@@ -1,0 +1,45 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: دریافت کد پروژه
+        uses: actions/checkout@v4
+
+      - name: آماده‌سازی Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: آماده‌سازی Java (لازم برای ساخت اندروید)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: نصب پکیج‌های پروژه
+        run: npm install
+
+      - name: اضافه‌کردن پلتفرم اندروید
+        run: npx cap add android
+
+      - name: همگام‌سازی فایل‌های وب با پروژه اندروید
+        run: npx cap sync android
+
+      - name: مجوز اجرا به gradlew
+        run: chmod +x android/gradlew
+
+      - name: ساخت فایل APK
+        run: cd android && ./gradlew assembleDebug
+
+      - name: بارگذاری APK به‌عنوان خروجی قابل دانلود
+        uses: actions/upload-artifact@v4
+        with:
+          name: loan-calculator-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
