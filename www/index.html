@@ -68,7 +68,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .date-row{ display:flex; gap:8px; }
 .date-select{ flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:9px 6px; color:var(--text); font-family:inherit; font-size:12.5px; text-align:center; }
 
-.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.grid2{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
 .bank-item{ display:flex; align-items:center; gap:8px; background:var(--surface-2); border-radius:12px; padding:8px 10px; cursor:pointer; border:1px solid transparent; }
 .bank-item.sel{ border-color:var(--primary-dim); background:rgba(45,216,184,.1); }
 .bank-badge{ width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; flex-shrink:0; }
@@ -140,6 +140,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .late-result{ margin-top:10px; text-align:center; font-size:13px; font-weight:700; color:var(--danger); }
 
 .loan-card{ background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:15px; margin-bottom:12px; cursor:pointer; }
+.add-manual-card{ border:1.5px dashed var(--primary-dim); background:rgba(45,216,184,.05); text-align:center; }
 .loan-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
 .loan-name{ font-weight:800; font-size:14px; } .loan-sub{ color:var(--muted); font-size:11px; margin-top:4px; }
 .loan-bottom{ display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); }
@@ -149,10 +150,11 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .empty{ text-align:center; padding:60px 20px; color:var(--muted); }
 .empty .ic{ font-size:32px; margin-bottom:10px; }
 
-.bottom-nav{ position:sticky; bottom:0; display:flex; background:var(--surface); border-top:1px solid var(--line); padding:7px 10px calc(7px + env(safe-area-inset-bottom)); z-index:20; }
-.nav-item{ flex:1; text-align:center; padding:7px; border-radius:12px; font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; }
+.bottom-nav{ position:sticky; bottom:0; display:flex; background:var(--surface); border-top:1px solid var(--line); padding:12px 10px calc(12px + env(safe-area-inset-bottom)); z-index:20; box-shadow:0 -8px 20px rgba(0,0,0,.25); }
+.nav-item{ flex:1; text-align:center; padding:10px 6px; border-radius:14px; font-size:12.5px; font-weight:700; color:var(--muted); cursor:pointer; }
 .nav-item.active{ color:var(--primary); background:rgba(45,216,184,.1); }
-.nav-item .ic{ display:block; font-size:17px; margin-bottom:2px; }
+.nav-item .ic{ display:block; font-size:22px; margin-bottom:5px; }
+.nav-item .ic svg{ width:23px !important; height:23px !important; }
 
 .back-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
 .back-row h2{ font-size:15px; font-weight:800; margin:0; }
@@ -225,7 +227,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 
       <div class="card">
         <div class="label">نام وام‌گیرنده</div>
-        <input type="text" class="text-input" id="borrowerName" placeholder="مثلاً: علی رضایی">
+        <input type="text" class="text-input" id="borrowerName" placeholder="نام وام‌گیرنده">
       </div>
 
       <div class="card">
@@ -294,6 +296,47 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
       </div>
 
       <button class="cta" onclick="calculate()">محاسبه کن</button>
+      <button class="cta ghost" onclick="showView('view-afford')" style="margin-top:10px;">چقدر وام می‌تونم بگیرم؟</button>
+    </div>
+
+    <!-- REVERSE / AFFORDABILITY CALCULATOR -->
+    <div class="view" id="view-afford">
+      <div class="back-row"><div class="icon-btn" onclick="showView('view-calc')">→</div><h2>چقدر وام می‌تونم بگیرم؟</h2></div>
+
+      <div class="card">
+        <div class="label">مبلغی که می‌تونم ماهانه قسط بدم</div>
+        <div class="amount-box">
+          <input type="text" inputmode="numeric" class="num-input" id="affordPay" style="font-size:24px;">
+          <span class="unit-badge">ریال</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">نرخ سود سالانه</div>
+        <div class="amount-box">
+          <input type="text" inputmode="decimal" class="num-input" id="affordRate" value="23" style="font-size:24px;">
+          <span class="unit-badge">درصد</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">تعداد اقساط (ماه)</div>
+        <div class="chips" id="affordMonthChips">
+          <div class="chip" data-v="12">۱۲</div>
+          <div class="chip" data-v="24">۲۴</div>
+          <div class="chip sel" data-v="36">۳۶</div>
+          <div class="chip" data-v="60">۶۰</div>
+          <div class="chip" data-v="120">۱۲۰</div>
+        </div>
+      </div>
+
+      <button class="cta" onclick="calculateAffordability()">محاسبه حداکثر وام</button>
+
+      <div class="card" id="affordResultCard" style="display:none; text-align:center; margin-top:16px;">
+        <div class="label">حداکثر مبلغ وامی که می‌تونی بگیری</div>
+        <div class="v" id="affordResult" style="font-size:20px; font-weight:800; color:var(--primary);">-</div>
+        <div class="words-line" id="affordResultWords"></div>
+      </div>
     </div>
 
     <!-- RESULT -->
@@ -339,7 +382,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
       <div class="late-card">
         <div class="title">⚠ محاسبه جریمه دیرکرد (طبق بانک مرکزی)</div>
         <div class="label">چند روز از سررسید گذشته؟</div>
-        <input type="text" inputmode="numeric" class="text-input" id="lateDays" placeholder="مثلاً ۸">
+        <input type="text" inputmode="numeric" class="text-input" id="lateDays" placeholder="تعداد روز">
         <button class="cta ghost" style="margin-top:10px" onclick="calcLateFee()">محاسبه جریمه</button>
         <div class="late-result" id="lateResult"></div>
       </div>
@@ -386,7 +429,6 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
     <!-- LOANS LIST -->
     <div class="view" id="view-loans">
       <div class="back-row"><h2>وام‌های من</h2></div>
-      <button class="cta ghost" onclick="openManualAdd()">＋ افزودن وامی که از قبل دارم (دستی)</button>
       <div id="loansList"></div>
     </div>
 
@@ -396,12 +438,12 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 
       <div class="card">
         <div class="label">اسم وام</div>
-        <input type="text" class="text-input" id="manualName" placeholder="مثلاً: کارت طلایی خودرو">
+        <input type="text" class="text-input" id="manualName" placeholder="اسم وام">
       </div>
 
       <div class="card">
         <div class="label">بانک یا فروشنده (اختیاری)</div>
-        <input type="text" class="text-input" id="manualBank" placeholder="مثلاً: کارت طلایی / فروشگاه X">
+        <input type="text" class="text-input" id="manualBank" placeholder="بانک یا فروشنده">
       </div>
 
       <div class="card">
@@ -414,7 +456,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 
       <div class="card">
         <div class="label">تعداد کل اقساط</div>
-        <input type="text" inputmode="numeric" class="text-input" id="manualTotalCount" placeholder="مثلاً ۲۴">
+        <input type="text" inputmode="numeric" class="text-input" id="manualTotalCount" placeholder="تعداد کل اقساط">
       </div>
 
       <div class="card">
@@ -477,7 +519,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
     <div class="modal-sheet">
       <div class="modal-handle"></div>
       <h3>اسم این وام رو وارد کن</h3>
-      <input type="text" class="text-input" id="nameModalInput" style="margin-top:6px;" placeholder="مثلاً: وام خودرو">
+      <input type="text" class="text-input" id="nameModalInput" style="margin-top:6px;" placeholder="اسم وام">
       <button class="cta" style="margin-top:16px" onclick="confirmNameModal()">ذخیره کن</button>
       <button class="cta ghost" onclick="closeNameModal()">انصراف</button>
     </div>
@@ -1065,11 +1107,17 @@ function renderLoansList(){
         <input type="file" accept="application/json" style="display:none" onchange="importBackup(event)">
       </label>
     </div>`;
+  const addCard = `
+    <div class="loan-card add-manual-card" onclick="openManualAdd()">
+      <div class="loan-top" style="margin-bottom:0; align-items:center;">
+        <div class="loan-name" style="color:var(--primary);">＋ افزودن دستی وام</div>
+      </div>
+    </div>`;
   if(currentLoans.length === 0){
-    container.innerHTML = backupBar + `<div class="empty"><div class="ic">📭</div>هنوز وامی ذخیره نکردی.<br>از تب محاسبه‌گر شروع کن.</div>`;
+    container.innerHTML = backupBar + addCard + `<div class="empty"><div class="ic">📭</div>هنوز وامی ذخیره نکردی.<br>از تب محاسبه‌گر شروع کن.</div>`;
     return;
   }
-  container.innerHTML = backupBar + currentLoans.map(l => `
+  container.innerHTML = backupBar + addCard + currentLoans.map(l => `
     <div class="loan-card" onclick="openSavedLoan(${l.id})">
       <div class="loan-top">
         <div><div class="loan-name">${l.name}</div><div class="loan-sub">${l.bank} • ${toFa(l.n)} ماهه • ${l.borrower}</div></div>
@@ -1125,7 +1173,36 @@ function switchTab(tab){
 renderLoansList();
 
 /* ---------- Haptic Feedback ---------- */
+document.querySelectorAll('#affordMonthChips .chip').forEach(c=>{
+  c.addEventListener('click', ()=>{
+    document.querySelectorAll('#affordMonthChips .chip').forEach(x=>x.classList.remove('sel'));
+    c.classList.add('sel');
+  });
+});
+
+function calculateAffordability(){
+  const A = Number(document.getElementById('affordPay').value.replace(/[^\d]/g,'')) || 0;
+  const rate = Number(document.getElementById('affordRate').value) || 0;
+  const n = Number(document.querySelector('#affordMonthChips .chip.sel').dataset.v);
+  if(A <= 0){ showToast('مبلغ قسط رو وارد کن'); return; }
+
+  const i = rate / 1200;
+  let P;
+  if(i === 0){ P = A * n; }
+  else { P = A * (1 - Math.pow(1+i, -n)) / i; }
+
+  document.getElementById('affordResult').textContent = fmt(P) + ' ریال';
+  document.getElementById('affordResultWords').textContent = `${numberToWordsFa(P/10)} تومان`;
+  document.getElementById('affordResultCard').style.display = 'block';
+}
+
 function haptic(ms){ if(navigator.vibrate){ try{ navigator.vibrate(ms || 8); }catch(e){} } }
+
+/* هندلر سراسری خطا: اگه هر جای کد خطا بده، به‌جای سکوت، پیام نشون میده */
+window.addEventListener('error', (e)=>{
+  showToast('خطا: ' + (e.message || 'یه مشکلی پیش اومد') );
+});
+
 document.addEventListener('click', (e)=>{
   if(e.target.closest('.cta, .chip, .nav-item, .toggle, .loan-card, .preset-card, .bank-item, .del-btn, .icon-btn, .theme-btn, .trow-simple, .fs-chip')){
     haptic(8);
