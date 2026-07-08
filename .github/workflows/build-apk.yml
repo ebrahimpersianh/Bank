@@ -29,13 +29,22 @@ jobs:
       - name: اضافه‌کردن پلتفرم اندروید
         run: npx cap add android
 
+      - name: مجوز ویبره (برای Haptic Feedback)
+        run: sed -i 's#<application#<uses-permission android:name="android.permission.VIBRATE" />\n    <application#' android/app/src/main/AndroidManifest.xml
+
+      - name: ساخت آیکون و اسپلش اپ از تصویر resources/icon.png
+        run: npx capacitor-assets generate --android
+
       - name: همگام‌سازی فایل‌های وب با پروژه اندروید
         run: npx cap sync android
+
+      - name: پایین‌آوردن حداقل نسخه اندروید به ۵.۰ (API 21)
+        run: sed -i 's/minSdkVersion = .*/minSdkVersion = 21/' android/variables.gradle
 
       - name: مجوز اجرا به gradlew
         run: chmod +x android/gradlew
 
-      - name: ساخت فایل APK
+      - name: ساخت فایل APK (پشتیبانی خودکار از همه معماری‌های CPU)
         run: cd android && ./gradlew assembleDebug
 
       - name: بارگذاری APK به‌عنوان خروجی قابل دانلود
