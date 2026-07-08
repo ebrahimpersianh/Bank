@@ -38,8 +38,8 @@ jobs:
       - name: همگام‌سازی فایل‌های وب با پروژه اندروید
         run: npx cap sync android
 
-      - name: پایین‌آوردن حداقل نسخه اندروید به ۵.۰ (API 21)
-        run: sed -i 's/minSdkVersion = .*/minSdkVersion = 21/' android/variables.gradle
+      - name: پایین‌آوردن حداقل نسخه اندروید به ۵.۱ (API 22 - حداقل واقعی که کتابخونه‌های داخلی پشتیبانی می‌کنن)
+        run: sed -i 's/minSdkVersion = .*/minSdkVersion = 22/' android/variables.gradle
 
       - name: مجوز اجرا به gradlew
         run: chmod +x android/gradlew
