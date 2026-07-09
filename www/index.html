@@ -43,9 +43,9 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .card{ background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:20px; margin-bottom:14px; transition:background .3s; }
 .label{ font-size:13px; color:var(--muted); margin-bottom:10px; font-weight:600; }
 .num-input{ width:100%; background:transparent; border:none; outline:none; color:var(--text); font-family:inherit; font-size:30px; font-weight:800; direction:ltr; text-align:right; letter-spacing:.5px; }
-.amount-box{ background:var(--surface-2); border:1.5px solid var(--primary-dim); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px; }
+.amount-box{ background:var(--surface-2); border:1.5px solid var(--primary-dim); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
 .amount-box:focus-within{ border-color:var(--primary); box-shadow:0 0 0 3px rgba(45,216,184,.15); }
-.unit-badge{ background:rgba(45,216,184,.14); color:var(--primary); font-size:11.5px; font-weight:700; padding:5px 10px; border-radius:8px; flex-shrink:0; }
+.unit-badge{ color:var(--muted); font-size:11px; font-weight:600; background:none; padding:0; }
 .sub-note{ font-size:11px; color:var(--muted); margin-top:6px; }
 .words-line{ font-size:11.5px; color:var(--accent); margin-top:4px; font-weight:600; }
 
@@ -133,6 +133,17 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
   padding:12px 20px; font-size:13px; font-weight:600; max-width:88%; text-align:center; opacity:0;
   transition:opacity .3s ease, transform .3s ease; pointer-events:none; box-shadow:0 12px 30px rgba(0,0,0,.35); }
 #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ---------- PRINT / PDF EXPORT ---------- */
+@media print{
+  .app-header, .bottom-nav, .modal-backdrop, #splash, #toast, .cta{ display:none !important; }
+  body, .app, main{ background:#fff !important; }
+  .table-wrap, .trow-simple, .summary-bar{ background:#fff !important; color:#000 !important; border-color:#ccc !important; }
+  .status-pill.paid{ background:#e6f9f5 !important; color:#0f9e88 !important; }
+  .status-pill.unpaid{ background:#f0f0f0 !important; color:#666 !important; }
+  .status-pill.late{ background:#fdeceb !important; color:#c6474b !important; }
+  h2{ color:#000 !important; }
+}
 .summary-bar{ display:flex; justify-content:space-between; padding:12px 14px; background:var(--surface-2); font-size:12px; font-weight:700; margin-top:12px; border-radius:14px; }
 
 .late-card{ background:var(--surface); border:1px dashed var(--danger); border-radius:16px; padding:14px; margin-top:14px; }
@@ -296,12 +307,11 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
       </div>
 
       <button class="cta" onclick="calculate()">محاسبه کن</button>
-      <button class="cta ghost" onclick="showView('view-afford')" style="margin-top:10px;">چقدر وام می‌تونم بگیرم؟</button>
     </div>
 
     <!-- REVERSE / AFFORDABILITY CALCULATOR -->
     <div class="view" id="view-afford">
-      <div class="back-row"><div class="icon-btn" onclick="showView('view-calc')">→</div><h2>چقدر وام می‌تونم بگیرم؟</h2></div>
+      <div class="back-row"><div class="icon-btn" onclick="switchTab('afford')">→</div><h2>چقدر وام می‌تونم بگیرم؟</h2></div>
 
       <div class="card">
         <div class="label">مبلغی که می‌تونم ماهانه قسط بدم</div>
@@ -378,6 +388,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
         <div class="table-scroll" id="tableBody"></div>
       </div>
       <div class="summary-bar"><span>مجموع پرداختی</span><span id="tableTotal" style="color:var(--primary)">-</span></div>
+      <button class="cta ghost" onclick="window.print()" style="margin-top:12px;">🖨 چاپ / ذخیره PDF</button>
 
       <div class="late-card">
         <div class="title">⚠ محاسبه جریمه دیرکرد (طبق بانک مرکزی)</div>
@@ -511,6 +522,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 
   <div class="bottom-nav">
     <div class="nav-item active" id="nav-calc" onclick="switchTab('calc')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;"><rect x="4" y="2" width="16" height="20" rx="3"/><line x1="8" y1="6" x2="16" y2="6"/><circle cx="8" cy="11" r="1"/><circle cx="12" cy="11" r="1"/><circle cx="16" cy="11" r="1"/><circle cx="8" cy="15" r="1"/><circle cx="12" cy="15" r="1"/><circle cx="16" cy="15" r="1"/><circle cx="8" cy="19" r="1"/><circle cx="12" cy="19" r="1"/><circle cx="16" cy="19" r="1"/></svg></span> محاسبه‌گر</div>
+    <div class="nav-item" id="nav-afford" onclick="switchTab('afford')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1 3 2.3c0 2.7-6 1.3-6 4 0 1.3 1.3 2.3 3 2.3s3-1.1 3-2.5"/></svg></span> چقدر وام بگیرم</div>
     <div class="nav-item" id="nav-loans" onclick="switchTab('loans')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;"><path d="M4 6h9l2 2h5v11a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1z"/></svg></span> وام‌های من</div>
   </div>
 
@@ -556,7 +568,7 @@ setThemeIcon();
 /* ================= HELPERS ================= */
 const faDigits = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
 function toFa(str){ return String(str).replace(/[0-9]/g, d => faDigits[d]); }
-function fmt(n){ let s = Math.round(n).toLocaleString('en-US').replace(/,/g,'/'); return toFa(s); }
+function fmt(n){ let s = Math.round(n).toLocaleString('en-US').replace(/,/g,'٬'); return toFa(s); }
 function fmtShort(n){ if(n >= 10000000) return toFa((n/1000000).toFixed(1)) + ' م'; return fmt(n); }
 
 // Persian number to words (up to billions), input in Toman
@@ -567,6 +579,7 @@ function ordinalFa(n){ return ordinalDays[n] || toFa(n); }
 const teens = ['ده','یازده','دوازده','سیزده','چهارده','پانزده','شانزده','هفده','هجده','نوزده'];
 const tens = ['', '', 'بیست', 'سی', 'چهل', 'پنجاه', 'شصت', 'هفتاد', 'هشتاد', 'نود'];
 const hundreds = ['', 'صد', 'دویست', 'سیصد', 'چهارصد', 'پانصد', 'ششصد', 'هفتصد', 'هشتصد', 'نهصد'];
+const ones = ['', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه'];
 function threeDigitsToWords(n){
   if(n === 0) return '';
   let h = Math.floor(n/100), r = n%100, parts=[];
@@ -619,7 +632,7 @@ presets.forEach(p=>{
   el.addEventListener('click', ()=>{
     document.querySelectorAll('.preset-card').forEach(x=>x.classList.remove('sel'));
     el.classList.add('sel');
-    amountInput.value = p.amount.toLocaleString('en-US').replace(/,/g,'/');
+    amountInput.value = p.amount.toLocaleString('en-US').replace(/,/g,'٬');
     amountSlider.min = 100000000; amountSlider.max = 10000000000;
     amountSlider.value = Math.min(p.amount, 10000000000);
     rateSlider.value = p.rate; rateInput.value = p.rate;
@@ -675,7 +688,7 @@ function renderBankGroup(list, label, isCredit){
         document.querySelectorAll('#monthChips .chip').forEach(c=>c.classList.toggle('sel', Number(c.dataset.v)===b.months));
         document.getElementById('customMonths').value = ([12,36,60,84,120,180,240].includes(b.months)) ? '' : b.months;
         const mid = Math.round((b.min+b.max)/2);
-        amountInput.value = mid.toLocaleString('en-US').replace(/,/g,'/');
+        amountInput.value = mid.toLocaleString('en-US').replace(/,/g,'٬');
         amountSlider.min = b.min; amountSlider.max = b.max; amountSlider.value = mid;
         updateAmountWords();
         document.querySelectorAll('.preset-card').forEach(x=>x.classList.remove('sel'));
@@ -727,10 +740,10 @@ function updateAmountWords(){
 }
 amountInput.addEventListener('input', ()=>{
   let raw = amountInput.value.replace(/[^\d]/g,'');
-  if(raw){ amountInput.value = Number(raw).toLocaleString('en-US').replace(/,/g,'/'); if(Number(raw) <= Number(amountSlider.max)) amountSlider.value = raw; }
+  if(raw){ amountInput.value = Number(raw).toLocaleString('en-US').replace(/,/g,'٬'); if(Number(raw) <= Number(amountSlider.max)) amountSlider.value = raw; }
   updateAmountWords();
 });
-amountSlider.addEventListener('input', ()=>{ amountInput.value = Number(amountSlider.value).toLocaleString('en-US').replace(/,/g,'/'); updateAmountWords(); });
+amountSlider.addEventListener('input', ()=>{ amountInput.value = Number(amountSlider.value).toLocaleString('en-US').replace(/,/g,'٬'); updateAmountWords(); });
 
 const rateSlider = document.getElementById('rateSlider');
 const rateInput = document.getElementById('rateInput');
@@ -898,6 +911,7 @@ function openSavedLoan(id){
   lastResult = result;
 
   document.getElementById('nav-calc').classList.add('active');
+  document.getElementById('nav-afford').classList.remove('active');
   document.getElementById('nav-loans').classList.remove('active');
   renderResultUI(result);
   showView('view-result');
@@ -1165,8 +1179,10 @@ loadLoansFromStorage();
 function showView(id){ document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 function switchTab(tab){
   document.getElementById('nav-calc').classList.toggle('active', tab==='calc');
+  document.getElementById('nav-afford').classList.toggle('active', tab==='afford');
   document.getElementById('nav-loans').classList.toggle('active', tab==='loans');
   if(tab === 'calc') showView('view-calc');
+  else if(tab === 'afford') showView('view-afford');
   else if(tab === 'loans'){ renderLoansList(); showView('view-loans'); }
   else if(tab === 'settings') showView('view-settings');
 }
