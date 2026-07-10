@@ -40,22 +40,22 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .view{ display:none; } .view.active{ display:block; animation:viewEnter .35s cubic-bezier(.22,1,.36,1); }
 @keyframes viewEnter{ from{opacity:0; transform:translateY(10px) scale(.985);} to{opacity:1; transform:none;} }
 
-.card{ background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:20px; margin-bottom:14px; transition:background .3s; }
-.label{ font-size:13px; color:var(--muted); margin-bottom:10px; font-weight:600; }
-.num-input{ width:100%; background:transparent; border:none; outline:none; color:var(--text); font-family:inherit; font-size:30px; font-weight:800; direction:ltr; text-align:right; letter-spacing:.5px; }
-.amount-box{ background:var(--surface-2); border:1.5px solid var(--primary-dim); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:10px; transition:background .3s; }
+.label{ font-size:11.5px; color:var(--muted); margin-bottom:7px; font-weight:600; }
+.num-input{ width:100%; background:transparent; border:none; outline:none; color:var(--text); font-family:inherit; font-size:21px; font-weight:800; direction:ltr; text-align:right; letter-spacing:.5px; }
+.amount-box{ background:var(--surface-2); border:1.5px solid var(--primary-dim); border-radius:12px; padding:9px 11px; display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
 .amount-box:focus-within{ border-color:var(--primary); box-shadow:0 0 0 3px rgba(45,216,184,.15); }
-.unit-badge{ color:var(--muted); font-size:11px; font-weight:600; background:none; padding:0; }
-.sub-note{ font-size:11px; color:var(--muted); margin-top:6px; }
+.unit-badge{ color:var(--muted); font-size:10px; font-weight:600; background:none; padding:0; }
+.sub-note{ font-size:10px; color:var(--muted); margin-top:5px; }
 .words-line{ font-size:11.5px; color:var(--accent); margin-top:4px; font-weight:600; }
 
 .slider{ -webkit-appearance:none; width:100%; height:5px; border-radius:6px; background:var(--surface-2); margin-top:12px; outline:none; }
 .slider::-webkit-slider-thumb{ -webkit-appearance:none; width:19px; height:19px; border-radius:50%; background:var(--primary); border:3px solid var(--bg); box-shadow:0 2px 8px rgba(45,216,184,.4); cursor:pointer; }
 
 .chips{ display:flex; gap:7px; flex-wrap:wrap; }
-.chip{ padding:7px 12px; border-radius:10px; background:var(--surface-2); font-size:12.5px; font-weight:600; color:var(--muted); border:1px solid transparent; cursor:pointer; }
+.chip{ padding:5px 9px; border-radius:9px; background:var(--surface-2); font-size:11px; font-weight:600; color:var(--muted); border:1px solid transparent; cursor:pointer; }
 .chip.sel{ background:rgba(45,216,184,.14); color:var(--primary); border-color:var(--primary-dim); }
-.chip.small{ padding:6px 10px; font-size:11.5px; }
+.chip.small{ padding:4px 8px; font-size:10px; }
 
 .preset-scroll{ display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; margin-bottom:4px; }
 .preset-card{ min-width:108px; background:var(--surface-2); border-radius:14px; padding:12px 10px; text-align:center; cursor:pointer; border:1px solid transparent; flex-shrink:0; }
@@ -74,7 +74,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .bank-badge{ width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; flex-shrink:0; }
 .bank-name{ font-size:11.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-.text-input{ width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:11px 12px; color:var(--text); font-family:inherit; font-size:13.5px; outline:none; }
+.text-input{ width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:8px 9px; color:var(--text); font-family:inherit; font-size:12px; outline:none; }
 
 .toggle-row{ display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
 .toggle{ width:44px; height:26px; border-radius:20px; background:var(--surface-2); position:relative; flex-shrink:0; transition:.2s; }
@@ -83,7 +83,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .toggle.on::after{ background:var(--primary); right:21px; }
 .grace-box{ max-height:0; overflow:hidden; transition:.25s; } .grace-box.open{ max-height:200px; margin-top:12px; }
 
-.cta{ width:100%; padding:15px; border-radius:16px; border:none; background:var(--primary); color:#04211C; font-family:inherit; font-size:15px; font-weight:800; margin-top:6px; cursor:pointer; box-shadow:0 12px 24px -10px rgba(45,216,184,.4); }
+.cta{ width:100%; padding:11px; border-radius:13px; border:none; background:var(--primary); color:#04211C; font-family:inherit; font-size:13px; font-weight:800; margin-top:5px; cursor:pointer; box-shadow:0 12px 24px -10px rgba(45,216,184,.4); }
 .cta.ghost{ background:transparent; color:var(--primary); border:1.5px solid var(--primary-dim); box-shadow:none; }
 .cta:active{ transform:scale(.98); }
 
@@ -317,6 +317,20 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
         </div>
       </div>
 
+      <div class="card">
+        <div class="toggle-row" onclick="toggleFee()">
+          <div><div style="font-weight:700; font-size:13px;">کارمزد بانک</div><div class="loan-sub">هزینه‌ی یک‌باره‌ی جدا از سود، معمولاً هنگام دریافت وام</div></div>
+          <div class="toggle" id="feeToggle"></div>
+        </div>
+        <div class="grace-box" id="feeBox">
+          <div class="label" style="margin-top:12px">درصد کارمزد</div>
+          <div class="amount-box">
+            <input type="text" inputmode="decimal" class="num-input" id="feeInput" value="1" style="font-size:20px;">
+            <span class="unit-badge">درصد از مبلغ وام</span>
+          </div>
+        </div>
+      </div>
+
       <button class="cta" onclick="calculate()">محاسبه کن</button>
     </div>
 
@@ -327,9 +341,11 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
       <div class="card">
         <div class="label">مبلغی که می‌تونم ماهانه قسط بدم</div>
         <div class="amount-box">
-          <input type="text" inputmode="numeric" class="num-input" id="affordPay" style="font-size:24px;">
+          <input type="text" inputmode="numeric" class="num-input" id="affordPay" value="100,000,000" style="font-size:24px;">
           <span class="unit-badge">ریال</span>
         </div>
+        <input type="range" class="slider" id="affordPaySlider" min="10000000" max="500000000" step="5000000" value="100000000">
+        <div class="sub-note">بازه اسلایدر: ۱۰ تا ۵۰۰ میلیون ریال — برای اعداد خارج از بازه، مستقیم تایپ کن</div>
       </div>
 
       <div class="card">
@@ -338,6 +354,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
           <input type="text" inputmode="decimal" class="num-input" id="affordRate" value="23" style="font-size:24px;">
           <span class="unit-badge">درصد</span>
         </div>
+        <input type="range" class="slider" id="affordRateSlider" min="0" max="35" step="0.5" value="23">
       </div>
 
       <div class="card">
@@ -349,6 +366,11 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
           <div class="chip" data-v="60">۶۰</div>
           <div class="chip" data-v="120">۱۲۰</div>
         </div>
+        <div class="amount-box" style="margin-top:10px;">
+          <input type="text" inputmode="numeric" class="num-input" id="affordMonths" value="36" style="font-size:22px;">
+          <span class="unit-badge">ماه</span>
+        </div>
+        <input type="range" class="slider" id="affordMonthsSlider" min="1" max="240" step="1" value="36">
       </div>
 
       <button class="cta" onclick="calculateAffordability()">محاسبه حداکثر وام</button>
@@ -357,6 +379,26 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
         <div class="label">حداکثر مبلغ وامی که می‌تونی بگیری</div>
         <div class="v" id="affordResult" style="font-size:20px; font-weight:800; color:var(--primary);">-</div>
         <div class="words-line" id="affordResultWords"></div>
+      </div>
+
+      <div style="height:6px;"></div>
+      <div class="card" style="border-color:var(--accent);">
+        <div class="label" style="color:var(--accent); font-weight:700;">یا برعکس: نرخ سود رو پیدا کن</div>
+        <div class="loan-sub" style="margin-bottom:10px;">مبلغ وام و قسطی که می‌دی رو بگو، نرخ سودش رو حساب می‌کنم</div>
+        <div class="amount-box">
+          <input type="text" inputmode="numeric" class="num-input" id="rateFindAmount" style="font-size:20px;">
+          <span class="unit-badge">مبلغ وام (ریال)</span>
+        </div>
+        <div class="amount-box" style="margin-top:8px;">
+          <input type="text" inputmode="numeric" class="num-input" id="rateFindInstallment" style="font-size:20px;">
+          <span class="unit-badge">مبلغ هر قسط (ریال)</span>
+        </div>
+        <div class="amount-box" style="margin-top:8px;">
+          <input type="text" inputmode="numeric" class="num-input" id="rateFindMonths" value="36" style="font-size:20px;">
+          <span class="unit-badge">تعداد اقساط (ماه)</span>
+        </div>
+        <button class="cta ghost" style="margin-top:10px;" onclick="calculateRateFinder()">محاسبه نرخ سود</button>
+        <div class="v" id="rateFindResult" style="display:none; text-align:center; margin-top:12px; font-size:18px; font-weight:800; color:var(--accent);">-</div>
       </div>
     </div>
 
@@ -386,6 +428,9 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
       <div class="stat-row">
         <div class="stat"><div class="v" id="statInterestPct">-</div><div class="k">سود نسبت به اصل وام</div></div>
         <div class="stat" style="flex:1.3"><div class="v" id="statEndDate" style="font-size:11.5px;">-</div><div class="k">تاریخ پایان وام</div></div>
+      </div>
+      <div class="stat-row" id="feeStatRow" style="display:none;">
+        <div class="stat" style="flex:1;"><div class="v" id="statFee" style="font-size:11.5px; color:var(--accent);">-</div><div class="k">کارمزد بانک (یک‌بار، جدا از اقساط)</div></div>
       </div>
       <button class="cta ghost" onclick="showView('view-table')">مشاهده جدول کامل اقساط</button>
       <button class="cta" onclick="saveLoan()">ذخیره این وام</button>
@@ -455,9 +500,11 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
       <div class="card">
         <div class="label">مبلغ سپرده</div>
         <div class="amount-box">
-          <input type="text" inputmode="numeric" class="num-input" id="depositAmount" style="font-size:24px;">
+          <input type="text" inputmode="numeric" class="num-input" id="depositAmount" value="2,500,000,000" style="font-size:24px;">
           <span class="unit-badge">ریال</span>
         </div>
+        <input type="range" class="slider" id="depositAmountSlider" min="100000000" max="10000000000" step="50000000" value="2500000000">
+        <div class="sub-note">بازه اسلایدر: ۱۰۰ میلیون تا ۱۰ میلیارد ریال — برای اعداد خارج از بازه، مستقیم تایپ کن</div>
       </div>
 
       <div class="card">
@@ -466,6 +513,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
           <input type="text" inputmode="decimal" class="num-input" id="depositRate" value="18" style="font-size:24px;">
           <span class="unit-badge">درصد</span>
         </div>
+        <input type="range" class="slider" id="depositRateSlider" min="0" max="35" step="0.5" value="18">
       </div>
 
       <div class="card">
@@ -519,11 +567,17 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
           <input type="text" inputmode="numeric" class="num-input" id="manualInstallment" placeholder="0" style="font-size:24px;">
           <span class="unit-badge">ریال</span>
         </div>
+        <input type="range" class="slider" id="manualInstallmentSlider" min="10000000" max="500000000" step="5000000" value="50000000">
+        <div class="sub-note">بازه اسلایدر: ۱۰ تا ۵۰۰ میلیون ریال — برای اعداد خارج از بازه، مستقیم تایپ کن</div>
       </div>
 
       <div class="card">
         <div class="label">تعداد کل اقساط</div>
-        <input type="text" inputmode="numeric" class="text-input" id="manualTotalCount" placeholder="تعداد کل اقساط">
+        <div class="amount-box">
+          <input type="text" inputmode="numeric" class="num-input" id="manualTotalCount" placeholder="0" style="font-size:22px;">
+          <span class="unit-badge">قسط</span>
+        </div>
+        <input type="range" class="slider" id="manualTotalCountSlider" min="1" max="240" step="1" value="24">
       </div>
 
       <div class="card">
@@ -855,6 +909,13 @@ function toggleGrace(){
   document.getElementById('graceToggle').classList.toggle('on');
   document.getElementById('graceBox').classList.toggle('open');
 }
+function toggleFee(){
+  document.getElementById('feeToggle').classList.toggle('on');
+  document.getElementById('feeBox').classList.toggle('open');
+}
+document.getElementById('feeInput').addEventListener('input', function(){
+  this.value = cleanNumDecimal(this.value);
+});
 updateAmountWords();
 
 /* ================= CORE MATH (amounts in RIAL internally) ================= */
@@ -907,6 +968,12 @@ function calculate(){
   result.rate = rate; result.n = n; result.method = method;
   result.borrower = document.getElementById('borrowerName').value || '—';
   result.bank = selectedBank || 'مشخص‌نشده';
+
+  const feeOn = document.getElementById('feeToggle').classList.contains('on');
+  const feePercent = feeOn ? Number(cleanNumDecimal(document.getElementById('feeInput').value)) || 0 : 0;
+  result.feePercent = feePercent;
+  result.feeAmount = rialAmount * feePercent / 100;
+
   lastStartDate = { y:Number(dYear.value), m:Number(dMonth.value), d:Number(dDay.value) };
   lastResult = result;
 
@@ -920,6 +987,14 @@ function renderResultUI(result){
   document.getElementById('statTotal').textContent = fmt(result.totalPaid);
   document.getElementById('statDueDay').textContent = ordinalFa(lastStartDate.d);
   document.getElementById('statMonths').textContent = toFa(result.n) + ' ماه';
+
+  const feeRow = document.getElementById('feeStatRow');
+  if(result.feeAmount && result.feeAmount > 0){
+    document.getElementById('statFee').textContent = fmt(result.feeAmount) + ' ریال (' + toFa(result.feePercent) + '٪)';
+    feeRow.style.display = 'flex';
+  } else {
+    feeRow.style.display = 'none';
+  }
   document.getElementById('resultTitle').textContent = result.borrower && result.borrower !== '—' ? `وام ${result.borrower}` : 'نتیجه محاسبه';
 
   const interestPct = result.principal > 0 ? (result.totalInterest / result.principal * 100) : 0;
@@ -940,11 +1015,35 @@ function renderResultUI(result){
   renderTable(result);
 }
 
+const manualInstallmentInput = document.getElementById('manualInstallment');
+const manualInstallmentSlider = document.getElementById('manualInstallmentSlider');
+manualInstallmentInput.addEventListener('input', ()=>{
+  let raw = cleanNum(manualInstallmentInput.value);
+  manualInstallmentInput.value = raw ? Number(raw).toLocaleString('en-US') : '';
+  if(raw && Number(raw) <= Number(manualInstallmentSlider.max)) manualInstallmentSlider.value = raw;
+});
+manualInstallmentSlider.addEventListener('input', ()=>{
+  manualInstallmentInput.value = Number(manualInstallmentSlider.value).toLocaleString('en-US');
+});
+
+const manualTotalCountInput = document.getElementById('manualTotalCount');
+const manualTotalCountSlider = document.getElementById('manualTotalCountSlider');
+manualTotalCountInput.addEventListener('input', ()=>{
+  const v = cleanNum(manualTotalCountInput.value);
+  manualTotalCountInput.value = v;
+  if(v){ manualTotalCountSlider.value = Math.min(Number(v), 240); }
+});
+manualTotalCountSlider.addEventListener('input', ()=>{
+  manualTotalCountInput.value = manualTotalCountSlider.value;
+});
+
 function openManualAdd(){
   document.getElementById('manualName').value = '';
   document.getElementById('manualBank').value = '';
   document.getElementById('manualInstallment').value = '';
+  document.getElementById('manualInstallmentSlider').value = 50000000;
   document.getElementById('manualTotalCount').value = '';
+  document.getElementById('manualTotalCountSlider').value = 24;
   document.getElementById('manualPaidCount').value = '';
   showView('view-manual');
 }
@@ -1285,13 +1384,52 @@ document.querySelectorAll('#affordMonthChips .chip').forEach(c=>{
   c.addEventListener('click', ()=>{
     document.querySelectorAll('#affordMonthChips .chip').forEach(x=>x.classList.remove('sel'));
     c.classList.add('sel');
+    const v = c.dataset.v;
+    document.getElementById('affordMonths').value = v;
+    document.getElementById('affordMonthsSlider').value = v;
   });
 });
+
+const affordMonthsInput = document.getElementById('affordMonths');
+const affordMonthsSlider = document.getElementById('affordMonthsSlider');
+function syncAffordMonthChips(v){
+  document.querySelectorAll('#affordMonthChips .chip').forEach(x=>x.classList.toggle('sel', Number(x.dataset.v)===Number(v)));
+}
+affordMonthsInput.addEventListener('input', ()=>{
+  const v = cleanNum(affordMonthsInput.value);
+  affordMonthsInput.value = v;
+  if(v){ affordMonthsSlider.value = Math.min(Number(v), 240); syncAffordMonthChips(v); }
+});
+affordMonthsSlider.addEventListener('input', ()=>{
+  affordMonthsInput.value = affordMonthsSlider.value;
+  syncAffordMonthChips(affordMonthsSlider.value);
+});
+
+const affordPayInput = document.getElementById('affordPay');
+const affordPaySlider = document.getElementById('affordPaySlider');
+affordPayInput.addEventListener('input', ()=>{
+  let raw = cleanNum(affordPayInput.value);
+  affordPayInput.value = raw ? Number(raw).toLocaleString('en-US').replace(/,/g,',') : '';
+  if(raw && Number(raw) <= Number(affordPaySlider.max)) affordPaySlider.value = raw;
+});
+affordPaySlider.addEventListener('input', ()=>{
+  affordPayInput.value = Number(affordPaySlider.value).toLocaleString('en-US').replace(/,/g,',');
+});
+
+const affordRateInput = document.getElementById('affordRate');
+const affordRateSlider = document.getElementById('affordRateSlider');
+affordRateInput.addEventListener('input', ()=>{
+  let v = cleanNumDecimal(affordRateInput.value);
+  affordRateInput.value = v;
+  const num = parseFloat(v);
+  if(!isNaN(num) && num >= 0 && num <= 35){ affordRateSlider.value = num; }
+});
+affordRateSlider.addEventListener('input', ()=>{ affordRateInput.value = affordRateSlider.value; });
 
 function calculateAffordability(){
   const A = Number(cleanNum(document.getElementById('affordPay').value)) || 0;
   const rate = Number(cleanNumDecimal(document.getElementById('affordRate').value)) || 0;
-  const n = Number(document.querySelector('#affordMonthChips .chip.sel').dataset.v);
+  const n = Number(cleanNum(document.getElementById('affordMonths').value)) || 36;
   if(A <= 0){ showToast('مبلغ قسط رو وارد کن'); return; }
 
   const i = rate / 1200;
@@ -1304,6 +1442,32 @@ function calculateAffordability(){
   document.getElementById('affordResultCard').style.display = 'block';
 }
 
+/* پیدا کردن نرخ سود از روی مبلغ وام + مبلغ قسط + تعداد اقساط (جستجوی دودویی، چون فرمول مستقیم نداره) */
+function installmentForRate(P, ratePct, n){
+  const i = ratePct / 1200;
+  if(i === 0) return P / n;
+  return P * i * Math.pow(1+i, n) / (Math.pow(1+i, n) - 1);
+}
+function calculateRateFinder(){
+  const P = Number(cleanNum(document.getElementById('rateFindAmount').value)) || 0;
+  const A = Number(cleanNum(document.getElementById('rateFindInstallment').value)) || 0;
+  const n = Number(cleanNum(document.getElementById('rateFindMonths').value)) || 0;
+
+  if(P <= 0 || A <= 0 || n <= 0){ showToast('هر سه مقدار رو وارد کن'); return; }
+  if(A * n < P){ showToast('مبلغ کل قسط‌ها از مبلغ وام کمتره؛ عددها رو چک کن'); return; }
+
+  let lo = 0, hi = 100;
+  for(let iter=0; iter<60; iter++){
+    const mid = (lo+hi)/2;
+    const inst = installmentForRate(P, mid, n);
+    if(inst > A) hi = mid; else lo = mid;
+  }
+  const foundRate = (lo+hi)/2;
+  const resultEl = document.getElementById('rateFindResult');
+  resultEl.textContent = `نرخ سود سالانه تقریبی: ${toFa(foundRate.toFixed(1))}٪`;
+  resultEl.style.display = 'block';
+}
+
 /* ---------- محاسبه سود سپرده ---------- */
 document.querySelectorAll('#depositMonthChips .chip').forEach(c=>{
   c.addEventListener('click', ()=>{
@@ -1311,6 +1475,27 @@ document.querySelectorAll('#depositMonthChips .chip').forEach(c=>{
     c.classList.add('sel');
   });
 });
+
+const depositAmountInput = document.getElementById('depositAmount');
+const depositAmountSlider = document.getElementById('depositAmountSlider');
+depositAmountInput.addEventListener('input', ()=>{
+  let raw = cleanNum(depositAmountInput.value);
+  depositAmountInput.value = raw ? Number(raw).toLocaleString('en-US') : '';
+  if(raw && Number(raw) <= Number(depositAmountSlider.max)) depositAmountSlider.value = raw;
+});
+depositAmountSlider.addEventListener('input', ()=>{
+  depositAmountInput.value = Number(depositAmountSlider.value).toLocaleString('en-US');
+});
+
+const depositRateInput = document.getElementById('depositRate');
+const depositRateSlider = document.getElementById('depositRateSlider');
+depositRateInput.addEventListener('input', ()=>{
+  let v = cleanNumDecimal(depositRateInput.value);
+  depositRateInput.value = v;
+  const num = parseFloat(v);
+  if(!isNaN(num) && num >= 0 && num <= 35){ depositRateSlider.value = num; }
+});
+depositRateSlider.addEventListener('input', ()=>{ depositRateInput.value = depositRateSlider.value; });
 
 function calculateDeposit(){
   const principal = Number(cleanNum(document.getElementById('depositAmount').value)) || 0;
