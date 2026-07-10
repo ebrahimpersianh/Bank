@@ -37,8 +37,16 @@ body{ display:flex; justify-content:center; min-height:100vh; }
 .icon-btn{ width:29px; height:29px; border-radius:9px; background:var(--surface); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:15px; border:1px solid var(--line); cursor:pointer; }
 
 main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
-.view{ display:none; } .view.active{ display:block; animation:viewEnter .35s cubic-bezier(.22,1,.36,1); }
-@keyframes viewEnter{ from{opacity:0; transform:translateY(10px) scale(.985);} to{opacity:1; transform:none;} }
+.view{ display:none; } .view.active{ display:block; animation:viewEnter .42s cubic-bezier(.16,1,.3,1); }
+@keyframes viewEnter{ from{opacity:0; transform:translateY(14px) scale(.97);} 60%{opacity:1;} to{opacity:1; transform:none;} }
+
+/* افکت نوار طلایی کوتاه و سریع دور المان لمس‌شده (کارت‌ها، تاگل‌ها، دکمه شب/روز، تنظیمات و ...) */
+@keyframes goldRing{
+  0%{ box-shadow:0 0 0 0 rgba(240,168,87,0); }
+  25%{ box-shadow:0 0 0 2px rgba(240,168,87,.95); }
+  100%{ box-shadow:0 0 0 2px rgba(240,168,87,0); }
+}
+.tap-glow{ animation:goldRing .5s ease-out; border-radius:inherit; }
 
 .card{ background:var(--surface); border:1px solid var(--line); border-radius:9px; padding:8px; margin-bottom:7px; transition:background .3s; }
 .label{ font-size:11.5px; color:var(--muted); margin-bottom:7px; font-weight:600; }
@@ -58,21 +66,24 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .chip.small{ padding:2px 4px; font-size:9.5px; }
 
 .preset-scroll{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:4px; }
-.preset-card{ min-width:60px; background:var(--surface-2); border-radius:8px; padding:7px 6px; text-align:center; cursor:pointer; border:1px solid transparent; flex-shrink:0; }
+.preset-card{ width:84px; min-width:84px; max-width:84px; background:var(--surface-2); border-radius:8px; padding:7px 6px; text-align:center; cursor:pointer; border:1px solid transparent; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
 .preset-card.sel{ border-color:var(--primary-dim); background:rgba(45,216,184,.1); }
 .preset-card .ic{ margin-bottom:6px; display:flex; justify-content:center; color:var(--primary); }
 .preset-card .ic svg{ width:22px; height:22px; }
-.preset-card .t{ font-size:11.5px; font-weight:700; }
+.preset-card .t{ font-size:11px; font-weight:700; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:29px; }
 .preset-card .s{ font-size:9.5px; color:var(--muted); margin-top:2px; }
+.preset-note{ font-size:11px; line-height:1.9; background:var(--surface-2); border:1px solid var(--primary-dim); border-radius:8px; padding:8px 9px; margin-bottom:8px; color:var(--text); }
+.preset-note b{ color:var(--accent); }
 
 .date-row{ display:flex; gap:8px; }
 .date-select{ flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:5px 4px; color:var(--text); font-family:inherit; font-size:12px; text-align:center; }
 
 .grid2{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
-.bank-item{ display:flex; align-items:center; gap:4px; background:var(--surface-2); border-radius:7px; padding:4px 6px; cursor:pointer; border:1px solid transparent; }
+.bank-item{ display:flex; align-items:center; gap:5px; background:var(--surface-2); border-radius:9px; padding:6px 8px; cursor:pointer; border:1px solid transparent; }
 .bank-item.sel{ border-color:var(--primary-dim); background:rgba(45,216,184,.1); }
-.bank-badge{ width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; flex-shrink:0; }
-.bank-name{ font-size:11.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bank-badge{ width:29px; height:29px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:#fff; flex-shrink:0; overflow:hidden; }
+.bank-badge img{ width:100%; height:100%; object-fit:cover; border-radius:8px; }
+.bank-name{ font-size:15px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 .text-input{ width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:4px 5px; color:var(--text); font-family:inherit; font-size:12px; outline:none; }
 
@@ -250,6 +261,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
       <div class="card">
         <div class="label">وام‌های پرتکرار</div>
         <div class="preset-scroll" id="presetScroll"></div>
+        <div class="preset-note" id="presetNote" style="display:none;"></div>
       </div>
 
       <div class="card">
@@ -662,6 +674,29 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
         ⚠️ نکته: نوتیفیکیشن واقعی وقتی کار می‌کنه که اپ به‌صورت نصبی (نه تو مرورگر) رو گوشی نصب بشه. تو نسخه نهایی که برای بازار بسته‌بندی می‌کنیم، این بخش کاملاً فعال میشه.
       </div>
 
+      <!-- ADVANCED REMINDER SETTINGS -->
+      <div class="card">
+        <div class="settings-item" onclick="toggleAdvancedReminder()">
+          <span class="si-label">تنظیمات پیشرفته یادآوری</span>
+          <span class="si-arrow" id="advReminderArrow">▾</span>
+        </div>
+        <div class="grace-box" id="advReminderBox">
+          <div style="margin-top:10px;">
+            <div class="label">صدای اعلان</div>
+            <div class="chips" id="reminderSoundChips">
+              <div class="chip small" data-snd="default">پیش‌فرض</div>
+              <div class="chip small sel" data-snd="chime">زنگوله</div>
+              <div class="chip small" data-snd="soft">ملایم</div>
+              <div class="chip small" data-snd="none">بی‌صدا (فقط لرزش)</div>
+            </div>
+          </div>
+          <div style="margin-top:14px;">
+            <div class="label">سفارشی‌سازی به ازای هر وام</div>
+            <div id="perLoanReminderList" class="loan-sub">وامی ذخیره نشده. از تب «وام‌های من» یک وام اضافه کن تا اینجا بتونی جداگانه براش زمان یادآوری تنظیم کنی.</div>
+          </div>
+        </div>
+      </div>
+
       <!-- SECURITY / LOGIN OPTIONS -->
       <div class="card">
         <div class="label">امنیت و ورود</div>
@@ -673,15 +708,25 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
           <div><div style="font-weight:700; font-size:13px;">ورود با جیمیل</div><div class="loan-sub">اتصال حساب گوگل برای پشتیبان‌گیری</div></div>
           <div class="toggle" id="googleToggle" onclick="handleGoogleToggle()"></div>
         </div>
+        <div class="notif-row">
+          <div><div style="font-weight:700; font-size:13px;">ورود با شماره تلفن</div><div class="loan-sub">دریافت کد تأیید پیامکی</div></div>
+          <button class="cta ghost" style="width:auto; margin:0; padding:6px 14px; font-size:11.5px;" onclick="openPhoneLoginModal()">ورود</button>
+        </div>
       </div>
       <div class="sub-note" style="line-height:1.9;">
-        ⚠️ نکته: قفل اثر انگشت و ورود با جیمیل نیاز به افزونه‌ی نیتیو دارن که در نسخه نهایی بازار فعال می‌شن؛ فعلاً این بخش به‌صورت نمایشی کار می‌کنه.
+        ⚠️ نکته: قفل اثر انگشت، ورود با جیمیل و ورود با شماره تلفن نیاز به سرویس بک‌اند و افزونه‌ی نیتیو دارن که در نسخه نهایی بازار فعال می‌شن؛ فعلاً این بخش به‌صورت نمایشی کار می‌کنه.
       </div>
 
       <!-- FEEDBACK -->
       <div class="card">
         <div class="label">نظرات و مشکلات</div>
-        <div class="loan-sub" style="margin-bottom:8px;">مشکلی دیدی یا پیشنهادی داری؟ بگو تا بهتر بشه</div>
+        <div class="loan-sub" style="margin-bottom:8px;">اول بخش مربوطه رو انتخاب کن، بعد نظر یا مشکلت رو بنویس</div>
+        <div class="chips" id="feedbackCategoryChips" style="margin-bottom:10px;">
+          <div class="chip" data-cat="calc">محاسبه‌گر وام</div>
+          <div class="chip" data-cat="bank">وام بانکی</div>
+          <div class="chip" data-cat="deposit">سود سپرده</div>
+          <div class="chip" data-cat="myloans">وام‌های من</div>
+        </div>
         <textarea class="text-input" id="feedbackText" rows="3" placeholder="نظر یا مشکل خودت رو بنویس..."></textarea>
         <button class="cta ghost" style="margin-top:8px;" onclick="submitFeedback()">ارسال نظر</button>
       </div>
@@ -732,6 +777,26 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
       <input type="email" class="text-input" id="loginEmailInput" style="margin-top:6px;" placeholder="you@gmail.com">
       <button class="cta" style="margin-top:16px" onclick="confirmLogin()">ورود</button>
       <button class="cta ghost" onclick="closeLoginModal()">انصراف</button>
+    </div>
+  </div>
+
+  <!-- PHONE LOGIN MODAL (mock, two steps) -->
+  <div class="modal-backdrop" id="phoneLoginModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div id="phoneStep1">
+        <h3>ورود با شماره تلفن</h3>
+        <input type="tel" class="text-input" id="phoneNumberInput" style="margin-top:6px; direction:ltr; text-align:center;" placeholder="09xxxxxxxxx" maxlength="11">
+        <button class="cta" style="margin-top:16px" onclick="sendPhoneOtp()">دریافت کد تأیید</button>
+        <button class="cta ghost" onclick="closePhoneLoginModal()">انصراف</button>
+      </div>
+      <div id="phoneStep2" style="display:none;">
+        <h3>کد تأیید</h3>
+        <div class="loan-sub" style="text-align:center; margin-bottom:10px;">کد ۵ رقمی ارسال‌شده به <span id="phoneShownNumber" style="color:var(--text); font-weight:700;"></span> رو وارد کن</div>
+        <input type="tel" class="text-input" id="phoneOtpInput" style="direction:ltr; text-align:center; letter-spacing:6px;" placeholder="•••••" maxlength="5">
+        <button class="cta" style="margin-top:16px" onclick="confirmPhoneOtp()">تأیید و ورود</button>
+        <button class="cta ghost" onclick="closePhoneLoginModal()">انصراف</button>
+      </div>
     </div>
   </div>
 
@@ -824,10 +889,15 @@ const svgCar = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 const svgHandshake = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>';
 const svgBag = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 016 0v2"/></svg>';
 
+/* نرخ‌ها و مبالغ زیر طبق آخرین مصوبات بانک مرکزی و قانون بودجه ۱۴۰۴ (سامانه ve.cbi.ir) به‌روزرسانی شده‌اند */
 const presets = [
-  { key:'marriage', icon:svgHeart, title:'وام ازدواج', sub:'۲ درصد', amount:7000000000, rate:2, months:120, grace:0 },
-  { key:'child', icon:svgBaby, title:'وام فرزندآوری', sub:'۲ درصد', amount:5000000000, rate:2, months:96, grace:12 },
+  { key:'marriage', icon:svgHeart, title:'وام ازدواج', sub:'۴ درصد', amount:3000000000, rate:4, months:120, grace:0,
+    note:'طبق مصوبه بانک مرکزی: کارمزد ۴٪ سالانه (قرض‌الحسنه، بدون سود)، مبلغ ۳۰۰ میلیون تومان برای هر نفر (تا ۳۵۰ میلیون برای زوجین زیر ۲۳/۲۵ سال) و بازپرداخت ۱۲۰ ماهه.' },
+  { key:'child', icon:svgBaby, title:'وام فرزندآوری', sub:'۴ درصد', amount:440000000, rate:4, months:36, grace:6,
+    note:'کارمزد ۴٪ سالانه. مبلغ فرزند اول ۴۴ میلیون تومان (۳۶ ماهه)، فرزند دوم ۸۸ میلیون (۴۸ ماهه) تا فرزند پنجم به بعد ۲۲۰ میلیون (۸۴ ماهه)؛ ۶ ماه تنفس قبل از اولین قسط.' },
   { key:'housing', icon:svgHome, title:'وام مسکن', sub:'۱۸ درصد', amount:20000000000, rate:18, months:144, grace:0 },
+  { key:'rentDeposit', icon:svgHome, title:'وام ودیعه مسکن', sub:'۲۳ درصد', amount:3000000000, rate:23, months:60, grace:0,
+    note:'نرخ سود مصوب شورای پول و اعتبار: ۲۳٪، بازپرداخت ۶۰ ماهه. سقف تسهیلات در تهران ۳۰۰ میلیون تومان، مراکز استان‌ها ۱۵۰ میلیون و سایر شهرها کمتر (بسته به منطقه).' },
   { key:'car', icon:svgCar, title:'وام خودرو', sub:'۲۳ درصد', amount:3000000000, rate:23, months:36, grace:0 },
   { key:'qarz', icon:svgHandshake, title:'قرض‌الحسنه', sub:'۴ درصد', amount:1000000000, rate:4, months:24, grace:0 },
   { key:'goods', icon:svgBag, title:'کالا / لوازم خانگی', sub:'۱۸ درصد', amount:800000000, rate:18, months:18, grace:0 },
@@ -850,926 +920,35 @@ presets.forEach(p=>{
     if(p.grace > 0){ graceToggle.classList.add('on'); document.getElementById('graceBox').classList.add('open'); document.getElementById('graceSlider').value = p.grace; document.getElementById('graceVal').textContent = toFa(p.grace); }
     else { graceToggle.classList.remove('on'); document.getElementById('graceBox').classList.remove('open'); }
     updateAmountWords();
+    const noteBox = document.getElementById('presetNote');
+    if(p.note){ noteBox.style.display = 'block'; noteBox.innerHTML = `<b>📋 طبق قانون بانک مرکزی</b><br>${p.note}`; }
+    else { noteBox.style.display = 'none'; }
   });
   presetScroll.appendChild(el);
 });
 
 /* ================= BANKS / SERVICES ================= */
 const banks = [
-  {n:'بانک ملی ایران', c:'#1565C0'}, {n:'بانک ملت', c:'#D32F2F'}, {n:'بانک صادرات', c:'#F9A825'},
-  {n:'بانک تجارت', c:'#0277BD'}, {n:'بانک سپه', c:'#2E7D32'}, {n:'بانک مسکن', c:'#5D4037'},
-  {n:'بانک کشاورزی', c:'#388E3C'}, {n:'بانک رفاه کارگران', c:'#00838F'}, {n:'پست بانک ایران', c:'#F57C00'},
-  {n:'بانک اقتصاد نوین', c:'#6A1B9A'}, {n:'بانک پارسیان', c:'#AD1457'}, {n:'بانک پاسارگاد', c:'#283593'},
-  {n:'بانک سامان', c:'#00695C'}, {n:'بانک شهر', c:'#37474F'}, {n:'بانک دی', c:'#4527A0'},
-  {n:'بانک گردشگری', c:'#C62828'}, {n:'بانک آینده', c:'#1A237E'}, {n:'بانک کارآفرین', c:'#EF6C00'},
-  {n:'بلوبانک', c:'#0091EA'}, {n:'بانک تجارت‌بلک', c:'#455A64'},
-];
-const creditServices = [
-  {n:'دیجی‌پی (خرید اقساطی)', c:'#E53935', rate:23, months:12, min:100000000, max:500000000},
-  {n:'اسنپ‌پی (اعتبار بانکی)', c:'#43A047', rate:22, months:24, min:50000000, max:1000000000},
-  {n:'اسنپ‌پی (۴ قسط بدون سود)', c:'#66BB6A', rate:0, months:4, min:10000000, max:100000000},
-  {n:'آپ (Up)', c:'#8E24AA', rate:24, months:12, min:50000000, max:500000000},
-  {n:'ازکی وام', c:'#FB8C00', rate:23, months:18, min:50000000, max:700000000},
-  {n:'ویپاد', c:'#00ACC1', rate:24, months:12, min:50000000, max:500000000},
-];
-function initials(name){
-  const clean = name.replace('بانک','').trim();
-  return clean.slice(0,2);
-}
-const bankGrid = document.getElementById('bankGrid');
-let selectedBank = null;
-function renderBankGroup(list, label, isCredit){
-  const header = document.createElement('div');
-  header.style.cssText = 'grid-column:1/-1; font-size:11px; color:var(--muted); font-weight:700; margin:6px 0 2px;';
-  header.textContent = label;
-  bankGrid.appendChild(header);
-  list.forEach(b=>{
-    const el = document.createElement('div');
-    el.className = 'bank-item';
-    el.innerHTML = `<div class="bank-badge" style="background:${b.c}">${initials(b.n)}</div><div class="bank-name">${b.n}</div>`;
-    el.addEventListener('click', ()=>{
-      document.querySelectorAll('.bank-item').forEach(x=>x.classList.remove('sel'));
-      el.classList.add('sel');
-      selectedBank = b.n;
-      if(isCredit){
-        rateSlider.value = b.rate; rateInput.value = b.rate;
-        document.querySelectorAll('#monthChips .chip').forEach(c=>c.classList.toggle('sel', Number(c.dataset.v)===b.months));
-        document.getElementById('customMonths').value = ([12,36,60,84,120,180,240].includes(b.months)) ? '' : b.months;
-        const mid = Math.round((b.min+b.max)/2);
-        amountInput.value = mid.toLocaleString('en-US').replace(/,/g,',');
-        amountSlider.min = b.min; amountSlider.max = b.max; amountSlider.value = mid;
-        updateAmountWords();
-        document.querySelectorAll('.preset-card').forEach(x=>x.classList.remove('sel'));
-      }
-    });
-    bankGrid.appendChild(el);
-  });
-}
-renderBankGroup(banks, 'بانک‌ها', false);
-renderBankGroup(creditServices, 'خدمات اعتباری', true);
-
-/* ================= PERSIAN DATE (simplified selects) ================= */
-const faMonths = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
-const dYear = document.getElementById('dYear'), dMonth = document.getElementById('dMonth'), dDay = document.getElementById('dDay');
-for(let y=1398; y<=1406; y++){ const o=document.createElement('option'); o.value=y; o.textContent=toFa(y); if(y===1404) o.selected=true; dYear.appendChild(o); }
-faMonths.forEach((m,i)=>{ const o=document.createElement('option'); o.value=i+1; o.textContent=m; dMonth.appendChild(o); });
-for(let d=1; d<=31; d++){ const o=document.createElement('option'); o.value=d; o.textContent=toFa(d); dDay.appendChild(o); }
-
-const payYear = document.getElementById('payYear'), payMonth = document.getElementById('payMonth'), payDay = document.getElementById('payDay');
-for(let y=1398; y<=1406; y++){ const o=document.createElement('option'); o.value=y; o.textContent=toFa(y); payYear.appendChild(o); }
-faMonths.forEach((m,i)=>{ const o=document.createElement('option'); o.value=i+1; o.textContent=m; payMonth.appendChild(o); });
-for(let d=1; d<=31; d++){ const o=document.createElement('option'); o.value=d; o.textContent=toFa(d); payDay.appendChild(o); }
-
-const mYear = document.getElementById('mYear'), mMonth = document.getElementById('mMonth'), mDay = document.getElementById('mDay');
-for(let y=1398; y<=1406; y++){ const o=document.createElement('option'); o.value=y; o.textContent=toFa(y); if(y===1404) o.selected=true; mYear.appendChild(o); }
-faMonths.forEach((m,i)=>{ const o=document.createElement('option'); o.value=i+1; o.textContent=m; mMonth.appendChild(o); });
-for(let d=1; d<=31; d++){ const o=document.createElement('option'); o.value=d; o.textContent=toFa(d); mDay.appendChild(o); }
-
-function monthLength(m){ if(m<=6) return 31; if(m<=11) return 30; return 29; }
-// add months to a {y,m,d} persian date (approximate, no leap-year correction on esfand)
-function addMonthsFa(date, count){
-  let {y,m,d} = date;
-  for(let i=0;i<count;i++){
-    m++;
-    if(m>12){ m=1; y++; }
-  }
-  d = Math.min(d, monthLength(m));
-  return {y,m,d};
-}
-function faDateStr(date){ return `${toFa(date.d)} ${faMonths[date.m-1]} ${toFa(date.y)}`; }
-// اضافه‌کردن تعداد روز دلخواه به یه تاریخ شمسی (برای فاصله‌ی سفارشی هر قسط)
-function addDaysFa(date, days){
-  let {y,m,d} = date;
-  for(let i=0;i<days;i++){
-    d++;
-    if(d > monthLength(m)){ d = 1; m++; if(m > 12){ m = 1; y++; } }
-  }
-  return {y,m,d};
-}
-
-/* ================= INPUT WIRING ================= */
-const amountInput = document.getElementById('amount');
-const amountSlider = document.getElementById('amountSlider');
-function updateAmountWords(){
-  const rialVal = Number(cleanNum(amountInput.value)) || 0;
-  const tomanVal = Math.round(rialVal / 10);
-  document.getElementById('amountWords').textContent = tomanVal > 0 ? `${numberToWordsFa(tomanVal)} تومان` : '';
-}
-amountInput.addEventListener('input', ()=>{
-  let raw = cleanNum(amountInput.value);
-  if(raw){ amountInput.value = Number(raw).toLocaleString('en-US').replace(/,/g,','); if(Number(raw) <= Number(amountSlider.max)) amountSlider.value = raw; }
-  updateAmountWords();
-});
-amountSlider.addEventListener('input', ()=>{ amountInput.value = Number(amountSlider.value).toLocaleString('en-US').replace(/,/g,','); updateAmountWords(); });
-
-const rateSlider = document.getElementById('rateSlider');
-const rateInput = document.getElementById('rateInput');
-rateSlider.addEventListener('input', ()=>{ rateInput.value = rateSlider.value; });
-rateInput.addEventListener('input', ()=>{
-  let v = cleanNumDecimal(rateInput.value);
-  rateInput.value = v;
-  const num = parseFloat(v);
-  if(!isNaN(num) && num >= 0 && num <= 35){ rateSlider.value = num; }
-});
-
-document.querySelectorAll('#monthChips .chip').forEach(c=>{
-  c.addEventListener('click', ()=>{
-    document.querySelectorAll('#monthChips .chip').forEach(x=>x.classList.remove('sel'));
-    c.classList.add('sel');
-    document.getElementById('customMonths').value = '';
-  });
-});
-document.getElementById('customMonths').addEventListener('input', function(){
-  if(this.value){ document.querySelectorAll('#monthChips .chip').forEach(x=>x.classList.remove('sel')); }
-});
-document.querySelectorAll('#intervalChips .chip').forEach(c=>{
-  c.addEventListener('click', ()=>{
-    document.querySelectorAll('#intervalChips .chip').forEach(x=>x.classList.remove('sel'));
-    c.classList.add('sel');
-  });
-});
-
-
-const graceSlider = document.getElementById('graceSlider');
-graceSlider.addEventListener('input', ()=>{ document.getElementById('graceVal').textContent = toFa(graceSlider.value); });
-function toggleGrace(){
-  document.getElementById('graceToggle').classList.toggle('on');
-  document.getElementById('graceBox').classList.toggle('open');
-}
-function toggleFee(){
-  document.getElementById('feeToggle').classList.toggle('on');
-  document.getElementById('feeBox').classList.toggle('open');
-}
-document.getElementById('feeInput').addEventListener('input', function(){
-  this.value = cleanNumDecimal(this.value);
-});
-updateAmountWords();
-
-/* ================= CORE MATH (amounts in RIAL internally) ================= */
-function computeLoan(P, annualRatePct, n, method, graceMonths, intervalDays){
-  intervalDays = intervalDays || 30;
-  const i = annualRatePct / 100 * (intervalDays / 365); // نرخ دوره‌ای بر اساس فاصله واقعی هر قسط
-  let principal = P;
-  if(graceMonths > 0){ principal = P + P * (annualRatePct/100/365) * (graceMonths*30); }
-  let rows = [], installment, totalInterest, totalPaid;
-  if(method === 'new'){
-    installment = (i === 0) ? principal/n : principal * i * Math.pow(1+i, n) / (Math.pow(1+i, n) - 1);
-    let balance = principal;
-    for(let m=1; m<=n; m++){
-      const interestPart = balance * i;
-      const principalPart = installment - interestPart;
-      balance -= principalPart;
-      rows.push({m, installment, interest:interestPart, principal:principalPart, balance:Math.max(balance,0), paid:false});
-    }
-    totalPaid = installment * n; totalInterest = totalPaid - principal;
-  } else {
-    totalInterest = principal * annualRatePct * (n+1) / 2400;
-    installment = (principal + totalInterest) / n;
-    const flatInterest = totalInterest/n, flatPrincipal = principal/n;
-    let balance = principal;
-    for(let m=1; m<=n; m++){ balance -= flatPrincipal; rows.push({m, installment, interest:flatInterest, principal:flatPrincipal, balance:Math.max(balance,0), paid:false}); }
-    totalPaid = installment * n;
-  }
-  return { installment, totalInterest, totalPaid, principal, rows, graceMonths, originalP:P, intervalDays };
-}
-
-let lastResult = null;
-let lastStartDate = null;
-
-function calculate(){
-  const rialAmount = Number(cleanNum(amountInput.value)) || 0;
-  const rate = Number(cleanNumDecimal(rateInput.value)) || 0;
-  const customM = Number(cleanNum(document.getElementById('customMonths').value));
-  const selChip = document.querySelector('#monthChips .chip.sel');
-  const n = customM > 0 ? customM : Number(selChip ? selChip.dataset.v : 36);
-  const method = 'new';
-  const graceOn = document.getElementById('graceToggle').classList.contains('on');
-  const grace = graceOn ? Number(document.getElementById('graceSlider').value) : 0;
-  const intervalChip = document.querySelector('#intervalChips .chip.sel');
-  const intervalDays = Number(intervalChip ? intervalChip.dataset.v : 30);
-
-  if(rialAmount <= 0){ showToast('لطفاً مبلغ وام را وارد کنید'); return; }
-  if(n <= 0){ showToast('لطفاً تعداد اقساط را مشخص کنید'); return; }
-
-  const result = computeLoan(rialAmount, rate, n, method, grace, intervalDays);
-  result.rate = rate; result.n = n; result.method = method;
-  result.borrower = document.getElementById('borrowerName').value || '—';
-  result.bank = selectedBank || 'مشخص‌نشده';
-
-  const feeOn = document.getElementById('feeToggle').classList.contains('on');
-  const feePercent = feeOn ? Number(cleanNumDecimal(document.getElementById('feeInput').value)) || 0 : 0;
-  result.feePercent = feePercent;
-  result.feeAmount = rialAmount * feePercent / 100;
-
-  lastStartDate = { y:Number(dYear.value), m:Number(dMonth.value), d:Number(dDay.value) };
-  lastResult = result;
-
-  renderResultUI(result);
-  showView('view-result');
-}
-
-function renderResultUI(result){
-  document.getElementById('installmentAmt').textContent = fmt(result.installment);
-  document.getElementById('installmentWords').textContent = `${numberToWordsFa(result.installment/10)} تومان`;
-  document.getElementById('statTotal').textContent = fmt(result.totalPaid);
-  document.getElementById('statDueDay').textContent = ordinalFa(lastStartDate.d);
-  document.getElementById('statMonths').textContent = toFa(result.n) + ' ماه';
-
-  const feeRow = document.getElementById('feeStatRow');
-  if(result.feeAmount && result.feeAmount > 0){
-    document.getElementById('statFee').textContent = fmt(result.feeAmount) + ' ریال (' + toFa(result.feePercent) + '٪)';
-    feeRow.style.display = 'flex';
-  } else {
-    feeRow.style.display = 'none';
-  }
-  document.getElementById('resultTitle').textContent = result.borrower && result.borrower !== '—' ? `وام ${result.borrower}` : 'نتیجه محاسبه';
-
-  const interestPct = result.principal > 0 ? (result.totalInterest / result.principal * 100) : 0;
-  document.getElementById('statInterestPct').textContent = toFa(interestPct.toFixed(interestPct < 10 ? 1 : 0)) + '٪';
-
-  const endDate = addDaysFa(lastStartDate, result.n * (result.intervalDays || 30));
-  document.getElementById('statEndDate').textContent = `${toFa(endDate.d)} ${faMonths[endDate.m-1]} ${toFa(endDate.y)}`;
-
-  const circumference = 2 * Math.PI * 52;
-  const principalFrac = result.principal / (result.principal + result.totalInterest);
-  const principalLen = circumference * principalFrac;
-  const interestLen = circumference - principalLen;
-  const ringPrincipal = document.getElementById('ringPrincipal');
-  const ringInterest = document.getElementById('ringInterest');
-  ringPrincipal.style.strokeDasharray = `${principalLen} ${circumference}`; ringPrincipal.style.strokeDashoffset = 0;
-  ringInterest.style.strokeDasharray = `${interestLen} ${circumference}`; ringInterest.style.strokeDashoffset = -principalLen;
-
-  renderTable(result);
-}
-
-const manualInstallmentInput = document.getElementById('manualInstallment');
-const manualInstallmentSlider = document.getElementById('manualInstallmentSlider');
-function updateManualInstallmentWords(){
-  const rialVal = Number(cleanNum(manualInstallmentInput.value)) || 0;
-  const tomanVal = Math.round(rialVal / 10);
-  document.getElementById('manualInstallmentWords').textContent = tomanVal > 0 ? `${numberToWordsFa(tomanVal)} تومان` : '';
-}
-manualInstallmentInput.addEventListener('input', ()=>{
-  let raw = cleanNum(manualInstallmentInput.value);
-  manualInstallmentInput.value = raw ? Number(raw).toLocaleString('en-US') : '';
-  if(raw && Number(raw) <= Number(manualInstallmentSlider.max)) manualInstallmentSlider.value = raw;
-  updateManualInstallmentWords();
-});
-manualInstallmentSlider.addEventListener('input', ()=>{
-  manualInstallmentInput.value = Number(manualInstallmentSlider.value).toLocaleString('en-US');
-  updateManualInstallmentWords();
-});
-
-const manualTotalCountInput = document.getElementById('manualTotalCount');
-const manualTotalCountSlider = document.getElementById('manualTotalCountSlider');
-manualTotalCountInput.addEventListener('input', ()=>{
-  const v = cleanNum(manualTotalCountInput.value);
-  manualTotalCountInput.value = v;
-  if(v){ manualTotalCountSlider.value = Math.min(Number(v), 240); }
-});
-manualTotalCountSlider.addEventListener('input', ()=>{
-  manualTotalCountInput.value = manualTotalCountSlider.value;
-});
-
-function openManualAdd(){
-  document.getElementById('manualName').value = '';
-  document.getElementById('manualBank').value = '';
-  document.getElementById('manualInstallment').value = '';
-  document.getElementById('manualInstallmentSlider').value = 50000000;
-  document.getElementById('manualTotalCount').value = '';
-  document.getElementById('manualTotalCountSlider').value = 24;
-  document.getElementById('manualPaidCount').value = '';
-  showView('view-manual');
-}
-
-function saveManualLoan(){
-  const name = document.getElementById('manualName').value.trim();
-  const bank = document.getElementById('manualBank').value.trim() || 'مشخص‌نشده';
-  const installment = Number(cleanNum(document.getElementById('manualInstallment').value));
-  const n = Number(cleanNum(document.getElementById('manualTotalCount').value));
-  const paidCount = Number(cleanNum(document.getElementById('manualPaidCount').value)) || 0;
-  const startDate = { y:Number(mYear.value), m:Number(mMonth.value), d:Number(mDay.value) };
-
-  if(!name){ showToast('اسم وام رو وارد کن'); return; }
-  if(!installment || installment <= 0){ showToast('مبلغ قسط رو وارد کن'); return; }
-  if(!n || n <= 0){ showToast('تعداد کل اقساط رو وارد کن'); return; }
-  if(paidCount > n){ showToast('تعداد پرداخت‌شده نمی‌تونه از کل اقساط بیشتر باشه'); return; }
-
-  currentLoans.unshift({
-    id: Date.now(), name, bank, borrower: '—',
-    amount: installment * n, rate: 0, n, method: 'manual', graceMonths: 0,
-    installment: installment, totalPaid: installment * n, totalInterest: 0,
-    startDate, paidCount, createdAt: new Date().toISOString()
-  });
-  persistLoans();
-  showToast('وام دستی ذخیره شد ✓');
-  switchTab('loans');
-}
-
-/* باز کردن یه وام ذخیره‌شده از تب "وام‌های من" و نمایش دوباره‌ی نتیجه و جدولش */
-function openSavedLoan(id){
-  const l = currentLoans.find(x => x.id === id);
-  if(!l) return;
-
-  let result;
-  if(l.method === 'manual'){
-    let balance = l.installment * l.n;
-    const rows = [];
-    for(let m=1; m<=l.n; m++){
-      balance -= l.installment;
-      rows.push({ m, installment:l.installment, interest:0, principal:l.installment, balance:Math.max(balance,0), paid: m <= (l.paidCount||0) });
-    }
-    result = { installment:l.installment, totalInterest:0, totalPaid:l.installment*l.n, principal:l.installment*l.n, rows, graceMonths:0, originalP:l.installment*l.n, intervalDays: l.intervalDays || 30 };
-  } else {
-    result = computeLoan(Number(l.amount), Number(l.rate), Number(l.n), l.method, Number(l.graceMonths || 0), Number(l.intervalDays || 30));
-  }
-  result.rate = Number(l.rate || 0); result.n = Number(l.n); result.method = l.method;
-  result.borrower = l.borrower; result.bank = l.bank;
-  lastStartDate = l.startDate;
-  lastResult = result;
-
-  document.getElementById('nav-calc').classList.add('active');
-  document.getElementById('nav-afford').classList.remove('active');
-  document.getElementById('nav-deposit').classList.remove('active');
-  document.getElementById('nav-loans').classList.remove('active');
-  renderResultUI(result);
-  showView('view-result');
-}
-
-let currentDetailIdx = null;
-
-function renderTable(result){
-  const body = document.getElementById('tableBody');
-  let cursor = {...lastStartDate};
-  const interval = result.intervalDays || 30;
-  result.dueDates = [];
-  body.innerHTML = result.rows.map((r,idx) => {
-    cursor = addDaysFa(cursor, interval);
-    result.dueDates.push({...cursor});
-    const dateLabel = interval >= 28
-      ? `${faMonths[cursor.m-1]} ${toFa(cursor.y)}`
-      : `${toFa(cursor.d)} ${faMonths[cursor.m-1]}`;
-    return `
-    <div class="trow-simple" onclick="openDetail(${idx})">
-      <span>قسط ${toFa(r.m)}</span>
-      <span>${dateLabel}</span>
-      <span><span class="inst-amt-box"><span class="inst-amt-num">${fmt(r.installment)} ریال</span><span class="inst-amt-words">${numberToWordsFa(r.installment/10)} تومان</span></span></span>
-      <span><span class="status-pill ${r.paid?'paid':'unpaid'}" id="pill-${idx}">${r.paid?'پرداخت‌شده ✓':'در انتظار'}</span></span>
-    </div>`;
-  }).join('');
-  document.getElementById('tableTotal').textContent = fmt(result.totalPaid) + ' ریال';
-}
-
-function openDetail(idx){
-  if(!lastResult) return;
-  currentDetailIdx = idx;
-  const r = lastResult.rows[idx];
-  const dd = lastResult.dueDates[idx];
-  document.getElementById('detailTitle').textContent = `جزئیات قسط ${toFa(r.m)}`;
-  document.getElementById('detailDate').textContent = `${toFa(dd.d)} ${faMonths[dd.m-1]} ${toFa(dd.y)}`;
-  document.getElementById('detailInstallment').textContent = fmt(r.installment) + ' ریال';
-  document.getElementById('detailInterest').textContent = fmt(r.interest) + ' ریال';
-  document.getElementById('detailPrincipal').textContent = fmt(r.principal) + ' ریال';
-  document.getElementById('detailBalance').textContent = fmt(r.balance) + ' ریال';
-  const statusEl = document.getElementById('detailStatus');
-  const payBtn = document.getElementById('detailPayBtn');
-  if(r.paid && r.paidLate){
-    const pd = r.paidDate;
-    statusEl.textContent = `پرداخت با تاخیر ثبت شده (تاریخ پرداخت: ${toFa(pd.d)} ${faMonths[pd.m-1]} ${toFa(pd.y)})`;
-    statusEl.className = 'detail-status late';
-    payBtn.textContent = 'برگرداندن به حالت پرداخت‌نشده';
-  } else if(r.paid){
-    statusEl.textContent = '✓ این قسط در سررسید پرداخت شده'; statusEl.className = 'detail-status paid';
-    payBtn.textContent = 'برگرداندن به حالت پرداخت‌نشده';
-  } else {
-    statusEl.textContent = 'وضعیت: هنوز پرداخت ثبت نشده'; statusEl.className = 'detail-status unpaid';
-    payBtn.textContent = 'ثبت پرداخت این قسط';
-  }
-  document.getElementById('detailModal').classList.add('open');
-}
-function closeDetail(){ document.getElementById('detailModal').classList.remove('open'); }
-function closeDetailIfBackdrop(ev){ if(ev.target.id === 'detailModal') closeDetail(); }
-
-function handlePayButton(){
-  const idx = currentDetailIdx;
-  if(idx === null || !lastResult) return;
-  const r = lastResult.rows[idx];
-  if(r.paid){
-    r.paid = false; r.paidLate = false; r.paidDate = null;
-    updatePill(idx);
-    closeDetail();
-    return;
-  }
-  openPayModal();
-}
-function openPayModal(){
-  document.getElementById('lateDateSection').style.display = 'none';
-  document.getElementById('payChoiceRow').style.display = 'flex';
-  const dd = lastResult.dueDates[currentDetailIdx];
-  document.getElementById('payYear').value = dd.y;
-  document.getElementById('payMonth').value = dd.m;
-  document.getElementById('payDay').value = dd.d;
-  document.getElementById('payModal').classList.add('open');
-}
-function closePayModal(){ document.getElementById('payModal').classList.remove('open'); }
-function payOnTime(){
-  const idx = currentDetailIdx;
-  const r = lastResult.rows[idx];
-  r.paid = true; r.paidLate = false; r.paidDate = null;
-  updatePill(idx);
-  closePayModal(); closeDetail();
-}
-function payLateStart(){
-  document.getElementById('payChoiceRow').style.display = 'none';
-  document.getElementById('lateDateSection').style.display = 'block';
-}
-function confirmLatePayment(){
-  const idx = currentDetailIdx;
-  const r = lastResult.rows[idx];
-  r.paid = true; r.paidLate = true;
-  r.paidDate = {
-    y: Number(document.getElementById('payYear').value),
-    m: Number(document.getElementById('payMonth').value),
-    d: Number(document.getElementById('payDay').value)
-  };
-  updatePill(idx);
-  closePayModal(); closeDetail();
-}
-function updatePill(idx){
-  const r = lastResult.rows[idx];
-  const pill = document.getElementById('pill-'+idx);
-  if(r.paid && r.paidLate){ pill.className = 'status-pill late'; pill.textContent = 'پرداخت با تاخیر'; }
-  else if(r.paid){ pill.className = 'status-pill paid'; pill.textContent = 'پرداخت‌شده ✓'; }
-  else { pill.className = 'status-pill unpaid'; pill.textContent = 'در انتظار'; }
-}
-
-/* late fee: days * installment * (rate+6) / (365*100) */
-function calcLateFee(){
-  if(!lastResult){ return; }
-  const days = Number(cleanNum(document.getElementById('lateDays').value));
-  if(!days){ document.getElementById('lateResult').textContent = 'تعداد روز رو وارد کن'; return; }
-  const fee = days * lastResult.installment * (lastResult.rate + 6) / (365*100);
-  document.getElementById('lateResult').textContent = `جریمه تاخیر: ${fmt(fee)} ریال (برای ${toFa(days)} روز تاخیر)`;
-}
-
-/* ================= SAVED LOANS (memory + best-effort storage + manual backup) ================= */
-let currentLoans = [];
-let storageWorks = true;
-
-function loadLoansFromStorage(){
-  try{
-    currentLoans = JSON.parse(localStorage.getItem('loans_v2') || '[]');
-  }catch(e){
-    storageWorks = false;
-    currentLoans = [];
-  }
-}
-function persistLoans(){
-  try{ localStorage.setItem('loans_v2', JSON.stringify(currentLoans)); }
-  catch(e){ storageWorks = false; }
-}
-
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(showToast._timer);
-  showToast._timer = setTimeout(()=>{ t.classList.remove('show'); }, 2600);
-}
-
-/* ================= ACCOUNT (mock google login, stored locally) ================= */
-let account = null;
-function loadAccount(){
-  try{ account = JSON.parse(localStorage.getItem('user_account') || 'null'); }
-  catch(e){ account = null; }
-}
-function renderAccountUI(){
-  const avatar = document.getElementById('accountAvatar');
-  const nameEl = document.getElementById('accountName');
-  const statusEl = document.getElementById('accountStatus');
-  const actionBtn = document.getElementById('accountActionBtn');
-  const googleToggle = document.getElementById('googleToggle');
-  if(account){
-    avatar.textContent = account.name.slice(0,1).toUpperCase();
-    avatar.classList.remove('guest');
-    nameEl.textContent = account.name;
-    statusEl.textContent = account.email;
-    actionBtn.style.display = 'none';
-    googleToggle.classList.add('on');
-  } else {
-    avatar.textContent = '؟';
-    avatar.classList.add('guest');
-    nameEl.textContent = 'ورود به حساب انجام نشده';
-    statusEl.textContent = 'برای همگام‌سازی و یادآوری‌ها وارد شو';
-    actionBtn.style.display = 'inline-block';
-    actionBtn.textContent = 'ورود';
-    googleToggle.classList.remove('on');
-  }
-}
-function handleAccountAction(){ if(!account) openLoginModal(); }
-function handleGoogleToggle(){ if(account) handleLogout(); else openLoginModal(); }
-function openLoginModal(){
-  document.getElementById('loginEmailInput').value = '';
-  document.getElementById('loginModal').classList.add('open');
-  setTimeout(()=> document.getElementById('loginEmailInput').focus(), 300);
-}
-function closeLoginModal(){ document.getElementById('loginModal').classList.remove('open'); }
-function confirmLogin(){
-  const email = document.getElementById('loginEmailInput').value.trim();
-  if(!email || !email.includes('@')){ showToast('یه ایمیل معتبر وارد کن'); return; }
-  account = { name: email.split('@')[0], email };
-  try{ localStorage.setItem('user_account', JSON.stringify(account)); }catch(e){}
-  renderAccountUI();
-  closeLoginModal();
-  showToast('با موفقیت وارد شدی');
-}
-function handleLogout(){
-  if(!account){ showToast('قبلاً وارد نشدی'); return; }
-  account = null;
-  try{ localStorage.removeItem('user_account'); }catch(e){}
-  renderAccountUI();
-  showToast('از حساب خارج شدی');
-}
-loadAccount();
-renderAccountUI();
-
-/* ================= FINGERPRINT LOCK (UI toggle, stored locally) ================= */
-function toggleFingerprint(){
-  const t = document.getElementById('fingerprintToggle');
-  t.classList.toggle('on');
-  try{ localStorage.setItem('fp_lock', t.classList.contains('on') ? '1' : '0'); }catch(e){}
-  showToast(t.classList.contains('on') ? 'قفل اثر انگشت فعال شد' : 'قفل اثر انگشت غیرفعال شد');
-}
-(function(){
-  try{ if(localStorage.getItem('fp_lock') === '1') document.getElementById('fingerprintToggle').classList.add('on'); }
-  catch(e){}
-})();
-
-/* ================= FEEDBACK ================= */
-function submitFeedback(){
-  const txt = document.getElementById('feedbackText').value.trim();
-  if(!txt){ showToast('یه متن بنویس'); return; }
-  try{
-    const list = JSON.parse(localStorage.getItem('feedback_list') || '[]');
-    list.push({ text: txt, date: new Date().toISOString() });
-    localStorage.setItem('feedback_list', JSON.stringify(list));
-  }catch(e){}
-  document.getElementById('feedbackText').value = '';
-  showToast('ممنون! نظرت ثبت شد');
-}
-
-/* ================= ABOUT ================= */
-function toggleAbout(){ document.getElementById('aboutBox').classList.toggle('open'); }
-
-/* ---- name modal (replaces prompt()) ---- */
-let nameModalCallback = null;
-function openNameModal(defaultValue, onConfirm){
-  document.getElementById('nameModalInput').value = defaultValue || '';
-  nameModalCallback = onConfirm;
-  document.getElementById('nameModal').classList.add('open');
-  setTimeout(()=> document.getElementById('nameModalInput').focus(), 300);
-}
-function closeNameModal(){ document.getElementById('nameModal').classList.remove('open'); nameModalCallback = null; }
-function confirmNameModal(){
-  const val = document.getElementById('nameModalInput').value.trim();
-  if(!val){ showToast('یه اسم برای وام وارد کن'); return; }
-  const cb = nameModalCallback;
-  closeNameModal();
-  if(cb) cb(val);
-}
-
-/* ---- generic confirm modal (replaces confirm()) ---- */
-let confirmModalCallback = null;
-function openConfirmModal(text, onYes){
-  document.getElementById('confirmModalText').textContent = text;
-  confirmModalCallback = onYes;
-  document.getElementById('confirmModal').classList.add('open');
-}
-function closeConfirmModal(){ document.getElementById('confirmModal').classList.remove('open'); confirmModalCallback = null; }
-document.querySelectorAll('#fontSizeChips .chip').forEach(c=>{
-  c.addEventListener('click', ()=>{
-    document.querySelectorAll('#fontSizeChips .chip').forEach(x=>x.classList.remove('sel'));
-    c.classList.add('sel');
-    const appEl = document.getElementById('appRoot');
-    appEl.classList.remove('fs-small','fs-medium','fs-large');
-    appEl.classList.add('fs-' + c.dataset.fs);
-  });
-});
-
-document.getElementById('confirmModalYes').addEventListener('click', ()=>{
-  const cb = confirmModalCallback;
-  closeConfirmModal();
-  if(cb) cb();
-});
-
-function saveLoan(){
-  if(!lastResult) return;
-  const defaultName = lastResult.borrower && lastResult.borrower !== '—' ? `وام ${lastResult.borrower}` : 'وام جدید';
-  openNameModal(defaultName, (name)=>{
-    currentLoans.unshift({
-      id: Date.now(), name, bank: lastResult.bank, borrower: lastResult.borrower,
-      amount: lastResult.originalP, rate: lastResult.rate, n: lastResult.n, method: lastResult.method,
-      graceMonths: lastResult.graceMonths || 0,
-      intervalDays: lastResult.intervalDays || 30,
-      installment: lastResult.installment, totalPaid: lastResult.totalPaid, totalInterest: lastResult.totalInterest,
-      startDate: lastStartDate, paidCount: 0, createdAt: new Date().toISOString()
-    });
-    persistLoans();
-    showToast(storageWorks ? 'ذخیره شد ✓' : 'ذخیره شد ✓ — برای اطمینان از دکمه پشتیبان‌گیری هم استفاده کن');
-    switchTab('loans');
-  });
-}
-function renderLoansList(){
-  const container = document.getElementById('loansList');
-  const backupBar = `
-    <div class="card" style="display:flex; gap:8px;">
-      <button class="cta ghost" style="margin:0; flex:1; font-size:12px; padding:11px;" onclick="exportBackup()">⬇ پشتیبان‌گیری</button>
-      <label class="cta ghost" style="margin:0; flex:1; font-size:12px; padding:11px; text-align:center; cursor:pointer;">
-        ⬆ بازیابی
-        <input type="file" accept="application/json" style="display:none" onchange="importBackup(event)">
-      </label>
-    </div>`;
-  const addCard = `
-    <div class="loan-card add-manual-card" onclick="openManualAdd()">
-      <div class="loan-top" style="margin-bottom:0; align-items:center;">
-        <div class="loan-name" style="color:var(--primary);">＋ افزودن دستی وام</div>
-      </div>
-    </div>`;
-  if(currentLoans.length === 0){
-    container.innerHTML = backupBar + addCard + `<div class="empty"><div class="ic">📭</div>هنوز وامی ذخیره نکردی.<br>از تب محاسبه‌گر شروع کن.</div>`;
-    return;
-  }
-  container.innerHTML = backupBar + addCard + currentLoans.map(l => `
-    <div class="loan-card" onclick="openSavedLoan(${l.id})">
-      <div class="loan-top">
-        <div><div class="loan-name">${l.name}</div><div class="loan-sub">${l.bank} • ${toFa(l.n)} ماهه • ${l.borrower}</div></div>
-        <button class="del-btn" onclick="deleteLoan(${l.id}, event)">حذف</button>
-      </div>
-      <div class="loan-bottom"><span>مبلغ وام: ${fmt(l.amount)} ریال</span><b>${fmt(l.installment)} ریال</b></div>
-    </div>`).join('');
-}
-function deleteLoan(id, ev){
-  ev.stopPropagation();
-  openConfirmModal('این وام حذف بشه؟', ()=>{
-    currentLoans = currentLoans.filter(l => l.id !== id);
-    persistLoans();
-    renderLoansList();
-    showToast('حذف شد');
-  });
-}
-function exportBackup(){
-  const blob = new Blob([JSON.stringify(currentLoans, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'loans-backup.json';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-function importBackup(ev){
-  const file = ev.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e){
-    try{
-      const imported = JSON.parse(e.target.result);
-      if(!Array.isArray(imported)) throw new Error('invalid');
-      currentLoans = imported;
-      persistLoans();
-      renderLoansList();
-      showToast('بازیابی شد ✓');
-    }catch(err){ showToast('فایل معتبر نیست'); }
-  };
-  reader.readAsText(file);
-}
-loadLoansFromStorage();
-
-/* ================= NAVIGATION ================= */
-function showView(id){ document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-function switchTab(tab){
-  document.getElementById('nav-calc').classList.toggle('active', tab==='calc');
-  document.getElementById('nav-afford').classList.toggle('active', tab==='afford');
-  document.getElementById('nav-deposit').classList.toggle('active', tab==='deposit');
-  document.getElementById('nav-loans').classList.toggle('active', tab==='loans');
-  if(tab === 'calc') showView('view-calc');
-  else if(tab === 'afford') showView('view-afford');
-  else if(tab === 'deposit') showView('view-deposit');
-  else if(tab === 'loans'){ renderLoansList(); showView('view-loans'); }
-  else if(tab === 'settings') showView('view-settings');
-}
-renderLoansList();
-
-/* ---------- Haptic Feedback ---------- */
-document.querySelectorAll('#affordMonthChips .chip').forEach(c=>{
-  c.addEventListener('click', ()=>{
-    document.querySelectorAll('#affordMonthChips .chip').forEach(x=>x.classList.remove('sel'));
-    c.classList.add('sel');
-    const v = c.dataset.v;
-    document.getElementById('affordMonths').value = v;
-    document.getElementById('affordMonthsSlider').value = v;
-  });
-});
-
-const affordMonthsInput = document.getElementById('affordMonths');
-const affordMonthsSlider = document.getElementById('affordMonthsSlider');
-function syncAffordMonthChips(v){
-  document.querySelectorAll('#affordMonthChips .chip').forEach(x=>x.classList.toggle('sel', Number(x.dataset.v)===Number(v)));
-}
-affordMonthsInput.addEventListener('input', ()=>{
-  const v = cleanNum(affordMonthsInput.value);
-  affordMonthsInput.value = v;
-  if(v){ affordMonthsSlider.value = Math.min(Number(v), 240); syncAffordMonthChips(v); }
-});
-affordMonthsSlider.addEventListener('input', ()=>{
-  affordMonthsInput.value = affordMonthsSlider.value;
-  syncAffordMonthChips(affordMonthsSlider.value);
-});
-
-const affordPayInput = document.getElementById('affordPay');
-const affordPaySlider = document.getElementById('affordPaySlider');
-function updateAffordPayWords(){
-  const rialVal = Number(cleanNum(affordPayInput.value)) || 0;
-  const tomanVal = Math.round(rialVal / 10);
-  document.getElementById('affordPayWords').textContent = tomanVal > 0 ? `${numberToWordsFa(tomanVal)} تومان` : '';
-}
-affordPayInput.addEventListener('input', ()=>{
-  let raw = cleanNum(affordPayInput.value);
-  affordPayInput.value = raw ? Number(raw).toLocaleString('en-US').replace(/,/g,',') : '';
-  if(raw && Number(raw) <= Number(affordPaySlider.max)) affordPaySlider.value = raw;
-  updateAffordPayWords();
-});
-affordPaySlider.addEventListener('input', ()=>{
-  affordPayInput.value = Number(affordPaySlider.value).toLocaleString('en-US').replace(/,/g,',');
-  updateAffordPayWords();
-});
-updateAffordPayWords();
-
-const affordRateInput = document.getElementById('affordRate');
-const affordRateSlider = document.getElementById('affordRateSlider');
-affordRateInput.addEventListener('input', ()=>{
-  let v = cleanNumDecimal(affordRateInput.value);
-  affordRateInput.value = v;
-  const num = parseFloat(v);
-  if(!isNaN(num) && num >= 0 && num <= 35){ affordRateSlider.value = num; }
-});
-affordRateSlider.addEventListener('input', ()=>{ affordRateInput.value = affordRateSlider.value; });
-
-function calculateAffordability(){
-  const A = Number(cleanNum(document.getElementById('affordPay').value)) || 0;
-  const rate = Number(cleanNumDecimal(document.getElementById('affordRate').value)) || 0;
-  const n = Number(cleanNum(document.getElementById('affordMonths').value)) || 36;
-  if(A <= 0){ showToast('مبلغ قسط رو وارد کن'); return; }
-
-  const i = rate / 1200;
-  let P;
-  if(i === 0){ P = A * n; }
-  else { P = A * (1 - Math.pow(1+i, -n)) / i; }
-
-  document.getElementById('affordResult').textContent = fmt(P) + ' ریال';
-  document.getElementById('affordResultWords').textContent = `${numberToWordsFa(P/10)} تومان`;
-  document.getElementById('affordResultCard').style.display = 'block';
-}
-
-/* ===== RATE FINDER: box <-> slider wiring + thousand separators ===== */
-(function(){
-  const rfAmount = document.getElementById('rateFindAmount');
-  const rfAmountSlider = document.getElementById('rateFindAmountSlider');
-  const rfInstallment = document.getElementById('rateFindInstallment');
-  const rfInstallmentSlider = document.getElementById('rateFindInstallmentSlider');
-  const rfMonths = document.getElementById('rateFindMonths');
-  const rfMonthsSlider = document.getElementById('rateFindMonthsSlider');
-
-  function updateRfAmountWords(){
-    const rialVal = Number(cleanNum(rfAmount.value)) || 0;
-    const tomanVal = Math.round(rialVal / 10);
-    document.getElementById('rateFindAmountWords').textContent = tomanVal > 0 ? `${numberToWordsFa(tomanVal)} تومان` : '';
-  }
-  function updateRfInstallmentWords(){
-    const rialVal = Number(cleanNum(rfInstallment.value)) || 0;
-    const tomanVal = Math.round(rialVal / 10);
-    document.getElementById('rateFindInstallmentWords').textContent = tomanVal > 0 ? `${numberToWordsFa(tomanVal)} تومان` : '';
-  }
-  rfAmount.addEventListener('input', ()=>{
-    let raw = cleanNum(rfAmount.value);
-    if(raw){ rfAmount.value = Number(raw).toLocaleString('en-US'); if(Number(raw) <= Number(rfAmountSlider.max)) rfAmountSlider.value = raw; }
-    updateRfAmountWords();
-  });
-  rfAmountSlider.addEventListener('input', ()=>{ rfAmount.value = Number(rfAmountSlider.value).toLocaleString('en-US'); updateRfAmountWords(); });
-
-  rfInstallment.addEventListener('input', ()=>{
-    let raw = cleanNum(rfInstallment.value);
-    if(raw){ rfInstallment.value = Number(raw).toLocaleString('en-US'); if(Number(raw) <= Number(rfInstallmentSlider.max)) rfInstallmentSlider.value = raw; }
-    updateRfInstallmentWords();
-  });
-  rfInstallmentSlider.addEventListener('input', ()=>{ rfInstallment.value = Number(rfInstallmentSlider.value).toLocaleString('en-US'); updateRfInstallmentWords(); });
-
-  rfMonths.addEventListener('input', ()=>{
-    let raw = cleanNum(rfMonths.value);
-    rfMonths.value = raw ? Number(raw).toLocaleString('en-US') : '';
-    if(raw && Number(raw) <= Number(rfMonthsSlider.max)) rfMonthsSlider.value = raw;
-  });
-  rfMonthsSlider.addEventListener('input', ()=>{ rfMonths.value = Number(rfMonthsSlider.value).toLocaleString('en-US'); });
-})();
-
-/* پیدا کردن نرخ سود از روی مبلغ وام + مبلغ قسط + تعداد اقساط (جستجوی دودویی، چون فرمول مستقیم نداره) */
-function installmentForRate(P, ratePct, n){
-  const i = ratePct / 1200;
-  if(i === 0) return P / n;
-  return P * i * Math.pow(1+i, n) / (Math.pow(1+i, n) - 1);
-}
-function calculateRateFinder(){
-  const P = Number(cleanNum(document.getElementById('rateFindAmount').value)) || 0;
-  const A = Number(cleanNum(document.getElementById('rateFindInstallment').value)) || 0;
-  const n = Number(cleanNum(document.getElementById('rateFindMonths').value)) || 0;
-
-  if(P <= 0 || A <= 0 || n <= 0){ showToast('هر سه مقدار رو وارد کن'); return; }
-  if(A * n < P){ showToast('مبلغ کل قسط‌ها از مبلغ وام کمتره؛ عددها رو چک کن'); return; }
-
-  let lo = 0, hi = 100;
-  for(let iter=0; iter<60; iter++){
-    const mid = (lo+hi)/2;
-    const inst = installmentForRate(P, mid, n);
-    if(inst > A) hi = mid; else lo = mid;
-  }
-  const foundRate = (lo+hi)/2;
-  const resultEl = document.getElementById('rateFindResult');
-  resultEl.textContent = `نرخ سود سالانه تقریبی: ${toFa(foundRate.toFixed(1))}٪`;
-  resultEl.style.display = 'block';
-}
-
-/* ---------- محاسبه سود سپرده ---------- */
-document.querySelectorAll('#depositMonthChips .chip').forEach(c=>{
-  c.addEventListener('click', ()=>{
-    document.querySelectorAll('#depositMonthChips .chip').forEach(x=>x.classList.remove('sel'));
-    c.classList.add('sel');
-  });
-});
-
-const depositAmountInput = document.getElementById('depositAmount');
-const depositAmountSlider = document.getElementById('depositAmountSlider');
-function updateDepositAmountWords(){
-  const rialVal = Number(cleanNum(depositAmountInput.value)) || 0;
-  const tomanVal = Math.round(rialVal / 10);
-  document.getElementById('depositAmountWords').textContent = tomanVal > 0 ? `${numberToWordsFa(tomanVal)} تومان` : '';
-}
-depositAmountInput.addEventListener('input', ()=>{
-  let raw = cleanNum(depositAmountInput.value);
-  depositAmountInput.value = raw ? Number(raw).toLocaleString('en-US') : '';
-  if(raw && Number(raw) <= Number(depositAmountSlider.max)) depositAmountSlider.value = raw;
-  updateDepositAmountWords();
-});
-depositAmountSlider.addEventListener('input', ()=>{
-  depositAmountInput.value = Number(depositAmountSlider.value).toLocaleString('en-US');
-  updateDepositAmountWords();
-});
-updateDepositAmountWords();
-
-const depositRateInput = document.getElementById('depositRate');
-const depositRateSlider = document.getElementById('depositRateSlider');
-depositRateInput.addEventListener('input', ()=>{
-  let v = cleanNumDecimal(depositRateInput.value);
-  depositRateInput.value = v;
-  const num = parseFloat(v);
-  if(!isNaN(num) && num >= 0 && num <= 35){ depositRateSlider.value = num; }
-});
-depositRateSlider.addEventListener('input', ()=>{ depositRateInput.value = depositRateSlider.value; });
-
-function calculateDeposit(){
-  const principal = Number(cleanNum(document.getElementById('depositAmount').value)) || 0;
-  const rate = Number(cleanNumDecimal(document.getElementById('depositRate').value)) || 0;
-  const months = Number(document.querySelector('#depositMonthChips .chip.sel').dataset.v);
-  if(principal <= 0){ showToast('مبلغ سپرده رو وارد کن'); return; }
-
-  // سود سپرده به روش ساده (غیرمرکب) طبق روال معمول بانک‌ها محاسبه میشه
-  const dailyInterest = principal * (rate/100) / 365;
-  const monthlyInterest = dailyInterest * 30;
-  const totalDays = months * 30;
-  const totalInterest = dailyInterest * totalDays;
-  const finalAmount = principal + totalInterest;
-
-  document.getElementById('depositDaily').textContent = fmt(dailyInterest);
-  document.getElementById('depositMonthly').textContent = fmt(monthlyInterest);
-  document.getElementById('depositTotalInterest').textContent = fmt(totalInterest);
-  document.getElementById('depositFinal').textContent = fmt(finalAmount);
-  document.getElementById('depositResultCard').style.display = 'block';
-}
-
-function haptic(ms){ if(navigator.vibrate){ try{ navigator.vibrate(ms || 8); }catch(e){} } }
-
-/* هندلر سراسری خطا: اگه هر جای کد خطا بده، به‌جای سکوت، پیام نشون میده */
-window.addEventListener('error', (e)=>{
-  showToast('خطا: ' + (e.message || 'یه مشکلی پیش اومد') );
-});
-
-document.addEventListener('click', (e)=>{
-  if(e.target.closest('.cta, .chip, .nav-item, .toggle, .loan-card, .preset-card, .bank-item, .del-btn, .icon-btn, .theme-btn, .trow-simple, .fs-chip')){
-    haptic(8);
-  }
-}, true);
-
-/* مخفی‌کردن اسپلش بعد از آماده‌شدن اپ */
-window.addEventListener('load', ()=>{
-  setTimeout(()=>{ document.getElementById('splash').classList.add('hide'); }, 2200);
-});
-</script>
-</body>
-</html>
+  {n:'بانک ملی ایران', c:'#1565C0', logo:'data:image/webp;base64,UklGRlAIAABXRUJQVlA4IEQIAADQJgCdASpgAFEAPj0ai0OiIaEVzEywIAPEsQBqe9soX6F/fvGB3v8S+UDzB/tOkr5gHON8xH7T+kd6lfQA/pP9E6xz0AP2H9N72QP7T/y/2y9sK748V/Hr4B9k+OtEI+N/XH8p/V/2+9dO9PgBfi383/wHhP7ArOP8B6AXqt8q/2v29eghqBdx/8N6lP6D/meOL+lf3v2AP5d/Rv9Z9zP0jfr3/T/wP5Yeyn8l/uv/R/xXwB/xz+h/7D+5/47/3/FV68v2F9iz9YmQbap8ozd8aZUK2PehGMoY8VFBdPgbmSR4tiu252/Xh6bIzv7BnbiWxZX5JIiY9qcc/UTRf3ev0E74LnUqrlVuGHtFDQ511r2OSMMS0I185aLydb96wqr5XBfsvjmT56EwMLD8/BP8NWxxzLODj7o1zcoMz5QAAP7+8sxt+m7Y3NH4xK1EwVgM3ZhfjQwIQD5HDl09nu5i7L2JqJzAvaaO5l3WaKWSZgMPBMwL0H8HFn2ifTMgfwKwhHlzxsuKigXrEN9dZ++q+XFIeniWUI2X/hpUdtYq3vLT6vMzgu6NWxt9Sv4tm6jSP55HJncX+UbTvhLahsqJYJY6KPZZZEGCWcM+0YuiE2Zyvrx9s//fCoNws3iD9BZslBfzr5hXp0YzuJuRl93Oe781xzFWBFR+AoOJVJS2h6WsJoooQ39XzJJdGQl9idoHo6nHAYiyahIuS2YIybigp51SZxRtemzcyGAcWTbFUcWn2pFhXIRI3iZQiIa3zvxrs9PtnNUp903afIyvfdetLrDa7sySiF/+f89JWHArHoGZkA3wKor/5nYFOsiuPRwwJ09GjTAJO+wSs8VL7EV0oqxJ5m/7bcQ3b+ipLR0BnLnn3H05DN41fgs1Viq53I45jCrlq4ExoARIHVYnsP5lfvg//LpltP1KUImahyihClSKnPV+YcCC53wSApJgL0TavkFCJPgInWCX85kTcfkmicG6yByr9/eYLxz8EU7IBqUEPu/4iUFJujMJy3dRSQIqq0JNEAXirxULdVAdZEDVGnXt5/byuNwF/KAhdEEWq3tDMfpilN9e3TkoQ1UIBufPpbfatk5sHyMQOBR/l+Qr+yUMW7p1nhX6+TwdRL/K74rWJnNiMQ1VS6Q2qbEVYVoYJjM0fx3OyeEASh4bVRj39COeOnCu5s1KveZ16//tS3ptc9lWnVhlRGcdhEjYi8kQU4knG8s1RLRnrxk/IekJqiR0omnleksTk32wQvuH6O+oogkQLvCcMWu1i+ayXECC2/rJWAmdynjTIHR4/9jy9dNuU0mI+6GcgFPnp41LazlrJ3mjfzvcOD8NOSudGiR+4/wtWMtZfcafrQHuLw+FPqlutJyRblusGy/yPb4okt5InB0irVqPzGF7/StHiuJiNiVPlP3/yHFx8Em9dnUTOa1baBxIqh5ovh4Gqr5Uc4WWHb9rDWF7aSmmqnO985WRnK65c/6xt191De1O3tU3Ks/tmd1zOA43V2lGuopyebCBHhiG7uHZZD/itUl2fwloGfcoYu+taARAAq+Ih5FWuPJtMXuyz1PWVgA/MC/+r6c+oQVU/dNon9uYNtqGEkFl66bBntj0kQiAAmS5Hmp3DqV5exK1okb9ES2n/kL/6xEouD6dnnXZ+FT9FiM+ggqnZX29A5D17/UcrCW5AvaAm6yldL1EXjQTt1aPYvxZ/hyApHUKETp7O8DzUqGJTh4T7lzEqfXkE/S67lD0ioy9SID3PoMHF2h6D/oQWaHy5RUB/V1paKtXxYkIZyrEokmaZPBSmcgsIlPDQLa3OWE3/TTN0sJv3vFo4ou3SERijm2bKmRqkP8GL/Enovi+N/VlpFHC3T02nruHcXvHS0TjDfg5P+Sb2cXX9ffb5s2XIxyU7CQXj2t1ehd6F6LnIbbOSZyb0VofnFGxUbXVMEt/KZXIujCJ19UCD+TMc7Qzi/ZacY2sVoBZUeBa8cG77o7uw+VrCR5SSs/Rbvw0Xhj65NFUCkOc3cqH7N96v5L9vtmhCNLdLnnPs+Nui8SyklphH3XmiWAte+FajPkbAlcSEM5IVMo1MvWSG0fvbk9LSr4/PTrvx0/hPxVr516qwN7FtqcrksuxioWxS6i/IQhjne0hFXDPvy/E4NVdELf6Pe78fujpV002ylZRpb7uUgHEapgYgmt+Vgmt8TuKy4xvuRuDite2Fc36Kx05Nw4o40ohm7SQK/7YcQlaVD5bsGNQ9eOdh6BvPkbuJSMvPJEjfY6cy2tTg130rZZQU4JKa0+VBrT70nReFQfo00fBbKAivTlTsY3akP9ijJS8F800i/ZC4PfjVhzfvfAoJhXN0QrHziQ/0XO56TyBSbfLqekwl8+0+PycY3+I4lCiXormPICseMSD05G+VHvytjiEkb+LBRz6bfptlRt0zzLUMBtQzH8ionvK/+dnP8SBw/70Z3czKa/56qHsq20Wwqp/+f1OYeZzoMaWxVj4WQVCCqNjpMz3nunjp3dQgkSIn3OtSj75HBG10XDMtMjbyvd+G5sFyE1aorn9V/wo1OWE/wcM7AVuTL/aiJX1GXNH3JAXHbxgehZ6gBtCT9rJraMH/iUD5gDTTw6J3Oc0XJsumZh0D1aAefd2UIhooJ8XQklEkjgpPdJli2tW5CJljfTwYZY5E79lvc1EeseKLXNU/bVHW629fjPls6yhYkpSTeUkPDz/+YdHQoBU2MWNKJZj0L/QdUpB5OgTKKU7pb9os3/NF4740mNCDVdaC5MeKJe9JgTybzzG2KYIL5DFXBKxNQ2LyQLTUobgMjdYW8JwAAAAAAAA'},
+  {n:'بانک ملت', c:'#D32F2F', logo:'data:image/webp;base64,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'},
+  {n:'بانک صادرات', c:'#F9A825', logo:'data:image/webp;base64,UklGRp4DAABXRUJQVlA4IJIDAAAwFQCdASpgAEsAPjkWiUMiISEbuuwAIAOEoAz5KO76eZTwqNsB5gNx0/wHXAegB0uH7a4RR0y65r/K5mH8gOCuuGtx+Dl+M3vKf5nl9+i/YI/jv9Q/3nX49C39gDyACyhZB5uYE2VMLKMCqnjkArQDumN/2unYTx3bWDNDGqm2i3ie33X5C7Ud+P/IHFUJGVIk0yPVDZ8kACIjdZvVjREL+xkRTUHtCC2xA6pFyZqtoVgAAP7+LOrxI0m7PBWYw82X/+r0sfTMGT5RAz12KmYTmL/Yv94HCXJPFlu4AbQL512hsYhnnRuYjzNU94rFdzKMf8hdD2QpcwW+UfxZM8cLH+jeAknYDq3GJuhYcC49hnZxm6eSVwz9w90AclizTdMhDU3JgWzodBjfwE7oSJKNSHWsXyEvtkuNr5d0NbR0iYzeKbAQc7b1do/F+F8Xpe6YCFhMHibmrldK/XC9NwhxwXnl5T1Soq55xrRF1aDrw367U6J5K4AGVHeh1VYdQd69P3jYWhkc+fBFJ/K2HVfak2PTDrxztZcvSz9oD+gJvGNn5oNK9+F9VodzbCLJQT/hprBNImUp0PkXD67G7IeI4r90IC8/8Cwv0U2P/g2CACGt2VhVP4vkm/CKzhkOfnRbyCfCWb9QgHd2YjnTlBNLCgwSIX8I3+boHBTihD90OAjpWDUBepMWOsK/tQwXI/wd34l0cHN653l34S8eSAoFFeNQn4eFJMMhztpfGLx9p+28KjCc/6wR/A/038bKnaGvOn4RZhmFb2AwyvuT0GXDV/ntoXE0eOnI6Lf/fTThEnf6OLb/jhMnvw/6rghyZsn6sbR/DsT+j7E9bs2LSitOffv/Mbb68dClEclx4t27u7vcjVEUXJzSozGBIJ1B/0k5xpxuT4rRK6OcApein44KkI8z56DpT/MdlBXkFKbOtIjvnU+0PhOL+eTkNjzWcSBH9OuT0Mz5VuhYzdKeNhAtnj6VyC9yL6LNH34ukqBb6anztDu+sYvy/0YLB6DF1g7WVUj0z2T+ZMGM0Ph9BsUhh8wR6yjH7+bjAudu9iR/ur8OOPm9cNYue2OzMNH/kp97YsLGYzX+NQvedE7CzLi9hhm9UjjZO+OjkuCP6f8uF/VqyFKbsLzkdv53li2P3z/Xv2IEhSeh+hQSpGDmkejx/xG/rXJCx3Vss1Qv9sJl6+XvLxx6tu3jz3fIoGJyjfAAAA=='},
+  {n:'بانک تجارت', c:'#0277BD', logo:'data:image/webp;base64,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'},
+  {n:'بانک سپه', c:'#2E7D32', logo:'data:image/webp;base64,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'},
+  {n:'بانک مسکن', c:'#5D4037', logo:'data:image/webp;base64,UklGRjoDAABXRUJQVlA4IC4DAABwFgCdASpgAFAAPj0Yi0MiIaEWagaoIAPEtQBmwQCuX1o+2fjpwx/br8denVKb1VfZPzG/nnaA/G/sAfiB1B/5F6AP4T/Uv28947+YfsB7ivPM81X2APQx/gH+W63vyqs1E/ozHBvgVRGJWsh6/biSKKvH/eBUx8UOma26QMoUmtF+UHFbIWxWKUtrCergWeE9gh/hNNW73a2W/O24C/e0Ota7z2UcKRzmDE7dSnS7Utvk2N//LctJJ6rx3AD+8pcxef5e3PJHZvuMfU4RjVFkidPn3lQ2yp+LYNW3S+BznfPT/+ZNGhdZg7I/JUvhlGkBliBs3bIO7lLUqQtFzbDgHyk5RQSqU9sGS1ofUWwjQrvGFo7lWP9NfDA8+Pw19Zc31pszR5UKkmnqZ/HIkj5T+GreiFbIH1AfGrsLUueavq2FlqZkuq0MbI8giEKmOGHNWRnkgRSHV5EKePn9zBtFgm1+cno/vL04uUEm3oZS6yoHNlw3EUFf+zla95EuexlAAL2+PwQBdeL1Z//7xqP4Fdl575e/uxJ1hLqAHIC8I3CCupoh+mBRU/I6KiE4FHQYQIF+Sp4iKTzIvZbVVoNasVRr2+t6rw5leioOFkSI++PSXxXzmoKUex3FdQeMZJDN/cP/5XvjmQyTsm49ARI7MGfb5rJ2FD9jfVZc3KAsaKf9pZoKCoPFWLPT8HaZu3SD4sOBrylXR5mBY1TJqq6yn+c1qDu014DiwB0Beoq010FRwibyTPrjmG8/FXsPnI5lUDGIuw2V/L+kV9Hy4Rtm6ZOeC3yUD72AoMIp8G+Rll9PDbyPI+mG/hA3hkyCmbC9eOBZ6or2rHjc2Bq8VsSNTzVvu9P84NYk5O/eSk/V7Qmz6MOiRghwFg4NxNrVzSrbRSxzgnZYutV9Fd5uxx+sgaPBnxRUhVxWU3QiNmDVED+P6mChEdZocfInQKr34ZCw0QLlOp8ZJYuUzO8C2d+Iny/1jKC4wJ4FaRnLmGHQL/1DO3ZcYuE/7v1kcv4eVEP9iaCRjjzlMw6z4WiGRgBwPmB3HQGhFZPiOfRw/4vgW+G/K/E32d+yeoJcAAAA'},
+  {n:'بانک کشاورزی', c:'#388E3C', logo:'data:image/webp;base64,UklGRioGAABXRUJQVlA4IB4GAACwHgCdASpgAFEAPj0ejEQiIaESvAVUIAPEsYBqRQmQMkj78+AvtuvMB5s3or813qGfQa8uD2VP3Ors3hD4o/FfsL+526V+gf0de3/kv6yf5Lw72qf6h+SfEM8h/ov+T4ye89/Lv9T6if6Dxxpl39G/03pif4n+D8/X5l/g/+F7gv8q/ov+3/uv7w/37vyft17KH65sblYE3bLguJN6RT4sAwgv8soxgC2f8dnSBYU+oiC13so/pXkFp0Bo14g+x+QibK1QXMLdjZsvHQ0HYP27sbCPJszAXE7/n4cykRIqPiCwZs+bTw4BaeyPlzTmierXX95EUZkQ5MtrQc4ngAD+/s9BYzWRCw1iikt12CZIHcnFuvCqpA9cxNJ/a0GV99vjeeBTaI+oBo04lLerabMMJjumx5jXvaJToJWkDjASFPqP5qufEr91TnklGdN4x7Y0wfAATScfPKWiyNm6QaE3G+GiOmrbOEqIlmb8jDoZA8sZ608AQ1tFxZuHhYmMCZh9/MnN+pJYWMa/czOzRgFIUaiG4gl396J5kfrY2MugRxDd+kM+e8/26VbN7/gT/tiyD12/UunSNe2Yl4kZOSPcOMtJiGdczlWpFuh1aUeYu99sOsOv64ajftJQEElb7ouLF8OgPc5jL/wZX6aWT249je4Tj4Aqs87nfS3fTQ2N4h8DUV57+CAdzOiSARCktUqssCuJ9FWA/yKB4+nl5kE69t3XnhsHQKtZnf1crJxe9zULHJUMTqkT3H3h979ua4/g/fAYXfWITqSrJ+JQiBa7yHFLF9JQ55z8d9xOgN4iYudamf9nEpEE/3yQKfiHRBCq99Z50yGDMSE2Q1Qsx/WIp9gBe4nnnO7bw19zOJfqdMG2mAY+0fv3RQ0gSZEwcJfBuiX7zU8HvzhwNi7m98P7mybKLcedOg0x40EzkG2iQ9C5g/X6vfQbrnfdngXMvVr/1O2ASTAeX5hx9tJ2Q232Vm+B+zGED39bdoWMOv883T+zjbMDKGqFGQBM3SaAGhfuq23CVjZKeiVPZM9GzNGbpD2UkAfMfXBWU8ka6kfujIoO/DU41pSxd3qtp/XZ15KaNuv99Ta97nOEmUZeiHlbYCcqzxPYyCDx5/7OaZn2x+B2oV5vIhRVaauNibVbw0dgChDbLc0gvr/k0uGO3c1eBanpHmwVno+mZIeAbWqMpqfXujV9GAoLYcjBKa0KVLzaDuQ7AJFHp5qd4nz4v0sCo+E/BzWX0lWhn8D/Zag2Yskj7PiTBCd2ut9UPDzvHLtZjcmBfpzBOKb+6JlOc0gG5enRdJ2ev/gN3wWd8aIWjqIuzyBbUMEnxxXE4dpNmno3tlkK0iRTHKEY3oIabd8JOOT9Md0fsNUxqlFSD6j7j5ky3Nt5Kin5jf7EETrXzXPnDUmK7UpChV0F6PpO1f/oJndBmayEpuEJ3CWlnHAju0tFGkibPwb6g4Y0c80g5vCLAmWPLZn8VJPnMvdxBLh9wcezDtp8gh6WlRLW0TZ0vgyrH9ify4e/pKfTZ1M91bPVkNbxyrspNU7EIiXqXssjACD1KC9lg3c3fsaZz8eBU0oIq3sWHG3XkwOhh/pS1JQr6+FNdqoC+fQxOStXLpqETLb9Sy8Y4ugne0lHQ+HC77xpyug6BTJn4bvVamBKFuav9+JRuahOn6RBvA2SM0xjQU3tywlyC/46abyfhhH0uimeK7LDFOEhFHyN0gIN71VTi0huaqmZf83dx3/HF/A2gPS0G9e3GV/dXnkJ7IQ96f9LqpwKLjK8Y2UUwTjVWcTdu9drqC+Vpxoq0PaZ/GSrA6c4EcLJVuFhY/wRP2yPcqQ9S0mpI398Ahp5vX1YaTnuCQEy4T4nj6JVAD2l6f7jOCepud/b+sK/8Vj//P0rUZAi/phR8ocRk+LzyJu4aabiVxIfN+/5Aen9mHIX+jD+XSvYCfy43DupHxdewPW6HXv6PcZpvhdTq43IXHkPWfvy3nTTqXQleae2VKZyccARe9EI9KgYCvomvXEG4iLmZ3Fg16sjz9I0Zkz39XrgIA/k7+XA3/bIhyOixGFnJv6fFPhCSNxgAD6cywAAAAA='},
+  {n:'بانک رفاه کارگران', c:'#00838F', logo:'data:image/webp;base64,UklGRogEAABXRUJQVlA4IHwEAAAwGQCdASpgAFEAPj0ci0OiIaEWPJSMIAPEoA1ee9+1+bRVX6vvVpvPS/4fnAeYB+k/Se8zPRV9AD+5f5nrRvQA6VX9uvRVzE3tN/qXKdH9P3rhr2mf61+OuW3fP/8xxgaRqdL/jv2M86H0B7AX6w/77sSei/+2htbJlu3SHsvQH9eTZatOKPjT0+MtD/fC14aSNaWCJKTEoQA8xxYnuEwTYk4MRcx85Z+F3KTEtWiwyzRkm1pej3lTKq4ampef8jOz3CEZne7D/eHPQ/Bfe0TwXqAA/v4kYKJa6dtx2Exodneo0eQ1wmPMQHicFPjfGi7BHctziBJV4ODpM+cklGDXPoTjzv+Ry6hQltHuNslPWNTBzzxUVyxDDEmRXdjkLhaa46xOTN1qgBB2skTeFb9x/r49mghVbce6998OOqZ90fECkP1oQXl3IbQ/MgULGEZ4wa49VqEP4F0uO68RPcxMogdyoOMZZZFuproyWzojBSqn95fHT98jn20E3Ennfjn26ECqx3H/7V1+RRvbWkqNOUnWdDW0xMO9NY+Krobn2m8U9qU3/N7oi5NwxS1U8tN8mpu5Sesgb9cBdgmuciSwpzi08bzbgi+L9hW2+QZ3yTqo0hpddaBOXd9Q1DkCR+wt3oioewTlF6D8sPXdK5dvFcBhFIwWie6c/u5AVt4SWAW5bVHw2doT2FwmdUmghdtRl36ujaRTP6qxd68Vvw9JckkmtYJ0+9j4A+1oVqytDCPrURcc27SrcrXq3O6r2lKjy+Gh8o7B030Z85PJsqw14TYKn4YmnROZmz+8zuf0xbHeX3cQjDDV/D9PkqbyAhv+sx18cL0HJM2H7iKEbxJOVIK7fpZP8pLLi89To6W7upz1mbkQNMIUcB4Lfjspf50SZykJ0vX47/v9khHR+NL96pViP3xERvlehfL5obLss81pA5feoYF9bQIGMl8bOVk2RlqLTO/iyp8cpRHdpCo+5t66RY1t/XuiLZ7PTDnEj87/X+mLInsPRi8Bw8YWQDZGGYq2m/6D45+uJACnjIZY+tCdE19y5aYGCcU+9/tRF5v7W39HG4C9ZCxrR0v9zYS4/QARuqF2xrjVSo0/yfrCcrsfBDKLo9P6JQ73jAmtTgkPLoqB4Aa+hQBHugw5Y/q9WQq0z9nAz1Bbli83v0NzgPVbwJACJX+BbsbN6bjYWQrlWpvgmihaRWA8oAiAptxZUm7slLIXX4qKbcpl8Wt3fuFCWbs2SmSUrk2r5IAX+nPu50nD+jP8kv+hAryP/8T9Kf1uWqlpPf+Hh9xEMzI443pW1t7JJlpFZ2vQqIp4MLWkz4svB/c/OO7W7LqtiE4bwCIgP70fuMlctzm+Hknyj3Xgf4U10SBBt2dHx9pDD6viVjTvN1THuiouEJ+ECBWNRpMDPbMtMhyTMw1OmLxLUp4+WU1D8f3HDsp0ePIvyhB/ZtTv+C2wWz8Gv9ScbmvJydE8sQx74OABZXlNlzuUM30mcCgU6aiJ+fg54FTFVENskY0MVgASwgAAAA=='},
+  {n:'پست بانک ایران', c:'#F57C00', logo:'data:image/webp;base64,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'},
+  {n:'بانک اقتصاد نوین', c:'#6A1B9A', logo:'data:image/webp;base64,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'},
+  {n:'بانک پارسیان', c:'#AD1457', logo:'data:image/webp;base64,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'},
+  {n:'بانک پاسارگاد', c:'#283593', logo:'data:image/webp;base64,UklGRiQFAABXRUJQVlA4IBgFAADwGQCdASpgAE4APj0ai0QiIaEVWNVkIAPEswBqmfz9s816zP3T8M8gsSDsc/ZfcB2kfMA8Z31Afsp6gP1z9XP/GeqT0AP5x/nOse9CD9nfTT9mD9yf2Z9pHVldxVmfVTqBOAjijWJqI99tbYMnZ2X6FfrRVi94vEvOY+81KPVtMAWyMMeKxu29BhkWPJEAxA75nmc/5SPHpXZLfw/B9wka9b9iDmlNMuG3DJSNxWDRaAU+nogo9rJmIUZyEWoEZrA7bFkEyiHH3Trqe2TXhu70J3xYOTNlrRAA/v7PWHofwkGBUeCZopKdQqVoE/TDVXP64UHYT269GUOoRCoXDxNplnuTsX41y3BRjyzOapaMM/011KZd/nrtn+m8YUC9o8iY0zPGc42qXG4lU6vLanydnm5oPvwf1KwAvKM9VaqNyOhXO3+H6+sDiJNlLbAvTKWoSC8FkOq1gnojwHjURqAIk0nseKGJIX9oXErVmbB9bHrNw3rhuLGXCNJkgWjiDVFASK5yKu7E68gcgle/Qb40v342oRWHKpLkGLpMYniKpZ676RbIogqoFWROtqf00cS68oRMV9hMw5rlPqEEGjWEeKvotzQ/hUzRY0WmJuq8iENtoUFXXmc2aaXbfun7eHG234HM+Y5u4iou3M3QfMVK0x0g7LIv8WoN4WKwFJP22MERZL+OXnqlvhrrDzYMjRcARk6ADi0EqmwFqvQcTdPIcP0YVPbwkH3nwgTwUk/rNw8JblgypRBbNGi43jc7M+kP9E61AOlklGOIs09KVBLu7fsPEckrrUjB4BM0u60wNdfnUiJ9Y3kE+AcmZFk7haE+FolJypCTP39Dg194AAlpvxM6Vjrqfq4nDg53VBFZzGIx4dxT001Eib//59BmfjvGvNlQTbEev/v1Tx0O76Fz+24nmdgf4dx1JnG/bnqvZcPj//82/X02eUIHdtrum8xLmsWu/ntZtavwnn95cbwdIWbXlSCMgaw5MpzLBKeTEQBQcb+vQ0sSH0IFUYPZrFDbX2s46reZBIJ8nWS4lsMHITduIUSb4oOBRf0UmatlsEbEIRGhJWtKigVnYWseQ8IVSDqE12gc2sVRI+T0RMy3ME4WoV+MhF5ShCfOQa4DCvOeaSkFMttc1MX5hChEMSnn3VWJiL2mUCB83nRpZnND8awQc80ZWoHa/L3n01F/CGtZmAQbJ6zbS/y1tBBNMIurd9TFCOCc/ccwbJ8qbMjrHGLxXwL85m7oDLnLd7yKe7qaIZqDC4LcXsjsUjhnzssXSTZidJwi4uBzmgaw8AM0m/p89sQxFAL7jnONiulqqIQL94tUJZH7bPiMSZgieEL3YwMAZkCZXAGuNlHNEnvZ40uPV786/oVgggvND3eZgJXKyHcms0LPeVGGk6qkUu8Ti9f/b8zcLVepftFSj1zlg0Sn6FksAQvRUWFbGbdUIHDnoA6Z8Mb9+YnrcFA0vmvR4FDBvaGbk+avZ+5cjsUqVr1iTur/9FCRXFlIKusa/EJAF/ofwh+y8AZuhZyqRowDLE4hptZceHA9Yo8mCHjBN5xdOZdSmLkwy6RIMiSdeMOX8ch0yxBZ+J9umGMRctbAmxgb+vTh/1Tr7wb1rgQqTr5RPzEY5VQ2EOrOzStnj4IK4irB+2MMyDp9sTAfrBcTVdjQ1K+jATOZeyLLAXeV/0kPT/d16XQbM1zqsKNA2r1XXolaH5aN21bYjODaoS4Xmt1i06AAAA=='},
+  {n:'بانک سامان', c:'#00695C', logo:'data:image/webp;base64,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'},
+  {n:'بانک شهر', c:'#37474F', logo:'data:image/webp;base64,UklGRjAFAABXRUJQVlA4ICQFAADwGwCdASpgAEgAPj0cjEQiIaETyk04IAPEswBqROi/M9aY7Tx8m+vhHmFyv9gP7b8o/7d2gPMA/Tn/N/zzrFeYD+T/2P9qveG9GX4ge4B/Rf7Z1mfoAfsz6Yv7XfCl+5v7QezD/77zd/AYy7sTEgtWf4DfSOO/yX/VcZWlBmVf9jyj/TPsE/rL/zuvf6LjGNt0ZbSNcsrwlEXqSD55e7aSzv7ppiVpbxO5x9fQlG84yWLTgb+tXXZ2WDleYEgl8Icbp8SVPzA3XUPhD3b/DPyumY5/fEQTh0TaYmSmG9QgD1i7cC0SEcwAAP7+z0EClMOnfQW2gTGoaavVJOZndPkl4pepuYA4/uxlvS/sX7OfDSCCjo0igvXmMnm0quI8854WzdTWPLyQSijUrAz7uPDEGUiN+B9UEQww9izkJr38n/jNMZL/1mR58qY9Hq4f7OxU56QMMSP0GxZHYKoVRmbMhJL1vyaSTkA3ef9h16EXajXE+91liS7aKOjZ87mjP0Sfw36mcbPCxDzrx0DUqt953wJL/VF0pDG36pcamg63LMK7Yu8TvxwxVa5/bDH/z9lmwX5+Fn1Uzs4mPUgDIAYiIPRq0bIGbOM6l133ITgtn9Y17YnXu7+Py6uwxI13Wx/POnPN+Z9zScY/1YqLIJxPuyr4QbJ1AgDQbmKAr1PpK6l72Dh1XXQpDld29w+8DI4ce/NG4Qs+CJl/FI/0j5hDp0GkGUlPxmdvucXqJdY15N5tOa6UVcnGjOpoOrfTzc/CQdprz4fBUd6+YKtnuNmSwzKenTtnWJu5ODxJH/+INPnDXAXew/aWxeAHv7auZMAlqqw7AOvOCTwPJoD34FjvaJ+e9u0zeLX+G+7k1a7re9RQKqWS8kh/vJQQLSQAzknBsnqS75f+lYujIozQ3xf4bc6jX2cZDLjSD/n+IJYm91KjDack18FpOuFEewtdP/Ex7Zy50R88GabFn7zsUO/mIB3VuHu5MSuPoHw/9ch3A12cvOFgA9LvzPZmhSjnsv/+qNNNR4ICqdEVSAtzYuHCdqxCcPBVFLzHHtH8+1Zb18NqYIa+GV1AhgiGGotdBnw9Nerf2tnCIxww7n/DX+YaCKqIo6xZqgiYwqEgrEsj2IbDAJE7wlCNNpxTWeAv+UVDSs+3h8kT+9VOkahJnbIKAE9c2bw41F9vqMPSP/lJKucy+Kt1siIM7NXck0BjqjvXW2/z+iqBekLwNfzDN9WyYkMqi5I9pvR724MfLBaV8+5CjT8EFx+jC+20hzThWLONryC8KgTdanKmPW9DTd/f+Tfl1bHMXmSeFv/homr51hq5eMff0vIQuWU1zBPFGg+K48gVnzHyo3+Q5NjPtvmFyb+N/RxvgT91I/fmwmejqn9BMhNku7dUxkZMLUkBo+7ZWYn+w4A7R9ymf57LUMiPdMcoAXsho5PHofjyE1RBZWcbcmbBLAVBSnT8dfVAMstqkh9uh9cgn3VzyvgPXbsNvLh+vNF9wmmrswNBXth3xeuTPe5gkYl5j9/+pE7iidBkqsKgORH/2xwStjo54No3r87Jn+guyD8FIAiAPtKm1UAiH5t0NdJH0z3DBQKmK8NKXLvDR3QI4l8XM42vIhxuP8y1H7UYvdiI5x35+6f14uqJIlJ6tejHgSAG3uuxybkJpWsqZUPNagXW4iDIlDHzID8G3VHw+q34su5zoUkct5owqzDbdmEt8MKqku6MBCA8WSKLKpMMV3puwADdJnTwxAAAAA=='},
+  {n:'بانک دی', c:'#4527A0', logo:'data:image/webp;base64,UklGRqAEAABXRUJQVlA4IJQEAAAwGACdASpgADQAPj0cjUQiIaGUCV0cIAPEtQBpL+X3pG83gf+T5LRyN8s3aL8wD9Rekp5gP2K9ar0I/5/1Gf6T/pusM9ADy4fZT/bf0ZM0r7COSOji0af4/hV2q/8bvNlxPGBpTZ07+j8Yn017Av8t/sn/M9ar2AftL7JP7dsgHZfxaRSHSrlL+DSKEmSzqhjcYG4OnSVbBOiqbHaRi14JhtOqdGfss0oTJzmFTt8xJbsP4zvB1WBAeHwsK08xHCQ6sELQRU2tAsDAAP7+z0AXHwY3b/BwTRq4jW0Zi2enHYwME4gaYY321eUvBSV0yx/DvHbnoMM4uPfIDhu/aWo37k2iX+Wfzs4qN6OmKkwyC3N9VdhraufLkTPbnPadSRSDXEh/Gp8QCZ6Su+S2gJyG1IwPvFfSDKOYrDX3ynOpJ851HuW+nei+nAANrgr8HI/30WKSUnMu+Wb1ZkmA+1g3cXJ7DFg6p8FMNVnCcHnYak1/E89nTmD2/QszWOnIui2OLpptT/ncZ/BGCWwvqG+2hK2aIo5jRCtzhv33vpKmdEDZ5Jn50WIR4zEuJDB4AHQ8HPCPuojr+kF0A0YGUbkG5dLKYguf13lu9cORy+DsdcbHd6z+P6ATp63h3ITlu+w+Q4UCPULtSAAbUTOt8NTgwkDXoGZv2nlmRp9zGBnTfPgxkf3JP+hSRQnqr/buw1OCKmmTocRi2bCcflEf778xmlA7vYRx4HizQ3jbZNw7VeTW19NpvHZ6K1Csj3/9CvvyQISrJzAuHj7j4HK50xnUZ187v8WSYp/zbI/958j4nlxqUjaRViR08WyTs6wHMRdA2vjbwRPkmsE6ykF5tBarhT3MlIeUjLjp48v1/k4VfIFg298erix+AUNt8uV4FxwREmHPqV59AIIFE1bgMjot4H35lh6vwOqxML7SOy08zgWKwfAuzOmGYjwUG95an33G7nyv3HiQ98fzO8MHvXkpH6mCMzJ435akuJk9n725yo8fB8c/rAyPLRj+bC8k0vAZjIMbXBesfBuIHd4hc5L9EffZUHmXFD38fMWkfzWanp0N0ohK/ki9G9OCu3UcXiXC9DPThscyP/mXKNT95GEjPkMm1pB3hEqscjg9/TShHkeYtPHHjrhGY7F4lC26CRuDczhdDdJwRMV5Vyp56Wiadmf0D7g85syor0ij5gUrHP+Id9xIeZ7nRT94aP7zN6Mbrlzh42HG9ZsMb3pgqF0ccO3l1UJOy9RhDjuksZKeMRIuDMSdWkr+QywYo7AKl1y17NmIbh3KMhzqldWn5pwjd9vkoqq0/PpCrgxdNJuaYRupo6XuiIDngKUB+w0+GQUeCO3DacrHZRhP8EKhutoPw9KozJQ+TYwsdDR8CeFehEyUbTNYKL4zY9wbEj6Z6JOI5jiOUdoS3WbPerlkrsEvKeiE9Q2iVlnaLWUq7/wpg9hw6lzRT2ypLk/f3fVRQbc4uNlDqMrQ0wUvJzHoRa0h4SzX/I4W1pWCWrQ8OroJhIjcMCj4M1hYhYbIDZu5Q3kkgsr+38R1wYW2d7ypHQAAAAAAAA=='},
+  {n:'بانک گردشگری', c:'#C62828', logo:'data:image/webp;base64,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'},
+  {n:'بانک آینده', c:'#1A237E', logo:'data:image/webp;base64,UklGRqIDAABXRUJQVlA4IJYDAACwFQCdASpgAFAAPj0Yi0MiIaEW+d5YIAPEsQBnVF9FO+P5EzhaR09Y5a5xvie9MPzO+c76Gv856QHUW+gB0tf7g/sV7QGaif26b8rU5YGmbmk+OXUG6Q/oZpHsO0rqGin0fqDHqBx1UNjbIroh3WsS0QfVmg5P9B4yX61B+0owk2ToP+Ac2Kr6N6nVY1whDmSnluTFEEvypdur7SudQHC+SEGVEk6aUUd9kze+pbNL5LW1eanwAAD+9TC8aKkOo+kFbpe1LfP7Xgj+V6GPcRI5//9/P9Ep0jj8/zMlnqhGEIN7fkJh/crNE3fy8aIwAtFuM4b5hpaSeT7cymASazCXLMmCcgKRN4JFN2VIAaOd1opU/CeW9kRrqZ5ZRx/yLp52r69/bJIPrze6Ofp/56Fx3CoE5lNB8PXT4LzOEn5AwyNJfUNouDKwclHdjKqBGEEcFLGkzGRnpUQ13NMO31gQXkPehYne655cUI7Ryc+/3sfYu8vfiLMmgkvnseIH5C0ZnCnr5nES6tdLSlU7hqT3VriuA/+iIRugmZY1eRNIQ1IaEDb1JGN3EGcWPt0unDf5TT3A8uuAMBIMgeuTo47ym0qKILgnahMNIBmPEozPWSPv56Ma31v4/6i1/arYsNwuURIwmI+79f8mk7/Y2YmzrzirUtzbOE1PA0upYvf/nFdbUAv4VdOYO0L4WAV2vA6E9uHdLfpj2FkODGllvcF1tZEqr28z5OEaFbmk4rR+kAHXf7gv9lvCVJRuk0VH6vJPlChaizoPpOWxJlLnrbIH6kupC1ygHt7SghV5J+nEenUnf+oqICgwNu9yKc8n57fBE/q+lqJan90NmiZg2k4Q1tTpHtpvIWqEGm/a4Xz/cP+lAImG4g8VaB/7T72+QP8H1NMfZNBa4W0pkmP7j970euNhTxuIBXmLqOnuP1VuNCBX/NT5k1JpvfktLGxX1rfkD8LOw4mg7FuJtzqgSXDYbIky37gDMMf3JgpR9l8rQes/2QwbLw6+efZSS/g7v6Rp8/5oi/EOfR5dnUPcRfjS/mlGW93Molxp6tyUZRCLoD3P1X7lX14r2Eo2fceYnNOcBHB6NT8HJiyxoOP+Ih4mHmxfBVMU/NCXxpAHiJ5gtwLyf5lQt9HBrgzhlbYvptXyw0vtQdeMZAY9UE5fc0nAPxLiQKcrbdxjBnXpg8LZ/XzgAWacwQ+O95kPJ+LYd5k2MpoAAAA='},
+  {n:'بانک کارآفرین', c:'#EF6C00', logo:'data:image/webp;base64,UklGRvQDAABXRUJQVlA4IOgDAABwFQCdASpgAEAAPj0ai0OiIaEWqZ20IAPEsgBovsb/QNNU7N5k9M/puLR8x+LP1AeYB+qXSA8wHQf9Bf+l9Slz7Hs5/tZXYOFdq2Rz44CVcjFfG59D+wX+rHWU/YD2Hv1vR4ICuojrL0wzaxUbfxeHvFrBxSULymrVsaXAaHbR7M1PYga1OrIqLsmtiTb1qhA5LFoSJlx5vDxbgtcBvrc1FBBu+5J8oGNLPyCDVDSTLSEzQLgA/v4kYaHWj7pzWheIUI9NnN44DWTP9gr+TfJX/iThxvJ7O5THmWrxC6mZG3jkOz9XN6TY2wmSm/mK2ZL4uR7qaF8HCoiHo6u7SV448OPcoyiF5Y9LBxiMv8Abi+MlQb/ezGHbZ6N216bxx7Xr+XuNlKG3Xo+nl5cHs7/93eAzdP7wFEt4AcsV5UA6lnqrzgfsJdespVjrlxONK81xgMfmL86ImVZUD4GdNvAbp6lxqC6djw8aX077NSHQ8FZg8Nc3uvpLgSdXo13A0NNkJLX21e4799b1hYWwM8iEvJ81z1j8zIcVmCT/1iHey96rcAViwtp00uemXjQrxOyNdL5jZ7Ch9ul/RmflWMn4Ho7+w/u335pH7Rj7t66eFlFoYJIH3qrdzh338Gv0stRXIoUl/rn9Cp/E86pNzyrlTU259SaTn5GMFCW0ZRMNxv6xAp8f4NiozH5UJiWw4E75Gv5jVfaEUCrJj1UpjbHs87S13+dcussrIi9GxuRCpJ+1uEatz10cEgv+q+nyjpFgkVKFdjFo82MTJJvuYR5/MZtP18TJgSDXSSn2l8cIv1bxw4/sBMpEGP+wqEMQc9sqWWAJHVFnzUQq3BH8RKSP0Q/cJygFV3zlgB+p08qgHrN9ks57WRUj7QPoH8V0HCjP1ZsK2eW2hjeLczr/+X6PEcqDOc0bR04kjBEbHL6VIfUnCLAgTPsxvKoTlywhOM182eQZz12iRit4eRyzISnZ2EEUZE1HW+J0QC6M4X7bDDyOatkooMlGoOb0ZOXrY5D7Qs+cgZbm0+3PFvwAIS3v+W//S0xqtlS585RlrtNhBH/f7pcn+3m20fzptuJqVuSunXJQFIus2VBHsRVUebb9JPbjRhzAr0xpgENHqkdIHXsI3Dspu/XgtRAou9p5TLSjnjqTo/NowjIZw8nRR/kyFTYVHUzLC8+ag54aj6ZFvKF9AAml7tUR7pT4K57lGf/2v347TCyNfLP04HTfzuT7wZQlHGlbJbElpZSw71x/OTjHxnB1sBEA7DWE5Fs4fgL745XPmaeMkHkOJtIn8d/NBjAsdm19Mxx8+EB6HFf9TokQwgmiAAAA'},
+  {n:'بلوبانک', c:'#0091EA'},
+  {n:'بانک تجارت‌بلک', c:'#455A64'},
+  {n:'بانک مرکزی', c:'#283593', logo:'data:image/webp;base64,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'},
+  {n:'بانک انصار', c:'#C62828', logo:'data:image/webp;base64,UklGRrwEAABXRUJQVlA4ILAEAABwGgCdASpgAFIAPj0aiUMiIaEYfKQ8IAPEswBqJoAav9zD8Y/YTqD9D+9P5QZk9yB/i/vD+AHqA8wD9KP9F1JPMB+u/rq+ir/W+oB/UuoA58j91fhK/dD9mfZ3//8X+MA7AnG1rcmPeK/8q/1XsB/rL1cf2q9jH9WkPArjWvuzZPH6vFZuOknUnjgVOZjizjQ87P/6y7qPZo1Rf0O3CXob4EOZUGsGfOfqFoqGQqmlo6n7KPZT6Uy2NEnU0F8cgJQLcGuNmTzY9IOR8TnfMjBdkYJFetJm7E0tsNJwAP7+njGjMNAgHKZjWMULeKY8zmf15mwhJPfwxN3m9U6ZJxXhsgzSiVDrCEwWgqhwDKDhDSXMwPBcswwn0KntVv3s8+48+8tt6Fk7ppEPkTP5pTkMNu/Oi4qbdD+xe/oWBfccfBRunyFj2//39ed7GTzUY+cT+X6kdVY0tTInROOVjxocXIDewMT9/5uL8X46R+X5YxEgr/4TaEw4gXoAq12PK/e6MCYyGxiMb21Ghkf/k2q+hEynQLj9Jb4j+neruA6uPPzV8eg0Nw/LPkbNOxn+og/Qhx7pYbNsxF7EtV/MvvlOSjNwvuYcL9RRV9ianSytkDHM/BYDzxoqZ0UG5g8+9Q8FWyPkfmigVWxh24lf74S28ZMot07ydoCVdqxA0r35j3krA/D1hTFY6hFB7hYTf1i5Rj30Xa19ngjc91gnGpOCcTaK5p8BgkVa79mAGJ2cchbntQoMMccUcmvUglFOpfsKFyvwjGEzQ/tkmRIYKbn/k1pZATqQGNN5WsBSFnGC7vd7fab8r9ptzBehPovDtW/DpT0lU5iUSHPgSC6Ic19vNGxqxK2EaSKQXzA9x56s1VOuY2HYwsk6tLcFf2OsOrV2hqYNxcNPWvfmLM6sDp7HEBovg5ESdVJ4CE6u4Rc0x7zKSGocKtNJQJjZNojpEpLfih9Whz22y402j6dtrgt9tfhg7gxg39XS/QGil/m68oQd1+3w6Qx170NA1X/uVY5/zulr2A7bFL9RSbEpP+YH66uSjzu609gipR9vp4lWlkpx6U0bFYu6bMuE61xjcJd+g+FUqViWBTgIBq+tR4QzqsQkE028Z9klqirp0DKWRTr6FbbAtPAlDslz7uItWTLQ9PsIor6+ANjk31z4mbpjtZ66FN1aN8//8nhqriUfoy/FEBPFMhSNQzzZlfcvWB9tHjp5r2no1tdMmcsPUpMDR2h6LQnluG4vAlt3fkv9f0MKoTzKaRFdL6ksQDgiIm7Z25xnCtVmjQA8gxBhzktvq2zy0BzHOkBD/18lp4pE7SxgyuWnV4ZrBQfqYnq4IbZFn8604LZTP6ntGdtYfMHDWYsiCeyAiRpEaHWIaBL//g6B/dx1dwJN+ekSkATFZnJ02vp/544zJF/XfCksnG/K/pZFYJoRI5aMvY/YtKXzNMXTzufczl6+ZPxcXx1rTLHBEeBEIz64lZo3FCdKANz87xyQ37V3NRiIPwq2TAkx267ibiWgAJnr6fgXD2GQtYHaj5nmVSCXY9Bj4u4ugMM5wsub/S2csMHvShmqgfKzGaaPeEirl7lhgAADcywAAAA='},
+  {n:'موسسه اعتباری آرمان', c:'#8D6E63', logo:'data:image/webp;base64,UklGRmwEAABXRUJQVlA4IGAEAACQGACdASpgAFEAPj0ejESiIaESPM0oIAPEoA1mnsOQ/u/FP7ovoXAnMHjN9QHiXd…
