@@ -40,10 +40,10 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .view{ display:none; } .view.active{ display:block; animation:viewEnter .35s cubic-bezier(.22,1,.36,1); }
 @keyframes viewEnter{ from{opacity:0; transform:translateY(10px) scale(.985);} to{opacity:1; transform:none;} }
 
-.card{ background:var(--surface); border:1px solid var(--line); border-radius:13px; padding:11px; margin-bottom:10px; transition:background .3s; }
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:9px; padding:8px; margin-bottom:7px; transition:background .3s; }
 .label{ font-size:11.5px; color:var(--muted); margin-bottom:7px; font-weight:600; }
 .num-input{ width:100%; background:transparent; border:none; outline:none; color:var(--text); font-family:inherit; font-size:21px; font-weight:800; direction:ltr; text-align:right; letter-spacing:.5px; }
-.amount-box{ background:var(--surface-2); border:1.5px solid var(--primary-dim); border-radius:10px; padding:7px 9px; display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+.amount-box{ background:var(--surface-2); border:1.5px solid var(--primary-dim); border-radius:7px; padding:5px 6px; display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
 .amount-box:focus-within{ border-color:var(--primary); box-shadow:0 0 0 3px rgba(45,216,184,.15); }
 .unit-badge{ color:var(--muted); font-size:10px; font-weight:600; background:none; padding:0; }
 .sub-note{ font-size:10px; color:var(--muted); margin-top:5px; }
@@ -53,12 +53,12 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .slider::-webkit-slider-thumb{ -webkit-appearance:none; width:19px; height:19px; border-radius:50%; background:var(--primary); border:3px solid var(--bg); box-shadow:0 2px 8px rgba(45,216,184,.4); cursor:pointer; }
 
 .chips{ display:flex; gap:7px; flex-wrap:wrap; }
-.chip{ padding:4px 7px; border-radius:7px; background:var(--surface-2); font-size:11px; font-weight:600; color:var(--muted); border:1px solid transparent; cursor:pointer; }
+.chip{ padding:3px 5px; border-radius:5px; background:var(--surface-2); font-size:10.5px; font-weight:600; color:var(--muted); border:1px solid transparent; cursor:pointer; }
 .chip.sel{ background:rgba(45,216,184,.14); color:var(--primary); border-color:var(--primary-dim); }
-.chip.small{ padding:3px 6px; font-size:10px; }
+.chip.small{ padding:2px 4px; font-size:9.5px; }
 
 .preset-scroll{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:4px; }
-.preset-card{ min-width:86px; background:var(--surface-2); border-radius:11px; padding:10px 8px; text-align:center; cursor:pointer; border:1px solid transparent; flex-shrink:0; }
+.preset-card{ min-width:60px; background:var(--surface-2); border-radius:8px; padding:7px 6px; text-align:center; cursor:pointer; border:1px solid transparent; flex-shrink:0; }
 .preset-card.sel{ border-color:var(--primary-dim); background:rgba(45,216,184,.1); }
 .preset-card .ic{ margin-bottom:6px; display:flex; justify-content:center; color:var(--primary); }
 .preset-card .ic svg{ width:22px; height:22px; }
@@ -66,15 +66,15 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .preset-card .s{ font-size:9.5px; color:var(--muted); margin-top:2px; }
 
 .date-row{ display:flex; gap:8px; }
-.date-select{ flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:7px 5px; color:var(--text); font-family:inherit; font-size:12.5px; text-align:center; }
+.date-select{ flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:5px 4px; color:var(--text); font-family:inherit; font-size:12px; text-align:center; }
 
 .grid2{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
-.bank-item{ display:flex; align-items:center; gap:6px; background:var(--surface-2); border-radius:10px; padding:6px 8px; cursor:pointer; border:1px solid transparent; }
+.bank-item{ display:flex; align-items:center; gap:4px; background:var(--surface-2); border-radius:7px; padding:4px 6px; cursor:pointer; border:1px solid transparent; }
 .bank-item.sel{ border-color:var(--primary-dim); background:rgba(45,216,184,.1); }
 .bank-badge{ width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; flex-shrink:0; }
 .bank-name{ font-size:11.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-.text-input{ width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:6px 7px; color:var(--text); font-family:inherit; font-size:12px; outline:none; }
+.text-input{ width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:4px 5px; color:var(--text); font-family:inherit; font-size:12px; outline:none; }
 
 .toggle-row{ display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
 .toggle{ width:35px; height:21px; border-radius:16px; background:var(--surface-2); position:relative; flex-shrink:0; transition:.2s; }
@@ -100,21 +100,24 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .dot{ width:9px; height:9px; border-radius:50%; }
 
 .stat-row{ display:flex; gap:8px; margin-bottom:14px; }
-.stat{ flex:1; background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:8px 5px; text-align:center; }
+.stat{ flex:1; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:6px 4px; text-align:center; }
 .stat .v{ font-size:13px; font-weight:800; } .stat .k{ font-size:10px; color:var(--muted); margin-top:4px; }
 
-.table-wrap{ background:var(--surface); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
-.trow-simple{ display:grid; grid-template-columns:1fr 1.4fr 0.8fr; padding:11px 10px; font-size:13px; border-bottom:1px solid var(--line); align-items:center; text-align:center; cursor:pointer; }
+.table-wrap{ background:var(--surface); border:1px solid var(--line); border-radius:11px; overflow:hidden; }
+.trow-simple{ display:grid; grid-template-columns:0.7fr 0.95fr 0.95fr 0.7fr; padding:8px 6px; font-size:12px; border-bottom:1px solid var(--line); align-items:center; text-align:center; cursor:pointer; gap:3px; }
 .trow-simple.head{ color:var(--muted); font-weight:700; background:rgba(255,255,255,.02); cursor:default; font-size:11.5px; }
 .trow-simple:active{ background:var(--surface-2); }
-.status-pill{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-block; }
+.status-pill{ font-size:10px; font-weight:700; padding:2px 5px; border-radius:5px; display:inline-block; }
+.inst-amt-box{ background:var(--surface-2); border-radius:5px; padding:2px 4px; display:inline-flex; flex-direction:column; align-items:center; gap:1px; max-width:100%; }
+.inst-amt-num{ font-size:10px; font-weight:700; white-space:nowrap; }
+.inst-amt-words{ font-size:7.5px; color:var(--muted); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 .status-pill.paid{ background:rgba(45,216,184,.14); color:var(--primary); }
 .status-pill.unpaid{ background:rgba(124,135,162,.14); color:var(--muted); }
 .status-pill.late{ background:rgba(229,107,111,.14); color:var(--danger); }
 
 .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:100; display:none; align-items:flex-end; justify-content:center; }
 .modal-backdrop.open{ display:flex; }
-.modal-sheet{ width:100%; max-width:460px; background:var(--surface); border-radius:19px 19px 0 0; padding:11px 16px 21px; animation:slideUp .25s ease; }
+.modal-sheet{ width:100%; max-width:460px; background:var(--surface); border-radius:13px 13px 0 0; padding:8px 11px 15px; animation:slideUp .25s ease; }
 @keyframes slideUp{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
 .modal-handle{ width:40px; height:4px; background:var(--surface-2); border-radius:4px; margin:0 auto 16px; }
 .modal-sheet h3{ font-size:16px; font-weight:800; margin:0 0 14px; text-align:center; }
@@ -146,11 +149,11 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 }
 .summary-bar{ display:flex; justify-content:space-between; padding:10px 11px; background:var(--surface-2); font-size:12px; font-weight:700; margin-top:12px; border-radius:11px; }
 
-.late-card{ background:var(--surface); border:1px dashed var(--danger); border-radius:13px; padding:11px; margin-top:14px; }
+.late-card{ background:var(--surface); border:1px dashed var(--danger); border-radius:9px; padding:8px; margin-top:14px; }
 .late-card .title{ font-size:12.5px; font-weight:800; color:var(--danger); margin-bottom:10px; }
 .late-result{ margin-top:10px; text-align:center; font-size:13px; font-weight:700; color:var(--danger); }
 
-.loan-card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px; margin-bottom:12px; cursor:pointer; }
+.loan-card{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px; margin-bottom:8px; cursor:pointer; }
 .add-manual-card{ border:1.5px dashed var(--primary-dim); background:rgba(45,216,184,.05); text-align:center; }
 .loan-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
 .loan-name{ font-weight:800; font-size:14px; } .loan-sub{ color:var(--muted); font-size:11px; margin-top:4px; }
@@ -172,6 +175,19 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 
 .notif-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); }
 .notif-row:last-child{ border-bottom:none; }
+
+.account-card{ display:flex; align-items:center; gap:10px; }
+.account-avatar{ width:42px; height:42px; border-radius:50%; background:var(--primary-dim); color:#04211C; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; flex-shrink:0; }
+.account-avatar.guest{ background:var(--surface-2); color:var(--muted); }
+.account-info{ flex:1; min-width:0; }
+.account-name{ font-weight:800; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.account-status{ font-size:10.5px; color:var(--muted); margin-top:2px; }
+.account-action{ font-size:11.5px; font-weight:700; color:var(--primary); background:none; border:none; font-family:inherit; cursor:pointer; padding:5px 8px; flex-shrink:0; }
+.settings-item{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; }
+.settings-item:not(:last-child){ border-bottom:1px solid var(--line); }
+.settings-item .si-label{ font-weight:700; font-size:13px; }
+.settings-item .si-arrow{ color:var(--muted); font-size:14px; }
+.logout-btn{ width:100%; padding:9px; border-radius:10px; border:1.5px solid var(--danger); background:transparent; color:var(--danger); font-family:inherit; font-size:13px; font-weight:800; cursor:pointer; margin-top:6px; }
 
 /* ---------- SPLASH / INTRO ---------- */
 #splash{
@@ -344,6 +360,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
           <input type="text" inputmode="numeric" class="num-input" id="affordPay" value="100,000,000" style="font-size:24px;">
           <span class="unit-badge">ریال</span>
         </div>
+        <div class="words-line" id="affordPayWords"></div>
         <input type="range" class="slider" id="affordPaySlider" min="10000000" max="500000000" step="5000000" value="100000000">
         <div class="sub-note">بازه اسلایدر: ۱۰ تا ۵۰۰ میلیون ریال — برای اعداد خارج از بازه، مستقیم تایپ کن</div>
       </div>
@@ -389,11 +406,13 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
           <input type="text" inputmode="numeric" class="num-input" id="rateFindAmount" style="font-size:20px;">
           <span class="unit-badge">مبلغ وام (ریال)</span>
         </div>
+        <div class="words-line" id="rateFindAmountWords"></div>
         <input type="range" class="slider" id="rateFindAmountSlider" min="100000000" max="10000000000" step="50000000" value="100000000">
         <div class="amount-box" style="margin-top:8px;">
           <input type="text" inputmode="numeric" class="num-input" id="rateFindInstallment" style="font-size:20px;">
           <span class="unit-badge">مبلغ هر قسط (ریال)</span>
         </div>
+        <div class="words-line" id="rateFindInstallmentWords"></div>
         <input type="range" class="slider" id="rateFindInstallmentSlider" min="1000000" max="200000000" step="1000000" value="1000000">
         <div class="amount-box" style="margin-top:8px;">
           <input type="text" inputmode="numeric" class="num-input" id="rateFindMonths" value="36" style="font-size:20px;">
@@ -443,7 +462,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
     <div class="view" id="view-table">
       <div class="back-row"><div class="icon-btn" onclick="showView('view-result')">→</div><h2>جدول اقساط</h2></div>
       <div class="table-wrap">
-        <div class="trow-simple head"><span>شماره قسط</span><span>تاریخ سررسید</span><span>وضعیت</span></div>
+        <div class="trow-simple head"><span>شماره قسط</span><span>تاریخ سررسید</span><span>مبلغ</span><span>وضعیت</span></div>
         <div class="table-scroll" id="tableBody"></div>
       </div>
       <div class="summary-bar"><span>مجموع پرداختی</span><span id="tableTotal" style="color:var(--primary)">-</span></div>
@@ -506,6 +525,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
           <input type="text" inputmode="numeric" class="num-input" id="depositAmount" value="2,500,000,000" style="font-size:24px;">
           <span class="unit-badge">ریال</span>
         </div>
+        <div class="words-line" id="depositAmountWords"></div>
         <input type="range" class="slider" id="depositAmountSlider" min="100000000" max="10000000000" step="50000000" value="2500000000">
         <div class="sub-note">بازه اسلایدر: ۱۰۰ میلیون تا ۱۰ میلیارد ریال — برای اعداد خارج از بازه، مستقیم تایپ کن</div>
       </div>
@@ -570,6 +590,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
           <input type="text" inputmode="numeric" class="num-input" id="manualInstallment" placeholder="0" style="font-size:24px;">
           <span class="unit-badge">ریال</span>
         </div>
+        <div class="words-line" id="manualInstallmentWords"></div>
         <input type="range" class="slider" id="manualInstallmentSlider" min="10000000" max="500000000" step="5000000" value="50000000">
         <div class="sub-note">بازه اسلایدر: ۱۰ تا ۵۰۰ میلیون ریال — برای اعداد خارج از بازه، مستقیم تایپ کن</div>
       </div>
@@ -604,6 +625,16 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
     <div class="view" id="view-settings">
       <div class="back-row"><div class="icon-btn" onclick="switchTab('calc')">→</div><h2>تنظیمات</h2></div>
 
+      <!-- ACCOUNT CARD -->
+      <div class="card account-card" id="accountCard">
+        <div class="account-avatar guest" id="accountAvatar">؟</div>
+        <div class="account-info">
+          <div class="account-name" id="accountName">ورود به حساب انجام نشده</div>
+          <div class="account-status" id="accountStatus">برای همگام‌سازی و یادآوری‌ها وارد شو</div>
+        </div>
+        <button class="account-action" id="accountActionBtn" onclick="handleAccountAction()">ورود</button>
+      </div>
+
       <div class="card">
         <div class="label">اندازه فونت</div>
         <div class="chips" id="fontSizeChips">
@@ -630,6 +661,48 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
       <div class="sub-note" style="line-height:1.9;">
         ⚠️ نکته: نوتیفیکیشن واقعی وقتی کار می‌کنه که اپ به‌صورت نصبی (نه تو مرورگر) رو گوشی نصب بشه. تو نسخه نهایی که برای بازار بسته‌بندی می‌کنیم، این بخش کاملاً فعال میشه.
       </div>
+
+      <!-- SECURITY / LOGIN OPTIONS -->
+      <div class="card">
+        <div class="label">امنیت و ورود</div>
+        <div class="notif-row">
+          <div><div style="font-weight:700; font-size:13px;">قفل با اثر انگشت</div><div class="loan-sub">باز کردن اپ با اثر انگشت گوشی</div></div>
+          <div class="toggle" id="fingerprintToggle" onclick="toggleFingerprint()"></div>
+        </div>
+        <div class="notif-row">
+          <div><div style="font-weight:700; font-size:13px;">ورود با جیمیل</div><div class="loan-sub">اتصال حساب گوگل برای پشتیبان‌گیری</div></div>
+          <div class="toggle" id="googleToggle" onclick="handleGoogleToggle()"></div>
+        </div>
+      </div>
+      <div class="sub-note" style="line-height:1.9;">
+        ⚠️ نکته: قفل اثر انگشت و ورود با جیمیل نیاز به افزونه‌ی نیتیو دارن که در نسخه نهایی بازار فعال می‌شن؛ فعلاً این بخش به‌صورت نمایشی کار می‌کنه.
+      </div>
+
+      <!-- FEEDBACK -->
+      <div class="card">
+        <div class="label">نظرات و مشکلات</div>
+        <div class="loan-sub" style="margin-bottom:8px;">مشکلی دیدی یا پیشنهادی داری؟ بگو تا بهتر بشه</div>
+        <textarea class="text-input" id="feedbackText" rows="3" placeholder="نظر یا مشکل خودت رو بنویس..."></textarea>
+        <button class="cta ghost" style="margin-top:8px;" onclick="submitFeedback()">ارسال نظر</button>
+      </div>
+
+      <!-- ABOUT -->
+      <div class="card">
+        <div class="settings-item" onclick="toggleAbout()">
+          <span class="si-label">درباره برنامه</span>
+          <span class="si-arrow">▾</span>
+        </div>
+        <div class="grace-box" id="aboutBox">
+          <div class="sub-note" style="line-height:1.9; margin-top:6px;">
+            محاسبه‌گر اقساط — بتا ۲<br>
+            این اپ برای محاسبه سریع و شفاف اقساط وام، سود سپرده و برنامه‌ریزی مالی طراحی شده.<br>
+            Powered By Sad Team
+          </div>
+        </div>
+      </div>
+
+      <!-- LOGOUT -->
+      <button class="logout-btn" onclick="handleLogout()">خروج از حساب</button>
     </div>
   </main>
 
@@ -648,6 +721,17 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
       <input type="text" class="text-input" id="nameModalInput" style="margin-top:6px;" placeholder="اسم وام">
       <button class="cta" style="margin-top:16px" onclick="confirmNameModal()">ذخیره کن</button>
       <button class="cta ghost" onclick="closeNameModal()">انصراف</button>
+    </div>
+  </div>
+
+  <!-- GOOGLE LOGIN MODAL (mock) -->
+  <div class="modal-backdrop" id="loginModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <h3>ورود با جیمیل</h3>
+      <input type="email" class="text-input" id="loginEmailInput" style="margin-top:6px;" placeholder="you@gmail.com">
+      <button class="cta" style="margin-top:16px" onclick="confirmLogin()">ورود</button>
+      <button class="cta ghost" onclick="closeLoginModal()">انصراف</button>
     </div>
   </div>
 
@@ -1020,13 +1104,20 @@ function renderResultUI(result){
 
 const manualInstallmentInput = document.getElementById('manualInstallment');
 const manualInstallmentSlider = document.getElementById('manualInstallmentSlider');
+function updateManualInstallmentWords(){
+  const rialVal = Number(cleanNum(manualInstallmentInput.value)) || 0;
+  const tomanVal = Math.round(rialVal / 10);
+  document.getElementById('manualInstallmentWords').textContent = tomanVal > 0 ? `${numberToWordsFa(tomanVal)} تومان` : '';
+}
 manualInstallmentInput.addEventListener('input', ()=>{
   let raw = cleanNum(manualInstallmentInput.value);
   manualInstallmentInput.value = raw ? Number(raw).toLocaleString('en-US') : '';
   if(raw && Number(raw) <= Number(manualInstallmentSlider.max)) manualInstallmentSlider.value = raw;
+  updateManualInstallmentWords();
 });
 manualInstallmentSlider.addEventListener('input', ()=>{
   manualInstallmentInput.value = Number(manualInstallmentSlider.value).toLocaleString('en-US');
+  updateManualInstallmentWords();
 });
 
 const manualTotalCountInput = document.getElementById('manualTotalCount');
@@ -1122,6 +1213,7 @@ function renderTable(result){
     <div class="trow-simple" onclick="openDetail(${idx})">
       <span>قسط ${toFa(r.m)}</span>
       <span>${dateLabel}</span>
+      <span><span class="inst-amt-box"><span class="inst-amt-num">${fmt(r.installment)} ریال</span><span class="inst-amt-words">${numberToWordsFa(r.installment/10)} تومان</span></span></span>
       <span><span class="status-pill ${r.paid?'paid':'unpaid'}" id="pill-${idx}">${r.paid?'پرداخت‌شده ✓':'در انتظار'}</span></span>
     </div>`;
   }).join('');
@@ -1244,6 +1336,90 @@ function showToast(msg){
   clearTimeout(showToast._timer);
   showToast._timer = setTimeout(()=>{ t.classList.remove('show'); }, 2600);
 }
+
+/* ================= ACCOUNT (mock google login, stored locally) ================= */
+let account = null;
+function loadAccount(){
+  try{ account = JSON.parse(localStorage.getItem('user_account') || 'null'); }
+  catch(e){ account = null; }
+}
+function renderAccountUI(){
+  const avatar = document.getElementById('accountAvatar');
+  const nameEl = document.getElementById('accountName');
+  const statusEl = document.getElementById('accountStatus');
+  const actionBtn = document.getElementById('accountActionBtn');
+  const googleToggle = document.getElementById('googleToggle');
+  if(account){
+    avatar.textContent = account.name.slice(0,1).toUpperCase();
+    avatar.classList.remove('guest');
+    nameEl.textContent = account.name;
+    statusEl.textContent = account.email;
+    actionBtn.style.display = 'none';
+    googleToggle.classList.add('on');
+  } else {
+    avatar.textContent = '؟';
+    avatar.classList.add('guest');
+    nameEl.textContent = 'ورود به حساب انجام نشده';
+    statusEl.textContent = 'برای همگام‌سازی و یادآوری‌ها وارد شو';
+    actionBtn.style.display = 'inline-block';
+    actionBtn.textContent = 'ورود';
+    googleToggle.classList.remove('on');
+  }
+}
+function handleAccountAction(){ if(!account) openLoginModal(); }
+function handleGoogleToggle(){ if(account) handleLogout(); else openLoginModal(); }
+function openLoginModal(){
+  document.getElementById('loginEmailInput').value = '';
+  document.getElementById('loginModal').classList.add('open');
+  setTimeout(()=> document.getElementById('loginEmailInput').focus(), 300);
+}
+function closeLoginModal(){ document.getElementById('loginModal').classList.remove('open'); }
+function confirmLogin(){
+  const email = document.getElementById('loginEmailInput').value.trim();
+  if(!email || !email.includes('@')){ showToast('یه ایمیل معتبر وارد کن'); return; }
+  account = { name: email.split('@')[0], email };
+  try{ localStorage.setItem('user_account', JSON.stringify(account)); }catch(e){}
+  renderAccountUI();
+  closeLoginModal();
+  showToast('با موفقیت وارد شدی');
+}
+function handleLogout(){
+  if(!account){ showToast('قبلاً وارد نشدی'); return; }
+  account = null;
+  try{ localStorage.removeItem('user_account'); }catch(e){}
+  renderAccountUI();
+  showToast('از حساب خارج شدی');
+}
+loadAccount();
+renderAccountUI();
+
+/* ================= FINGERPRINT LOCK (UI toggle, stored locally) ================= */
+function toggleFingerprint(){
+  const t = document.getElementById('fingerprintToggle');
+  t.classList.toggle('on');
+  try{ localStorage.setItem('fp_lock', t.classList.contains('on') ? '1' : '0'); }catch(e){}
+  showToast(t.classList.contains('on') ? 'قفل اثر انگشت فعال شد' : 'قفل اثر انگشت غیرفعال شد');
+}
+(function(){
+  try{ if(localStorage.getItem('fp_lock') === '1') document.getElementById('fingerprintToggle').classList.add('on'); }
+  catch(e){}
+})();
+
+/* ================= FEEDBACK ================= */
+function submitFeedback(){
+  const txt = document.getElementById('feedbackText').value.trim();
+  if(!txt){ showToast('یه متن بنویس'); return; }
+  try{
+    const list = JSON.parse(localStorage.getItem('feedback_list') || '[]');
+    list.push({ text: txt, date: new Date().toISOString() });
+    localStorage.setItem('feedback_list', JSON.stringify(list));
+  }catch(e){}
+  document.getElementById('feedbackText').value = '';
+  showToast('ممنون! نظرت ثبت شد');
+}
+
+/* ================= ABOUT ================= */
+function toggleAbout(){ document.getElementById('aboutBox').classList.toggle('open'); }
 
 /* ---- name modal (replaces prompt()) ---- */
 let nameModalCallback = null;
@@ -1410,14 +1586,22 @@ affordMonthsSlider.addEventListener('input', ()=>{
 
 const affordPayInput = document.getElementById('affordPay');
 const affordPaySlider = document.getElementById('affordPaySlider');
+function updateAffordPayWords(){
+  const rialVal = Number(cleanNum(affordPayInput.value)) || 0;
+  const tomanVal = Math.round(rialVal / 10);
+  document.getElementById('affordPayWords').textContent = tomanVal > 0 ? `${numberToWordsFa(tomanVal)} تومان` : '';
+}
 affordPayInput.addEventListener('input', ()=>{
   let raw = cleanNum(affordPayInput.value);
   affordPayInput.value = raw ? Number(raw).toLocaleString('en-US').replace(/,/g,',') : '';
   if(raw && Number(raw) <= Number(affordPaySlider.max)) affordPaySlider.value = raw;
+  updateAffordPayWords();
 });
 affordPaySlider.addEventListener('input', ()=>{
   affordPayInput.value = Number(affordPaySlider.value).toLocaleString('en-US').replace(/,/g,',');
+  updateAffordPayWords();
 });
+updateAffordPayWords();
 
 const affordRateInput = document.getElementById('affordRate');
 const affordRateSlider = document.getElementById('affordRateSlider');
@@ -1454,17 +1638,29 @@ function calculateAffordability(){
   const rfMonths = document.getElementById('rateFindMonths');
   const rfMonthsSlider = document.getElementById('rateFindMonthsSlider');
 
+  function updateRfAmountWords(){
+    const rialVal = Number(cleanNum(rfAmount.value)) || 0;
+    const tomanVal = Math.round(rialVal / 10);
+    document.getElementById('rateFindAmountWords').textContent = tomanVal > 0 ? `${numberToWordsFa(tomanVal)} تومان` : '';
+  }
+  function updateRfInstallmentWords(){
+    const rialVal = Number(cleanNum(rfInstallment.value)) || 0;
+    const tomanVal = Math.round(rialVal / 10);
+    document.getElementById('rateFindInstallmentWords').textContent = tomanVal > 0 ? `${numberToWordsFa(tomanVal)} تومان` : '';
+  }
   rfAmount.addEventListener('input', ()=>{
     let raw = cleanNum(rfAmount.value);
     if(raw){ rfAmount.value = Number(raw).toLocaleString('en-US'); if(Number(raw) <= Number(rfAmountSlider.max)) rfAmountSlider.value = raw; }
+    updateRfAmountWords();
   });
-  rfAmountSlider.addEventListener('input', ()=>{ rfAmount.value = Number(rfAmountSlider.value).toLocaleString('en-US'); });
+  rfAmountSlider.addEventListener('input', ()=>{ rfAmount.value = Number(rfAmountSlider.value).toLocaleString('en-US'); updateRfAmountWords(); });
 
   rfInstallment.addEventListener('input', ()=>{
     let raw = cleanNum(rfInstallment.value);
     if(raw){ rfInstallment.value = Number(raw).toLocaleString('en-US'); if(Number(raw) <= Number(rfInstallmentSlider.max)) rfInstallmentSlider.value = raw; }
+    updateRfInstallmentWords();
   });
-  rfInstallmentSlider.addEventListener('input', ()=>{ rfInstallment.value = Number(rfInstallmentSlider.value).toLocaleString('en-US'); });
+  rfInstallmentSlider.addEventListener('input', ()=>{ rfInstallment.value = Number(rfInstallmentSlider.value).toLocaleString('en-US'); updateRfInstallmentWords(); });
 
   rfMonths.addEventListener('input', ()=>{
     let raw = cleanNum(rfMonths.value);
@@ -1510,14 +1706,22 @@ document.querySelectorAll('#depositMonthChips .chip').forEach(c=>{
 
 const depositAmountInput = document.getElementById('depositAmount');
 const depositAmountSlider = document.getElementById('depositAmountSlider');
+function updateDepositAmountWords(){
+  const rialVal = Number(cleanNum(depositAmountInput.value)) || 0;
+  const tomanVal = Math.round(rialVal / 10);
+  document.getElementById('depositAmountWords').textContent = tomanVal > 0 ? `${numberToWordsFa(tomanVal)} تومان` : '';
+}
 depositAmountInput.addEventListener('input', ()=>{
   let raw = cleanNum(depositAmountInput.value);
   depositAmountInput.value = raw ? Number(raw).toLocaleString('en-US') : '';
   if(raw && Number(raw) <= Number(depositAmountSlider.max)) depositAmountSlider.value = raw;
+  updateDepositAmountWords();
 });
 depositAmountSlider.addEventListener('input', ()=>{
   depositAmountInput.value = Number(depositAmountSlider.value).toLocaleString('en-US');
+  updateDepositAmountWords();
 });
+updateDepositAmountWords();
 
 const depositRateInput = document.getElementById('depositRate');
 const depositRateSlider = document.getElementById('depositRateSlider');
