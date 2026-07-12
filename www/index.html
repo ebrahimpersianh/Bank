@@ -937,19 +937,19 @@ const banks = [
   {n:'بانک گردشگری', c:'#C62828', logo:'icons/banks/gardeshgari.png'},
   {n:'بانک کارآفرین', c:'#EF6C00', logo:'icons/banks/karafarin.png'},
   {n:'بلوبانک', c:'#0091EA'},
-  {n:'بانک مرکزی', c:'#283593', logo:'icons/banks/markazi.webp'},
-  {n:'موسسه اعتباری آرمان', c:'#8D6E63', logo:'icons/banks/arman.webp'},
-  {n:'موسسه اعتباری ملل', c:'#1565C0', logo:'icons/banks/melal.webp'},
-  {n:'بانک صنعت و معدن', c:'#8D6E63', logo:'icons/banks/sanat-madan.webp'},
+  {n:'بانک مرکزی', c:'#283593', logo:'icons/banks/markazi.png'},
+  {n:'موسسه اعتباری آرمان', c:'#8D6E63', logo:'icons/banks/arman.png'},
+  {n:'موسسه اعتباری ملل', c:'#1565C0', logo:'icons/banks/melal.png'},
+  {n:'بانک صنعت و معدن', c:'#8D6E63', logo:'icons/banks/sanat-madan.png'},
   {n:'بانک سرمایه', c:'#37474F', logo:'icons/banks/sarmayeh.png'},
   {n:'بانک سینا', c:'#0D47A1', logo:'icons/banks/sina.png'},
-  {n:'بانک توسعه تعاون', c:'#00838F', logo:'icons/banks/tosee-taavon.webp'},
+  {n:'بانک توسعه تعاون', c:'#00838F', logo:'icons/banks/tosee-taavon.png'},
   {n:'بانک توسعه صادرات ایران', c:'#2E7D32', logo:'icons/banks/tosee-saderat.png'},
-  {n:'موسسه اعتباری توسعه', c:'#8D2F2F', logo:'icons/banks/tosee-credit.webp'},
-  {n:'بانک خاورمیانه', c:'#F57F17', logo:'icons/banks/khavarmianeh.webp'},
+  {n:'موسسه اعتباری توسعه', c:'#8D2F2F', logo:'icons/banks/tosee-credit.png'},
+  {n:'بانک خاورمیانه', c:'#F57F17', logo:'icons/banks/khavarmianeh.png'},
   {n:'بانک رسالت', c:'#00838F', logo:'icons/banks/resalat.png'},
   {n:'بانک ایران زمین', c:'#6A1B9A', logo:'icons/banks/iran-zamin.png'},
-  {n:'بانک مهر ایران', c:'#2E7D32', logo:'icons/banks/mehr-iran.webp'},
+  {n:'بانک مهر ایران', c:'#2E7D32', logo:'icons/banks/mehr-iran.png'},
 ];
 const creditServices = [
   {n:'دیجی‌پی (خرید اقساطی)', c:'#E53935', rate:23, months:12, min:100000000, max:500000000, logo:'icons/services/digipay.png'},
@@ -1120,16 +1120,23 @@ function computeLoan(P, annualRatePct, n, method, graceMonths, intervalDays){
     }
     totalPaid = installment * n; totalInterest = totalPaid - principal;
   } else if(method === 'qarz'){
-    /* قرض‌الحسنه: بدون سود مرکب. اصل به‌طور مساوی بین اقساط تقسیم می‌شود و فقط در
-       ابتدای هر سال (قسط ۱، ۱۳، ۲۵، ۳۷...) یک کارمزد سالانه روی مانده‌ی همان لحظه
-       جدا از قسط اصل اضافه می‌شود. */
-    const principalPart = principal / n;
+    /* قرض‌الحسنه: بدون سود مرکب. قسط‌های ۱، ۱۳، ۲۵، ۳۷... (ابتدای هر سال) کاملاً
+       اختصاص به کارمزد سالانه دارند (روی مانده‌ی همان لحظه) و اصل وام ندارند؛ اصل
+       وام فقط بین بقیه‌ی اقساط (اقساط غیرکارمزدی) مساوی تقسیم می‌شود. */
+    const feeInstallments = Math.ceil(n / 12);
+    const principalInstallments = n - feeInstallments;
+    const principalPart = principal / principalInstallments;
     let balance = principal, totalFee = 0;
     for(let m=1; m<=n; m++){
-      const feePart = ((m-1) % 12 === 0) ? balance * (annualRatePct/100) : 0;
-      totalFee += feePart;
-      balance -= principalPart;
-      rows.push({m, installment:principalPart+feePart, interest:feePart, principal:principalPart, balance:Math.max(balance,0), paid:false});
+      if((m-1) % 12 === 0){
+        const k = (m-1) / 12;
+        const feePart = (principal - k * 11 * principalPart) * (annualRatePct/100);
+        totalFee += feePart;
+        rows.push({m, installment:feePart, interest:feePart, principal:0, balance:Math.max(balance,0), paid:false});
+      } else {
+        balance -= principalPart;
+        rows.push({m, installment:principalPart, interest:0, principal:principalPart, balance:Math.max(balance,0), paid:false});
+      }
     }
     installment = principalPart; totalInterest = totalFee; totalPaid = principal + totalFee;
   } else {
