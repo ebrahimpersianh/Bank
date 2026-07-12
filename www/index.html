@@ -91,8 +91,9 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; overflow-x:hidden; }
 .date-row{ display:flex; gap:8px; }
 .date-select{ flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:5px 4px; color:var(--text); font-family:inherit; font-size:12px; text-align:center; }
 
-.grid2{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:10px 6px; }
-.bank-item{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; background:transparent; border-radius:12px; padding:4px 2px; cursor:pointer; border:1px solid transparent; min-width:0; transition:background .18s ease, border-color .18s ease, transform .12s ease; }
+.bank-group-label{ font-size:11px; color:var(--muted); font-weight:700; margin:6px 0 2px; }
+.bank-scroll{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; }
+.bank-item{ flex:0 0 78px; width:78px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; background:transparent; border-radius:12px; padding:4px 2px; cursor:pointer; border:1px solid transparent; transition:background .18s ease, border-color .18s ease, transform .12s ease; }
 .bank-item.sel{ border-color:var(--primary-dim); background:rgba(45,216,184,.1); }
 .bank-item:active{ transform:scale(.95); }
 .bank-badge{ width:54px; height:54px; border-radius:15px; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:800; color:#fff; flex-shrink:0; overflow:hidden; }
@@ -311,7 +312,7 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; overflow-x:hidden; }
 
       <div class="card">
         <div class="label">بانک یا سرویس اعتباری</div>
-        <div class="grid2" id="bankGrid"></div>
+        <div id="bankGrid"></div>
       </div>
 
       <div class="card">
@@ -1067,9 +1068,12 @@ const bankGrid = document.getElementById('bankGrid');
 let selectedBank = null;
 function renderBankGroup(list, label, isCredit){
   const header = document.createElement('div');
-  header.style.cssText = 'grid-column:1/-1; font-size:11px; color:var(--muted); font-weight:700; margin:6px 0 2px;';
+  header.className = 'bank-group-label';
   header.textContent = label;
   bankGrid.appendChild(header);
+  const scrollRow = document.createElement('div');
+  scrollRow.className = 'bank-scroll';
+  bankGrid.appendChild(scrollRow);
   list.forEach(b=>{
     const el = document.createElement('div');
     el.className = 'bank-item';
@@ -1091,7 +1095,7 @@ function renderBankGroup(list, label, isCredit){
         document.querySelectorAll('.preset-card').forEach(x=>x.classList.remove('sel'));
       }
     });
-    bankGrid.appendChild(el);
+    scrollRow.appendChild(el);
   });
 }
 renderBankGroup(banks, 'بانک‌ها', false);
