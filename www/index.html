@@ -938,6 +938,9 @@ const banks = [
   {n:'بانک کارآفرین', c:'#EF6C00', logo:'icons/banks/karafarin.png'},
   {n:'بلوبانک', c:'#0091EA'},
   {n:'بانک مرکزی', c:'#283593', logo:'icons/banks/markazi.png'},
+  {n:'بانک انصار', c:'#B71C1C', logo:'icons/banks/ansar.png'},
+  {n:'بانک آینده', c:'#3E2723', logo:'icons/banks/ayandeh.png'},
+  {n:'بانک حکمت ایرانیان', c:'#1976D2', logo:'icons/banks/hekmat.png'},
   {n:'موسسه اعتباری آرمان', c:'#8D6E63', logo:'icons/banks/arman.png'},
   {n:'موسسه اعتباری ملل', c:'#1565C0', logo:'icons/banks/melal.png'},
   {n:'بانک صنعت و معدن', c:'#8D6E63', logo:'icons/banks/sanat-madan.png'},
@@ -1205,7 +1208,7 @@ function renderResultUI(result){
   const interestPct = result.principal > 0 ? (result.totalInterest / result.principal * 100) : 0;
   document.getElementById('statInterestPct').textContent = toFa(interestPct.toFixed(interestPct < 10 ? 1 : 0)) + '٪';
 
-  const endDate = addDaysFa(lastStartDate, result.n * (result.intervalDays || 30));
+  const endDate = addDaysFa(lastStartDate, (result.graceMonths||0) * 30 + result.n * (result.intervalDays || 30));
   document.getElementById('statEndDate').textContent = `${toFa(endDate.d)} ${faMonths[endDate.m-1]} ${toFa(endDate.y)}`;
 
   const circumference = 2 * Math.PI * 52;
@@ -1319,6 +1322,7 @@ let currentDetailIdx = null;
 function renderTable(result){
   const body = document.getElementById('tableBody');
   let cursor = {...lastStartDate};
+  if(result.graceMonths > 0){ cursor = addDaysFa(cursor, result.graceMonths * 30); }
   const interval = result.intervalDays || 30;
   result.dueDates = [];
   body.innerHTML = result.rows.map((r,idx) => {
