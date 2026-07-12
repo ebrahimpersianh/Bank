@@ -103,9 +103,13 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; }
 .toggle.on::after{ background:var(--primary); right:17px; }
 .grace-box{ max-height:0; overflow:hidden; transition:max-height .3s cubic-bezier(.4,0,.2,1); } .grace-box.open{ max-height:200px; margin-top:12px; }
 
-.cta{ width:100%; padding:9px; border-radius:10px; border:none; background:var(--primary); color:#04211C; font-family:inherit; font-size:13px; font-weight:800; margin-top:5px; cursor:pointer; box-shadow:0 12px 24px -10px rgba(45,216,184,.4); transition:transform .15s ease, box-shadow .2s ease; }
+.cta{ width:100%; padding:9px; border-radius:10px; border:none; background:var(--primary); color:#04211C; font-family:inherit; font-size:13px; font-weight:800; margin-top:5px; cursor:pointer; box-shadow:0 12px 24px -10px rgba(45,216,184,.4); transition:transform .15s ease, box-shadow .2s ease, opacity .2s ease; }
 .cta.ghost{ background:transparent; color:var(--primary); border:1.5px solid var(--primary-dim); box-shadow:none; }
 .cta:active{ transform:scale(.97); }
+.cta.loading{ pointer-events:none; opacity:.7; position:relative; color:transparent !important; }
+.cta.loading::after{ content:''; position:absolute; top:50%; left:50%; width:16px; height:16px; margin:-8px 0 0 -8px; border:2px solid rgba(4,33,28,.35); border-top-color:#04211C; border-radius:50%; animation:btnSpin .6s linear infinite; }
+.cta.ghost.loading::after{ border-color:rgba(45,216,184,.3); border-top-color:var(--primary); }
+@keyframes btnSpin{ to{ transform:rotate(360deg); } }
 
 .ring-wrap{ display:flex; justify-content:center; margin:4px 0 8px; }
 .ring{ position:relative; width:180px; height:180px; }
@@ -828,14 +832,14 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; }
       <div id="phoneStep1">
         <h3>ورود با شماره تلفن</h3>
         <input type="tel" class="text-input" id="phoneNumberInput" style="margin-top:6px; direction:ltr; text-align:center;" placeholder="09xxxxxxxxx" maxlength="11">
-        <button class="cta" style="margin-top:16px" onclick="sendPhoneOtp()">دریافت کد تأیید</button>
+        <button class="cta" id="btnSendOtp" style="margin-top:16px" onclick="sendPhoneOtp()">دریافت کد تأیید</button>
         <button class="cta ghost" onclick="closePhoneLoginModal()">انصراف</button>
       </div>
       <div id="phoneStep2" style="display:none;">
         <h3>کد تأیید</h3>
         <div class="loan-sub" style="text-align:center; margin-bottom:10px;">کد ۵ رقمی ارسال‌شده به <span id="phoneShownNumber" style="color:var(--text); font-weight:700;"></span> رو وارد کن</div>
         <input type="tel" class="text-input" id="phoneOtpInput" style="direction:ltr; text-align:center; letter-spacing:6px;" placeholder="•••••" maxlength="5">
-        <button class="cta" style="margin-top:16px" onclick="confirmPhoneOtp()">تأیید و ورود</button>
+        <button class="cta" id="btnConfirmOtp" style="margin-top:16px" onclick="confirmPhoneOtp()">تأیید و ورود</button>
         <button class="cta ghost" onclick="closePhoneLoginModal()">انصراف</button>
       </div>
     </div>
@@ -1670,6 +1674,8 @@ function sendPhoneOtp(){
   const phone = cleanNum(document.getElementById('phoneNumberInput').value);
   if(!phone || phone.length !== 11 || !phone.startsWith('09')){ showToast('شماره رو به‌صورت ۰۹xxxxxxxxx وارد کن'); return; }
   pendingPhoneNumber = phone;
+  const btn = document.getElementById('btnSendOtp');
+  btn.classList.add('loading');
   fetch(API_BASE_URL + '/api/auth/request-otp', {
     method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone})
   }).then(async res => {
@@ -1683,11 +1689,14 @@ function sendPhoneOtp(){
     document.getElementById('phoneStep2').style.display = 'block';
     setTimeout(()=> document.getElementById('phoneOtpInput').focus(), 200);
     showToast('کد تأیید پیامک شد');
-  }).catch(()=> showToast('اتصال به سرور برقرار نشد'));
+  }).catch(()=> showToast('اتصال به سرور برقرار نشد'))
+    .finally(()=> btn.classList.remove('loading'));
 }
 function confirmPhoneOtp(){
   const otp = document.getElementById('phoneOtpInput').value.trim();
   if(otp.length !== 5){ showToast('کد ۵ رقمی رو کامل وارد کن'); return; }
+  const btn = document.getElementById('btnConfirmOtp');
+  btn.classList.add('loading');
   fetch(API_BASE_URL + '/api/auth/verify-otp', {
     method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone:pendingPhoneNumber, code:otp})
   }).then(async res => {
@@ -1707,7 +1716,8 @@ function confirmPhoneOtp(){
     closePhoneLoginModal();
     showToast('با موفقیت وارد شدی');
     syncAfterLogin();
-  }).catch(()=> showToast('اتصال به سرور برقرار نشد'));
+  }).catch(()=> showToast('اتصال به سرور برقرار نشد'))
+    .finally(()=> btn.classList.remove('loading'));
 }
 function handleLogout(){
   if(!account){ showToast('قبلاً وارد نشدی'); return; }
