@@ -4,9 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>محاسبه‌گر اقساط — بتا ۲</title>
-<link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <style>
-@import url('https://cdnjs.cloudflare.com/ajax/libs/vazirmatn/33.003/Vazirmatn-font-face.css');
+@font-face{
+  font-family:'Vazirmatn';
+  src:url('fonts/Vazirmatn[wght].woff2') format('woff2 supports variations'),
+      url('fonts/Vazirmatn[wght].woff2') format('woff2-variations');
+  font-weight:100 900;
+  font-style:normal;
+  font-display:swap;
+}
 
 :root{
   --bg:#0D1321; --surface:#161F35; --surface-2:#1D2A46;
@@ -2183,11 +2189,10 @@ document.addEventListener('click', (e)=>{
 
 /* مخفی‌کردن اسپلش بعد از آماده‌شدن اپ
    نکته مهم: قبلاً این کد فقط به window 'load' گوش می‌داد که منتظر لود کامل
-   منابع خارجی (مثل فونت از cdnjs.cloudflare.com) هم می‌مونه. اگه اون سرور
-   در دسترس نباشه یا کند باشه، 'load' هیچ‌وقت فایر نمی‌شه و اپ برای همیشه
-   رو اسپلش گیر می‌کنه. الان به DOMContentLoaded سوییچ کردیم (که منتظر
-   منابع خارجی نمی‌مونه) و یک fallback سخت هم اضافه شده که در هر صورت
-   حداکثر بعد از ۴ ثانیه اسپلش رو مخفی می‌کنه. */
+   منابع خارجی (وقتی فونت از cdnjs.cloudflare.com می‌اومد) هم می‌مونه. الان
+   فونت لوکاله (www/fonts/) و دیگه به اون سرور نیازی نیست، ولی برای اطمینان
+   بازم روی DOMContentLoaded موندیم و یک fallback سخت هم اضافه شده که در هر
+   صورت حداکثر بعد از ۴ ثانیه اسپلش رو مخفی می‌کنه. */
 function hideSplashOnce(){
   const splash = document.getElementById('splash');
   if(splash && !splash.classList.contains('hide')){
