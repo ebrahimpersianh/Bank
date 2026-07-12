@@ -991,8 +991,9 @@ function renderBankGroup(list, label, isCredit){
   list.forEach(b=>{
     const el = document.createElement('div');
     el.className = 'bank-item';
-    const badgeInner = b.logo ? `<img src="${b.logo}" alt="${b.n}" onerror="this.parentElement.style.background='${b.c}'; this.parentElement.innerHTML='${initials(b.n)}';">` : initials(b.n);
-    el.innerHTML = `<div class="bank-badge" style="background:${b.c}">${badgeInner}</div><div class="bank-name">${b.n}</div>`;
+    const badgeInner = b.logo ? `<img src="${b.logo}" alt="${b.n}" onerror="this.parentElement.style.background='${b.c}'; this.parentElement.style.color='#fff'; this.parentElement.innerHTML='${initials(b.n)}';">` : initials(b.n);
+    const badgeBg = b.logo ? '#fff' : b.c;
+    el.innerHTML = `<div class="bank-badge" style="background:${badgeBg}">${badgeInner}</div><div class="bank-name">${b.n}</div>`;
     fitBankName(el.querySelector('.bank-name'));
     el.addEventListener('click', ()=>{
       document.querySelectorAll('.bank-item').forEach(x=>x.classList.remove('sel'));
