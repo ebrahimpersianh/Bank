@@ -44,6 +44,11 @@ jobs:
       - name: مجوز اجرا به gradlew
         run: chmod +x android/gradlew
 
+      - name: نصب کلید امضای ثابت دیباگ (تا هر بیلد رو نسخه قبلی نصب بشه، نه اینکه Android بگه "conflicts with an existing package")
+        run: |
+          mkdir -p ~/.android
+          cp ci-debug.keystore ~/.android/debug.keystore
+
       - name: ساخت فایل APK (پشتیبانی خودکار از همه معماری‌های CPU)
         run: cd android && ./gradlew assembleDebug
 
