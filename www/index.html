@@ -491,7 +491,22 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
         <div class="detail-row"><span>مانده بعد از این قسط</span><b id="detailBalance">-</b></div>
         <div class="detail-status" id="detailStatus"></div>
         <button class="cta" id="detailPayBtn" onclick="handlePayButton()">ثبت پرداخت این قسط</button>
+        <button class="cta ghost" onclick="openEditInstallmentModal()">ویرایش مبلغ این قسط</button>
         <button class="cta ghost" onclick="closeDetail()">بستن</button>
+      </div>
+    </div>
+
+    <!-- EDIT INSTALLMENT AMOUNT MODAL -->
+    <div class="modal-backdrop" id="editInstallmentModal">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <h3>مبلغ واقعی این قسط رو وارد کن</h3>
+        <div class="amount-box">
+          <input type="text" inputmode="numeric" class="num-input" id="editInstallmentInput" style="font-size:20px;">
+          <span class="unit-badge">ریال</span>
+        </div>
+        <button class="cta" style="margin-top:16px" onclick="confirmEditInstallment()">ذخیره کن</button>
+        <button class="cta ghost" onclick="closeEditInstallmentModal()">انصراف</button>
       </div>
     </div>
 
@@ -1156,6 +1171,7 @@ function computeLoan(P, annualRatePct, n, method, graceMonths, intervalDays){
 
 let lastResult = null;
 let lastStartDate = null;
+let currentLoanId = null;
 
 function calculate(){
   const rialAmount = Number(cleanNum(amountInput.value)) || 0;
@@ -1185,6 +1201,7 @@ function calculate(){
 
   lastStartDate = { y:Number(dYear.value), m:Number(dMonth.value), d:Number(dDay.value) };
   lastResult = result;
+  currentLoanId = null;
 
   renderResultUI(result);
   showView('view-result');
@@ -1304,11 +1321,16 @@ function openSavedLoan(id){
     result = { installment:l.installment, totalInterest:0, totalPaid:l.installment*l.n, principal:l.installment*l.n, rows, graceMonths:0, originalP:l.installment*l.n, intervalDays: l.intervalDays || 30 };
   } else {
     result = computeLoan(Number(l.amount), Number(l.rate), Number(l.n), l.method, Number(l.graceMonths || 0), Number(l.intervalDays || 30));
+    if(l.rows){ result.rows = l.rows; } /* اقساطی که ویرایش دستی یا پرداخت‌شون ثبت شده رو نگه دار، دوباره از صفر حساب نکن */
+    result.feePercent = (l.method === 'qarz') ? Number(l.rate || 0) : 0;
+    result.feeAmount = (l.method === 'qarz') ? result.totalInterest : 0;
   }
   result.rate = Number(l.rate || 0); result.n = Number(l.n); result.method = l.method;
   result.borrower = l.borrower; result.bank = l.bank;
   lastStartDate = l.startDate;
   lastResult = result;
+  currentLoanId = id;
+  syncTotalsFromRows();
 
   document.getElementById('nav-calc').classList.add('active');
   document.getElementById('nav-afford').classList.remove('active');
@@ -1380,6 +1402,7 @@ function handlePayButton(){
   if(r.paid){
     r.paid = false; r.paidLate = false; r.paidDate = null;
     updatePill(idx);
+    persistCurrentLoanIfSaved();
     closeDetail();
     return;
   }
@@ -1400,6 +1423,7 @@ function payOnTime(){
   const r = lastResult.rows[idx];
   r.paid = true; r.paidLate = false; r.paidDate = null;
   updatePill(idx);
+  persistCurrentLoanIfSaved();
   closePayModal(); closeDetail();
 }
 function payLateStart(){
@@ -1416,6 +1440,7 @@ function confirmLatePayment(){
     d: Number(document.getElementById('payDay').value)
   };
   updatePill(idx);
+  persistCurrentLoanIfSaved();
   closePayModal(); closeDetail();
 }
 function updatePill(idx){
@@ -1425,6 +1450,58 @@ function updatePill(idx){
   else if(r.paid){ pill.className = 'status-pill paid'; pill.textContent = 'پرداخت‌شده ✓'; }
   else { pill.className = 'status-pill unpaid'; pill.textContent = 'در انتظار'; }
 }
+
+/* جمع کل بازپرداخت و سود رو دوباره از رو خودِ اقساط حساب می‌کنه، برای وقتی که
+   مبلغ یه قسط دستی ویرایش شده و دیگه با محاسبه‌ی اولیه یکی نیست */
+function syncTotalsFromRows(){
+  if(!lastResult || !lastResult.rows) return;
+  let totalPaid = 0, totalInterest = 0;
+  lastResult.rows.forEach(r => { totalPaid += r.installment; totalInterest += r.interest; });
+  lastResult.totalPaid = totalPaid;
+  lastResult.totalInterest = totalInterest;
+  if(lastResult.method === 'qarz'){ lastResult.feeAmount = totalInterest; }
+}
+
+/* اگه وامی که الان نشون داده می‌شه از قبل تو "وام‌های من" ذخیره شده (currentLoanId ست شده)،
+   اقساط و جمع‌های به‌روزشده رو برگردون تو localStorage تا با بازکردن دوباره از بین نره */
+function persistCurrentLoanIfSaved(){
+  if(currentLoanId === null || !lastResult) return;
+  const l = currentLoans.find(x => x.id === currentLoanId);
+  if(!l) return;
+  l.rows = lastResult.rows;
+  l.installment = lastResult.installment;
+  l.totalPaid = lastResult.totalPaid;
+  l.totalInterest = lastResult.totalInterest;
+  persistLoans();
+}
+
+function openEditInstallmentModal(){
+  if(currentDetailIdx === null || !lastResult) return;
+  const r = lastResult.rows[currentDetailIdx];
+  document.getElementById('editInstallmentInput').value = Math.round(r.installment).toLocaleString('en-US');
+  document.getElementById('editInstallmentModal').classList.add('open');
+  setTimeout(()=> document.getElementById('editInstallmentInput').focus(), 300);
+}
+function closeEditInstallmentModal(){ document.getElementById('editInstallmentModal').classList.remove('open'); }
+function confirmEditInstallment(){
+  const newAmount = Number(cleanNum(document.getElementById('editInstallmentInput').value));
+  if(!newAmount || newAmount <= 0){ showToast('یه مبلغ معتبر وارد کن'); return; }
+  const idx = currentDetailIdx;
+  const r = lastResult.rows[idx];
+  r.installment = newAmount;
+  r.interest = newAmount - r.principal;
+  r.edited = true;
+  syncTotalsFromRows();
+  persistCurrentLoanIfSaved();
+  closeEditInstallmentModal();
+  closeDetail();
+  renderResultUI(lastResult);
+  showToast('مبلغ قسط به‌روز شد ✓');
+}
+document.getElementById('editInstallmentInput').addEventListener('input', function(){
+  const raw = cleanNum(this.value);
+  this.value = raw ? Number(raw).toLocaleString('en-US') : '';
+});
 
 /* late fee: days * installment * (rate+6) / (365*100) */
 function calcLateFee(){
@@ -1676,14 +1753,17 @@ function saveLoan(){
   if(!lastResult) return;
   const defaultName = lastResult.borrower && lastResult.borrower !== '—' ? `وام ${lastResult.borrower}` : 'وام جدید';
   openNameModal(defaultName, (name)=>{
+    const id = Date.now();
     currentLoans.unshift({
-      id: Date.now(), name, bank: lastResult.bank, borrower: lastResult.borrower,
+      id, name, bank: lastResult.bank, borrower: lastResult.borrower,
       amount: lastResult.originalP, rate: lastResult.rate, n: lastResult.n, method: lastResult.method,
       graceMonths: lastResult.graceMonths || 0,
       intervalDays: lastResult.intervalDays || 30,
       installment: lastResult.installment, totalPaid: lastResult.totalPaid, totalInterest: lastResult.totalInterest,
+      rows: lastResult.rows,
       startDate: lastStartDate, paidCount: 0, createdAt: new Date().toISOString()
     });
+    currentLoanId = id;
     persistLoans();
     showToast(storageWorks ? 'ذخیره شد ✓' : 'ذخیره شد ✓ — برای اطمینان از دکمه پشتیبان‌گیری هم استفاده کن');
     switchTab('loans');
