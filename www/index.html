@@ -207,6 +207,15 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; }
   transition:opacity .6s ease, visibility .6s ease;
 }
 #splash.hide{ opacity:0; visibility:hidden; pointer-events:none; }
+
+/* ---------- BIOMETRIC LOCK ---------- */
+#biometricLock{
+  position:fixed; inset:0; z-index:500; background:var(--bg);
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+}
+#biometricLock.show{ display:flex; }
+#biometricLock .name{ color:var(--text); font-size:15px; font-weight:800; margin-top:18px; }
+#biometricLock .sub{ color:var(--muted); font-size:12px; margin-top:6px; }
 #splash .glow{
   position:absolute; width:260px; height:260px; border-radius:50%;
   background:radial-gradient(circle, rgba(45,216,184,.16) 0%, rgba(45,216,184,0) 70%);
@@ -244,6 +253,15 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; }
   <div class="name">محاسبه‌گر اقساط</div>
   <div class="dots"><span></span><span></span><span></span></div>
   <div class="powered-by">Powered By Sad Team</div>
+</div>
+
+<div id="biometricLock">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:56px;height:56px;color:var(--primary);">
+    <path d="M12 11c0 3-1 5.5-3 7.5M8 15c1-1.5 1.5-3 1.5-5a2.5 2.5 0 015 0c0 1 0 2-.2 3M12 5.5A6.5 6.5 0 0118.5 12c0 1.2-.1 2.3-.4 3.3M5.5 12A6.5 6.5 0 0112 5.5M4 12c0-.7.06-1.4.18-2M15 12c0 2-.5 3.8-1.4 5.3"/>
+  </svg>
+  <div class="name">اپ قفله</div>
+  <div class="sub">با اثر انگشت بازش کن</div>
+  <button class="cta" style="margin-top:20px; width:auto; padding:11px 28px;" onclick="attemptBiometricUnlock()">تلاش دوباره</button>
 </div>
 
 <div class="app fs-medium" id="appRoot">
@@ -709,16 +727,12 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; }
           <div class="toggle" id="fingerprintToggle" onclick="toggleFingerprint()"></div>
         </div>
         <div class="notif-row">
-          <div><div style="font-weight:700; font-size:13px;">ورود با جیمیل</div><div class="loan-sub">اتصال حساب گوگل برای پشتیبان‌گیری</div></div>
-          <div class="toggle" id="googleToggle" onclick="handleGoogleToggle()"></div>
-        </div>
-        <div class="notif-row">
-          <div><div style="font-weight:700; font-size:13px;">ورود با شماره تلفن</div><div class="loan-sub">دریافت کد تأیید پیامکی</div></div>
+          <div><div style="font-weight:700; font-size:13px;">ورود با شماره تلفن</div><div class="loan-sub">همگام‌سازی وام‌های من بین چند گوشی</div></div>
           <button class="cta ghost" style="width:auto; margin:0; padding:6px 14px; font-size:11.5px;" onclick="openPhoneLoginModal()">ورود</button>
         </div>
       </div>
       <div class="sub-note" style="line-height:1.9;">
-        ⚠️ نکته: قفل اثر انگشت، ورود با جیمیل و ورود با شماره تلفن نیاز به سرویس بک‌اند و افزونه‌ی نیتیو دارن که در نسخه نهایی بازار فعال می‌شن؛ فعلاً این بخش به‌صورت نمایشی کار می‌کنه.
+        ⚠️ نکته: قفل اثر انگشت فقط رو نسخه‌ی نصبی (نه مرورگر) کار می‌کنه.
       </div>
 
       <!-- FEEDBACK -->
@@ -773,18 +787,7 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; }
     </div>
   </div>
 
-  <!-- GOOGLE LOGIN MODAL (mock) -->
-  <div class="modal-backdrop" id="loginModal">
-    <div class="modal-sheet">
-      <div class="modal-handle"></div>
-      <h3>ورود با جیمیل</h3>
-      <input type="email" class="text-input" id="loginEmailInput" style="margin-top:6px;" placeholder="you@gmail.com">
-      <button class="cta" style="margin-top:16px" onclick="confirmLogin()">ورود</button>
-      <button class="cta ghost" onclick="closeLoginModal()">انصراف</button>
-    </div>
-  </div>
-
-  <!-- PHONE LOGIN MODAL (mock, two steps) -->
+  <!-- PHONE LOGIN MODAL (two steps) -->
   <div class="modal-backdrop" id="phoneLoginModal">
     <div class="modal-sheet">
       <div class="modal-handle"></div>
@@ -817,7 +820,13 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; }
   <div id="toast"></div>
 </div>
 
+<script src="vendor/biometric-auth.js"></script>
 <script>
+/* TODO: آدرس بک‌اند — بعد از دیپلوی سرور (پوشه‌ی server/ همین ریپو) رو دامنه‌ی خودتون،
+   این مقدار رو با آدرس واقعی (https://...) عوض کنید. تا وقتی خالیه، ورود با شماره تلفن
+   و همگام‌سازی ابری کار نمی‌کنن (پیام خطا نشون داده می‌شه). */
+const API_BASE_URL = '';
+
 /* ================= THEME ================= */
 const sunIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`;
 const moonIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>`;
@@ -1538,6 +1547,7 @@ function loadLoansFromStorage(){
 function persistLoans(){
   try{ localStorage.setItem('loans_v2', JSON.stringify(currentLoans)); }
   catch(e){ storageWorks = false; }
+  syncLoansToServer();
 }
 
 function showToast(msg){
@@ -1548,54 +1558,40 @@ function showToast(msg){
   showToast._timer = setTimeout(()=>{ t.classList.remove('show'); }, 2600);
 }
 
-/* ================= ACCOUNT (mock google login, stored locally) ================= */
+/* ================= ACCOUNT (ورود با شماره موبایل + همگام‌سازی ابری) ================= */
 let account = null;
+let authToken = null;
 function loadAccount(){
-  try{ account = JSON.parse(localStorage.getItem('user_account') || 'null'); }
-  catch(e){ account = null; }
+  try{
+    account = JSON.parse(localStorage.getItem('user_account') || 'null');
+    authToken = localStorage.getItem('auth_token') || null;
+  }catch(e){ account = null; authToken = null; }
 }
 function renderAccountUI(){
   const avatar = document.getElementById('accountAvatar');
   const nameEl = document.getElementById('accountName');
   const statusEl = document.getElementById('accountStatus');
   const actionBtn = document.getElementById('accountActionBtn');
-  const googleToggle = document.getElementById('googleToggle');
   if(account){
-    avatar.textContent = account.name.slice(0,1).toUpperCase();
+    avatar.textContent = '✓';
     avatar.classList.remove('guest');
-    nameEl.textContent = account.name;
-    statusEl.textContent = account.email;
+    nameEl.textContent = toFa(account.phone);
+    statusEl.textContent = 'وارد حساب شدی — وام‌های من همگام‌سازی می‌شه';
     actionBtn.style.display = 'none';
-    googleToggle.classList.add('on');
   } else {
     avatar.textContent = '؟';
     avatar.classList.add('guest');
     nameEl.textContent = 'ورود به حساب انجام نشده';
-    statusEl.textContent = 'برای همگام‌سازی و یادآوری‌ها وارد شو';
+    statusEl.textContent = 'برای همگام‌سازی ابری وارد شو';
     actionBtn.style.display = 'inline-block';
     actionBtn.textContent = 'ورود';
-    googleToggle.classList.remove('on');
   }
 }
-function handleAccountAction(){ if(!account) openLoginModal(); }
-function handleGoogleToggle(){ if(account) handleLogout(); else openLoginModal(); }
-function openLoginModal(){
-  document.getElementById('loginEmailInput').value = '';
-  document.getElementById('loginModal').classList.add('open');
-  setTimeout(()=> document.getElementById('loginEmailInput').focus(), 300);
-}
-function closeLoginModal(){ document.getElementById('loginModal').classList.remove('open'); }
-function confirmLogin(){
-  const email = document.getElementById('loginEmailInput').value.trim();
-  if(!email || !email.includes('@')){ showToast('یه ایمیل معتبر وارد کن'); return; }
-  account = { name: email.split('@')[0], email };
-  try{ localStorage.setItem('user_account', JSON.stringify(account)); }catch(e){}
-  renderAccountUI();
-  closeLoginModal();
-  showToast('با موفقیت وارد شدی');
-}
-/* ================= PHONE LOGIN (mock — no real SMS backend yet) ================= */
+function handleAccountAction(){ if(!account) openPhoneLoginModal(); }
+
+/* ================= PHONE LOGIN (شماره موبایل + کد تایید پیامکی از سرور) ================= */
 function openPhoneLoginModal(){
+  if(!API_BASE_URL){ showToast('آدرس بک‌اند هنوز تو کد تنظیم نشده'); return; }
   document.getElementById('phoneNumberInput').value = '';
   document.getElementById('phoneOtpInput').value = '';
   document.getElementById('phoneStep1').style.display = 'block';
@@ -1609,27 +1605,91 @@ function sendPhoneOtp(){
   const phone = cleanNum(document.getElementById('phoneNumberInput').value);
   if(!phone || phone.length !== 11 || !phone.startsWith('09')){ showToast('شماره رو به‌صورت ۰۹xxxxxxxxx وارد کن'); return; }
   pendingPhoneNumber = phone;
-  document.getElementById('phoneShownNumber').textContent = toFa(phone);
-  document.getElementById('phoneStep1').style.display = 'none';
-  document.getElementById('phoneStep2').style.display = 'block';
-  setTimeout(()=> document.getElementById('phoneOtpInput').focus(), 200);
-  showToast('کد تأیید ارسال شد (نمایشی)');
+  fetch(API_BASE_URL + '/api/auth/request-otp', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone})
+  }).then(async res => {
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      showToast(err.error === 'too_soon' ? 'کمی صبر کن، کد قبلی هنوز معتبره' : 'ارسال کد ناموفق بود');
+      return;
+    }
+    document.getElementById('phoneShownNumber').textContent = toFa(phone);
+    document.getElementById('phoneStep1').style.display = 'none';
+    document.getElementById('phoneStep2').style.display = 'block';
+    setTimeout(()=> document.getElementById('phoneOtpInput').focus(), 200);
+    showToast('کد تأیید پیامک شد');
+  }).catch(()=> showToast('اتصال به سرور برقرار نشد'));
 }
 function confirmPhoneOtp(){
   const otp = document.getElementById('phoneOtpInput').value.trim();
   if(otp.length !== 5){ showToast('کد ۵ رقمی رو کامل وارد کن'); return; }
-  account = { name: 'کاربر ' + toFa(pendingPhoneNumber.slice(-4)), email: pendingPhoneNumber, phone: pendingPhoneNumber };
-  try{ localStorage.setItem('user_account', JSON.stringify(account)); }catch(e){}
-  renderAccountUI();
-  closePhoneLoginModal();
-  showToast('با موفقیت وارد شدی');
+  fetch(API_BASE_URL + '/api/auth/verify-otp', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone:pendingPhoneNumber, code:otp})
+  }).then(async res => {
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok){
+      const msgs = { wrong_code:'کد اشتباهه', code_expired:'کد منقضی شده، دوباره درخواست بده', too_many_attempts:'تعداد تلاش‌ها بیش از حده، دوباره کد بگیر' };
+      showToast(msgs[data.error] || 'تایید ناموفق بود');
+      return;
+    }
+    authToken = data.token;
+    account = { phone: data.phone };
+    try{
+      localStorage.setItem('auth_token', authToken);
+      localStorage.setItem('user_account', JSON.stringify(account));
+    }catch(e){}
+    renderAccountUI();
+    closePhoneLoginModal();
+    showToast('با موفقیت وارد شدی');
+    syncAfterLogin();
+  }).catch(()=> showToast('اتصال به سرور برقرار نشد'));
 }
 function handleLogout(){
   if(!account){ showToast('قبلاً وارد نشدی'); return; }
-  account = null;
-  try{ localStorage.removeItem('user_account'); }catch(e){}
+  account = null; authToken = null;
+  try{ localStorage.removeItem('user_account'); localStorage.removeItem('auth_token'); }catch(e){}
   renderAccountUI();
   showToast('از حساب خارج شدی');
+}
+
+/* ================= همگام‌سازی ابری «وام‌های من» ================= */
+/* بعد از هر ذخیره‌ی محلی (persistLoans)، اگه لاگین بودیم، همون آرایه رو می‌فرستیم بالا؛
+   شکست این درخواست بی‌صدا نادیده گرفته می‌شه چون نسخه‌ی محلی هر حال ذخیره شده. */
+function syncLoansToServer(){
+  if(!authToken || !API_BASE_URL) return;
+  fetch(API_BASE_URL + '/api/loans', {
+    method:'PUT',
+    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + authToken },
+    body: JSON.stringify({ loans: currentLoans })
+  }).catch(()=>{});
+}
+/* فقط یه‌بار بلافاصله بعد از ورود موفق صدا زده می‌شه: نسخه‌ی ابری رو با نسخه‌ی همین
+   گوشی مقایسه می‌کنه؛ اگه یکیشون خالیه، بدون سوال همون یکی‌ی دیگه رو نگه می‌داره،
+   اگه هر دو داده دارن و فرق می‌کنن، از کاربر می‌پرسه کدوم نسخه بمونه. */
+function syncAfterLogin(){
+  fetch(API_BASE_URL + '/api/loans', { headers: { 'Authorization': 'Bearer ' + authToken } })
+    .then(res => res.ok ? res.json() : Promise.reject())
+    .then(data => {
+      const serverLoans = data.loans || [];
+      const localHasData = currentLoans.length > 0;
+      const serverHasData = serverLoans.length > 0;
+      if(serverHasData && !localHasData){
+        currentLoans = serverLoans;
+        try{ localStorage.setItem('loans_v2', JSON.stringify(currentLoans)); }catch(e){}
+        renderLoansList();
+        showToast('وام‌های ذخیره‌شده‌ی ابری بازیابی شد ✓');
+      } else if(serverHasData && localHasData && JSON.stringify(serverLoans) !== JSON.stringify(currentLoans)){
+        openConfirmModal('یه نسخه‌ی دیگه از «وام‌های من» تو فضای ابری ذخیره شده. می‌خوای همون نسخه جایگزین اطلاعات این گوشی بشه؟', ()=>{
+          currentLoans = serverLoans;
+          try{ localStorage.setItem('loans_v2', JSON.stringify(currentLoans)); }catch(e){}
+          renderLoansList();
+          showToast('نسخه‌ی ابری جایگزین شد ✓');
+        }, 'بله، نسخه‌ی ابری رو بیار', false);
+      } else {
+        syncLoansToServer();
+      }
+    })
+    .catch(()=> showToast('همگام‌سازی اولیه با سرور ناموفق بود'));
 }
 loadAccount();
 renderAccountUI();
@@ -1681,17 +1741,48 @@ function renderPerLoanReminders(){
     </div>`).join('');
 }
 
-/* ================= FINGERPRINT LOCK (UI toggle, stored locally) ================= */
+/* ================= FINGERPRINT LOCK (@aparajita/capacitor-biometric-auth) ================= */
 function toggleFingerprint(){
   const t = document.getElementById('fingerprintToggle');
-  t.classList.toggle('on');
-  try{ localStorage.setItem('fp_lock', t.classList.contains('on') ? '1' : '0'); }catch(e){}
-  showToast(t.classList.contains('on') ? 'قفل اثر انگشت فعال شد' : 'قفل اثر انگشت غیرفعال شد');
+  if(t.classList.contains('on')){
+    t.classList.remove('on');
+    try{ localStorage.setItem('fp_lock', '0'); }catch(e){}
+    showToast('قفل اثر انگشت غیرفعال شد');
+    return;
+  }
+  window.BiometricAuth.checkBiometry().then(info => {
+    if(!info.isAvailable){
+      showToast('این گوشی اثر انگشت/بایومتریک فعالی نداره');
+      return;
+    }
+    return window.BiometricAuth.authenticate({ reason: 'برای فعال‌کردن قفل اثر انگشت تایید کن', androidTitle: 'تایید اثر انگشت' }).then(()=>{
+      t.classList.add('on');
+      try{ localStorage.setItem('fp_lock', '1'); }catch(e){}
+      showToast('قفل اثر انگشت فعال شد');
+    });
+  }).catch(()=>{
+    showToast('تایید اثر انگشت ناموفق بود، دوباره امتحان کن');
+  });
 }
 (function(){
   try{ if(localStorage.getItem('fp_lock') === '1') document.getElementById('fingerprintToggle').classList.add('on'); }
   catch(e){}
 })();
+
+/* موقع بازشدن اپ (بعد از تموم‌شدن اسپلش)، اگه قفل فعال باشه، صفحه رو با اثر انگشت قفل می‌کنه */
+function isBiometricLockEnabled(){
+  try{ return localStorage.getItem('fp_lock') === '1'; }catch(e){ return false; }
+}
+function attemptBiometricUnlock(){
+  window.BiometricAuth.authenticate({ reason: 'برای باز کردن اپ تایید کن', androidTitle: 'باز کردن قفل اپ' })
+    .then(()=> document.getElementById('biometricLock').classList.remove('show'))
+    .catch(()=>{ /* کاربر لغو کرد یا شکست خورد؛ صفحه‌ی قفل با دکمه‌ی «تلاش دوباره» می‌مونه */ });
+}
+function checkBiometricLockOnStart(){
+  if(!isBiometricLockEnabled()) return;
+  document.getElementById('biometricLock').classList.add('show');
+  attemptBiometricUnlock();
+}
 
 /* ================= FEEDBACK ================= */
 const feedbackCatLabels = { calc:'محاسبه‌گر وام', bank:'وام بانکی', deposit:'سود سپرده', myloans:'وام‌های من' };
@@ -2099,7 +2190,10 @@ document.addEventListener('click', (e)=>{
    حداکثر بعد از ۴ ثانیه اسپلش رو مخفی می‌کنه. */
 function hideSplashOnce(){
   const splash = document.getElementById('splash');
-  if(splash && !splash.classList.contains('hide')) splash.classList.add('hide');
+  if(splash && !splash.classList.contains('hide')){
+    splash.classList.add('hide');
+    checkBiometricLockOnStart();
+  }
 }
 if(document.readyState === 'loading'){
   document.addEventListener('DOMContentLoaded', ()=> setTimeout(hideSplashOnce, 900));
