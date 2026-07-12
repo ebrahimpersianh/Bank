@@ -42,9 +42,14 @@ body{ display:flex; justify-content:center; min-height:100vh; }
 
 .icon-btn{ width:29px; height:29px; border-radius:9px; background:var(--surface); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:15px; border:1px solid var(--line); cursor:pointer; }
 
-main{ flex:1; padding:14px 6px 100px; overflow-y:auto; }
+main{ flex:1; padding:14px 6px 100px; overflow-y:auto; overflow-x:hidden; }
 .view{ display:none; } .view.active{ display:block; animation:viewEnter .42s cubic-bezier(.16,1,.3,1); }
 @keyframes viewEnter{ from{opacity:0; transform:translateY(14px) scale(.97);} 60%{opacity:1;} to{opacity:1; transform:none;} }
+/* اسلاید افقی بین ۴ تب اصلی پایین صفحه (نه بین صفحات جزئیات/برگشتی مثل نتیجه یا تنظیمات که همون fade عمودی رو دارن) */
+.view.active.slide-l{ animation:slideInFromLeft .32s cubic-bezier(.16,1,.3,1); }
+.view.active.slide-r{ animation:slideInFromRight .32s cubic-bezier(.16,1,.3,1); }
+@keyframes slideInFromLeft{ from{opacity:0; transform:translateX(-26px);} to{opacity:1; transform:translateX(0);} }
+@keyframes slideInFromRight{ from{opacity:0; transform:translateX(26px);} to{opacity:1; transform:translateX(0);} }
 
 /* افکت نوار طلایی کوتاه و سریع دور المان لمس‌شده (کارت‌ها، تاگل‌ها، دکمه شب/روز، تنظیمات و ...) */
 @keyframes goldRing{
@@ -2036,17 +2041,35 @@ function importBackup(ev){
 loadLoansFromStorage();
 
 /* ================= NAVIGATION ================= */
-function showView(id){ document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function showView(id, slideDir){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active', 'slide-l', 'slide-r'));
+  const el = document.getElementById(id);
+  if(slideDir === 'left') el.classList.add('slide-l');
+  else if(slideDir === 'right') el.classList.add('slide-r');
+  el.classList.add('active');
+}
+/* ترتیب ۴ تب پایین صفحه، دقیقاً به همون ترتیبی که تو bottom-nav (راست به چپ) چیده شدن؛
+   موقع سوییچ بین این‌ها، جهت اسلاید از رو فاصله‌ی ایندکس تب قبلی و جدید حساب می‌شه —
+   بین این صفحه‌ها و صفحه‌های برگشتی/جزئیات (نتیجه، تنظیمات، افزودن دستی) این اسلاید اعمال نمی‌شه. */
+const tabOrder = ['calc', 'afford', 'deposit', 'loans'];
+let currentTabName = 'calc';
 function switchTab(tab){
   document.getElementById('nav-calc').classList.toggle('active', tab==='calc');
   document.getElementById('nav-afford').classList.toggle('active', tab==='afford');
   document.getElementById('nav-deposit').classList.toggle('active', tab==='deposit');
   document.getElementById('nav-loans').classList.toggle('active', tab==='loans');
-  if(tab === 'calc') showView('view-calc');
-  else if(tab === 'afford') showView('view-afford');
-  else if(tab === 'deposit') showView('view-deposit');
-  else if(tab === 'loans'){ renderLoansList(); showView('view-loans'); }
+
+  const oldIdx = tabOrder.indexOf(currentTabName);
+  const newIdx = tabOrder.indexOf(tab);
+  const slideDir = (oldIdx !== -1 && newIdx !== -1 && oldIdx !== newIdx) ? (newIdx > oldIdx ? 'left' : 'right') : null;
+
+  if(tab === 'calc') showView('view-calc', slideDir);
+  else if(tab === 'afford') showView('view-afford', slideDir);
+  else if(tab === 'deposit') showView('view-deposit', slideDir);
+  else if(tab === 'loans'){ renderLoansList(); showView('view-loans', slideDir); }
   else if(tab === 'settings'){ renderPerLoanReminders(); showView('view-settings'); }
+
+  if(newIdx !== -1) currentTabName = tab;
 }
 renderLoansList();
 
