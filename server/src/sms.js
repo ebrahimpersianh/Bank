@@ -15,7 +15,7 @@ async function sendOtpSms(phone, code) {
     return { ok: true, dev: true };
   }
 
-  const message = `کد تایید محاسبه‌گر اقساط: ${code}`;
+  const message = `کد تایید وام من: ${code}`;
   const url = `https://api.kavenegar.com/v1/${KAVENEGAR_API_KEY}/sms/send.json` +
     `?receptor=${encodeURIComponent(phone)}&message=${encodeURIComponent(message)}` +
     (KAVENEGAR_SENDER ? `&sender=${encodeURIComponent(KAVENEGAR_SENDER)}` : '');
