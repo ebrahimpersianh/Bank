@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>محاسبه‌گر اقساط — بتا ۲</title>
+<title>محاسبه‌گر اقساط — نسخه ۱</title>
 <style>
 @font-face{
   font-family:'Vazirmatn';
@@ -35,7 +35,7 @@ body{ display:flex; justify-content:center; min-height:100vh; }
 .app.fs-large{ zoom:1.15; }
 .app-header{ padding:18px 8px 12px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:var(--bg); z-index:20; border-bottom:1px solid var(--line); transition:background .3s; }
 .app-header h1{ font-size:16px; font-weight:800; margin:0; }
-.badge-beta{ font-size:10px; color:var(--accent); background:rgba(240,168,87,.14); padding:3px 8px; border-radius:8px; font-weight:700; margin-right:6px; }
+.badge-version{ font-size:10px; color:var(--accent); background:rgba(240,168,87,.14); padding:3px 8px; border-radius:8px; font-weight:700; margin-right:6px; }
 
 .theme-btn{ width:30px; height:30px; border-radius:10px; background:var(--surface); border:1px solid var(--line); cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .theme-btn svg{ width:19px; height:19px; transition:transform .4s; }
@@ -273,7 +273,7 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; }
 <div class="app fs-medium" id="appRoot">
   <div class="app-header">
     <div class="theme-btn" onclick="toggleTheme()" id="themeBtn"></div>
-    <h1>محاسبه‌گر اقساط <span class="badge-beta">بتا ۲</span></h1>
+    <h1>محاسبه‌گر اقساط <span class="badge-version">نسخه ۱</span></h1>
     <div class="icon-btn" onclick="switchTab('settings')">⚙</div>
   </div>
 
@@ -763,7 +763,7 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; }
         </div>
         <div class="grace-box" id="aboutBox">
           <div class="sub-note" style="line-height:1.9; margin-top:6px;">
-            محاسبه‌گر اقساط — بتا ۲<br>
+            محاسبه‌گر اقساط — نسخه ۱<br>
             این اپ برای محاسبه سریع و شفاف اقساط وام، سود سپرده و برنامه‌ریزی مالی طراحی شده.<br>
             Powered By Sad Team
           </div>
@@ -863,7 +863,7 @@ function reportCrash(message, stack, context){
   fetch(API_BASE_URL + '/api/crash', {
     method:'POST',
     headers: { 'Content-Type':'application/json' },
-    body: JSON.stringify({ message: String(message||''), stack: String(stack||''), context: context||'', appVersion:'بتا ۲' })
+    body: JSON.stringify({ message: String(message||''), stack: String(stack||''), context: context||'', appVersion:'نسخه ۱' })
   }).catch(()=>{});
 }
 window.addEventListener('error', (e)=> reportCrash(e.message, e.error && e.error.stack, e.filename + ':' + e.lineno));
