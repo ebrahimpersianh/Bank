@@ -23,7 +23,7 @@ html,body{ margin:0; padding:0; background:#070B14; color:var(--text); font-fami
 body.light{ background:#E7E9F0; }
 body{ display:flex; justify-content:center; min-height:100vh; }
 
-.app{ width:100%; max-width:460px; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; position:relative; transition:background .3s; }
+.app{ width:100%; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; position:relative; transition:background .3s; }
 .app.fs-small{ zoom:0.9; }
 .app.fs-medium{ zoom:1; }
 .app.fs-large{ zoom:1.15; }
@@ -128,7 +128,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 
 .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:100; display:none; align-items:flex-end; justify-content:center; }
 .modal-backdrop.open{ display:flex; }
-.modal-sheet{ width:100%; max-width:460px; background:var(--surface); border-radius:13px 13px 0 0; padding:8px 11px 15px; animation:slideUp .25s ease; }
+.modal-sheet{ width:100%; background:var(--surface); border-radius:13px 13px 0 0; padding:8px 11px 15px; animation:slideUp .25s ease; }
 @keyframes slideUp{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
 .modal-handle{ width:40px; height:4px; background:var(--surface-2); border-radius:4px; margin:0 auto 16px; }
 .modal-sheet h3{ font-size:16px; font-weight:800; margin:0 0 14px; text-align:center; }
@@ -742,8 +742,8 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
   </main>
 
   <div class="bottom-nav">
-    <div class="nav-item" id="nav-afford" onclick="switchTab('afford')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1 3 2.3c0 2.7-6 1.3-6 4 0 1.3 1.3 2.3 3 2.3s3-1.1 3-2.5"/></svg></span> محاسبه‌گر</div>
     <div class="nav-item active" id="nav-calc" onclick="switchTab('calc')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;"><rect x="4" y="2" width="16" height="20" rx="3"/><line x1="8" y1="6" x2="16" y2="6"/><circle cx="8" cy="11" r="1"/><circle cx="12" cy="11" r="1"/><circle cx="16" cy="11" r="1"/><circle cx="8" cy="15" r="1"/><circle cx="12" cy="15" r="1"/><circle cx="16" cy="15" r="1"/><circle cx="8" cy="19" r="1"/><circle cx="12" cy="19" r="1"/><circle cx="16" cy="19" r="1"/></svg></span> وام بانکی</div>
+    <div class="nav-item" id="nav-afford" onclick="switchTab('afford')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1 3 2.3c0 2.7-6 1.3-6 4 0 1.3 1.3 2.3 3 2.3s3-1.1 3-2.5"/></svg></span> محاسبه‌گر</div>
     <div class="nav-item" id="nav-deposit" onclick="switchTab('deposit')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span> سود سپرده</div>
     <div class="nav-item" id="nav-loans" onclick="switchTab('loans')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;"><path d="M4 6h9l2 2h5v11a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1z"/></svg></span> وام‌های من</div>
   </div>
