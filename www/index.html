@@ -188,9 +188,11 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; overflow-x:hidden; }
 .add-manual-card{ border:1.5px dashed var(--primary-dim); background:rgba(45,216,184,.05); text-align:center; }
 .loan-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
 .loan-name{ font-weight:800; font-size:12.6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; max-width:100%; } .loan-sub{ color:var(--muted); font-size:11px; margin-top:4px; }
-.loan-top > div:first-child{ min-width:0; flex:1; }
+.loan-top > div:first-child{ min-width:0; flex:1; display:flex; gap:8px; align-items:center; }
+.loan-bank-badge{ width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#fff; flex-shrink:0; overflow:hidden; }
+.loan-bank-badge img{ width:100%; height:100%; object-fit:cover; border-radius:9px; }
 .loan-bottom{ display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); }
-.loan-bottom b{ color:var(--text); font-weight:700; }
+.loan-bottom b{ color:var(--text); font-weight:800; font-size:13px; }
 .del-btn{ color:var(--danger); font-size:11px; font-weight:700; background:none; border:none; font-family:inherit; cursor:pointer; }
 
 .empty{ text-align:center; padding:60px 20px; color:var(--muted); }
@@ -865,6 +867,7 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; overflow-x:hidden; }
 </div>
 
 <script src="vendor/biometric-auth.js"></script>
+<script src="vendor/backup.js"></script>
 <script>
 /* TODO: آدرس بک‌اند — بعد از دیپلوی سرور (پوشه‌ی server/ همین ریپو) رو دامنه‌ی خودتون،
    این مقدار رو با آدرس واقعی (https://...) عوض کنید. تا وقتی خالیه، ورود با شماره تلفن
@@ -1353,13 +1356,14 @@ function openManualAdd(){
 
 function saveManualLoan(){
   const name = document.getElementById('manualName').value.trim();
-  const bank = document.getElementById('manualBank').value.trim() || 'مشخص‌نشده';
+  const bank = document.getElementById('manualBank').value.trim();
   const installment = Number(cleanNum(document.getElementById('manualInstallment').value));
   const n = Number(cleanNum(document.getElementById('manualTotalCount').value));
   const paidCount = Number(cleanNum(document.getElementById('manualPaidCount').value)) || 0;
   const startDate = { y:Number(mYear.value), m:Number(mMonth.value), d:Number(mDay.value) };
 
   if(!name){ showToast('اسم وام رو وارد کن'); return; }
+  if(!bank){ showToast('اسم بانک یا فروشنده رو وارد کن'); return; }
   if(!installment || installment <= 0){ showToast('مبلغ قسط رو وارد کن'); return; }
   if(!n || n <= 0){ showToast('تعداد کل اقساط رو وارد کن'); return; }
   if(paidCount > n){ showToast('تعداد پرداخت‌شده نمی‌تونه از کل اقساط بیشتر باشه'); return; }
@@ -1969,15 +1973,29 @@ function renderLoansList(){
     container.innerHTML = backupBar + addCard + `<div class="empty"><div class="ic">📭</div>هنوز وامی ذخیره نکردی.<br>از تب محاسبه‌گر شروع کن.</div>`;
     return;
   }
-  container.innerHTML = backupBar + addCard + currentLoans.map(l => `
+  container.innerHTML = backupBar + addCard + currentLoans.map(l => {
+    const meta = findBankMeta(l.bank);
+    const badgeBg = meta ? (meta.logo ? '#fff' : meta.c) : 'var(--primary-dim)';
+    const badgeInner = meta && meta.logo
+      ? `<img src="${meta.logo}" alt="${l.bank}" onerror="this.parentElement.style.background='${meta.c}'; this.parentElement.style.color='#fff'; this.parentElement.innerHTML='${initials(l.bank)}';">`
+      : initials(l.bank);
+    return `
     <div class="loan-card" onclick="openSavedLoan(${l.id})">
       <div class="loan-top">
-        <div><div class="loan-name">${l.name}</div><div class="loan-sub">${l.bank} • ${toFa(l.n)} ماهه • ${l.borrower}</div></div>
+        <div>
+          <div class="loan-bank-badge" style="background:${badgeBg}">${badgeInner}</div>
+          <div style="min-width:0;"><div class="loan-name">${l.name}</div><div class="loan-sub">${l.bank} • ${toFa(l.n)} ماهه • ${l.borrower}</div></div>
+        </div>
         <button class="del-btn" onclick="deleteLoan(${l.id}, event)">حذف</button>
       </div>
       <div class="loan-bottom"><span>مبلغ وام: ${fmt(l.amount)} ریال</span><b>${fmt(l.installment)} ریال</b></div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   fitLoanNames();
+}
+/* پیدا کردن اطلاعات (لوگو/رنگ) بانک یا سرویس اعتباری از رو اسمش، برای بج لوگوی «وام‌های من» */
+function findBankMeta(name){
+  return banks.find(b=>b.n===name) || creditServices.find(b=>b.n===name) || null;
 }
 /* اسم بانک/وام رو اگه طولانی باشه و از عرض کادر بزنه بیرون، خودکار کمی کوچیک می‌کنه
    تا کامل و خوانا داخل کادر جا بشه (به‌جای بریده‌شدن با ...) */
@@ -2002,8 +2020,28 @@ function deleteLoan(id, ev){
     showToast('حذف شد');
   });
 }
-function exportBackup(){
-  const blob = new Blob([JSON.stringify(currentLoans, null, 2)], {type:'application/json'});
+/* پشتیبان‌گیری: تو WebView واقعیِ اندروید، دانلود با <a download> و blob: کار نمی‌کنه
+   (محدودیت شناخته‌شده‌ی Capacitor/WebView) - برای همین رو گوشی واقعی از پلاگین‌های
+   Filesystem+Share استفاده می‌کنیم تا فایل رو بنویسیم و به کاربر بدیم ذخیره/شیر کنه.
+   تو مرورگر معمولی (برای تست لوکال) همون دانلود مستقیم با blob کافیه. */
+async function exportBackup(){
+  const data = JSON.stringify(currentLoans, null, 2);
+  const isNative = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+  if(isNative && window.CapFilesystem){
+    try{
+      const result = await window.CapFilesystem.writeFile({
+        path: 'loans-backup.json',
+        data,
+        directory: window.CapDirectory.Cache,
+        encoding: window.CapEncoding.UTF8,
+      });
+      await window.CapShare.share({ title: 'پشتیبان‌گیری وام‌های من', url: result.uri });
+    }catch(e){
+      showToast('پشتیبان‌گیری ناموفق بود' + (e && e.message ? ': ' + e.message : ''));
+    }
+    return;
+  }
+  const blob = new Blob([data], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = 'loans-backup.json';
