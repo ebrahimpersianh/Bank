@@ -6,6 +6,10 @@ on:
     paths:
       - "native-android/**"
       - ".github/workflows/build-native-android.yml"
+  pull_request:
+    paths:
+      - "native-android/**"
+      - ".github/workflows/build-native-android.yml"
   workflow_dispatch:
 
 jobs:
