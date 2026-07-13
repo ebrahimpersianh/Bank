@@ -1,6 +1,6 @@
 {
-  "appId": "ir.loancalc.beta",
-  "appName": "محاسبه‌گر اقساط",
+  "appId": "ir.sadteam.loancalc",
+  "appName": "وام من",
   "webDir": "www",
   "bundledWebRuntime": false,
   "backgroundColor": "#0D1321",

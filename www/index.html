@@ -3,10 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>محاسبه‌گر اقساط — بتا ۲</title>
-<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<title>وام من — نسخه ۱</title>
 <style>
-@import url('https://cdnjs.cloudflare.com/ajax/libs/vazirmatn/33.003/Vazirmatn-font-face.css');
+@font-face{
+  font-family:'Vazirmatn';
+  src:url('fonts/Vazirmatn[wght].woff2') format('woff2 supports variations'),
+      url('fonts/Vazirmatn[wght].woff2') format('woff2-variations');
+  font-weight:100 900;
+  font-style:normal;
+  font-display:swap;
+}
 
 :root{
   --bg:#0D1321; --surface:#161F35; --surface-2:#1D2A46;
@@ -23,22 +29,27 @@ html,body{ margin:0; padding:0; background:#070B14; color:var(--text); font-fami
 body.light{ background:#E7E9F0; }
 body{ display:flex; justify-content:center; min-height:100vh; }
 
-.app{ width:100%; max-width:460px; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; position:relative; transition:background .3s; }
+.app{ width:100%; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; position:relative; transition:background .3s; }
 .app.fs-small{ zoom:0.9; }
 .app.fs-medium{ zoom:1; }
 .app.fs-large{ zoom:1.15; }
-.app-header{ padding:18px 18px 12px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:var(--bg); z-index:20; border-bottom:1px solid var(--line); transition:background .3s; }
+.app-header{ padding:18px 8px 12px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:var(--bg); z-index:20; border-bottom:1px solid var(--line); transition:background .3s; }
 .app-header h1{ font-size:16px; font-weight:800; margin:0; }
-.badge-beta{ font-size:10px; color:var(--accent); background:rgba(240,168,87,.14); padding:3px 8px; border-radius:8px; font-weight:700; margin-right:6px; }
+.badge-version{ font-size:10px; color:var(--accent); background:rgba(240,168,87,.14); padding:3px 8px; border-radius:8px; font-weight:700; margin-right:6px; }
 
 .theme-btn{ width:30px; height:30px; border-radius:10px; background:var(--surface); border:1px solid var(--line); cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .theme-btn svg{ width:19px; height:19px; transition:transform .4s; }
 
 .icon-btn{ width:29px; height:29px; border-radius:9px; background:var(--surface); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:15px; border:1px solid var(--line); cursor:pointer; }
 
-main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
+main{ flex:1; padding:14px 6px 100px; overflow-y:auto; overflow-x:hidden; }
 .view{ display:none; } .view.active{ display:block; animation:viewEnter .42s cubic-bezier(.16,1,.3,1); }
 @keyframes viewEnter{ from{opacity:0; transform:translateY(14px) scale(.97);} 60%{opacity:1;} to{opacity:1; transform:none;} }
+/* اسلاید افقی بین ۴ تب اصلی پایین صفحه (نه بین صفحات جزئیات/برگشتی مثل نتیجه یا تنظیمات که همون fade عمودی رو دارن) */
+.view.active.slide-l{ animation:slideInFromLeft .32s cubic-bezier(.16,1,.3,1); }
+.view.active.slide-r{ animation:slideInFromRight .32s cubic-bezier(.16,1,.3,1); }
+@keyframes slideInFromLeft{ from{opacity:0; transform:translateX(-26px);} to{opacity:1; transform:translateX(0);} }
+@keyframes slideInFromRight{ from{opacity:0; transform:translateX(26px);} to{opacity:1; transform:translateX(0);} }
 
 /* افکت نوار طلایی کوتاه و سریع دور المان لمس‌شده (کارت‌ها، تاگل‌ها، دکمه شب/روز، تنظیمات و ...) */
 @keyframes goldRing{
@@ -60,14 +71,19 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .slider{ -webkit-appearance:none; width:100%; height:5px; border-radius:6px; background:var(--surface-2); margin-top:12px; outline:none; }
 .slider::-webkit-slider-thumb{ -webkit-appearance:none; width:19px; height:19px; border-radius:50%; background:var(--primary); border:3px solid var(--bg); box-shadow:0 2px 8px rgba(45,216,184,.4); cursor:pointer; }
 
-.chips{ display:flex; gap:7px; flex-wrap:wrap; }
-.chip{ padding:3px 5px; border-radius:5px; background:var(--surface-2); font-size:10.5px; font-weight:600; color:var(--muted); border:1px solid transparent; cursor:pointer; }
+.chips{ display:flex; gap:7px; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin; scrollbar-color:var(--line) transparent; }
+.chips::-webkit-scrollbar{ height:3px; }
+.chips::-webkit-scrollbar-track{ background:transparent; }
+.chips::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+.chip{ padding:3px 5px; border-radius:5px; background:var(--surface-2); font-size:10.5px; font-weight:600; color:var(--muted); border:1px solid transparent; cursor:pointer; flex-shrink:0; transition:background .18s ease, border-color .18s ease, color .18s ease, transform .12s ease; }
 .chip.sel{ background:rgba(45,216,184,.14); color:var(--primary); border-color:var(--primary-dim); }
 .chip.small{ padding:2px 4px; font-size:9.5px; }
+.chip:active{ transform:scale(.92); }
 
 .preset-scroll{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:4px; }
-.preset-card{ width:67px; min-width:67px; max-width:67px; background:var(--surface-2); border-radius:6px; padding:6px 5px; text-align:center; cursor:pointer; border:1px solid transparent; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
+.preset-card{ width:67px; min-width:67px; max-width:67px; background:var(--surface-2); border-radius:6px; padding:6px 5px; text-align:center; cursor:pointer; border:1px solid transparent; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; transition:background .18s ease, border-color .18s ease, transform .12s ease; }
 .preset-card.sel{ border-color:var(--primary-dim); background:rgba(45,216,184,.1); }
+.preset-card:active{ transform:scale(.95); }
 .preset-card .ic{ margin-bottom:6px; display:flex; justify-content:center; color:var(--primary); }
 .preset-card .ic svg{ width:22px; height:22px; }
 .preset-card .t{ font-size:11px; font-weight:700; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:29px; }
@@ -78,30 +94,36 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .date-row{ display:flex; gap:8px; }
 .date-select{ flex:1; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:5px 4px; color:var(--text); font-family:inherit; font-size:12px; text-align:center; }
 
-.grid2{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
-.bank-item{ display:flex; align-items:center; gap:4px; background:var(--surface-2); border-radius:7px; padding:5px 6px; cursor:pointer; border:1px solid transparent; min-width:0; }
+.bank-group-label{ font-size:11px; color:var(--muted); font-weight:700; margin:6px 0 2px; }
+.bank-scroll{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; }
+.bank-item{ flex:0 0 78px; width:78px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; background:transparent; border-radius:12px; padding:4px 2px; cursor:pointer; border:1px solid transparent; transition:background .18s ease, border-color .18s ease, transform .12s ease; }
 .bank-item.sel{ border-color:var(--primary-dim); background:rgba(45,216,184,.1); }
-.bank-badge{ width:23px; height:23px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; flex-shrink:0; overflow:hidden; }
-.bank-badge img{ width:100%; height:100%; object-fit:cover; border-radius:6px; }
-.bank-name{ font-size:12px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1; display:inline-block; }
+.bank-item:active{ transform:scale(.95); }
+.bank-badge{ width:54px; height:54px; border-radius:15px; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:800; color:#fff; flex-shrink:0; overflow:hidden; }
+.bank-badge img{ width:100%; height:100%; object-fit:cover; border-radius:15px; }
+.bank-name{ font-size:10.5px; font-weight:700; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; white-space:normal; min-height:27px; width:100%; }
 
 .text-input{ width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:4px 5px; color:var(--text); font-family:inherit; font-size:12px; outline:none; }
 
 .toggle-row{ display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
-.toggle{ width:35px; height:21px; border-radius:16px; background:var(--surface-2); position:relative; flex-shrink:0; transition:.2s; }
+.toggle{ width:35px; height:21px; border-radius:16px; background:var(--surface-2); position:relative; flex-shrink:0; transition:background .28s cubic-bezier(.34,1.56,.64,1); }
 .toggle.on{ background:var(--primary-dim); }
-.toggle::after{ content:''; position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:var(--muted); transition:.2s; }
+.toggle::after{ content:''; position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:var(--muted); transition:right .28s cubic-bezier(.34,1.56,.64,1), background .28s ease; }
 .toggle.on::after{ background:var(--primary); right:17px; }
-.grace-box{ max-height:0; overflow:hidden; transition:.25s; } .grace-box.open{ max-height:200px; margin-top:12px; }
+.grace-box{ max-height:0; overflow:hidden; transition:max-height .3s cubic-bezier(.4,0,.2,1); } .grace-box.open{ max-height:200px; margin-top:12px; }
 
-.cta{ width:100%; padding:9px; border-radius:10px; border:none; background:var(--primary); color:#04211C; font-family:inherit; font-size:13px; font-weight:800; margin-top:5px; cursor:pointer; box-shadow:0 12px 24px -10px rgba(45,216,184,.4); }
+.cta{ width:100%; padding:9px; border-radius:10px; border:none; background:var(--primary); color:#04211C; font-family:inherit; font-size:13px; font-weight:800; margin-top:5px; cursor:pointer; box-shadow:0 12px 24px -10px rgba(45,216,184,.4); transition:transform .15s ease, box-shadow .2s ease, opacity .2s ease; }
 .cta.ghost{ background:transparent; color:var(--primary); border:1.5px solid var(--primary-dim); box-shadow:none; }
-.cta:active{ transform:scale(.98); }
+.cta:active{ transform:scale(.97); }
+.cta.loading{ pointer-events:none; opacity:.7; position:relative; color:transparent !important; }
+.cta.loading::after{ content:''; position:absolute; top:50%; left:50%; width:16px; height:16px; margin:-8px 0 0 -8px; border:2px solid rgba(4,33,28,.35); border-top-color:#04211C; border-radius:50%; animation:btnSpin .6s linear infinite; }
+.cta.ghost.loading::after{ border-color:rgba(45,216,184,.3); border-top-color:var(--primary); }
+@keyframes btnSpin{ to{ transform:rotate(360deg); } }
 
 .ring-wrap{ display:flex; justify-content:center; margin:4px 0 8px; }
 .ring{ position:relative; width:180px; height:180px; }
 .ring svg{ width:100%; height:100%; transform:rotate(-90deg); }
-.ring circle{ transition:stroke-dasharray .6s ease; }
+.ring circle{ transition:stroke-dasharray .7s cubic-bezier(.16,1,.3,1), stroke-dashoffset .7s cubic-bezier(.16,1,.3,1); }
 .ring-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
 .ring-center .amt{ font-size:18px; font-weight:800; }
 .ring-center .cap{ font-size:10.5px; color:var(--muted); margin-top:4px; }
@@ -115,20 +137,20 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .stat .v{ font-size:11px; font-weight:800; } .stat .k{ font-size:9px; color:var(--muted); margin-top:3px; }
 
 .table-wrap{ background:var(--surface); border:1px solid var(--line); border-radius:11px; overflow:hidden; }
-.trow-simple{ display:grid; grid-template-columns:0.7fr 0.95fr 0.95fr 0.7fr; padding:8px 6px; font-size:12px; border-bottom:1px solid var(--line); align-items:center; text-align:center; cursor:pointer; gap:3px; }
+.trow-simple{ display:grid; grid-template-columns:0.6fr 1fr auto auto; padding:8px 6px; font-size:12px; border-bottom:1px solid var(--line); align-items:center; text-align:center; cursor:pointer; gap:6px; }
 .trow-simple.head{ color:var(--muted); font-weight:700; background:rgba(255,255,255,.02); cursor:default; font-size:11.5px; }
 .trow-simple:active{ background:var(--surface-2); }
-.status-pill{ font-size:10px; font-weight:700; padding:2px 5px; border-radius:5px; display:inline-block; }
-.inst-amt-box{ background:var(--surface-2); border-radius:5px; padding:2px 4px; display:inline-flex; flex-direction:column; align-items:center; gap:1px; max-width:100%; }
-.inst-amt-num{ font-size:10px; font-weight:700; white-space:nowrap; }
-.inst-amt-words{ font-size:7.5px; color:var(--muted); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.status-pill{ font-size:9.5px; font-weight:700; padding:2px 4px; border-radius:5px; display:inline-block; width:64px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.inst-amt-box{ background:var(--surface-2); border-radius:5px; padding:2px 6px; display:inline-block; }
+.inst-amt-num{ font-size:10.5px; font-weight:700; white-space:nowrap; }
 .status-pill.paid{ background:rgba(45,216,184,.14); color:var(--primary); }
 .status-pill.unpaid{ background:rgba(124,135,162,.14); color:var(--muted); }
 .status-pill.late{ background:rgba(229,107,111,.14); color:var(--danger); }
 
 .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:100; display:none; align-items:flex-end; justify-content:center; }
-.modal-backdrop.open{ display:flex; }
-.modal-sheet{ width:100%; max-width:460px; background:var(--surface); border-radius:13px 13px 0 0; padding:8px 11px 15px; animation:slideUp .25s ease; }
+.modal-backdrop.open{ display:flex; animation:backdropFade .22s ease; }
+@keyframes backdropFade{ from{ background:rgba(0,0,0,0); } to{ background:rgba(0,0,0,.55); } }
+.modal-sheet{ width:100%; max-height:85vh; overflow-y:auto; background:var(--surface); border-radius:13px 13px 0 0; padding:8px 11px 15px; animation:slideUp .3s cubic-bezier(.16,1,.3,1); }
 @keyframes slideUp{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
 .modal-handle{ width:40px; height:4px; background:var(--surface-2); border-radius:4px; margin:0 auto 16px; }
 .modal-sheet h3{ font-size:16px; font-weight:800; margin:0 0 14px; text-align:center; }
@@ -142,11 +164,11 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .detail-status.late{ color:var(--danger); }
 .pay-choice-row{ display:flex; flex-direction:column; }
 
-#toast{ position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px); z-index:1100;
+#toast{ position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(16px) scale(.94); z-index:1100;
   background:var(--surface-2); color:var(--text); border:1px solid var(--line); border-radius:11px;
   padding:10px 16px; font-size:13px; font-weight:600; max-width:88%; text-align:center; opacity:0;
-  transition:opacity .3s ease, transform .3s ease; pointer-events:none; box-shadow:0 12px 30px rgba(0,0,0,.35); }
-#toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  transition:opacity .25s ease, transform .32s cubic-bezier(.34,1.56,.64,1); pointer-events:none; box-shadow:0 12px 30px rgba(0,0,0,.35); }
+#toast.show{ opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
 
 /* ---------- PRINT / PDF EXPORT ---------- */
 @media print{
@@ -164,23 +186,28 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .late-card .title{ font-size:12.5px; font-weight:800; color:var(--danger); margin-bottom:10px; }
 .late-result{ margin-top:10px; text-align:center; font-size:13px; font-weight:700; color:var(--danger); }
 
-.loan-card{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px; margin-bottom:8px; cursor:pointer; }
+.loan-card{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px; margin-bottom:8px; cursor:pointer; transition:transform .15s ease; }
+.loan-card:active{ transform:scale(.98); }
 .add-manual-card{ border:1.5px dashed var(--primary-dim); background:rgba(45,216,184,.05); text-align:center; }
 .loan-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
 .loan-name{ font-weight:800; font-size:12.6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; max-width:100%; } .loan-sub{ color:var(--muted); font-size:11px; margin-top:4px; }
-.loan-top > div:first-child{ min-width:0; flex:1; }
+.loan-top > div:first-child{ min-width:0; flex:1; display:flex; gap:8px; align-items:center; }
+.loan-bank-badge{ width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#fff; flex-shrink:0; overflow:hidden; }
+.loan-bank-badge img{ width:100%; height:100%; object-fit:cover; border-radius:9px; }
 .loan-bottom{ display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); }
-.loan-bottom b{ color:var(--text); font-weight:700; }
+.loan-bottom b{ color:var(--text); font-weight:800; font-size:13px; }
 .del-btn{ color:var(--danger); font-size:11px; font-weight:700; background:none; border:none; font-family:inherit; cursor:pointer; }
 
 .empty{ text-align:center; padding:60px 20px; color:var(--muted); }
 .empty .ic{ font-size:32px; margin-bottom:10px; }
 
 .bottom-nav{ position:sticky; bottom:0; display:flex; background:var(--surface); border-top:1px solid var(--line); padding:12px 10px calc(12px + env(safe-area-inset-bottom)); z-index:20; box-shadow:0 -8px 20px rgba(0,0,0,.25); }
-.nav-item{ flex:1; text-align:center; padding:8px 5px; border-radius:11px; font-size:12.5px; font-weight:700; color:var(--muted); cursor:pointer; }
+.nav-item{ flex:1; text-align:center; padding:8px 5px; border-radius:11px; font-size:12.5px; font-weight:700; color:var(--muted); cursor:pointer; transition:background .25s ease, color .25s ease; }
 .nav-item.active{ color:var(--primary); background:rgba(45,216,184,.1); }
 .nav-item .ic{ display:block; font-size:22px; margin-bottom:5px; }
-.nav-item .ic svg{ width:23px !important; height:23px !important; }
+.nav-item .ic svg{ width:23px !important; height:23px !important; transition:transform .3s cubic-bezier(.34,1.56,.64,1); }
+.nav-item.active .ic svg{ animation:navBounce .4s cubic-bezier(.34,1.56,.64,1); }
+@keyframes navBounce{ 0%{ transform:scale(1); } 45%{ transform:scale(1.22); } 100%{ transform:scale(1); } }
 
 .back-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
 .back-row h2{ font-size:15px; font-weight:800; margin:0; }
@@ -198,7 +225,8 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 .settings-item{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; }
 .settings-item:not(:last-child){ border-bottom:1px solid var(--line); }
 .settings-item .si-label{ font-weight:700; font-size:13px; }
-.settings-item .si-arrow{ color:var(--muted); font-size:14px; }
+.settings-item .si-arrow{ color:var(--muted); font-size:14px; display:inline-block; transition:transform .25s ease; }
+.settings-item .si-arrow.open{ transform:rotate(180deg); }
 .logout-btn{ width:100%; padding:9px; border-radius:10px; border:1.5px solid var(--danger); background:transparent; color:var(--danger); font-family:inherit; font-size:13px; font-weight:800; cursor:pointer; margin-top:6px; }
 
 /* ---------- SPLASH / INTRO ---------- */
@@ -208,6 +236,15 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
   transition:opacity .6s ease, visibility .6s ease;
 }
 #splash.hide{ opacity:0; visibility:hidden; pointer-events:none; }
+
+/* ---------- BIOMETRIC LOCK ---------- */
+#biometricLock{
+  position:fixed; inset:0; z-index:500; background:var(--bg);
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+}
+#biometricLock.show{ display:flex; }
+#biometricLock .name{ color:var(--text); font-size:15px; font-weight:800; margin-top:18px; }
+#biometricLock .sub{ color:var(--muted); font-size:12px; margin-top:6px; }
 #splash .glow{
   position:absolute; width:260px; height:260px; border-radius:50%;
   background:radial-gradient(circle, rgba(45,216,184,.16) 0%, rgba(45,216,184,0) 70%);
@@ -242,15 +279,24 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
     <circle cx="60" cy="60" r="52" fill="none" stroke="#F0A857" stroke-width="12" stroke-linecap="round" stroke-dasharray="98 326.7" transform="rotate(-90 60 60)"/>
     <circle cx="60" cy="60" r="52" fill="none" stroke="#2DD8B8" stroke-width="12" stroke-linecap="round" stroke-dasharray="228 326.7" stroke-dashoffset="-98" transform="rotate(-90 60 60)"/>
   </svg>
-  <div class="name">محاسبه‌گر اقساط</div>
+  <div class="name">وام من</div>
   <div class="dots"><span></span><span></span><span></span></div>
   <div class="powered-by">Powered By Sad Team</div>
+</div>
+
+<div id="biometricLock">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:56px;height:56px;color:var(--primary);">
+    <path d="M12 11c0 3-1 5.5-3 7.5M8 15c1-1.5 1.5-3 1.5-5a2.5 2.5 0 015 0c0 1 0 2-.2 3M12 5.5A6.5 6.5 0 0118.5 12c0 1.2-.1 2.3-.4 3.3M5.5 12A6.5 6.5 0 0112 5.5M4 12c0-.7.06-1.4.18-2M15 12c0 2-.5 3.8-1.4 5.3"/>
+  </svg>
+  <div class="name">اپ قفله</div>
+  <div class="sub">با اثر انگشت بازش کن</div>
+  <button class="cta" style="margin-top:20px; width:auto; padding:11px 28px;" onclick="attemptBiometricUnlock()">تلاش دوباره</button>
 </div>
 
 <div class="app fs-medium" id="appRoot">
   <div class="app-header">
     <div class="theme-btn" onclick="toggleTheme()" id="themeBtn"></div>
-    <h1>محاسبه‌گر اقساط <span class="badge-beta">بتا ۲</span></h1>
+    <h1>وام من</h1>
     <div class="icon-btn" onclick="switchTab('settings')">⚙</div>
   </div>
 
@@ -271,7 +317,7 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
 
       <div class="card">
         <div class="label">بانک یا سرویس اعتباری</div>
-        <div class="grid2" id="bankGrid"></div>
+        <div id="bankGrid"></div>
       </div>
 
       <div class="card">
@@ -491,7 +537,22 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
         <div class="detail-row"><span>مانده بعد از این قسط</span><b id="detailBalance">-</b></div>
         <div class="detail-status" id="detailStatus"></div>
         <button class="cta" id="detailPayBtn" onclick="handlePayButton()">ثبت پرداخت این قسط</button>
+        <button class="cta ghost" onclick="openEditInstallmentModal()">ویرایش مبلغ این قسط</button>
         <button class="cta ghost" onclick="closeDetail()">بستن</button>
+      </div>
+    </div>
+
+    <!-- EDIT INSTALLMENT AMOUNT MODAL -->
+    <div class="modal-backdrop" id="editInstallmentModal">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <h3>مبلغ واقعی این قسط رو وارد کن</h3>
+        <div class="amount-box">
+          <input type="text" inputmode="numeric" class="num-input" id="editInstallmentInput" style="font-size:20px;">
+          <span class="unit-badge">ریال</span>
+        </div>
+        <button class="cta" style="margin-top:16px" onclick="confirmEditInstallment()">ذخیره کن</button>
+        <button class="cta ghost" onclick="closeEditInstallmentModal()">انصراف</button>
       </div>
     </div>
 
@@ -695,16 +756,12 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
           <div class="toggle" id="fingerprintToggle" onclick="toggleFingerprint()"></div>
         </div>
         <div class="notif-row">
-          <div><div style="font-weight:700; font-size:13px;">ورود با جیمیل</div><div class="loan-sub">اتصال حساب گوگل برای پشتیبان‌گیری</div></div>
-          <div class="toggle" id="googleToggle" onclick="handleGoogleToggle()"></div>
-        </div>
-        <div class="notif-row">
-          <div><div style="font-weight:700; font-size:13px;">ورود با شماره تلفن</div><div class="loan-sub">دریافت کد تأیید پیامکی</div></div>
+          <div><div style="font-weight:700; font-size:13px;">ورود با شماره تلفن</div><div class="loan-sub">همگام‌سازی وام‌های من بین چند گوشی</div></div>
           <button class="cta ghost" style="width:auto; margin:0; padding:6px 14px; font-size:11.5px;" onclick="openPhoneLoginModal()">ورود</button>
         </div>
       </div>
       <div class="sub-note" style="line-height:1.9;">
-        ⚠️ نکته: قفل اثر انگشت، ورود با جیمیل و ورود با شماره تلفن نیاز به سرویس بک‌اند و افزونه‌ی نیتیو دارن که در نسخه نهایی بازار فعال می‌شن؛ فعلاً این بخش به‌صورت نمایشی کار می‌کنه.
+        ⚠️ نکته: قفل اثر انگشت فقط رو نسخه‌ی نصبی (نه مرورگر) کار می‌کنه.
       </div>
 
       <!-- FEEDBACK -->
@@ -725,13 +782,33 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
       <div class="card">
         <div class="settings-item" onclick="toggleAbout()">
           <span class="si-label">درباره برنامه</span>
-          <span class="si-arrow">▾</span>
+          <span class="si-arrow" id="aboutArrow">▾</span>
         </div>
         <div class="grace-box" id="aboutBox">
           <div class="sub-note" style="line-height:1.9; margin-top:6px;">
-            محاسبه‌گر اقساط — بتا ۲<br>
+            وام من — نسخه ۱<br>
             این اپ برای محاسبه سریع و شفاف اقساط وام، سود سپرده و برنامه‌ریزی مالی طراحی شده.<br>
             Powered By Sad Team
+          </div>
+        </div>
+      </div>
+
+      <!-- PRIVACY POLICY -->
+      <div class="card">
+        <div class="settings-item" onclick="togglePrivacy()">
+          <span class="si-label">حریم خصوصی</span>
+          <span class="si-arrow" id="privacyArrow">▾</span>
+        </div>
+        <div class="grace-box" id="privacyBox">
+          <div class="sub-note" style="line-height:2; margin-top:6px;">
+            <b>چه اطلاعاتی ذخیره می‌شه؟</b><br>
+            وام‌ها، تنظیمات و یادآوری‌هایی که تو اپ می‌سازی، فقط روی گوشی خودت (حافظه محلی مرورگر/اپ) ذخیره می‌شن. این اپ هیچ تبلیغ، ابزار ردیابی (analytics) یا کد شخص ثالثی نداره و اطلاعاتت رو به‌جایی نمی‌فروشه.<br><br>
+            <b>ورود با شماره تلفن (اختیاری)</b><br>
+            اگه با شماره موبایل وارد بشی، فقط شماره‌ت و لیست وام‌هات (برای همگام‌سازی بین گوشی‌هات) روی سرور اختصاصی همین اپ ذخیره می‌شه؛ این اطلاعات جای دیگه‌ای فرستاده نمی‌شه و در اختیار شرکت یا سرویس ثالثی قرار نمی‌گیره.<br><br>
+            <b>قفل اثر انگشت</b><br>
+            تشخیص اثر انگشت کاملاً توسط سیستم‌عامل گوشی خودت انجام می‌شه؛ این اپ هیچ داده‌ی بیومتریکی نمی‌بینه و ذخیره نمی‌کنه.<br><br>
+            <b>تماس</b><br>
+            برای هر سؤال یا درخواستی درباره‌ی حریم خصوصی، از همون بخش «نظرات و مشکلات» بالا با ما در ارتباط باش.
           </div>
         </div>
       </div>
@@ -742,8 +819,8 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
   </main>
 
   <div class="bottom-nav">
-    <div class="nav-item" id="nav-afford" onclick="switchTab('afford')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1 3 2.3c0 2.7-6 1.3-6 4 0 1.3 1.3 2.3 3 2.3s3-1.1 3-2.5"/></svg></span> محاسبه‌گر</div>
     <div class="nav-item active" id="nav-calc" onclick="switchTab('calc')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;"><rect x="4" y="2" width="16" height="20" rx="3"/><line x1="8" y1="6" x2="16" y2="6"/><circle cx="8" cy="11" r="1"/><circle cx="12" cy="11" r="1"/><circle cx="16" cy="11" r="1"/><circle cx="8" cy="15" r="1"/><circle cx="12" cy="15" r="1"/><circle cx="16" cy="15" r="1"/><circle cx="8" cy="19" r="1"/><circle cx="12" cy="19" r="1"/><circle cx="16" cy="19" r="1"/></svg></span> وام بانکی</div>
+    <div class="nav-item" id="nav-afford" onclick="switchTab('afford')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1 3 2.3c0 2.7-6 1.3-6 4 0 1.3 1.3 2.3 3 2.3s3-1.1 3-2.5"/></svg></span> محاسبه‌گر</div>
     <div class="nav-item" id="nav-deposit" onclick="switchTab('deposit')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span> سود سپرده</div>
     <div class="nav-item" id="nav-loans" onclick="switchTab('loans')"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;"><path d="M4 6h9l2 2h5v11a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1z"/></svg></span> وام‌های من</div>
   </div>
@@ -759,32 +836,21 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
     </div>
   </div>
 
-  <!-- GOOGLE LOGIN MODAL (mock) -->
-  <div class="modal-backdrop" id="loginModal">
-    <div class="modal-sheet">
-      <div class="modal-handle"></div>
-      <h3>ورود با جیمیل</h3>
-      <input type="email" class="text-input" id="loginEmailInput" style="margin-top:6px;" placeholder="you@gmail.com">
-      <button class="cta" style="margin-top:16px" onclick="confirmLogin()">ورود</button>
-      <button class="cta ghost" onclick="closeLoginModal()">انصراف</button>
-    </div>
-  </div>
-
-  <!-- PHONE LOGIN MODAL (mock, two steps) -->
+  <!-- PHONE LOGIN MODAL (two steps) -->
   <div class="modal-backdrop" id="phoneLoginModal">
     <div class="modal-sheet">
       <div class="modal-handle"></div>
       <div id="phoneStep1">
         <h3>ورود با شماره تلفن</h3>
         <input type="tel" class="text-input" id="phoneNumberInput" style="margin-top:6px; direction:ltr; text-align:center;" placeholder="09xxxxxxxxx" maxlength="11">
-        <button class="cta" style="margin-top:16px" onclick="sendPhoneOtp()">دریافت کد تأیید</button>
+        <button class="cta" id="btnSendOtp" style="margin-top:16px" onclick="sendPhoneOtp()">دریافت کد تأیید</button>
         <button class="cta ghost" onclick="closePhoneLoginModal()">انصراف</button>
       </div>
       <div id="phoneStep2" style="display:none;">
         <h3>کد تأیید</h3>
         <div class="loan-sub" style="text-align:center; margin-bottom:10px;">کد ۵ رقمی ارسال‌شده به <span id="phoneShownNumber" style="color:var(--text); font-weight:700;"></span> رو وارد کن</div>
         <input type="tel" class="text-input" id="phoneOtpInput" style="direction:ltr; text-align:center; letter-spacing:6px;" placeholder="•••••" maxlength="5">
-        <button class="cta" style="margin-top:16px" onclick="confirmPhoneOtp()">تأیید و ورود</button>
+        <button class="cta" id="btnConfirmOtp" style="margin-top:16px" onclick="confirmPhoneOtp()">تأیید و ورود</button>
         <button class="cta ghost" onclick="closePhoneLoginModal()">انصراف</button>
       </div>
     </div>
@@ -803,7 +869,27 @@ main{ flex:1; padding:14px 18px 100px; overflow-y:auto; }
   <div id="toast"></div>
 </div>
 
+<script src="vendor/biometric-auth.js"></script>
+<script src="vendor/backup.js"></script>
 <script>
+const API_BASE_URL = 'https://server-8a887fd3-2459-4e6d-ace8-884dc36ca3db.ir-thr-fr1.arvancompute.ir';
+
+/* ================= گزارش خودکار کرش/خطا ================= */
+/* اگه API_BASE_URL ست نشده باشه این کاملاً بی‌اثره (نه کرش می‌کنه نه صف می‌سازه).
+   حداکثر ۵ گزارش در هر بار باز شدن اپ می‌فرسته تا لوپ‌های خطای پشت‌سرهم سرور رو بمباران نکنن. */
+let crashReportsSent = 0;
+function reportCrash(message, stack, context){
+  if(!API_BASE_URL || crashReportsSent >= 5) return;
+  crashReportsSent++;
+  fetch(API_BASE_URL + '/api/crash', {
+    method:'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify({ message: String(message||''), stack: String(stack||''), context: context||'', appVersion:'نسخه ۱' })
+  }).catch(()=>{});
+}
+window.addEventListener('error', (e)=> reportCrash(e.message, e.error && e.error.stack, e.filename + ':' + e.lineno));
+window.addEventListener('unhandledrejection', (e)=> reportCrash('unhandledrejection: ' + (e.reason && e.reason.message || e.reason), e.reason && e.reason.stack, ''));
+
 /* ================= THEME ================= */
 const sunIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`;
 const moonIcon = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>`;
@@ -833,6 +919,21 @@ function cleanNum(str){ return toEnDigits(str).replace(/[^\d]/g,''); }
 function cleanNumDecimal(str){ return toEnDigits(str).replace(/[^\d.]/g,''); }
 function fmt(n){ let s = Math.round(n).toLocaleString('en-US').replace(/,/g,','); return toFa(s); }
 function fmtShort(n){ if(n >= 10000000) return toFa((n/1000000).toFixed(1)) + ' م'; return fmt(n); }
+
+/* شمارش نرم عدد از مقدار قبلی تا مقدار جدید (وقتی نتیجه‌ی محاسبه عوض می‌شه) */
+function animateNumber(el, toValue){
+  const fromValue = Number(el.dataset.animVal) || 0;
+  el.dataset.animVal = toValue;
+  if(fromValue === toValue) { el.textContent = fmt(toValue); return; }
+  const duration = 500, start = performance.now();
+  function tick(now){
+    const p = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(fromValue + (toValue - fromValue) * eased);
+    if(p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
 
 // Persian number to words (up to billions), input in Toman
 const ordinalDays = ['','اول','دوم','سوم','چهارم','پنجم','ششم','هفتم','هشتم','نهم','دهم',
@@ -936,8 +1037,11 @@ const banks = [
   {n:'بانک دی', c:'#4527A0', logo:'icons/banks/dey.png'},
   {n:'بانک گردشگری', c:'#C62828', logo:'icons/banks/gardeshgari.png'},
   {n:'بانک کارآفرین', c:'#EF6C00', logo:'icons/banks/karafarin.png'},
-  {n:'بلوبانک', c:'#0091EA'},
+  {n:'بلوبانک', c:'#0091EA', logo:'icons/banks/blubank.png'},
   {n:'بانک مرکزی', c:'#283593', logo:'icons/banks/markazi.png'},
+  {n:'بانک انصار', c:'#B71C1C', logo:'icons/banks/ansar.png'},
+  {n:'بانک آینده', c:'#3E2723', logo:'icons/banks/ayandeh.png'},
+  {n:'بانک حکمت ایرانیان', c:'#1976D2', logo:'icons/banks/hekmat.png'},
   {n:'موسسه اعتباری آرمان', c:'#8D6E63', logo:'icons/banks/arman.png'},
   {n:'موسسه اعتباری ملل', c:'#1565C0', logo:'icons/banks/melal.png'},
   {n:'بانک صنعت و معدن', c:'#8D6E63', logo:'icons/banks/sanat-madan.png'},
@@ -959,21 +1063,6 @@ const creditServices = [
   {n:'ازکی وام', c:'#FB8C00', rate:23, months:18, min:50000000, max:700000000, logo:'icons/services/azki.jpg'},
   {n:'ویپاد', c:'#00ACC1', rate:24, months:12, min:50000000, max:500000000, logo:'icons/services/vipad.jpg'},
 ];
-function fitBankName(nameEl){
-  if(!nameEl) return;
-  let size = 12;
-  nameEl.style.fontSize = size + 'px';
-  const shrink = ()=>{
-    let tries = 0;
-    while(nameEl.scrollWidth > nameEl.clientWidth && size > 8 && tries < 10){
-      size -= 0.5;
-      nameEl.style.fontSize = size + 'px';
-      tries++;
-    }
-  };
-  if(nameEl.clientWidth > 0){ shrink(); }
-  else { requestAnimationFrame(shrink); }
-}
 function initials(name){
   const clean = name.replace('بانک','').trim();
   return clean.slice(0,2);
@@ -982,15 +1071,18 @@ const bankGrid = document.getElementById('bankGrid');
 let selectedBank = null;
 function renderBankGroup(list, label, isCredit){
   const header = document.createElement('div');
-  header.style.cssText = 'grid-column:1/-1; font-size:11px; color:var(--muted); font-weight:700; margin:6px 0 2px;';
+  header.className = 'bank-group-label';
   header.textContent = label;
   bankGrid.appendChild(header);
+  const scrollRow = document.createElement('div');
+  scrollRow.className = 'bank-scroll';
+  bankGrid.appendChild(scrollRow);
   list.forEach(b=>{
     const el = document.createElement('div');
     el.className = 'bank-item';
-    const badgeInner = b.logo ? `<img src="${b.logo}" alt="${b.n}" onerror="this.parentElement.style.background='${b.c}'; this.parentElement.innerHTML='${initials(b.n)}';">` : initials(b.n);
-    el.innerHTML = `<div class="bank-badge" style="background:${b.c}">${badgeInner}</div><div class="bank-name">${b.n}</div>`;
-    fitBankName(el.querySelector('.bank-name'));
+    const badgeInner = b.logo ? `<img src="${b.logo}" alt="${b.n}" onerror="this.parentElement.style.background='${b.c}'; this.parentElement.style.color='#fff'; this.parentElement.innerHTML='${initials(b.n)}';">` : initials(b.n);
+    const badgeBg = b.logo ? '#fff' : b.c;
+    el.innerHTML = `<div class="bank-badge" style="background:${badgeBg}">${badgeInner}</div><div class="bank-name">${b.n}</div>`;
     el.addEventListener('click', ()=>{
       document.querySelectorAll('.bank-item').forEach(x=>x.classList.remove('sel'));
       el.classList.add('sel');
@@ -1006,7 +1098,7 @@ function renderBankGroup(list, label, isCredit){
         document.querySelectorAll('.preset-card').forEach(x=>x.classList.remove('sel'));
       }
     });
-    bankGrid.appendChild(el);
+    scrollRow.appendChild(el);
   });
 }
 renderBankGroup(banks, 'بانک‌ها', false);
@@ -1152,6 +1244,7 @@ function computeLoan(P, annualRatePct, n, method, graceMonths, intervalDays){
 
 let lastResult = null;
 let lastStartDate = null;
+let currentLoanId = null;
 
 function calculate(){
   const rialAmount = Number(cleanNum(amountInput.value)) || 0;
@@ -1181,15 +1274,16 @@ function calculate(){
 
   lastStartDate = { y:Number(dYear.value), m:Number(dMonth.value), d:Number(dDay.value) };
   lastResult = result;
+  currentLoanId = null;
 
   renderResultUI(result);
   showView('view-result');
 }
 
 function renderResultUI(result){
-  document.getElementById('installmentAmt').textContent = fmt(result.installment);
+  animateNumber(document.getElementById('installmentAmt'), result.installment);
   document.getElementById('installmentWords').textContent = `${numberToWordsFa(result.installment/10)} تومان`;
-  document.getElementById('statTotal').textContent = fmt(result.totalPaid);
+  animateNumber(document.getElementById('statTotal'), result.totalPaid);
   document.getElementById('statDueDay').textContent = ordinalFa(lastStartDate.d);
   document.getElementById('statMonths').textContent = toFa(result.n) + ' ماه';
 
@@ -1205,7 +1299,7 @@ function renderResultUI(result){
   const interestPct = result.principal > 0 ? (result.totalInterest / result.principal * 100) : 0;
   document.getElementById('statInterestPct').textContent = toFa(interestPct.toFixed(interestPct < 10 ? 1 : 0)) + '٪';
 
-  const endDate = addDaysFa(lastStartDate, result.n * (result.intervalDays || 30));
+  const endDate = addDaysFa(lastStartDate, (result.graceMonths||0) * 30 + result.n * (result.intervalDays || 30));
   document.getElementById('statEndDate').textContent = `${toFa(endDate.d)} ${faMonths[endDate.m-1]} ${toFa(endDate.y)}`;
 
   const circumference = 2 * Math.PI * 52;
@@ -1262,13 +1356,14 @@ function openManualAdd(){
 
 function saveManualLoan(){
   const name = document.getElementById('manualName').value.trim();
-  const bank = document.getElementById('manualBank').value.trim() || 'مشخص‌نشده';
+  const bank = document.getElementById('manualBank').value.trim();
   const installment = Number(cleanNum(document.getElementById('manualInstallment').value));
   const n = Number(cleanNum(document.getElementById('manualTotalCount').value));
   const paidCount = Number(cleanNum(document.getElementById('manualPaidCount').value)) || 0;
   const startDate = { y:Number(mYear.value), m:Number(mMonth.value), d:Number(mDay.value) };
 
   if(!name){ showToast('اسم وام رو وارد کن'); return; }
+  if(!bank){ showToast('اسم بانک یا فروشنده رو وارد کن'); return; }
   if(!installment || installment <= 0){ showToast('مبلغ قسط رو وارد کن'); return; }
   if(!n || n <= 0){ showToast('تعداد کل اقساط رو وارد کن'); return; }
   if(paidCount > n){ showToast('تعداد پرداخت‌شده نمی‌تونه از کل اقساط بیشتر باشه'); return; }
@@ -1300,11 +1395,16 @@ function openSavedLoan(id){
     result = { installment:l.installment, totalInterest:0, totalPaid:l.installment*l.n, principal:l.installment*l.n, rows, graceMonths:0, originalP:l.installment*l.n, intervalDays: l.intervalDays || 30 };
   } else {
     result = computeLoan(Number(l.amount), Number(l.rate), Number(l.n), l.method, Number(l.graceMonths || 0), Number(l.intervalDays || 30));
+    if(l.rows){ result.rows = l.rows; } /* اقساطی که ویرایش دستی یا پرداخت‌شون ثبت شده رو نگه دار، دوباره از صفر حساب نکن */
+    result.feePercent = (l.method === 'qarz') ? Number(l.rate || 0) : 0;
+    result.feeAmount = (l.method === 'qarz') ? result.totalInterest : 0;
   }
   result.rate = Number(l.rate || 0); result.n = Number(l.n); result.method = l.method;
   result.borrower = l.borrower; result.bank = l.bank;
   lastStartDate = l.startDate;
   lastResult = result;
+  currentLoanId = id;
+  syncTotalsFromRows();
 
   document.getElementById('nav-calc').classList.add('active');
   document.getElementById('nav-afford').classList.remove('active');
@@ -1319,6 +1419,7 @@ let currentDetailIdx = null;
 function renderTable(result){
   const body = document.getElementById('tableBody');
   let cursor = {...lastStartDate};
+  if(result.graceMonths > 0){ cursor = addDaysFa(cursor, result.graceMonths * 30); }
   const interval = result.intervalDays || 30;
   result.dueDates = [];
   body.innerHTML = result.rows.map((r,idx) => {
@@ -1331,7 +1432,7 @@ function renderTable(result){
     <div class="trow-simple" onclick="openDetail(${idx})">
       <span>قسط ${toFa(r.m)}</span>
       <span>${dateLabel}</span>
-      <span><span class="inst-amt-box"><span class="inst-amt-num">${fmt(r.installment)} ریال</span><span class="inst-amt-words">${numberToWordsFa(r.installment/10)} تومان</span></span></span>
+      <span><span class="inst-amt-box"><span class="inst-amt-num">${fmt(r.installment)} ریال</span></span></span>
       <span><span class="status-pill ${r.paid?'paid':'unpaid'}" id="pill-${idx}">${r.paid?'پرداخت‌شده ✓':'در انتظار'}</span></span>
     </div>`;
   }).join('');
@@ -1375,6 +1476,7 @@ function handlePayButton(){
   if(r.paid){
     r.paid = false; r.paidLate = false; r.paidDate = null;
     updatePill(idx);
+    persistCurrentLoanIfSaved();
     closeDetail();
     return;
   }
@@ -1395,6 +1497,7 @@ function payOnTime(){
   const r = lastResult.rows[idx];
   r.paid = true; r.paidLate = false; r.paidDate = null;
   updatePill(idx);
+  persistCurrentLoanIfSaved();
   closePayModal(); closeDetail();
 }
 function payLateStart(){
@@ -1411,6 +1514,7 @@ function confirmLatePayment(){
     d: Number(document.getElementById('payDay').value)
   };
   updatePill(idx);
+  persistCurrentLoanIfSaved();
   closePayModal(); closeDetail();
 }
 function updatePill(idx){
@@ -1420,6 +1524,70 @@ function updatePill(idx){
   else if(r.paid){ pill.className = 'status-pill paid'; pill.textContent = 'پرداخت‌شده ✓'; }
   else { pill.className = 'status-pill unpaid'; pill.textContent = 'در انتظار'; }
 }
+
+/* جمع کل بازپرداخت و سود رو دوباره از رو خودِ اقساط حساب می‌کنه، برای وقتی که
+   مبلغ یه قسط دستی ویرایش شده و دیگه با محاسبه‌ی اولیه یکی نیست */
+function syncTotalsFromRows(){
+  if(!lastResult || !lastResult.rows) return;
+  let totalPaid = 0, totalInterest = 0;
+  lastResult.rows.forEach(r => { totalPaid += r.installment; totalInterest += r.interest; });
+  lastResult.totalPaid = totalPaid;
+  lastResult.totalInterest = totalInterest;
+  if(lastResult.method === 'qarz'){ lastResult.feeAmount = totalInterest; }
+}
+
+/* اگه وامی که الان نشون داده می‌شه از قبل تو "وام‌های من" ذخیره شده (currentLoanId ست شده)،
+   اقساط و جمع‌های به‌روزشده رو برگردون تو localStorage تا با بازکردن دوباره از بین نره */
+function persistCurrentLoanIfSaved(){
+  if(currentLoanId === null || !lastResult) return;
+  const l = currentLoans.find(x => x.id === currentLoanId);
+  if(!l) return;
+  l.rows = lastResult.rows;
+  l.installment = lastResult.installment;
+  l.totalPaid = lastResult.totalPaid;
+  l.totalInterest = lastResult.totalInterest;
+  persistLoans();
+}
+
+function openEditInstallmentModal(){
+  if(currentDetailIdx === null || !lastResult) return;
+  const r = lastResult.rows[currentDetailIdx];
+  document.getElementById('editInstallmentInput').value = Math.round(r.installment).toLocaleString('en-US');
+  document.getElementById('editInstallmentModal').classList.add('open');
+  setTimeout(()=> document.getElementById('editInstallmentInput').focus(), 300);
+}
+function closeEditInstallmentModal(){ document.getElementById('editInstallmentModal').classList.remove('open'); }
+function confirmEditInstallment(){
+  const newAmount = Number(cleanNum(document.getElementById('editInstallmentInput').value));
+  if(!newAmount || newAmount <= 0){ showToast('یه مبلغ معتبر وارد کن'); return; }
+  const idx = currentDetailIdx;
+  const r = lastResult.rows[idx];
+  r.installment = newAmount;
+  r.interest = newAmount - r.principal;
+  r.edited = true;
+  syncTotalsFromRows();
+  persistCurrentLoanIfSaved();
+  closeEditInstallmentModal();
+  closeDetail();
+  renderResultUI(lastResult);
+  showToast('مبلغ قسط به‌روز شد ✓');
+
+  openConfirmModal('می‌خوای این مبلغ رو برای همه‌ی اقساط اعمال کنی؟', ()=>{
+    lastResult.rows.forEach(row => {
+      row.installment = newAmount;
+      row.interest = newAmount - row.principal;
+      row.edited = true;
+    });
+    syncTotalsFromRows();
+    persistCurrentLoanIfSaved();
+    renderResultUI(lastResult);
+    showToast('مبلغ همه‌ی اقساط به‌روز شد ✓');
+  }, 'بله، رو همه اعمال کن', false);
+}
+document.getElementById('editInstallmentInput').addEventListener('input', function(){
+  const raw = cleanNum(this.value);
+  this.value = raw ? Number(raw).toLocaleString('en-US') : '';
+});
 
 /* late fee: days * installment * (rate+6) / (365*100) */
 function calcLateFee(){
@@ -1445,6 +1613,7 @@ function loadLoansFromStorage(){
 function persistLoans(){
   try{ localStorage.setItem('loans_v2', JSON.stringify(currentLoans)); }
   catch(e){ storageWorks = false; }
+  syncLoansToServer();
 }
 
 function showToast(msg){
@@ -1455,54 +1624,40 @@ function showToast(msg){
   showToast._timer = setTimeout(()=>{ t.classList.remove('show'); }, 2600);
 }
 
-/* ================= ACCOUNT (mock google login, stored locally) ================= */
+/* ================= ACCOUNT (ورود با شماره موبایل + همگام‌سازی ابری) ================= */
 let account = null;
+let authToken = null;
 function loadAccount(){
-  try{ account = JSON.parse(localStorage.getItem('user_account') || 'null'); }
-  catch(e){ account = null; }
+  try{
+    account = JSON.parse(localStorage.getItem('user_account') || 'null');
+    authToken = localStorage.getItem('auth_token') || null;
+  }catch(e){ account = null; authToken = null; }
 }
 function renderAccountUI(){
   const avatar = document.getElementById('accountAvatar');
   const nameEl = document.getElementById('accountName');
   const statusEl = document.getElementById('accountStatus');
   const actionBtn = document.getElementById('accountActionBtn');
-  const googleToggle = document.getElementById('googleToggle');
   if(account){
-    avatar.textContent = account.name.slice(0,1).toUpperCase();
+    avatar.textContent = '✓';
     avatar.classList.remove('guest');
-    nameEl.textContent = account.name;
-    statusEl.textContent = account.email;
+    nameEl.textContent = toFa(account.phone);
+    statusEl.textContent = 'وارد حساب شدی — وام‌های من همگام‌سازی می‌شه';
     actionBtn.style.display = 'none';
-    googleToggle.classList.add('on');
   } else {
     avatar.textContent = '؟';
     avatar.classList.add('guest');
     nameEl.textContent = 'ورود به حساب انجام نشده';
-    statusEl.textContent = 'برای همگام‌سازی و یادآوری‌ها وارد شو';
+    statusEl.textContent = 'برای همگام‌سازی ابری وارد شو';
     actionBtn.style.display = 'inline-block';
     actionBtn.textContent = 'ورود';
-    googleToggle.classList.remove('on');
   }
 }
-function handleAccountAction(){ if(!account) openLoginModal(); }
-function handleGoogleToggle(){ if(account) handleLogout(); else openLoginModal(); }
-function openLoginModal(){
-  document.getElementById('loginEmailInput').value = '';
-  document.getElementById('loginModal').classList.add('open');
-  setTimeout(()=> document.getElementById('loginEmailInput').focus(), 300);
-}
-function closeLoginModal(){ document.getElementById('loginModal').classList.remove('open'); }
-function confirmLogin(){
-  const email = document.getElementById('loginEmailInput').value.trim();
-  if(!email || !email.includes('@')){ showToast('یه ایمیل معتبر وارد کن'); return; }
-  account = { name: email.split('@')[0], email };
-  try{ localStorage.setItem('user_account', JSON.stringify(account)); }catch(e){}
-  renderAccountUI();
-  closeLoginModal();
-  showToast('با موفقیت وارد شدی');
-}
-/* ================= PHONE LOGIN (mock — no real SMS backend yet) ================= */
+function handleAccountAction(){ if(!account) openPhoneLoginModal(); }
+
+/* ================= PHONE LOGIN (شماره موبایل + کد تایید پیامکی از سرور) ================= */
 function openPhoneLoginModal(){
+  if(!API_BASE_URL){ showToast('آدرس بک‌اند هنوز تو کد تنظیم نشده'); return; }
   document.getElementById('phoneNumberInput').value = '';
   document.getElementById('phoneOtpInput').value = '';
   document.getElementById('phoneStep1').style.display = 'block';
@@ -1516,27 +1671,97 @@ function sendPhoneOtp(){
   const phone = cleanNum(document.getElementById('phoneNumberInput').value);
   if(!phone || phone.length !== 11 || !phone.startsWith('09')){ showToast('شماره رو به‌صورت ۰۹xxxxxxxxx وارد کن'); return; }
   pendingPhoneNumber = phone;
-  document.getElementById('phoneShownNumber').textContent = toFa(phone);
-  document.getElementById('phoneStep1').style.display = 'none';
-  document.getElementById('phoneStep2').style.display = 'block';
-  setTimeout(()=> document.getElementById('phoneOtpInput').focus(), 200);
-  showToast('کد تأیید ارسال شد (نمایشی)');
+  const btn = document.getElementById('btnSendOtp');
+  btn.classList.add('loading');
+  fetch(API_BASE_URL + '/api/auth/request-otp', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone})
+  }).then(async res => {
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      showToast(err.error === 'too_soon' ? 'کمی صبر کن، کد قبلی هنوز معتبره' : 'ارسال کد ناموفق بود');
+      return;
+    }
+    document.getElementById('phoneShownNumber').textContent = toFa(phone);
+    document.getElementById('phoneStep1').style.display = 'none';
+    document.getElementById('phoneStep2').style.display = 'block';
+    setTimeout(()=> document.getElementById('phoneOtpInput').focus(), 200);
+    showToast('کد تأیید پیامک شد');
+  }).catch(()=> showToast('اتصال به سرور برقرار نشد'))
+    .finally(()=> btn.classList.remove('loading'));
 }
 function confirmPhoneOtp(){
   const otp = document.getElementById('phoneOtpInput').value.trim();
   if(otp.length !== 5){ showToast('کد ۵ رقمی رو کامل وارد کن'); return; }
-  account = { name: 'کاربر ' + toFa(pendingPhoneNumber.slice(-4)), email: pendingPhoneNumber, phone: pendingPhoneNumber };
-  try{ localStorage.setItem('user_account', JSON.stringify(account)); }catch(e){}
-  renderAccountUI();
-  closePhoneLoginModal();
-  showToast('با موفقیت وارد شدی');
+  const btn = document.getElementById('btnConfirmOtp');
+  btn.classList.add('loading');
+  fetch(API_BASE_URL + '/api/auth/verify-otp', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone:pendingPhoneNumber, code:otp})
+  }).then(async res => {
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok){
+      const msgs = { wrong_code:'کد اشتباهه', code_expired:'کد منقضی شده، دوباره درخواست بده', too_many_attempts:'تعداد تلاش‌ها بیش از حده، دوباره کد بگیر' };
+      showToast(msgs[data.error] || 'تایید ناموفق بود');
+      return;
+    }
+    authToken = data.token;
+    account = { phone: data.phone };
+    try{
+      localStorage.setItem('auth_token', authToken);
+      localStorage.setItem('user_account', JSON.stringify(account));
+    }catch(e){}
+    renderAccountUI();
+    closePhoneLoginModal();
+    showToast('با موفقیت وارد شدی');
+    syncAfterLogin();
+  }).catch(()=> showToast('اتصال به سرور برقرار نشد'))
+    .finally(()=> btn.classList.remove('loading'));
 }
 function handleLogout(){
   if(!account){ showToast('قبلاً وارد نشدی'); return; }
-  account = null;
-  try{ localStorage.removeItem('user_account'); }catch(e){}
+  account = null; authToken = null;
+  try{ localStorage.removeItem('user_account'); localStorage.removeItem('auth_token'); }catch(e){}
   renderAccountUI();
   showToast('از حساب خارج شدی');
+}
+
+/* ================= همگام‌سازی ابری «وام‌های من» ================= */
+/* بعد از هر ذخیره‌ی محلی (persistLoans)، اگه لاگین بودیم، همون آرایه رو می‌فرستیم بالا؛
+   شکست این درخواست بی‌صدا نادیده گرفته می‌شه چون نسخه‌ی محلی هر حال ذخیره شده. */
+function syncLoansToServer(){
+  if(!authToken || !API_BASE_URL) return;
+  fetch(API_BASE_URL + '/api/loans', {
+    method:'PUT',
+    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + authToken },
+    body: JSON.stringify({ loans: currentLoans })
+  }).catch(()=>{});
+}
+/* فقط یه‌بار بلافاصله بعد از ورود موفق صدا زده می‌شه: نسخه‌ی ابری رو با نسخه‌ی همین
+   گوشی مقایسه می‌کنه؛ اگه یکیشون خالیه، بدون سوال همون یکی‌ی دیگه رو نگه می‌داره،
+   اگه هر دو داده دارن و فرق می‌کنن، از کاربر می‌پرسه کدوم نسخه بمونه. */
+function syncAfterLogin(){
+  fetch(API_BASE_URL + '/api/loans', { headers: { 'Authorization': 'Bearer ' + authToken } })
+    .then(res => res.ok ? res.json() : Promise.reject())
+    .then(data => {
+      const serverLoans = data.loans || [];
+      const localHasData = currentLoans.length > 0;
+      const serverHasData = serverLoans.length > 0;
+      if(serverHasData && !localHasData){
+        currentLoans = serverLoans;
+        try{ localStorage.setItem('loans_v2', JSON.stringify(currentLoans)); }catch(e){}
+        renderLoansList();
+        showToast('وام‌های ذخیره‌شده‌ی ابری بازیابی شد ✓');
+      } else if(serverHasData && localHasData && JSON.stringify(serverLoans) !== JSON.stringify(currentLoans)){
+        openConfirmModal('یه نسخه‌ی دیگه از «وام‌های من» تو فضای ابری ذخیره شده. می‌خوای همون نسخه جایگزین اطلاعات این گوشی بشه؟', ()=>{
+          currentLoans = serverLoans;
+          try{ localStorage.setItem('loans_v2', JSON.stringify(currentLoans)); }catch(e){}
+          renderLoansList();
+          showToast('نسخه‌ی ابری جایگزین شد ✓');
+        }, 'بله، نسخه‌ی ابری رو بیار', false);
+      } else {
+        syncLoansToServer();
+      }
+    })
+    .catch(()=> showToast('همگام‌سازی اولیه با سرور ناموفق بود'));
 }
 loadAccount();
 renderAccountUI();
@@ -1544,7 +1769,7 @@ renderAccountUI();
 /* ================= ADVANCED REMINDER SETTINGS ================= */
 function toggleAdvancedReminder(){
   document.getElementById('advReminderBox').classList.toggle('open');
-  document.getElementById('advReminderArrow').textContent = document.getElementById('advReminderBox').classList.contains('open') ? '▴' : '▾';
+  document.getElementById('advReminderArrow').classList.toggle('open');
 }
 document.querySelectorAll('#reminderSoundChips .chip').forEach(c=>{
   c.addEventListener('click', ()=>{
@@ -1588,17 +1813,48 @@ function renderPerLoanReminders(){
     </div>`).join('');
 }
 
-/* ================= FINGERPRINT LOCK (UI toggle, stored locally) ================= */
+/* ================= FINGERPRINT LOCK (@aparajita/capacitor-biometric-auth) ================= */
 function toggleFingerprint(){
   const t = document.getElementById('fingerprintToggle');
-  t.classList.toggle('on');
-  try{ localStorage.setItem('fp_lock', t.classList.contains('on') ? '1' : '0'); }catch(e){}
-  showToast(t.classList.contains('on') ? 'قفل اثر انگشت فعال شد' : 'قفل اثر انگشت غیرفعال شد');
+  if(t.classList.contains('on')){
+    t.classList.remove('on');
+    try{ localStorage.setItem('fp_lock', '0'); }catch(e){}
+    showToast('قفل اثر انگشت غیرفعال شد');
+    return;
+  }
+  window.BiometricAuth.checkBiometry().then(info => {
+    if(!info.isAvailable){
+      showToast('این گوشی اثر انگشت/بایومتریک فعالی نداره');
+      return;
+    }
+    return window.BiometricAuth.authenticate({ reason: 'برای فعال‌کردن قفل اثر انگشت تایید کن', androidTitle: 'تایید اثر انگشت' }).then(()=>{
+      t.classList.add('on');
+      try{ localStorage.setItem('fp_lock', '1'); }catch(e){}
+      showToast('قفل اثر انگشت فعال شد');
+    });
+  }).catch(()=>{
+    showToast('تایید اثر انگشت ناموفق بود، دوباره امتحان کن');
+  });
 }
 (function(){
   try{ if(localStorage.getItem('fp_lock') === '1') document.getElementById('fingerprintToggle').classList.add('on'); }
   catch(e){}
 })();
+
+/* موقع بازشدن اپ (بعد از تموم‌شدن اسپلش)، اگه قفل فعال باشه، صفحه رو با اثر انگشت قفل می‌کنه */
+function isBiometricLockEnabled(){
+  try{ return localStorage.getItem('fp_lock') === '1'; }catch(e){ return false; }
+}
+function attemptBiometricUnlock(){
+  window.BiometricAuth.authenticate({ reason: 'برای باز کردن اپ تایید کن', androidTitle: 'باز کردن قفل اپ' })
+    .then(()=> document.getElementById('biometricLock').classList.remove('show'))
+    .catch(()=>{ /* کاربر لغو کرد یا شکست خورد؛ صفحه‌ی قفل با دکمه‌ی «تلاش دوباره» می‌مونه */ });
+}
+function checkBiometricLockOnStart(){
+  if(!isBiometricLockEnabled()) return;
+  document.getElementById('biometricLock').classList.add('show');
+  attemptBiometricUnlock();
+}
 
 /* ================= FEEDBACK ================= */
 const feedbackCatLabels = { calc:'محاسبه‌گر وام', bank:'وام بانکی', deposit:'سود سپرده', myloans:'وام‌های من' };
@@ -1624,7 +1880,14 @@ function submitFeedback(){
 }
 
 /* ================= ABOUT ================= */
-function toggleAbout(){ document.getElementById('aboutBox').classList.toggle('open'); }
+function toggleAbout(){
+  document.getElementById('aboutBox').classList.toggle('open');
+  document.getElementById('aboutArrow').classList.toggle('open');
+}
+function togglePrivacy(){
+  document.getElementById('privacyBox').classList.toggle('open');
+  document.getElementById('privacyArrow').classList.toggle('open');
+}
 
 /* ---- name modal (replaces prompt()) ---- */
 let nameModalCallback = null;
@@ -1645,8 +1908,11 @@ function confirmNameModal(){
 
 /* ---- generic confirm modal (replaces confirm()) ---- */
 let confirmModalCallback = null;
-function openConfirmModal(text, onYes){
+function openConfirmModal(text, onYes, yesLabel, danger){
   document.getElementById('confirmModalText').textContent = text;
+  const yesBtn = document.getElementById('confirmModalYes');
+  yesBtn.textContent = yesLabel || 'بله، حذف کن';
+  yesBtn.style.background = (danger === false) ? 'var(--primary)' : 'var(--danger)';
   confirmModalCallback = onYes;
   document.getElementById('confirmModal').classList.add('open');
 }
@@ -1671,14 +1937,17 @@ function saveLoan(){
   if(!lastResult) return;
   const defaultName = lastResult.borrower && lastResult.borrower !== '—' ? `وام ${lastResult.borrower}` : 'وام جدید';
   openNameModal(defaultName, (name)=>{
+    const id = Date.now();
     currentLoans.unshift({
-      id: Date.now(), name, bank: lastResult.bank, borrower: lastResult.borrower,
+      id, name, bank: lastResult.bank, borrower: lastResult.borrower,
       amount: lastResult.originalP, rate: lastResult.rate, n: lastResult.n, method: lastResult.method,
       graceMonths: lastResult.graceMonths || 0,
       intervalDays: lastResult.intervalDays || 30,
       installment: lastResult.installment, totalPaid: lastResult.totalPaid, totalInterest: lastResult.totalInterest,
+      rows: lastResult.rows,
       startDate: lastStartDate, paidCount: 0, createdAt: new Date().toISOString()
     });
+    currentLoanId = id;
     persistLoans();
     showToast(storageWorks ? 'ذخیره شد ✓' : 'ذخیره شد ✓ — برای اطمینان از دکمه پشتیبان‌گیری هم استفاده کن');
     switchTab('loans');
@@ -1704,15 +1973,29 @@ function renderLoansList(){
     container.innerHTML = backupBar + addCard + `<div class="empty"><div class="ic">📭</div>هنوز وامی ذخیره نکردی.<br>از تب محاسبه‌گر شروع کن.</div>`;
     return;
   }
-  container.innerHTML = backupBar + addCard + currentLoans.map(l => `
+  container.innerHTML = backupBar + addCard + currentLoans.map(l => {
+    const meta = findBankMeta(l.bank);
+    const badgeBg = meta ? (meta.logo ? '#fff' : meta.c) : 'var(--primary-dim)';
+    const badgeInner = meta && meta.logo
+      ? `<img src="${meta.logo}" alt="${l.bank}" onerror="this.parentElement.style.background='${meta.c}'; this.parentElement.style.color='#fff'; this.parentElement.innerHTML='${initials(l.bank)}';">`
+      : initials(l.bank);
+    return `
     <div class="loan-card" onclick="openSavedLoan(${l.id})">
       <div class="loan-top">
-        <div><div class="loan-name">${l.name}</div><div class="loan-sub">${l.bank} • ${toFa(l.n)} ماهه • ${l.borrower}</div></div>
+        <div>
+          <div class="loan-bank-badge" style="background:${badgeBg}">${badgeInner}</div>
+          <div style="min-width:0;"><div class="loan-name">${l.name}</div><div class="loan-sub">${l.bank} • ${toFa(l.n)} ماهه • ${l.borrower}</div></div>
+        </div>
         <button class="del-btn" onclick="deleteLoan(${l.id}, event)">حذف</button>
       </div>
       <div class="loan-bottom"><span>مبلغ وام: ${fmt(l.amount)} ریال</span><b>${fmt(l.installment)} ریال</b></div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   fitLoanNames();
+}
+/* پیدا کردن اطلاعات (لوگو/رنگ) بانک یا سرویس اعتباری از رو اسمش، برای بج لوگوی «وام‌های من» */
+function findBankMeta(name){
+  return banks.find(b=>b.n===name) || creditServices.find(b=>b.n===name) || null;
 }
 /* اسم بانک/وام رو اگه طولانی باشه و از عرض کادر بزنه بیرون، خودکار کمی کوچیک می‌کنه
    تا کامل و خوانا داخل کادر جا بشه (به‌جای بریده‌شدن با ...) */
@@ -1737,8 +2020,28 @@ function deleteLoan(id, ev){
     showToast('حذف شد');
   });
 }
-function exportBackup(){
-  const blob = new Blob([JSON.stringify(currentLoans, null, 2)], {type:'application/json'});
+/* پشتیبان‌گیری: تو WebView واقعیِ اندروید، دانلود با <a download> و blob: کار نمی‌کنه
+   (محدودیت شناخته‌شده‌ی Capacitor/WebView) - برای همین رو گوشی واقعی از پلاگین‌های
+   Filesystem+Share استفاده می‌کنیم تا فایل رو بنویسیم و به کاربر بدیم ذخیره/شیر کنه.
+   تو مرورگر معمولی (برای تست لوکال) همون دانلود مستقیم با blob کافیه. */
+async function exportBackup(){
+  const data = JSON.stringify(currentLoans, null, 2);
+  const isNative = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+  if(isNative && window.CapFilesystem){
+    try{
+      const result = await window.CapFilesystem.writeFile({
+        path: 'loans-backup.json',
+        data,
+        directory: window.CapDirectory.Cache,
+        encoding: window.CapEncoding.UTF8,
+      });
+      await window.CapShare.share({ title: 'پشتیبان‌گیری وام‌های من', url: result.uri });
+    }catch(e){
+      showToast('پشتیبان‌گیری ناموفق بود' + (e && e.message ? ': ' + e.message : ''));
+    }
+    return;
+  }
+  const blob = new Blob([data], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = 'loans-backup.json';
@@ -1764,17 +2067,35 @@ function importBackup(ev){
 loadLoansFromStorage();
 
 /* ================= NAVIGATION ================= */
-function showView(id){ document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function showView(id, slideDir){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active', 'slide-l', 'slide-r'));
+  const el = document.getElementById(id);
+  if(slideDir === 'left') el.classList.add('slide-l');
+  else if(slideDir === 'right') el.classList.add('slide-r');
+  el.classList.add('active');
+}
+/* ترتیب ۴ تب پایین صفحه، دقیقاً به همون ترتیبی که تو bottom-nav (راست به چپ) چیده شدن؛
+   موقع سوییچ بین این‌ها، جهت اسلاید از رو فاصله‌ی ایندکس تب قبلی و جدید حساب می‌شه —
+   بین این صفحه‌ها و صفحه‌های برگشتی/جزئیات (نتیجه، تنظیمات، افزودن دستی) این اسلاید اعمال نمی‌شه. */
+const tabOrder = ['calc', 'afford', 'deposit', 'loans'];
+let currentTabName = 'calc';
 function switchTab(tab){
   document.getElementById('nav-calc').classList.toggle('active', tab==='calc');
   document.getElementById('nav-afford').classList.toggle('active', tab==='afford');
   document.getElementById('nav-deposit').classList.toggle('active', tab==='deposit');
   document.getElementById('nav-loans').classList.toggle('active', tab==='loans');
-  if(tab === 'calc') showView('view-calc');
-  else if(tab === 'afford') showView('view-afford');
-  else if(tab === 'deposit') showView('view-deposit');
-  else if(tab === 'loans'){ renderLoansList(); showView('view-loans'); }
+
+  const oldIdx = tabOrder.indexOf(currentTabName);
+  const newIdx = tabOrder.indexOf(tab);
+  const slideDir = (oldIdx !== -1 && newIdx !== -1 && oldIdx !== newIdx) ? (newIdx > oldIdx ? 'left' : 'right') : null;
+
+  if(tab === 'calc') showView('view-calc', slideDir);
+  else if(tab === 'afford') showView('view-afford', slideDir);
+  else if(tab === 'deposit') showView('view-deposit', slideDir);
+  else if(tab === 'loans'){ renderLoansList(); showView('view-loans', slideDir); }
   else if(tab === 'settings'){ renderPerLoanReminders(); showView('view-settings'); }
+
+  if(newIdx !== -1) currentTabName = tab;
 }
 renderLoansList();
 
@@ -1993,14 +2314,16 @@ document.addEventListener('click', (e)=>{
 
 /* مخفی‌کردن اسپلش بعد از آماده‌شدن اپ
    نکته مهم: قبلاً این کد فقط به window 'load' گوش می‌داد که منتظر لود کامل
-   منابع خارجی (مثل فونت از cdnjs.cloudflare.com) هم می‌مونه. اگه اون سرور
-   در دسترس نباشه یا کند باشه، 'load' هیچ‌وقت فایر نمی‌شه و اپ برای همیشه
-   رو اسپلش گیر می‌کنه. الان به DOMContentLoaded سوییچ کردیم (که منتظر
-   منابع خارجی نمی‌مونه) و یک fallback سخت هم اضافه شده که در هر صورت
-   حداکثر بعد از ۴ ثانیه اسپلش رو مخفی می‌کنه. */
+   منابع خارجی (وقتی فونت از cdnjs.cloudflare.com می‌اومد) هم می‌مونه. الان
+   فونت لوکاله (www/fonts/) و دیگه به اون سرور نیازی نیست، ولی برای اطمینان
+   بازم روی DOMContentLoaded موندیم و یک fallback سخت هم اضافه شده که در هر
+   صورت حداکثر بعد از ۴ ثانیه اسپلش رو مخفی می‌کنه. */
 function hideSplashOnce(){
   const splash = document.getElementById('splash');
-  if(splash && !splash.classList.contains('hide')) splash.classList.add('hide');
+  if(splash && !splash.classList.contains('hide')){
+    splash.classList.add('hide');
+    checkBiometricLockOnStart();
+  }
 }
 if(document.readyState === 'loading'){
   document.addEventListener('DOMContentLoaded', ()=> setTimeout(hideSplashOnce, 900));
