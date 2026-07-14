@@ -10,7 +10,7 @@ import retrofit2.http.PUT
 /**
  * قرارداد دقیق API طبق server/src/routes/{auth,loans,subscription,crash}.js — بدون هیچ حدسی،
  * مستقیم از رو کد فعلی بک‌اند استخراج شده. توضیح کامل هر مسیر (ارورها، وضعیت auth و ...) تو
- * server/README.md و کامنت‌های خودِ فایل‌های routes/*.js هست.
+ * server/README.md و کامنت‌های خودِ فایل‌های پوشه‌ی routes هست.
  *
  * جدول وام‌ها (loans) سمت سرور schema نداره (JSON مات)، برای همین اینجا هم فعلاً به‌صورت
  * List<Map<String, Any?>> نگه داشته می‌شه؛ مدل تایپ‌شده‌ی کامل (با rows/method/تاریخ‌ها) تو فاز ۱
