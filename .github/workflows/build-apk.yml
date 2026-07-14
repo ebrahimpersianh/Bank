@@ -21,19 +21,22 @@ jobs:
       - name: آماده‌سازی Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: آماده‌سازی Java (لازم برای ساخت اندروید)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: نصب پکیج‌های پروژه
         run: npm install
 
       - name: اضافه‌کردن پلتفرم اندروید
         run: npx cap add android
+
+      - name: اضافه‌کردن مخزن JitPack (پلاگین پرداخت کافه‌بازار/Poolakey از اونجا میاد، نه از Maven Central/Google)
+        run: sed -i "s#mavenCentral()#mavenCentral()\n        maven { url 'https://jitpack.io' }#" android/build.gradle
 
       - name: مجوز ویبره (برای Haptic Feedback)
         run: sed -i 's#<application#<uses-permission android:name="android.permission.VIBRATE" />\n    <application#' android/app/src/main/AndroidManifest.xml
@@ -43,9 +46,6 @@ jobs:
 
       - name: همگام‌سازی فایل‌های وب با پروژه اندروید
         run: npx cap sync android
-
-      - name: پایین‌آوردن حداقل نسخه اندروید به ۵.۱ (API 22 - حداقل واقعی که کتابخونه‌های داخلی پشتیبانی می‌کنن)
-        run: sed -i 's/minSdkVersion = .*/minSdkVersion = 22/' android/variables.gradle
 
       - name: تنظیم شماره نسخه (هر بیلد یه versionCode جدید و منحصربه‌فرد می‌گیره، وگرنه بازار آپلود نسخه‌ی بعدی رو رد می‌کنه)
         run: |

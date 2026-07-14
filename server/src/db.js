@@ -9,6 +9,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT UNIQUE NOT NULL,
+    subscribed INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -36,5 +37,8 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
+
+/* migration برای دیتابیس‌های قدیمی که از قبل جدول users رو بدون ستون subscribed دارن */
+try { db.exec(`ALTER TABLE users ADD COLUMN subscribed INTEGER NOT NULL DEFAULT 0`); } catch (e) { /* از قبل وجود داره */ }
 
 module.exports = db;
