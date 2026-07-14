@@ -68,3 +68,13 @@ server {
 ```bash
 sqlite3 server/data.sqlite "SELECT id, message, context, app_version, created_at FROM crash_reports ORDER BY id DESC LIMIT 20;"
 ```
+
+## اشتراک (محدودیت یک وام رایگان)
+
+هر کاربر بدون اشتراک فقط می‌تونه یک وام تو «وام‌های من» ذخیره کنه؛ برای وام‌های بیشتر باید اشتراک بخره.
+فعلاً خرید واقعی از طریق کافه‌بازار (Bazaar IAB) وصل نشده — تا اون موقع، برای فعال کردن دستی اشتراک یه کاربر
+(مثلاً برای پشتیبانی یا تست) کافیه رو خودِ سرور این رو بزنید:
+
+```bash
+sqlite3 server/data.sqlite "UPDATE users SET subscribed = 1 WHERE phone = '09xxxxxxxxx';"
+```
