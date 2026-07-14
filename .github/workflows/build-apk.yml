@@ -37,11 +37,11 @@ jobs:
 
       - name: اضافه‌کردن مخزن JitPack (پلاگین پرداخت کافه‌بازار/Poolakey از اونجا میاد، نه از Maven Central/Google)
         run: |
-          echo "--- android/settings.gradle BEFORE ---"
-          cat android/settings.gradle
-          sed -i "s#mavenCentral()#mavenCentral()\n        maven { url 'https://jitpack.io' }#" android/settings.gradle
-          echo "--- android/settings.gradle AFTER ---"
-          cat android/settings.gradle
+          echo "--- android/build.gradle BEFORE ---"
+          cat android/build.gradle
+          sed -i "s#mavenCentral()#mavenCentral()\n        maven { url 'https://jitpack.io' }#" android/build.gradle
+          echo "--- android/build.gradle AFTER ---"
+          cat android/build.gradle
 
       - name: مجوز ویبره (برای Haptic Feedback)
         run: sed -i 's#<application#<uses-permission android:name="android.permission.VIBRATE" />\n    <application#' android/app/src/main/AndroidManifest.xml
