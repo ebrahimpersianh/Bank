@@ -26,12 +26,16 @@ Plugin و همه‌ی کتابخونه‌های androidx/Compose فقط رو Goo
 
 ```bash
 cd native-android
-gradle :core:test
+./gradlew :core:test
 ```
 
 ## ساخت APK دیباگ (نیاز به دسترسی به dl.google.com)
 
 ```bash
 cd native-android
-gradle :app:assembleDebug
+./gradlew :app:assembleDebug
 ```
+
+(از این به بعد پروژه `gradlew` داره — دیگه نیازی به نصب جدا Gradle نیست. اگه محیطت هم مثل سندباکس فعلی
+`dl.google.com`/`services.gradle.org` رو بلاک کرده، دانلود اولیه‌ی distribution هم fail می‌شه؛ رو یه
+ماشین معمولی با اینترنت کامل (یا رو گیت‌هاب اکشن) مشکلی نداره.)

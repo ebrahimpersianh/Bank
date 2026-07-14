@@ -28,16 +28,14 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: نصب و کش Gradle (این پروژه فعلاً gradlew نداره، پروژه هنوز در حال ساختِ)
+      - name: کش Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: 8.7
 
       - name: تست موتور محاسبه‌ی وام (core - بدون وابستگی به اندروید)
-        run: gradle :core:test --console=plain
+        run: ./gradlew :core:test --console=plain
 
-      - name: ساخت APK دیباگ (فقط تب وام بانکی فعلاً پورت شده)
-        run: gradle :app:assembleDebug --console=plain
+      - name: ساخت APK دیباگ
+        run: ./gradlew :app:assembleDebug --console=plain
 
       - name: بارگذاری APK به‌عنوان خروجی قابل دانلود
         uses: actions/upload-artifact@v4
