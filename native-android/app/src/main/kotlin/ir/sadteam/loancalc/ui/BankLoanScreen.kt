@@ -37,6 +37,8 @@ import ir.sadteam.loancalc.core.LoanCalculator
 import ir.sadteam.loancalc.core.LoanMethod
 import ir.sadteam.loancalc.core.LoanResult
 import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.core.cleanNum
+import ir.sadteam.loancalc.core.cleanNumDecimal
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
@@ -237,7 +239,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { raw ->
-                        val digits = raw.filter { it.isDigit() }
+                        val digits = cleanNum(raw)
                         val n = digits.toLongOrNull() ?: 0L
                         amountText = if (digits.isEmpty()) "" else fmtGroupedEn(n)
                         if (n in amountSliderRange.start.toLong()..amountSliderRange.endInclusive.toLong()) {
@@ -248,7 +250,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
-                val rialVal = amountText.filter { it.isDigit() }.toLongOrNull() ?: 0L
+                val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
                 if (rialVal > 0) {
                     Text(
                         text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
@@ -279,7 +281,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                 OutlinedTextField(
                     value = rateText,
                     onValueChange = { raw ->
-                        val filtered = raw.filter { it.isDigit() || it == '.' }
+                        val filtered = cleanNumDecimal(raw)
                         rateText = filtered
                         val num = filtered.toDoubleOrNull()
                         if (num != null && num in 0.0..35.0) rateSlider = num.toFloat()
@@ -313,7 +315,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                 }
                 OutlinedTextField(
                     value = customMonthsText,
-                    onValueChange = { customMonthsText = it.filter { c -> c.isDigit() } },
+                    onValueChange = { customMonthsText = cleanNum(it) },
                     placeholder = { Text("تعداد دلخواه") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier
@@ -386,7 +388,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
         }
 
         item {
-            val rialAmount = amountText.filter { it.isDigit() }.toLongOrNull() ?: 0L
+            val rialAmount = cleanNum(amountText).toLongOrNull() ?: 0L
             val n = customMonthsText.toIntOrNull() ?: selectedMonths
             val rate = rateText.toDoubleOrNull() ?: 0.0
             Button(

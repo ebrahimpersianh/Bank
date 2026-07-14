@@ -5,6 +5,8 @@ import kotlin.math.floor
 import kotlin.math.roundToLong
 
 private val faDigits = listOf("۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹")
+private val faToEnDigits = ('۰'..'۹').zip('0'..'9').toMap()
+private val arToEnDigits = ('٠'..'٩').zip('0'..'9').toMap()
 
 /** پورت toFa تو www/index.html: تبدیل ارقام انگلیسی هر رشته به فارسی */
 fun toFa(value: Any): String {
@@ -15,6 +17,18 @@ fun toFa(value: Any): String {
     }
     return sb.toString()
 }
+
+/** پورت toEnDigits تو www/index.html: ارقام فارسی/عربی رو (از هر کیبوردی اومده باشن) به انگلیسی تبدیل می‌کنه */
+fun toEnDigits(value: String): String = buildString {
+    for (c in value) append(faToEnDigits[c] ?: arToEnDigits[c] ?: c)
+}
+
+/** پورت cleanNum تو www/index.html: قبل از parse کردن ورودی عددی کاربر همیشه از این استفاده کن،
+ * وگرنه تایپ‌کردن با کیبورد فارسی (ارقام ۰-۹) به یه عدد صفر/خالی parse می‌شه. */
+fun cleanNum(value: String): String = toEnDigits(value).filter { it in '0'..'9' }
+
+/** پورت cleanNumDecimal تو www/index.html: مثل cleanNum ولی ممیز اعشاری رو هم نگه می‌داره */
+fun cleanNumDecimal(value: String): String = toEnDigits(value).filter { it in '0'..'9' || it == '.' }
 
 /** پورت fmt تو www/index.html: عدد رو با جداکننده‌ی هزارگان (کاما) و ارقام فارسی نشون می‌ده */
 fun fmt(n: Double): String {
