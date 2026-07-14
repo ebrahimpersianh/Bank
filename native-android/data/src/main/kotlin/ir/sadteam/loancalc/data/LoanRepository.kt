@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.data
 
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import ir.sadteam.loancalc.data.db.LoanDao
 import ir.sadteam.loancalc.data.db.LoanEntity
 import kotlinx.coroutines.flow.Flow
@@ -61,10 +62,20 @@ class LoanRepository(private val loanDao: LoanDao) {
                 installment = installment,
                 totalPaid = amount,
                 n = n,
+                paidCount = paidCount,
                 createdAt = createdAt,
                 dataJson = gson.toJson(webShape),
             ),
         )
+    }
+
+    /** پرداخت/لغو پرداخت یه قسط برای وام‌های دستی: هم ستون سریع [LoanEntity.paidCount] رو آپدیت
+     * می‌کنه هم کلید متناظرش رو تو [LoanEntity.dataJson]، تا این دو هیچ‌وقت از هم عقب نیفتن. */
+    suspend fun setPaidCount(loan: LoanEntity, paidCount: Int) {
+        val type = object : TypeToken<MutableMap<String, Any?>>() {}.type
+        val data: MutableMap<String, Any?> = gson.fromJson(loan.dataJson, type) ?: mutableMapOf()
+        data["paidCount"] = paidCount
+        loanDao.upsert(loan.copy(paidCount = paidCount, dataJson = gson.toJson(data)))
     }
 
     private fun isoNow(): String {

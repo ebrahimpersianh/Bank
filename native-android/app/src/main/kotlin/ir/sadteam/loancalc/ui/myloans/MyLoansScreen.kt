@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,12 +37,13 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
- * فعلاً لیست وام‌های محلی Room + افزودن دستی/حذف رو نشون می‌ده. فرم ویرایش قسط، پرداخت قسط، سینک
- * ابری و بازکردن جزئیات/جدول یه وام (openSavedLoan تو www/index.html) فاز بعد هستن.
+ * فعلاً لیست وام‌های محلی Room + افزودن دستی/حذف/بازکردن جزئیات (پرداخت قسط) رو نشون می‌ده.
+ * سینک ابری واقعی و ویرایش دستی مبلغ هر قسط فاز بعد هستن.
  */
 @Composable
 fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel()) {
     var showAddForm by remember { mutableStateOf(false) }
+    var openedLoanId by remember { mutableStateOf<Long?>(null) }
 
     if (showAddForm) {
         AddManualLoanScreen(
@@ -53,6 +55,18 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel()) {
     }
 
     val loans by viewModel.loans.collectAsState()
+
+    val openedLoan = openedLoanId?.let { id -> loans.firstOrNull { it.id == id } }
+    if (openedLoan != null) {
+        LoanDetailScreen(
+            loan = openedLoan,
+            onBack = { openedLoanId = null },
+            onDelete = { viewModel.deleteLoan(openedLoan.id); openedLoanId = null },
+            onMarkNextPaid = { viewModel.setPaidCount(openedLoan, openedLoan.paidCount + 1) },
+            onUndoLastPaid = { viewModel.setPaidCount(openedLoan, openedLoan.paidCount - 1) },
+        )
+        return
+    }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -97,7 +111,7 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel()) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(loans, key = { it.id }) { loan ->
-                AppCard {
+                AppCard(modifier = Modifier.clickable { openedLoanId = loan.id }) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -106,6 +120,12 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel()) {
                         Column {
                             Text(loan.name, color = AppText, fontSize = 15.sp)
                             Text(loan.bank, color = AppMuted, fontSize = 12.sp)
+                            Text(
+                                "${loan.paidCount} از ${loan.n} قسط پرداخت‌شده",
+                                color = AppPrimary,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
                         }
                         IconButton(onClick = { viewModel.deleteLoan(loan.id) }) {
                             Icon(Icons.Filled.Delete, contentDescription = "حذف وام", tint = AppDanger)

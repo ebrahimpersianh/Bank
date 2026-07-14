@@ -40,4 +40,9 @@ class MyLoansViewModel @Inject constructor(
     fun deleteLoan(id: Long) {
         viewModelScope.launch { loanRepository.deleteLoan(id) }
     }
+
+    fun setPaidCount(loan: LoanEntity, paidCount: Int) {
+        val clamped = paidCount.coerceIn(0, loan.n)
+        viewModelScope.launch { loanRepository.setPaidCount(loan, clamped) }
+    }
 }

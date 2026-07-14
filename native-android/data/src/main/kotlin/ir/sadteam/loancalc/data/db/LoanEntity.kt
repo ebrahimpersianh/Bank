@@ -19,6 +19,7 @@ data class LoanEntity(
     val installment: Double,
     val totalPaid: Double,
     val n: Int,
+    val paidCount: Int,
     val createdAt: String,
     val dataJson: String,
 )
