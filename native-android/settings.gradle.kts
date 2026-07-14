@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 rootProject.name = "loan-calculator-native"
 include(":app")
 include(":core")
+include(":data")
