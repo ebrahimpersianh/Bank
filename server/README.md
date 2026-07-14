@@ -71,9 +71,34 @@ sqlite3 server/data.sqlite "SELECT id, message, context, app_version, created_at
 
 ## اشتراک (محدودیت یک وام رایگان)
 
-هر کاربر بدون اشتراک فقط می‌تونه یک وام تو «وام‌های من» ذخیره کنه؛ برای وام‌های بیشتر باید اشتراک بخره.
-فعلاً خرید واقعی از طریق کافه‌بازار (Bazaar IAB) وصل نشده — تا اون موقع، برای فعال کردن دستی اشتراک یه کاربر
-(مثلاً برای پشتیبانی یا تست) کافیه رو خودِ سرور این رو بزنید:
+هر کاربر (مهمون یا لاگین‌کرده) بدون اشتراک فقط می‌تونه یک وام تو «وام‌های من» ذخیره کنه؛ برای وام
+بیشتر اول باید وارد بشه، بعد اشتراک بخره. خرید از طریق پرداخت درون‌برنامه‌ای کافه‌بازار (پلاگین
+Poolakey) انجام می‌شه — چون پلاگین موجود فقط خرید یک‌باره/غیرقابل‌مصرف پشتیبانی می‌کنه (نه اشتراک
+تمدیدشونده‌ی واقعی)، تو پنل کافه‌بازار هم محصول رو از نوع **«محصول درون‌برنامه‌ای غیرقابل‌مصرف»**
+تعریف کنید، نه «اشتراک».
+
+برای فعال شدن واقعیِ تایید خرید (`POST /api/subscription/verify`)، باید این مراحل رو یه‌بار تو
+[پنل توسعه‌دهندگان کافه‌بازار](https://pardakht.cafebazaar.ir/panel/developer-api) انجام بدید:
+
+1. اپ (`ir.sadteam.loancalc`) رو تو پنل کافه‌بازار (Pishkhan) ثبت کنید و یه محصول درون‌برنامه‌ای
+   غیرقابل‌مصرف براش تعریف کنید — شناسه‌ی محصول (Product ID) رو یادداشت کنید.
+2. از بخش «پرداخت درون‌برنامه‌ای» اپ، **کلید RSA** رو کپی کنید — این تو کلاینت (`www/index.html`،
+   ثابت `CAFEBAZAAR_RSA_PUBLIC_KEY`) لازمه.
+3. از بخش «Developer API» یه کلاینت OAuth بسازید (client_id/client_secret می‌گیرید).
+4. این آدرس رو تو مرورگر باز کنید (به‌جای مقادیر داخل `<>` مقادیر واقعی رو بذارید) و اجازه بدید:
+   ```
+   https://pardakht.cafebazaar.ir/devapi/v2/auth/authorize/?response_type=code&access_type=offline&redirect_uri=<REDIRECT_URI>&client_id=<CLIENT_ID>
+   ```
+   بعد از تایید، به `redirect_uri` با یه پارامتر `code` ریدایرکت می‌شید.
+5. با اون `code`، یه درخواست POST به `https://pardakht.cafebazaar.ir/devapi/v2/auth/token/` بزنید
+   (پارامترها: `grant_type=authorization_code`, `code`, `client_id`, `client_secret`, `redirect_uri`)
+   تا `refresh_token` بگیرید — این یه‌بار مصرفه، فقط برای گرفتن refresh_token لازمه.
+6. مقادیر `CAFEBAZAAR_CLIENT_ID`, `CAFEBAZAAR_CLIENT_SECRET`, `CAFEBAZAAR_REFRESH_TOKEN` رو تو
+   `.env` سرور بذارید و `pm2 restart` بزنید.
+
+تا وقتی این‌ها ست نشن، `POST /api/subscription/verify` همیشه `503 {error: 'cafebazaar_not_configured'}`
+برمی‌گردونه (کلاینت پیام خطا نشون می‌ده، کرش نمی‌کنه). برای فعال کردن دستی اشتراک یه کاربر
+(مثلاً برای پشتیبانی یا تست، بدون نیاز به کل این فلو) کافیه رو خودِ سرور این رو بزنید:
 
 ```bash
 sqlite3 server/data.sqlite "UPDATE users SET subscribed = 1 WHERE phone = '09xxxxxxxxx';"
