@@ -21,7 +21,7 @@ jobs:
       - name: آماده‌سازی Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: آماده‌سازی Java (لازم برای ساخت اندروید)
         uses: actions/setup-java@v4
