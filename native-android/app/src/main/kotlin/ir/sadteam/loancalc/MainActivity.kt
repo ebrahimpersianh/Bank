@@ -45,8 +45,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
+import ir.sadteam.loancalc.ui.AffordScreen
 import ir.sadteam.loancalc.ui.BankLoanOutcome
 import ir.sadteam.loancalc.ui.BankLoanScreen
+import ir.sadteam.loancalc.ui.DepositScreen
 import ir.sadteam.loancalc.ui.ResultScreen
 import ir.sadteam.loancalc.ui.myloans.MyLoansScreen
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -129,8 +131,8 @@ private fun LoanCalcApp() {
             composable(BottomTab.BANK_LOAN.route) {
                 key(bankLoanResetKey) { BankLoanTab() }
             }
-            composable(BottomTab.AFFORD.route) { NotYetPortedTab() }
-            composable(BottomTab.DEPOSIT.route) { NotYetPortedTab() }
+            composable(BottomTab.AFFORD.route) { AffordScreen() }
+            composable(BottomTab.DEPOSIT.route) { DepositScreen() }
             composable(BottomTab.MY_LOANS.route) { MyLoansScreen() }
         }
     }
@@ -143,25 +145,6 @@ private fun BankLoanTab() {
         BankLoanScreen(onCalculated = { loanOutcome = it })
     } else {
         ResultScreen(outcome = loanOutcome!!)
-    }
-}
-
-@Composable
-private fun NotYetPortedTab() {
-    // بقیه‌ی تب‌ها (محاسبه‌گر، سود سپرده) هنوز پورت نشدن - فعلاً طبق تصمیم اول، فقط تب «وام بانکی»
-    // کامل ساخته شده (وام‌های من هم به Room/Hilt وصل شده، هرچند فرم افزودن هنوز نداره).
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            "این تب هنوز به Kotlin پورت نشده",
-            color = AppMuted,
-            fontSize = 13.sp,
-        )
     }
 }
 
