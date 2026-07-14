@@ -36,12 +36,7 @@ jobs:
         run: npx cap add android
 
       - name: اضافه‌کردن مخزن JitPack (پلاگین پرداخت کافه‌بازار/Poolakey از اونجا میاد، نه از Maven Central/Google)
-        run: |
-          echo "--- android/build.gradle BEFORE ---"
-          cat android/build.gradle
-          sed -i "s#mavenCentral()#mavenCentral()\n        maven { url 'https://jitpack.io' }#" android/build.gradle
-          echo "--- android/build.gradle AFTER ---"
-          cat android/build.gradle
+        run: sed -i "s#mavenCentral()#mavenCentral()\n        maven { url 'https://jitpack.io' }#" android/build.gradle
 
       - name: مجوز ویبره (برای Haptic Feedback)
         run: sed -i 's#<application#<uses-permission android:name="android.permission.VIBRATE" />\n    <application#' android/app/src/main/AndroidManifest.xml
@@ -51,9 +46,6 @@ jobs:
 
       - name: همگام‌سازی فایل‌های وب با پروژه اندروید
         run: npx cap sync android
-
-      - name: پایین‌آوردن حداقل نسخه اندروید به ۵.۱ (API 22 - حداقل واقعی که کتابخونه‌های داخلی پشتیبانی می‌کنن)
-        run: sed -i 's/minSdkVersion = .*/minSdkVersion = 22/' android/variables.gradle
 
       - name: تنظیم شماره نسخه (هر بیلد یه versionCode جدید و منحصربه‌فرد می‌گیره، وگرنه بازار آپلود نسخه‌ی بعدی رو رد می‌کنه)
         run: |
