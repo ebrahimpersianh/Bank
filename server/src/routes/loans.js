@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { isSubscribed } = require('../subscriptionStatus');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -20,8 +21,8 @@ router.put('/', (req, res) => {
 
   /* بدون اشتراک فقط یه وام مجازه؛ این جلوی دور زدن محدودیت از طریق فراخوانی مستقیم API
      رو می‌گیره (منطق اصلی/پیام به کاربر سمت کلاینته، این فقط یه لایه‌ی دفاعی سمت سرورـه) */
-  const user = db.prepare(`SELECT subscribed FROM users WHERE id = ?`).get(req.user.uid);
-  if (!user?.subscribed && loans.length > 1) {
+  const user = db.prepare(`SELECT subscribed, subscribed_until FROM users WHERE id = ?`).get(req.user.uid);
+  if (!isSubscribed(user) && loans.length > 1) {
     return res.status(403).json({ error: 'subscription_required' });
   }
 

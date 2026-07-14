@@ -10,6 +10,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     phone TEXT UNIQUE NOT NULL,
     subscribed INTEGER NOT NULL DEFAULT 0,
+    subscribed_until TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -38,7 +39,8 @@ db.exec(`
   );
 `);
 
-/* migration برای دیتابیس‌های قدیمی که از قبل جدول users رو بدون ستون subscribed دارن */
+/* migration برای دیتابیس‌های قدیمی که از قبل جدول users رو بدون این ستون‌ها دارن */
 try { db.exec(`ALTER TABLE users ADD COLUMN subscribed INTEGER NOT NULL DEFAULT 0`); } catch (e) { /* از قبل وجود داره */ }
+try { db.exec(`ALTER TABLE users ADD COLUMN subscribed_until TEXT`); } catch (e) { /* از قبل وجود داره */ }
 
 module.exports = db;

@@ -832,8 +832,8 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; overflow-x:hidden; }
     <div class="modal-sheet">
       <div class="modal-handle"></div>
       <h3>ارتقا به اشتراک</h3>
-      <div class="loan-sub" style="text-align:center; margin-bottom:14px;">بدون اشتراک فقط یک وام قابل ذخیره‌ست. برای ذخیره‌ی وام‌های بیشتر، اشتراک تهیه کن.</div>
-      <button class="cta" id="btnBuySubscription" onclick="purchaseSubscription()">خرید اشتراک</button>
+      <div class="loan-sub" style="text-align:center; margin-bottom:14px;">بدون اشتراک فقط یک وام قابل ذخیره‌ست. یه پلن انتخاب کن:</div>
+      <div id="subscriptionTiers"></div>
       <button class="cta ghost" onclick="closeSubscriptionModal()">فعلاً نه</button>
     </div>
   </div>
@@ -856,12 +856,16 @@ main{ flex:1; padding:14px 6px 100px; overflow-y:auto; overflow-x:hidden; }
 <script>
 const API_BASE_URL = 'https://server-8a887fd3-2459-4e6d-ace8-884dc36ca3db.ir-thr-fr1.arvancompute.ir';
 
-/* TODO: این دو مقدار رو بعد از ثبت اپ تو پنل توسعه‌دهندگان کافه‌بازار (Pishkhan) پر کنید:
-   - CAFEBAZAAR_RSA_PUBLIC_KEY: از پنل → اپ → پرداخت درون‌برنامه‌ای → کلید RSA
-   - CAFEBAZAAR_PRODUCT_ID: شناسه‌ی محصولی که برای «اشتراک» (خرید دائمی/غیرقابل‌مصرف) اونجا تعریف می‌کنید
-   تا این‌ها خالی‌ان، purchaseSubscription() موفق نمی‌شه (کاربر یه پیام خطا می‌بینه، کرش نمی‌کنه). */
-const CAFEBAZAAR_RSA_PUBLIC_KEY = '';
-const CAFEBAZAAR_PRODUCT_ID = '';
+const CAFEBAZAAR_RSA_PUBLIC_KEY = 'MIHNMA0GCSqGSIb3DQEBAQUAA4G7ADCBtwKBrwCjfR4R/UMHznr0WXrUrnmzbiVQHT+jaupSCVLKJKixTsSvZxn5ZLo20xyh9s16BPIP3ppDsttotCM53O4jvJvmvPkVfmIRmkvwEIn9wADnl318Ozo7LmnmXQZ8v6diBbkpCpCk1zOWpeicVoiggRUPnmjPiMD5NjHISHWMVbWUrT8YdKmRab1OQzG5JUtnn8FjWf4lYPwMdUylQ3z5m2EO7GOP2EJvgZXRXSWyubUCAwEAAQ==';
+/* هرکدوم یه محصولِ «خرید یک‌باره»‌ی جداگانه‌ست تو پنل کافه‌بازار (نه اشتراک واقعی
+   تمدیدشونده) — شناسه‌ها باید دقیقاً با چیزی که تو پنل ساختید یکی باشه، و سرور هم
+   همین شناسه‌ها رو برای محاسبه‌ی مدت اعتبار می‌شناسه (routes/subscription.js). */
+const CAFEBAZAAR_SUBSCRIPTION_TIERS = [
+  { productId: 'unlimited_loans_1m', label: 'اشتراک ۱ ماهه' },
+  { productId: 'unlimited_loans_3m', label: 'اشتراک ۳ ماهه' },
+  { productId: 'unlimited_loans_6m', label: 'اشتراک ۶ ماهه' },
+  { productId: 'unlimited_loans_1y', label: 'اشتراک ۱ ساله' },
+];
 
 /* ================= گزارش خودکار کرش/خطا ================= */
 /* اگه API_BASE_URL ست نشده باشه این کاملاً بی‌اثره (نه کرش می‌کنه نه صف می‌سازه).
@@ -1655,21 +1659,42 @@ function handleLoanLimitReached(){
 }
 function openSubscriptionModal(){
   document.getElementById('subscriptionModal').classList.add('open');
+  renderSubscriptionTiers();
 }
 function closeSubscriptionModal(){ document.getElementById('subscriptionModal').classList.remove('open'); }
+
 /* ================= خرید اشتراک (پرداخت درون‌برنامه‌ای کافه‌بازار / Poolakey) =================
-   این یه خرید یک‌باره‌ی غیرقابل‌مصرفه (نه اشتراک تمدیدشونده‌ی واقعی) — چون پلاگین Capacitor
-   موجود (Poolakey bridge) فقط purchaseProduct/consumeProduct رو می‌ده، نه یه subscribeProduct
-   جدا؛ برای همین تو پنل کافه‌بازار هم باید این محصول رو از نوع «غیرقابل‌مصرف» تعریف کنی، نه
-   «اشتراک». عمداً consumeProduct صدا زده نمی‌شه (وگرنه دوباره قابل‌خریدن می‌شد). */
-function purchaseSubscription(){
+   هر پلن (۱/۳/۶/۱۲ ماهه) یه خرید یک‌باره‌ی غیرقابل‌مصرفه (نه اشتراک تمدیدشونده‌ی واقعی) —
+   چون پلاگین Capacitor موجود (Poolakey bridge) فقط purchaseProduct/consumeProduct رو می‌ده،
+   نه یه subscribeProduct جدا؛ برای همین تو پنل کافه‌بازار هم باید این محصولات از نوع
+   «غیرقابل‌مصرف» تعریف بشن، نه «اشتراک». عمداً consumeProduct صدا زده نمی‌شه (وگرنه دوباره
+   قابل‌خریدن می‌شد). سرور (routes/subscription.js) با شناسه‌ی محصول تشخیص می‌ده چند روز به
+   اشتراک کاربر اضافه کنه. */
+function renderSubscriptionTiers(){
+  const container = document.getElementById('subscriptionTiers');
+  container.innerHTML = CAFEBAZAAR_SUBSCRIPTION_TIERS.map(t => `
+    <button class="cta ghost tier-btn" onclick="purchaseSubscription('${t.productId}')" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <span>${t.label}</span><span id="tier-price-${t.productId}" class="loan-sub">...</span>
+    </button>`).join('');
+  if(!window.CafebazaarPoolakey || !CAFEBAZAAR_RSA_PUBLIC_KEY) return;
+  window.CafebazaarPoolakey.initialize({ rsaPublicKey: CAFEBAZAAR_RSA_PUBLIC_KEY })
+    .then(()=> window.CafebazaarPoolakey.getProducts({ skus: CAFEBAZAAR_SUBSCRIPTION_TIERS.map(t=>t.productId) }))
+    .then(result => {
+      (result.products || []).forEach(p => {
+        const el = document.getElementById('tier-price-' + p.sku);
+        if(el) el.textContent = p.price;
+      });
+    }).catch(()=>{});
+}
+let subscriptionPurchaseInProgress = false;
+function purchaseSubscription(productId){
   if(!account){ showToast('اول باید وارد بشی'); openPhoneLoginModal(); return; }
   if(!window.CafebazaarPoolakey){ showToast('این قابلیت فقط رو نسخه‌ی نصبی اپ کار می‌کنه'); return; }
-  if(!CAFEBAZAAR_PRODUCT_ID){ showToast('هنوز محصول اشتراک تو کافه‌بازار تعریف نشده'); return; }
-  const btn = document.getElementById('btnBuySubscription');
-  btn.classList.add('loading');
+  if(!CAFEBAZAAR_RSA_PUBLIC_KEY){ showToast('هنوز محصولات اشتراک تو کافه‌بازار تعریف نشدن'); return; }
+  if(subscriptionPurchaseInProgress) return;
+  subscriptionPurchaseInProgress = true;
   window.CafebazaarPoolakey.initialize({ rsaPublicKey: CAFEBAZAAR_RSA_PUBLIC_KEY })
-    .then(()=> window.CafebazaarPoolakey.purchaseProduct({ productId: CAFEBAZAAR_PRODUCT_ID }))
+    .then(()=> window.CafebazaarPoolakey.purchaseProduct({ productId }))
     .then(result => {
       if(result.state !== 'PURCHASED' || !result.purchase){
         const msgs = { CANCELLED:'خرید لغو شد', FAILED:'خرید ناموفق بود', FAILED_TO_BEGIN:'شروع خرید ناموفق بود' };
@@ -1679,7 +1704,7 @@ function purchaseSubscription(){
       return verifySubscriptionPurchase(result.purchase);
     })
     .catch(()=> showToast('اتصال به سرویس پرداخت کافه‌بازار برقرار نشد'))
-    .finally(()=> btn.classList.remove('loading'));
+    .finally(()=>{ subscriptionPurchaseInProgress = false; });
 }
 function verifySubscriptionPurchase(purchase){
   return fetch(API_BASE_URL + '/api/subscription/verify', {

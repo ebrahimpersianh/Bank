@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../db');
 const { sendOtpSms } = require('../sms');
 const { JWT_SECRET, requireAuth } = require('../middleware/auth');
+const { isSubscribed } = require('../subscriptionStatus');
 
 const router = express.Router();
 
@@ -72,16 +73,16 @@ router.post('/verify-otp', (req, res) => {
   }
 
   const token = jwt.sign({ uid: user.id, phone: user.phone }, JWT_SECRET, { expiresIn: '90d' });
-  res.json({ token, phone: user.phone, subscribed: !!user.subscribed });
+  res.json({ token, phone: user.phone, subscribed: isSubscribed(user) });
 });
 
 /* وضعیت فعلی حساب (از جمله اشتراک) — کلاینت بعد از باز شدن اپ این رو صدا می‌زنه تا اگه
    اشتراک از جای دیگه (مثلاً گوشی دیگه، یا بعداً از طریق خرید درون‌برنامه‌ای کافه‌بازار)
    فعال شده باشه، بدون نیاز به لاگین مجدد باخبر بشه. */
 router.get('/me', requireAuth, (req, res) => {
-  const user = db.prepare(`SELECT phone, subscribed FROM users WHERE id = ?`).get(req.user.uid);
+  const user = db.prepare(`SELECT phone, subscribed, subscribed_until FROM users WHERE id = ?`).get(req.user.uid);
   if (!user) return res.status(404).json({ error: 'user_not_found' });
-  res.json({ phone: user.phone, subscribed: !!user.subscribed });
+  res.json({ phone: user.phone, subscribed: isSubscribed(user), subscribedUntil: user.subscribed_until || null });
 });
 
 module.exports = router;
