@@ -3,6 +3,11 @@ package ir.sadteam.loancalc.ui.myloans
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -101,42 +106,7 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
     val gateState by authViewModel.gateState.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
     val canSaveAnotherLoan = loans.isEmpty() || (gateState == GateState.LOGGED_IN && subscribed)
-
-    if (showLoginPrompt) {
-        LoginScreen(
-            onDismiss = { showLoginPrompt = false },
-            onLoginSuccess = { showLoginPrompt = false },
-        )
-        return
-    }
-
-    if (showSubscriptionScreen) {
-        SubscriptionScreen(
-            onBack = { showSubscriptionScreen = false },
-            onSubscribed = { showSubscriptionScreen = false },
-        )
-        return
-    }
-
-    if (showAddForm) {
-        AddManualLoanScreen(
-            onSaved = { showAddForm = false },
-            onCancel = { showAddForm = false },
-            viewModel = viewModel,
-        )
-        return
-    }
-
     val openedLoan = openedLoanId?.let { id -> loans.firstOrNull { it.id == id } }
-    if (openedLoan != null) {
-        LoanDetailScreen(
-            loan = openedLoan,
-            onBack = { openedLoanId = null },
-            onDelete = { viewModel.deleteLoan(openedLoan.id); openedLoanId = null },
-            viewModel = viewModel,
-        )
-        return
-    }
 
     fun onAddLoanClick() {
         when {
@@ -188,103 +158,142 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
         }
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 100.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        item {
-            DashboardSummary(
-                loans = loans,
-                monthlyIncome = monthlyIncome,
-                onIncomeChange = { viewModel.setMonthlyIncome(it) },
+    // پورت حس تعویض نرم بین حالت‌های مختلف این صفحه (لیست/ورود/اشتراک/افزودن/جزئیات) - قبلاً هرکدوم
+    // با یه return زودهنگام یهو جایگزین بقیه می‌شد؛ حالا با AnimatedContent (fade ظریف) عوض می‌شه.
+    val screenKey = when {
+        showLoginPrompt -> "login"
+        showSubscriptionScreen -> "subscription"
+        showAddForm -> "add"
+        openedLoan != null -> "detail"
+        else -> "list"
+    }
+
+    AnimatedContent(
+        targetState = screenKey,
+        transitionSpec = { fadeIn(tween(200)).togetherWith(fadeOut(tween(150))) },
+        label = "myLoansScreen",
+    ) { key ->
+        when (key) {
+            "login" -> LoginScreen(
+                onDismiss = { showLoginPrompt = false },
+                onLoginSuccess = { showLoginPrompt = false },
             )
-        }
-
-        if (loans.isNotEmpty()) {
-            item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    LoanSortMenu(selected = sortOption, onSelect = { sortOption = it })
-                }
+            "subscription" -> SubscriptionScreen(
+                onBack = { showSubscriptionScreen = false },
+                onSubscribed = { showSubscriptionScreen = false },
+            )
+            "add" -> AddManualLoanScreen(
+                onSaved = { showAddForm = false },
+                onCancel = { showAddForm = false },
+                viewModel = viewModel,
+            )
+            "detail" -> openedLoan?.let { loan ->
+                LoanDetailScreen(
+                    loan = loan,
+                    onBack = { openedLoanId = null },
+                    onDelete = { viewModel.deleteLoan(loan.id); openedLoanId = null },
+                    viewModel = viewModel,
+                )
             }
-        }
-
-        item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(
-                    onClick = { openDocumentLauncher.launch(arrayOf("application/json")) },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text("بازیابی", fontSize = 12.sp)
-                }
-                OutlinedButton(
-                    onClick = {
-                        viewModel.exportBackup { json ->
-                            pendingExportJson = json
-                            createDocumentLauncher.launch("loans-backup.json")
-                        }
-                    },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text("پشتیبان‌گیری", fontSize = 12.sp)
-                }
-            }
-        }
-
-        item {
-            OutlinedButton(
-                onClick = { onAddLoanClick() },
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
-                modifier = Modifier.fillMaxWidth(),
+            else -> LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 100.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text("+ افزودن دستی وام")
-            }
-        }
+                item {
+                    DashboardSummary(
+                        loans = loans,
+                        monthlyIncome = monthlyIncome,
+                        onIncomeChange = { viewModel.setMonthlyIncome(it) },
+                    )
+                }
 
-        if (loans.isEmpty()) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 60.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Text("هنوز وامی ذخیره نشده", color = AppText, fontSize = 15.sp)
-                        Text(
-                            "با دکمه‌ی + یه وام دستی اضافه کن",
-                            color = AppMuted,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 6.dp),
-                        )
+                if (loans.isNotEmpty()) {
+                    item {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            LoanSortMenu(selected = sortOption, onSelect = { sortOption = it })
+                        }
                     }
                 }
-            }
-        } else {
-            items(loans, key = { it.id }) { loan ->
-                AppCard(modifier = Modifier.pressScaleClickable { openedLoanId = loan.id }) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column {
-                            Text(loan.name, color = AppText, fontSize = 15.sp)
-                            Text(loan.bank, color = AppMuted, fontSize = 12.sp)
-                            Text(
-                                "${loan.paidCount} از ${loan.n} قسط پرداخت‌شده",
-                                color = AppPrimary,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
+
+                item {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = { openDocumentLauncher.launch(arrayOf("application/json")) },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("بازیابی", fontSize = 12.sp)
                         }
-                        IconButton(onClick = { viewModel.deleteLoan(loan.id) }) {
-                            Icon(Icons.Filled.Delete, contentDescription = "حذف وام", tint = AppDanger)
+                        OutlinedButton(
+                            onClick = {
+                                viewModel.exportBackup { json ->
+                                    pendingExportJson = json
+                                    createDocumentLauncher.launch("loans-backup.json")
+                                }
+                            },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("پشتیبان‌گیری", fontSize = 12.sp)
+                        }
+                    }
+                }
+
+                item {
+                    OutlinedButton(
+                        onClick = { onAddLoanClick() },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("+ افزودن دستی وام")
+                    }
+                }
+
+                if (loans.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 60.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                            ) {
+                                Text("هنوز وامی ذخیره نشده", color = AppText, fontSize = 15.sp)
+                                Text(
+                                    "با دکمه‌ی + یه وام دستی اضافه کن",
+                                    color = AppMuted,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(top = 6.dp),
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(loans, key = { it.id }) { loan ->
+                        AppCard(modifier = Modifier.pressScaleClickable { openedLoanId = loan.id }) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column {
+                                    Text(loan.name, color = AppText, fontSize = 15.sp)
+                                    Text(loan.bank, color = AppMuted, fontSize = 12.sp)
+                                    Text(
+                                        "${loan.paidCount} از ${loan.n} قسط پرداخت‌شده",
+                                        color = AppPrimary,
+                                        fontSize = 11.sp,
+                                        modifier = Modifier.padding(top = 2.dp),
+                                    )
+                                }
+                                IconButton(onClick = { viewModel.deleteLoan(loan.id) }) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "حذف وام", tint = AppDanger)
+                                }
+                            }
                         }
                     }
                 }

@@ -7,7 +7,9 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -362,10 +364,21 @@ private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
 @Composable
 private fun BankLoanTab() {
     var loanOutcome by remember { mutableStateOf<BankLoanOutcome?>(null) }
-    if (loanOutcome == null) {
-        BankLoanScreen(onCalculated = { loanOutcome = it })
-    } else {
-        ResultScreen(outcome = loanOutcome!!)
+    // پورت حس اسلاید فرم→نتیجه (به‌جای یه کاتِ ناگهانی) - همون fade+scale ظریفِ ترنزیشن تب‌های
+    // پایین، اینجا هم برای تعویض داخلی فرم/نتیجه‌ی همین تب اعمال شده.
+    AnimatedContent(
+        targetState = loanOutcome,
+        transitionSpec = {
+            (fadeIn(tween(220)) + scaleIn(initialScale = 0.97f, animationSpec = tween(220)))
+                .togetherWith(fadeOut(tween(150)))
+        },
+        label = "bankLoanTab",
+    ) { outcome ->
+        if (outcome == null) {
+            BankLoanScreen(onCalculated = { loanOutcome = it })
+        } else {
+            ResultScreen(outcome = outcome)
+        }
     }
 }
 

@@ -8,6 +8,11 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -94,6 +99,50 @@ fun SettingsScreen(
     var showLoginPrompt by remember { mutableStateOf(false) }
     var showFinancialCalendar by remember { mutableStateOf(false) }
     var showStats by remember { mutableStateOf(false) }
+
+    // پورت حس تعویض نرم بین حالت‌های مختلف پنل تنظیمات (اصلی/ورود/تقویم مالی/آمار) - قبلاً هرکدوم
+    // با یه return زودهنگام یهو جایگزین بقیه می‌شد؛ حالا با AnimatedContent (fade ظریف) عوض می‌شه.
+    val screenKey = when {
+        showLoginPrompt -> "login"
+        showFinancialCalendar -> "calendar"
+        showStats -> "stats"
+        else -> "main"
+    }
+
+    AnimatedContent(
+        targetState = screenKey,
+        transitionSpec = { fadeIn(tween(200)).togetherWith(fadeOut(tween(150))) },
+        label = "settingsScreen",
+    ) { key ->
+        when (key) {
+            "login" -> LoginScreen(onDismiss = { showLoginPrompt = false }, onLoginSuccess = { showLoginPrompt = false })
+            "calendar" -> FinancialCalendarScreen(onBack = { showFinancialCalendar = false })
+            "stats" -> StatsScreen(onBack = { showStats = false })
+            else -> SettingsMainContent(
+                onBack = onBack,
+                authViewModel = authViewModel,
+                themeViewModel = themeViewModel,
+                notificationsViewModel = notificationsViewModel,
+                appLockViewModel = appLockViewModel,
+                onShowLoginPrompt = { showLoginPrompt = true },
+                onShowFinancialCalendar = { showFinancialCalendar = true },
+                onShowStats = { showStats = true },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsMainContent(
+    onBack: () -> Unit,
+    authViewModel: AuthViewModel,
+    themeViewModel: ThemeViewModel,
+    notificationsViewModel: NotificationsViewModel,
+    appLockViewModel: AppLockViewModel,
+    onShowLoginPrompt: () -> Unit,
+    onShowFinancialCalendar: () -> Unit,
+    onShowStats: () -> Unit,
+) {
     val gateState by authViewModel.gateState.collectAsState()
     val phone by authViewModel.phone.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
@@ -103,21 +152,6 @@ fun SettingsScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) notificationsViewModel.enable() }
-
-    if (showLoginPrompt) {
-        LoginScreen(onDismiss = { showLoginPrompt = false }, onLoginSuccess = { showLoginPrompt = false })
-        return
-    }
-
-    if (showFinancialCalendar) {
-        FinancialCalendarScreen(onBack = { showFinancialCalendar = false })
-        return
-    }
-
-    if (showStats) {
-        StatsScreen(onBack = { showStats = false })
-        return
-    }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // پورت پروفایل بالای پنل تنظیمات اپ رقیب (VAMMAN): آواتار + برچسب وضعیت («نسخه عادی»/«نسخه
@@ -185,7 +219,7 @@ fun SettingsScreen(
                             modifier = Modifier.padding(top = 4.dp),
                         )
                         GradientButton(
-                            onClick = { showLoginPrompt = true },
+                            onClick = onShowLoginPrompt,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 12.dp),
@@ -255,7 +289,7 @@ fun SettingsScreen(
                             modifier = Modifier.padding(top = 2.dp),
                         )
                     }
-                    OutlinedButton(onClick = { showFinancialCalendar = true }) {
+                    OutlinedButton(onClick = onShowFinancialCalendar) {
                         Text("مشاهده")
                     }
                 }
@@ -275,7 +309,7 @@ fun SettingsScreen(
                             modifier = Modifier.padding(top = 2.dp),
                         )
                     }
-                    OutlinedButton(onClick = { showStats = true }) {
+                    OutlinedButton(onClick = onShowStats) {
                         Text("مشاهده")
                     }
                 }
