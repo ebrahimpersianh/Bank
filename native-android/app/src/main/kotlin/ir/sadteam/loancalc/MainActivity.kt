@@ -8,9 +8,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
@@ -52,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -306,6 +311,12 @@ private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
+                // پورت حس اسلاید بین ۴ تب اصلی وب (switchTab/showView) - قبلاً اینجا هیچ ترنزیشنی
+                // نبود (تعویض تب یهو/سخت بود)؛ حالا یه fade+scale ظریف داره، نه یه کات ناگهانی.
+                enterTransition = { fadeIn(tween(220)) + scaleIn(initialScale = 0.97f, animationSpec = tween(220)) },
+                exitTransition = { fadeOut(tween(150)) },
+                popEnterTransition = { fadeIn(tween(220)) + scaleIn(initialScale = 0.97f, animationSpec = tween(220)) },
+                popExitTransition = { fadeOut(tween(150)) },
             ) {
                 composable(BottomTab.BANK_LOAN.route) {
                     key(bankLoanResetKey) { BankLoanTab() }
@@ -365,6 +376,13 @@ private fun RowScope.BottomNavItem(
     onClick: () -> Unit,
 ) {
     val color = if (selected) AppPrimary else AppMuted
+    // پورت easing فنری تب فعال تو وب (cubic-bezier(.34,1.56,.64,1) رو .nav-item .ic svg) - قبلاً
+    // آیکون تب انتخاب‌شده هیچ افکتی نداشت، فقط رنگش عوض می‌شد.
+    val iconScale by animateFloatAsState(
+        targetValue = if (selected) 1.15f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "navIconScale",
+    )
     Column(
         modifier = Modifier
             .weight(1f)
@@ -373,7 +391,14 @@ private fun RowScope.BottomNavItem(
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(tab.icon, contentDescription = tab.label, tint = color, modifier = Modifier.height(22.dp))
+        Icon(
+            tab.icon,
+            contentDescription = tab.label,
+            tint = color,
+            modifier = Modifier
+                .height(22.dp)
+                .graphicsLayer { scaleX = iconScale; scaleY = iconScale },
+        )
         Text(
             tab.label,
             color = color,
