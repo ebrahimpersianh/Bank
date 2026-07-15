@@ -14,6 +14,7 @@ import ir.sadteam.loancalc.data.db.LoanDao
 import ir.sadteam.loancalc.data.network.ApiClient
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
+import ir.sadteam.loancalc.data.prefs.IncomePrefs
 import ir.sadteam.loancalc.data.prefs.SecurityPrefs
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import javax.inject.Singleton
@@ -62,4 +63,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSecurityPrefs(@ApplicationContext context: Context): SecurityPrefs = SecurityPrefs(context)
+
+    @Provides
+    @Singleton
+    fun provideIncomePrefs(@ApplicationContext context: Context): IncomePrefs = IncomePrefs(context)
 }
