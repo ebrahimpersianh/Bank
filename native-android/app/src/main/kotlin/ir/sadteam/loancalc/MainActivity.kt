@@ -25,6 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -44,12 +45,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.hilt.navigation.compose.hiltViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.ui.AffordScreen
 import ir.sadteam.loancalc.ui.BankLoanOutcome
 import ir.sadteam.loancalc.ui.BankLoanScreen
 import ir.sadteam.loancalc.ui.DepositScreen
 import ir.sadteam.loancalc.ui.ResultScreen
+import ir.sadteam.loancalc.ui.auth.AuthViewModel
+import ir.sadteam.loancalc.ui.auth.GateState
+import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.myloans.MyLoansScreen
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -71,10 +76,26 @@ class MainActivity : ComponentActivity() {
         setContent {
             LoanCalcTheme {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                    LoanCalcApp()
+                    AppRoot()
                 }
             }
         }
+    }
+}
+
+/**
+ * پورت checkLoginGateOnStart تو www/index.html: اولین بار که اپ باز می‌شه (و هنوز نه لاگین کرده نه
+ * «مهمان» رو انتخاب کرده) LoginScreen اجباریه؛ گیت هیچ‌وقت دوباره نشون داده نمی‌شه (نه بعد از ورود،
+ * نه بعد از انتخاب مهمان). تا اولین مقدار واقعی از DataStore برسه (gateState == null) چیزی نشون
+ * نمی‌دیم که یه فلش اشتباهی صفحه‌ی ورود قبل از لاگین واقعی دیده نشه.
+ */
+@Composable
+private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel()) {
+    val gateState by authViewModel.gateState.collectAsState()
+    when (gateState) {
+        null -> Surface(modifier = Modifier.fillMaxSize(), color = AppSurface) {}
+        GateState.NEEDS_LOGIN -> LoginScreen()
+        GateState.GUEST, GateState.LOGGED_IN -> LoanCalcApp()
     }
 }
 
