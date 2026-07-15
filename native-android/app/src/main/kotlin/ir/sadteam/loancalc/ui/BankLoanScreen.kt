@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -39,7 +40,6 @@ import ir.sadteam.loancalc.core.LoanResult
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.cleanNumDecimal
-import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.BankEntry
@@ -53,6 +53,8 @@ import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.PresetCard
 import ir.sadteam.loancalc.ui.components.SlimSlider
+import ir.sadteam.loancalc.ui.components.appFieldColors
+import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -123,13 +125,20 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
         return
     }
 
+    val listState = rememberLazyListState()
+    val scrollbarColor = AppPrimary
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        state = listState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .lazyColumnScrollbar(listState, scrollbarColor),
         contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         item {
-            AppCard(label = "وام‌های پرتکرار") {
+            // کارت وام‌های پرتکرار خط مشکی می‌گیره (نه سبز) - چون خودِ کارت‌های داخلش خط مشکی دارن
+            // و کاربر خواست حاشیه‌ی سبز مخصوص بقیه‌ی باکس‌ها باشه، نه این بخشِ اول.
+            AppCard(label = "وام‌های پرتکرار", borderColor = AppText.copy(alpha = 0.5f)) {
                 Row(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -174,6 +183,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     placeholder = { Text("نام وام‌گیرنده") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                 )
             }
         }
@@ -270,6 +280,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                     suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
                 )
                 val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
@@ -277,7 +288,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     Text(
                         text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
                         color = AppAccent,
-                        fontSize = 13.5.sp,
+                        fontSize = 11.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
@@ -288,11 +299,6 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         amountText = fmtGroupedEn(v.toLong())
                     },
                     valueRange = amountSliderRange,
-                )
-                Text(
-                    text = "بازه اسلایدر: ${fmtShortToman(amountSliderRange.start)} تا ${fmtShortToman(amountSliderRange.endInclusive)} ریال — برای اعداد خارج از بازه، مستقیم تایپ کن",
-                    fontSize = 12.sp,
-                    color = AppMuted,
                 )
             }
         }
@@ -310,6 +316,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                     suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
                 )
                 SlimSlider(
@@ -343,6 +350,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         .fillMaxWidth()
                         .padding(top = 10.dp),
                     singleLine = true,
+                    colors = appFieldColors(),
                     suffix = { Text("ماه", color = AppMuted, fontSize = 13.sp) },
                 )
             }
@@ -454,6 +462,7 @@ private fun SimpleDropdown(
             onValueChange = {},
             readOnly = true,
             singleLine = true,
+            colors = appFieldColors(),
             modifier = Modifier.menuAnchor(),
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
         )
@@ -467,10 +476,6 @@ private fun SimpleDropdown(
 
 private fun fmtGroupedEn(n: Long): String {
     return "%,d".format(n)
-}
-
-private fun fmtShortToman(v: Float): String {
-    return fmt(v.toDouble())
 }
 
 private fun trimRate(v: Double): String {

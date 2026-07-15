@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
@@ -31,6 +32,8 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
+import ir.sadteam.loancalc.ui.components.appFieldColors
+import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -50,8 +53,13 @@ fun DepositScreen() {
 
     var result by remember { mutableStateOf<DepositResult?>(null) }
 
+    val listState = rememberLazyListState()
+    val scrollbarColor = AppPrimary
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        state = listState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .lazyColumnScrollbar(listState, scrollbarColor),
         contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -68,6 +76,7 @@ fun DepositScreen() {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                     suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
                 )
                 val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
@@ -75,7 +84,7 @@ fun DepositScreen() {
                     Text(
                         text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
                         color = AppAccent,
-                        fontSize = 13.5.sp,
+                        fontSize = 11.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
@@ -86,11 +95,6 @@ fun DepositScreen() {
                         amountText = "%,d".format(v.toLong())
                     },
                     valueRange = 100_000_000f..10_000_000_000f,
-                )
-                Text(
-                    text = "بازه اسلایدر: ۱۰۰ میلیون تا ۱۰ میلیارد ریال — برای اعداد خارج از بازه، مستقیم تایپ کن",
-                    fontSize = 12.sp,
-                    color = AppMuted,
                 )
             }
         }
@@ -108,6 +112,7 @@ fun DepositScreen() {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                     suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
                 )
                 SlimSlider(
@@ -169,8 +174,9 @@ fun DepositScreen() {
 
 @Composable
 private fun DepositStat(label: String, value: String, modifier: Modifier = Modifier) {
+    // به‌درخواست کاربر اول عنوان (به حروف) بالا، بعد عددش پایین.
     Column(modifier = modifier) {
-        Text(text = value, fontSize = 12.sp, color = AppPrimary)
-        Text(text = label, fontSize = 12.sp, color = AppMuted, modifier = Modifier.padding(top = 2.dp))
+        Text(text = label, fontSize = 12.sp, color = AppMuted)
+        Text(text = value, fontSize = 14.sp, color = AppPrimary, modifier = Modifier.padding(top = 2.dp))
     }
 }

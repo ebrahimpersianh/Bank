@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -41,6 +42,8 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
+import ir.sadteam.loancalc.ui.components.appFieldColors
+import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -62,8 +65,13 @@ fun AffordScreen() {
 
     var result by remember { mutableStateOf<Double?>(null) }
 
+    val listState = rememberLazyListState()
+    val scrollbarColor = AppPrimary
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        state = listState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .lazyColumnScrollbar(listState, scrollbarColor),
         contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -80,6 +88,7 @@ fun AffordScreen() {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                     suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
                 )
                 val rialVal = cleanNum(payText).toLongOrNull() ?: 0L
@@ -87,7 +96,7 @@ fun AffordScreen() {
                     Text(
                         text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
                         color = AppAccent,
-                        fontSize = 13.5.sp,
+                        fontSize = 11.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
@@ -98,11 +107,6 @@ fun AffordScreen() {
                         payText = "%,d".format(v.toLong())
                     },
                     valueRange = 10_000_000f..500_000_000f,
-                )
-                Text(
-                    text = "بازه اسلایدر: ۱۰ تا ۵۰۰ میلیون ریال — برای اعداد خارج از بازه، مستقیم تایپ کن",
-                    fontSize = 12.sp,
-                    color = AppMuted,
                 )
             }
         }
@@ -120,6 +124,7 @@ fun AffordScreen() {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                     suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
                 )
                 SlimSlider(
@@ -152,6 +157,7 @@ fun AffordScreen() {
                         .fillMaxWidth()
                         .padding(top = 10.dp),
                     singleLine = true,
+                    colors = appFieldColors(),
                     suffix = { Text("ماه", color = AppMuted, fontSize = 13.sp) },
                 )
             }
@@ -206,9 +212,9 @@ private fun RateFinderCard() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(AppSurface, RoundedCornerShape(7.dp))
-            .border(1.dp, AppAccent, RoundedCornerShape(7.dp))
-            .padding(10.dp),
+            .background(AppSurface, RoundedCornerShape(18.dp))
+            .border(1.dp, AppPrimary.copy(alpha = 0.4f), RoundedCornerShape(18.dp))
+            .padding(14.dp),
     ) {
         Column {
             Text("یا برعکس: نرخ سود رو پیدا کن", color = AppAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -229,8 +235,12 @@ private fun RateFinderCard() {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                colors = appFieldColors(),
                 suffix = { Text("مبلغ وام (ریال)", color = AppMuted, fontSize = 13.sp) },
             )
+            (cleanNum(amountText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { r ->
+                Text("${numberToWordsFa((r / 10).toDouble())} تومان", color = AppAccent, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+            }
             SlimSlider(
                 value = amountSlider,
                 onValueChange = { v -> amountSlider = v; amountText = "%,d".format(v.toLong()) },
@@ -250,8 +260,12 @@ private fun RateFinderCard() {
                     .fillMaxWidth()
                     .padding(top = 8.dp),
                 singleLine = true,
+                colors = appFieldColors(),
                 suffix = { Text("مبلغ هر قسط (ریال)", color = AppMuted, fontSize = 13.sp) },
             )
+            (cleanNum(installmentText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { r ->
+                Text("${numberToWordsFa((r / 10).toDouble())} تومان", color = AppAccent, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+            }
             SlimSlider(
                 value = installmentSlider,
                 onValueChange = { v -> installmentSlider = v; installmentText = "%,d".format(v.toLong()) },
@@ -266,6 +280,7 @@ private fun RateFinderCard() {
                     .fillMaxWidth()
                     .padding(top = 8.dp),
                 singleLine = true,
+                colors = appFieldColors(),
                 suffix = { Text("تعداد اقساط (ماه)", color = AppMuted, fontSize = 13.sp) },
             )
             if (error != null) {
