@@ -7,6 +7,7 @@ import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
+import ir.sadteam.loancalc.data.prefs.IncomePrefs
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -23,9 +24,18 @@ import javax.inject.Inject
 class MyLoansViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
     private val authPrefs: AuthPrefs,
+    private val incomePrefs: IncomePrefs,
 ) : ViewModel() {
     val loans: StateFlow<List<LoanEntity>> = loanRepository.observeLoans()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** برای باکس «تحلیل درآمد» تو داشبورد بالای «وام‌های من» - رجوع کن به DashboardSummary. */
+    val monthlyIncome: StateFlow<Double> = incomePrefs.monthlyIncome
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    fun setMonthlyIncome(value: Double) {
+        viewModelScope.launch { incomePrefs.setMonthlyIncome(value) }
+    }
 
     fun saveManualLoan(
         name: String,
