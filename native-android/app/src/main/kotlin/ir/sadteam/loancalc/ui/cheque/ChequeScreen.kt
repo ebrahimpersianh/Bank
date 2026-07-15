@@ -57,6 +57,7 @@ import kotlinx.coroutines.withContext
 
 private val typeFilterOptions = listOf(null to "همه", ChequeType.RECEIVED to "دریافتی", ChequeType.PAID to "پرداختی")
 
+@Composable
 fun chequeStatusColor(status: String) = when (status) {
     "PASSED" -> AppPrimary
     "BOUNCED" -> AppDanger
@@ -87,7 +88,8 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
     val allCheques by viewModel.cheques.collectAsState()
     val chequeBooks by viewModel.chequeBooks.collectAsState()
     val visibleCheques = remember(allCheques, typeFilter) {
-        allCheques.filter { !it.archived && (typeFilter == null || it.type == typeFilter.name) }
+        val filterName = typeFilter?.name
+        allCheques.filter { !it.archived && (filterName == null || it.type == filterName) }
     }
     val openedCheque = openedChequeId?.let { id -> allCheques.firstOrNull { it.id == id } }
     val editingCheque = editingChequeId?.let { id -> allCheques.firstOrNull { it.id == id } }
