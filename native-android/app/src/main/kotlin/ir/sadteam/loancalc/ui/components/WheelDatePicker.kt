@@ -66,7 +66,7 @@ fun WheelDatePickerScreen(
     initial: PersianDate,
     onConfirm: (PersianDate) -> Unit,
     onBack: () -> Unit,
-    yearRange: IntRange = 1380..1410,
+    yearRange: IntRange = 1350..1410,
 ) {
     val years = remember(yearRange) { yearRange.toList() }
     var year by remember { mutableIntStateOf(initial.y.coerceIn(yearRange.first, yearRange.last)) }
