@@ -38,8 +38,8 @@ class AuthViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     /** پورت setSubscribed/refreshSubscriptionStatus تو www/index.html - فعلاً فقط از DataStore
-     * محلی خونده می‌شه (بعد از verify-otp نوشته شده)؛ تازه‌سازی زنده از GET /api/auth/me و خرید
-     * واقعی اشتراک کافه‌بازار فاز بعده. */
+     * محلی خونده می‌شه (بعد از verify-otp یا [verifySubscriptionPurchase] نوشته شده)؛ تازه‌سازی
+     * زنده از GET /api/auth/me فاز بعده. */
     val subscribed: StateFlow<Boolean> = authPrefs.subscribed
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -112,6 +112,22 @@ class AuthViewModel @Inject constructor(
             }
             _syncConflict.value = null
             onDone()
+        }
+    }
+
+    /** پورت verifySubscriptionPurchase تو www/index.html: بعد از یه خرید موفق Poolakey صدا زده
+     * می‌شه، سرور خودش مستقل از کافه‌بازار تایید می‌کنه (به کلاینت اعتماد نمی‌شه). */
+    fun verifySubscriptionPurchase(
+        productId: String,
+        purchaseToken: String,
+        onSuccess: () -> Unit,
+        onError: (String?) -> Unit,
+    ) {
+        viewModelScope.launch {
+            when (val result = authRepository.verifySubscription(productId, purchaseToken)) {
+                is AuthResult.Success -> onSuccess()
+                is AuthResult.Error -> onError(result.code)
+            }
         }
     }
 }

@@ -4,8 +4,10 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.network.RequestOtpRequest
+import ir.sadteam.loancalc.data.network.VerifySubscriptionRequest
 import ir.sadteam.loancalc.data.network.VerifyOtpRequest
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
+import kotlinx.coroutines.flow.first
 import retrofit2.HttpException
 
 /** نتیجه‌ی درخواست‌های OTP - [Error.code] دقیقاً همون رشته‌ی error سرور (مثلاً "wrong_code") رو
@@ -42,6 +44,25 @@ class AuthRepository(
         return try {
             val result = apiService.verifyOtp(VerifyOtpRequest(phone, code))
             authPrefs.saveSession(result.token, result.phone, result.subscribed)
+            AuthResult.Success
+        } catch (e: HttpException) {
+            AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))
+        } catch (e: Exception) {
+            AuthResult.Error(null)
+        }
+    }
+
+    /** پورت verifySubscriptionPurchase تو www/index.html: به سرور می‌گه یه خرید Poolakey واقعیه
+     * (کلاینت خودش قابل‌اعتماد نیست)، و اگه تایید شد subscribed رو تو AuthPrefs به‌روز می‌کنه. */
+    suspend fun verifySubscription(productId: String, purchaseToken: String): AuthResult {
+        val token = authPrefs.authToken.first()
+        if (token.isNullOrEmpty()) return AuthResult.Error(null)
+        return try {
+            val result = apiService.verifySubscription(
+                "Bearer $token",
+                VerifySubscriptionRequest(productId, purchaseToken),
+            )
+            authPrefs.setSubscribed(result.subscribed)
             AuthResult.Success
         } catch (e: HttpException) {
             AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))

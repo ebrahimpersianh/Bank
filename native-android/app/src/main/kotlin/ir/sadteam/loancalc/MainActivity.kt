@@ -60,6 +60,8 @@ import ir.sadteam.loancalc.ui.ResultScreen
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
+import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
+import ir.sadteam.loancalc.subscription.SubscriptionManager
 import ir.sadteam.loancalc.ui.myloans.MyLoansScreen
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -77,18 +79,33 @@ private enum class BottomTab(val route: String, val label: String, val icon: Ima
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    // پورت مو‌به‌موی الگوی نمونه‌ی رسمی Poolakey: connect تو onCreate، disconnect تو onDestroy.
+    // خودِ SubscriptionManager به Activity نیاز داره (activityResultRegistry)، برای همین
+    // Hilt-managed نیست و اینجا مستقیم ساخته می‌شه.
+    private lateinit var subscriptionManager: SubscriptionManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        subscriptionManager = SubscriptionManager(this)
+        subscriptionManager.connect { }
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val darkTheme by themeViewModel.darkTheme.collectAsState()
             LoanCalcTheme(darkTheme = darkTheme) {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                CompositionLocalProvider(
+                    LocalLayoutDirection provides LayoutDirection.Rtl,
+                    LocalSubscriptionManager provides subscriptionManager,
+                ) {
                     AppRoot()
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        subscriptionManager.disconnect()
+        super.onDestroy()
     }
 }
 
