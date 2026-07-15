@@ -13,11 +13,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,6 +32,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.ui.auth.AuthViewModel
+import ir.sadteam.loancalc.ui.auth.GateState
+import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -39,11 +44,41 @@ import ir.sadteam.loancalc.ui.theme.AppText
 /**
  * فعلاً لیست وام‌های محلی Room + افزودن دستی/حذف/بازکردن جزئیات (پرداخت قسط) رو نشون می‌ده.
  * سینک ابری واقعی و ویرایش دستی مبلغ هر قسط فاز بعد هستن.
+ *
+ * پورت canSaveAnotherLoan/handleLoanLimitReached تو www/index.html: بعد از اولین وام، مهمون‌ها
+ * باید وارد بشن (LoginScreen غیراجباری، با دکمه‌ی بازگشت)، کاربرهای واردشده‌ی بدون اشتراک باید
+ * اشتراک بخرن (فعلاً فقط یه پیام - خرید واقعی کافه‌بازار فاز بعده).
  */
 @Composable
-fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel()) {
+fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: AuthViewModel = hiltViewModel()) {
     var showAddForm by remember { mutableStateOf(false) }
     var openedLoanId by remember { mutableStateOf<Long?>(null) }
+    var showLoginPrompt by remember { mutableStateOf(false) }
+    var showSubscriptionDialog by remember { mutableStateOf(false) }
+
+    val loans by viewModel.loans.collectAsState()
+    val gateState by authViewModel.gateState.collectAsState()
+    val subscribed by authViewModel.subscribed.collectAsState()
+    val canSaveAnotherLoan = loans.isEmpty() || (gateState == GateState.LOGGED_IN && subscribed)
+
+    if (showLoginPrompt) {
+        LoginScreen(
+            onDismiss = { showLoginPrompt = false },
+            onLoginSuccess = { showLoginPrompt = false },
+        )
+        return
+    }
+
+    if (showSubscriptionDialog) {
+        AlertDialog(
+            onDismissRequest = { showSubscriptionDialog = false },
+            title = { Text("نیاز به اشتراک") },
+            text = { Text("برای ذخیره‌ی بیش از یه وام باید اشتراک بخری. خرید اشتراک هنوز تو این نسخه پیاده نشده.") },
+            confirmButton = {
+                TextButton(onClick = { showSubscriptionDialog = false }) { Text("متوجه شدم") }
+            },
+        )
+    }
 
     if (showAddForm) {
         AddManualLoanScreen(
@@ -53,8 +88,6 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel()) {
         )
         return
     }
-
-    val loans by viewModel.loans.collectAsState()
 
     val openedLoan = openedLoanId?.let { id -> loans.firstOrNull { it.id == id } }
     if (openedLoan != null) {
@@ -72,7 +105,14 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel()) {
         containerColor = Color.Transparent,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddForm = true },
+                onClick = {
+                    when {
+                        canSaveAnotherLoan -> showAddForm = true
+                        gateState == null -> Unit // هنوز از DataStore خونده نشده، صبر کن
+                        gateState != GateState.LOGGED_IN -> showLoginPrompt = true
+                        else -> showSubscriptionDialog = true
+                    }
+                },
                 containerColor = AppPrimary,
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "افزودن وام")

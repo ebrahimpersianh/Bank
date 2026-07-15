@@ -31,6 +31,12 @@ class AuthViewModel @Inject constructor(
         state
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** پورت setSubscribed/refreshSubscriptionStatus تو www/index.html - فعلاً فقط از DataStore
+     * محلی خونده می‌شه (بعد از verify-otp نوشته شده)؛ تازه‌سازی زنده از GET /api/auth/me و خرید
+     * واقعی اشتراک کافه‌بازار فاز بعده. */
+    val subscribed: StateFlow<Boolean> = authPrefs.subscribed
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     fun continueAsGuest() {
         viewModelScope.launch { authPrefs.setGuestMode(true) }
     }
