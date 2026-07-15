@@ -37,8 +37,20 @@ class AuthViewModel @Inject constructor(
     val subscribed: StateFlow<Boolean> = authPrefs.subscribed
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val phone: StateFlow<String?> = authPrefs.phone
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     fun continueAsGuest() {
         viewModelScope.launch { authPrefs.setGuestMode(true) }
+    }
+
+    /** پورت handleLogout: بعد از خروج، guest_mode رو ست می‌کنه (نه اینکه گیت اجباری رو دوباره باز
+     * کنه) تا کاربر بعد از خروج آزادانه به‌عنوان مهمان ادامه بده - رجوع کن به CLAUDE.md. */
+    fun logout() {
+        viewModelScope.launch {
+            authPrefs.clearSession()
+            authPrefs.setGuestMode(true)
+        }
     }
 
     /** پورت sendPhoneOtp: موفق بشه onSuccess صدا زده می‌شه، وگرنه onError با کد خطای سرور
