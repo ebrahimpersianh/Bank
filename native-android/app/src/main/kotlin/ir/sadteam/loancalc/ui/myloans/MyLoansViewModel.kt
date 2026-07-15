@@ -106,6 +106,21 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
+    /** پورت exportBackup - [onResult] با متن JSON صدا زده می‌شه تا UI با SAF ذخیره‌ش کنه. */
+    fun exportBackup(onResult: (String) -> Unit) {
+        viewModelScope.launch { onResult(loanRepository.exportBackupJson()) }
+    }
+
+    /** پورت importBackup - کل لیست وام‌ها رو با محتوای [json] جایگزین می‌کنه. [onResult] با
+     * true/false (فایل معتبر بود یا نه) صدا زده می‌شه. */
+    fun importBackup(json: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val ok = loanRepository.importBackupJson(json)
+            if (ok) syncIfLoggedIn()
+            onResult(ok)
+        }
+    }
+
     private suspend fun syncIfLoggedIn() {
         val token = authPrefs.authToken.first()
         if (!token.isNullOrEmpty()) loanRepository.pushToServer(token)

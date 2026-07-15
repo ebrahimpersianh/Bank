@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.data
 
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.PersianDate
@@ -226,6 +227,26 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
 
     suspend fun replaceAllWithServerData(serverLoans: List<Map<String, Any?>>) {
         loanDao.replaceAll(serverLoans.mapNotNull { fromWebMap(it) })
+    }
+
+    /** پورت exportBackup تو www/index.html - همون آرایه‌ی خام (currentLoans) رو به JSON خوانا
+     * (pretty-printed) تبدیل می‌کنه تا کاربر با SAF ذخیره‌ش کنه. */
+    suspend fun exportBackupJson(): String {
+        val loans = loanDao.getAll().map { toWebMap(it) }
+        return GsonBuilder().setPrettyPrinting().create().toJson(loans)
+    }
+
+    /** پورت importBackup - کل لیست وام‌ها رو با محتوای فایل جایگزین می‌کنه (نه merge)، دقیقاً مثل
+     * وب. اگه JSON یه آرایه نباشه (فایل نامعتبر)، false برمی‌گردونه بدون تغییر دادن چیزی. */
+    suspend fun importBackupJson(json: String): Boolean {
+        val type = object : TypeToken<List<Map<String, Any?>>>() {}.type
+        val imported: List<Map<String, Any?>> = try {
+            gson.fromJson(json, type) ?: return false
+        } catch (e: Exception) {
+            return false
+        }
+        replaceAllWithServerData(imported)
+        return true
     }
 
     /** مقایسه‌ی «فرق دارن یا نه» - نه یه‌به‌یه مثل JSON.stringify تو وب (چون Gson اعداد رو موقع
