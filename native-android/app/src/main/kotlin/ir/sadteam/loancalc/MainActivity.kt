@@ -67,6 +67,7 @@ import ir.sadteam.loancalc.ui.ResultScreen
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
+import ir.sadteam.loancalc.ui.onboarding.BenefitsScreen
 import ir.sadteam.loancalc.ui.onboarding.PermissionGateScreen
 import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.SubscriptionManager
@@ -134,12 +135,23 @@ class MainActivity : ComponentActivity() {
  *
  * قبل از این گیت هم، [PermissionGateScreen] چک می‌شه - برخلاف گیت ورود، این یکی هر بار اپ باز
  * می‌شه دوباره ارزیابی می‌شه (نه فقط یه‌بار)، چون کاربر می‌تونه مجوزها رو از تنظیمات گوشی خاموش کنه.
+ * بعد از گیت مجوز و قبل از گیت ورود، [BenefitsScreen] هم فقط یه‌بار تو کل عمر نصب نشون داده می‌شه.
  */
 @Composable
 private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel()) {
     var permissionsOk by remember { mutableStateOf(false) }
     if (!permissionsOk) {
         PermissionGateScreen(onAllGranted = { permissionsOk = true })
+        return
+    }
+
+    val benefitsSeen by authViewModel.benefitsSeen.collectAsState()
+    if (benefitsSeen != true) {
+        if (benefitsSeen == false) {
+            BenefitsScreen(onContinue = { authViewModel.markBenefitsSeen() })
+        } else {
+            Surface(modifier = Modifier.fillMaxSize(), color = AppSurface) {}
+        }
         return
     }
 

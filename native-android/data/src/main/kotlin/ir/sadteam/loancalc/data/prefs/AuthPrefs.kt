@@ -20,12 +20,17 @@ class AuthPrefs(private val context: Context) {
         val PHONE = stringPreferencesKey("phone")
         val SUBSCRIBED = booleanPreferencesKey("subscribed")
         val GUEST_MODE = booleanPreferencesKey("guest_mode")
+        val BENEFITS_SEEN = booleanPreferencesKey("benefits_seen")
     }
 
     val authToken: Flow<String?> = context.authDataStore.data.map { it[Keys.TOKEN] }
     val phone: Flow<String?> = context.authDataStore.data.map { it[Keys.PHONE] }
     val subscribed: Flow<Boolean> = context.authDataStore.data.map { it[Keys.SUBSCRIBED] ?: false }
     val guestMode: Flow<Boolean> = context.authDataStore.data.map { it[Keys.GUEST_MODE] ?: false }
+
+    /** پورت صفحه‌ی خوش‌آمد امکانات (رایگان/اشتراکی) اپ رقیب (VAMMAN) - فقط یه‌بار تو کل عمر نصب
+     * نشون داده می‌شه، درست بعد از گیت مجوز و قبل از گیت ورود/مهمان. */
+    val benefitsSeen: Flow<Boolean> = context.authDataStore.data.map { it[Keys.BENEFITS_SEEN] ?: false }
 
     suspend fun saveSession(token: String, phone: String, subscribed: Boolean) {
         context.authDataStore.edit { prefs ->
@@ -41,6 +46,10 @@ class AuthPrefs(private val context: Context) {
 
     suspend fun setGuestMode(value: Boolean) {
         context.authDataStore.edit { it[Keys.GUEST_MODE] = value }
+    }
+
+    suspend fun setBenefitsSeen(value: Boolean) {
+        context.authDataStore.edit { it[Keys.BENEFITS_SEEN] = value }
     }
 
     suspend fun clearSession() {

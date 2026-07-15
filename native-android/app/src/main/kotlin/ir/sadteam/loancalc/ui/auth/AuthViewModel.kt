@@ -46,6 +46,15 @@ class AuthViewModel @Inject constructor(
     val phone: StateFlow<String?> = authPrefs.phone
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** پورت گیت مجوز → [BenefitsScreen] تو AppRoot: تا اولین مقدار واقعی از DataStore نیومده null
+     * می‌مونه (همون الگوی [gateState]) که یه فلش اشتباهی صفحه‌ی امکانات دیده نشه. */
+    val benefitsSeen: StateFlow<Boolean?> = authPrefs.benefitsSeen
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun markBenefitsSeen() {
+        viewModelScope.launch { authPrefs.setBenefitsSeen(true) }
+    }
+
     /** پورت syncAfterLogin - وقتی هم گوشی هم سرور داده‌ی متفاوت دارن، غیر-null می‌شه و منتظر
      * تصمیم کاربر (resolveSyncConflict) می‌مونه؛ UI (LoginScreen) اینو observe می‌کنه. */
     private val _syncConflict = MutableStateFlow<List<Map<String, Any?>>?>(null)
