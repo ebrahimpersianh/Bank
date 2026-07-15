@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -64,6 +66,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.LoanCalcTheme
+import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 
 private enum class BottomTab(val route: String, val label: String, val icon: ImageVector) {
     BANK_LOAN("bank_loan", "وام بانکی", Icons.Filled.AccountBalance),
@@ -78,7 +81,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            LoanCalcTheme {
+            val themeViewModel: ThemeViewModel = hiltViewModel()
+            val darkTheme by themeViewModel.darkTheme.collectAsState()
+            LoanCalcTheme(darkTheme = darkTheme) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     AppRoot()
                 }
@@ -105,12 +110,14 @@ private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel()) {
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-private fun LoanCalcApp() {
+private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
     var showSettings by remember { mutableStateOf(false) }
     if (showSettings) {
         SettingsScreen(onBack = { showSettings = false })
         return
     }
+
+    val darkTheme by themeViewModel.darkTheme.collectAsState()
 
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -125,6 +132,14 @@ private fun LoanCalcApp() {
         topBar = {
             TopAppBar(
                 title = { Text("وام من") },
+                navigationIcon = {
+                    IconButton(onClick = { themeViewModel.toggleTheme() }) {
+                        Icon(
+                            if (darkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                            contentDescription = "تغییر تم",
+                        )
+                    }
+                },
                 actions = {
                     IconButton(onClick = { showSettings = true }) {
                         Icon(Icons.Filled.Settings, contentDescription = "تنظیمات")

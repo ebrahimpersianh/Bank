@@ -13,6 +13,7 @@ import ir.sadteam.loancalc.data.db.LoanDao
 import ir.sadteam.loancalc.data.network.ApiClient
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
+import ir.sadteam.loancalc.data.prefs.UiPrefs
 import javax.inject.Singleton
 
 /**
@@ -47,4 +48,8 @@ object AppModule {
     @Singleton
     fun provideAuthRepository(apiService: ApiService, authPrefs: AuthPrefs): AuthRepository =
         AuthRepository(apiService, authPrefs)
+
+    @Provides
+    @Singleton
+    fun provideUiPrefs(@ApplicationContext context: Context): UiPrefs = UiPrefs(context)
 }
