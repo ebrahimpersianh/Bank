@@ -104,4 +104,16 @@ object JalaliCalendar {
      * ژولینی داخلی الگوریتم حساب می‌شه، بدون نیاز به تبدیل رفت‌وبرگشت به گرگوری. */
     fun daysBetween(from: PersianDate, to: PersianDate): Int =
         j2d(to.y, to.m, to.d) - j2d(from.y, from.m, from.d)
+
+    /** تعداد روزهای واقعی یه ماه شمسی (با در نظر گرفتن کبیسه‌ی واقعی اسفند - نه فرض ساده‌ی همیشه
+     * ۲۹ روز مثل [PersianCalendar] بالا) - برای رسم گرید تقویم (CalendarPickerScreen). */
+    fun daysInMonth(y: Int, m: Int): Int {
+        val nextY = if (m == 12) y + 1 else y
+        val nextM = if (m == 12) 1 else m + 1
+        return j2d(nextY, nextM, 1) - j2d(y, m, 1)
+    }
+
+    /** روز هفته با شمارش شنبه=۰ تا جمعه=۶ (هفته‌ی ایرانی) - از رو شماره روز ژولینی، فرمول
+     * `(jdn + 2) mod 7` که در برابر jdatetime روی چندین تاریخ مرجع تایید شده (JalaliCalendarTest). */
+    fun dayOfWeekSaturdayFirst(date: PersianDate): Int = (j2d(date.y, date.m, date.d) + 2) % 7
 }

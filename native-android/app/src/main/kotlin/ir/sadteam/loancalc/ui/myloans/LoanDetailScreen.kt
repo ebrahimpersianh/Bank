@@ -156,7 +156,7 @@ fun LoanDetailScreen(
             text = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     DetailDateDropdown(
-                        options = (1398..1406).map { it to toFa(it) },
+                        options = (1380..1410).map { it to toFa(it) },
                         selected = lateYear,
                         onSelect = { lateYear = it },
                         modifier = Modifier.weight(1f),
