@@ -7,6 +7,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import ir.sadteam.loancalc.data.AuthRepository
+import ir.sadteam.loancalc.data.CrashRepository
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.db.AppDatabase
 import ir.sadteam.loancalc.data.db.LoanDao
@@ -52,4 +53,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideUiPrefs(@ApplicationContext context: Context): UiPrefs = UiPrefs(context)
+
+    @Provides
+    @Singleton
+    fun provideCrashRepository(apiService: ApiService): CrashRepository = CrashRepository(apiService)
 }
