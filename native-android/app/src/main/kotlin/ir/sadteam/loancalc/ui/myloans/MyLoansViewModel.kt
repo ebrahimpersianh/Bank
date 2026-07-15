@@ -67,10 +67,20 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
-    /** پورت confirmEditInstallment تو www/index.html - ویرایش دستی مبلغ یه قسط. */
-    fun setRowInstallment(loan: LoanEntity, m: Int, newAmount: Double) {
+    /** پورت confirmEditInstallment تو www/index.html - ویرایش دستی مبلغ یه قسط. [onSaved] بعد از
+     * ذخیره صدا زده می‌شه تا UI بتونه سوال «رو همه اعمال کنم؟» رو نشون بده. */
+    fun setRowInstallment(loan: LoanEntity, m: Int, newAmount: Double, onSaved: () -> Unit = {}) {
         viewModelScope.launch {
             loanRepository.setRowInstallment(loan, m, newAmount)
+            syncIfLoggedIn()
+            onSaved()
+        }
+    }
+
+    /** پورت «می‌خوای این مبلغ رو برای همه‌ی اقساط اعمال کنی؟» تو confirmEditInstallment. */
+    fun setAllRowsInstallment(loan: LoanEntity, newAmount: Double) {
+        viewModelScope.launch {
+            loanRepository.setAllRowsInstallment(loan, newAmount)
             syncIfLoggedIn()
         }
     }

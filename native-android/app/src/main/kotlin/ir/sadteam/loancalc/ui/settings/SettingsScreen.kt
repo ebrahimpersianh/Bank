@@ -28,19 +28,28 @@ import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 
-/** پورت ساده‌شده‌ی view-settings تو www/index.html - فعلاً فقط کارت حساب (accountCard) و
- * خروج/ورود؛ اندازه فونت، یادآوری سررسید، و تنظیمات پیشرفته هنوز جای دیگه‌ای تو اپ پیاده نشدن. */
+private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
+
+/** پورت ساده‌شده‌ی view-settings تو www/index.html - کارت حساب (accountCard) + خروج/ورود، و
+ * اندازه فونت (fontSizeChips). یادآوری سررسید و تنظیمات پیشرفته‌ش هنوز جای دیگه‌ای تو اپ پیاده نشدن. */
 @Composable
-fun SettingsScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewModel()) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    authViewModel: AuthViewModel = hiltViewModel(),
+    themeViewModel: ThemeViewModel = hiltViewModel(),
+) {
     var showLoginPrompt by remember { mutableStateOf(false) }
     val gateState by authViewModel.gateState.collectAsState()
     val phone by authViewModel.phone.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
+    val fontScale by themeViewModel.fontScale.collectAsState()
 
     if (showLoginPrompt) {
         LoginScreen(onDismiss = { showLoginPrompt = false }, onLoginSuccess = { showLoginPrompt = false })
@@ -98,6 +107,18 @@ fun SettingsScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewMo
                         ) {
                             Text("ورود")
                         }
+                    }
+                }
+            }
+
+            AppCard(label = "اندازه فونت", modifier = Modifier.padding(top = 10.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    fontSizeOptions.forEach { (scale, label) ->
+                        AppChip(
+                            label = label,
+                            selected = fontScale == scale,
+                            onClick = { themeViewModel.setFontScale(scale) },
+                        )
                     }
                 }
             }

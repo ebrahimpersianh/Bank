@@ -45,8 +45,8 @@ import ir.sadteam.loancalc.ui.theme.AppText
  * پورت openDetail/renderTable تو www/index.html، برای وام‌های دستی (method=manual): هر قسط
  * وضعیت پرداخت مستقل داره (`rows[].paid`، با تپ‌کردن رو خودِ ردیف toggle می‌شه) و تاریخ سررسید
  * واقعی (از startDate + intervalDays محاسبه می‌شه). برخلاف وب، `paidLate`/`paidDate` (تاخیر در
- * پرداخت) هنوز پورت نشده. ویرایش دستی مبلغ هر قسط هم هست (پورت confirmEditInstallment)، بدون
- * گزینه‌ی «همین مبلغ رو بقیه هم بگیرن» وب (فاز بعد).
+ * پرداخت) هنوز پورت نشده. ویرایش دستی مبلغ هر قسط هم هست (پورت confirmEditInstallment)، همراه
+ * سوال «رو همه‌ی اقساط هم اعمال کنم؟» بعد از ذخیره.
  */
 @Composable
 fun LoanDetailScreen(
@@ -58,6 +58,7 @@ fun LoanDetailScreen(
     val rows = remember(loan) { viewModel.getRows(loan) }
     var editingRowM by remember { mutableStateOf<Int?>(null) }
     var editAmountText by remember { mutableStateOf("") }
+    var applyAllPromptAmount by remember { mutableStateOf<Double?>(null) }
 
     if (editingRowM != null) {
         AlertDialog(
@@ -76,13 +77,32 @@ fun LoanDetailScreen(
                     val newAmount = editAmountText.toDoubleOrNull()
                     val m = editingRowM
                     if (newAmount != null && newAmount > 0 && m != null) {
-                        viewModel.setRowInstallment(loan, m, newAmount)
+                        viewModel.setRowInstallment(loan, m, newAmount) {
+                            applyAllPromptAmount = newAmount
+                        }
                     }
                     editingRowM = null
                 }) { Text("ذخیره") }
             },
             dismissButton = {
                 TextButton(onClick = { editingRowM = null }) { Text("انصراف") }
+            },
+        )
+    }
+
+    if (applyAllPromptAmount != null) {
+        AlertDialog(
+            onDismissRequest = { applyAllPromptAmount = null },
+            title = { Text("اعمال به همه‌ی اقساط") },
+            text = { Text("می‌خوای این مبلغ رو برای همه‌ی اقساط اعمال کنی؟") },
+            confirmButton = {
+                TextButton(onClick = {
+                    applyAllPromptAmount?.let { viewModel.setAllRowsInstallment(loan, it) }
+                    applyAllPromptAmount = null
+                }) { Text("بله، رو همه اعمال کن") }
+            },
+            dismissButton = {
+                TextButton(onClick = { applyAllPromptAmount = null }) { Text("نه") }
             },
         )
     }
