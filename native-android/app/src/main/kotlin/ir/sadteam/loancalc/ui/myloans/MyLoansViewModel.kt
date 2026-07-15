@@ -3,11 +3,13 @@ package ir.sadteam.loancalc.ui.myloans
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.core.IncomeType
 import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
+import ir.sadteam.loancalc.data.db.IncomeEntity
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
-import ir.sadteam.loancalc.data.prefs.IncomePrefs
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -24,17 +26,22 @@ import javax.inject.Inject
 class MyLoansViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
     private val authPrefs: AuthPrefs,
-    private val incomePrefs: IncomePrefs,
+    private val incomeRepository: IncomeRepository,
 ) : ViewModel() {
     val loans: StateFlow<List<LoanEntity>> = loanRepository.observeLoans()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    /** برای باکس «تحلیل درآمد» تو داشبورد بالای «وام‌های من» - رجوع کن به DashboardSummary. */
-    val monthlyIncome: StateFlow<Double> = incomePrefs.monthlyIncome
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+    /** برای باکس «تحلیل درآمد» تو داشبورد بالای «وام‌های من» - رجوع کن به DashboardSummary. چند منبع
+     * درآمد مستقل (ثابت/متغیر)، نه یه عدد تکی. */
+    val incomes: StateFlow<List<IncomeEntity>> = incomeRepository.observeIncomes()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun setMonthlyIncome(value: Double) {
-        viewModelScope.launch { incomePrefs.setMonthlyIncome(value) }
+    fun addIncome(label: String, amount: Double, type: IncomeType) {
+        viewModelScope.launch { incomeRepository.addIncome(label, amount, type) }
+    }
+
+    fun deleteIncome(income: IncomeEntity) {
+        viewModelScope.launch { incomeRepository.deleteIncome(income) }
     }
 
     fun saveManualLoan(
