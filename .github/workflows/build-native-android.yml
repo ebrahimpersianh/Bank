@@ -31,10 +31,11 @@ jobs:
       - name: کش Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: نصب کلید امضای ثابت دیباگ (تا هر بیلد رو نسخه قبلی نصب بشه، نه اینکه Android بگه "conflicts with an existing package")
-        run: |
-          mkdir -p ~/.android
-          cp ../ci-debug.keystore ~/.android/debug.keystore
+      # امضای دیباگ حالا مستقیم تو app/build.gradle.kts به فایل کامیت‌شده‌ی ci-debug.keystore پین شده
+      # (نه ~/.android/debug.keystore)، پس دیگه نیازی به کپی‌کردن دستیِ کیستور اینجا نیست.
+
+      - name: تنظیم versionCode یکتا و صعودی از شماره‌ی ران (تا نصب بیلد جدید رو بیلد قبلی downgrade حساب نشه)
+        run: sed -i "s/versionCode = 1/versionCode = ${{ github.run_number }}/" app/build.gradle.kts
 
       - name: تست موتور محاسبه‌ی وام (core - بدون وابستگی به اندروید)
         run: ./gradlew :core:test --console=plain

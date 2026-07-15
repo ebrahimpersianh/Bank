@@ -21,7 +21,9 @@ class UiPrefs(private val context: Context) {
         val LAST_AUTO_BACKUP_AT = stringPreferencesKey("last_auto_backup_at")
     }
 
-    val darkTheme: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.DARK_THEME] ?: true }
+    // پیش‌فرض روشن/سفید (به‌درخواست کاربر «تم اصلی برنامه سفید باشه») - کاربری که قبلاً دستی
+    // تم رو عوض کرده باشه، انتخابش تو DataStore می‌مونه؛ فقط نصب‌های تازه پیش‌فرض روشن می‌گیرن.
+    val darkTheme: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.DARK_THEME] ?: false }
 
     suspend fun setDarkTheme(value: Boolean) {
         context.uiPrefsDataStore.edit { it[Keys.DARK_THEME] = value }

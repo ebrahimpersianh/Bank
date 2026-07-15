@@ -156,7 +156,7 @@ fun AddEditChequeScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     ChequeDateDropdown(
-                        options = (1380..1410).map { it to toFa(it) },
+                        options = (1350..1410).map { it to toFa(it) },
                         selected = dueYear,
                         onSelect = { dueYear = it },
                         modifier = Modifier.weight(1f),

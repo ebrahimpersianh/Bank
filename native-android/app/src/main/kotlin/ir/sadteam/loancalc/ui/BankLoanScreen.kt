@@ -1,21 +1,22 @@
 package ir.sadteam.loancalc.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -27,7 +28,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -39,7 +42,6 @@ import ir.sadteam.loancalc.core.LoanResult
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.cleanNumDecimal
-import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.BankEntry
@@ -53,6 +55,10 @@ import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.PresetCard
 import ir.sadteam.loancalc.ui.components.SlimSlider
+import ir.sadteam.loancalc.ui.components.WheelDatePickerScreen
+import ir.sadteam.loancalc.ui.components.appFieldColors
+import ir.sadteam.loancalc.ui.components.horizontalScrollbar
+import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -103,6 +109,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
 
     var presetNote by remember { mutableStateOf<String?>(null) }
     var showCalendarPicker by remember { mutableStateOf(false) }
+    var showWheelPicker by remember { mutableStateOf(false) }
 
     fun applyAmount(rial: Long) {
         amountText = fmtGroupedEn(rial)
@@ -122,14 +129,29 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
         )
         return
     }
+    if (showWheelPicker) {
+        WheelDatePickerScreen(
+            initial = PersianDate(startYear, startMonth, startDay),
+            onConfirm = { d -> startYear = d.y; startMonth = d.m; startDay = d.d; showWheelPicker = false },
+            onBack = { showWheelPicker = false },
+        )
+        return
+    }
 
+    val listState = rememberLazyListState()
+    val scrollbarColor = AppPrimary
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        state = listState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .lazyColumnScrollbar(listState, scrollbarColor),
         contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         item {
-            AppCard(label = "وام‌های پرتکرار") {
+            // کارت وام‌های پرتکرار خط مشکی می‌گیره (نه سبز) - چون خودِ کارت‌های داخلش خط مشکی دارن
+            // و کاربر خواست حاشیه‌ی سبز مخصوص بقیه‌ی باکس‌ها باشه، نه این بخشِ اول.
+            AppCard(label = "وام‌های پرتکرار", borderColor = AppText.copy(alpha = 0.5f)) {
                 Row(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -174,17 +196,20 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     placeholder = { Text("نام وام‌گیرنده") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                 )
             }
         }
 
         item {
             AppCard(label = "بانک یا سرویس اعتباری") {
+                val banksScroll = rememberScrollState()
+                val creditScroll = rememberScrollState()
                 Text("بانک‌ها", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier
-                        .horizontalScroll(rememberScrollState())
-                        .padding(top = 4.dp, bottom = 8.dp),
+                        .horizontalScroll(banksScroll)
+                        .padding(top = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     banks.forEach { b ->
@@ -195,10 +220,18 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         )
                     }
                 }
+                // نشانگر اسکرول افقی زیر ردیفِ بانک‌ها (تو همون فاصله‌ی ظریفِ زیرِ لیبل).
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp, bottom = 8.dp)
+                        .height(4.dp)
+                        .horizontalScrollbar(banksScroll, AppPrimary),
+                )
                 Text("خدمات اعتباری", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier
-                        .horizontalScroll(rememberScrollState())
+                        .horizontalScroll(creditScroll)
                         .padding(top = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
@@ -221,32 +254,33 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         )
                     }
                 }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                        .height(4.dp)
+                        .horizontalScrollbar(creditScroll, AppPrimary),
+                )
             }
         }
 
         item {
             AppCard(label = "تاریخ دریافت وام") {
+                // تپ روی خودِ تاریخ → چرخونه‌ی اسکرولی؛ آیکون تقویم → تقویم گریدی (هر دو نگه داشته شدن).
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    SimpleDropdown(
-                        options = (1380..1410).map { it to toFa(it) },
-                        selected = startYear,
-                        onSelect = { startYear = it },
-                        modifier = Modifier.weight(1f),
-                    )
-                    SimpleDropdown(
-                        options = faMonthNames.mapIndexed { idx, name -> (idx + 1) to name },
-                        selected = startMonth,
-                        onSelect = { startMonth = it },
-                        modifier = Modifier.weight(1f),
-                    )
-                    SimpleDropdown(
-                        options = (1..31).map { it to toFa(it) },
-                        selected = startDay,
-                        onSelect = { startDay = it },
-                        modifier = Modifier.weight(1f),
+                    Text(
+                        text = "${toFa(startDay)} ${faMonthNames[startMonth - 1]} ${toFa(startYear)}",
+                        color = AppText,
+                        fontSize = 15.sp,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { showWheelPicker = true }
+                            .padding(vertical = 12.dp, horizontal = 6.dp),
                     )
                     IconButton(onClick = { showCalendarPicker = true }) {
                         Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
@@ -270,6 +304,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                     suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
                 )
                 val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
@@ -277,7 +312,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     Text(
                         text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
                         color = AppAccent,
-                        fontSize = 13.5.sp,
+                        fontSize = 11.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
@@ -288,11 +323,6 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         amountText = fmtGroupedEn(v.toLong())
                     },
                     valueRange = amountSliderRange,
-                )
-                Text(
-                    text = "بازه اسلایدر: ${fmtShortToman(amountSliderRange.start)} تا ${fmtShortToman(amountSliderRange.endInclusive)} ریال — برای اعداد خارج از بازه، مستقیم تایپ کن",
-                    fontSize = 12.sp,
-                    color = AppMuted,
                 )
             }
         }
@@ -310,6 +340,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                     suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
                 )
                 SlimSlider(
@@ -343,6 +374,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         .fillMaxWidth()
                         .padding(top = 10.dp),
                     singleLine = true,
+                    colors = appFieldColors(),
                     suffix = { Text("ماه", color = AppMuted, fontSize = 13.sp) },
                 )
             }
@@ -438,39 +470,8 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SimpleDropdown(
-    options: List<Pair<Int, String>>,
-    selected: Int,
-    onSelect: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedLabel = options.firstOrNull { it.first == selected }?.second ?: ""
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
-        OutlinedTextField(
-            value = selectedLabel,
-            onValueChange = {},
-            readOnly = true,
-            singleLine = true,
-            modifier = Modifier.menuAnchor(),
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { (value, label) ->
-                DropdownMenuItem(text = { Text(label) }, onClick = { onSelect(value); expanded = false })
-            }
-        }
-    }
-}
-
 private fun fmtGroupedEn(n: Long): String {
     return "%,d".format(n)
-}
-
-private fun fmtShortToman(v: Float): String {
-    return fmt(v.toDouble())
 }
 
 private fun trimRate(v: Double): String {

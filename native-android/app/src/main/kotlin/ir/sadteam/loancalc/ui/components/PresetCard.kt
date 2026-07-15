@@ -2,7 +2,9 @@ package ir.sadteam.loancalc.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -12,17 +14,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppSurface2
+import ir.sadteam.loancalc.ui.theme.AppText
 
-/** پورت .preset-card تو www/index.html (وام‌های پرتکرار) */
+/** پورت .preset-card تو www/index.html (وام‌های پرتکرار). به‌درخواست کاربر همه‌ی کارت‌ها هم‌سایز
+ * (عرض و ارتفاع ثابت) و با یه خط نازک مشکی دورشون هستن؛ انتخاب با پُرشدنِ سبز مشخص می‌شه، نه
+ * حاشیه‌ی سبز (حاشیه‌ی سبز مخصوص بقیه‌ی باکس‌هاست). */
 @Composable
 fun PresetCard(
     icon: ImageVector,
@@ -32,17 +35,19 @@ fun PresetCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val bg = if (selected) AppPrimary.copy(alpha = 0.1f) else AppSurface2
-    val border = if (selected) AppPrimaryDim else Color.Transparent
+    val bg = if (selected) AppPrimary.copy(alpha = 0.12f) else AppSurface2
+    val shape = RoundedCornerShape(12.dp)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
         modifier = modifier
-            .width(67.dp)
-            .pressScaleClickable(onClick = onClick)
-            .background(bg, RoundedCornerShape(6.dp))
-            .border(1.dp, border, RoundedCornerShape(6.dp))
-            .padding(horizontal = 5.dp, vertical = 6.dp),
+            .width(72.dp)
+            .height(92.dp)
+            .pressScaleClickable(goldBorderShape = shape, onClick = onClick)
+            .background(bg, shape)
+            .border(1.dp, AppText.copy(alpha = 0.5f), shape)
+            .padding(horizontal = 5.dp, vertical = 8.dp),
     ) {
         Icon(icon, contentDescription = title, tint = AppPrimary, modifier = Modifier.size(22.dp))
         Text(

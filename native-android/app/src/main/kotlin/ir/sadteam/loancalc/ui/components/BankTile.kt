@@ -36,13 +36,14 @@ fun BankTile(
     val border = if (selected) AppPrimaryDim else Color.Transparent
     val bg = if (selected) AppPrimary.copy(alpha = 0.1f) else Color.Transparent
 
+    val shape = RoundedCornerShape(12.dp)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .width(78.dp)
-            .pressScaleClickable(onClick = onClick)
-            .background(bg, RoundedCornerShape(12.dp))
-            .border(1.dp, border, RoundedCornerShape(12.dp))
+            .pressScaleClickable(goldBorderShape = shape, onClick = onClick)
+            .background(bg, shape)
+            .border(1.dp, border, shape)
             .padding(horizontal = 2.dp, vertical = 4.dp),
     ) {
         AsyncImage(
@@ -53,13 +54,20 @@ fun BankTile(
                 .size(54.dp)
                 .background(Color.White, RoundedCornerShape(15.dp)),
         )
+        // اسم کامل نشون داده می‌شه (بدون «...»)؛ اسم‌های بلندتر فونتشون خودکار کوچیک‌تر می‌شه تا
+        // تو همون عرضِ ثابتِ تایل جا بشن و نظمِ ردیف بهم نریزه (خواسته‌ی کاربر).
+        val nameFontSize = when {
+            bank.name.length > 16 -> 9.5.sp
+            bank.name.length > 11 -> 10.5.sp
+            else -> 12.5.sp
+        }
         Text(
             text = bank.name,
-            fontSize = 12.5.sp,
+            fontSize = nameFontSize,
             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
             textAlign = TextAlign.Center,
             maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
+            overflow = TextOverflow.Clip,
             modifier = Modifier.padding(top = 6.dp),
         )
     }

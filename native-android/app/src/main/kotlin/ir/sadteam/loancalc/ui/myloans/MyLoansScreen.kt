@@ -18,13 +18,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -171,6 +174,7 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
         else -> "list"
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     AnimatedContent(
         targetState = screenKey,
         transitionSpec = { fadeIn(tween(200)).togetherWith(fadeOut(tween(150))) },
@@ -244,16 +248,6 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                     }
                 }
 
-                item {
-                    OutlinedButton(
-                        onClick = { onAddLoanClick() },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("+ افزودن دستی وام")
-                    }
-                }
-
                 if (loans.isEmpty()) {
                     item {
                         Box(
@@ -301,6 +295,22 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                         }
                     }
                 }
+            }
+        }
+    }
+        // دکمه‌ی «+» دایره‌ای سبز گوشه‌ی سمت چپ (در RTL: BottomEnd) - جایگزین دکمه‌ی تمام‌عرضِ
+        // «افزودن دستی وام»؛ فقط رو خودِ لیست نشون داده می‌شه، نه رو فرم افزودن/جزئیات.
+        if (screenKey == "list") {
+            FloatingActionButton(
+                onClick = { onAddLoanClick() },
+                containerColor = AppPrimary,
+                contentColor = Color.White,
+                shape = CircleShape,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(20.dp),
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "افزودن دستی وام")
             }
         }
     }

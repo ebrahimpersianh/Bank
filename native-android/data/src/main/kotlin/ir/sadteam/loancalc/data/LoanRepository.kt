@@ -90,6 +90,67 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
         )
     }
 
+    /**
+     * پورت saveLoan تو www/index.html (ذخیره‌ی نتیجه‌ی یه محاسبه‌ی وام بانکی، نه ورود دستی). برخلاف
+     * [addManualLoan] که اقساط رو یکسان فرض می‌کنه، اینجا خودِ ردیف‌های محاسبه‌شده ([rows] = جفت
+     * (شماره‌ی قسط، مبلغ)) ذخیره می‌شن تا وام‌های قرض‌الحسنه که اقساط نامساوی دارن درست بازسازی بشن.
+     * شناسه‌ی وامِ ساخته‌شده رو برمی‌گردونه.
+     */
+    suspend fun saveComputedLoan(
+        name: String,
+        bank: String,
+        borrower: String,
+        principal: Double,
+        ratePct: Double,
+        n: Int,
+        method: String,
+        graceMonths: Int,
+        installment: Double,
+        totalPaid: Double,
+        totalInterest: Double,
+        startDate: Map<String, Int>,
+        intervalDays: Int,
+        rows: List<Pair<Int, Double>>,
+    ): Long {
+        val id = System.currentTimeMillis()
+        val createdAt = isoNow()
+        val rowMaps = rows.map { (m, inst) -> mapOf("m" to m, "installment" to inst, "paid" to false) }
+        val webShape = linkedMapOf(
+            "id" to id,
+            "name" to name,
+            "bank" to bank,
+            "borrower" to borrower,
+            "amount" to principal,
+            "rate" to ratePct,
+            "n" to n,
+            "method" to method,
+            "graceMonths" to graceMonths,
+            "installment" to installment,
+            "totalPaid" to totalPaid,
+            "totalInterest" to totalInterest,
+            "startDate" to startDate,
+            "intervalDays" to intervalDays,
+            "paidCount" to 0,
+            "createdAt" to createdAt,
+            "rows" to rowMaps,
+        )
+        loanDao.upsert(
+            LoanEntity(
+                id = id,
+                name = name,
+                bank = bank,
+                amount = principal,
+                installment = installment,
+                totalPaid = totalPaid,
+                n = n,
+                paidCount = 0,
+                createdAt = createdAt,
+                dataJson = gson.toJson(webShape),
+            ),
+        )
+        return id
+    }
+
     /** پورت rows[].paid تو www/index.html - وضعیت پرداخت هر قسط مستقله (نه یه آستانه‌ی ترتیبی)،
      * به‌علاوه `dueDate` که از startDate/intervalDaysِ خودِ وام محاسبه می‌شه (:app مستقیم به Gson
      * دسترسی نداره، برای همین این محاسبه اینجا تو :data انجام می‌شه، نه تو UI). */

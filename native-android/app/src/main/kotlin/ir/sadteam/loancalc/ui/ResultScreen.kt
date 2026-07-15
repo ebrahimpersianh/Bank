@@ -8,15 +8,20 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,8 +40,15 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.ordinalFa
 import ir.sadteam.loancalc.core.toFa
+import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.ui.auth.AuthViewModel
+import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
+import ir.sadteam.loancalc.ui.myloans.MyLoansViewModel
 import ir.sadteam.loancalc.ui.theme.AppAccent
+import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -72,6 +84,17 @@ fun ResultScreen(outcome: BankLoanOutcome) {
     LaunchedEffect(result.installment) {
         animateValue(0f, result.installment.toFloat()) { animatedInstallment = it }
     }
+
+    // دکمه‌ی «ذخیره وام»: همون محدودیتِ «۱ وام رایگان» تب «وام‌های من» رو رعایت می‌کنه
+    // (canSaveAnotherLoan = هیچ وامی ذخیره نشده، یا واردشده‌ی مشترک).
+    val myLoansViewModel: MyLoansViewModel = hiltViewModel()
+    val authViewModel: AuthViewModel = hiltViewModel()
+    val savedLoans by myLoansViewModel.loans.collectAsState()
+    val gateState by authViewModel.gateState.collectAsState()
+    val subscribed by authViewModel.subscribed.collectAsState()
+    val canSaveAnotherLoan = savedLoans.isEmpty() || (gateState == GateState.LOGGED_IN && subscribed)
+    var saved by remember { mutableStateOf(false) }
+    var saveMessage by remember { mutableStateOf<String?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -109,6 +132,47 @@ fun ResultScreen(outcome: BankLoanOutcome) {
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
             )
+        }
+
+        item {
+            if (saved) {
+                Text(
+                    "✓ وام تو «وام‌های من» ذخیره شد",
+                    color = AppPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.5.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                )
+            } else {
+                GradientButton(
+                    onClick = {
+                        when {
+                            canSaveAnotherLoan -> myLoansViewModel.saveComputedLoan(outcome) {
+                                saved = true
+                                saveMessage = null
+                            }
+                            gateState == null -> Unit
+                            gateState != GateState.LOGGED_IN ->
+                                saveMessage = "برای ذخیره‌ی وام دوم اول باید وارد بشی — از تب «وام‌های من» وارد شو"
+                            else ->
+                                saveMessage = "برای ذخیره‌ی بیش از یک وام باید اشتراک بگیری — از تب «وام‌های من»"
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                ) {
+                    Text("ذخیره وام", fontWeight = FontWeight.Bold)
+                }
+                if (saveMessage != null) {
+                    Text(
+                        saveMessage!!,
+                        color = AppDanger,
+                        fontSize = 12.5.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    )
+                }
+            }
         }
 
         item {
@@ -152,23 +216,37 @@ fun ResultScreen(outcome: BankLoanOutcome) {
 
         item {
             AppCard(label = "جدول کامل اقساط") {
-                Column(Modifier.fillMaxWidth()) {
-                    result.rows.forEachIndexed { idx, row ->
+                // حداکثر ۵ قسط تو صفحه جا می‌شه، بقیه با اسکرول - کنارش یه اسکرول‌بار سبز نشون می‌ده
+                // چقدر پایین رفتیم (خواسته‌ی کاربر).
+                val tableState = rememberLazyListState()
+                val rowH = 48.dp
+                val visibleRows = minOf(result.rows.size, 5)
+                LazyColumn(
+                    state = tableState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(rowH * visibleRows)
+                        .lazyColumnScrollbar(tableState, AppPrimary),
+                ) {
+                    itemsIndexed(result.rows) { idx, row ->
                         val due = dueDates[idx]
                         val dateLabel = if (interval >= 28) {
                             "${faMonthNamesResult[due.m - 1]} ${toFa(due.y)}"
                         } else {
                             "${toFa(due.d)} ${faMonthNamesResult[due.m - 1]}"
                         }
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text("قسط ${toFa(row.month)}", fontSize = 12.sp)
-                            Text(dateLabel, fontSize = 12.sp)
-                            Text("${fmt(row.installment)} ریال", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                        Column(Modifier.fillMaxWidth().height(rowH)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text("قسط ${toFa(row.month)}", fontSize = 12.sp)
+                                Text(dateLabel, fontSize = 12.sp)
+                                Text("${fmt(row.installment)} ریال", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                            }
+                            if (idx != result.rows.lastIndex) HorizontalDivider(color = AppLine)
                         }
-                        if (idx != result.rows.lastIndex) HorizontalDivider(color = AppLine)
                     }
                 }
             }

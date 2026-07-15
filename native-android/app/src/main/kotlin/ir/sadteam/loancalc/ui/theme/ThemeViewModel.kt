@@ -13,7 +13,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewModel() {
     val darkTheme: StateFlow<Boolean> = uiPrefs.darkTheme
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     fun toggleTheme() {
         viewModelScope.launch { uiPrefs.setDarkTheme(!darkTheme.value) }

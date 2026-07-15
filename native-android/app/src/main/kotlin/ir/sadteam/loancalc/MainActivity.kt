@@ -2,7 +2,6 @@ package ir.sadteam.loancalc
 
 import android.app.Activity
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -18,9 +17,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,6 +42,10 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.Calculate
+import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -48,6 +54,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -98,14 +105,22 @@ import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.LoanCalcTheme
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
+import kotlinx.coroutines.delay
 
-private enum class BottomTab(val route: String, val label: String, val icon: ImageVector) {
-    BANK_LOAN("bank_loan", "وام بانکی", Icons.Filled.AccountBalance),
-    AFFORD("afford", "محاسبه‌گر", Icons.Filled.Calculate),
-    DEPOSIT("deposit", "سود سپرده", Icons.Filled.Savings),
-    MY_LOANS("my_loans", "وام‌های من", Icons.Filled.Folder),
+// آیکون‌های نوار پایین: حالت عادی outline (مینیمال، مثل نسخه‌ی وب)، تب فعال پُر (filled).
+private enum class BottomTab(
+    val route: String,
+    val label: String,
+    val icon: ImageVector,
+    val selectedIcon: ImageVector,
+) {
+    BANK_LOAN("bank_loan", "وام بانکی", Icons.Outlined.AccountBalance, Icons.Filled.AccountBalance),
+    AFFORD("afford", "محاسبه‌گر", Icons.Outlined.Calculate, Icons.Filled.Calculate),
+    DEPOSIT("deposit", "سود سپرده", Icons.Outlined.Savings, Icons.Filled.Savings),
+    MY_LOANS("my_loans", "وام‌های من", Icons.Outlined.FolderOpen, Icons.Filled.Folder),
 }
 
 @AndroidEntryPoint
@@ -244,13 +259,22 @@ private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
     // تنظیمات) رو داشته باشه.
     val context = LocalContext.current
     var lastBackPressAt by remember { mutableStateOf(0L) }
+    // هینت خروج به‌صورت overlay داخلِ اپ نشون داده می‌شه، نه Toast سیستمی - چون بعضی رام‌ها
+    // (مثل MIUI) کنار هر Toast آیکون لانچرِ اپ رو می‌چسبونن، که کاربر خواست حذف بشه.
+    var showExitHint by remember { mutableStateOf(false) }
+    LaunchedEffect(showExitHint) {
+        if (showExitHint) {
+            delay(2000)
+            showExitHint = false
+        }
+    }
     BackHandler(enabled = currentRoute == BottomTab.BANK_LOAN.route) {
         val now = System.currentTimeMillis()
         if (now - lastBackPressAt < 2000) {
             (context as? Activity)?.finish()
         } else {
             lastBackPressAt = now
-            Toast.makeText(context, "برای خروج، دوباره دکمه‌ی برگشت رو بزن", Toast.LENGTH_SHORT).show()
+            showExitHint = true
         }
     }
 
@@ -358,6 +382,28 @@ private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
                 SettingsScreen(onBack = { showSettings = false })
             }
         }
+
+        AnimatedVisibility(
+            visible = showExitHint,
+            enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 2 },
+            exit = fadeOut(tween(180)) + slideOutVertically(tween(180)) { it / 2 },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 96.dp),
+        ) {
+            Surface(
+                color = AppText.copy(alpha = 0.92f),
+                shape = RoundedCornerShape(24.dp),
+                shadowElevation = 6.dp,
+            ) {
+                Text(
+                    "برای خروج، دوباره دکمه‌ی برگشت رو بزن",
+                    color = AppSurface,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                )
+            }
+        }
     }
 }
 
@@ -405,7 +451,7 @@ private fun RowScope.BottomNavItem(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
-            tab.icon,
+            if (selected) tab.selectedIcon else tab.icon,
             contentDescription = tab.label,
             tint = color,
             modifier = Modifier

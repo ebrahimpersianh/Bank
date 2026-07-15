@@ -1,16 +1,18 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -19,17 +21,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.cleanNum
+import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.WheelDatePickerScreen
+import ir.sadteam.loancalc.ui.components.appFieldColors
+import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppText
 
 private val faMonthNamesManual = listOf(
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
@@ -54,6 +65,25 @@ fun AddManualLoanScreen(
     var startMonth by remember { mutableStateOf(1) }
     var startDay by remember { mutableStateOf(1) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showWheelPicker by remember { mutableStateOf(false) }
+    var showCalendarPicker by remember { mutableStateOf(false) }
+
+    if (showWheelPicker) {
+        WheelDatePickerScreen(
+            initial = PersianDate(startYear, startMonth, startDay),
+            onConfirm = { d -> startYear = d.y; startMonth = d.m; startDay = d.d; showWheelPicker = false },
+            onBack = { showWheelPicker = false },
+        )
+        return
+    }
+    if (showCalendarPicker) {
+        CalendarPickerScreen(
+            initialDate = PersianDate(startYear, startMonth, startDay),
+            onDateSelected = { d -> startYear = d.y; startMonth = d.m; startDay = d.d; showCalendarPicker = false },
+            onBack = { showCalendarPicker = false },
+        )
+        return
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -68,6 +98,7 @@ fun AddManualLoanScreen(
                     onValueChange = { name = it },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                 )
             }
         }
@@ -78,33 +109,31 @@ fun AddManualLoanScreen(
                     onValueChange = { bank = it },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                 )
             }
         }
         item {
             AppCard(label = "تاریخ دریافت وام") {
+                // تپ روی خودِ تاریخ → چرخونه‌ی اسکرولی؛ آیکون تقویم → تقویم گریدی (هر دو نگه داشته شدن).
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    ManualDateDropdown(
-                        options = (1380..1410).map { it to toFa(it) },
-                        selected = startYear,
-                        onSelect = { startYear = it },
-                        modifier = Modifier.weight(1f),
+                    Text(
+                        text = "${toFa(startDay)} ${faMonthNamesManual[startMonth - 1]} ${toFa(startYear)}",
+                        color = AppText,
+                        fontSize = 15.sp,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { showWheelPicker = true }
+                            .padding(vertical = 12.dp, horizontal = 6.dp),
                     )
-                    ManualDateDropdown(
-                        options = faMonthNamesManual.mapIndexed { idx, name2 -> (idx + 1) to name2 },
-                        selected = startMonth,
-                        onSelect = { startMonth = it },
-                        modifier = Modifier.weight(1f),
-                    )
-                    ManualDateDropdown(
-                        options = (1..31).map { it to toFa(it) },
-                        selected = startDay,
-                        onSelect = { startDay = it },
-                        modifier = Modifier.weight(1f),
-                    )
+                    IconButton(onClick = { showCalendarPicker = true }) {
+                        Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
+                    }
                 }
             }
         }
@@ -112,11 +141,25 @@ fun AddManualLoanScreen(
             AppCard(label = "مبلغ هر قسط") {
                 OutlinedTextField(
                     value = installmentText,
-                    onValueChange = { installmentText = cleanNum(it) },
+                    onValueChange = { raw ->
+                        val digits = cleanNum(raw)
+                        installmentText = if (digits.isEmpty()) "" else "%,d".format(digits.toLongOrNull() ?: 0L)
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
+                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
                 )
+                val instRial = cleanNum(installmentText).toLongOrNull() ?: 0L
+                if (instRial > 0) {
+                    Text(
+                        "${numberToWordsFa((instRial / 10).toDouble())} تومان",
+                        color = AppAccent,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
         }
         item {
@@ -127,6 +170,7 @@ fun AddManualLoanScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                 )
             }
         }
@@ -138,6 +182,7 @@ fun AddManualLoanScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = appFieldColors(),
                 )
             }
         }
@@ -150,7 +195,7 @@ fun AddManualLoanScreen(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 GradientButton(
                     onClick = {
-                        val installment = installmentText.toDoubleOrNull() ?: 0.0
+                        val installment = cleanNum(installmentText).toDoubleOrNull() ?: 0.0
                         val n = totalCountText.toIntOrNull() ?: 0
                         val paidCount = paidCountText.toIntOrNull() ?: 0
 
@@ -181,33 +226,6 @@ fun AddManualLoanScreen(
                 OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
                     Text("انصراف")
                 }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ManualDateDropdown(
-    options: List<Pair<Int, String>>,
-    selected: Int,
-    onSelect: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedLabel = options.firstOrNull { it.first == selected }?.second ?: ""
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
-        OutlinedTextField(
-            value = selectedLabel,
-            onValueChange = {},
-            readOnly = true,
-            singleLine = true,
-            modifier = Modifier.menuAnchor(),
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { (value, label) ->
-                DropdownMenuItem(text = { Text(label) }, onClick = { onSelect(value); expanded = false })
             }
         }
     }
