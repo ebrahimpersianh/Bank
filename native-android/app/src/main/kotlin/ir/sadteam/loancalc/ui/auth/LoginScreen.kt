@@ -135,7 +135,7 @@ fun LoginScreen(
                     if (step == LoginStep.PHONE) {
                         if (phone.length != 11 || !phone.startsWith("09")) {
                             error = "شماره رو به‌صورت ۰۹xxxxxxxxx وارد کن"
-                            return@Button
+                            return@GradientButton
                         }
                         loading = true
                         viewModel.requestOtp(
@@ -149,7 +149,7 @@ fun LoginScreen(
                     } else {
                         if (otp.length != 5) {
                             error = "کد ۵ رقمی رو کامل وارد کن"
-                            return@Button
+                            return@GradientButton
                         }
                         loading = true
                         viewModel.verifyOtp(
