@@ -1,7 +1,10 @@
 package ir.sadteam.loancalc
 
+import android.app.Activity
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -41,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
@@ -166,6 +170,21 @@ private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
     // قبل از معرفی Navigation) — چون launchSingleTop جلوی navigate دوباره به همون مقصد رو می‌گیره،
     // این ریست از طریق یه کلید جدا اعمال می‌شه.
     var bankLoanResetKey by remember { mutableIntStateOf(0) }
+
+    // پورت رفتار «یه‌بار برگشت بزنی هشدار بده، دوباره بزنی خارج شو» - فقط رو تب پیش‌فرض (وام بانکی)
+    // فعاله، چون تو بقیه‌ی تب‌ها/تنظیمات دکمه‌ی برگشت باید همون رفتار عادیش (برگشت به تب قبلی/بستن
+    // تنظیمات) رو داشته باشه.
+    val context = LocalContext.current
+    var lastBackPressAt by remember { mutableStateOf(0L) }
+    BackHandler(enabled = currentRoute == BottomTab.BANK_LOAN.route) {
+        val now = System.currentTimeMillis()
+        if (now - lastBackPressAt < 2000) {
+            (context as? Activity)?.finish()
+        } else {
+            lastBackPressAt = now
+            Toast.makeText(context, "برای خروج، دوباره دکمه‌ی برگشت رو بزن", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Scaffold(
         topBar = {
