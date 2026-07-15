@@ -15,7 +15,9 @@ import dagger.assisted.AssistedInject
 import ir.sadteam.loancalc.R
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.LoanRepository
+import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.data.db.LoanEntity
 
 /**
@@ -29,6 +31,7 @@ class DueDateReminderWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val loanRepository: LoanRepository,
+    private val chequeRepository: ChequeRepository,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -50,13 +53,22 @@ class DueDateReminderWorker @AssistedInject constructor(
                 val daysLeft = JalaliCalendar.daysBetween(today, PersianDate(y, mo, d))
                 if (daysLeft !in 0..1) return@forEach
                 val m = (row["m"] as? Number)?.toInt() ?: return@forEach
-                notify(loan, m, daysLeft == 0)
+                notifyLoan(loan, m, daysLeft == 0)
             }
         }
+
+        // پورت «یادآوری هوشمند سررسید چک» رقیب - همون منطق امروز/فردا، فقط رو چک‌های وضع‌نشده
+        // (بایگانی‌نشده) به‌جای قسط وام.
+        chequeRepository.getAllCheques()
+            .filter { it.status == "PENDING" && !it.archived }
+            .forEach { cheque ->
+                val daysLeft = JalaliCalendar.daysBetween(today, PersianDate(cheque.dueYear, cheque.dueMonth, cheque.dueDay))
+                if (daysLeft in 0..1) notifyCheque(cheque, daysLeft == 0)
+            }
         return Result.success()
     }
 
-    private fun notify(loan: LoanEntity, m: Int, isToday: Boolean) {
+    private fun notifyLoan(loan: LoanEntity, m: Int, isToday: Boolean) {
         val whenLabel = if (isToday) "امروز" else "فردا"
         val notification = NotificationCompat.Builder(applicationContext, ReminderScheduler.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
@@ -66,6 +78,19 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
         val notificationId = "${loan.id}_$m".hashCode()
+        NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
+    }
+
+    private fun notifyCheque(cheque: ChequeEntity, isToday: Boolean) {
+        val whenLabel = if (isToday) "امروز" else "فردا"
+        val notification = NotificationCompat.Builder(applicationContext, ReminderScheduler.CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("یادآوری سررسید چک")
+            .setContentText("چک شماره ${cheque.chequeNumber} (${cheque.bankName}) $whenLabel سررسید می‌شه")
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+        val notificationId = "cheque_${cheque.id}".hashCode()
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
     }
 }

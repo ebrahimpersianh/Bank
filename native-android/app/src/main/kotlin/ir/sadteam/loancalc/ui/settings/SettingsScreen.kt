@@ -62,6 +62,7 @@ import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.calendar.FinancialCalendarScreen
+import ir.sadteam.loancalc.ui.cheque.ChequeScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
@@ -99,13 +100,15 @@ fun SettingsScreen(
     var showLoginPrompt by remember { mutableStateOf(false) }
     var showFinancialCalendar by remember { mutableStateOf(false) }
     var showStats by remember { mutableStateOf(false) }
+    var showCheque by remember { mutableStateOf(false) }
 
-    // پورت حس تعویض نرم بین حالت‌های مختلف پنل تنظیمات (اصلی/ورود/تقویم مالی/آمار) - قبلاً هرکدوم
+    // پورت حس تعویض نرم بین حالت‌های مختلف پنل تنظیمات (اصلی/ورود/تقویم مالی/آمار/چک) - قبلاً هرکدوم
     // با یه return زودهنگام یهو جایگزین بقیه می‌شد؛ حالا با AnimatedContent (fade ظریف) عوض می‌شه.
     val screenKey = when {
         showLoginPrompt -> "login"
         showFinancialCalendar -> "calendar"
         showStats -> "stats"
+        showCheque -> "cheque"
         else -> "main"
     }
 
@@ -118,6 +121,7 @@ fun SettingsScreen(
             "login" -> LoginScreen(onDismiss = { showLoginPrompt = false }, onLoginSuccess = { showLoginPrompt = false })
             "calendar" -> FinancialCalendarScreen(onBack = { showFinancialCalendar = false })
             "stats" -> StatsScreen(onBack = { showStats = false })
+            "cheque" -> ChequeScreen(onBack = { showCheque = false })
             else -> SettingsMainContent(
                 onBack = onBack,
                 authViewModel = authViewModel,
@@ -127,6 +131,7 @@ fun SettingsScreen(
                 onShowLoginPrompt = { showLoginPrompt = true },
                 onShowFinancialCalendar = { showFinancialCalendar = true },
                 onShowStats = { showStats = true },
+                onShowCheque = { showCheque = true },
             )
         }
     }
@@ -142,6 +147,7 @@ private fun SettingsMainContent(
     onShowLoginPrompt: () -> Unit,
     onShowFinancialCalendar: () -> Unit,
     onShowStats: () -> Unit,
+    onShowCheque: () -> Unit,
 ) {
     val gateState by authViewModel.gateState.collectAsState()
     val phone by authViewModel.phone.collectAsState()
@@ -310,6 +316,26 @@ private fun SettingsMainContent(
                         )
                     }
                     OutlinedButton(onClick = onShowStats) {
+                        Text("مشاهده")
+                    }
+                }
+            }
+
+            AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("امور چک", color = AppText, fontSize = 13.sp)
+                        Text(
+                            "چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    OutlinedButton(onClick = onShowCheque) {
                         Text("مشاهده")
                     }
                 }
