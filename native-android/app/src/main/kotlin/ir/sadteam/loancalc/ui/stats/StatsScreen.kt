@@ -75,6 +75,26 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
         }
     }
 
+    val createXlsxLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch(Dispatchers.IO) {
+                val ok = runCatching {
+                    context.contentResolver.openOutputStream(uri)?.use { out ->
+                        StatsXlsxExporter.export(summary, loans, out)
+                    }
+                }.isSuccess
+                withContext(Dispatchers.Main) {
+                    val message = if (ok) "اکسل ذخیره شد" else "ذخیره‌ی اکسل ناموفق بود"
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -92,14 +112,26 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
             Text("آمار و گزارشات", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
         }
 
-        OutlinedButton(
-            onClick = { createDocumentLauncher.launch("gozaresh-vamha.pdf") },
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("دانلود گزارش PDF")
+            OutlinedButton(
+                onClick = { createDocumentLauncher.launch("gozaresh-vamha.pdf") },
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
+                modifier = Modifier.weight(1f),
+            ) {
+                Text("دانلود PDF")
+            }
+            OutlinedButton(
+                onClick = { createXlsxLauncher.launch("gozaresh-vamha.xlsx") },
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
+                modifier = Modifier.weight(1f),
+            ) {
+                Text("دانلود اکسل")
+            }
         }
 
         Box(
