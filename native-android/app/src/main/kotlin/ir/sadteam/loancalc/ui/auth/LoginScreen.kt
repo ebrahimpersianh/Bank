@@ -17,6 +17,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +63,15 @@ fun LoginScreen(
     var otp by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
+    val syncConflict by viewModel.syncConflict.collectAsState()
+
+    if (syncConflict != null) {
+        SyncConflictPrompt(
+            onKeepCloud = { viewModel.resolveSyncConflict(useServer = true) { onLoginSuccess?.invoke() } },
+            onKeepDevice = { viewModel.resolveSyncConflict(useServer = false) { onLoginSuccess?.invoke() } },
+        )
+        return
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (onDismiss != null) {
@@ -149,7 +159,12 @@ fun LoginScreen(
                             code = otp,
                             onSuccess = {
                                 loading = false
-                                onLoginSuccess?.invoke()
+                                // اگه تعارض سینک پیش اومده باشه، viewModel.syncConflict همین الان
+                                // پر شده و recomposition بالای این تابع خودش UI تعارض رو نشون می‌ده؛
+                                // onLoginSuccess اونجا (بعد از تصمیم کاربر) صدا زده می‌شه، نه اینجا.
+                                if (viewModel.syncConflict.value == null) {
+                                    onLoginSuccess?.invoke()
+                                }
                             },
                             onError = { code ->
                                 loading = false
@@ -176,6 +191,42 @@ fun LoginScreen(
                     Text("ادامه به‌عنوان مهمان")
                 }
             }
+        }
+    }
+}
+
+/** پورت openConfirmModal تو syncAfterLogin: هم گوشی هم سرور «وام‌های من» دارن و فرق می‌کنن،
+ * کاربر باید انتخاب کنه کدوم بمونه. */
+@Composable
+private fun SyncConflictPrompt(onKeepCloud: () -> Unit, onKeepDevice: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            "یه نسخه‌ی دیگه از «وام‌های من» تو فضای ابری ذخیره شده. می‌خوای همون نسخه جایگزین اطلاعات این گوشی بشه؟",
+            color = AppText,
+            fontSize = 14.sp,
+        )
+        Button(
+            onClick = onKeepCloud,
+            colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 20.dp),
+        ) {
+            Text("بله، نسخه‌ی ابری رو بیار")
+        }
+        OutlinedButton(
+            onClick = onKeepDevice,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp),
+        ) {
+            Text("نه، همین گوشی بمونه")
         }
     }
 }

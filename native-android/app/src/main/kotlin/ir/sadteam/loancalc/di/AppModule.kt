@@ -32,7 +32,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideLoanRepository(loanDao: LoanDao): LoanRepository = LoanRepository(loanDao)
+    fun provideLoanRepository(loanDao: LoanDao, apiService: ApiService): LoanRepository =
+        LoanRepository(loanDao, apiService)
 
     @Provides
     @Singleton

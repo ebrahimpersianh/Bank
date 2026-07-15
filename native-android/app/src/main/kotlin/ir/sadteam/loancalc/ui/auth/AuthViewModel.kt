@@ -5,10 +5,15 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.data.AuthRepository
 import ir.sadteam.loancalc.data.AuthResult
+import ir.sadteam.loancalc.data.LoanRepository
+import ir.sadteam.loancalc.data.SyncOutcome
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -21,6 +26,7 @@ enum class GateState { NEEDS_LOGIN, GUEST, LOGGED_IN }
 class AuthViewModel @Inject constructor(
     private val authPrefs: AuthPrefs,
     private val authRepository: AuthRepository,
+    private val loanRepository: LoanRepository,
 ) : ViewModel() {
     val gateState: StateFlow<GateState?> = combine(authPrefs.authToken, authPrefs.guestMode) { token, guest ->
         val state: GateState? = when {
@@ -39,6 +45,11 @@ class AuthViewModel @Inject constructor(
 
     val phone: StateFlow<String?> = authPrefs.phone
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    /** پورت syncAfterLogin - وقتی هم گوشی هم سرور داده‌ی متفاوت دارن، غیر-null می‌شه و منتظر
+     * تصمیم کاربر (resolveSyncConflict) می‌مونه؛ UI (LoginScreen) اینو observe می‌کنه. */
+    private val _syncConflict = MutableStateFlow<List<Map<String, Any?>>?>(null)
+    val syncConflict: StateFlow<List<Map<String, Any?>>?> = _syncConflict.asStateFlow()
 
     fun continueAsGuest() {
         viewModelScope.launch { authPrefs.setGuestMode(true) }
@@ -64,14 +75,43 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    /** پورت confirmPhoneOtp: onSuccess موفقیت رو گزارش می‌کنه (session از قبلش تو AuthPrefs ذخیره
-     * شده)، onError کد خطای سرور رو می‌ده (wrong_code/code_expired/too_many_attempts). */
+    /**
+     * پورت confirmPhoneOtp + syncAfterLogin: بعد از ورود موفق، قبل از صدا زدن onSuccess، یه‌بار
+     * وضعیت سینک رو چک می‌کنه - اگه تعارض داشت [syncConflict] پر می‌شه و onSuccess طبق قرارداد
+     * همچنان صدا زده می‌شه (UI باید اول [syncConflict] رو چک کنه، نه این‌که کورکورانه ناوبری کنه).
+     */
     fun verifyOtp(phone: String, code: String, onSuccess: () -> Unit, onError: (String?) -> Unit) {
         viewModelScope.launch {
             when (val result = authRepository.verifyOtp(phone, code)) {
-                is AuthResult.Success -> onSuccess()
+                is AuthResult.Success -> {
+                    val token = authPrefs.authToken.first()
+                    if (!token.isNullOrEmpty()) {
+                        when (val outcome = loanRepository.syncAfterLogin(token)) {
+                            is SyncOutcome.ConflictNeedsChoice -> _syncConflict.value = outcome.serverLoans
+                            else -> Unit
+                        }
+                    }
+                    onSuccess()
+                }
                 is AuthResult.Error -> onError(result.code)
             }
+        }
+    }
+
+    /** پورت تصمیم کاربر تو openConfirmModal (syncAfterLogin): [useServer]=true یعنی «بله، نسخه‌ی
+     * ابری رو بیار» (جایگزینی محلی)، false یعنی نسخه‌ی همین گوشی بمونه و همون به سرور پوش بشه. */
+    fun resolveSyncConflict(useServer: Boolean, onDone: () -> Unit) {
+        viewModelScope.launch {
+            val conflict = _syncConflict.value
+            if (conflict != null) {
+                if (useServer) {
+                    loanRepository.replaceAllWithServerData(conflict)
+                } else {
+                    authPrefs.authToken.first()?.let { loanRepository.pushToServer(it) }
+                }
+            }
+            _syncConflict.value = null
+            onDone()
         }
     }
 }
