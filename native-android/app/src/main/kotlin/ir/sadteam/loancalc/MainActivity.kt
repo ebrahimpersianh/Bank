@@ -3,7 +3,6 @@ package ir.sadteam.loancalc
 import android.app.Activity
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -58,6 +57,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.fragment.app.FragmentActivity
 import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.ui.AffordScreen
 import ir.sadteam.loancalc.ui.BankLoanOutcome
@@ -72,6 +72,8 @@ import ir.sadteam.loancalc.ui.onboarding.AnimatedAppEntrance
 import ir.sadteam.loancalc.ui.onboarding.BenefitsScreen
 import ir.sadteam.loancalc.ui.onboarding.PermissionGateScreen
 import ir.sadteam.loancalc.ui.onboarding.WelcomeMessageScreen
+import ir.sadteam.loancalc.ui.security.AppLockViewModel
+import ir.sadteam.loancalc.ui.security.LockScreen
 import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.SubscriptionManager
 import ir.sadteam.loancalc.ui.myloans.MyLoansScreen
@@ -90,7 +92,7 @@ private enum class BottomTab(val route: String, val label: String, val icon: Ima
 }
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     // پورت مو‌به‌موی الگوی نمونه‌ی رسمی Poolakey: connect تو onCreate، disconnect تو onDestroy.
     // خودِ SubscriptionManager به Activity نیاز داره (activityResultRegistry)، برای همین
     // Hilt-managed نیست و اینجا مستقیم ساخته می‌شه.
@@ -141,9 +143,26 @@ class MainActivity : ComponentActivity() {
  * بعد از گیت مجوز و قبل از گیت ورود، [BenefitsScreen] هم فقط یه‌بار تو کل عمر نصب نشون داده می‌شه.
  * بعد از حل شدن گیت ورود/مهمان، هر بار [WelcomeMessageScreen] (پیام خوش‌آمد شبیه چت‌بات) نشون داده
  * می‌شه، بعد صفحه‌ی اصلی با یه افکت swoosh سریع (`AnimatedAppEntrance`) از بالا-چپ میاد تو.
+ *
+ * قبل از همه‌ی این‌ها هم [LockScreen] چک می‌شه، فقط اگه کاربر از تنظیمات قفل PIN/اثر انگشت رو فعال
+ * کرده باشه (پیش‌فرض خاموشه، هیچ‌کس رفتار قبلی رو نمی‌بینه) - رجوع کن به [AppLockViewModel].
  */
 @Composable
-private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel()) {
+private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel(), appLockViewModel: AppLockViewModel = hiltViewModel()) {
+    val pinHash by appLockViewModel.pinHash.collectAsState()
+    val biometricEnabled by appLockViewModel.biometricEnabled.collectAsState()
+    val unlocked by appLockViewModel.unlocked.collectAsState()
+    val securityEnabled = pinHash != null || biometricEnabled
+    if (securityEnabled && !unlocked) {
+        LockScreen(
+            pinHash = pinHash,
+            biometricEnabled = biometricEnabled,
+            verifyPin = { appLockViewModel.verifyPin(it) },
+            onUnlock = { appLockViewModel.unlock() },
+        )
+        return
+    }
+
     var permissionsOk by remember { mutableStateOf(false) }
     if (!permissionsOk) {
         PermissionGateScreen(onAllGranted = { permissionsOk = true })
