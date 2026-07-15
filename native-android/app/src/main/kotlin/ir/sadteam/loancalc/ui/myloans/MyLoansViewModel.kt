@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.ui.myloans
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -32,10 +33,18 @@ class MyLoansViewModel @Inject constructor(
         installment: Double,
         n: Int,
         paidCount: Int,
+        startDate: PersianDate,
         onSaved: () -> Unit,
     ) {
         viewModelScope.launch {
-            loanRepository.addManualLoan(name, bank, installment, n, paidCount)
+            loanRepository.addManualLoan(
+                name = name,
+                bank = bank,
+                installment = installment,
+                n = n,
+                paidCount = paidCount,
+                startDate = mapOf("y" to startDate.y, "m" to startDate.m, "d" to startDate.d),
+            )
             syncIfLoggedIn()
             onSaved()
         }
@@ -48,10 +57,20 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
-    fun setPaidCount(loan: LoanEntity, paidCount: Int) {
-        val clamped = paidCount.coerceIn(0, loan.n)
+    /** پورت rows[].paid تو www/index.html - وضعیت پرداخت هر قسط مستقله، نه یه آستانه‌ی ترتیبی. */
+    fun getRows(loan: LoanEntity): List<Map<String, Any?>> = loanRepository.getRows(loan)
+
+    fun setRowPaid(loan: LoanEntity, m: Int, paid: Boolean) {
         viewModelScope.launch {
-            loanRepository.setPaidCount(loan, clamped)
+            loanRepository.setRowPaid(loan, m, paid)
+            syncIfLoggedIn()
+        }
+    }
+
+    /** پورت confirmEditInstallment تو www/index.html - ویرایش دستی مبلغ یه قسط. */
+    fun setRowInstallment(loan: LoanEntity, m: Int, newAmount: Double) {
+        viewModelScope.launch {
+            loanRepository.setRowInstallment(loan, m, newAmount)
             syncIfLoggedIn()
         }
     }

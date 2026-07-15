@@ -91,8 +91,7 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
             loan = openedLoan,
             onBack = { openedLoanId = null },
             onDelete = { viewModel.deleteLoan(openedLoan.id); openedLoanId = null },
-            onMarkNextPaid = { viewModel.setPaidCount(openedLoan, openedLoan.paidCount + 1) },
-            onUndoLastPaid = { viewModel.setPaidCount(openedLoan, openedLoan.paidCount - 1) },
+            viewModel = viewModel,
         )
         return
     }

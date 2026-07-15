@@ -2,6 +2,8 @@ package ir.sadteam.loancalc.data
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import ir.sadteam.loancalc.core.PersianCalendar
+import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.data.db.LoanDao
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.data.network.ApiService
@@ -37,13 +39,21 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
 
     /**
      * پورت saveManualLoan تو www/index.html. [dataJson] دقیقاً همون شکل شیءای رو نگه می‌داره که
-     * سرور/اپ وب برای هر وام انتظار دارن (name/bank/borrower/amount/rate/n/method/...).
-     * تاریخ شروع فعلاً یه مقدار پیش‌فرضه چون هنوز فرم انتخاب تاریخ رو این صفحه نداره.
+     * سرور/اپ وب برای هر وام انتظار دارن (name/bank/borrower/amount/rate/n/method/...)، به‌علاوه
+     * یه آرایه‌ی `rows` (پورت مدل مستقل هر قسط `rows[].paid` تو وب - بدون paidLate/paidDate هنوز).
      */
-    suspend fun addManualLoan(name: String, bank: String, installment: Double, n: Int, paidCount: Int) {
+    suspend fun addManualLoan(
+        name: String,
+        bank: String,
+        installment: Double,
+        n: Int,
+        paidCount: Int,
+        startDate: Map<String, Int>,
+    ) {
         val id = System.currentTimeMillis()
         val amount = installment * n
         val createdAt = isoNow()
+        val rows = buildInitialRows(installment, n, paidCount)
         val webShape = linkedMapOf(
             "id" to id,
             "name" to name,
@@ -57,9 +67,11 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
             "installment" to installment,
             "totalPaid" to amount,
             "totalInterest" to 0,
-            "startDate" to mapOf("y" to 1404, "m" to 1, "d" to 1),
+            "startDate" to startDate,
+            "intervalDays" to 30,
             "paidCount" to paidCount,
             "createdAt" to createdAt,
+            "rows" to rows,
         )
         loanDao.upsert(
             LoanEntity(
@@ -77,13 +89,73 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
         )
     }
 
-    /** پرداخت/لغو پرداخت یه قسط برای وام‌های دستی: هم ستون سریع [LoanEntity.paidCount] رو آپدیت
-     * می‌کنه هم کلید متناظرش رو تو [LoanEntity.dataJson]، تا این دو هیچ‌وقت از هم عقب نیفتن. */
-    suspend fun setPaidCount(loan: LoanEntity, paidCount: Int) {
+    /** پورت rows[].paid تو www/index.html - وضعیت پرداخت هر قسط مستقله (نه یه آستانه‌ی ترتیبی)،
+     * به‌علاوه `dueDate` که از startDate/intervalDaysِ خودِ وام محاسبه می‌شه (:app مستقیم به Gson
+     * دسترسی نداره، برای همین این محاسبه اینجا تو :data انجام می‌شه، نه تو UI). */
+    fun getRows(loan: LoanEntity): List<Map<String, Any?>> {
+        val data = parseData(loan)
+        val rows = rowsFromData(data, loan)
+        val startDate = parseStartDate(data)
+        val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
+        return rows.map { row ->
+            val m = (row["m"] as? Number)?.toInt() ?: 1
+            // پورت دقیق حلقه‌ی renderTable تو www/index.html: cursor قبل از هر قسط با interval
+            // جلو می‌ره (یعنی قسط ۱ سررسیدش startDate+interval هست، نه خودِ startDate).
+            val due = PersianCalendar.addDays(startDate, m * intervalDays)
+            row + ("dueDate" to mapOf("y" to due.y, "m" to due.m, "d" to due.d))
+        }
+    }
+
+    private fun parseStartDate(data: Map<String, Any?>): PersianDate {
+        val sd = data["startDate"] as? Map<*, *>
+        val y = (sd?.get("y") as? Number)?.toInt() ?: 1404
+        val m = (sd?.get("m") as? Number)?.toInt() ?: 1
+        val d = (sd?.get("d") as? Number)?.toInt() ?: 1
+        return PersianDate(y, m, d)
+    }
+
+    suspend fun setRowPaid(loan: LoanEntity, m: Int, paid: Boolean) {
+        val data = parseDataMutable(loan)
+        val rows = rowsFromData(data, loan).map { row ->
+            if ((row["m"] as? Number)?.toInt() == m) row + ("paid" to paid) else row
+        }
+        val newPaidCount = rows.count { it["paid"] == true }
+        data["rows"] = rows
+        data["paidCount"] = newPaidCount
+        loanDao.upsert(loan.copy(paidCount = newPaidCount, dataJson = gson.toJson(data)))
+    }
+
+    /** ویرایش دستی مبلغ یه قسط (کارمزد/جریمه‌ی بانکی که نمی‌تونیم حدس بزنیم) - پورت
+     * confirmEditInstallment، بدون گزینه‌ی «همین مبلغ رو بقیه هم بگیرن» (فاز بعد). */
+    suspend fun setRowInstallment(loan: LoanEntity, m: Int, newAmount: Double) {
+        val data = parseDataMutable(loan)
+        val rows = rowsFromData(data, loan).map { row ->
+            if ((row["m"] as? Number)?.toInt() == m) row + ("installment" to newAmount) else row
+        }
+        val newTotal = rows.sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
+        data["rows"] = rows
+        data["amount"] = newTotal
+        data["totalPaid"] = newTotal
+        loanDao.upsert(loan.copy(amount = newTotal, totalPaid = newTotal, dataJson = gson.toJson(data)))
+    }
+
+    private fun buildInitialRows(installment: Double, n: Int, paidCount: Int): List<Map<String, Any?>> =
+        (1..n).map { m -> mapOf("m" to m, "installment" to installment, "paid" to (m <= paidCount)) }
+
+    private fun rowsFromData(data: Map<String, Any?>, loan: LoanEntity): List<Map<String, Any?>> {
+        val raw = (data["rows"] as? List<*>)?.mapNotNull { it as? Map<*, *> }
+        return raw?.map { row -> row.entries.associate { it.key.toString() to it.value } }
+            ?: buildInitialRows(loan.installment, loan.n, loan.paidCount)
+    }
+
+    private fun parseData(loan: LoanEntity): Map<String, Any?> {
+        val type = object : TypeToken<Map<String, Any?>>() {}.type
+        return gson.fromJson(loan.dataJson, type) ?: emptyMap()
+    }
+
+    private fun parseDataMutable(loan: LoanEntity): MutableMap<String, Any?> {
         val type = object : TypeToken<MutableMap<String, Any?>>() {}.type
-        val data: MutableMap<String, Any?> = gson.fromJson(loan.dataJson, type) ?: mutableMapOf()
-        data["paidCount"] = paidCount
-        loanDao.upsert(loan.copy(paidCount = paidCount, dataJson = gson.toJson(data)))
+        return gson.fromJson(loan.dataJson, type) ?: mutableMapOf()
     }
 
     /** پورت syncLoansToServer: fire-and-forget، خطاها رو قورت می‌ده (دقیقاً مثل `.catch(()=>{})`
