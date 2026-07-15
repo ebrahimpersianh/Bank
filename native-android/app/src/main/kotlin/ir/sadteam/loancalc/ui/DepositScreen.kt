@@ -13,8 +13,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,6 +31,7 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -70,6 +69,7 @@ fun DepositScreen() {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    suffix = { Text("ریال", color = AppMuted, fontSize = 11.sp) },
                 )
                 val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
                 if (rialVal > 0) {
@@ -80,14 +80,13 @@ fun DepositScreen() {
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
-                Slider(
+                SlimSlider(
                     value = amountSlider,
                     onValueChange = { v ->
                         amountSlider = v
                         amountText = "%,d".format(v.toLong())
                     },
                     valueRange = 100_000_000f..10_000_000_000f,
-                    colors = SliderDefaults.colors(thumbColor = AppPrimary, activeTrackColor = AppPrimary),
                 )
                 Text(
                     text = "بازه اسلایدر: ۱۰۰ میلیون تا ۱۰ میلیارد ریال — برای اعداد خارج از بازه، مستقیم تایپ کن",
@@ -110,12 +109,12 @@ fun DepositScreen() {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    suffix = { Text("درصد", color = AppMuted, fontSize = 11.sp) },
                 )
-                Slider(
+                SlimSlider(
                     value = rateSlider,
                     onValueChange = { v -> rateSlider = v; rateText = if (v == v.toLong().toFloat()) v.toLong().toString() else v.toString() },
                     valueRange = 0f..35f,
-                    colors = SliderDefaults.colors(thumbColor = AppPrimary, activeTrackColor = AppPrimary),
                 )
             }
         }

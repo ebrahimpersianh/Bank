@@ -204,6 +204,7 @@ private fun ManualDateDropdown(
             value = selectedLabel,
             onValueChange = {},
             readOnly = true,
+            singleLine = true,
             modifier = Modifier.menuAnchor(),
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
         )
