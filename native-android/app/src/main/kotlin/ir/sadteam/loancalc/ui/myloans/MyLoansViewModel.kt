@@ -60,9 +60,30 @@ class MyLoansViewModel @Inject constructor(
     /** پورت rows[].paid تو www/index.html - وضعیت پرداخت هر قسط مستقله، نه یه آستانه‌ی ترتیبی. */
     fun getRows(loan: LoanEntity): List<Map<String, Any?>> = loanRepository.getRows(loan)
 
-    fun setRowPaid(loan: LoanEntity, m: Int, paid: Boolean) {
+    /** پورت handlePayButton برای برگردوندن قسط به حالت پرداخت‌نشده. */
+    fun setRowUnpaid(loan: LoanEntity, m: Int) {
         viewModelScope.launch {
-            loanRepository.setRowPaid(loan, m, paid)
+            loanRepository.setRowUnpaid(loan, m)
+            syncIfLoggedIn()
+        }
+    }
+
+    /** پورت payOnTime تو www/index.html. */
+    fun setRowPaidOnTime(loan: LoanEntity, m: Int) {
+        viewModelScope.launch {
+            loanRepository.setRowPaidOnTime(loan, m)
+            syncIfLoggedIn()
+        }
+    }
+
+    /** پورت confirmLatePayment تو www/index.html - [paidDate] تاریخ واقعیِ پرداخته، نه سررسید. */
+    fun setRowPaidLate(loan: LoanEntity, m: Int, paidDate: PersianDate) {
+        viewModelScope.launch {
+            loanRepository.setRowPaidLate(
+                loan,
+                m,
+                mapOf("y" to paidDate.y, "m" to paidDate.m, "d" to paidDate.d),
+            )
             syncIfLoggedIn()
         }
     }
