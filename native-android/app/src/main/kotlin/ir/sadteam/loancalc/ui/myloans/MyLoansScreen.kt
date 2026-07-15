@@ -47,17 +47,20 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.core.IncomeType
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.data.db.IncomeEntity
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
-import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -102,7 +105,7 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
     val rawLoans by viewModel.loans.collectAsState()
     var sortOption by remember { mutableStateOf(LoanSortOption.NEWEST) }
     val loans = remember(rawLoans, sortOption) { rawLoans.sortedByOption(sortOption) }
-    val monthlyIncome by viewModel.monthlyIncome.collectAsState()
+    val incomes by viewModel.incomes.collectAsState()
     val gateState by authViewModel.gateState.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
     val canSaveAnotherLoan = loans.isEmpty() || (gateState == GateState.LOGGED_IN && subscribed)
@@ -203,8 +206,9 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                 item {
                     DashboardSummary(
                         loans = loans,
-                        monthlyIncome = monthlyIncome,
-                        onIncomeChange = { viewModel.setMonthlyIncome(it) },
+                        incomes = incomes,
+                        onAddIncome = { label, amount, type -> viewModel.addIncome(label, amount, type) },
+                        onDeleteIncome = { viewModel.deleteIncome(it) },
                     )
                 }
 
@@ -305,42 +309,46 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
 /**
  * پورت داشبورد اصلی اپ رقیب (VAMMAN): سه‌تا کارت بزرگ و خوانا - وضعیت کلی بدهی‌ها (مجموع مانده‌ی
  * همه‌ی وام‌ها، از رو installment×(n−paidCount) هر وام)، مجموع اقساط ماهانه (جمع installment همه‌ی
- * وام‌ها - تقریبی، فرض دوره‌ی ماهانه)، و تحلیل درآمد (نسبت اقساط به درآمد دستی کاربر با آستانه‌ی
- * رایج ۳۰٪/۵۰٪ که تو هیچ‌جای دیگه‌ی این پروژه از قبل تعریف نشده بود). برخلاف رقیب که این یه صفحه‌ی
- * جدا (home) بود، چون معماری تب‌های این اپ (رجوع کن به CLAUDE.md) ثابته، بالای همین «وام‌های من»
- * اضافه شده - جایی که داده‌ی وام‌ها از قبل در دسترسه.
+ * وام‌ها - تقریبی، فرض دوره‌ی ماهانه)، و تحلیل درآمد (نسبت اقساط به جمع چند منبع درآمد مستقل -
+ * ثابت/متغیر - با آستانه‌ی «منطقه‌ی امن» ۶۵٪ که از رشته‌های واقعی رقیب استخراج شد؛ نسخه‌ی قبلی این
+ * پروژه اشتباهاً دو آستانه‌ی ۳۰٪/۵۰٪ حدسی داشت که تو هیچ‌جای رقیب پیدا نشد). برخلاف رقیب که این یه
+ * صفحه‌ی جدا (home) بود، چون معماری تب‌های این اپ (رجوع کن به CLAUDE.md) ثابته، بالای همین «وام‌های
+ * من» اضافه شده - جایی که داده‌ی وام‌ها از قبل در دسترسه.
  */
 @Composable
 private fun DashboardSummary(
     loans: List<LoanEntity>,
-    monthlyIncome: Double,
-    onIncomeChange: (Double) -> Unit,
+    incomes: List<IncomeEntity>,
+    onAddIncome: (label: String, amount: Double, type: IncomeType) -> Unit,
+    onDeleteIncome: (IncomeEntity) -> Unit,
 ) {
     val totalRemainingDebt = remember(loans) {
         loans.sumOf { it.installment * (it.n - it.paidCount) }
     }
     val totalMonthlyInstallment = remember(loans) { loans.sumOf { it.installment } }
-    val ratio = if (monthlyIncome > 0) totalMonthlyInstallment / monthlyIncome else 0.0
+    val totalIncome = remember(incomes) { incomes.sumOf { it.amount } }
+    val ratio = if (totalIncome > 0) totalMonthlyInstallment / totalIncome else 0.0
     val statusLabel: String?
     val statusColor: Color
     when {
-        monthlyIncome <= 0 -> {
+        totalIncome <= 0 -> {
             statusLabel = null
             statusColor = AppMuted
         }
-        ratio <= 0.3 -> {
+        ratio <= 0.65 -> {
             statusLabel = "وضعیت مطلوب"
             statusColor = AppPrimary
-        }
-        ratio <= 0.5 -> {
-            statusLabel = "محتاط باش"
-            statusColor = AppAccent
         }
         else -> {
             statusLabel = "فشار مالی بالا"
             statusColor = AppDanger
         }
     }
+
+    var showAddIncome by remember { mutableStateOf(false) }
+    var label by remember { mutableStateOf("") }
+    var amountText by remember { mutableStateOf("") }
+    var type by remember { mutableStateOf(IncomeType.FIXED) }
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         DashboardStatCard(
@@ -355,22 +363,95 @@ private fun DashboardSummary(
         )
 
         AppCard(label = "تحلیل درآمد") {
-            var incomeText by remember(monthlyIncome) {
-                mutableStateOf(if (monthlyIncome > 0) monthlyIncome.roundToInt().toString() else "")
+            if (incomes.isNotEmpty()) {
+                Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                    incomes.forEach { income ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column {
+                                Text(income.label, color = AppText, fontSize = 13.sp)
+                                Text(
+                                    if (income.type == IncomeType.FIXED.name) "ثابت" else "متغیر",
+                                    color = AppMuted,
+                                    fontSize = 11.sp,
+                                )
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "${fmt(income.amount)} ریال",
+                                    color = AppMuted,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(end = 6.dp),
+                                )
+                                IconButton(onClick = { onDeleteIncome(income) }) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "حذف منبع درآمد", tint = AppDanger)
+                                }
+                            }
+                        }
+                    }
+                    Text(
+                        "جمع درآمد: ${fmt(totalIncome)} ریال",
+                        color = AppText,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
-            OutlinedTextField(
-                value = if (incomeText.isEmpty()) "" else toFa(incomeText),
-                onValueChange = { raw ->
-                    val cleaned = cleanNum(raw)
-                    incomeText = cleaned
-                    onIncomeChange(cleaned.toDoubleOrNull() ?: 0.0)
-                },
-                label = { Text("درآمد ماهانه (ریال)") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (monthlyIncome > 0) {
+
+            if (showAddIncome) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = label,
+                        onValueChange = { label = it },
+                        label = { Text("اسم منبع درآمد (مثلاً حقوق)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = if (amountText.isEmpty()) "" else toFa(amountText),
+                        onValueChange = { amountText = cleanNum(it) },
+                        label = { Text("مبلغ ماهانه (ریال)") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AppChip(label = "ثابت", selected = type == IncomeType.FIXED, onClick = { type = IncomeType.FIXED })
+                        AppChip(label = "متغیر", selected = type == IncomeType.VARIABLE, onClick = { type = IncomeType.VARIABLE })
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        GradientButton(
+                            onClick = {
+                                val amount = amountText.toDoubleOrNull() ?: 0.0
+                                if (label.trim().isNotEmpty() && amount > 0) {
+                                    onAddIncome(label.trim(), amount, type)
+                                    label = ""
+                                    amountText = ""
+                                    showAddIncome = false
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("افزودن")
+                        }
+                        OutlinedButton(onClick = { showAddIncome = false }, modifier = Modifier.weight(1f)) {
+                            Text("انصراف")
+                        }
+                    }
+                }
+            } else {
+                OutlinedButton(onClick = { showAddIncome = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text("+ افزودن منبع درآمد")
+                }
+            }
+
+            if (totalIncome > 0) {
                 Text(
                     "${toFa((ratio * 100).roundToInt())}٪ از درآمدت صرف اقساط می‌شه",
                     color = AppMuted,

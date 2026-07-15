@@ -12,8 +12,9 @@ import androidx.room.RoomDatabase
         ChequeBookEntity::class,
         AccountEntity::class,
         AccountTransactionEntity::class,
+        IncomeEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -22,6 +23,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun chequeBookDao(): ChequeBookDao
     abstract fun accountDao(): AccountDao
     abstract fun accountTransactionDao(): AccountTransactionDao
+    abstract fun incomeDao(): IncomeDao
 
     companion object {
         @Volatile

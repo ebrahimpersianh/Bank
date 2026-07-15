@@ -10,17 +10,18 @@ import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.AuthRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.CrashRepository
+import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.db.AccountDao
 import ir.sadteam.loancalc.data.db.AccountTransactionDao
 import ir.sadteam.loancalc.data.db.AppDatabase
 import ir.sadteam.loancalc.data.db.ChequeBookDao
 import ir.sadteam.loancalc.data.db.ChequeDao
+import ir.sadteam.loancalc.data.db.IncomeDao
 import ir.sadteam.loancalc.data.db.LoanDao
 import ir.sadteam.loancalc.data.network.ApiClient
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
-import ir.sadteam.loancalc.data.prefs.IncomePrefs
 import ir.sadteam.loancalc.data.prefs.SecurityPrefs
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import javax.inject.Singleton
@@ -71,8 +72,11 @@ object AppModule {
     fun provideSecurityPrefs(@ApplicationContext context: Context): SecurityPrefs = SecurityPrefs(context)
 
     @Provides
+    fun provideIncomeDao(database: AppDatabase): IncomeDao = database.incomeDao()
+
+    @Provides
     @Singleton
-    fun provideIncomePrefs(@ApplicationContext context: Context): IncomePrefs = IncomePrefs(context)
+    fun provideIncomeRepository(incomeDao: IncomeDao): IncomeRepository = IncomeRepository(incomeDao)
 
     @Provides
     fun provideChequeDao(database: AppDatabase): ChequeDao = database.chequeDao()
