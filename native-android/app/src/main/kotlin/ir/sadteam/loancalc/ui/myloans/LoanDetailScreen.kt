@@ -1,14 +1,20 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Edit
@@ -31,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,8 +49,10 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 
 private val faMonthNamesDetail = listOf(
@@ -187,94 +196,116 @@ fun LoanDetailScreen(
         )
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
-                }
-                Text(loan.name, color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
             }
+            Text(loan.name, color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
         }
 
-        item {
-            AppCard(label = loan.bank, modifier = Modifier.padding(horizontal = 14.dp)) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column {
-                        Text("مبلغ هر قسط", fontSize = 13.sp, color = AppMuted)
-                        Text("${fmt(loan.installment)} ریال", fontSize = 13.sp, color = AppText)
-                    }
-                    Column {
-                        Text("پرداخت‌شده", fontSize = 13.sp, color = AppMuted)
-                        Text("${toFa(loan.paidCount)} از ${toFa(loan.n)}", fontSize = 13.sp, color = AppPrimary)
-                    }
-                }
-            }
-        }
-
-        items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
-            val m = (row["m"] as? Number)?.toInt() ?: 0
-            val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
-            val paid = row["paid"] == true
-            val paidLate = paid && row["paidLate"] == true
-            val due = row["dueDate"] as? Map<*, *>
-            val dueLabel = due?.let {
-                "${toFa(it["y"].toString())}/${toFa(it["m"].toString())}/${toFa(it["d"].toString())}"
-            } ?: ""
-            val statusLabel = if (paidLate) "پرداخت با تاخیر" else if (paid) "پرداخت‌شده ✓" else "در انتظار"
-            val statusColor = if (paid) AppPrimary else AppMuted
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp)
-                    .clickable {
-                        if (paid) viewModel.setRowUnpaid(loan, m) else payChoiceM = m
-                    },
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+        AppCard(label = loan.bank, modifier = Modifier.padding(horizontal = 14.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text("قسط ${toFa(m)}", color = AppText, fontSize = 12.5.sp)
-                    Text(dueLabel, color = AppMuted, fontSize = 12.5.sp)
+                    Text("مبلغ هر قسط", fontSize = 13.sp, color = AppMuted)
+                    Text("${fmt(loan.installment)} ریال", fontSize = 13.sp, color = AppText)
                 }
-                Text("${fmt(installment)} ریال", color = AppMuted, fontSize = 13.sp)
-                Text(statusLabel, color = statusColor, fontSize = 13.5.sp)
-                IconButton(onClick = {
-                    editingRowM = m
-                    editAmountText = installment.toLong().toString()
-                }) {
-                    Icon(Icons.Filled.Edit, contentDescription = "ویرایش مبلغ", tint = AppMuted)
+                Column {
+                    Text("پرداخت‌شده", fontSize = 13.sp, color = AppMuted)
+                    Text("${toFa(loan.paidCount)} از ${toFa(loan.n)}", fontSize = 13.sp, color = AppPrimary)
                 }
             }
         }
 
-        item {
-            Column(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+        // پورت «۵ ردیف هم‌زمان + اسکرول عمودی» به‌جای همه‌ی ~۱۵ قسط تو یه صفحه‌ی شلوغ - جدول اقساط
+        // یه بلوک با ارتفاع ثابت (تقریباً ۵ ردیف) داره و مستقل از بقیه‌ی صفحه اسکرول می‌شه.
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 14.dp)
+                .fillMaxWidth()
+                .background(AppSurface, RoundedCornerShape(7.dp))
+                .border(1.dp, AppLine, RoundedCornerShape(7.dp)),
+        ) {
+            Text(
+                "اقساط",
+                color = AppMuted,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(start = 10.dp, top = 10.dp, end = 10.dp),
+            )
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(installmentRowHeight * 5),
             ) {
-                OutlinedButton(
-                    onClick = onDelete,
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 24.dp),
-                ) {
-                    Text("حذف وام")
+                items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
+                    val m = (row["m"] as? Number)?.toInt() ?: 0
+                    val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
+                    val paid = row["paid"] == true
+                    val paidLate = paid && row["paidLate"] == true
+                    val due = row["dueDate"] as? Map<*, *>
+                    val dueLabel = due?.let {
+                        "${toFa(it["y"].toString())}/${toFa(it["m"].toString())}/${toFa(it["d"].toString())}"
+                    } ?: ""
+                    val statusLabel = if (paidLate) "پرداخت با تاخیر" else if (paid) "پرداخت‌شده ✓" else "در انتظار"
+                    val statusColor = if (paid) AppPrimary else AppMuted
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(installmentRowHeight)
+                            .padding(horizontal = 10.dp)
+                            .clickable {
+                                if (paid) viewModel.setRowUnpaid(loan, m) else payChoiceM = m
+                            },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column {
+                            Text("قسط ${toFa(m)}", color = AppText, fontSize = 12.5.sp)
+                            Text(dueLabel, color = AppMuted, fontSize = 12.5.sp)
+                        }
+                        Text("${fmt(installment)} ریال", color = AppMuted, fontSize = 13.sp)
+                        Text(statusLabel, color = statusColor, fontSize = 13.5.sp)
+                        IconButton(onClick = {
+                            editingRowM = m
+                            editAmountText = installment.toLong().toString()
+                        }) {
+                            Icon(Icons.Filled.Edit, contentDescription = "ویرایش مبلغ", tint = AppMuted)
+                        }
+                    }
                 }
+            }
+        }
+
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedButton(
+                onClick = onDelete,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+            ) {
+                Text("حذف وام")
             }
         }
     }
 }
+
+private val installmentRowHeight = 56.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
