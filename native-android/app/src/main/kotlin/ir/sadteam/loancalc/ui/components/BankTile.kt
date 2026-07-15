@@ -36,13 +36,14 @@ fun BankTile(
     val border = if (selected) AppPrimaryDim else Color.Transparent
     val bg = if (selected) AppPrimary.copy(alpha = 0.1f) else Color.Transparent
 
+    val shape = RoundedCornerShape(12.dp)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .width(78.dp)
-            .pressScaleClickable(onClick = onClick)
-            .background(bg, RoundedCornerShape(12.dp))
-            .border(1.dp, border, RoundedCornerShape(12.dp))
+            .pressScaleClickable(goldBorderShape = shape, onClick = onClick)
+            .background(bg, shape)
+            .border(1.dp, border, shape)
             .padding(horizontal = 2.dp, vertical = 4.dp),
     ) {
         AsyncImage(

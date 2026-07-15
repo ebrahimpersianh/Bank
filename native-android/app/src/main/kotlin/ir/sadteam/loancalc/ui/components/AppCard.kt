@@ -9,32 +9,35 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 
 /** پورت .card تو www/index.html - از `Surface` (نه یه `Column` دستی با background/border خام)
- * استفاده می‌کنه تا هم سایه‌ی ظریف (`shadowElevation`) هم روشن‌شدن تونالِ سطح (`tonalElevation`،
- * سیستم عمق متریال۳ برای تم تیره) رو مجانی داشته باشیم - قبلاً کاملاً flat بود (فقط رنگ+حاشیه)،
- * که رو تم تیره خیلی «خشک» و بی‌عمق دیده می‌شد. */
+ * استفاده می‌کنه تا هم سایه‌ی ظریف (`shadowElevation`) هم روشن‌شدن تونالِ سطح (`tonalElevation`) رو
+ * مجانی داشته باشیم. حالا گوشه‌گردتر (مینیمال‌تر) و یه حاشیه‌ی سبز کم‌رنگ دورش داره (به‌درخواست
+ * کاربر «دور همه‌ی باکس‌ها یه خط سبز کم‌رنگ مینیمال») - با [borderColor] می‌شه برای موارد خاص
+ * (مثل کارت وام‌های پرتکرار که خط مشکی می‌خواد) override کرد. */
 @Composable
 fun AppCard(
     modifier: Modifier = Modifier,
     label: String? = null,
+    borderColor: Color? = null,
     content: @Composable () -> Unit,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(18.dp),
         color = AppSurface,
         tonalElevation = 3.dp,
         shadowElevation = 2.dp,
-        border = BorderStroke(1.dp, AppLine),
+        border = BorderStroke(1.dp, borderColor ?: AppPrimary.copy(alpha = 0.35f)),
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(14.dp)) {
             if (label != null) {
                 Text(
                     text = label,

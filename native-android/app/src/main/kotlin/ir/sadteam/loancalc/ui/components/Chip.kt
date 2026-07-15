@@ -27,14 +27,15 @@ fun AppChip(
     val border = if (selected) AppPrimaryDim else Color.Transparent
     val textColor = if (selected) AppPrimary else MaterialTheme.colorScheme.onSurfaceVariant
 
+    val shape = RoundedCornerShape(10.dp)
     Text(
         text = label,
         color = textColor,
         fontSize = 12.sp,
         modifier = modifier
-            .pressScaleClickable(onClick = onClick)
-            .background(bg, RoundedCornerShape(6.dp))
-            .border(1.dp, border, RoundedCornerShape(6.dp))
+            .pressScaleClickable(goldBorderShape = shape, onClick = onClick)
+            .background(bg, shape)
+            .border(1.dp, border, shape)
             .padding(horizontal = 10.dp, vertical = 6.dp),
     )
 }

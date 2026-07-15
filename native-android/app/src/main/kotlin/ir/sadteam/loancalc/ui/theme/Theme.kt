@@ -11,10 +11,10 @@ import androidx.compose.ui.graphics.Color
 private val AppTypography = Typography()
 
 /** پورت toggleTheme تو www/index.html (کلاس body.light). [darkTheme] از ThemeViewModel/DataStore
- * میاد، پیش‌فرضش تیره‌ست - همون‌جوری که وب همیشه با تم تیره شروع می‌شه. */
+ * میاد؛ پیش‌فرض روشن/سفیده (به‌درخواست کاربر «تم اصلی برنامه سفید باشه»). */
 @Composable
 fun LoanCalcTheme(
-    darkTheme: Boolean = true,
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val palette = if (darkTheme) DarkAppColors else LightAppColors
