@@ -240,8 +240,14 @@
   AppPrimary))` (رنگ صاف تخت) بودن؛ ظاهر/رفتار (ripple، enabled/disabled، شکل گرد) عین `Button`
   معمولیه، فقط پس‌زمینه‌ش یه گرادینت خطی از `AppPrimary` به `AppPrimaryDim`ه. محتوای هر call site
   (معمولاً یه `Text`) بدون تغییر کار می‌کنه چون امضاش هم مثل `Button` یه `RowScope.() -> Unit`ه.
-- ⏳ بقیه‌ی این پولیش (`AnimatedContent` برای تعویض صفحه‌های داخلی مثل فرم→نتیجه یا لیست→جزئیات،
-  افکت press-scale رو کارت‌های قابل‌تپ) هنوز کار می‌کنه.
+- ✅ **افکت press-scale رو کارت‌های قابل‌تپ** (`ui/components/PressScale.kt`, `pressScaleClickable`)
+  - پورت `:active { transform: scale(...) }` وب رو `.chip`/`.preset-card`/`.bank-item`/`.loan-card`
+  (رجوع کن به CLAUDE.md) - یه `Modifier` قابل‌استفاده‌ی مجدد که خودش هم `clickable` رو با یه
+  `interactionSource` مشترک انجام می‌ده (نه یه Modifier جدا از کلیک، چون press-state باید دقیقاً
+  همون تعامل کلیک رو ببینه). جایگزین `.clickable(...)` تو `BankTile`، `PresetCard`، `AppChip`، کارت
+  وام «وام‌های من»، و ردیف‌های آکاردئون/پشتیبانی تنظیمات شد.
+- ⏳ بقیه‌ی این پولیش (`AnimatedContent` برای تعویض صفحه‌های داخلی مثل فرم→نتیجه یا لیست→جزئیات)
+  هنوز کار می‌کنه.
 
 ## محدودیت مهم محیط توسعه
 
