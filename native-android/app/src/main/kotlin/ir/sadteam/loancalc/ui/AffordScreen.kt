@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -40,6 +39,7 @@ import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -161,13 +161,12 @@ fun AffordScreen() {
             val pay = cleanNum(payText).toLongOrNull() ?: 0L
             val rate = rateText.toDoubleOrNull() ?: 0.0
             val n = monthsText.toIntOrNull() ?: 36
-            Button(
+            GradientButton(
                 onClick = {
                     if (pay > 0) {
                         result = AffordabilityCalculator.computeMaxPrincipal(pay.toDouble(), rate, n)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("محاسبه حداکثر وام")

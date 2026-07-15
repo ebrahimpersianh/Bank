@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -30,9 +28,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
-import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 
 private enum class LoginStep { PHONE, OTP }
@@ -130,14 +128,14 @@ fun LoginScreen(
                 )
             }
 
-            Button(
+            GradientButton(
                 enabled = !loading,
                 onClick = {
                     error = null
                     if (step == LoginStep.PHONE) {
                         if (phone.length != 11 || !phone.startsWith("09")) {
                             error = "شماره رو به‌صورت ۰۹xxxxxxxxx وارد کن"
-                            return@Button
+                            return@GradientButton
                         }
                         loading = true
                         viewModel.requestOtp(
@@ -151,7 +149,7 @@ fun LoginScreen(
                     } else {
                         if (otp.length != 5) {
                             error = "کد ۵ رقمی رو کامل وارد کن"
-                            return@Button
+                            return@GradientButton
                         }
                         loading = true
                         viewModel.verifyOtp(
@@ -173,7 +171,6 @@ fun LoginScreen(
                         )
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 16.dp),
@@ -211,9 +208,8 @@ private fun SyncConflictPrompt(onKeepCloud: () -> Unit, onKeepDevice: () -> Unit
             color = AppText,
             fontSize = 14.sp,
         )
-        Button(
+        GradientButton(
             onClick = onKeepCloud,
-            colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 20.dp),

@@ -12,8 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -52,6 +50,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.BankTile
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
+import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.PresetCard
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.theme.AppAccent
@@ -413,9 +412,9 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
             val rialAmount = cleanNum(amountText).toLongOrNull() ?: 0L
             val n = customMonthsText.toIntOrNull() ?: selectedMonths
             val rate = rateText.toDoubleOrNull() ?: 0.0
-            Button(
+            GradientButton(
                 onClick = {
-                    if (rialAmount <= 0 || n <= 0) return@Button
+                    if (rialAmount <= 0 || n <= 0) return@GradientButton
                     val method = if (rate <= 4.0) LoanMethod.QARZ else LoanMethod.STANDARD
                     val grace = if (graceOn) graceMonths.toInt() else 0
                     val result = LoanCalculator.compute(rialAmount.toDouble(), rate, n, method, grace, intervalDays)
@@ -431,7 +430,6 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         ),
                     )
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("محاسبه کن", fontWeight = FontWeight.Bold)
