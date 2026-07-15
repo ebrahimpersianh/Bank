@@ -40,8 +40,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -92,10 +94,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val darkTheme by themeViewModel.darkTheme.collectAsState()
+            val fontScale by themeViewModel.fontScale.collectAsState()
+            val baseDensity = LocalDensity.current
             LoanCalcTheme(darkTheme = darkTheme) {
                 CompositionLocalProvider(
                     LocalLayoutDirection provides LayoutDirection.Rtl,
                     LocalSubscriptionManager provides subscriptionManager,
+                    // پورت .app.fs-small/fs-medium/fs-large (CSS zoom) تو www/index.html - هم
+                    // فونت هم فاصله‌ها (dp) با هم مقیاس می‌شن، دقیقاً مثل زوم کل کانتینر .app.
+                    LocalDensity provides Density(
+                        density = baseDensity.density * fontScale,
+                        fontScale = baseDensity.fontScale * fontScale,
+                    ),
                 ) {
                     AppRoot()
                 }

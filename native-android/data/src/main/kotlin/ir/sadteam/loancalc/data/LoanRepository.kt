@@ -126,12 +126,26 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
     }
 
     /** ویرایش دستی مبلغ یه قسط (کارمزد/جریمه‌ی بانکی که نمی‌تونیم حدس بزنیم) - پورت
-     * confirmEditInstallment، بدون گزینه‌ی «همین مبلغ رو بقیه هم بگیرن» (فاز بعد). */
+     * confirmEditInstallment. */
     suspend fun setRowInstallment(loan: LoanEntity, m: Int, newAmount: Double) {
         val data = parseDataMutable(loan)
         val rows = rowsFromData(data, loan).map { row ->
             if ((row["m"] as? Number)?.toInt() == m) row + ("installment" to newAmount) else row
         }
+        saveRows(loan, data, rows)
+    }
+
+    /** پورت گزینه‌ی «می‌خوای این مبلغ رو برای همه‌ی اقساط اعمال کنی؟» تو confirmEditInstallment -
+     * برخلاف وب که فقط اقساطِ همون نتیجه‌ی محاسبه رو عوض می‌کنه، اینجا مستقیم همه‌ی ردیف‌های
+     * ذخیره‌شده رو آپدیت می‌کنه (چون :app به rows مستقیم دسترسی نداره، جایی برای «نگه داشتن اون
+     * نسخه‌ی موقت تو حافظه» مثل وب نیست). */
+    suspend fun setAllRowsInstallment(loan: LoanEntity, newAmount: Double) {
+        val data = parseDataMutable(loan)
+        val rows = rowsFromData(data, loan).map { row -> row + ("installment" to newAmount) }
+        saveRows(loan, data, rows)
+    }
+
+    private suspend fun saveRows(loan: LoanEntity, data: MutableMap<String, Any?>, rows: List<Map<String, Any?>>) {
         val newTotal = rows.sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
         data["rows"] = rows
         data["amount"] = newTotal

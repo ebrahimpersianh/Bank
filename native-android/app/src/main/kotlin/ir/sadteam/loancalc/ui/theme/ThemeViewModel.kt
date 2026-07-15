@@ -18,4 +18,12 @@ class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewMod
     fun toggleTheme() {
         viewModelScope.launch { uiPrefs.setDarkTheme(!darkTheme.value) }
     }
+
+    /** پورت .app.fs-small/fs-medium/fs-large تو www/index.html. */
+    val fontScale: StateFlow<Float> = uiPrefs.fontScale
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1f)
+
+    fun setFontScale(value: Float) {
+        viewModelScope.launch { uiPrefs.setFontScale(value) }
+    }
 }
