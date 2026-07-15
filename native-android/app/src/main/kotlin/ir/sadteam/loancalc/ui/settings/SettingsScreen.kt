@@ -421,6 +421,7 @@ private fun SecuritySettings(appLockViewModel: AppLockViewModel) {
     val context = LocalContext.current
     val pinHash by appLockViewModel.pinHash.collectAsState()
     val biometricEnabled by appLockViewModel.biometricEnabled.collectAsState()
+    val autoLockTimeoutMinutes by appLockViewModel.autoLockTimeoutMinutes.collectAsState()
     var showPinDialog by remember { mutableStateOf(false) }
 
     if (showPinDialog) {
@@ -487,8 +488,31 @@ private fun SecuritySettings(appLockViewModel: AppLockViewModel) {
                 Text("حذف قفل PIN", color = AppDanger)
             }
         }
+
+        if (pinHash != null || biometricEnabled) {
+            Text(
+                "قفل خودکار بعد از رفتن به پس‌زمینه",
+                color = AppText,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(top = 14.dp),
+            )
+            Row(
+                modifier = Modifier.padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
+            ) {
+                autoLockTimeoutOptions.forEach { (minutes, label) ->
+                    AppChip(
+                        label = label,
+                        selected = autoLockTimeoutMinutes == minutes,
+                        onClick = { appLockViewModel.setAutoLockTimeoutMinutes(minutes) },
+                    )
+                }
+            }
+        }
     }
 }
+
+private val autoLockTimeoutOptions = listOf(0 to "بی‌درنگ", 1 to "۱ دقیقه", 5 to "۵ دقیقه", 15 to "۱۵ دقیقه")
 
 @Composable
 private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
