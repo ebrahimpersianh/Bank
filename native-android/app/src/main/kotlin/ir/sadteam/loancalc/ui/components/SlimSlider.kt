@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
@@ -19,6 +20,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
  * پورت ظاهر `.slider`/`.slider::-webkit-slider-thumb` تو www/index.html (تراک باریک ۵px + دستگیره‌ی
  * گرد کوچیک با یه حلقه‌ی هم‌رنگ پس‌زمینه دورش) - Slider پیش‌فرض Material3 خیلی حجیم‌تر و بزرگ‌تره.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SlimSlider(
     value: Float,
