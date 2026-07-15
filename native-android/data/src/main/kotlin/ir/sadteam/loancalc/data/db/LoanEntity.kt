@@ -22,4 +22,6 @@ data class LoanEntity(
     val paidCount: Int,
     val createdAt: String,
     val dataJson: String,
+    /** مسیر مطلق عکس رسید تو فضای داخلی اپ (پورت «پیوست عکس» اپ رقیب) - رجوع کن به AttachmentStorage. */
+    val photoPath: String? = null,
 )

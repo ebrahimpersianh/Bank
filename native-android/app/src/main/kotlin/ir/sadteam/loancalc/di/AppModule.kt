@@ -7,6 +7,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.AuthRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.CrashRepository
@@ -99,4 +100,9 @@ object AppModule {
     @Singleton
     fun provideAccountRepository(accountDao: AccountDao, transactionDao: AccountTransactionDao): AccountRepository =
         AccountRepository(accountDao, transactionDao)
+
+    @Provides
+    @Singleton
+    fun provideAttachmentStorage(@ApplicationContext context: Context): AttachmentStorage =
+        AttachmentStorage(context)
 }

@@ -30,6 +30,7 @@ import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -87,6 +88,14 @@ fun ChequeDetailScreen(
                     if (cheque.notes.isNotBlank()) DetailRow("یادداشت", cheque.notes)
                 }
             }
+        }
+
+        item {
+            PhotoAttachmentCard(
+                photoPath = cheque.photoPath,
+                onPick = { uri -> viewModel.setChequePhoto(cheque, uri) },
+                onRemove = { viewModel.removeChequePhoto(cheque) },
+            )
         }
 
         item {

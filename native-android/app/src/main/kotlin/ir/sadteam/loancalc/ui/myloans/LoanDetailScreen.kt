@@ -48,6 +48,7 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -226,6 +227,13 @@ fun LoanDetailScreen(
                 }
             }
         }
+
+        PhotoAttachmentCard(
+            photoPath = loan.photoPath,
+            onPick = { uri -> viewModel.setLoanPhoto(loan, uri) },
+            onRemove = { viewModel.removeLoanPhoto(loan) },
+            modifier = Modifier.padding(horizontal = 14.dp),
+        )
 
         // پورت «۵ ردیف هم‌زمان + اسکرول عمودی» به‌جای همه‌ی ~۱۵ قسط تو یه صفحه‌ی شلوغ - جدول اقساط
         // یه بلوک با ارتفاع ثابت (تقریباً ۵ ردیف) داره و مستقل از بقیه‌ی صفحه اسکرول می‌شه.

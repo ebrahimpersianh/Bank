@@ -1,10 +1,12 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.IncomeType
 import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.db.IncomeEntity
@@ -27,6 +29,7 @@ class MyLoansViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
     private val authPrefs: AuthPrefs,
     private val incomeRepository: IncomeRepository,
+    private val attachmentStorage: AttachmentStorage,
 ) : ViewModel() {
     val loans: StateFlow<List<LoanEntity>> = loanRepository.observeLoans()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -70,6 +73,25 @@ class MyLoansViewModel @Inject constructor(
     fun deleteLoan(id: Long) {
         viewModelScope.launch {
             loanRepository.deleteLoan(id)
+            syncIfLoggedIn()
+        }
+    }
+
+    /** پورت «پیوست عکس رسید» اپ رقیب - عکس انتخابی رو به فضای داخلی اپ کپی می‌کنه، عکس قبلی (اگه بود)
+     * رو پاک می‌کنه، و مسیر جدید رو رو خودِ وام ذخیره می‌کنه. */
+    fun setLoanPhoto(loan: LoanEntity, uri: Uri) {
+        viewModelScope.launch {
+            val newPath = attachmentStorage.copyToInternalStorage(uri) ?: return@launch
+            attachmentStorage.delete(loan.photoPath)
+            loanRepository.saveLoan(loan.copy(photoPath = newPath))
+            syncIfLoggedIn()
+        }
+    }
+
+    fun removeLoanPhoto(loan: LoanEntity) {
+        viewModelScope.launch {
+            attachmentStorage.delete(loan.photoPath)
+            loanRepository.saveLoan(loan.copy(photoPath = null))
             syncIfLoggedIn()
         }
     }

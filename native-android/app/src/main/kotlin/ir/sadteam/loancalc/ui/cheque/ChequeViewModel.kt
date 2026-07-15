@@ -1,10 +1,12 @@
 package ir.sadteam.loancalc.ui.cheque
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.core.ChequeType
+import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
 import ir.sadteam.loancalc.data.db.ChequeEntity
@@ -17,6 +19,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ChequeViewModel @Inject constructor(
     private val chequeRepository: ChequeRepository,
+    private val attachmentStorage: AttachmentStorage,
 ) : ViewModel() {
     val cheques: StateFlow<List<ChequeEntity>> = chequeRepository.observeCheques()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -64,6 +67,23 @@ class ChequeViewModel @Inject constructor(
 
     fun deleteCheque(id: Long) {
         viewModelScope.launch { chequeRepository.deleteCheque(id) }
+    }
+
+    /** پورت «پیوست عکس رسید» اپ رقیب - عکس انتخابی رو به فضای داخلی اپ کپی می‌کنه، عکس قبلی (اگه بود)
+     * رو پاک می‌کنه، و مسیر جدید رو رو خودِ چک ذخیره می‌کنه. */
+    fun setChequePhoto(cheque: ChequeEntity, uri: Uri) {
+        viewModelScope.launch {
+            val newPath = attachmentStorage.copyToInternalStorage(uri) ?: return@launch
+            attachmentStorage.delete(cheque.photoPath)
+            chequeRepository.updateCheque(cheque.copy(photoPath = newPath))
+        }
+    }
+
+    fun removeChequePhoto(cheque: ChequeEntity) {
+        viewModelScope.launch {
+            attachmentStorage.delete(cheque.photoPath)
+            chequeRepository.updateCheque(cheque.copy(photoPath = null))
+        }
     }
 
     fun addChequeBook(ownerName: String, bankName: String, startSerial: Long, endSerial: Long) {
