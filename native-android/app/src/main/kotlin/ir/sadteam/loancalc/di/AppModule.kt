@@ -6,6 +6,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import ir.sadteam.loancalc.data.AuthRepository
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.db.AppDatabase
 import ir.sadteam.loancalc.data.db.LoanDao
@@ -40,4 +41,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideApiService(): ApiService = ApiClient.create()
+
+    @Provides
+    @Singleton
+    fun provideAuthRepository(apiService: ApiService, authPrefs: AuthPrefs): AuthRepository =
+        AuthRepository(apiService, authPrefs)
 }
