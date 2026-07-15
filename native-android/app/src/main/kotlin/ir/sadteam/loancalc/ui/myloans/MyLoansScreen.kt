@@ -16,11 +16,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
@@ -46,6 +51,24 @@ import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+/** پورت لیبل «فیلتر» بالا-چپِ لیست وام‌های رقیب (VAMMAN) - فقط مرتب‌سازی محلی لیست، بدون تغییر
+ * داده؛ پیش‌فرض «جدیدترین» (همون ترتیب قبلی createdAt نزولی که قبلاً بدون این کنترل هم اعمال می‌شد). */
+private enum class LoanSortOption(val label: String) {
+    NEWEST("جدیدترین"),
+    OLDEST("قدیمی‌ترین"),
+    NAME("نام (الفبا)"),
+    AMOUNT_DESC("بیشترین مبلغ"),
+    PROGRESS_DESC("بیشترین پیشرفت پرداخت"),
+}
+
+private fun List<LoanEntity>.sortedByOption(option: LoanSortOption): List<LoanEntity> = when (option) {
+    LoanSortOption.NEWEST -> sortedByDescending { it.createdAt }
+    LoanSortOption.OLDEST -> sortedBy { it.createdAt }
+    LoanSortOption.NAME -> sortedBy { it.name }
+    LoanSortOption.AMOUNT_DESC -> sortedByDescending { it.amount }
+    LoanSortOption.PROGRESS_DESC -> sortedByDescending { if (it.n > 0) it.paidCount.toDouble() / it.n else 0.0 }
+}
 
 /**
  * لیست محلی Room + افزودن دستی/حذف/بازکردن جزئیات (پرداخت قسط)، پشتیبان‌گیری/بازیابی رو نشون می‌ده.
@@ -61,7 +84,9 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
     var showLoginPrompt by remember { mutableStateOf(false) }
     var showSubscriptionScreen by remember { mutableStateOf(false) }
 
-    val loans by viewModel.loans.collectAsState()
+    val rawLoans by viewModel.loans.collectAsState()
+    var sortOption by remember { mutableStateOf(LoanSortOption.NEWEST) }
+    val loans = remember(rawLoans, sortOption) { rawLoans.sortedByOption(sortOption) }
     val gateState by authViewModel.gateState.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
     val canSaveAnotherLoan = loans.isEmpty() || (gateState == GateState.LOGGED_IN && subscribed)
@@ -157,6 +182,14 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
         contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        if (loans.isNotEmpty()) {
+            item {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    LoanSortMenu(selected = sortOption, onSelect = { sortOption = it })
+                }
+            }
+        }
+
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
@@ -236,6 +269,33 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoanSortMenu(selected: LoanSortOption, onSelect: (LoanSortOption) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        TextButton(onClick = { expanded = true }) {
+            Icon(Icons.Filled.FilterList, contentDescription = null, tint = AppPrimary, modifier = Modifier.padding(end = 4.dp))
+            Text("فیلتر", color = AppPrimary, fontSize = 13.sp)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            LoanSortOption.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            option.label,
+                            color = if (option == selected) AppPrimary else AppText,
+                        )
+                    },
+                    onClick = {
+                        onSelect(option)
+                        expanded = false
+                    },
+                )
             }
         }
     }
