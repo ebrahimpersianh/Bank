@@ -40,7 +40,7 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
     /**
      * پورت saveManualLoan تو www/index.html. [dataJson] دقیقاً همون شکل شیءای رو نگه می‌داره که
      * سرور/اپ وب برای هر وام انتظار دارن (name/bank/borrower/amount/rate/n/method/...)، به‌علاوه
-     * یه آرایه‌ی `rows` (پورت مدل مستقل هر قسط `rows[].paid` تو وب - بدون paidLate/paidDate هنوز).
+     * یه آرایه‌ی `rows` (پورت مدل مستقل هر قسط `rows[].paid`/`paidLate`/`paidDate` تو وب).
      */
     suspend fun addManualLoan(
         name: String,
@@ -114,10 +114,25 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
         return PersianDate(y, m, d)
     }
 
-    suspend fun setRowPaid(loan: LoanEntity, m: Int, paid: Boolean) {
+    /** پورت handlePayButton برای برگردوندن قسط به حالت پرداخت‌نشده - paidLate/paidDate هم پاک می‌شن. */
+    suspend fun setRowUnpaid(loan: LoanEntity, m: Int) = updateRowPayment(loan, m) { row ->
+        row + mapOf("paid" to false, "paidLate" to false, "paidDate" to null)
+    }
+
+    /** پورت payOnTime تو www/index.html. */
+    suspend fun setRowPaidOnTime(loan: LoanEntity, m: Int) = updateRowPayment(loan, m) { row ->
+        row + mapOf("paid" to true, "paidLate" to false, "paidDate" to null)
+    }
+
+    /** پورت confirmLatePayment تو www/index.html - [paidDate] تاریخ واقعی پرداخته (نه سررسید). */
+    suspend fun setRowPaidLate(loan: LoanEntity, m: Int, paidDate: Map<String, Int>) = updateRowPayment(loan, m) { row ->
+        row + mapOf("paid" to true, "paidLate" to true, "paidDate" to paidDate)
+    }
+
+    private suspend fun updateRowPayment(loan: LoanEntity, m: Int, transform: (Map<String, Any?>) -> Map<String, Any?>) {
         val data = parseDataMutable(loan)
         val rows = rowsFromData(data, loan).map { row ->
-            if ((row["m"] as? Number)?.toInt() == m) row + ("paid" to paid) else row
+            if ((row["m"] as? Number)?.toInt() == m) transform(row) else row
         }
         val newPaidCount = rows.count { it["paid"] == true }
         data["rows"] = rows
