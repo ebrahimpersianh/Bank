@@ -235,8 +235,13 @@
 - ✅ **بازگشت فنری آیکون تب فعال** (`MainActivity.kt`, `BottomNavItem`) - پورت easing فنری
   `cubic-bezier(.34,1.56,.64,1)` وب (`.nav-item .ic svg`) - آیکون تب انتخاب‌شده حالا با یه
   `spring(dampingRatio=MediumBouncy)` یه‌کم بزرگ‌تر (۱.۱۵×) می‌شه، نه فقط رنگش عوض بشه.
-- ⏳ بقیه‌ی این پولیش (گرادینت رو دکمه‌های اصلی CTA، `AnimatedContent` برای تعویض صفحه‌های داخلی
-  مثل فرم→نتیجه یا لیست→جزئیات، افکت press-scale رو کارت‌های قابل‌تپ) هنوز کار می‌کنه.
+- ✅ **گرادینت رو دکمه‌های اصلی CTA** (`ui/components/GradientButton.kt`) - یه کامپوننت جدید
+  جایگزین همه‌ی ۱۱ جای اپ که قبلاً `Button(colors = ButtonDefaults.buttonColors(containerColor =
+  AppPrimary))` (رنگ صاف تخت) بودن؛ ظاهر/رفتار (ripple، enabled/disabled، شکل گرد) عین `Button`
+  معمولیه، فقط پس‌زمینه‌ش یه گرادینت خطی از `AppPrimary` به `AppPrimaryDim`ه. محتوای هر call site
+  (معمولاً یه `Text`) بدون تغییر کار می‌کنه چون امضاش هم مثل `Button` یه `RowScope.() -> Unit`ه.
+- ⏳ بقیه‌ی این پولیش (`AnimatedContent` برای تعویض صفحه‌های داخلی مثل فرم→نتیجه یا لیست→جزئیات،
+  افکت press-scale رو کارت‌های قابل‌تپ) هنوز کار می‌کنه.
 
 ## محدودیت مهم محیط توسعه
 

@@ -9,8 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -29,9 +27,9 @@ import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.subscriptionTiers
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
-import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -94,7 +92,7 @@ fun SubscriptionScreen(
                             Text(label, color = AppText, fontSize = 14.sp)
                             Text(prices[productId] ?: "…", color = AppMuted, fontSize = 12.sp)
                         }
-                        Button(
+                        GradientButton(
                             enabled = purchasingProductId == null,
                             onClick = {
                                 error = null
@@ -116,7 +114,6 @@ fun SubscriptionScreen(
                                     onCanceled = { purchasingProductId = null },
                                 )
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
                         ) {
                             Text(if (purchasingProductId == productId) "..." else "خرید")
                         }

@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +29,7 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -133,14 +132,13 @@ fun DepositScreen() {
         }
 
         item {
-            Button(
+            GradientButton(
                 onClick = {
                     val principal = cleanNum(amountText).toLongOrNull() ?: 0L
                     if (principal > 0) {
                         result = DepositCalculator.compute(principal.toDouble(), rateText.toDoubleOrNull() ?: 0.0, selectedMonths)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("محاسبه سود سپرده")

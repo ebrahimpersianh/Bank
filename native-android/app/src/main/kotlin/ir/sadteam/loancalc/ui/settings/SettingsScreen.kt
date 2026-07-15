@@ -60,6 +60,7 @@ import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.calendar.FinancialCalendarScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
 import ir.sadteam.loancalc.ui.stats.StatsScreen
@@ -183,9 +184,8 @@ fun SettingsScreen(
                             fontSize = 12.sp,
                             modifier = Modifier.padding(top = 4.dp),
                         )
-                        Button(
+                        GradientButton(
                             onClick = { showLoginPrompt = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 12.dp),
