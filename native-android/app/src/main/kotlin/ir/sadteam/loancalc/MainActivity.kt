@@ -174,7 +174,7 @@ private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel(), appLockViewM
         LockScreen(
             pinHash = pinHash,
             biometricEnabled = biometricEnabled,
-            verifyPin = { appLockViewModel.verifyPin(it) },
+            attemptPin = { appLockViewModel.attemptPin(it) },
             onUnlock = { appLockViewModel.unlock() },
         )
         return

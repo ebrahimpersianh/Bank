@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,6 +36,7 @@ import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
+import kotlinx.coroutines.delay
 
 /**
  * قفل امنیتی اپ - وقتی PIN تنظیم شده یا قفل اثر انگشت فعاله نشون داده می‌شه (رجوع کن به
@@ -45,12 +47,22 @@ import ir.sadteam.loancalc.ui.theme.AppText
 fun LockScreen(
     pinHash: String?,
     biometricEnabled: Boolean,
-    verifyPin: (String) -> Boolean,
+    attemptPin: (String) -> PinAttemptResult,
     onUnlock: () -> Unit,
 ) {
     val context = LocalContext.current
     var pin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var lockedOutUntil by remember { mutableLongStateOf(0L) }
+    var secondsLeft by remember { mutableStateOf(0L) }
+
+    LaunchedEffect(lockedOutUntil) {
+        while (lockedOutUntil > System.currentTimeMillis()) {
+            secondsLeft = (lockedOutUntil - System.currentTimeMillis()) / 1000 + 1
+            delay(1000)
+        }
+        secondsLeft = 0
+    }
 
     fun tryBiometric() {
         val activity = context as? FragmentActivity ?: return
@@ -89,6 +101,7 @@ fun LockScreen(
         )
 
         if (pinHash != null) {
+            val lockedOut = secondsLeft > 0
             OutlinedTextField(
                 value = pin,
                 onValueChange = {
@@ -97,6 +110,7 @@ fun LockScreen(
                         error = null
                     }
                 },
+                enabled = !lockedOut,
                 label = { Text("PIN") },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
@@ -105,13 +119,26 @@ fun LockScreen(
             )
             GradientButton(
                 onClick = {
-                    if (verifyPin(pin)) onUnlock() else error = "PIN اشتباهه"
+                    when (val result = attemptPin(pin)) {
+                        is PinAttemptResult.Success -> {
+                            error = null
+                            onUnlock()
+                        }
+                        is PinAttemptResult.WrongPin -> {
+                            error = "PIN اشتباهه (${result.attemptsLeft} تلاش دیگه مونده)"
+                        }
+                        is PinAttemptResult.LockedOut -> {
+                            error = "به دلیل تلاش‌های ناموفق زیاد، موقتاً قفل شدی"
+                            lockedOutUntil = System.currentTimeMillis() + result.secondsLeft * 1000
+                        }
+                    }
                 },
+                enabled = !lockedOut,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp),
             ) {
-                Text("ورود")
+                Text(if (lockedOut) "امتحان دوباره بعد از ${secondsLeft} ثانیه" else "ورود")
             }
         }
 
