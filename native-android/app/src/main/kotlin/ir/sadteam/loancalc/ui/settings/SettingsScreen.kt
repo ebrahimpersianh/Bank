@@ -57,6 +57,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
+import ir.sadteam.loancalc.ui.calendar.FinancialCalendarScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
@@ -89,6 +90,7 @@ fun SettingsScreen(
     appLockViewModel: AppLockViewModel = hiltViewModel(),
 ) {
     var showLoginPrompt by remember { mutableStateOf(false) }
+    var showFinancialCalendar by remember { mutableStateOf(false) }
     val gateState by authViewModel.gateState.collectAsState()
     val phone by authViewModel.phone.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
@@ -101,6 +103,11 @@ fun SettingsScreen(
 
     if (showLoginPrompt) {
         LoginScreen(onDismiss = { showLoginPrompt = false }, onLoginSuccess = { showLoginPrompt = false })
+        return
+    }
+
+    if (showFinancialCalendar) {
+        FinancialCalendarScreen(onBack = { showFinancialCalendar = false })
         return
     }
 
@@ -224,6 +231,26 @@ fun SettingsScreen(
                         },
                         colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
                     )
+                }
+            }
+
+            AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("تقویم مالی", color = AppText, fontSize = 13.sp)
+                        Text(
+                            "سررسید اقساط همه‌ی وام‌هات رو رو تقویم ببین",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    OutlinedButton(onClick = { showFinancialCalendar = true }) {
+                        Text("مشاهده")
+                    }
                 }
             }
 
