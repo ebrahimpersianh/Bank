@@ -1,0 +1,115 @@
+package ir.sadteam.loancalc.core
+
+enum class LoanMethod { STANDARD, QARZ, FLAT }
+
+data class LoanRow(
+    val month: Int,
+    val installment: Double,
+    val interest: Double,
+    val principal: Double,
+    val balance: Double,
+)
+
+data class LoanResult(
+    val installment: Double,
+    val totalInterest: Double,
+    val totalPaid: Double,
+    val principal: Double,
+    val rows: List<LoanRow>,
+    val graceMonths: Int,
+    val originalPrincipal: Double,
+    val intervalDays: Int,
+)
+
+/**
+ * پورت مو‌به‌موی computeLoan تو www/index.html - دست نزن مگر با تست دقیق رو چند مثال واقعی
+ * (بنگرید CLAUDE.md، بخش «فرمول‌های حساسِ محاسبه»).
+ */
+object LoanCalculator {
+    fun compute(
+        principalAmount: Double,
+        annualRatePct: Double,
+        n: Int,
+        method: LoanMethod,
+        graceMonths: Int = 0,
+        intervalDays: Int = 30,
+    ): LoanResult {
+        val i = annualRatePct / 100.0 * (intervalDays / 365.0)
+        var principal = principalAmount
+        if (graceMonths > 0) {
+            principal = principalAmount + principalAmount * (annualRatePct / 100.0 / 365.0) * (graceMonths * 30)
+        }
+        val rows = mutableListOf<LoanRow>()
+        val installment: Double
+        val totalInterest: Double
+        val totalPaid: Double
+
+        when (method) {
+            LoanMethod.STANDARD -> {
+                installment = if (i == 0.0) {
+                    principal / n
+                } else {
+                    principal * i * Math.pow(1 + i, n.toDouble()) / (Math.pow(1 + i, n.toDouble()) - 1)
+                }
+                var balance = principal
+                for (m in 1..n) {
+                    val interestPart = balance * i
+                    val principalPart = installment - interestPart
+                    balance -= principalPart
+                    rows.add(LoanRow(m, installment, interestPart, principalPart, maxOf(balance, 0.0)))
+                }
+                totalPaid = installment * n
+                totalInterest = totalPaid - principal
+            }
+
+            LoanMethod.QARZ -> {
+                // قرض‌الحسنه: بدون سود مرکب. قسط‌های ۱، ۱۳، ۲۵... (ابتدای هر سال) کاملاً
+                // مخصوص کارمزد سالانه‌ان (روی مانده‌ی همون لحظه) و هیچ اصل وامی توشون نیست؛
+                // اصل وام فقط بین بقیه‌ی اقساط (غیرکارمزدی) مساوی تقسیم می‌شه.
+                val feeInstallments = Math.ceil(n / 12.0).toInt()
+                val principalInstallments = n - feeInstallments
+                val principalPart = principal / principalInstallments
+                var balance = principal
+                var totalFee = 0.0
+                for (m in 1..n) {
+                    if ((m - 1) % 12 == 0) {
+                        val k = (m - 1) / 12
+                        val feePart = (principal - k * 11 * principalPart) * (annualRatePct / 100.0)
+                        totalFee += feePart
+                        rows.add(LoanRow(m, feePart, feePart, 0.0, maxOf(balance, 0.0)))
+                    } else {
+                        balance -= principalPart
+                        rows.add(LoanRow(m, principalPart, 0.0, principalPart, maxOf(balance, 0.0)))
+                    }
+                }
+                installment = principalPart
+                totalInterest = totalFee
+                totalPaid = principal + totalFee
+            }
+
+            LoanMethod.FLAT -> {
+                totalInterest = principal * annualRatePct * (n + 1) / 2400.0
+                installment = (principal + totalInterest) / n
+                val flatInterest = totalInterest / n
+                val flatPrincipal = principal / n
+                var balance = principal
+                for (m in 1..n) {
+                    balance -= flatPrincipal
+                    rows.add(LoanRow(m, installment, flatInterest, flatPrincipal, maxOf(balance, 0.0)))
+                }
+                totalPaid = installment * n
+            }
+        }
+
+        return LoanResult(
+            installment = installment,
+            totalInterest = totalInterest,
+            totalPaid = totalPaid,
+            principal = principal,
+            rows = rows,
+            graceMonths = graceMonths,
+            originalPrincipal = principalAmount,
+            intervalDays = intervalDays,
+        )
+    }
+}
