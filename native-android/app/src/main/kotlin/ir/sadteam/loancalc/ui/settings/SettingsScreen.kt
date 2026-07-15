@@ -9,18 +9,23 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,10 +61,13 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
+import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 
@@ -97,6 +105,8 @@ fun SettingsScreen(
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
+        // پورت پروفایل بالای پنل تنظیمات اپ رقیب (VAMMAN): آواتار + برچسب وضعیت («نسخه عادی»/«نسخه
+        // اشتراکی»)؛ اگه مشترک باشیم، کادر دور آواتار طلایی و ضخیم‌تر می‌شه.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -106,7 +116,28 @@ fun SettingsScreen(
             IconButton(onClick = onBack) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
             }
-            Text("تنظیمات", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+            Box(
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .size(40.dp)
+                    .background(AppSurface2, CircleShape)
+                    .border(if (subscribed) 3.dp else 1.dp, if (subscribed) AppAccent else AppLine, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.Person,
+                    contentDescription = null,
+                    tint = if (subscribed) AppAccent else AppMuted,
+                )
+            }
+            Column(modifier = Modifier.padding(start = 8.dp)) {
+                Text("تنظیمات", color = AppText, fontSize = 16.sp)
+                Text(
+                    if (subscribed) "نسخه اشتراکی" else "نسخه عادی",
+                    color = if (subscribed) AppAccent else AppMuted,
+                    fontSize = 11.sp,
+                )
+            }
         }
 
         Column(modifier = Modifier.padding(horizontal = 14.dp)) {

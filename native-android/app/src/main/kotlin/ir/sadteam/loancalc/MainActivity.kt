@@ -7,12 +7,21 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -200,14 +210,16 @@ private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel(), appLockViewM
     }
 }
 
+/**
+ * پورت پنل تنظیمات اپ رقیب (VAMMAN): به‌جای این‌که کلاً صفحه‌ی فعلی رو با یه صفحه‌ی جدا جایگزین کنه
+ * (return زودهنگام قبلی)، حالا یه overlay روی همون صفحه‌ست - یه scrim نیمه‌شفاف (تپ روش می‌بنده) +
+ * پنل با عرض ۸۵٪ صفحه که از سمت گیره‌ی تنظیمات (سمت «End»، تو RTL همون چپ) با اسلاید سریع میاد تو،
+ * طوری که یه لبه‌ی نازک از صفحه‌ی زیرش (سمت راست) همیشه دیده بمونه.
+ */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
     var showSettings by remember { mutableStateOf(false) }
-    if (showSettings) {
-        SettingsScreen(onBack = { showSettings = false })
-        return
-    }
 
     val darkTheme by themeViewModel.darkTheme.collectAsState()
 
@@ -235,71 +247,103 @@ private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("وام من") },
-                navigationIcon = {
-                    IconButton(onClick = { themeViewModel.toggleTheme() }) {
-                        // پورت sunIcon/moonIcon تو www/index.html: آیکون وضعیت *فعلی* رو نشون
-                        // می‌ده (ماه = الان تاریکه)، نه نتیجه‌ی تپ‌کردن - قبلاً برعکس این بود.
-                        Icon(
-                            if (darkTheme) Icons.Filled.DarkMode else Icons.Filled.LightMode,
-                            contentDescription = "تغییر تم",
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showSettings = true }) {
-                        Icon(Icons.Filled.Settings, contentDescription = "تنظیمات")
-                    }
-                },
-            )
-        },
-        bottomBar = {
-            Surface(color = AppSurface) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    BottomTab.entries.forEach { tab ->
-                        BottomNavItem(
-                            tab = tab,
-                            selected = currentRoute == tab.route,
-                            onClick = {
-                                if (tab.route == currentRoute && tab == BottomTab.BANK_LOAN) {
-                                    bankLoanResetKey++
-                                } else {
-                                    navController.navigate(tab.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("وام من") },
+                    navigationIcon = {
+                        IconButton(onClick = { themeViewModel.toggleTheme() }) {
+                            // پورت sunIcon/moonIcon تو www/index.html: آیکون وضعیت *فعلی* رو نشون
+                            // می‌ده (ماه = الان تاریکه)، نه نتیجه‌ی تپ‌کردن - قبلاً برعکس این بود.
+                            Icon(
+                                if (darkTheme) Icons.Filled.DarkMode else Icons.Filled.LightMode,
+                                contentDescription = "تغییر تم",
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { showSettings = true }) {
+                            Icon(Icons.Filled.Settings, contentDescription = "تنظیمات")
+                        }
+                    },
+                )
+            },
+            bottomBar = {
+                Surface(color = AppSurface) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        BottomTab.entries.forEach { tab ->
+                            BottomNavItem(
+                                tab = tab,
+                                selected = currentRoute == tab.route,
+                                onClick = {
+                                    if (tab.route == currentRoute && tab == BottomTab.BANK_LOAN) {
+                                        bankLoanResetKey++
+                                    } else {
+                                        navController.navigate(tab.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
                                         }
-                                        launchSingleTop = true
-                                        restoreState = true
                                     }
-                                }
-                            },
-                        )
+                                },
+                            )
+                        }
                     }
                 }
+            },
+        ) { padding ->
+            NavHost(
+                navController = navController,
+                startDestination = BottomTab.BANK_LOAN.route,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+            ) {
+                composable(BottomTab.BANK_LOAN.route) {
+                    key(bankLoanResetKey) { BankLoanTab() }
+                }
+                composable(BottomTab.AFFORD.route) { AffordScreen() }
+                composable(BottomTab.DEPOSIT.route) { DepositScreen() }
+                composable(BottomTab.MY_LOANS.route) { MyLoansScreen() }
             }
-        },
-    ) { padding ->
-        NavHost(
-            navController = navController,
-            startDestination = BottomTab.BANK_LOAN.route,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
+        }
+    
+        AnimatedVisibility(
+            visible = showSettings,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
         ) {
-            composable(BottomTab.BANK_LOAN.route) {
-                key(bankLoanResetKey) { BankLoanTab() }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) { showSettings = false },
+            )
+        }
+    
+        AnimatedVisibility(
+            visible = showSettings,
+            enter = slideInHorizontally(animationSpec = tween(250)) { -it } + fadeIn(tween(250)),
+            exit = slideOutHorizontally(animationSpec = tween(200)) { -it } + fadeOut(tween(200)),
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(0.85f)
+                .align(Alignment.CenterEnd),
+        ) {
+            Surface(color = AppSurface, modifier = Modifier.fillMaxSize()) {
+                SettingsScreen(onBack = { showSettings = false })
             }
-            composable(BottomTab.AFFORD.route) { AffordScreen() }
-            composable(BottomTab.DEPOSIT.route) { DepositScreen() }
-            composable(BottomTab.MY_LOANS.route) { MyLoansScreen() }
         }
     }
 }
