@@ -23,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +40,7 @@ import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppSurface2
 import kotlin.math.roundToLong
 import kotlinx.coroutines.delay
 
@@ -190,12 +190,18 @@ private fun StatBox(label: String, value: String, modifier: Modifier = Modifier)
 private fun LoanRing(principal: Double, interest: Double, modifier: Modifier = Modifier) {
     val total = principal + interest
     val principalFrac = if (total > 0) (principal / total).toFloat() else 0f
+    // drawArc اجرا می‌شه تو DrawScope که @Composable نیست - رنگ‌های تم (که حالا @Composable
+    // get() هستن، برای پشتیبانی از تم روشن) باید همینجا تو بدنه‌ی @Composable گرفته بشن، نه
+    // مستقیم تو بلوک Canvas.
+    val trackColor = AppSurface2
+    val primaryColor = AppPrimary
+    val accentColor = AppAccent
     Canvas(modifier = modifier.aspectRatio(1f)) {
         val strokeWidth = size.minDimension * 0.1f
         val arcSize = Size(size.width - strokeWidth, size.height - strokeWidth)
         val topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
         drawArc(
-            color = Color(0xFF1D2A46),
+            color = trackColor,
             startAngle = -90f,
             sweepAngle = 360f,
             useCenter = false,
@@ -204,7 +210,7 @@ private fun LoanRing(principal: Double, interest: Double, modifier: Modifier = M
             style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
         )
         drawArc(
-            color = AppPrimary,
+            color = primaryColor,
             startAngle = -90f,
             sweepAngle = 360f * principalFrac,
             useCenter = false,
@@ -213,7 +219,7 @@ private fun LoanRing(principal: Double, interest: Double, modifier: Modifier = M
             style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
         )
         drawArc(
-            color = AppAccent,
+            color = accentColor,
             startAngle = -90f + 360f * principalFrac,
             sweepAngle = 360f * (1f - principalFrac),
             useCenter = false,
