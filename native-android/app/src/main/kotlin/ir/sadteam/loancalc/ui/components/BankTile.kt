@@ -2,7 +2,6 @@ package ir.sadteam.loancalc.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -41,7 +40,7 @@ fun BankTile(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .width(78.dp)
-            .clickable(onClick = onClick)
+            .pressScaleClickable(onClick = onClick)
             .background(bg, RoundedCornerShape(12.dp))
             .border(1.dp, border, RoundedCornerShape(12.dp))
             .padding(horizontal = 2.dp, vertical = 4.dp),
