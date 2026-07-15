@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.IncomeType
+import ir.sadteam.loancalc.core.LoanMethod
 import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.ui.BankLoanOutcome
 import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
@@ -64,6 +66,34 @@ class MyLoansViewModel @Inject constructor(
                 n = n,
                 paidCount = paidCount,
                 startDate = mapOf("y" to startDate.y, "m" to startDate.m, "d" to startDate.d),
+            )
+            syncIfLoggedIn()
+            onSaved()
+        }
+    }
+
+    /** پورت saveLoan تو www/index.html - نتیجه‌ی محاسبه‌ی تب «وام بانکی» رو تو «وام‌های من» ذخیره
+     * می‌کنه (با نگه‌داشتن ردیف‌های واقعیِ محاسبه‌شده). محدودیتِ «۱ وام رایگان» باید قبلِ صدا زدن
+     * این، سمتِ UI چک بشه (مثل onAddLoanClick تو MyLoansScreen). */
+    fun saveComputedLoan(outcome: BankLoanOutcome, onSaved: () -> Unit) {
+        viewModelScope.launch {
+            val r = outcome.result
+            val loanName = outcome.borrower.takeIf { it != "—" && it.isNotBlank() } ?: outcome.bankName
+            loanRepository.saveComputedLoan(
+                name = loanName,
+                bank = outcome.bankName,
+                borrower = outcome.borrower,
+                principal = r.principal,
+                ratePct = outcome.ratePct,
+                n = outcome.n,
+                method = if (outcome.method == LoanMethod.QARZ) "qarz" else "standard",
+                graceMonths = r.graceMonths,
+                installment = r.installment,
+                totalPaid = r.totalPaid,
+                totalInterest = r.totalInterest,
+                startDate = mapOf("y" to outcome.startDate.y, "m" to outcome.startDate.m, "d" to outcome.startDate.d),
+                intervalDays = r.intervalDays,
+                rows = r.rows.map { it.month to it.installment },
             )
             syncIfLoggedIn()
             onSaved()
