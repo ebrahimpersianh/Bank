@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
@@ -97,6 +98,7 @@ fun SettingsScreen(
     themeViewModel: ThemeViewModel = hiltViewModel(),
     notificationsViewModel: NotificationsViewModel = hiltViewModel(),
     appLockViewModel: AppLockViewModel = hiltViewModel(),
+    autoBackupViewModel: AutoBackupViewModel = hiltViewModel(),
 ) {
     var showLoginPrompt by remember { mutableStateOf(false) }
     var showFinancialCalendar by remember { mutableStateOf(false) }
@@ -132,6 +134,7 @@ fun SettingsScreen(
                 themeViewModel = themeViewModel,
                 notificationsViewModel = notificationsViewModel,
                 appLockViewModel = appLockViewModel,
+                autoBackupViewModel = autoBackupViewModel,
                 onShowLoginPrompt = { showLoginPrompt = true },
                 onShowFinancialCalendar = { showFinancialCalendar = true },
                 onShowStats = { showStats = true },
@@ -149,6 +152,7 @@ private fun SettingsMainContent(
     themeViewModel: ThemeViewModel,
     notificationsViewModel: NotificationsViewModel,
     appLockViewModel: AppLockViewModel,
+    autoBackupViewModel: AutoBackupViewModel,
     onShowLoginPrompt: () -> Unit,
     onShowFinancialCalendar: () -> Unit,
     onShowStats: () -> Unit,
@@ -160,6 +164,8 @@ private fun SettingsMainContent(
     val subscribed by authViewModel.subscribed.collectAsState()
     val fontScale by themeViewModel.fontScale.collectAsState()
     val notificationsEnabled by notificationsViewModel.enabled.collectAsState()
+    val autoBackupEnabled by autoBackupViewModel.enabled.collectAsState()
+    val lastAutoBackupAt by autoBackupViewModel.lastBackupAt.collectAsState()
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -284,6 +290,63 @@ private fun SettingsMainContent(
                         },
                         colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
                     )
+                }
+            }
+
+            AppCard(label = "پشتیبان‌گیری خودکار روزانه", modifier = Modifier.padding(top = 10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "هر روز یه اسنپ‌شات از وام/چک/حساب رو خودکار ذخیره کن",
+                            color = AppMuted,
+                            fontSize = 12.sp,
+                        )
+                        val lastBackupLabel = remember(lastAutoBackupAt) {
+                            lastAutoBackupAt?.let { iso ->
+                                runCatching {
+                                    val date = JalaliCalendar.fromGregorian(
+                                        iso.substring(0, 4).toInt(),
+                                        iso.substring(5, 7).toInt(),
+                                        iso.substring(8, 10).toInt(),
+                                    )
+                                    "${toFa(date.d)}/${toFa(date.m)}/${toFa(date.y)}"
+                                }.getOrNull()
+                            }
+                        }
+                        if (lastBackupLabel != null) {
+                            Text(
+                                "آخرین پشتیبان: $lastBackupLabel",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                    }
+                    Switch(
+                        checked = autoBackupEnabled,
+                        onCheckedChange = { checked ->
+                            if (checked) autoBackupViewModel.enable() else autoBackupViewModel.disable()
+                        },
+                        colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
+                    )
+                }
+                if (lastAutoBackupAt != null) {
+                    OutlinedButton(
+                        onClick = {
+                            autoBackupViewModel.restoreFromAutoBackup { ok ->
+                                val message = if (ok) "بازیابی از پشتیبان خودکار انجام شد" else "پشتیبانی برای بازیابی پیدا نشد"
+                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                    ) {
+                        Text("بازیابی از پشتیبان خودکار")
+                    }
                 }
             }
 
