@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,19 +8,30 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.LoanEntity
@@ -30,19 +42,51 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
- * پورت ساده‌شده‌ی openDetail/renderTable تو www/index.html، فقط برای وام‌های دستی (method=manual).
- * برخلاف وب که وضعیت پرداخت هر قسط مستقل و با تاریخ/تاخیر ثبت می‌شه (rows[].paid/paidLate/paidDate)،
- * اینجا فعلاً فقط یه آستانه‌ی ترتیبی (paidCount) داریم - «ثبت پرداخت قسط بعدی»/«لغو آخرین پرداخت».
- * پورت کامل مدل مستقل هر قسط (همراه تاریخ سررسید واقعی) فاز بعده.
+ * پورت openDetail/renderTable تو www/index.html، برای وام‌های دستی (method=manual): هر قسط
+ * وضعیت پرداخت مستقل داره (`rows[].paid`، با تپ‌کردن رو خودِ ردیف toggle می‌شه) و تاریخ سررسید
+ * واقعی (از startDate + intervalDays محاسبه می‌شه). برخلاف وب، `paidLate`/`paidDate` (تاخیر در
+ * پرداخت) هنوز پورت نشده. ویرایش دستی مبلغ هر قسط هم هست (پورت confirmEditInstallment)، بدون
+ * گزینه‌ی «همین مبلغ رو بقیه هم بگیرن» وب (فاز بعد).
  */
 @Composable
 fun LoanDetailScreen(
     loan: LoanEntity,
     onBack: () -> Unit,
     onDelete: () -> Unit,
-    onMarkNextPaid: () -> Unit,
-    onUndoLastPaid: () -> Unit,
+    viewModel: MyLoansViewModel = hiltViewModel(),
 ) {
+    val rows = remember(loan) { viewModel.getRows(loan) }
+    var editingRowM by remember { mutableStateOf<Int?>(null) }
+    var editAmountText by remember { mutableStateOf("") }
+
+    if (editingRowM != null) {
+        AlertDialog(
+            onDismissRequest = { editingRowM = null },
+            title = { Text("ویرایش مبلغ قسط ${toFa(editingRowM ?: 0)}") },
+            text = {
+                OutlinedTextField(
+                    value = editAmountText,
+                    onValueChange = { editAmountText = cleanNum(it) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val newAmount = editAmountText.toDoubleOrNull()
+                    val m = editingRowM
+                    if (newAmount != null && newAmount > 0 && m != null) {
+                        viewModel.setRowInstallment(loan, m, newAmount)
+                    }
+                    editingRowM = null
+                }) { Text("ذخیره") }
+            },
+            dismissButton = {
+                TextButton(onClick = { editingRowM = null }) { Text("انصراف") }
+            },
+        )
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -76,24 +120,39 @@ fun LoanDetailScreen(
             }
         }
 
-        items(loan.n) { idx ->
-            val m = idx + 1
-            val paid = m <= loan.paidCount
-            val balance = (loan.n - m) * loan.installment
+        items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
+            val m = (row["m"] as? Number)?.toInt() ?: 0
+            val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
+            val paid = row["paid"] == true
+            val due = row["dueDate"] as? Map<*, *>
+            val dueLabel = due?.let {
+                "${toFa(it["y"].toString())}/${toFa(it["m"].toString())}/${toFa(it["d"].toString())}"
+            } ?: ""
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp),
+                    .padding(horizontal = 14.dp)
+                    .clickable { viewModel.setRowPaid(loan, m, !paid) },
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("قسط ${toFa(m)}", color = AppText, fontSize = 12.5.sp)
-                Text("مانده: ${fmt(balance)} ریال", color = AppMuted, fontSize = 11.sp)
+                Column {
+                    Text("قسط ${toFa(m)}", color = AppText, fontSize = 12.5.sp)
+                    Text(dueLabel, color = AppMuted, fontSize = 10.5.sp)
+                }
+                Text("${fmt(installment)} ریال", color = AppMuted, fontSize = 11.sp)
                 Text(
                     if (paid) "پرداخت‌شده ✓" else "در انتظار",
                     color = if (paid) AppPrimary else AppMuted,
                     fontSize = 11.5.sp,
                 )
+                IconButton(onClick = {
+                    editingRowM = m
+                    editAmountText = installment.toLong().toString()
+                }) {
+                    Icon(Icons.Filled.Edit, contentDescription = "ویرایش مبلغ", tint = AppMuted)
+                }
             }
         }
 
@@ -102,21 +161,6 @@ fun LoanDetailScreen(
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Button(
-                    onClick = onMarkNextPaid,
-                    enabled = loan.paidCount < loan.n,
-                    colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("ثبت پرداخت قسط بعدی")
-                }
-                OutlinedButton(
-                    onClick = onUndoLastPaid,
-                    enabled = loan.paidCount > 0,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("لغو آخرین پرداخت")
-                }
                 OutlinedButton(
                     onClick = onDelete,
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),

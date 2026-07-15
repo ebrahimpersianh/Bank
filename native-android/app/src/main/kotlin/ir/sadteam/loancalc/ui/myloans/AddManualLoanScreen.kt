@@ -2,12 +2,17 @@ package ir.sadteam.loancalc.ui.myloans
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -21,15 +26,20 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.cleanNum
+import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 
+private val faMonthNamesManual = listOf(
+    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
+    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
+)
+
 /**
  * پورت فرم افزودن وام دستی (view-manual تو www/index.html؛ saveManualLoan برای اعتبارسنجی/ذخیره).
- * برخلاف وب، هنوز محدودیت «۱ وام رایگان»/اشتراک اینجا پیاده نشده - چون ورود OTP و اشتراک کافه‌بازار
- * تو این پروژه هنوز پورت نشدن (فاز بعد، طبق native-android/README.md).
  */
 @Composable
 fun AddManualLoanScreen(
@@ -42,6 +52,9 @@ fun AddManualLoanScreen(
     var installmentText by remember { mutableStateOf("") }
     var totalCountText by remember { mutableStateOf("") }
     var paidCountText by remember { mutableStateOf("") }
+    var startYear by remember { mutableStateOf(1404) }
+    var startMonth by remember { mutableStateOf(1) }
+    var startDay by remember { mutableStateOf(1) }
     var error by remember { mutableStateOf<String?>(null) }
 
     LazyColumn(
@@ -68,6 +81,33 @@ fun AddManualLoanScreen(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
+            }
+        }
+        item {
+            AppCard(label = "تاریخ دریافت وام") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ManualDateDropdown(
+                        options = (1398..1406).map { it to toFa(it) },
+                        selected = startYear,
+                        onSelect = { startYear = it },
+                        modifier = Modifier.weight(1f),
+                    )
+                    ManualDateDropdown(
+                        options = faMonthNamesManual.mapIndexed { idx, name2 -> (idx + 1) to name2 },
+                        selected = startMonth,
+                        onSelect = { startMonth = it },
+                        modifier = Modifier.weight(1f),
+                    )
+                    ManualDateDropdown(
+                        options = (1..31).map { it to toFa(it) },
+                        selected = startDay,
+                        onSelect = { startDay = it },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
         item {
@@ -125,7 +165,15 @@ fun AddManualLoanScreen(
                             else -> null
                         }
                         if (error == null) {
-                            viewModel.saveManualLoan(name.trim(), bank.trim(), installment, n, paidCount, onSaved)
+                            viewModel.saveManualLoan(
+                                name = name.trim(),
+                                bank = bank.trim(),
+                                installment = installment,
+                                n = n,
+                                paidCount = paidCount,
+                                startDate = PersianDate(startYear, startMonth, startDay),
+                                onSaved = onSaved,
+                            )
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
@@ -136,6 +184,32 @@ fun AddManualLoanScreen(
                 OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
                     Text("انصراف")
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ManualDateDropdown(
+    options: List<Pair<Int, String>>,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedLabel = options.firstOrNull { it.first == selected }?.second ?: ""
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
+        OutlinedTextField(
+            value = selectedLabel,
+            onValueChange = {},
+            readOnly = true,
+            modifier = Modifier.menuAnchor(),
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { (value, label) ->
+                DropdownMenuItem(text = { Text(label) }, onClick = { onSelect(value); expanded = false })
             }
         }
     }
