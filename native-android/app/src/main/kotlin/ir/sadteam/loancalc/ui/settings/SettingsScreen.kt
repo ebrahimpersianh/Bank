@@ -170,6 +170,9 @@ private fun SettingsMainContent(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) notificationsViewModel.enable() }
+    var searchQuery by remember { mutableStateOf("") }
+    fun matches(vararg titles: String) =
+        searchQuery.isBlank() || titles.any { it.contains(searchQuery.trim()) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // پورت پروفایل بالای پنل تنظیمات اپ رقیب (VAMMAN): آواتار + برچسب وضعیت («نسخه عادی»/«نسخه
@@ -248,202 +251,234 @@ private fun SettingsMainContent(
                 }
             }
 
-            AppCard(label = "اندازه فونت", modifier = Modifier.padding(top = 10.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    fontSizeOptions.forEach { (scale, label) ->
-                        AppChip(
-                            label = label,
-                            selected = fontScale == scale,
-                            onClick = { themeViewModel.setFontScale(scale) },
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("جستجو تو تنظیمات") },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp),
+            )
+
+            if (matches("اندازه فونت")) {
+                AppCard(label = "اندازه فونت", modifier = Modifier.padding(top = 10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                        fontSizeOptions.forEach { (scale, label) ->
+                            AppChip(
+                                label = label,
+                                selected = fontScale == scale,
+                                onClick = { themeViewModel.setFontScale(scale) },
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (matches("یادآوری سررسید")) {
+                AppCard(label = "یادآوری سررسید", modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "هر روز، برای اقساط سررسید نزدیک (امروز/فردا) یه نوتیف بده",
+                            color = AppMuted,
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Switch(
+                            checked = notificationsEnabled,
+                            onCheckedChange = { checked ->
+                                if (!checked) {
+                                    notificationsViewModel.disable()
+                                } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                                    notificationsViewModel.enable()
+                                } else if (ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.POST_NOTIFICATIONS,
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    notificationsViewModel.enable()
+                                } else {
+                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                            },
+                            colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
                         )
                     }
                 }
             }
 
-            AppCard(label = "یادآوری سررسید", modifier = Modifier.padding(top = 10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "هر روز، برای اقساط سررسید نزدیک (امروز/فردا) یه نوتیف بده",
-                        color = AppMuted,
-                        fontSize = 12.sp,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Switch(
-                        checked = notificationsEnabled,
-                        onCheckedChange = { checked ->
-                            if (!checked) {
-                                notificationsViewModel.disable()
-                            } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                                notificationsViewModel.enable()
-                            } else if (ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.POST_NOTIFICATIONS,
-                                ) == PackageManager.PERMISSION_GRANTED
-                            ) {
-                                notificationsViewModel.enable()
-                            } else {
-                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            if (matches("پشتیبان‌گیری خودکار روزانه")) {
+                AppCard(label = "پشتیبان‌گیری خودکار روزانه", modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "هر روز یه اسنپ‌شات از وام/چک/حساب رو خودکار ذخیره کن",
+                                color = AppMuted,
+                                fontSize = 12.sp,
+                            )
+                            val lastBackupLabel = remember(lastAutoBackupAt) {
+                                lastAutoBackupAt?.let { iso ->
+                                    runCatching {
+                                        val date = JalaliCalendar.fromGregorian(
+                                            iso.substring(0, 4).toInt(),
+                                            iso.substring(5, 7).toInt(),
+                                            iso.substring(8, 10).toInt(),
+                                        )
+                                        "${toFa(date.d)}/${toFa(date.m)}/${toFa(date.y)}"
+                                    }.getOrNull()
+                                }
                             }
-                        },
-                        colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-                    )
+                            if (lastBackupLabel != null) {
+                                Text(
+                                    "آخرین پشتیبان: $lastBackupLabel",
+                                    color = AppMuted,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                )
+                            }
+                        }
+                        Switch(
+                            checked = autoBackupEnabled,
+                            onCheckedChange = { checked ->
+                                if (checked) autoBackupViewModel.enable() else autoBackupViewModel.disable()
+                            },
+                            colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
+                        )
+                    }
+                    if (lastAutoBackupAt != null) {
+                        OutlinedButton(
+                            onClick = {
+                                autoBackupViewModel.restoreFromAutoBackup { ok ->
+                                    val message = if (ok) "بازیابی از پشتیبان خودکار انجام شد" else "پشتیبانی برای بازیابی پیدا نشد"
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                        ) {
+                            Text("بازیابی از پشتیبان خودکار")
+                        }
+                    }
                 }
             }
 
-            AppCard(label = "پشتیبان‌گیری خودکار روزانه", modifier = Modifier.padding(top = 10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "هر روز یه اسنپ‌شات از وام/چک/حساب رو خودکار ذخیره کن",
-                            color = AppMuted,
-                            fontSize = 12.sp,
-                        )
-                        val lastBackupLabel = remember(lastAutoBackupAt) {
-                            lastAutoBackupAt?.let { iso ->
-                                runCatching {
-                                    val date = JalaliCalendar.fromGregorian(
-                                        iso.substring(0, 4).toInt(),
-                                        iso.substring(5, 7).toInt(),
-                                        iso.substring(8, 10).toInt(),
-                                    )
-                                    "${toFa(date.d)}/${toFa(date.m)}/${toFa(date.y)}"
-                                }.getOrNull()
-                            }
-                        }
-                        if (lastBackupLabel != null) {
+            if (matches("تقویم مالی")) {
+                AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("تقویم مالی", color = AppText, fontSize = 13.sp)
                             Text(
-                                "آخرین پشتیبان: $lastBackupLabel",
+                                "سررسید اقساط همه‌ی وام‌هات رو رو تقویم ببین",
                                 color = AppMuted,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 2.dp),
                             )
                         }
+                        OutlinedButton(onClick = onShowFinancialCalendar) {
+                            Text("مشاهده")
+                        }
                     }
-                    Switch(
-                        checked = autoBackupEnabled,
-                        onCheckedChange = { checked ->
-                            if (checked) autoBackupViewModel.enable() else autoBackupViewModel.disable()
-                        },
-                        colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-                    )
                 }
-                if (lastAutoBackupAt != null) {
-                    OutlinedButton(
-                        onClick = {
-                            autoBackupViewModel.restoreFromAutoBackup { ok ->
-                                val message = if (ok) "بازیابی از پشتیبان خودکار انجام شد" else "پشتیبانی برای بازیابی پیدا نشد"
-                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
+            }
+
+            if (matches("آمار و گزارشات")) {
+                AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("بازیابی از پشتیبان خودکار")
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("آمار و گزارشات", color = AppText, fontSize = 13.sp)
+                            Text(
+                                "آمار کلی وام‌هات + خروجی PDF",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                        OutlinedButton(onClick = onShowStats) {
+                            Text("مشاهده")
+                        }
                     }
                 }
             }
 
-            AppCard(modifier = Modifier.padding(top = 10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("تقویم مالی", color = AppText, fontSize = 13.sp)
-                        Text(
-                            "سررسید اقساط همه‌ی وام‌هات رو رو تقویم ببین",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                    OutlinedButton(onClick = onShowFinancialCalendar) {
-                        Text("مشاهده")
-                    }
-                }
-            }
-
-            AppCard(modifier = Modifier.padding(top = 10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("آمار و گزارشات", color = AppText, fontSize = 13.sp)
-                        Text(
-                            "آمار کلی وام‌هات + خروجی PDF",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                    OutlinedButton(onClick = onShowStats) {
-                        Text("مشاهده")
+            if (matches("امور چک")) {
+                AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("امور چک", color = AppText, fontSize = 13.sp)
+                            Text(
+                                "چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                        OutlinedButton(onClick = onShowCheque) {
+                            Text("مشاهده")
+                        }
                     }
                 }
             }
 
-            AppCard(modifier = Modifier.padding(top = 10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("امور چک", color = AppText, fontSize = 13.sp)
-                        Text(
-                            "چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                    OutlinedButton(onClick = onShowCheque) {
-                        Text("مشاهده")
-                    }
-                }
-            }
-
-            AppCard(modifier = Modifier.padding(top = 10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("حساب‌های بانکی", color = AppText, fontSize = 13.sp)
-                        Text(
-                            "موجودی و تراکنش‌های واریز/برداشت هر حساب رو دنبال کن",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                    OutlinedButton(onClick = onShowAccounts) {
-                        Text("مشاهده")
+            if (matches("حساب‌های بانکی")) {
+                AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("حساب‌های بانکی", color = AppText, fontSize = 13.sp)
+                            Text(
+                                "موجودی و تراکنش‌های واریز/برداشت هر حساب رو دنبال کن",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                        OutlinedButton(onClick = onShowAccounts) {
+                            Text("مشاهده")
+                        }
                     }
                 }
             }
 
-            AccordionCard(title = "امنیت", modifier = Modifier.padding(top = 10.dp)) {
-                SecuritySettings(appLockViewModel)
+            if (matches("امنیت", "قفل", "PIN", "اثر انگشت")) {
+                AccordionCard(title = "امنیت", modifier = Modifier.padding(top = 10.dp)) {
+                    SecuritySettings(appLockViewModel)
+                }
             }
 
-            AccordionCard(title = "پشتیبانی", modifier = Modifier.padding(top = 10.dp)) {
-                SupportContacts()
+            if (matches("پشتیبانی")) {
+                AccordionCard(title = "پشتیبانی", modifier = Modifier.padding(top = 10.dp)) {
+                    SupportContacts()
+                }
             }
 
-            AccordionCard(title = "درباره برنامه", modifier = Modifier.padding(top = 10.dp)) {
-                Text(aboutText, color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp)
+            if (matches("درباره برنامه")) {
+                AccordionCard(title = "درباره برنامه", modifier = Modifier.padding(top = 10.dp)) {
+                    Text(aboutText, color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp)
+                }
             }
 
-            AccordionCard(title = "حریم خصوصی", modifier = Modifier.padding(top = 10.dp)) {
-                Text(privacyText, color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp)
+            if (matches("حریم خصوصی")) {
+                AccordionCard(title = "حریم خصوصی", modifier = Modifier.padding(top = 10.dp)) {
+                    Text(privacyText, color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp)
+                }
             }
         }
     }
