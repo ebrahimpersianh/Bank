@@ -7,6 +7,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -33,6 +34,47 @@ fun Modifier.verticalScrollbar(
             topLeft = Offset(size.width - w, thumbY),
             size = Size(w, thumbHeight),
             cornerRadius = CornerRadius(w / 2, w / 2),
+        )
+    }
+}
+
+/**
+ * نشانگر اسکرول افقی: یه خط نازک سبز که کجای ردیفِ افقی هستیم و چقدر تا آخرش مونده رو نشون می‌ده.
+ * پس‌زمینه‌ی خطْ یه شیارِ کم‌رنگ با دو سرِ محو (fade) هست، و روش یه دستگیره‌ی سبزِ پررنگ - دقیقاً
+ * چیزی که کاربر برای ردیف بانک‌ها/خدمات اعتباری خواست («یه خط ظریف سبز که کناراش رنگش پریده»).
+ * روی یه `Box` نازک (مثلاً `height(4.dp)`) زیر همون ردیف اعمالش کن، با همون `ScrollState` ردیف.
+ */
+fun Modifier.horizontalScrollbar(
+    state: ScrollState,
+    color: Color,
+    thickness: Dp = 3.dp,
+): Modifier = drawWithContent {
+    drawContent()
+    val viewport = size.width
+    val t = thickness.toPx()
+    val top = (size.height - t) / 2f
+    // شیارِ کم‌رنگ با دو سرِ محو
+    drawRoundRect(
+        brush = Brush.horizontalGradient(
+            0f to Color.Transparent,
+            0.12f to color.copy(alpha = 0.16f),
+            0.88f to color.copy(alpha = 0.16f),
+            1f to Color.Transparent,
+        ),
+        topLeft = Offset(0f, top),
+        size = Size(viewport, t),
+        cornerRadius = CornerRadius(t / 2, t / 2),
+    )
+    val max = state.maxValue
+    if (max > 0) {
+        val content = viewport + max
+        val thumbW = ((viewport / content) * viewport).coerceAtLeast(24f)
+        val thumbX = (state.value.toFloat() / max) * (viewport - thumbW)
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(thumbX, top),
+            size = Size(thumbW, t),
+            cornerRadius = CornerRadius(t / 2, t / 2),
         )
     }
 }

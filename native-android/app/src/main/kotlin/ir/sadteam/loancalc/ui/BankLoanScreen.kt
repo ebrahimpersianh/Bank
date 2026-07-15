@@ -2,10 +2,12 @@ package ir.sadteam.loancalc.ui
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -54,6 +56,7 @@ import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.PresetCard
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.components.appFieldColors
+import ir.sadteam.loancalc.ui.components.horizontalScrollbar
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -190,11 +193,13 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
 
         item {
             AppCard(label = "بانک یا سرویس اعتباری") {
+                val banksScroll = rememberScrollState()
+                val creditScroll = rememberScrollState()
                 Text("بانک‌ها", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier
-                        .horizontalScroll(rememberScrollState())
-                        .padding(top = 4.dp, bottom = 8.dp),
+                        .horizontalScroll(banksScroll)
+                        .padding(top = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     banks.forEach { b ->
@@ -205,10 +210,18 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         )
                     }
                 }
+                // نشانگر اسکرول افقی زیر ردیفِ بانک‌ها (تو همون فاصله‌ی ظریفِ زیرِ لیبل).
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp, bottom = 8.dp)
+                        .height(4.dp)
+                        .horizontalScrollbar(banksScroll, AppPrimary),
+                )
                 Text("خدمات اعتباری", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier
-                        .horizontalScroll(rememberScrollState())
+                        .horizontalScroll(creditScroll)
                         .padding(top = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
@@ -231,6 +244,13 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         )
                     }
                 }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                        .height(4.dp)
+                        .horizontalScrollbar(creditScroll, AppPrimary),
+                )
             }
         }
 
