@@ -62,6 +62,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
+import ir.sadteam.loancalc.ui.stats.StatsScreen
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -91,6 +92,7 @@ fun SettingsScreen(
 ) {
     var showLoginPrompt by remember { mutableStateOf(false) }
     var showFinancialCalendar by remember { mutableStateOf(false) }
+    var showStats by remember { mutableStateOf(false) }
     val gateState by authViewModel.gateState.collectAsState()
     val phone by authViewModel.phone.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
@@ -108,6 +110,11 @@ fun SettingsScreen(
 
     if (showFinancialCalendar) {
         FinancialCalendarScreen(onBack = { showFinancialCalendar = false })
+        return
+    }
+
+    if (showStats) {
+        StatsScreen(onBack = { showStats = false })
         return
     }
 
@@ -249,6 +256,26 @@ fun SettingsScreen(
                         )
                     }
                     OutlinedButton(onClick = { showFinancialCalendar = true }) {
+                        Text("مشاهده")
+                    }
+                }
+            }
+
+            AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("آمار و گزارشات", color = AppText, fontSize = 13.sp)
+                        Text(
+                            "آمار کلی وام‌هات + خروجی PDF",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    OutlinedButton(onClick = { showStats = true }) {
                         Text("مشاهده")
                     }
                 }
