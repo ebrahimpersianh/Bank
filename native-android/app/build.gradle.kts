@@ -31,6 +31,8 @@ android {
 
     buildFeatures {
         compose = true
+        // برای BuildConfig.VERSION_NAME تو crash/CrashReporter.kt - از AGP 8 به بعد پیش‌فرض خاموشه.
+        buildConfig = true
     }
 }
 

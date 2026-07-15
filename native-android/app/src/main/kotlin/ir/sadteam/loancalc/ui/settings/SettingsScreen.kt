@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -47,8 +50,10 @@ import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
 
 /** پورت ساده‌شده‌ی view-settings تو www/index.html - کارت حساب (accountCard) + خروج/ورود، اندازه
- * فونت (fontSizeChips)، و یادآوری سررسید (کاملاً native-only، وب هنوز نداره - رجوع کن به
- * notifications/). بقیه‌ی تنظیمات پیشرفته‌ی وب هنوز جای دیگه‌ای تو اپ پیاده نشدن. */
+ * فونت (fontSizeChips)، یادآوری سررسید (کاملاً native-only، وب هنوز نداره - رجوع کن به
+ * notifications/)، و درباره‌برنامه/حریم‌خصوصی (toggleAbout/togglePrivacy، متن عینِ وب). «تنظیمات
+ * پیشرفته یادآوری» (صدا، سفارشی‌سازی هر وام) و فرم «نظرات و مشکلات» عمداً پورت نشدن - رو خودِ وب هم
+ * صرفاً UI نمایشی/localStorage-فقط بودن، هیچ‌وقت واقعاً کاربردی نبودن (رجوع کن به کامنت خودِ وب). */
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -171,6 +176,54 @@ fun SettingsScreen(
                     )
                 }
             }
+
+            AccordionCard(title = "درباره برنامه", modifier = Modifier.padding(top = 10.dp)) {
+                Text(aboutText, color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp)
+            }
+
+            AccordionCard(title = "حریم خصوصی", modifier = Modifier.padding(top = 10.dp)) {
+                Text(privacyText, color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp)
+            }
         }
     }
 }
+
+/** پورت toggleAbout/toggleAbout (آکاردئون settings-item + grace-box تو www/index.html). */
+@Composable
+private fun AccordionCard(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    AppCard(modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(title, color = AppText, fontSize = 13.sp)
+            Icon(
+                if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                contentDescription = null,
+                tint = AppMuted,
+            )
+        }
+        if (expanded) {
+            Column(modifier = Modifier.padding(top = 8.dp)) { content() }
+        }
+    }
+}
+
+private const val aboutText = "وام من — نسخه ۱\n" +
+    "این اپ برای محاسبه سریع و شفاف اقساط وام، سود سپرده و برنامه‌ریزی مالی طراحی شده.\n" +
+    "Powered By Sad Team"
+
+private const val privacyText = "چه اطلاعاتی ذخیره می‌شه؟\n" +
+    "وام‌ها، تنظیمات و یادآوری‌هایی که تو اپ می‌سازی، فقط روی گوشی خودت ذخیره می‌شن. این اپ هیچ " +
+    "تبلیغ، ابزار ردیابی (analytics) یا کد شخص ثالثی نداره و اطلاعاتت رو به‌جایی نمی‌فروشه.\n\n" +
+    "ورود با شماره تلفن\n" +
+    "بدون ورود هم می‌تونی از اپ به‌عنوان مهمان استفاده کنی. اگه با شماره موبایل وارد بشی، فقط " +
+    "شماره‌ت و لیست وام‌هات (برای همگام‌سازی بین گوشی‌هات) روی سرور اختصاصی همین اپ ذخیره می‌شه؛ " +
+    "این اطلاعات جای دیگه‌ای فرستاده نمی‌شه و در اختیار شرکت یا سرویس ثالثی قرار نمی‌گیره.\n\n" +
+    "اشتراک\n" +
+    "بدون اشتراک فقط یک وام قابل ذخیره‌ست؛ برای ذخیره‌ی وام بیشتر اول باید وارد بشی و بعد اشتراک " +
+    "تهیه کنی."
