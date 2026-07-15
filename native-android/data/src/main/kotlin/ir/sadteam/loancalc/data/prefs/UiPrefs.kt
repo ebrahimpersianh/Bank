@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -16,6 +17,8 @@ class UiPrefs(private val context: Context) {
         val DARK_THEME = booleanPreferencesKey("dark_theme")
         val FONT_SCALE = floatPreferencesKey("font_scale")
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+        val AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
+        val LAST_AUTO_BACKUP_AT = stringPreferencesKey("last_auto_backup_at")
     }
 
     val darkTheme: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.DARK_THEME] ?: true }
@@ -37,5 +40,18 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setNotificationsEnabled(value: Boolean) {
         context.uiPrefsDataStore.edit { it[Keys.NOTIFICATIONS_ENABLED] = value }
+    }
+
+    /** پورت «پشتیبان‌گیری خودکار روزانه» اپ رقیب - رجوع کن به AutoBackupWorker/AutoBackupScheduler. */
+    val autoBackupEnabled: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.AUTO_BACKUP_ENABLED] ?: false }
+
+    suspend fun setAutoBackupEnabled(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.AUTO_BACKUP_ENABLED] = value }
+    }
+
+    val lastAutoBackupAt: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.LAST_AUTO_BACKUP_AT] }
+
+    suspend fun setLastAutoBackupAt(value: String) {
+        context.uiPrefsDataStore.edit { it[Keys.LAST_AUTO_BACKUP_AT] = value }
     }
 }
