@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -27,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
@@ -54,6 +57,7 @@ import kotlinx.coroutines.withContext
 fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel()) {
     val loans by viewModel.loans.collectAsState()
     val summary = remember(loans) { viewModel.summarize(loans) }
+    val paymentHistory = remember(loans) { viewModel.paymentHistory(loans) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -171,6 +175,15 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
                 }
             }
         }
+
+        if (paymentHistory.isNotEmpty()) {
+            AppCard(
+                label = "تاریخچه پرداخت (تجمعی)",
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+            ) {
+                PaymentHistoryLineChart(points = paymentHistory)
+            }
+        }
     }
 }
 
@@ -205,6 +218,58 @@ private fun ProgressDonut(ratio: Double) {
                 fontWeight = FontWeight.Bold,
             )
             Text("پرداخت‌شده", color = AppMuted, fontSize = 11.sp)
+        }
+    }
+}
+
+/** پورت نمودار خطی «تاریخچه پرداخت» اپ رقیب (VAMMAN) - رسم دستی با Canvas (بدون کتابخونه‌ی نمودارِ
+ * جدید)، عین دونات بالا؛ نقاط از [StatsViewModel.paymentHistory] (مجموع تجمعی اقساط پرداخت‌شده به
+ * تفکیک ماه شمسی) میان. */
+@Composable
+private fun PaymentHistoryLineChart(points: List<PaymentHistoryPoint>) {
+    val lineColor = AppPrimary
+    val gridColor = AppLine
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp),
+        ) {
+            val maxAmount = points.maxOf { it.cumulativeAmount }.coerceAtLeast(1.0)
+            val stepX = if (points.size > 1) size.width / (points.size - 1) else 0f
+
+            drawLine(
+                color = gridColor,
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = 1.dp.toPx(),
+            )
+
+            if (points.size == 1) {
+                val y = size.height - (points[0].cumulativeAmount / maxAmount * size.height).toFloat()
+                drawCircle(color = lineColor, radius = 4.dp.toPx(), center = Offset(size.width / 2f, y))
+                return@Canvas
+            }
+
+            val path = Path()
+            points.forEachIndexed { index, point ->
+                val x = stepX * index
+                val y = size.height - (point.cumulativeAmount / maxAmount * size.height).toFloat()
+                if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+            drawPath(path = path, color = lineColor, style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round))
+
+            points.forEachIndexed { index, point ->
+                val x = stepX * index
+                val y = size.height - (point.cumulativeAmount / maxAmount * size.height).toFloat()
+                drawCircle(color = lineColor, radius = 3.dp.toPx(), center = Offset(x, y))
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(points.first().label, color = AppMuted, fontSize = 11.sp)
+            if (points.size > 1) {
+                Text(points.last().label, color = AppMuted, fontSize = 11.sp)
+            }
         }
     }
 }
