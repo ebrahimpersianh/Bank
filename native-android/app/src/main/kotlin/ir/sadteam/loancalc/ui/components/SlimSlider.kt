@@ -1,0 +1,54 @@
+package ir.sadteam.loancalc.ui.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import ir.sadteam.loancalc.ui.theme.AppBg
+import ir.sadteam.loancalc.ui.theme.AppPrimary
+
+/**
+ * پورت ظاهر `.slider`/`.slider::-webkit-slider-thumb` تو www/index.html (تراک باریک ۵px + دستگیره‌ی
+ * گرد کوچیک با یه حلقه‌ی هم‌رنگ پس‌زمینه دورش) - Slider پیش‌فرض Material3 خیلی حجیم‌تر و بزرگ‌تره.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SlimSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    modifier: Modifier = Modifier,
+    steps: Int = 0,
+) {
+    Slider(
+        value = value,
+        onValueChange = onValueChange,
+        valueRange = valueRange,
+        steps = steps,
+        modifier = modifier.fillMaxWidth(),
+        thumb = {
+            Box(
+                modifier = Modifier
+                    .size(19.dp)
+                    .background(AppPrimary, CircleShape)
+                    .border(3.dp, AppBg, CircleShape),
+            )
+        },
+        track = { sliderState ->
+            SliderDefaults.Track(
+                sliderState = sliderState,
+                modifier = Modifier.height(5.dp),
+                colors = SliderDefaults.colors(activeTrackColor = AppPrimary, inactiveTrackColor = AppBg),
+            )
+        },
+    )
+}

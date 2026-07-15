@@ -17,8 +17,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -50,6 +48,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.BankTile
 import ir.sadteam.loancalc.ui.components.PresetCard
+import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -249,6 +248,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    suffix = { Text("ریال", color = AppMuted, fontSize = 11.sp) },
                 )
                 val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
                 if (rialVal > 0) {
@@ -259,14 +259,13 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
-                Slider(
+                SlimSlider(
                     value = amountSlider,
                     onValueChange = { v ->
                         amountSlider = v
                         amountText = fmtGroupedEn(v.toLong())
                     },
                     valueRange = amountSliderRange,
-                    colors = SliderDefaults.colors(thumbColor = AppPrimary, activeTrackColor = AppPrimary),
                 )
                 Text(
                     text = "بازه اسلایدر: ${fmtShortToman(amountSliderRange.start)} تا ${fmtShortToman(amountSliderRange.endInclusive)} ریال — برای اعداد خارج از بازه، مستقیم تایپ کن",
@@ -289,12 +288,12 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    suffix = { Text("درصد", color = AppMuted, fontSize = 11.sp) },
                 )
-                Slider(
+                SlimSlider(
                     value = rateSlider,
                     onValueChange = { v -> rateSlider = v; rateText = trimRate(v.toDouble()) },
                     valueRange = 0f..35f,
-                    colors = SliderDefaults.colors(thumbColor = AppPrimary, activeTrackColor = AppPrimary),
                 )
             }
         }
@@ -322,6 +321,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         .fillMaxWidth()
                         .padding(top = 10.dp),
                     singleLine = true,
+                    suffix = { Text("ماه", color = AppMuted, fontSize = 11.sp) },
                 )
             }
         }
@@ -357,12 +357,11 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                 }
                 if (graceOn) {
                     Text("مدت تنفس (ماه)", fontSize = 11.5.sp, color = AppMuted, modifier = Modifier.padding(top = 12.dp))
-                    Slider(
+                    SlimSlider(
                         value = graceMonths,
                         onValueChange = { graceMonths = it },
                         valueRange = 1f..24f,
                         steps = 22,
-                        colors = SliderDefaults.colors(thumbColor = AppPrimary, activeTrackColor = AppPrimary),
                     )
                     Text(
                         text = "${toFa(graceMonths.toInt())} ماه",
@@ -433,6 +432,7 @@ private fun SimpleDropdown(
             value = selectedLabel,
             onValueChange = {},
             readOnly = true,
+            singleLine = true,
             modifier = Modifier.menuAnchor(),
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
         )

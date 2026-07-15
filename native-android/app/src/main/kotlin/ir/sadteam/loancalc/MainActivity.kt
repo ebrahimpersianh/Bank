@@ -161,8 +161,10 @@ private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
                 title = { Text("وام من") },
                 navigationIcon = {
                     IconButton(onClick = { themeViewModel.toggleTheme() }) {
+                        // پورت sunIcon/moonIcon تو www/index.html: آیکون وضعیت *فعلی* رو نشون
+                        // می‌ده (ماه = الان تاریکه)، نه نتیجه‌ی تپ‌کردن - قبلاً برعکس این بود.
                         Icon(
-                            if (darkTheme) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                            if (darkTheme) Icons.Filled.DarkMode else Icons.Filled.LightMode,
                             contentDescription = "تغییر تم",
                         )
                     }
