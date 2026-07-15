@@ -67,6 +67,13 @@ dependencies {
     kapt("com.google.dagger:hilt-compiler:2.52")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
+    // یادآوری سررسید (نوتیفیکیشن واقعی) - WorkManager برای یه چک روزانه‌ی پس‌زمینه که با ری‌استارت
+    // گوشی هم زنده می‌مونه (بدون نیاز به BroadcastReceiver دستی برای BOOT_COMPLETED)، hilt-work برای
+    // تزریق LoanRepository داخل Worker.
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    kapt("androidx.hilt:hilt-compiler:1.2.0")
+
     // خرید درون‌برنامه‌ای واقعی کافه‌بازار (اشتراک) - SDK بومی رسمی، همون‌ کتابخونه‌ای که پلاگین
     // Capacitor نسخه‌ی وب (www/) هم زیرش استفاده می‌کنه. از JitPack میاد (settings.gradle.kts).
     implementation("com.github.cafebazaar.Poolakey:poolakey:2.2.0")

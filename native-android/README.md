@@ -62,8 +62,19 @@
 - ✅ **اندازه فونت** (پورت `.app.fs-small/fs-medium/fs-large` تو وب) — یه `LocalDensity` override
   رو ریشه‌ی Compose (`MainActivity`) هم dp هم sp رو با هم مقیاس می‌کنه، دقیقاً معادل زوم CSS رو کل
   کانتینر `.app`؛ مقدار (۰.۹/۱/۱.۱۵) تو `UiPrefs.fontScale` ذخیره می‌شه.
-- ⏳ یادآوری سررسید (نوتیفیکیشن) هنوز پورت نشده - یه ساب‌سیستم جدا و نسبتاً بزرگ (AlarmManager/
-  WorkManager + channel نوتیفیکیشن + مجوز POST_NOTIFICATIONS اندروید ۱۳+)، فاز بعد.
+- ✅ **یادآوری سررسید** (`notifications/`) — کاملاً native-only (وب اصلاً این قابلیت رو نداره تا
+  ازش پورت بشه). `ReminderScheduler` یه `PeriodicWorkRequest` روزانه (هر ۲۴ ساعت، `WorkManager`
+  - نه `AlarmManager` خام - چون WorkManager خودش زمان‌بندی رو حتی بعد از ری‌استارت گوشی حفظ می‌کنه،
+  بدون نیاز به `BroadcastReceiver` دستی برای `BOOT_COMPLETED`) با `ExistingPeriodicWorkPolicy.KEEP`
+  ثبت می‌کنه. `DueDateReminderWorker` (`@HiltWorker`، تزریق `LoanRepository`) هر بار همه‌ی وام‌ها رو
+  چک می‌کنه و برای هر قسط پرداخت‌نشده‌ای که سررسیدش امروز یا فرداست یه نوتیف مجزا می‌ده. سوییچ فعال/
+  غیرفعال تو تنظیمات (`SettingsScreen`) رو Android 13+ مجوز `POST_NOTIFICATIONS` رو runtime درخواست
+  می‌کنه (`ActivityResultContracts.RequestPermission`)، پایین‌تر از اون نیازی به مجوز نیست.
+  «امروز» واقعی از یه تبدیل جلالی↔میلادی دقیق نجومی (`core/JalaliCalendar.kt`، الگوریتم
+  jalaali-js/Borkowski با جدول واقعی سال‌های کبیسه) به‌دست میاد - نه تقویم ساده‌شده‌ی
+  `PersianCalendar` بالا که فقط برای فاصله‌ی روزهای اقساط از رو یه startDate دلخواهه، نه گرفتن
+  «امروز». الگوریتم با ده‌ها هزار تاریخ در برابر کتابخونه‌ی پایتون jdatetime تایید شده
+  (`JalaliCalendarTest.kt`).
 - 🚫 **قفل اثر انگشت عمداً پورت نمی‌شه** - طبق CLAUDE.md، این قابلیت قبلاً از خودِ وب هم به تصمیم
   صریح کاربر کامل حذف شد چون ورود/مهمان‌بودن الان به‌جاش مدیریت می‌شه؛ همون منطق اینجا هم صدق
   می‌کنه. اگه دوباره خواسته شد باید صریحاً درخواست بشه، نه فرض پیش‌فرض این بازنویسی.

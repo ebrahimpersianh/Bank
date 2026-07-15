@@ -15,6 +15,7 @@ class UiPrefs(private val context: Context) {
     private object Keys {
         val DARK_THEME = booleanPreferencesKey("dark_theme")
         val FONT_SCALE = floatPreferencesKey("font_scale")
+        val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
     }
 
     val darkTheme: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.DARK_THEME] ?: true }
@@ -28,5 +29,13 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setFontScale(value: Float) {
         context.uiPrefsDataStore.edit { it[Keys.FONT_SCALE] = value }
+    }
+
+    /** پورت یادآوری سررسید (وب هنوز نداره) - پیش‌فرض خاموش چون روشن‌کردنش رو Android 13+ نیاز به
+     * مجوز POST_NOTIFICATIONS داره که فقط با تعامل کاربر (سوییچ تو تنظیمات) درخواست می‌شه. */
+    val notificationsEnabled: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.NOTIFICATIONS_ENABLED] ?: false }
+
+    suspend fun setNotificationsEnabled(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.NOTIFICATIONS_ENABLED] = value }
     }
 }
