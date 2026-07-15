@@ -62,8 +62,17 @@ dependencies {
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
+    // ProcessLifecycleOwner برای قفل امنیتی: تشخیص «کل اپ رفت پس‌زمینه» (ON_STOP) تا با برگشت به
+    // اپ دوباره قفل بشه، نه فقط قفل‌شدن یه‌بار موقع باز شدن.
+    implementation("androidx.lifecycle:lifecycle-process:2.8.6")
     implementation("com.google.android.material:material:1.12.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+
+    // قفل امنیتی PIN+اثر انگشت (برگردوندن تصمیم قبلی حذف بایومتریک، با درخواست صریح جدید کاربر) -
+    // BiometricPrompt نیاز به FragmentActivity داره (نه ComponentActivity ساده)، برای همین
+    // MainActivity هم به FragmentActivity تغییر کرد.
+    implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.fragment:fragment-ktx:1.8.3")
 
     implementation("androidx.navigation:navigation-compose:2.8.3")
 

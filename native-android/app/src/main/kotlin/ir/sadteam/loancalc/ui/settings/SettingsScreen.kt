@@ -16,17 +16,22 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,6 +42,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -47,6 +54,8 @@ import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.security.AppLockViewModel
+import ir.sadteam.loancalc.ui.security.biometricAvailable
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -69,6 +78,7 @@ fun SettingsScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
     themeViewModel: ThemeViewModel = hiltViewModel(),
     notificationsViewModel: NotificationsViewModel = hiltViewModel(),
+    appLockViewModel: AppLockViewModel = hiltViewModel(),
 ) {
     var showLoginPrompt by remember { mutableStateOf(false) }
     val gateState by authViewModel.gateState.collectAsState()
@@ -186,6 +196,10 @@ fun SettingsScreen(
                 }
             }
 
+            AccordionCard(title = "امنیت", modifier = Modifier.padding(top = 10.dp)) {
+                SecuritySettings(appLockViewModel)
+            }
+
             AccordionCard(title = "پشتیبانی", modifier = Modifier.padding(top = 10.dp)) {
                 SupportContacts()
             }
@@ -224,6 +238,134 @@ private fun SupportContacts() {
             openOrToast(context) { Intent(Intent.ACTION_VIEW, Uri.parse(SUPPORT_BALE_URL)) }
         }
     }
+}
+
+/**
+ * پورت قفل امنیتی PIN+اثر انگشت اپ رقیب (VAMMAN) - برگردوندن تصمیم قبلی حذف بایومتریک، با درخواست
+ * صریح جدید کاربر (رجوع کن به CLAUDE.md). سوییچ اثر انگشت فقط اگه گوشی سخت‌افزار/داده‌ی بایومتریک
+ * ثبت‌شده داشته باشه ([biometricAvailable]) فعال می‌شه.
+ */
+@Composable
+private fun SecuritySettings(appLockViewModel: AppLockViewModel) {
+    val context = LocalContext.current
+    val pinHash by appLockViewModel.pinHash.collectAsState()
+    val biometricEnabled by appLockViewModel.biometricEnabled.collectAsState()
+    var showPinDialog by remember { mutableStateOf(false) }
+
+    if (showPinDialog) {
+        PinSetupDialog(
+            onDismiss = { showPinDialog = false },
+            onConfirm = { pin ->
+                appLockViewModel.setPin(pin)
+                showPinDialog = false
+            },
+        )
+    }
+
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "قفل با اثر انگشت",
+                color = AppText,
+                fontSize = 13.sp,
+                modifier = Modifier.weight(1f),
+            )
+            Switch(
+                checked = biometricEnabled,
+                enabled = biometricAvailable(context),
+                onCheckedChange = { appLockViewModel.setBiometricEnabled(it) },
+                colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
+            )
+        }
+        if (!biometricAvailable(context)) {
+            Text(
+                "این گوشی سنسور یا اثر انگشت ثبت‌شده‌ای نداره",
+                color = AppMuted,
+                fontSize = 11.sp,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("قفل با PIN", color = AppText, fontSize = 13.sp)
+                Text(
+                    if (pinHash != null) "فعال است" else "غیرفعال",
+                    color = if (pinHash != null) AppPrimary else AppMuted,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            OutlinedButton(onClick = { showPinDialog = true }) {
+                Text(if (pinHash != null) "تغییر PIN" else "تنظیم PIN")
+            }
+        }
+        if (pinHash != null) {
+            TextButton(
+                onClick = { appLockViewModel.clearPin() },
+                modifier = Modifier.padding(top = 4.dp),
+            ) {
+                Text("حذف قفل PIN", color = AppDanger)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    var pin by remember { mutableStateOf("") }
+    var confirmPin by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("تنظیم PIN") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { if (it.length <= 8) pin = it },
+                    label = { Text("PIN جدید") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = confirmPin,
+                    onValueChange = { if (it.length <= 8) confirmPin = it },
+                    label = { Text("تکرار PIN") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                )
+                if (error != null) {
+                    Text(error ?: "", color = AppDanger, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                when {
+                    pin.length < 4 -> error = "PIN باید حداقل ۴ رقم باشه"
+                    pin != confirmPin -> error = "دو PIN یکی نیستن"
+                    else -> onConfirm(pin)
+                }
+            }) { Text("ذخیره") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("انصراف") }
+        },
+    )
 }
 
 private fun openOrToast(context: android.content.Context, buildIntent: () -> Intent) {
