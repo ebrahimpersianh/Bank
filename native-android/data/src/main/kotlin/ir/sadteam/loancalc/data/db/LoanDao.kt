@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.data.db
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
@@ -25,4 +26,12 @@ interface LoanDao {
 
     @Query("DELETE FROM loans")
     suspend fun clear()
+
+    /** پورت رفتار «نسخه‌ی ابری جایگزین بشه» تو syncAfterLogin - همه‌ی لیست محلی رو با یه لیست
+     * جدید (اومده از سرور) عوض می‌کنه، به‌صورت اتمیک. */
+    @Transaction
+    suspend fun replaceAll(loans: List<LoanEntity>) {
+        clear()
+        loans.forEach { upsert(it) }
+    }
 }
