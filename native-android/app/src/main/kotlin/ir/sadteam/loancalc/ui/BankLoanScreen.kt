@@ -106,7 +106,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(6.dp, 14.dp, 6.dp, 100.dp),
+        contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         item {
@@ -139,7 +139,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                 if (presetNote != null) {
                     Text(
                         text = "📋 طبق قانون بانک مرکزی\n$presetNote",
-                        fontSize = 11.sp,
+                        fontSize = 13.sp,
                         color = AppText,
                         modifier = Modifier.padding(top = 8.dp),
                     )
@@ -161,7 +161,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
 
         item {
             AppCard(label = "بانک یا سرویس اعتباری") {
-                Text("بانک‌ها", fontSize = 11.sp, color = AppMuted, fontWeight = FontWeight.Bold)
+                Text("بانک‌ها", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier
                         .horizontalScroll(rememberScrollState())
@@ -176,7 +176,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         )
                     }
                 }
-                Text("خدمات اعتباری", fontSize = 11.sp, color = AppMuted, fontWeight = FontWeight.Bold)
+                Text("خدمات اعتباری", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier
                         .horizontalScroll(rememberScrollState())
@@ -248,14 +248,14 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("ریال", color = AppMuted, fontSize = 11.sp) },
+                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
                 )
                 val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
                 if (rialVal > 0) {
                     Text(
                         text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
                         color = AppAccent,
-                        fontSize = 11.5.sp,
+                        fontSize = 13.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
@@ -269,7 +269,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                 )
                 Text(
                     text = "بازه اسلایدر: ${fmtShortToman(amountSliderRange.start)} تا ${fmtShortToman(amountSliderRange.endInclusive)} ریال — برای اعداد خارج از بازه، مستقیم تایپ کن",
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = AppMuted,
                 )
             }
@@ -288,7 +288,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("درصد", color = AppMuted, fontSize = 11.sp) },
+                    suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
                 )
                 SlimSlider(
                     value = rateSlider,
@@ -321,7 +321,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         .fillMaxWidth()
                         .padding(top = 10.dp),
                     singleLine = true,
-                    suffix = { Text("ماه", color = AppMuted, fontSize = 11.sp) },
+                    suffix = { Text("ماه", color = AppMuted, fontSize = 13.sp) },
                 )
             }
         }
@@ -347,7 +347,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                 ) {
                     Column {
                         Text("دوره تنفس", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        Text("بدون پرداخت اقساط در ماه‌های اول", fontSize = 11.sp, color = AppMuted)
+                        Text("بدون پرداخت اقساط در ماه‌های اول", fontSize = 13.sp, color = AppMuted)
                     }
                     Switch(
                         checked = graceOn,
@@ -356,7 +356,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     )
                 }
                 if (graceOn) {
-                    Text("مدت تنفس (ماه)", fontSize = 11.5.sp, color = AppMuted, modifier = Modifier.padding(top = 12.dp))
+                    Text("مدت تنفس (ماه)", fontSize = 13.5.sp, color = AppMuted, modifier = Modifier.padding(top = 12.dp))
                     SlimSlider(
                         value = graceMonths,
                         onValueChange = { graceMonths = it },
@@ -378,7 +378,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
             AppCard {
                 Text(
                     "کارمزد بانک به‌صورت خودکار طبق قانون بانک مرکزی و ضوابط هر بانک محاسبه می‌شود.",
-                    fontSize = 11.5.sp,
+                    fontSize = 13.5.sp,
                     color = AppMuted,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
