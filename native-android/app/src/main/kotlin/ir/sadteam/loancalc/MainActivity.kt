@@ -67,8 +67,11 @@ import ir.sadteam.loancalc.ui.ResultScreen
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
+import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.onboarding.AnimatedAppEntrance
 import ir.sadteam.loancalc.ui.onboarding.BenefitsScreen
 import ir.sadteam.loancalc.ui.onboarding.PermissionGateScreen
+import ir.sadteam.loancalc.ui.onboarding.WelcomeMessageScreen
 import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.SubscriptionManager
 import ir.sadteam.loancalc.ui.myloans.MyLoansScreen
@@ -136,6 +139,8 @@ class MainActivity : ComponentActivity() {
  * قبل از این گیت هم، [PermissionGateScreen] چک می‌شه - برخلاف گیت ورود، این یکی هر بار اپ باز
  * می‌شه دوباره ارزیابی می‌شه (نه فقط یه‌بار)، چون کاربر می‌تونه مجوزها رو از تنظیمات گوشی خاموش کنه.
  * بعد از گیت مجوز و قبل از گیت ورود، [BenefitsScreen] هم فقط یه‌بار تو کل عمر نصب نشون داده می‌شه.
+ * بعد از حل شدن گیت ورود/مهمان، هر بار [WelcomeMessageScreen] (پیام خوش‌آمد شبیه چت‌بات) نشون داده
+ * می‌شه، بعد صفحه‌ی اصلی با یه افکت swoosh سریع (`AnimatedAppEntrance`) از بالا-چپ میاد تو.
  */
 @Composable
 private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel()) {
@@ -159,7 +164,20 @@ private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel()) {
     when (gateState) {
         null -> Surface(modifier = Modifier.fillMaxSize(), color = AppSurface) {}
         GateState.NEEDS_LOGIN -> LoginScreen()
-        GateState.GUEST, GateState.LOGGED_IN -> LoanCalcApp()
+        GateState.GUEST, GateState.LOGGED_IN -> {
+            var welcomeDone by remember { mutableStateOf(false) }
+            if (!welcomeDone) {
+                val phone by authViewModel.phone.collectAsState()
+                val name = if (gateState == GateState.LOGGED_IN && !phone.isNullOrEmpty()) {
+                    toFa(phone!!)
+                } else {
+                    "مهمان"
+                }
+                WelcomeMessageScreen(name = name, onDone = { welcomeDone = true })
+            } else {
+                AnimatedAppEntrance { LoanCalcApp() }
+            }
+        }
     }
 }
 
