@@ -4,8 +4,12 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- برای یادآوری سررسید (نوتیفیکیشن) - از Android 13 (API 33) به بعد اجباریه، فقط runtime هم
-         باید درخواست بشه (ui/settings/SettingsScreen.kt). -->
+         باید درخواست بشه (ui/settings/SettingsScreen.kt، ui/onboarding/PermissionGateScreen.kt). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- برای گیت مجوز اول اپ (PermissionGateScreen) - بدون این، Intent
+         ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS اجرا نمی‌شه. لازمه چون WorkManager (یادآوری
+         سررسید) رو خیلی گوشی‌ها بدون معافیت از بهینه‌سازی باتری پس‌زمینه‌ش کشته می‌شه. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:name=".LoanCalcApplication"

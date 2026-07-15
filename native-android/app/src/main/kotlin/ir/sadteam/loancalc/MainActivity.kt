@@ -63,6 +63,7 @@ import ir.sadteam.loancalc.ui.ResultScreen
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
+import ir.sadteam.loancalc.ui.onboarding.PermissionGateScreen
 import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.SubscriptionManager
 import ir.sadteam.loancalc.ui.myloans.MyLoansScreen
@@ -126,9 +127,18 @@ class MainActivity : ComponentActivity() {
  * «مهمان» رو انتخاب کرده) LoginScreen اجباریه؛ گیت هیچ‌وقت دوباره نشون داده نمی‌شه (نه بعد از ورود،
  * نه بعد از انتخاب مهمان). تا اولین مقدار واقعی از DataStore برسه (gateState == null) چیزی نشون
  * نمی‌دیم که یه فلش اشتباهی صفحه‌ی ورود قبل از لاگین واقعی دیده نشه.
+ *
+ * قبل از این گیت هم، [PermissionGateScreen] چک می‌شه - برخلاف گیت ورود، این یکی هر بار اپ باز
+ * می‌شه دوباره ارزیابی می‌شه (نه فقط یه‌بار)، چون کاربر می‌تونه مجوزها رو از تنظیمات گوشی خاموش کنه.
  */
 @Composable
 private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel()) {
+    var permissionsOk by remember { mutableStateOf(false) }
+    if (!permissionsOk) {
+        PermissionGateScreen(onAllGranted = { permissionsOk = true })
+        return
+    }
+
     val gateState by authViewModel.gateState.collectAsState()
     when (gateState) {
         null -> Surface(modifier = Modifier.fillMaxSize(), color = AppSurface) {}
