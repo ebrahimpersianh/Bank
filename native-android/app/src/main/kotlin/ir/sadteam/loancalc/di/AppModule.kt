@@ -6,10 +6,13 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.AuthRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.CrashRepository
 import ir.sadteam.loancalc.data.LoanRepository
+import ir.sadteam.loancalc.data.db.AccountDao
+import ir.sadteam.loancalc.data.db.AccountTransactionDao
 import ir.sadteam.loancalc.data.db.AppDatabase
 import ir.sadteam.loancalc.data.db.ChequeBookDao
 import ir.sadteam.loancalc.data.db.ChequeDao
@@ -81,4 +84,15 @@ object AppModule {
     @Singleton
     fun provideChequeRepository(chequeDao: ChequeDao, chequeBookDao: ChequeBookDao): ChequeRepository =
         ChequeRepository(chequeDao, chequeBookDao)
+
+    @Provides
+    fun provideAccountDao(database: AppDatabase): AccountDao = database.accountDao()
+
+    @Provides
+    fun provideAccountTransactionDao(database: AppDatabase): AccountTransactionDao = database.accountTransactionDao()
+
+    @Provides
+    @Singleton
+    fun provideAccountRepository(accountDao: AccountDao, transactionDao: AccountTransactionDao): AccountRepository =
+        AccountRepository(accountDao, transactionDao)
 }
