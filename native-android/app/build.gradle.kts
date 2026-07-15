@@ -10,10 +10,27 @@ android {
     namespace = "ir.sadteam.loancalc"
     compileSdk = 34
 
+    signingConfigs {
+        // امضای دیباگِ ثابت و قطعی: مستقیم از فایل کامیت‌شده‌ی `ci-debug.keystore` تو ریشه‌ی مخزن
+        // امضا می‌شه، نه از `~/.android/debug.keystore` که بین محیط‌ها/رانرها فرق می‌کرد و باعث می‌شد
+        // نصب یه بیلد جدید رو بیلد قبلی با «App not installed»/«conflicts with an existing package»
+        // رد بشه (چون امضاها فرق داشتن). چون کلید ثابته، همه‌ی بیلدها امضای یکسان دارن و رو هم به‌روز
+        // نصب می‌شن. این همون کلید استاندارد دیباگ اندروید (alias=androiddebugkey، پسورد عمومی
+        // «android») هست، پس رازی توش نیست - عمداً کامیت شده (رجوع کن به CLAUDE.md).
+        getByName("debug") {
+            storeFile = rootProject.file("../ci-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     defaultConfig {
         applicationId = "ir.sadteam.loancalc"
         minSdk = 24
         targetSdk = 34
+        // versionCode تو workflow از github.run_number تزریق می‌شه (تا نصب بیلد جدید رو قبلی downgrade
+        // حساب نشه)؛ این مقدار پیش‌فرض فقط برای build لوکاله.
         versionCode = 1
         versionName = "1.0"
     }
@@ -21,6 +38,9 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
