@@ -64,7 +64,7 @@ fun AffordScreen() {
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(6.dp, 14.dp, 6.dp, 100.dp),
+        contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         item {
@@ -80,14 +80,14 @@ fun AffordScreen() {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("ریال", color = AppMuted, fontSize = 11.sp) },
+                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
                 )
                 val rialVal = cleanNum(payText).toLongOrNull() ?: 0L
                 if (rialVal > 0) {
                     Text(
                         text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
                         color = AppAccent,
-                        fontSize = 11.5.sp,
+                        fontSize = 13.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
@@ -101,7 +101,7 @@ fun AffordScreen() {
                 )
                 Text(
                     text = "بازه اسلایدر: ۱۰ تا ۵۰۰ میلیون ریال — برای اعداد خارج از بازه، مستقیم تایپ کن",
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = AppMuted,
                 )
             }
@@ -120,7 +120,7 @@ fun AffordScreen() {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("درصد", color = AppMuted, fontSize = 11.sp) },
+                    suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
                 )
                 SlimSlider(
                     value = rateSlider,
@@ -152,7 +152,7 @@ fun AffordScreen() {
                         .fillMaxWidth()
                         .padding(top = 10.dp),
                     singleLine = true,
-                    suffix = { Text("ماه", color = AppMuted, fontSize = 11.sp) },
+                    suffix = { Text("ماه", color = AppMuted, fontSize = 13.sp) },
                 )
             }
         }
@@ -216,7 +216,7 @@ private fun RateFinderCard() {
             Text(
                 "مبلغ وام و قسطی که می‌دی رو بگو، نرخ سودش رو حساب می‌کنم",
                 color = AppMuted,
-                fontSize = 11.sp,
+                fontSize = 13.sp,
                 modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
             )
             OutlinedTextField(
@@ -230,7 +230,7 @@ private fun RateFinderCard() {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                suffix = { Text("مبلغ وام (ریال)", color = AppMuted, fontSize = 11.sp) },
+                suffix = { Text("مبلغ وام (ریال)", color = AppMuted, fontSize = 13.sp) },
             )
             SlimSlider(
                 value = amountSlider,
@@ -251,7 +251,7 @@ private fun RateFinderCard() {
                     .fillMaxWidth()
                     .padding(top = 8.dp),
                 singleLine = true,
-                suffix = { Text("مبلغ هر قسط (ریال)", color = AppMuted, fontSize = 11.sp) },
+                suffix = { Text("مبلغ هر قسط (ریال)", color = AppMuted, fontSize = 13.sp) },
             )
             SlimSlider(
                 value = installmentSlider,
@@ -267,10 +267,10 @@ private fun RateFinderCard() {
                     .fillMaxWidth()
                     .padding(top = 8.dp),
                 singleLine = true,
-                suffix = { Text("تعداد اقساط (ماه)", color = AppMuted, fontSize = 11.sp) },
+                suffix = { Text("تعداد اقساط (ماه)", color = AppMuted, fontSize = 13.sp) },
             )
             if (error != null) {
-                Text(error ?: "", color = AppDanger, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+                Text(error ?: "", color = AppDanger, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
             }
             OutlinedButton(
                 onClick = {

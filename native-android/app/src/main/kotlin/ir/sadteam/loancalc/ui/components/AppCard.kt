@@ -34,7 +34,7 @@ fun AppCard(
             Text(
                 text = label,
                 color = AppMuted,
-                fontSize = 11.5.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(bottom = 7.dp),
             )

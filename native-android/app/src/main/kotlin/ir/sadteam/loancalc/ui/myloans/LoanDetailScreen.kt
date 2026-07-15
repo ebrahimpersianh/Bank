@@ -209,11 +209,11 @@ fun LoanDetailScreen(
             AppCard(label = loan.bank, modifier = Modifier.padding(horizontal = 14.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
-                        Text("مبلغ هر قسط", fontSize = 11.sp, color = AppMuted)
+                        Text("مبلغ هر قسط", fontSize = 13.sp, color = AppMuted)
                         Text("${fmt(loan.installment)} ریال", fontSize = 13.sp, color = AppText)
                     }
                     Column {
-                        Text("پرداخت‌شده", fontSize = 11.sp, color = AppMuted)
+                        Text("پرداخت‌شده", fontSize = 13.sp, color = AppMuted)
                         Text("${toFa(loan.paidCount)} از ${toFa(loan.n)}", fontSize = 13.sp, color = AppPrimary)
                     }
                 }
@@ -244,10 +244,10 @@ fun LoanDetailScreen(
             ) {
                 Column {
                     Text("قسط ${toFa(m)}", color = AppText, fontSize = 12.5.sp)
-                    Text(dueLabel, color = AppMuted, fontSize = 10.5.sp)
+                    Text(dueLabel, color = AppMuted, fontSize = 12.5.sp)
                 }
-                Text("${fmt(installment)} ریال", color = AppMuted, fontSize = 11.sp)
-                Text(statusLabel, color = statusColor, fontSize = 11.5.sp)
+                Text("${fmt(installment)} ریال", color = AppMuted, fontSize = 13.sp)
+                Text(statusLabel, color = statusColor, fontSize = 13.5.sp)
                 IconButton(onClick = {
                     editingRowM = m
                     editAmountText = installment.toLong().toString()

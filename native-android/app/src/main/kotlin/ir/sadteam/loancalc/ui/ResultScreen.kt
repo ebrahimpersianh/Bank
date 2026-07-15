@@ -75,7 +75,7 @@ fun ResultScreen(outcome: BankLoanOutcome) {
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(6.dp, 14.dp, 6.dp, 100.dp),
+        contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         item {
@@ -96,7 +96,7 @@ fun ResultScreen(outcome: BankLoanOutcome) {
                 )
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(fmt(animatedInstallment.toDouble()), fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    Text("قسط ماهانه (ریال)", fontSize = 10.5.sp, color = AppMuted)
+                    Text("قسط ماهانه (ریال)", fontSize = 12.5.sp, color = AppMuted)
                 }
             }
         }
@@ -105,7 +105,7 @@ fun ResultScreen(outcome: BankLoanOutcome) {
             Text(
                 text = "${numberToWordsFa(result.installment / 10)} تومان",
                 color = AppAccent,
-                fontSize = 11.5.sp,
+                fontSize = 13.5.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
             )
@@ -166,7 +166,7 @@ fun ResultScreen(outcome: BankLoanOutcome) {
                         ) {
                             Text("قسط ${toFa(row.month)}", fontSize = 12.sp)
                             Text(dateLabel, fontSize = 12.sp)
-                            Text("${fmt(row.installment)} ریال", fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                            Text("${fmt(row.installment)} ریال", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
                         }
                         if (idx != result.rows.lastIndex) HorizontalDivider(color = AppLine)
                     }
@@ -180,7 +180,7 @@ fun ResultScreen(outcome: BankLoanOutcome) {
 private fun StatBox(label: String, value: String, modifier: Modifier = Modifier) {
     AppCard(modifier = modifier) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-            Text(value, fontWeight = FontWeight.Bold, fontSize = 11.sp, textAlign = TextAlign.Center)
+            Text(value, fontWeight = FontWeight.Bold, fontSize = 13.sp, textAlign = TextAlign.Center)
             Text(label, fontSize = 9.sp, color = AppMuted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 3.dp))
         }
     }

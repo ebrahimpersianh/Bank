@@ -56,7 +56,7 @@ fun BankTile(
         )
         Text(
             text = bank.name,
-            fontSize = 10.5.sp,
+            fontSize = 12.5.sp,
             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
             textAlign = TextAlign.Center,
             maxLines = 2,
