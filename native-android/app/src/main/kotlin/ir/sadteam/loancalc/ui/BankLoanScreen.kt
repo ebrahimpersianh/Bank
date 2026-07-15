@@ -10,12 +10,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -47,6 +51,7 @@ import ir.sadteam.loancalc.data.loanPresets
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.BankTile
+import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.PresetCard
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.theme.AppAccent
@@ -98,10 +103,25 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
     var graceMonths by remember { mutableStateOf(6f) }
 
     var presetNote by remember { mutableStateOf<String?>(null) }
+    var showCalendarPicker by remember { mutableStateOf(false) }
 
     fun applyAmount(rial: Long) {
         amountText = fmtGroupedEn(rial)
         if (rial <= amountSliderRange.endInclusive.toLong()) amountSlider = rial.toFloat()
+    }
+
+    if (showCalendarPicker) {
+        CalendarPickerScreen(
+            initialDate = PersianDate(startYear, startMonth, startDay),
+            onDateSelected = { date ->
+                startYear = date.y
+                startMonth = date.m
+                startDay = date.d
+                showCalendarPicker = false
+            },
+            onBack = { showCalendarPicker = false },
+        )
+        return
     }
 
     LazyColumn(
@@ -212,7 +232,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     SimpleDropdown(
-                        options = (1398..1406).map { it to toFa(it) },
+                        options = (1380..1410).map { it to toFa(it) },
                         selected = startYear,
                         onSelect = { startYear = it },
                         modifier = Modifier.weight(1f),
@@ -229,6 +249,9 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         onSelect = { startDay = it },
                         modifier = Modifier.weight(1f),
                     )
+                    IconButton(onClick = { showCalendarPicker = true }) {
+                        Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
+                    }
                 }
             }
         }

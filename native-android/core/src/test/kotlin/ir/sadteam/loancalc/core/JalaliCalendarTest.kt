@@ -209,4 +209,19 @@ class JalaliCalendarTest {
         )
         assertEquals(expected, JalaliCalendar.today())
     }
+
+    @Test
+    fun daysInMonthMatchesRealCalendarIncludingLeapEsfand() {
+        // ۱۴۰۲ کبیسه نیست (اسفندش ۲۹ روزه)، ۱۴۰۳ کبیسه‌ست (اسفندش ۳۰ روزه) - هر دو با jdatetime تایید شدن.
+        assertEquals(29, JalaliCalendar.daysInMonth(1402, 12))
+        assertEquals(30, JalaliCalendar.daysInMonth(1403, 12))
+        assertEquals(31, JalaliCalendar.daysInMonth(1404, 1))
+        assertEquals(30, JalaliCalendar.daysInMonth(1404, 7))
+    }
+
+    @Test
+    fun dayOfWeekMatchesRealCalendar() {
+        // ۱۴۰۳/۰۱/۰۱ (نوروز ۱۴۰۳ = ۲۰۲۴-۰۳-۲۰) یه چهارشنبه بود - چهارشنبه تو هفته‌ی شنبه=۰ یعنی ۴.
+        assertEquals(4, JalaliCalendar.dayOfWeekSaturdayFirst(PersianDate(1403, 1, 1)))
+    }
 }

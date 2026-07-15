@@ -90,7 +90,7 @@ fun AddManualLoanScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     ManualDateDropdown(
-                        options = (1398..1406).map { it to toFa(it) },
+                        options = (1380..1410).map { it to toFa(it) },
                         selected = startYear,
                         onSelect = { startYear = it },
                         modifier = Modifier.weight(1f),
