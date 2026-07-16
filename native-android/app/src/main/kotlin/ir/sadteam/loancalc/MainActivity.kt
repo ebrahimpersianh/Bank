@@ -295,9 +295,16 @@ private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
                         IconButton(onClick = { themeViewModel.toggleTheme() }) {
                             // پورت sunIcon/moonIcon تو www/index.html: آیکون وضعیت *فعلی* رو نشون
                             // می‌ده (ماه = الان تاریکه)، نه نتیجه‌ی تپ‌کردن - قبلاً برعکس این بود.
+                            // موقع تعویض تم هم یه چرخش فنری می‌خوره (پولیش).
+                            val themeIconRotation by animateFloatAsState(
+                                targetValue = if (darkTheme) 0f else 360f,
+                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+                                label = "themeIconRotation",
+                            )
                             Icon(
                                 if (darkTheme) Icons.Filled.DarkMode else Icons.Filled.LightMode,
                                 contentDescription = "تغییر تم",
+                                modifier = Modifier.graphicsLayer { rotationZ = themeIconRotation },
                             )
                         }
                     },

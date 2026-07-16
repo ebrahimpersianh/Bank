@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,6 +52,7 @@ import ir.sadteam.loancalc.data.creditServices
 import ir.sadteam.loancalc.data.loanPresets
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.BankTile
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
@@ -57,7 +60,7 @@ import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.PresetCard
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.components.appFieldColors
-import ir.sadteam.loancalc.ui.components.horizontalScrollbar
+import ir.sadteam.loancalc.ui.components.lazyRowScrollbar
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -138,11 +141,9 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
             // کارت وام‌های پرتکرار خط مشکی می‌گیره (نه سبز) - چون خودِ کارت‌های داخلش خط مشکی دارن
             // و کاربر خواست حاشیه‌ی سبز مخصوص بقیه‌ی باکس‌ها باشه، نه این بخشِ اول.
             AppCard(label = "وام‌های پرتکرار", borderColor = AppText.copy(alpha = 0.5f)) {
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    loanPresets.forEach { p ->
+                // LazyRow به‌جای Row+horizontalScroll: فقط کارت‌های قابل‌دیدن compose می‌شن (پرفورمنس).
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(loanPresets, key = { it.key }) { p ->
                         PresetCard(
                             icon = p.icon,
                             title = p.title,
@@ -180,16 +181,17 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
 
         item {
             AppCard(label = "بانک یا سرویس اعتباری") {
-                val banksScroll = rememberScrollState()
-                val creditScroll = rememberScrollState()
+                // LazyRow به‌جای Row+horizontalScroll: قبلاً هر ۳۴ لوگوی بانک + ۶ سرویس همیشه یک‌جا
+                // compose می‌شدن (یکی از منابع اصلی لگ تعویض تب)؛ حالا فقط ~۵ تای قابل‌دیدن.
+                val banksScroll = rememberLazyListState()
+                val creditScroll = rememberLazyListState()
                 Text("بانک‌ها", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
-                Row(
-                    modifier = Modifier
-                        .horizontalScroll(banksScroll)
-                        .padding(top = 4.dp),
+                LazyRow(
+                    state = banksScroll,
+                    modifier = Modifier.padding(top = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    banks.forEach { b ->
+                    items(banks, key = { it.name }) { b ->
                         BankTile(
                             bank = b,
                             selected = selectedBank?.name == b.name,
@@ -203,16 +205,15 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         .fillMaxWidth()
                         .padding(top = 6.dp, bottom = 8.dp)
                         .height(4.dp)
-                        .horizontalScrollbar(banksScroll, AppPrimary),
+                        .lazyRowScrollbar(banksScroll, AppPrimary),
                 )
                 Text("خدمات اعتباری", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
-                Row(
-                    modifier = Modifier
-                        .horizontalScroll(creditScroll)
-                        .padding(top = 4.dp),
+                LazyRow(
+                    state = creditScroll,
+                    modifier = Modifier.padding(top = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    creditServices.forEach { b ->
+                    items(creditServices, key = { it.name }) { b ->
                         BankTile(
                             bank = b,
                             selected = selectedBank?.name == b.name,
@@ -235,7 +236,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         .fillMaxWidth()
                         .padding(top = 6.dp)
                         .height(4.dp)
-                        .horizontalScrollbar(creditScroll, AppPrimary),
+                        .lazyRowScrollbar(creditScroll, AppPrimary),
                 )
             }
         }
@@ -283,10 +284,11 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                 )
                 val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
                 if (rialVal > 0) {
-                    Text(
+                    // همیشه تک‌خطی - اگه جا نشه فونت کوچیک می‌شه، نه این‌که به خط دوم بشکنه.
+                    AutoShrinkText(
                         text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
                         color = AppAccent,
-                        fontSize = 11.5.sp,
+                        maxFontSize = 11.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }

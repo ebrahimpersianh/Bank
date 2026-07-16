@@ -10,6 +10,10 @@
          ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS اجرا نمی‌شه. لازمه چون WorkManager (یادآوری
          سررسید) رو خیلی گوشی‌ها بدون معافیت از بهینه‌سازی باتری پس‌زمینه‌ش کشته می‌شه. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- برای «افزودن سررسید اقساط به تقویم گوشی» (calendar/DeviceCalendarExporter) - runtime تو
+         LoanDetailScreen درخواست می‌شن؛ READ لازمه چون قبل از درج باید تقویمِ قابل‌نوشتن پیدا بشه. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
 
     <application
         android:name=".LoanCalcApplication"

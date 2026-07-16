@@ -4,9 +4,13 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,6 +57,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.IncomeType
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.IncomeEntity
 import ir.sadteam.loancalc.data.db.LoanEntity
@@ -61,10 +66,13 @@ import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
+import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -303,15 +311,20 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
     }
         // دکمه‌ی «+» دایره‌ای سبز گوشه‌ی سمت چپ (در RTL: BottomEnd) - جایگزین دکمه‌ی تمام‌عرضِ
         // «افزودن دستی وام»؛ فقط رو خودِ لیست نشون داده می‌شه، نه رو فرم افزودن/جزئیات.
-        if (screenKey == "list") {
+        // با یه pop فنری ظاهر/محو می‌شه (نه یهو).
+        androidx.compose.animation.AnimatedVisibility(
+            visible = screenKey == "list",
+            enter = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) + fadeIn(tween(150)),
+            exit = scaleOut(tween(120)) + fadeOut(tween(120)),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(20.dp),
+        ) {
             FloatingActionButton(
                 onClick = { onAddLoanClick() },
                 containerColor = AppPrimary,
                 contentColor = Color.White,
                 shape = CircleShape,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(20.dp),
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "افزودن دستی وام")
             }
@@ -363,15 +376,19 @@ private fun DashboardSummary(
     var amountText by remember { mutableStateOf("") }
     var type by remember { mutableStateOf(IncomeType.FIXED) }
 
+    // شمارش صعودی اعداد بزرگ داشبورد (پورت animateNumber وب) - حس «پریمیوم» موقع ورود به تب.
+    val animatedDebt = countUpDouble(totalRemainingDebt)
+    val animatedMonthly = countUpDouble(totalMonthlyInstallment)
+
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         DashboardStatCard(
             title = "وضعیت کلی بدهی‌ها",
-            value = "${fmt(totalRemainingDebt)} ریال",
+            value = "${fmt(animatedDebt)} ریال",
             valueColor = AppText,
         )
         DashboardStatCard(
             title = "مجموع اقساط ماهانه",
-            value = "${fmt(totalMonthlyInstallment)} ریال",
+            value = "${fmt(animatedMonthly)} ریال",
             valueColor = AppPrimary,
         )
 
@@ -426,14 +443,23 @@ private fun DashboardSummary(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    // مبلغ با جداکننده‌ی هزارگان نشون داده می‌شه و زیرش معادل حروفی (مثل «مبلغ وام»).
                     OutlinedTextField(
-                        value = if (amountText.isEmpty()) "" else toFa(amountText),
+                        value = if (amountText.isEmpty()) "" else fmt((amountText.toLongOrNull() ?: 0L).toDouble()),
                         onValueChange = { amountText = cleanNum(it) },
                         label = { Text("مبلغ ماهانه (ریال)") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    val incomeRial = amountText.toLongOrNull() ?: 0L
+                    if (incomeRial > 0) {
+                        AutoShrinkText(
+                            text = "${numberToWordsFa((incomeRial / 10).toDouble())} تومان",
+                            color = AppAccent,
+                            maxFontSize = 11.sp,
+                        )
+                    }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         AppChip(label = "ثابت", selected = type == IncomeType.FIXED, onClick = { type = IncomeType.FIXED })
                         AppChip(label = "متغیر", selected = type == IncomeType.VARIABLE, onClick = { type = IncomeType.VARIABLE })

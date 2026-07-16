@@ -1,5 +1,10 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,6 +27,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -39,9 +45,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
@@ -50,7 +58,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.calendar.DeviceCalendarExporter
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.fmt
@@ -67,6 +77,9 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private val faMonthNamesDetail = listOf(
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
@@ -89,6 +102,49 @@ fun LoanDetailScreen(
     viewModel: MyLoansViewModel = hiltViewModel(),
 ) {
     val rows = remember(loan) { viewModel.getRows(loan) }
+
+    // «افزودن سررسیدها به تقویم گوشی»: اقساط پرداخت‌نشده به‌صورت رویداد تمام‌روز تو تقویم خودِ
+    // گوشی درج می‌شن (خواسته‌ی کاربر که قبلاً دستی این‌کارو می‌کرد). درج تو IO انجام می‌شه چون یه
+    // وام می‌تونه ۱۲۰ قسط داشته باشه.
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    fun runCalendarExport() {
+        val items = rows.mapNotNull { row ->
+            if (row["paid"] == true) return@mapNotNull null
+            val m = (row["m"] as? Number)?.toInt() ?: return@mapNotNull null
+            val due = row["dueDate"] as? Map<*, *> ?: return@mapNotNull null
+            val y = (due["y"] as? Number)?.toInt() ?: return@mapNotNull null
+            val mo = (due["m"] as? Number)?.toInt() ?: return@mapNotNull null
+            val d = (due["d"] as? Number)?.toInt() ?: return@mapNotNull null
+            m to PersianDate(y, mo, d)
+        }
+        val amountByM = rows.associate {
+            ((it["m"] as? Number)?.toInt() ?: 0) to ((it["installment"] as? Number)?.toDouble() ?: loan.installment)
+        }
+        scope.launch(Dispatchers.IO) {
+            val inserted = DeviceCalendarExporter.insertInstallmentEvents(context, items) { m ->
+                "[وام] قسط ${toFa(m)} ${loan.name} (${fmt(amountByM[m] ?: loan.installment)} ریال)"
+            }
+            withContext(Dispatchers.Main) {
+                val message = if (inserted > 0) {
+                    "${toFa(inserted)} قسط به تقویم گوشی اضافه شد"
+                } else {
+                    "تقویم قابل‌نوشتنی رو گوشی پیدا نشد"
+                }
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    val calendarPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { granted ->
+        if (granted.values.all { it }) {
+            runCalendarExport()
+        } else {
+            Toast.makeText(context, "بدون مجوز تقویم نمی‌شه سررسیدها رو اضافه کرد", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     var editingRowM by remember { mutableStateOf<Int?>(null) }
     var editAmountText by remember { mutableStateOf("") }
     var applyAllPromptAmount by remember { mutableStateOf<Double?>(null) }
@@ -356,6 +412,23 @@ fun LoanDetailScreen(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            OutlinedButton(
+                onClick = {
+                    val perms = arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)
+                    val allGranted = perms.all {
+                        ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+                    }
+                    if (allGranted) runCalendarExport() else calendarPermissionLauncher.launch(perms)
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    Icons.Filled.CalendarMonth,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 6.dp),
+                )
+                Text("افزودن سررسیدها به تقویم گوشی")
+            }
             OutlinedButton(
                 onClick = onDelete,
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),

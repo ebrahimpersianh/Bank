@@ -8,8 +8,9 @@
          installSplashScreen() این تم رو موقتاً فعال می‌کنه، بعدش خودکار به Theme.LoanCalc برمی‌گرده. -->
     <style name="Theme.LoanCalc.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/app_bg</item>
-        <!-- آیکونِ اسپلش = دوناتِ رنگی (عینِ اسپلشِ اپ وب)، نه آیکونِ لانچرِ ماشین‌حساب. -->
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_donut</item>
+        <!-- آیکونِ اسپلشِ سیستمی عمداً شفافه: ماسکِ دایره‌ای اندروید ۱۲ دونات رو زشت می‌بُرید و
+             کاربر خواست این صفحه‌ی اضافه حذف بشه؛ اینتروِ دوناتیِ واقعی تو Compose نشون داده می‌شه. -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_empty</item>
         <item name="postSplashScreenTheme">@style/Theme.LoanCalc</item>
     </style>
 </resources>
