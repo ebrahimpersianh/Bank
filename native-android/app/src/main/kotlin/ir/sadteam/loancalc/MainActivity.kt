@@ -95,6 +95,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.onboarding.AnimatedAppEntrance
 import ir.sadteam.loancalc.ui.onboarding.BenefitsScreen
 import ir.sadteam.loancalc.ui.onboarding.PermissionGateScreen
+import ir.sadteam.loancalc.ui.onboarding.SplashIntroScreen
 import ir.sadteam.loancalc.ui.onboarding.WelcomeMessageScreen
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.LockScreen
@@ -181,6 +182,13 @@ class MainActivity : FragmentActivity() {
  */
 @Composable
 private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel(), appLockViewModel: AppLockViewModel = hiltViewModel()) {
+    // اینتروِ دوناتی (پورت اسپلشِ اپ وب) - یه‌بار در هر بار باز شدن اپ، قبل از همه‌چیز.
+    var introDone by remember { mutableStateOf(false) }
+    if (!introDone) {
+        SplashIntroScreen(onDone = { introDone = true })
+        return
+    }
+
     val pinHash by appLockViewModel.pinHash.collectAsState()
     val biometricEnabled by appLockViewModel.biometricEnabled.collectAsState()
     val unlocked by appLockViewModel.unlocked.collectAsState()

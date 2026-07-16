@@ -8,7 +8,8 @@
          installSplashScreen() این تم رو موقتاً فعال می‌کنه، بعدش خودکار به Theme.LoanCalc برمی‌گرده. -->
     <style name="Theme.LoanCalc.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/app_bg</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <!-- آیکونِ اسپلش = دوناتِ رنگی (عینِ اسپلشِ اپ وب)، نه آیکونِ لانچرِ ماشین‌حساب. -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_donut</item>
         <item name="postSplashScreenTheme">@style/Theme.LoanCalc</item>
     </style>
 </resources>
