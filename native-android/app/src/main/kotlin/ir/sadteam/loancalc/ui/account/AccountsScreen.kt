@@ -64,6 +64,11 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewMod
 
     val accounts by viewModel.accounts.collectAsState()
     val transactions by viewModel.transactions.collectAsState()
+    // موجودی هر حساب فقط وقتی حساب‌ها/تراکنش‌ها عوض می‌شن دوباره حساب می‌شه، نه هر recomposition
+    // به‌ازای هر کارت (قبلاً balanceOf رو تک‌تک آیتم‌ها هر بار صدا زده می‌شد).
+    val balances = remember(accounts, transactions) {
+        accounts.associate { it.id to viewModel.balanceOf(it, transactions) }
+    }
     val openedAccount = openedAccountId?.let { id -> accounts.firstOrNull { it.id == id } }
     val editingAccount = editingAccountId?.let { id -> accounts.firstOrNull { it.id == id } }
 
@@ -193,7 +198,7 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewMod
                     items(accounts, key = { it.id }) { account ->
                         AccountCard(
                             account = account,
-                            balance = viewModel.balanceOf(account, transactions),
+                            balance = balances[account.id] ?: account.initialBalance,
                             onClick = { openedAccountId = account.id },
                         )
                     }

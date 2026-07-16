@@ -71,7 +71,7 @@ fun AccountDetailScreen(
     val transactions = remember(allTransactions, account.id) {
         allTransactions.filter { it.accountId == account.id }
     }
-    val balance = viewModel.balanceOf(account, allTransactions)
+    val balance = remember(account, allTransactions) { viewModel.balanceOf(account, allTransactions) }
 
     var showAddTransaction by remember { mutableStateOf(false) }
     var txType by remember { mutableStateOf(TransactionType.DEPOSIT) }
