@@ -191,6 +191,17 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
         row + mapOf("paid" to true, "paidLate" to true, "paidDate" to paidDate)
     }
 
+    /** پیوست عکس رسید مخصوص یه قسطِ خاص (نه یه عکس کلیِ روی خودِ وام) - خواسته‌ی کاربر «مشخص باشه
+     * برای کدوم وام و کدوم قسطه» که چون این تابع همیشه با یه [loan] و یه [m] مشخص صدا زده می‌شه،
+     * به‌طور طبیعی تضمین می‌شه. */
+    suspend fun setRowPhoto(loan: LoanEntity, m: Int, photoPath: String) = updateRowPayment(loan, m) { row ->
+        row + ("photoPath" to photoPath)
+    }
+
+    suspend fun removeRowPhoto(loan: LoanEntity, m: Int) = updateRowPayment(loan, m) { row ->
+        row + ("photoPath" to null)
+    }
+
     private suspend fun updateRowPayment(loan: LoanEntity, m: Int, transform: (Map<String, Any?>) -> Map<String, Any?>) {
         val data = parseDataMutable(loan)
         val rows = rowsFromData(data, loan).map { row ->

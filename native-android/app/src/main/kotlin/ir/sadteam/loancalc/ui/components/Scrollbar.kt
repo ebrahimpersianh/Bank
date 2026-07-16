@@ -9,8 +9,20 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+
+/** دستگیره‌ی اسکرول‌بار به‌جای رنگِ صافِ یک‌دست، یه گرادینت داره: وسطش پررنگ (خودِ [color])، دو سرش
+ * یه‌کم روشن‌تر/کم‌رنگ‌تر - دقیقاً خواسته‌ی کاربر «رنگش مرکزش پررنگ‌تر باشه و بغل کمی کم‌رنگ‌تر». */
+private fun thumbBrush(color: Color, horizontal: Boolean): Brush {
+    val edge = lerp(color, Color.White, 0.3f)
+    return if (horizontal) {
+        Brush.horizontalGradient(listOf(edge, color, edge))
+    } else {
+        Brush.verticalGradient(listOf(edge, color, edge))
+    }
+}
 
 /**
  * اسکرول‌بار نازک سبز برای ستون‌هایی که با `verticalScroll(state)` اسکرول می‌شن - به‌درخواست کاربر
@@ -30,7 +42,7 @@ fun Modifier.verticalScrollbar(
         val thumbY = (state.value.toFloat() / max) * (viewport - thumbHeight)
         val w = width.toPx()
         drawRoundRect(
-            color = color,
+            brush = thumbBrush(color, horizontal = false),
             topLeft = Offset(size.width - w, thumbY),
             size = Size(w, thumbHeight),
             cornerRadius = CornerRadius(w / 2, w / 2),
@@ -71,7 +83,7 @@ fun Modifier.horizontalScrollbar(
         val thumbW = ((viewport / content) * viewport).coerceAtLeast(24f)
         val thumbX = (state.value.toFloat() / max) * (viewport - thumbW)
         drawRoundRect(
-            color = color,
+            brush = thumbBrush(color, horizontal = true),
             topLeft = Offset(thumbX, top),
             size = Size(thumbW, t),
             cornerRadius = CornerRadius(t / 2, t / 2),
@@ -113,7 +125,7 @@ fun Modifier.lazyRowScrollbar(
         // تو RTL، آیتم اول سمت راسته - دستگیره از راست به چپ حرکت می‌کنه.
         val thumbX = (viewport - thumbW) * (1f - progress)
         drawRoundRect(
-            color = color,
+            brush = thumbBrush(color, horizontal = true),
             topLeft = Offset(thumbX, top),
             size = Size(thumbW, t),
             cornerRadius = CornerRadius(t / 2, t / 2),
@@ -142,7 +154,7 @@ fun Modifier.lazyColumnScrollbar(
         val thumbY = progress * (viewport - thumbHeight)
         val w = width.toPx()
         drawRoundRect(
-            color = color,
+            brush = thumbBrush(color, horizontal = false),
             topLeft = Offset(size.width - w, thumbY),
             size = Size(w, thumbHeight),
             cornerRadius = CornerRadius(w / 2, w / 2),

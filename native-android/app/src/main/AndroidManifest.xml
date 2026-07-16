@@ -14,6 +14,8 @@
          LoanDetailScreen درخواست می‌شن؛ READ لازمه چون قبل از درج باید تقویمِ قابل‌نوشتن پیدا بشه. -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <!-- برای ویبره‌ی واقعی رو تپ‌های اصلی (ui/haptics/Haptics.kt) - ویژگی اشتراکی. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- allowBackup عمداً false: بکاپ خودکار اندروید موقع نصب مجدد، فلگ‌های «یه‌بار پرسیده شده»
          (ورود/مهمان، benefits، گیت مجوزها) رو از نصب قبلی برمی‌گردوند و در نتیجه سوال‌های اولین

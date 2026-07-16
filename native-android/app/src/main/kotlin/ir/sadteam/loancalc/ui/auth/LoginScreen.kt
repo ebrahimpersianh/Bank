@@ -1,8 +1,10 @@
 package ir.sadteam.loancalc.ui.auth
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -31,6 +33,8 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 
 private enum class LoginStep { PHONE, OTP }
@@ -71,7 +75,9 @@ fun LoginScreen(
         return
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    // پس‌زمینه‌ی صریح رو تمِ فعلی (قبلاً نداشت، پس رنگِ زمینه‌ی خودِ ویندو - که تیره‌ست - از زیرش رد
+    // می‌شد و صفحه‌ی ورود همیشه مشکی دیده می‌شد، حتی تو تمِ روشن).
+    Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
         if (onDismiss != null) {
             IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopStart)) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
@@ -93,18 +99,34 @@ fun LoginScreen(
                 modifier = Modifier.padding(top = 6.dp, bottom = 20.dp),
             )
 
+            // شماره‌ی کامل همیشه به فرم ۰۹xxxxxxxxx (فرمتی که سرور/پیامک انتظار داره) نگه داشته
+            // می‌شه؛ فقط نمایش عوض شده - کاربر پیشوندِ ثابتِ +۹۸ رو می‌بینه و فقط ۱۰ رقمِ بعدش
+            // (که با ۹ شروع می‌شه) رو تایپ می‌کنه، دقیقاً مثل اپ‌های ایرانیِ مشابه.
+            val fullPhone = "0$phone"
             if (step == LoginStep.PHONE) {
-                OutlinedTextField(
-                    value = phone,
-                    onValueChange = { phone = cleanNum(it) },
-                    placeholder = { Text("۰۹xxxxxxxxx") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .background(AppSurface2, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                            .padding(horizontal = 14.dp, vertical = 16.dp),
+                    ) {
+                        Text("+۹۸", color = AppText, fontSize = 15.sp)
+                    }
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = { raw ->
+                            val cleaned = cleanNum(raw).removePrefix("0")
+                            phone = cleaned.take(10)
+                        },
+                        placeholder = { Text("۹xxxxxxxxx") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.weight(1f).padding(start = 8.dp),
+                        singleLine = true,
+                    )
+                }
             } else {
                 Text(
-                    "کد تایید برای ${toFa(phone)} پیامک شد",
+                    "کد تایید برای ${toFa(fullPhone)} پیامک شد",
                     color = AppMuted,
                     fontSize = 12.sp,
                     modifier = Modifier.padding(bottom = 10.dp),
@@ -133,13 +155,13 @@ fun LoginScreen(
                 onClick = {
                     error = null
                     if (step == LoginStep.PHONE) {
-                        if (phone.length != 11 || !phone.startsWith("09")) {
-                            error = "شماره رو به‌صورت ۰۹xxxxxxxxx وارد کن"
+                        if (phone.length != 10 || !phone.startsWith("9")) {
+                            error = "شماره رو به‌صورت ۹xxxxxxxxx (بعد از +۹۸) وارد کن"
                             return@GradientButton
                         }
                         loading = true
                         viewModel.requestOtp(
-                            phone = phone,
+                            phone = fullPhone,
                             onSuccess = { loading = false; otp = ""; step = LoginStep.OTP },
                             onError = { code ->
                                 loading = false
@@ -153,7 +175,7 @@ fun LoginScreen(
                         }
                         loading = true
                         viewModel.verifyOtp(
-                            phone = phone,
+                            phone = fullPhone,
                             code = otp,
                             onSuccess = {
                                 loading = false
@@ -199,6 +221,7 @@ private fun SyncConflictPrompt(onKeepCloud: () -> Unit, onKeepDevice: () -> Unit
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(AppSurface)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,

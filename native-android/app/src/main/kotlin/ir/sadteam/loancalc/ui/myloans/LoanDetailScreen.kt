@@ -2,9 +2,14 @@ package ir.sadteam.loancalc.ui.myloans
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,6 +20,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,6 +35,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -42,6 +49,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -108,6 +116,16 @@ fun LoanDetailScreen(
     // وام می‌تونه ۱۲۰ قسط داشته باشه.
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // نتیجه با یه بنرِ داخلِ خودِ اپ نشون داده می‌شه، نه Toast سیستمی - چون Android 12+ (و بعضی
+    // رام‌ها مثل MIUI) خودکار آیکونِ اپ رو کنارِ متنِ Toast می‌چسبونن که کاربر خواست حذف بشه (دقیقاً
+    // همون دلیلی که هینتِ خروج تو MainActivity هم Toast نیست).
+    var calendarMessage by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(calendarMessage) {
+        if (calendarMessage != null) {
+            kotlinx.coroutines.delay(2600)
+            calendarMessage = null
+        }
+    }
     fun runCalendarExport() {
         val items = rows.mapNotNull { row ->
             if (row["paid"] == true) return@mapNotNull null
@@ -126,12 +144,11 @@ fun LoanDetailScreen(
                 "[وام] قسط ${toFa(m)} ${loan.name} (${fmt(amountByM[m] ?: loan.installment)} ریال)"
             }
             withContext(Dispatchers.Main) {
-                val message = if (inserted > 0) {
+                calendarMessage = if (inserted > 0) {
                     "${toFa(inserted)} قسط به تقویم گوشی اضافه شد"
                 } else {
                     "تقویم قابل‌نوشتنی رو گوشی پیدا نشد"
                 }
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -141,7 +158,7 @@ fun LoanDetailScreen(
         if (granted.values.all { it }) {
             runCalendarExport()
         } else {
-            Toast.makeText(context, "بدون مجوز تقویم نمی‌شه سررسیدها رو اضافه کرد", Toast.LENGTH_SHORT).show()
+            calendarMessage = "بدون مجوز تقویم نمی‌شه سررسیدها رو اضافه کرد"
         }
     }
 
@@ -153,6 +170,34 @@ fun LoanDetailScreen(
     var lateYear by remember { mutableStateOf(1404) }
     var lateMonth by remember { mutableStateOf(1) }
     var lateDay by remember { mutableStateOf(1) }
+    // عکس رسیدِ مخصوص یه قسطِ خاص (نه یه عکس کلی رو کل وام) - فقط رو قسط‌های پرداخت‌شده در دسترسه؛
+    // چون این دیالوگ همیشه از رو یه ردیفِ مشخصِ همینِ وام باز می‌شه، «کدوم وام و کدوم قسط» خودش
+    // مشخصه (خواسته‌ی کاربر).
+    var photoRowM by remember { mutableStateOf<Int?>(null) }
+
+    if (photoRowM != null) {
+        val m = photoRowM!!
+        val row = rows.firstOrNull { (it["m"] as? Number)?.toInt() == m }
+        val photoPath = row?.get("photoPath") as? String
+        AlertDialog(
+            onDismissRequest = { photoRowM = null },
+            title = { Text("رسید قسط") },
+            text = {
+                Column {
+                    Text("وام: ${loan.name}", color = AppMuted, fontSize = 12.sp)
+                    Text("قسط شماره ${toFa(m)}", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+                    PhotoAttachmentCard(
+                        photoPath = photoPath,
+                        onPick = { uri -> viewModel.setRowPhoto(loan, m, uri, photoPath) },
+                        onRemove = { viewModel.removeRowPhoto(loan, m, photoPath) },
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { photoRowM = null }) { Text("بستن") }
+            },
+        )
+    }
 
     if (editingRowM != null) {
         AlertDialog(
@@ -265,6 +310,7 @@ fun LoanDetailScreen(
         )
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -397,6 +443,16 @@ fun LoanDetailScreen(
                                 fontWeight = FontWeight.Bold,
                             )
                         }
+                        if (paid) {
+                            IconButton(onClick = { photoRowM = m }) {
+                                val hasPhoto = (row["photoPath"] as? String) != null
+                                Icon(
+                                    Icons.Filled.PhotoCamera,
+                                    contentDescription = "رسید قسط",
+                                    tint = if (hasPhoto) AppPrimary else AppMuted,
+                                )
+                            }
+                        }
                         IconButton(onClick = {
                             editingRowM = m
                             editAmountText = installment.toLong().toString()
@@ -437,6 +493,24 @@ fun LoanDetailScreen(
                     .padding(bottom = 24.dp),
             ) {
                 Text("حذف وام")
+            }
+        }
+    }
+
+        AnimatedVisibility(
+            visible = calendarMessage != null,
+            enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 2 },
+            exit = fadeOut(tween(180)) + slideOutVertically(tween(180)) { it / 2 },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(AppText.copy(alpha = 0.92f), RoundedCornerShape(24.dp))
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+            ) {
+                Text(calendarMessage ?: "", color = AppSurface, fontSize = 13.sp)
             }
         }
     }

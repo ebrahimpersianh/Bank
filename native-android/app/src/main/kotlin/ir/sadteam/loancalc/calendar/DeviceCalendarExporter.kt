@@ -16,12 +16,14 @@ import java.util.TimeZone
  */
 object DeviceCalendarExporter {
 
-    /** اولین تقویم قابل‌نوشتن (ترجیحاً primary) رو پیدا می‌کنه؛ null اگه هیچی نبود. */
-    private fun findWritableCalendarId(context: Context): Long? {
-        val projection = arrayOf(
-            CalendarContract.Calendars._ID,
-            CalendarContract.Calendars.IS_PRIMARY,
-        )
+    /**
+     * همه‌ی تقویم‌های قابل‌نوشتنِ رو گوشی (نه فقط اولی/primary) - چون کاربر ممکنه هم یه تقویمِ
+     * محلیِ گوشی داشته باشه هم یه حساب گوگل‌کلندر جدا، و اگه فقط تو یکی درج بشه، تو اپِ تقویمِ
+     * دیگه («هم تو تقویم خود گوشی هم تو تقویم گوگل» - خواسته‌ی صریح کاربر) دیده نمی‌شه.
+     */
+    private fun findWritableCalendarIds(context: Context): List<Long> {
+        val projection = arrayOf(CalendarContract.Calendars._ID)
+        val ids = mutableListOf<Long>()
         context.contentResolver.query(
             CalendarContract.Calendars.CONTENT_URI,
             projection,
@@ -29,29 +31,24 @@ object DeviceCalendarExporter {
             null,
             null,
         )?.use { cursor ->
-            var fallback: Long? = null
             val idIdx = cursor.getColumnIndexOrThrow(CalendarContract.Calendars._ID)
-            val primaryIdx = cursor.getColumnIndex(CalendarContract.Calendars.IS_PRIMARY)
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idIdx)
-                if (fallback == null) fallback = id
-                if (primaryIdx >= 0 && cursor.getInt(primaryIdx) == 1) return id
-            }
-            return fallback
+            while (cursor.moveToNext()) ids.add(cursor.getLong(idIdx))
         }
-        return null
+        return ids
     }
 
     /**
-     * برای هر (شماره قسط، سررسید شمسی) یه رویداد تمام‌روز می‌سازه؛ تعداد درج‌شده رو برمی‌گردونه
-     * (۰ یعنی تقویم قابل‌نوشتنی پیدا نشد). [titleFor] عنوان هر رویداد رو می‌سازه.
+     * برای هر (شماره قسط، سررسید شمسی) یه رویداد تمام‌روز، رو *همه‌ی* تقویم‌های قابل‌نوشتنِ گوشی
+     * (هم تقویم محلی، هم هر حساب گوگل‌کلندرِ سینک‌شده) می‌سازه؛ تعداد کل درج‌شده رو برمی‌گردونه
+     * (۰ یعنی هیچ تقویم قابل‌نوشتنی پیدا نشد). [titleFor] عنوان هر رویداد رو می‌سازه.
      */
     fun insertInstallmentEvents(
         context: Context,
         items: List<Pair<Int, PersianDate>>,
         titleFor: (Int) -> String,
     ): Int {
-        val calendarId = findWritableCalendarId(context) ?: return 0
+        val calendarIds = findWritableCalendarIds(context)
+        if (calendarIds.isEmpty()) return 0
         val utc = TimeZone.getTimeZone("UTC")
         var inserted = 0
         items.forEach { (m, due) ->
@@ -62,17 +59,19 @@ object DeviceCalendarExporter {
                 set(g.y, g.m - 1, g.d)
             }
             val startMillis = cal.timeInMillis
-            val values = ContentValues().apply {
-                put(CalendarContract.Events.CALENDAR_ID, calendarId)
-                put(CalendarContract.Events.TITLE, titleFor(m))
-                put(CalendarContract.Events.DESCRIPTION, "یادآوری قسط - ساخته‌شده توسط اپ «وام من»")
-                put(CalendarContract.Events.DTSTART, startMillis)
-                put(CalendarContract.Events.DTEND, startMillis + 24L * 60 * 60 * 1000)
-                put(CalendarContract.Events.ALL_DAY, 1)
-                put(CalendarContract.Events.EVENT_TIMEZONE, "UTC")
+            calendarIds.forEach { calendarId ->
+                val values = ContentValues().apply {
+                    put(CalendarContract.Events.CALENDAR_ID, calendarId)
+                    put(CalendarContract.Events.TITLE, titleFor(m))
+                    put(CalendarContract.Events.DESCRIPTION, "یادآوری قسط - ساخته‌شده توسط اپ «وام من»")
+                    put(CalendarContract.Events.DTSTART, startMillis)
+                    put(CalendarContract.Events.DTEND, startMillis + 24L * 60 * 60 * 1000)
+                    put(CalendarContract.Events.ALL_DAY, 1)
+                    put(CalendarContract.Events.EVENT_TIMEZONE, "UTC")
+                }
+                val uri = context.contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
+                if (uri != null) inserted++
             }
-            val uri = context.contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
-            if (uri != null) inserted++
         }
         return inserted
     }

@@ -37,14 +37,22 @@ class AuthViewModel @Inject constructor(
         state
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    /** پورت setSubscribed/refreshSubscriptionStatus تو www/index.html - فعلاً فقط از DataStore
-     * محلی خونده می‌شه (بعد از verify-otp یا [verifySubscriptionPurchase] نوشته شده)؛ تازه‌سازی
-     * زنده از GET /api/auth/me فاز بعده. */
+    /** پورت setSubscribed/refreshSubscriptionStatus تو www/index.html - از DataStore محلی خونده
+     * می‌شه (بعد از verify-otp یا [verifySubscriptionPurchase] نوشته شده)، ولی حالا [refreshStatus]
+     * هم از AppRoot هر بار اپ باز می‌شه صدا زده می‌شه تا وضعیت واقعاً زنده از سرور تازه بشه (مثلاً
+     * دقیقاً روزی که دوره‌ی آزمایشیِ ۷روزه تموم می‌شه، بدون نیاز به خروج/ورود دوباره). */
     val subscribed: StateFlow<Boolean> = authPrefs.subscribed
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val trialEndsAt: StateFlow<Long?> = authPrefs.trialEndsAt
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val phone: StateFlow<String?> = authPrefs.phone
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun refreshStatus() {
+        viewModelScope.launch { authRepository.refreshSubscriptionStatus() }
+    }
 
     /** پورت گیت مجوز → [BenefitsScreen] تو AppRoot: تا اولین مقدار واقعی از DataStore نیومده null
      * می‌مونه (همون الگوی [gateState]) که یه فلش اشتباهی صفحه‌ی امکانات دیده نشه. */

@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../db');
 const { sendOtpSms } = require('../sms');
 const { JWT_SECRET, requireAuth } = require('../middleware/auth');
-const { isSubscribed } = require('../subscriptionStatus');
+const { isSubscribed, trialEndsAtMs } = require('../subscriptionStatus');
 
 const router = express.Router();
 
@@ -68,21 +68,28 @@ router.post('/verify-otp', (req, res) => {
   let user = db.prepare(`SELECT * FROM users WHERE phone = ?`).get(phone);
   if (!user) {
     const info = db.prepare(`INSERT INTO users (phone) VALUES (?)`).run(phone);
-    user = { id: info.lastInsertRowid, phone };
-    db.prepare(`INSERT INTO loans (user_id, data) VALUES (?, '[]')`).run(user.id);
+    db.prepare(`INSERT INTO loans (user_id, data) VALUES (?, '[]')`).run(info.lastInsertRowid);
+    // بعد از insert دوباره از دیتابیس می‌خونیم (نه یه آبجکت دستیِ ناقص) تا created_at واقعی
+    // (لازم برای محاسبه‌ی دوره‌ی آزمایشی ۷ روزه‌ی isSubscribed) رو داشته باشیم.
+    user = db.prepare(`SELECT * FROM users WHERE id = ?`).get(info.lastInsertRowid);
   }
 
   const token = jwt.sign({ uid: user.id, phone: user.phone }, JWT_SECRET, { expiresIn: '90d' });
-  res.json({ token, phone: user.phone, subscribed: isSubscribed(user) });
+  res.json({ token, phone: user.phone, subscribed: isSubscribed(user), trialEndsAt: trialEndsAtMs(user) });
 });
 
 /* وضعیت فعلی حساب (از جمله اشتراک) — کلاینت بعد از باز شدن اپ این رو صدا می‌زنه تا اگه
    اشتراک از جای دیگه (مثلاً گوشی دیگه، یا بعداً از طریق خرید درون‌برنامه‌ای کافه‌بازار)
    فعال شده باشه، بدون نیاز به لاگین مجدد باخبر بشه. */
 router.get('/me', requireAuth, (req, res) => {
-  const user = db.prepare(`SELECT phone, subscribed, subscribed_until FROM users WHERE id = ?`).get(req.user.uid);
+  const user = db.prepare(`SELECT phone, subscribed, subscribed_until, created_at FROM users WHERE id = ?`).get(req.user.uid);
   if (!user) return res.status(404).json({ error: 'user_not_found' });
-  res.json({ phone: user.phone, subscribed: isSubscribed(user), subscribedUntil: user.subscribed_until || null });
+  res.json({
+    phone: user.phone,
+    subscribed: isSubscribed(user),
+    subscribedUntil: user.subscribed_until || null,
+    trialEndsAt: trialEndsAtMs(user),
+  });
 });
 
 module.exports = router;

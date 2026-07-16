@@ -157,6 +157,26 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
+    /** پیوست/حذف عکس رسیدِ مخصوصِ یه قسطِ خاص (نه یه عکسِ کلیِ رو کل وام) - خواسته‌ی کاربر که مشخص
+     * باشه رسید برای کدوم وام و کدوم قسطه؛ چون [loan] و [m] همیشه صریح داده می‌شن، این خودش تضمین
+     * می‌شه. عکس قبلیِ همون قسط (اگه بود) قبل از جایگزینی پاک می‌شه. */
+    fun setRowPhoto(loan: LoanEntity, m: Int, uri: Uri, previousPath: String?) {
+        viewModelScope.launch {
+            val newPath = attachmentStorage.copyToInternalStorage(uri) ?: return@launch
+            attachmentStorage.delete(previousPath)
+            loanRepository.setRowPhoto(loan, m, newPath)
+            syncIfLoggedIn()
+        }
+    }
+
+    fun removeRowPhoto(loan: LoanEntity, m: Int, previousPath: String?) {
+        viewModelScope.launch {
+            attachmentStorage.delete(previousPath)
+            loanRepository.removeRowPhoto(loan, m)
+            syncIfLoggedIn()
+        }
+    }
+
     /** پورت confirmEditInstallment تو www/index.html - ویرایش دستی مبلغ یه قسط. [onSaved] بعد از
      * ذخیره صدا زده می‌شه تا UI بتونه سوال «رو همه اعمال کنم؟» رو نشون بده. */
     fun setRowInstallment(loan: LoanEntity, m: Int, newAmount: Double, onSaved: () -> Unit = {}) {

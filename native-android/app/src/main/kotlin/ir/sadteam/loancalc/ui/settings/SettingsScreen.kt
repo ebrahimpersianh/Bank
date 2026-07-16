@@ -20,16 +20,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -65,13 +70,17 @@ import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.account.AccountsScreen
 import ir.sadteam.loancalc.ui.calendar.FinancialCalendarScreen
 import ir.sadteam.loancalc.ui.cheque.ChequeScreen
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.haptics.HapticsViewModel
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
 import ir.sadteam.loancalc.ui.stats.StatsScreen
+import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -80,9 +89,11 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.ThemeMode
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 
 private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
+private val themeModeOptions = listOf(ThemeMode.LIGHT to "روشن", ThemeMode.DARK to "تاریک", ThemeMode.GOLD to "طلایی")
 
 /** پورت ساده‌شده‌ی view-settings تو www/index.html - کارت حساب (accountCard) + خروج/ورود، اندازه
  * فونت (fontSizeChips)، یادآوری سررسید (کاملاً native-only، وب هنوز نداره - رجوع کن به
@@ -99,12 +110,14 @@ fun SettingsScreen(
     notificationsViewModel: NotificationsViewModel = hiltViewModel(),
     appLockViewModel: AppLockViewModel = hiltViewModel(),
     autoBackupViewModel: AutoBackupViewModel = hiltViewModel(),
+    hapticsViewModel: HapticsViewModel = hiltViewModel(),
 ) {
     var showLoginPrompt by remember { mutableStateOf(false) }
     var showFinancialCalendar by remember { mutableStateOf(false) }
     var showStats by remember { mutableStateOf(false) }
     var showCheque by remember { mutableStateOf(false) }
     var showAccounts by remember { mutableStateOf(false) }
+    var showSubscription by remember { mutableStateOf(false) }
 
     // پورت حس تعویض نرم بین حالت‌های مختلف پنل تنظیمات (اصلی/ورود/تقویم مالی/آمار/چک/حساب) - قبلاً
     // هرکدوم با یه return زودهنگام یهو جایگزین بقیه می‌شد؛ حالا با AnimatedContent (fade ظریف) عوض می‌شه.
@@ -114,6 +127,7 @@ fun SettingsScreen(
         showStats -> "stats"
         showCheque -> "cheque"
         showAccounts -> "accounts"
+        showSubscription -> "subscription"
         else -> "main"
     }
 
@@ -128,6 +142,10 @@ fun SettingsScreen(
             "stats" -> StatsScreen(onBack = { showStats = false })
             "cheque" -> ChequeScreen(onBack = { showCheque = false })
             "accounts" -> AccountsScreen(onBack = { showAccounts = false })
+            "subscription" -> SubscriptionScreen(
+                onBack = { showSubscription = false },
+                onSubscribed = { showSubscription = false },
+            )
             else -> SettingsMainContent(
                 onBack = onBack,
                 authViewModel = authViewModel,
@@ -135,11 +153,13 @@ fun SettingsScreen(
                 notificationsViewModel = notificationsViewModel,
                 appLockViewModel = appLockViewModel,
                 autoBackupViewModel = autoBackupViewModel,
+                hapticsViewModel = hapticsViewModel,
                 onShowLoginPrompt = { showLoginPrompt = true },
                 onShowFinancialCalendar = { showFinancialCalendar = true },
                 onShowStats = { showStats = true },
                 onShowCheque = { showCheque = true },
                 onShowAccounts = { showAccounts = true },
+                onShowSubscription = { showSubscription = true },
             )
         }
     }
@@ -153,11 +173,13 @@ private fun SettingsMainContent(
     notificationsViewModel: NotificationsViewModel,
     appLockViewModel: AppLockViewModel,
     autoBackupViewModel: AutoBackupViewModel,
+    hapticsViewModel: HapticsViewModel,
     onShowLoginPrompt: () -> Unit,
     onShowFinancialCalendar: () -> Unit,
     onShowStats: () -> Unit,
     onShowCheque: () -> Unit,
     onShowAccounts: () -> Unit,
+    onShowSubscription: () -> Unit,
 ) {
     val gateState by authViewModel.gateState.collectAsState()
     val phone by authViewModel.phone.collectAsState()
@@ -166,6 +188,7 @@ private fun SettingsMainContent(
     val notificationsEnabled by notificationsViewModel.enabled.collectAsState()
     val autoBackupEnabled by autoBackupViewModel.enabled.collectAsState()
     val lastAutoBackupAt by autoBackupViewModel.lastBackupAt.collectAsState()
+    val vibrationEnabled by hapticsViewModel.enabled.collectAsState()
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -174,12 +197,30 @@ private fun SettingsMainContent(
     fun matches(vararg titles: String) =
         searchQuery.isBlank() || titles.any { it.contains(searchQuery.trim()) }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    // به‌درخواست کاربر، منوی تنظیمات دیگه زیرِ نوار وضعیتِ گوشی گم نمی‌شه (statusBarsPadding) و تا
+    // ته قابل‌اسکرول‌شدنه (verticalScroll + navigationBarsPadding پایین) - قبلاً هیچ‌کدوم نبود.
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .verticalScroll(rememberScrollState())
+            .navigationBarsPadding(),
+    ) {
         // پورت پروفایل بالای پنل تنظیمات اپ رقیب (VAMMAN): آواتار + برچسب وضعیت («نسخه عادی»/«نسخه
-        // اشتراکی»)؛ اگه مشترک باشیم، کادر دور آواتار طلایی و ضخیم‌تر می‌شه.
+        // اشتراکی»)؛ اگه مشترک باشیم، کادر دور آواتار طلایی و ضخیم‌تر می‌شه + یه گرادینت طلاییِ
+        // ظریف پشتِ کل ردیف (خواسته‌ی کاربر «منو تنظیمات هم همون رنگ طلایی کمی قاطیش کن»).
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .then(
+                    if (subscribed) {
+                        Modifier.background(
+                            Brush.horizontalGradient(listOf(AppAccent.copy(alpha = 0.16f), Color.Transparent)),
+                        )
+                    } else {
+                        Modifier
+                    },
+                )
                 .padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -221,6 +262,21 @@ private fun SettingsMainContent(
                             fontSize = 12.sp,
                             modifier = Modifier.padding(top = 4.dp),
                         )
+                        // اگه دلیل «مشترک بودن» فعلاً فقط دوره‌ی آزمایشیِ ۷روزه‌ست (نه خرید واقعی)،
+                        // مهلتِ باقی‌مونده رو نشون بده - وقتی تموم شد، خودکار (سمت سرور) به حالت
+                        // عادی برمی‌گرده و همون پیامِ «باید اشتراک بگیری» جای این رو می‌گیره.
+                        val trialEndsAt by authViewModel.trialEndsAt.collectAsState()
+                        val trialDaysLeft = trialEndsAt?.let { end ->
+                            ((end - System.currentTimeMillis()) / (24 * 60 * 60 * 1000)).toInt() + 1
+                        }
+                        if (subscribed && trialDaysLeft != null && trialDaysLeft in 1..7) {
+                            Text(
+                                "دوره‌ی آزمایشی رایگان: ${toFa(trialDaysLeft.toString())} روز مانده",
+                                color = AppAccent,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
                         Button(
                             onClick = { authViewModel.logout() },
                             colors = ButtonDefaults.buttonColors(containerColor = AppDanger),
@@ -251,6 +307,29 @@ private fun SettingsMainContent(
                 }
             }
 
+            if (gateState == GateState.LOGGED_IN && !subscribed && matches("اشتراک", "خرید اشتراک")) {
+                AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Star, contentDescription = null, tint = AppAccent)
+                        Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                            Text("ارتقا به اشتراک", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                "وام/چک نامحدود، همگام‌سازی چند دستگاه، تم تاریک/طلایی، ویبره و موارد دیگر",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                    }
+                    GradientButton(
+                        onClick = onShowSubscription,
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                    ) {
+                        Text("مشاهده پلن‌ها")
+                    }
+                }
+            }
+
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -260,6 +339,27 @@ private fun SettingsMainContent(
                     .fillMaxWidth()
                     .padding(top = 10.dp),
             )
+
+            if (matches("تم", "رنگ برنامه")) {
+                val themeMode by themeViewModel.themeMode.collectAsState()
+                AppCard(label = "تم", modifier = Modifier.padding(top = 10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                        themeModeOptions.forEach { (mode, label) ->
+                            AppChip(
+                                label = if (mode != ThemeMode.LIGHT && !subscribed) "$label 🔒" else label,
+                                selected = themeMode == mode,
+                                onClick = {
+                                    if (mode == ThemeMode.LIGHT || subscribed) {
+                                        themeViewModel.setThemeMode(mode)
+                                    } else {
+                                        onShowSubscription()
+                                    }
+                                },
+                            )
+                        }
+                    }
+                }
+            }
 
             if (matches("اندازه فونت")) {
                 AppCard(label = "اندازه فونت", modifier = Modifier.padding(top = 10.dp)) {
@@ -306,6 +406,37 @@ private fun SettingsMainContent(
                             },
                             colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
                         )
+                    }
+                }
+            }
+
+            if (matches("ویبره")) {
+                AppCard(label = "ویبره", modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            if (subscribed) {
+                                "موقع لمس دکمه‌ها و اسلایدرها یه لرزش کوتاه حس کن"
+                            } else {
+                                "این ویژگی مخصوص کاربرهای مشترکه"
+                            },
+                            color = AppMuted,
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Switch(
+                            checked = subscribed && vibrationEnabled,
+                            enabled = subscribed,
+                            onCheckedChange = { hapticsViewModel.setEnabled(it) },
+                            colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
+                        )
+                    }
+                    if (!subscribed) {
+                        TextButton(onClick = onShowSubscription, modifier = Modifier.padding(top = 4.dp)) {
+                            Text("مشاهده پلن‌های اشتراک", color = AppAccent)
+                        }
                     }
                 }
             }

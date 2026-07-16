@@ -141,7 +141,7 @@ fun SplashIntroScreen(onDone: () -> Unit) {
         }
 
         Text(
-            "Powered By Sad Team",
+            "SADTeam",
             color = SplashSub,
             fontSize = 10.5.sp,
             modifier = Modifier

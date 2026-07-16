@@ -21,27 +21,23 @@ private val AppShapes = Shapes(
     medium = RoundedCornerShape(18.dp),
 )
 
-/** پورت toggleTheme تو www/index.html (کلاس body.light). [darkTheme] از ThemeViewModel/DataStore
- * میاد؛ پیش‌فرض روشن/سفیده (به‌درخواست کاربر «تم اصلی برنامه سفید باشه»). */
+/** حالت‌های تمِ اپ - روشن (پیش‌فرض، رایگان)، تاریک و طلایی (این دوتای آخر ویژگی اشتراکی‌ان، رجوع
+ * کن به AuthViewModel.subscribed تو MainActivity/SettingsScreen که تعویض بهشون رو گیت می‌کنه). */
+enum class ThemeMode { LIGHT, DARK, GOLD }
+
+/** پورت toggleTheme تو www/index.html (کلاس body.light) + تمِ طلاییِ جدید. پیش‌فرض روشن/سفیده
+ * (به‌درخواست کاربر «تم اصلی برنامه سفید باشه»). */
 @Composable
 fun LoanCalcTheme(
-    darkTheme: Boolean = false,
+    themeMode: ThemeMode = ThemeMode.LIGHT,
     content: @Composable () -> Unit,
 ) {
-    val palette = if (darkTheme) DarkAppColors else LightAppColors
-    val colorScheme = if (darkTheme) {
-        darkColorScheme(
-            background = palette.bg,
-            surface = palette.surface,
-            surfaceVariant = palette.surface2,
-            primary = palette.primary,
-            secondary = palette.accent,
-            onBackground = palette.text,
-            onSurface = palette.text,
-            onPrimary = Color(0xFF04211C),
-            error = palette.danger,
-        )
-    } else {
+    val palette = when (themeMode) {
+        ThemeMode.LIGHT -> LightAppColors
+        ThemeMode.DARK -> DarkAppColors
+        ThemeMode.GOLD -> GoldAppColors
+    }
+    val colorScheme = if (themeMode == ThemeMode.LIGHT) {
         lightColorScheme(
             background = palette.bg,
             surface = palette.surface,
@@ -51,6 +47,18 @@ fun LoanCalcTheme(
             onBackground = palette.text,
             onSurface = palette.text,
             onPrimary = Color.White,
+            error = palette.danger,
+        )
+    } else {
+        darkColorScheme(
+            background = palette.bg,
+            surface = palette.surface,
+            surfaceVariant = palette.surface2,
+            primary = palette.primary,
+            secondary = palette.accent,
+            onBackground = palette.text,
+            onSurface = palette.text,
+            onPrimary = if (themeMode == ThemeMode.GOLD) Color(0xFF2B2000) else Color(0xFF04211C),
             error = palette.danger,
         )
     }
