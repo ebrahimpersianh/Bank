@@ -80,6 +80,48 @@ fun Modifier.horizontalScrollbar(
 }
 
 /**
+ * نسخه‌ی [horizontalScrollbar] برای `LazyRow` (بر اساس ایندکس آیتم، نه پیکسل) - بعد از تبدیل
+ * ردیف‌های بانک/خدمات به LazyRow (برای پرفورمنس) لازم شد؛ همون شیار کم‌رنگ + دستگیره‌ی سبز.
+ */
+fun Modifier.lazyRowScrollbar(
+    state: LazyListState,
+    color: Color,
+    thickness: Dp = 3.dp,
+): Modifier = drawWithContent {
+    drawContent()
+    val viewport = size.width
+    val t = thickness.toPx()
+    val top = (size.height - t) / 2f
+    drawRoundRect(
+        brush = Brush.horizontalGradient(
+            0f to Color.Transparent,
+            0.12f to color.copy(alpha = 0.16f),
+            0.88f to color.copy(alpha = 0.16f),
+            1f to Color.Transparent,
+        ),
+        topLeft = Offset(0f, top),
+        size = Size(viewport, t),
+        cornerRadius = CornerRadius(t / 2, t / 2),
+    )
+    val layout = state.layoutInfo
+    val total = layout.totalItemsCount
+    val visible = layout.visibleItemsInfo
+    if (total > 0 && visible.isNotEmpty() && visible.size < total) {
+        val thumbW = ((visible.size.toFloat() / total) * viewport).coerceAtLeast(24f)
+        val scrollable = (total - visible.size).coerceAtLeast(1)
+        val progress = visible.first().index.toFloat() / scrollable
+        // تو RTL، آیتم اول سمت راسته - دستگیره از راست به چپ حرکت می‌کنه.
+        val thumbX = (viewport - thumbW) * (1f - progress)
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(thumbX, top),
+            size = Size(thumbW, t),
+            cornerRadius = CornerRadius(t / 2, t / 2),
+        )
+    }
+}
+
+/**
  * همون اسکرول‌بار نازک سبز، ولی برای `LazyColumn`/`LazyList` (که به‌جای پیکسل، بر اساس ایندکس آیتم
  * کار می‌کنه). تخمینیه (ارتفاع آیتم‌ها یکسان فرض می‌شه) ولی برای نشون‌دادن «کجای لیستیم» کافیه.
  */

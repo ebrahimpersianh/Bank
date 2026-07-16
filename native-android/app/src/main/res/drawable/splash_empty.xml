@@ -1,0 +1,6 @@
+<!-- آیکونِ کاملاً شفاف برای اسپلشِ سیستمی: ماسکِ دایره‌ایِ اندروید ۱۲ دوناتِ قبلی رو زشت می‌بُرید
+     (اسکرین‌شات کاربر) و کاربر خواست این صفحه‌ی اول کلاً حذف بشه - پس اسپلش سیستمی فقط یه پس‌زمینه‌ی
+     تیره‌ی خالیه و اینتروِ دوناتیِ اصلی (SplashIntroScreen تو Compose) بلافاصله بعدش میاد. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@android:color/transparent" />
+</shape>

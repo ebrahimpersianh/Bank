@@ -1,8 +1,12 @@
 package ir.sadteam.loancalc.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -126,28 +130,32 @@ fun ResultScreen(outcome: BankLoanOutcome) {
         }
 
         item {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                LoanRing(
-                    principal = result.principal,
-                    interest = result.totalInterest,
-                    progress = ringProgress.value,
-                    modifier = Modifier.size(180.dp),
-                )
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(fmt(animatedInstallment), fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    Text("قسط ماهانه (ریال)", fontSize = 12.5.sp, color = AppMuted)
+            StaggerIn(0) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                    LoanRing(
+                        principal = result.principal,
+                        interest = result.totalInterest,
+                        progress = ringProgress.value,
+                        modifier = Modifier.size(180.dp),
+                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(fmt(animatedInstallment), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text("قسط ماهانه (ریال)", fontSize = 12.5.sp, color = AppMuted)
+                    }
                 }
             }
         }
 
         item {
-            Text(
-                text = "${numberToWordsFa(result.installment / 10)} تومان",
-                color = AppAccent,
-                fontSize = 13.5.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
-            )
+            StaggerIn(1) {
+                Text(
+                    text = "${numberToWordsFa(result.installment / 10)} تومان",
+                    color = AppAccent,
+                    fontSize = 13.5.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                )
+            }
         }
 
         item {
@@ -192,26 +200,30 @@ fun ResultScreen(outcome: BankLoanOutcome) {
         }
 
         item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatBox("کل بازپرداخت (ریال)", fmt(animatedTotal), Modifier.weight(1.3f))
-                StatBox("سررسید هر ماه", ordinalFa(outcome.startDate.d), Modifier.weight(1f))
-                StatBox("مدت وام", "${toFa(outcome.n)} ماه", Modifier.weight(1f))
+            StaggerIn(2) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    StatBox("کل بازپرداخت (ریال)", fmt(animatedTotal), Modifier.weight(1.3f))
+                    StatBox("سررسید هر ماه", ordinalFa(outcome.startDate.d), Modifier.weight(1f))
+                    StatBox("مدت وام", "${toFa(outcome.n)} ماه", Modifier.weight(1f))
+                }
             }
         }
 
         item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                val pctText = if (interestPct < 10) {
-                    toFa(String.format("%.1f", interestPct))
-                } else {
-                    toFa(interestPct.roundToLong().toString())
+            StaggerIn(3) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val pctText = if (interestPct < 10) {
+                        toFa(String.format("%.1f", interestPct))
+                    } else {
+                        toFa(interestPct.roundToLong().toString())
+                    }
+                    StatBox("سود نسبت به اصل وام", "$pctText٪", Modifier.weight(1f))
+                    StatBox(
+                        "تاریخ پایان وام",
+                        "${toFa(endDate.d)} ${faMonthNamesResult[endDate.m - 1]} ${toFa(endDate.y)}",
+                        Modifier.weight(1f),
+                    )
                 }
-                StatBox("سود نسبت به اصل وام", "$pctText٪", Modifier.weight(1f))
-                StatBox(
-                    "تاریخ پایان وام",
-                    "${toFa(endDate.d)} ${faMonthNamesResult[endDate.m - 1]} ${toFa(endDate.y)}",
-                    Modifier.weight(1f),
-                )
             }
         }
 
@@ -231,6 +243,7 @@ fun ResultScreen(outcome: BankLoanOutcome) {
         }
 
         item {
+            StaggerIn(4) {
             AppCard(label = "جدول کامل اقساط") {
                 // حداکثر ۵ قسط تو صفحه جا می‌شه، بقیه با اسکرول - کنارش یه اسکرول‌بار سبز نشون می‌ده
                 // چقدر پایین رفتیم (خواسته‌ی کاربر).
@@ -266,7 +279,22 @@ fun ResultScreen(outcome: BankLoanOutcome) {
                     }
                 }
             }
+            }
         }
+    }
+}
+
+/** ورود پلکانی آیتم‌های صفحه‌ی نتیجه: هر بخش با یه تاخیر کوچیک بعد از قبلی fade+slide میاد بالا -
+ * حس «چیده شدن» نتیجه، به‌جای ظاهر شدن یهویی همه‌چیز. فقط یه‌بار موقع ساخته‌شدن صفحه اجرا می‌شه. */
+@Composable
+private fun StaggerIn(index: Int, content: @Composable () -> Unit) {
+    val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
+    AnimatedVisibility(
+        visibleState = visibleState,
+        enter = fadeIn(tween(340, delayMillis = index * 55)) +
+            slideInVertically(tween(340, delayMillis = index * 55)) { it / 8 },
+    ) {
+        content()
     }
 }
 
