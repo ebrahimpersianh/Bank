@@ -340,6 +340,12 @@ permissions، لیست activity/service/receiver، و رشته‌های فارس
 - ✅ **رفع «نصب رو نسخه‌ی قبلی»** - رجوع کن به بخش امضای دیباگ تو CLAUDE.md: امضای دیباگ حالا مستقیم
   تو `app/build.gradle.kts` به `ci-debug.keystore` کامیت‌شده پین شده (نه `~/.android/debug.keystore`)،
   و `versionCode` تو workflow از `github.run_number` تزریق می‌شه.
+- ✅ **رفع باگ بازیابی دسته‌چک** - `ChequeRepository.importBackupJson` قبلاً دسته‌چک‌ها رو با upsert تو
+  حلقه بازمی‌گردوند، پس دسته‌چک‌های قدیمیِ خارج از فایل بکاپ باقی می‌موندن؛ حالا `ChequeBookDao.replaceAll`
+  (clear + insert) داره، هم‌الگو با بازیابی چک/حساب.
+- ✅ **بهینه‌سازی محاسبه‌ی موجودی حساب** - `AccountsScreen`/`AccountDetailScreen` موجودی هر حساب رو
+  حالا فقط وقتی حساب‌ها/تراکنش‌ها عوض می‌شن (با `remember`) حساب می‌کنن، نه هر recomposition به‌ازای هر
+  کارت.
 
 ## محدودیت مهم محیط توسعه
 

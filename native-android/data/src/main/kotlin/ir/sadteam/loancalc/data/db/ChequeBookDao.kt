@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.data.db
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
@@ -19,4 +20,13 @@ interface ChequeBookDao {
 
     @Delete
     suspend fun delete(book: ChequeBookEntity)
+
+    @Query("DELETE FROM cheque_books")
+    suspend fun clear()
+
+    @Transaction
+    suspend fun replaceAll(books: List<ChequeBookEntity>) {
+        clear()
+        books.forEach { upsert(it) }
+    }
 }
