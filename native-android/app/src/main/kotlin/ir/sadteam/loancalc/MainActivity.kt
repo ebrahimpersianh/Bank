@@ -38,19 +38,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.FolderOpen
-import androidx.compose.material.icons.outlined.Savings
+import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -103,15 +106,19 @@ import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.SubscriptionManager
 import ir.sadteam.loancalc.ui.myloans.MyLoansScreen
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
+import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.LoanCalcTheme
+import ir.sadteam.loancalc.ui.theme.ThemeMode
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 import kotlinx.coroutines.delay
 
-// آیکون‌های نوار پایین: حالت عادی outline (مینیمال، مثل نسخه‌ی وب)، تب فعال پُر (filled).
+// آیکون‌های نوار پایین: حالت عادی outline (مینیمال، مثل نسخه‌ی وب)، تب فعال پُر (filled). آیکونِ
+// «سود سپرده» قبلاً Savings بود که رو گوشی شکل یه خوکِ قلک درمیاد (گزارش کاربر) - با TrendingUp
+// (رشد/سود، مینیمال‌تر) عوض شد.
 private enum class BottomTab(
     val route: String,
     val label: String,
@@ -120,7 +127,7 @@ private enum class BottomTab(
 ) {
     BANK_LOAN("bank_loan", "وام بانکی", Icons.Outlined.AccountBalance, Icons.Filled.AccountBalance),
     AFFORD("afford", "محاسبه‌گر", Icons.Outlined.Calculate, Icons.Filled.Calculate),
-    DEPOSIT("deposit", "سود سپرده", Icons.Outlined.Savings, Icons.Filled.Savings),
+    DEPOSIT("deposit", "سود سپرده", Icons.Outlined.TrendingUp, Icons.Filled.TrendingUp),
     MY_LOANS("my_loans", "وام‌های من", Icons.Outlined.FolderOpen, Icons.Filled.Folder),
 }
 
@@ -139,10 +146,10 @@ class MainActivity : FragmentActivity() {
         subscriptionManager.connect { }
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()
-            val darkTheme by themeViewModel.darkTheme.collectAsState()
+            val themeMode by themeViewModel.themeMode.collectAsState()
             val fontScale by themeViewModel.fontScale.collectAsState()
             val baseDensity = LocalDensity.current
-            LoanCalcTheme(darkTheme = darkTheme) {
+            LoanCalcTheme(themeMode = themeMode) {
                 CompositionLocalProvider(
                     LocalLayoutDirection provides LayoutDirection.Rtl,
                     LocalSubscriptionManager provides subscriptionManager,
@@ -248,10 +255,22 @@ private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel(), appLockViewM
  */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
+private fun LoanCalcApp(
+    themeViewModel: ThemeViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
+) {
     var showSettings by remember { mutableStateOf(false) }
 
-    val darkTheme by themeViewModel.darkTheme.collectAsState()
+    val themeMode by themeViewModel.themeMode.collectAsState()
+    val subscribed by authViewModel.subscribed.collectAsState()
+    var showThemeGateDialog by remember { mutableStateOf(false) }
+    val buzz = rememberBuzz()
+
+    // وضعیت اشتراک/دوره‌ی آزمایشی رو هر بار اپ باز می‌شه از سرور تازه می‌کنیم (نه فقط لحظه‌ی ورود) -
+    // وگرنه اگه اپ لاگین‌شده بمونه، دقیقاً روزی که دوره‌ی آزمایشی تموم می‌شه هیچ‌وقت خودش رو به‌روز
+    // نمی‌کرد. اجرای واقعیِ محدودیت (۱ وام رایگان) همیشه سمت سرور (routes/loans.js) دفاعی چک می‌شه؛
+    // این فقط UI رو هم‌زمان با واقعیت نگه می‌داره.
+    LaunchedEffect(Unit) { authViewModel.refreshStatus() }
 
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -292,11 +311,22 @@ private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
                 TopAppBar(
                     title = { Text("وام من") },
                     navigationIcon = {
-                        IconButton(onClick = { themeViewModel.toggleTheme() }) {
+                        IconButton(onClick = {
+                            if (subscribed) {
+                                buzz()
+                                themeViewModel.cycleThemeMode()
+                            } else {
+                                showThemeGateDialog = true
+                            }
+                        }) {
                             // پورت sunIcon/moonIcon تو www/index.html: آیکون وضعیت *فعلی* رو نشون
-                            // می‌ده (ماه = الان تاریکه)، نه نتیجه‌ی تپ‌کردن - قبلاً برعکس این بود.
+                            // می‌ده، نه نتیجه‌ی تپ‌کردن. حالت‌های تاریک/طلایی ویژگیِ اشتراکی‌ان.
                             Icon(
-                                if (darkTheme) Icons.Filled.DarkMode else Icons.Filled.LightMode,
+                                when (themeMode) {
+                                    ThemeMode.DARK -> Icons.Filled.DarkMode
+                                    ThemeMode.GOLD -> Icons.Filled.WorkspacePremium
+                                    ThemeMode.LIGHT -> Icons.Filled.LightMode
+                                },
                                 contentDescription = "تغییر تم",
                             )
                         }
@@ -429,6 +459,22 @@ private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
                 )
             }
         }
+
+        if (showThemeGateDialog) {
+            AlertDialog(
+                onDismissRequest = { showThemeGateDialog = false },
+                title = { Text("ویژگی اشتراکی") },
+                text = { Text("تغییر تم (حالت تاریک/طلایی) فقط برای کاربرهای مشترک فعاله. از تنظیمات می‌تونی اشتراک تهیه کنی.") },
+                confirmButton = {
+                    TextButton(onClick = { showThemeGateDialog = false; showSettings = true }) {
+                        Text("رفتن به تنظیمات")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showThemeGateDialog = false }) { Text("باشه") }
+                },
+            )
+        }
     }
 }
 
@@ -488,11 +534,12 @@ private fun RowScope.BottomNavItem(
         label = "navPillAlpha",
     )
     val pillColor = AppPrimary
+    val buzz = rememberBuzz()
     Column(
         modifier = Modifier
             .weight(1f)
             .background(pillColor.copy(alpha = 0.10f * pillAlpha), RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+            .clickable(onClick = { buzz(); onClick() })
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

@@ -15,18 +15,24 @@ private val Context.uiPrefsDataStore by preferencesDataStore(name = "ui_prefs")
 class UiPrefs(private val context: Context) {
     private object Keys {
         val DARK_THEME = booleanPreferencesKey("dark_theme")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
         val FONT_SCALE = floatPreferencesKey("font_scale")
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
         val LAST_AUTO_BACKUP_AT = stringPreferencesKey("last_auto_backup_at")
+        val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
     }
 
     // پیش‌فرض روشن/سفید (به‌درخواست کاربر «تم اصلی برنامه سفید باشه») - کاربری که قبلاً دستی
     // تم رو عوض کرده باشه، انتخابش تو DataStore می‌مونه؛ فقط نصب‌های تازه پیش‌فرض روشن می‌گیرن.
-    val darkTheme: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.DARK_THEME] ?: false }
+    // اگه کاربر قبل از اضافه‌شدنِ تمِ طلایی، فقط تاریک/روشنِ قدیمی (DARK_THEME بولین) رو ست کرده
+    // بود، همون مقدار مهاجرت می‌شه؛ کلید جدید THEME_MODE سه‌حالته (light/dark/gold) اولویت داره.
+    val themeMode: Flow<String> = context.uiPrefsDataStore.data.map { prefs ->
+        prefs[Keys.THEME_MODE] ?: if (prefs[Keys.DARK_THEME] == true) "dark" else "light"
+    }
 
-    suspend fun setDarkTheme(value: Boolean) {
-        context.uiPrefsDataStore.edit { it[Keys.DARK_THEME] = value }
+    suspend fun setThemeMode(value: String) {
+        context.uiPrefsDataStore.edit { it[Keys.THEME_MODE] = value }
     }
 
     /** پورت .app.fs-small/fs-medium/fs-large (zoom:0.9/1/1.15) - پیش‌فرض «متوسط» (۱). */
@@ -55,5 +61,13 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setLastAutoBackupAt(value: String) {
         context.uiPrefsDataStore.edit { it[Keys.LAST_AUTO_BACKUP_AT] = value }
+    }
+
+    /** ویبره‌ی واقعی (نه فقط هپتیک ظریف Compose) رو تپ‌های اصلی - ویژگی اشتراکی؛ پیش‌فرض روشنه
+     * (چون خودِ روشن/خاموش‌کردنش تو تنظیمات پشت گیت اشتراک قرار داره، رجوع کن به HapticsViewModel). */
+    val vibrationEnabled: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.VIBRATION_ENABLED] ?: true }
+
+    suspend fun setVibrationEnabled(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.VIBRATION_ENABLED] = value }
     }
 }

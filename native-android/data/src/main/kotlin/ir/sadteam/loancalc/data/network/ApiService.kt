@@ -49,9 +49,12 @@ data class RequestOtpRequest(val phone: String)
 
 data class VerifyOtpRequest(val phone: String, val code: String)
 
-data class VerifyOtpResponse(val token: String, val phone: String, val subscribed: Boolean)
+data class VerifyOtpResponse(val token: String, val phone: String, val subscribed: Boolean, val trialEndsAt: Long? = null)
 
-data class MeResponse(val phone: String, val subscribed: Boolean, val subscribedUntil: String?)
+/** [trialEndsAt] پایانِ دوره‌ی آزمایشیِ ۷روزه‌ی رایگان (میلی‌ثانیه‌ی epoch، سمت سرور کلید‌خورده به
+ * created_at شماره‌موبایل - رجوع کن به server/src/subscriptionStatus.js). [subscribed] از قبل
+ * ترکیبِ اشتراکِ واقعی + دوره‌ی آزمایشیِ فعاله - برای گیت «۱ وام رایگان» فقط همون کافیه. */
+data class MeResponse(val phone: String, val subscribed: Boolean, val subscribedUntil: String?, val trialEndsAt: Long? = null)
 
 data class LoansResponse(val loans: List<Map<String, Any?>>, val updatedAt: String?)
 

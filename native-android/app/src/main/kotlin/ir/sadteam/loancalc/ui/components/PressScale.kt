@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
+import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.theme.AppAccent
 
 /**
@@ -41,8 +42,12 @@ fun Modifier.pressScaleClickable(
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val haptic = LocalHapticFeedback.current
+    val buzz = rememberBuzz()
     LaunchedEffect(pressed) {
-        if (pressed) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        if (pressed) {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            buzz()
+        }
     }
     val animatedScale by animateFloatAsState(
         targetValue = if (pressed) scale else 1f,

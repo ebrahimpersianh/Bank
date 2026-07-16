@@ -43,12 +43,28 @@ class AuthRepository(
     suspend fun verifyOtp(phone: String, code: String): AuthResult {
         return try {
             val result = apiService.verifyOtp(VerifyOtpRequest(phone, code))
-            authPrefs.saveSession(result.token, result.phone, result.subscribed)
+            authPrefs.saveSession(result.token, result.phone, result.subscribed, result.trialEndsAt)
             AuthResult.Success
         } catch (e: HttpException) {
             AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))
         } catch (e: Exception) {
             AuthResult.Error(null)
+        }
+    }
+
+    /** پورت «refreshSubscriptionStatus» که تو کامنتِ قبلیِ AuthViewModel «فاز بعد» علامت خورده بود -
+     * چون قبلاً هیچ‌جا GET /api/auth/me واقعاً صدا زده نمی‌شد، وضعیتِ اشتراک/دوره‌ی آزمایشیِ محلی
+     * می‌تونست کهنه بمونه (مثلاً دقیقاً روز هشتم که آزمایشی تموم می‌شه، بدون خروج/ورودِ دوباره تا
+     * مدت‌ها اپ فکر می‌کرد هنوز مشترکه). حالا از AppRoot هر بار اپ باز می‌شه صدا زده می‌شه. */
+    suspend fun refreshSubscriptionStatus() {
+        val token = authPrefs.authToken.first() ?: return
+        try {
+            val result = apiService.me("Bearer $token")
+            authPrefs.setSubscribed(result.subscribed)
+            authPrefs.setTrialEndsAt(result.trialEndsAt)
+        } catch (e: Exception) {
+            // بی‌صدا نادیده گرفته می‌شه - این فقط یه تازه‌سازیِ پس‌زمینه‌ست؛ اگه شکست بخوره (مثلاً
+            // بی‌اینترنتی)، مقدارِ محلیِ قبلی همچنان معتبر می‌مونه تا دفعه‌ی بعد.
         }
     }
 
