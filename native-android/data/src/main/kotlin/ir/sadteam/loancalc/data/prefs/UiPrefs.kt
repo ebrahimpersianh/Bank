@@ -25,8 +25,8 @@ class UiPrefs(private val context: Context) {
 
     // پیش‌فرض روشن/سفید (به‌درخواست کاربر «تم اصلی برنامه سفید باشه») - کاربری که قبلاً دستی
     // تم رو عوض کرده باشه، انتخابش تو DataStore می‌مونه؛ فقط نصب‌های تازه پیش‌فرض روشن می‌گیرن.
-    // اگه کاربر قبل از اضافه‌شدنِ تمِ طلایی، فقط تاریک/روشنِ قدیمی (DARK_THEME بولین) رو ست کرده
-    // بود، همون مقدار مهاجرت می‌شه؛ کلید جدید THEME_MODE سه‌حالته (light/dark/gold) اولویت داره.
+    // اگه کاربر قبل از اضافه‌شدنِ کلیدِ جدید فقط تاریک/روشنِ قدیمی (DARK_THEME بولین) رو ست کرده
+    // بود، همون مقدار مهاجرت می‌شه؛ کلید جدید THEME_MODE (light/dark) اولویت داره.
     val themeMode: Flow<String> = context.uiPrefsDataStore.data.map { prefs ->
         prefs[Keys.THEME_MODE] ?: if (prefs[Keys.DARK_THEME] == true) "dark" else "light"
     }

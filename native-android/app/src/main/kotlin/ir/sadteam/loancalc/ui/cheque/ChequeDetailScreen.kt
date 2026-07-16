@@ -2,11 +2,12 @@ package ir.sadteam.loancalc.ui.cheque
 
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,7 +31,9 @@ import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
+import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -54,7 +57,9 @@ fun ChequeDetailScreen(
 ) {
     val context = LocalContext.current
     val typeLabel = if (cheque.type == "RECEIVED") "دریافتی" else "پرداختی"
+    val banner = rememberInAppBanner()
 
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 40.dp),
@@ -132,7 +137,7 @@ fun ChequeDetailScreen(
                     runCatching {
                         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SAYAD_INQUIRY_URL_PLACEHOLDER)))
                     }.onFailure {
-                        Toast.makeText(context, "این قابلیت هنوز فعال نشده", Toast.LENGTH_SHORT).show()
+                        banner.show("این قابلیت هنوز فعال نشده")
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -150,6 +155,9 @@ fun ChequeDetailScreen(
                 Text("حذف چک")
             }
         }
+    }
+
+        InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 

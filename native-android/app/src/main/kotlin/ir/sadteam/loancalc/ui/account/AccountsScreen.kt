@@ -1,6 +1,5 @@
 package ir.sadteam.loancalc.ui.account
 
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -42,7 +41,9 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -75,6 +76,7 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewMod
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pendingExportJson by remember { mutableStateOf<String?>(null) }
+    val banner = rememberInAppBanner()
 
     val createDocumentLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
@@ -84,7 +86,7 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewMod
             scope.launch(Dispatchers.IO) {
                 runCatching { context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) } }
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "پشتیبان‌گیری حساب‌ها انجام شد", Toast.LENGTH_SHORT).show()
+                    banner.show("پشتیبان‌گیری حساب‌ها انجام شد")
                 }
             }
         }
@@ -100,11 +102,11 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewMod
             }.getOrNull()
             withContext(Dispatchers.Main) {
                 if (json == null) {
-                    Toast.makeText(context, "فایل قابل خوندن نبود", Toast.LENGTH_SHORT).show()
+                    banner.show("فایل قابل خوندن نبود")
                 } else {
                     viewModel.importBackup(json) { ok ->
                         val message = if (ok) "بازیابی حساب‌ها انجام شد" else "فایل معتبر نیست"
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        banner.show(message)
                     }
                 }
             }
@@ -117,6 +119,7 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewMod
         else -> "list"
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     AnimatedContent(
         targetState = screenKey,
         transitionSpec = { fadeIn(tween(200)).togetherWith(fadeOut(tween(150))) },
@@ -206,6 +209,9 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewMod
                 }
             }
         }
+    }
+
+        InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 

@@ -35,16 +35,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.RequestQuote
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.WorkspacePremium
-import androidx.compose.material.icons.outlined.AccountBalance
-import androidx.compose.material.icons.outlined.Calculate
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.RequestQuote
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.AlertDialog
@@ -125,8 +124,8 @@ private enum class BottomTab(
     val icon: ImageVector,
     val selectedIcon: ImageVector,
 ) {
-    BANK_LOAN("bank_loan", "وام بانکی", Icons.Outlined.AccountBalance, Icons.Filled.AccountBalance),
-    AFFORD("afford", "محاسبه‌گر", Icons.Outlined.Calculate, Icons.Filled.Calculate),
+    BANK_LOAN("bank_loan", "وام بانکی", Icons.Outlined.Payments, Icons.Filled.Payments),
+    AFFORD("afford", "محاسبه‌گر", Icons.Outlined.RequestQuote, Icons.Filled.RequestQuote),
     DEPOSIT("deposit", "سود سپرده", Icons.Outlined.TrendingUp, Icons.Filled.TrendingUp),
     MY_LOANS("my_loans", "وام‌های من", Icons.Outlined.FolderOpen, Icons.Filled.Folder),
 }
@@ -320,13 +319,9 @@ private fun LoanCalcApp(
                             }
                         }) {
                             // پورت sunIcon/moonIcon تو www/index.html: آیکون وضعیت *فعلی* رو نشون
-                            // می‌ده، نه نتیجه‌ی تپ‌کردن. حالت‌های تاریک/طلایی ویژگیِ اشتراکی‌ان.
+                            // می‌ده، نه نتیجه‌ی تپ‌کردن. تمِ تاریک ویژگیِ اشتراکیه.
                             Icon(
-                                when (themeMode) {
-                                    ThemeMode.DARK -> Icons.Filled.DarkMode
-                                    ThemeMode.GOLD -> Icons.Filled.WorkspacePremium
-                                    ThemeMode.LIGHT -> Icons.Filled.LightMode
-                                },
+                                if (themeMode == ThemeMode.DARK) Icons.Filled.DarkMode else Icons.Filled.LightMode,
                                 contentDescription = "تغییر تم",
                             )
                         }
@@ -464,7 +459,7 @@ private fun LoanCalcApp(
             AlertDialog(
                 onDismissRequest = { showThemeGateDialog = false },
                 title = { Text("ویژگی اشتراکی") },
-                text = { Text("تغییر تم (حالت تاریک/طلایی) فقط برای کاربرهای مشترک فعاله. از تنظیمات می‌تونی اشتراک تهیه کنی.") },
+                text = { Text("تغییر تم (حالت تاریک) فقط برای کاربرهای مشترک فعاله. از تنظیمات می‌تونی اشتراک تهیه کنی.") },
                 confirmButton = {
                     TextButton(onClick = { showThemeGateDialog = false; showSettings = true }) {
                         Text("رفتن به تنظیمات")

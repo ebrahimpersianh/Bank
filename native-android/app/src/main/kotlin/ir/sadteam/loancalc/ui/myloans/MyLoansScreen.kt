@@ -1,6 +1,5 @@
 package ir.sadteam.loancalc.ui.myloans
 
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -69,6 +68,8 @@ import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.InAppBannerHost
+import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
@@ -135,6 +136,7 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pendingExportJson by remember { mutableStateOf<String?>(null) }
+    val banner = rememberInAppBanner()
 
     val createDocumentLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
@@ -146,7 +148,7 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                     context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
                 }
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "پشتیبان‌گیری انجام شد", Toast.LENGTH_SHORT).show()
+                    banner.show("پشتیبان‌گیری انجام شد")
                 }
             }
         }
@@ -162,11 +164,11 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
             }.getOrNull()
             withContext(Dispatchers.Main) {
                 if (json == null) {
-                    Toast.makeText(context, "فایل قابل خوندن نبود", Toast.LENGTH_SHORT).show()
+                    banner.show("فایل قابل خوندن نبود")
                 } else {
                     viewModel.importBackup(json) { ok ->
                         val message = if (ok) "بازیابی شد" else "فایل معتبر نیست"
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        banner.show(message)
                     }
                 }
             }
@@ -329,6 +331,8 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                 Icon(Icons.Filled.Add, contentDescription = "افزودن دستی وام")
             }
         }
+
+        InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 

@@ -25,13 +25,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.ChequeType
 import ir.sadteam.loancalc.core.cleanNum
+import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
 import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppMuted
 
 private val faMonthNamesCheque = listOf(
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
@@ -83,13 +88,24 @@ fun AddEditChequeScreen(
         }
         item {
             AppCard(label = "مبلغ (ریال)") {
+                // هم‌الگو با بقیه‌ی فیلدهای مبلغِ اپ (وام/درآمد): جداکننده‌ی هزارگان تو خودِ فیلد +
+                // معادلِ حروفی تومانی زیرش - قبلاً این یکی فرمتِ ساده‌ی بدونِ کاما داشت.
                 OutlinedTextField(
-                    value = amountText,
+                    value = if (amountText.isEmpty()) "" else fmt((amountText.toLongOrNull() ?: 0L).toDouble()),
                     onValueChange = { amountText = cleanNum(it) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
+                val amountVal = amountText.toLongOrNull() ?: 0L
+                if (amountVal > 0) {
+                    AutoShrinkText(
+                        text = "${numberToWordsFa((amountVal / 10).toDouble())} تومان",
+                        color = AppAccent,
+                        maxFontSize = 11.5.sp,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
         }
         if (chequeBooks.isNotEmpty()) {

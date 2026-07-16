@@ -21,22 +21,22 @@ private val AppShapes = Shapes(
     medium = RoundedCornerShape(18.dp),
 )
 
-/** حالت‌های تمِ اپ - روشن (پیش‌فرض، رایگان)، تاریک و طلایی (این دوتای آخر ویژگی اشتراکی‌ان، رجوع
- * کن به AuthViewModel.subscribed تو MainActivity/SettingsScreen که تعویض بهشون رو گیت می‌کنه). */
-enum class ThemeMode { LIGHT, DARK, GOLD }
+/** حالت‌های تمِ اپ - روشن (پیش‌فرض، رایگان) و تاریک (ویژگی اشتراکی، رجوع کن به
+ * AuthViewModel.subscribed تو MainActivity/SettingsScreen که تعویض بهش رو گیت می‌کنه). یه تمِ سومِ
+ * جدا («طلایی») یه دور امتحان شد ولی کاربر توضیح داد منظورش این نبود - می‌خواست رنگِ طلایی
+ * (که همون [AppAccent] موجوده) فقط به‌عنوانِ لهجه‌ی ظریف تو کل اپ (هر دو تمِ روشن/تاریک) بیشتر
+ * دیده بشه، نه یه تمِ کاملاً جدا. برای همین تمِ طلاییِ جدا حذف شد؛ [GoldAppColors] (تو Color.kt)
+ * دیگه به‌عنوانِ تمِ فعال استفاده نمی‌شه. */
+enum class ThemeMode { LIGHT, DARK }
 
-/** پورت toggleTheme تو www/index.html (کلاس body.light) + تمِ طلاییِ جدید. پیش‌فرض روشن/سفیده
- * (به‌درخواست کاربر «تم اصلی برنامه سفید باشه»). */
+/** پورت toggleTheme تو www/index.html (کلاس body.light). پیش‌فرض روشن/سفیده (به‌درخواست کاربر
+ * «تم اصلی برنامه سفید باشه»). */
 @Composable
 fun LoanCalcTheme(
     themeMode: ThemeMode = ThemeMode.LIGHT,
     content: @Composable () -> Unit,
 ) {
-    val palette = when (themeMode) {
-        ThemeMode.LIGHT -> LightAppColors
-        ThemeMode.DARK -> DarkAppColors
-        ThemeMode.GOLD -> GoldAppColors
-    }
+    val palette = if (themeMode == ThemeMode.DARK) DarkAppColors else LightAppColors
     val colorScheme = if (themeMode == ThemeMode.LIGHT) {
         lightColorScheme(
             background = palette.bg,
@@ -58,7 +58,7 @@ fun LoanCalcTheme(
             secondary = palette.accent,
             onBackground = palette.text,
             onSurface = palette.text,
-            onPrimary = if (themeMode == ThemeMode.GOLD) Color(0xFF2B2000) else Color(0xFF04211C),
+            onPrimary = Color(0xFF04211C),
             error = palette.danger,
         )
     }

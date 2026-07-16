@@ -1,33 +1,35 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 
 private val inlineMonthNames = listOf(
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
     "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
 )
 
+private val InlineWheelItemHeight = 34.dp
+
 /**
- * انتخاب تاریخ شمسی به‌صورت اینلاین (سه دراپ‌داونِ روز/ماه/سال) - تغییر تاریخ بدون رفتن به یه صفحه‌ی
- * جدا (خواسته‌ی کاربر). طول واقعی ماه (کبیسه‌ی اسفند) از [JalaliCalendar] گرفته می‌شه و اگه با عوض
- * شدن ماه/سال روزِ فعلی از تعداد روزهای ماه بیشتر بشه، به آخرین روز کلمپ می‌شه.
+ * انتخاب تاریخ شمسی به‌صورت اینلاین، چرخونه‌ای (spinner) - قبلاً سه دراپ‌داون بود؛ کاربر چندبار
+ * توضیح داد منظورش این بود که همینِ حالتِ چرخونه‌ی تمام‌صفحه‌ی [WheelDatePickerScreen] رو، بدون
+ * رفتن به صفحه‌ی جدا، مستقیم همینجا تو کارتِ «تاریخ دریافت وام» داشته باشیم - فقط با اسکرول‌کردنِ
+ * روی هرکدوم از سه ستون تنظیم می‌شه (همون [WheelColumn] با ارتفاع/تعداد ردیفِ کوچیک‌تر که تو یه
+ * کارتِ کوچیک جا بشه)، بدون هیچ ناوبری‌ای.
  */
 @Composable
 fun InlineJalaliDateRow(
@@ -38,58 +40,52 @@ fun InlineJalaliDateRow(
     modifier: Modifier = Modifier,
     yearRange: IntRange = 1350..1410,
 ) {
+    val years = remember(yearRange) { yearRange.toList() }
     val maxDay = JalaliCalendar.daysInMonth(year, month)
-    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        DateDropdown(
-            options = (1..maxDay).map { it to toFa(it) },
-            selected = day.coerceAtMost(maxDay),
-            onSelect = { onDateChange(year, month, it) },
-            modifier = Modifier.weight(1f),
-        )
-        DateDropdown(
-            options = inlineMonthNames.mapIndexed { idx, name -> (idx + 1) to name },
-            selected = month,
-            onSelect = { m ->
-                val newMax = JalaliCalendar.daysInMonth(year, m)
-                onDateChange(year, m, day.coerceAtMost(newMax))
-            },
-            modifier = Modifier.weight(1.3f),
-        )
-        DateDropdown(
-            options = yearRange.map { it to toFa(it) },
-            selected = year,
-            onSelect = { y ->
-                val newMax = JalaliCalendar.daysInMonth(y, month)
-                onDateChange(y, month, day.coerceAtMost(newMax))
-            },
-            modifier = Modifier.weight(1f),
-        )
-    }
-}
+    val days = remember(maxDay) { (1..maxDay).toList() }
+    val safeDay = day.coerceAtMost(maxDay)
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DateDropdown(
-    options: List<Pair<Int, String>>,
-    selected: Int,
-    onSelect: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedLabel = options.firstOrNull { it.first == selected }?.second ?: ""
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier) {
-        OutlinedTextField(
-            value = selectedLabel,
-            onValueChange = {},
-            readOnly = true,
-            singleLine = true,
-            modifier = Modifier.menuAnchor(),
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+    Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        // نوار هایلایتِ ردیفِ وسط - عینِ چرخونه‌ی تمام‌صفحه، فقط جمع‌وجورتر.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(InlineWheelItemHeight)
+                .background(AppPrimary.copy(alpha = 0.10f), RoundedCornerShape(10.dp))
+                .border(1.dp, AppPrimary.copy(alpha = 0.45f), RoundedCornerShape(10.dp)),
         )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { (value, label) ->
-                DropdownMenuItem(text = { Text(label) }, onClick = { onSelect(value); expanded = false })
-            }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            WheelColumn(
+                items = days.map { toFa(it) },
+                selectedIndex = days.indexOf(safeDay).coerceAtLeast(0),
+                onCentered = { onDateChange(year, month, days[it]) },
+                modifier = Modifier.weight(1f),
+                itemHeight = InlineWheelItemHeight,
+                visibleRows = 3,
+            )
+            WheelColumn(
+                items = inlineMonthNames,
+                selectedIndex = month - 1,
+                onCentered = { idx ->
+                    val newMax = JalaliCalendar.daysInMonth(year, idx + 1)
+                    onDateChange(year, idx + 1, safeDay.coerceAtMost(newMax))
+                },
+                modifier = Modifier.weight(1.3f),
+                itemHeight = InlineWheelItemHeight,
+                visibleRows = 3,
+            )
+            WheelColumn(
+                items = years.map { toFa(it) },
+                selectedIndex = years.indexOf(year).coerceAtLeast(0),
+                onCentered = { idx ->
+                    val y = years[idx]
+                    val newMax = JalaliCalendar.daysInMonth(y, month)
+                    onDateChange(y, month, safeDay.coerceAtMost(newMax))
+                },
+                modifier = Modifier.weight(1f),
+                itemHeight = InlineWheelItemHeight,
+                visibleRows = 3,
+            )
         }
     }
 }

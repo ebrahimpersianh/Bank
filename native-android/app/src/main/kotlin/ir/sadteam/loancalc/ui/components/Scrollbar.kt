@@ -4,6 +4,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -94,11 +95,15 @@ fun Modifier.horizontalScrollbar(
 /**
  * نسخه‌ی [horizontalScrollbar] برای `LazyRow` (بر اساس ایندکس آیتم، نه پیکسل) - بعد از تبدیل
  * ردیف‌های بانک/خدمات به LazyRow (برای پرفورمنس) لازم شد؛ همون شیار کم‌رنگ + دستگیره‌ی سبز.
+ * [shimmerPhase] اختیاریه (۰..۱، از `rememberInfiniteTransition` تو خودِ صفحه‌ی صدازننده حساب
+ * می‌شه) - اگه داده بشه، یه هایلایتِ نوریِ محو مدام رو خودِ دستگیره سر می‌خوره (خواسته‌ی کاربر «اون
+ * اسکرول زیر بانک‌ها رو یکم شیک‌تر بکن»)؛ null یعنی بدون شیمر (رفتار قبلی).
  */
 fun Modifier.lazyRowScrollbar(
     state: LazyListState,
     color: Color,
     thickness: Dp = 3.dp,
+    shimmerPhase: Float? = null,
 ): Modifier = drawWithContent {
     drawContent()
     val viewport = size.width
@@ -130,6 +135,22 @@ fun Modifier.lazyRowScrollbar(
             size = Size(thumbW, t),
             cornerRadius = CornerRadius(t / 2, t / 2),
         )
+        if (shimmerPhase != null) {
+            val streakW = (thumbW * 0.4f).coerceAtLeast(1f)
+            val streakX = thumbX + (thumbW - streakW) * shimmerPhase
+            clipRect(left = thumbX, top = top, right = thumbX + thumbW, bottom = top + t) {
+                drawRoundRect(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.65f), Color.Transparent),
+                        startX = streakX,
+                        endX = streakX + streakW,
+                    ),
+                    topLeft = Offset(thumbX, top),
+                    size = Size(thumbW, t),
+                    cornerRadius = CornerRadius(t / 2, t / 2),
+                )
+            }
+        }
     }
 }
 

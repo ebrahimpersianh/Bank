@@ -134,20 +134,27 @@ fun WheelDatePickerScreen(
     }
 }
 
-private val WheelItemHeight = 46.dp
+internal val WheelItemHeight = 46.dp
 
+/**
+ * ستونِ چرخونه‌ی اسکرولی - [itemHeight]/[visibleRows] پارامتری شدن (پیش‌فرض همون مقادیرِ چرخونه‌ی
+ * تمام‌صفحه) تا همین کامپوننت رو نسخه‌ی جمع‌وجورِ اینلاینِ [InlineWheelDateRow] هم بشه استفاده کرد،
+ * بدون تکرارِ منطقِ اسنپ/هپتیک/محو‌شدنِ لبه‌ها.
+ */
 @Composable
-private fun WheelColumn(
+internal fun WheelColumn(
     items: List<String>,
     selectedIndex: Int,
     onCentered: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    itemHeight: Dp = WheelItemHeight,
+    visibleRows: Int = 5,
 ) {
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex.coerceAtLeast(0))
     val fling = rememberSnapFlingBehavior(lazyListState = listState)
     val haptic = LocalHapticFeedback.current
     val view = LocalView.current
-    val itemPx = with(LocalDensity.current) { WheelItemHeight.toPx() }
+    val itemPx = with(LocalDensity.current) { itemHeight.toPx() }
 
     val centered by remember {
         derivedStateOf {
@@ -167,8 +174,8 @@ private fun WheelColumn(
     LazyColumn(
         state = listState,
         flingBehavior = fling,
-        modifier = modifier.height(WheelItemHeight * 5),
-        contentPadding = PaddingValues(vertical = WheelItemHeight * 2),
+        modifier = modifier.height(itemHeight * visibleRows),
+        contentPadding = PaddingValues(vertical = itemHeight * (visibleRows / 2)),
     ) {
         itemsIndexed(items) { i, label ->
             val distance = abs(i - centered)
@@ -179,13 +186,13 @@ private fun WheelColumn(
                 else -> 0.15f
             }
             Box(
-                modifier = Modifier.fillMaxWidth().height(WheelItemHeight),
+                modifier = Modifier.fillMaxWidth().height(itemHeight),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = label,
                     color = AppText,
-                    fontSize = if (distance == 0) 19.sp else 15.sp,
+                    fontSize = if (distance == 0) 17.sp else 13.sp,
                     fontWeight = if (distance == 0) FontWeight.Bold else FontWeight.Normal,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.alpha(itemAlpha),
