@@ -53,9 +53,9 @@ import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.BankTile
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.PresetCard
 import ir.sadteam.loancalc.ui.components.SlimSlider
-import ir.sadteam.loancalc.ui.components.WheelDatePickerScreen
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.horizontalScrollbar
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
@@ -65,10 +65,6 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppText
 
-private val faMonthNames = listOf(
-    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
-)
 private val monthChipValues = listOf(12, 18, 24, 36, 60, 84, 120, 180, 240)
 private val intervalChipOptions = listOf(7 to "هفتگی", 14 to "دوهفته‌ای", 30 to "ماهانه", 60 to "دوماهه", 90 to "سه‌ماهه")
 
@@ -109,7 +105,6 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
 
     var presetNote by remember { mutableStateOf<String?>(null) }
     var showCalendarPicker by remember { mutableStateOf(false) }
-    var showWheelPicker by remember { mutableStateOf(false) }
 
     fun applyAmount(rial: Long) {
         amountText = fmtGroupedEn(rial)
@@ -126,14 +121,6 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                 showCalendarPicker = false
             },
             onBack = { showCalendarPicker = false },
-        )
-        return
-    }
-    if (showWheelPicker) {
-        WheelDatePickerScreen(
-            initial = PersianDate(startYear, startMonth, startDay),
-            onConfirm = { d -> startYear = d.y; startMonth = d.m; startDay = d.d; showWheelPicker = false },
-            onBack = { showWheelPicker = false },
         )
         return
     }
@@ -266,21 +253,19 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
 
         item {
             AppCard(label = "تاریخ دریافت وام") {
-                // تپ روی خودِ تاریخ → چرخونه‌ی اسکرولی؛ آیکون تقویم → تقویم گریدی (هر دو نگه داشته شدن).
+                // تاریخ اینلاین با سه دراپ‌داونِ روز/ماه/سال - همینجا عوض می‌شه بدون رفتن به یه صفحه‌ی
+                // جدا (خواسته‌ی کاربر). آیکون تقویم کنارش، برای کسی که تقویم گریدیِ کامل رو بخواد.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = "${toFa(startDay)} ${faMonthNames[startMonth - 1]} ${toFa(startYear)}",
-                        color = AppText,
-                        fontSize = 15.sp,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { showWheelPicker = true }
-                            .padding(vertical = 12.dp, horizontal = 6.dp),
+                    InlineJalaliDateRow(
+                        year = startYear,
+                        month = startMonth,
+                        day = startDay,
+                        onDateChange = { y, m, d -> startYear = y; startMonth = m; startDay = d },
+                        modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = { showCalendarPicker = true }) {
                         Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
