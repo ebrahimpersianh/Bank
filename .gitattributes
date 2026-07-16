@@ -1,3 +1,22 @@
 # اپ وب فعلی (www/) عمداً موازی با بازنویسی Kotlin نگه داشته می‌شه، ولی نمی‌خوایم آمار زبان
 # گیت‌هاب (GitHub Linguist) رو با HTML/JS این پوشه رقیق کنه — پروژه از نظر زبان اصلی، Kotlin حساب بشه.
 www/** linguist-vendored
+
+# فایل‌های غیر-Kotlin که کارکردشون لازمه (منیفست اندروید، عکس‌ها، تنظیمات گریدل، CI، مستندات...)
+# پاک نمی‌شن (حذفشون پروژه رو می‌شکنه)، فقط از آمار زبان گیت‌هاب کنار گذاشته می‌شن تا نوار زبان
+# پروژه عملاً Kotlin نشون بده. *.kts (اسکریپت‌های Gradle) عمداً این‌جا نیست چون خودش زبانش Kotlin حساب می‌شه.
+*.md linguist-vendored
+*.xml linguist-vendored
+*.png linguist-vendored
+*.jpg linguist-vendored
+*.jpeg linguist-vendored
+*.properties linguist-vendored
+*.yml linguist-vendored
+*.yaml linguist-vendored
+*.jar linguist-vendored
+*.bat linguist-vendored
+*.keystore linguist-vendored
+*.example linguist-vendored
+.gitignore linguist-vendored
+.gitattributes linguist-vendored
+gradlew linguist-vendored
