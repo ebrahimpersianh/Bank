@@ -76,7 +76,7 @@ fun SlimSlider(
         interactionSource = interactionSource,
         modifier = modifier.fillMaxWidth(),
         thumb = {
-            val edgeColor = remember(AppPrimary) { lerp(AppPrimary, Color.White, 0.32f) }
+            val edgeColor = lerp(AppPrimary, Color.White, 0.32f)
             Box(
                 modifier = Modifier
                     .size(thumbSize)
