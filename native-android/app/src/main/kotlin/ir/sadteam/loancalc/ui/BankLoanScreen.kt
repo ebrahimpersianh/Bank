@@ -103,7 +103,6 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
     var graceOn by remember { mutableStateOf(false) }
     var graceMonths by remember { mutableStateOf(6f) }
 
-    var presetNote by remember { mutableStateOf<String?>(null) }
     var showCalendarPicker by remember { mutableStateOf(false) }
 
     fun applyAmount(rial: Long) {
@@ -159,18 +158,9 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                                 customMonthsText = ""
                                 graceOn = p.graceMonths > 0
                                 if (p.graceMonths > 0) graceMonths = p.graceMonths.toFloat()
-                                presetNote = p.note
                             },
                         )
                     }
-                }
-                if (presetNote != null) {
-                    Text(
-                        text = "📋 طبق قانون بانک مرکزی\n$presetNote",
-                        fontSize = 13.sp,
-                        color = AppText,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
                 }
             }
         }
@@ -236,7 +226,6 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                                 applyAmount(mid)
                                 amountSliderRange = b.minAmount.toFloat()..b.maxAmount.toFloat()
                                 selectedPresetKey = null
-                                presetNote = null
                             },
                         )
                     }
