@@ -326,13 +326,21 @@ fun LoanDetailScreen(
                             Text(dueLabel, color = AppMuted, fontSize = 12.sp)
                         }
                         Text("${fmt(installment)} ریال", color = AppText, fontSize = 13.sp)
-                        Text(
-                            statusLabel,
-                            color = statusColor,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp),
-                        )
+                        // وضعیت پرداخت تو یه باکس رنگیِ گوشه‌گرد (بج) - تا از بقیه‌ی متن جدا و
+                        // واضح دیده بشه (خواسته‌ی کاربر). رنگ پس‌زمینه نسخه‌ی کم‌رنگِ رنگ وضعیته.
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 6.dp)
+                                .background(statusColor.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                        ) {
+                            Text(
+                                statusLabel,
+                                color = statusColor,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
                         IconButton(onClick = {
                             editingRowM = m
                             editAmountText = installment.toLong().toString()
