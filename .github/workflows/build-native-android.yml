@@ -43,7 +43,18 @@ jobs:
       - name: ساخت APK دیباگ
         run: ./gradlew :app:assembleDebug --console=plain
 
-      - name: بارگذاری APK به‌عنوان خروجی قابل دانلود
+      # بیلد release همون کد رو بدون debuggable می‌سازه که خیلی روان‌تره (رفع لگ اسکرول/تعویض تب) -
+      # با همون کلید امضا می‌شه، پس رو نصبِ قبلی هم می‌شینه. برای نصب رو گوشی همین رو بردار.
+      - name: ساخت APK ریلیز (روان - برای نصب این رو بردار)
+        run: ./gradlew :app:assembleRelease --console=plain
+
+      - name: بارگذاری APK ریلیز (نسخه‌ی روان - این رو نصب کن)
+        uses: actions/upload-artifact@v4
+        with:
+          name: loan-calculator-native-release-apk
+          path: native-android/app/build/outputs/apk/release/app-release.apk
+
+      - name: بارگذاری APK دیباگ (فقط برای توسعه/دیباگ)
         uses: actions/upload-artifact@v4
         with:
           name: loan-calculator-native-debug-apk
