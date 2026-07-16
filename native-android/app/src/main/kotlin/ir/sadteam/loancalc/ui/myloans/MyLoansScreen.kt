@@ -61,6 +61,7 @@ import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
@@ -275,10 +276,11 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                         AppCard(modifier = Modifier.pressScaleClickable { openedLoanId = loan.id }) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Column {
+                                // لوگوی بانک سمت راست کارت (لبه‌ی leading در RTL) - از رو اسم بانک.
+                                BankBadge(bankName = loan.bank)
+                                Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
                                     Text(loan.name, color = AppText, fontSize = 15.sp)
                                     Text(loan.bank, color = AppMuted, fontSize = 12.sp)
                                     Text(
