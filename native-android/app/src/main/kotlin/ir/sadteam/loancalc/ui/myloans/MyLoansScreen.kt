@@ -273,7 +273,8 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                     }
                 } else {
                     items(loans, key = { it.id }) { loan ->
-                        AppCard(modifier = Modifier.pressScaleClickable { openedLoanId = loan.id }) {
+                        // animateItem: اضافه/حذف/جابه‌جایی وام‌ها با انیمیشن نرم (نه پرش یهویی).
+                        AppCard(modifier = Modifier.animateItem().pressScaleClickable { openedLoanId = loan.id }) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,

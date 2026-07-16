@@ -241,7 +241,11 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                     }
                 } else {
                     items(visibleCheques, key = { it.id }) { cheque ->
-                        ChequeCard(cheque = cheque, onClick = { openedChequeId = cheque.id })
+                        ChequeCard(
+                            cheque = cheque,
+                            onClick = { openedChequeId = cheque.id },
+                            modifier = Modifier.animateItem(),
+                        )
                     }
                 }
             }
@@ -250,8 +254,8 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
 }
 
 @Composable
-private fun ChequeCard(cheque: ChequeEntity, onClick: () -> Unit) {
-    AppCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
+private fun ChequeCard(cheque: ChequeEntity, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    AppCard(modifier = modifier.pressScaleClickable(onClick = onClick)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
