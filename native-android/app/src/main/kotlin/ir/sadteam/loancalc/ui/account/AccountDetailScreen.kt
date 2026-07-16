@@ -234,15 +234,19 @@ fun AccountDetailScreen(
             }
         } else {
             items(transactions, key = { it.id }) { tx ->
-                TransactionRow(tx = tx, onDelete = { viewModel.deleteTransaction(tx) })
+                TransactionRow(
+                    tx = tx,
+                    onDelete = { viewModel.deleteTransaction(tx) },
+                    modifier = Modifier.animateItem(),
+                )
             }
         }
     }
 }
 
 @Composable
-private fun TransactionRow(tx: AccountTransactionEntity, onDelete: () -> Unit) {
-    AppCard {
+private fun TransactionRow(tx: AccountTransactionEntity, onDelete: () -> Unit, modifier: Modifier = Modifier) {
+    AppCard(modifier = modifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

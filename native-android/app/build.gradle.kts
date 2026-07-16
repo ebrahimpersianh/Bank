@@ -37,7 +37,15 @@ android {
 
     buildTypes {
         release {
+            // ریشه‌ی «لگ» گزارش‌شده‌ی کاربر، نصبِ بیلد debug بود: تو بیلد debug فلگ debuggable
+            // بهینه‌سازی ART/AOT رو خاموش می‌کنه و runtime کامپوز هم چک‌های اضافه داره، پس اسکرول و
+            // تعویض تب همیشه سنگینه. بیلد release (debuggable=false) همون کد رو روان اجرا می‌کنه.
+            // minify عمداً خاموشه: R8 با reflection های Gson (Map<String,Any?> تو LoanRepository)
+            // ریسک کرش runtime داره و اینجا امکان تست runtime نیست - سود اصلی از خودِ release بودنه.
             isMinifyEnabled = false
+            // با همون کلید ثابتِ کامیت‌شده امضا می‌شه (عین debug) تا رو نصبِ قبلی - چه debug چه
+            // release - بدون ارور امضا نصب بشه.
+            signingConfig = signingConfigs.getByName("debug")
         }
         debug {
             signingConfig = signingConfigs.getByName("debug")

@@ -345,12 +345,29 @@ private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
-                // پورت حس اسلاید بین ۴ تب اصلی وب (switchTab/showView) - قبلاً اینجا هیچ ترنزیشنی
-                // نبود (تعویض تب یهو/سخت بود)؛ حالا یه fade+scale ظریف داره، نه یه کات ناگهانی.
-                enterTransition = { fadeIn(tween(220)) + scaleIn(initialScale = 0.97f, animationSpec = tween(220)) },
-                exitTransition = { fadeOut(tween(150)) },
-                popEnterTransition = { fadeIn(tween(220)) + scaleIn(initialScale = 0.97f, animationSpec = tween(220)) },
-                popExitTransition = { fadeOut(tween(150)) },
+                // پورت کاملِ اسلاید جهت‌دار بین ۴ تب اصلی وب (switchTab: slide-l/slide-r): جهت از
+                // رو فاصله‌ی ایندکس تب قبلی/جدید تو ترتیب تب‌ها حساب می‌شه و صفحه‌ی جدید با یه
+                // اسلاید فنری از همون سمتِ حرکت میاد تو - حس «پریمیوم»تر از fade+scale قبلی.
+                enterTransition = {
+                    val dir = slideDirection(initialState.destination.route, targetState.destination.route)
+                    slideInHorizontally(
+                        animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
+                    ) { dir * it / 3 } + fadeIn(tween(220))
+                },
+                exitTransition = {
+                    val dir = slideDirection(initialState.destination.route, targetState.destination.route)
+                    slideOutHorizontally(animationSpec = tween(180)) { -dir * it / 4 } + fadeOut(tween(150))
+                },
+                popEnterTransition = {
+                    val dir = slideDirection(initialState.destination.route, targetState.destination.route)
+                    slideInHorizontally(
+                        animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
+                    ) { dir * it / 3 } + fadeIn(tween(220))
+                },
+                popExitTransition = {
+                    val dir = slideDirection(initialState.destination.route, targetState.destination.route)
+                    slideOutHorizontally(animationSpec = tween(180)) { -dir * it / 4 } + fadeOut(tween(150))
+                },
             ) {
                 composable(BottomTab.BANK_LOAN.route) {
                     key(bankLoanResetKey) { BankLoanTab() }
@@ -415,16 +432,30 @@ private fun LoanCalcApp(themeViewModel: ThemeViewModel = hiltViewModel()) {
     }
 }
 
+/** جهت اسلاید تعویض تب (پورت محاسبه‌ی جهت switchTab تو www/index.html): تو RTL رفتن به تبِ با
+ * ایندکس بالاتر یعنی حرکت به سمت چپ، پس صفحه‌ی جدید از چپ (آفست منفی) میاد تو؛ برگشتن برعکس. */
+private fun slideDirection(fromRoute: String?, toRoute: String?): Int {
+    val from = BottomTab.entries.indexOfFirst { it.route == fromRoute }
+    val to = BottomTab.entries.indexOfFirst { it.route == toRoute }
+    return if (to >= from) -1 else 1
+}
+
 @Composable
 private fun BankLoanTab() {
     var loanOutcome by remember { mutableStateOf<BankLoanOutcome?>(null) }
-    // پورت حس اسلاید فرم→نتیجه (به‌جای یه کاتِ ناگهانی) - همون fade+scale ظریفِ ترنزیشن تب‌های
-    // پایین، اینجا هم برای تعویض داخلی فرم/نتیجه‌ی همین تب اعمال شده.
+    // اسلاید جهت‌دار فرم→نتیجه (هم‌خانواده‌ی اسلاید تب‌های پایین): نتیجه از چپ میاد تو و فرم به
+    // راست می‌ره؛ برگشت به فرم برعکس - به‌جای fade+scale قبلی.
     AnimatedContent(
         targetState = loanOutcome,
         transitionSpec = {
-            (fadeIn(tween(220)) + scaleIn(initialScale = 0.97f, animationSpec = tween(220)))
-                .togetherWith(fadeOut(tween(150)))
+            val dir = if (targetState != null) -1 else 1
+            (
+                slideInHorizontally(
+                    animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
+                ) { dir * it / 3 } + fadeIn(tween(220))
+                ).togetherWith(
+                    slideOutHorizontally(animationSpec = tween(180)) { -dir * it / 4 } + fadeOut(tween(150)),
+                )
         },
         label = "bankLoanTab",
     ) { outcome ->
@@ -450,10 +481,17 @@ private fun RowScope.BottomNavItem(
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
         label = "navIconScale",
     )
+    // «قرصِ» پس‌زمینه‌ی تب فعال حالا نرم fade می‌شه (قبلاً یهو ظاهر/محو می‌شد).
+    val pillAlpha by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        animationSpec = tween(250),
+        label = "navPillAlpha",
+    )
+    val pillColor = AppPrimary
     Column(
         modifier = Modifier
             .weight(1f)
-            .then(if (selected) Modifier.background(AppPrimary.copy(alpha = 0.1f)) else Modifier)
+            .background(pillColor.copy(alpha = 0.10f * pillAlpha), RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

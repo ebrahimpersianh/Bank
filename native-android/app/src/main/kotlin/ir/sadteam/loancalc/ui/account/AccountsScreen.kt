@@ -200,6 +200,7 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewMod
                             account = account,
                             balance = balances[account.id] ?: account.initialBalance,
                             onClick = { openedAccountId = account.id },
+                            modifier = Modifier.animateItem(),
                         )
                     }
                 }
@@ -209,8 +210,8 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewMod
 }
 
 @Composable
-private fun AccountCard(account: AccountEntity, balance: Double, onClick: () -> Unit) {
-    AppCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
+private fun AccountCard(account: AccountEntity, balance: Double, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    AppCard(modifier = modifier.pressScaleClickable(onClick = onClick)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

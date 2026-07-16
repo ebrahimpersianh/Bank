@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,9 +83,21 @@ fun ResultScreen(outcome: BankLoanOutcome) {
     val interestPct = if (result.principal > 0) result.totalInterest / result.principal * 100 else 0.0
     val feeAmount = if (outcome.method == LoanMethod.QARZ) result.totalInterest else 0.0
 
-    var animatedInstallment by remember { mutableFloatStateOf(0f) }
+    // شمارش صعودی اعداد (پورت animateNumber وب) - رو Double تا برای مبالغ میلیاردی خطای گردکردن
+    // Float (که تا چند صد ریال می‌رسید) پیش نیاد.
+    var animatedInstallment by remember { mutableStateOf(0.0) }
     LaunchedEffect(result.installment) {
-        animateValue(0f, result.installment.toFloat()) { animatedInstallment = it }
+        animateValue(0.0, result.installment) { animatedInstallment = it }
+    }
+    var animatedTotal by remember { mutableStateOf(0.0) }
+    LaunchedEffect(result.totalPaid) {
+        animateValue(0.0, result.totalPaid) { animatedTotal = it }
+    }
+    // حلقه‌ی دونات با یه sweep از صفر «کشیده» می‌شه (حس پریمیوم‌تر از ظاهر شدن یهویی).
+    val ringProgress = remember { Animatable(0f) }
+    LaunchedEffect(result) {
+        ringProgress.snapTo(0f)
+        ringProgress.animateTo(1f, animationSpec = tween(900, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
     }
 
     // دکمه‌ی «ذخیره وام»: همون محدودیتِ «۱ وام رایگان» تب «وام‌های من» رو رعایت می‌کنه
@@ -115,10 +130,11 @@ fun ResultScreen(outcome: BankLoanOutcome) {
                 LoanRing(
                     principal = result.principal,
                     interest = result.totalInterest,
+                    progress = ringProgress.value,
                     modifier = Modifier.size(180.dp),
                 )
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(fmt(animatedInstallment.toDouble()), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(fmt(animatedInstallment), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     Text("قسط ماهانه (ریال)", fontSize = 12.5.sp, color = AppMuted)
                 }
             }
@@ -177,7 +193,7 @@ fun ResultScreen(outcome: BankLoanOutcome) {
 
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                StatBox("کل بازپرداخت (ریال)", fmt(result.totalPaid), Modifier.weight(1.3f))
+                StatBox("کل بازپرداخت (ریال)", fmt(animatedTotal), Modifier.weight(1.3f))
                 StatBox("سررسید هر ماه", ordinalFa(outcome.startDate.d), Modifier.weight(1f))
                 StatBox("مدت وام", "${toFa(outcome.n)} ماه", Modifier.weight(1f))
             }
@@ -265,7 +281,7 @@ private fun StatBox(label: String, value: String, modifier: Modifier = Modifier)
 }
 
 @Composable
-private fun LoanRing(principal: Double, interest: Double, modifier: Modifier = Modifier) {
+private fun LoanRing(principal: Double, interest: Double, progress: Float, modifier: Modifier = Modifier) {
     val total = principal + interest
     val principalFrac = if (total > 0) (principal / total).toFloat() else 0f
     // drawArc اجرا می‌شه تو DrawScope که @Composable نیست - رنگ‌های تم (که حالا @Composable
@@ -287,10 +303,11 @@ private fun LoanRing(principal: Double, interest: Double, modifier: Modifier = M
             size = arcSize,
             style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
         )
+        // هر دو کمان با [progress] از صفر «کشیده» می‌شن (انیمیشن sweep ورود به صفحه).
         drawArc(
             color = primaryColor,
             startAngle = -90f,
-            sweepAngle = 360f * principalFrac,
+            sweepAngle = 360f * principalFrac * progress,
             useCenter = false,
             topLeft = topLeft,
             size = arcSize,
@@ -298,8 +315,8 @@ private fun LoanRing(principal: Double, interest: Double, modifier: Modifier = M
         )
         drawArc(
             color = accentColor,
-            startAngle = -90f + 360f * principalFrac,
-            sweepAngle = 360f * (1f - principalFrac),
+            startAngle = -90f + 360f * principalFrac * progress,
+            sweepAngle = 360f * (1f - principalFrac) * progress,
             useCenter = false,
             topLeft = topLeft,
             size = arcSize,
@@ -308,14 +325,14 @@ private fun LoanRing(principal: Double, interest: Double, modifier: Modifier = M
     }
 }
 
-private suspend fun animateValue(from: Float, to: Float, durationMs: Long = 500, onUpdate: (Float) -> Unit) {
+private suspend fun animateValue(from: Double, to: Double, durationMs: Long = 500, onUpdate: (Double) -> Unit) {
     val start = System.currentTimeMillis()
     while (true) {
         val elapsed = System.currentTimeMillis() - start
-        val p = (elapsed.toFloat() / durationMs).coerceIn(0f, 1f)
-        val eased = 1f - (1f - p) * (1f - p) * (1f - p)
+        val p = (elapsed.toDouble() / durationMs).coerceIn(0.0, 1.0)
+        val eased = 1.0 - (1.0 - p) * (1.0 - p) * (1.0 - p)
         onUpdate(from + (to - from) * eased)
-        if (p >= 1f) break
+        if (p >= 1.0) break
         delay(16)
     }
 }
