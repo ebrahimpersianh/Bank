@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -17,6 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -75,7 +75,10 @@ import androidx.compose.ui.graphics.Color
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.InAppBannerHost
+import ir.sadteam.loancalc.ui.components.InAppBannerState
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.haptics.HapticsViewModel
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
@@ -93,7 +96,7 @@ import ir.sadteam.loancalc.ui.theme.ThemeMode
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 
 private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
-private val themeModeOptions = listOf(ThemeMode.LIGHT to "روشن", ThemeMode.DARK to "تاریک", ThemeMode.GOLD to "طلایی")
+private val themeModeOptions = listOf(ThemeMode.LIGHT to "روشن", ThemeMode.DARK to "تاریک")
 
 /** پورت ساده‌شده‌ی view-settings تو www/index.html - کارت حساب (accountCard) + خروج/ورود، اندازه
  * فونت (fontSizeChips)، یادآوری سررسید (کاملاً native-only، وب هنوز نداره - رجوع کن به
@@ -196,9 +199,11 @@ private fun SettingsMainContent(
     var searchQuery by remember { mutableStateOf("") }
     fun matches(vararg titles: String) =
         searchQuery.isBlank() || titles.any { it.contains(searchQuery.trim()) }
+    val banner = rememberInAppBanner()
 
     // به‌درخواست کاربر، منوی تنظیمات دیگه زیرِ نوار وضعیتِ گوشی گم نمی‌شه (statusBarsPadding) و تا
     // ته قابل‌اسکرول‌شدنه (verticalScroll + navigationBarsPadding پایین) - قبلاً هیچ‌کدوم نبود.
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -487,7 +492,7 @@ private fun SettingsMainContent(
                             onClick = {
                                 autoBackupViewModel.restoreFromAutoBackup { ok ->
                                     val message = if (ok) "بازیابی از پشتیبان خودکار انجام شد" else "پشتیبانی برای بازیابی پیدا نشد"
-                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    banner.show(message)
                                 }
                             },
                             modifier = Modifier
@@ -596,7 +601,7 @@ private fun SettingsMainContent(
 
             if (matches("پشتیبانی")) {
                 AccordionCard(title = "پشتیبانی", modifier = Modifier.padding(top = 10.dp)) {
-                    SupportContacts()
+                    SupportContacts(banner)
                 }
             }
 
@@ -613,6 +618,9 @@ private fun SettingsMainContent(
             }
         }
     }
+
+        InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
+    }
 }
 
 // TODO: این سه تا مقدار موقتی/جای‌گیرنده‌ان - کاربر باید با ایمیل و آیدی واقعی تلگرام/بله خودش
@@ -623,19 +631,19 @@ private const val SUPPORT_BALE_URL = "https://ble.ir/example_support"
 
 /** پورت مودال پشتیبانی اپ رقیب (VAMMAN) - ایمیل/تلگرام/بله، هرکدوم با تپ یه اپ خارجی باز می‌کنه. */
 @Composable
-private fun SupportContacts() {
+private fun SupportContacts(banner: InAppBannerState) {
     val context = LocalContext.current
     Column {
         SupportRow(label = "ایمیل", value = SUPPORT_EMAIL) {
-            openOrToast(context) {
+            openOrShowBanner(context, banner) {
                 Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$SUPPORT_EMAIL"))
             }
         }
         SupportRow(label = "تلگرام", value = SUPPORT_TELEGRAM_URL, modifier = Modifier.padding(top = 8.dp)) {
-            openOrToast(context) { Intent(Intent.ACTION_VIEW, Uri.parse(SUPPORT_TELEGRAM_URL)) }
+            openOrShowBanner(context, banner) { Intent(Intent.ACTION_VIEW, Uri.parse(SUPPORT_TELEGRAM_URL)) }
         }
         SupportRow(label = "پیام‌رسان بله", value = SUPPORT_BALE_URL, modifier = Modifier.padding(top = 8.dp)) {
-            openOrToast(context) { Intent(Intent.ACTION_VIEW, Uri.parse(SUPPORT_BALE_URL)) }
+            openOrShowBanner(context, banner) { Intent(Intent.ACTION_VIEW, Uri.parse(SUPPORT_BALE_URL)) }
         }
     }
 }
@@ -792,11 +800,11 @@ private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     )
 }
 
-private fun openOrToast(context: android.content.Context, buildIntent: () -> Intent) {
+private fun openOrShowBanner(context: android.content.Context, banner: InAppBannerState, buildIntent: () -> Intent) {
     try {
         context.startActivity(buildIntent())
     } catch (e: Exception) {
-        Toast.makeText(context, "اپ مناسبی برای باز کردن این لینک پیدا نشد", Toast.LENGTH_SHORT).show()
+        banner.show("اپ مناسبی برای باز کردن این لینک پیدا نشد")
     }
 }
 

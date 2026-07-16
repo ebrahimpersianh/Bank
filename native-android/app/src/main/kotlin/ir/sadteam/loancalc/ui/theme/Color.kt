@@ -44,22 +44,6 @@ val LightAppColors = AppColorPalette(
     line = Color(0x14141A2A), // rgba(20,26,42,0.08)
 )
 
-/** تم طلایی - ویژگی اشتراکی جدید (خواسته‌ی کاربر «تم طلایی هم می‌خوام برنامه داشته باشه»). زمینه‌ی
- * تیره‌ی گرم (قهوه‌ای/برنز) با رنگ اصلیِ طلایی به‌جای سبز - پایه‌ش عین [DarkAppColors] (چون Material
- * dark color scheme لازمه) ولی هیوی طلایی. */
-val GoldAppColors = AppColorPalette(
-    bg = Color(0xFF1A1508),
-    surface = Color(0xFF241C0D),
-    surface2 = Color(0xFF2E2411),
-    primary = Color(0xFFD4AF37),
-    primaryDim = Color(0xFFA9872C),
-    accent = Color(0xFFF0C674),
-    text = Color(0xFFF5EFDD),
-    muted = Color(0xFFA6976E),
-    danger = Color(0xFFE56B6F),
-    line = Color(0x14F5EFDD),
-)
-
 val LocalAppColors = staticCompositionLocalOf { DarkAppColors }
 
 /**

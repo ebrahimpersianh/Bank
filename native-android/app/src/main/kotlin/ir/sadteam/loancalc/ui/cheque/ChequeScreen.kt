@@ -1,6 +1,5 @@
 package ir.sadteam.loancalc.ui.cheque
 
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -45,7 +44,9 @@ import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -97,6 +98,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pendingExportJson by remember { mutableStateOf<String?>(null) }
+    val banner = rememberInAppBanner()
 
     val createDocumentLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
@@ -106,7 +108,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
             scope.launch(Dispatchers.IO) {
                 runCatching { context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) } }
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "پشتیبان‌گیری چک انجام شد", Toast.LENGTH_SHORT).show()
+                    banner.show("پشتیبان‌گیری چک انجام شد")
                 }
             }
         }
@@ -122,11 +124,11 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
             }.getOrNull()
             withContext(Dispatchers.Main) {
                 if (json == null) {
-                    Toast.makeText(context, "فایل قابل خوندن نبود", Toast.LENGTH_SHORT).show()
+                    banner.show("فایل قابل خوندن نبود")
                 } else {
                     viewModel.importBackup(json) { ok ->
                         val message = if (ok) "بازیابی چک انجام شد" else "فایل معتبر نیست"
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        banner.show(message)
                     }
                 }
             }
@@ -140,6 +142,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
         else -> "list"
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     AnimatedContent(
         targetState = screenKey,
         transitionSpec = { fadeIn(tween(200)).togetherWith(fadeOut(tween(150))) },
@@ -250,6 +253,9 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                 }
             }
         }
+    }
+
+        InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 

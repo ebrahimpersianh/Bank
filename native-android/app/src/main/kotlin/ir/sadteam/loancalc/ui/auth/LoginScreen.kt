@@ -17,6 +17,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +25,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -104,14 +108,16 @@ fun LoginScreen(
             // (که با ۹ شروع می‌شه) رو تایپ می‌کنه، دقیقاً مثل اپ‌های ایرانیِ مشابه.
             val fullPhone = "0$phone"
             if (step == LoginStep.PHONE) {
+                val focusRequester = remember { FocusRequester() }
+                val keyboardController = LocalSoftwareKeyboardController.current
+                // کیبرد عددی خودکار باز می‌شه (کاربر: «خودکار کیبرد بیاد رو عدد») - بدون تپِ دستی.
+                LaunchedEffect(Unit) {
+                    focusRequester.requestFocus()
+                    keyboardController?.show()
+                }
+                // تو RTL، اولین چیزِ توی Row سمتِ راست میاد؛ برای این‌که «+۹۸» سمتِ چپ باشه (خواسته‌ی
+                // کاربر)، فیلدِ شماره باید اول تو کد بیاد، بعد چیپِ +۹۸.
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Box(
-                        modifier = Modifier
-                            .background(AppSurface2, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
-                            .padding(horizontal = 14.dp, vertical = 16.dp),
-                    ) {
-                        Text("+۹۸", color = AppText, fontSize = 15.sp)
-                    }
                     OutlinedTextField(
                         value = phone,
                         onValueChange = { raw ->
@@ -119,10 +125,20 @@ fun LoginScreen(
                             phone = cleaned.take(10)
                         },
                         placeholder = { Text("۹xxxxxxxxx") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        modifier = Modifier.weight(1f).padding(start = 8.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp)
+                            .focusRequester(focusRequester),
                         singleLine = true,
                     )
+                    Box(
+                        modifier = Modifier
+                            .background(AppSurface2, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                            .padding(horizontal = 14.dp, vertical = 16.dp),
+                    ) {
+                        Text("+۹۸", color = AppText, fontSize = 15.sp)
+                    }
                 }
             } else {
                 Text(

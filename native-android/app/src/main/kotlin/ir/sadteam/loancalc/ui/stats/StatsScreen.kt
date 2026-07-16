@@ -1,6 +1,5 @@
 package ir.sadteam.loancalc.ui.stats
 
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
@@ -8,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -40,6 +40,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.InAppBannerHost
+import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -60,6 +62,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
     val paymentHistory = remember(loans) { viewModel.paymentHistory(loans) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val banner = rememberInAppBanner()
 
     val createDocumentLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/pdf"),
@@ -73,7 +76,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
                 }.isSuccess
                 withContext(Dispatchers.Main) {
                     val message = if (ok) "PDF ذخیره شد" else "ذخیره‌ی PDF ناموفق بود"
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    banner.show(message)
                 }
             }
         }
@@ -93,12 +96,13 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
                 }.isSuccess
                 withContext(Dispatchers.Main) {
                     val message = if (ok) "اکسل ذخیره شد" else "ذخیره‌ی اکسل ناموفق بود"
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    banner.show(message)
                 }
             }
         }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -184,6 +188,9 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
                 PaymentHistoryLineChart(points = paymentHistory)
             }
         }
+    }
+
+        InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 

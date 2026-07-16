@@ -1,5 +1,11 @@
 package ir.sadteam.loancalc.ui
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +24,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,6 +57,7 @@ import ir.sadteam.loancalc.data.BankEntry
 import ir.sadteam.loancalc.data.banks
 import ir.sadteam.loancalc.data.creditServices
 import ir.sadteam.loancalc.data.loanPresets
+import ir.sadteam.loancalc.ui.cheque.ChequeScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
@@ -62,6 +70,7 @@ import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyRowScrollbar
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -107,6 +116,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
     var graceMonths by remember { mutableStateOf(6f) }
 
     var showCalendarPicker by remember { mutableStateOf(false) }
+    var showCheque by remember { mutableStateOf(false) }
 
     fun applyAmount(rial: Long) {
         amountText = fmtGroupedEn(rial)
@@ -124,6 +134,13 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
             },
             onBack = { showCalendarPicker = false },
         )
+        return
+    }
+
+    // «امور چک» رو کاربر می‌خواست مستقیم زیرِ بانک‌ها/خدمات اعتباری تو همین تبِ «وام بانکی» هم در
+    // دسترس باشه، نه فقط از تنظیمات - رجوع کن به کارتِ «امور چک» تو ادامه‌ی همین LazyColumn.
+    if (showCheque) {
+        ChequeScreen(onBack = { showCheque = false })
         return
     }
 
@@ -185,6 +202,15 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                 // compose می‌شدن (یکی از منابع اصلی لگ تعویض تب)؛ حالا فقط ~۵ تای قابل‌دیدن.
                 val banksScroll = rememberLazyListState()
                 val creditScroll = rememberLazyListState()
+                // هایلایتِ نوریِ مدام رو نشانگرهای اسکرولِ زیرِ بانک‌ها/خدمات (خواسته‌ی کاربر «اسکرول
+                // زیر بانک‌ها رو یکم شیک‌تر بکن») - مستقل از خودِ اسکرول، همیشه در حال حرکته.
+                val shimmerTransition = rememberInfiniteTransition(label = "bankScrollShimmer")
+                val shimmerPhase by shimmerTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart),
+                    label = "shimmerPhase",
+                )
                 Text("بانک‌ها", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
                 LazyRow(
                     state = banksScroll,
@@ -205,7 +231,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         .fillMaxWidth()
                         .padding(top = 6.dp, bottom = 8.dp)
                         .height(4.dp)
-                        .lazyRowScrollbar(banksScroll, AppPrimary),
+                        .lazyRowScrollbar(banksScroll, AppPrimary, shimmerPhase = shimmerPhase),
                 )
                 Text("خدمات اعتباری", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
                 LazyRow(
@@ -236,15 +262,39 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         .fillMaxWidth()
                         .padding(top = 6.dp)
                         .height(4.dp)
-                        .lazyRowScrollbar(creditScroll, AppPrimary),
+                        .lazyRowScrollbar(creditScroll, AppPrimary, shimmerPhase = shimmerPhase),
                 )
             }
         }
 
         item {
+            // «امور چک» مستقیم زیرِ بانک‌ها/خدمات اعتباری (خواسته‌ی کاربر) - قبلاً فقط از تنظیمات
+            // در دسترس بود.
+            AppCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth().pressScaleClickable { showCheque = true },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Text("امور چک", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            "چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    Icon(Icons.Filled.ArrowBack, contentDescription = null, tint = AppMuted)
+                }
+            }
+        }
+
+        item {
             AppCard(label = "تاریخ دریافت وام") {
-                // تاریخ اینلاین با سه دراپ‌داونِ روز/ماه/سال - همینجا عوض می‌شه بدون رفتن به یه صفحه‌ی
-                // جدا (خواسته‌ی کاربر). آیکون تقویم کنارش، برای کسی که تقویم گریدیِ کامل رو بخواد.
+                // تاریخ اینلاینِ چرخونه‌ای (روی روز/ماه/سال اسکرول می‌کنی) - همینجا عوض می‌شه بدون
+                // رفتن به یه صفحه‌ی جدا (خواسته‌ی کاربر، چندبار تکرار شد). آیکون تقویم کنارش، برای
+                // کسی که تقویم گریدیِ کامل رو بخواد.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
