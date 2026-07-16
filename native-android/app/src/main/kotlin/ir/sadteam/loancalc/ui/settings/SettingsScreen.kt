@@ -317,9 +317,9 @@ private fun SettingsMainContent(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.Star, contentDescription = null, tint = AppAccent)
                         Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                            Text("ارتقا به اشتراک", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text("ارتقا به نسخه اشتراکی", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             Text(
-                                "وام/چک نامحدود، همگام‌سازی چند دستگاه، تم تاریک/طلایی، ویبره و موارد دیگر",
+                                "وام/چک نامحدود، همگام‌سازی چند دستگاه و موارد دیگر",
                                 color = AppMuted,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 2.dp),
@@ -351,15 +351,9 @@ private fun SettingsMainContent(
                     Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                         themeModeOptions.forEach { (mode, label) ->
                             AppChip(
-                                label = if (mode != ThemeMode.LIGHT && !subscribed) "$label 🔒" else label,
+                                label = label,
                                 selected = themeMode == mode,
-                                onClick = {
-                                    if (mode == ThemeMode.LIGHT || subscribed) {
-                                        themeViewModel.setThemeMode(mode)
-                                    } else {
-                                        onShowSubscription()
-                                    }
-                                },
+                                onClick = { themeViewModel.setThemeMode(mode) },
                             )
                         }
                     }
@@ -415,33 +409,23 @@ private fun SettingsMainContent(
                 }
             }
 
-            if (matches("ویبره")) {
-                AppCard(label = "ویبره", modifier = Modifier.padding(top = 10.dp)) {
+            if (matches("هپتیک فیدبک", "ویبره")) {
+                AppCard(label = "هپتیک فیدبک", modifier = Modifier.padding(top = 10.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            if (subscribed) {
-                                "موقع لمس دکمه‌ها و اسلایدرها یه لرزش کوتاه حس کن"
-                            } else {
-                                "این ویژگی مخصوص کاربرهای مشترکه"
-                            },
+                            "موقع لمس دکمه‌ها و اسلایدرها یه لرزش کوتاه حس کن",
                             color = AppMuted,
                             fontSize = 12.sp,
                             modifier = Modifier.weight(1f),
                         )
                         Switch(
-                            checked = subscribed && vibrationEnabled,
-                            enabled = subscribed,
+                            checked = vibrationEnabled,
                             onCheckedChange = { hapticsViewModel.setEnabled(it) },
                             colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
                         )
-                    }
-                    if (!subscribed) {
-                        TextButton(onClick = onShowSubscription, modifier = Modifier.padding(top = 4.dp)) {
-                            Text("مشاهده پلن‌های اشتراک", color = AppAccent)
-                        }
                     }
                 }
             }

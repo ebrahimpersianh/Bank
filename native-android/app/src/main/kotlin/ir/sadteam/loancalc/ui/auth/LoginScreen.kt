@@ -97,7 +97,7 @@ fun LoginScreen(
         ) {
             Text("ورود با شماره موبایل", color = AppText, fontSize = 18.sp)
             Text(
-                "برای ذخیره‌ی «وام‌های من» رو ابر و همگام‌سازی بین گوشی‌ها وارد شو",
+                "برای ذخیره‌ی «وام‌های من» در سرور ابری و همگام‌سازی بین گوشی‌ها وارد شو",
                 color = AppMuted,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(top = 6.dp, bottom = 20.dp),

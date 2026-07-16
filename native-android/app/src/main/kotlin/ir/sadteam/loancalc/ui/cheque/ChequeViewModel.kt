@@ -31,6 +31,7 @@ class ChequeViewModel @Inject constructor(
         type: ChequeType,
         amount: Double,
         chequeNumber: String,
+        sayadId: String,
         bankName: String,
         branchName: String,
         ownerName: String,
@@ -43,7 +44,7 @@ class ChequeViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             chequeRepository.addCheque(
-                type, amount, chequeNumber, bankName, branchName, ownerName,
+                type, amount, chequeNumber, sayadId, bankName, branchName, ownerName,
                 dueYear, dueMonth, dueDay, notes, chequeBookId,
             )
             onSaved()

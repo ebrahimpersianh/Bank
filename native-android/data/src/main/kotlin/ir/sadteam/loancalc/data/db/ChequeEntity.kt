@@ -27,4 +27,9 @@ data class ChequeEntity(
     val createdAt: String,
     /** مسیر مطلق عکس رسید تو فضای داخلی اپ (پورت «پیوست عکس» اپ رقیب) - رجوع کن به AttachmentStorage. */
     val photoPath: String? = null,
+    /** شناسه‌ی ۱۶ رقمی صیادی (سامانه‌ی صیاد چک) - اختیاریه، خیلی از چک‌های قدیمی/دست‌نویس این رو ندارن.
+     * Nullable (نه رشته‌ی خالی پیش‌فرض) هم‌الگو با [photoPath]: وقتی گسون یه بک‌آپ JSON قدیمی‌تر از
+     * قبل از این فیلد رو import می‌کنه، مقدارِ پیش‌فرضِ Kotlin اعمال نمی‌شه (گسون از Unsafe استفاده
+     * می‌کنه)، پس فقط nullable امنه، نه یه non-null با مقدار پیش‌فرض. */
+    val sayadId: String? = null,
 )

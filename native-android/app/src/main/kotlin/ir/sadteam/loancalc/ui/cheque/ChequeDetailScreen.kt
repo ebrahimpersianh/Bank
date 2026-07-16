@@ -83,6 +83,7 @@ fun ChequeDetailScreen(
                     DetailRow("نوع", typeLabel)
                     DetailRow("مبلغ", "${fmt(cheque.amount)} ریال")
                     DetailRow("شماره چک", toFa(cheque.chequeNumber))
+                    if (!cheque.sayadId.isNullOrBlank()) DetailRow("شناسه صیادی", toFa(cheque.sayadId))
                     DetailRow("بانک", cheque.bankName)
                     if (cheque.branchName.isNotBlank()) DetailRow("شعبه", cheque.branchName)
                     DetailRow(if (cheque.type == "RECEIVED") "پرداخت‌کننده" else "دریافت‌کننده", cheque.ownerName)
@@ -90,7 +91,7 @@ fun ChequeDetailScreen(
                         "تاریخ سررسید",
                         "${toFa(cheque.dueDay)}/${toFa(cheque.dueMonth)}/${toFa(cheque.dueYear)}",
                     )
-                    if (cheque.notes.isNotBlank()) DetailRow("یادداشت", cheque.notes)
+                    if (cheque.notes.isNotBlank()) DetailRow("بابت", cheque.notes)
                 }
             }
         }

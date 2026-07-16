@@ -34,10 +34,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -157,6 +162,19 @@ internal fun WheelColumn(
     val view = LocalView.current
     val itemPx = with(LocalDensity.current) { itemHeight.toPx() }
 
+    // چرخونه یه کنترلِ خودکفا و محدوده‌ست - نباید اسکرول/فلینگِ ته‌مونده‌ش (وقتی سریع می‌چرخونی و
+    // به مرز لیست می‌رسه) به صفحه‌ی بیرونی درز کنه و کل صفحه رو هم یه‌کم پایین بیاره. با مصرفِ کاملِ
+    // مقدارِ باقی‌مونده تو postScroll/postFling جلوی این «درز» رو می‌گیریم.
+    val blockOverscrollLeak = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset =
+                available
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
+                available
+        }
+    }
+
     val centered by remember {
         derivedStateOf {
             (listState.firstVisibleItemIndex + (listState.firstVisibleItemScrollOffset / itemPx).roundToInt())
@@ -175,7 +193,9 @@ internal fun WheelColumn(
     LazyColumn(
         state = listState,
         flingBehavior = fling,
-        modifier = modifier.height(itemHeight * visibleRows),
+        modifier = modifier
+            .height(itemHeight * visibleRows)
+            .nestedScroll(blockOverscrollLeak),
         contentPadding = PaddingValues(vertical = itemHeight * (visibleRows / 2)),
     ) {
         itemsIndexed(items) { i, label ->
