@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -58,6 +59,12 @@ fun SplashIntroScreen(onDone: () -> Unit) {
     LaunchedEffect(Unit) {
         pop.animateTo(1f, animationSpec = tween(800, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
     }
+    // چرخش کامل حلقه موقع ورود (خواسته‌ی کاربر: «دایره بچرخه، خیلی پریمیوم می‌شه») - یه دور ۳۶۰
+    // درجه با همون easing نرم، همزمان با pop، بعد آروم می‌ایسته.
+    val spin = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        spin.animateTo(360f, animationSpec = tween(1100, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
+    }
     LaunchedEffect(Unit) {
         delay(1300)
         onDone()
@@ -80,7 +87,12 @@ fun SplashIntroScreen(onDone: () -> Unit) {
         )
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Canvas(modifier = Modifier.size(100.dp).scale(pop.value)) {
+            Canvas(
+                modifier = Modifier
+                    .size(100.dp)
+                    .scale(pop.value)
+                    .graphicsLayer { rotationZ = spin.value },
+            ) {
                 val stroke = 12.dp.toPx()
                 val inset = stroke / 2f
                 val arcSize = Size(size.width - stroke, size.height - stroke)

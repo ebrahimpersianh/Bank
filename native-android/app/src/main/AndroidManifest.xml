@@ -15,9 +15,13 @@
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
 
+    <!-- allowBackup عمداً false: بکاپ خودکار اندروید موقع نصب مجدد، فلگ‌های «یه‌بار پرسیده شده»
+         (ورود/مهمان، benefits، گیت مجوزها) رو از نصب قبلی برمی‌گردوند و در نتیجه سوال‌های اولین
+         اجرا دیگه هیچ‌وقت نشون داده نمی‌شدن (گزارش کاربر). داده‌ی کاربر راه‌های بکاپ خودش رو داره
+         (پشتیبان‌گیری داخل اپ + سینک ابری + پشتیبان‌گیری خودکار روزانه). -->
     <application
         android:name=".LoanCalcApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
