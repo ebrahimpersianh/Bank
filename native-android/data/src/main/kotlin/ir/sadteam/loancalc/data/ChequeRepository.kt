@@ -131,7 +131,7 @@ class ChequeRepository(
         val cheques: List<ChequeEntity> = gson.fromJson(chequesJson, object : TypeToken<List<ChequeEntity>>() {}.type)
         val books: List<ChequeBookEntity> = gson.fromJson(booksJson, object : TypeToken<List<ChequeBookEntity>>() {}.type)
         chequeDao.replaceAll(cheques)
-        books.forEach { chequeBookDao.upsert(it) }
+        chequeBookDao.replaceAll(books)
         return true
     }
 
