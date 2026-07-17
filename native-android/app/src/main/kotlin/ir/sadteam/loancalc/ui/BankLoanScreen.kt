@@ -33,10 +33,12 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,8 +56,8 @@ import ir.sadteam.loancalc.core.cleanNumDecimal
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.BankEntry
+import ir.sadteam.loancalc.data.CreditRatesViewModel
 import ir.sadteam.loancalc.data.banks
-import ir.sadteam.loancalc.data.creditServices
 import ir.sadteam.loancalc.data.loanPresets
 import ir.sadteam.loancalc.ui.cheque.ChequeScreen
 import ir.sadteam.loancalc.ui.components.AppCard
@@ -91,7 +93,8 @@ data class BankLoanOutcome(
 )
 
 @Composable
-fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit) {
+fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel: CreditRatesViewModel = hiltViewModel()) {
+    val creditServices by creditRatesViewModel.rates.collectAsState()
     var borrowerName by remember { mutableStateOf("") }
     var selectedBank by remember { mutableStateOf<BankEntry?>(null) }
     var selectedPresetKey by remember { mutableStateOf<String?>(null) }

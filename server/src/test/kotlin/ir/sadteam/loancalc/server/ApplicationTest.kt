@@ -13,6 +13,7 @@ import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
@@ -143,5 +144,22 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.OK, putAccounts.status)
         val getAccounts = client.get("/api/accounts") { header("Authorization", "Bearer $token") }
         assertEquals(accountsBlob, Json.parseToJsonElement(getAccounts.bodyAsText()).jsonObject["data"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `credit rates are seeded and publicly readable without auth`() = testApplication {
+        val dbFile = File.createTempFile("loan-calc-test-credit-rates", ".sqlite")
+        dbFile.deleteOnExit()
+        System.setProperty("DB_PATH", dbFile.absolutePath)
+        System.setProperty("JWT_SECRET", "test-secret-for-unit-tests-only-5")
+
+        application { module() }
+
+        val response = client.get("/api/credit-rates")
+        assertEquals(HttpStatusCode.OK, response.status)
+        val rates = Json.parseToJsonElement(response.bodyAsText()).jsonObject["rates"]?.jsonArray
+        assertTrue(rates != null && rates.size == 6)
+        val first = rates!!.first().jsonObject
+        assertEquals("digipay", first["key"]?.jsonPrimitive?.content)
     }
 }

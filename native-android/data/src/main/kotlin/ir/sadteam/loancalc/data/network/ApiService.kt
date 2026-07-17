@@ -64,6 +64,11 @@ interface ApiService {
         @Header("Authorization") authHeader: String,
         @Body body: BackupBlobRequest,
     ): Response<Unit>
+
+    // نرخِ خدمات اعتباری (دیجی‌پی، اسنپ‌پی و ...) - عمومی، بدون نیاز به ورود؛ منبع حقیقتش سرور شد
+    // بجای هاردکد تو خودِ اپ (رجوع کن به data/Banks.kt برای fallback آفلاین).
+    @GET("api/credit-rates")
+    suspend fun getCreditRates(): CreditRatesResponse
 }
 
 data class RequestOtpRequest(val phone: String)
@@ -90,6 +95,19 @@ data class VerifySubscriptionResponse(val ok: Boolean, val subscribed: Boolean, 
 data class BackupBlobResponse(val data: String, val updatedAt: String?)
 
 data class BackupBlobRequest(val data: String)
+
+data class CreditRateDto(
+    val key: String,
+    val name: String,
+    val colorHex: String,
+    val logoAsset: String,
+    val ratePct: Double,
+    val months: Int,
+    val minAmount: Long,
+    val maxAmount: Long,
+)
+
+data class CreditRatesResponse(val rates: List<CreditRateDto>)
 
 data class CrashReportRequest(
     val message: String,
