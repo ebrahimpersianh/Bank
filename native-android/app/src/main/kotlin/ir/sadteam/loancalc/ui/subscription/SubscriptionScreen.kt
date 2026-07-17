@@ -81,7 +81,7 @@ fun SubscriptionScreen(
                 )
             }
         } else {
-            items(subscriptionTiers) { (productId, label) ->
+            items(subscriptionTiers, key = { it.first }) { (productId, label) ->
                 AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

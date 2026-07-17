@@ -2,6 +2,7 @@ package ir.sadteam.loancalc
 
 import android.app.Activity
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -42,17 +43,17 @@ import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.RequestQuote
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.TrendingUp
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -104,6 +105,8 @@ import ir.sadteam.loancalc.ui.security.LockScreen
 import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.SubscriptionManager
 import ir.sadteam.loancalc.ui.myloans.MyLoansScreen
+import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -140,6 +143,9 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        // اطلاعات مالی/شخصیه؛ جلوی اسکرین‌شات و نمایش محتوا تو لیست اپ‌های اخیر (App Switcher) رو
+        // می‌گیره.
+        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         enableEdgeToEdge()
         subscriptionManager = SubscriptionManager(this)
         subscriptionManager.connect { }
@@ -257,12 +263,12 @@ private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel(), appLockViewM
 private fun LoanCalcApp(
     themeViewModel: ThemeViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
+    privacyModeViewModel: PrivacyModeViewModel = hiltViewModel(),
 ) {
     var showSettings by remember { mutableStateOf(false) }
 
     val themeMode by themeViewModel.themeMode.collectAsState()
-    val subscribed by authViewModel.subscribed.collectAsState()
-    var showThemeGateDialog by remember { mutableStateOf(false) }
+    val privacyMode by privacyModeViewModel.enabled.collectAsState()
     val buzz = rememberBuzz()
 
     // وضعیت اشتراک/دوره‌ی آزمایشی رو هر بار اپ باز می‌شه از سرور تازه می‌کنیم (نه فقط لحظه‌ی ورود) -
@@ -304,22 +310,16 @@ private fun LoanCalcApp(
         }
     }
 
+    CompositionLocalProvider(LocalPrivacyMode provides privacyMode) {
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = { Text("وام من") },
                     navigationIcon = {
-                        IconButton(onClick = {
-                            if (subscribed) {
-                                buzz()
-                                themeViewModel.cycleThemeMode()
-                            } else {
-                                showThemeGateDialog = true
-                            }
-                        }) {
+                        IconButton(onClick = { buzz(); themeViewModel.cycleThemeMode() }) {
                             // پورت sunIcon/moonIcon تو www/index.html: آیکون وضعیت *فعلی* رو نشون
-                            // می‌ده، نه نتیجه‌ی تپ‌کردن. تمِ تاریک ویژگیِ اشتراکیه.
+                            // می‌ده، نه نتیجه‌ی تپ‌کردن. تمِ تاریک الان برای همه رایگانه.
                             Icon(
                                 if (themeMode == ThemeMode.DARK) Icons.Filled.DarkMode else Icons.Filled.LightMode,
                                 contentDescription = "تغییر تم",
@@ -327,6 +327,14 @@ private fun LoanCalcApp(
                         }
                     },
                     actions = {
+                        // حالت خصوصی: مخفی‌کردن سریع همه‌ی مبلغ‌های صفحه پشت «•••» (برای وقتی
+                        // گوشیتو دستِ کسی می‌دی)، بدون نیاز به رفتن تو تنظیمات.
+                        IconButton(onClick = { buzz(); privacyModeViewModel.toggle() }) {
+                            Icon(
+                                if (privacyMode) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = "حالت خصوصی",
+                            )
+                        }
                         IconButton(onClick = { showSettings = true }) {
                             Icon(Icons.Filled.Settings, contentDescription = "تنظیمات")
                         }
@@ -454,22 +462,7 @@ private fun LoanCalcApp(
                 )
             }
         }
-
-        if (showThemeGateDialog) {
-            AlertDialog(
-                onDismissRequest = { showThemeGateDialog = false },
-                title = { Text("ویژگی اشتراکی") },
-                text = { Text("تغییر تم (حالت تاریک) فقط برای کاربرهای مشترک فعاله. از تنظیمات می‌تونی اشتراک تهیه کنی.") },
-                confirmButton = {
-                    TextButton(onClick = { showThemeGateDialog = false; showSettings = true }) {
-                        Text("رفتن به تنظیمات")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showThemeGateDialog = false }) { Text("باشه") }
-                },
-            )
-        }
+    }
     }
 }
 

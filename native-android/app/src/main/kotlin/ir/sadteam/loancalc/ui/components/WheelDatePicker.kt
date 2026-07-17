@@ -198,7 +198,7 @@ internal fun WheelColumn(
             .nestedScroll(blockOverscrollLeak),
         contentPadding = PaddingValues(vertical = itemHeight * (visibleRows / 2)),
     ) {
-        itemsIndexed(items) { i, label ->
+        itemsIndexed(items, key = { i, _ -> i }) { i, label ->
             val distance = abs(i - centered)
             val itemAlpha = when (distance) {
                 0 -> 1f

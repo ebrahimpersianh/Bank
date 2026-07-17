@@ -21,6 +21,7 @@ class UiPrefs(private val context: Context) {
         val AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
         val LAST_AUTO_BACKUP_AT = stringPreferencesKey("last_auto_backup_at")
         val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
+        val PRIVACY_MODE_ENABLED = booleanPreferencesKey("privacy_mode_enabled")
     }
 
     // پیش‌فرض روشن/سفید (به‌درخواست کاربر «تم اصلی برنامه سفید باشه») - کاربری که قبلاً دستی
@@ -69,5 +70,12 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setVibrationEnabled(value: Boolean) {
         context.uiPrefsDataStore.edit { it[Keys.VIBRATION_ENABLED] = value }
+    }
+
+    /** حالت خصوصی: مخفی‌کردن همه‌ی مبلغ‌های روی صفحه پشت «•••» - برای وقتی گوشی دستِ کسیه. */
+    val privacyModeEnabled: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.PRIVACY_MODE_ENABLED] ?: false }
+
+    suspend fun setPrivacyModeEnabled(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.PRIVACY_MODE_ENABLED] = value }
     }
 }

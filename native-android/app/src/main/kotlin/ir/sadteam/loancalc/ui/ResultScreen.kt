@@ -54,6 +54,8 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.myloans.MyLoansViewModel
+import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -71,6 +73,7 @@ private val faMonthNamesResult = listOf(
 @Composable
 fun ResultScreen(outcome: BankLoanOutcome) {
     val result = outcome.result
+    val privacyMode = LocalPrivacyMode.current
 
     // هم‌راستا با renderTable تو www/index.html: اول گریس‌پیریود بعد فاصله‌ی هر قسط اضافه می‌شه
     val interval = result.intervalDays
@@ -139,7 +142,7 @@ fun ResultScreen(outcome: BankLoanOutcome) {
                         modifier = Modifier.size(180.dp),
                     )
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(fmt(animatedInstallment), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text(maskIfPrivate(privacyMode, fmt(animatedInstallment)), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         Text("قسط ماهانه (ریال)", fontSize = 12.5.sp, color = AppMuted)
                     }
                 }
@@ -202,7 +205,7 @@ fun ResultScreen(outcome: BankLoanOutcome) {
         item {
             StaggerIn(2) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    StatBox("کل بازپرداخت (ریال)", fmt(animatedTotal), Modifier.weight(1.3f))
+                    StatBox("کل بازپرداخت (ریال)", maskIfPrivate(privacyMode, fmt(animatedTotal)), Modifier.weight(1.3f))
                     StatBox("سررسید هر ماه", ordinalFa(outcome.startDate.d), Modifier.weight(1f))
                     StatBox("مدت وام", "${toFa(outcome.n)} ماه", Modifier.weight(1f))
                 }
@@ -236,7 +239,7 @@ fun ResultScreen(outcome: BankLoanOutcome) {
                 }
                 StatBox(
                     "کارمزد سالانه (قرض‌الحسنه)",
-                    "${fmt(feeAmount)} ریال (${toFa(rateLabel)}٪ سالانه)",
+                    "${maskIfPrivate(privacyMode, fmt(feeAmount))} ریال (${toFa(rateLabel)}٪ سالانه)",
                     Modifier.fillMaxWidth(),
                 )
             }
@@ -257,7 +260,7 @@ fun ResultScreen(outcome: BankLoanOutcome) {
                         .height(rowH * visibleRows)
                         .lazyColumnScrollbar(tableState, AppPrimary),
                 ) {
-                    itemsIndexed(result.rows) { idx, row ->
+                    itemsIndexed(result.rows, key = { _, row -> row.month }) { idx, row ->
                         val due = dueDates[idx]
                         val dateLabel = if (interval >= 28) {
                             "${faMonthNamesResult[due.m - 1]} ${toFa(due.y)}"
@@ -272,7 +275,7 @@ fun ResultScreen(outcome: BankLoanOutcome) {
                             ) {
                                 Text("قسط ${toFa(row.month)}", fontSize = 12.sp)
                                 Text(dateLabel, fontSize = 12.sp)
-                                Text("${fmt(row.installment)} ریال", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                                Text("${maskIfPrivate(privacyMode, fmt(row.installment))} ریال", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
                             }
                             if (idx != result.rows.lastIndex) HorizontalDivider(color = AppLine)
                         }

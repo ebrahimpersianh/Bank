@@ -269,7 +269,7 @@ private fun YearGrid(current: Int, onSelect: (Int) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(years) { year ->
+        items(years, key = { it }) { year ->
             GridCell(label = toFa(year), selected = year == current, onClick = { onSelect(year) })
         }
     }

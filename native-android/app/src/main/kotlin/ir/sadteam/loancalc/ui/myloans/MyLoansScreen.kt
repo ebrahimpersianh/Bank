@@ -65,6 +65,8 @@ import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.GradientButton
@@ -383,16 +385,17 @@ private fun DashboardSummary(
     // شمارش صعودی اعداد بزرگ داشبورد (پورت animateNumber وب) - حس «پریمیوم» موقع ورود به تب.
     val animatedDebt = countUpDouble(totalRemainingDebt)
     val animatedMonthly = countUpDouble(totalMonthlyInstallment)
+    val privacyMode = LocalPrivacyMode.current
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         DashboardStatCard(
             title = "وضعیت کلی بدهی‌ها",
-            value = "${fmt(animatedDebt)} ریال",
+            value = "${maskIfPrivate(privacyMode, fmt(animatedDebt))} ریال",
             valueColor = AppText,
         )
         DashboardStatCard(
             title = "مجموع اقساط ماهانه",
-            value = "${fmt(animatedMonthly)} ریال",
+            value = "${maskIfPrivate(privacyMode, fmt(animatedMonthly))} ریال",
             valueColor = AppPrimary,
         )
 
@@ -417,7 +420,7 @@ private fun DashboardSummary(
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    "${fmt(income.amount)} ریال",
+                                    "${maskIfPrivate(privacyMode, fmt(income.amount))} ریال",
                                     color = AppMuted,
                                     fontSize = 12.sp,
                                     modifier = Modifier.padding(end = 6.dp),
@@ -429,7 +432,7 @@ private fun DashboardSummary(
                         }
                     }
                     Text(
-                        "جمع درآمد: ${fmt(totalIncome)} ریال",
+                        "جمع درآمد: ${maskIfPrivate(privacyMode, fmt(totalIncome))} ریال",
                         color = AppText,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,

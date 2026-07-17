@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.core
 
+import java.math.BigDecimal
+
 enum class LoanMethod { STANDARD, QARZ, FLAT }
 
 data class LoanRow(
@@ -49,7 +51,15 @@ object LoanCalculator {
                 installment = if (i == 0.0) {
                     principal / n
                 } else {
-                    principal * i * Math.pow(1 + i, n.toDouble()) / (Math.pow(1 + i, n.toDouble()) - 1)
+                    // فرمولِ اصلی (پورتِ computeLoan تو www/index.html) با Double همینه؛ اینجا فقط
+                    // خودِ عبارتِ حساس (تقسیمِ دو عددِ نزدیک‌به‌هم) با BigDecimal حساب می‌شه تا خطای
+                    // گردکردنِ باینری تو محاسبه‌ی قسط (که همه‌ی ردیف‌های جدول رو ازش می‌سازیم) نباشه؛
+                    // نتیجه بلافاصله به Double برمی‌گرده چون بقیه‌ی اپ (fmt، Room، UI) با Double کار
+                    // می‌کنن و همه‌جا نهایتاً به نزدیک‌ترین ریال گرد می‌شه.
+                    val iBd = i.toBd()
+                    val pow = (BigDecimal.ONE + iBd).powBd(n)
+                    val numerator = principal.toBd() * iBd * pow
+                    numerator.divide(pow - BigDecimal.ONE, FINANCIAL_MC).toDouble()
                 }
                 var balance = principal
                 for (m in 1..n) {
@@ -68,7 +78,7 @@ object LoanCalculator {
                 // اصل وام فقط بین بقیه‌ی اقساط (غیرکارمزدی) مساوی تقسیم می‌شه.
                 val feeInstallments = Math.ceil(n / 12.0).toInt()
                 val principalInstallments = n - feeInstallments
-                val principalPart = principal / principalInstallments
+                val principalPart = principal.toBd().divide(BigDecimal(principalInstallments), FINANCIAL_MC).toDouble()
                 var balance = principal
                 var totalFee = 0.0
                 for (m in 1..n) {
@@ -88,8 +98,9 @@ object LoanCalculator {
             }
 
             LoanMethod.FLAT -> {
-                totalInterest = principal * annualRatePct * (n + 1) / 2400.0
-                installment = (principal + totalInterest) / n
+                totalInterest = (principal.toBd() * annualRatePct.toBd() * BigDecimal(n + 1))
+                    .divide(BigDecimal(2400), FINANCIAL_MC).toDouble()
+                installment = (principal + totalInterest).toBd().divide(BigDecimal(n), FINANCIAL_MC).toDouble()
                 val flatInterest = totalInterest / n
                 val flatPrincipal = principal / n
                 var balance = principal

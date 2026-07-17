@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.core
 
+import java.math.BigDecimal
+
 /**
  * پورت مو‌به‌موی calculateAffordability تو www/index.html («چقدر وام می‌تونم بگیرم؟»):
  * از رو قسط ماهانه‌ی دلخواه، نرخ سود و تعداد ماه، سقف اصل وام قابل‌دریافت رو حساب می‌کنه
@@ -11,7 +13,10 @@ object AffordabilityCalculator {
         return if (i == 0.0) {
             monthlyPayment * months
         } else {
-            monthlyPayment * (1 - Math.pow(1 + i, -months.toDouble())) / i
+            val iBd = i.toBd()
+            val pow = (BigDecimal.ONE + iBd).powBd(-months)
+            monthlyPayment.toBd().multiply(BigDecimal.ONE - pow, FINANCIAL_MC)
+                .divide(iBd, FINANCIAL_MC).toDouble()
         }
     }
 }
