@@ -87,8 +87,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideChequeRepository(chequeDao: ChequeDao, chequeBookDao: ChequeBookDao): ChequeRepository =
-        ChequeRepository(chequeDao, chequeBookDao)
+    fun provideChequeRepository(chequeDao: ChequeDao, chequeBookDao: ChequeBookDao, apiService: ApiService): ChequeRepository =
+        ChequeRepository(chequeDao, chequeBookDao, apiService)
 
     @Provides
     fun provideAccountDao(database: AppDatabase): AccountDao = database.accountDao()
@@ -98,8 +98,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAccountRepository(accountDao: AccountDao, transactionDao: AccountTransactionDao): AccountRepository =
-        AccountRepository(accountDao, transactionDao)
+    fun provideAccountRepository(
+        accountDao: AccountDao,
+        transactionDao: AccountTransactionDao,
+        apiService: ApiService,
+    ): AccountRepository = AccountRepository(accountDao, transactionDao, apiService)
 
     @Provides
     @Singleton

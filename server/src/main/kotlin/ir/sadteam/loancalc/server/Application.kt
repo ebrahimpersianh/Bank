@@ -13,7 +13,9 @@ import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import ir.sadteam.loancalc.server.routes.accountsBackupRoutes
 import ir.sadteam.loancalc.server.routes.authRoutes
+import ir.sadteam.loancalc.server.routes.chequesBackupRoutes
 import ir.sadteam.loancalc.server.routes.crashRoutes
 import ir.sadteam.loancalc.server.routes.loansRoutes
 import ir.sadteam.loancalc.server.routes.subscriptionRoutes
@@ -45,6 +47,8 @@ fun Application.module() {
         get("/health") { call.respond(mapOf("ok" to true)) }
         authRoutes()
         loansRoutes()
+        chequesBackupRoutes()
+        accountsBackupRoutes()
         crashRoutes()
         subscriptionRoutes()
     }

@@ -301,6 +301,19 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
         loanDao.replaceAll(serverLoans.mapNotNull { fromWebMap(it) })
     }
 
+    /** پورت مفهومی restoreFromServer تو ChequeRepository/AccountRepository - برای «بازیابی از سرور
+     * ابری» دستی تو تنظیمات، برخلاف syncAfterLogin که یه‌بار خودکار بعد از ورود صدا زده می‌شه و
+     * برخورد داده‌ی محلی/سرور رو مدیریت می‌کنه، این همیشه بی‌قیدوشرط با نسخه‌ی سرور جایگزین می‌کنه. */
+    suspend fun restoreFromServer(token: String): Boolean {
+        val serverLoans = try {
+            apiService.getLoans("Bearer $token").loans
+        } catch (e: Exception) {
+            return false
+        }
+        replaceAllWithServerData(serverLoans)
+        return true
+    }
+
     /** پورت exportBackup تو www/index.html - همون آرایه‌ی خام (currentLoans) رو به JSON خوانا
      * (pretty-printed) تبدیل می‌کنه تا کاربر با SAF ذخیره‌ش کنه. */
     suspend fun exportBackupJson(): String {

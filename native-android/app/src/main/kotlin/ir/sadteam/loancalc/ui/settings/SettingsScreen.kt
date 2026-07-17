@@ -486,6 +486,24 @@ private fun SettingsMainContent(
                             Text("بازیابی از پشتیبان خودکار")
                         }
                     }
+                    // برخلاف دکمه‌ی بالا (که فقط رو همون گوشی کار می‌کنه)، این از سرور می‌گیره - برای
+                    // وقتی گوشی عوض شده یا اپ پاک/نصب شده. فقط برای کاربر لاگین‌شده‌ی مشترک نشون داده
+                    // می‌شه چون پوش‌شدن به سرور هم فقط برای همین گروه فعاله (رجوع کن به AutoBackupWorker).
+                    if (gateState == GateState.LOGGED_IN && subscribed) {
+                        OutlinedButton(
+                            onClick = {
+                                autoBackupViewModel.restoreFromCloud { ok ->
+                                    val message = if (ok) "بازیابی از سرور ابری انجام شد" else "پشتیبانی رو سرور ابری پیدا نشد"
+                                    banner.show(message)
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                        ) {
+                            Text("بازیابی از سرور ابری")
+                        }
+                    }
                 }
             }
 

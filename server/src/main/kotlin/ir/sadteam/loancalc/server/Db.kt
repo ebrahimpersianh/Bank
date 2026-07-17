@@ -43,6 +43,28 @@ object Db {
                     )
                     """.trimIndent()
                 )
+                // پشتیبان‌گیری ابری چک‌ها و حساب‌ها (اپ بومی): برخلاف loans که یه آرایه‌ی JSON واقعی
+                // نگه می‌داره (چون کلاینت وب هم مستقیم مصرفش می‌کنه)، این دوتا فقط یه blob مات از
+                // همون JSON ای هستن که ChequeRepository/AccountRepository.exportBackupJson تو اپ
+                // بومی تولید می‌کنه - سرور به شکل داخلیش کاری نداره، فقط ذخیره/برمی‌گردونه.
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS cheques_backup (
+                        user_id INTEGER PRIMARY KEY REFERENCES users(id),
+                        data TEXT NOT NULL DEFAULT '{}',
+                        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                    """.trimIndent()
+                )
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS accounts_backup (
+                        user_id INTEGER PRIMARY KEY REFERENCES users(id),
+                        data TEXT NOT NULL DEFAULT '{}',
+                        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                    """.trimIndent()
+                )
                 st.executeUpdate(
                     """
                     CREATE TABLE IF NOT EXISTS crash_reports (

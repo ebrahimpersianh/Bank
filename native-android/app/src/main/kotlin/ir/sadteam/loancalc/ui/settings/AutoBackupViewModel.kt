@@ -8,6 +8,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.LoanRepository
+import ir.sadteam.loancalc.data.prefs.AuthPrefs
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import ir.sadteam.loancalc.notifications.AutoBackupScheduler
 import ir.sadteam.loancalc.notifications.AutoBackupWorker
@@ -29,6 +30,7 @@ class AutoBackupViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
     private val chequeRepository: ChequeRepository,
     private val accountRepository: AccountRepository,
+    private val authPrefs: AuthPrefs,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
     val enabled: StateFlow<Boolean> = uiPrefs.autoBackupEnabled
@@ -73,6 +75,22 @@ class AutoBackupViewModel @Inject constructor(
                 if (!runCatching { accountRepository.importBackupJson(file.readText()) }.getOrDefault(false)) ok = false
             }
             onResult(ok)
+        }
+    }
+
+    /** پورت مفهومیِ «بازیابی از پشتیبان خودکار» ولی از سرور ابری بجای فایل محلی - برای وقتی گوشی
+     * عوض شده یا اپ پاک/نصب شده و بکاپ محلی دیگه وجود نداره. */
+    fun restoreFromCloud(onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val token = authPrefs.authToken.first()
+            if (token.isNullOrEmpty()) {
+                onResult(false)
+                return@launch
+            }
+            val loansOk = loanRepository.restoreFromServer(token)
+            val chequesOk = chequeRepository.restoreFromServer(token)
+            val accountsOk = accountRepository.restoreFromServer(token)
+            onResult(loansOk || chequesOk || accountsOk)
         }
     }
 }

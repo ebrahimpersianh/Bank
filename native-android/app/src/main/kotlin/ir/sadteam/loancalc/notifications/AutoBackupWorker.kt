@@ -9,7 +9,9 @@ import dagger.assisted.AssistedInject
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.LoanRepository
+import ir.sadteam.loancalc.data.prefs.AuthPrefs
 import ir.sadteam.loancalc.data.prefs.UiPrefs
+import kotlinx.coroutines.flow.first
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -22,6 +24,11 @@ import java.util.TimeZone
  * نباید پرامپت انتخاب فایل نشون بده) می‌نویسه؛ هر بار جایگزین اسنپ‌شات قبلی می‌شه (یه نسخه‌ی واحد،
  * نه آرشیو تاریخچه‌ای). AutoBackupViewModel.restoreFromAutoBackup همین فایل‌ها رو برای بازیابی
  * می‌خونه.
+ *
+ * علاوه بر اسنپ‌شات محلی، اگه کاربر لاگین و مشترک باشه، همون سه‌تا رو به سرور هم آپلود می‌کنه
+ * (LoanRepository/ChequeRepository/AccountRepository.pushToServer) - قبلاً این اسنپ‌شات فقط رو
+ * خودِ گوشی می‌موند، یعنی با گم‌شدن/خرابیِ گوشی از بین می‌رفت با اینکه «پشتیبان‌گیری ابری» تو
+ * BenefitsScreen به‌عنوان مزیت اشتراک تبلیغ شده بود.
  */
 @HiltWorker
 class AutoBackupWorker @AssistedInject constructor(
@@ -31,6 +38,7 @@ class AutoBackupWorker @AssistedInject constructor(
     private val chequeRepository: ChequeRepository,
     private val accountRepository: AccountRepository,
     private val uiPrefs: UiPrefs,
+    private val authPrefs: AuthPrefs,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val dir = File(applicationContext.filesDir, BACKUP_DIR_NAME).apply { mkdirs() }
@@ -38,6 +46,15 @@ class AutoBackupWorker @AssistedInject constructor(
         File(dir, "cheques.json").writeText(chequeRepository.exportBackupJson())
         File(dir, "accounts.json").writeText(accountRepository.exportBackupJson())
         uiPrefs.setLastAutoBackupAt(isoNow())
+
+        val token = authPrefs.authToken.first()
+        val subscribed = authPrefs.subscribed.first()
+        if (token != null && subscribed) {
+            loanRepository.pushToServer(token)
+            chequeRepository.pushToServer(token)
+            accountRepository.pushToServer(token)
+        }
+
         return Result.success()
     }
 

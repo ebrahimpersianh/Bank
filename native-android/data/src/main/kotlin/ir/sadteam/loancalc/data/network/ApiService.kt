@@ -43,6 +43,27 @@ interface ApiService {
 
     @POST("api/crash")
     suspend fun reportCrash(@Body body: CrashReportRequest): Response<Unit>
+
+    // پشتیبان‌گیری ابری چک‌ها/حساب‌ها (پورت مفهومی «پشتیبان‌گیری ابری از تمامی وام‌ها» تبلیغ‌شده تو
+    // BenefitsScreen): برخلاف loans که سرور شکلش رو می‌دونه، این دوتا فقط یه blob مات از همون JSON
+    // ای هستن که ChequeRepository/AccountRepository.exportBackupJson تولید می‌کنه.
+    @GET("api/cheques")
+    suspend fun getChequesBackup(@Header("Authorization") authHeader: String): BackupBlobResponse
+
+    @PUT("api/cheques")
+    suspend fun putChequesBackup(
+        @Header("Authorization") authHeader: String,
+        @Body body: BackupBlobRequest,
+    ): Response<Unit>
+
+    @GET("api/accounts")
+    suspend fun getAccountsBackup(@Header("Authorization") authHeader: String): BackupBlobResponse
+
+    @PUT("api/accounts")
+    suspend fun putAccountsBackup(
+        @Header("Authorization") authHeader: String,
+        @Body body: BackupBlobRequest,
+    ): Response<Unit>
 }
 
 data class RequestOtpRequest(val phone: String)
@@ -65,6 +86,10 @@ data class PutLoansRequest(val loans: List<Map<String, Any?>>)
 data class VerifySubscriptionRequest(val productId: String, val purchaseToken: String)
 
 data class VerifySubscriptionResponse(val ok: Boolean, val subscribed: Boolean, val subscribedUntil: String)
+
+data class BackupBlobResponse(val data: String, val updatedAt: String?)
+
+data class BackupBlobRequest(val data: String)
 
 data class CrashReportRequest(
     val message: String,

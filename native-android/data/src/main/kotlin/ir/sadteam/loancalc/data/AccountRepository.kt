@@ -7,6 +7,8 @@ import ir.sadteam.loancalc.data.db.AccountDao
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionDao
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
+import ir.sadteam.loancalc.data.network.ApiService
+import ir.sadteam.loancalc.data.network.BackupBlobRequest
 import kotlinx.coroutines.flow.Flow
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -21,6 +23,7 @@ import java.util.TimeZone
 class AccountRepository(
     private val accountDao: AccountDao,
     private val transactionDao: AccountTransactionDao,
+    private val apiService: ApiService,
 ) {
     fun observeAccounts(): Flow<List<AccountEntity>> = accountDao.observeAll()
     fun observeTransactions(): Flow<List<AccountTransactionEntity>> = transactionDao.observeAll()
@@ -109,6 +112,25 @@ class AccountRepository(
         accountDao.replaceAll(accounts)
         transactionDao.replaceAll(transactions)
         return true
+    }
+
+    /** پورت مفهومی pushToServer تو LoanRepository - fire-and-forget، خطاها عمداً قورت داده می‌شن. */
+    suspend fun pushToServer(token: String) {
+        try {
+            apiService.putAccountsBackup("Bearer $token", BackupBlobRequest(exportBackupJson()))
+        } catch (e: Exception) {
+            // عمداً نادیده گرفته می‌شه
+        }
+    }
+
+    /** آخرین بکاپِ ابریِ حساب‌ها/تراکنش‌ها رو می‌گیره و جایگزینِ دیتای محلی می‌کنه. */
+    suspend fun restoreFromServer(token: String): Boolean {
+        val blob = try {
+            apiService.getAccountsBackup("Bearer $token").data
+        } catch (e: Exception) {
+            return false
+        }
+        return importBackupJson(blob)
     }
 
     private fun isoNow(): String {

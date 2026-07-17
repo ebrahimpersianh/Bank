@@ -8,6 +8,8 @@ import ir.sadteam.loancalc.data.db.ChequeBookDao
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
 import ir.sadteam.loancalc.data.db.ChequeDao
 import ir.sadteam.loancalc.data.db.ChequeEntity
+import ir.sadteam.loancalc.data.network.ApiService
+import ir.sadteam.loancalc.data.network.BackupBlobRequest
 import kotlinx.coroutines.flow.Flow
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -16,11 +18,13 @@ import java.util.TimeZone
 
 /**
  * پورت مفهومی ماژول «امور چک» اپ رقیب (VAMMAN) - چک‌های دریافتی/پرداختی + دسته‌چک (برای پیشنهاد
- * خودکار شماره سریال بعدی). کاملاً محلی (Room)، هم‌الگو با LoanRepository.
+ * خودکار شماره سریال بعدی). محلی (Room) + پشتیبان‌گیری ابری اختیاری (pushToServer/restoreFromServer)،
+ * هم‌الگو با LoanRepository.
  */
 class ChequeRepository(
     private val chequeDao: ChequeDao,
     private val chequeBookDao: ChequeBookDao,
+    private val apiService: ApiService,
 ) {
     fun observeCheques(): Flow<List<ChequeEntity>> = chequeDao.observeAll()
     fun observeChequeBooks(): Flow<List<ChequeBookEntity>> = chequeBookDao.observeAll()
@@ -135,6 +139,26 @@ class ChequeRepository(
         chequeDao.replaceAll(cheques)
         chequeBookDao.replaceAll(books)
         return true
+    }
+
+    /** پورت مفهومی pushToServer تو LoanRepository - fire-and-forget، خطاها (اینترنت قطع، اشتراک
+     * منقضی و ...) عمداً قورت داده می‌شن چون این یه سینک پس‌زمینه‌ست. */
+    suspend fun pushToServer(token: String) {
+        try {
+            apiService.putChequesBackup("Bearer $token", BackupBlobRequest(exportBackupJson()))
+        } catch (e: Exception) {
+            // عمداً نادیده گرفته می‌شه
+        }
+    }
+
+    /** آخرین بکاپِ ابریِ چک‌ها/دسته‌چک‌ها رو می‌گیره و جایگزینِ دیتای محلی می‌کنه. */
+    suspend fun restoreFromServer(token: String): Boolean {
+        val blob = try {
+            apiService.getChequesBackup("Bearer $token").data
+        } catch (e: Exception) {
+            return false
+        }
+        return importBackupJson(blob)
     }
 
     private fun isoNow(): String {
