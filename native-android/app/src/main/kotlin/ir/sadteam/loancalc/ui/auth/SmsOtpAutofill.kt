@@ -7,11 +7,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
@@ -26,6 +24,13 @@ import com.google.android.gms.common.api.Status
  * من این پیامک رو بخونه؟») نشون می‌ده؛ فقط بعد از تاییدِ دستیِ کاربر، متنِ کامل پیامک در اختیار
  * اپ قرار می‌گیره - این یعنی اپ هیچ‌وقت بدونِ اطلاعِ کاربر پیامک نمی‌خونه.
  *
+ * دقتِ فنی: با این‌که «کد» ارسالی از سرور رو با متدِ `startSmsUserConsent` می‌خونیم (نه
+ * SMS Retriever خودکارِ بدونِ دیالوگ)، اکشنِ broadcast ای که سیستم برای هر دو حالت می‌فرسته یکیه:
+ * [SmsRetriever.SMS_RETRIEVED_ACTION] (کاتلین/جاوا اسمِ متفاوتِ SMS_CONSENT_ACTION نداره). و چون
+ * consentIntent (تو [SmsRetriever.EXTRA_CONSENT_INTENT]) یه Intentِ معمولیه نه IntentSender/
+ * PendingIntent، باید با `ActivityResultContracts.StartActivityForResult` اجرا بشه، نه
+ * StartIntentSenderForResult.
+ *
  * [active] باید فقط وقتی true بشه که کاربر تو مرحله‌ی وارد کردنِ کد تاییده (نه از اول باز شدنِ
  * صفحه‌ی ورود) - وگرنه دیالوگِ سیستمی زودتر از موقع (قبل از این‌که کاربر اصلاً درخواستِ کد داده
  * باشه) ظاهر می‌شه.
@@ -36,7 +41,7 @@ fun SmsUserConsentEffect(active: Boolean, onCodeReceived: (String) -> Unit) {
     val onCodeReceivedState = rememberUpdatedState(onCodeReceived)
 
     val consentLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult(),
+        ActivityResultContracts.StartActivityForResult(),
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val message = result.data?.getStringExtra(SmsRetriever.EXTRA_SMS_MESSAGE) ?: return@rememberLauncherForActivityResult
@@ -49,20 +54,18 @@ fun SmsUserConsentEffect(active: Boolean, onCodeReceived: (String) -> Unit) {
 
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(ctx: Context?, intent: Intent?) {
-                if (intent?.action != SmsRetriever.SMS_CONSENT_ACTION) return
+                if (intent?.action != SmsRetriever.SMS_RETRIEVED_ACTION) return
                 val status = intent.getParcelableSafe<Status>(SmsRetriever.EXTRA_STATUS) ?: return
                 if (status.statusCode == CommonStatusCodes.SUCCESS) {
                     val consentIntent = intent.getParcelableSafe<Intent>(SmsRetriever.EXTRA_CONSENT_INTENT)
                     if (consentIntent != null) {
-                        runCatching {
-                            consentLauncher.launch(IntentSenderRequest.Builder(consentIntent).build())
-                        }
+                        runCatching { consentLauncher.launch(consentIntent) }
                     }
                 }
             }
         }
 
-        val filter = IntentFilter(SmsRetriever.SMS_CONSENT_ACTION)
+        val filter = IntentFilter(SmsRetriever.SMS_RETRIEVED_ACTION)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.registerReceiver(receiver, filter, SmsRetriever.SEND_PERMISSION, null, ContextCompat.RECEIVER_EXPORTED)
         } else {
