@@ -34,6 +34,20 @@ jobs:
       # امضای دیباگ حالا مستقیم تو app/build.gradle.kts به فایل کامیت‌شده‌ی ci-debug.keystore پین شده
       # (نه ~/.android/debug.keystore)، پس دیگه نیازی به کپی‌کردن دستیِ کیستور اینجا نیست.
 
+      # کلید واقعیِ release - فقط اگه سکرت‌هاش تو تنظیمات ریپو (Settings → Secrets and variables →
+      # Actions) ست شده باشن این استپ فایل کیستور رو از سکرتِ base64 می‌سازه و مسیرش رو به بقیه‌ی
+      # استپ‌ها می‌ده (RELEASE_KEYSTORE_PATH تو app/build.gradle.kts خونده می‌شه)؛ وگرنه (سکرت‌ها هنوز
+      # ست نشدن) این استپ رد می‌شه و بیلد release طبق فال‌بکِ build.gradle.kts با کلید دیباگ امضا
+      # می‌شه - یعنی هیچ‌وقت خودِ بیلد fail نمی‌کنه، فقط تا وقتی سکرت‌ها نیستن نباید اون APK رو رو
+      # کافه‌بازار آپلود کرد.
+      - name: آماده‌سازی کلید واقعیِ release (اگه سکرت‌هاش ست شده باشن)
+        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          echo "RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+
       - name: تنظیم versionCode یکتا و صعودی از شماره‌ی ران (تا نصب بیلد جدید رو بیلد قبلی downgrade حساب نشه)
         run: sed -i "s/versionCode = 1/versionCode = ${{ github.run_number }}/" app/build.gradle.kts
 
@@ -43,9 +57,14 @@ jobs:
       - name: ساخت APK دیباگ
         run: ./gradlew :app:assembleDebug --console=plain
 
-      # بیلد release همون کد رو بدون debuggable می‌سازه که خیلی روان‌تره (رفع لگ اسکرول/تعویض تب) -
-      # با همون کلید امضا می‌شه، پس رو نصبِ قبلی هم می‌شینه. برای نصب رو گوشی همین رو بردار.
+      # بیلد release همون کد رو بدون debuggable می‌سازه که خیلی روان‌تره (رفع لگ اسکرول/تعویض تب).
+      # امضاش به کلیدِ واقعیِ release (اگه سکرت‌هاش ست شده باشن) یا فال‌بکِ کلید دیباگ بستگی داره -
+      # رجوع کن به استپ بالا و کامنتِ signingConfig تو app/build.gradle.kts.
       - name: ساخت APK ریلیز (روان - برای نصب این رو بردار)
+        env:
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: ./gradlew :app:assembleRelease --console=plain
 
       - name: بارگذاری APK ریلیز (نسخه‌ی روان - این رو نصب کن)

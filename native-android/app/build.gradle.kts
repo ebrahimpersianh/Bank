@@ -23,6 +23,20 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        // کلید واقعیِ release: از متغیرهای محیطی خونده می‌شه (نه هاردکد تو گیت - این‌ها واقعاً محرمانه‌ان،
+        // برخلاف کلید دیباگِ عمومیِ بالا)، چون بیلد release قبلاً با همون کلید دیباگِ عمومی امضا می‌شد که
+        // برای انتشار واقعی رو کافه‌بازار خطرناکه (هرکسی می‌تونه یه آپدیتِ جعلی با همون کلید امضا کنه).
+        // اگه RELEASE_KEYSTORE_PATH ست نشده باشه (لوکال، یا CI بدون سکرت‌ها) از همین signingConfig
+        // استفاده نمی‌شه - رجوع کن به buildTypes.release پایین که فال‌بک می‌زنه رو کلید دیباگ.
+        create("release") {
+            val path = System.getenv("RELEASE_KEYSTORE_PATH")
+            if (path != null) {
+                storeFile = file(path)
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
     }
 
     defaultConfig {
@@ -49,9 +63,15 @@ android {
             // همگام‌سازی/پشتیبان‌گیریِ ابری، و بازیابی از بکاپ رو دستی تست کن.
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // با همون کلید ثابتِ کامیت‌شده امضا می‌شه (عین debug) تا رو نصبِ قبلی - چه debug چه
-            // release - بدون ارور امضا نصب بشه.
-            signingConfig = signingConfigs.getByName("debug")
+            // اگه کلید واقعیِ release در دسترس بود (RELEASE_KEYSTORE_PATH ست شده - رجوع کن به
+            // signingConfigs بالا) باهاش امضا می‌شه؛ وگرنه (لوکال/CI بدون سکرت‌ها) فال‌بک می‌زنه رو
+            // همون کلید دیباگِ عمومی، فقط برای این‌که بیلد لوکال/تستی خراب نشه - این بیلد هیچ‌وقت نباید
+            // مستقیم رو کافه‌بازار آپلود بشه.
+            signingConfig = if (System.getenv("RELEASE_KEYSTORE_PATH") != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
         debug {
             signingConfig = signingConfigs.getByName("debug")
