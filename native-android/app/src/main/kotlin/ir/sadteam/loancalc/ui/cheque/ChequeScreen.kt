@@ -128,12 +128,13 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
     var showChequeBooks by remember { mutableStateOf(false) }
     var typeFilter by remember { mutableStateOf<ChequeType?>(null) }
     var menuExpanded by remember { mutableStateOf(false) }
+    var showArchived by remember { mutableStateOf(false) }
 
     val allCheques by viewModel.cheques.collectAsState()
     val chequeBooks by viewModel.chequeBooks.collectAsState()
-    val visibleCheques = remember(allCheques, typeFilter) {
+    val visibleCheques = remember(allCheques, typeFilter, showArchived) {
         val filterName = typeFilter?.name
-        allCheques.filter { !it.archived && (filterName == null || it.type == filterName) }
+        allCheques.filter { it.archived == showArchived && (filterName == null || it.type == filterName) }
     }
     val stats = remember(allCheques) { computeChequeStats(allCheques) }
     val openedCheque = openedChequeId?.let { id -> allCheques.firstOrNull { it.id == id } }
@@ -230,10 +231,15 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                         IconButton(onClick = onBack) {
                             Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                         }
-                        Text("امور چک", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+                        Text(
+                            if (showArchived) "بایگانی چک" else "امور چک",
+                            color = AppText,
+                            fontSize = 16.sp,
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
                         Spacer(modifier = Modifier.weight(1f))
-                        // تنظیمات این بخش (دسته‌چک‌ها/پشتیبان‌گیری/بازیابی) زیر آیکون سه‌خط، نه
-                        // دیگه دکمه‌های همیشه‌نمایانِ بالای صفحه (خواسته‌ی کاربر).
+                        // تنظیمات این بخش (دسته‌چک‌ها/بایگانی/پشتیبان‌گیری/بازیابی) زیر آیکون
+                        // سه‌خط، نه دیگه دکمه‌های همیشه‌نمایانِ بالای صفحه (خواسته‌ی کاربر).
                         Box {
                             IconButton(onClick = { menuExpanded = true }) {
                                 Icon(Icons.Filled.Menu, contentDescription = "تنظیمات امور چک")
@@ -242,6 +248,10 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                                 DropdownMenuItem(
                                     text = { Text("دسته‌چک‌ها") },
                                     onClick = { menuExpanded = false; showChequeBooks = true },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(if (showArchived) "بازگشت به لیست اصلی" else "بایگانی") },
+                                    onClick = { menuExpanded = false; showArchived = !showArchived; typeFilter = null },
                                 )
                                 DropdownMenuItem(
                                     text = { Text("پشتیبان‌گیری") },

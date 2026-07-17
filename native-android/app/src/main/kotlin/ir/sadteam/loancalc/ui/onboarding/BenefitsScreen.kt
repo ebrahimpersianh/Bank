@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.ui.onboarding
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -113,6 +114,21 @@ fun BenefitsScreen(onContinue: () -> Unit) {
         ) {
             Text("بزن بریم")
         }
+
+        // به‌جای فقط متن، پایینِ صفحه یه لینکِ کوچیکِ مخصوصِ خریدِ نسخه‌ی اشتراکی هم داره (پورت
+        // مفهومیِ لینکِ «برای فعال‌سازی لمس کنید» تو صفحه‌ی خوش‌آمدِ اپ رقیب) - چون اینجا هنوز قبل
+        // از گیتِ ورودیم (هیچ کاربری شناخته‌شده نیست)، این هم دقیقاً همون onContinue رو صدا می‌زنه؛
+        // قدمِ بعدی (ورود، بعد صفحه‌ی اشتراک) طبق همون قانونِ همیشگیِ اپ پیش می‌ره.
+        Text(
+            "می‌خوای نسخه‌ی اشتراکی رو بخری؟ اول وارد شو ←",
+            color = AppAccent,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .padding(top = 14.dp)
+                .clickable(onClick = onContinue),
+        )
     }
 }
 
