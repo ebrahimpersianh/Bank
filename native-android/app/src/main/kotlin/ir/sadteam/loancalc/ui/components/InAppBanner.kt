@@ -48,7 +48,7 @@ import kotlinx.coroutines.delay
  * `InAppBannerHost(banner)` رو به‌عنوان آخرین فرزندِ همون Box اضافه کن. هر جا قبلاً Toast بود،
  * به‌جاش `banner.show("متن")` صدا بزن.
  */
-private data class BannerMessage(val text: String, val isSuccess: Boolean)
+internal data class BannerMessage(val text: String, val isSuccess: Boolean)
 
 @Composable
 fun rememberInAppBanner(): InAppBannerState {
