@@ -143,15 +143,27 @@ fun LoanDetailScreen(
             ((it["m"] as? Number)?.toInt() ?: 0) to ((it["installment"] as? Number)?.toDouble() ?: loan.installment)
         }
         scope.launch(Dispatchers.IO) {
-            val inserted = DeviceCalendarExporter.insertInstallmentEvents(context, items) { m ->
-                "[وام] قسط ${toFa(m)} ${loan.name} (${fmt(amountByM[m] ?: loan.installment)} ریال)"
+            // قبلاً هیچ try/catch ای اینجا نبود: بعضی گوشی‌ها (مخصوصاً رام‌های سفارشی مثل MIUI) با
+            // اینکه مجوز رو گرفتی، سرِ خودِ insert بازم SecurityException/IllegalArgumentException
+            // پرت می‌کنن - چون این کوروتین رو Dispatchers.IO بدون هیچ catchی بود، این استثنا مستقیم
+            // می‌رفت رو CrashReporter (Thread.UncaughtExceptionHandler سراسری) که فقط گزارشش می‌کنه،
+            // نه نمایشش؛ نتیجه برای کاربر دقیقاً «هیچ اتفاقی نمی‌افته» بود (نه پیام موفقیت، نه خطا).
+            val result = runCatching {
+                DeviceCalendarExporter.insertInstallmentEvents(context, items) { m ->
+                    "[وام] قسط ${toFa(m)} ${loan.name} (${fmt(amountByM[m] ?: loan.installment)} ریال)"
+                }
             }
             withContext(Dispatchers.Main) {
-                calendarMessage = if (inserted > 0) {
-                    "${toFa(inserted)} قسط به تقویم گوشی اضافه شد"
-                } else {
-                    "تقویم قابل‌نوشتنی رو گوشی پیدا نشد"
-                }
+                calendarMessage = result.fold(
+                    onSuccess = { inserted ->
+                        if (inserted > 0) {
+                            "${toFa(inserted)} قسط به تقویم گوشی اضافه شد"
+                        } else {
+                            "تقویم قابل‌نوشتنی رو گوشی پیدا نشد"
+                        }
+                    },
+                    onFailure = { "این گوشی اجازه نداد به تقویم اضافه بشه" },
+                )
             }
         }
     }

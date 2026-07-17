@@ -204,6 +204,7 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
             "subscription" -> SubscriptionScreen(
                 onBack = { showSubscriptionScreen = false },
                 onSubscribed = { showSubscriptionScreen = false },
+                onNeedsLogin = { showLoginPrompt = true },
             )
             "add" -> AddManualLoanScreen(
                 onSaved = { showAddForm = false },

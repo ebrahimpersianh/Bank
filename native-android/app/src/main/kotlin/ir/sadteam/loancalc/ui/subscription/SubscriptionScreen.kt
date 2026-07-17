@@ -14,6 +14,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.subscriptionTiers
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
+import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -36,14 +38,21 @@ import ir.sadteam.loancalc.ui.theme.AppText
  * پورت #subscriptionModal تو www/index.html - ۴ پلن پلکانی، خرید واقعی با SDK بومی Poolakey
  * (نه پلاگین Capacitor)، تایید سمت سرور قبل از فعال‌شدن. اگه کافه‌بازار رو گوشی نصب نباشه یا
  * سرویس وصل نشه، [LocalSubscriptionManager] پیام صادقانه‌ی «فقط رو نسخه‌ی نصبی کار می‌کنه» می‌ده.
+ *
+ * قیمت‌ها (رجوع کن به [subscriptionTiers]) بی‌قید و شرط از کافه‌بازار خونده می‌شن - این صفحه دیگه
+ * پشتِ گیتِ ورود نیست (خواسته‌ی کاربر: «می‌خوام اشتراک‌ها قیمتشون معلوم باشه، نیاز نباشه حتما ورود
+ * کرد»)؛ فقط دکمه‌ی خرید، چون سمت سرور نیاز به توکن داره (AuthRepository.verifySubscription)، اگه
+ * کاربر لاگین نباشه به‌جای شروع خرید [onNeedsLogin] رو صدا می‌زنه.
  */
 @Composable
 fun SubscriptionScreen(
     onBack: () -> Unit,
     onSubscribed: () -> Unit,
+    onNeedsLogin: () -> Unit = {},
     authViewModel: AuthViewModel = hiltViewModel(),
 ) {
     val subscriptionManager = LocalSubscriptionManager.current
+    val gateState by authViewModel.gateState.collectAsState()
     var prices by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var purchasingProductId by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -81,6 +90,16 @@ fun SubscriptionScreen(
                 )
             }
         } else {
+            if (gateState != GateState.LOGGED_IN) {
+                item {
+                    Text(
+                        "قیمت‌های زیر رو ببین؛ برای تکمیل خرید، اول باید وارد حساب بشی.",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+                    )
+                }
+            }
             items(subscriptionTiers, key = { it.first }) { (productId, label) ->
                 AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
                     Row(
@@ -95,6 +114,10 @@ fun SubscriptionScreen(
                         GradientButton(
                             enabled = purchasingProductId == null,
                             onClick = {
+                                if (gateState != GateState.LOGGED_IN) {
+                                    onNeedsLogin()
+                                    return@GradientButton
+                                }
                                 error = null
                                 purchasingProductId = productId
                                 subscriptionManager.purchase(

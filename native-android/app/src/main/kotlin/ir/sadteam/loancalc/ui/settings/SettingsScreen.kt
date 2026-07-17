@@ -156,6 +156,7 @@ fun SettingsScreen(
             "subscription" -> SubscriptionScreen(
                 onBack = { showSubscription = false },
                 onSubscribed = { showSubscription = false },
+                onNeedsLogin = { showLoginPrompt = true },
             )
             "history" -> CalculationHistoryScreen(onBack = { showHistory = false })
             else -> SettingsMainContent(
@@ -387,10 +388,12 @@ private fun SettingsMainContent(
 
             // این کارت قبلاً فقط برای LOGGED_IN نشون داده می‌شد - یعنی کاربر مهمان (GateState.GUEST)
             // اصلاً هیچ نقطه‌ی ورودی‌ای برای خرید اشتراک نمی‌دید (خواسته‌ی صریح کاربر: «تو تنظیمات
-            // زیر حساب کاربری بجا باشه برای خرید اشتراک اصلا جایی نزاشتی اونو»). حالا برای هر دو حالت
-            // (مهمان/واردشده) که مشترک نیستن نشون داده می‌شه؛ چون خریدِ واقعی سمت سرور نیاز به توکنِ
-            // ورود داره (AuthRepository.verifySubscription)، تپ‌کردنش برای مهمان اول می‌بره سراغ
-            // ورود، نه مستقیم صفحه‌ی خرید.
+            // زیر حساب کاربری بجا باشه برای خرید اشتراک اصلا جایی نزاشتی اونو»). بعد کاربر گفت حتی
+            // دیدنِ قیمتِ پلن‌ها هم نباید اول ورود بخواد («می‌خوام اشتراک‌ها قیمتشون معلوم باشه، نیاز
+            // نباشه حتما ورود کرد») - پس حالا تپ‌کردن همیشه مستقیم می‌ره صفحه‌ی پلن‌ها (SubscriptionScreen
+            // قیمت‌ها رو بی‌قید و شرط از کافه‌بازار می‌گیره، نیاز به توکن نداره)؛ فقط خودِ دکمه‌ی «خرید»
+            // تو اون صفحه (نه اینجا) اگه کاربر لاگین نبود، اول می‌بره سراغ ورود - رجوع کن به
+            // SubscriptionScreen.onNeedsLogin.
             if (!subscribed && matches("اشتراک", "خرید اشتراک")) {
                 PulseGlowBox(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
                     AppCard(backgroundColor = lerp(AppSurface, AppAccent, 0.14f)) {
@@ -399,11 +402,7 @@ private fun SettingsMainContent(
                             Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
                                 Text("ارتقا به نسخه اشتراکی", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    if (gateState == GateState.LOGGED_IN) {
-                                        "وام/چک نامحدود، همگام‌سازی چند دستگاه و موارد دیگر"
-                                    } else {
-                                        "برای خرید اشتراک اول باید وارد حساب بشی"
-                                    },
+                                    "وام/چک نامحدود، همگام‌سازی چند دستگاه و موارد دیگر",
                                     color = AppMuted,
                                     fontSize = 11.sp,
                                     modifier = Modifier.padding(top = 2.dp),
@@ -411,10 +410,10 @@ private fun SettingsMainContent(
                             }
                         }
                         GradientButton(
-                            onClick = if (gateState == GateState.LOGGED_IN) onShowSubscription else onShowLoginPrompt,
+                            onClick = onShowSubscription,
                             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                         ) {
-                            Text(if (gateState == GateState.LOGGED_IN) "مشاهده پلن‌ها" else "ورود و مشاهده پلن‌ها")
+                            Text("مشاهده پلن‌ها")
                         }
                     }
                 }
