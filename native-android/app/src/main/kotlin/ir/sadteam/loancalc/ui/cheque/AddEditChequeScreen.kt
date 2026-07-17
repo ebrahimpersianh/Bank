@@ -201,8 +201,8 @@ fun AddEditChequeScreen(
                     )
                 }
                 if (showMoreInfo) {
-                    val previousBalanceVal = cleanNum(previousBalanceText).toDoubleOrNull() ?: 0.0
-                    val depositAmountVal = cleanNum(depositAmountText).toDoubleOrNull() ?: 0.0
+                    val previousBalanceVal = cleanNumDecimal(previousBalanceText).toDoubleOrNull() ?: 0.0
+                    val depositAmountVal = cleanNumDecimal(depositAmountText).toDoubleOrNull() ?: 0.0
                     val sumVal = previousBalanceVal + depositAmountVal
                     val remainingVal = sumVal - (amountText.toLongOrNull()?.toDouble() ?: 0.0)
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -219,7 +219,7 @@ fun AddEditChequeScreen(
                             OutlinedTextField(
                                 value = previousBalanceText,
                                 onValueChange = { previousBalanceText = cleanNumDecimal(it) },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                             )
@@ -234,7 +234,7 @@ fun AddEditChequeScreen(
                             OutlinedTextField(
                                 value = depositAmountText,
                                 onValueChange = { depositAmountText = cleanNumDecimal(it) },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                             )
@@ -396,8 +396,8 @@ fun AddEditChequeScreen(
                                     chequeBookId = chequeBookId,
                                     photoPath = photoPath,
                                     nationalId = nationalId.trim(),
-                                    previousBalance = cleanNum(previousBalanceText).toDoubleOrNull(),
-                                    depositAmount = cleanNum(depositAmountText).toDoubleOrNull(),
+                                    previousBalance = cleanNumDecimal(previousBalanceText).toDoubleOrNull(),
+                                    depositAmount = cleanNumDecimal(depositAmountText).toDoubleOrNull(),
                                     onSaved = onSaved,
                                 )
                             } else {
@@ -417,8 +417,8 @@ fun AddEditChequeScreen(
                                         chequeBookId = chequeBookId,
                                         photoPath = photoPath,
                                         nationalId = nationalId.trim().takeIf { it.isNotBlank() },
-                                        previousBalance = cleanNum(previousBalanceText).toDoubleOrNull(),
-                                        depositAmount = cleanNum(depositAmountText).toDoubleOrNull(),
+                                        previousBalance = cleanNumDecimal(previousBalanceText).toDoubleOrNull(),
+                                        depositAmount = cleanNumDecimal(depositAmountText).toDoubleOrNull(),
                                     ),
                                     onSaved = onSaved,
                                 )

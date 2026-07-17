@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
@@ -801,7 +802,7 @@ private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
             Column {
                 OutlinedTextField(
                     value = pin,
-                    onValueChange = { if (it.length <= 8) pin = it },
+                    onValueChange = { val cleaned = cleanNum(it); if (cleaned.length <= 8) pin = cleaned },
                     label = { Text("PIN جدید") },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
@@ -810,7 +811,7 @@ private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
                 )
                 OutlinedTextField(
                     value = confirmPin,
-                    onValueChange = { if (it.length <= 8) confirmPin = it },
+                    onValueChange = { val cleaned = cleanNum(it); if (cleaned.length <= 8) confirmPin = cleaned },
                     label = { Text("تکرار PIN") },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),

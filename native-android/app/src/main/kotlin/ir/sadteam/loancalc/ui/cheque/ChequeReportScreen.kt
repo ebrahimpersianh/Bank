@@ -35,7 +35,7 @@ import ir.sadteam.loancalc.ui.theme.AppText
  * فقط نمایشه.
  */
 @Composable
-fun ChequeReportScreen(
+internal fun ChequeReportScreen(
     stats: ChequeStats,
     onBack: () -> Unit,
     onDownloadPdf: () -> Unit,

@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
+import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -105,8 +106,9 @@ fun LockScreen(
             OutlinedTextField(
                 value = pin,
                 onValueChange = {
-                    if (it.length <= 8) {
-                        pin = it
+                    val cleaned = cleanNum(it)
+                    if (cleaned.length <= 8) {
+                        pin = cleaned
                         error = null
                     }
                 },
