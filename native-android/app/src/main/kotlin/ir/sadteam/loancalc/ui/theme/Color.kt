@@ -18,12 +18,16 @@ data class AppColorPalette(
     val line: Color,
 )
 
+// خواسته‌ی صریح کاربر: primary/primaryDim از یه سبزِ فیروزه‌ایِ نزدیک به سبز (hue ~169°) به یه
+// سبزآبیِ واضح‌تر و پررنگ‌تر (hue ~185-187°، اشباعِ ~100%، حداقل ۳۰٪ پررنگ‌تر از قبل) تغییر کرد.
+// چون همه‌ی پس‌زمینه‌های کم‌رنگِ باکس‌ها تو کل اپ با AppPrimary.copy(alpha=...) ساخته می‌شن، همین
+// یه تغییر رنگِ پایه کافیه که همه‌جا (دکمه، آیکون، پس‌زمینه‌ها) یکجا آپدیت بشه.
 val DarkAppColors = AppColorPalette(
     bg = Color(0xFF0D1321),
     surface = Color(0xFF161F35),
     surface2 = Color(0xFF1D2A46),
-    primary = Color(0xFF2DD8B8),
-    primaryDim = Color(0xFF1B8E78),
+    primary = Color(0xFF00C2D1),
+    primaryDim = Color(0xFF00838D),
     accent = Color(0xFFF0A857),
     text = Color(0xFFEEF1F8),
     muted = Color(0xFF7C879E),
@@ -35,8 +39,8 @@ val LightAppColors = AppColorPalette(
     bg = Color(0xFFF6F7FB),
     surface = Color(0xFFFFFFFF),
     surface2 = Color(0xFFEEF1F8),
-    primary = Color(0xFF0F9E88),
-    primaryDim = Color(0xFF0C7C6A),
+    primary = Color(0xFF008C99),
+    primaryDim = Color(0xFF00707A),
     accent = Color(0xFFC97A1F),
     text = Color(0xFF141A2A),
     muted = Color(0xFF6B7488),

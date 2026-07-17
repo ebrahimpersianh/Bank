@@ -83,7 +83,10 @@ fun ChequeDetailScreen(
                     DetailRow("نوع", typeLabel)
                     DetailRow("مبلغ", "${fmt(cheque.amount)} ریال")
                     DetailRow("شماره چک", toFa(cheque.chequeNumber))
-                    if (!cheque.sayadId.isNullOrBlank()) DetailRow("شناسه صیادی", toFa(cheque.sayadId))
+                    // smart-cast مستقیم رو یه property از یه ماژول دیگه (:data) مجاز نیست، برای
+                    // همین اول تو یه val محلی می‌ریزیمش.
+                    val sayadId = cheque.sayadId
+                    if (!sayadId.isNullOrBlank()) DetailRow("شناسه صیادی", toFa(sayadId))
                     DetailRow("بانک", cheque.bankName)
                     if (cheque.branchName.isNotBlank()) DetailRow("شعبه", cheque.branchName)
                     DetailRow(if (cheque.type == "RECEIVED") "پرداخت‌کننده" else "دریافت‌کننده", cheque.ownerName)
