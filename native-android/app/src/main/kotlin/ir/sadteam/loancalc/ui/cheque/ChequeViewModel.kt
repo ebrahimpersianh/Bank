@@ -40,15 +40,33 @@ class ChequeViewModel @Inject constructor(
         dueDay: Int,
         notes: String,
         chequeBookId: Long?,
+        photoPath: String?,
+        nationalId: String?,
+        previousBalance: Double?,
+        depositAmount: Double?,
         onSaved: () -> Unit,
     ) {
         viewModelScope.launch {
             chequeRepository.addCheque(
                 type, amount, chequeNumber, sayadId, bankName, branchName, ownerName,
                 dueYear, dueMonth, dueDay, notes, chequeBookId,
+                photoPath, nationalId, previousBalance, depositAmount,
             )
             onSaved()
         }
+    }
+
+    /** پیک‌کردن عکسِ رسید تو خودِ فرمِ افزودن چک (قبل از این‌که چک هنوز ذخیره شده باشه، پس id نداره) -
+     * عکس فوراً به فضای داخلی اپ کپی می‌شه و مسیرش برمی‌گرده تا فرم موقتاً تو state خودش نگهش داره؛
+     * وقتی کاربر «ذخیره چک» رو زد همین مسیر مستقیم تو [addCheque] پاس داده می‌شه. */
+    fun pickPhotoForNewCheque(uri: Uri, onResult: (String?) -> Unit) {
+        viewModelScope.launch { onResult(attachmentStorage.copyToInternalStorage(uri)) }
+    }
+
+    /** اگه کاربر تو فرمِ افزودن یه عکس پیک کرد ولی بعد حذفش کرد/فرم رو کنسل کرد، فایلِ یتیمِ کپی‌شده
+     * تو فضای داخلی اپ رو پاک می‌کنه (چون هیچ چکی بهش اشاره نمی‌کنه). */
+    fun deleteOrphanPhoto(path: String?) {
+        viewModelScope.launch { attachmentStorage.delete(path) }
     }
 
     fun updateCheque(cheque: ChequeEntity, onSaved: () -> Unit) {

@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.cheque
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +11,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -25,12 +29,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.ChequeType
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.cleanNum
+import ir.sadteam.loancalc.core.cleanNumDecimal
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
@@ -41,8 +47,10 @@ import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
+import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
  * فرم افزودن/ویرایش چک - هم‌الگو با BankLoanScreen (تاریخِ اینلاینِ چرخونه‌ای + آیکونِ تقویمِ گریدیِ
@@ -69,6 +77,11 @@ fun AddEditChequeScreen(
     var dueMonth by remember { mutableStateOf(existing?.dueMonth ?: 1) }
     var dueDay by remember { mutableStateOf(existing?.dueDay ?: 1) }
     var chequeBookId by remember { mutableStateOf(existing?.chequeBookId) }
+    var photoPath by remember { mutableStateOf(existing?.photoPath) }
+    var showMoreInfo by remember { mutableStateOf(false) }
+    var nationalId by remember { mutableStateOf(existing?.nationalId ?: "") }
+    var previousBalanceText by remember { mutableStateOf(existing?.previousBalance?.let { fmt(it) } ?: "") }
+    var depositAmountText by remember { mutableStateOf(existing?.depositAmount?.let { fmt(it) } ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
     var showCalendarPicker by remember { mutableStateOf(false) }
 
@@ -128,9 +141,114 @@ fun AddEditChequeScreen(
                 }
             }
         }
+        item {
+            // پیوست عکس مستقیم تو خودِ فرمِ افزودن (نه فقط بعد از ذخیره، تو جزئیات) - برای چکِ جدید
+            // (existing == null) هنوز id نداریم، پس عکس بلافاصله با pickPhotoForNewCheque به فضای
+            // داخلی اپ کپی می‌شه و مسیرش موقتاً تو state خودِ فرم می‌مونه تا موقعِ «ذخیره چک» مستقیم
+            // با خودِ چک ذخیره بشه؛ برای ویرایش (existing != null) رفتار عیناً مثل قبل (ChequeDetailScreen).
+            PhotoAttachmentCard(
+                photoPath = photoPath,
+                onPick = { uri ->
+                    viewModel.pickPhotoForNewCheque(uri) { newPath ->
+                        if (newPath != null) {
+                            viewModel.deleteOrphanPhoto(photoPath.takeIf { existing == null })
+                            photoPath = newPath
+                        }
+                    }
+                },
+                onRemove = {
+                    if (existing == null) viewModel.deleteOrphanPhoto(photoPath)
+                    photoPath = null
+                },
+            )
+        }
+        item {
+            // بخشِ اختیاریِ «اطلاعات بیشتر» (شناسه/کد ملی + مانده‌ی قبلی/واریزی حساب) - جمع/مانده از
+            // رو همین دو مقدار محاسبه می‌شه، فیلدِ جدا برای اون‌ها نیست.
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showMoreInfo = !showMoreInfo }
+                    .animateContentSize(),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("اطلاعات بیشتر", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Icon(
+                        if (showMoreInfo) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = null,
+                        tint = AppMuted,
+                    )
+                }
+                if (showMoreInfo) {
+                    val previousBalanceVal = cleanNum(previousBalanceText).toDoubleOrNull() ?: 0.0
+                    val depositAmountVal = cleanNum(depositAmountText).toDoubleOrNull() ?: 0.0
+                    val sumVal = previousBalanceVal + depositAmountVal
+                    val remainingVal = sumVal - (amountText.toLongOrNull()?.toDouble() ?: 0.0)
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        AppCard(label = "شناسه ملی / کد ملی") {
+                            OutlinedTextField(
+                                value = nationalId,
+                                onValueChange = { nationalId = cleanNum(it).take(11) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                            )
+                        }
+                        AppCard(label = "مانده قبلی (تومان)") {
+                            OutlinedTextField(
+                                value = previousBalanceText,
+                                onValueChange = { previousBalanceText = cleanNumDecimal(it) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                            )
+                            Text(
+                                "موجودی حساب قبل از واریز مبلغ جدید",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
+                        AppCard(label = "واریزی (تومان)") {
+                            OutlinedTextField(
+                                value = depositAmountText,
+                                onValueChange = { depositAmountText = cleanNumDecimal(it) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                            )
+                            Text(
+                                "مبلغی که امروز به حساب واریز کرده‌اید",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            AppCard(label = "جمع (تومان)", modifier = Modifier.weight(1f)) {
+                                Text(fmt(sumVal), color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                            }
+                            AppCard(label = "مانده (تومان)", modifier = Modifier.weight(1f)) {
+                                Text(fmt(remainingVal), color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+        }
         if (chequeBooks.isNotEmpty()) {
             item {
-                AppCard(label = "دسته‌چک (اختیاری)") {
+                AppCard(label = "اطلاعات دسته چک") {
+                    Text(
+                        "از بین دسته‌چک‌های ثبت‌شده انتخاب کنید (اختیاری)",
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
                     ChequeBookDropdown(
                         chequeBooks = chequeBooks,
                         selected = chequeBookId,
@@ -259,6 +377,10 @@ fun AddEditChequeScreen(
                                     dueDay = dueDay,
                                     notes = notes.trim(),
                                     chequeBookId = chequeBookId,
+                                    photoPath = photoPath,
+                                    nationalId = nationalId.trim(),
+                                    previousBalance = cleanNum(previousBalanceText).toDoubleOrNull(),
+                                    depositAmount = cleanNum(depositAmountText).toDoubleOrNull(),
                                     onSaved = onSaved,
                                 )
                             } else {
@@ -276,6 +398,10 @@ fun AddEditChequeScreen(
                                         dueDay = dueDay,
                                         notes = notes.trim(),
                                         chequeBookId = chequeBookId,
+                                        photoPath = photoPath,
+                                        nationalId = nationalId.trim().takeIf { it.isNotBlank() },
+                                        previousBalance = cleanNum(previousBalanceText).toDoubleOrNull(),
+                                        depositAmount = cleanNum(depositAmountText).toDoubleOrNull(),
                                     ),
                                     onSaved = onSaved,
                                 )

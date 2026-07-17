@@ -42,6 +42,10 @@ class ChequeRepository(
         dueDay: Int,
         notes: String,
         chequeBookId: Long?,
+        photoPath: String? = null,
+        nationalId: String? = null,
+        previousBalance: Double? = null,
+        depositAmount: Double? = null,
     ) {
         chequeDao.upsert(
             ChequeEntity(
@@ -61,6 +65,10 @@ class ChequeRepository(
                 chequeBookId = chequeBookId,
                 archived = false,
                 createdAt = isoNow(),
+                photoPath = photoPath,
+                nationalId = nationalId?.takeIf { it.isNotBlank() },
+                previousBalance = previousBalance,
+                depositAmount = depositAmount,
             ),
         )
         if (chequeBookId != null) {
