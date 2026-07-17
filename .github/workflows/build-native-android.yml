@@ -15,6 +15,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # چون `secrets` مستقیم تو `if:` یه step مجاز نیست، اول یه‌بار تو env سطح job (که این‌جا مجازه)
+      # منتقلش می‌کنیم تا استپِ بعدی بتونه با env.HAS_RELEASE_KEY تصمیم بگیره.
+      HAS_RELEASE_KEY: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
     defaults:
       run:
         working-directory: native-android
@@ -41,7 +45,7 @@ jobs:
       # می‌شه - یعنی هیچ‌وقت خودِ بیلد fail نمی‌کنه، فقط تا وقتی سکرت‌ها نیستن نباید اون APK رو رو
       # کافه‌بازار آپلود کرد.
       - name: آماده‌سازی کلید واقعیِ release (اگه سکرت‌هاش ست شده باشن)
-        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.HAS_RELEASE_KEY == 'true' }}
         env:
           RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
         run: |
