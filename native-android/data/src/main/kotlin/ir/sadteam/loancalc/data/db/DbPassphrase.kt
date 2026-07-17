@@ -3,7 +3,7 @@ package ir.sadteam.loancalc.data.db
 import android.content.Context
 import android.util.Base64
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import androidx.security.crypto.MasterKeys
 import java.security.SecureRandom
 
 /**
@@ -17,13 +17,11 @@ private object DbPassphrase {
     private const val KEY_PASSPHRASE = "db_passphrase"
 
     fun getOrCreate(context: Context): ByteArray {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
+        val keyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
         val prefs = EncryptedSharedPreferences.create(
-            context,
             PREFS_NAME,
-            masterKey,
+            keyAlias,
+            context,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
         )

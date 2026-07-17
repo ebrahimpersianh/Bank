@@ -43,8 +43,11 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     // رمزنگاری دیتابیس Room (SQLCipher) - وام/چک/حساب اطلاعات مالی/شخصی‌ان، اگه گوشی روت باشه یکی
-    // می‌تونه فایل خام دیتابیس رو بخونه؛ این‌ها همون فایل رو با AES-256 رمزنگاری می‌کنن.
-    implementation("net.zetetic:sqlcipher-android:4.6.1")
+    // می‌تونه فایل خام دیتابیس رو بخونه؛ این‌ها همون فایل رو با AES-256 رمزنگاری می‌کنن. عمداً
+    // android-database-sqlcipher (نه بازنویسیِ جدیدترِ sqlcipher-android) چون فقط این یکی
+    // net.sqlcipher.database.SupportFactory (پیاده‌سازیِ آماده‌ی SupportSQLiteOpenHelper.Factory
+    // برای Room) رو داره؛ نسخه‌ی جدید فقط درایورِ خامه، بدونِ پُلِ Room.
+    implementation("net.zetetic:android-database-sqlcipher:4.5.4")
     implementation("androidx.sqlite:sqlite:2.4.0")
     // پسورد رمزنگاری رو خودش نمی‌سازیم/جایی هاردکد نمی‌کنیم - یه کلید تصادفی تولید و با
     // Android Keystore (سخت‌افزاری، هیچ‌وقت از دستگاه خارج نمی‌شه) نگه‌داری می‌شه.
