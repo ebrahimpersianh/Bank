@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.AffordabilityCalculator
 import ir.sadteam.loancalc.core.RateFinderCalculator
 import ir.sadteam.loancalc.core.cleanNum
@@ -44,6 +45,7 @@ import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
+import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -54,7 +56,7 @@ private val affordMonthChipValues = listOf(12, 24, 36, 60, 120)
 
 /** پورت مو‌به‌موی تب «چقدر وام می‌تونم بگیرم؟» (view-afford تو www/index.html). */
 @Composable
-fun AffordScreen() {
+fun AffordScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel()) {
     var payText by remember { mutableStateOf("100,000,000") }
     var paySlider by remember { mutableStateOf(100_000_000f) }
 
@@ -170,7 +172,14 @@ fun AffordScreen() {
             GradientButton(
                 onClick = {
                     if (pay > 0) {
-                        result = AffordabilityCalculator.computeMaxPrincipal(pay.toDouble(), rate, n)
+                        val maxPrincipal = AffordabilityCalculator.computeMaxPrincipal(pay.toDouble(), rate, n)
+                        result = maxPrincipal
+                        historyViewModel.log(
+                            kind = "AFFORD",
+                            title = "محاسبه‌گر سقف وام",
+                            summary = "قسط ${fmt(pay.toDouble())} ریال × ${toFa(n)} ماه، نرخ ${toFa(rate)}٪",
+                            amount = maxPrincipal,
+                        )
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),

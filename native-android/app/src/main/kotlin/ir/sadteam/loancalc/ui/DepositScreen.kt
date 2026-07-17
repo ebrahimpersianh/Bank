@@ -22,18 +22,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.DepositCalculator
 import ir.sadteam.loancalc.core.DepositResult
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.cleanNumDecimal
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
+import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
+import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -42,7 +45,7 @@ private val depositMonthOptions = listOf(1 to "۱ ماهه", 3 to "۳ ماهه",
 
 /** پورت مو‌به‌موی تب «سود سپرده» (view-deposit تو www/index.html، calculateDeposit). */
 @Composable
-fun DepositScreen() {
+fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel()) {
     var amountText by remember { mutableStateOf("2,500,000,000") }
     var amountSlider by remember { mutableStateOf(2_500_000_000f) }
 
@@ -141,7 +144,14 @@ fun DepositScreen() {
                 onClick = {
                     val principal = cleanNum(amountText).toLongOrNull() ?: 0L
                     if (principal > 0) {
-                        result = DepositCalculator.compute(principal.toDouble(), rateText.toDoubleOrNull() ?: 0.0, selectedMonths)
+                        val computed = DepositCalculator.compute(principal.toDouble(), rateText.toDoubleOrNull() ?: 0.0, selectedMonths)
+                        result = computed
+                        historyViewModel.log(
+                            kind = "DEPOSIT",
+                            title = "سود سپرده",
+                            summary = "مبلغ ${fmt(principal.toDouble())} ریال × ${toFa(selectedMonths)} ماه",
+                            amount = computed.finalAmount,
+                        )
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),

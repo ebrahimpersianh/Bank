@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.widget
 
 import android.content.Context
+import android.content.Intent
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.action.clickable
@@ -71,12 +72,13 @@ object LoanWidget : GlanceAppWidget() {
 
 @Composable
 private fun WidgetContent(next: NextInstallment?) {
+    val context = androidx.glance.LocalContext.current
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(Color(0xFF0D1321))
             .padding(12.dp)
-            .clickable(actionStartActivity<MainActivity>()),
+            .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
     ) {
         Text("وام من")
         if (next == null) {

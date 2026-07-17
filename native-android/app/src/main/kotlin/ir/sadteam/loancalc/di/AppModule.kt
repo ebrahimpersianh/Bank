@@ -9,6 +9,7 @@ import dagger.hilt.components.SingletonComponent
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.AuthRepository
+import ir.sadteam.loancalc.data.CalculationHistoryRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.CrashRepository
 import ir.sadteam.loancalc.data.IncomeRepository
@@ -16,6 +17,7 @@ import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.db.AccountDao
 import ir.sadteam.loancalc.data.db.AccountTransactionDao
 import ir.sadteam.loancalc.data.db.AppDatabase
+import ir.sadteam.loancalc.data.db.CalculationHistoryDao
 import ir.sadteam.loancalc.data.db.ChequeBookDao
 import ir.sadteam.loancalc.data.db.ChequeDao
 import ir.sadteam.loancalc.data.db.IncomeDao
@@ -108,4 +110,13 @@ object AppModule {
     @Singleton
     fun provideAttachmentStorage(@ApplicationContext context: Context): AttachmentStorage =
         AttachmentStorage(context)
+
+    @Provides
+    fun provideCalculationHistoryDao(database: AppDatabase): CalculationHistoryDao =
+        database.calculationHistoryDao()
+
+    @Provides
+    @Singleton
+    fun provideCalculationHistoryRepository(dao: CalculationHistoryDao): CalculationHistoryRepository =
+        CalculationHistoryRepository(dao)
 }

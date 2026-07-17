@@ -15,8 +15,9 @@ import net.sqlcipher.database.SupportFactory
         AccountEntity::class,
         AccountTransactionEntity::class,
         IncomeEntity::class,
+        CalculationHistoryEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -26,6 +27,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun accountDao(): AccountDao
     abstract fun accountTransactionDao(): AccountTransactionDao
     abstract fun incomeDao(): IncomeDao
+    abstract fun calculationHistoryDao(): CalculationHistoryDao
 
     companion object {
         @Volatile

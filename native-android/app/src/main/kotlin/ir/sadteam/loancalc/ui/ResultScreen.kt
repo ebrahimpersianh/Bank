@@ -53,6 +53,7 @@ import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
+import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
 import ir.sadteam.loancalc.ui.myloans.MyLoansViewModel
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
@@ -71,9 +72,20 @@ private val faMonthNamesResult = listOf(
 )
 
 @Composable
-fun ResultScreen(outcome: BankLoanOutcome) {
+fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryViewModel = hiltViewModel()) {
     val result = outcome.result
     val privacyMode = LocalPrivacyMode.current
+
+    // هر محاسبه‌ی وامی که تا نتیجه می‌رسه (نه فقط اونایی که کاربر صریحاً «ذخیره» می‌زنه) تو تاریخچه‌ی
+    // محاسبات هم ثبت می‌شه - رجوع کن به ui/history/. فقط یه‌بار به‌ازای هر outcome (نه هر recomposition).
+    LaunchedEffect(outcome) {
+        historyViewModel.log(
+            kind = "LOAN",
+            title = if (outcome.borrower != "—") "وام ${outcome.borrower} (${outcome.bankName})" else outcome.bankName,
+            summary = "قسط ${fmt(result.installment)} ریال × ${toFa(outcome.n)} ماه، نرخ ${toFa(outcome.ratePct)}٪",
+            amount = result.principal,
+        )
+    }
 
     // هم‌راستا با renderTable تو www/index.html: اول گریس‌پیریود بعد فاصله‌ی هر قسط اضافه می‌شه
     val interval = result.intervalDays

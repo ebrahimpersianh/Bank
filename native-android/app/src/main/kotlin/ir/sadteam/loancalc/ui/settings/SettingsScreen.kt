@@ -80,6 +80,7 @@ import ir.sadteam.loancalc.ui.components.InAppBannerState
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.haptics.HapticsViewModel
+import ir.sadteam.loancalc.ui.history.CalculationHistoryScreen
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
 import ir.sadteam.loancalc.ui.stats.StatsScreen
@@ -121,6 +122,7 @@ fun SettingsScreen(
     var showCheque by remember { mutableStateOf(false) }
     var showAccounts by remember { mutableStateOf(false) }
     var showSubscription by remember { mutableStateOf(false) }
+    var showHistory by remember { mutableStateOf(false) }
 
     // پورت حس تعویض نرم بین حالت‌های مختلف پنل تنظیمات (اصلی/ورود/تقویم مالی/آمار/چک/حساب) - قبلاً
     // هرکدوم با یه return زودهنگام یهو جایگزین بقیه می‌شد؛ حالا با AnimatedContent (fade ظریف) عوض می‌شه.
@@ -131,6 +133,7 @@ fun SettingsScreen(
         showCheque -> "cheque"
         showAccounts -> "accounts"
         showSubscription -> "subscription"
+        showHistory -> "history"
         else -> "main"
     }
 
@@ -149,6 +152,7 @@ fun SettingsScreen(
                 onBack = { showSubscription = false },
                 onSubscribed = { showSubscription = false },
             )
+            "history" -> CalculationHistoryScreen(onBack = { showHistory = false })
             else -> SettingsMainContent(
                 onBack = onBack,
                 authViewModel = authViewModel,
@@ -163,6 +167,7 @@ fun SettingsScreen(
                 onShowCheque = { showCheque = true },
                 onShowAccounts = { showAccounts = true },
                 onShowSubscription = { showSubscription = true },
+                onShowHistory = { showHistory = true },
             )
         }
     }
@@ -183,6 +188,7 @@ private fun SettingsMainContent(
     onShowCheque: () -> Unit,
     onShowAccounts: () -> Unit,
     onShowSubscription: () -> Unit,
+    onShowHistory: () -> Unit,
 ) {
     val gateState by authViewModel.gateState.collectAsState()
     val phone by authViewModel.phone.collectAsState()
@@ -545,6 +551,28 @@ private fun SettingsMainContent(
                             )
                         }
                         OutlinedButton(onClick = onShowStats) {
+                            Text("مشاهده")
+                        }
+                    }
+                }
+            }
+
+            if (matches("تاریخچه محاسبات")) {
+                AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("تاریخچه محاسبات", color = AppText, fontSize = 13.sp)
+                            Text(
+                                "مرور و جستجوی محاسبه‌های قبلی وام/سقف وام/سود سپرده",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                        OutlinedButton(onClick = onShowHistory) {
                             Text("مشاهده")
                         }
                     }
