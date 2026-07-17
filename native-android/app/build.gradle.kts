@@ -110,6 +110,10 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.8.3")
 
+    // پرکردنِ خودکارِ کدِ OTP از رو پیامک با SMS User Consent API - بدونِ مجوزِ READ_SMS، فقط با
+    // تاییدِ دستیِ کاربر رو دیالوگِ سیستمی (رجوع کن به ui/auth/SmsOtpAutofill.kt).
+    implementation("com.google.android.gms:play-services-auth-api-phone:18.1.0")
+
     // ویجت صفحه اصلی (قسط بعدی) - Jetpack Glance، بدون RemoteViews دستی.
     implementation("androidx.glance:glance-appwidget:1.1.1")
 

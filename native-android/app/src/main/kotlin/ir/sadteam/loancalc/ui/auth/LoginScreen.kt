@@ -141,6 +141,9 @@ fun LoginScreen(
                     }
                 }
             } else {
+                // پرکردنِ خودکارِ کد از رو پیامک (بدونِ مجوزِ خواندنِ پیامک، فقط با تاییدِ دستیِ
+                // کاربر رو دیالوگِ سیستمی) - رجوع کن به SmsOtpAutofill.kt.
+                SmsUserConsentEffect(active = true, onCodeReceived = { code -> otp = code })
                 Text(
                     "کد تایید برای ${toFa(fullPhone)} پیامک شد",
                     color = AppMuted,

@@ -62,7 +62,11 @@
 و تاریخچه‌ی تصمیم‌ها تو `native-android/README.md` نگه داشته می‌شه — قبل از ادامه‌ی کار حتماً اونجا رو
 هم بخون، این فایل فقط خلاصه‌ی سطح‌بالا و نکات تازه‌ست.
 
-قفل اثر انگشت **عمداً** پیاده نشده (تصمیم صریح کاربر). ci-debug.keystore یه کلید امضای دیباگ ثابته (نه
+قفل امنیتی PIN+اثر انگشت پیاده‌ست (`ui/security/LockScreen.kt`, `AppLockViewModel.kt`، با
+`BiometricPrompt` — به همین خاطر `MainActivity` از `ComponentActivity` به `FragmentActivity` عوض شده).
+این برخلافِ یه یادداشتِ خیلی قدیمی‌تر تو همین فایله («عمداً پیاده نشده») که با یه درخواستِ صریحِ بعدیِ
+کاربر منسوخ شده بود؛ اگه جایی تو تاریخچه/کد کامنتی برخلاف این دیدی، همین خط رو ملاک بگیر، نه کامنتِ قدیمی.
+ci-debug.keystore یه کلید امضای دیباگ ثابته (نه
 یه راز/سکرت) که مستقیم تو `native-android/app/build.gradle.kts` پین شده تا نصب هر بیلد جدید رو بیلد
 قبلی خطای «conflicts with an existing package» ندید — این فایل رو پاک نکن. applicationId نهایی
 `ir.sadteam.loancalc`.
