@@ -13,15 +13,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 
 /** پورت .card تو www/index.html - از `Surface` (نه یه `Column` دستی با background/border خام)
  * استفاده می‌کنه تا هم سایه‌ی ظریف (`shadowElevation`) هم روشن‌شدن تونالِ سطح (`tonalElevation`) رو
- * مجانی داشته باشیم. حالا گوشه‌گردتر (مینیمال‌تر) و یه حاشیه‌ی سبز کم‌رنگ دورش داره (به‌درخواست
- * کاربر «دور همه‌ی باکس‌ها یه خط سبز کم‌رنگ مینیمال») - با [borderColor] می‌شه برای موارد خاص
- * (مثل کارت وام‌های پرتکرار که خط مشکی می‌خواد) override کرد. */
+ * مجانی داشته باشیم. حالا گوشه‌گردتر (مینیمال‌تر) و یه حاشیه‌ی سبزآبیِ کم‌رنگ دورش داره (به‌درخواست
+ * کاربر «دور همه‌ی باکس‌ها یه خط سبزآبیِ کم‌رنگ مینیمال») - با [borderColor] می‌شه برای موارد خاص
+ * (مثل کارت وام‌های پرتکرار که خط مشکی می‌خواد) override کرد. لیبلِ بالای کارت هم عمداً طلایی‌رنگه
+ * (نه خاکستریِ AppMuted قبلی) - خواسته‌ی کاربر برای لهجهٔ طلاییِ بیشتر ولی همچنان ظریف تو کل اپ؛ چون
+ * این کامپوننت تقریباً همه‌جای اپ استفاده می‌شه، همین یه تغییر کافیه که سراسری و یکدست اعمال بشه. */
 @Composable
 fun AppCard(
     modifier: Modifier = Modifier,
@@ -41,7 +43,7 @@ fun AppCard(
             if (label != null) {
                 Text(
                     text = label,
-                    color = AppMuted,
+                    color = AppAccent.copy(alpha = 0.85f),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(bottom = 7.dp),

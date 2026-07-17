@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
+import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 
@@ -39,7 +41,9 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
  *
  * افکتِ شیمر (یه نوارِ نور که مدام از رو دکمه رد می‌شه) دوباره برگردوندیم - کاربر توضیح داد که
  * منظورش از «تک باش» این بود که اپ تو زیبایی منحصربه‌فرد باشه، نه اینکه افکت‌ها کم بشن؛ پس هرچی
- * می‌شه پرافکت‌تر نگهش می‌داریم.
+ * می‌شه پرافکت‌تر نگهش می‌داریم. رنگ شیمر و حاشیه‌ی نازکِ دکمه هم طلایی شدن (نه سفید/بی‌رنگ قبلی) -
+ * خواسته‌ی کاربر برای لهجهٔ طلاییِ بیشتر ولی ظریف تو کل اپ؛ چون این کامپوننت CTA اصلیِ تقریباً همه‌ی
+ * صفحه‌هاست، همین کافیه که اون لهجه سراسری اعمال بشه.
  */
 @Composable
 fun GradientButton(
@@ -65,6 +69,7 @@ fun GradientButton(
         shape = shape,
         color = Color.Transparent,
         contentColor = Color(0xFF04211C),
+        border = BorderStroke(1.dp, AppAccent.copy(alpha = 0.45f)),
     ) {
         Box(
             modifier = Modifier
@@ -80,7 +85,7 @@ fun GradientButton(
                         .fillMaxSize()
                         .background(
                             Brush.linearGradient(
-                                colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.28f), Color.Transparent),
+                                colors = listOf(Color.Transparent, AppAccent.copy(alpha = 0.55f), Color.Transparent),
                                 start = Offset(shimmerX * 300f - 90f, 0f),
                                 end = Offset(shimmerX * 300f + 90f, 90f),
                             ),
