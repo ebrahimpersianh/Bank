@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.calendar
 
+import android.content.ContentProviderOperation
 import android.content.ContentValues
 import android.content.Context
 import android.provider.CalendarContract
@@ -41,6 +42,12 @@ object DeviceCalendarExporter {
      * برای هر (شماره قسط، سررسید شمسی) یه رویداد تمام‌روز، رو *همه‌ی* تقویم‌های قابل‌نوشتنِ گوشی
      * (هم تقویم محلی، هم هر حساب گوگل‌کلندرِ سینک‌شده) می‌سازه؛ تعداد کل درج‌شده رو برمی‌گردونه
      * (۰ یعنی هیچ تقویم قابل‌نوشتنی پیدا نشد). [titleFor] عنوان هر رویداد رو می‌سازه.
+     *
+     * قبلاً هر رویداد با یه `contentResolver.insert` جدا (یه رفت‌وبرگشتِ IPC سنکرون مجزا) درج
+     * می‌شد - برای یه وام ۱۲۰ قسطی رو ۲ تا تقویم یعنی ۲۴۰ تا فراخوانیِ سنکرونِ پشتِ‌سرهم، که رو
+     * خیلی گوشی‌ها چندین ثانیه طول می‌کشید بدون هیچ نشونه‌ای از پیشرفت - دقیقاً همون چیزی که کاربر
+     * «هیچ اتفاقی نمی‌افته» توصیف کرد (فقط صبر نکرده بود، نه اینکه واقعاً خراب بود). حالا همه‌ی
+     * رویدادها با یه `applyBatch` واحد درج می‌شن - هم چندبرابر سریع‌تره، هم اتمیک‌تره.
      */
     fun insertInstallmentEvents(
         context: Context,
@@ -50,7 +57,7 @@ object DeviceCalendarExporter {
         val calendarIds = findWritableCalendarIds(context)
         if (calendarIds.isEmpty()) return 0
         val utc = TimeZone.getTimeZone("UTC")
-        var inserted = 0
+        val ops = ArrayList<ContentProviderOperation>()
         items.forEach { (m, due) ->
             val g = JalaliCalendar.toGregorian(due)
             // رویداد تمام‌روز طبق مستندات CalendarContract باید بر حسب نیمه‌شب UTC باشه.
@@ -69,10 +76,15 @@ object DeviceCalendarExporter {
                     put(CalendarContract.Events.ALL_DAY, 1)
                     put(CalendarContract.Events.EVENT_TIMEZONE, "UTC")
                 }
-                val uri = context.contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
-                if (uri != null) inserted++
+                ops.add(
+                    ContentProviderOperation.newInsert(CalendarContract.Events.CONTENT_URI)
+                        .withValues(values)
+                        .build(),
+                )
             }
         }
-        return inserted
+        if (ops.isEmpty()) return 0
+        val results = context.contentResolver.applyBatch(CalendarContract.AUTHORITY, ops)
+        return results.count { it.uri != null }
     }
 }

@@ -129,7 +129,12 @@ fun LoanDetailScreen(
             calendarMessage = null
         }
     }
+    // نشونه‌ی فوری «داره کار می‌کنه» - قبلاً بین زدنِ دکمه تا نتیجه‌ی نهایی هیچ فیدبکی نبود، برای
+    // وامی با ۱۲۰ قسط این می‌تونست چند ثانیه طول بکشه (رجوع کن به کامنتِ applyBatch تو
+    // DeviceCalendarExporter) و کاربر فکر می‌کرد «هیچ اتفاقی نمی‌افته».
+    var isExportingCalendar by remember { mutableStateOf(false) }
     fun runCalendarExport() {
+        isExportingCalendar = true
         val items = rows.mapNotNull { row ->
             if (row["paid"] == true) return@mapNotNull null
             val m = (row["m"] as? Number)?.toInt() ?: return@mapNotNull null
@@ -154,6 +159,7 @@ fun LoanDetailScreen(
                 }
             }
             withContext(Dispatchers.Main) {
+                isExportingCalendar = false
                 calendarMessage = result.fold(
                     onSuccess = { inserted ->
                         if (inserted > 0) {
@@ -173,6 +179,7 @@ fun LoanDetailScreen(
         if (granted.values.all { it }) {
             runCalendarExport()
         } else {
+            isExportingCalendar = false
             calendarMessage = "بدون مجوز تقویم نمی‌شه سررسیدها رو اضافه کرد"
         }
     }
@@ -486,7 +493,9 @@ fun LoanDetailScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             OutlinedButton(
+                enabled = !isExportingCalendar,
                 onClick = {
+                    isExportingCalendar = true
                     val perms = arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)
                     val allGranted = perms.all {
                         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
@@ -500,7 +509,7 @@ fun LoanDetailScreen(
                     contentDescription = null,
                     modifier = Modifier.padding(end = 6.dp),
                 )
-                Text("افزودن سررسیدها به تقویم گوشی")
+                Text(if (isExportingCalendar) "در حال افزودن..." else "افزودن سررسیدها به تقویم گوشی")
             }
             OutlinedButton(
                 onClick = onDelete,
