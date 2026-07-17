@@ -7,6 +7,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,15 +16,25 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.weight
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -33,7 +45,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -42,21 +57,48 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.ui.components.AppCard
-import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private val typeFilterOptions = listOf(null to "همه", ChequeType.RECEIVED to "دریافتی", ChequeType.PAID to "پرداختی")
+private data class ChequeStats(
+    val total: Int,
+    val passed: Int,
+    val bounced: Int,
+    val pending: Int,
+    val pendingReceived: Int,
+    val pendingPaid: Int,
+    val receivedPassedSum: Double,
+    val paidPassedSum: Double,
+) {
+    val netBalance get() = receivedPassedSum - paidPassedSum
+    val passRatePercent get() = if (total > 0) passed * 100.0 / total else 0.0
+}
+
+private fun computeChequeStats(cheques: List<ChequeEntity>): ChequeStats {
+    val active = cheques.filter { !it.archived }
+    return ChequeStats(
+        total = active.size,
+        passed = active.count { it.status == "PASSED" },
+        bounced = active.count { it.status == "BOUNCED" },
+        pending = active.count { it.status == "PENDING" },
+        pendingReceived = active.count { it.type == "RECEIVED" && it.status == "PENDING" },
+        pendingPaid = active.count { it.type == "PAID" && it.status == "PENDING" },
+        receivedPassedSum = active.filter { it.type == "RECEIVED" && it.status == "PASSED" }.sumOf { it.amount },
+        paidPassedSum = active.filter { it.type == "PAID" && it.status == "PASSED" }.sumOf { it.amount },
+    )
+}
 
 @Composable
 fun chequeStatusColor(status: String) = when (status) {
@@ -85,6 +127,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
     var openedChequeId by remember { mutableStateOf<Long?>(null) }
     var showChequeBooks by remember { mutableStateOf(false) }
     var typeFilter by remember { mutableStateOf<ChequeType?>(null) }
+    var menuExpanded by remember { mutableStateOf(false) }
 
     val allCheques by viewModel.cheques.collectAsState()
     val chequeBooks by viewModel.chequeBooks.collectAsState()
@@ -92,6 +135,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
         val filterName = typeFilter?.name
         allCheques.filter { !it.archived && (filterName == null || it.type == filterName) }
     }
+    val stats = remember(allCheques) { computeChequeStats(allCheques) }
     val openedCheque = openedChequeId?.let { id -> allCheques.firstOrNull { it.id == id } }
     val editingCheque = editingChequeId?.let { id -> allCheques.firstOrNull { it.id == id } }
 
@@ -187,50 +231,79 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                             Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                         }
                         Text("امور چک", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
-                    }
-                }
-
-                item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                        typeFilterOptions.forEach { (value, label) ->
-                            AppChip(label = label, selected = typeFilter == value, onClick = { typeFilter = value })
+                        Spacer(modifier = Modifier.weight(1f))
+                        // تنظیمات این بخش (دسته‌چک‌ها/پشتیبان‌گیری/بازیابی) زیر آیکون سه‌خط، نه
+                        // دیگه دکمه‌های همیشه‌نمایانِ بالای صفحه (خواسته‌ی کاربر).
+                        Box {
+                            IconButton(onClick = { menuExpanded = true }) {
+                                Icon(Icons.Filled.Menu, contentDescription = "تنظیمات امور چک")
+                            }
+                            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("دسته‌چک‌ها") },
+                                    onClick = { menuExpanded = false; showChequeBooks = true },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("پشتیبان‌گیری") },
+                                    onClick = {
+                                        menuExpanded = false
+                                        viewModel.exportBackup { json ->
+                                            pendingExportJson = json
+                                            createDocumentLauncher.launch("cheques-backup.json")
+                                        }
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("بازیابی") },
+                                    onClick = {
+                                        menuExpanded = false
+                                        openDocumentLauncher.launch(arrayOf("application/json"))
+                                    },
+                                )
+                            }
                         }
                     }
                 }
 
                 item {
+                    // وضعیتِ چک‌های وضع‌نشده - چندتا دریافتی و چندتا پرداختی هنوز منتظرن.
+                    AppCard(label = "وضعیت چک‌های وضع‌نشده") {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                            PendingStatusItem(label = "دریافتی", count = stats.pendingReceived, color = AppPrimary)
+                            PendingStatusItem(label = "پرداختی", count = stats.pendingPaid, color = AppDanger)
+                        }
+                    }
+                }
+
+                item {
+                    // دکمه‌های نوع، هم‌زمان فیلترِ لیستِ پایین هم هستن (دوباره زدن روی یکی که
+                    // انتخابه، فیلتر رو برمی‌داره) - رنگ‌ها هم‌الگو با chequeStatusColor.
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(
-                            onClick = { openDocumentLauncher.launch(arrayOf("application/json")) },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
+                        ChequeTypeButton(
+                            label = "چک‌های دریافتی",
+                            color = AppPrimary,
+                            selected = typeFilter == ChequeType.RECEIVED,
+                            onClick = { typeFilter = if (typeFilter == ChequeType.RECEIVED) null else ChequeType.RECEIVED },
                             modifier = Modifier.weight(1f),
-                        ) {
-                            Text("بازیابی", fontSize = 12.sp)
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                viewModel.exportBackup { json ->
-                                    pendingExportJson = json
-                                    createDocumentLauncher.launch("cheques-backup.json")
-                                }
-                            },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
+                        )
+                        ChequeTypeButton(
+                            label = "چک‌های پرداختی",
+                            color = AppDanger,
+                            selected = typeFilter == ChequeType.PAID,
+                            onClick = { typeFilter = if (typeFilter == ChequeType.PAID) null else ChequeType.PAID },
                             modifier = Modifier.weight(1f),
-                        ) {
-                            Text("پشتیبان‌گیری", fontSize = 12.sp)
-                        }
+                        )
                     }
                 }
 
                 item {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        GradientButton(onClick = { showAddForm = true }, modifier = Modifier.weight(1f)) {
-                            Text("+ افزودن چک")
-                        }
-                        OutlinedButton(onClick = { showChequeBooks = true }, modifier = Modifier.weight(1f)) {
-                            Text("دسته‌چک‌ها")
-                        }
+                    GradientButton(onClick = { showAddForm = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text("+ افزودن چک جدید")
                     }
+                }
+
+                item {
+                    ChequeAnalyticsDashboard(stats)
                 }
 
                 if (visibleCheques.isEmpty()) {
@@ -286,6 +359,146 @@ private fun ChequeCard(cheque: ChequeEntity, onClick: () -> Unit, modifier: Modi
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PendingStatusItem(label: String, count: Int, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(color))
+            Text(label, color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(start = 6.dp))
+        }
+        Text(
+            toFa(count),
+            color = AppText,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun ChequeTypeButton(
+    label: String,
+    color: Color,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(44.dp),
+        shape = RoundedCornerShape(10.dp),
+        color = if (selected) color.copy(alpha = 0.16f) else AppSurface2,
+        border = BorderStroke(1.dp, if (selected) color else Color.Transparent),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                label,
+                color = if (selected) color else AppMuted,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatNumber(label: String, value: Int, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(toFa(value), color = color, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = AppMuted, fontSize = 10.5.sp, modifier = Modifier.padding(top = 2.dp))
+    }
+}
+
+/**
+ * پورت «داشبورد تحلیلی چک» اپ رقیب - کاملاً از رو دیتای واقعیِ محلی (Room) محاسبه می‌شه، نه عدد
+ * ساختگی: کل/پاس‌شده/برگشت‌خورده/وضع‌نشده، مجموع دریافتی/پرداختیِ پاس‌شده، مانده‌ی خالص (تفاضل اون
+ * دوتا)، و نرخ پاس‌شدن (پاس‌شده از کل).
+ */
+@Composable
+private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
+    AppCard(label = "داشبورد تحلیلی چک") {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            StatNumber("کل چک‌ها", stats.total, AppText)
+            StatNumber("پاس‌شده", stats.passed, AppPrimary)
+            StatNumber("برگشت‌خورده", stats.bounced, AppDanger)
+            StatNumber("وضع‌نشده", stats.pending, AppMuted)
+        }
+
+        HorizontalDivider(color = AppLine, modifier = Modifier.padding(vertical = 12.dp))
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Column {
+                Text("دریافتی پاس‌شده", color = AppMuted, fontSize = 11.sp)
+                Text(
+                    "${fmt(stats.receivedPassedSum)} ریال",
+                    color = AppPrimary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text("پرداختی پاس‌شده", color = AppMuted, fontSize = 11.sp)
+                Text(
+                    "${fmt(stats.paidPassedSum)} ریال",
+                    color = AppDanger,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+
+        val netColor = if (stats.netBalance >= 0) AppPrimary else AppDanger
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(netColor.copy(alpha = 0.10f))
+                .padding(12.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("مانده خالص", color = AppText, fontSize = 13.sp)
+                Text(
+                    "${if (stats.netBalance >= 0) "+" else ""}${fmt(stats.netBalance)} ریال",
+                    color = netColor,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("نرخ پاس‌شدن", color = AppMuted, fontSize = 12.sp)
+            LinearProgressIndicator(
+                progress = (stats.passRatePercent / 100.0).toFloat(),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 10.dp)
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp)),
+                color = AppAccent,
+                trackColor = AppSurface2,
+            )
+            Text(
+                "${toFa(stats.passRatePercent.toInt())}٪",
+                color = AppAccent,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
         }
     }
 }
