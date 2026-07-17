@@ -40,6 +40,18 @@
             </intent-filter>
         </activity>
 
+        <!-- ویجت صفحه اصلی (قسط بعدی) - رجوع کن به ui/widget/LoanWidget.kt -->
+        <receiver
+            android:name=".ui.widget.LoanWidgetReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/loan_widget_info" />
+        </receiver>
+
         <!-- WorkManager رو خودمون با HiltWorkerFactory مقداردهی می‌کنیم (LoanCalcApplication پیاده‌ی
              Configuration.Provider هست) - initializer پیش‌فرض androidx.startup باید غیرفعال بشه. -->
         <provider
