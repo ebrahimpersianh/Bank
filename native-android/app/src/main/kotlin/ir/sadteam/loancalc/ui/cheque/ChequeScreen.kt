@@ -77,7 +77,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
 
-private data class ChequeStats(
+internal data class ChequeStats(
     val total: Int,
     val passed: Int,
     val bounced: Int,
@@ -135,6 +135,8 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
     var menuExpanded by remember { mutableStateOf(false) }
     var showArchived by remember { mutableStateOf(false) }
     var showSayadInquiry by remember { mutableStateOf(false) }
+    var showReport by remember { mutableStateOf(false) }
+    var showReminderSettings by remember { mutableStateOf(false) }
 
     val allCheques by viewModel.cheques.collectAsState()
     val chequeBooks by viewModel.chequeBooks.collectAsState()
@@ -222,6 +224,8 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
         showChequeBooks -> "books"
         showAddForm -> "add"
         showSayadInquiry -> "sayad"
+        showReport -> "report"
+        showReminderSettings -> "reminders"
         openedCheque != null -> "detail"
         else -> "list"
     }
@@ -250,6 +254,13 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                 sayadId = openedCheque?.sayadId,
                 onBack = { showSayadInquiry = false },
             )
+            "report" -> ChequeReportScreen(
+                stats = stats,
+                onBack = { showReport = false },
+                onDownloadPdf = { createPdfLauncher.launch("cheques.pdf") },
+                onDownloadXlsx = { createXlsxLauncher.launch("cheques.xlsx") },
+            )
+            "reminders" -> ChequeReminderSettingsScreen(onBack = { showReminderSettings = false })
             "detail" -> openedCheque?.let { cheque ->
                 ChequeDetailScreen(
                     cheque = cheque,
@@ -293,12 +304,20 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                             }
                             DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                                 DropdownMenuItem(
+                                    text = { Text("گزارش‌دهی") },
+                                    onClick = { menuExpanded = false; showReport = true },
+                                )
+                                DropdownMenuItem(
                                     text = { Text("دسته‌چک‌ها") },
                                     onClick = { menuExpanded = false; showChequeBooks = true },
                                 )
                                 DropdownMenuItem(
                                     text = { Text("استعلام چک صیادی") },
                                     onClick = { menuExpanded = false; showSayadInquiry = true },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("تنظیمات یادآوری چک") },
+                                    onClick = { menuExpanded = false; showReminderSettings = true },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(if (showArchived) "بازگشت به لیست اصلی" else "بایگانی") },
@@ -320,14 +339,6 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                                         menuExpanded = false
                                         openDocumentLauncher.launch(arrayOf("application/json"))
                                     },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("دانلود PDF") },
-                                    onClick = { menuExpanded = false; createPdfLauncher.launch("cheques.pdf") },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("دانلود اکسل") },
-                                    onClick = { menuExpanded = false; createXlsxLauncher.launch("cheques.xlsx") },
                                 )
                             }
                         }

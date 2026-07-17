@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.cheque
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -21,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,14 +45,16 @@ import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
 import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.ui.components.AppCard
-import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -109,11 +114,23 @@ fun AddEditChequeScreen(
             Text(if (existing == null) "افزودن چک" else "ویرایش چک", fontSize = 16.sp)
         }
         item {
-            AppCard(label = "نوع چک") {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AppChip(label = "دریافتی", selected = type == ChequeType.RECEIVED, onClick = { type = ChequeType.RECEIVED })
-                    AppChip(label = "پرداختی", selected = type == ChequeType.PAID, onClick = { type = ChequeType.PAID })
-                }
+            // دوتا کارتِ بزرگ به‌جای دو چیپِ کوچیک - هم‌الگو با toggleِ «نوع چک» تو عکسِ مرجعِ کاربر
+            // (هرکدوم یه زیرنویسِ توضیحی هم داره، نه فقط یه اسم تنها).
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ChequeTypeToggleCard(
+                    title = "پرداختی",
+                    subtitle = "چکی که شما صادر کرده‌اید",
+                    selected = type == ChequeType.PAID,
+                    onClick = { type = ChequeType.PAID },
+                    modifier = Modifier.weight(1f),
+                )
+                ChequeTypeToggleCard(
+                    title = "دریافتی",
+                    subtitle = "چکی که به شما داده شده",
+                    selected = type == ChequeType.RECEIVED,
+                    onClick = { type = ChequeType.RECEIVED },
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
         item {
@@ -416,6 +433,38 @@ fun AddEditChequeScreen(
                     Text("انصراف")
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ChequeTypeToggleCard(
+    title: String,
+    subtitle: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        color = if (selected) AppPrimary.copy(alpha = 0.16f) else AppSurface,
+        border = BorderStroke(1.dp, if (selected) AppPrimary else AppLine),
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                title,
+                color = if (selected) AppPrimary else AppText,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                subtitle,
+                color = AppMuted,
+                fontSize = 10.5.sp,
+                modifier = Modifier.padding(top = 2.dp),
+            )
         }
     }
 }
