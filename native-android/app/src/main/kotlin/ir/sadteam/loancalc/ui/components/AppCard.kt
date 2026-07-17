@@ -14,19 +14,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.ui.theme.AppMuted
-import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 
 /** پورت .card تو www/index.html - از `Surface` (نه یه `Column` دستی با background/border خام)
  * استفاده می‌کنه تا هم سایه‌ی ظریف (`shadowElevation`) هم روشن‌شدن تونالِ سطح (`tonalElevation`) رو
- * مجانی داشته باشیم. حالا گوشه‌گردتر (مینیمال‌تر) و یه حاشیه‌ی سبزآبیِ کم‌رنگ دورش داره (به‌درخواست
- * کاربر «دور همه‌ی باکس‌ها یه خط سبزآبیِ کم‌رنگ مینیمال») - با [borderColor] می‌شه برای موارد خاص
- * (مثل کارت وام‌های پرتکرار که خط مشکی می‌خواد) override کرد. لیبلِ بالای کارت قبلاً یه دور طلایی‌رنگ
- * شده بود (لهجهٔ طلایی بیشتر)، ولی کاربر بعداً این تصمیم رو برگردوند: طلایی نباید رو فونت باشه، فقط
- * رو پس‌زمینه/حاشیه‌ی باکس‌ها (مثل حاشیه‌ی هنگام لمس تو `PressScale`، یا رینگ آواتار مشترکین) - پس
- * لیبل به همون خاکستریِ AppMuted قبلی برگشت. [backgroundColor] برای مواردی که کارت باید رنگ زمینه‌ی
- * خاص خودش رو داشته باشه (مثل کارتِ تحلیلِ درآمد که یه سبزِ ملایم می‌خواد) override می‌شه؛ برای بی‌خط
- * کردنِ کامل یه کارت هم [borderColor] رو `Color.Transparent` بده (مثل کارت‌های آمار داشبورد). */
+ * مجانی داشته باشیم. یه دوره حاشیه‌ی سبزآبیِ کم‌رنگِ پیش‌فرض داشت، ولی کاربر بعداً این رو هم برگردوند:
+ * همه‌ی باکس‌های اپ (نه فقط چندتای خاص) باید بدون خط دور باشن، حس مدرن‌تری داره - فقط سایه‌ی ظریف
+ * تشخیصشون می‌ده. [borderColor] برای مواردی که یه کارتِ خاص واقعاً به خط دور نیاز داره (مثل کارت
+ * وام‌های پرتکرار که خط مشکی می‌خواد) override می‌شه. لیبلِ بالای کارت قبلاً یه دور طلایی‌رنگ شده بود
+ * (لهجهٔ طلایی بیشتر)، ولی کاربر بعداً این تصمیم رو هم برگردوند: طلایی نباید رو فونت باشه، فقط رو
+ * پس‌زمینه/حاشیه‌ی باکس‌ها (مثل حاشیه‌ی هنگام لمس تو `PressScale`، یا رینگ آواتار مشترکین) - پس لیبل
+ * به همون خاکستریِ AppMuted قبلی برگشت. [backgroundColor] برای مواردی که کارت باید رنگ زمینه‌ی خاص
+ * خودش رو داشته باشه (مثل کارتِ تحلیلِ درآمد که یه سبزِ ملایم می‌خواد) override می‌شه. */
 @Composable
 fun AppCard(
     modifier: Modifier = Modifier,
@@ -41,7 +40,7 @@ fun AppCard(
         color = backgroundColor ?: AppSurface,
         tonalElevation = 3.dp,
         shadowElevation = 2.dp,
-        border = BorderStroke(1.dp, borderColor ?: AppPrimary.copy(alpha = 0.35f)),
+        border = BorderStroke(1.dp, borderColor ?: Color.Transparent),
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             if (label != null) {
