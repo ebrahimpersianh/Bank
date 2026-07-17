@@ -75,7 +75,6 @@ import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyRowScrollbar
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
-import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
@@ -355,7 +354,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
                     // همیشه تک‌خطی - اگه جا نشه فونت کوچیک می‌شه، نه این‌که به خط دوم بشکنه.
                     AutoShrinkText(
                         text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
-                        color = AppAccent,
+                        color = AppMuted,
                         maxFontSize = 11.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )

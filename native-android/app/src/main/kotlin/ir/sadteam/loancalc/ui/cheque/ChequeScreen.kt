@@ -544,7 +544,7 @@ private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
             )
             Text(
                 "${toFa(stats.passRatePercent.toInt())}٪",
-                color = AppAccent,
+                color = AppText,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
             )

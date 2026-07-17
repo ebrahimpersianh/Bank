@@ -79,7 +79,6 @@ import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
-import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -519,7 +518,7 @@ private fun DashboardSummary(
                     if (incomeRial > 0) {
                         AutoShrinkText(
                             text = "${numberToWordsFa((incomeRial / 10).toDouble())} تومان",
-                            color = AppAccent,
+                            color = AppMuted,
                             maxFontSize = 11.sp,
                         )
                     }

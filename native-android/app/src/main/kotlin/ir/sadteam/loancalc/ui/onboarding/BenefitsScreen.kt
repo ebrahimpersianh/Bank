@@ -98,7 +98,7 @@ fun BenefitsScreen(onContinue: () -> Unit) {
 
         FeatureBox(
             title = "امکانات اشتراکی",
-            titleColor = AppAccent,
+            titleColor = AppText,
             items = subscriptionFeatures,
             itemIcon = Icons.Filled.Lock,
             iconColor = AppAccent,
@@ -121,13 +121,16 @@ fun BenefitsScreen(onContinue: () -> Unit) {
         // قدمِ بعدی (ورود، بعد صفحه‌ی اشتراک) طبق همون قانونِ همیشگیِ اپ پیش می‌ره.
         Text(
             "می‌خوای نسخه‌ی اشتراکی رو بخری؟ اول وارد شو ←",
-            color = AppAccent,
+            color = AppText,
             fontSize = 12.5.sp,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .padding(top = 14.dp)
-                .clickable(onClick = onContinue),
+                .clickable(onClick = onContinue)
+                .background(AppAccent.copy(alpha = 0.14f), RoundedCornerShape(10.dp))
+                .border(1.dp, AppAccent.copy(alpha = 0.45f), RoundedCornerShape(10.dp))
+                .padding(horizontal = 12.dp, vertical = 6.dp),
         )
     }
 }

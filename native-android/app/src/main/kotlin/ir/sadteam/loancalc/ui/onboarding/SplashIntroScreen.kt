@@ -42,7 +42,7 @@ import kotlinx.coroutines.delay
 // رنگ‌های عینِ اسپلشِ اپ وب (#splash تو www/index.html) - عمداً مستقل از تم روشن/تیره، همیشه تیره.
 private val SplashBg = Color(0xFF0D1321)
 private val RingBase = Color(0xFF1D2A46)
-private val RingGold = Color(0xFFF0A857)
+private val RingGold = Color(0xFFFFB020) // هم‌رنگِ AppAccent جدید (طلایی پررنگ‌تر)
 private val RingTeal = Color(0xFF00C2D1) // هم‌رنگِ AppPrimary جدید (سبزآبی، نه سبزِ قبلی)
 private val SplashName = Color(0xFFEEF1F8)
 private val SplashSub = Color(0xFF4A5570)
@@ -83,6 +83,19 @@ fun SplashIntroScreen(onDone: () -> Unit) {
             // حلقه هم‌مرکز نباشن (باگی که کاربر با اسکرین‌شات نشون داد). حالا هرسه‌تا (هاله‌ی محو،
             // هاله‌ی بازتابِ نور، حلقه‌ی اصلی) تو یه Box جدا و هم‌مرکز کنار همدیگه‌ان.
             Box(contentAlignment = Alignment.Center) {
+                // هاله‌ی بیرونیِ گرم (طلایی/کهربایی) - الهام از پرتالِ Doctor Strange: یه لایه‌ی
+                // نورِ گرمِ پخش‌شده و بزرگ‌تر از هاله‌ی سبزآبیِ داخلی، طوری که لبه‌ی بیرونی حلقه
+                // بازتابِ نورِ طلایی داشته باشه، نه فقط سبزآبیِ یکدست.
+                Box(
+                    modifier = Modifier
+                        .size(300.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(RingGold.copy(alpha = 0.20f), Color.Transparent),
+                            ),
+                        ),
+                )
                 // هاله‌ی محو پشتِ حلقه (پورت .glow)
                 Box(
                     modifier = Modifier
@@ -107,19 +120,31 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                 ) {
                     val stroke = 3.dp.toPx()
                     val inset = stroke / 2f
+                    val sweepColors = listOf(
+                        Color.Transparent,
+                        Color.Transparent,
+                        Color.Transparent,
+                        RingGold.copy(alpha = 0.85f),
+                        Color.White.copy(alpha = 0.95f),
+                        RingGold.copy(alpha = 0.85f),
+                        Color.Transparent,
+                        Color.Transparent,
+                    )
+                    // یه لایه‌ی پهن‌تر و کم‌رنگ‌تر پشتِ خودِ نورِ تیز، برای حسِ «درخشش/بلور» - مثل
+                    // نورِ لبه‌ی پرتال که پخش می‌شه، نه یه خط تیزِ تنها.
                     drawArc(
                         brush = Brush.sweepGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Transparent,
-                                Color.Transparent,
-                                RingGold.copy(alpha = 0.85f),
-                                Color.White.copy(alpha = 0.95f),
-                                RingGold.copy(alpha = 0.85f),
-                                Color.Transparent,
-                                Color.Transparent,
-                            ),
+                            colors = sweepColors.map { it.copy(alpha = it.alpha * 0.45f) },
                         ),
+                        startAngle = 0f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        topLeft = Offset(inset, inset),
+                        size = Size(size.width - stroke, size.height - stroke),
+                        style = Stroke(width = stroke * 3.2f, cap = StrokeCap.Round),
+                    )
+                    drawArc(
+                        brush = Brush.sweepGradient(colors = sweepColors),
                         startAngle = 0f,
                         sweepAngle = 360f,
                         useCenter = false,

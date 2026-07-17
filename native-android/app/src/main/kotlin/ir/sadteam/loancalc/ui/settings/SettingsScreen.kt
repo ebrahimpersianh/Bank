@@ -284,9 +284,13 @@ private fun SettingsMainContent(
                         if (subscribed && trialDaysLeft != null && trialDaysLeft in 1..7) {
                             Text(
                                 "دوره‌ی آزمایشی رایگان: ${toFa(trialDaysLeft.toString())} روز مانده",
-                                color = AppAccent,
+                                color = AppText,
                                 fontSize = 11.sp,
-                                modifier = Modifier.padding(top = 4.dp),
+                                modifier = Modifier
+                                    .padding(top = 4.dp)
+                                    .background(AppAccent.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
+                                    .border(1.dp, AppAccent.copy(alpha = 0.45f), RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 8.dp, vertical = 3.dp),
                             )
                         }
                         Button(

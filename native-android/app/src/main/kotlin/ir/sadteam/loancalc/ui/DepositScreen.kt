@@ -37,7 +37,6 @@ import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
-import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 
@@ -86,7 +85,7 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                 if (rialVal > 0) {
                     Text(
                         text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
-                        color = AppAccent,
+                        color = AppMuted,
                         fontSize = 11.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )

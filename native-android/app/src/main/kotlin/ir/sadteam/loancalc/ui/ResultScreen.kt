@@ -170,7 +170,7 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
             StaggerIn(1) {
                 Text(
                     text = "${numberToWordsFa(result.installment / 10)} تومان",
-                    color = AppAccent,
+                    color = AppMuted,
                     fontSize = 13.5.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),

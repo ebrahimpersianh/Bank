@@ -84,6 +84,8 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
+import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -109,6 +111,7 @@ fun LoanDetailScreen(
     onDelete: () -> Unit,
     viewModel: MyLoansViewModel = hiltViewModel(),
 ) {
+    val privacyMode = LocalPrivacyMode.current
     val rows = remember(loan) { viewModel.getRows(loan) }
 
     // «افزودن سررسیدها به تقویم گوشی»: اقساط پرداخت‌نشده به‌صورت رویداد تمام‌روز تو تقویم خودِ
@@ -333,7 +336,7 @@ fun LoanDetailScreen(
         val principalFrac = if (loan.totalPaid > 0) (loan.amount / loan.totalPaid).toFloat() else 1f
         LoanDonut(
             principalFraction = principalFrac,
-            centerTop = fmt(loan.installment),
+            centerTop = maskIfPrivate(privacyMode, fmt(loan.installment)),
             centerBottom = "قسط ماهانه (ریال)",
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         )
@@ -342,13 +345,15 @@ fun LoanDetailScreen(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
                     Text("مبلغ هر قسط", fontSize = 13.sp, color = AppMuted)
-                    Text("${fmt(loan.installment)} ریال", fontSize = 15.sp, color = AppText, fontWeight = FontWeight.Bold)
-                    Text(
-                        "${numberToWordsFa(loan.installment / 10)} تومان",
-                        fontSize = 11.sp,
-                        color = AppAccent,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
+                    Text("${maskIfPrivate(privacyMode, fmt(loan.installment))} ریال", fontSize = 15.sp, color = AppText, fontWeight = FontWeight.Bold)
+                    if (!privacyMode) {
+                        Text(
+                            "${numberToWordsFa(loan.installment / 10)} تومان",
+                            fontSize = 11.sp,
+                            color = AppMuted,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
                 }
                 Column {
                     Text("پرداخت‌شده", fontSize = 13.sp, color = AppMuted)
@@ -427,7 +432,7 @@ fun LoanDetailScreen(
                             Text("قسط شماره ${toFa(m)}", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             Text(dueLabel, color = AppMuted, fontSize = 12.sp)
                         }
-                        Text("${fmt(installment)} ریال", color = AppText, fontSize = 13.sp)
+                        Text("${maskIfPrivate(privacyMode, fmt(installment))} ریال", color = AppText, fontSize = 13.sp)
                         // وضعیت پرداخت تو یه باکس رنگیِ گوشه‌گرد (بج) - تا از بقیه‌ی متن جدا و
                         // واضح دیده بشه (خواسته‌ی کاربر). رنگ پس‌زمینه نسخه‌ی کم‌رنگِ رنگ وضعیته.
                         Box(

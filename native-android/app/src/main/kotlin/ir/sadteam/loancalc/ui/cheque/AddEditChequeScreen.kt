@@ -41,7 +41,6 @@ import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
-import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 
@@ -122,7 +121,7 @@ fun AddEditChequeScreen(
                 if (amountVal > 0) {
                     AutoShrinkText(
                         text = "${numberToWordsFa((amountVal / 10).toDouble())} تومان",
-                        color = AppAccent,
+                        color = AppMuted,
                         maxFontSize = 11.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )

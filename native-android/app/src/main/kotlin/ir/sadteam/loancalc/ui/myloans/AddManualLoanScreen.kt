@@ -37,7 +37,6 @@ import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.WheelDatePickerScreen
 import ir.sadteam.loancalc.ui.components.appFieldColors
-import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -155,7 +154,7 @@ fun AddManualLoanScreen(
                 if (instRial > 0) {
                     Text(
                         "${numberToWordsFa((instRial / 10).toDouble())} تومان",
-                        color = AppAccent,
+                        color = AppMuted,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )

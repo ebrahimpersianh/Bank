@@ -2,7 +2,6 @@ package ir.sadteam.loancalc
 
 import android.app.Activity
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -143,9 +142,6 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        // اطلاعات مالی/شخصیه؛ جلوی اسکرین‌شات و نمایش محتوا تو لیست اپ‌های اخیر (App Switcher) رو
-        // می‌گیره.
-        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         enableEdgeToEdge()
         subscriptionManager = SubscriptionManager(this)
         subscriptionManager.connect { }

@@ -51,6 +51,7 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.AppText
 
 private val affordMonthChipValues = listOf(12, 24, 36, 60, 120)
 
@@ -97,7 +98,7 @@ fun AffordScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel()
                 if (rialVal > 0) {
                     Text(
                         text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
-                        color = AppAccent,
+                        color = AppMuted,
                         fontSize = 11.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )
@@ -226,7 +227,7 @@ private fun RateFinderCard() {
             .padding(14.dp),
     ) {
         Column {
-            Text("یا برعکس: نرخ سود رو پیدا کن", color = AppAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text("یا برعکس: نرخ سود رو پیدا کن", color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             Text(
                 "مبلغ وام و قسطی که می‌دی رو بگو، نرخ سودش رو حساب می‌کنم",
                 color = AppMuted,
@@ -248,7 +249,7 @@ private fun RateFinderCard() {
                 suffix = { Text("مبلغ وام (ریال)", color = AppMuted, fontSize = 13.sp) },
             )
             (cleanNum(amountText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { r ->
-                Text("${numberToWordsFa((r / 10).toDouble())} تومان", color = AppAccent, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+                Text("${numberToWordsFa((r / 10).toDouble())} تومان", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
             }
             SlimSlider(
                 value = amountSlider,
@@ -273,7 +274,7 @@ private fun RateFinderCard() {
                 suffix = { Text("مبلغ هر قسط (ریال)", color = AppMuted, fontSize = 13.sp) },
             )
             (cleanNum(installmentText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { r ->
-                Text("${numberToWordsFa((r / 10).toDouble())} تومان", color = AppAccent, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+                Text("${numberToWordsFa((r / 10).toDouble())} تومان", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
             }
             SlimSlider(
                 value = installmentSlider,
@@ -313,7 +314,7 @@ private fun RateFinderCard() {
                         result = found
                     }
                 },
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppAccent),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppText),
                 border = BorderStroke(1.5.dp, AppAccent),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -324,7 +325,7 @@ private fun RateFinderCard() {
             result?.let { r ->
                 Text(
                     text = "نرخ سود سالانه تقریبی: ${toFa(String.format("%.1f", r))}٪",
-                    color = AppAccent,
+                    color = AppPrimary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
