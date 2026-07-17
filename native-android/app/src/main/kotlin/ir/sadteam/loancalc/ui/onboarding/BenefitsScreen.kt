@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -104,6 +105,10 @@ fun BenefitsScreen(onContinue: () -> Unit) {
             iconColor = AppAccent,
             modifier = Modifier.padding(top = 14.dp),
             borderColor = AppAccent,
+            // پس‌زمینه‌ی این کارتِ خاص هم یه لهجه‌ی طلاییِ محسوس بگیره (خواسته‌ی صریح کاربر: طلایی
+            // باید حسِ پرمیوم بده، نه یه پس‌زمینه‌ی رنگ‌پریده) - با lerp رو سطحِ خودِ کارت (نه یه
+            // overlay نیمه‌شفافِ کم‌رنگ که قبلاً رنگش زرد و مات به نظر می‌رسید).
+            backgroundColor = lerp(AppSurface, AppAccent, 0.14f),
         )
 
         GradientButton(
@@ -128,8 +133,8 @@ fun BenefitsScreen(onContinue: () -> Unit) {
             modifier = Modifier
                 .padding(top = 14.dp)
                 .clickable(onClick = onContinue)
-                .background(AppAccent.copy(alpha = 0.14f), RoundedCornerShape(10.dp))
-                .border(1.dp, AppAccent.copy(alpha = 0.45f), RoundedCornerShape(10.dp))
+                .background(AppAccent.copy(alpha = 0.24f), RoundedCornerShape(10.dp))
+                .border(1.dp, AppAccent.copy(alpha = 0.85f), RoundedCornerShape(10.dp))
                 .padding(horizontal = 12.dp, vertical = 6.dp),
         )
     }
@@ -144,11 +149,12 @@ private fun FeatureBox(
     iconColor: androidx.compose.ui.graphics.Color,
     modifier: Modifier = Modifier,
     borderColor: androidx.compose.ui.graphics.Color = AppLine,
+    backgroundColor: androidx.compose.ui.graphics.Color = AppSurface,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(AppSurface, RoundedCornerShape(14.dp))
+            .background(backgroundColor, RoundedCornerShape(14.dp))
             .border(1.dp, borderColor, RoundedCornerShape(14.dp))
             .padding(16.dp),
     ) {

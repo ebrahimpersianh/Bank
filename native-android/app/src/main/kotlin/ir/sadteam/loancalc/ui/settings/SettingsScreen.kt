@@ -55,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -94,6 +95,7 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.ThemeMode
@@ -229,7 +231,7 @@ private fun SettingsMainContent(
                 .then(
                     if (subscribed) {
                         Modifier.background(
-                            Brush.horizontalGradient(listOf(AppAccent.copy(alpha = 0.16f), Color.Transparent)),
+                            Brush.horizontalGradient(listOf(AppAccent.copy(alpha = 0.28f), Color.Transparent)),
                         )
                     } else {
                         Modifier
@@ -290,8 +292,8 @@ private fun SettingsMainContent(
                                 fontSize = 11.sp,
                                 modifier = Modifier
                                     .padding(top = 4.dp)
-                                    .background(AppAccent.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
-                                    .border(1.dp, AppAccent.copy(alpha = 0.45f), RoundedCornerShape(8.dp))
+                                    .background(AppAccent.copy(alpha = 0.24f), RoundedCornerShape(8.dp))
+                                    .border(1.dp, AppAccent.copy(alpha = 0.85f), RoundedCornerShape(8.dp))
                                     .padding(horizontal = 8.dp, vertical = 3.dp),
                             )
                         }
@@ -325,15 +327,25 @@ private fun SettingsMainContent(
                 }
             }
 
-            if (gateState == GateState.LOGGED_IN && !subscribed && matches("اشتراک", "خرید اشتراک")) {
+            // این کارت قبلاً فقط برای LOGGED_IN نشون داده می‌شد - یعنی کاربر مهمان (GateState.GUEST)
+            // اصلاً هیچ نقطه‌ی ورودی‌ای برای خرید اشتراک نمی‌دید (خواسته‌ی صریح کاربر: «تو تنظیمات
+            // زیر حساب کاربری بجا باشه برای خرید اشتراک اصلا جایی نزاشتی اونو»). حالا برای هر دو حالت
+            // (مهمان/واردشده) که مشترک نیستن نشون داده می‌شه؛ چون خریدِ واقعی سمت سرور نیاز به توکنِ
+            // ورود داره (AuthRepository.verifySubscription)، تپ‌کردنش برای مهمان اول می‌بره سراغ
+            // ورود، نه مستقیم صفحه‌ی خرید.
+            if (!subscribed && matches("اشتراک", "خرید اشتراک")) {
                 PulseGlowBox(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
-                    AppCard {
+                    AppCard(backgroundColor = lerp(AppSurface, AppAccent, 0.14f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.Star, contentDescription = null, tint = AppAccent)
                             Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
                                 Text("ارتقا به نسخه اشتراکی", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "وام/چک نامحدود، همگام‌سازی چند دستگاه و موارد دیگر",
+                                    if (gateState == GateState.LOGGED_IN) {
+                                        "وام/چک نامحدود، همگام‌سازی چند دستگاه و موارد دیگر"
+                                    } else {
+                                        "برای خرید اشتراک اول باید وارد حساب بشی"
+                                    },
                                     color = AppMuted,
                                     fontSize = 11.sp,
                                     modifier = Modifier.padding(top = 2.dp),
@@ -341,10 +353,10 @@ private fun SettingsMainContent(
                             }
                         }
                         GradientButton(
-                            onClick = onShowSubscription,
+                            onClick = if (gateState == GateState.LOGGED_IN) onShowSubscription else onShowLoginPrompt,
                             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                         ) {
-                            Text("مشاهده پلن‌ها")
+                            Text(if (gateState == GateState.LOGGED_IN) "مشاهده پلن‌ها" else "ورود و مشاهده پلن‌ها")
                         }
                     }
                 }
