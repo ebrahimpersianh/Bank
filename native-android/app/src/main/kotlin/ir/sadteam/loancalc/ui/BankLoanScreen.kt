@@ -163,9 +163,10 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         item {
-            // کارت وام‌های پرتکرار خط مشکی می‌گیره (نه سبز) - چون خودِ کارت‌های داخلش خط مشکی دارن
-            // و کاربر خواست حاشیه‌ی سبز مخصوص بقیه‌ی باکس‌ها باشه، نه این بخشِ اول.
-            AppCard(label = "وام‌های پرتکرار", borderColor = AppText.copy(alpha = 0.5f)) {
+            // این کارت قبلاً یه حاشیه‌ی مشکی مخصوص خودش داشت؛ کاربر بعداً همون تصمیمِ «بدون خط دور»ی
+            // که رو بقیه‌ی اپ اعمال شد رو اینجا هم خواست، پس override حذف شد - حالا مثل همه‌ی
+            // AppCardهای دیگه از پیش‌فرضِ بدون‌حاشیه استفاده می‌کنه.
+            AppCard(label = "وام‌های پرتکرار") {
                 // LazyRow به‌جای Row+horizontalScroll: فقط کارت‌های قابل‌دیدن compose می‌شن (پرفورمنس).
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(loanPresets, key = { it.key }) { p ->

@@ -454,9 +454,10 @@ private fun DashboardSummary(
             valueColor = AppPrimary,
         )
 
-        // خواسته‌ی کاربر: کارتِ درآمد یه پس‌زمینه‌ی سبزِ ملایم داره (نه رنگ اصلی/تیل اپ) - مثل کارتِ
-        // «درآمد» تو اپ مرجع. بدون خط دور دیگه پیش‌فرضِ خودِ AppCard ـه.
-        AppCard(label = "تحلیل درآمد", backgroundColor = IncomeCardGreen.copy(alpha = 0.14f)) {
+        // یه پس‌زمینه‌ی سبزِ اختصاصیِ نیمه‌شفاف اینجا امتحان شده بود، ولی رو Surface (که خودش
+        // tonalElevation داره) رنگ‌ها بهم می‌ریخت و دوتُنی/کثیف به‌نظر می‌رسید. کاربر خواست دقیقاً
+        // مثل بقیه‌ی کارت‌های داشبورد (DashboardStatCard بالا) باشه - پس همون پیش‌فرضِ AppCard.
+        AppCard(label = "تحلیل درآمد") {
             if (incomes.isNotEmpty()) {
                 Column(modifier = Modifier.padding(bottom = 8.dp)) {
                     incomes.forEach { income ->
@@ -574,10 +575,6 @@ private fun DashboardSummary(
         }
     }
 }
-
-// یه سبزِ ملایمِ مستقل از AppPrimary (که خودش تیل/سبزآبیه) - فقط برای پس‌زمینه‌ی کارتِ درآمد، هم‌رنگ
-// با کارتِ «درآمد» تو اپ مرجعی که کاربر عکسش رو فرستاد.
-private val IncomeCardGreen = Color(0xFF4CAF50)
 
 @Composable
 private fun DashboardStatCard(title: String, value: String, valueColor: Color) {
