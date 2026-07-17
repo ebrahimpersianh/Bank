@@ -40,9 +40,14 @@ android {
             // ریشه‌ی «لگ» گزارش‌شده‌ی کاربر، نصبِ بیلد debug بود: تو بیلد debug فلگ debuggable
             // بهینه‌سازی ART/AOT رو خاموش می‌کنه و runtime کامپوز هم چک‌های اضافه داره، پس اسکرول و
             // تعویض تب همیشه سنگینه. بیلد release (debuggable=false) همون کد رو روان اجرا می‌کنه.
-            // minify عمداً خاموشه: R8 با reflection های Gson (Map<String,Any?> تو LoanRepository)
-            // ریسک کرش runtime داره و اینجا امکان تست runtime نیست - سود اصلی از خودِ release بودنه.
+            // minify عمداً هنوز خاموشه: قوانینِ proguard-rules.pro (Gson reflection رو Room entities
+            // + Retrofit + Hilt) نوشته و آماده‌ان، ولی چون این‌جا (sandbox بدون دستگاه واقعی) امکان
+            // تست runtime نیست، ریسکش اینه که minify یه چیزی رو بی‌صدا (بدون کرش، فقط null شدنِ
+            // فیلدهای JSON پشتیبان‌گیری) خراب کنه و خودم نتونم بفهمم. قبل از true کردنِ این فلگ، حتماً
+            // باید رو یه بیلدِ release واقعی رو گوشی تست بشه: ذخیره‌ی وام، بستن/بازکردنِ اپ (که دیتا
+            // بمونه)، پشتیبان‌گیری، و بازیابی از همون بکاپ.
             isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // با همون کلید ثابتِ کامیت‌شده امضا می‌شه (عین debug) تا رو نصبِ قبلی - چه debug چه
             // release - بدون ارور امضا نصب بشه.
             signingConfig = signingConfigs.getByName("debug")
