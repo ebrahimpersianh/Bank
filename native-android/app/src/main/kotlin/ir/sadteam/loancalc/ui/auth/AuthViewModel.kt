@@ -3,8 +3,10 @@ package ir.sadteam.loancalc.ui.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.AuthRepository
 import ir.sadteam.loancalc.data.AuthResult
+import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.SyncOutcome
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -27,6 +29,8 @@ class AuthViewModel @Inject constructor(
     private val authPrefs: AuthPrefs,
     private val authRepository: AuthRepository,
     private val loanRepository: LoanRepository,
+    private val chequeRepository: ChequeRepository,
+    private val accountRepository: AccountRepository,
 ) : ViewModel() {
     val gateState: StateFlow<GateState?> = combine(authPrefs.authToken, authPrefs.guestMode) { token, guest ->
         val state: GateState? = when {
@@ -96,6 +100,12 @@ class AuthViewModel @Inject constructor(
      * پورت confirmPhoneOtp + syncAfterLogin: بعد از ورود موفق، قبل از صدا زدن onSuccess، یه‌بار
      * وضعیت سینک رو چک می‌کنه - اگه تعارض داشت [syncConflict] پر می‌شه و onSuccess طبق قرارداد
      * همچنان صدا زده می‌شه (UI باید اول [syncConflict] رو چک کنه، نه این‌که کورکورانه ناوبری کنه).
+     *
+     * علاوه بر سینک وام، اگه کاربر مشترک باشه، چک‌ها و حساب‌ها هم بلافاصله (نه فقط با
+     * AutoBackupWorkerِ دوره‌ای) به سرور پوش می‌شن - خواسته‌ی کاربر: «هر کاربری ورود کرد خودکار
+     * پشتیبان بگیره». چون چک/حساب برخلاف وام تعارض‌سنجی ندارن (همون pushToServerِ یک‌طرفه‌ی
+     * AutoBackupWorker)، این‌جا هم بی‌قید صدا زده می‌شن؛ خودشون fire-and-forget-ن (خطا رو قورت
+     * می‌دن)، پس منتظرشون نمی‌مونیم و onSuccess بلافاصله بعد از تصمیم سینکِ وام صدا زده می‌شه.
      */
     fun verifyOtp(phone: String, code: String, onSuccess: () -> Unit, onError: (String?) -> Unit) {
         viewModelScope.launch {
@@ -106,6 +116,10 @@ class AuthViewModel @Inject constructor(
                         when (val outcome = loanRepository.syncAfterLogin(token)) {
                             is SyncOutcome.ConflictNeedsChoice -> _syncConflict.value = outcome.serverLoans
                             else -> Unit
+                        }
+                        if (authPrefs.subscribed.first()) {
+                            launch { chequeRepository.pushToServer(token) }
+                            launch { accountRepository.pushToServer(token) }
                         }
                     }
                     onSuccess()
