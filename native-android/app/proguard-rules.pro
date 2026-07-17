@@ -27,6 +27,10 @@
 # اسم و نوعِ فیلدها باید عیناً بمونه، وگرنه JSON پشتیبان‌گیری/بازیابی و همگام‌سازی با فرمت وب می‌شکنه.
 -keep class ir.sadteam.loancalc.data.db.** { *; }
 -keep class ir.sadteam.loancalc.core.** { *; }
+# DTOهای درخواست/پاسخِ Retrofit+Gson (ApiService.kt: OTP، همگام‌سازی وام، بک‌آپ چک/حساب، نرخ بانک‌ها) -
+# هیچ‌کدوم @SerializedName ندارن و رو تطبیقِ اسمِ فیلد با کلیدِ JSON سرور تکیه می‌کنن؛ بدونِ این قانون
+# minify اسم فیلدها رو عوض می‌کنه و همه‌ی این درخواست‌ها بی‌صدا (بدون کرش) با مقادیرِ null جواب می‌گیرن.
+-keep class ir.sadteam.loancalc.data.network.** { *; }
 
 # --- Retrofit/OkHttp (طبق راهنمای رسمی Retrofit برای R8) ---
 -dontwarn okhttp3.**
