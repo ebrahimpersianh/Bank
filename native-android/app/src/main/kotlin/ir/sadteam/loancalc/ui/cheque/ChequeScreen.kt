@@ -36,6 +36,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.ChequeType
+import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ChequeEntity
@@ -65,11 +68,14 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Calendar
 
 private data class ChequeStats(
     val total: Int,
@@ -128,6 +134,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
     var typeFilter by remember { mutableStateOf<ChequeType?>(null) }
     var menuExpanded by remember { mutableStateOf(false) }
     var showArchived by remember { mutableStateOf(false) }
+    var showSayadInquiry by remember { mutableStateOf(false) }
 
     val allCheques by viewModel.cheques.collectAsState()
     val chequeBooks by viewModel.chequeBooks.collectAsState()
@@ -214,6 +221,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
     val screenKey = when {
         showChequeBooks -> "books"
         showAddForm -> "add"
+        showSayadInquiry -> "sayad"
         openedCheque != null -> "detail"
         else -> "list"
     }
@@ -238,12 +246,17 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                 onCancel = { showAddForm = false; editingChequeId = null },
                 viewModel = viewModel,
             )
+            "sayad" -> SayadInquiryScreen(
+                sayadId = openedCheque?.sayadId,
+                onBack = { showSayadInquiry = false },
+            )
             "detail" -> openedCheque?.let { cheque ->
                 ChequeDetailScreen(
                     cheque = cheque,
                     onBack = { openedChequeId = null },
                     onEdit = { editingChequeId = cheque.id; openedChequeId = null; showAddForm = true },
                     onDelete = { viewModel.deleteCheque(cheque.id); openedChequeId = null },
+                    onSayadInquiry = { showSayadInquiry = true },
                     viewModel = viewModel,
                 )
             }
@@ -252,6 +265,9 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                 contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 100.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                if (!showArchived) {
+                    item { LiveDateTimeHeader() }
+                }
                 item {
                     Row(
                         modifier = Modifier
@@ -279,6 +295,10 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                                 DropdownMenuItem(
                                     text = { Text("دسته‌چک‌ها") },
                                     onClick = { menuExpanded = false; showChequeBooks = true },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("استعلام چک صیادی") },
+                                    onClick = { menuExpanded = false; showSayadInquiry = true },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(if (showArchived) "بازگشت به لیست اصلی" else "بایگانی") },
@@ -407,6 +427,67 @@ private fun ChequeCard(cheque: ChequeEntity, onClick: () -> Unit, modifier: Modi
                     fontSize = 11.sp,
                     modifier = Modifier.padding(top = 2.dp),
                 )
+            }
+        }
+    }
+}
+
+private val faWeekDayNames = listOf("شنبه", "یک‌شنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه")
+
+/**
+ * ساعت زنده + تاریخ جلالی امروز، بالای صفحه‌ی اصلیِ «امور چک» (خواسته‌ی کاربر، عکسِ مرجع داشت). هر
+ * ثانیه با یه `LaunchedEffect` حلقه‌ای تیک می‌خوره؛ تبدیل میلادی→جلالی از رو همون
+ * `core/JalaliCalendar.kt` نجومیِ دقیق (تنها منبع درستِ «امروزِ شمسی» تو این پروژه، رجوع کن به
+ * کامنت بالای خودش).
+ */
+@Composable
+private fun LiveDateTimeHeader() {
+    var nowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            nowMillis = System.currentTimeMillis()
+            delay(1000)
+        }
+    }
+    val cal = remember(nowMillis) { Calendar.getInstance().apply { timeInMillis = nowMillis } }
+    val jalali = remember(nowMillis) {
+        JalaliCalendar.fromGregorian(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
+    }
+    val weekDay = faWeekDayNames[JalaliCalendar.dayOfWeekSaturdayFirst(jalali)]
+    val dateText = "${toFa(jalali.y)}/${toFa("%02d".format(jalali.m))}/${toFa("%02d".format(jalali.d))}"
+    val timeText = toFa(
+        "%02d:%02d:%02d".format(
+            cal.get(Calendar.HOUR_OF_DAY),
+            cal.get(Calendar.MINUTE),
+            cal.get(Calendar.SECOND),
+        ),
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(Brush.horizontalGradient(listOf(AppPrimaryDim, AppPrimary)))
+            .padding(vertical = 16.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(weekDay, color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp)
+            Text(
+                dateText,
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+            Box(
+                modifier = Modifier
+                    .padding(top = 10.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.White.copy(alpha = 0.18f))
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+            ) {
+                Text(timeText, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

@@ -1,7 +1,5 @@
 package ir.sadteam.loancalc.ui.cheque
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.ChequeStatus
@@ -38,14 +35,9 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
 
-// TODO: این آدرس صرفاً جای‌گیرنده‌ست - سرویس واقعی استعلام صیادی چک (بانک مرکزی) باید بعداً جایگزین
-// بشه؛ طبق قانون پروژه هیچ URL واقعی حدسی/ساختگی این‌جا قرار داده نشده.
-private const val SAYAD_INQUIRY_URL_PLACEHOLDER = "https://example.com/sayad-inquiry"
-
 /**
  * جزئیات یه چک - نمایش کامل فیلدها + مدیریت وضعیت (وضع‌نشده/پاس‌شده/برگشت‌خورده/مسترد) با AppChip،
- * آرشیو/بازگردانی، ویرایش/حذف، و یه دکمه‌ی جای‌گیرنده برای استعلام صیادی (هنوز به سرویس واقعی وصل
- * نشده - رجوع کن به TODO بالا).
+ * آرشیو/بازگردانی، ویرایش/حذف، و یه دکمه برای استعلام صیادی (رجوع کن به `SayadInquiryScreen.kt`).
  */
 @Composable
 fun ChequeDetailScreen(
@@ -53,9 +45,9 @@ fun ChequeDetailScreen(
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onSayadInquiry: () -> Unit,
     viewModel: ChequeViewModel,
 ) {
-    val context = LocalContext.current
     val typeLabel = if (cheque.type == "RECEIVED") "دریافتی" else "پرداختی"
     val banner = rememberInAppBanner()
 
@@ -137,13 +129,7 @@ fun ChequeDetailScreen(
 
         item {
             GradientButton(
-                onClick = {
-                    runCatching {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SAYAD_INQUIRY_URL_PLACEHOLDER)))
-                    }.onFailure {
-                        banner.show("این قابلیت هنوز فعال نشده")
-                    }
-                },
+                onClick = onSayadInquiry,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("استعلام چک صیادی")
