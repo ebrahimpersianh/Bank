@@ -24,18 +24,21 @@ import ir.sadteam.loancalc.ui.theme.AppSurface
  * (مثل کارت وام‌های پرتکرار که خط مشکی می‌خواد) override کرد. لیبلِ بالای کارت قبلاً یه دور طلایی‌رنگ
  * شده بود (لهجهٔ طلایی بیشتر)، ولی کاربر بعداً این تصمیم رو برگردوند: طلایی نباید رو فونت باشه، فقط
  * رو پس‌زمینه/حاشیه‌ی باکس‌ها (مثل حاشیه‌ی هنگام لمس تو `PressScale`، یا رینگ آواتار مشترکین) - پس
- * لیبل به همون خاکستریِ AppMuted قبلی برگشت. */
+ * لیبل به همون خاکستریِ AppMuted قبلی برگشت. [backgroundColor] برای مواردی که کارت باید رنگ زمینه‌ی
+ * خاص خودش رو داشته باشه (مثل کارتِ تحلیلِ درآمد که یه سبزِ ملایم می‌خواد) override می‌شه؛ برای بی‌خط
+ * کردنِ کامل یه کارت هم [borderColor] رو `Color.Transparent` بده (مثل کارت‌های آمار داشبورد). */
 @Composable
 fun AppCard(
     modifier: Modifier = Modifier,
     label: String? = null,
     borderColor: Color? = null,
+    backgroundColor: Color? = null,
     content: @Composable () -> Unit,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        color = AppSurface,
+        color = backgroundColor ?: AppSurface,
         tonalElevation = 3.dp,
         shadowElevation = 2.dp,
         border = BorderStroke(1.dp, borderColor ?: AppPrimary.copy(alpha = 0.35f)),

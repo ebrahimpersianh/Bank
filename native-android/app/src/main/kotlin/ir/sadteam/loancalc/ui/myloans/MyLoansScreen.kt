@@ -454,7 +454,9 @@ private fun DashboardSummary(
             valueColor = AppPrimary,
         )
 
-        AppCard(label = "تحلیل درآمد") {
+        // خواسته‌ی کاربر: کارتِ درآمد یه پس‌زمینه‌ی سبزِ ملایم داره (نه رنگ اصلی/تیل اپ) و بدون خط دور -
+        // مثل کارتِ «درآمد» تو اپ مرجع.
+        AppCard(label = "تحلیل درآمد", borderColor = Color.Transparent, backgroundColor = IncomeCardGreen.copy(alpha = 0.14f)) {
             if (incomes.isNotEmpty()) {
                 Column(modifier = Modifier.padding(bottom = 8.dp)) {
                     incomes.forEach { income ->
@@ -574,8 +576,15 @@ private fun DashboardSummary(
 }
 
 @Composable
+// یه سبزِ ملایمِ مستقل از AppPrimary (که خودش تیل/سبزآبیه) - فقط برای پس‌زمینه‌ی کارتِ درآمد، هم‌رنگ
+// با کارتِ «درآمد» تو اپ مرجعی که کاربر عکسش رو فرستاد.
+private val IncomeCardGreen = Color(0xFF4CAF50)
+
+@Composable
 private fun DashboardStatCard(title: String, value: String, valueColor: Color) {
-    AppCard(label = title) {
+    // خواسته‌ی کاربر: باکس‌های آمارِ داشبورد بدون خط دور، حسِ مدرن‌تری داره - AppCard.borderColor
+    // شفاف می‌شه (نه اینکه کلاً border سیستم رو حذف کنیم، چون بقیه‌ی کارت‌ها همچنان خط می‌خوان).
+    AppCard(label = title, borderColor = Color.Transparent) {
         Text(value, color = valueColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
     }
 }
