@@ -37,6 +37,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
@@ -95,31 +96,34 @@ data class BankLoanOutcome(
 @Composable
 fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel: CreditRatesViewModel = hiltViewModel()) {
     val creditServices by creditRatesViewModel.rates.collectAsState()
-    var borrowerName by remember { mutableStateOf("") }
+    // فیلدهای ورودیِ ساده (String/Int/Float/Boolean) با rememberSaveable - چرخشِ صفحه یا اومدنِ اپ به
+    // پس‌زمینه (که Compose گاهی state رو از دست می‌ده) دیگه فرمِ نیمه‌پرشده رو پاک نمی‌کنه. انتخابِ
+    // بانک (BankEntry، شامل Color) عمداً هنوز remember ساده‌ست چون Saver سفارشی می‌خواد.
+    var borrowerName by rememberSaveable { mutableStateOf("") }
     var selectedBank by remember { mutableStateOf<BankEntry?>(null) }
-    var selectedPresetKey by remember { mutableStateOf<String?>(null) }
+    var selectedPresetKey by rememberSaveable { mutableStateOf<String?>(null) }
 
-    var startYear by remember { mutableStateOf(1404) }
-    var startMonth by remember { mutableStateOf(1) }
-    var startDay by remember { mutableStateOf(1) }
+    var startYear by rememberSaveable { mutableStateOf(1404) }
+    var startMonth by rememberSaveable { mutableStateOf(1) }
+    var startDay by rememberSaveable { mutableStateOf(1) }
 
-    var amountText by remember { mutableStateOf("2,500,000,000") }
+    var amountText by rememberSaveable { mutableStateOf("2,500,000,000") }
     var amountSliderRange by remember { mutableStateOf(100_000_000f..10_000_000_000f) }
-    var amountSlider by remember { mutableStateOf(2_500_000_000f) }
+    var amountSlider by rememberSaveable { mutableStateOf(2_500_000_000f) }
 
-    var rateText by remember { mutableStateOf("23") }
-    var rateSlider by remember { mutableStateOf(23f) }
+    var rateText by rememberSaveable { mutableStateOf("23") }
+    var rateSlider by rememberSaveable { mutableStateOf(23f) }
 
-    var selectedMonths by remember { mutableStateOf(36) }
-    var customMonthsText by remember { mutableStateOf("") }
+    var selectedMonths by rememberSaveable { mutableStateOf(36) }
+    var customMonthsText by rememberSaveable { mutableStateOf("") }
 
-    var intervalDays by remember { mutableStateOf(30) }
+    var intervalDays by rememberSaveable { mutableStateOf(30) }
 
-    var graceOn by remember { mutableStateOf(false) }
-    var graceMonths by remember { mutableStateOf(6f) }
+    var graceOn by rememberSaveable { mutableStateOf(false) }
+    var graceMonths by rememberSaveable { mutableStateOf(6f) }
 
-    var showCalendarPicker by remember { mutableStateOf(false) }
-    var showCheque by remember { mutableStateOf(false) }
+    var showCalendarPicker by rememberSaveable { mutableStateOf(false) }
+    var showCheque by rememberSaveable { mutableStateOf(false) }
 
     fun applyAmount(rial: Long) {
         amountText = fmtGroupedEn(rial)
