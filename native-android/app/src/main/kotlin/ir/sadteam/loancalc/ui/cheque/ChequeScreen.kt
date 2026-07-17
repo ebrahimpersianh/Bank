@@ -179,6 +179,38 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
         }
     }
 
+    // خروجی PDF/اکسل از لیست چک‌ها - هم‌الگو با StatsScreen (وام‌ها).
+    val createPdfLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/pdf"),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch(Dispatchers.IO) {
+                val ok = runCatching {
+                    context.contentResolver.openOutputStream(uri)?.use { ChequePdfExporter.export(allCheques, it) }
+                }.isSuccess
+                withContext(Dispatchers.Main) {
+                    banner.show(if (ok) "PDF ذخیره شد" else "ذخیره‌ی PDF ناموفق بود")
+                }
+            }
+        }
+    }
+    val createXlsxLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch(Dispatchers.IO) {
+                val ok = runCatching {
+                    context.contentResolver.openOutputStream(uri)?.use { ChequeXlsxExporter.export(allCheques, it) }
+                }.isSuccess
+                withContext(Dispatchers.Main) {
+                    banner.show(if (ok) "اکسل ذخیره شد" else "ذخیره‌ی اکسل ناموفق بود")
+                }
+            }
+        }
+    }
+
     val screenKey = when {
         showChequeBooks -> "books"
         showAddForm -> "add"
@@ -268,6 +300,14 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                                         menuExpanded = false
                                         openDocumentLauncher.launch(arrayOf("application/json"))
                                     },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("دانلود PDF") },
+                                    onClick = { menuExpanded = false; createPdfLauncher.launch("cheques.pdf") },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("دانلود اکسل") },
+                                    onClick = { menuExpanded = false; createXlsxLauncher.launch("cheques.xlsx") },
                                 )
                             }
                         }
