@@ -77,92 +77,99 @@ fun SplashIntroScreen(onDone: () -> Unit) {
         modifier = Modifier.fillMaxSize().background(SplashBg),
         contentAlignment = Alignment.Center,
     ) {
-        // هاله‌ی محو پشتِ حلقه (پورت .glow)
-        Box(
-            modifier = Modifier
-                .size(230.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(RingTeal.copy(alpha = 0.16f), Color.Transparent),
-                    ),
-                ),
-        )
-
-        // هالهٔ «بازتاب نور» دورِ حلقه: یه حلقه‌ی نازک‌تر و بزرگ‌تر از خودِ دونات، با یه sweepGradient
-        // که بیشترش شفافه و فقط یه تکه‌ش روشنه - چون همون spin.value رو (هم‌زمان با چرخشِ خودِ حلقه)
-        // می‌گیره، دقیقاً انگار نور داره دورِ حلقه می‌چرخه و ازش بازتاب می‌گیره.
-        Canvas(
-            modifier = Modifier
-                .size(150.dp)
-                .scale(pop.value)
-                .graphicsLayer { rotationZ = spin.value },
-        ) {
-            val stroke = 3.dp.toPx()
-            val inset = stroke / 2f
-            drawArc(
-                brush = Brush.sweepGradient(
-                    colors = listOf(
-                        Color.Transparent,
-                        Color.Transparent,
-                        Color.Transparent,
-                        RingGold.copy(alpha = 0.85f),
-                        Color.White.copy(alpha = 0.95f),
-                        RingGold.copy(alpha = 0.85f),
-                        Color.Transparent,
-                        Color.Transparent,
-                    ),
-                ),
-                startAngle = 0f,
-                sweepAngle = 360f,
-                useCenter = false,
-                topLeft = Offset(inset, inset),
-                size = Size(size.width - stroke, size.height - stroke),
-                style = Stroke(width = stroke, cap = StrokeCap.Round),
-            )
-        }
-
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Canvas(
-                modifier = Modifier
-                    .size(100.dp)
-                    .scale(pop.value)
-                    .graphicsLayer { rotationZ = spin.value },
-            ) {
-                val stroke = 12.dp.toPx()
-                val inset = stroke / 2f
-                val arcSize = Size(size.width - stroke, size.height - stroke)
-                val topLeft = Offset(inset, inset)
-                // پایه‌ی حلقه (کل دایره)
-                drawArc(
-                    color = RingBase,
-                    startAngle = -90f,
-                    sweepAngle = 360f,
-                    useCenter = false,
-                    topLeft = topLeft,
-                    size = arcSize,
-                    style = Stroke(width = stroke),
+            // قبلاً هاله‌ی نور و حلقه‌ی اصلی هرکدوم مستقیم زیرِ Box بیرونی بودن، پس رو کلِ صفحه
+            // (با متن/نقطه‌های پایینش) وسط‌چین می‌شدن، نه رو خودِ حلقه - همین باعث می‌شد هاله و
+            // حلقه هم‌مرکز نباشن (باگی که کاربر با اسکرین‌شات نشون داد). حالا هرسه‌تا (هاله‌ی محو،
+            // هاله‌ی بازتابِ نور، حلقه‌ی اصلی) تو یه Box جدا و هم‌مرکز کنار همدیگه‌ان.
+            Box(contentAlignment = Alignment.Center) {
+                // هاله‌ی محو پشتِ حلقه (پورت .glow)
+                Box(
+                    modifier = Modifier
+                        .size(230.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(RingTeal.copy(alpha = 0.16f), Color.Transparent),
+                            ),
+                        ),
                 )
-                // کمانِ طلایی: ۳۰٪ از بالا (۱۰۸ درجه)
-                drawArc(
-                    color = RingGold,
-                    startAngle = -90f,
-                    sweepAngle = 108f,
-                    useCenter = false,
-                    topLeft = topLeft,
-                    size = arcSize,
-                    style = Stroke(width = stroke, cap = StrokeCap.Round),
-                )
-                // کمانِ سبز: ۷۰٪ باقی‌مونده (۲۵۲ درجه)
-                drawArc(
-                    color = RingTeal,
-                    startAngle = -90f + 108f,
-                    sweepAngle = 252f,
-                    useCenter = false,
-                    topLeft = topLeft,
-                    size = arcSize,
-                    style = Stroke(width = stroke, cap = StrokeCap.Round),
-                )
+
+                // هالهٔ «بازتاب نور» دورِ حلقه: یه حلقه‌ی نازک‌تر و بزرگ‌تر از خودِ دونات، دقیقاً
+                // هم‌مرکز باهاش، با یه sweepGradient که بیشترش شفافه و فقط یه تکه‌ش روشنه - چون
+                // همون spin.value رو (هم‌زمان با چرخشِ خودِ حلقه) می‌گیره، انگار نور داره دورِ حلقه
+                // می‌چرخه و ازش بازتاب می‌گیره، نه یه قوسِ جدا و بی‌ربط.
+                Canvas(
+                    modifier = Modifier
+                        .size(150.dp)
+                        .scale(pop.value)
+                        .graphicsLayer { rotationZ = spin.value },
+                ) {
+                    val stroke = 3.dp.toPx()
+                    val inset = stroke / 2f
+                    drawArc(
+                        brush = Brush.sweepGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Transparent,
+                                Color.Transparent,
+                                RingGold.copy(alpha = 0.85f),
+                                Color.White.copy(alpha = 0.95f),
+                                RingGold.copy(alpha = 0.85f),
+                                Color.Transparent,
+                                Color.Transparent,
+                            ),
+                        ),
+                        startAngle = 0f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        topLeft = Offset(inset, inset),
+                        size = Size(size.width - stroke, size.height - stroke),
+                        style = Stroke(width = stroke, cap = StrokeCap.Round),
+                    )
+                }
+
+                Canvas(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .scale(pop.value)
+                        .graphicsLayer { rotationZ = spin.value },
+                ) {
+                    val stroke = 12.dp.toPx()
+                    val inset = stroke / 2f
+                    val arcSize = Size(size.width - stroke, size.height - stroke)
+                    val topLeft = Offset(inset, inset)
+                    // پایه‌ی حلقه (کل دایره)
+                    drawArc(
+                        color = RingBase,
+                        startAngle = -90f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = arcSize,
+                        style = Stroke(width = stroke),
+                    )
+                    // کمانِ طلایی: ۳۰٪ از بالا (۱۰۸ درجه)
+                    drawArc(
+                        color = RingGold,
+                        startAngle = -90f,
+                        sweepAngle = 108f,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = arcSize,
+                        style = Stroke(width = stroke, cap = StrokeCap.Round),
+                    )
+                    // کمانِ سبز: ۷۰٪ باقی‌مونده (۲۵۲ درجه)
+                    drawArc(
+                        color = RingTeal,
+                        startAngle = -90f + 108f,
+                        sweepAngle = 252f,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = arcSize,
+                        style = Stroke(width = stroke, cap = StrokeCap.Round),
+                    )
+                }
             }
 
             Text(
