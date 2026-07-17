@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.settings
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -661,27 +662,37 @@ private fun SettingsMainContent(
     }
 }
 
-// TODO: این سه تا مقدار موقتی/جای‌گیرنده‌ان - کاربر باید با ایمیل و آیدی واقعی تلگرام/بله خودش
-// عوضشون کنه قبل از انتشار.
-private const val SUPPORT_EMAIL = "support@example.com"
-private const val SUPPORT_TELEGRAM_URL = "https://t.me/example_support"
-private const val SUPPORT_BALE_URL = "https://ble.ir/example_support"
+private const val SUPPORT_EMAIL = "vamman.pbs@gmail.com"
 
-/** پورت مودال پشتیبانی اپ رقیب (VAMMAN) - ایمیل/تلگرام/بله، هرکدوم با تپ یه اپ خارجی باز می‌کنه. */
+/** پشتیبانی فقط با ایمیل - با تپ مستقیم Gmail (نه یه چوزر عمومی) با گیرنده‌ی از قبل پرشده باز
+ * می‌شه تا کاربر فقط متن رو بنویسه و بزنه ارسال؛ اگه Gmail نصب نباشه mailto عادی (هر اپ ایمیلی)
+ * جایگزین می‌شه. چون هیچ callback مستقیمی برای «کاربر واقعاً ایمیل رو فرستاد» وجود نداره، این با
+ * ActivityResultContracts.StartActivityForResult پیاده شده: هر بار که کاربر از صفحه‌ی
+ * ارسال/کامپوز برگرده (چه با زدنِ ارسال، چه با دکمه‌ی برگشت)، یه بنرِ تشکر نشون داده می‌شه. */
 @Composable
 private fun SupportContacts(banner: InAppBannerState) {
     val context = LocalContext.current
+    val emailLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) {
+        banner.show("ممنون از پیامت! در اسرع وقت جوابت رو می‌دیم", isSuccess = true)
+    }
     Column {
         SupportRow(label = "ایمیل", value = SUPPORT_EMAIL) {
-            openOrShowBanner(context, banner) {
-                Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$SUPPORT_EMAIL"))
+            val gmailIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "message/rfc822"
+                putExtra(Intent.EXTRA_EMAIL, arrayOf(SUPPORT_EMAIL))
+                setPackage("com.google.android.gm")
             }
-        }
-        SupportRow(label = "تلگرام", value = SUPPORT_TELEGRAM_URL, modifier = Modifier.padding(top = 8.dp)) {
-            openOrShowBanner(context, banner) { Intent(Intent.ACTION_VIEW, Uri.parse(SUPPORT_TELEGRAM_URL)) }
-        }
-        SupportRow(label = "پیام‌رسان بله", value = SUPPORT_BALE_URL, modifier = Modifier.padding(top = 8.dp)) {
-            openOrShowBanner(context, banner) { Intent(Intent.ACTION_VIEW, Uri.parse(SUPPORT_BALE_URL)) }
+            try {
+                emailLauncher.launch(gmailIntent)
+            } catch (e: ActivityNotFoundException) {
+                try {
+                    emailLauncher.launch(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$SUPPORT_EMAIL")))
+                } catch (e: ActivityNotFoundException) {
+                    banner.show("اپ مناسبی برای ارسال ایمیل پیدا نشد")
+                }
+            }
         }
     }
 }
@@ -836,14 +847,6 @@ private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
             TextButton(onClick = onDismiss) { Text("انصراف") }
         },
     )
-}
-
-private fun openOrShowBanner(context: android.content.Context, banner: InAppBannerState, buildIntent: () -> Intent) {
-    try {
-        context.startActivity(buildIntent())
-    } catch (e: Exception) {
-        banner.show("اپ مناسبی برای باز کردن این لینک پیدا نشد")
-    }
 }
 
 @Composable
