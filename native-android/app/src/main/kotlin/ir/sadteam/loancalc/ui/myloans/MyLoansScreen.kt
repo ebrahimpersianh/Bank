@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -47,7 +49,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -285,26 +289,78 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                     }
                 } else {
                     items(loans, key = { it.id }) { loan ->
+                        // انیمیشنِ فلیپِ کارت (خواسته‌ی «انیمیشن‌های سفارشی») - آیکونِ اطلاعات، کارت رو
+                        // مثل یه چکِ فیزیکی می‌چرخونه و خلاصه‌ی پرداخت رو پشتش نشون می‌ده؛ ضربه‌ی اصلیِ
+                        // کارت هنوز باز کردنِ جزئیاتِ وامه، این فقط یه لایه‌ی جدا و مستقله.
+                        var flipped by remember { mutableStateOf(false) }
+                        val density = LocalDensity.current
+                        val rotation by animateFloatAsState(
+                            targetValue = if (flipped) 180f else 0f,
+                            animationSpec = tween(500),
+                            label = "loanCardFlip",
+                        )
                         // animateItem: اضافه/حذف/جابه‌جایی وام‌ها با انیمیشن نرم (نه پرش یهویی).
-                        AppCard(modifier = Modifier.animateItem().pressScaleClickable { openedLoanId = loan.id }) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                // لوگوی بانک سمت راست کارت (لبه‌ی leading در RTL) - از رو اسم بانک.
-                                BankBadge(bankName = loan.bank)
-                                Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                                    Text(loan.name, color = AppText, fontSize = 15.sp)
-                                    Text(loan.bank, color = AppMuted, fontSize = 12.sp)
+                        AppCard(
+                            modifier = Modifier
+                                .animateItem()
+                                .pressScaleClickable { openedLoanId = loan.id }
+                                .graphicsLayer {
+                                    rotationY = rotation
+                                    cameraDistance = 12f * density.density
+                                },
+                        ) {
+                            if (rotation <= 90f) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    // لوگوی بانک سمت راست کارت (لبه‌ی leading در RTL) - از رو اسم بانک.
+                                    BankBadge(bankName = loan.bank)
+                                    Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                                        Text(loan.name, color = AppText, fontSize = 15.sp)
+                                        Text(loan.bank, color = AppMuted, fontSize = 12.sp)
+                                        Text(
+                                            "${loan.paidCount} از ${loan.n} قسط پرداخت‌شده",
+                                            color = AppPrimary,
+                                            fontSize = 11.sp,
+                                            modifier = Modifier.padding(top = 2.dp),
+                                        )
+                                    }
+                                    IconButton(onClick = { flipped = true }) {
+                                        Icon(Icons.Filled.Info, contentDescription = "خلاصه پرداخت", tint = AppMuted)
+                                    }
+                                    IconButton(onClick = { viewModel.deleteLoan(loan.id) }) {
+                                        Icon(Icons.Filled.Delete, contentDescription = "حذف وام", tint = AppDanger)
+                                    }
+                                }
+                            } else {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .graphicsLayer { rotationY = 180f },
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(loan.name, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                        IconButton(onClick = { flipped = false }) {
+                                            Icon(Icons.Filled.Info, contentDescription = "بستن خلاصه", tint = AppMuted)
+                                        }
+                                    }
                                     Text(
-                                        "${loan.paidCount} از ${loan.n} قسط پرداخت‌شده",
+                                        "باقی‌مانده: ${maskIfPrivate(LocalPrivacyMode.current, fmt(loan.installment * (loan.n - loan.paidCount)))} ریال",
                                         color = AppPrimary,
-                                        fontSize = 11.sp,
+                                        fontSize = 13.sp,
+                                        modifier = Modifier.padding(top = 6.dp),
+                                    )
+                                    Text(
+                                        "${toFa(loan.n - loan.paidCount)} قسط باقیمانده از ${toFa(loan.n)}",
+                                        color = AppMuted,
+                                        fontSize = 12.sp,
                                         modifier = Modifier.padding(top = 2.dp),
                                     )
-                                }
-                                IconButton(onClick = { viewModel.deleteLoan(loan.id) }) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "حذف وام", tint = AppDanger)
                                 }
                             }
                         }

@@ -26,6 +26,11 @@ class CreditRatesViewModel @Inject constructor(
     private val _rates = MutableStateFlow(creditServices)
     val rates: StateFlow<List<BankEntry>> = _rates.asStateFlow()
 
+    // فقط برای انیمیشنِ shimmer تو BankLoanScreen - تا وقتی fetch از سرور تموم نشده true می‌مونه
+    // (حتی موقعِ fallback به داده‌ی استاتیک، چون UI نمی‌دونه شکستِ شبکه پیش اومده یا هنوز در حالِ رفتنه).
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     init {
         viewModelScope.launch {
             try {
@@ -35,6 +40,8 @@ class CreditRatesViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 // بی‌صدا نادیده گرفته می‌شه - fallback استاتیک همچنان معتبره
+            } finally {
+                _isLoading.value = false
             }
         }
     }

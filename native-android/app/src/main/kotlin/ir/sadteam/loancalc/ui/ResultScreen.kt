@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -63,7 +64,10 @@ import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface2
+import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.roundToLong
+import kotlin.math.sin
 import kotlinx.coroutines.delay
 
 private val faMonthNamesResult = listOf(
@@ -153,6 +157,7 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                         progress = ringProgress.value,
                         modifier = Modifier.size(180.dp),
                     )
+                    MoneyParticleBurst(trigger = result, modifier = Modifier.size(220.dp))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(maskIfPrivate(privacyMode, fmt(animatedInstallment)), fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         Text("قسط ماهانه (ریال)", fontSize = 12.5.sp, color = AppMuted)
@@ -295,6 +300,39 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                 }
             }
             }
+        }
+    }
+}
+
+/** یه پاشیدنِ کوتاهِ «سکه‌های طلایی» از مرکزِ حلقه‌ی نتیجه به بیرون - خواسته‌ی «انیمیشن‌های سفارشی»،
+ * حسِ جشن‌گرفتنِ لحظه‌ای که نتیجه‌ی محاسبه آماده می‌شه. [trigger] هر بار عوض بشه (یعنی محاسبه‌ی
+ * جدید) یه دور کامل پخش می‌شه؛ صرفاً تزئینیه و روی هیچ داده‌ای اثر نمی‌ذاره. */
+@Composable
+private fun MoneyParticleBurst(trigger: Any, modifier: Modifier = Modifier) {
+    val progress = remember(trigger) { Animatable(0f) }
+    LaunchedEffect(trigger) {
+        progress.snapTo(0f)
+        progress.animateTo(1f, animationSpec = tween(900, easing = LinearOutSlowInEasing))
+    }
+    val particleCount = 10
+    Canvas(modifier = modifier) {
+        val p = progress.value
+        if (p <= 0f) return@Canvas
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val maxRadius = size.minDimension / 2f
+        val alpha = (1f - p).coerceIn(0f, 1f)
+        if (alpha <= 0f) return@Canvas
+        repeat(particleCount) { i ->
+            val angle = 2 * PI * i / particleCount + PI / particleCount
+            val dist = maxRadius * p
+            val x = center.x + (dist * cos(angle)).toFloat()
+            val y = center.y + (dist * sin(angle)).toFloat()
+            val radius = 3.5.dp.toPx() * (1f - p * 0.35f)
+            drawCircle(
+                color = androidx.compose.ui.graphics.Color(0xFFD4AF37).copy(alpha = alpha),
+                radius = radius,
+                center = Offset(x, y),
+            )
         }
     }
 }

@@ -65,6 +65,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.BankTile
+import ir.sadteam.loancalc.ui.components.BankTileShimmer
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
@@ -96,6 +97,7 @@ data class BankLoanOutcome(
 @Composable
 fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel: CreditRatesViewModel = hiltViewModel()) {
     val creditServices by creditRatesViewModel.rates.collectAsState()
+    val creditRatesLoading by creditRatesViewModel.isLoading.collectAsState()
     // فیلدهای ورودیِ ساده (String/Int/Float/Boolean) با rememberSaveable - چرخشِ صفحه یا اومدنِ اپ به
     // پس‌زمینه (که Compose گاهی state رو از دست می‌ده) دیگه فرمِ نیمه‌پرشده رو پاک نمی‌کنه. انتخابِ
     // بانک (BankEntry، شامل Color) عمداً هنوز remember ساده‌ست چون Saver سفارشی می‌خواد.
@@ -241,27 +243,36 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
                         .lazyRowScrollbar(banksScroll, AppPrimary, shimmerPhase = shimmerPhase),
                 )
                 Text("خدمات اعتباری", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
-                LazyRow(
-                    state = creditScroll,
-                    modifier = Modifier.padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    items(creditServices, key = { it.name }) { b ->
-                        BankTile(
-                            bank = b,
-                            selected = selectedBank?.name == b.name,
-                            onClick = {
-                                selectedBank = b
-                                rateText = trimRate(b.ratePct)
-                                rateSlider = b.ratePct.toFloat()
-                                selectedMonths = b.months
-                                customMonthsText = ""
-                                val mid = (b.minAmount + b.maxAmount) / 2
-                                applyAmount(mid)
-                                amountSliderRange = b.minAmount.toFloat()..b.maxAmount.toFloat()
-                                selectedPresetKey = null
-                            },
-                        )
+                if (creditRatesLoading) {
+                    Row(
+                        modifier = Modifier.padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        repeat(5) { BankTileShimmer() }
+                    }
+                } else {
+                    LazyRow(
+                        state = creditScroll,
+                        modifier = Modifier.padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        items(creditServices, key = { it.name }) { b ->
+                            BankTile(
+                                bank = b,
+                                selected = selectedBank?.name == b.name,
+                                onClick = {
+                                    selectedBank = b
+                                    rateText = trimRate(b.ratePct)
+                                    rateSlider = b.ratePct.toFloat()
+                                    selectedMonths = b.months
+                                    customMonthsText = ""
+                                    val mid = (b.minAmount + b.maxAmount) / 2
+                                    applyAmount(mid)
+                                    amountSliderRange = b.minAmount.toFloat()..b.maxAmount.toFloat()
+                                    selectedPresetKey = null
+                                },
+                            )
+                        }
                     }
                 }
                 Box(

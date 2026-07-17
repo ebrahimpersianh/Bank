@@ -77,6 +77,7 @@ import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.InAppBannerState
+import ir.sadteam.loancalc.ui.components.PulseGlowBox
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.haptics.HapticsViewModel
@@ -319,24 +320,26 @@ private fun SettingsMainContent(
             }
 
             if (gateState == GateState.LOGGED_IN && !subscribed && matches("اشتراک", "خرید اشتراک")) {
-                AppCard(modifier = Modifier.padding(top = 10.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Star, contentDescription = null, tint = AppAccent)
-                        Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                            Text("ارتقا به نسخه اشتراکی", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Text(
-                                "وام/چک نامحدود، همگام‌سازی چند دستگاه و موارد دیگر",
-                                color = AppMuted,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
+                PulseGlowBox(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+                    AppCard {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.Star, contentDescription = null, tint = AppAccent)
+                            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                                Text("ارتقا به نسخه اشتراکی", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "وام/چک نامحدود، همگام‌سازی چند دستگاه و موارد دیگر",
+                                    color = AppMuted,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                )
+                            }
                         }
-                    }
-                    GradientButton(
-                        onClick = onShowSubscription,
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                    ) {
-                        Text("مشاهده پلن‌ها")
+                        GradientButton(
+                            onClick = onShowSubscription,
+                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                        ) {
+                            Text("مشاهده پلن‌ها")
+                        }
                     }
                 }
             }
