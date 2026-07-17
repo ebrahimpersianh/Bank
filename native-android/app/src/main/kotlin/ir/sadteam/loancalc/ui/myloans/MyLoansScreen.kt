@@ -150,7 +150,7 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                     context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
                 }
                 withContext(Dispatchers.Main) {
-                    banner.show("پشتیبان‌گیری انجام شد")
+                    banner.show("پشتیبان‌گیری انجام شد", isSuccess = true)
                 }
             }
         }
@@ -170,7 +170,7 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                 } else {
                     viewModel.importBackup(json) { ok ->
                         val message = if (ok) "بازیابی شد" else "فایل معتبر نیست"
-                        banner.show(message)
+                        banner.show(message, isSuccess = ok)
                     }
                 }
             }

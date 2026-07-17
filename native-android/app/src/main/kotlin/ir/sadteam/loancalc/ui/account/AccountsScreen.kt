@@ -86,7 +86,7 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewMod
             scope.launch(Dispatchers.IO) {
                 runCatching { context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) } }
                 withContext(Dispatchers.Main) {
-                    banner.show("پشتیبان‌گیری حساب‌ها انجام شد")
+                    banner.show("پشتیبان‌گیری حساب‌ها انجام شد", isSuccess = true)
                 }
             }
         }
@@ -106,7 +106,7 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewMod
                 } else {
                     viewModel.importBackup(json) { ok ->
                         val message = if (ok) "بازیابی حساب‌ها انجام شد" else "فایل معتبر نیست"
-                        banner.show(message)
+                        banner.show(message, isSuccess = ok)
                     }
                 }
             }

@@ -152,7 +152,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
             scope.launch(Dispatchers.IO) {
                 runCatching { context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) } }
                 withContext(Dispatchers.Main) {
-                    banner.show("پشتیبان‌گیری چک انجام شد")
+                    banner.show("پشتیبان‌گیری چک انجام شد", isSuccess = true)
                 }
             }
         }
@@ -172,7 +172,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                 } else {
                     viewModel.importBackup(json) { ok ->
                         val message = if (ok) "بازیابی چک انجام شد" else "فایل معتبر نیست"
-                        banner.show(message)
+                        banner.show(message, isSuccess = ok)
                     }
                 }
             }
@@ -189,7 +189,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                     context.contentResolver.openOutputStream(uri)?.use { ChequePdfExporter.export(allCheques, it) }
                 }.isSuccess
                 withContext(Dispatchers.Main) {
-                    banner.show(if (ok) "PDF ذخیره شد" else "ذخیره‌ی PDF ناموفق بود")
+                    banner.show(if (ok) "PDF ذخیره شد" else "ذخیره‌ی PDF ناموفق بود", isSuccess = ok)
                 }
             }
         }
@@ -205,7 +205,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                     context.contentResolver.openOutputStream(uri)?.use { ChequeXlsxExporter.export(allCheques, it) }
                 }.isSuccess
                 withContext(Dispatchers.Main) {
-                    banner.show(if (ok) "اکسل ذخیره شد" else "ذخیره‌ی اکسل ناموفق بود")
+                    banner.show(if (ok) "اکسل ذخیره شد" else "ذخیره‌ی اکسل ناموفق بود", isSuccess = ok)
                 }
             }
         }

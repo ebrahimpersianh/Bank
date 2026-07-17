@@ -76,7 +76,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
                 }.isSuccess
                 withContext(Dispatchers.Main) {
                     val message = if (ok) "PDF ذخیره شد" else "ذخیره‌ی PDF ناموفق بود"
-                    banner.show(message)
+                    banner.show(message, isSuccess = ok)
                 }
             }
         }
@@ -96,7 +96,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
                 }.isSuccess
                 withContext(Dispatchers.Main) {
                     val message = if (ok) "اکسل ذخیره شد" else "ذخیره‌ی اکسل ناموفق بود"
-                    banner.show(message)
+                    banner.show(message, isSuccess = ok)
                 }
             }
         }

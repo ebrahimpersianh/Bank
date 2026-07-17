@@ -482,7 +482,7 @@ private fun SettingsMainContent(
                             onClick = {
                                 autoBackupViewModel.restoreFromAutoBackup { ok ->
                                     val message = if (ok) "بازیابی از پشتیبان خودکار انجام شد" else "پشتیبانی برای بازیابی پیدا نشد"
-                                    banner.show(message)
+                                    banner.show(message, isSuccess = ok)
                                 }
                             },
                             modifier = Modifier
@@ -500,7 +500,7 @@ private fun SettingsMainContent(
                             onClick = {
                                 autoBackupViewModel.restoreFromCloud { ok ->
                                     val message = if (ok) "بازیابی از سرور ابری انجام شد" else "پشتیبانی رو سرور ابری پیدا نشد"
-                                    banner.show(message)
+                                    banner.show(message, isSuccess = ok)
                                 }
                             },
                             modifier = Modifier
