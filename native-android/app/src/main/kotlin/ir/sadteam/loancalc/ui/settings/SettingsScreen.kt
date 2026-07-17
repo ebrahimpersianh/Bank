@@ -211,6 +211,8 @@ private fun SettingsMainContent(
     fun matches(vararg titles: String) =
         searchQuery.isBlank() || titles.any { it.contains(searchQuery.trim()) }
     val banner = rememberInAppBanner()
+    var showDeleteAccountConfirm by remember { mutableStateOf(false) }
+    var deleteAccountInProgress by remember { mutableStateOf(false) }
 
     // به‌درخواست کاربر، منوی تنظیمات دیگه زیرِ نوار وضعیتِ گوشی گم نمی‌شه (statusBarsPadding) و تا
     // ته قابل‌اسکرول‌شدنه (verticalScroll + navigationBarsPadding پایین) - قبلاً هیچ‌کدوم نبود.
@@ -306,6 +308,18 @@ private fun SettingsMainContent(
                         ) {
                             Text("خروج از حساب")
                         }
+                        // الزامِ استانداردِ فروشگاه‌های اپ: راهِ داخل‌برنامه‌ای برای حذفِ کاملِ حساب،
+                        // نه فقط خروج. عمداً OutlinedButton (نه پرشده مثل خروج) - شدتِ بصریِ کمتر برای
+                        // یه عملِ به‌مراتب جدی‌تر و غیرقابل‌بازگشت، تا اشتباهی باهاش قاطی نشه.
+                        OutlinedButton(
+                            onClick = { showDeleteAccountConfirm = true },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                        ) {
+                            Text("حذف حساب کاربری")
+                        }
                     }
                     else -> {
                         Text("ورود به حساب انجام نشده", color = AppText, fontSize = 15.sp)
@@ -325,6 +339,50 @@ private fun SettingsMainContent(
                         }
                     }
                 }
+            }
+
+            if (showDeleteAccountConfirm) {
+                AlertDialog(
+                    onDismissRequest = { if (!deleteAccountInProgress) showDeleteAccountConfirm = false },
+                    title = { Text("حذف حساب کاربری") },
+                    text = {
+                        Text(
+                            "شماره‌ی حساب و وام‌ها/پشتیبان‌های ابری‌ای که سمت سرور ذخیره شدن برای همیشه " +
+                                "پاک می‌شن و قابل بازگشت نیستن. داده‌های محلیِ همین گوشی (وام‌ها/چک‌های " +
+                                "ذخیره‌شده) دست‌نخورده می‌مونه. مطمئنی؟",
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                deleteAccountInProgress = true
+                                authViewModel.deleteAccount(
+                                    onSuccess = {
+                                        deleteAccountInProgress = false
+                                        showDeleteAccountConfirm = false
+                                        banner.show("حساب کاربری حذف شد")
+                                    },
+                                    onError = {
+                                        deleteAccountInProgress = false
+                                        banner.show("حذف حساب ناموفق بود؛ دوباره امتحان کن")
+                                    },
+                                )
+                            },
+                            enabled = !deleteAccountInProgress,
+                            colors = ButtonDefaults.buttonColors(containerColor = AppDanger),
+                        ) {
+                            Text(if (deleteAccountInProgress) "..." else "حذف کن")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = { showDeleteAccountConfirm = false },
+                            enabled = !deleteAccountInProgress,
+                        ) {
+                            Text("انصراف")
+                        }
+                    },
+                )
             }
 
             // این کارت قبلاً فقط برای LOGGED_IN نشون داده می‌شد - یعنی کاربر مهمان (GateState.GUEST)

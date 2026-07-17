@@ -87,6 +87,22 @@ class AuthRepository(
         }
     }
 
+    /** پورت الزامِ استانداردِ فروشگاه‌های اپ: حذفِ کاملِ حساب (شماره + وام‌ها + پشتیبان‌های ابری) از
+     * سرور - نه فقط یه خروجِ محلی مثل [AuthPrefs.clearSession]. پاک‌کردنِ لوکالِ سشن بعد از موفقیت
+     * وظیفه‌ی خودِ فراخوان (AuthViewModel) ـه، دقیقاً مثل الگوی logout. */
+    suspend fun deleteAccount(): AuthResult {
+        val token = authPrefs.authToken.first()
+        if (token.isNullOrEmpty()) return AuthResult.Error(null)
+        return try {
+            apiService.deleteAccount("Bearer $token")
+            AuthResult.Success
+        } catch (e: HttpException) {
+            AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))
+        } catch (e: Exception) {
+            AuthResult.Error(null)
+        }
+    }
+
     private fun errorCodeFrom(body: String?): String? {
         if (body.isNullOrEmpty()) return null
         return try {

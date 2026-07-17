@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.data.network
 
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
@@ -25,6 +26,11 @@ interface ApiService {
 
     @GET("api/auth/me")
     suspend fun me(@Header("Authorization") authHeader: String): MeResponse
+
+    // حذف کامل حساب (شماره + وام‌ها + پشتیبان‌های ابری چک/حساب سمت سرور) - الزامِ استانداردِ
+    // فروشگاه‌های اپ برای هر اپی که ورود با شماره‌موبایل داره.
+    @DELETE("api/auth/account")
+    suspend fun deleteAccount(@Header("Authorization") authHeader: String): Response<Unit>
 
     @GET("api/loans")
     suspend fun getLoans(@Header("Authorization") authHeader: String): LoansResponse

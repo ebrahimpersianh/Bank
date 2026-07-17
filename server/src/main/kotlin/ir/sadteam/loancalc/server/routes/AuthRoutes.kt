@@ -5,6 +5,7 @@ import io.ktor.server.application.call
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
@@ -174,6 +175,23 @@ fun Route.authRoutes() {
                     trialEndsAt = trialEndsAtMs(user.createdAt)
                 )
             )
+        }
+
+        /* حذف کامل حساب - الزامِ استانداردِ فروشگاه‌های اپ برای هر اپی که با شماره‌موبایل لاگین
+           می‌گیره و داده‌ی کاربر رو سمت سرور نگه می‌داره (نه فقط یه لاگ‌اوت محلی). چون هیچ FK ای تو
+           Db.kt با ON DELETE CASCADE تعریف نشده، هر جدولِ وابسته به user_id/phone رو دستی و قبل از
+           خودِ ردیفِ users پاک می‌کنیم؛ اگه جدولِ جدیدی به user_id/phone وابسته اضافه شد، همینجا هم
+           باید اضافه بشه. */
+        delete("/account") {
+            val authed = call.requireAuth() ?: return@delete
+            Db.withConnection { conn ->
+                conn.execute("DELETE FROM loans WHERE user_id = ?", authed.uid)
+                conn.execute("DELETE FROM cheques_backup WHERE user_id = ?", authed.uid)
+                conn.execute("DELETE FROM accounts_backup WHERE user_id = ?", authed.uid)
+                conn.execute("DELETE FROM otps WHERE phone = ?", authed.phone)
+                conn.execute("DELETE FROM users WHERE id = ?", authed.uid)
+            }
+            call.respond(mapOf("ok" to true))
         }
     }
 }

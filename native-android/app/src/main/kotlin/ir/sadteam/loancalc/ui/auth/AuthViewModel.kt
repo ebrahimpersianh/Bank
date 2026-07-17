@@ -146,6 +146,22 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    /** الزامِ استانداردِ فروشگاه‌های اپ: حذفِ کاملِ حساب (نه فقط خروج) - سرور شماره/وام‌ها/پشتیبان‌های
+     * ابریِ چک و حساب رو پاک می‌کنه (رجوع کن به AuthRoutes.kt سمت سرور). موفق که شد، لوکال هم دقیقاً
+     * مثل [logout] پاک می‌شه، چون دیگه توکنی نیست که باهاش کار کنه. */
+    fun deleteAccount(onSuccess: () -> Unit, onError: (String?) -> Unit) {
+        viewModelScope.launch {
+            when (val result = authRepository.deleteAccount()) {
+                is AuthResult.Success -> {
+                    authPrefs.clearSession()
+                    authPrefs.setGuestMode(true)
+                    onSuccess()
+                }
+                is AuthResult.Error -> onError(result.code)
+            }
+        }
+    }
+
     /** پورت verifySubscriptionPurchase تو www/index.html: بعد از یه خرید موفق Poolakey صدا زده
      * می‌شه، سرور خودش مستقل از کافه‌بازار تایید می‌کنه (به کلاینت اعتماد نمی‌شه). */
     fun verifySubscriptionPurchase(
