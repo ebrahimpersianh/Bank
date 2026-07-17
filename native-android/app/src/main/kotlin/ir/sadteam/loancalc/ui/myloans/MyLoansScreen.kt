@@ -575,7 +575,6 @@ private fun DashboardSummary(
     }
 }
 
-@Composable
 // یه سبزِ ملایمِ مستقل از AppPrimary (که خودش تیل/سبزآبیه) - فقط برای پس‌زمینه‌ی کارتِ درآمد، هم‌رنگ
 // با کارتِ «درآمد» تو اپ مرجعی که کاربر عکسش رو فرستاد.
 private val IncomeCardGreen = Color(0xFF4CAF50)
