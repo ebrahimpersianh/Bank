@@ -43,15 +43,17 @@ import kotlinx.coroutines.delay
 private val SplashBg = Color(0xFF0D1321)
 private val RingBase = Color(0xFF1D2A46)
 private val RingGold = Color(0xFFF0A857)
-private val RingTeal = Color(0xFF2DD8B8)
+private val RingTeal = Color(0xFF00C2D1) // هم‌رنگِ AppPrimary جدید (سبزآبی، نه سبزِ قبلی)
 private val SplashName = Color(0xFFEEF1F8)
 private val SplashSub = Color(0xFF4A5570)
 
 /**
  * اینتروِ باز شدن اپ - پورت دقیق اسپلشِ اپ وب (`#splash` تو www/index.html): زمینه‌ی تیره، یه حلقه‌ی
  * دونات (پایه‌ی تیره + کمانِ طلایی ۳۰٪ + کمانِ سبز ۷۰٪، عین نمودار دونات وام)، اسم «وام من»، سه نقطه‌ی
- * چشمک‌زن و «Powered By Sad Team». بعد از ~۱.۶ ثانیه [onDone] صدا زده می‌شه. قبلاً اپ بومی به‌جاش فقط
+ * چشمک‌زن و «Powered By Sad Team». بعد از ~۱.۸ ثانیه [onDone] صدا زده می‌شه. قبلاً اپ بومی به‌جاش فقط
  * آیکونِ ماشین‌حساب (اسپلشِ سیستمی) رو نشون می‌داد؛ کاربر همین دوناتِ وب رو می‌خواست.
+ * خواسته‌ی بعدی کاربر: چرخش بیشتر (دو دور کامل، نه یه دور) + یه هالهٔ «بازتاب نور» دورِ حلقه که
+ * هم‌زمان با خودِ حلقه می‌چرخه (نه فقط چرخشِ خودِ رنگ‌ها) - رجوع کن به lightSweep پایین.
  */
 @Composable
 fun SplashIntroScreen(onDone: () -> Unit) {
@@ -59,14 +61,15 @@ fun SplashIntroScreen(onDone: () -> Unit) {
     LaunchedEffect(Unit) {
         pop.animateTo(1f, animationSpec = tween(800, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
     }
-    // چرخش کامل حلقه موقع ورود (خواسته‌ی کاربر: «دایره بچرخه، خیلی پریمیوم می‌شه») - یه دور ۳۶۰
-    // درجه با همون easing نرم، همزمان با pop، بعد آروم می‌ایسته.
+    // چرخش کامل حلقه موقع ورود (خواسته‌ی کاربر: «دایره بچرخه، خیلی پریمیوم می‌شه»، بعد «چرخش رو یه
+    // دور بیشتر کن») - دو دور کامل (۷۲۰ درجه) با همون easing نرم، همزمان با pop، بعد آروم می‌ایسته.
+    // تاخیرِ onDone هم متناسب زیاد شده تا اسپلش قبل از تموم‌شدنِ چرخش قطع نشه.
     val spin = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        spin.animateTo(360f, animationSpec = tween(1100, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
+        spin.animateTo(720f, animationSpec = tween(1600, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
     }
     LaunchedEffect(Unit) {
-        delay(1300)
+        delay(1800)
         onDone()
     }
 
@@ -85,6 +88,39 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                     ),
                 ),
         )
+
+        // هالهٔ «بازتاب نور» دورِ حلقه: یه حلقه‌ی نازک‌تر و بزرگ‌تر از خودِ دونات، با یه sweepGradient
+        // که بیشترش شفافه و فقط یه تکه‌ش روشنه - چون همون spin.value رو (هم‌زمان با چرخشِ خودِ حلقه)
+        // می‌گیره، دقیقاً انگار نور داره دورِ حلقه می‌چرخه و ازش بازتاب می‌گیره.
+        Canvas(
+            modifier = Modifier
+                .size(150.dp)
+                .scale(pop.value)
+                .graphicsLayer { rotationZ = spin.value },
+        ) {
+            val stroke = 3.dp.toPx()
+            val inset = stroke / 2f
+            drawArc(
+                brush = Brush.sweepGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color.Transparent,
+                        Color.Transparent,
+                        RingGold.copy(alpha = 0.85f),
+                        Color.White.copy(alpha = 0.95f),
+                        RingGold.copy(alpha = 0.85f),
+                        Color.Transparent,
+                        Color.Transparent,
+                    ),
+                ),
+                startAngle = 0f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = Size(size.width - stroke, size.height - stroke),
+                style = Stroke(width = stroke, cap = StrokeCap.Round),
+            )
+        }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Canvas(
