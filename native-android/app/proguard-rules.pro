@@ -47,3 +47,7 @@
 # نگه می‌داریم چون از رو نام تزریق می‌شن. ---
 -keep @dagger.hilt.android.lifecycle.HiltViewModel class * { *; }
 -keep @androidx.hilt.work.HiltWorker class *
+
+# --- SQLCipher: JNI/reflection داخلی داره، کلاس‌هاش نباید عوض/حذف بشن. ---
+-keep class net.sqlcipher.** { *; }
+-dontwarn net.sqlcipher.**

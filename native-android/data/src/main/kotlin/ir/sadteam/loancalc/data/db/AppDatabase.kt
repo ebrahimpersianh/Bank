@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import net.sqlcipher.database.SQLiteDatabase
+import net.sqlcipher.database.SupportFactory
 
 @Database(
     entities = [
@@ -31,17 +33,25 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getInstance(context: Context): AppDatabase =
             instance ?: synchronized(this) {
-                instance ?: Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "loan-calc.db",
-                )
-                    // این پروژه هنوز پیش از انتشار عمومیه (فاز ۰/۱)، پس هیچ داده‌ی واقعی کاربری
-                    // برای نگه‌داشتن وجود نداره - به‌جای نوشتن migration دستی برای هر تغییر schema
-                    // زودهنگام، دیتابیس رو موقع تغییر version دوباره می‌سازه.
-                    .fallbackToDestructiveMigration()
-                    .build()
-                    .also { instance = it }
+                instance ?: run {
+                    // وام/چک/حساب اطلاعات مالی/شخصی‌ان؛ SQLCipher فایل دیتابیس رو با AES-256
+                    // رمزنگاری می‌کنه (پسورد از Android Keystore - رجوع کن به DbPassphrase.kt) تا
+                    // گوشیِ روت‌شده نتونه مستقیم فایلِ خام رو بخونه. چون این پروژه هنوز پیش از
+                    // انتشار عمومیه (فاز ۰/۱، هیچ داده‌ی واقعی کاربری نیست)، این تغییر بدون هیچ
+                    // migration ای اعمال می‌شه - نصب‌های قبلیِ رمزنگاری‌نشده با تغییرِ version دوباره
+                    // ساخته می‌شن (fallbackToDestructiveMigration، هم‌مثل تغییرات schema قبلی).
+                    SQLiteDatabase.loadLibs(context)
+                    val factory = SupportFactory(dbPassphrase(context.applicationContext))
+                    Room.databaseBuilder(
+                        context.applicationContext,
+                        AppDatabase::class.java,
+                        "loan-calc.db",
+                    )
+                        .openHelperFactory(factory)
+                        .fallbackToDestructiveMigration()
+                        .build()
+                        .also { instance = it }
+                }
             }
     }
 }
