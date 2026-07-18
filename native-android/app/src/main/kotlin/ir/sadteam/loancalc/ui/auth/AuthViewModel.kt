@@ -77,11 +77,21 @@ class AuthViewModel @Inject constructor(
     }
 
     /** پورت handleLogout: بعد از خروج، guest_mode رو ست می‌کنه (نه اینکه گیت اجباری رو دوباره باز
-     * کنه) تا کاربر بعد از خروج آزادانه به‌عنوان مهمان ادامه بده - رجوع کن به CLAUDE.md. */
+     * کنه) تا کاربر بعد از خروج آزادانه به‌عنوان مهمان ادامه بده - رجوع کن به CLAUDE.md.
+     *
+     * وام‌ها/چک‌ها/حساب‌های محلی هم همین‌جا پاک می‌شن - وگرنه اگه کاربر بعداً با یه شماره‌ی *دیگه*
+     * رو همین گوشی وارد بشه، [LoanRepository.syncAfterLogin] چون سرورِ حسابِ جدید هنوز خالیه ولی
+     * محلی داده داره، اون رو «پوش به سرور» تفسیر می‌کنه و اشتباهی وام‌های حسابِ قبلی رو زیرِ حسابِ
+     * جدید آپلود می‌کنه (باگی که کاربر موقع تست با دو شماره‌ی مختلف رو یه گوشی گزارش داد). داده‌ی
+     * خودِ حسابِ قبلی جایی از دست نمی‌ره چون از قبل رو سرور پشتیبان گرفته شده - دفعه‌ی بعد که با
+     * همون شماره وارد بشه، [LoanRepository.syncAfterLogin] از سرور برش می‌گردونه. */
     fun logout() {
         viewModelScope.launch {
             authPrefs.clearSession()
             authPrefs.setGuestMode(true)
+            loanRepository.clearLocal()
+            chequeRepository.clearLocal()
+            accountRepository.clearLocal()
         }
     }
 
@@ -155,6 +165,9 @@ class AuthViewModel @Inject constructor(
                 is AuthResult.Success -> {
                     authPrefs.clearSession()
                     authPrefs.setGuestMode(true)
+                    loanRepository.clearLocal()
+                    chequeRepository.clearLocal()
+                    accountRepository.clearLocal()
                     onSuccess()
                 }
                 is AuthResult.Error -> onError(result.code)

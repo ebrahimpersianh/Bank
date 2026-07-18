@@ -38,6 +38,11 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
 
     suspend fun deleteLoan(id: Long) = loanDao.deleteById(id)
 
+    /** پورت پاک‌سازیِ لوکالِ بعد از خروج - وگرنه وام‌های همون گوشی زیرِ حسابِ قبلی، موقع ورود با یه
+     * شماره‌ی دیگه (که سرورش هنوز خالیه)، تو [syncAfterLogin] به‌جای «سرور خالیه» به «پوشِ محلی به
+     * سرور» می‌رفت و اشتباهی وام‌های کاربرِ قبلی رو زیرِ حسابِ جدید آپلود می‌کرد. */
+    suspend fun clearLocal() = loanDao.clear()
+
     /**
      * پورت saveManualLoan تو www/index.html. [dataJson] دقیقاً همون شکل شیءای رو نگه می‌داره که
      * سرور/اپ وب برای هر وام انتظار دارن (name/bank/borrower/amount/rate/n/method/...)، به‌علاوه

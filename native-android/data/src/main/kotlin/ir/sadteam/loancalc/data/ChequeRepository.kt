@@ -94,6 +94,12 @@ class ChequeRepository(
 
     suspend fun getAllCheques(): List<ChequeEntity> = chequeDao.getAll()
 
+    /** پورت پاک‌سازیِ لوکالِ بعد از خروج - رجوع کن به توضیح [ir.sadteam.loancalc.data.LoanRepository.clearLocal]. */
+    suspend fun clearLocal() {
+        chequeDao.clear()
+        chequeBookDao.clear()
+    }
+
     suspend fun addChequeBook(ownerName: String, bankName: String, startSerial: Long, endSerial: Long) {
         chequeBookDao.upsert(
             ChequeBookEntity(

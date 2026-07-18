@@ -51,6 +51,12 @@ class AccountRepository(
         transactionDao.deleteForAccount(account.id)
     }
 
+    /** پورت پاک‌سازیِ لوکالِ بعد از خروج - رجوع کن به توضیح [ir.sadteam.loancalc.data.LoanRepository.clearLocal]. */
+    suspend fun clearLocal() {
+        accountDao.clear()
+        transactionDao.clear()
+    }
+
     suspend fun addTransaction(
         accountId: Long,
         type: TransactionType,
