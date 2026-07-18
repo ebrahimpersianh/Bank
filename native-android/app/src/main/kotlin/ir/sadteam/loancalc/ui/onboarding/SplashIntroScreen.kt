@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 // رنگ‌های عینِ اسپلشِ اپ وب (#splash تو www/index.html) - عمداً مستقل از تم روشن/تیره، همیشه تیره.
 private val SplashBg = Color(0xFF0D1321)
@@ -71,6 +73,18 @@ fun SplashIntroScreen(onDone: () -> Unit) {
     LaunchedEffect(Unit) {
         delay(1800)
         onDone()
+    }
+    // «Powered By SadTeam» پایینِ اسپلش قبلاً هیچ افکتی نداشت، همون اول یهو بود. خواسته‌ی کاربر:
+    // انگار داره «ظاهر می‌شه» - محو (alpha) + یه‌کم بالا اومدن (offset) با تاخیر بعد از حلقه، تا
+    // حسِ لایه‌به‌لایه ظاهرشدن بده، نه یهویی.
+    val poweredByAlpha = remember { Animatable(0f) }
+    val poweredByOffset = remember { Animatable(12f) }
+    LaunchedEffect(Unit) {
+        delay(900)
+        launch { poweredByAlpha.animateTo(1f, animationSpec = tween(700)) }
+        launch {
+            poweredByOffset.animateTo(0f, animationSpec = tween(700, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
+        }
     }
 
     Box(
@@ -209,12 +223,14 @@ fun SplashIntroScreen(onDone: () -> Unit) {
         }
 
         Text(
-            "SADTeam",
+            "Powered By SadTeam",
             color = SplashSub,
             fontSize = 10.5.sp,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 34.dp),
+                .padding(bottom = 34.dp)
+                .offset(y = poweredByOffset.value.dp)
+                .alpha(poweredByAlpha.value),
         )
     }
 }
