@@ -146,3 +146,36 @@ ci-debug.keystore یه کلید امضای دیباگ ثابته (نه
   می‌خواد اول اپ رو منتشر کنه و یه مدت نصب جمع کنه، بعداً برمی‌گرده رو این موضوع. تا وقتی خودش نگفته
   «الان وقتشه»، شروعش نکن؛ وقتی خواست، اول باید خودش تو تپسل/آدیوری حساب بسازه و Zone ID بگیره (این
   بخش رو کسی جز خودِ کاربر نمی‌تونه انجام بده).
+
+## مایکت (فلیورِ دوم، کنارِ کافه‌بازار) — کد آماده‌ست، فقط یه مقدار مونده
+`native-android/app/build.gradle.kts` دو فلیور داره: `cafebazaar` (Poolakey، همونی که تا امروز بود)
+و `myket` (کتابخونه‌ی رسمیِ `com.github.myketstore:myket-billing-client`، الگوی کلاسیکِ Android IAB
+v3 - `IabHelper`/`Purchase`/`Inventory`). هر فلیور `SubscriptionManager` خودش رو داره
+(`app/src/cafebazaar/.../subscription/` و `app/src/myket/.../subscription/`)، بقیه‌ی اپ (`main`
+source set) هیچ فرقی بینِ دوتا نمی‌بینه. مانیفستِ کتابخونه‌ی مایکت از placeholder استفاده می‌کنه، نه
+مقدارِ ثابت - مقادیرش (`ir.mservices.market` و ...) تو `manifestPlaceholders` همون فلیور تو
+build.gradle.kts ست شدن، نه یه فایلِ AndroidManifest جدا.
+
+**تنها چیزی که مونده**: `MYKET_IAB_PUBLIC_KEY` تو
+`app/src/myket/kotlin/ir/sadteam/loancalc/subscription/SubscriptionManager.kt` الان یه
+placeholderه (`"MYKET_IAB_PUBLIC_KEY_PLACEHOLDER"`) - کاربر باید اول اپ رو تو پنلِ دولوپرِ مایکت ثبت
+کنه، بعد کلیدِ عمومیِ واقعیِ اپ (نه رازِ دولوپر - این کلید محرمانه نیست، فقط برای تاییدِ امضای خرید
+استفاده می‌شه) رو از اونجا بگیره و جایگزینِ این placeholder کنه. همون ۴ شناسه‌ی محصولِ اشتراک
+(`unlimited_loans_1m/3m/6m/1y`) هم باید تو پنلِ مایکت به‌عنوانِ محصولِ درون‌برنامه‌ای تعریف بشن (دقیقاً
+همین شناسه‌ها، نه چیزِ دیگه‌ای - سرور از رو همین‌ها تشخیص می‌ده کدوم پلنه).
+
+CI الان هر ۴ تا APK (کافه‌بازار دیباگ/ریلیز + مایکت دیباگ/ریلیز) رو می‌سازه و به‌عنوانِ آرتیفکتِ جدا
+آپلود می‌کنه (`loan-calculator-native-myket-debug-apk` و `-myket-release-apk`).
+
+## آپدیتِ خودکار
+سرور یه جدولِ تک‌ردیفه‌ی `app_version` داره (`server/.../routes/AppVersionRoutes.kt`،
+`GET /api/app-version`) که آخرین versionCode + لینکِ هر استور رو نگه می‌داره؛ اپ هر بار باز می‌شه
+چک می‌کنه و اگه قدیمی بود یه بنر نشون می‌ده. **این جدول دستیه، خودکار آپدیت نمی‌شه** - بعدِ هر
+انتشارِ واقعیِ نسخه‌ی جدید رو کافه‌بازار/مایکت، باید رو VPS این دستور زده بشه (دقیقش تو کامنتِ بالای
+AppVersionRoutes.kt هم هست):
+```bash
+sqlite3 ~/loan-server/data.sqlite \
+  "UPDATE app_version SET latest_version_code = <شماره‌نسخه>,
+   cafebazaar_url = 'https://cafebazaar.ir/app/ir.sadteam.loancalc',
+   myket_url = 'https://myket.ir/app/ir.sadteam.loancalc' WHERE id = 1;"
+```
