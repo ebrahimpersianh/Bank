@@ -207,6 +207,9 @@ private fun SettingsMainContent(
     val gateState by authViewModel.gateState.collectAsState()
     val phone by authViewModel.phone.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
+    // بالا کشیده شد (قبلاً فقط داخلِ شاخه‌ی LOGGED_IN تعریف می‌شد) چون کارتِ «خرید اشتراک» پایین‌تر
+    // هم بهش نیاز داره - رجوع کن به کامنتِ همون‌جا.
+    val trialDaysLeft by authViewModel.trialDaysLeft.collectAsState()
     val fontScale by themeViewModel.fontScale.collectAsState()
     val notificationsEnabled by notificationsViewModel.enabled.collectAsState()
     val autoBackupEnabled by autoBackupViewModel.enabled.collectAsState()
@@ -295,7 +298,6 @@ private fun SettingsMainContent(
                         // مستقیم از سرور میاد (با ساعتِ سرور حساب شده)، نه از یه محاسبه‌ی محلی روی
                         // ساعتِ گوشی - وگرنه دستکاری‌کردنِ تاریخِ گوشی می‌تونست این نمایش رو
                         // (نه خودِ دسترسیِ واقعی، که همیشه سمت سرور تصمیم‌گیری می‌شه) اشتباه نشون بده.
-                        val trialDaysLeft by authViewModel.trialDaysLeft.collectAsState()
                         if (subscribed && trialDaysLeft != null && trialDaysLeft in 1..7) {
                             Text(
                                 "دوره‌ی آزمایشی رایگان: ${toFa(trialDaysLeft.toString())} روز مانده",
@@ -406,7 +408,13 @@ private fun SettingsMainContent(
             // قیمت‌ها رو بی‌قید و شرط از کافه‌بازار می‌گیره، نیاز به توکن نداره)؛ فقط خودِ دکمه‌ی «خرید»
             // تو اون صفحه (نه اینجا) اگه کاربر لاگین نبود، اول می‌بره سراغ ورود - رجوع کن به
             // SubscriptionScreen.onNeedsLogin.
-            if (!subscribed && matches("اشتراک", "خرید اشتراک")) {
+            // subscribed هم با خریدِ واقعی true می‌شه هم با دوره‌ی آزمایشیِ ۷روزه؛ اگه فقط شرطِ
+            // !subscribed می‌بود، کاربرِ تو دوره‌ی آزمایشی اصلاً این کارت رو نمی‌دید و نمی‌تونست زودتر
+            // از تمومِ آزمایشی، خرید کنه (خواسته‌ی صریح کاربر: «شاید یکی دوست داشت از همون اول
+            // بگیره») - برای همین وقتی دلیلِ subscribed فقط دوره‌ی آزمایشیه (نه خریدِ واقعی)، همچنان
+            // این کارت نشون داده می‌شه.
+            val onlyTrialSubscribed = subscribed && trialDaysLeft != null && trialDaysLeft in 1..7
+            if ((!subscribed || onlyTrialSubscribed) && matches("اشتراک", "خرید اشتراک")) {
                 PulseGlowBox(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
                     AppCard(backgroundColor = lerp(AppSurface, AppAccent, 0.14f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
