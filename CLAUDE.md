@@ -156,13 +156,22 @@ source set) هیچ فرقی بینِ دوتا نمی‌بینه. مانیفست�
 مقدارِ ثابت - مقادیرش (`ir.mservices.market` و ...) تو `manifestPlaceholders` همون فلیور تو
 build.gradle.kts ست شدن، نه یه فایلِ AndroidManifest جدا.
 
-**تنها چیزی که مونده**: `MYKET_IAB_PUBLIC_KEY` تو
-`app/src/myket/kotlin/ir/sadteam/loancalc/subscription/SubscriptionManager.kt` الان یه
-placeholderه (`"MYKET_IAB_PUBLIC_KEY_PLACEHOLDER"`) - کاربر باید اول اپ رو تو پنلِ دولوپرِ مایکت ثبت
-کنه، بعد کلیدِ عمومیِ واقعیِ اپ (نه رازِ دولوپر - این کلید محرمانه نیست، فقط برای تاییدِ امضای خرید
-استفاده می‌شه) رو از اونجا بگیره و جایگزینِ این placeholder کنه. همون ۴ شناسه‌ی محصولِ اشتراک
-(`unlimited_loans_1m/3m/6m/1y`) هم باید تو پنلِ مایکت به‌عنوانِ محصولِ درون‌برنامه‌ای تعریف بشن (دقیقاً
-همین شناسه‌ها، نه چیزِ دیگه‌ای - سرور از رو همین‌ها تشخیص می‌ده کدوم پلنه).
+**`MYKET_IAB_PUBLIC_KEY` دیگه placeholder نیست** - کاربر اپ رو تو پنلِ دولوپرِ مایکت ثبت کرد و کلیدِ
+عمومیِ واقعی رو از اونجا گرفت؛ الان تو
+`app/src/myket/kotlin/ir/sadteam/loancalc/subscription/SubscriptionManager.kt` مقدارِ واقعیه. همون
+۴ شناسه‌ی محصولِ اشتراک (`unlimited_loans_1m/3m/6m/1y`، با همون قیمت‌های کافه‌بازار: ۳۰۰۰۰۰/۸۱۰۰۰۰/
+۱۴۴۰۰۰۰/۲۵۲۰۰۰۰ ریال) هم تو پنلِ مایکت به‌عنوانِ محصولِ درون‌برنامه‌ای تعریف شدن.
+
+**مونده**: صحت‌سنجیِ خریدِ سمتِ سرور برای مایکت (معادلِ `Cafebazaar.kt`/`validateInAppPurchase` که الان
+فقط کافه‌بازار رو پوشش می‌ده - `SubscriptionRoutes.kt` هنوز فقط از طریقِ API کافه‌بازار تاییدِ خرید
+می‌کنه، برای خریدِ مایکت اصلاً چک نمی‌شه) - منتظرِ توکنِ دسترسی + فرمتِ دقیقِ API صحت‌سنجیِ مایکت
+(`X-Access-Token` هدر، از پنلِ دولوپر → توکن دسترسی) از کاربره.
+
+**اطلاعاتِ Play Protect**: اولین نصبِ APKِ مایکت (کلیدِ امضای تازه) رو گوشیِ واقعی «Blocked by Play
+Protect» می‌ده (Unknown Developer - طبیعیه برای هر کلیدِ امضای جدید، نه باگِ کد). راه‌حلِ رسمیِ مایکت:
+فرمِ Google «Play Protect Appeals» (لینکش تو myket.ir/kb/pages/blocked-by-play-protect-fa/ هست، فقط
+با VPN باز می‌شه) با هشِ SHA256 از APK رو VirusTotal + اطلاعاتِ اپ. بررسیِ گوگل تا یه هفته طول می‌کشه،
+تا اون‌موقع نباید applicationId یا کلیدِ امضا عوض بشه.
 
 CI الان هر ۴ تا APK (کافه‌بازار دیباگ/ریلیز + مایکت دیباگ/ریلیز) رو می‌سازه و به‌عنوانِ آرتیفکتِ جدا
 آپلود می‌کنه (`loan-calculator-native-myket-debug-apk` و `-myket-release-apk`).

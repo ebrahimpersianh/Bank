@@ -8,11 +8,10 @@ import ir.myket.billingclient.util.IabResult
 import ir.myket.billingclient.util.Inventory
 import ir.myket.billingclient.util.Purchase
 
-/** کلیدِ عمومیِ اپ (نه رازِ دولوپر) که مایکت موقعِ ثبتِ اپ تو پنلش می‌ده - رجوع کن به
- * SUPPORT_EMAIL تو SettingsScreen.kt برای الگوی مشابه: placeholder ئه، تا وقتی کاربر خودش اپ رو
- * تو مایکت ثبت نکرده و این کلید رو از پنلش نگرفته، خریدِ واقعی رو مایکت کار نمی‌کنه (فقط پیامِ
- * خطا می‌ده، کرش نمی‌کنه - رجوع کن به isConnected/onStateChange پایین). */
-const val MYKET_IAB_PUBLIC_KEY = "MYKET_IAB_PUBLIC_KEY_PLACEHOLDER"
+/** کلیدِ عمومیِ واقعیِ اپ (نه رازِ دولوپر)، از پنلِ توسعه‌دهندگانِ مایکت (بخشِ محصولات درون‌برنامه‌ای
+ * → کلید عمومی) گرفته شده - برای تاییدِ محلیِ امضای خرید توسطِ IabHelper استفاده می‌شه. */
+const val MYKET_IAB_PUBLIC_KEY =
+    "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDbE0HmWXnUYn9v8Y2UIhjwdoL3pxWwe4Nde12haN0+R7wQ/lxlpAiiwp8GG8Au4h9UPUhlsU5XEjIVZ4K9WycM4emoyhhpf61fTseCkpeaZV330/1M/6UW6DlW1lqxJC7ZMcMgPTd4oIzFi6hQ22l5ihwGTjOScLZOaOUi8d0GnQIDAQAB"
 
 /** پورت CAFEBAZAAR_SUBSCRIPTION_TIERS برای مایکت - همون شناسه‌های محصول، چون هر استور کاتالوگِ
  * محصولِ جدا و مستقل داره (تداخلی با کافه‌بازار نداره)؛ باید دقیقاً همین ۴ شناسه تو پنلِ مایکت هم
