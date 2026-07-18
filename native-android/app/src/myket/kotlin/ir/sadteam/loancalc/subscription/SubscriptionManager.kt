@@ -100,12 +100,11 @@ class SubscriptionManager(private val activity: ComponentActivity) {
         )
     }
 
-    /** پورتِ اجباریِ الگوی کلاسیکِ IAB v3 - بدونِ این، نتیجه‌ی launchPurchaseFlow هیچ‌وقت به
-     * onIabPurchaseFinished نمی‌رسه، چون خریدِ مایکت (برخلافِ Poolakey) یه اکتیویتیِ خارجی با
-     * startIntentSenderForResult باز می‌کنه، نه یه ActivityResultLauncher مدرن. */
-    fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        helper.handleActivityResult(requestCode, resultCode, data)
-    }
+    /** برخلافِ Google IAB v3 اصلی، IabHelperِ مایکت متدِ handleActivityResult نداره (نمونه‌ی رسمیِ
+     * خودشون - myketstore/myket-billing-client/sample - هم هیچ‌جا onActivityResult رو override
+     * نمی‌کنه)، پس ظاهراً نتیجه‌ی خرید رو خودش داخلی مدیریت می‌کنه. این متد فقط برای یکسان‌بودنِ
+     * امضا با فلیورِ cafebazaar اینجاست (رجوع کن به MainActivity.onActivityResult). */
+    fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {}
 }
 
 /** null یعنی هنوز وصل نشده/در دسترس نیست (مثلاً مایکت رو گوشی نصب نیست) - صفحه‌ی اشتراک باید این
