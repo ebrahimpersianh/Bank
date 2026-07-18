@@ -19,7 +19,7 @@ import net.sqlcipher.database.SupportFactory
         IncomeEntity::class,
         CalculationHistoryEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -35,6 +35,15 @@ abstract class AppDatabase : RoomDatabase() {
         private val MIGRATION_9_10 = object : Migration(9, 10) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE loans ADD COLUMN calendarExported INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        /** یادآوریِ حرفه‌ای/شخصی‌سازی‌شده (تایمینگِ اختصاصی به‌ازای هر وام/چک) - رجوع کن به
+         * LoanEntity.reminderDayOffsets/ChequeEntity.reminderDayOffsets. */
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE loans ADD COLUMN reminderDayOffsets TEXT")
+                db.execSQL("ALTER TABLE cheques ADD COLUMN reminderDayOffsets TEXT")
             }
         }
 
@@ -63,7 +72,7 @@ abstract class AppDatabase : RoomDatabase() {
                         // می‌کنه - یه migration واقعی نوشتیم که ستون جدید رو اضافه کنه بدون پاک‌کردنِ
                         // جدول‌ها. fallbackToDestructiveMigration فقط برای نسخه‌های خیلی قدیمی‌تر
                         // (قبل از این migration) که پوشش داده نشدن نگه داشته شده.
-                        .addMigrations(MIGRATION_9_10)
+                        .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
                         .fallbackToDestructiveMigration()
                         .build()
                         .also { instance = it }

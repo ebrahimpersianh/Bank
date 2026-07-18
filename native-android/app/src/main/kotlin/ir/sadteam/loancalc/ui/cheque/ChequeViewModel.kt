@@ -142,6 +142,16 @@ class ChequeViewModel @Inject constructor(
         }
     }
 
+    /** یادآوریِ اختصاصیِ این چک رو ست می‌کنه - null یعنی از پیش‌فرضِ سراسری استفاده کن، رشته‌ی خالی
+     * یعنی برای این چک کاملاً خاموش باشه، وگرنه CSVِ روزهای انتخاب‌شده. رجوع کن به
+     * [ir.sadteam.loancalc.ui.myloans.MyLoansViewModel.setLoanReminderOffsets] برای معادلِ وام. */
+    fun setChequeReminderOffsets(cheque: ChequeEntity, offsets: String?) {
+        viewModelScope.launch {
+            chequeRepository.updateCheque(cheque.copy(reminderDayOffsets = offsets))
+            syncIfLoggedIn()
+        }
+    }
+
     fun exportBackup(onResult: (String) -> Unit) {
         viewModelScope.launch { onResult(chequeRepository.exportBackupJson()) }
     }

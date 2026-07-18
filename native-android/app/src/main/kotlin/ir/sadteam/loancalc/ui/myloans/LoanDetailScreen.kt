@@ -79,6 +79,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
+import ir.sadteam.loancalc.ui.components.ReminderOverrideCard
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -512,6 +513,10 @@ fun LoanDetailScreen(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            ReminderOverrideCard(
+                currentOffsets = loan.reminderDayOffsets,
+                onChange = { viewModel.setLoanReminderOffsets(loan, it) },
+            )
             OutlinedButton(
                 enabled = !isExportingCalendar,
                 onClick = {

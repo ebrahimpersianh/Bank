@@ -22,6 +22,9 @@ class UiPrefs(private val context: Context) {
         val LAST_AUTO_BACKUP_AT = stringPreferencesKey("last_auto_backup_at")
         val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
         val PRIVACY_MODE_ENABLED = booleanPreferencesKey("privacy_mode_enabled")
+        val REMINDER_DAY_OFFSETS = stringPreferencesKey("reminder_day_offsets")
+        val REMINDER_SOUND_URI = stringPreferencesKey("reminder_sound_uri")
+        val REMINDER_VIBRATE = booleanPreferencesKey("reminder_vibrate")
     }
 
     // پیش‌فرض روشن/سفید (به‌درخواست کاربر «تم اصلی برنامه سفید باشه») - کاربری که قبلاً دستی
@@ -77,5 +80,30 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setPrivacyModeEnabled(value: Boolean) {
         context.uiPrefsDataStore.edit { it[Keys.PRIVACY_MODE_ENABLED] = value }
+    }
+
+    /** پیش‌فرضِ سراسریِ زمان‌بندیِ یادآوری (CSV از تعداد روزهای قبل از سررسید، مثلاً "1,3,7") - هر
+     * وام/چک که تنظیمِ اختصاصی نداره (`reminderDayOffsets == null`) از همین استفاده می‌کنه.
+     * پیش‌فرضِ نصبِ تازه «۱» (یه روز قبل)، جایگزینِ رفتارِ قدیمیِ ثابتِ «امروز/فردا». */
+    val reminderDayOffsets: Flow<String> = context.uiPrefsDataStore.data.map { it[Keys.REMINDER_DAY_OFFSETS] ?: "1" }
+
+    suspend fun setReminderDayOffsets(value: String) {
+        context.uiPrefsDataStore.edit { it[Keys.REMINDER_DAY_OFFSETS] = value }
+    }
+
+    /** URI صدای اعلانِ یادآوری (از RingtoneManager انتخاب می‌شه) - null یعنی صدای پیش‌فرضِ سیستم. */
+    val reminderSoundUri: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.REMINDER_SOUND_URI] }
+
+    suspend fun setReminderSoundUri(value: String?) {
+        context.uiPrefsDataStore.edit {
+            if (value == null) it.remove(Keys.REMINDER_SOUND_URI) else it[Keys.REMINDER_SOUND_URI] = value
+        }
+    }
+
+    /** ویبره‌ی مخصوصِ نوتیفِ یادآوری (مستقل از [vibrationEnabled] که برای هپتیکِ لمسیِ خودِ اپه). */
+    val reminderVibrate: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.REMINDER_VIBRATE] ?: true }
+
+    suspend fun setReminderVibrate(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.REMINDER_VIBRATE] = value }
     }
 }

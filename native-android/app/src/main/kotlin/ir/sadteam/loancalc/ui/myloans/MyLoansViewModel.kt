@@ -135,6 +135,16 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
+    /** یادآوریِ اختصاصیِ این وام رو ست می‌کنه - null یعنی از پیش‌فرضِ سراسری استفاده کن، رشته‌ی خالی
+     * یعنی برای این وام کاملاً خاموش باشه، وگرنه CSVِ روزهای انتخاب‌شده. رجوع کن به
+     * ReminderSettingsScreen برای پیش‌فرضِ سراسری. */
+    fun setLoanReminderOffsets(loan: LoanEntity, offsets: String?) {
+        viewModelScope.launch {
+            loanRepository.saveLoan(loan.copy(reminderDayOffsets = offsets))
+            syncIfLoggedIn()
+        }
+    }
+
     /** پورت rows[].paid تو www/index.html - وضعیت پرداخت هر قسط مستقله، نه یه آستانه‌ی ترتیبی. */
     fun getRows(loan: LoanEntity): List<Map<String, Any?>> = loanRepository.getRows(loan)
 

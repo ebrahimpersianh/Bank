@@ -30,6 +30,7 @@ import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
+import ir.sadteam.loancalc.ui.components.ReminderOverrideCard
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -111,6 +112,13 @@ fun ChequeDetailScreen(
                     }
                 }
             }
+        }
+
+        item {
+            ReminderOverrideCard(
+                currentOffsets = cheque.reminderDayOffsets,
+                onChange = { viewModel.setChequeReminderOffsets(cheque, it) },
+            )
         }
 
         item {

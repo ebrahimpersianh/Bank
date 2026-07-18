@@ -109,9 +109,11 @@ private val themeModeOptions = listOf(ThemeMode.LIGHT to "روشن", ThemeMode.D
  * فونت (fontSizeChips)، یادآوری سررسید (کاملاً native-only، وب هنوز نداره - رجوع کن به
  * notifications/)، درباره‌برنامه/حریم‌خصوصی (toggleAbout/togglePrivacy، متن عینِ وب)، و صفحه‌ی
  * پشتیبانی (ایمیل/تلگرام/بله - پورت مفهومی از اپ رقیب VAMMAN؛ مقادیر SUPPORT_EMAIL/TELEGRAM/BALE
- * فعلاً placeholder ان، باید با اطلاعات واقعی جایگزین بشن). «تنظیمات پیشرفته یادآوری» (صدای اعلان،
- * سفارشی‌سازی به‌ازای هر وام) و فرم «نظرات و مشکلات» عمداً پورت نشدن - رو خودِ وب هم صرفاً UI
- * نمایشی/localStorage-فقط بودن، هیچ‌وقت واقعاً کاربردی نبودن (رجوع کن به کامنت خودِ وب). */
+ * فعلاً placeholder ان، باید با اطلاعات واقعی جایگزین بشن). فرم «نظرات و مشکلات» عمداً پورت نشده -
+ * رو خودِ وب هم صرفاً UI نمایشی/localStorage-فقط بود، هیچ‌وقت واقعاً کاربردی نبود (رجوع کن به کامنت
+ * خودِ وب). «تنظیمات پیشرفته یادآوری» برخلافِ اون، حالا واقعاً پیاده شده - رجوع کن به
+ * [ReminderSettingsScreen] (زمان‌بندی/صدا/ویبره‌ی سراسری) و `ReminderOverrideCard` تو
+ * LoanDetailScreen/ChequeDetailScreen (سفارشی‌سازیِ اختصاصیِ هر وام/چک). */
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -129,6 +131,7 @@ fun SettingsScreen(
     var showAccounts by remember { mutableStateOf(false) }
     var showSubscription by remember { mutableStateOf(false) }
     var showHistory by remember { mutableStateOf(false) }
+    var showReminderSettings by remember { mutableStateOf(false) }
 
     // پورت حس تعویض نرم بین حالت‌های مختلف پنل تنظیمات (اصلی/ورود/تقویم مالی/آمار/چک/حساب) - قبلاً
     // هرکدوم با یه return زودهنگام یهو جایگزین بقیه می‌شد؛ حالا با AnimatedContent (fade ظریف) عوض می‌شه.
@@ -140,6 +143,7 @@ fun SettingsScreen(
         showAccounts -> "accounts"
         showSubscription -> "subscription"
         showHistory -> "history"
+        showReminderSettings -> "reminderSettings"
         else -> "main"
     }
 
@@ -160,6 +164,7 @@ fun SettingsScreen(
                 onNeedsLogin = { showLoginPrompt = true },
             )
             "history" -> CalculationHistoryScreen(onBack = { showHistory = false })
+            "reminderSettings" -> ReminderSettingsScreen(onBack = { showReminderSettings = false })
             else -> SettingsMainContent(
                 onBack = onBack,
                 authViewModel = authViewModel,
@@ -175,6 +180,7 @@ fun SettingsScreen(
                 onShowAccounts = { showAccounts = true },
                 onShowSubscription = { showSubscription = true },
                 onShowHistory = { showHistory = true },
+                onShowReminderSettings = { showReminderSettings = true },
             )
         }
     }
@@ -196,6 +202,7 @@ private fun SettingsMainContent(
     onShowAccounts: () -> Unit,
     onShowSubscription: () -> Unit,
     onShowHistory: () -> Unit,
+    onShowReminderSettings: () -> Unit,
 ) {
     val gateState by authViewModel.gateState.collectAsState()
     val phone by authViewModel.phone.collectAsState()
@@ -470,7 +477,7 @@ private fun SettingsMainContent(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "هر روز، برای اقساط سررسید نزدیک (امروز/فردا) یه نوتیف بده",
+                            "برای اقساط و چک‌های نزدیک به سررسید یه نوتیف بده",
                             color = AppMuted,
                             fontSize = 12.sp,
                             modifier = Modifier.weight(1f),
@@ -494,6 +501,9 @@ private fun SettingsMainContent(
                             },
                             colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
                         )
+                    }
+                    TextButton(onClick = onShowReminderSettings, modifier = Modifier.padding(top = 2.dp)) {
+                        Text("زمان‌بندی، صدا و ویبره رو شخصی‌سازی کن", fontSize = 12.sp)
                     }
                 }
             }

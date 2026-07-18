@@ -28,4 +28,10 @@ data class LoanEntity(
      * سررسیدها» تو LoanDetailScreen به‌جای درجِ دوباره فقط یه پیام نشون می‌ده (خواسته‌ی کاربر: جلوگیری
      * از رویدادهای تکراری تو تقویم گوشی با هر بار کلیک). */
     val calendarExported: Boolean = false,
+    /** یادآوریِ اختصاصیِ این وام: CSV از تعداد روزهای قبل از سررسید (مثلاً "1,3,7"). null یعنی از
+     * تنظیماتِ سراسریِ [ir.sadteam.loancalc.data.prefs.UiPrefs.reminderDayOffsets] استفاده کن؛ رشته‌ی
+     * خالی یعنی یادآوری برای این وام کاملاً خاموشه. حتماً nullable و بدون defaultِ معنادار (نه یه
+     * لیستِ ثابت) بمونه - رجوع کن به توضیحِ مشابه رو [ir.sadteam.loancalc.data.db.ChequeEntity.sayadId]
+     * درباره‌ی گسون/Unsafe موقعِ importِ بک‌آپ‌های قدیمی. */
+    val reminderDayOffsets: String? = null,
 )

@@ -41,4 +41,8 @@ data class ChequeEntity(
     val previousBalance: Double? = null,
     /** مبلغی که هم‌زمان با ثبتِ این چک به حساب واریز شده - رجوع کن به [previousBalance]. */
     val depositAmount: Double? = null,
+    /** یادآوریِ اختصاصیِ این چک: CSV از تعداد روزهای قبل از سررسید (مثلاً "1,3,7"). null یعنی از
+     * تنظیماتِ سراسری استفاده کن؛ رشته‌ی خالی یعنی یادآوری برای این چک کاملاً خاموشه - رجوع کن به
+     * توضیحِ مشابه رو [ir.sadteam.loancalc.data.db.LoanEntity.reminderDayOffsets]. */
+    val reminderDayOffsets: String? = null,
 )
