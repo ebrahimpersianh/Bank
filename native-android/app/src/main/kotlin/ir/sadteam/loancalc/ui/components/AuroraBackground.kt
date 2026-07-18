@@ -41,22 +41,25 @@ fun AuroraBackground(modifier: Modifier = Modifier) {
     val primary = AppPrimary
     val accent = AppAccent
     val isDark = bg.luminance() < 0.5f
-    val primaryAlpha = if (isDark) 0.15f else 0.09f
-    val accentAlpha = if (isDark) 0.10f else 0.06f
+    // نسخه‌ی اول (۰.۰۹/۰.۰۶ رو تمِ روشن) اون‌قدر محو بود که کاربر اصلاً متوجهش نشد - این مقادیر
+    // عمداً پررنگ شدن تا واقعاً «دیده» بشه؛ اگه یه‌وقت جیغ شد، همین دو خطه که باید کم بشه.
+    val primaryAlpha = if (isDark) 0.28f else 0.20f
+    val accentAlpha = if (isDark) 0.20f else 0.14f
 
     val transition = rememberInfiniteTransition(label = "aurora")
-    // یه دورِ کامل ~۴۵ ثانیه - عمداً خیلی کند، که حس «زنده بودن» بده نه «انیمیشنِ در حال پخش».
+    // یه دورِ کامل ~۲۲ ثانیه - اون‌قدر کند که مزاحم نباشه، اون‌قدر تند که تو چند ثانیه نگاه‌کردن
+    // جابه‌جاییش معلوم بشه (۴۵ثانیه‌ی اولیه عملاً ساکن حس می‌شد).
     val phase by transition.animateFloat(
         initialValue = 0f,
         targetValue = (2.0 * PI).toFloat(),
-        animationSpec = infiniteRepeatable(tween(45000, easing = LinearEasing), RepeatMode.Restart),
+        animationSpec = infiniteRepeatable(tween(22000, easing = LinearEasing), RepeatMode.Restart),
         label = "auroraPhase",
     )
     // یه «نفس‌کشیدنِ» آرومِ جدا برای شدتِ نور، که حرکت یکنواخت/مکانیکی حس نشه.
     val breath by transition.animateFloat(
-        initialValue = 0.75f,
+        initialValue = 0.65f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(9000, easing = LinearEasing), RepeatMode.Reverse),
+        animationSpec = infiniteRepeatable(tween(5500, easing = LinearEasing), RepeatMode.Reverse),
         label = "auroraBreath",
     )
 
