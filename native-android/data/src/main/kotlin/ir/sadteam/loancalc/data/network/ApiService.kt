@@ -97,9 +97,11 @@ data class LoansResponse(val loans: List<Map<String, Any?>>, val updatedAt: Stri
 
 data class PutLoansRequest(val loans: List<Map<String, Any?>>)
 
-/** productId یکی از unlimited_loans_1m/3m/6m/1y — باید دقیقاً با پنل کافه‌بازار و
- * TIER_DURATION_DAYS تو server/src/routes/subscription.js یکی باشه. */
-data class VerifySubscriptionRequest(val productId: String, val purchaseToken: String)
+/** productId یکی از unlimited_loans_1m/3m/6m/1y — باید دقیقاً با پنل کافه‌بازار/مایکت و
+ * TIER_DURATION_DAYS تو server/routes/SubscriptionRoutes.kt یکی باشه. store مشخص می‌کنه سرور
+ * خرید رو با کدوم API (کافه‌بازار یا مایکت) تایید کنه؛ BuildConfig.FLAVOR از سمتِ app پاس داده
+ * می‌شه (رجوع کن به AuthViewModel.verifySubscriptionPurchase). */
+data class VerifySubscriptionRequest(val productId: String, val purchaseToken: String, val store: String)
 
 data class VerifySubscriptionResponse(val ok: Boolean, val subscribed: Boolean, val subscribedUntil: String)
 

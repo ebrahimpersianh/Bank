@@ -68,15 +68,16 @@ class AuthRepository(
         }
     }
 
-    /** پورت verifySubscriptionPurchase تو www/index.html: به سرور می‌گه یه خرید Poolakey واقعیه
-     * (کلاینت خودش قابل‌اعتماد نیست)، و اگه تایید شد subscribed رو تو AuthPrefs به‌روز می‌کنه. */
-    suspend fun verifySubscription(productId: String, purchaseToken: String): AuthResult {
+    /** پورت verifySubscriptionPurchase تو www/index.html: به سرور می‌گه یه خریدِ Poolakey/IabHelper
+     * واقعیه (کلاینت خودش قابل‌اعتماد نیست)، و اگه تایید شد subscribed رو تو AuthPrefs به‌روز
+     * می‌کنه. store مشخص می‌کنه سرور خرید رو با API کدوم استور تایید کنه. */
+    suspend fun verifySubscription(productId: String, purchaseToken: String, store: String): AuthResult {
         val token = authPrefs.authToken.first()
         if (token.isNullOrEmpty()) return AuthResult.Error(null)
         return try {
             val result = apiService.verifySubscription(
                 "Bearer $token",
-                VerifySubscriptionRequest(productId, purchaseToken),
+                VerifySubscriptionRequest(productId, purchaseToken, store),
             )
             authPrefs.setSubscribed(result.subscribed)
             AuthResult.Success

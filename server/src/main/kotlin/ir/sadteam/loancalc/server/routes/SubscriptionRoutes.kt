@@ -9,11 +9,14 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.CafebazaarException
 import ir.sadteam.loancalc.server.Db
+import ir.sadteam.loancalc.server.MyketException
 import ir.sadteam.loancalc.server.cafebazaarConfigured
 import ir.sadteam.loancalc.server.execute
+import ir.sadteam.loancalc.server.myketConfigured
 import ir.sadteam.loancalc.server.queryOne
 import ir.sadteam.loancalc.server.requireAuth
 import ir.sadteam.loancalc.server.validateInAppPurchase
+import ir.sadteam.loancalc.server.validateMyketPurchase
 import kotlinx.serialization.Serializable
 import java.time.Instant
 
@@ -27,8 +30,14 @@ private val TIER_DURATION_DAYS = mapOf(
     "unlimited_loans_1y" to 365
 )
 
+/* store رو نسخه‌های قدیمی‌ترِ اپ (قبل از اضافه‌شدنِ فلیورِ مایکت) اصلاً نمی‌فرستن - پیش‌فرضش
+   cafebazaar می‌مونه که سازگار با رفتارِ قبلی بمونه. */
 @Serializable
-private data class VerifyBody(val productId: String? = null, val purchaseToken: String? = null)
+private data class VerifyBody(
+    val productId: String? = null,
+    val purchaseToken: String? = null,
+    val store: String? = null,
+)
 
 @Serializable
 private data class VerifyResponse(val ok: Boolean = true, val subscribed: Boolean = true, val subscribedUntil: String)
@@ -39,14 +48,11 @@ fun Route.subscriptionRoutes() {
            ما هم مستقیماً حرف کلاینت رو باور نمی‌کنیم، خودمون با API کافه‌بازار تایید می‌کنیم. */
         post("/verify") {
             val authed = call.requireAuth() ?: return@post
-            if (!cafebazaarConfigured()) {
-                call.respond(HttpStatusCode.ServiceUnavailable, mapOf("error" to "cafebazaar_not_configured"))
-                return@post
-            }
 
             val body = runCatching { call.receive<VerifyBody>() }.getOrNull()
             val productId = body?.productId
             val purchaseToken = body?.purchaseToken
+            val store = body?.store ?: "cafebazaar"
             if (productId.isNullOrEmpty() || purchaseToken.isNullOrEmpty()) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid_input"))
                 return@post
@@ -56,11 +62,23 @@ fun Route.subscriptionRoutes() {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to "unknown_product"))
                 return@post
             }
+            if (store != "myket" && !cafebazaarConfigured()) {
+                call.respond(HttpStatusCode.ServiceUnavailable, mapOf("error" to "cafebazaar_not_configured"))
+                return@post
+            }
+            if (store == "myket" && !myketConfigured()) {
+                call.respond(HttpStatusCode.ServiceUnavailable, mapOf("error" to "myket_not_configured"))
+                return@post
+            }
 
             val valid = try {
-                validateInAppPurchase(productId, purchaseToken)
+                if (store == "myket") validateMyketPurchase(productId, purchaseToken)
+                else validateInAppPurchase(productId, purchaseToken)
             } catch (e: CafebazaarException) {
                 call.respond(HttpStatusCode.BadGateway, mapOf("error" to "cafebazaar_validation_failed"))
+                return@post
+            } catch (e: MyketException) {
+                call.respond(HttpStatusCode.BadGateway, mapOf("error" to "myket_validation_failed"))
                 return@post
             }
             if (!valid) {

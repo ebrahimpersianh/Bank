@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.ui.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.BuildConfig
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.AuthRepository
 import ir.sadteam.loancalc.data.AuthResult
@@ -184,7 +185,7 @@ class AuthViewModel @Inject constructor(
         onError: (String?) -> Unit,
     ) {
         viewModelScope.launch {
-            when (val result = authRepository.verifySubscription(productId, purchaseToken)) {
+            when (val result = authRepository.verifySubscription(productId, purchaseToken, BuildConfig.FLAVOR)) {
                 is AuthResult.Success -> onSuccess()
                 is AuthResult.Error -> onError(result.code)
             }
