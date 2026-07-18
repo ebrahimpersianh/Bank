@@ -2,6 +2,7 @@ package ir.sadteam.loancalc
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -35,6 +36,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.RequestQuote
@@ -43,6 +46,7 @@ import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Payments
@@ -54,6 +58,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -100,6 +105,7 @@ import ir.sadteam.loancalc.ui.onboarding.BenefitsScreen
 import ir.sadteam.loancalc.ui.onboarding.PermissionGateScreen
 import ir.sadteam.loancalc.ui.onboarding.SplashIntroScreen
 import ir.sadteam.loancalc.ui.onboarding.WelcomeMessageScreen
+import ir.sadteam.loancalc.ui.update.AppUpdateViewModel
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.LockScreen
 import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
@@ -270,8 +276,10 @@ private fun LoanCalcApp(
     themeViewModel: ThemeViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
     privacyModeViewModel: PrivacyModeViewModel = hiltViewModel(),
+    appUpdateViewModel: AppUpdateViewModel = hiltViewModel(),
 ) {
     var showSettings by remember { mutableStateOf(false) }
+    val updateUrl by appUpdateViewModel.updateUrl.collectAsState()
 
     val themeMode by themeViewModel.themeMode.collectAsState()
     val privacyMode by privacyModeViewModel.enabled.collectAsState()
@@ -466,6 +474,50 @@ private fun LoanCalcApp(
                     fontSize = 13.sp,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                 )
+            }
+        }
+
+        // بنرِ آپدیتِ خودکار - رجوع کن به AppUpdateViewModel. برخلافِ هینتِ خروج، خودش محو نمی‌شه؛
+        // تا کاربر یا بزنه «بروزرسانی» (بازکردنِ صفحه‌ی استور) یا خودش با ضربدر ببندتش.
+        AnimatedVisibility(
+            visible = updateUrl != null,
+            enter = fadeIn(tween(200)) + slideInVertically(tween(200)) { -it },
+            exit = fadeOut(tween(150)) + slideOutVertically(tween(150)) { -it },
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 8.dp, start = 14.dp, end = 14.dp),
+        ) {
+            Surface(
+                color = AppPrimary,
+                shape = RoundedCornerShape(14.dp),
+                shadowElevation = 6.dp,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "نسخه‌ی جدیدِ اپ موجوده",
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = {
+                        updateUrl?.let { url ->
+                            runCatching {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                            }
+                        }
+                    }) {
+                        Text("بروزرسانی", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    }
+                    IconButton(onClick = { appUpdateViewModel.dismiss() }, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.Close, contentDescription = "بستن", tint = Color.White)
+                    }
+                }
             }
         }
     }

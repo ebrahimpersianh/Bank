@@ -103,6 +103,25 @@ object Db {
                 if (creditRatesCount == 0) {
                     seedDefaultCreditRates(conn)
                 }
+
+                // آپدیتِ خودکار: چون نه کافه‌بازار نه مایکت API خودکارِ «نسخه‌ی جدید منتشر شد یا نه»
+                // ندارن، خودِ سرور منبعِ حقیقتِ «آخرین نسخه»ست - رجوع کن به routes/AppVersionRoutes.kt.
+                // یه ردیفِ تکی (id=1)؛ بعدِ هر انتشارِ واقعیِ نسخه‌ی جدید رو کافه‌بازار/مایکت، باید
+                // دستی آپدیت بشه (رجوع کن به کامنتِ AppVersionRoutes.kt برای دستورِ SQL دقیق).
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS app_version (
+                        id INTEGER PRIMARY KEY CHECK (id = 1),
+                        latest_version_code INTEGER NOT NULL,
+                        cafebazaar_url TEXT,
+                        myket_url TEXT,
+                        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                    """.trimIndent()
+                )
+                st.executeUpdate(
+                    "INSERT INTO app_version (id, latest_version_code) VALUES (1, 1) ON CONFLICT(id) DO NOTHING"
+                )
             }
             /* migration برای دیتابیس‌های قدیمی که از قبل جدول users رو بدون این ستون‌ها دارن */
             runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN subscribed INTEGER NOT NULL DEFAULT 0") } }

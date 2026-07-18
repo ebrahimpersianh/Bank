@@ -75,6 +75,10 @@ interface ApiService {
     // بجای هاردکد تو خودِ اپ (رجوع کن به data/Banks.kt برای fallback آفلاین).
     @GET("api/credit-rates")
     suspend fun getCreditRates(): CreditRatesResponse
+
+    // آپدیتِ خودکار - عمومی، بدون نیاز به ورود؛ رجوع کن به server/routes/AppVersionRoutes.kt.
+    @GET("api/app-version")
+    suspend fun getAppVersion(): AppVersionResponse
 }
 
 data class RequestOtpRequest(val phone: String)
@@ -121,4 +125,13 @@ data class CrashReportRequest(
     val stack: String? = null,
     val context: String? = null,
     val appVersion: String? = null,
+)
+
+/** [latestVersionCode] با BuildConfig.VERSION_CODE مقایسه می‌شه - سرور بزرگ‌تر یعنی نسخه‌ی جدید
+ * موجوده. [cafebazaarUrl]/[myketUrl] هرکدوم null باشن یعنی هنوز دستی رو سرور ست نشدن (رجوع کن به
+ * کامنتِ AppVersionRoutes.kt برای دستورِ SQLِ آپدیت بعدِ هر انتشار). */
+data class AppVersionResponse(
+    val latestVersionCode: Int,
+    val cafebazaarUrl: String?,
+    val myketUrl: String?,
 )

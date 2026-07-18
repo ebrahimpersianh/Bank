@@ -14,6 +14,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import ir.sadteam.loancalc.server.routes.accountsBackupRoutes
+import ir.sadteam.loancalc.server.routes.appVersionRoutes
 import ir.sadteam.loancalc.server.routes.authRoutes
 import ir.sadteam.loancalc.server.routes.chequesBackupRoutes
 import ir.sadteam.loancalc.server.routes.crashRoutes
@@ -53,5 +54,6 @@ fun Application.module() {
         creditRatesRoutes()
         crashRoutes()
         subscriptionRoutes()
+        appVersionRoutes()
     }
 }
