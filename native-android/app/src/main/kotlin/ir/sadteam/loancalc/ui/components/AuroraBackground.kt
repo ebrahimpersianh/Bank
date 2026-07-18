@@ -47,19 +47,19 @@ fun AuroraBackground(modifier: Modifier = Modifier) {
     val accentAlpha = if (isDark) 0.20f else 0.14f
 
     val transition = rememberInfiniteTransition(label = "aurora")
-    // یه دورِ کامل ~۲۲ ثانیه - اون‌قدر کند که مزاحم نباشه، اون‌قدر تند که تو چند ثانیه نگاه‌کردن
-    // جابه‌جاییش معلوم بشه (۴۵ثانیه‌ی اولیه عملاً ساکن حس می‌شد).
+    // یه دورِ کامل ~۱۲ ثانیه (دورِ دومِ بازخورد کاربر: ۲۲ثانیه هم هنوز «انگار حرکت نداره» بود) -
+    // همراه با دامنه‌ی جابه‌جاییِ بزرگ‌تر پایین، الان تو ۲-۳ ثانیه نگاه‌کردن حرکت واضح دیده می‌شه.
     val phase by transition.animateFloat(
         initialValue = 0f,
         targetValue = (2.0 * PI).toFloat(),
-        animationSpec = infiniteRepeatable(tween(22000, easing = LinearEasing), RepeatMode.Restart),
+        animationSpec = infiniteRepeatable(tween(12000, easing = LinearEasing), RepeatMode.Restart),
         label = "auroraPhase",
     )
     // یه «نفس‌کشیدنِ» آرومِ جدا برای شدتِ نور، که حرکت یکنواخت/مکانیکی حس نشه.
     val breath by transition.animateFloat(
-        initialValue = 0.65f,
+        initialValue = 0.55f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(5500, easing = LinearEasing), RepeatMode.Reverse),
+        animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing), RepeatMode.Reverse),
         label = "auroraBreath",
     )
 
@@ -71,8 +71,8 @@ fun AuroraBackground(modifier: Modifier = Modifier) {
 
         // هاله‌ی سبزآبیِ بزرگ - بالای صفحه، آروم چپ‌وراست می‌ره.
         val c1 = Offset(
-            x = w * (0.72f + 0.16f * sin(phase)),
-            y = h * (0.12f + 0.05f * cos(phase * 2f)),
+            x = w * (0.65f + 0.30f * sin(phase)),
+            y = h * (0.14f + 0.09f * cos(phase * 2f)),
         )
         val r1 = w * 0.85f
         drawCircle(
@@ -87,8 +87,8 @@ fun AuroraBackground(modifier: Modifier = Modifier) {
 
         // هاله‌ی طلایی - پایینِ صفحه، خلافِ جهتِ اولی (لهجه‌ی طلایی طبق الگوی مصوب: پس‌زمینه، نه فونت).
         val c2 = Offset(
-            x = w * (0.20f + 0.14f * sin(phase + (PI / 2).toFloat())),
-            y = h * (0.88f + 0.05f * cos(phase)),
+            x = w * (0.28f + 0.26f * sin(phase + (PI / 2).toFloat())),
+            y = h * (0.85f + 0.09f * cos(phase)),
         )
         val r2 = w * 0.75f
         drawCircle(
@@ -103,8 +103,8 @@ fun AuroraBackground(modifier: Modifier = Modifier) {
 
         // هاله‌ی سبزآبیِ کوچیک‌ترِ میانی - عمقِ سوم، خیلی محوتر.
         val c3 = Offset(
-            x = w * (0.35f + 0.20f * cos(phase * 0.5f)),
-            y = h * (0.50f + 0.08f * sin(phase + PI.toFloat())),
+            x = w * (0.40f + 0.34f * cos(phase * 0.5f)),
+            y = h * (0.50f + 0.14f * sin(phase + PI.toFloat())),
         )
         val r3 = w * 0.55f
         drawCircle(
