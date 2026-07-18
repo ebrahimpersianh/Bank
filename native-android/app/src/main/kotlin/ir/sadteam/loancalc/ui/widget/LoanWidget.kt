@@ -78,7 +78,9 @@ private fun WidgetContent(next: NextInstallment?) {
     // خودِ پس‌زمینه رنگِ تیره‌ی ثابت داره (مستقل از تمِ سیستم)، ولی قبلاً هیچ رنگِ متنی صریح
     // ست نشده بود - رنگِ پیش‌فرضِ Glance.Text رو خیلی گوشی‌ها تیره/مشکیه، که رو این پس‌زمینه‌ی
     // تیره عملاً غیرقابل‌خوندن می‌شه (دقیقاً همون «ویجت کلاً سیاهه» که کاربر گزارش داد).
-    val textStyle = TextStyle(color = ColorProvider(Color(0xFFEEF1F8)))
+    // چون خودِ پس‌زمینه (پایین‌تر) مستقل از تمِ سیستمه، رنگِ متن هم باید همیشه ثابت باشه - برای
+    // همین day/night هردو رو یه مقدار می‌گیرن (ColorProvider تک‌آرگومانی برای رنگِ ثابت وجود نداره).
+    val textStyle = TextStyle(color = ColorProvider(day = Color(0xFFEEF1F8), night = Color(0xFFEEF1F8)))
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
