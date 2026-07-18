@@ -10,8 +10,10 @@ import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
 import ir.sadteam.loancalc.data.db.ChequeEntity
+import ir.sadteam.loancalc.data.prefs.AuthPrefs
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,7 +22,15 @@ import javax.inject.Inject
 class ChequeViewModel @Inject constructor(
     private val chequeRepository: ChequeRepository,
     private val attachmentStorage: AttachmentStorage,
+    private val authPrefs: AuthPrefs,
 ) : ViewModel() {
+    /** پورت syncIfLoggedIn تو MyLoansViewModel - چک‌ها/دسته‌چک‌ها قبلاً فقط با AutoBackupWorkerِ
+     * روزانه سینک می‌شدن، نه بعد از هر تغییر؛ کاربر خواسته با کوچیک‌ترین تغییری هم بی‌صدا آنلاین
+     * بکاپ بگیره، دقیقاً مثل وام‌ها. */
+    private suspend fun syncIfLoggedIn() {
+        val token = authPrefs.authToken.first()
+        if (!token.isNullOrEmpty()) chequeRepository.pushToServer(token)
+    }
     val cheques: StateFlow<List<ChequeEntity>> = chequeRepository.observeCheques()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -52,6 +62,7 @@ class ChequeViewModel @Inject constructor(
                 dueYear, dueMonth, dueDay, notes, chequeBookId,
                 photoPath, nationalId, previousBalance, depositAmount,
             )
+            syncIfLoggedIn()
             onSaved()
         }
     }
@@ -72,20 +83,30 @@ class ChequeViewModel @Inject constructor(
     fun updateCheque(cheque: ChequeEntity, onSaved: () -> Unit) {
         viewModelScope.launch {
             chequeRepository.updateCheque(cheque)
+            syncIfLoggedIn()
             onSaved()
         }
     }
 
     fun setStatus(cheque: ChequeEntity, status: ChequeStatus) {
-        viewModelScope.launch { chequeRepository.setStatus(cheque, status) }
+        viewModelScope.launch {
+            chequeRepository.setStatus(cheque, status)
+            syncIfLoggedIn()
+        }
     }
 
     fun setArchived(cheque: ChequeEntity, archived: Boolean) {
-        viewModelScope.launch { chequeRepository.setArchived(cheque, archived) }
+        viewModelScope.launch {
+            chequeRepository.setArchived(cheque, archived)
+            syncIfLoggedIn()
+        }
     }
 
     fun deleteCheque(id: Long) {
-        viewModelScope.launch { chequeRepository.deleteCheque(id) }
+        viewModelScope.launch {
+            chequeRepository.deleteCheque(id)
+            syncIfLoggedIn()
+        }
     }
 
     /** پورت «پیوست عکس رسید» اپ رقیب - عکس انتخابی رو به فضای داخلی اپ کپی می‌کنه، عکس قبلی (اگه بود)
@@ -95,6 +116,7 @@ class ChequeViewModel @Inject constructor(
             val newPath = attachmentStorage.copyToInternalStorage(uri) ?: return@launch
             attachmentStorage.delete(cheque.photoPath)
             chequeRepository.updateCheque(cheque.copy(photoPath = newPath))
+            syncIfLoggedIn()
         }
     }
 
@@ -102,15 +124,22 @@ class ChequeViewModel @Inject constructor(
         viewModelScope.launch {
             attachmentStorage.delete(cheque.photoPath)
             chequeRepository.updateCheque(cheque.copy(photoPath = null))
+            syncIfLoggedIn()
         }
     }
 
     fun addChequeBook(ownerName: String, bankName: String, startSerial: Long, endSerial: Long) {
-        viewModelScope.launch { chequeRepository.addChequeBook(ownerName, bankName, startSerial, endSerial) }
+        viewModelScope.launch {
+            chequeRepository.addChequeBook(ownerName, bankName, startSerial, endSerial)
+            syncIfLoggedIn()
+        }
     }
 
     fun deleteChequeBook(book: ChequeBookEntity) {
-        viewModelScope.launch { chequeRepository.deleteChequeBook(book) }
+        viewModelScope.launch {
+            chequeRepository.deleteChequeBook(book)
+            syncIfLoggedIn()
+        }
     }
 
     fun exportBackup(onResult: (String) -> Unit) {
@@ -118,6 +147,10 @@ class ChequeViewModel @Inject constructor(
     }
 
     fun importBackup(json: String, onResult: (Boolean) -> Unit) {
-        viewModelScope.launch { onResult(chequeRepository.importBackupJson(json)) }
+        viewModelScope.launch {
+            val ok = chequeRepository.importBackupJson(json)
+            if (ok) syncIfLoggedIn()
+            onResult(ok)
+        }
     }
 }
