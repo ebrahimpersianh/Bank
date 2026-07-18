@@ -78,9 +78,11 @@ import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.CoinCelebration
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
 import ir.sadteam.loancalc.ui.components.ReminderOverrideCard
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
+import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -116,6 +118,21 @@ fun LoanDetailScreen(
 ) {
     val privacyMode = LocalPrivacyMode.current
     val rows = remember(loan) { viewModel.getRows(loan) }
+
+    // جشنِ تسویه‌ی کامل (بارش سکه + ویبره): فقط وقتی «همین الان» آخرین قسط تو همین صفحه پرداخت
+    // بشه (گذر از ناتمام→تمام)، نه موقعِ باز کردنِ وامی که از قبل تسویه‌شده بوده - برای همین
+    // wasFullyPaid با وضعیتِ لحظه‌ی ورود مقداردهی می‌شه.
+    var celebrate by remember { mutableStateOf(false) }
+    var wasFullyPaid by remember { mutableStateOf(loan.n > 0 && loan.paidCount >= loan.n) }
+    val celebrationBuzz = rememberBuzz(durationMs = 60)
+    LaunchedEffect(loan.paidCount, loan.n) {
+        val fullyPaid = loan.n > 0 && loan.paidCount >= loan.n
+        if (fullyPaid && !wasFullyPaid) {
+            celebrate = true
+            celebrationBuzz()
+        }
+        wasFullyPaid = fullyPaid
+    }
 
     // «افزودن سررسیدها به تقویم گوشی»: همه‌ی اقساط (پرداخت‌شده‌ها هم، با خط‌خورده) به‌صورت رویدادِ
     // تمام‌روز تو تقویم خودِ گوشی درج می‌شن (خواسته‌ی کاربر که قبلاً دستی این‌کارو می‌کرد). درج تو
@@ -574,6 +591,14 @@ fun LoanDetailScreen(
             ) {
                 Text(calendarMessage ?: "", color = AppSurface, fontSize = 13.sp)
             }
+        }
+
+        // رو همه‌چیزِ صفحه (آخرین بچه‌ی Box) - لمس رو مصرف نمی‌کنه، فقط ~۳ ثانیه سکه می‌باره.
+        if (celebrate) {
+            CoinCelebration(
+                modifier = Modifier.fillMaxSize(),
+                onFinished = { celebrate = false },
+            )
         }
     }
 }

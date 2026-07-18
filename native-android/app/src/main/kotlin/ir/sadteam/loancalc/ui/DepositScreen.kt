@@ -35,6 +35,7 @@ import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.components.appFieldColors
+import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -161,10 +162,16 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
 
         result?.let { r ->
             item {
+                // شمارشِ صعودیِ نرمِ هر ۴ عدد (همون الگوی countUpDouble داشبوردِ وام‌های من) -
+                // به‌جای پرشِ یهوییِ نتیجه، اعداد «جون می‌گیرن».
+                val animatedDaily = countUpDouble(r.dailyInterest)
+                val animatedMonthly = countUpDouble(r.monthlyInterest)
+                val animatedTotal = countUpDouble(r.totalInterest)
+                val animatedFinal = countUpDouble(r.finalAmount)
                 AppCard {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        DepositStat(label = "سود روزانه (ریال)", value = fmt(r.dailyInterest), modifier = Modifier.weight(1f))
-                        DepositStat(label = "سود ماهانه (ریال)", value = fmt(r.monthlyInterest), modifier = Modifier.weight(1f))
+                        DepositStat(label = "سود روزانه (ریال)", value = fmt(animatedDaily), modifier = Modifier.weight(1f))
+                        DepositStat(label = "سود ماهانه (ریال)", value = fmt(animatedMonthly), modifier = Modifier.weight(1f))
                     }
                     Row(
                         modifier = Modifier
@@ -172,8 +179,8 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                             .padding(top = 10.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        DepositStat(label = "کل سود دوره (ریال)", value = fmt(r.totalInterest), modifier = Modifier.weight(1f))
-                        DepositStat(label = "مبلغ نهایی (ریال)", value = fmt(r.finalAmount), modifier = Modifier.weight(1f))
+                        DepositStat(label = "کل سود دوره (ریال)", value = fmt(animatedTotal), modifier = Modifier.weight(1f))
+                        DepositStat(label = "مبلغ نهایی (ریال)", value = fmt(animatedFinal), modifier = Modifier.weight(1f))
                     }
                 }
             }

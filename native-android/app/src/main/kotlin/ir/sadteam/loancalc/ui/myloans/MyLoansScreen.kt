@@ -78,10 +78,13 @@ import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.components.ProgressRing
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
+import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -326,6 +329,21 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                                             modifier = Modifier.padding(top = 2.dp),
                                         )
                                     }
+                                    // حلقه‌ی پیشرفتِ گرادیانی (سبزآبی→طلایی) با درصدِ اقساطِ
+                                    // پرداخت‌شده - رجوع کن به ProgressRing؛ هرچی به تسویه نزدیک‌تر،
+                                    // نوکِ قوس طلایی‌تر.
+                                    val paidPct = if (loan.n > 0) loan.paidCount.toFloat() / loan.n else 0f
+                                    ProgressRing(
+                                        progress = paidPct,
+                                        size = 40.dp,
+                                        strokeWidth = 4.dp,
+                                    ) {
+                                        Text(
+                                            "${toFa((paidPct * 100).roundToInt())}٪",
+                                            color = AppText,
+                                            fontSize = 9.sp,
+                                        )
+                                    }
                                     IconButton(onClick = { flipped = true }) {
                                         Icon(Icons.Filled.Info, contentDescription = "خلاصه پرداخت", tint = AppMuted)
                                     }
@@ -557,21 +575,43 @@ private fun DashboardSummary(
             }
 
             if (totalIncome > 0) {
-                Text(
-                    "${toFa((ratio * 100).roundToInt())}٪ از درآمدت صرف اقساط می‌شه",
-                    color = AppMuted,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-            if (statusLabel != null) {
-                Text(
-                    statusLabel,
-                    color = statusColor,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
+                // گیجِ «سلامتِ مالی»: درصدِ درآمدی که صرفِ اقساط می‌شه، به‌شکل یه حلقه‌ی انیمیشنی -
+                // تو حالتِ فشارِ بالا (ratio > 0.65، همون آستانه‌ی statusColor بالا) کلِ حلقه قرمز
+                // می‌شه، وگرنه همون گرادیانِ سبزآبی→طلاییِ استانداردِ ProgressRing.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 10.dp),
+                ) {
+                    ProgressRing(
+                        progress = ratio.toFloat(),
+                        size = 64.dp,
+                        strokeWidth = 7.dp,
+                        colors = if (ratio > 0.65) listOf(AppDanger, AppDanger) else listOf(AppPrimaryDim, AppPrimary, AppAccent),
+                    ) {
+                        Text(
+                            "${toFa((ratio * 100).roundToInt())}٪",
+                            color = AppText,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    Column(modifier = Modifier.padding(start = 12.dp)) {
+                        Text(
+                            "از درآمدت صرف اقساط می‌شه",
+                            color = AppMuted,
+                            fontSize = 12.sp,
+                        )
+                        if (statusLabel != null) {
+                            Text(
+                                statusLabel,
+                                color = statusColor,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                    }
+                }
             }
         }
     }

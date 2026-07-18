@@ -81,6 +81,7 @@ import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.InAppBannerState
 import ir.sadteam.loancalc.ui.components.LottieSpinner
+import ir.sadteam.loancalc.ui.components.GoldSheenBox
 import ir.sadteam.loancalc.ui.components.PulseGlowBox
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
@@ -299,16 +300,21 @@ private fun SettingsMainContent(
                         // ساعتِ گوشی - وگرنه دستکاری‌کردنِ تاریخِ گوشی می‌تونست این نمایش رو
                         // (نه خودِ دسترسیِ واقعی، که همیشه سمت سرور تصمیم‌گیری می‌شه) اشتباه نشون بده.
                         if (subscribed && trialDaysLeft != null && trialDaysLeft in 1..7) {
-                            Text(
-                                "دوره‌ی آزمایشی رایگان: ${toFa(trialDaysLeft.toString())} روز مانده",
-                                color = AppText,
-                                fontSize = 11.sp,
-                                modifier = Modifier
-                                    .padding(top = 4.dp)
-                                    .background(AppAccent.copy(alpha = 0.24f), RoundedCornerShape(8.dp))
-                                    .border(1.dp, AppAccent.copy(alpha = 0.85f), RoundedCornerShape(8.dp))
-                                    .padding(horizontal = 8.dp, vertical = 3.dp),
-                            )
+                            // GoldSheenBox: برقِ گذرای طلایی رو بجِ آزمایشی (رجوع کن به GoldSheen.kt).
+                            GoldSheenBox(
+                                modifier = Modifier.padding(top = 4.dp),
+                                cornerRadius = 8.dp,
+                            ) {
+                                Text(
+                                    "دوره‌ی آزمایشی رایگان: ${toFa(trialDaysLeft.toString())} روز مانده",
+                                    color = AppText,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier
+                                        .background(AppAccent.copy(alpha = 0.24f), RoundedCornerShape(8.dp))
+                                        .border(1.dp, AppAccent.copy(alpha = 0.85f), RoundedCornerShape(8.dp))
+                                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                                )
+                            }
                         }
                         Button(
                             onClick = { authViewModel.logout() },
@@ -416,6 +422,9 @@ private fun SettingsMainContent(
             val onlyTrialSubscribed = subscribed && trialDaysLeft != null && trialDaysLeft in 1..7
             if ((!subscribed || onlyTrialSubscribed) && matches("اشتراک", "خرید اشتراک")) {
                 PulseGlowBox(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+                    // GoldSheenBox: هر چند ثانیه یه موجِ نورِ طلایی از رو کارت رد می‌شه (لهجه‌ی
+                    // طلایی رو افکت/پس‌زمینه، طبق الگوی مصوب) - مکملِ هاله‌ی ضربان‌دارِ PulseGlow.
+                    GoldSheenBox {
                     AppCard(backgroundColor = lerp(AppSurface, AppAccent, 0.14f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Filled.Star, contentDescription = null, tint = AppAccent)
@@ -435,6 +444,7 @@ private fun SettingsMainContent(
                         ) {
                             Text("مشاهده پلن‌ها")
                         }
+                    }
                     }
                 }
             }

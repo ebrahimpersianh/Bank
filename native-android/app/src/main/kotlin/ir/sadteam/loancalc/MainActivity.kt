@@ -60,6 +60,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -99,6 +100,7 @@ import ir.sadteam.loancalc.ui.ResultScreen
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
+import ir.sadteam.loancalc.ui.components.AuroraBackground
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.onboarding.AnimatedAppEntrance
 import ir.sadteam.loancalc.ui.onboarding.BenefitsScreen
@@ -326,9 +328,15 @@ private fun LoanCalcApp(
 
     CompositionLocalProvider(LocalPrivacyMode provides privacyMode) {
     Box(modifier = Modifier.fillMaxSize()) {
+        // پس‌زمینه‌ی زنده‌ی شفق (سبزآبی+طلایی، رجوع کن به AuroraBackground) پشتِ کل تب‌ها -
+        // containerColor خودِ Scaffold و TopAppBar عمداً Transparent شدن تا این دیده بشه؛ هیچ‌کدوم
+        // از ۴ تبِ اصلی پس‌زمینه‌ی مات ندارن (فقط کارت‌هاشون Surface دارن) پس بینِ کارت‌ها پیداست.
+        AuroraBackground(modifier = Modifier.fillMaxSize())
         Scaffold(
+            containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                     title = { Text("وام من") },
                     navigationIcon = {
                         IconButton(onClick = { buzz(); themeViewModel.cycleThemeMode() }) {

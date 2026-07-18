@@ -44,6 +44,7 @@ import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.components.appFieldColors
+import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
 import ir.sadteam.loancalc.ui.theme.AppAccent
@@ -191,8 +192,11 @@ fun AffordScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel()
 
         result?.let { p ->
             item {
+                // شمارشِ صعودیِ نرمِ عددِ اصلیِ نتیجه (الگوی countUpDouble) - معادلِ حروفی عمداً
+                // ثابته (شمردنِ کلمه‌به‌کلمه بی‌معنی/گیج‌کننده می‌شد).
+                val animatedMax = countUpDouble(p)
                 AppCard(label = "حداکثر مبلغ وامی که می‌تونی بگیری") {
-                    Text(text = "${fmt(p)} ریال", fontSize = 20.sp, color = AppPrimary)
+                    Text(text = "${fmt(animatedMax)} ریال", fontSize = 20.sp, color = AppPrimary)
                     Text(
                         text = "${numberToWordsFa(p / 10)} تومان",
                         color = AppMuted,
