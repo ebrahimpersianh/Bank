@@ -80,6 +80,7 @@ import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.InAppBannerState
+import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.components.PulseGlowBox
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
@@ -372,7 +373,11 @@ private fun SettingsMainContent(
                             enabled = !deleteAccountInProgress,
                             colors = ButtonDefaults.buttonColors(containerColor = AppDanger),
                         ) {
-                            Text(if (deleteAccountInProgress) "..." else "حذف کن")
+                            if (deleteAccountInProgress) {
+                                LottieSpinner(modifier = Modifier.size(18.dp))
+                            } else {
+                                Text("حذف کن")
+                            }
                         }
                     },
                     dismissButton = {

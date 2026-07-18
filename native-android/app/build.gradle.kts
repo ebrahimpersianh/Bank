@@ -151,4 +151,8 @@ dependencies {
     // خرید درون‌برنامه‌ای واقعی کافه‌بازار (اشتراک) - SDK بومی رسمی، همون‌ کتابخونه‌ای که پلاگین
     // Capacitor نسخه‌ی وب (www/) هم زیرش استفاده می‌کنه. از JitPack میاد (settings.gradle.kts).
     implementation("com.github.cafebazaar.Poolakey:poolakey:2.2.0")
+
+    // انیمیشنِ Lottie واقعی (به‌جای متنِ ساکنِ «...») برای حالت‌های در-حال-بارگذاری - رجوع کن به
+    // ui/components/LottieSpinner.kt و assets/anim/spinner.json.
+    implementation("com.airbnb.android:lottie-compose:6.1.0")
 }

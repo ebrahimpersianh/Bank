@@ -28,8 +28,10 @@ import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.subscriptionTiers
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
+import androidx.compose.foundation.layout.size
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -138,7 +140,11 @@ fun SubscriptionScreen(
                                 )
                             },
                         ) {
-                            Text(if (purchasingProductId == productId) "..." else "خرید")
+                            if (purchasingProductId == productId) {
+                                LottieSpinner(modifier = Modifier.size(18.dp))
+                            } else {
+                                Text("خرید")
+                            }
                         }
                     }
                 }
