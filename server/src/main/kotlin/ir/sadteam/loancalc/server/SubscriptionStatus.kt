@@ -21,6 +21,19 @@ fun trialEndsAtMs(createdAt: String?): Long? {
     return parseUtc(createdAt) + TRIAL_MS
 }
 
+/** پورت «چند روز از دوره‌ی آزمایشی مونده» - قبلاً کلاینت این رو خودش از رو trialEndsAtMs (یه
+ * timestamp خام) با ساعتِ خودِ گوشی حساب می‌کرد؛ اگه کاربر تاریخِ گوشیش رو دستکاری می‌کرد (این
+ * تاثیری رو خودِ isSubscribed نداشت چون اون همیشه سمت سرور با System.currentTimeMillis حساب
+ * می‌شه، ولی) این عددِ نمایشی می‌تونست اشتباه نشون داده بشه. حالا خودِ عددِ نهایی (نه timestamp خام)
+ * اینجا با ساعتِ سرور حساب و مستقیم به کلاینت داده می‌شه، پس دیگه به ساعتِ گوشی هیچ وابستگی‌ای نداره.
+ * null یعنی یا هنوز مشترک نشده یا دوره‌ی آزمایشی تموم شده. */
+fun trialDaysLeft(createdAt: String?): Int? {
+    val end = trialEndsAtMs(createdAt) ?: return null
+    val remainingMs = end - System.currentTimeMillis()
+    if (remainingMs <= 0) return null
+    return (remainingMs / (24 * 60 * 60 * 1000)).toInt() + 1
+}
+
 /* یه کاربر مشترکه (یا هنوز تو دوره‌ی آزمایشی رایگانه) اگه:
    - دستی (subscribed=1، برای پشتیبانی/تست) فعال شده باشه، یا
    - یکی از پلن‌های زمان‌دار (subscribed_until) هنوز منقضی نشده باشه، یا

@@ -284,11 +284,11 @@ private fun SettingsMainContent(
                         )
                         // اگه دلیل «مشترک بودن» فعلاً فقط دوره‌ی آزمایشیِ ۷روزه‌ست (نه خرید واقعی)،
                         // مهلتِ باقی‌مونده رو نشون بده - وقتی تموم شد، خودکار (سمت سرور) به حالت
-                        // عادی برمی‌گرده و همون پیامِ «باید اشتراک بگیری» جای این رو می‌گیره.
-                        val trialEndsAt by authViewModel.trialEndsAt.collectAsState()
-                        val trialDaysLeft = trialEndsAt?.let { end ->
-                            ((end - System.currentTimeMillis()) / (24 * 60 * 60 * 1000)).toInt() + 1
-                        }
+                        // عادی برمی‌گرده و همون پیامِ «باید اشتراک بگیری» جای این رو می‌گیره. عددش
+                        // مستقیم از سرور میاد (با ساعتِ سرور حساب شده)، نه از یه محاسبه‌ی محلی روی
+                        // ساعتِ گوشی - وگرنه دستکاری‌کردنِ تاریخِ گوشی می‌تونست این نمایش رو
+                        // (نه خودِ دسترسیِ واقعی، که همیشه سمت سرور تصمیم‌گیری می‌شه) اشتباه نشون بده.
+                        val trialDaysLeft by authViewModel.trialDaysLeft.collectAsState()
                         if (subscribed && trialDaysLeft != null && trialDaysLeft in 1..7) {
                             Text(
                                 "دوره‌ی آزمایشی رایگان: ${toFa(trialDaysLeft.toString())} روز مانده",

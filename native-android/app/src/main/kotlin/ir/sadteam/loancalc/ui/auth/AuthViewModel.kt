@@ -48,7 +48,7 @@ class AuthViewModel @Inject constructor(
     val subscribed: StateFlow<Boolean> = authPrefs.subscribed
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    val trialEndsAt: StateFlow<Long?> = authPrefs.trialEndsAt
+    val trialDaysLeft: StateFlow<Int?> = authPrefs.trialDaysLeft
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val phone: StateFlow<String?> = authPrefs.phone

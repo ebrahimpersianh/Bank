@@ -81,12 +81,13 @@ data class RequestOtpRequest(val phone: String)
 
 data class VerifyOtpRequest(val phone: String, val code: String)
 
-data class VerifyOtpResponse(val token: String, val phone: String, val subscribed: Boolean, val trialEndsAt: Long? = null)
+data class VerifyOtpResponse(val token: String, val phone: String, val subscribed: Boolean, val trialDaysLeft: Int? = null)
 
-/** [trialEndsAt] پایانِ دوره‌ی آزمایشیِ ۷روزه‌ی رایگان (میلی‌ثانیه‌ی epoch، سمت سرور کلید‌خورده به
- * created_at شماره‌موبایل - رجوع کن به server/src/subscriptionStatus.js). [subscribed] از قبل
+/** [trialDaysLeft] چند روز از دوره‌ی آزمایشیِ ۷روزه‌ی رایگان مونده - عددِ نهایی، از قبل سمت سرور
+ * (SubscriptionStatus.trialDaysLeft، کلید‌خورده به created_at شماره‌موبایل) با ساعتِ خودِ سرور
+ * حساب شده، نه یه timestampِ خام که کلاینت بخواد با ساعتِ گوشی حسابش کنه. [subscribed] از قبل
  * ترکیبِ اشتراکِ واقعی + دوره‌ی آزمایشیِ فعاله - برای گیت «۱ وام رایگان» فقط همون کافیه. */
-data class MeResponse(val phone: String, val subscribed: Boolean, val subscribedUntil: String?, val trialEndsAt: Long? = null)
+data class MeResponse(val phone: String, val subscribed: Boolean, val subscribedUntil: String?, val trialDaysLeft: Int? = null)
 
 data class LoansResponse(val loans: List<Map<String, Any?>>, val updatedAt: String?)
 
