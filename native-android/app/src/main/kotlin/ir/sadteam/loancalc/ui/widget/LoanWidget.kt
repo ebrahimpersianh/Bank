@@ -10,10 +10,12 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
+import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Column
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
@@ -73,6 +75,10 @@ object LoanWidget : GlanceAppWidget() {
 @Composable
 private fun WidgetContent(next: NextInstallment?) {
     val context = androidx.glance.LocalContext.current
+    // خودِ پس‌زمینه رنگِ تیره‌ی ثابت داره (مستقل از تمِ سیستم)، ولی قبلاً هیچ رنگِ متنی صریح
+    // ست نشده بود - رنگِ پیش‌فرضِ Glance.Text رو خیلی گوشی‌ها تیره/مشکیه، که رو این پس‌زمینه‌ی
+    // تیره عملاً غیرقابل‌خوندن می‌شه (دقیقاً همون «ویجت کلاً سیاهه» که کاربر گزارش داد).
+    val textStyle = TextStyle(color = ColorProvider(Color(0xFFEEF1F8)))
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -80,13 +86,13 @@ private fun WidgetContent(next: NextInstallment?) {
             .padding(12.dp)
             .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
     ) {
-        Text("وام من")
+        Text("وام من", style = textStyle)
         if (next == null) {
-            Text("قسطِ پرداخت‌نشده‌ای ثبت نشده")
+            Text("قسطِ پرداخت‌نشده‌ای ثبت نشده", style = textStyle)
         } else {
-            Text("قسط بعدی: ${next.loanName}")
-            Text("${fmt(next.amount)} ریال")
-            Text("سررسید: ${toFa(next.due.d)}/${toFa(next.due.m)}/${toFa(next.due.y)}")
+            Text("قسط بعدی: ${next.loanName}", style = textStyle)
+            Text("${fmt(next.amount)} ریال", style = textStyle)
+            Text("سررسید: ${toFa(next.due.d)}/${toFa(next.due.m)}/${toFa(next.due.y)}", style = textStyle)
         }
     }
 }
