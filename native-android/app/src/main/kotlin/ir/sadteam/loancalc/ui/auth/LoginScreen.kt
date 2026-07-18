@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
@@ -35,6 +36,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppSurface
@@ -216,7 +218,14 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .padding(top = 16.dp),
             ) {
-                Text(if (step == LoginStep.PHONE) "ارسال کد تایید" else "تایید و ورود")
+                // قبلاً موقعِ loading هیچ نشونه‌ی بصری‌ای نبود (فقط enabled=false، بدون اسپینر)،
+                // برای همین تاخیرِ چندثانیه‌ایِ درخواستِ شبکه (request-otp/verify-otp) حسِ هنگ‌کردن
+                // می‌داد - همون الگوی LottieSpinner که تو SubscriptionScreen/حذفِ حساب هست، اینجا هم.
+                if (loading) {
+                    LottieSpinner(modifier = Modifier.size(18.dp))
+                } else {
+                    Text(if (step == LoginStep.PHONE) "ارسال کد تایید" else "تایید و ورود")
+                }
             }
 
             if (onDismiss == null) {
