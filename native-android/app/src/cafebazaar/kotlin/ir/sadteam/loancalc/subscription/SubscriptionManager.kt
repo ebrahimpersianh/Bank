@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.subscription
 
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.staticCompositionLocalOf
 import ir.cafebazaar.poolakey.Connection
@@ -93,6 +94,11 @@ class SubscriptionManager(private val activity: ComponentActivity) {
             purchaseFailed { onFailed() }
         }
     }
+
+    /** Poolakey با ActivityResultRegistry مدرن کار می‌کنه، نیازی به onActivityResultِ خام نداره -
+     * این متد فقط برای یکسان‌بودنِ امضا با فلیورِ myket (که واقعاً بهش نیاز داره) اینجاست، رجوع کن
+     * به MainActivity.onActivityResult. */
+    fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {}
 }
 
 /** null یعنی هنوز وصل نشده/در دسترس نیست (مثلاً کافه‌بازار رو گوشی نصب نیست) - صفحه‌ی اشتراک

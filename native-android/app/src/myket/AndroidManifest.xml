@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- برای اتصال به سرویسِ پرداختِ درون‌برنامه‌ایِ مایکت (IabHelper) - فقط تو فلیورِ myket لازمه،
+         تو فلیورِ cafebazaar اصلاً merge نمی‌شه. -->
+    <uses-permission android:name="ir.mservices.market.BILLING" />
+
+    <!-- اندروید ۱۱+ (API 30) بدونِ این، باندشدن به سرویسِ اپِ مایکت (حتی با مجوزِ بالا) کور می‌مونه. -->
+    <queries>
+        <package android:name="ir.mservices.market" />
+        <intent>
+            <action android:name="ir.mservices.market.InAppBillingService.BIND" />
+        </intent>
+    </queries>
+
+</manifest>

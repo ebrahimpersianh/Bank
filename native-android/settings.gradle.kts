@@ -10,8 +10,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // پلاگین Poolakey (خرید درون‌برنامه‌ای کافه‌بازار) از JitPack میاد، نه Maven Central/Google -
-        // دقیقاً همون دلیلی که وب‌ورژن (www/) هم تو build-apk.yml همین ریپو رو نیاز داره.
+        // خرید درون‌برنامه‌ای هر دو استور از JitPack میاد، نه Maven Central/Google: Poolakey
+        // (کافه‌بازار) و myket-billing-client (مایکت) - رجوع کن به app/build.gradle.kts.
         maven { url = uri("https://jitpack.io") }
     }
 }

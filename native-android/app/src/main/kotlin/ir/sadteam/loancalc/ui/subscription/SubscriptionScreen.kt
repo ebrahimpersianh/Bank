@@ -37,11 +37,12 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
- * پورت #subscriptionModal تو www/index.html - ۴ پلن پلکانی، خرید واقعی با SDK بومی Poolakey
- * (نه پلاگین Capacitor)، تایید سمت سرور قبل از فعال‌شدن. اگه کافه‌بازار رو گوشی نصب نباشه یا
- * سرویس وصل نشه، [LocalSubscriptionManager] پیام صادقانه‌ی «فقط رو نسخه‌ی نصبی کار می‌کنه» می‌ده.
+ * پورت #subscriptionModal تو www/index.html - ۴ پلن پلکانی، خرید واقعی با SDK بومیِ استور (Poolakey
+ * رو فلیورِ cafebazaar، myket-billing-client رو فلیورِ myket - رجوع کن به app/src/cafebazaar و
+ * app/src/myket)، تایید سمت سرور قبل از فعال‌شدن. اگه استورِ موردنظر رو گوشی نصب نباشه یا سرویس وصل
+ * نشه، [LocalSubscriptionManager] پیام صادقانه‌ی «فقط رو نسخه‌ی نصبی کار می‌کنه» می‌ده.
  *
- * قیمت‌ها (رجوع کن به [subscriptionTiers]) بی‌قید و شرط از کافه‌بازار خونده می‌شن - این صفحه دیگه
+ * قیمت‌ها (رجوع کن به [subscriptionTiers]) بی‌قید و شرط از استور خونده می‌شن - این صفحه دیگه
  * پشتِ گیتِ ورود نیست (خواسته‌ی کاربر: «می‌خوام اشتراک‌ها قیمتشون معلوم باشه، نیاز نباشه حتما ورود
  * کرد»)؛ فقط دکمه‌ی خرید، چون سمت سرور نیاز به توکن داره (AuthRepository.verifySubscription)، اگه
  * کاربر لاگین نباشه به‌جای شروع خرید [onNeedsLogin] رو صدا می‌زنه.

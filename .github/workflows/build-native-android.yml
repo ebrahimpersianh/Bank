@@ -58,27 +58,42 @@ jobs:
       - name: تست موتور محاسبه‌ی وام (core - بدون وابستگی به اندروید)
         run: ./gradlew :core:test --console=plain
 
-      - name: ساخت APK دیباگ
+      # از وقتی فلیورهای cafebazaar/myket اضافه شدن (رجوع کن به app/build.gradle.kts)، این دو تسکِ
+      # کلی هر دو فلیور رو با هم می‌سازن - خروجی هرکدوم تو مسیرِ جداگونه‌ی خودش (app/build/outputs/
+      # apk/<flavor>/<buildType>/) میاد، برای همین ۴ تا استپِ uploadِ جدا لازمه، نه ۲ تا.
+      - name: ساخت APKهای دیباگ (هر دو فلیور)
         run: ./gradlew :app:assembleDebug --console=plain
 
       # بیلد release همون کد رو بدون debuggable می‌سازه که خیلی روان‌تره (رفع لگ اسکرول/تعویض تب).
       # امضاش به کلیدِ واقعیِ release (اگه سکرت‌هاش ست شده باشن) یا فال‌بکِ کلید دیباگ بستگی داره -
       # رجوع کن به استپ بالا و کامنتِ signingConfig تو app/build.gradle.kts.
-      - name: ساخت APK ریلیز (روان - برای نصب این رو بردار)
+      - name: ساخت APKهای ریلیز (هر دو فلیور - روان، برای نصب این‌ها رو بردار)
         env:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: ./gradlew :app:assembleRelease --console=plain
 
-      - name: بارگذاری APK ریلیز (نسخه‌ی روان - این رو نصب کن)
+      - name: بارگذاری APK ریلیز کافه‌بازار (نسخه‌ی روان - این رو نصب کن)
         uses: actions/upload-artifact@v4
         with:
           name: loan-calculator-native-release-apk
-          path: native-android/app/build/outputs/apk/release/app-release.apk
+          path: native-android/app/build/outputs/apk/cafebazaar/release/app-cafebazaar-release.apk
 
-      - name: بارگذاری APK دیباگ (فقط برای توسعه/دیباگ)
+      - name: بارگذاری APK دیباگ کافه‌بازار (فقط برای توسعه/دیباگ)
         uses: actions/upload-artifact@v4
         with:
           name: loan-calculator-native-debug-apk
-          path: native-android/app/build/outputs/apk/debug/app-debug.apk
+          path: native-android/app/build/outputs/apk/cafebazaar/debug/app-cafebazaar-debug.apk
+
+      - name: بارگذاری APK ریلیز مایکت
+        uses: actions/upload-artifact@v4
+        with:
+          name: loan-calculator-native-myket-release-apk
+          path: native-android/app/build/outputs/apk/myket/release/app-myket-release.apk
+
+      - name: بارگذاری APK دیباگ مایکت
+        uses: actions/upload-artifact@v4
+        with:
+          name: loan-calculator-native-myket-debug-apk
+          path: native-android/app/build/outputs/apk/myket/debug/app-myket-debug.apk

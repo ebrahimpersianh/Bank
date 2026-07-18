@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -170,6 +171,15 @@ class MainActivity : FragmentActivity() {
     override fun onDestroy() {
         subscriptionManager.disconnect()
         super.onDestroy()
+    }
+
+    // فلیورِ myket برخلافِ cafebazaar (که با ActivityResultRegistryِ مدرن کار می‌کنه) هنوز الگوی
+    // کلاسیکِ IAB v3 رو داره، پس نتیجه‌ی خریدش از همین onActivityResultِ خام برمی‌گرده - رجوع کن به
+    // SubscriptionManager.handleActivityResult (تو فلیورِ cafebazaar یه no-op بی‌ضرره).
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        subscriptionManager.handleActivityResult(requestCode, resultCode, data)
     }
 }
 

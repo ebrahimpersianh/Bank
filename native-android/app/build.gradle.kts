@@ -49,6 +49,21 @@ android {
         versionName = "1.0"
     }
 
+    // دو استورِ ایرانی، هرکدوم SDK پرداختِ درون‌برنامه‌ای مخصوصِ خودشون رو می‌خوان (Poolakey برای
+    // کافه‌بازار، myket-billing-client برای مایکت) - چون applicationId مشترکه (هر دو استور همین اپِ
+    // یکسان رو قبول می‌کنن)، به‌جای دو applicationId جدا، دو فلیور تعریف شده که فقط تو منبعِ
+    // SubscriptionManager (رجوع کن به app/src/cafebazaar/ و app/src/myket/) فرق دارن؛ بقیه‌ی کد
+    // (main source set) عیناً بینِ هر دو مشترکه.
+    flavorDimensions += "store"
+    productFlavors {
+        create("cafebazaar") {
+            dimension = "store"
+        }
+        create("myket") {
+            dimension = "store"
+        }
+    }
+
     buildTypes {
         release {
             // ریشه‌ی «لگ» گزارش‌شده‌ی کاربر، نصبِ بیلد debug بود: تو بیلد debug فلگ debuggable
@@ -148,9 +163,13 @@ dependencies {
     implementation("androidx.hilt:hilt-work:1.2.0")
     kapt("androidx.hilt:hilt-compiler:1.2.0")
 
-    // خرید درون‌برنامه‌ای واقعی کافه‌بازار (اشتراک) - SDK بومی رسمی، همون‌ کتابخونه‌ای که پلاگین
-    // Capacitor نسخه‌ی وب (www/) هم زیرش استفاده می‌کنه. از JitPack میاد (settings.gradle.kts).
-    implementation("com.github.cafebazaar.Poolakey:poolakey:2.2.0")
+    // خرید درون‌برنامه‌ای واقعی - هر فلیور فقط SDK پرداختِ استورِ خودش رو داره (SubscriptionManager
+    // متناظرش هم تو app/src/cafebazaar/ و app/src/myket/ جداست)، نه هر دو با هم تو یه APK.
+    // Poolakey: کافه‌بازار (SDK بومی رسمی، همون‌ کتابخونه‌ای که پلاگین Capacitor نسخه‌ی وب هم زیرش
+    // استفاده می‌کنه). myket-billing-client: مایکت (پورتِ رسمیِ خودِ مایکت از Android IAB v3). هر دو
+    // از JitPack میان (settings.gradle.kts).
+    "cafebazaarImplementation"("com.github.cafebazaar.Poolakey:poolakey:2.2.0")
+    "myketImplementation"("com.github.myketstore:myket-billing-client:1.19")
 
     // انیمیشنِ Lottie واقعی (به‌جای متنِ ساکنِ «...») برای حالت‌های در-حال-بارگذاری - رجوع کن به
     // ui/components/LottieSpinner.kt و assets/anim/spinner.json.

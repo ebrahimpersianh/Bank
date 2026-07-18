@@ -55,3 +55,9 @@
 # --- SQLCipher: JNI/reflection داخلی داره، کلاس‌هاش نباید عوض/حذف بشن. ---
 -keep class net.sqlcipher.** { *; }
 -dontwarn net.sqlcipher.**
+
+# --- myket-billing-client (فلیورِ myket): برخلافِ Poolakey که خودش consumer-rules بسته‌بندی‌شده
+# داره، این کتابخونه از الگوی قدیمیِ IAB v3 (AIDL + کلاسِ استابِ سرویس تولیدشده) استفاده می‌کنه که
+# R8 بدونِ keep صریح ممکنه اسم/امضاش رو عوض کنه و باندشدن به سرویسِ مایکت رو زمانِ اجرا بشکنه. ---
+-keep class ir.myket.billingclient.** { *; }
+-dontwarn ir.myket.billingclient.**
