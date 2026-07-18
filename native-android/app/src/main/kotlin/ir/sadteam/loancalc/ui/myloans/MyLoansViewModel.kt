@@ -126,6 +126,15 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
+    /** بعد از یه درجِ موفقِ سررسیدها تو تقویم گوشی صدا زده می‌شه - persist می‌کنه تا دکمه‌ی «افزودن
+     * سررسیدها» تو LoanDetailScreen دیگه هیچ‌وقت (نه فقط تو همین session) دوباره درج نکنه. */
+    fun markCalendarExported(loan: LoanEntity) {
+        viewModelScope.launch {
+            loanRepository.saveLoan(loan.copy(calendarExported = true))
+            syncIfLoggedIn()
+        }
+    }
+
     /** پورت rows[].paid تو www/index.html - وضعیت پرداخت هر قسط مستقله، نه یه آستانه‌ی ترتیبی. */
     fun getRows(loan: LoanEntity): List<Map<String, Any?>> = loanRepository.getRows(loan)
 

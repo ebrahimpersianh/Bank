@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -58,6 +59,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
@@ -114,9 +116,10 @@ fun LoanDetailScreen(
     val privacyMode = LocalPrivacyMode.current
     val rows = remember(loan) { viewModel.getRows(loan) }
 
-    // «افزودن سررسیدها به تقویم گوشی»: اقساط پرداخت‌نشده به‌صورت رویداد تمام‌روز تو تقویم خودِ
-    // گوشی درج می‌شن (خواسته‌ی کاربر که قبلاً دستی این‌کارو می‌کرد). درج تو IO انجام می‌شه چون یه
-    // وام می‌تونه ۱۲۰ قسط داشته باشه.
+    // «افزودن سررسیدها به تقویم گوشی»: همه‌ی اقساط (پرداخت‌شده‌ها هم، با خط‌خورده) به‌صورت رویدادِ
+    // تمام‌روز تو تقویم خودِ گوشی درج می‌شن (خواسته‌ی کاربر که قبلاً دستی این‌کارو می‌کرد). درج تو
+    // IO انجام می‌شه چون یه وام می‌تونه ۱۲۰ قسط داشته باشه. یه‌بارمصرفه (رجوع کن به
+    // LoanEntity.calendarExported) تا با هر بار کلیک رویدادهای تکراری درج نشه.
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     // نتیجه با یه بنرِ داخلِ خودِ اپ نشون داده می‌شه، نه Toast سیستمی - چون Android 12+ (و بعضی
@@ -135,14 +138,15 @@ fun LoanDetailScreen(
     var isExportingCalendar by remember { mutableStateOf(false) }
     fun runCalendarExport() {
         isExportingCalendar = true
+        // قبلاً قسط‌های پرداخت‌شده اصلاً درج نمی‌شدن؛ حالا همه درج می‌شن (پرداخت‌شده‌ها با
+        // خط‌خورده - رجوع کن به DeviceCalendarExporter.strikethrough) تا یه رکورد کامل باشه.
         val items = rows.mapNotNull { row ->
-            if (row["paid"] == true) return@mapNotNull null
             val m = (row["m"] as? Number)?.toInt() ?: return@mapNotNull null
             val due = row["dueDate"] as? Map<*, *> ?: return@mapNotNull null
             val y = (due["y"] as? Number)?.toInt() ?: return@mapNotNull null
             val mo = (due["m"] as? Number)?.toInt() ?: return@mapNotNull null
             val d = (due["d"] as? Number)?.toInt() ?: return@mapNotNull null
-            m to PersianDate(y, mo, d)
+            DeviceCalendarExporter.InstallmentItem(m, PersianDate(y, mo, d), paid = row["paid"] == true)
         }
         val amountByM = rows.associate {
             ((it["m"] as? Number)?.toInt() ?: 0) to ((it["installment"] as? Number)?.toDouble() ?: loan.installment)
@@ -163,6 +167,9 @@ fun LoanDetailScreen(
                 calendarMessage = result.fold(
                     onSuccess = { inserted ->
                         if (inserted > 0) {
+                            // یه‌بار موفق شد - persist می‌شه تا این دکمه دیگه هیچ‌وقت (نه فقط تو
+                            // همین session) دوباره درج نکنه؛ رجوع کن به AppCard پایین‌تر.
+                            viewModel.markCalendarExported(loan)
                             "${toFa(inserted)} قسط به تقویم گوشی اضافه شد"
                         } else {
                             "تقویم قابل‌نوشتنی رو گوشی پیدا نشد"
@@ -333,10 +340,11 @@ fun LoanDetailScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+    val outerScrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(outerScrollState),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(
@@ -405,11 +413,23 @@ fun LoanDetailScreen(
             )
             val listState = rememberLazyListState()
             val rowShape = RoundedCornerShape(14.dp)
+            // خواسته‌ی کاربر: وقتی اسکرول رو صفحه می‌رسه به بخش اقساط، این بخش فضای بیشتری از
+            // صفحه بگیره (آیتمِ بیشتر هم‌زمان دیده بشه)، و وقتی برمی‌گرده بالا (رو بخش «درباره»ی
+            // وام) دوباره جمع بشه. چون تشخیصِ دقیقِ «رسیدن به این بخش» بدون اندازه‌گیریِ واقعیِ
+            // موقعیتش پیچیده می‌شه، از یه آستانه‌ی ساده رو اسکرولِ خودِ صفحه استفاده شده (تقریباً
+            // ارتفاعِ هدر+دونات+کارتِ بانک+عکسِ رسید) - ساده‌ترین تفسیرِ بی‌خطر از این خواسته.
+            val density = LocalDensity.current
+            val expandThresholdPx = with(density) { 380.dp.toPx() }
+            val installmentsExpanded = outerScrollState.value > expandThresholdPx
+            val installmentsListHeight by animateDpAsState(
+                targetValue = if (installmentsExpanded) installmentRowHeight * 10 + 24.dp else installmentRowHeight * 5 + 24.dp,
+                label = "installmentsListHeight",
+            )
             LazyColumn(
                 state = listState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(installmentRowHeight * 5 + 24.dp)
+                    .height(installmentsListHeight)
                     .lazyColumnScrollbar(listState, AppPrimary),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -495,12 +515,23 @@ fun LoanDetailScreen(
             OutlinedButton(
                 enabled = !isExportingCalendar,
                 onClick = {
+                    if (loan.calendarExported) {
+                        // دیگه دوباره درج نمی‌کنیم (جلوگیری از رویدادهای تکراری تو تقویم گوشی با
+                        // هر بار کلیک) - فقط یادآوری می‌کنیم قبلاً اضافه شده.
+                        calendarMessage = "سررسیدهای این وام قبلاً به تقویم گوشی اضافه شده‌اند"
+                        return@OutlinedButton
+                    }
                     isExportingCalendar = true
                     val perms = arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)
                     val allGranted = perms.all {
                         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
                     }
                     if (allGranted) runCalendarExport() else calendarPermissionLauncher.launch(perms)
+                },
+                colors = if (loan.calendarExported) {
+                    ButtonDefaults.outlinedButtonColors(contentColor = AppMuted)
+                } else {
+                    ButtonDefaults.outlinedButtonColors()
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {

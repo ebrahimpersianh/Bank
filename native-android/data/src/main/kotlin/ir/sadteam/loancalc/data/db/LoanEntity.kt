@@ -24,4 +24,8 @@ data class LoanEntity(
     val dataJson: String,
     /** مسیر مطلق عکس رسید تو فضای داخلی اپ (پورت «پیوست عکس» اپ رقیب) - رجوع کن به AttachmentStorage. */
     val photoPath: String? = null,
+    /** یه‌بار سررسیدهای این وام به تقویم گوشی اضافه شدن یا نه - بعد از true شدن، دکمه‌ی «افزودن
+     * سررسیدها» تو LoanDetailScreen به‌جای درجِ دوباره فقط یه پیام نشون می‌ده (خواسته‌ی کاربر: جلوگیری
+     * از رویدادهای تکراری تو تقویم گوشی با هر بار کلیک). */
+    val calendarExported: Boolean = false,
 )

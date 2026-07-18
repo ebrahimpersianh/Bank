@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
 
@@ -17,7 +19,7 @@ import net.sqlcipher.database.SupportFactory
         IncomeEntity::class,
         CalculationHistoryEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -30,6 +32,12 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun calculationHistoryDao(): CalculationHistoryDao
 
     companion object {
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE loans ADD COLUMN calendarExported INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -50,6 +58,12 @@ abstract class AppDatabase : RoomDatabase() {
                         "loan-calc.db",
                     )
                         .openHelperFactory(factory)
+                        // برخلاف ارتقاهای قبلیِ schema (که همه destructive بودن، چون هنوز داده‌ی
+                        // واقعی کاربری نبود)، این‌بار کاربر داره فعالانه رو وام‌های واقعی‌اش تست
+                        // می‌کنه - یه migration واقعی نوشتیم که ستون جدید رو اضافه کنه بدون پاک‌کردنِ
+                        // جدول‌ها. fallbackToDestructiveMigration فقط برای نسخه‌های خیلی قدیمی‌تر
+                        // (قبل از این migration) که پوشش داده نشدن نگه داشته شده.
+                        .addMigrations(MIGRATION_9_10)
                         .fallbackToDestructiveMigration()
                         .build()
                         .also { instance = it }
