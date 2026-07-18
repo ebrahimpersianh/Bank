@@ -61,6 +61,12 @@ android {
         }
         create("myket") {
             dimension = "store"
+            // خودِ AARِ myket-billing-client یه AndroidManifest با placeholderِ Gradle داره
+            // (نه یه مقدارِ ثابت) - بدونِ این سه‌تا، manifest merger با خطای «no value for
+            // <marketApplicationId>» شکست می‌خوره. مقادیر طبق مستندِ رسمیِ مایکت (myket.ir/kb).
+            manifestPlaceholders["marketApplicationId"] = "ir.mservices.market"
+            manifestPlaceholders["marketBindAddress"] = "ir.mservices.market.InAppBillingService.BIND"
+            manifestPlaceholders["marketPermission"] = "ir.mservices.market.BILLING"
         }
     }
 
