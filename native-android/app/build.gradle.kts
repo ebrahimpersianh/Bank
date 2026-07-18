@@ -43,8 +43,9 @@ android {
         applicationId = "ir.sadteam.loancalc"
         minSdk = 24
         targetSdk = 34
-        // versionCode تو workflow از github.run_number تزریق می‌شه (تا نصب بیلد جدید رو قبلی downgrade
-        // حساب نشه)؛ این مقدار پیش‌فرض فقط برای build لوکاله.
+        // versionCode/versionName هر دو تو workflow از github.run_number تزریق می‌شن (تا هم نصبِ
+        // بیلدِ جدید رو قبلی downgrade حساب نشه، هم شماره‌ی نسخه‌ای که کاربر تو بازار/مایکت می‌بینه
+        // با هر انتشارِ جدید خودکار عوض بشه) - این مقادیرِ پیش‌فرض فقط برای build لوکاله.
         versionCode = 1
         versionName = "1.0"
     }

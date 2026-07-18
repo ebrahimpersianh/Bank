@@ -52,8 +52,13 @@ jobs:
           echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
           echo "RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
 
-      - name: تنظیم versionCode یکتا و صعودی از شماره‌ی ران (تا نصب بیلد جدید رو بیلد قبلی downgrade حساب نشه)
-        run: sed -i "s/versionCode = 1/versionCode = ${{ github.run_number }}/" app/build.gradle.kts
+      # versionCode یکتا/صعودیه (تا نصبِ بیلدِ جدید رو بیلدِ قبلی downgrade حساب نشه)؛ versionName هم
+      # هر بار عوض می‌شه (۱.۰.<شماره‌ی ران>) تا شماره‌ی نسخه‌ای که کاربر تو بازار/مایکت می‌بینه با هر
+      # انتشارِ جدید خودکار بروز بشه، بدونِ نیاز به دستی ویرایش‌کردنِ build.gradle.kts هر بار.
+      - name: تنظیم versionCode/versionName یکتا و صعودی از شماره‌ی ران
+        run: |
+          sed -i "s/versionCode = 1/versionCode = ${{ github.run_number }}/" app/build.gradle.kts
+          sed -i "s/versionName = \"1.0\"/versionName = \"1.0.${{ github.run_number }}\"/" app/build.gradle.kts
 
       - name: تست موتور محاسبه‌ی وام (core - بدون وابستگی به اندروید)
         run: ./gradlew :core:test --console=plain
