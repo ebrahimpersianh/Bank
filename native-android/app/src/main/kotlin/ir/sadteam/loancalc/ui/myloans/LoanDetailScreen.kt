@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -60,8 +61,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -89,6 +93,7 @@ import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppText
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -436,79 +441,53 @@ fun LoanDetailScreen(
         }
         }
 
-        val rowShape = RoundedCornerShape(14.dp)
-        items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
-                    val m = (row["m"] as? Number)?.toInt() ?: 0
-                    val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
-                    val paid = row["paid"] == true
-                    val paidLate = paid && row["paidLate"] == true
-                    val due = row["dueDate"] as? Map<*, *>
-                    val dueLabel = due?.let {
-                        "${toFa(it["y"].toString())}/${toFa(it["m"].toString())}/${toFa(it["d"].toString())}"
-                    } ?: ""
-                    val statusLabel = when {
-                        paidLate -> "با تأخیر"
-                        paid -> "پرداخت شد"
-                        else -> "پرداخت نشده"
-                    }
-                    val statusColor = when {
-                        paidLate -> AppDanger
-                        paid -> AppPrimary
-                        else -> AppText
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp)
-                            .height(installmentRowHeight)
-                            .background(AppSurface, rowShape)
-                            .border(1.dp, AppPrimary.copy(alpha = 0.4f), rowShape)
-                            .clickable {
-                                if (paid) viewModel.setRowUnpaid(loan, m) else payChoiceM = m
-                            }
-                            .padding(horizontal = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("قسط شماره ${toFa(m)}", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Text(dueLabel, color = AppMuted, fontSize = 12.sp)
-                        }
-                        Text("${maskIfPrivate(privacyMode, fmt(installment))} ریال", color = AppText, fontSize = 13.sp)
-                        // وضعیت پرداخت تو یه باکس رنگیِ گوشه‌گرد (بج) - تا از بقیه‌ی متن جدا و
-                        // واضح دیده بشه (خواسته‌ی کاربر). رنگ پس‌زمینه نسخه‌ی کم‌رنگِ رنگ وضعیته.
-                        Box(
-                            modifier = Modifier
-                                .padding(horizontal = 6.dp)
-                                .background(statusColor.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
-                        ) {
-                            Text(
-                                statusLabel,
-                                color = statusColor,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
-                        if (paid) {
-                            IconButton(onClick = { photoRowM = m }) {
-                                val hasPhoto = (row["photoPath"] as? String) != null
-                                Icon(
-                                    Icons.Filled.PhotoCamera,
-                                    contentDescription = "رسید قسط",
-                                    tint = if (hasPhoto) AppPrimary else AppMuted,
-                                )
-                            }
-                        }
-                        IconButton(onClick = {
-                            editingRowM = m
-                            editAmountText = installment.toLong().toString()
-                        }) {
-                            Icon(Icons.Filled.Edit, contentDescription = "ویرایش مبلغ", tint = AppMuted)
-                        }
+        item {
+            // جعبه‌ی اقساط با ارتفاعِ ثابت (بدونِ هیچ انیمیشنِ تغییرِ ارتفاع - همون چیزی که باگِ
+            // قبلی رو ساخته بود) که همیشه ~۵ ردیف نشون می‌ده و خودش اسکرولِ داخلیِ مستقل داره؛
+            // خواسته‌ی کاربر: با وامِ ۱۲۰قسطی، برای رسیدن به یادآوری/تقویم/حذفِ زیرش مجبور نباشه از
+            // کنارِ همه‌ی ۱۲۰ ردیف رد بشه. با nested-scrollِ پیش‌فرضِ Compose، وقتی لیستِ داخلی به
+            // ته/سرش برسه و درگ ادامه پیدا کنه، خودش سرریز می‌شه به لیستِ بیرونی - این رایگانه.
+            // چیزی که رایگان نیست: یه swipeِ *سریع* (نه یه درگِ آهسته‌ی هدفمند) باید حتی وسطِ لیست
+            // هم بی‌معطلی از کلِ جعبه رد بشه - برای همین [installmentsFlingPassthrough] سرعتِ فلینگ
+            // رو تو onPreFling چک می‌کنه و اگه بالای آستانه بود، به‌جای فلینگِ لیستِ داخلی، مستقیم
+            // لیستِ بیرونی رو به آیتمِ بعد/قبل از جعبه می‌بره.
+            val innerListState = rememberLazyListState()
+            val flingConnection = remember(detailListState) {
+                installmentsFlingPassthrough(
+                    outerListState = detailListState,
+                    scope = scope,
+                    beforeBoxIndex = 0,
+                    afterBoxIndex = 2,
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .height(installmentRowHeight * 5 + 8.dp * 4)
+                    .nestedScroll(flingConnection),
+            ) {
+                LazyColumn(
+                    state = innerListState,
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
+                        InstallmentRow(
+                            row = row,
+                            loan = loan,
+                            privacyMode = privacyMode,
+                            onTogglePaid = { m, paid -> if (paid) viewModel.setRowUnpaid(loan, m) else payChoiceM = m },
+                            onOpenPhoto = { m -> photoRowM = m },
+                            onEditAmount = { m, installment ->
+                                editingRowM = m
+                                editAmountText = installment.toLong().toString()
+                            },
+                        )
                     }
                 }
+            }
+        }
 
         item {
         Column(
@@ -590,6 +569,109 @@ fun LoanDetailScreen(
 }
 
 private val installmentRowHeight = 56.dp
+
+/** آستانه‌ی سرعتِ فلینگ (px/s) که پایین‌ترش «درگِ آهسته/هدفمند» حساب می‌شه (بمون تو اقساط، فقط
+ * اسکرولِ داخلی)، بالاترش «سواپِ سریع» (رد شو از کل جعبه) - رجوع کن به [installmentsFlingPassthrough]. */
+private const val INSTALLMENTS_FLING_SKIP_VELOCITY = 3500f
+
+/**
+ * وقتی کاربر رو جعبه‌ی اقساط یه فلینگِ *سریع* بزنه (نه یه درگِ آهسته‌ی هدفمند برای دیدنِ اقساط)،
+ * به‌جای اینکه لیستِ داخلیِ اقساط خودش فلینگ کنه (که با ۱۲۰ ردیف ممکنه چندین‌بار لازم باشه)، مستقیم
+ * لیستِ بیرونیِ صفحه رو به آیتمِ قبل/بعدِ جعبه می‌بره - یعنی حسِ «از جعبه رد شو» بدونِ نیاز به رسیدنِ
+ * دستی به لبه‌ی بالا/پایینِ لیستِ داخلی. درگِ آهسته (سرعتِ فلینگِ پایین) دست‌نخورده می‌مونه و طبقِ
+ * رفتارِ پیش‌فرضِ nested-scrollِ Compose فقط لیستِ داخلی رو اسکرول می‌کنه.
+ */
+private fun installmentsFlingPassthrough(
+    outerListState: LazyListState,
+    scope: CoroutineScope,
+    beforeBoxIndex: Int,
+    afterBoxIndex: Int,
+): NestedScrollConnection = object : NestedScrollConnection {
+    override suspend fun onPreFling(available: Velocity): Velocity {
+        if (kotlin.math.abs(available.y) < INSTALLMENTS_FLING_SKIP_VELOCITY) return Velocity.Zero
+        val targetIndex = if (available.y < 0) afterBoxIndex else beforeBoxIndex
+        scope.launch { outerListState.animateScrollToItem(targetIndex) }
+        return available
+    }
+}
+
+/** یه ردیفِ قسط - هر قسط یه باکس مینیمالِ گوشه‌گرد با حاشیه‌ی سبزه (خواسته‌ی کاربر). وضعیت پرداخت:
+ * به‌موقع=سبز «پرداخت شد»، با تأخیر=قرمز «با تأخیر»، پرداخت‌نشده=مشکی «پرداخت نشده». */
+@Composable
+private fun InstallmentRow(
+    row: Map<String, Any?>,
+    loan: LoanEntity,
+    privacyMode: Boolean,
+    onTogglePaid: (m: Int, paid: Boolean) -> Unit,
+    onOpenPhoto: (m: Int) -> Unit,
+    onEditAmount: (m: Int, installment: Double) -> Unit,
+) {
+    val m = (row["m"] as? Number)?.toInt() ?: 0
+    val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
+    val paid = row["paid"] == true
+    val paidLate = paid && row["paidLate"] == true
+    val due = row["dueDate"] as? Map<*, *>
+    val dueLabel = due?.let {
+        "${toFa(it["y"].toString())}/${toFa(it["m"].toString())}/${toFa(it["d"].toString())}"
+    } ?: ""
+    val statusLabel = when {
+        paidLate -> "با تأخیر"
+        paid -> "پرداخت شد"
+        else -> "پرداخت نشده"
+    }
+    val statusColor = when {
+        paidLate -> AppDanger
+        paid -> AppPrimary
+        else -> AppText
+    }
+    val rowShape = RoundedCornerShape(14.dp)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(installmentRowHeight)
+            .background(AppSurface, rowShape)
+            .border(1.dp, AppPrimary.copy(alpha = 0.4f), rowShape)
+            .clickable { onTogglePaid(m, paid) }
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("قسط شماره ${toFa(m)}", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(dueLabel, color = AppMuted, fontSize = 12.sp)
+        }
+        Text("${maskIfPrivate(privacyMode, fmt(installment))} ریال", color = AppText, fontSize = 13.sp)
+        // وضعیت پرداخت تو یه باکس رنگیِ گوشه‌گرد (بج) - تا از بقیه‌ی متن جدا و واضح دیده بشه
+        // (خواسته‌ی کاربر). رنگ پس‌زمینه نسخه‌ی کم‌رنگِ رنگ وضعیته.
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 6.dp)
+                .background(statusColor.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+        ) {
+            Text(
+                statusLabel,
+                color = statusColor,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        if (paid) {
+            IconButton(onClick = { onOpenPhoto(m) }) {
+                val hasPhoto = (row["photoPath"] as? String) != null
+                Icon(
+                    Icons.Filled.PhotoCamera,
+                    contentDescription = "رسید قسط",
+                    tint = if (hasPhoto) AppPrimary else AppMuted,
+                )
+            }
+        }
+        IconButton(onClick = { onEditAmount(m, installment) }) {
+            Icon(Icons.Filled.Edit, contentDescription = "ویرایش مبلغ", tint = AppMuted)
+        }
+    }
+}
 
 /** دایره‌ی وام (سبز = اصل، طلایی = سود) با قسط ماهانه تو مرکز - پورت حس دونات نتیجه‌ی وب. */
 @Composable
