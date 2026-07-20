@@ -121,6 +121,11 @@ private fun List<LoanEntity>.sortedByOption(option: LoanSortOption): List<LoanEn
 fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: AuthViewModel = hiltViewModel()) {
     var showAddForm by remember { mutableStateOf(false) }
     var openedLoanId by remember { mutableStateOf<Long?>(null) }
+    // ویرایشِ مشخصاتِ کلیِ یه وام (اسم/بانک/مبلغ/تعدادِ اقساط) - عمداً openedLoanId رو پاک نمی‌کنیم
+    // وقتی ویرایش باز می‌شه، فقط اولویتِ مسیریابی رو تو screenKey بالاتر می‌بریم؛ این‌طوری بعدِ
+    // ذخیره/انصرافِ ویرایش (editingLoanId = null)، خودکار برمی‌گرده به همون صفحه‌ی جزئیاتِ وام،
+    // نه لیست.
+    var editingLoanId by remember { mutableStateOf<Long?>(null) }
     var showLoginPrompt by remember { mutableStateOf(false) }
     var showSubscriptionScreen by remember { mutableStateOf(false) }
 
@@ -132,6 +137,7 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
     val subscribed by authViewModel.subscribed.collectAsState()
     val canSaveAnotherLoan = loans.isEmpty() || (gateState == GateState.LOGGED_IN && subscribed)
     val openedLoan = openedLoanId?.let { id -> loans.firstOrNull { it.id == id } }
+    val editingLoan = editingLoanId?.let { id -> loans.firstOrNull { it.id == id } }
 
     fun onAddLoanClick() {
         when {
@@ -190,6 +196,7 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
         showLoginPrompt -> "login"
         showSubscriptionScreen -> "subscription"
         showAddForm -> "add"
+        editingLoan != null -> "edit"
         openedLoan != null -> "detail"
         else -> "list"
     }
@@ -215,11 +222,20 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                 onCancel = { showAddForm = false },
                 viewModel = viewModel,
             )
+            "edit" -> editingLoan?.let { loan ->
+                AddManualLoanScreen(
+                    editingLoan = loan,
+                    onSaved = { editingLoanId = null },
+                    onCancel = { editingLoanId = null },
+                    viewModel = viewModel,
+                )
+            }
             "detail" -> openedLoan?.let { loan ->
                 LoanDetailScreen(
                     loan = loan,
                     onBack = { openedLoanId = null },
                     onDelete = { viewModel.deleteLoan(loan.id); openedLoanId = null },
+                    onEdit = { editingLoanId = loan.id },
                     viewModel = viewModel,
                 )
             }

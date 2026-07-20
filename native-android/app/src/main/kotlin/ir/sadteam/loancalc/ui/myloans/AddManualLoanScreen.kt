@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -21,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,34 +30,50 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.numberToWordsFa
+import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
+import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
  * پورت فرم افزودن وام دستی (view-manual تو www/index.html؛ saveManualLoan برای اعتبارسنجی/ذخیره).
+ * وقتی [editingLoan] پاس داده بشه، همین فرم برای ویرایشِ مشخصاتِ کلیِ یه وامِ دستیِ ازقبل‌ذخیره‌شده
+ * (اسم/بانک/مبلغِ قسط/تعدادِ کل/تاریخ) استفاده می‌شه به‌جای ساختنِ یه وامِ جدید - خواسته‌ی کاربر بعد
+ * از اینکه یه‌بار به‌جای ۱۰ قسط اشتباهی ۱۱ تا ثبت کرد و راهی برای اصلاحش نبود. فیلدِ «تعداد پرداخت‌شده»
+ * تو حالتِ ویرایش نشون داده نمی‌شه چون منبعِ حقیقتِ وضعیتِ پرداختِ هر قسط از این به بعد خودِ
+ * تک‌تکِ ردیف‌هاست (قابلِ تغییر تو LoanDetailScreen)، نه این فیلدِ خلاصه.
  */
 @Composable
 fun AddManualLoanScreen(
     onSaved: () -> Unit,
     onCancel: () -> Unit,
+    editingLoan: LoanEntity? = null,
     viewModel: MyLoansViewModel = hiltViewModel(),
 ) {
-    var name by remember { mutableStateOf("") }
-    var bank by remember { mutableStateOf("") }
-    var installmentText by remember { mutableStateOf("") }
-    var totalCountText by remember { mutableStateOf("") }
+    val initialStartDate = remember(editingLoan) {
+        editingLoan?.let { viewModel.getLoanStartDate(it) } ?: PersianDate(1404, 1, 1)
+    }
+    var name by remember(editingLoan) { mutableStateOf(editingLoan?.name ?: "") }
+    var bank by remember(editingLoan) { mutableStateOf(editingLoan?.bank ?: "") }
+    var installmentText by remember(editingLoan) { mutableStateOf(editingLoan?.installment?.toLong()?.toString() ?: "") }
+    var totalCountText by remember(editingLoan) { mutableStateOf(editingLoan?.n?.toString() ?: "") }
     var paidCountText by remember { mutableStateOf("") }
-    var startYear by remember { mutableStateOf(1404) }
-    var startMonth by remember { mutableStateOf(1) }
-    var startDay by remember { mutableStateOf(1) }
+    var startYear by remember(editingLoan) { mutableStateOf(initialStartDate.y) }
+    var startMonth by remember(editingLoan) { mutableStateOf(initialStartDate.m) }
+    var startDay by remember(editingLoan) { mutableStateOf(initialStartDate.d) }
     var error by remember { mutableStateOf<String?>(null) }
     var showCalendarPicker by remember { mutableStateOf(false) }
+    // موقعِ ذخیره (خصوصاً وقتی لاگین باشیم و پوشِ شبکه‌ای به سرور طول بکشه) دکمه هیچ نشونه‌ای نداشت -
+    // کاربر چندبار زد و ۶-۷ تا وامِ تکراری ساخته شد. الان دکمه موقعِ saving غیرفعال می‌شه و اسپینر
+    // نشون می‌ده، همون الگوی LoginScreen.
+    var saving by remember { mutableStateOf(false) }
 
     if (showCalendarPicker) {
         CalendarPickerScreen(
@@ -72,6 +90,14 @@ fun AddManualLoanScreen(
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        item {
+            Text(
+                if (editingLoan != null) "ویرایش وام" else "افزودن وام دستی",
+                color = AppText,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
         item {
             AppCard(label = "اسم وام") {
                 OutlinedTextField(
@@ -155,16 +181,18 @@ fun AddManualLoanScreen(
                 )
             }
         }
-        item {
-            AppCard(label = "تعداد اقساط پرداخت‌شده (اختیاری)") {
-                OutlinedTextField(
-                    value = paidCountText,
-                    onValueChange = { paidCountText = cleanNum(it) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = appFieldColors(),
-                )
+        if (editingLoan == null) {
+            item {
+                AppCard(label = "تعداد اقساط پرداخت‌شده (اختیاری)") {
+                    OutlinedTextField(
+                        value = paidCountText,
+                        onValueChange = { paidCountText = cleanNum(it) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = appFieldColors(),
+                    )
+                }
             }
         }
         if (error != null) {
@@ -175,7 +203,12 @@ fun AddManualLoanScreen(
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 GradientButton(
+                    enabled = !saving,
                     onClick = {
+                        // نبودِ این گارد باعث می‌شد اگه پوشِ شبکه‌ایِ بعدِ ذخیره (syncIfLoggedIn) کند
+                        // بود، دکمه بی‌حرکت به‌نظر برسه، کاربر چندبار بزنه، و هر تپ یه وامِ کاملاً
+                        // جدید بسازه (باگِ گزارش‌شده: ۶-۷ تا وامِ تکراری از یه ذخیره).
+                        if (saving) return@GradientButton
                         val installment = cleanNum(installmentText).toDoubleOrNull() ?: 0.0
                         val n = totalCountText.toIntOrNull() ?: 0
                         val paidCount = paidCountText.toIntOrNull() ?: 0
@@ -185,26 +218,44 @@ fun AddManualLoanScreen(
                             bank.trim().isEmpty() -> "اسم بانک یا فروشنده رو وارد کن"
                             installment <= 0 -> "مبلغ قسط رو وارد کن"
                             n <= 0 -> "تعداد کل اقساط رو وارد کن"
-                            paidCount > n -> "تعداد پرداخت‌شده نمی‌تونه از کل اقساط بیشتر باشه"
+                            editingLoan == null && paidCount > n -> "تعداد پرداخت‌شده نمی‌تونه از کل اقساط بیشتر باشه"
                             else -> null
                         }
                         if (error == null) {
-                            viewModel.saveManualLoan(
-                                name = name.trim(),
-                                bank = bank.trim(),
-                                installment = installment,
-                                n = n,
-                                paidCount = paidCount,
-                                startDate = PersianDate(startYear, startMonth, startDay),
-                                onSaved = onSaved,
-                            )
+                            saving = true
+                            val startDate = PersianDate(startYear, startMonth, startDay)
+                            if (editingLoan != null) {
+                                viewModel.updateManualLoan(
+                                    loan = editingLoan,
+                                    name = name.trim(),
+                                    bank = bank.trim(),
+                                    installment = installment,
+                                    n = n,
+                                    startDate = startDate,
+                                    onSaved = onSaved,
+                                )
+                            } else {
+                                viewModel.saveManualLoan(
+                                    name = name.trim(),
+                                    bank = bank.trim(),
+                                    installment = installment,
+                                    n = n,
+                                    paidCount = paidCount,
+                                    startDate = startDate,
+                                    onSaved = onSaved,
+                                )
+                            }
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("ذخیره وام")
+                    if (saving) {
+                        LottieSpinner(modifier = Modifier.size(18.dp))
+                    } else {
+                        Text(if (editingLoan != null) "ذخیره تغییرات" else "ذخیره وام")
+                    }
                 }
-                OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth(), enabled = !saving) {
                     Text("انصراف")
                 }
             }

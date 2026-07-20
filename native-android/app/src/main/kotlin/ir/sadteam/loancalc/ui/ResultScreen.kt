@@ -53,6 +53,7 @@ import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
 import ir.sadteam.loancalc.ui.myloans.MyLoansViewModel
@@ -142,6 +143,10 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
     val canSaveAnotherLoan = savedLoans.isEmpty() || (gateState == GateState.LOGGED_IN && subscribed)
     var saved by remember { mutableStateOf(false) }
     var saveMessage by remember { mutableStateOf<String?>(null) }
+    // همون گاردِ AddManualLoanScreen: قبل از این‌که `saved=true` بشه (که پوشِ شبکه‌ای بعدِ ذخیره هم
+    // توش هست)، دکمه هنوز دیده می‌شد و قابلِ تپِ دوباره بود - با تاخیرِ شبکه، چندبار زدن می‌تونست
+    // چندتا وامِ تکراری بسازه.
+    var saving by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -199,11 +204,17 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                 )
             } else {
                 GradientButton(
+                    enabled = !saving,
                     onClick = {
+                        if (saving) return@GradientButton
                         when {
-                            canSaveAnotherLoan -> myLoansViewModel.saveComputedLoan(outcome) {
-                                saved = true
-                                saveMessage = null
+                            canSaveAnotherLoan -> {
+                                saving = true
+                                myLoansViewModel.saveComputedLoan(outcome) {
+                                    saving = false
+                                    saved = true
+                                    saveMessage = null
+                                }
                             }
                             gateState == null -> Unit
                             gateState != GateState.LOGGED_IN ->
@@ -214,7 +225,11 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                     },
                     modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
                 ) {
-                    Text("ذخیره وام", fontWeight = FontWeight.Bold)
+                    if (saving) {
+                        LottieSpinner(modifier = Modifier.size(18.dp))
+                    } else {
+                        Text("ذخیره وام", fontWeight = FontWeight.Bold)
+                    }
                 }
                 if (saveMessage != null) {
                     Text(

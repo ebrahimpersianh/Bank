@@ -116,10 +116,14 @@ fun LoanDetailScreen(
     loan: LoanEntity,
     onBack: () -> Unit,
     onDelete: () -> Unit,
+    onEdit: () -> Unit,
     viewModel: MyLoansViewModel = hiltViewModel(),
 ) {
     val privacyMode = LocalPrivacyMode.current
     val rows = remember(loan) { viewModel.getRows(loan) }
+    // ویرایشِ مشخصاتِ کلی فقط رو وام‌های دستی معنی داره (نه محاسبه‌شده/قرض‌الحسنه که ساختارِ اقساطِ
+    // نامساوی دارن) - رجوع کن به AddManualLoanScreen/LoanRepository.updateManualLoan.
+    val isManualLoan = remember(loan) { viewModel.isManualLoan(loan) }
 
     // جشنِ تسویه‌ی کامل (بارش سکه + ویبره): فقط وقتی «همین الان» آخرین قسط تو همین صفحه پرداخت
     // بشه (گذر از ناتمام→تمام)، نه موقعِ باز کردنِ وامی که از قبل تسویه‌شده بوده - برای همین
@@ -389,7 +393,18 @@ fun LoanDetailScreen(
             IconButton(onClick = onBack) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
             }
-            Text(loan.name, color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))
+            Text(
+                loan.name,
+                color = AppText,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 4.dp).weight(1f),
+            )
+            if (isManualLoan) {
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Filled.Edit, contentDescription = "ویرایش مشخصات وام", tint = AppMuted)
+                }
+            }
         }
 
         // دایره‌ی شیک بالای وام (سبز = اصل، طلایی = سود) با قسط ماهانه تو مرکز - مثل نسخه‌ی وب.

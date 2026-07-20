@@ -95,6 +95,61 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
         )
     }
 
+    /** آیا این وام با فرمِ افزودنِ دستی ساخته شده (نه از رو یه محاسبه‌ی وامِ بانکی/قرض‌الحسنه)؟ فقط
+     * وام‌های دستی ساختارِ ساده‌ی «همه‌ی اقساط برابر» دارن که ویرایشِ کلی (اسم/بانک/مبلغ/تعداد) روش
+     * معنی داره - رجوع کن به [updateManualLoan]. */
+    fun isManualLoan(loan: LoanEntity): Boolean = (parseData(loan)["method"] as? String) == "manual"
+
+    /** تاریخِ شروعِ وام - چون :app مستقیم به Gson دسترسی نداره (فقط :data)، این تابع رو برای پرکردنِ
+     * فرمِ ویرایش با تاریخِ فعلیِ وام لازم داریم. */
+    fun getStartDate(loan: LoanEntity): PersianDate = parseStartDate(parseData(loan))
+
+    /**
+     * ویرایشِ مشخصاتِ کلیِ یه وامِ دستیِ ازقبل‌ذخیره‌شده (اسم/بانک/مبلغِ هر قسط/تعدادِ کل/تاریخِ
+     * شروع) - برخلافِ [setRowInstallment]/[setAllRowsInstallment] که فقط مبلغِ اقساط رو دست می‌زنن.
+     * اگه [n] عوض بشه، ردیف‌ها هوشمند بازسازی می‌شن: قسط‌هایی که هنوز تو بازه‌ی جدیدن (وضعیتِ
+     * پرداخت/تاخیر/عکسِ رسیدشون) دست‌نخورده می‌مونن، قسط‌های جدید (اگه n بیشتر شده) پرداخت‌نشده اضافه
+     * می‌شن، قسط‌های اضافی (اگه n کمتر شده) حذف می‌شن - نه اینکه کل تاریخچه‌ی پرداخت پاک بشه.
+     */
+    suspend fun updateManualLoan(
+        loan: LoanEntity,
+        name: String,
+        bank: String,
+        installment: Double,
+        n: Int,
+        startDate: Map<String, Int>,
+    ) {
+        val data = parseDataMutable(loan)
+        val oldRowsByM = rowsFromData(data, loan).associateBy { (it["m"] as? Number)?.toInt() ?: 0 }
+        val newRows = (1..n).map { m ->
+            oldRowsByM[m]?.let { it + ("installment" to installment) }
+                ?: mapOf("m" to m, "installment" to installment, "paid" to false)
+        }
+        val amount = installment * n
+        val newPaidCount = newRows.count { it["paid"] == true }
+        data["name"] = name
+        data["bank"] = bank
+        data["amount"] = amount
+        data["installment"] = installment
+        data["totalPaid"] = amount
+        data["n"] = n
+        data["startDate"] = startDate
+        data["rows"] = newRows
+        data["paidCount"] = newPaidCount
+        loanDao.upsert(
+            loan.copy(
+                name = name,
+                bank = bank,
+                amount = amount,
+                installment = installment,
+                totalPaid = amount,
+                n = n,
+                paidCount = newPaidCount,
+                dataJson = gson.toJson(data),
+            ),
+        )
+    }
+
     /**
      * پورت saveLoan تو www/index.html (ذخیره‌ی نتیجه‌ی یه محاسبه‌ی وام بانکی، نه ورود دستی). برخلاف
      * [addManualLoan] که اقساط رو یکسان فرض می‌کنه، اینجا خودِ ردیف‌های محاسبه‌شده ([rows] = جفت

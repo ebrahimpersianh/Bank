@@ -72,6 +72,37 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
+    /** پورت گیت ویرایشِ مشخصاتِ کلیِ یه وامِ دستیِ ازقبل‌ذخیره‌شده - رجوع کن به
+     * [LoanRepository.updateManualLoan]. */
+    fun updateManualLoan(
+        loan: LoanEntity,
+        name: String,
+        bank: String,
+        installment: Double,
+        n: Int,
+        startDate: PersianDate,
+        onSaved: () -> Unit,
+    ) {
+        viewModelScope.launch {
+            loanRepository.updateManualLoan(
+                loan = loan,
+                name = name,
+                bank = bank,
+                installment = installment,
+                n = n,
+                startDate = mapOf("y" to startDate.y, "m" to startDate.m, "d" to startDate.d),
+            )
+            syncIfLoggedIn()
+            onSaved()
+        }
+    }
+
+    /** آیا این وام قابلِ ویرایشِ کلی‌ه (فقط وام‌های دستی) - رجوع کن به [LoanRepository.isManualLoan]. */
+    fun isManualLoan(loan: LoanEntity): Boolean = loanRepository.isManualLoan(loan)
+
+    /** تاریخِ شروعِ وام برای پرکردنِ فرمِ ویرایش - رجوع کن به [LoanRepository.getStartDate]. */
+    fun getLoanStartDate(loan: LoanEntity): PersianDate = loanRepository.getStartDate(loan)
+
     /** پورت saveLoan تو www/index.html - نتیجه‌ی محاسبه‌ی تب «وام بانکی» رو تو «وام‌های من» ذخیره
      * می‌کنه (با نگه‌داشتن ردیف‌های واقعیِ محاسبه‌شده). محدودیتِ «۱ وام رایگان» باید قبلِ صدا زدن
      * این، سمتِ UI چک بشه (مثل onAddLoanClick تو MyLoansScreen). */
