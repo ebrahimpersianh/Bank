@@ -244,15 +244,24 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
     suspend fun setAllRowsInstallment(loan: LoanEntity, newAmount: Double) {
         val data = parseDataMutable(loan)
         val rows = rowsFromData(data, loan).map { row -> row + ("installment" to newAmount) }
-        saveRows(loan, data, rows)
+        // چون این‌جا واقعاً همه‌ی اقساط برابرِ newAmount شدن، loan.installment (که دایره‌ی بالای
+        // صفحه و کارتِ «مبلغ هر قسط» ازش می‌خونن، نه از rows) هم باید هم‌قدمش بشه - وگرنه بعد از
+        // «بله، رو همه اعمال کن» دایره‌ی بالا هنوز مبلغِ قدیمی رو نشون می‌ده (باگی که کاربر گزارش داد).
+        saveRows(loan, data, rows, installment = newAmount)
     }
 
-    private suspend fun saveRows(loan: LoanEntity, data: MutableMap<String, Any?>, rows: List<Map<String, Any?>>) {
+    private suspend fun saveRows(
+        loan: LoanEntity,
+        data: MutableMap<String, Any?>,
+        rows: List<Map<String, Any?>>,
+        installment: Double? = null,
+    ) {
         val newTotal = rows.sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
         data["rows"] = rows
         data["amount"] = newTotal
         data["totalPaid"] = newTotal
-        loanDao.upsert(loan.copy(amount = newTotal, totalPaid = newTotal, dataJson = gson.toJson(data)))
+        val updated = loan.copy(amount = newTotal, totalPaid = newTotal, dataJson = gson.toJson(data))
+        loanDao.upsert(if (installment != null) updated.copy(installment = installment) else updated)
     }
 
     private fun buildInitialRows(installment: Double, n: Int, paidCount: Int): List<Map<String, Any?>> =

@@ -77,6 +77,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CoinCelebration
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
 import ir.sadteam.loancalc.ui.components.ReminderOverrideCard
+import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.theme.AppAccent
@@ -250,8 +251,10 @@ fun LoanDetailScreen(
                 OutlinedTextField(
                     value = editAmountText,
                     onValueChange = { editAmountText = cleanNum(it) },
+                    visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
+                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
                 )
             },
             confirmButton = {
