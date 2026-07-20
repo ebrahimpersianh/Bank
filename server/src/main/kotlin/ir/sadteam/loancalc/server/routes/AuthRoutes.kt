@@ -11,6 +11,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.Db
 import ir.sadteam.loancalc.server.SmsSendException
+import ir.sadteam.loancalc.server.env
 import ir.sadteam.loancalc.server.execute
 import ir.sadteam.loancalc.server.insertReturningId
 import ir.sadteam.loancalc.server.isSubscribed
@@ -31,6 +32,17 @@ private const val OTP_RESEND_COOLDOWN_MS = 60 * 1000L // حداقل فاصله �
 private const val MAX_VERIFY_ATTEMPTS = 5
 
 private val secureRandom = SecureRandom()
+
+/* حسابِ تستِ دائمی (برای فرمِ «حساب تستی»ِ بررسی‌کننده‌های کافه‌بازار/مایکت + تستِ خودِ توسعه‌دهنده):
+   اگه TEST_ACCOUNT_PHONE و TEST_ACCOUNT_CODE تو .env ست شده باشن، برای اون یه شماره هیچ پیامکی
+   ارسال نمی‌شه و کدِ تایید همیشه همون مقدارِ ثابته - یعنی حتی بعد از فعال‌شدنِ پیامکِ واقعیِ
+   ملی‌پیامک هم این حساب کار می‌کنه (شماره‌ش غیرواقعیه و پیامک بهش نمی‌رسید). برای بقیه‌ی شماره‌ها
+   هیچ رفتاری عوض نمی‌شه؛ تا وقتی این دو env ست نشن، این قابلیت کلاً خاموشه. */
+private val TEST_ACCOUNT_PHONE = env("TEST_ACCOUNT_PHONE")
+private val TEST_ACCOUNT_CODE = env("TEST_ACCOUNT_CODE")
+
+private fun isTestAccount(phone: String): Boolean =
+    TEST_ACCOUNT_PHONE.isNotEmpty() && TEST_ACCOUNT_CODE.isNotEmpty() && phone == TEST_ACCOUNT_PHONE
 
 private fun hashCode(code: String): String {
     val digest = MessageDigest.getInstance("SHA-256").digest(code.toByteArray(Charsets.UTF_8))
@@ -71,7 +83,9 @@ fun Route.authRoutes() {
                 return@post
             }
 
-            val code = (10000 + secureRandom.nextInt(90000)).toString() // ۵ رقمی
+            // حسابِ تست: کدِ ثابت از env، بدونِ ارسالِ پیامک (رجوع کن به کامنتِ TEST_ACCOUNT_PHONE بالا).
+            val testAccount = isTestAccount(phone)
+            val code = if (testAccount) TEST_ACCOUNT_CODE else (10000 + secureRandom.nextInt(90000)).toString() // ۵ رقمی
             val expiresAt = System.currentTimeMillis() + OTP_TTL_MS
             Db.withConnection { conn ->
                 conn.execute(
@@ -80,11 +94,13 @@ fun Route.authRoutes() {
                 )
             }
 
-            try {
-                sendOtpSms(phone, code)
-            } catch (e: SmsSendException) {
-                call.respond(HttpStatusCode.BadGateway, mapOf("error" to "sms_send_failed"))
-                return@post
+            if (!testAccount) {
+                try {
+                    sendOtpSms(phone, code)
+                } catch (e: SmsSendException) {
+                    call.respond(HttpStatusCode.BadGateway, mapOf("error" to "sms_send_failed"))
+                    return@post
+                }
             }
 
             call.respond(mapOf("ok" to true))
