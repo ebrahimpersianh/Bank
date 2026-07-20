@@ -1,13 +1,11 @@
 package ir.sadteam.loancalc.ui.myloans
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -23,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,20 +28,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.numberToWordsFa
-import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
-import ir.sadteam.loancalc.ui.components.WheelDatePickerScreen
+import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
+import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
-import ir.sadteam.loancalc.ui.theme.AppText
-
-private val faMonthNamesManual = listOf(
-    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
-)
 
 /**
  * پورت فرم افزودن وام دستی (view-manual تو www/index.html؛ saveManualLoan برای اعتبارسنجی/ذخیره).
@@ -64,17 +55,8 @@ fun AddManualLoanScreen(
     var startMonth by remember { mutableStateOf(1) }
     var startDay by remember { mutableStateOf(1) }
     var error by remember { mutableStateOf<String?>(null) }
-    var showWheelPicker by remember { mutableStateOf(false) }
     var showCalendarPicker by remember { mutableStateOf(false) }
 
-    if (showWheelPicker) {
-        WheelDatePickerScreen(
-            initial = PersianDate(startYear, startMonth, startDay),
-            onConfirm = { d -> startYear = d.y; startMonth = d.m; startDay = d.d; showWheelPicker = false },
-            onBack = { showWheelPicker = false },
-        )
-        return
-    }
     if (showCalendarPicker) {
         CalendarPickerScreen(
             initialDate = PersianDate(startYear, startMonth, startDay),
@@ -114,21 +96,20 @@ fun AddManualLoanScreen(
         }
         item {
             AppCard(label = "تاریخ دریافت وام") {
-                // تپ روی خودِ تاریخ → چرخونه‌ی اسکرولی؛ آیکون تقویم → تقویم گریدی (هر دو نگه داشته شدن).
+                // هم‌الگو با تاریخِ «وام بانکی» و فرمِ چک (InlineJalaliDateRow): اعدادِ روز/ماه/سال
+                // درجا قابلِ تغییرن + آیکونِ تقویمِ گریدی - قبلاً فقط یه متنِ تپ‌شونده به چرخونه بود
+                // که کاربر خواست مثل صفحه‌ی اصلی بشه.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = "${toFa(startDay)} ${faMonthNamesManual[startMonth - 1]} ${toFa(startYear)}",
-                        color = AppText,
-                        fontSize = 15.sp,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { showWheelPicker = true }
-                            .padding(vertical = 12.dp, horizontal = 6.dp),
+                    InlineJalaliDateRow(
+                        year = startYear,
+                        month = startMonth,
+                        day = startDay,
+                        onDateChange = { y, m, d -> startYear = y; startMonth = m; startDay = d },
+                        modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = { showCalendarPicker = true }) {
                         Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
@@ -138,12 +119,13 @@ fun AddManualLoanScreen(
         }
         item {
             AppCard(label = "مبلغ هر قسط") {
+                // state فقط رقم نگه می‌داره؛ کاما با ThousandsSeparatorTransformation فقط «نمایشیه» -
+                // فرمت‌کردن تو onValueChange (الگوی قبلی) مکان‌نما رو می‌پروند و رقمِ تایپ‌شده وسطِ
+                // عدد می‌افتاد (باگِ گزارش‌شده: ۱۲۷۴۹۰۰۰ → ۱۲,۷۴۰,۰۰۹).
                 OutlinedTextField(
                     value = installmentText,
-                    onValueChange = { raw ->
-                        val digits = cleanNum(raw)
-                        installmentText = if (digits.isEmpty()) "" else "%,d".format(digits.toLongOrNull() ?: 0L)
-                    },
+                    onValueChange = { installmentText = cleanNum(it) },
+                    visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,

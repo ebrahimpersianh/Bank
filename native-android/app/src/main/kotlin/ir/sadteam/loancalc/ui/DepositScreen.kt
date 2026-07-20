@@ -34,6 +34,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
+import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
@@ -46,7 +47,7 @@ private val depositMonthOptions = listOf(1 to "۱ ماهه", 3 to "۳ ماهه",
 /** پورت مو‌به‌موی تب «سود سپرده» (view-deposit تو www/index.html، calculateDeposit). */
 @Composable
 fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel()) {
-    var amountText by remember { mutableStateOf("2,500,000,000") }
+    var amountText by remember { mutableStateOf("2500000000") }
     var amountSlider by remember { mutableStateOf(2_500_000_000f) }
 
     var rateText by remember { mutableStateOf("18") }
@@ -71,11 +72,14 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { raw ->
+                        // فقط رقم تو state؛ کاما نمایشیه (ThousandsSeparatorTransformation) - فرمت تو
+                        // onValueChange مکان‌نما رو می‌پروند و رقم وسطِ عدد درج می‌شد (باگ گزارش‌شده).
                         val digits = cleanNum(raw)
                         val n = digits.toLongOrNull() ?: 0L
-                        amountText = if (digits.isEmpty()) "" else "%,d".format(n)
+                        amountText = digits
                         if (n in 100_000_000L..10_000_000_000L) amountSlider = n.toFloat()
                     },
+                    visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -95,7 +99,7 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                     value = amountSlider,
                     onValueChange = { v ->
                         amountSlider = v
-                        amountText = "%,d".format(v.toLong())
+                        amountText = v.toLong().toString()
                     },
                     valueRange = 100_000_000f..10_000_000_000f,
                 )

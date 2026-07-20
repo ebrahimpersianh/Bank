@@ -79,6 +79,7 @@ import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.ProgressRing
+import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -529,8 +530,9 @@ private fun DashboardSummary(
                     )
                     // مبلغ با جداکننده‌ی هزارگان نشون داده می‌شه و زیرش معادل حروفی (مثل «مبلغ وام»).
                     OutlinedTextField(
-                        value = if (amountText.isEmpty()) "" else fmt((amountText.toLongOrNull() ?: 0L).toDouble()),
+                        value = amountText,
                         onValueChange = { amountText = cleanNum(it) },
+                        visualTransformation = ThousandsSeparatorTransformation(),
                         label = { Text("مبلغ ماهانه (ریال)") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

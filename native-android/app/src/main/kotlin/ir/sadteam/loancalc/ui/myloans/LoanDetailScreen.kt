@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -15,7 +14,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,7 +29,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -59,7 +56,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
@@ -358,13 +354,24 @@ fun LoanDetailScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-    val outerScrollState = rememberScrollState()
-    Column(
+    // کل صفحه یه LazyColumn واحده (نه اسکرولِ تودرتوی قبلی): قبلاً لیستِ اقساط یه LazyColumn با
+    // ارتفاعِ محدود داخلِ یه Columnِ اسکرول‌دار بود که با یه آستانه‌ی اسکرول بین ۵ و ۱۰ ردیف
+    // باز/جمع می‌شد - تغییرِ ارتفاع وسطِ درگ محتوا رو زیرِ انگشت می‌پروند و نزدیکِ آستانه هم
+    // رفت‌وبرگشتی می‌شد (گزارشِ کاربر: «یهو بزرگ می‌شه... قاطی می‌کنه»). الان اقساط آیتم‌های خودِ
+    // لیستِ اصلی‌ان: هرچی پایین‌تر بری طبیعتاً کلِ صفحه رو می‌گیرن، روون و بدونِ هیچ پرش/حالتِ خاصی.
+    val detailListState = rememberLazyListState()
+    LazyColumn(
+        state = detailListState,
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(outerScrollState),
+            .lazyColumnScrollbar(detailListState, AppPrimary),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        item {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -414,44 +421,20 @@ fun LoanDetailScreen(
             modifier = Modifier.padding(horizontal = 14.dp),
         )
 
-        // حداکثر ۵ قسط تو صفحه، بقیه با اسکرول مستقل - کنارش اسکرول‌بار سبز نشون می‌ده کجاییم.
         // هر قسط یه باکس مینیمالِ گوشه‌گرد با حاشیه‌ی سبزه (خواسته‌ی کاربر). وضعیت پرداخت:
         // به‌موقع=سبز «پرداخت شد»، با تأخیر=قرمز «با تأخیر»، پرداخت‌نشده=مشکی «پرداخت نشده».
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 14.dp)
-                .fillMaxWidth(),
-        ) {
             Text(
                 "اقساط",
                 color = AppMuted,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = 4.dp, bottom = 6.dp),
+                modifier = Modifier.padding(start = 18.dp, top = 4.dp),
             )
-            val listState = rememberLazyListState()
-            val rowShape = RoundedCornerShape(14.dp)
-            // خواسته‌ی کاربر: وقتی اسکرول رو صفحه می‌رسه به بخش اقساط، این بخش فضای بیشتری از
-            // صفحه بگیره (آیتمِ بیشتر هم‌زمان دیده بشه)، و وقتی برمی‌گرده بالا (رو بخش «درباره»ی
-            // وام) دوباره جمع بشه. چون تشخیصِ دقیقِ «رسیدن به این بخش» بدون اندازه‌گیریِ واقعیِ
-            // موقعیتش پیچیده می‌شه، از یه آستانه‌ی ساده رو اسکرولِ خودِ صفحه استفاده شده (تقریباً
-            // ارتفاعِ هدر+دونات+کارتِ بانک+عکسِ رسید) - ساده‌ترین تفسیرِ بی‌خطر از این خواسته.
-            val density = LocalDensity.current
-            val expandThresholdPx = with(density) { 380.dp.toPx() }
-            val installmentsExpanded = outerScrollState.value > expandThresholdPx
-            val installmentsListHeight by animateDpAsState(
-                targetValue = if (installmentsExpanded) installmentRowHeight * 10 + 24.dp else installmentRowHeight * 5 + 24.dp,
-                label = "installmentsListHeight",
-            )
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(installmentsListHeight)
-                    .lazyColumnScrollbar(listState, AppPrimary),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
+        }
+        }
+
+        val rowShape = RoundedCornerShape(14.dp)
+        items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
                     val m = (row["m"] as? Number)?.toInt() ?: 0
                     val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
                     val paid = row["paid"] == true
@@ -474,7 +457,7 @@ fun LoanDetailScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 6.dp)
+                            .padding(horizontal = 20.dp)
                             .height(installmentRowHeight)
                             .background(AppSurface, rowShape)
                             .border(1.dp, AppPrimary.copy(alpha = 0.4f), rowShape)
@@ -523,9 +506,8 @@ fun LoanDetailScreen(
                         }
                     }
                 }
-            }
-        }
 
+        item {
         Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -573,6 +555,7 @@ fun LoanDetailScreen(
             ) {
                 Text("حذف وام")
             }
+        }
         }
     }
 

@@ -43,6 +43,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
+import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
@@ -59,7 +60,7 @@ private val affordMonthChipValues = listOf(12, 24, 36, 60, 120)
 /** پورت مو‌به‌موی تب «چقدر وام می‌تونم بگیرم؟» (view-afford تو www/index.html). */
 @Composable
 fun AffordScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel()) {
-    var payText by remember { mutableStateOf("100,000,000") }
+    var payText by remember { mutableStateOf("100000000") }
     var paySlider by remember { mutableStateOf(100_000_000f) }
 
     var rateText by remember { mutableStateOf("23") }
@@ -86,9 +87,10 @@ fun AffordScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel()
                     onValueChange = { raw ->
                         val digits = cleanNum(raw)
                         val n = digits.toLongOrNull() ?: 0L
-                        payText = if (digits.isEmpty()) "" else "%,d".format(n)
+                        payText = digits
                         if (n in 10_000_000L..500_000_000L) paySlider = n.toFloat()
                     },
+                    visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -108,7 +110,7 @@ fun AffordScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel()
                     value = paySlider,
                     onValueChange = { v ->
                         paySlider = v
-                        payText = "%,d".format(v.toLong())
+                        payText = v.toLong().toString()
                     },
                     valueRange = 10_000_000f..500_000_000f,
                 )
@@ -243,9 +245,10 @@ private fun RateFinderCard() {
                 onValueChange = { raw ->
                     val digits = cleanNum(raw)
                     val n = digits.toLongOrNull() ?: 0L
-                    amountText = if (digits.isEmpty()) "" else "%,d".format(n)
+                    amountText = digits
                     if (n in 100_000_000L..10_000_000_000L) amountSlider = n.toFloat()
                 },
+                visualTransformation = ThousandsSeparatorTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -257,7 +260,7 @@ private fun RateFinderCard() {
             }
             SlimSlider(
                 value = amountSlider,
-                onValueChange = { v -> amountSlider = v; amountText = "%,d".format(v.toLong()) },
+                onValueChange = { v -> amountSlider = v; amountText = v.toLong().toString() },
                 valueRange = 100_000_000f..10_000_000_000f,
                 modifier = Modifier.padding(top = 6.dp),
             )
@@ -266,9 +269,10 @@ private fun RateFinderCard() {
                 onValueChange = { raw ->
                     val digits = cleanNum(raw)
                     val n = digits.toLongOrNull() ?: 0L
-                    installmentText = if (digits.isEmpty()) "" else "%,d".format(n)
+                    installmentText = digits
                     if (n in 1_000_000L..200_000_000L) installmentSlider = n.toFloat()
                 },
+                visualTransformation = ThousandsSeparatorTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -282,7 +286,7 @@ private fun RateFinderCard() {
             }
             SlimSlider(
                 value = installmentSlider,
-                onValueChange = { v -> installmentSlider = v; installmentText = "%,d".format(v.toLong()) },
+                onValueChange = { v -> installmentSlider = v; installmentText = v.toLong().toString() },
                 valueRange = 1_000_000f..200_000_000f,
                 modifier = Modifier.padding(top = 6.dp),
             )

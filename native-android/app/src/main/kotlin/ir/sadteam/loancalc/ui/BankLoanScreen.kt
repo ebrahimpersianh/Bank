@@ -69,6 +69,7 @@ import ir.sadteam.loancalc.ui.components.BankTileShimmer
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
+import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.PresetCard
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.components.appFieldColors
@@ -108,7 +109,8 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
     var startMonth by rememberSaveable { mutableStateOf(1) }
     var startDay by rememberSaveable { mutableStateOf(1) }
 
-    var amountText by rememberSaveable { mutableStateOf("2,500,000,000") }
+    // state فقط رقم نگه می‌داره؛ کاما نمایشیه (ThousandsSeparatorTransformation) - رجوع کن به کامنتِ فیلد.
+    var amountText by rememberSaveable { mutableStateOf("2500000000") }
     var amountSliderRange by remember { mutableStateOf(100_000_000f..10_000_000_000f) }
     var amountSlider by rememberSaveable { mutableStateOf(2_500_000_000f) }
 
@@ -127,7 +129,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
     var showCheque by rememberSaveable { mutableStateOf(false) }
 
     fun applyAmount(rial: Long) {
-        amountText = fmtGroupedEn(rial)
+        amountText = rial.toString()
         if (rial <= amountSliderRange.endInclusive.toLong()) amountSlider = rial.toFloat()
     }
 
@@ -337,13 +339,16 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { raw ->
+                        // فقط رقم تو state می‌مونه؛ فرمتِ هزارگان نمایشیه (ThousandsSeparatorTransformation) -
+                        // فرمت‌کردن تو onValueChange مکان‌نما رو می‌پروند و رقم وسطِ عدد درج می‌شد.
                         val digits = cleanNum(raw)
                         val n = digits.toLongOrNull() ?: 0L
-                        amountText = if (digits.isEmpty()) "" else fmtGroupedEn(n)
+                        amountText = digits
                         if (n in amountSliderRange.start.toLong()..amountSliderRange.endInclusive.toLong()) {
                             amountSlider = n.toFloat()
                         }
                     },
+                    visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -364,7 +369,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
                     value = amountSlider,
                     onValueChange = { v ->
                         amountSlider = v
-                        amountText = fmtGroupedEn(v.toLong())
+                        amountText = v.toLong().toString()
                     },
                     valueRange = amountSliderRange,
                 )
@@ -512,10 +517,6 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
             }
         }
     }
-}
-
-private fun fmtGroupedEn(n: Long): String {
-    return "%,d".format(n)
 }
 
 private fun trimRate(v: Double): String {

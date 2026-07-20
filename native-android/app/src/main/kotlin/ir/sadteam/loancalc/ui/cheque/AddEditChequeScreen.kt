@@ -50,6 +50,7 @@ import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
+import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -140,8 +141,9 @@ fun AddEditChequeScreen(
                 // به‌جای این‌که تو لیبلِ بالای باکس باشه، حالا هم‌الگو با بقیه‌ی فیلدهای مبلغِ اپ،
                 // suffix داخلِ خودِ فیلده.
                 OutlinedTextField(
-                    value = if (amountText.isEmpty()) "" else fmt((amountText.toLongOrNull() ?: 0L).toDouble()),
+                    value = amountText,
                     onValueChange = { amountText = cleanNum(it) },
+                    visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
