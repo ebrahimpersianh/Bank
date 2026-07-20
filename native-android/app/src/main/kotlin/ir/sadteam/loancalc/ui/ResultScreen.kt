@@ -91,14 +91,23 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
         )
     }
 
-    // هم‌راستا با renderTable تو www/index.html: اول گریس‌پیریود بعد فاصله‌ی هر قسط اضافه می‌شه
+    // اول گریس‌پیریود بعد فاصله‌ی هر قسط اضافه می‌شه. هم‌راستا با LoanRepository.getRows (که منبعِ
+    // حقیقتِ سررسیدِ وام‌های ذخیره‌شده‌ست): فاصله‌های مضربِ ۳۰ ماهِ تقویمیِ واقعی جلو می‌رن (روزِ
+    // ماه ثابت، نه ۳۰+روزِ ثابت که هر ماه یه روز عقب می‌رفت - باگِ گزارش‌شده‌ی کاربر)؛ فقط
+    // هفتگی/دوهفته‌ای روزشمار می‌مونن. فرمولِ مالی (interval تو LoanCalculator) دست نخورده.
     val interval = result.intervalDays
     val dueDates = remember(result, outcome.startDate) {
-        var c = outcome.startDate
-        if (result.graceMonths > 0) c = PersianCalendar.addDays(c, result.graceMonths * 30)
-        result.rows.map {
-            c = PersianCalendar.addDays(c, interval)
-            c
+        val base = if (result.graceMonths > 0) {
+            PersianCalendar.addMonths(outcome.startDate, result.graceMonths)
+        } else {
+            outcome.startDate
+        }
+        result.rows.map { row ->
+            if (interval % 30 == 0) {
+                PersianCalendar.addMonths(base, row.month * (interval / 30))
+            } else {
+                PersianCalendar.addDays(base, row.month * interval)
+            }
         }
     }
     val endDate = dueDates.lastOrNull() ?: outcome.startDate

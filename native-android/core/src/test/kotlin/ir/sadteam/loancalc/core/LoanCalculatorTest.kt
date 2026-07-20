@@ -97,6 +97,23 @@ class LoanCalculatorTest {
     }
 
     @Test
+    fun persianDateAddMonthsKeepsDayOfMonth() {
+        // باگ گزارش‌شده‌ی کاربر: سررسید ماهانه باید همون روزِ ماه بمونه (۴ هر ماه)، نه اینکه با
+        // ۳۰+روزِ ثابت هر ماه یه روز عقب بره (۴/۴ → ۵/۳ → ۶/۲...).
+        assertTrue(PersianCalendar.addMonths(PersianDate(1404, 3, 4), 1) == PersianDate(1404, 4, 4))
+        assertTrue(PersianCalendar.addMonths(PersianDate(1404, 3, 4), 4) == PersianDate(1404, 7, 4))
+        assertTrue(PersianCalendar.addMonths(PersianDate(1404, 3, 4), 12) == PersianDate(1405, 3, 4))
+    }
+
+    @Test
+    fun persianDateAddMonthsRespectsLeapEsfand() {
+        // ۱۴۰۳ کبیسه‌ست (اسفند ۳۰ روزه) - addMonths نباید ۳۰ اسفند رو اشتباهی به ۲۹ برگردونه؛
+        // ۱۴۰۴ عادیه و همون clamp به ۲۹ درسته.
+        assertTrue(PersianCalendar.addMonths(PersianDate(1403, 11, 30), 1) == PersianDate(1403, 12, 30))
+        assertTrue(PersianCalendar.addMonths(PersianDate(1404, 11, 30), 1) == PersianDate(1404, 12, 29))
+    }
+
+    @Test
     fun fmtMatchesJsReference() {
         assertTrue(fmt(9392433.0) == "۹,۳۹۲,۴۳۳")
         assertTrue(fmt(112709199.0) == "۱۱۲,۷۰۹,۱۹۹")

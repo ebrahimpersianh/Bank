@@ -28,6 +28,10 @@ object PersianCalendar {
         return PersianDate(y, m, d)
     }
 
+    /** روزِ ماه ثابت می‌مونه و فقط clamp می‌شه به طولِ واقعیِ ماهِ مقصد (با کبیسه‌ی واقعیِ اسفند از
+     * [JalaliCalendar.daysInMonth]، نه فرضِ ساده‌ی همیشه-۲۹ی [monthLength]) - این تابع پایه‌ی
+     * سررسیدِ ماهانه‌ی اقساطه (رجوع کن به LoanRepository.getRows) و «۳۰ اسفندِ سالِ کبیسه» نباید
+     * اشتباهی به ۲۹ برگرده. */
     fun addMonths(date: PersianDate, count: Int): PersianDate {
         var y = date.y
         var m = date.m
@@ -38,7 +42,7 @@ object PersianCalendar {
                 y++
             }
         }
-        val d = minOf(date.d, monthLength(m))
+        val d = minOf(date.d, JalaliCalendar.daysInMonth(y, m))
         return PersianDate(y, m, d)
     }
 }

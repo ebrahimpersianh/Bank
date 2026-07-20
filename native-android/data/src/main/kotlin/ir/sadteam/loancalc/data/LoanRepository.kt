@@ -166,9 +166,18 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
         val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
         return rows.map { row ->
             val m = (row["m"] as? Number)?.toInt() ?: 1
-            // پورت دقیق حلقه‌ی renderTable تو www/index.html: cursor قبل از هر قسط با interval
-            // جلو می‌ره (یعنی قسط ۱ سررسیدش startDate+interval هست، نه خودِ startDate).
-            val due = PersianCalendar.addDays(startDate, m * intervalDays)
+            // قسط ۱ سررسیدش یه دوره بعد از startDate ئه (نه خودِ startDate) - پورت renderTable وب.
+            // باگِ گزارش‌شده‌ی کاربر: نسخه‌ی قبلی برای فاصله‌ی «ماهانه» هم ثابت m×۳۰ روز جمع می‌زد،
+            // که چون ۶ ماهِ اولِ سالِ شمسی ۳۱ روزه‌ان هر ماه یه روز عقب می‌رفت (۴/۴ → ۵/۳ → ۶/۲...).
+            // الان فاصله‌های مضربِ ۳۰ (ماهانه/دوماهه/سه‌ماهه) ماهِ تقویمیِ واقعی جلو می‌رن و روزِ
+            // ماه ثابت می‌مونه (با clamp آخرِ ماه)؛ فقط هفتگی/دوهفته‌ای (۷/۱۴) روزشمار می‌مونن.
+            // توجه: این فقط «تاریخِ نمایشیِ» سررسیده - فرمولِ مالی (i = rate×interval/365 تو
+            // LoanCalculator) عمداً همون interval قبلی رو نگه می‌داره، رجوع کن به CLAUDE.md.
+            val due = if (intervalDays % 30 == 0) {
+                PersianCalendar.addMonths(startDate, m * (intervalDays / 30))
+            } else {
+                PersianCalendar.addDays(startDate, m * intervalDays)
+            }
             row + ("dueDate" to mapOf("y" to due.y, "m" to due.m, "d" to due.d))
         }
     }
