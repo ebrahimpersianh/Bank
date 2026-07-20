@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
@@ -83,7 +84,10 @@ fun LoginScreen(
 
     // پس‌زمینه‌ی صریح رو تمِ فعلی (قبلاً نداشت، پس رنگِ زمینه‌ی خودِ ویندو - که تیره‌ست - از زیرش رد
     // می‌شد و صفحه‌ی ورود همیشه مشکی دیده می‌شد، حتی تو تمِ روشن).
-    Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+    // statusBarsPadding: قبلاً نبود، پس فلشِ بازگشت (align TopStart) دقیقاً زیرِ نوارِ وضعیت/آنتن
+    // گوشی می‌رفت (خواسته‌ی کاربر: «فلش عقب می‌ره تو آنتن»، «بالای صفحه رو بیار پایین‌تر») - چون
+    // MainActivity با enableEdgeToEdge محتوا رو زیرِ نوارِ وضعیت هم می‌کشه، بدونِ این پدینگ صریح.
+    Box(modifier = Modifier.fillMaxSize().background(AppSurface).statusBarsPadding()) {
         if (onDismiss != null) {
             IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopStart)) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")

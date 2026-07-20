@@ -207,11 +207,17 @@ class MainActivity : FragmentActivity() {
  * کرده باشه (پیش‌فرض خاموشه، هیچ‌کس رفتار قبلی رو نمی‌بینه) - رجوع کن به [AppLockViewModel].
  */
 @Composable
-private fun AppRoot(authViewModel: AuthViewModel = hiltViewModel(), appLockViewModel: AppLockViewModel = hiltViewModel()) {
-    // اینتروِ دوناتی (پورت اسپلشِ اپ وب) - یه‌بار در هر بار باز شدن اپ، قبل از همه‌چیز.
+private fun AppRoot(
+    authViewModel: AuthViewModel = hiltViewModel(),
+    appLockViewModel: AppLockViewModel = hiltViewModel(),
+    themeViewModel: ThemeViewModel = hiltViewModel(),
+) {
+    // اینتروِ دوناتی (پورت اسپلشِ اپ وب) - یه‌بار در هر بار باز شدن اپ، قبل از همه‌چیز. رنگِ زمینه‌ش
+    // با دارک/لایت‌مودِ فعلی هماهنگه (خواسته‌ی کاربر) - برای همین themeMode هم اینجا لازمه.
     var introDone by remember { mutableStateOf(false) }
     if (!introDone) {
-        SplashIntroScreen(onDone = { introDone = true })
+        val themeMode by themeViewModel.themeMode.collectAsState()
+        SplashIntroScreen(isDarkTheme = themeMode == ThemeMode.DARK, onDone = { introDone = true })
         return
     }
 

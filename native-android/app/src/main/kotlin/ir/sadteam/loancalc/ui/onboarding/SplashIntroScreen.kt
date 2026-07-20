@@ -38,27 +38,39 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
+import kotlin.math.sin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// رنگ‌های عینِ اسپلشِ اپ وب (#splash تو www/index.html) - عمداً مستقل از تم روشن/تیره، همیشه تیره.
-private val SplashBg = Color(0xFF0D1321)
+// رنگ‌های عینِ اسپلشِ اپ وب (#splash تو www/index.html)، حالا به‌جز پس‌زمینه با تم هماهنگ (خواسته‌ی
+// کاربر: «اسپلش سفید و مشکی باشه بنا به دارک‌مود تغییر کنه» - قبلاً همیشه تیره بود، مستقل از تم).
+private val SplashBgDark = Color(0xFF0D1321)
+private val SplashBgLight = Color(0xFFFFFFFF)
 private val RingBase = Color(0xFF1D2A46)
 private val RingGold = Color(0xFFFFB020) // هم‌رنگِ AppAccent جدید (طلایی پررنگ‌تر)
 private val RingTeal = Color(0xFF00C2D1) // هم‌رنگِ AppPrimary جدید (سبزآبی، نه سبزِ قبلی)
-private val SplashName = Color(0xFFEEF1F8)
-private val SplashSub = Color(0xFF4A5570)
+private val FireCore = Color(0xFFFF5A1F) // هسته‌ی گرمِ نارنجی/قرمز برای حسِ «آتیشِ روشن»
+private val SplashNameDark = Color(0xFFEEF1F8)
+private val SplashNameLight = Color(0xFF1A2033)
+private val SplashSubDark = Color(0xFF4A5570)
+private val SplashSubLight = Color(0xFF8D96AC)
 
 /**
- * اینتروِ باز شدن اپ - پورت دقیق اسپلشِ اپ وب (`#splash` تو www/index.html): زمینه‌ی تیره، یه حلقه‌ی
- * دونات (پایه‌ی تیره + کمانِ طلایی ۳۰٪ + کمانِ سبز ۷۰٪، عین نمودار دونات وام)، اسم «وام من»، سه نقطه‌ی
- * چشمک‌زن و «Powered By Sad Team». بعد از ~۱.۸ ثانیه [onDone] صدا زده می‌شه. قبلاً اپ بومی به‌جاش فقط
- * آیکونِ ماشین‌حساب (اسپلشِ سیستمی) رو نشون می‌داد؛ کاربر همین دوناتِ وب رو می‌خواست.
- * خواسته‌ی بعدی کاربر: چرخش بیشتر (دو دور کامل، نه یه دور) + یه هالهٔ «بازتاب نور» دورِ حلقه که
- * هم‌زمان با خودِ حلقه می‌چرخه (نه فقط چرخشِ خودِ رنگ‌ها) - رجوع کن به lightSweep پایین.
+ * اینتروِ باز شدن اپ - پورت دقیق اسپلشِ اپ وب (`#splash` تو www/index.html): زمینه‌ی هماهنگ با تم، یه
+ * حلقه‌ی دونات (پایه‌ی تیره + کمانِ طلایی ۳۰٪ + کمانِ سبز ۷۰٪، عین نمودار دونات وام)، اسم «وام من»، سه
+ * نقطه‌ی چشمک‌زن و «Powered By Sad Team». بعد از ~۱.۸ ثانیه [onDone] صدا زده می‌شه.
+ *
+ * خواسته‌ی آخرِ کاربر (این دور): حلقه‌ی بازتابِ نورِ دورِ دونات (که قبلاً اینجا بود) حذف شد - فقط
+ * خودِ «یک حلقه‌ی بسته» (دونات) می‌مونه؛ به‌جاش هاله‌ی پشتِ حلقه بزرگ‌تر و گرم‌تر شد تا حسِ «آتیشِ
+ * روشن» بده (هسته‌ی نارنجی/قرمز [FireCore] + طلایی، با یه لایه‌ی سایه‌ی تیره‌ی افتاده‌ی پشتش)، و
+ * هم‌زمان با چرخشِ [spin] یه تکونِ ریزِ نفس‌مانند (wobbleScale، مستقیم مشتق از خودِ spin.value، نه یه
+ * انیمیشنِ جدا) می‌خوره - نه یه‌ذره پرت از حلقه، عینِ شعله‌ای که با چرخش می‌لرزه.
  */
 @Composable
-fun SplashIntroScreen(onDone: () -> Unit) {
+fun SplashIntroScreen(isDarkTheme: Boolean, onDone: () -> Unit) {
+    val splashBg = if (isDarkTheme) SplashBgDark else SplashBgLight
+    val splashName = if (isDarkTheme) SplashNameDark else SplashNameLight
+    val splashSub = if (isDarkTheme) SplashSubDark else SplashSubLight
     val pop = remember { Animatable(0.75f) }
     LaunchedEffect(Unit) {
         pop.animateTo(1f, animationSpec = tween(800, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
@@ -87,86 +99,77 @@ fun SplashIntroScreen(onDone: () -> Unit) {
         }
     }
 
+    // تکونِ نفس‌مانندِ هاله (خواسته‌ی کاربر: «هم‌زمان با چرخش یه تکونی بخوره») - مستقیم از رو
+    // spin.value مشتق می‌شه (نه یه Animatable جدا)، پس دقیقاً هم‌زمانِ خودِ چرخشِ حلقه‌ست: تا وقتی
+    // spin در حال چرخیدنه هاله هم می‌لرزه، وقتی چرخش می‌ایسته لرزش هم می‌ایسته.
+    val wobbleScale = 1f + 0.05f * sin(Math.toRadians(spin.value * 3.0)).toFloat()
+
     Box(
-        modifier = Modifier.fillMaxSize().background(SplashBg),
+        modifier = Modifier.fillMaxSize().background(splashBg),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             // قبلاً هاله‌ی نور و حلقه‌ی اصلی هرکدوم مستقیم زیرِ Box بیرونی بودن، پس رو کلِ صفحه
             // (با متن/نقطه‌های پایینش) وسط‌چین می‌شدن، نه رو خودِ حلقه - همین باعث می‌شد هاله و
-            // حلقه هم‌مرکز نباشن (باگی که کاربر با اسکرین‌شات نشون داد). حالا هرسه‌تا (هاله‌ی محو،
-            // هاله‌ی بازتابِ نور، حلقه‌ی اصلی) تو یه Box جدا و هم‌مرکز کنار همدیگه‌ان.
+            // حلقه هم‌مرکز نباشن (باگی که کاربر با اسکرین‌شات نشون داد). حالا همه‌شون تو یه Box
+            // جدا و هم‌مرکز کنار همدیگه‌ان.
             Box(contentAlignment = Alignment.Center) {
-                // هاله‌ی بیرونیِ گرم (طلایی/کهربایی) - الهام از پرتالِ Doctor Strange: یه لایه‌ی
-                // نورِ گرمِ پخش‌شده و بزرگ‌تر از هاله‌ی سبزآبیِ داخلی، طوری که لبه‌ی بیرونی حلقه
-                // بازتابِ نورِ طلایی داشته باشه، نه فقط سبزآبیِ یکدست.
+                // سایه‌ی افتاده‌ی پشتِ آتیش (خواسته‌ی کاربر: «سایه‌اش افتاده پشت») - یه هاله‌ی تیره‌ی
+                // بزرگ، کمی به پایین آفست‌شده، طوری که انگار نورِ آتیش از بالا می‌تابه و سایه‌ش پشتِ
+                // حلقه می‌افته.
                 Box(
                     modifier = Modifier
-                        .size(300.dp)
+                        .size(360.dp)
+                        .offset(y = 20.dp)
+                        .scale(wobbleScale)
                         .clip(CircleShape)
                         .background(
                             Brush.radialGradient(
-                                colors = listOf(RingGold.copy(alpha = 0.20f), Color.Transparent),
+                                colors = listOf(Color.Black.copy(alpha = 0.30f), Color.Transparent),
                             ),
                         ),
                 )
-                // هاله‌ی محو پشتِ حلقه (پورت .glow)
+                // هاله‌ی بیرونیِ آتیش - هسته‌ی گرمِ نارنجی/قرمز (FireCore) که به طلایی محو می‌شه،
+                // بزرگ‌تر از قبل (خواسته‌ی کاربر: «بزرگ هم باشه») تا حسِ «آتیشِ روشن» بده.
                 Box(
                     modifier = Modifier
-                        .size(230.dp)
+                        .size(400.dp)
+                        .scale(wobbleScale)
                         .clip(CircleShape)
                         .background(
                             Brush.radialGradient(
-                                colors = listOf(RingTeal.copy(alpha = 0.16f), Color.Transparent),
+                                colors = listOf(
+                                    FireCore.copy(alpha = 0.26f),
+                                    RingGold.copy(alpha = 0.20f),
+                                    Color.Transparent,
+                                ),
                             ),
                         ),
                 )
-
-                // هالهٔ «بازتاب نور» دورِ حلقه: یه حلقه‌ی نازک‌تر و بزرگ‌تر از خودِ دونات، دقیقاً
-                // هم‌مرکز باهاش، با یه sweepGradient که بیشترش شفافه و فقط یه تکه‌ش روشنه - چون
-                // همون spin.value رو (هم‌زمان با چرخشِ خودِ حلقه) می‌گیره، انگار نور داره دورِ حلقه
-                // می‌چرخه و ازش بازتاب می‌گیره، نه یه قوسِ جدا و بی‌ربط.
-                Canvas(
+                // هاله‌ی میانیِ گرم‌تر و فشرده‌تر، نزدیک‌تر به خودِ حلقه
+                Box(
                     modifier = Modifier
-                        .size(150.dp)
-                        .scale(pop.value)
-                        .graphicsLayer { rotationZ = spin.value },
-                ) {
-                    val stroke = 3.dp.toPx()
-                    val inset = stroke / 2f
-                    val sweepColors = listOf(
-                        Color.Transparent,
-                        Color.Transparent,
-                        Color.Transparent,
-                        RingGold.copy(alpha = 0.85f),
-                        Color.White.copy(alpha = 0.95f),
-                        RingGold.copy(alpha = 0.85f),
-                        Color.Transparent,
-                        Color.Transparent,
-                    )
-                    // یه لایه‌ی پهن‌تر و کم‌رنگ‌تر پشتِ خودِ نورِ تیز، برای حسِ «درخشش/بلور» - مثل
-                    // نورِ لبه‌ی پرتال که پخش می‌شه، نه یه خط تیزِ تنها.
-                    drawArc(
-                        brush = Brush.sweepGradient(
-                            colors = sweepColors.map { it.copy(alpha = it.alpha * 0.45f) },
+                        .size(270.dp)
+                        .scale(wobbleScale)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(RingGold.copy(alpha = 0.30f), Color.Transparent),
+                            ),
                         ),
-                        startAngle = 0f,
-                        sweepAngle = 360f,
-                        useCenter = false,
-                        topLeft = Offset(inset, inset),
-                        size = Size(size.width - stroke, size.height - stroke),
-                        style = Stroke(width = stroke * 3.2f, cap = StrokeCap.Round),
-                    )
-                    drawArc(
-                        brush = Brush.sweepGradient(colors = sweepColors),
-                        startAngle = 0f,
-                        sweepAngle = 360f,
-                        useCenter = false,
-                        topLeft = Offset(inset, inset),
-                        size = Size(size.width - stroke, size.height - stroke),
-                        style = Stroke(width = stroke, cap = StrokeCap.Round),
-                    )
-                }
+                )
+                // هاله‌ی محو سبزآبی چسبیده به خودِ حلقه (پورت .glow) - برای این‌که رنگِ برندِ اپ هم
+                // تو اسپلش بمونه، نه فقط گرم/آتیشی.
+                Box(
+                    modifier = Modifier
+                        .size(190.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(RingTeal.copy(alpha = 0.18f), Color.Transparent),
+                            ),
+                        ),
+                )
 
                 Canvas(
                     modifier = Modifier
@@ -213,7 +216,7 @@ fun SplashIntroScreen(onDone: () -> Unit) {
 
             Text(
                 "وام من",
-                color = SplashName,
+                color = splashName,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.ExtraBold,
                 modifier = Modifier.padding(top = 20.dp),
@@ -224,7 +227,7 @@ fun SplashIntroScreen(onDone: () -> Unit) {
 
         Text(
             "Powered By SadTeam",
-            color = SplashSub,
+            color = splashSub,
             fontSize = 10.5.sp,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
