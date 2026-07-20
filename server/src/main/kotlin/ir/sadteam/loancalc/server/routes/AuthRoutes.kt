@@ -21,7 +21,7 @@ import ir.sadteam.loancalc.server.requireAuth
 import ir.sadteam.loancalc.server.sendOtpSms
 import ir.sadteam.loancalc.server.signToken
 import ir.sadteam.loancalc.server.toUserRow
-import ir.sadteam.loancalc.server.trialDaysLeft
+import ir.sadteam.loancalc.server.trialDaysLeftIfApplicable
 import kotlinx.serialization.Serializable
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -56,7 +56,13 @@ private data class RequestOtpBody(val phone: String? = null)
 private data class VerifyOtpBody(val phone: String? = null, val code: String? = null)
 
 @Serializable
-private data class VerifyOtpResponse(val token: String, val phone: String, val subscribed: Boolean, val trialDaysLeft: Int?)
+private data class VerifyOtpResponse(
+    val token: String,
+    val phone: String,
+    val subscribed: Boolean,
+    val subscribedUntil: String?,
+    val trialDaysLeft: Int?,
+)
 
 @Serializable
 private data class MeResponse(val phone: String, val subscribed: Boolean, val subscribedUntil: String?, val trialDaysLeft: Int?)
@@ -164,7 +170,8 @@ fun Route.authRoutes() {
                     token = token,
                     phone = user.phone,
                     subscribed = isSubscribed(user),
-                    trialDaysLeft = trialDaysLeft(user.createdAt)
+                    subscribedUntil = user.subscribedUntil,
+                    trialDaysLeft = trialDaysLeftIfApplicable(user)
                 )
             )
         }
@@ -188,7 +195,7 @@ fun Route.authRoutes() {
                     phone = user.phone,
                     subscribed = isSubscribed(user),
                     subscribedUntil = user.subscribedUntil,
-                    trialDaysLeft = trialDaysLeft(user.createdAt)
+                    trialDaysLeft = trialDaysLeftIfApplicable(user)
                 )
             )
         }

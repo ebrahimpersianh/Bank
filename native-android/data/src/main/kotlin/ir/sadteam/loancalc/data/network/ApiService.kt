@@ -85,7 +85,13 @@ data class RequestOtpRequest(val phone: String)
 
 data class VerifyOtpRequest(val phone: String, val code: String)
 
-data class VerifyOtpResponse(val token: String, val phone: String, val subscribed: Boolean, val trialDaysLeft: Int? = null)
+data class VerifyOtpResponse(
+    val token: String,
+    val phone: String,
+    val subscribed: Boolean,
+    val subscribedUntil: String? = null,
+    val trialDaysLeft: Int? = null,
+)
 
 /** [trialDaysLeft] چند روز از دوره‌ی آزمایشیِ ۷روزه‌ی رایگان مونده - عددِ نهایی، از قبل سمت سرور
  * (SubscriptionStatus.trialDaysLeft، کلید‌خورده به created_at شماره‌موبایل) با ساعتِ خودِ سرور

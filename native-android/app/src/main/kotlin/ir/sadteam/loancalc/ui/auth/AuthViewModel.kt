@@ -52,6 +52,11 @@ class AuthViewModel @Inject constructor(
     val trialDaysLeft: StateFlow<Int?> = authPrefs.trialDaysLeft
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** null یعنی یا مشترک نیست یا اشتراکش دستی/دائمیه (نه یه خریدِ زمان‌دار) - رجوع کن به
+     * کامنتِ AuthPrefs.subscribedUntil. */
+    val subscribedUntil: StateFlow<String?> = authPrefs.subscribedUntil
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val phone: StateFlow<String?> = authPrefs.phone
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 

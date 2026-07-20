@@ -50,3 +50,19 @@ fun isSubscribed(user: UserRow?): Boolean {
     if (trialEnds != null && trialEnds > System.currentTimeMillis()) return true
     return false
 }
+
+/** باگِ رفع‌شده: [trialDaysLeft] قبلاً بی‌قید و شرط فقط از رو created_at حساب می‌شد و به کلاینت
+ * می‌رفت - یعنی حتی یه حسابِ **دائمیِ** دستی (subscribed=1، مثلِ حسابِ تست/شخصیِ توسعه‌دهنده) که
+ * تصادفاً تو ۷ روزِ اولِ ثبت‌نامش بود، همچنان بجِ گمراه‌کننده‌ی «دوره‌ی آزمایشی: X روز مانده» می‌گرفت
+ * (گزارشِ کاربر: «حساب دائمی درست نیست، بازم اشتباه می‌زنه»). این تابع فقط وقتی trialDaysLeft
+ * واقعاً *دلیلِ* مشترک‌بودنه (نه یه اشتراکِ دستی یا خریدِ واقعیِ زمان‌دار) عددی برمی‌گردونه؛ کلاینت
+ * (SettingsScreen) از رو null-بودنش بجِ آزمایشی رو نشون نمی‌ده. */
+fun trialDaysLeftIfApplicable(user: UserRow): Int? {
+    if (user.subscribed) return null
+    val until = user.subscribedUntil
+    if (until != null) {
+        val untilMs = runCatching { Instant.parse(until).toEpochMilli() }.getOrNull()
+        if (untilMs != null && untilMs > System.currentTimeMillis()) return null
+    }
+    return trialDaysLeft(user.createdAt)
+}

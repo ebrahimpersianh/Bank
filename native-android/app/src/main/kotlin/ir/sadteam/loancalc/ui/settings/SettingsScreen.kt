@@ -211,6 +211,7 @@ private fun SettingsMainContent(
     // بالا کشیده شد (قبلاً فقط داخلِ شاخه‌ی LOGGED_IN تعریف می‌شد) چون کارتِ «خرید اشتراک» پایین‌تر
     // هم بهش نیاز داره - رجوع کن به کامنتِ همون‌جا.
     val trialDaysLeft by authViewModel.trialDaysLeft.collectAsState()
+    val subscribedUntil by authViewModel.subscribedUntil.collectAsState()
     val fontScale by themeViewModel.fontScale.collectAsState()
     val notificationsEnabled by notificationsViewModel.enabled.collectAsState()
     val autoBackupEnabled by autoBackupViewModel.enabled.collectAsState()
@@ -299,6 +300,12 @@ private fun SettingsMainContent(
                         // مستقیم از سرور میاد (با ساعتِ سرور حساب شده)، نه از یه محاسبه‌ی محلی روی
                         // ساعتِ گوشی - وگرنه دستکاری‌کردنِ تاریخِ گوشی می‌تونست این نمایش رو
                         // (نه خودِ دسترسیِ واقعی، که همیشه سمت سرور تصمیم‌گیری می‌شه) اشتباه نشون بده.
+                        // باگِ رفع‌شده: قبلاً trialDaysLeft بی‌قید و شرط از سرور می‌اومد، پس حتی یه
+                        // حسابِ **دائمیِ** دستی (subscribed=1 رو دیتابیس، برای پشتیبانی/تست) که
+                        // تصادفاً تو ۷ روزِ اولِ ثبت‌نامش بود، همچنان همین بجِ «آزمایشی» گمراه‌کننده
+                        // رو می‌گرفت. سرور الان فقط وقتی trialDaysLeft واقعاً دلیلِ مشترک‌بودنه
+                        // (نه دستی/دائمی، نه خریدِ زمان‌دار) عدد می‌ده - رجوع کن به
+                        // trialDaysLeftIfApplicable سمتِ سرور.
                         if (subscribed && trialDaysLeft != null && trialDaysLeft in 1..7) {
                             // GoldSheenBox: برقِ گذرای طلایی رو بجِ آزمایشی (رجوع کن به GoldSheen.kt).
                             GoldSheenBox(
@@ -307,6 +314,24 @@ private fun SettingsMainContent(
                             ) {
                                 Text(
                                     "دوره‌ی آزمایشی رایگان: ${toFa(trialDaysLeft.toString())} روز مانده",
+                                    color = AppText,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier
+                                        .background(AppAccent.copy(alpha = 0.24f), RoundedCornerShape(8.dp))
+                                        .border(1.dp, AppAccent.copy(alpha = 0.85f), RoundedCornerShape(8.dp))
+                                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                                )
+                            }
+                        } else if (subscribed && subscribedUntil == null) {
+                            // subscribed=true ولی نه از دوره‌ی آزمایشی نه از یه خریدِ زمان‌دار (که
+                            // subscribedUntil رو پر می‌کرد) - یعنی همون فلگِ دستیِ subscribed=1 رو
+                            // دیتابیس (حسابِ تست/شخصیِ توسعه‌دهنده)، واقعاً دائمیه.
+                            GoldSheenBox(
+                                modifier = Modifier.padding(top = 4.dp),
+                                cornerRadius = 8.dp,
+                            ) {
+                                Text(
+                                    "اشتراک دائمی",
                                     color = AppText,
                                     fontSize = 11.sp,
                                     modifier = Modifier

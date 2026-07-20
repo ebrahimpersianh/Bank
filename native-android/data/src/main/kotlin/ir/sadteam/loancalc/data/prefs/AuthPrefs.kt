@@ -23,6 +23,7 @@ class AuthPrefs(private val context: Context) {
         val GUEST_MODE = booleanPreferencesKey("guest_mode")
         val BENEFITS_SEEN = booleanPreferencesKey("benefits_seen")
         val TRIAL_DAYS_LEFT = intPreferencesKey("trial_days_left")
+        val SUBSCRIBED_UNTIL = stringPreferencesKey("subscribed_until")
     }
 
     val authToken: Flow<String?> = context.authDataStore.data.map { it[Keys.TOKEN] }
@@ -43,16 +44,35 @@ class AuthPrefs(private val context: Context) {
         }
     }
 
+    /** تاریخِ انقضای اشتراکِ زمان‌دار (از سرور، MeResponse/VerifyOtpResponse.subscribedUntil) -
+     * null یعنی یا اصلاً مشترک نیست، یا مشترکه ولی **دستی/دائمی**ه (نه یه خریدِ زمان‌دار) - همین
+     * null-بودن‌شه که SettingsScreen رو ازش بجِ «اشتراک دائمی» می‌سازه (رجوع کن به کامنتِ
+     * trialDaysLeftIfApplicable سمتِ سرور برای دلیلِ این تفکیک). */
+    val subscribedUntil: Flow<String?> = context.authDataStore.data.map { it[Keys.SUBSCRIBED_UNTIL] }
+
+    suspend fun setSubscribedUntil(value: String?) {
+        context.authDataStore.edit { prefs ->
+            if (value != null) prefs[Keys.SUBSCRIBED_UNTIL] = value else prefs.remove(Keys.SUBSCRIBED_UNTIL)
+        }
+    }
+
     /** پورت صفحه‌ی خوش‌آمد امکانات (رایگان/اشتراکی) اپ رقیب (VAMMAN) - فقط یه‌بار تو کل عمر نصب
      * نشون داده می‌شه، درست بعد از گیت مجوز و قبل از گیت ورود/مهمان. */
     val benefitsSeen: Flow<Boolean> = context.authDataStore.data.map { it[Keys.BENEFITS_SEEN] ?: false }
 
-    suspend fun saveSession(token: String, phone: String, subscribed: Boolean, trialDaysLeft: Int? = null) {
+    suspend fun saveSession(
+        token: String,
+        phone: String,
+        subscribed: Boolean,
+        trialDaysLeft: Int? = null,
+        subscribedUntil: String? = null,
+    ) {
         context.authDataStore.edit { prefs ->
             prefs[Keys.TOKEN] = token
             prefs[Keys.PHONE] = phone
             prefs[Keys.SUBSCRIBED] = subscribed
             if (trialDaysLeft != null) prefs[Keys.TRIAL_DAYS_LEFT] = trialDaysLeft else prefs.remove(Keys.TRIAL_DAYS_LEFT)
+            if (subscribedUntil != null) prefs[Keys.SUBSCRIBED_UNTIL] = subscribedUntil else prefs.remove(Keys.SUBSCRIBED_UNTIL)
         }
     }
 
