@@ -48,6 +48,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,7 +56,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -124,6 +128,11 @@ fun SettingsScreen(
     appLockViewModel: AppLockViewModel = hiltViewModel(),
     autoBackupViewModel: AutoBackupViewModel = hiltViewModel(),
     hapticsViewModel: HapticsViewModel = hiltViewModel(),
+    // برای تورِ راهنمای اولین ورود (AppTourOverlay تو MainActivity.kt، قدم‌های SETTINGS_CALENDAR/
+    // SETTINGS_CHEQUE): وقتی non-null باشه، جستجوی همین پنل خودکار رو همین عنوان فیلتر می‌شه (دقیقاً
+    // مثلِ تایپ‌کردنِ کاربر تو «جستجو تو تنظیمات») تا ردیفِ هدف بدونِ نیاز به اسکرول پیدا بشه.
+    tourHighlightQuery: String? = null,
+    onTourRowPositioned: (Rect) -> Unit = {},
 ) {
     var showLoginPrompt by remember { mutableStateOf(false) }
     var showFinancialCalendar by remember { mutableStateOf(false) }
@@ -182,6 +191,8 @@ fun SettingsScreen(
                 onShowSubscription = { showSubscription = true },
                 onShowHistory = { showHistory = true },
                 onShowReminderSettings = { showReminderSettings = true },
+                tourHighlightQuery = tourHighlightQuery,
+                onTourRowPositioned = onTourRowPositioned,
             )
         }
     }
@@ -204,6 +215,8 @@ private fun SettingsMainContent(
     onShowSubscription: () -> Unit,
     onShowHistory: () -> Unit,
     onShowReminderSettings: () -> Unit,
+    tourHighlightQuery: String? = null,
+    onTourRowPositioned: (Rect) -> Unit = {},
 ) {
     val gateState by authViewModel.gateState.collectAsState()
     val phone by authViewModel.phone.collectAsState()
@@ -222,7 +235,12 @@ private fun SettingsMainContent(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) notificationsViewModel.enable() }
-    var searchQuery by remember { mutableStateOf("") }
+    var searchQuery by remember { mutableStateOf(tourHighlightQuery ?: "") }
+    // اگه تور یه قدمِ جدید رو پنلِ تنظیمات فعال کرد (مثلاً از SETTINGS_CALENDAR به SETTINGS_CHEQUE)،
+    // جستجو رو خودکار با همون فیلترِ جدید هم‌قدم کن - دقیقاً همون کاری که خودِ کاربر با تایپ می‌کرد.
+    LaunchedEffect(tourHighlightQuery) {
+        if (tourHighlightQuery != null) searchQuery = tourHighlightQuery
+    }
     fun matches(vararg titles: String) =
         searchQuery.isBlank() || titles.any { it.contains(searchQuery.trim()) }
     val banner = rememberInAppBanner()
@@ -668,7 +686,13 @@ private fun SettingsMainContent(
             }
 
             if (matches("تقویم مالی")) {
-                AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                AppCard(
+                    modifier = Modifier
+                        .padding(top = 10.dp)
+                        // برای قدمِ SETTINGS_CALENDARِ AppTourOverlay - رجوع کن به
+                        // onTourRowPositioned/tourHighlightQuery بالا.
+                        .onGloballyPositioned { onTourRowPositioned(it.boundsInRoot()) },
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -734,7 +758,13 @@ private fun SettingsMainContent(
             }
 
             if (matches("امور چک")) {
-                AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                AppCard(
+                    modifier = Modifier
+                        .padding(top = 10.dp)
+                        // برای قدمِ SETTINGS_CHEQUEِ AppTourOverlay - رجوع کن به
+                        // onTourRowPositioned/tourHighlightQuery بالا.
+                        .onGloballyPositioned { onTourRowPositioned(it.boundsInRoot()) },
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,

@@ -166,8 +166,19 @@ private enum class TourTarget(val title: String, val hint: String) {
     ),
     SETTINGS(
         "تنظیمات",
-        "از اینجا به یادآوریِ سررسید، پشتیبان‌گیری، تقویمِ مالی، آمار و گزارشات، امورِ چک و حساب‌های " +
-            "بانکی هم دسترسی داری.",
+        "از اینجا به یادآوریِ سررسید، پشتیبان‌گیری، آمار و گزارشات، امنیت و حساب‌های بانکی هم " +
+            "دسترسی داری.",
+    ),
+    // این دو قدم، برخلافِ بقیه، پنلِ تنظیمات رو خودکار باز می‌کنن و با فیلترِ جستجوی خودِ همون پنل
+    // (matches() تو SettingsScreen.kt) دقیقاً ردیفِ خودشون رو نشون می‌دن - رجوع کن به
+    // tourHighlightQuery تو SettingsScreen.kt.
+    SETTINGS_CALENDAR(
+        "تقویم مالی",
+        "همینجا تو تنظیماته - سررسیدِ اقساطِ همه‌ی وام‌هات رو رو یه تقویمِ جلالی یه‌جا ببین.",
+    ),
+    SETTINGS_CHEQUE(
+        "امور چک",
+        "این‌م همینجا تو تنظیماته - چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن.",
     ),
     BANK_LOAN(
         "وام بانکی",
@@ -357,6 +368,10 @@ private fun LoanCalcApp(
     appUpdateViewModel: AppUpdateViewModel = hiltViewModel(),
 ) {
     var showSettings by remember { mutableStateOf(false) }
+    // قدمِ فعلیِ تور (اگه تور در حالِ اجراست) - AppTourOverlay.onStepChanged پرش می‌کنه؛ برای
+    // قدم‌های SETTINGS_CALENDAR/SETTINGS_CHEQUE لازمه بدونیم کدوم ردیفِ پنلِ تنظیمات رو باید
+    // فیلتر/اسپاتلایت کنیم - رجوع کن به SettingsScreen(tourHighlightQuery = ...) پایین‌تر.
+    var currentTourTarget by remember { mutableStateOf<TourTarget?>(null) }
     val updateUrl by appUpdateViewModel.updateUrl.collectAsState()
 
     val themeMode by themeViewModel.themeMode.collectAsState()
@@ -562,7 +577,15 @@ private fun LoanCalcApp(
                 .align(Alignment.CenterEnd),
         ) {
             Surface(color = AppSurface, modifier = Modifier.fillMaxSize()) {
-                SettingsScreen(onBack = { showSettings = false })
+                SettingsScreen(
+                    onBack = { showSettings = false },
+                    tourHighlightQuery = when (currentTourTarget) {
+                        TourTarget.SETTINGS_CALENDAR -> "تقویم مالی"
+                        TourTarget.SETTINGS_CHEQUE -> "امور چک"
+                        else -> null
+                    },
+                    onTourRowPositioned = { rect -> currentTourTarget?.let { tourBounds[it] = rect } },
+                )
             }
         }
 
@@ -640,20 +663,31 @@ private fun LoanCalcApp(
                 steps = TourTarget.entries.toList(),
                 bounds = tourBounds,
                 onStepChanged = { target ->
-                    // قدم‌هایی که رو یه تبِ خاص زندگی می‌کنن (مثلاً افزودنِ دستی که فقط رو تبِ
-                    // «وام‌های من» وجود داره) خودکار به همون تب می‌رن - وگرنه المانِ هدف اصلاً
-                    // رندر/قابل‌اندازه‌گیری نیست.
-                    target.asBottomTab()?.let { tab ->
-                        if (currentRoute != tab.route) {
-                            navController.navigate(tab.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
+                    currentTourTarget = target
+                    if (target == TourTarget.SETTINGS_CALENDAR || target == TourTarget.SETTINGS_CHEQUE) {
+                        // این دو قدم رو خودِ پنلِ تنظیمات زندگی می‌کنن - خودکار بازش کن، وگرنه ردیفِ
+                        // هدف اصلاً رندر نمی‌شه.
+                        showSettings = true
+                    } else {
+                        showSettings = false
+                        // قدم‌هایی که رو یه تبِ خاص زندگی می‌کنن (مثلاً افزودنِ دستی که فقط رو تبِ
+                        // «وام‌های من» وجود داره) خودکار به همون تب می‌رن - وگرنه المانِ هدف اصلاً
+                        // رندر/قابل‌اندازه‌گیری نیست.
+                        target.asBottomTab()?.let { tab ->
+                            if (currentRoute != tab.route) {
+                                navController.navigate(tab.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
                         }
                     }
                 },
-                onDone = { authViewModel.markTourSeen() },
+                onDone = {
+                    showSettings = false
+                    authViewModel.markTourSeen()
+                },
             )
         }
     }
