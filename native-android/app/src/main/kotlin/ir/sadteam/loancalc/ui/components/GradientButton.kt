@@ -57,6 +57,8 @@ import ir.sadteam.loancalc.ui.theme.AppText
  * می‌شد. الان با `Modifier.onSizeChanged` عرضِ واقعیِ دکمه اندازه‌گیری می‌شه و بازه‌ی حرکت طوری حساب
  * می‌شه که نوار همیشه **کاملاً بیرون از لبه‌ی راست شروع** و **کاملاً بیرون از لبه‌ی چپ تموم** بشه (و
  * برعکس) - یعنی لحظه‌ی ریست‌شدنِ چرخه دقیقاً وقتیه که نوار نامرئیه، پس هیچ پرشی حس نمی‌شه.
+ * آلفای نوار هم به‌خواستِ کاربر («خیلی ظریف باشه، انگار یک سایه‌ست») از ۰.۶ به ۰.۱۴ کم شد - دیگه یه
+ * نوارِ طلاییِ پررنگ نیست، فقط یه هایلایتِ ظریفِ عبوریه.
  */
 @Composable
 fun GradientButton(
@@ -109,7 +111,7 @@ fun GradientButton(
                         .fillMaxSize()
                         .background(
                             Brush.linearGradient(
-                                colors = listOf(Color.Transparent, AppAccent.copy(alpha = 0.6f), Color.Transparent),
+                                colors = listOf(Color.Transparent, AppAccent.copy(alpha = 0.14f), Color.Transparent),
                                 start = Offset(centerX - halfStreak, 0f),
                                 end = Offset(centerX + halfStreak, widthPx * 0.25f),
                             ),

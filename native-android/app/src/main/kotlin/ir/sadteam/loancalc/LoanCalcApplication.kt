@@ -11,6 +11,7 @@ import dagger.hilt.android.HiltAndroidApp
 import ir.sadteam.loancalc.crash.CrashReporter
 import ir.sadteam.loancalc.data.banks
 import ir.sadteam.loancalc.data.creditServices
+import ir.sadteam.loancalc.ui.auth.SmsRetrieverHash
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -25,6 +26,9 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         super.onCreate()
         crashReporter.install()
         preloadLogoAssets()
+        // برای هماهنگ‌کردنِ پترنِ پیامکِ OTP با SMS Retriever API - رجوع کن به کامنتِ
+        // SmsRetrieverHash.kt. فقط لاگ می‌کنه (Log.i)، هیچ اثرِ دیگه‌ای رو رفتارِ اپ نداره.
+        SmsRetrieverHash.logForDebugging(this)
     }
 
     // خواسته‌ی کاربر: لوگوهای بانک/خدمات اعتباری (assets/banks, assets/services - فایل‌های چندکیلوبایتی)
