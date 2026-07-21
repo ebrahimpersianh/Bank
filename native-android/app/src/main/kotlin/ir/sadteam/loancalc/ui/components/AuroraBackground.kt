@@ -41,10 +41,11 @@ fun AuroraBackground(modifier: Modifier = Modifier) {
     val primary = AppPrimary
     val accent = AppAccent
     val isDark = bg.luminance() < 0.5f
-    // نسخه‌ی اول (۰.۰۹/۰.۰۶ رو تمِ روشن) اون‌قدر محو بود که کاربر اصلاً متوجهش نشد؛ دورِ دوم هم
-    // «بیشتر بشه بد نیست» گفت - این مقادیر عمداً پررنگن؛ اگه یه‌وقت جیغ شد، همین دو خطه که کم بشه.
-    val primaryAlpha = if (isDark) 0.36f else 0.27f
-    val accentAlpha = if (isDark) 0.26f else 0.19f
+    // نسخه‌ی اول (۰.۰۹/۰.۰۶ رو تمِ روشن) اون‌قدر محو بود که کاربر اصلاً متوجهش نشد؛ دورِ دوم «بیشتر
+    // بشه بد نیست» گفت؛ دورِ سوم از بینِ ۴ سطحِ پیش‌نمایش‌شده تو یه HTML، پررنگ‌ترین (سطحِ ۴) انتخاب
+    // شد - اگه یه‌وقت جیغ شد، همین دو خطه که کم بشه.
+    val primaryAlpha = if (isDark) 0.85f else 0.64f
+    val accentAlpha = if (isDark) 0.68f else 0.50f
 
     val transition = rememberInfiniteTransition(label = "aurora")
     // یه دورِ کامل ~۱۲ ثانیه (دورِ دومِ بازخورد کاربر: ۲۲ثانیه هم هنوز «انگار حرکت نداره» بود) -
