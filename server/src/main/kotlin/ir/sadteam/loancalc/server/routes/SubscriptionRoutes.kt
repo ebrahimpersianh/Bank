@@ -30,6 +30,15 @@ private val TIER_DURATION_DAYS = mapOf(
     "unlimited_loans_1y" to 365
 )
 
+/* کدِ کوتاهِ پلن که تو دیتابیس (users.subscription_tier) ذخیره و به کلاینت برگردونده می‌شه - برای
+   نمایشِ دقیقِ نوعِ اشتراک تو تنظیمات («اشتراک یک‌ماهه»/«سه‌ماهه»/...)، به‌جای شناسه‌ی خامِ محصول. */
+private val PRODUCT_TIER_CODE = mapOf(
+    "unlimited_loans_1m" to "1m",
+    "unlimited_loans_3m" to "3m",
+    "unlimited_loans_6m" to "6m",
+    "unlimited_loans_1y" to "1y"
+)
+
 /* store رو نسخه‌های قدیمی‌ترِ اپ (قبل از اضافه‌شدنِ فلیورِ مایکت) اصلاً نمی‌فرستن - پیش‌فرضش
    cafebazaar می‌مونه که سازگار با رفتارِ قبلی بمونه. */
 @Serializable
@@ -98,8 +107,14 @@ fun Route.subscriptionRoutes() {
                 ?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0
             val base = if (currentExpiry > now) currentExpiry else now
             val newExpiry = Instant.ofEpochMilli(base + durationDays * 24L * 60 * 60 * 1000).toString()
+            val tierCode = PRODUCT_TIER_CODE[productId]
 
-            Db.withConnection { conn -> conn.execute("UPDATE users SET subscribed_until = ? WHERE id = ?", newExpiry, authed.uid) }
+            Db.withConnection { conn ->
+                conn.execute(
+                    "UPDATE users SET subscribed_until = ?, subscription_tier = ? WHERE id = ?",
+                    newExpiry, tierCode, authed.uid,
+                )
+            }
             call.respond(VerifyResponse(subscribedUntil = newExpiry))
         }
     }

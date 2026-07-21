@@ -5,6 +5,8 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -54,9 +56,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
@@ -457,34 +461,68 @@ fun LoanDetailScreen(
         }
 
         item {
-            // جعبه‌ی اقساط با ارتفاعِ ثابت (بدونِ هیچ انیمیشنِ تغییرِ ارتفاع - همون چیزی که باگِ
-            // قبلی رو ساخته بود) که همیشه ~۵ ردیف نشون می‌ده و خودش اسکرولِ داخلیِ مستقل داره؛
-            // خواسته‌ی کاربر: با وامِ ۱۲۰قسطی، برای رسیدن به یادآوری/تقویم/حذفِ زیرش مجبور نباشه از
-            // کنارِ همه‌ی ۱۲۰ ردیف رد بشه. با nested-scrollِ پیش‌فرضِ Compose، وقتی لیستِ داخلی به
-            // ته/سرش برسه و درگ ادامه پیدا کنه، خودش سرریز می‌شه به لیستِ بیرونی - این رایگانه.
-            // چیزی که رایگان نیست: یه swipeِ *سریع* (نه یه درگِ آهسته‌ی هدفمند) باید حتی وسطِ لیست
-            // هم بی‌معطلی از کلِ جعبه رد بشه - برای همین [installmentsFlingPassthrough] سرعتِ فلینگ
-            // رو تو onPreFling چک می‌کنه و اگه بالای آستانه بود، به‌جای فلینگِ لیستِ داخلی، مستقیم
-            // لیستِ بیرونی رو به آیتمِ بعد/قبل از جعبه می‌بره.
+            // جعبه‌ی اقساط - حالا «هوشمند»: کوچیک وقتی داری از کنارش رد می‌شی، ولی وقتی واقعاً بهش
+            // رسیدی (لبه‌ی بالاش نزدیکِ بالای صفحه‌ست) به‌آرومی تا نزدیکِ تمام‌صفحه بزرگ می‌شه تا
+            // چندتا ردیفِ بیشتر (به‌جای ۵ تا) هم‌زمان دیده بشن، و وقتی ازش دور می‌شی دوباره کوچیک
+            // می‌شه - خواسته‌ی کاربر: «میام روی اقساط، بزرگ تمام صفحه رو بگیره، گوشه‌ها کوچیک‌تر بشه».
+            //
+            // فرقِ کلیدی با نسخه‌ی باگ‌دارِ خیلی قبل (که برگردونده شده بود به حالتِ ساده‌ی ثابت):
+            // اونجا یه آستانه‌ی تکی داشت (بالاتر/پایین‌تر از یه نقطه = عوضِ حالت) که دقیقاً رو مرز
+            // می‌لرزید (رفت‌وبرگشتی) و چون خودِ اسکرول با انیمیشن هم‌زمان بود، محتوا زیرِ انگشت
+            // می‌پرید. اینجا: (۱) دو آستانه‌ی جدا برای ورود/خروج (هیسترزیس، نه یکی) که دیگه رو مرز
+            // نمی‌لرزه، (۲) عوضِ حالت با [snapshotFlow] فقط رو مقدارِ واقعیِ اسکرول واکنش نشون می‌ده
+            // (نه یه انیمیشنِ مستقلِ رقیب)، (۳) وقتی جعبه بزرگه، اسکرولِ سریعِ «رد شو» غیرفعاله (چون
+            // دیگه معنی نداره - کاربر دقیقاً اومده تو همین جعبه).
             val innerListState = rememberLazyListState()
+            var expanded by remember { mutableStateOf(false) }
+            LaunchedEffect(detailListState) {
+                snapshotFlow {
+                    detailListState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == 1 }?.offset
+                }.collect { offset ->
+                    expanded = when {
+                        offset == null -> false
+                        !expanded && offset <= 40 -> true
+                        expanded && offset >= 140 -> false
+                        else -> expanded
+                    }
+                }
+            }
+            // اولین بار که وامی رو باز می‌کنی، به‌جای شروع از قسطِ ۱، مستقیم می‌ره رو مرزِ آخرین
+            // قسطِ پرداخت‌شده (خواسته‌ی کاربر: «اگه ده تا رفتم، از اول نیاد، بیاد از رو ده»).
+            LaunchedEffect(rows) {
+                val firstUnpaid = rows.indexOfFirst { it["paid"] != true }
+                if (firstUnpaid > 0) innerListState.scrollToItem(firstUnpaid)
+            }
             val flingConnection = remember(detailListState) {
                 installmentsFlingPassthrough(
                     outerListState = detailListState,
                     scope = scope,
                     beforeBoxIndex = 0,
                     afterBoxIndex = 2,
+                    isExpanded = { expanded },
                 )
             }
+            val density = LocalDensity.current
+            val compactHeight = installmentRowHeight * 5 + 8.dp * 4
+            val viewportHeightPx = detailListState.layoutInfo.viewportEndOffset - detailListState.layoutInfo.viewportStartOffset
+            val expandedHeight = with(density) { (viewportHeightPx * 0.92f).toDp() }
+            val boxHeight by animateDpAsState(
+                targetValue = if (expanded) expandedHeight else compactHeight,
+                animationSpec = tween(280, easing = FastOutSlowInEasing),
+                label = "installmentsBoxHeight",
+            )
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
-                    .height(installmentRowHeight * 5 + 8.dp * 4)
+                    .height(boxHeight)
                     .nestedScroll(flingConnection),
             ) {
                 LazyColumn(
                     state = innerListState,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .lazyColumnScrollbar(innerListState, AppPrimary),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
@@ -601,8 +639,12 @@ private fun installmentsFlingPassthrough(
     scope: CoroutineScope,
     beforeBoxIndex: Int,
     afterBoxIndex: Int,
+    isExpanded: () -> Boolean,
 ): NestedScrollConnection = object : NestedScrollConnection {
     override suspend fun onPreFling(available: Velocity): Velocity {
+        // وقتی جعبه تمام‌صفحه‌ست، «رد شو»یِ سریع دیگه معنی نداره - کاربر دقیقاً همین‌جا می‌خواد
+        // بمونه و لیست رو مرور کنه؛ فلینگِ سریع باید عادی خودِ لیستِ داخلی رو اسکرول کنه.
+        if (isExpanded()) return Velocity.Zero
         if (kotlin.math.abs(available.y) < INSTALLMENTS_FLING_SKIP_VELOCITY) return Velocity.Zero
         val targetIndex = if (available.y < 0) afterBoxIndex else beforeBoxIndex
         scope.launch { outerListState.animateScrollToItem(targetIndex) }

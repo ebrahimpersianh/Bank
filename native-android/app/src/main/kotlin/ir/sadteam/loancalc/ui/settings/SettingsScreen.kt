@@ -212,6 +212,7 @@ private fun SettingsMainContent(
     // هم بهش نیاز داره - رجوع کن به کامنتِ همون‌جا.
     val trialDaysLeft by authViewModel.trialDaysLeft.collectAsState()
     val subscribedUntil by authViewModel.subscribedUntil.collectAsState()
+    val subscriptionTier by authViewModel.subscriptionTier.collectAsState()
     val fontScale by themeViewModel.fontScale.collectAsState()
     val notificationsEnabled by notificationsViewModel.enabled.collectAsState()
     val autoBackupEnabled by autoBackupViewModel.enabled.collectAsState()
@@ -288,8 +289,25 @@ private fun SettingsMainContent(
                 when (gateState) {
                     GateState.LOGGED_IN -> {
                         Text(toFa(phone ?: ""), color = AppText, fontSize = 15.sp)
+                        // خواسته‌ی کاربر: زیرِ شماره فقط نوعِ اشتراک (یک‌ماهه/سه‌ماهه/شش‌ماهه/یک‌ساله)
+                        // باشه، نه متنِ قبلیِ «مشترک — وام‌های من همگام‌سازی می‌شه». subscriptionTier
+                        // فقط برای خریدِ واقعیِ زمان‌دار پر می‌شه (سرور، رجوع کن به
+                        // SubscriptionRoutes.kt/PRODUCT_TIER_CODE)؛ برای دوره‌ی آزمایشی/اشتراکِ دستیِ
+                        // دائمی یا خریدِ قدیمی‌تر (قبل از این فیلد) که تیرش معلوم نیست، فقط «مشترک»
+                        // ساده نشون داده می‌شه - جزئیاتِ بیشترش رو بجِ آزمایشی/دائمیِ پایین‌تر می‌ده.
+                        val tierLabel = when (subscriptionTier) {
+                            "1m" -> "اشتراک یک‌ماهه"
+                            "3m" -> "اشتراک سه‌ماهه"
+                            "6m" -> "اشتراک شش‌ماهه"
+                            "1y" -> "اشتراک یک‌ساله"
+                            else -> null
+                        }
                         Text(
-                            if (subscribed) "مشترک — وام‌های من همگام‌سازی می‌شه" else "وارد حساب شدی",
+                            when {
+                                !subscribed -> "وارد حساب شدی"
+                                tierLabel != null -> tierLabel
+                                else -> "مشترک"
+                            },
                             color = AppMuted,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(top = 4.dp),

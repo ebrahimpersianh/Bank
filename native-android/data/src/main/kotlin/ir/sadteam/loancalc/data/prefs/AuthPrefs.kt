@@ -24,6 +24,7 @@ class AuthPrefs(private val context: Context) {
         val BENEFITS_SEEN = booleanPreferencesKey("benefits_seen")
         val TRIAL_DAYS_LEFT = intPreferencesKey("trial_days_left")
         val SUBSCRIBED_UNTIL = stringPreferencesKey("subscribed_until")
+        val SUBSCRIPTION_TIER = stringPreferencesKey("subscription_tier")
     }
 
     val authToken: Flow<String?> = context.authDataStore.data.map { it[Keys.TOKEN] }
@@ -56,6 +57,17 @@ class AuthPrefs(private val context: Context) {
         }
     }
 
+    /** پلنِ خریداری‌شده ("1m"/"3m"/"6m"/"1y")، از سرور (MeResponse/VerifyOtpResponse.subscriptionTier) -
+     * فقط برای خریدهای واقعیِ زمان‌دار پر می‌شه (نه دوره‌ی آزمایشی، نه اشتراکِ دستی/دائمی)؛ برای
+     * نمایشِ دقیقِ نوعِ اشتراک تو SettingsScreen به‌جای متنِ کلیِ قبلی استفاده می‌شه. */
+    val subscriptionTier: Flow<String?> = context.authDataStore.data.map { it[Keys.SUBSCRIPTION_TIER] }
+
+    suspend fun setSubscriptionTier(value: String?) {
+        context.authDataStore.edit { prefs ->
+            if (value != null) prefs[Keys.SUBSCRIPTION_TIER] = value else prefs.remove(Keys.SUBSCRIPTION_TIER)
+        }
+    }
+
     /** پورت صفحه‌ی خوش‌آمد امکانات (رایگان/اشتراکی) اپ رقیب (VAMMAN) - فقط یه‌بار تو کل عمر نصب
      * نشون داده می‌شه، درست بعد از گیت مجوز و قبل از گیت ورود/مهمان. */
     val benefitsSeen: Flow<Boolean> = context.authDataStore.data.map { it[Keys.BENEFITS_SEEN] ?: false }
@@ -66,6 +78,7 @@ class AuthPrefs(private val context: Context) {
         subscribed: Boolean,
         trialDaysLeft: Int? = null,
         subscribedUntil: String? = null,
+        subscriptionTier: String? = null,
     ) {
         context.authDataStore.edit { prefs ->
             prefs[Keys.TOKEN] = token
@@ -73,6 +86,7 @@ class AuthPrefs(private val context: Context) {
             prefs[Keys.SUBSCRIBED] = subscribed
             if (trialDaysLeft != null) prefs[Keys.TRIAL_DAYS_LEFT] = trialDaysLeft else prefs.remove(Keys.TRIAL_DAYS_LEFT)
             if (subscribedUntil != null) prefs[Keys.SUBSCRIBED_UNTIL] = subscribedUntil else prefs.remove(Keys.SUBSCRIBED_UNTIL)
+            if (subscriptionTier != null) prefs[Keys.SUBSCRIPTION_TIER] = subscriptionTier else prefs.remove(Keys.SUBSCRIPTION_TIER)
         }
     }
 

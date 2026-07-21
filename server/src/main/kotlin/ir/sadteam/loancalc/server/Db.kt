@@ -18,6 +18,7 @@ object Db {
                         phone TEXT UNIQUE NOT NULL,
                         subscribed INTEGER NOT NULL DEFAULT 0,
                         subscribed_until TEXT,
+                        subscription_tier TEXT,
                         created_at TEXT NOT NULL DEFAULT (datetime('now'))
                     )
                     """.trimIndent()
@@ -126,6 +127,9 @@ object Db {
             /* migration برای دیتابیس‌های قدیمی که از قبل جدول users رو بدون این ستون‌ها دارن */
             runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN subscribed INTEGER NOT NULL DEFAULT 0") } }
             runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN subscribed_until TEXT") } }
+            // پلنِ خریداری‌شده ("1m"/"3m"/"6m"/"1y") - قبلاً اصلاً ذخیره نمی‌شد، فقط تاریخِ انقضا؛
+            // برای نمایشِ دقیقِ نوعِ اشتراک تو تنظیمات لازم شد - رجوع کن به SubscriptionRoutes.kt.
+            runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN subscription_tier TEXT") } }
         }
     }
 
@@ -181,6 +185,7 @@ data class UserRow(
     val phone: String,
     val subscribed: Boolean,
     val subscribedUntil: String?,
+    val subscriptionTier: String?,
     val createdAt: String
 )
 
@@ -189,5 +194,6 @@ fun ResultSet.toUserRow(): UserRow = UserRow(
     phone = getString("phone"),
     subscribed = getInt("subscribed") != 0,
     subscribedUntil = getString("subscribed_until"),
+    subscriptionTier = getString("subscription_tier"),
     createdAt = getString("created_at")
 )

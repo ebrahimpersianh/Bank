@@ -90,6 +90,7 @@ data class VerifyOtpResponse(
     val phone: String,
     val subscribed: Boolean,
     val subscribedUntil: String? = null,
+    val subscriptionTier: String? = null,
     val trialDaysLeft: Int? = null,
 )
 
@@ -97,7 +98,13 @@ data class VerifyOtpResponse(
  * (SubscriptionStatus.trialDaysLeft، کلید‌خورده به created_at شماره‌موبایل) با ساعتِ خودِ سرور
  * حساب شده، نه یه timestampِ خام که کلاینت بخواد با ساعتِ گوشی حسابش کنه. [subscribed] از قبل
  * ترکیبِ اشتراکِ واقعی + دوره‌ی آزمایشیِ فعاله - برای گیت «۱ وام رایگان» فقط همون کافیه. */
-data class MeResponse(val phone: String, val subscribed: Boolean, val subscribedUntil: String?, val trialDaysLeft: Int? = null)
+data class MeResponse(
+    val phone: String,
+    val subscribed: Boolean,
+    val subscribedUntil: String?,
+    val subscriptionTier: String? = null,
+    val trialDaysLeft: Int? = null,
+)
 
 data class LoansResponse(val loans: List<Map<String, Any?>>, val updatedAt: String?)
 

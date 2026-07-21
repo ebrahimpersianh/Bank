@@ -56,7 +56,7 @@ fun Route.loansRoutes() {
                رو می‌گیره (منطق اصلی/پیام به کاربر سمت کلاینته، این فقط یه لایه‌ی دفاعی سمت سرورـه) */
             val user = Db.withConnection { conn ->
                 conn.queryOne(
-                    "SELECT id, phone, subscribed, subscribed_until, created_at FROM users WHERE id = ?", authed.uid
+                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE id = ?", authed.uid
                 ) { it.toUserRow() }
             }
             if (!isSubscribed(user) && loans.size > 1) {

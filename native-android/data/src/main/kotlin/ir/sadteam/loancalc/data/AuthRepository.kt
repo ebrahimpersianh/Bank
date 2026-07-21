@@ -43,7 +43,14 @@ class AuthRepository(
     suspend fun verifyOtp(phone: String, code: String): AuthResult {
         return try {
             val result = apiService.verifyOtp(VerifyOtpRequest(phone, code))
-            authPrefs.saveSession(result.token, result.phone, result.subscribed, result.trialDaysLeft, result.subscribedUntil)
+            authPrefs.saveSession(
+                result.token,
+                result.phone,
+                result.subscribed,
+                result.trialDaysLeft,
+                result.subscribedUntil,
+                result.subscriptionTier,
+            )
             AuthResult.Success
         } catch (e: HttpException) {
             AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))
@@ -63,6 +70,7 @@ class AuthRepository(
             authPrefs.setSubscribed(result.subscribed)
             authPrefs.setTrialDaysLeft(result.trialDaysLeft)
             authPrefs.setSubscribedUntil(result.subscribedUntil)
+            authPrefs.setSubscriptionTier(result.subscriptionTier)
         } catch (e: Exception) {
             // بی‌صدا نادیده گرفته می‌شه - این فقط یه تازه‌سازیِ پس‌زمینه‌ست؛ اگه شکست بخوره (مثلاً
             // بی‌اینترنتی)، مقدارِ محلیِ قبلی همچنان معتبر می‌مونه تا دفعه‌ی بعد.

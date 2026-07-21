@@ -55,7 +55,7 @@ private fun Route.backupBlobRoutes(path: String, table: String) {
 
             val user = Db.withConnection { conn ->
                 conn.queryOne(
-                    "SELECT id, phone, subscribed, subscribed_until, created_at FROM users WHERE id = ?", authed.uid
+                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE id = ?", authed.uid
                 ) { it.toUserRow() }
             }
             if (!isSubscribed(user)) {

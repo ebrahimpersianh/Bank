@@ -57,6 +57,11 @@ class AuthViewModel @Inject constructor(
     val subscribedUntil: StateFlow<String?> = authPrefs.subscribedUntil
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** پلنِ خریداری‌شده ("1m"/"3m"/"6m"/"1y") - فقط برای خریدهای واقعیِ زمان‌دار پر می‌شه، رجوع کن
+     * به کامنتِ AuthPrefs.subscriptionTier. */
+    val subscriptionTier: StateFlow<String?> = authPrefs.subscriptionTier
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val phone: StateFlow<String?> = authPrefs.phone
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 

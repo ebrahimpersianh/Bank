@@ -61,11 +61,18 @@ private data class VerifyOtpResponse(
     val phone: String,
     val subscribed: Boolean,
     val subscribedUntil: String?,
+    val subscriptionTier: String?,
     val trialDaysLeft: Int?,
 )
 
 @Serializable
-private data class MeResponse(val phone: String, val subscribed: Boolean, val subscribedUntil: String?, val trialDaysLeft: Int?)
+private data class MeResponse(
+    val phone: String,
+    val subscribed: Boolean,
+    val subscribedUntil: String?,
+    val subscriptionTier: String?,
+    val trialDaysLeft: Int?,
+)
 
 private data class OtpRow(val id: Long, val codeHash: String, val expiresAt: Long, val attempts: Int)
 
@@ -149,7 +156,7 @@ fun Route.authRoutes() {
 
             var user = Db.withConnection { conn ->
                 conn.queryOne(
-                    "SELECT id, phone, subscribed, subscribed_until, created_at FROM users WHERE phone = ?", phone
+                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE phone = ?", phone
                 ) { it.toUserRow() }
             }
             if (user == null) {
@@ -159,7 +166,7 @@ fun Route.authRoutes() {
                 // واقعی (لازم برای محاسبه‌ی دوره‌ی آزمایشی ۷ روزه‌ی isSubscribed) رو داشته باشیم.
                 user = Db.withConnection { conn ->
                     conn.queryOne(
-                        "SELECT id, phone, subscribed, subscribed_until, created_at FROM users WHERE id = ?", newId
+                        "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE id = ?", newId
                     ) { it.toUserRow() }
                 }!!
             }
@@ -171,6 +178,7 @@ fun Route.authRoutes() {
                     phone = user.phone,
                     subscribed = isSubscribed(user),
                     subscribedUntil = user.subscribedUntil,
+                    subscriptionTier = user.subscriptionTier,
                     trialDaysLeft = trialDaysLeftIfApplicable(user)
                 )
             )
@@ -183,7 +191,7 @@ fun Route.authRoutes() {
             val authed = call.requireAuth() ?: return@get
             val user = Db.withConnection { conn ->
                 conn.queryOne(
-                    "SELECT id, phone, subscribed, subscribed_until, created_at FROM users WHERE id = ?", authed.uid
+                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE id = ?", authed.uid
                 ) { it.toUserRow() }
             }
             if (user == null) {
@@ -195,6 +203,7 @@ fun Route.authRoutes() {
                     phone = user.phone,
                     subscribed = isSubscribed(user),
                     subscribedUntil = user.subscribedUntil,
+                    subscriptionTier = user.subscriptionTier,
                     trialDaysLeft = trialDaysLeftIfApplicable(user)
                 )
             )
