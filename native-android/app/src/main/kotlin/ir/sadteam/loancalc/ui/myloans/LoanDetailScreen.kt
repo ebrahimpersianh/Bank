@@ -469,20 +469,35 @@ fun LoanDetailScreen(
             // فرقِ کلیدی با نسخه‌ی باگ‌دارِ خیلی قبل (که برگردونده شده بود به حالتِ ساده‌ی ثابت):
             // اونجا یه آستانه‌ی تکی داشت (بالاتر/پایین‌تر از یه نقطه = عوضِ حالت) که دقیقاً رو مرز
             // می‌لرزید (رفت‌وبرگشتی) و چون خودِ اسکرول با انیمیشن هم‌زمان بود، محتوا زیرِ انگشت
-            // می‌پرید. اینجا: (۱) دو آستانه‌ی جدا برای ورود/خروج (هیسترزیس، نه یکی) که دیگه رو مرز
-            // نمی‌لرزه، (۲) عوضِ حالت با [snapshotFlow] فقط رو مقدارِ واقعیِ اسکرول واکنش نشون می‌ده
+            // می‌پرید. اینجا: (۱) هیسترزیس بر اساسِ درصدِ دیده‌شدنِ خودِ جعبه (نه موقعیتِ مطلقش رو
+            // صفحه) - آستانه‌ی ورود ۴۵٪، خروج ۲۰٪، پس هم رو مرز نمی‌لرزه هم نیازی به رد کردنِ کاملِ
+            // هدر نیست، (۲) عوضِ حالت با [snapshotFlow] فقط رو مقدارِ واقعیِ اسکرول واکنش نشون می‌ده
             // (نه یه انیمیشنِ مستقلِ رقیب)، (۳) وقتی جعبه بزرگه، اسکرولِ سریعِ «رد شو» غیرفعاله (چون
             // دیگه معنی نداره - کاربر دقیقاً اومده تو همین جعبه).
             val innerListState = rememberLazyListState()
             var expanded by remember { mutableStateOf(false) }
+            // باگِ رفع‌شده: نسخه‌ی قبلی با آستانه‌ی «offset ≤ 40px از بالای صفحه» فعال می‌شد - یعنی
+            // کاربر باید کلِ هدر (دکمه‌ی بازگشت + دونات + کارتِ بانک + کارتِ عکس، معمولاً ۵۰۰-۷۰۰dp)
+            // رو کامل از رو صفحه رد می‌کرد تا لبه‌ی جعبه دقیقاً به بالای صفحه برسه - این خیلی بیشتر از
+            // یه اسکرولِ معمولیه، برای همین کاربر گزارش داد اصلاً فول‌اسکرین نمی‌شه. الان به‌جای
+            // موقعیتِ مطلق، بر اساسِ چند درصد از خودِ جعبه رو صفحه دیده می‌شه تصمیم می‌گیره - با یه
+            // اسکرولِ معمولی (نه یه اسکرولِ خیلی طولانی) هم قابلِ رسیدنه.
             LaunchedEffect(detailListState) {
                 snapshotFlow {
-                    detailListState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == 1 }?.offset
-                }.collect { offset ->
+                    val info = detailListState.layoutInfo
+                    val itemInfo = info.visibleItemsInfo.firstOrNull { it.index == 1 }
+                    if (itemInfo == null || itemInfo.size <= 0) {
+                        0f
+                    } else {
+                        val viewportHeight = info.viewportEndOffset - info.viewportStartOffset
+                        val visibleTop = itemInfo.offset.coerceAtLeast(0)
+                        val visibleBottom = (itemInfo.offset + itemInfo.size).coerceAtMost(viewportHeight)
+                        (visibleBottom - visibleTop).coerceAtLeast(0).toFloat() / itemInfo.size
+                    }
+                }.collect { visibleFraction ->
                     expanded = when {
-                        offset == null -> false
-                        !expanded && offset <= 40 -> true
-                        expanded && offset >= 140 -> false
+                        !expanded && visibleFraction >= 0.45f -> true
+                        expanded && visibleFraction <= 0.2f -> false
                         else -> expanded
                     }
                 }
