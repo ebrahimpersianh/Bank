@@ -16,6 +16,15 @@ data class AppColorPalette(
     val muted: Color,
     val danger: Color,
     val line: Color,
+    // سبکِ «شیشه‌ای» باکس‌های بزرگ (AppCard) - الهام‌گرفته از اپِ «تقویم من» (خواسته‌ی صریحِ کاربر،
+    // با پیش‌نمایش تاییدشده). دو تمِ روشن/تیره عمداً یه معکوسِ ساده‌ی هم نیستن: تو تیره یه گرادیانِ
+    // نورِ سفید رو یه پایه‌ی سرمه‌ای نیمه‌شفاف نشسته (چون پس‌زمینه تیره‌ست، «نور» باید روشن‌تر از
+    // زمینه باشه)؛ تو روشن یه گرادیانِ سایه‌ی تیره رو یه پایه‌ی سفیدِ نیمه‌شفاف (چون زمینه‌ش از قبل
+    // روشنه، سفیدِ اضافه اثری نداره - سایه‌ی ظریف حسِ لبه‌ی شیشه رو می‌ده).
+    val glassBase: Color,
+    val glassGradientStart: Color,
+    val glassGradientEnd: Color,
+    val glassBorder: Color,
 )
 
 // خواسته‌ی صریح کاربر: primary/primaryDim از یه سبزِ فیروزه‌ایِ نزدیک به سبز (hue ~169°) به یه
@@ -33,6 +42,10 @@ val DarkAppColors = AppColorPalette(
     muted = Color(0xFF7C879E),
     danger = Color(0xFFE56B6F),
     line = Color(0x14EEF1F8), // rgba(238,241,248,0.08)
+    glassBase = Color(0x6A161F35), // surface تیره با آلفای ~۴۲٪
+    glassGradientStart = Color(0x17FFFFFF), // سفید با آلفای ~۹٪
+    glassGradientEnd = Color(0x04FFFFFF), // سفید با آلفای ~۱.۵٪
+    glassBorder = Color(0x1FFFFFFF), // سفید با آلفای ~۱۲٪
 )
 
 val LightAppColors = AppColorPalette(
@@ -46,6 +59,10 @@ val LightAppColors = AppColorPalette(
     muted = Color(0xFF6B7488),
     danger = Color(0xFFC6474B),
     line = Color(0x14141A2A), // rgba(20,26,42,0.08)
+    glassBase = Color(0xB3FFFFFF), // سفید با آلفای ~۷۰٪
+    glassGradientStart = Color(0x14141A2A), // متن تیره با آلفای ~۸٪ (سایه‌ی ظریفِ لبه‌ی شیشه)
+    glassGradientEnd = Color(0x00141A2A), // کاملاً شفاف
+    glassBorder = Color(0x1F141A2A), // متن تیره با آلفای ~۱۲٪
 )
 
 val LocalAppColors = staticCompositionLocalOf { DarkAppColors }
@@ -65,3 +82,7 @@ val AppText: Color @Composable get() = LocalAppColors.current.text
 val AppMuted: Color @Composable get() = LocalAppColors.current.muted
 val AppDanger: Color @Composable get() = LocalAppColors.current.danger
 val AppLine: Color @Composable get() = LocalAppColors.current.line
+val AppGlassBase: Color @Composable get() = LocalAppColors.current.glassBase
+val AppGlassGradientStart: Color @Composable get() = LocalAppColors.current.glassGradientStart
+val AppGlassGradientEnd: Color @Composable get() = LocalAppColors.current.glassGradientEnd
+val AppGlassBorder: Color @Composable get() = LocalAppColors.current.glassBorder
