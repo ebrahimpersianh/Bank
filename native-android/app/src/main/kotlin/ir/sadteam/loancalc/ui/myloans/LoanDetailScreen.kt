@@ -19,6 +19,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -630,11 +631,17 @@ fun LoanDetailScreen(
                     .height(boxHeight)
                     .nestedScroll(flingConnection),
             ) {
+                // contentPadding(end): بدونش ردیف‌ها دقیقاً تا لبه‌ی همین Box کشیده می‌شدن - همون
+                // لبه‌ای که lazyColumnScrollbar خطش رو روش رسم می‌کنه، پس خط دقیقاً رو حاشیه‌ی
+                // باکسِ هر ردیف می‌افتاد (گزارشِ کاربر: «خط اومده تو باکس‌ها»). این فاصله‌ی کوچیک
+                // ردیف‌ها رو یه‌کم جمع‌تر می‌کنه تا بینِ لبه‌شون و خطِ اسکرول‌بار (که همون‌جای قبلی،
+                // نزدیکِ لبه‌ی واقعیِ صفحه، می‌مونه) یه فاصله‌ی تمیز باشه.
                 LazyColumn(
                     state = innerListState,
                     modifier = Modifier
                         .fillMaxSize()
                         .lazyColumnScrollbar(innerListState, AppPrimary),
+                    contentPadding = PaddingValues(end = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->

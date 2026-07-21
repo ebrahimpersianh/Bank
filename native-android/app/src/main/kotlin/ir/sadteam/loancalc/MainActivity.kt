@@ -38,7 +38,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.RequestQuote
@@ -587,6 +590,21 @@ private fun LoanCalcApp(
                     onTourRowPositioned = { rect -> currentTourTarget?.let { tourBounds[it] = rect } },
                 )
             }
+        }
+
+        // باگِ رفع‌شده: پنلِ تنظیمات فقط ۸۵٪ عرض می‌گیره؛ چون خودِ پنل (Surface رنگِ AppSurface) و
+        // لایه‌ی تیره‌ی پشتش (اسکرمِ ۴۵٪ سیاه) هر دو تا زیرِ نوارِ وضعیتِ گوشی هم کشیده می‌شن، این
+        // دو رنگِ متفاوت درست زیرِ آیکون‌های نوارِ وضعیت (بینِ آنتن و باتری) به‌هم می‌رسیدن و یه خطِ
+        // دیدنی می‌ساختن (گزارشِ کاربر: «بالا بین آنتن‌ها یه خطه»). این نوارِ باریک، فقط به‌ارتفاعِ
+        // نوارِ وضعیت و تمام‌عرض، رو همه‌چیزِ دیگه (هم اسکرم هم پنل) می‌شینه تا زیرِ ساعت/آنتن/باتری
+        // همیشه یه‌دست/یه‌تیکه بمونه.
+        AnimatedVisibility(visible = showSettings, enter = fadeIn(tween(200)), exit = fadeOut(tween(200))) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsTopHeight(WindowInsets.statusBars)
+                    .background(AppSurface),
+            )
         }
 
         AnimatedVisibility(
