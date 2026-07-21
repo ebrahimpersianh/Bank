@@ -165,27 +165,38 @@ fun SettingsScreen(
         label = "settingsScreen",
     ) { key ->
         when (key) {
-            // «ورود» از داخلِ پنلِ تنظیمات (که خودش عرضِ ۸۵٪ صفحه‌ست، رجوع کن به AnimatedVisibility
-            // تو MainActivity.kt) باید کاملاً فول‌اسکرین باشه، نه محدود به همون عرض - برای همین با
-            // Dialogِ usePlatformDefaultWidth=false نمایش داده می‌شه که تو ویندویی جدا و مستقل از
-            // محدودیتِ عرضِ والد رندر می‌شه.
-            "login" -> Dialog(
-                onDismissRequest = { showLoginPrompt = false },
-                properties = DialogProperties(usePlatformDefaultWidth = false),
-            ) {
+            // هر صفحه‌ی زیرمجموعه‌ی تنظیمات (که خودش پنلی با عرضِ ۸۵٪ صفحه‌ست، رجوع کن به
+            // AnimatedVisibility تو MainActivity.kt) باید کاملاً فول‌اسکرین باشه، نه محدود به همون
+            // عرض - برای همین همه‌شون تو FullScreenDialog (پایینِ همین فایل) نشون داده می‌شن که تو
+            // ویندویی جدا و مستقل از محدودیتِ عرضِ والد رندر می‌شه.
+            "login" -> FullScreenDialog(onDismissRequest = { showLoginPrompt = false }) {
                 LoginScreen(onDismiss = { showLoginPrompt = false }, onLoginSuccess = { showLoginPrompt = false })
             }
-            "calendar" -> FinancialCalendarScreen(onBack = { showFinancialCalendar = false })
-            "stats" -> StatsScreen(onBack = { showStats = false })
-            "cheque" -> ChequeScreen(onBack = { showCheque = false })
-            "accounts" -> AccountsScreen(onBack = { showAccounts = false })
-            "subscription" -> SubscriptionScreen(
-                onBack = { showSubscription = false },
-                onSubscribed = { showSubscription = false },
-                onNeedsLogin = { showLoginPrompt = true },
-            )
-            "history" -> CalculationHistoryScreen(onBack = { showHistory = false })
-            "reminderSettings" -> ReminderSettingsScreen(onBack = { showReminderSettings = false })
+            "calendar" -> FullScreenDialog(onDismissRequest = { showFinancialCalendar = false }) {
+                FinancialCalendarScreen(onBack = { showFinancialCalendar = false })
+            }
+            "stats" -> FullScreenDialog(onDismissRequest = { showStats = false }) {
+                StatsScreen(onBack = { showStats = false })
+            }
+            "cheque" -> FullScreenDialog(onDismissRequest = { showCheque = false }) {
+                ChequeScreen(onBack = { showCheque = false })
+            }
+            "accounts" -> FullScreenDialog(onDismissRequest = { showAccounts = false }) {
+                AccountsScreen(onBack = { showAccounts = false })
+            }
+            "subscription" -> FullScreenDialog(onDismissRequest = { showSubscription = false }) {
+                SubscriptionScreen(
+                    onBack = { showSubscription = false },
+                    onSubscribed = { showSubscription = false },
+                    onNeedsLogin = { showLoginPrompt = true },
+                )
+            }
+            "history" -> FullScreenDialog(onDismissRequest = { showHistory = false }) {
+                CalculationHistoryScreen(onBack = { showHistory = false })
+            }
+            "reminderSettings" -> FullScreenDialog(onDismissRequest = { showReminderSettings = false }) {
+                ReminderSettingsScreen(onBack = { showReminderSettings = false })
+            }
             else -> SettingsMainContent(
                 onBack = onBack,
                 authViewModel = authViewModel,
@@ -206,6 +217,21 @@ fun SettingsScreen(
                 onTourRowPositioned = onTourRowPositioned,
             )
         }
+    }
+}
+
+/** پوششِ مشترکِ همه‌ی زیرصفحه‌های تنظیمات (ورود، تقویمِ مالی، آمار، تاریخچه، چک، حساب‌های بانکی،
+ * اشتراک، یادآوریِ سررسید) رو یه `Dialog`ِ `usePlatformDefaultWidth = false` - چون خودِ پنلِ
+ * تنظیمات یه `AnimatedVisibility` با عرضِ ۸۵٪ صفحه‌ست (`MainActivity.kt`)، بدونِ این پوشش هر
+ * زیرصفحه‌ای هم به همون عرضِ ۸۵٪ محدود می‌موند - `Dialog` تو ویندویی کاملاً جدا رندر می‌شه، پس
+ * مستقل از این محدودیت همیشه کاملِ صفحه رو می‌گیره. */
+@Composable
+private fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        content()
     }
 }
 
@@ -396,18 +422,6 @@ private fun SettingsMainContent(
                                 .padding(top = 12.dp),
                         ) {
                             Text("خروج از حساب")
-                        }
-                        // الزامِ استانداردِ فروشگاه‌های اپ: راهِ داخل‌برنامه‌ای برای حذفِ کاملِ حساب،
-                        // نه فقط خروج. عمداً OutlinedButton (نه پرشده مثل خروج) - شدتِ بصریِ کمتر برای
-                        // یه عملِ به‌مراتب جدی‌تر و غیرقابل‌بازگشت، تا اشتباهی باهاش قاطی نشه.
-                        OutlinedButton(
-                            onClick = { showDeleteAccountConfirm = true },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                        ) {
-                            Text("حذف حساب کاربری")
                         }
                     }
                     else -> {
@@ -839,6 +853,22 @@ private fun SettingsMainContent(
             if (matches("حریم خصوصی")) {
                 AccordionCard(title = "حریم خصوصی", modifier = Modifier.padding(top = 10.dp)) {
                     Text(privacyText, color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp)
+                }
+            }
+
+            // خواسته‌ی کاربر: «حذف حساب کاربری» بیاد پایینِ پایینِ لیستِ تنظیمات - قبلاً بالای لیست،
+            // تویِ کارتِ وضعیتِ حساب بود. الزامِ استانداردِ فروشگاه‌های اپ: راهِ داخل‌برنامه‌ای برای
+            // حذفِ کاملِ حساب، نه فقط خروج - عمداً OutlinedButton (نه پرشده مثلِ خروج) - شدتِ بصریِ
+            // کمتر برای یه عملِ به‌مراتب جدی‌تر و غیرقابل‌بازگشت، تا اشتباهی باهاش قاطی نشه.
+            if (gateState == GateState.LOGGED_IN && matches("حذف حساب")) {
+                AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                    OutlinedButton(
+                        onClick = { showDeleteAccountConfirm = true },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("حذف حساب کاربری")
+                    }
                 }
             }
         }
