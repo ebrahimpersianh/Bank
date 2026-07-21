@@ -22,13 +22,19 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import ir.sadteam.loancalc.ui.theme.AppMuted
 
 /**
  * افکتِ اسکلتونِ درخشان (shimmer) برای وقتی که خدماتِ اعتباری از سرور (GET /api/credit-rates)
  * در حال fetch شدنه - به‌جای پرشِ ناگهانیِ لیستِ خالی به پر، چند تایلِ جای‌گیرنده با یه گرادیانِ
  * روشن که مدام از راست به چپ می‌گذره نشون داده می‌شه.
+ *
+ * **باگِ رفع‌شده**: قبلاً گرادیان از Color.White ثابت ساخته می‌شد - رو تمِ تیره (پس‌زمینه‌ی سرمه‌ای)
+ * قابل‌دیدن بود، ولی رو تمِ روشن (پس‌زمینه/کارتِ تقریباً کاملاً سفید، AppSurface = 0xFFFFFFFF تو
+ * Color.kt) یه سفیدِ تقریباً شفاف رو یه پس‌زمینه‌ی سفید عملاً نامرئی بود - دقیقاً همون چیزی که کاربر
+ * «خدمات اعتباری نیومد» می‌دید (درواقع در حالِ لود بود، فقط اسکلتونش دیده نمی‌شد). الان از AppMuted
+ * (خاکستریِ میان‌رنگِ تم‌آگاه) استفاده می‌شه که رو هر دو تمِ روشن/تیره کنتراستِ کافی داره.
  */
 fun Modifier.shimmerEffect(): Modifier = composed {
     val transition = rememberInfiniteTransition(label = "shimmer")
@@ -38,12 +44,13 @@ fun Modifier.shimmerEffect(): Modifier = composed {
         animationSpec = infiniteRepeatable(tween(1200, easing = LinearEasing), RepeatMode.Restart),
         label = "shimmerTranslate",
     )
+    val base = AppMuted
     background(
         Brush.linearGradient(
             colors = listOf(
-                Color.White.copy(alpha = 0.06f),
-                Color.White.copy(alpha = 0.18f),
-                Color.White.copy(alpha = 0.06f),
+                base.copy(alpha = 0.12f),
+                base.copy(alpha = 0.32f),
+                base.copy(alpha = 0.12f),
             ),
             start = Offset(translate - 200f, 0f),
             end = Offset(translate + 200f, 200f),

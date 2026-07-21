@@ -48,8 +48,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -118,7 +121,13 @@ private fun List<LoanEntity>.sortedByOption(option: LoanSortOption): List<LoanEn
  * [SubscriptionScreen] (خرید واقعی با Poolakey) می‌رن.
  */
 @Composable
-fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: AuthViewModel = hiltViewModel()) {
+fun MyLoansScreen(
+    viewModel: MyLoansViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
+    // مختصاتِ واقعیِ دکمه‌ی «افزودن دستی وام» رو گزارش می‌ده - برای قدمِ آخرِ AppTourOverlay
+    // (TourTarget.MANUAL_ADD تو MainActivity.kt) که این دکمه رو اسپاتلایت می‌کنه.
+    onManualAddFabPositioned: (Rect) -> Unit = {},
+) {
     var showAddForm by remember { mutableStateOf(false) }
     var openedLoanId by remember { mutableStateOf<Long?>(null) }
     // ویرایشِ مشخصاتِ کلیِ یه وام (اسم/بانک/مبلغ/تعدادِ اقساط) - عمداً openedLoanId رو پاک نمی‌کنیم
@@ -420,6 +429,9 @@ fun MyLoansScreen(viewModel: MyLoansViewModel = hiltViewModel(), authViewModel: 
                 containerColor = AppPrimary,
                 contentColor = Color.White,
                 shape = CircleShape,
+                modifier = Modifier.onGloballyPositioned {
+                    onManualAddFabPositioned(it.boundsInRoot())
+                },
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "افزودن دستی وام")
             }

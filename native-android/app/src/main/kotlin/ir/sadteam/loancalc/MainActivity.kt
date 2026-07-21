@@ -145,25 +145,67 @@ private enum class BottomTab(
     val label: String,
     val icon: ImageVector,
     val selectedIcon: ImageVector,
-    // متنِ توضیحِ TabTourOverlay - رجوع کن به همون کامپوننت پایین‌تر.
-    val tourHint: String,
 ) {
+    BANK_LOAN("bank_loan", "وام بانکی", Icons.Outlined.Payments, Icons.Filled.Payments),
+    AFFORD("afford", "محاسبه‌گر", Icons.Outlined.RequestQuote, Icons.Filled.RequestQuote),
+    DEPOSIT("deposit", "سود سپرده", Icons.Outlined.TrendingUp, Icons.Filled.TrendingUp),
+    MY_LOANS("my_loans", "وام‌های من", Icons.Outlined.FolderOpen, Icons.Filled.Folder),
+}
+
+// ترتیب/محتوای کاملِ تورِ راهنمای اولین ورود (AppTourOverlay) - رجوع کن به همون کامپوننت پایین‌تر
+// برای جزئیاتِ فنیِ اسپاتلایت. هر مرحله یه المانِ *واقعیِ* رو صفحه رو هدف می‌گیره (مختصاتش تو
+// tourBounds تو LoanCalcApp اندازه‌گیری می‌شه) - نه یه توضیحِ مستقلِ بدونِ هدف.
+private enum class TourTarget(val title: String, val hint: String) {
+    PRIVACY(
+        "حالت خصوصی",
+        "با این آیکون همه‌ی مبلغ‌های صفحه رو پشتِ ••• مخفی کن - برای وقتی گوشیتو دستِ کسی می‌دی.",
+    ),
+    DARK_MODE(
+        "تمِ روشن/تاریک",
+        "با این آیکون بینِ تمِ روشن و تاریک جابه‌جا شو.",
+    ),
+    SETTINGS(
+        "تنظیمات",
+        "از اینجا به یادآوریِ سررسید، پشتیبان‌گیری، تقویمِ مالی، آمار و گزارشات، امورِ چک و حساب‌های " +
+            "بانکی هم دسترسی داری.",
+    ),
     BANK_LOAN(
-        "bank_loan", "وام بانکی", Icons.Outlined.Payments, Icons.Filled.Payments,
+        "وام بانکی",
         "قسطِ وام‌های بانکی و قرض‌الحسنه رو اینجا دقیق محاسبه کن.",
     ),
     AFFORD(
-        "afford", "محاسبه‌گر", Icons.Outlined.RequestQuote, Icons.Filled.RequestQuote,
+        "محاسبه‌گر",
         "با پرداختِ ماهانه‌ای که مقدوره، ببین چقدر وام می‌تونی بگیری.",
     ),
     DEPOSIT(
-        "deposit", "سود سپرده", Icons.Outlined.TrendingUp, Icons.Filled.TrendingUp,
+        "سود سپرده",
         "قبل از سپرده‌گذاری، سودِ نهایی رو از قبل حساب کن.",
     ),
     MY_LOANS(
-        "my_loans", "وام‌های من", Icons.Outlined.FolderOpen, Icons.Filled.Folder,
-        "وام‌ها و چک‌هات رو یه‌جا ذخیره کن، وضعیتِ هر قسط رو پیگیری کن، و یادآوری بگیر.",
+        "وام‌های من",
+        "وام‌ها و چک‌هات رو یه‌جا ذخیره کن و وضعیتِ هر قسط رو پیگیری کن.",
     ),
+    MANUAL_ADD(
+        "افزودن دستی وام",
+        "با این دکمه یه وام رو دستی (بدونِ محاسبه) اضافه کن و اقساطش رو خودت پیگیری کن - آخرین قدمِ تور!",
+    ),
+}
+
+// نگاشتِ TourTarget های تبی → BottomTab واقعی (برای این‌که AppTourOverlay بدونه با کدوم تب باید
+// هماهنگ بشه - هم گرفتنِ مختصات از BottomNavItem هم ناوبریِ خودکار موقعِ قدمِ MANUAL_ADD).
+private fun TourTarget.asBottomTab(): BottomTab? = when (this) {
+    TourTarget.BANK_LOAN -> BottomTab.BANK_LOAN
+    TourTarget.AFFORD -> BottomTab.AFFORD
+    TourTarget.DEPOSIT -> BottomTab.DEPOSIT
+    TourTarget.MY_LOANS, TourTarget.MANUAL_ADD -> BottomTab.MY_LOANS
+    else -> null
+}
+
+private fun BottomTab.asTourTarget(): TourTarget = when (this) {
+    BottomTab.BANK_LOAN -> TourTarget.BANK_LOAN
+    BottomTab.AFFORD -> TourTarget.AFFORD
+    BottomTab.DEPOSIT -> TourTarget.DEPOSIT
+    BottomTab.MY_LOANS -> TourTarget.MY_LOANS
 }
 
 @AndroidEntryPoint
@@ -293,7 +335,7 @@ private fun AppRoot(
             } else {
                 // تورِ راهنمای اولین ورود دیگه یه گیتِ جداگانه‌ی قبل از ورود نیست - کاربر خواستِ
                 // «تو خود برنامه بگه کجا بری»، پس حالا یه اورلیِ spotlight داخلِ خودِ LoanCalcApp
-                // (رو نوارِ تبِ واقعی) نشون داده می‌شه - رجوع کن به TabTourOverlay اونجا.
+                // (رو المان‌های واقعیِ چیدمان) نشون داده می‌شه - رجوع کن به AppTourOverlay اونجا.
                 AnimatedAppEntrance { LoanCalcApp() }
             }
         }
@@ -336,9 +378,10 @@ private fun LoanCalcApp(
     // این ریست از طریق یه کلید جدا اعمال می‌شه.
     var bankLoanResetKey by remember { mutableIntStateOf(0) }
 
-    // مختصاتِ واقعیِ هر تب رو صفحه (رجوع کن به BottomNavItem.onPositioned) - برای اینکه
-    // TabTourOverlay بتونه دقیقاً دورِ تبِ واقعی یه سوراخِ نورانی بکشه، نه یه مختصاتِ حدسی.
-    val tabBounds = remember { mutableStateMapOf<BottomTab, Rect>() }
+    // مختصاتِ واقعیِ هر هدفِ تور رو صفحه (چهارتا تبِ نوارِ پایین + سه‌تا آیکونِ TopAppBar + دکمه‌ی
+    // افزودنِ دستیِ MyLoansScreen) - برای اینکه AppTourOverlay بتونه دقیقاً دورِ المانِ واقعی یه
+    // سوراخِ نورانی بکشه، نه یه مختصاتِ حدسی. رجوع کن به onGloballyPositioned رو هر کدوم پایین‌تر.
+    val tourBounds = remember { mutableStateMapOf<TourTarget, Rect>() }
 
     // پورت رفتار «یه‌بار برگشت بزنی هشدار بده، دوباره بزنی خارج شو» - فقط رو تب پیش‌فرض (وام بانکی)
     // فعاله، چون تو بقیه‌ی تب‌ها/تنظیمات دکمه‌ی برگشت باید همون رفتار عادیش (برگشت به تب قبلی/بستن
@@ -377,7 +420,14 @@ private fun LoanCalcApp(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                     title = { Text("وام من") },
                     navigationIcon = {
-                        IconButton(onClick = { buzz(); themeViewModel.cycleThemeMode() }) {
+                        IconButton(
+                            onClick = { buzz(); themeViewModel.cycleThemeMode() },
+                            // مختصاتِ واقعیِ این آیکون رو گزارش می‌ده - برای قدمِ TourTarget.DARK_MODE
+                            // تو AppTourOverlay، رجوع کن به onPositioned مشابه رو BottomNavItem.
+                            modifier = Modifier.onGloballyPositioned {
+                                tourBounds[TourTarget.DARK_MODE] = it.boundsInRoot()
+                            },
+                        ) {
                             // پورت sunIcon/moonIcon تو www/index.html: آیکون وضعیت *فعلی* رو نشون
                             // می‌ده، نه نتیجه‌ی تپ‌کردن. تمِ تاریک الان برای همه رایگانه.
                             Icon(
@@ -389,13 +439,23 @@ private fun LoanCalcApp(
                     actions = {
                         // حالت خصوصی: مخفی‌کردن سریع همه‌ی مبلغ‌های صفحه پشت «•••» (برای وقتی
                         // گوشیتو دستِ کسی می‌دی)، بدون نیاز به رفتن تو تنظیمات.
-                        IconButton(onClick = { buzz(); privacyModeViewModel.toggle() }) {
+                        IconButton(
+                            onClick = { buzz(); privacyModeViewModel.toggle() },
+                            modifier = Modifier.onGloballyPositioned {
+                                tourBounds[TourTarget.PRIVACY] = it.boundsInRoot()
+                            },
+                        ) {
                             Icon(
                                 if (privacyMode) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                                 contentDescription = "حالت خصوصی",
                             )
                         }
-                        IconButton(onClick = { showSettings = true }) {
+                        IconButton(
+                            onClick = { showSettings = true },
+                            modifier = Modifier.onGloballyPositioned {
+                                tourBounds[TourTarget.SETTINGS] = it.boundsInRoot()
+                            },
+                        ) {
                             Icon(Icons.Filled.Settings, contentDescription = "تنظیمات")
                         }
                     },
@@ -413,7 +473,7 @@ private fun LoanCalcApp(
                             BottomNavItem(
                                 tab = tab,
                                 selected = currentRoute == tab.route,
-                                onPositioned = { rect -> tabBounds[tab] = rect },
+                                onPositioned = { rect -> tourBounds[tab.asTourTarget()] = rect },
                                 onClick = {
                                     if (tab.route == currentRoute && tab == BottomTab.BANK_LOAN) {
                                         bankLoanResetKey++
@@ -468,7 +528,11 @@ private fun LoanCalcApp(
                 }
                 composable(BottomTab.AFFORD.route) { AffordScreen() }
                 composable(BottomTab.DEPOSIT.route) { DepositScreen() }
-                composable(BottomTab.MY_LOANS.route) { MyLoansScreen() }
+                composable(BottomTab.MY_LOANS.route) {
+                    MyLoansScreen(
+                        onManualAddFabPositioned = { rect -> tourBounds[TourTarget.MANUAL_ADD] = rect },
+                    )
+                }
             }
         }
     
@@ -569,12 +633,26 @@ private fun LoanCalcApp(
         }
 
         // تورِ راهنمای اولین ورود - «تو خود برنامه بگه کجا بری» (خواسته‌ی صریح کاربر، به‌جای صفحه‌ی
-        // جدای قبلی) - رجوع کن به TabTourOverlay پایین‌تر. آخرین بچه‌ی Box تا رو همه‌چیز دیگه بشینه.
+        // جدای قبلی) - رجوع کن به AppTourOverlay پایین‌تر. آخرین بچه‌ی Box تا رو همه‌چیز دیگه بشینه.
         val tourSeen by authViewModel.tourSeen.collectAsState()
         if (tourSeen == false) {
-            TabTourOverlay(
-                tabs = BottomTab.entries.toList(),
-                bounds = tabBounds,
+            AppTourOverlay(
+                steps = TourTarget.entries.toList(),
+                bounds = tourBounds,
+                onStepChanged = { target ->
+                    // قدم‌هایی که رو یه تبِ خاص زندگی می‌کنن (مثلاً افزودنِ دستی که فقط رو تبِ
+                    // «وام‌های من» وجود داره) خودکار به همون تب می‌رن - وگرنه المانِ هدف اصلاً
+                    // رندر/قابل‌اندازه‌گیری نیست.
+                    target.asBottomTab()?.let { tab ->
+                        if (currentRoute != tab.route) {
+                            navController.navigate(tab.route) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    }
+                },
                 onDone = { authViewModel.markTourSeen() },
             )
         }
@@ -591,23 +669,28 @@ private fun slideDirection(fromRoute: String?, toRoute: String?): Int {
 }
 
 /**
- * تورِ راهنمای اولین ورود، به‌صورتِ یه اورلیِ spotlight واقعی رو نوارِ تبِ خودِ اپ - نه یه صفحه‌ی
+ * تورِ راهنمای اولین ورود، به‌صورتِ یه اورلیِ spotlight واقعی رو خودِ چیدمانِ اپ - نه یه صفحه‌ی
  * جدای قبل از ورود. یه لایه‌ی تیره‌ی نیمه‌شفاف کلِ صفحه رو می‌پوشونه با یه «سوراخِ» گردگوشه دقیقاً
- * دورِ تبِ فعلی (از رو [bounds]، مختصاتِ واقعیِ اندازه‌گیری‌شده - نه حدسی)، + یه کارتِ توضیح که
- * همیشه بالای نوارِ تب می‌شینه (موقعیتش ثابته، فقط سوراخ جابه‌جا می‌شه - از پیچیدگی/ریسکِ محاسبه‌ی
- * موقعیتِ پویا برای خودِ کارت اجتناب شد). لمسِ هرجای دیگه‌ی صفحه (به‌جز دکمه‌های خودِ کارت) قدمِ بعد
- * رو فعال می‌کنه؛ آخرین قدم «متوجه شدم» رو تور رو تموم می‌کنه.
+ * دورِ هدفِ فعلی (از رو [bounds]، مختصاتِ واقعیِ اندازه‌گیری‌شده - نه حدسی)، + یه کارتِ توضیح که
+ * همیشه بالای نوارِ تب می‌شینه (موقعیتش ثابته، فقط سوراخ جابه‌جا می‌شه). قدم‌هایی که رو یه تبِ
+ * خاص زندگی می‌کنن (رجوع کن به [TourTarget.asBottomTab]) موقعِ رسیدن، [onStepChanged] رو صدا
+ * می‌زنن تا LoanCalcApp خودش به همون تب ناوبری کنه - این‌جوری المانِ هدف (مثلاً دکمه‌ی افزودنِ
+ * دستی که فقط رو تبِ «وام‌های من» وجود داره) همیشه واقعاً رندر و قابل‌اندازه‌گیریه. لمسِ هرجای
+ * دیگه‌ی صفحه (به‌جز دکمه‌های خودِ کارت) قدمِ بعد رو فعال می‌کنه؛ آخرین قدم «متوجه شدم» تور رو تموم
+ * می‌کنه.
  */
 @Composable
-private fun TabTourOverlay(
-    tabs: List<BottomTab>,
-    bounds: Map<BottomTab, Rect>,
+private fun AppTourOverlay(
+    steps: List<TourTarget>,
+    bounds: Map<TourTarget, Rect>,
+    onStepChanged: (TourTarget) -> Unit,
     onDone: () -> Unit,
 ) {
     var stepIndex by remember { mutableIntStateOf(0) }
-    val currentTab = tabs.getOrNull(stepIndex) ?: return
-    val rect = bounds[currentTab]
-    val isLastStep = stepIndex == tabs.lastIndex
+    val currentStep = steps.getOrNull(stepIndex) ?: return
+    LaunchedEffect(currentStep) { onStepChanged(currentStep) }
+    val rect = bounds[currentStep]
+    val isLastStep = stepIndex == steps.lastIndex
     val advance: () -> Unit = { if (isLastStep) onDone() else stepIndex++ }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -635,9 +718,9 @@ private fun TabTourOverlay(
                 .padding(horizontal = 20.dp, vertical = 110.dp),
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(currentTab.label, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(currentStep.title, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    currentTab.tourHint,
+                    currentStep.hint,
                     color = AppMuted,
                     fontSize = 12.5.sp,
                     modifier = Modifier.padding(top = 4.dp),
@@ -715,7 +798,7 @@ private fun RowScope.BottomNavItem(
             .background(pillColor.copy(alpha = 0.10f * pillAlpha), RoundedCornerShape(14.dp))
             .clickable(onClick = { buzz(); onClick() })
             .padding(vertical = 6.dp)
-            // مختصاتِ ریشه‌ی خودِ تب رو گزارش می‌ده - برای TabTourOverlay که دقیقاً همین محدوده رو
+            // مختصاتِ ریشه‌ی خودِ تب رو گزارش می‌ده - برای AppTourOverlay که دقیقاً همین محدوده رو
             // نورانی می‌کنه، نه یه مختصاتِ حدسی/هاردکد.
             .onGloballyPositioned { coordinates -> onPositioned(coordinates.boundsInRoot()) },
         horizontalAlignment = Alignment.CenterHorizontally,
