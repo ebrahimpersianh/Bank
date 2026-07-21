@@ -83,6 +83,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CoinCelebration
+import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
 import ir.sadteam.loancalc.ui.components.ReminderOverrideCard
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
@@ -125,8 +126,10 @@ fun LoanDetailScreen(
 ) {
     val privacyMode = LocalPrivacyMode.current
     val rows = remember(loan) { viewModel.getRows(loan) }
-    // ویرایشِ مشخصاتِ کلی فقط رو وام‌های دستی معنی داره (نه محاسبه‌شده/قرض‌الحسنه که ساختارِ اقساطِ
-    // نامساوی دارن) - رجوع کن به AddManualLoanScreen/LoanRepository.updateManualLoan.
+    // آیکونِ ویرایشِ هدر رو هر وامی هست، ولی مقصدش فرق می‌کنه: وام‌های دستی فرمِ کاملِ
+    // AddManualLoanScreen (onEdit، شاملِ مبلغ/تعدادِ اقساط) رو باز می‌کنن؛ وام‌های محاسبه‌شده/
+    // قرض‌الحسنه (ساختارِ اقساطِ نامساوی دارن) فقط دیالوگِ سبکِ اسم/بانک/تاریخ رو - رجوع کن به
+    // showEditMetaDialog پایین‌تر.
     val isManualLoan = remember(loan) { viewModel.isManualLoan(loan) }
 
     // جشنِ تسویه‌ی کامل (بارش سکه + ویبره): فقط وقتی «همین الان» آخرین قسط تو همین صفحه پرداخت
@@ -231,6 +234,82 @@ fun LoanDetailScreen(
     // چون این دیالوگ همیشه از رو یه ردیفِ مشخصِ همینِ وام باز می‌شه، «کدوم وام و کدوم قسط» خودش
     // مشخصه (خواسته‌ی کاربر).
     var photoRowM by remember { mutableStateOf<Int?>(null) }
+
+    // ویرایشِ مشخصاتِ *غیرمالیِ* وام‌های محاسبه‌شده/قرض‌الحسنه (اسم/بانک/وام‌گیرنده/تاریخ) - برخلافِ
+    // وام‌های دستی که فرمِ کاملِ AddManualLoanScreen رو باز می‌کنن (onEdit، از MyLoansScreen)، این
+    // یه دیالوگِ سبکِ همین‌جاست چون مبلغ/نرخ/تعدادِ اقساط این نوع وام‌ها عمداً قابلِ‌ویرایش نیست
+    // (نیازمندِ اجرای دوباره‌ی فرمولِ کاملِ LoanCalculator و پاک‌شدنِ تاریخچه‌ی پرداخته - خواسته‌ی
+    // کاربر «ادیت کل وام برای همه‌ی وام‌ها» با همین محدودیتِ امن پیاده شد).
+    var showEditMetaDialog by remember { mutableStateOf(false) }
+    var editMetaName by remember { mutableStateOf("") }
+    var editMetaBank by remember { mutableStateOf("") }
+    var editMetaBorrower by remember { mutableStateOf("") }
+    var editMetaYear by remember { mutableStateOf(1404) }
+    var editMetaMonth by remember { mutableStateOf(1) }
+    var editMetaDay by remember { mutableStateOf(1) }
+
+    if (showEditMetaDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditMetaDialog = false },
+            title = { Text("ویرایش مشخصات وام") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = editMetaName,
+                        onValueChange = { editMetaName = it },
+                        label = { Text("اسم وام") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = editMetaBank,
+                        onValueChange = { editMetaBank = it },
+                        label = { Text("اسم بانک یا فروشنده") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = editMetaBorrower,
+                        onValueChange = { editMetaBorrower = it },
+                        label = { Text("وام‌گیرنده (اختیاری)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        InlineJalaliDateRow(
+                            year = editMetaYear,
+                            month = editMetaMonth,
+                            day = editMetaDay,
+                            onDateChange = { y, m, d -> editMetaYear = y; editMetaMonth = m; editMetaDay = d },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    // مبلغ/نرخ/تعدادِ اقساط عمداً اینجا نیست - رجوع کن به کامنتِ بالای showEditMetaDialog.
+                    Text(
+                        "مبلغ/نرخ/تعدادِ اقساط این نوع وام از رو فرمول محاسبه شده و قابلِ‌ویرایش نیست.",
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.updateLoanMeta(
+                        loan = loan,
+                        name = editMetaName.trim().ifEmpty { loan.name },
+                        bank = editMetaBank.trim(),
+                        borrower = editMetaBorrower.trim().ifEmpty { "—" },
+                        startDate = PersianDate(editMetaYear, editMetaMonth, editMetaDay),
+                        onSaved = {},
+                    )
+                    showEditMetaDialog = false
+                }) { Text("ذخیره") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditMetaDialog = false }) { Text("انصراف") }
+            },
+        )
+    }
 
     if (photoRowM != null) {
         val m = photoRowM!!
@@ -404,10 +483,21 @@ fun LoanDetailScreen(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 4.dp).weight(1f),
             )
-            if (isManualLoan) {
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Filled.Edit, contentDescription = "ویرایش مشخصات وام", tint = AppMuted)
+            IconButton(onClick = {
+                if (isManualLoan) {
+                    onEdit()
+                } else {
+                    editMetaName = loan.name
+                    editMetaBank = loan.bank
+                    editMetaBorrower = viewModel.getLoanBorrower(loan).let { if (it == "—") "" else it }
+                    val sd = viewModel.getLoanStartDate(loan)
+                    editMetaYear = sd.y
+                    editMetaMonth = sd.m
+                    editMetaDay = sd.d
+                    showEditMetaDialog = true
                 }
+            }) {
+                Icon(Icons.Filled.Edit, contentDescription = "ویرایش مشخصات وام", tint = AppMuted)
             }
         }
 

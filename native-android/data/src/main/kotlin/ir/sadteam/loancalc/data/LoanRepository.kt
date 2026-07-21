@@ -104,6 +104,32 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
      * فرمِ ویرایش با تاریخِ فعلیِ وام لازم داریم. */
     fun getStartDate(loan: LoanEntity): PersianDate = parseStartDate(parseData(loan))
 
+    /** اسمِ وام‌گیرنده - برای پرکردنِ فرمِ ویرایشِ وام‌های محاسبه‌شده (رجوع کن به [updateLoanMeta]).
+     * وام‌های دستی این فیلد رو ندارن، همیشه «—» برمی‌گردونه. */
+    fun getBorrower(loan: LoanEntity): String = (parseData(loan)["borrower"] as? String) ?: "—"
+
+    /**
+     * ویرایشِ مشخصاتِ *غیرمالیِ* هر وامی (دستی یا محاسبه‌شده) - فقط اسم/بانک/وام‌گیرنده/تاریخِ شروع،
+     * بدون دست‌زدن به مبلغ/نرخ/تعدادِ اقساط/ردیف‌ها. برخلافِ [updateManualLoan] که مخصوصِ وام‌های
+     * دستیه (چون فرضِ «همه‌ی اقساط برابر» می‌کنه)، این یکی رو هر نوع وامی امن‌ه - وام‌های محاسبه‌شده/
+     * قرض‌الحسنه ساختارِ اقساطِ نامساوی دارن که بازمحاسبه‌شون نیاز به اجرای دوباره‌ی فرمولِ کاملِ
+     * LoanCalculator داره (که یعنی پاک‌شدنِ تاریخچه‌ی پرداخت) - این تابع عمداً وارد اون بحث نمی‌شه.
+     */
+    suspend fun updateLoanMeta(
+        loan: LoanEntity,
+        name: String,
+        bank: String,
+        borrower: String,
+        startDate: Map<String, Int>,
+    ) {
+        val data = parseDataMutable(loan)
+        data["name"] = name
+        data["bank"] = bank
+        data["borrower"] = borrower
+        data["startDate"] = startDate
+        loanDao.upsert(loan.copy(name = name, bank = bank, dataJson = gson.toJson(data)))
+    }
+
     /**
      * ویرایشِ مشخصاتِ کلیِ یه وامِ دستیِ ازقبل‌ذخیره‌شده (اسم/بانک/مبلغِ هر قسط/تعدادِ کل/تاریخِ
      * شروع) - برخلافِ [setRowInstallment]/[setAllRowsInstallment] که فقط مبلغِ اقساط رو دست می‌زنن.
