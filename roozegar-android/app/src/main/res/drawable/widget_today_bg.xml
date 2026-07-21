@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- برجسته‌سازی «امروز» تو ویجت ماه: قرص گرادیانی فیروزه‌ای→طلایی (امضای بصری اپ). -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <gradient
-        android:angle="45"
-        android:startColor="#FF2DD4BF"
-        android:endColor="#FFF2B04B" />
-    <corners android:radius="10dp" />
-</shape>

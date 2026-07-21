@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- پس‌زمینه‌ی پنجره همون سرمه‌ای اپه که موقع باز شدن (قبل از اولین فریم Compose) فلش سفید نزنه. -->
-    <style name="Theme.Roozegar" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/night_bg</item>
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-    </style>
-</resources>
