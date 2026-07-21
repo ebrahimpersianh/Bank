@@ -239,12 +239,25 @@ fun LoginScreen(
                                 singleLine = true,
                             )
                         }
-                        Box(
-                            modifier = Modifier
-                                .background(AppSurface2, RoundedCornerShape(10.dp))
-                                .padding(horizontal = 14.dp, vertical = 16.dp),
-                        ) {
-                            Text("+۹۸", color = AppText, fontSize = 15.sp)
+                        // باگِ رفع‌شده: بدونِ این override، «+۹۸» گاهی (خصوصاً با فونتِ سیستمیِ
+                        // بزرگ‌تر) به‌جای یه خط، دو خط می‌شد («۹+» بالا، «۸» پایین) - چون تویِ
+                        // ambientِ RTL، این رشته‌ی مختلطِ «+»/ارقام رو موقعِ اندازه‌گیری با bidiِ
+                        // ناخواسته می‌شکست. الان هم LTR فورس شده هم maxLines=1/softWrap=false
+                        // (تضمینِ تک‌خط بودن، صرف‌نظر از مقیاسِ فونتِ سیستم).
+                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                            Box(
+                                modifier = Modifier
+                                    .background(AppSurface2, RoundedCornerShape(10.dp))
+                                    .padding(horizontal = 14.dp, vertical = 16.dp),
+                            ) {
+                                Text(
+                                    "+۹۸",
+                                    color = AppText,
+                                    fontSize = 15.sp,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                )
+                            }
                         }
                     }
 
@@ -379,8 +392,12 @@ private fun formatCountdown(totalSeconds: Int): String {
 /**
  * ورودیِ کدِ تایید به‌صورتِ [length] باکسِ جداگانه (دقیقاً مثلِ رفرنسِ کاربر) - یه `BasicTextField`
  * نامرئی زیرِ کاره که فوکوس/کیبرد/مکان‌نما رو مدیریت می‌کنه، `decorationBox`ش به‌جای متنِ خطی، همون
- * تعداد باکس رو رسم می‌کنه. تو RTL (که کلِ اپ باهاشه)، باکسِ اول (اولین رقمِ تایپ‌شده) خودش‌به‌خود
- * سمتِ راست می‌شینه - نیازی به معکوس‌کردنِ دستی نیست.
+ * تعداد باکس رو رسم می‌کنه.
+ *
+ * **باگِ رفع‌شده**: قبلاً تو RTL (که کلِ اپ باهاشه) اولین رقمِ تایپ‌شده خودکار سمتِ راست می‌شینه بود -
+ * ولی کاربر صراحتاً خواستِ عکسِ این رو («عدد باید از سمتِ چپ وارد بشه»، هم‌راستا با همون رفعِ جهتِ
+ * فیلدِ شماره‌موبایل). الان Rowِ باکس‌ها با `LocalLayoutDirection` روی LTR فورس شده - رقمِ اول
+ * سمتِ چپ می‌شینه و رقم‌های بعدی از چپ به راست اضافه می‌شن.
  */
 @Composable
 private fun OtpBoxRow(value: String, onValueChange: (String) -> Unit, length: Int) {
@@ -399,24 +416,33 @@ private fun OtpBoxRow(value: String, onValueChange: (String) -> Unit, length: In
         // واقعی جایی تو درختِ کامپوز داشته باشه؛ چیزی که کاربر واقعاً می‌بینه همون Rowِ باکس‌هاست.
         decorationBox = { innerTextField ->
             Box(modifier = Modifier.size(0.dp)) { innerTextField() }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) { focusRequester.requestFocus() },
-            ) {
-                repeat(length) { index ->
-                    val digit = value.getOrNull(index)?.toString()
-                    val filled = digit != null
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .background(if (filled) AppSurface2 else AppSurface, RoundedCornerShape(12.dp))
-                            .border(1.dp, if (filled) AppPrimary else AppLine, RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(toFa(digit ?: ""), color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) { focusRequester.requestFocus() },
+                ) {
+                    repeat(length) { index ->
+                        val digit = value.getOrNull(index)?.toString()
+                        val filled = digit != null
+                        Box(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .background(if (filled) AppSurface2 else AppSurface, RoundedCornerShape(12.dp))
+                                .border(1.dp, if (filled) AppPrimary else AppLine, RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                toFa(digit ?: ""),
+                                color = AppText,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
                     }
                 }
             }
