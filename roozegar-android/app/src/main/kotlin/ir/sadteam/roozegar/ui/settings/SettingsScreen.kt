@@ -108,7 +108,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                 Text("درباره", style = MaterialTheme.typography.titleMedium, color = Teal)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "روزگار - تقویم فارسی\nنسخه‌ی ${BuildConfig.VERSION_NAME}",
+                    "تقویم من - تقویم فارسی\nنسخه‌ی ${BuildConfig.VERSION_NAME}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextMuted,
                 )

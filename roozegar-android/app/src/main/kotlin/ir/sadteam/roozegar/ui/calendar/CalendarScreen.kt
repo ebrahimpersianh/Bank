@@ -87,7 +87,7 @@ fun CalendarScreen(today: PersianDate, effectsEnabled: Boolean, onOpenSettings: 
                     .padding(top = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("روزگار", style = MaterialTheme.typography.titleLarge, color = Gold)
+                Text("تقویم من", style = MaterialTheme.typography.titleLarge, color = Gold)
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = onOpenSettings) {
                     Icon(Icons.Filled.Settings, contentDescription = "تنظیمات", tint = TextMuted)

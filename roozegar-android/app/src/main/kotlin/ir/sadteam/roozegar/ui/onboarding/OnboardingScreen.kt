@@ -183,7 +183,7 @@ private fun WelcomePage() {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         AnimatedLogo()
         Spacer(Modifier.height(24.dp))
-        Text("روزگار", style = MaterialTheme.typography.displaySmall, color = Gold)
+        Text("تقویم من", style = MaterialTheme.typography.displaySmall, color = Gold)
         Spacer(Modifier.height(8.dp))
         Text(
             "تقویم فارسی، به شیوه‌ی شیشه",
@@ -208,7 +208,7 @@ private fun NotificationPage() {
     }
     PermissionPage(
         title = "تاریخ، همیشه بالای گوشی",
-        body = "روزگار عدد امروز رو تو نوار وضعیت و یه اعلان دائمی (تاریخ کامل شمسی، میلادی و قمری + " +
+        body = "تقویم من عدد امروز رو تو نوار وضعیت و یه اعلان دائمی (تاریخ کامل شمسی، میلادی و قمری + " +
             "مناسبت روز) نشون می‌ده. برای این کار به اجازه‌ی اعلان نیاز داره - بی‌صداست و هیچ‌وقت مزاحم نمی‌شه.",
         buttonText = if (granted) "✓ فعال شد" else "فعال‌سازی اعلان",
         buttonEnabled = !granted,
@@ -228,7 +228,7 @@ private fun BatteryPage() {
     PermissionPage(
         title = "که هیچ‌وقت قطع نشه",
         body = "بعضی گوشی‌ها برای صرفه‌جویی باتری، اپ‌های پس‌زمینه رو می‌کشن و اعلان تاریخ می‌پره. " +
-            "با خارج‌کردن روزگار از بهینه‌سازی باتری، تاریخ و ویجت‌ها همیشه به‌روز می‌مونن - مصرف واقعی " +
+            "با خارج‌کردن تقویم من از بهینه‌سازی باتری، تاریخ و ویجت‌ها همیشه به‌روز می‌مونن - مصرف واقعی " +
             "اپ ناچیزه چون فقط شب‌ها یه لحظه بیدار می‌شه.",
         buttonText = if (exempt) "✓ انجام شد" else "خارج‌کردن از بهینه‌سازی باتری",
         buttonEnabled = !exempt,
@@ -252,7 +252,7 @@ private fun BatteryPage() {
                     Text("تنظیمات «اجرای خودکار» گوشی ${brandFa()}", color = TextMuted)
                 }
                 Text(
-                    "گوشی شما یه تنظیم جدا برای اجرای خودکار بعد از روشن‌شدن داره - روزگار رو اونجا هم فعال کن.",
+                    "گوشی شما یه تنظیم جدا برای اجرای خودکار بعد از روشن‌شدن داره - «تقویم من» رو اونجا هم فعال کن.",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextMuted,
                     modifier = Modifier.padding(top = 6.dp),
@@ -270,7 +270,7 @@ private fun FinishPage(onDone: () -> Unit) {
         Text("همه‌چیز آماده‌ست", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text(
-            "ویجت‌های روزگار رو هم از صفحه‌ی اصلی گوشی اضافه کن:\nنگه‌داشتن رو صفحه‌ی خالی ← ویجت‌ها ← روزگار",
+            "ویجت‌های تقویم من رو هم از صفحه‌ی اصلی گوشی اضافه کن:\nنگه‌داشتن رو صفحه‌ی خالی ← ویجت‌ها ← تقویم من",
             style = MaterialTheme.typography.bodyMedium,
             color = TextMuted,
             textAlign = TextAlign.Center,

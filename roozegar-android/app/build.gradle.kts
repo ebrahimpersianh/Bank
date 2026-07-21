@@ -19,7 +19,7 @@ android {
             keyPassword = "android"
         }
         // کلید واقعی release از متغیرهای محیطی (سکرت‌های CI) - اگه ست نشده باشن، release با کلید
-        // دیباگ امضا می‌شه (فقط برای تست؛ اون APK رو استور آپلود نکن). ⚠️ برای «روزگار» باید یه کلید
+        // دیباگ امضا می‌شه (فقط برای تست؛ اون APK رو استور آپلود نکن). ⚠️ برای «تقویم من» باید یه کلید
         // release جدا از «وام من» ساخته بشه - از اولین انتشار به بعد دیگه قابل تغییر نیست.
         create("release") {
             val path = System.getenv("ROOZEGAR_KEYSTORE_PATH")
@@ -33,7 +33,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "ir.sadteam.roozegar"
+        applicationId = "ir.sadteam.mycalendar"
         minSdk = 24
         targetSdk = 34
         // versionCode/versionName تو workflow از github.run_number تزریق می‌شن - این‌ها فقط پیش‌فرضِ
