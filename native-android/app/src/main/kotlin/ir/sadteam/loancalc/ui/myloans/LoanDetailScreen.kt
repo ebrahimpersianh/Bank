@@ -593,10 +593,17 @@ fun LoanDetailScreen(
                 }
             }
             // اولین بار که وامی رو باز می‌کنی، به‌جای شروع از قسطِ ۱، مستقیم می‌ره رو مرزِ آخرین
-            // قسطِ پرداخت‌شده (خواسته‌ی کاربر: «اگه ده تا رفتم، از اول نیاد، بیاد از رو ده»).
-            LaunchedEffect(rows) {
+            // قسطِ پرداخت‌شده (خواسته‌ی کاربر: «اگه ده تا رفتم، از اول نیاد، بیاد از رو ده») - با
+            // یکی قبلش هم دیده بشه که معلوم باشه آخری چی پرداخت شد.
+            // **باگِ رفع‌شده**: قبلاً کلیدِ این افکت خودِ `rows` بود - چون `rows` با هر تغییرِ
+            // وضعیتِ پرداختِ یه قسط (حتی همینجا، وسطِ کارِ کاربر) یه لیستِ *جدید* می‌شه، هر بار که
+            // کاربر رو همین صفحه یه قسط رو «پرداخت» می‌زد، این افکت دوباره اجرا و صفحه به‌زورِ
+            // اسکرول به مرزِ بعدی می‌پرید - دقیقاً همون چیزی که کاربر نمی‌خواستش. الان با کلیدِ
+            // `Unit` فقط یه‌بار، دقیقاً موقعِ اولین بازشدنِ صفحه اجرا می‌شه.
+            LaunchedEffect(Unit) {
                 val firstUnpaid = rows.indexOfFirst { it["paid"] != true }
-                if (firstUnpaid > 0) innerListState.scrollToItem(firstUnpaid)
+                val target = (firstUnpaid - 1).coerceAtLeast(0)
+                if (firstUnpaid > 0) innerListState.scrollToItem(target)
             }
             val flingConnection = remember(detailListState) {
                 installmentsFlingPassthrough(

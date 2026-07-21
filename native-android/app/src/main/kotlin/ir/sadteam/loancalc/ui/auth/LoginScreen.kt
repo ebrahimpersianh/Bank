@@ -25,6 +25,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,9 +37,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -215,20 +218,27 @@ fun LoginScreen(
                     // تو RTL، اولین چیزِ توی Row سمتِ راست میاد؛ برای این‌که «+۹۸» سمتِ چپ باشه
                     // (خواسته‌ی کاربر)، فیلدِ شماره باید اول تو کد بیاد، بعد چیپِ +۹۸.
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                        OutlinedTextField(
-                            value = phone,
-                            onValueChange = { raw ->
-                                val cleaned = cleanNum(raw).removePrefix("0")
-                                phone = cleaned.take(10)
-                            },
-                            placeholder = { Text("۹xxxxxxxxx") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 8.dp)
-                                .focusRequester(focusRequester),
-                            singleLine = true,
-                        )
+                        // باگِ رفع‌شده: بدونِ این override، چون کلِ اپ globally RTL ه، رقم‌های تایپ‌شده
+                        // تو این فیلد (که یه شماره‌ی صرفاً لاتین/چپ‌به‌راستِ) از سمتِ راست جا می‌گرفتن
+                        // و حسِ «معکوس» می‌دادن (خواسته‌ی کاربر: «عدد رو که وارد می‌کنم از چپ نیست
+                        // از راست») - این‌جا صریحاً LTR فورس می‌شه، بدونِ این‌که چیدمانِ بیرونیِ Row
+                        // (ترتیبِ فیلد/چیپِ +۹۸) عوض بشه.
+                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                            OutlinedTextField(
+                                value = phone,
+                                onValueChange = { raw ->
+                                    val cleaned = cleanNum(raw).removePrefix("0")
+                                    phone = cleaned.take(10)
+                                },
+                                placeholder = { Text("۹xxxxxxxxx") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 8.dp)
+                                    .focusRequester(focusRequester),
+                                singleLine = true,
+                            )
+                        }
                         Box(
                             modifier = Modifier
                                 .background(AppSurface2, RoundedCornerShape(10.dp))

@@ -66,6 +66,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
@@ -163,7 +165,16 @@ fun SettingsScreen(
         label = "settingsScreen",
     ) { key ->
         when (key) {
-            "login" -> LoginScreen(onDismiss = { showLoginPrompt = false }, onLoginSuccess = { showLoginPrompt = false })
+            // «ورود» از داخلِ پنلِ تنظیمات (که خودش عرضِ ۸۵٪ صفحه‌ست، رجوع کن به AnimatedVisibility
+            // تو MainActivity.kt) باید کاملاً فول‌اسکرین باشه، نه محدود به همون عرض - برای همین با
+            // Dialogِ usePlatformDefaultWidth=false نمایش داده می‌شه که تو ویندویی جدا و مستقل از
+            // محدودیتِ عرضِ والد رندر می‌شه.
+            "login" -> Dialog(
+                onDismissRequest = { showLoginPrompt = false },
+                properties = DialogProperties(usePlatformDefaultWidth = false),
+            ) {
+                LoginScreen(onDismiss = { showLoginPrompt = false }, onLoginSuccess = { showLoginPrompt = false })
+            }
             "calendar" -> FinancialCalendarScreen(onBack = { showFinancialCalendar = false })
             "stats" -> StatsScreen(onBack = { showStats = false })
             "cheque" -> ChequeScreen(onBack = { showCheque = false })
