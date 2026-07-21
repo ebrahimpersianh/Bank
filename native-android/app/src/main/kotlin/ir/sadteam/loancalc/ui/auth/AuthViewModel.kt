@@ -78,17 +78,8 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch { authPrefs.setBenefitsSeen(true) }
     }
 
-    /** پورت گیت [ir.sadteam.loancalc.ui.onboarding.PersonalizationScreen] → AppRoot - همون الگوی
-     * null-تا-لود-شدنِ [benefitsSeen]. */
-    val personalizationSeen: StateFlow<Boolean?> = authPrefs.personalizationSeen
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    fun markPersonalizationSeen() {
-        viewModelScope.launch { authPrefs.setPersonalizationSeen(true) }
-    }
-
-    /** پورت گیت [ir.sadteam.loancalc.ui.onboarding.TourScreen] → AppRoot - همون الگوی
-     * null-تا-لود-شدنِ [benefitsSeen]. */
+    /** پورت گیتِ تورِ راهنمای اولین ورود (TabTourOverlay تو LoanCalcApp، نه یه صفحه‌ی جدا) - همون
+     * الگوی null-تا-لود-شدنِ [benefitsSeen]. */
     val tourSeen: StateFlow<Boolean?> = authPrefs.tourSeen
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
