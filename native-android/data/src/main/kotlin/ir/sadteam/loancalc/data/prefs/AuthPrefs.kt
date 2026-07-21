@@ -25,6 +25,8 @@ class AuthPrefs(private val context: Context) {
         val TRIAL_DAYS_LEFT = intPreferencesKey("trial_days_left")
         val SUBSCRIBED_UNTIL = stringPreferencesKey("subscribed_until")
         val SUBSCRIPTION_TIER = stringPreferencesKey("subscription_tier")
+        val PERSONALIZATION_SEEN = booleanPreferencesKey("personalization_seen")
+        val TOUR_SEEN = booleanPreferencesKey("tour_seen")
     }
 
     val authToken: Flow<String?> = context.authDataStore.data.map { it[Keys.TOKEN] }
@@ -71,6 +73,23 @@ class AuthPrefs(private val context: Context) {
     /** پورت صفحه‌ی خوش‌آمد امکانات (رایگان/اشتراکی) اپ رقیب (VAMMAN) - فقط یه‌بار تو کل عمر نصب
      * نشون داده می‌شه، درست بعد از گیت مجوز و قبل از گیت ورود/مهمان. */
     val benefitsSeen: Flow<Boolean> = context.authDataStore.data.map { it[Keys.BENEFITS_SEEN] ?: false }
+
+    /** صفحه‌ی «الان دنبالِ چی هستی؟» (PersonalizationScreen) - فقط یه‌بار، بینِ BenefitsScreen و
+     * گیتِ ورود/مهمان نشون داده می‌شه؛ خودِ انتخاب (کدوم تب) فقط برای همون نشستِ اولیه تو حافظه
+     * نگه داشته می‌شه (رجوع کن به AppRoot تو MainActivity.kt)، اینجا فقط «دیده شد یا نه» ذخیره می‌شه. */
+    val personalizationSeen: Flow<Boolean> = context.authDataStore.data.map { it[Keys.PERSONALIZATION_SEEN] ?: false }
+
+    suspend fun setPersonalizationSeen(value: Boolean) {
+        context.authDataStore.edit { it[Keys.PERSONALIZATION_SEEN] = value }
+    }
+
+    /** تورِ راهنمای اولین ورود (TourScreen) - فقط یه‌بار تو کل عمر نصب، درست بعد از اولین
+     * WelcomeMessageScreen و قبل از ورود به صفحه‌ی اصلی نشون داده می‌شه. */
+    val tourSeen: Flow<Boolean> = context.authDataStore.data.map { it[Keys.TOUR_SEEN] ?: false }
+
+    suspend fun setTourSeen(value: Boolean) {
+        context.authDataStore.edit { it[Keys.TOUR_SEEN] = value }
+    }
 
     suspend fun saveSession(
         token: String,

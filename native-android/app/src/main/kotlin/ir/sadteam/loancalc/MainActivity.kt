@@ -105,7 +105,9 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.onboarding.AnimatedAppEntrance
 import ir.sadteam.loancalc.ui.onboarding.BenefitsScreen
 import ir.sadteam.loancalc.ui.onboarding.PermissionGateScreen
+import ir.sadteam.loancalc.ui.onboarding.PersonalizationScreen
 import ir.sadteam.loancalc.ui.onboarding.SplashIntroScreen
+import ir.sadteam.loancalc.ui.onboarding.TourScreen
 import ir.sadteam.loancalc.ui.onboarding.WelcomeMessageScreen
 import ir.sadteam.loancalc.ui.update.AppUpdateViewModel
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
@@ -251,6 +253,27 @@ private fun AppRoot(
         return
     }
 
+    // «الان دنبالِ چی هستی؟» - فقط یه‌بار، بینِ BenefitsScreen و گیتِ ورود/مهمان. جوابش (کدوم تب)
+    // فقط تو همین متغیرِ محلی نگه داشته می‌شه (نه DataStore) و مستقیم به LoanCalcApp پاس داده
+    // می‌شه تا اولین باری که کاربر به صفحه‌ی اصلی می‌رسه همون تب باز باشه - رجوع کن به
+    // PersonalizationScreen.kt.
+    var preferredTabRoute by remember { mutableStateOf<String?>(null) }
+    val personalizationSeen by authViewModel.personalizationSeen.collectAsState()
+    if (personalizationSeen != true) {
+        if (personalizationSeen == false) {
+            PersonalizationScreen(
+                onSelect = { choice ->
+                    preferredTabRoute = choice.route
+                    authViewModel.markPersonalizationSeen()
+                },
+                onSkip = { authViewModel.markPersonalizationSeen() },
+            )
+        } else {
+            Surface(modifier = Modifier.fillMaxSize(), color = AppSurface) {}
+        }
+        return
+    }
+
     val gateState by authViewModel.gateState.collectAsState()
     when (gateState) {
         null -> Surface(modifier = Modifier.fillMaxSize(), color = AppSurface) {}
@@ -266,7 +289,13 @@ private fun AppRoot(
                 }
                 WelcomeMessageScreen(name = name, onDone = { welcomeDone = true })
             } else {
-                AnimatedAppEntrance { LoanCalcApp() }
+                // تورِ راهنمای اولین ورود - فقط یه‌بار تو کل عمر نصب (رجوع کن به TourScreen.kt).
+                val tourSeen by authViewModel.tourSeen.collectAsState()
+                when (tourSeen) {
+                    null -> Surface(modifier = Modifier.fillMaxSize(), color = AppSurface) {}
+                    false -> TourScreen(onDone = { authViewModel.markTourSeen() })
+                    true -> AnimatedAppEntrance { LoanCalcApp(initialRoute = preferredTabRoute) }
+                }
             }
         }
     }
@@ -281,6 +310,7 @@ private fun AppRoot(
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun LoanCalcApp(
+    initialRoute: String? = null,
     themeViewModel: ThemeViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
     privacyModeViewModel: PrivacyModeViewModel = hiltViewModel(),
@@ -402,7 +432,9 @@ private fun LoanCalcApp(
         ) { padding ->
             NavHost(
                 navController = navController,
-                startDestination = BottomTab.BANK_LOAN.route,
+                // اگه کاربر تو PersonalizationScreen یه تبِ خاص رو انتخاب کرده بود (خواسته‌ی «الان
+                // دنبالِ چی هستی؟»)، همون اولین تبی می‌شه که می‌بینه؛ وگرنه همون پیش‌فرضِ قبلی.
+                startDestination = initialRoute ?: BottomTab.BANK_LOAN.route,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
