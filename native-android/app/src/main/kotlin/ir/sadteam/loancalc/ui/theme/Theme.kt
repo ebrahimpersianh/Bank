@@ -11,7 +11,27 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-private val AppTypography = Typography()
+// فونتِ سراسریِ اپ Vazirmatn شد (به‌جای پیش‌فرضِ سیستم/اندروید که تا الان هیچ‌جا override نمی‌شد) -
+// چون MaterialTheme متنِ پیش‌فرضِ کلِ اپ رو از رو AppTypography.bodyLarge می‌گیره (با
+// ProvideTextStyle)، همین یه‌جا کافیه؛ هیچ Text ای تو اپ فونتِ صریح ست نکرده بود.
+private val defaultTypography = Typography()
+private val AppTypography = Typography(
+    displayLarge = defaultTypography.displayLarge.copy(fontFamily = VazirmatnFontFamily),
+    displayMedium = defaultTypography.displayMedium.copy(fontFamily = VazirmatnFontFamily),
+    displaySmall = defaultTypography.displaySmall.copy(fontFamily = VazirmatnFontFamily),
+    headlineLarge = defaultTypography.headlineLarge.copy(fontFamily = VazirmatnFontFamily),
+    headlineMedium = defaultTypography.headlineMedium.copy(fontFamily = VazirmatnFontFamily),
+    headlineSmall = defaultTypography.headlineSmall.copy(fontFamily = VazirmatnFontFamily),
+    titleLarge = defaultTypography.titleLarge.copy(fontFamily = VazirmatnFontFamily),
+    titleMedium = defaultTypography.titleMedium.copy(fontFamily = VazirmatnFontFamily),
+    titleSmall = defaultTypography.titleSmall.copy(fontFamily = VazirmatnFontFamily),
+    bodyLarge = defaultTypography.bodyLarge.copy(fontFamily = VazirmatnFontFamily),
+    bodyMedium = defaultTypography.bodyMedium.copy(fontFamily = VazirmatnFontFamily),
+    bodySmall = defaultTypography.bodySmall.copy(fontFamily = VazirmatnFontFamily),
+    labelLarge = defaultTypography.labelLarge.copy(fontFamily = VazirmatnFontFamily),
+    labelMedium = defaultTypography.labelMedium.copy(fontFamily = VazirmatnFontFamily),
+    labelSmall = defaultTypography.labelSmall.copy(fontFamily = VazirmatnFontFamily),
+)
 
 // گوشه‌گردیِ مینیمالِ سراسری - چون OutlinedTextField شکلش رو از shapes.extraSmall می‌گیره، این‌جا
 // یه‌بار گردتر کردنش همه‌ی فیلدهای ورودی اپ رو گوشه‌گرد می‌کنه (به‌درخواست کاربر «همه باکس‌ها ar دار»).
