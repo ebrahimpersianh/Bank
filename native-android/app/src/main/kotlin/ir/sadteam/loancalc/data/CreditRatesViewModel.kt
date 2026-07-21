@@ -10,14 +10,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
+
+// حداکثر مدتی که منتظرِ فچِ نرخ‌های سرور می‌مونیم قبل از رضایت‌دادن به فالبکِ استاتیک - خیلی کوتاه‌تر
+// از تایم‌اوتِ سراسریِ OkHttp (۱۵ ثانیه تو ApiClient.kt) که برای عملیاتِ حیاتی (ورود، سینکِ وام) لازمه؛
+// خدماتِ اعتباری صرفاً یه به‌روزرسانیِ نرخِ جانبیه، کاربر نباید ۱۵ ثانیه منتظرِ (حتی اسکلتونِ) اون
+// بمونه - رجوع کن به CLAUDE.md، گزارشِ کاربر «باز هم دیر لود می‌شه».
+private const val CREDIT_RATES_TIMEOUT_MS = 4000L
 
 /**
  * نرخِ خدمات اعتباری (creditServices تو Banks.kt) قبلاً همیشه هاردکدِ تو خودِ اپ بود؛ الان از سرور
  * (GET /api/credit-rates) تازه می‌شه تا با تغییرِ نرخِ واقعیِ دیجی‌پی/اسنپ‌پی و ... نیازی به نسخه‌ی
  * جدیدِ اپ نباشه. [rates] همیشه با همون لیستِ استاتیکِ Banks.kt شروع می‌شه (بدون تاخیر/پرش تو UI و
- * کاملاً آفلاین‌سیف)، و فقط اگه فراخوانیِ شبکه موفق بود جایگزین می‌شه؛ خطا (بی‌اینترنتی، سرور پایین)
- * عمداً نادیده گرفته می‌شه و همون fallback باقی می‌مونه.
+ * کاملاً آفلاین‌سیف)، و فقط اگه فراخوانیِ شبکه موفق بود جایگزین می‌شه؛ خطا یا کندی (بی‌اینترنتی، سرور
+ * پایین/کند) عمداً نادیده گرفته می‌شه و همون fallback باقی می‌مونه.
  */
 @HiltViewModel
 class CreditRatesViewModel @Inject constructor(
@@ -34,8 +41,8 @@ class CreditRatesViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             try {
-                val fetched = apiService.getCreditRates().rates
-                if (fetched.isNotEmpty()) {
+                val fetched = withTimeoutOrNull(CREDIT_RATES_TIMEOUT_MS) { apiService.getCreditRates().rates }
+                if (!fetched.isNullOrEmpty()) {
                     _rates.value = fetched.map { it.toBankEntry() }
                 }
             } catch (e: Exception) {

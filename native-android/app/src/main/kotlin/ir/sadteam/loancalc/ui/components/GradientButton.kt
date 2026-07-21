@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,6 +59,11 @@ import ir.sadteam.loancalc.ui.theme.AppText
  * برعکس) - یعنی لحظه‌ی ریست‌شدنِ چرخه دقیقاً وقتیه که نوار نامرئیه، پس هیچ پرشی حس نمی‌شه.
  * آلفای نوار هم به‌خواستِ کاربر («خیلی ظریف باشه، انگار یک سایه‌ست») از ۰.۶ به ۰.۱۴ کم شد - دیگه یه
  * نوارِ طلاییِ پررنگ نیست، فقط یه هایلایتِ ظریفِ عبوریه.
+ *
+ * شکلِ گوشه‌ها از یه عددِ ثابتِ جداگانه (۱۰dp) به `MaterialTheme.shapes.small` عوض شد - خواسته‌ی
+ * کاربر: «اندازه‌ی گوشه‌ش بشه مثلِ دکمه‌ی محاسبه نرخ سود» (یه `OutlinedButton` معمولی که شکلش رو از
+ * همین توکن می‌گیره) - این‌جوری هر دو نوع دکمه (اصلی/گرادینتی و ثانویه/outline) تو کل اپ همیشه
+ * دقیقاً هم‌شکل می‌مونن، حتی اگه بعداً AppShapes تو Theme.kt عوض بشه.
  */
 @Composable
 fun GradientButton(
@@ -67,7 +72,7 @@ fun GradientButton(
     enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val shape = RoundedCornerShape(10.dp)
+    val shape = MaterialTheme.shapes.small
     val glassGradient = Brush.linearGradient(
         listOf(AppPrimary.copy(alpha = 0.38f), AppPrimary.copy(alpha = 0.10f)),
     )

@@ -59,10 +59,13 @@ val LightAppColors = AppColorPalette(
     muted = Color(0xFF6B7488),
     danger = Color(0xFFC6474B),
     line = Color(0x14141A2A), // rgba(20,26,42,0.08)
-    glassBase = Color(0xB3FFFFFF), // سفید با آلفای ~۷۰٪
-    glassGradientStart = Color(0x14141A2A), // متن تیره با آلفای ~۸٪ (سایه‌ی ظریفِ لبه‌ی شیشه)
+    // باگِ رفع‌شده: مقادیرِ اولیه (پایه‌ی ۷۰٪ + گرادیانِ ۸٪ + حاشیه‌ی ۱۲٪) رو زمینه‌ی از قبل تقریباً
+    // سفیدِ تمِ روشن عملاً نامرئی بود - کاربر گزارش داد «تو حالت عادی باکس‌ها اصلاً شیشه‌ای نیست
+    // سفیده». پایه‌ی نیمه‌شفاف‌تر شد (پس‌زمینه/Aurora بیشتر ازش رد می‌شه) و گرادیان/حاشیه پررنگ‌تر.
+    glassBase = Color(0x80FFFFFF), // سفید با آلفای ~۵۰٪
+    glassGradientStart = Color(0x2E141A2A), // متن تیره با آلفای ~۱۸٪ (سایه‌ی لبه‌ی شیشه)
     glassGradientEnd = Color(0x00141A2A), // کاملاً شفاف
-    glassBorder = Color(0x1F141A2A), // متن تیره با آلفای ~۱۲٪
+    glassBorder = Color(0x40141A2A), // متن تیره با آلفای ~۲۵٪
 )
 
 val LocalAppColors = staticCompositionLocalOf { DarkAppColors }

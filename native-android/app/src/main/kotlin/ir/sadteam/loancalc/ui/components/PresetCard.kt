@@ -52,6 +52,7 @@ fun PresetCard(
         Icon(icon, contentDescription = title, tint = AppPrimary, modifier = Modifier.size(22.dp))
         Text(
             text = title,
+            color = AppText,
             fontSize = 11.sp,
             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
             textAlign = TextAlign.Center,
