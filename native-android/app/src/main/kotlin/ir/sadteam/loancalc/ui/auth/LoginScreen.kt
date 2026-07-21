@@ -25,7 +25,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,11 +36,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,6 +47,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.LottieSpinner
+import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -218,12 +216,12 @@ fun LoginScreen(
                     // تو RTL، اولین چیزِ توی Row سمتِ راست میاد؛ برای این‌که «+۹۸» سمتِ چپ باشه
                     // (خواسته‌ی کاربر)، فیلدِ شماره باید اول تو کد بیاد، بعد چیپِ +۹۸.
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                        // باگِ رفع‌شده: بدونِ این override، چون کلِ اپ globally RTL ه، رقم‌های تایپ‌شده
+                        // باگِ رفع‌شده: بدونِ [Ltr]، چون کلِ اپ globally RTL ه، رقم‌های تایپ‌شده
                         // تو این فیلد (که یه شماره‌ی صرفاً لاتین/چپ‌به‌راستِ) از سمتِ راست جا می‌گرفتن
                         // و حسِ «معکوس» می‌دادن (خواسته‌ی کاربر: «عدد رو که وارد می‌کنم از چپ نیست
                         // از راست») - این‌جا صریحاً LTR فورس می‌شه، بدونِ این‌که چیدمانِ بیرونیِ Row
                         // (ترتیبِ فیلد/چیپِ +۹۸) عوض بشه.
-                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                        Ltr {
                             OutlinedTextField(
                                 value = phone,
                                 onValueChange = { raw ->
@@ -239,12 +237,12 @@ fun LoginScreen(
                                 singleLine = true,
                             )
                         }
-                        // باگِ رفع‌شده: بدونِ این override، «+۹۸» گاهی (خصوصاً با فونتِ سیستمیِ
-                        // بزرگ‌تر) به‌جای یه خط، دو خط می‌شد («۹+» بالا، «۸» پایین) - چون تویِ
-                        // ambientِ RTL، این رشته‌ی مختلطِ «+»/ارقام رو موقعِ اندازه‌گیری با bidiِ
-                        // ناخواسته می‌شکست. الان هم LTR فورس شده هم maxLines=1/softWrap=false
-                        // (تضمینِ تک‌خط بودن، صرف‌نظر از مقیاسِ فونتِ سیستم).
-                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                        // باگِ رفع‌شده: بدونِ [Ltr]، «+۹۸» گاهی (خصوصاً با فونتِ سیستمیِ بزرگ‌تر)
+                        // به‌جای یه خط، دو خط می‌شد («۹+» بالا، «۸» پایین) - چون تویِ ambientِ RTL،
+                        // این رشته‌ی مختلطِ «+»/ارقام رو موقعِ اندازه‌گیری با bidiِ ناخواسته می‌شکست.
+                        // الان هم LTR فورس شده هم maxLines=1/softWrap=false (تضمینِ تک‌خط بودن،
+                        // صرف‌نظر از مقیاسِ فونتِ سیستم).
+                        Ltr {
                             Box(
                                 modifier = Modifier
                                     .background(AppSurface2, RoundedCornerShape(10.dp))
@@ -416,7 +414,7 @@ private fun OtpBoxRow(value: String, onValueChange: (String) -> Unit, length: In
         // واقعی جایی تو درختِ کامپوز داشته باشه؛ چیزی که کاربر واقعاً می‌بینه همون Rowِ باکس‌هاست.
         decorationBox = { innerTextField ->
             Box(modifier = Modifier.size(0.dp)) { innerTextField() }
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Ltr {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.clickable(

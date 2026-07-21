@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -103,22 +104,26 @@ fun LockScreen(
 
         if (pinHash != null) {
             val lockedOut = secondsLeft > 0
-            OutlinedTextField(
-                value = pin,
-                onValueChange = {
-                    val cleaned = cleanNum(it)
-                    if (cleaned.length <= 8) {
-                        pin = cleaned
-                        error = null
-                    }
-                },
-                enabled = !lockedOut,
-                label = { Text("PIN") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                modifier = Modifier.fillMaxWidth(),
-            )
+            // Ltr: بدونش، تایپِ PIN تو ambientِ RTLِ کلِ اپ از سمتِ راست جا می‌گرفت - همون باگی که
+            // فیلدِ شماره‌موبایل/کدِ تاییدِ LoginScreen داشتن (رجوع کن به کامنتِ Ltr.kt).
+            Ltr {
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = {
+                        val cleaned = cleanNum(it)
+                        if (cleaned.length <= 8) {
+                            pin = cleaned
+                            error = null
+                        }
+                    },
+                    enabled = !lockedOut,
+                    label = { Text("PIN") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             GradientButton(
                 onClick = {
                     when (val result = attemptPin(pin)) {

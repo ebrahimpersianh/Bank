@@ -49,6 +49,7 @@ import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
+import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -209,13 +210,17 @@ fun AddEditChequeScreen(
                     val remainingVal = sumVal - (amountText.toLongOrNull()?.toDouble() ?: 0.0)
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         AppCard(label = "شناسه ملی / کد ملی") {
-                            OutlinedTextField(
-                                value = nationalId,
-                                onValueChange = { nationalId = cleanNum(it).take(11) },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                            )
+                            // Ltr: بدونش، تایپِ عدد زیرِ RTLِ کلِ اپ از سمتِ راست جا می‌گرفت - رجوع
+                            // کن به کامنتِ Ltr.kt.
+                            Ltr {
+                                OutlinedTextField(
+                                    value = nationalId,
+                                    onValueChange = { nationalId = cleanNum(it).take(11) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                )
+                            }
                         }
                         AppCard(label = "مانده قبلی (تومان)") {
                             OutlinedTextField(
@@ -283,24 +288,30 @@ fun AddEditChequeScreen(
         }
         item {
             AppCard(label = "شماره چک") {
-                OutlinedTextField(
-                    value = chequeNumber,
-                    onValueChange = { chequeNumber = cleanNum(it) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
+                // Ltr: رجوع کن به کامنتِ Ltr.kt.
+                Ltr {
+                    OutlinedTextField(
+                        value = chequeNumber,
+                        onValueChange = { chequeNumber = cleanNum(it) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                }
             }
         }
         item {
             AppCard(label = "شناسه ۱۶ رقمی صیادی (اختیاری)") {
-                OutlinedTextField(
-                    value = sayadId,
-                    onValueChange = { sayadId = cleanNum(it).take(16) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
+                // Ltr: رجوع کن به کامنتِ Ltr.kt.
+                Ltr {
+                    OutlinedTextField(
+                        value = sayadId,
+                        onValueChange = { sayadId = cleanNum(it).take(16) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                }
             }
         }
         item {

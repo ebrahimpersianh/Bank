@@ -91,6 +91,7 @@ import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.InAppBannerState
 import ir.sadteam.loancalc.ui.components.LottieSpinner
+import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.GoldSheenBox
 import ir.sadteam.loancalc.ui.components.PulseGlowBox
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -1049,24 +1050,30 @@ private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
         title = { Text("تنظیم PIN") },
         text = {
             Column {
-                OutlinedTextField(
-                    value = pin,
-                    onValueChange = { val cleaned = cleanNum(it); if (cleaned.length <= 8) pin = cleaned },
-                    label = { Text("PIN جدید") },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = confirmPin,
-                    onValueChange = { val cleaned = cleanNum(it); if (cleaned.length <= 8) confirmPin = cleaned },
-                    label = { Text("تکرار PIN") },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                )
+                // Ltr: همون باگِ فیلدهای شماره‌موبایل/کدِ تاییدِ LoginScreen (تایپِ عدد زیرِ RTL از
+                // سمتِ راست جا می‌گرفت) - رجوع کن به کامنتِ Ltr.kt.
+                Ltr {
+                    OutlinedTextField(
+                        value = pin,
+                        onValueChange = { val cleaned = cleanNum(it); if (cleaned.length <= 8) pin = cleaned },
+                        label = { Text("PIN جدید") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                Ltr {
+                    OutlinedTextField(
+                        value = confirmPin,
+                        onValueChange = { val cleaned = cleanNum(it); if (cleaned.length <= 8) confirmPin = cleaned },
+                        label = { Text("تکرار PIN") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    )
+                }
                 if (error != null) {
                     Text(error ?: "", color = AppDanger, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
                 }

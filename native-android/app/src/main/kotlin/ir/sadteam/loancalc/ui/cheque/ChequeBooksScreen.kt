@@ -34,6 +34,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -134,22 +135,27 @@ fun ChequeBooksScreen(
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         AppCard(label = "شماره شروع", modifier = Modifier.weight(1f)) {
-                            OutlinedTextField(
-                                value = startText,
-                                onValueChange = { startText = cleanNum(it) },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                            )
+                            // Ltr: رجوع کن به کامنتِ Ltr.kt.
+                            Ltr {
+                                OutlinedTextField(
+                                    value = startText,
+                                    onValueChange = { startText = cleanNum(it) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                )
+                            }
                         }
                         AppCard(label = "شماره پایان", modifier = Modifier.weight(1f)) {
-                            OutlinedTextField(
-                                value = endText,
-                                onValueChange = { endText = cleanNum(it) },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                            )
+                            Ltr {
+                                OutlinedTextField(
+                                    value = endText,
+                                    onValueChange = { endText = cleanNum(it) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                )
+                            }
                         }
                     }
                     if (error != null) {
