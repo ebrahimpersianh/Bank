@@ -25,6 +25,11 @@ data class AppColorPalette(
     val glassGradientStart: Color,
     val glassGradientEnd: Color,
     val glassBorder: Color,
+    // نقطه‌ی نورِ نوکِ‌تیزِ گوشه‌ی بالا-چپِ AppCard (خواسته‌ی کاربر: طرحِ «Liquid Glass»ِ iOS از بینِ
+    // ۴ طرحِ پیش‌نمایش‌شده‌ی HTML انتخاب شد) - همون هایلایتِ نوریِ مشخصه‌ی شیشه‌ی اپل که با یه بلورِ
+    // واقعی شبیه‌سازی می‌شه، اینجا چون AuroraBackground عمداً بدونِ RenderEffect (بلورِ واقعی، سنگین
+    // رو گوشیِ ضعیف) پیاده شده، با یه Brush.radialGradient ثابت تقلید می‌شه.
+    val glassHighlight: Color,
 )
 
 // خواسته‌ی صریح کاربر: primary/primaryDim از یه سبزِ فیروزه‌ایِ نزدیک به سبز (hue ~169°) به یه
@@ -42,10 +47,13 @@ val DarkAppColors = AppColorPalette(
     muted = Color(0xFF7C879E),
     danger = Color(0xFFE56B6F),
     line = Color(0x14EEF1F8), // rgba(238,241,248,0.08)
-    glassBase = Color(0x6A161F35), // surface تیره با آلفای ~۴۲٪
-    glassGradientStart = Color(0x17FFFFFF), // سفید با آلفای ~۹٪
-    glassGradientEnd = Color(0x04FFFFFF), // سفید با آلفای ~۱.۵٪
-    glassBorder = Color(0x1FFFFFFF), // سفید با آلفای ~۱۲٪
+    // دورِ سومِ شیشه‌ای‌شدن («Liquid Glass» - رجوع کن به کامنتِ glassHighlight بالا): پایه شفاف‌تر شد
+    // (۴۲٪→۳۲٪، Aurora بیشتر دیده می‌شه)، حاشیه روشن‌تر/تیزتر شد (لبه‌ی شیشه‌ی واقعی‌تر).
+    glassBase = Color(0x52161F35), // surface تیره با آلفای ~۳۲٪
+    glassGradientStart = Color(0x26FFFFFF), // سفید با آلفای ~۱۵٪
+    glassGradientEnd = Color(0x00FFFFFF), // کاملاً شفاف
+    glassBorder = Color(0x38FFFFFF), // سفید با آلفای ~۲۲٪
+    glassHighlight = Color(0x45FFFFFF), // سفید با آلفای ~۲۷٪
 )
 
 val LightAppColors = AppColorPalette(
@@ -62,10 +70,13 @@ val LightAppColors = AppColorPalette(
     // باگِ رفع‌شده: مقادیرِ اولیه (پایه‌ی ۷۰٪ + گرادیانِ ۸٪ + حاشیه‌ی ۱۲٪) رو زمینه‌ی از قبل تقریباً
     // سفیدِ تمِ روشن عملاً نامرئی بود - کاربر گزارش داد «تو حالت عادی باکس‌ها اصلاً شیشه‌ای نیست
     // سفیده». پایه‌ی نیمه‌شفاف‌تر شد (پس‌زمینه/Aurora بیشتر ازش رد می‌شه) و گرادیان/حاشیه پررنگ‌تر.
-    glassBase = Color(0x80FFFFFF), // سفید با آلفای ~۵۰٪
-    glassGradientStart = Color(0x2E141A2A), // متن تیره با آلفای ~۱۸٪ (سایه‌ی لبه‌ی شیشه)
+    // دورِ سومِ شیشه‌ای‌شدن («Liquid Glass»): پایه شفاف‌تر شد (۵۰٪→۴۰٪)، و برخلافِ حاشیه‌ی تیره‌ی
+    // قبلی، حاشیه هم سفید/روشن شد (لبه‌ی شیشه‌ی واقعی نور رو منعکس می‌کنه، نه سایه می‌ندازه).
+    glassBase = Color(0x66FFFFFF), // سفید با آلفای ~۴۰٪
+    glassGradientStart = Color(0x20141A2A), // متن تیره با آلفای ~۱۳٪ (سایه‌ی ظریفِ لبه‌ی شیشه)
     glassGradientEnd = Color(0x00141A2A), // کاملاً شفاف
-    glassBorder = Color(0x40141A2A), // متن تیره با آلفای ~۲۵٪
+    glassBorder = Color(0x4DFFFFFF), // سفید با آلفای ~۳۰٪
+    glassHighlight = Color(0x99FFFFFF), // سفید با آلفای ~۶۰٪
 )
 
 val LocalAppColors = staticCompositionLocalOf { DarkAppColors }
@@ -89,3 +100,4 @@ val AppGlassBase: Color @Composable get() = LocalAppColors.current.glassBase
 val AppGlassGradientStart: Color @Composable get() = LocalAppColors.current.glassGradientStart
 val AppGlassGradientEnd: Color @Composable get() = LocalAppColors.current.glassGradientEnd
 val AppGlassBorder: Color @Composable get() = LocalAppColors.current.glassBorder
+val AppGlassHighlight: Color @Composable get() = LocalAppColors.current.glassHighlight

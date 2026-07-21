@@ -15,8 +15,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,6 +26,7 @@ import ir.sadteam.loancalc.ui.theme.AppGlassBase
 import ir.sadteam.loancalc.ui.theme.AppGlassBorder
 import ir.sadteam.loancalc.ui.theme.AppGlassGradientEnd
 import ir.sadteam.loancalc.ui.theme.AppGlassGradientStart
+import ir.sadteam.loancalc.ui.theme.AppGlassHighlight
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
 
@@ -47,7 +50,14 @@ import ir.sadteam.loancalc.ui.theme.AppText
  * `Surface` به یه `Column` خام عوض شد (برای پشتیبانیِ گرادیانِ شیشه‌ای)، این محاسبه‌ی خودکار از دست
  * رفت و همچین `Text`هایی رو دارک‌مود مشکی/نامرئی می‌شدن. الان با `CompositionLocalProvider
  * (LocalContentColor provides AppText)` همون رفتار دستی برگردونده شده - اگه بازم جایی تو اپ متنِ
- * بدونِ `color` صریح داخلِ یه `AppCard` نامرئی بود، این همون علتشه. */
+ * بدونِ `color` صریح داخلِ یه `AppCard` نامرئی بود، این همون علتشه.
+ *
+ * **دورِ سومِ شیشه‌ای‌شدن - «Liquid Glass» (سبکِ iOS)**: کاربر از بینِ ۴ طرحِ شیشه‌ایِ پیش‌نمایش‌شده
+ * تو یه HTML جدا (فعلی/پررنگ‌تر، مات‌نرم، لبه‌دار، لیکوئید) صراحتاً طرحِ الهام‌گرفته از iOS رو انتخاب
+ * کرد. گوشه‌ها گردتر شدن (۱۸dp→۲۲dp)، سایه نرم‌تر/پخش‌تر شد (elevation بیشتر، آلفای کمتر)، و یه
+ * هایلایتِ نوریِ گوشه‌ی بالا-چپ ([AppGlassHighlight] + [highlightBrush]) اضافه شد - تقلیدِ همون
+ * بازتابِ نوکِ‌تیزِ شیشه‌ی واقعی که رو iOS با بلورِ سنگین می‌بینی؛ چون این پروژه عمداً بدونِ بلورِ واقعی
+ * پیاده شده (رجوع کن به کامنتِ AuroraBackground.kt)، این هایلایتِ ثابت جایگزینِ ارزون‌ترشه. */
 @Composable
 fun AppCard(
     modifier: Modifier = Modifier,
@@ -56,7 +66,7 @@ fun AppCard(
     backgroundColor: Color? = null,
     content: @Composable () -> Unit,
 ) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(22.dp)
     if (backgroundColor != null) {
         Surface(
             modifier = modifier.fillMaxWidth(),
@@ -72,18 +82,26 @@ fun AppCard(
         }
     } else {
         val glassGradient = Brush.linearGradient(listOf(AppGlassGradientStart, AppGlassGradientEnd))
+        val density = LocalDensity.current
+        val highlightRadiusPx = with(density) { 130.dp.toPx() }
+        val highlightBrush = Brush.radialGradient(
+            colors = listOf(AppGlassHighlight, Color.Transparent),
+            center = Offset(0f, 0f),
+            radius = highlightRadiusPx,
+        )
         Column(
             modifier = modifier
                 .fillMaxWidth()
                 .shadow(
-                    elevation = 8.dp,
+                    elevation = 14.dp,
                     shape = shape,
-                    ambientColor = Color.Black.copy(alpha = 0.22f),
-                    spotColor = Color.Black.copy(alpha = 0.22f),
+                    ambientColor = Color.Black.copy(alpha = 0.14f),
+                    spotColor = Color.Black.copy(alpha = 0.14f),
                 )
                 .clip(shape)
                 .background(AppGlassBase)
                 .background(glassGradient)
+                .background(highlightBrush)
                 .border(1.dp, borderColor ?: AppGlassBorder, shape)
                 .padding(14.dp),
         ) {
