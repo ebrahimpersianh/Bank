@@ -72,11 +72,11 @@ jobs:
       - name: تستِ اسکرین‌شاتِ Compose (Paparazzi)
         run: ./gradlew :app:testCafebazaarDebugUnitTest --console=plain
 
-      # از وقتی فلیورهای cafebazaar/myket اضافه شدن (رجوع کن به app/build.gradle.kts)، این دو تسکِ
-      # کلی هر دو فلیور رو با هم می‌سازن - خروجی هرکدوم تو مسیرِ جداگونه‌ی خودش (app/build/outputs/
-      # apk/<flavor>/<buildType>/) میاد، برای همین ۴ تا استپِ uploadِ جدا لازمه، نه ۲ تا.
-      - name: ساخت APKهای دیباگ (هر دو فلیور)
-        run: ./gradlew :app:assembleDebug --console=plain
+      # قبلاً بیلدِ دیباگ (هر دو فلیور) هم اینجا ساخته و آپلود می‌شد - به‌خواستِ صریح کاربر حذف شد
+      # («من فقط ریلیز رو نصب می‌کنم») چون هم هیچ‌وقت واقعاً استفاده نمی‌شد، هم حجمش تقریباً ۳ برابرِ
+      # ریلیز بود و فضای Artifact گیت‌هاب رو زودتر پر می‌کرد (رجوع کن به CLAUDE.md). اگه یه روز واقعاً
+      # برای دیباگِ یه کرش خاص لازم شد، همون تسکِ `./gradlew :app:assembleDebug` رو می‌شه دستی/یه‌بار
+      # اجرا کرد - نیازی به برگردوندنِ این استپِ خودکار نیست.
 
       # بیلد release همون کد رو بدون debuggable می‌سازه که خیلی روان‌تره (رفع لگ اسکرول/تعویض تب).
       # امضاش به کلیدِ واقعیِ release (اگه سکرت‌هاش ست شده باشن) یا فال‌بکِ کلید دیباگ بستگی داره -
@@ -99,23 +99,9 @@ jobs:
           path: native-android/app/build/outputs/apk/cafebazaar/release/app-cafebazaar-release.apk
           retention-days: 7
 
-      - name: بارگذاری APK دیباگ کافه‌بازار (فقط برای توسعه/دیباگ)
-        uses: actions/upload-artifact@v4
-        with:
-          name: loan-calculator-native-debug-apk
-          path: native-android/app/build/outputs/apk/cafebazaar/debug/app-cafebazaar-debug.apk
-          retention-days: 7
-
       - name: بارگذاری APK ریلیز مایکت
         uses: actions/upload-artifact@v4
         with:
           name: loan-calculator-native-myket-release-apk
           path: native-android/app/build/outputs/apk/myket/release/app-myket-release.apk
-          retention-days: 7
-
-      - name: بارگذاری APK دیباگ مایکت
-        uses: actions/upload-artifact@v4
-        with:
-          name: loan-calculator-native-myket-debug-apk
-          path: native-android/app/build/outputs/apk/myket/debug/app-myket-debug.apk
           retention-days: 7
