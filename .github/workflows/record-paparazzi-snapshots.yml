@@ -41,8 +41,11 @@ jobs:
       - name: کش Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # چون اپ دو تا فلیورِ استور داره (cafebazaar/myket)، اسمِ تسکِ ساده‌ی recordPaparazziDebug
+      # مبهمه (Gradle نمی‌دونه کدوم فلیور رو منظورته) - چون خودِ AppCard/LoanCalcTheme به فلیور
+      # وابسته نیستن، فقط یکی (cafebazaar) کافیه.
       - name: ساختِ عکس‌های مرجعِ Paparazzi
-        run: ./gradlew :app:recordPaparazziDebug --console=plain
+        run: ./gradlew :app:recordPaparazziCafebazaarDebug --console=plain
 
       - name: کامیت/پوشِ عکس‌های مرجعِ جدید (اگه فرقی کرده باشن)
         run: |
