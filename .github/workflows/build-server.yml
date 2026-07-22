@@ -83,7 +83,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: "loan-calculator-server-1.0.0-all.jar"
-          target: "~/loan-server/incoming/"
+          target: "~/VameMan/incoming/"
           strip_components: 0
 
       - name: تاییدِ سلامتِ jar + جایگزینی + ری‌استارت + تاییدِ بالا اومدن
@@ -95,7 +95,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd ~/loan-server
+            cd ~/VameMan
             NEW=incoming/loan-calculator-server-1.0.0-all.jar
             if [ ! -s "$NEW" ]; then
               echo "jarِ جدید خالیه یا وجود نداره - دیپلوی متوقف شد، jarِ قبلی دست‌نخورده موند."

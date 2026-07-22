@@ -34,7 +34,7 @@ jobs:
             df -h / | tail -1
             echo ""
             echo "=== حجمِ دیتابیس ==="
-            ls -lh ~/loan-server/data.sqlite 2>/dev/null || echo "پیدا نشد"
+            ls -lh ~/VameMan/data.sqlite 2>/dev/null || echo "پیدا نشد"
             echo ""
             echo "=== جوابِ محلیِ API (پورت 3000) ==="
             curl -s -o /dev/null -w "HTTP status: %{http_code}\n" --max-time 5 http://localhost:3000/api/app-version || echo "جواب نداد"

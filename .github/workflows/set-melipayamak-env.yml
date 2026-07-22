@@ -2,7 +2,7 @@ name: تنظیمِ خودکارِ اطلاعاتِ ملی‌پیامک رو VPS 
 
 # اجرای دستی (workflow_dispatch) - فقط وقتی لازمه (بعدِ ساختِ پترنِ ملی‌پیامک + گرفتنِ
 # یوزرنیم/پسورد) دستی تریگر می‌شه، نه با هر پوش. سه‌تا سکرت (MELIPAYAMAK_USERNAME/PASSWORD/
-# BODY_ID) رو از گیت‌هاب می‌خونه و تو ~/loan-server/.env رو VPS می‌نویسه/آپدیت می‌کنه - جایگزینِ
+# BODY_ID) رو از گیت‌هاب می‌خونه و تو ~/VameMan/.env رو VPS می‌نویسه/آپدیت می‌کنه - جایگزینِ
 # دستی ssh زدن و ویرایشِ فایل که تو CLAUDE.md (بخشِ OTP) توضیح داده شده. کلیدِ SSH و
 # VPS_HOST/VPS_USER همون سکرت‌هاییه که برای دیپلویِ خودکارِ سرور (build-server.yml) از قبل ست شده.
 on:
@@ -39,7 +39,7 @@ jobs:
           envs: MELIPAYAMAK_USERNAME,MELIPAYAMAK_PASSWORD,MELIPAYAMAK_BODY_ID
           script: |
             set -e
-            cd ~/loan-server
+            cd ~/VameMan
             touch .env
             set_env_line() {
               key="$1"; value="$2"
