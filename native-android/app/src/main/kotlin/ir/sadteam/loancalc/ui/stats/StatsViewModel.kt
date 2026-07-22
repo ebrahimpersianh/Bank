@@ -55,7 +55,7 @@ class StatsViewModel @Inject constructor(
     /** پورت نمودار خطی «تاریخچه پرداخت» اپ رقیب (VAMMAN) - مجموع تجمعی اقساط پرداخت‌شده به‌ازای هر
      * ماه شمسی (بر اساس paidDate واقعی اگه با تاخیر پرداخت شده، وگرنه dueDate)، از رو همون rows که
      * LoanDetailScreen/getRows قبلاً برای وضعیت پرداخت هر قسط استفاده می‌کنه - نه یه منبع داده‌ی جدید. */
-    fun paymentHistory(loans: List<LoanEntity>): List<PaymentHistoryPoint> {
+    suspend fun paymentHistory(loans: List<LoanEntity>): List<PaymentHistoryPoint> {
         val monthlyTotals = sortedMapOf<Int, Double>()
         loans.forEach { loan ->
             loanRepository.getRows(loan).forEach { row ->

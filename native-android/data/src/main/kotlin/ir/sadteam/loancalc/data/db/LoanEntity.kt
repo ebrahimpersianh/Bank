@@ -4,11 +4,17 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * جدول محلی «وام‌های من». مطابق الگوی سرور فعلی (server/src/routes/loans.js) که کل شیء وام رو
- * به‌صورت یک JSON مات (بدون schema) ذخیره می‌کنه، اینجا هم [dataJson] همون شیء کامل (rows،
- * method، تاریخ‌ها، ویرایش‌های دستی قسط و ...) رو نگه می‌داره؛ ستون‌های دیگه فقط برای لیست/مرتب‌سازی
- * سریع بدون deserialize کردن کل JSON هستن. مدل تایپ‌شده‌ی کامل (Loan/InstallmentRow در :core) و
- * منطق سینک با سرور در فاز ۱ اضافه می‌شه.
+ * جدول محلی «وام‌های من». [dataJson] شکلِ کلیِ وام (method/rate/graceMonths/borrower/startDate/...)
+ * رو نگه می‌داره - همون شیءای که سرور (server/.../routes/LoansRoutes.kt) هم به‌صورتِ JSONِ مات
+ * ذخیره/سینک می‌کنه، برای سازگاریِ کاملِ فرمتِ سیم با سرور/بک‌آپ عمداً دست‌نخورده مونده. ستون‌های
+ * دیگه فقط برای لیست/مرتب‌سازیِ سریع بدون deserialize کردنِ کل JSON هستن.
+ *
+ * **مرتب‌سازیِ دیتابیس**: تا قبل از این، آرایه‌ی `rows` (وضعیتِ پرداختِ تک‌تکِ اقساط) هم همینجا تویِ
+ * [dataJson] بود؛ الان یه جدولِ جدای واقعیِ Room ([ir.sadteam.loancalc.data.db.LoanRowEntity]/
+ * `loan_rows`) منبعِ حقیقتشه - رجوع کن به [LoanRepository][ir.sadteam.loancalc.data.LoanRepository]
+ * برای جزئیاتِ کاملِ معماری/مهاجرت. `dataJson`ِ وام‌های قدیمی‌ای که هنوز از قبلِ این تغییر ذخیره
+ * شدن ممکنه یه کلیدِ "rows" روبه‌زوال هم داخلش داشته باشن (migrationِ AppDatabase عمداً حذفش
+ * نمی‌کنه، فقط دیگه هیچ‌جای کد ازش نمی‌خونه) - بی‌ضرره، فقط دیتای مرده.
  */
 @Entity(tableName = "loans")
 data class LoanEntity(

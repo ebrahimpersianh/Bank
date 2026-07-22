@@ -22,6 +22,7 @@ import ir.sadteam.loancalc.data.db.ChequeBookDao
 import ir.sadteam.loancalc.data.db.ChequeDao
 import ir.sadteam.loancalc.data.db.IncomeDao
 import ir.sadteam.loancalc.data.db.LoanDao
+import ir.sadteam.loancalc.data.db.LoanRowDao
 import ir.sadteam.loancalc.data.network.ApiClient
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -45,9 +46,12 @@ object AppModule {
     fun provideLoanDao(database: AppDatabase): LoanDao = database.loanDao()
 
     @Provides
+    fun provideLoanRowDao(database: AppDatabase): LoanRowDao = database.loanRowDao()
+
+    @Provides
     @Singleton
-    fun provideLoanRepository(loanDao: LoanDao, apiService: ApiService): LoanRepository =
-        LoanRepository(loanDao, apiService)
+    fun provideLoanRepository(loanDao: LoanDao, loanRowDao: LoanRowDao, apiService: ApiService): LoanRepository =
+        LoanRepository(loanDao, loanRowDao, apiService)
 
     @Provides
     @Singleton

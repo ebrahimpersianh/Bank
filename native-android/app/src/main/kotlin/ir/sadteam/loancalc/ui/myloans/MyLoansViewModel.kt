@@ -205,7 +205,7 @@ class MyLoansViewModel @Inject constructor(
     }
 
     /** پورت rows[].paid تو www/index.html - وضعیت پرداخت هر قسط مستقله، نه یه آستانه‌ی ترتیبی. */
-    fun getRows(loan: LoanEntity): List<Map<String, Any?>> = loanRepository.getRows(loan)
+    suspend fun getRows(loan: LoanEntity): List<Map<String, Any?>> = loanRepository.getRows(loan)
 
     /** پورت handlePayButton برای برگردوندن قسط به حالت پرداخت‌نشده. */
     fun setRowUnpaid(loan: LoanEntity, m: Int) {

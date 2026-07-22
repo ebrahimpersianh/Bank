@@ -24,7 +24,7 @@ class FinancialCalendarViewModel @Inject constructor(
     val loans: StateFlow<List<LoanEntity>> = loanRepository.observeLoans()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun dueItemsByDate(loans: List<LoanEntity>): Map<PersianDate, List<DueItem>> {
+    suspend fun dueItemsByDate(loans: List<LoanEntity>): Map<PersianDate, List<DueItem>> {
         val map = mutableMapOf<PersianDate, MutableList<DueItem>>()
         for (loan in loans) {
             for (row in loanRepository.getRows(loan)) {

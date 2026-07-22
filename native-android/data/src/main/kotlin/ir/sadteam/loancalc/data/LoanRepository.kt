@@ -7,6 +7,8 @@ import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.data.db.LoanDao
 import ir.sadteam.loancalc.data.db.LoanEntity
+import ir.sadteam.loancalc.data.db.LoanRowDao
+import ir.sadteam.loancalc.data.db.LoanRowEntity
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.network.PutLoansRequest
 import kotlinx.coroutines.flow.Flow
@@ -25,9 +27,25 @@ sealed class SyncOutcome {
 
 /**
  * فقط دور LoanDao محلی نیست - سینک ابری (syncLoansToServer/syncAfterLogin معادل www/index.html)
- * هم همینجاست. مدل تایپ‌شده‌ی کامل وام (به‌جای Map<String, Any?> مات) فاز بعده.
+ * هم همینجاست.
+ *
+ * **معماریِ ردیف‌های قسط (بعدِ مرتب‌سازیِ دیتابیس)**: قبلاً آرایه‌ی `rows` (وضعیتِ پرداختِ هر قسط)
+ * فقط تویِ [LoanEntity.dataJson] (یه blobِ JSONِ خام) بود. الان جدولِ واقعیِ Roomِ [LoanRowDao]/
+ * `loan_rows` منبعِ حقیقتِ ردیف‌هاست - همه‌ی توابعِ این کلاس که قسط رو می‌خونن/می‌نویسن از رو همون
+ * جدول کار می‌کنن، نه از رو JSON. [dataJson] فقط دیگه اطلاعاتِ کلیِ وام (اسم/بانک/نرخ/تاریخِ
+ * شروع/...) رو نگه می‌داره - رجوع کن به [LoanEntity]/[LoanRowEntity] برای جزئیاتِ کاملِ مهاجرت.
+ *
+ * [getOrMigrateRows] یه فال‌بکِ خودترمیم‌شونده‌ست: اگه به هر دلیلی (لبه‌ی نادرِ مهاجرت، وامی که با
+ * نسخه‌ی خیلی قدیمی‌تر ساخته شده) یه وام تو `loan_rows` هیچ ردیفی نداشت، از رو `dataJson.rows`ِ
+ * قدیمی (اگه هنوز اونجا مونده - migrationِ AppDatabase عمداً استریپش نمی‌کنه) یا پیش‌فرضِ اقساطِ
+ * برابر بازسازی می‌شه و همون‌جا هم persist می‌شه - یعنی تاریخچه‌ی پرداختِ هیچ کاربری با این تغییر
+ * گم نمی‌شه.
  */
-class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiService) {
+class LoanRepository(
+    private val loanDao: LoanDao,
+    private val loanRowDao: LoanRowDao,
+    private val apiService: ApiService,
+) {
     private val gson = Gson()
 
     fun observeLoans(): Flow<List<LoanEntity>> = loanDao.observeAll()
@@ -36,17 +54,24 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
 
     suspend fun saveLoan(loan: LoanEntity) = loanDao.upsert(loan)
 
-    suspend fun deleteLoan(id: Long) = loanDao.deleteById(id)
+    suspend fun deleteLoan(id: Long) {
+        loanDao.deleteById(id)
+        loanRowDao.deleteForLoan(id)
+    }
 
     /** پورت پاک‌سازیِ لوکالِ بعد از خروج - وگرنه وام‌های همون گوشی زیرِ حسابِ قبلی، موقع ورود با یه
      * شماره‌ی دیگه (که سرورش هنوز خالیه)، تو [syncAfterLogin] به‌جای «سرور خالیه» به «پوشِ محلی به
      * سرور» می‌رفت و اشتباهی وام‌های کاربرِ قبلی رو زیرِ حسابِ جدید آپلود می‌کرد. */
-    suspend fun clearLocal() = loanDao.clear()
+    suspend fun clearLocal() {
+        loanDao.clear()
+        loanRowDao.clearAll()
+    }
 
     /**
-     * پورت saveManualLoan تو www/index.html. [dataJson] دقیقاً همون شکل شیءای رو نگه می‌داره که
-     * سرور/اپ وب برای هر وام انتظار دارن (name/bank/borrower/amount/rate/n/method/...)، به‌علاوه
-     * یه آرایه‌ی `rows` (پورت مدل مستقل هر قسط `rows[].paid`/`paidLate`/`paidDate` تو وب).
+     * پورت saveManualLoan تو www/index.html. [dataJson] دیگه ردیف‌ها رو نگه نمی‌داره (رجوع کن به
+     * کامنتِ بالای کلاس) - فقط شکلِ کلیِ وام (name/bank/borrower/amount/rate/n/method/...) که سرور/
+     * اپ وب انتظار دارن، برای سینک/بک‌آپ رجوع کن به [toWebMap] که ردیف‌ها رو از رو `loan_rows`
+     * دوباره بهش اضافه می‌کنه.
      */
     suspend fun addManualLoan(
         name: String,
@@ -59,7 +84,6 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
         val id = System.currentTimeMillis()
         val amount = installment * n
         val createdAt = isoNow()
-        val rows = buildInitialRows(installment, n, paidCount)
         val webShape = linkedMapOf(
             "id" to id,
             "name" to name,
@@ -77,7 +101,6 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
             "intervalDays" to 30,
             "paidCount" to paidCount,
             "createdAt" to createdAt,
-            "rows" to rows,
         )
         loanDao.upsert(
             LoanEntity(
@@ -93,6 +116,7 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
                 dataJson = gson.toJson(webShape),
             ),
         )
+        loanRowDao.upsertAll(buildInitialRowEntities(id, installment, n, paidCount))
     }
 
     /** آیا این وام با فرمِ افزودنِ دستی ساخته شده (نه از رو یه محاسبه‌ی وامِ بانکی/قرض‌الحسنه)؟ فقط
@@ -145,14 +169,14 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
         n: Int,
         startDate: Map<String, Int>,
     ) {
-        val data = parseDataMutable(loan)
-        val oldRowsByM = rowsFromData(data, loan).associateBy { (it["m"] as? Number)?.toInt() ?: 0 }
+        val oldRowsByM = getOrMigrateRows(loan).associateBy { it.m }
         val newRows = (1..n).map { m ->
-            oldRowsByM[m]?.let { it + ("installment" to installment) }
-                ?: mapOf("m" to m, "installment" to installment, "paid" to false)
+            oldRowsByM[m]?.copy(installment = installment)
+                ?: LoanRowEntity(loanId = loan.id, m = m, installment = installment, paid = false)
         }
         val amount = installment * n
-        val newPaidCount = newRows.count { it["paid"] == true }
+        val newPaidCount = newRows.count { it.paid }
+        val data = parseDataMutable(loan)
         data["name"] = name
         data["bank"] = bank
         data["amount"] = amount
@@ -160,8 +184,10 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
         data["totalPaid"] = amount
         data["n"] = n
         data["startDate"] = startDate
-        data["rows"] = newRows
         data["paidCount"] = newPaidCount
+        // اگه این وام از قبلِ مرتب‌سازیِ دیتابیس مونده باشه، دیگه لازم نیست dataJson کپیِ روبه‌زوالِ
+        // "rows" رو نگه داره - از این به بعد منبعِ حقیقتِ همین وام قطعاً loan_rows ئه.
+        data.remove("rows")
         loanDao.upsert(
             loan.copy(
                 name = name,
@@ -174,6 +200,7 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
                 dataJson = gson.toJson(data),
             ),
         )
+        loanRowDao.replaceForLoan(loan.id, newRows)
     }
 
     /**
@@ -200,7 +227,6 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
     ): Long {
         val id = System.currentTimeMillis()
         val createdAt = isoNow()
-        val rowMaps = rows.map { (m, inst) -> mapOf("m" to m, "installment" to inst, "paid" to false) }
         val webShape = linkedMapOf(
             "id" to id,
             "name" to name,
@@ -218,7 +244,6 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
             "intervalDays" to intervalDays,
             "paidCount" to 0,
             "createdAt" to createdAt,
-            "rows" to rowMaps,
         )
         loanDao.upsert(
             LoanEntity(
@@ -234,19 +259,21 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
                 dataJson = gson.toJson(webShape),
             ),
         )
+        loanRowDao.upsertAll(
+            rows.map { (m, inst) -> LoanRowEntity(loanId = id, m = m, installment = inst, paid = false) },
+        )
         return id
     }
 
     /** پورت rows[].paid تو www/index.html - وضعیت پرداخت هر قسط مستقله (نه یه آستانه‌ی ترتیبی)،
      * به‌علاوه `dueDate` که از startDate/intervalDaysِ خودِ وام محاسبه می‌شه (:app مستقیم به Gson
      * دسترسی نداره، برای همین این محاسبه اینجا تو :data انجام می‌شه، نه تو UI). */
-    fun getRows(loan: LoanEntity): List<Map<String, Any?>> {
+    suspend fun getRows(loan: LoanEntity): List<Map<String, Any?>> {
+        val rows = getOrMigrateRows(loan).sortedBy { it.m }
         val data = parseData(loan)
-        val rows = rowsFromData(data, loan)
         val startDate = parseStartDate(data)
         val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
         return rows.map { row ->
-            val m = (row["m"] as? Number)?.toInt() ?: 1
             // قسط ۱ سررسیدش یه دوره بعد از startDate ئه (نه خودِ startDate) - پورت renderTable وب.
             // باگِ گزارش‌شده‌ی کاربر: نسخه‌ی قبلی برای فاصله‌ی «ماهانه» هم ثابت m×۳۰ روز جمع می‌زد،
             // که چون ۶ ماهِ اولِ سالِ شمسی ۳۱ روزه‌ان هر ماه یه روز عقب می‌رفت (۴/۴ → ۵/۳ → ۶/۲...).
@@ -255,11 +282,11 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
             // توجه: این فقط «تاریخِ نمایشیِ» سررسیده - فرمولِ مالی (i = rate×interval/365 تو
             // LoanCalculator) عمداً همون interval قبلی رو نگه می‌داره، رجوع کن به CLAUDE.md.
             val due = if (intervalDays % 30 == 0) {
-                PersianCalendar.addMonths(startDate, m * (intervalDays / 30))
+                PersianCalendar.addMonths(startDate, row.m * (intervalDays / 30))
             } else {
-                PersianCalendar.addDays(startDate, m * intervalDays)
+                PersianCalendar.addDays(startDate, row.m * intervalDays)
             }
-            row + ("dueDate" to mapOf("y" to due.y, "m" to due.m, "d" to due.d))
+            row.toRowMap() + ("dueDate" to mapOf("y" to due.y, "m" to due.m, "d" to due.d))
         }
     }
 
@@ -273,49 +300,44 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
 
     /** پورت handlePayButton برای برگردوندن قسط به حالت پرداخت‌نشده - paidLate/paidDate هم پاک می‌شن. */
     suspend fun setRowUnpaid(loan: LoanEntity, m: Int) = updateRowPayment(loan, m) { row ->
-        row + mapOf("paid" to false, "paidLate" to false, "paidDate" to null)
+        row.copy(paid = false, paidLate = false, paidDateY = null, paidDateM = null, paidDateD = null)
     }
 
     /** پورت payOnTime تو www/index.html. */
     suspend fun setRowPaidOnTime(loan: LoanEntity, m: Int) = updateRowPayment(loan, m) { row ->
-        row + mapOf("paid" to true, "paidLate" to false, "paidDate" to null)
+        row.copy(paid = true, paidLate = false, paidDateY = null, paidDateM = null, paidDateD = null)
     }
 
     /** پورت confirmLatePayment تو www/index.html - [paidDate] تاریخ واقعی پرداخته (نه سررسید). */
     suspend fun setRowPaidLate(loan: LoanEntity, m: Int, paidDate: Map<String, Int>) = updateRowPayment(loan, m) { row ->
-        row + mapOf("paid" to true, "paidLate" to true, "paidDate" to paidDate)
+        row.copy(paid = true, paidLate = true, paidDateY = paidDate["y"], paidDateM = paidDate["m"], paidDateD = paidDate["d"])
     }
 
     /** پیوست عکس رسید مخصوص یه قسطِ خاص (نه یه عکس کلیِ روی خودِ وام) - خواسته‌ی کاربر «مشخص باشه
      * برای کدوم وام و کدوم قسطه» که چون این تابع همیشه با یه [loan] و یه [m] مشخص صدا زده می‌شه،
      * به‌طور طبیعی تضمین می‌شه. */
     suspend fun setRowPhoto(loan: LoanEntity, m: Int, photoPath: String) = updateRowPayment(loan, m) { row ->
-        row + ("photoPath" to photoPath)
+        row.copy(photoPath = photoPath)
     }
 
     suspend fun removeRowPhoto(loan: LoanEntity, m: Int) = updateRowPayment(loan, m) { row ->
-        row + ("photoPath" to null)
+        row.copy(photoPath = null)
     }
 
-    private suspend fun updateRowPayment(loan: LoanEntity, m: Int, transform: (Map<String, Any?>) -> Map<String, Any?>) {
-        val data = parseDataMutable(loan)
-        val rows = rowsFromData(data, loan).map { row ->
-            if ((row["m"] as? Number)?.toInt() == m) transform(row) else row
-        }
-        val newPaidCount = rows.count { it["paid"] == true }
-        data["rows"] = rows
-        data["paidCount"] = newPaidCount
-        loanDao.upsert(loan.copy(paidCount = newPaidCount, dataJson = gson.toJson(data)))
+    private suspend fun updateRowPayment(loan: LoanEntity, m: Int, transform: (LoanRowEntity) -> LoanRowEntity) {
+        val rows = getOrMigrateRows(loan)
+        val current = rows.firstOrNull { it.m == m }
+            ?: LoanRowEntity(loanId = loan.id, m = m, installment = loan.installment, paid = false)
+        loanRowDao.upsertAll(listOf(transform(current)))
+        val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
+        loanDao.upsert(loan.copy(paidCount = newPaidCount))
     }
 
     /** ویرایش دستی مبلغ یه قسط (کارمزد/جریمه‌ی بانکی که نمی‌تونیم حدس بزنیم) - پورت
      * confirmEditInstallment. */
     suspend fun setRowInstallment(loan: LoanEntity, m: Int, newAmount: Double) {
-        val data = parseDataMutable(loan)
-        val rows = rowsFromData(data, loan).map { row ->
-            if ((row["m"] as? Number)?.toInt() == m) row + ("installment" to newAmount) else row
-        }
-        saveRows(loan, data, rows)
+        val rows = getOrMigrateRows(loan).map { if (it.m == m) it.copy(installment = newAmount) else it }
+        saveRows(loan, rows)
     }
 
     /** پورت گزینه‌ی «می‌خوای این مبلغ رو برای همه‌ی اقساط اعمال کنی؟» تو confirmEditInstallment -
@@ -323,35 +345,79 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
      * ذخیره‌شده رو آپدیت می‌کنه (چون :app به rows مستقیم دسترسی نداره، جایی برای «نگه داشتن اون
      * نسخه‌ی موقت تو حافظه» مثل وب نیست). */
     suspend fun setAllRowsInstallment(loan: LoanEntity, newAmount: Double) {
-        val data = parseDataMutable(loan)
-        val rows = rowsFromData(data, loan).map { row -> row + ("installment" to newAmount) }
+        val rows = getOrMigrateRows(loan).map { it.copy(installment = newAmount) }
         // چون این‌جا واقعاً همه‌ی اقساط برابرِ newAmount شدن، loan.installment (که دایره‌ی بالای
         // صفحه و کارتِ «مبلغ هر قسط» ازش می‌خونن، نه از rows) هم باید هم‌قدمش بشه - وگرنه بعد از
         // «بله، رو همه اعمال کن» دایره‌ی بالا هنوز مبلغِ قدیمی رو نشون می‌ده (باگی که کاربر گزارش داد).
-        saveRows(loan, data, rows, installment = newAmount)
+        saveRows(loan, rows, installment = newAmount)
     }
 
-    private suspend fun saveRows(
-        loan: LoanEntity,
-        data: MutableMap<String, Any?>,
-        rows: List<Map<String, Any?>>,
-        installment: Double? = null,
-    ) {
-        val newTotal = rows.sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
-        data["rows"] = rows
-        data["amount"] = newTotal
-        data["totalPaid"] = newTotal
-        val updated = loan.copy(amount = newTotal, totalPaid = newTotal, dataJson = gson.toJson(data))
+    private suspend fun saveRows(loan: LoanEntity, rows: List<LoanRowEntity>, installment: Double? = null) {
+        loanRowDao.upsertAll(rows)
+        val newTotal = rows.sumOf { it.installment }
+        val updated = loan.copy(amount = newTotal, totalPaid = newTotal)
         loanDao.upsert(if (installment != null) updated.copy(installment = installment) else updated)
     }
+
+    /** ردیف‌های این وام رو از `loan_rows` می‌خونه؛ اگه خالی بود (لبه‌ی نادرِ مهاجرت یا وامِ خیلی
+     * قدیمی)، از رو dataJsonِ قدیمی/پیش‌فرضِ اقساطِ برابر بازسازی و همون‌جا persist می‌کنه - رجوع کن
+     * به کامنتِ بالای کلاس. */
+    private suspend fun getOrMigrateRows(loan: LoanEntity): List<LoanRowEntity> {
+        val stored = loanRowDao.getForLoan(loan.id)
+        if (stored.isNotEmpty()) return stored
+        val legacy = legacyRowsFromDataJson(loan).map { it.toLoanRowEntity(loan.id) }
+        if (legacy.isNotEmpty()) loanRowDao.upsertAll(legacy)
+        return legacy
+    }
+
+    private fun buildInitialRowEntities(loanId: Long, installment: Double, n: Int, paidCount: Int): List<LoanRowEntity> =
+        (1..n).map { m -> LoanRowEntity(loanId = loanId, m = m, installment = installment, paid = m <= paidCount) }
 
     private fun buildInitialRows(installment: Double, n: Int, paidCount: Int): List<Map<String, Any?>> =
         (1..n).map { m -> mapOf("m" to m, "installment" to installment, "paid" to (m <= paidCount)) }
 
-    private fun rowsFromData(data: Map<String, Any?>, loan: LoanEntity): List<Map<String, Any?>> {
+    /** فقط برای فال‌بکِ [getOrMigrateRows] - پارسِ دستیِ همون شکلِ آرایه‌ی "rows" که قبلاً تویِ
+     * dataJson بود (برای وام‌های خیلی قدیمی که migrationِ AppDatabase بنا به دلیلی موقعِ
+     * جمع‌آوری‌شون رد کرده). */
+    private fun legacyRowsFromDataJson(loan: LoanEntity): List<Map<String, Any?>> {
+        val data = parseData(loan)
         val raw = (data["rows"] as? List<*>)?.mapNotNull { it as? Map<*, *> }
         return raw?.map { row -> row.entries.associate { it.key.toString() to it.value } }
             ?: buildInitialRows(loan.installment, loan.n, loan.paidCount)
+    }
+
+    private fun LoanRowEntity.toRowMap(): Map<String, Any?> {
+        val map = mutableMapOf<String, Any?>(
+            "m" to m,
+            "installment" to installment,
+            "paid" to paid,
+        )
+        if (paidLate) map["paidLate"] = true
+        if (paidDateY != null && paidDateM != null && paidDateD != null) {
+            map["paidDate"] = mapOf("y" to paidDateY, "m" to paidDateM, "d" to paidDateD)
+        }
+        if (photoPath != null) map["photoPath"] = photoPath
+        return map
+    }
+
+    private fun Map<String, Any?>.toLoanRowEntity(loanId: Long): LoanRowEntity {
+        val m = (this["m"] as? Number)?.toInt() ?: 1
+        val installment = (this["installment"] as? Number)?.toDouble() ?: 0.0
+        val paid = this["paid"] == true
+        val paidLate = this["paidLate"] == true
+        val paidDate = this["paidDate"] as? Map<*, *>
+        val photoPath = this["photoPath"] as? String
+        return LoanRowEntity(
+            loanId = loanId,
+            m = m,
+            installment = installment,
+            paid = paid,
+            paidLate = paidLate,
+            paidDateY = (paidDate?.get("y") as? Number)?.toInt(),
+            paidDateM = (paidDate?.get("m") as? Number)?.toInt(),
+            paidDateD = (paidDate?.get("d") as? Number)?.toInt(),
+            photoPath = photoPath,
+        )
     }
 
     private fun parseData(loan: LoanEntity): Map<String, Any?> {
@@ -402,7 +468,10 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
     }
 
     suspend fun replaceAllWithServerData(serverLoans: List<Map<String, Any?>>) {
-        loanDao.replaceAll(serverLoans.mapNotNull { fromWebMap(it) })
+        val parsed = serverLoans.mapNotNull { fromWebMap(it) }
+        loanDao.replaceAll(parsed.map { it.first })
+        loanRowDao.clearAll()
+        parsed.forEach { (entity, rows) -> if (rows.isNotEmpty()) loanRowDao.upsertAll(rows) }
     }
 
     /** پورت مفهومی restoreFromServer تو ChequeRepository/AccountRepository - برای «بازیابی از سرور
@@ -452,12 +521,18 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
         return localSig == serverSig
     }
 
-    private fun toWebMap(entity: LoanEntity): Map<String, Any?> {
-        val type = object : TypeToken<Map<String, Any?>>() {}.type
-        return gson.fromJson(entity.dataJson, type) ?: emptyMap()
+    /** شکلِ کاملِ وب (meta + rows) - ردیف‌ها همیشه تازه از رو `loan_rows` بازسازی می‌شن (نه از رو
+     * کپیِ احتمالاً روبه‌زوالِ dataJson) تا سرور/بک‌آپ همیشه آخرین وضعیتِ واقعیِ پرداخت رو بگیره. */
+    private suspend fun toWebMap(entity: LoanEntity): Map<String, Any?> {
+        val meta = parseDataMutable(entity)
+        val rows = getOrMigrateRows(entity).sortedBy { it.m }.map { it.toRowMap() }
+        meta["rows"] = rows
+        return meta
     }
 
-    private fun fromWebMap(map: Map<String, Any?>): LoanEntity? {
+    /** پارسِ یه وامِ کاملِ اومده از سرور/بک‌آپ - metaی وام رو تویِ [LoanEntity.dataJson] (بدونِ
+     * "rows") و ردیف‌ها رو جدا برمی‌گردونه تا صدازننده هر دو رو تو جدولِ درستشون ذخیره کنه. */
+    private fun fromWebMap(map: Map<String, Any?>): Pair<LoanEntity, List<LoanRowEntity>>? {
         val id = (map["id"] as? Number)?.toLong() ?: return null
         val name = map["name"] as? String ?: return null
         val bank = map["bank"] as? String ?: ""
@@ -467,7 +542,12 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
         val n = (map["n"] as? Number)?.toInt() ?: 0
         val paidCount = (map["paidCount"] as? Number)?.toInt() ?: 0
         val createdAt = map["createdAt"] as? String ?: isoNow()
-        return LoanEntity(
+        val rows = (map["rows"] as? List<*>)
+            ?.mapNotNull { it as? Map<*, *> }
+            ?.map { row -> row.entries.associate { it.key.toString() to it.value }.toLoanRowEntity(id) }
+            ?: emptyList()
+        val metaOnly = map.toMutableMap().apply { remove("rows") }
+        val entity = LoanEntity(
             id = id,
             name = name,
             bank = bank,
@@ -477,8 +557,9 @@ class LoanRepository(private val loanDao: LoanDao, private val apiService: ApiSe
             n = n,
             paidCount = paidCount,
             createdAt = createdAt,
-            dataJson = gson.toJson(map),
+            dataJson = gson.toJson(metaOnly),
         )
+        return entity to rows
     }
 
     private fun isoNow(): String {

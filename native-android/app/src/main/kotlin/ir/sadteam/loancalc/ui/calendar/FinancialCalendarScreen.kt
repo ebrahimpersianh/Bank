@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,7 +62,12 @@ private val faWeekDayShort = listOf("ش", "ی", "د", "س", "چ", "پ", "ج")
 @Composable
 fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarViewModel = hiltViewModel()) {
     val loans by viewModel.loans.collectAsState()
-    val dueMap = remember(loans) { viewModel.dueItemsByDate(loans) }
+    // dueItemsByDate دیگه نمی‌تونه محاسبه‌ی همزمان (remember{}) باشه چون از رو رَدیف‌های واقعیِ Room
+    // (loan_rows) می‌خونه، نه دیگه از رو JSONِ درون‌حافظه‌ای - رجوع کن به CLAUDE.md.
+    var dueMap by remember { mutableStateOf<Map<PersianDate, List<DueItem>>>(emptyMap()) }
+    LaunchedEffect(loans) {
+        dueMap = viewModel.dueItemsByDate(loans)
+    }
     val today = remember { JalaliCalendar.today() }
 
     var viewYear by remember { mutableStateOf(today.y) }

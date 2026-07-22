@@ -22,10 +22,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -59,7 +62,12 @@ import kotlinx.coroutines.withContext
 fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel()) {
     val loans by viewModel.loans.collectAsState()
     val summary = remember(loans) { viewModel.summarize(loans) }
-    val paymentHistory = remember(loans) { viewModel.paymentHistory(loans) }
+    // paymentHistory دیگه نمی‌تونه محاسبه‌ی همزمان (remember{}) باشه چون از رو رَدیف‌های واقعیِ Room
+    // (loan_rows) می‌خونه، نه دیگه از رو JSONِ درون‌حافظه‌ای - رجوع کن به CLAUDE.md.
+    var paymentHistory by remember { mutableStateOf<List<PaymentHistoryPoint>>(emptyList()) }
+    LaunchedEffect(loans) {
+        paymentHistory = viewModel.paymentHistory(loans)
+    }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val banner = rememberInAppBanner()

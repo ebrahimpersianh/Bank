@@ -126,7 +126,14 @@ fun LoanDetailScreen(
     viewModel: MyLoansViewModel = hiltViewModel(),
 ) {
     val privacyMode = LocalPrivacyMode.current
-    val rows = remember(loan) { viewModel.getRows(loan) }
+    // rows دیگه نمی‌تونه محاسبه‌ی همزمان (remember{}) باشه چون از رو رَدیف‌های واقعیِ Room
+    // (loan_rows) می‌خونه، نه دیگه از رو JSONِ درون‌حافظه‌ای که همیشه از قبل تو خودِ loan بود - رجوع
+    // کن به CLAUDE.md. با هر تغییرِ loan (مثلاً بعدِ پرداختِ یه قسط) دوباره لود می‌شه، دقیقاً همون
+    // reactivity ای که remember(loan) قبلاً می‌داد.
+    var rows by remember { mutableStateOf<List<Map<String, Any?>>>(emptyList()) }
+    LaunchedEffect(loan) {
+        rows = viewModel.getRows(loan)
+    }
     // آیکونِ ویرایشِ هدر رو هر وامی هست، ولی مقصدش فرق می‌کنه: وام‌های دستی فرمِ کاملِ
     // AddManualLoanScreen (onEdit، شاملِ مبلغ/تعدادِ اقساط) رو باز می‌کنن؛ وام‌های محاسبه‌شده/
     // قرض‌الحسنه (ساختارِ اقساطِ نامساوی دارن) فقط دیالوگِ سبکِ اسم/بانک/تاریخ رو - رجوع کن به
@@ -599,9 +606,17 @@ fun LoanDetailScreen(
             // **باگِ رفع‌شده**: قبلاً کلیدِ این افکت خودِ `rows` بود - چون `rows` با هر تغییرِ
             // وضعیتِ پرداختِ یه قسط (حتی همینجا، وسطِ کارِ کاربر) یه لیستِ *جدید* می‌شه، هر بار که
             // کاربر رو همین صفحه یه قسط رو «پرداخت» می‌زد، این افکت دوباره اجرا و صفحه به‌زورِ
-            // اسکرول به مرزِ بعدی می‌پرید - دقیقاً همون چیزی که کاربر نمی‌خواستش. الان با کلیدِ
-            // `Unit` فقط یه‌بار، دقیقاً موقعِ اولین بازشدنِ صفحه اجرا می‌شه.
-            LaunchedEffect(Unit) {
+            // اسکرول به مرزِ بعدی می‌پرید - دقیقاً همون چیزی که کاربر نمی‌خواستش.
+            // چون `rows` الان از رو Room (loan_rows) به‌صورتِ async لود می‌شه (رجوع کن به
+            // CLAUDE.md)، اولین مقدارش همیشه یه لیستِ خالیه - کلیدِ ثابتِ `Unit` باعث می‌شد این
+            // افکت دقیقاً همون لحظه‌ی خالی‌بودن اجرا بشه و اسکرول هیچ‌وقت کار نکنه. الان کلید دوباره
+            // `rows`ه، ولی با یه پرچمِ «یه‌بار مصرف» (`hasAutoScrolled`) محافظت شده - همون‌قدر
+            // «فقط یه‌بار، موقعِ اولین باردیدنِ دادهٔ واقعی» هست، فقط دیگه رو دادهٔ خالیِ لحظه‌ی اول
+            // گیر نمی‌کنه.
+            var hasAutoScrolled by remember { mutableStateOf(false) }
+            LaunchedEffect(rows) {
+                if (hasAutoScrolled || rows.isEmpty()) return@LaunchedEffect
+                hasAutoScrolled = true
                 val firstUnpaid = rows.indexOfFirst { it["paid"] != true }
                 val target = (firstUnpaid - 1).coerceAtLeast(0)
                 if (firstUnpaid > 0) innerListState.scrollToItem(target)
