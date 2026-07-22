@@ -41,3 +41,6 @@ jobs:
             echo ""
             echo "=== ۱۰ خطِ آخرِ لاگ ==="
             pm2 logs loan-calc-api --lines 10 --nostream
+            echo ""
+            echo "=== ۵ گزارشِ کرشِ آخر ==="
+            sqlite3 ~/VameMan/data.sqlite "SELECT id, created_at, app_version, substr(message,1,300) as message FROM crash_reports ORDER BY id DESC LIMIT 5;" 2>&1 || echo "sqlite3 نصب نیست یا جدول پیدا نشد"
