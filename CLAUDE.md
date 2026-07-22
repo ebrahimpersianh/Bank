@@ -37,9 +37,19 @@ artifact، CI، deploy، Room و…) یا خودداری کن یا در حدِ �
   (HTTPS با certbot/Let's Encrypt، خودکار تمدید می‌شه). nginx رو پورت ۸۰/۴۴۳ به `localhost:3000` proxy می‌کنه
   (`/etc/nginx/sites-available/loan-api`، با `server_names_hash_bucket_size 128;` تو `nginx.conf`).
 - جار runnable (`loan-calculator-server-1.0.0-all.jar`، از تسک دستی `fatJar` تو `build.gradle.kts`) تو
-  `~/loan-server/` رو VPS با pm2 اجرا می‌شه: `pm2 start java --name loan-calc-api --interpreter none --cwd ~/loan-server -- -jar loan-calculator-server-1.0.0-all.jar` + `pm2 save`.
-  `.env` (کنار jar، همون `~/loan-server/`) فقط `JWT_SECRET` و `PORT=3000` داره فعلاً — پیامک OTP واقعی
+  `~/VameMan/` رو VPS با pm2 اجرا می‌شه: `pm2 start java --name loan-calc-api --interpreter none --cwd ~/VameMan -- -jar loan-calculator-server-1.0.0-all.jar` + `pm2 save`.
+  `.env` (کنار jar، همون `~/VameMan/`) فقط `JWT_SECRET` و `PORT=3000` داره فعلاً — پیامک OTP واقعی
   هنوز فعال نیست، رجوع کن به بخش OTP پایین.
+  **بروزرسانیِ ۱ مرداد ۱۴۰۵ (۲۰۲۶-۰۷-۲۲)**: پوشه‌ی سرور رو خودِ VPS از `~/loan-server` به `~/VameMan`
+  تغییرِ نام داد (خواستِ صریحِ کاربر برای نظم‌دادن به سرور، آماده‌سازی برای وقتی چند برنامه‌ی دیگه هم
+  قراره رو همین سرور بیان - هرکدوم پوشه/اسمِ خودشون رو داشته باشن). این کار با یه ورک‌فلوی گیت‌هابِ
+  یه‌بارمصرف (بکاپِ کامل قبلش، تاییدِ حجمِ دیتابیس بعدش، بالاآوردنِ دوباره‌ی pm2 با مسیرِ جدید) انجام
+  و تایید شد - دیتابیس (`data.sqlite`) و jar سالم منتقل شدن، سرور بدونِ افتادن بالا اومد. یه بکاپِ
+  کاملِ پوشه‌ی قبلی هم رو خودِ VPS موند (`~/loan-server-backup-20260722-155651`) - اگه یه مدت گذشت و
+  همه‌چیز مشکلی نداشت، می‌شه پاکش کرد. همه‌ی ورک‌فلوهای گیت‌هاب (`build-server.yml` دیپلویِ خودکار،
+  `set-melipayamak-env.yml`، `check-server-health.yml`) به مسیرِ جدید آپدیت شدن - از این به بعد هر
+  جا تو این فایل `~/loan-server` دیده شد (جز تو روایتِ حادثه‌های قدیمی‌تر که عمداً دست‌نخورده موندن)
+  یعنی مالِ قبل از این تغییره، مسیرِ واقعیِ الان `~/VameMan`ه.
 - ساختار کد تو `server/src/main/kotlin/ir/sadteam/loancalc/server/`: `Application.kt` (main + ماژول Ktor)،
   `Db.kt` (اسکیمای SQLite + مایگریشن، با `withConnection` یه کانکشن جدا به‌ازای هر کوئری)، `Auth.kt` (JWT)،
   `Sms.kt` (ارسال OTP)، `SubscriptionStatus.kt`، `Cafebazaar.kt`، و
@@ -50,7 +60,7 @@ artifact، CI، deploy، Room و…) یا خودداری کن یا در حدِ �
 ### OTP (پیامک کد تایید) — هنوز فعال نیست، اینه که چیکار لازمه
 سرویس فعلی تو `Sms.kt` **ملی‌پیامک** (melipayamak.com) هست، وب‌سرویس SOAP قدیمی
 (`api.payamak-panel.com`، متد `SendByBaseNumber`، ارسال با خط اشتراکی/پایه). تا وقتی این سه متغیر تو
-`.env` رو VPS (`~/loan-server/.env`) ست نشن، کد تایید فقط تو لاگ سرور (`pm2 logs loan-calc-api`) چاپ
+`.env` رو VPS (`~/VameMan/.env`) ست نشن، کد تایید فقط تو لاگ سرور (`pm2 logs loan-calc-api`) چاپ
 می‌شه و پیامک واقعی نمی‌ره:
 1. تو پنل ملی‌پیامک (پیامک > پترن‌ها) یه پترن متنی برای کد تایید بساز و منتظر تاییدش بمون (چیزی مثل
    «کد تایید شما: %code%») — بدون پترن تاییدشده، ارسال همیشه شکست می‌خوره. بعد شماره‌ی همون پترن
@@ -68,7 +78,7 @@ artifact، CI، deploy، Room و…) یا خودداری کن یا در حدِ �
    (`MELIPAYAMAK_USERNAME`/`MELIPAYAMAK_PASSWORD`/`MELIPAYAMAK_BODY_ID`) رو به‌عنوانِ سکرتِ گیت‌هاب
    اضافه کن (همون روشِ ساده‌ای که برای کلیدِ امضای release قبلاً انجام شد)، بعد این ورک‌فلو رو دستی
    اجرا کن - خودش رو VPS می‌نویسه تو `.env` و سرویس رو ری‌استارت می‌کنه. (روشِ قدیمیِ دستی - `nano
-   ~/loan-server/.env` + `pm2 restart` - هنوز به‌عنوانِ فال‌بک کار می‌کنه اگه این ورک‌فلو به هر
+   ~/VameMan/.env` + `pm2 restart` - هنوز به‌عنوانِ فال‌بک کار می‌کنه اگه این ورک‌فلو به هر
    دلیلی جواب نداد.)
 5. تست کن: یه درخواست OTP واقعی از اپ بزن، `pm2 logs loan-calc-api --lines 20 --nostream` رو چک کن که
    دیگه پیام `[SMS-DEV]` نیاد و پیامک واقعی به گوشی برسه.
@@ -970,7 +980,7 @@ ci-debug.keystore یه کلید امضای دیباگ ثابته (نه
 جایگزینِ آپلودِ دستیِ تیکه‌تیکه‌ی jar که چندبار (jarِ خالی از cat ناقص، jar تو مسیرِ اشتباه) سرورِ زنده
 رو کرش کرده بود (رجوع کن به حادثه‌های بخشِ سرور بالا). `.github/workflows/build-server.yml` یه jobِ
 `deploy` جدید داره (بعدِ jobِ `build`، فقط رو پوشِ `main`): با `appleboy/scp-action`/`appleboy/
-ssh-action` jarِ جدید رو به `~/loan-server/incoming/` می‌فرسته، سلامتش رو (غیرخالی + zip معتبر) چک
+ssh-action` jarِ جدید رو به `~/VameMan/incoming/` می‌فرسته، سلامتش رو (غیرخالی + zip معتبر) چک
 می‌کنه، فقط اگه سالم بود جایگزینِ jarِ زنده می‌کنه (با بکاپِ `.bak` قبلش)، `pm2 restart` می‌زنه، و اگه
 بعدِ ۳ ثانیه سرویس "online" نبود خودکار به `.bak` برمی‌گرده. اگه سکرت‌های `VPS_HOST`/`VPS_USER`/
 `VPS_SSH_KEY` ست نشده باشن، jobِ deploy فقط warning می‌ده و skip می‌شه (به رانِ build لطمه نمی‌زنه).
@@ -1168,7 +1178,7 @@ CI الان هر ۴ تا APK (کافه‌بازار دیباگ/ریلیز + ما
 انتشارِ واقعیِ نسخه‌ی جدید رو کافه‌بازار/مایکت، باید رو VPS این دستور زده بشه (دقیقش تو کامنتِ بالای
 AppVersionRoutes.kt هم هست):
 ```bash
-sqlite3 ~/loan-server/data.sqlite \
+sqlite3 ~/VameMan/data.sqlite \
   "UPDATE app_version SET latest_version_code = <شماره‌نسخه>,
    cafebazaar_url = 'https://cafebazaar.ir/app/ir.sadteam.loancalc',
    myket_url = 'https://myket.ir/app/ir.sadteam.loancalc' WHERE id = 1;"
