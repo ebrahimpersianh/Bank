@@ -37,11 +37,15 @@ jobs:
       - name: ساخت jar اجراپذیر (fat jar)
         run: ./gradlew fatJar --console=plain
 
+      # retention-days: این jar فقط برای دستِ‌به‌دست‌شدن بینِ jobِ build و jobِ deploy همین رانه (چند
+      # دقیقه‌ای مصرف می‌شه) - نگه‌داشتنِ ۹۰روزه‌ی پیش‌فرضِ گیت‌هاب لازم نیست و فضای Artifact رو زودتر
+      # از موعد پر می‌کرد (رجوع کن به CLAUDE.md).
       - name: بارگذاری jar سرور
         uses: actions/upload-artifact@v4
         with:
           name: loan-calculator-server-jar
           path: server/build/libs/loan-calculator-server-1.0.0-all.jar
+          retention-days: 3
 
   # دیپلویِ خودکار رو VPS - جایگزینِ آپلودِ دستیِ تیکه‌تیکه‌ی jar که چندبار (jarِ خالی از cat
   # ناقص، jar تو مسیرِ اشتباه) سرورِ زنده رو کرش کرده بود (رجوع کن به CLAUDE.md). فقط رو پوشِ main
