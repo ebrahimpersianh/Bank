@@ -124,5 +124,5 @@ jobs:
           gh release create "build-${{ github.run_number }}" \
             --title "بیلدِ خودکار #${{ github.run_number }}" \
             --notes "نسخه‌ی ۱.۰.${{ github.run_number }} - ساخته‌شده از کامیتِ ${{ github.sha }}" \
-            native-android/app/build/outputs/apk/cafebazaar/release/app-cafebazaar-release.apk \
-            native-android/app/build/outputs/apk/myket/release/app-myket-release.apk
+            app/build/outputs/apk/cafebazaar/release/app-cafebazaar-release.apk \
+            app/build/outputs/apk/myket/release/app-myket-release.apk
