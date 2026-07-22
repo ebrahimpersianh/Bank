@@ -15,6 +15,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       # چون `secrets` مستقیم تو `if:` یه step مجاز نیست، اول یه‌بار تو env سطح job (که این‌جا مجازه)
       # منتقلش می‌کنیم تا استپِ بعدی بتونه با env.HAS_RELEASE_KEY تصمیم بگیره.
@@ -92,8 +94,12 @@ jobs:
       # از موعد پر می‌شد (خطای «Artifact storage quota has been hit» که چندبار این نشست‌ها دیده شد،
       # رجوع کن به CLAUDE.md). APKِ دیباگ/ریلیز معمولاً همون روز یا فردا نصب/تست می‌شه، نگه‌داشتنِ
       # ۹۰روزه‌ش لازم نیست.
+      # continue-on-error: چون سهمیه‌ی Artifact گیت‌هاب گاهی پر می‌شه (مستقل از کدِ ما)، این استپ
+      # دیگه کلِ رانو قرمز/fail نشون نمی‌ده - راهِ اصلیِ دانلود از این به بعد استپِ ریلیزِ زیره که
+      # اصلاً از این سهمیه استفاده نمی‌کنه.
       - name: بارگذاری APK ریلیز کافه‌بازار (نسخه‌ی روان - این رو نصب کن)
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: loan-calculator-native-release-apk
           path: native-android/app/build/outputs/apk/cafebazaar/release/app-cafebazaar-release.apk
@@ -101,7 +107,22 @@ jobs:
 
       - name: بارگذاری APK ریلیز مایکت
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: loan-calculator-native-myket-release-apk
           path: native-android/app/build/outputs/apk/myket/release/app-myket-release.apk
           retention-days: 7
+
+      # مسیرِ اصلیِ دانلود: به‌جای Artifactِ موقتِ گیت‌هاب (که سهمیه‌ش گاهی پر می‌شه و مستقل از کدِ
+      # ما fail می‌کنه)، هر بیلد یه GitHub Release می‌سازه و APKها رو بهش پیوست می‌کنه - Releaseها
+      # سهمیه‌ی جدا و بازتری دارن، این مشکل رو ندارن. تگ بر اساسِ شماره‌ی رانه، پس هر بیلد یه ریلیزِ
+      # جدا/غیرتکراری می‌سازه.
+      - name: انتشارِ APKها به‌عنوانِ GitHub Release (همیشه کار می‌کنه، سهمیه‌ی جدا از Artifact)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "build-${{ github.run_number }}" \
+            --title "بیلدِ خودکار #${{ github.run_number }}" \
+            --notes "نسخه‌ی ۱.۰.${{ github.run_number }} - ساخته‌شده از کامیتِ ${{ github.sha }}" \
+            native-android/app/build/outputs/apk/cafebazaar/release/app-cafebazaar-release.apk \
+            native-android/app/build/outputs/apk/myket/release/app-myket-release.apk
