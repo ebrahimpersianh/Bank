@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.data.db
 
 import androidx.room.Entity
+import androidx.room.Index
 
 /**
  * ردیفِ تک‌قسطِ یه وام - جدولِ جدا (نه دیگه تویِ [LoanEntity.dataJson] به‌صورتِ آرایه‌ی JSONِ خام).
@@ -16,8 +17,17 @@ import androidx.room.Entity
  * دلیلی (لبه‌ی نادرِ مهاجرت، وامِ ساخته‌شده با نسخه‌ی خیلی قدیمی‌تر) یه وام تو این جدول هیچ ردیفی
  * نداشت، از رو `dataJson.rows`ِ قدیمی (اگه هنوز اونجا مونده باشه) یا پیش‌فرضِ اقساطِ برابر بازسازی و
  * همون‌جا persist می‌شه - تضمین می‌کنه تاریخچه‌ی پرداختِ هیچ کاربری با این تغییر گم نشه.
+ *
+ * **باگِ کرشِ رفع‌شده**: `MIGRATION_11_12` (تو [AppDatabase]) صریحاً یه ایندکس رو `loanId` می‌سازه
+ * (`CREATE INDEX index_loan_rows_loanId`)، ولی این کلاس اولش هیچ `indices`ای نداشت - موقعِ بازکردنِ
+ * دیتابیس، Room ساختارِ واقعیِ جدول رو با چیزی که از رو همین annotation انتظار داره مقایسه می‌کنه؛
+ * چون ایندکس تو کد اعلام نشده بود ولی تو دیتابیسِ واقعی بود، این تناقض باعثِ
+ * `IllegalStateException: Migration didn't properly handle...` می‌شد - یعنی اپ رو هر گوشی‌ای که این
+ * migration روش اجرا شده بود (نه رو دیتابیسِ خالی) همیشه بلافاصله بعدِ باز شدن کرش می‌کرد. رفع شد با
+ * اضافه‌کردنِ `indices = [Index("loanId")]` پایین - اگه ایندکسِ دیگه‌ای هم بعداً تو migration دستی
+ * ساخته شد، حتماً همین‌جا هم اعلامش کن، وگرنه همین باگ تکرار می‌شه.
  */
-@Entity(tableName = "loan_rows", primaryKeys = ["loanId", "m"])
+@Entity(tableName = "loan_rows", primaryKeys = ["loanId", "m"], indices = [Index("loanId")])
 data class LoanRowEntity(
     val loanId: Long,
     val m: Int,
