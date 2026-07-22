@@ -1,0 +1,48 @@
+name: انتشارِ نسخه‌ی دائمی (Release)
+
+# فرقش با APKهای معمولیِ CI (که ۷ روزه پاک می‌شن - رجوع کن به build-native-android.yml): این‌جا یه
+# بیلدِ ازقبل‌ساخته‌شده و موفق رو، به‌جای فضای موقتِ Artifact، تویِ یه بخشِ کاملاً دائمیِ گیت‌هاب
+# («Release») منتشر می‌کنه که هیچ‌وقت خودکار پاک نمی‌شه و اصلاً جزوِ همون سقفِ فضای Artifact حساب
+# نمی‌شه. عمداً فقط دستی (workflow_dispatch) اجرا می‌شه - تصمیمِ «این نسخه واقعاً نهایی/مهمه» (مثلاً
+# همونی که برای بررسیِ کافه‌بازار/مایکت فرستاده شده) باید عمدی باشه، نه خودکار رو هر بیلدِ روزمره.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "شماره‌ی رانِ build-native-android.yml که می‌خوای دائمیش کنی (از تبِ Actions)"
+        required: true
+      tag:
+        description: "برچسبِ این نسخه (مثلاً v1.0.259)"
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: دریافتِ کد پروژه
+        uses: actions/checkout@v4
+
+      - name: دانلودِ APKهای ریلیزِ همون رانِ مشخص‌شده (نه دیباگ - این‌ها نسخه‌ی نصبی‌ان)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh run download ${{ inputs.run_id }} \
+            --repo ${{ github.repository }} \
+            -n loan-calculator-native-release-apk \
+            -n loan-calculator-native-myket-release-apk \
+            --dir release-apks
+
+      - name: ساختِ Releaseِ دائمی + پیوستِ APKها
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ inputs.tag }}" \
+            --repo ${{ github.repository }} \
+            --title "وام من - نسخه‌ی ${{ inputs.tag }}" \
+            --notes "منتشرشده از رانِ build-native-android.yml شماره‌ی #${{ inputs.run_id }}." \
+            "release-apks/loan-calculator-native-release-apk/app-cafebazaar-release.apk#وام-من-کافه‌بازار-${{ inputs.tag }}.apk" \
+            "release-apks/loan-calculator-native-myket-release-apk/app-myket-release.apk#وام-من-مایکت-${{ inputs.tag }}.apk"
