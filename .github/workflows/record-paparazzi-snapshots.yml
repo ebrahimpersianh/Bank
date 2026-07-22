@@ -1,0 +1,52 @@
+name: بازتولیدِ عکس‌های مرجعِ Paparazzi (دستی)
+
+# این ورک‌فلو فقط دستی (workflow_dispatch) اجرا می‌شه، هیچ‌وقت خودکار رو push/PR - چون ساختِ
+# عکس‌های مرجعِ جدید یعنی «هرچی الان تو AppCard رندر می‌شه رو درست فرض کن»، این تصمیم نباید خودکار
+# گرفته بشه؛ فقط وقتی که عمداً طراحیِ AppCard/Composableِ تستی رو عوض کردیم و می‌خوایم عکسِ مرجعِ
+# جدید بسازیم، این رو دستی از تبِ Actions اجرا می‌کنیم.
+#
+# نتیجه مستقیم به‌عنوانِ کامیتِ گیت پوش می‌شه (نه Artifact گیت‌هاب) - چون Artifact ذخیره‌سازیِ
+# جداگونه‌ای داره که گاهی quotaش پر می‌شه (رجوع کن به CLAUDE.md)، ولی خودِ عکس‌های مرجع باید همیشه
+# تو ریپو کنارِ کد بمونن تا build-native-android.yml (استپِ «تستِ اسکرین‌شاتِ Compose») بتونه هر بار
+# باهاشون مقایسه کنه.
+on:
+  workflow_dispatch:
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: native-android
+    steps:
+      - name: دریافت کد پروژه
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: آماده‌سازی Java (لازم برای Gradle/AGP)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: کش Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: ساختِ عکس‌های مرجعِ Paparazzi
+        run: ./gradlew :app:recordPaparazziDebug --console=plain
+
+      - name: کامیت/پوشِ عکس‌های مرجعِ جدید (اگه فرقی کرده باشن)
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add native-android/app/src/test/snapshots
+          if git diff --cached --quiet; then
+            echo "هیچ عکسِ مرجعِ جدید/تغییرکرده‌ای نبود - چیزی برای کامیت نیست."
+          else
+            git commit -m "بازتولیدِ خودکارِ عکس‌های مرجعِ Paparazzi"
+            git push
+          fi

@@ -63,6 +63,13 @@ jobs:
       - name: تست موتور محاسبه‌ی وام (core - بدون وابستگی به اندروید)
         run: ./gradlew :core:test --console=plain
 
+      # تستِ اسکرین‌شاتِ Compose (Paparazzi، رجوع کن به app/src/test/kotlin/.../ScreenshotTest.kt) -
+      # عکسِ واقعیِ رندرشده رو با عکسِ مرجعِ کامیت‌شده (app/src/test/snapshots/) مقایسه می‌کنه؛ اگه
+      # فرق داشتن (باگِ ظاهری/تغییرِ عمدیِ طراحی)، این استپ fail می‌شه. عکس‌های مرجع با ورک‌فلوی جداگونه‌ی
+      # record-paparazzi-snapshots.yml (اجرای دستی) ساخته/بازسازی می‌شن، نه اینجا.
+      - name: تستِ اسکرین‌شاتِ Compose (Paparazzi)
+        run: ./gradlew :app:testDebugUnitTest --console=plain
+
       # از وقتی فلیورهای cafebazaar/myket اضافه شدن (رجوع کن به app/build.gradle.kts)، این دو تسکِ
       # کلی هر دو فلیور رو با هم می‌سازن - خروجی هرکدوم تو مسیرِ جداگونه‌ی خودش (app/build/outputs/
       # apk/<flavor>/<buildType>/) میاد، برای همین ۴ تا استپِ uploadِ جدا لازمه، نه ۲ تا.
