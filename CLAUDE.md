@@ -25,14 +25,6 @@ artifact، CI، deploy، Room و…) یا خودداری کن یا در حدِ �
 - **بک‌اند**: Kotlin + Ktor + SQLite (JDBC/sqlite-jdbc) تو `server/` — برای ورود اجباری با موبایل (OTP)،
   همگام‌سازی ابری «وام‌های من»/چک‌ها، و اشتراک کافه‌بازار. جزئیات کامل تو `server/README.md`.
 
-## اپ دوم: «تقویم من» — تو ریپوی جدا `ebrahimpersianh/Calendar`، نه این‌جا
-تو ۳۰ تیر ۱۴۰۵ (۲۰۲۶-۰۷-۲۱) یه اپ تقویم فارسی («تقویم من»، شیشه‌ای، Kotlin + Compose، برای
-بازار/مایکت) اول به‌اشتباه تو همین ریپو (برنچ `claude/calendar-k51pj8`، پوشه‌ی `roozegar-android/`)
-ساخته شد و بعد به‌خواستِ صریح کاربر **کامل به ریپوی `ebrahimpersianh/Calendar` منتقل شد** (پروژه
-تو ریشه‌ی اون ریپو، برنچ `main`، CI: ‏`build-app.yml`). نسخه‌ی این‌جا حذف شده — اگه رو این ریپو
-پوشه/workflowی از «روزگار/تقویم من» دیدی، بازمانده‌ی قدیمیه؛ **هر کاری برای اپ تقویم فقط تو ریپوی
-Calendar** (که CLAUDE.md و README خودش رو داره). این ریپو (Bank) فقط مال «وام من» و سرورشه.
-
 این پروژه تو سندباکس فعلی **بیلد نمی‌شه** (`dl.google.com` مسدوده)؛ تنها راه تأیید واقعیِ `native-android/`،
 ران‌کردن `.github/workflows/build-native-android.yml` (با `workflow_dispatch` یا push به `main`) و
 چک‌کردن نتیجه‌ست، نه حدس‌زدن از رو خوندن کد. `server/` برعکس، چون فقط به Maven Central نیاز داره (نه
