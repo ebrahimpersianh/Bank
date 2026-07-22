@@ -1,0 +1,61 @@
+name: تنظیمِ خودکارِ اطلاعاتِ ملی‌پیامک رو VPS (فعال‌سازیِ OTP واقعی)
+
+# اجرای دستی (workflow_dispatch) - فقط وقتی لازمه (بعدِ ساختِ پترنِ ملی‌پیامک + گرفتنِ
+# یوزرنیم/پسورد) دستی تریگر می‌شه، نه با هر پوش. سه‌تا سکرت (MELIPAYAMAK_USERNAME/PASSWORD/
+# BODY_ID) رو از گیت‌هاب می‌خونه و تو ~/loan-server/.env رو VPS می‌نویسه/آپدیت می‌کنه - جایگزینِ
+# دستی ssh زدن و ویرایشِ فایل که تو CLAUDE.md (بخشِ OTP) توضیح داده شده. کلیدِ SSH و
+# VPS_HOST/VPS_USER همون سکرت‌هاییه که برای دیپلویِ خودکارِ سرور (build-server.yml) از قبل ست شده.
+on:
+  workflow_dispatch:
+
+jobs:
+  set-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: چک کردنِ وجودِ همه‌ی سکرت‌های لازم
+        id: check
+        run: |
+          missing=""
+          [ -z "${{ secrets.VPS_HOST }}" ] && missing="$missing VPS_HOST"
+          [ -z "${{ secrets.VPS_USER }}" ] && missing="$missing VPS_USER"
+          [ -z "${{ secrets.VPS_SSH_KEY }}" ] && missing="$missing VPS_SSH_KEY"
+          [ -z "${{ secrets.MELIPAYAMAK_USERNAME }}" ] && missing="$missing MELIPAYAMAK_USERNAME"
+          [ -z "${{ secrets.MELIPAYAMAK_PASSWORD }}" ] && missing="$missing MELIPAYAMAK_PASSWORD"
+          [ -z "${{ secrets.MELIPAYAMAK_BODY_ID }}" ] && missing="$missing MELIPAYAMAK_BODY_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::این سکرت‌ها ست نشدن:$missing"
+            exit 1
+          fi
+
+      # هرکدوم از این سه خط رو اگه از قبل تو .env بود جایگزین می‌کنه (sed)، وگرنه اضافه می‌کنه -
+      # پس چندبار اجراکردنِ این ورک‌فلو (مثلاً بعدِ عوض‌کردنِ پسورد) امن/idempotent‌ه، بقیه‌ی
+      # خط‌های .env (مثلِ JWT_SECRET/PORT) دست‌نخورده می‌مونن.
+      - name: نوشتنِ اطلاعاتِ ملی‌پیامک تو .env رو VPS + ری‌استارت
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: MELIPAYAMAK_USERNAME,MELIPAYAMAK_PASSWORD,MELIPAYAMAK_BODY_ID
+          script: |
+            set -e
+            cd ~/loan-server
+            touch .env
+            set_env_line() {
+              key="$1"; value="$2"
+              if grep -q "^${key}=" .env; then
+                sed -i "s|^${key}=.*|${key}=${value}|" .env
+              else
+                echo "${key}=${value}" >> .env
+              fi
+            }
+            set_env_line "MELIPAYAMAK_USERNAME" "$MELIPAYAMAK_USERNAME"
+            set_env_line "MELIPAYAMAK_PASSWORD" "$MELIPAYAMAK_PASSWORD"
+            set_env_line "MELIPAYAMAK_BODY_ID" "$MELIPAYAMAK_BODY_ID"
+            pm2 restart loan-calc-api
+            sleep 3
+            pm2 describe loan-calc-api | grep -q "online" && echo "OK: سرویس با اطلاعاتِ جدید بالاست" || (echo "سرویس بالا نیومد!"; exit 1)
+        env:
+          MELIPAYAMAK_USERNAME: ${{ secrets.MELIPAYAMAK_USERNAME }}
+          MELIPAYAMAK_PASSWORD: ${{ secrets.MELIPAYAMAK_PASSWORD }}
+          MELIPAYAMAK_BODY_ID: ${{ secrets.MELIPAYAMAK_BODY_ID }}

@@ -103,6 +103,12 @@ server {
 شکست می‌خوره. `MELIPAYAMAK_USERNAME`/`MELIPAYAMAK_PASSWORD` هم از پنل ملی‌پیامک گرفته می‌شن (اگه
 حساب جدید Api Key بهتون داده به‌جای رمز عبور، همون Api Key رو تو `MELIPAYAMAK_PASSWORD` بذارید).
 
+**گذاشتنِ این سه مقدار رو VPS دیگه نیازی به SSH دستی نداره**: ورک‌فلوی
+`.github/workflows/set-melipayamak-env.yml` (اجرای دستی از تبِ Actions) این سه مقدار رو از سکرت‌های
+گیت‌هاب (`MELIPAYAMAK_USERNAME`/`MELIPAYAMAK_PASSWORD`/`MELIPAYAMAK_BODY_ID`، دقیقاً همون روشِ ساده‌ای
+که برای `RELEASE_KEYSTORE_PASSWORD` و بقیه استفاده شده) می‌خونه و خودش تو `.env` رو VPS می‌نویسه/آپدیت
+می‌کنه و سرویس رو ری‌استارت می‌کنه - فقط کافیه این سه سکرت تو تنظیماتِ ریپو اضافه بشن.
+
 برای عوض کردن به یه سرویس دیگه (کاوه‌نگار، ippanel و ...) فقط کافیه
 `src/main/kotlin/ir/sadteam/loancalc/server/Sms.kt` رو ویرایش کنید — بقیه‌ی کد کاری نداره
 پیامک از کجا می‌ره.

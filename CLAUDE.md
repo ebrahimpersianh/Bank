@@ -63,8 +63,13 @@ artifact، CI، deploy، Room و…) یا خودداری کن یا در حدِ �
    برای بیلدِ دیباگ و بیلدِ ریلیزِ واقعی دو هشِ متفاوته.
 2. `MELIPAYAMAK_USERNAME`/`MELIPAYAMAK_PASSWORD` رو از پنل ملی‌پیامک بگیر (اگه حساب جدید بهت Api Key
    داده به‌جای رمز عبور، همون رو تو `MELIPAYAMAK_PASSWORD` بذار).
-3. رو VPS: `nano ~/loan-server/.env` (یا `cat >> ~/loan-server/.env`)، سه خط بالا رو اضافه کن، ذخیره کن.
-4. `pm2 restart loan-calc-api` بزن تا `.env` جدید خونده بشه.
+3. **دیگه نیازی به SSH دستی نیست** - این نشست یه ورک‌فلوی جدید ساخته شد
+   (`.github/workflows/set-melipayamak-env.yml`, اجرای دستی از تبِ Actions): فقط این سه مقدار
+   (`MELIPAYAMAK_USERNAME`/`MELIPAYAMAK_PASSWORD`/`MELIPAYAMAK_BODY_ID`) رو به‌عنوانِ سکرتِ گیت‌هاب
+   اضافه کن (همون روشِ ساده‌ای که برای کلیدِ امضای release قبلاً انجام شد)، بعد این ورک‌فلو رو دستی
+   اجرا کن - خودش رو VPS می‌نویسه تو `.env` و سرویس رو ری‌استارت می‌کنه. (روشِ قدیمیِ دستی - `nano
+   ~/loan-server/.env` + `pm2 restart` - هنوز به‌عنوانِ فال‌بک کار می‌کنه اگه این ورک‌فلو به هر
+   دلیلی جواب نداد.)
 5. تست کن: یه درخواست OTP واقعی از اپ بزن، `pm2 logs loan-calc-api --lines 20 --nostream` رو چک کن که
    دیگه پیام `[SMS-DEV]` نیاد و پیامک واقعی به گوشی برسه.
 
