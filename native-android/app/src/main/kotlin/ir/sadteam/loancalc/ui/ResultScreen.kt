@@ -300,6 +300,10 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                         .fillMaxWidth()
                         .height(rowH * visibleRows)
                         .lazyColumnScrollbar(tableState, AppPrimary),
+                    // start=10.dp (نه end) چون RTLه - رجوع کن به همین رفع رو LoanDetailScreen: start
+                    // تو RTL یعنی سمتِ راست، دقیقاً همونجایی که اسکرول‌بار (رسمِ raw canvas، مستقل از
+                    // جهت) کشیده می‌شه؛ بدونش متنِ «قسط N» زیرِ اسکرول‌بار می‌رفت.
+                    contentPadding = PaddingValues(start = 10.dp),
                 ) {
                     itemsIndexed(result.rows, key = { _, row -> row.month }) { idx, row ->
                         val due = dueDates[idx]
