@@ -4,6 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.kapt")
     id("com.google.dagger.hilt.android")
+    id("app.cash.paparazzi")
 }
 
 android {
@@ -181,4 +182,8 @@ dependencies {
     // انیمیشنِ Lottie واقعی (به‌جای متنِ ساکنِ «...») برای حالت‌های در-حال-بارگذاری - رجوع کن به
     // ui/components/LottieSpinner.kt و assets/anim/spinner.json.
     implementation("com.airbnb.android:lottie-compose:6.1.0")
+
+    // Paparazziِ JVM اسکرین‌شات‌تست از JUnit4 (نه JUnit5ِ ماژولِ core) استفاده می‌کنه - رجوع کن به
+    // app/src/test/kotlin/ir/sadteam/loancalc/ScreenshotTest.kt.
+    testImplementation("junit:junit:4.13.2")
 }

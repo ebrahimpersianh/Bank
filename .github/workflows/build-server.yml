@@ -42,3 +42,69 @@ jobs:
         with:
           name: loan-calculator-server-jar
           path: server/build/libs/loan-calculator-server-1.0.0-all.jar
+
+  # دیپلویِ خودکار رو VPS - جایگزینِ آپلودِ دستیِ تیکه‌تیکه‌ی jar که چندبار (jarِ خالی از cat
+  # ناقص، jar تو مسیرِ اشتباه) سرورِ زنده رو کرش کرده بود (رجوع کن به CLAUDE.md). فقط رو پوشِ main
+  # اجرا می‌شه، و فقط اگه سکرت‌های SSH ست شده باشن - وگرنه این job خودش رد می‌شه (skip)، نه fail،
+  # پس نبودِ سکرت باعثِ خرابیِ رانِ build نمی‌شه.
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: چک کردنِ وجودِ سکرت‌های VPS
+        id: check
+        run: |
+          if [ -n "${{ secrets.VPS_HOST }}" ] && [ -n "${{ secrets.VPS_USER }}" ] && [ -n "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::سکرت‌های VPS_HOST/VPS_USER/VPS_SSH_KEY ست نشدن - دیپلویِ خودکار رد می‌شه (رجوع کن به server/README.md)."
+          fi
+
+      - name: دانلودِ jarِ بیلدشده
+        if: steps.check.outputs.ready == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: loan-calculator-server-jar
+          path: .
+
+      # به‌جای جایگزینیِ مستقیمِ jarِ زنده، اول با یه اسمِ موقت کپی می‌شه؛ استپِ بعدی فقط اگه
+      # فایل واقعاً یه zip/jarِ سالمه (نه خالی/ناقص - دقیقاً همون باگِ قبلی) جایگزینش می‌کنه.
+      - name: کپیِ مستقیمِ jar به VPS (با اسمِ موقت)
+        if: steps.check.outputs.ready == 'true'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "loan-calculator-server-1.0.0-all.jar"
+          target: "~/loan-server/incoming/"
+          strip_components: 0
+
+      - name: تاییدِ سلامتِ jar + جایگزینی + ری‌استارت + تاییدِ بالا اومدن
+        if: steps.check.outputs.ready == 'true'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/loan-server
+            NEW=incoming/loan-calculator-server-1.0.0-all.jar
+            if [ ! -s "$NEW" ]; then
+              echo "jarِ جدید خالیه یا وجود نداره - دیپلوی متوقف شد، jarِ قبلی دست‌نخورده موند."
+              exit 1
+            fi
+            if ! unzip -tq "$NEW" > /dev/null; then
+              echo "jarِ جدید یه zip/jarِ سالم نیست - دیپلوی متوقف شد، jarِ قبلی دست‌نخورده موند."
+              exit 1
+            fi
+            cp loan-calculator-server-1.0.0-all.jar loan-calculator-server-1.0.0-all.jar.bak || true
+            mv "$NEW" loan-calculator-server-1.0.0-all.jar
+            sha256sum loan-calculator-server-1.0.0-all.jar
+            pm2 restart loan-calc-api
+            sleep 3
+            pm2 logs loan-calc-api --lines 20 --nostream
+            pm2 describe loan-calc-api | grep -q "online" && echo "OK: سرویس بالاست" || (echo "سرویس بالا نیومد - برگردوندنِ jarِ قبلی"; mv loan-calculator-server-1.0.0-all.jar.bak loan-calculator-server-1.0.0-all.jar; pm2 restart loan-calc-api; exit 1)
