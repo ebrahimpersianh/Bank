@@ -646,17 +646,22 @@ fun LoanDetailScreen(
                     .height(boxHeight)
                     .nestedScroll(flingConnection),
             ) {
-                // contentPadding(end): بدونش ردیف‌ها دقیقاً تا لبه‌ی همین Box کشیده می‌شدن - همون
-                // لبه‌ای که lazyColumnScrollbar خطش رو روش رسم می‌کنه، پس خط دقیقاً رو حاشیه‌ی
-                // باکسِ هر ردیف می‌افتاد (گزارشِ کاربر: «خط اومده تو باکس‌ها»). این فاصله‌ی کوچیک
-                // ردیف‌ها رو یه‌کم جمع‌تر می‌کنه تا بینِ لبه‌شون و خطِ اسکرول‌بار (که همون‌جای قبلی،
-                // نزدیکِ لبه‌ی واقعیِ صفحه، می‌مونه) یه فاصله‌ی تمیز باشه.
+                // contentPadding(start): بدونش ردیف‌ها دقیقاً تا لبه‌ی همین Box کشیده می‌شدن - همون
+                // لبه‌ای که lazyColumnScrollbar خطش رو روش رسم می‌کنه (چون drawWithContent مستقیم
+                // از رو size.width رسم می‌کنه، همیشه لبه‌ی فیزیکیِ راستِ همون Box، صرف‌نظر از
+                // جهت)، پس خط دقیقاً رو حاشیه‌ی باکسِ هر ردیف می‌افتاد (گزارشِ کاربر: «اسکرول رفته
+                // تو شکمِ باکس‌ها»).
+                // **باگِ رفع‌شده (اشتباهِ RTL)**: نسخه‌ی قبلی این‌جا `end = 10.dp` بود - ولی چون کلِ
+                // اپ RTL ئه، `end` تو PaddingValues یعنی سمتِ چپِ فیزیکی (نه راست)! یعنی اون فاصله
+                // اصلاً رو سمتِ درستی (راست، جایی که خط واقعاً رسم می‌شه) اضافه نمی‌شد - برای همین
+                // با اینکه کد قبلاً هم همین‌جوری بود، باگ همچنان دیده می‌شد. تو RTL، `start` سمتِ
+                // راستِ فیزیکیه - این همون سمتیه که لازم داریم.
                 LazyColumn(
                     state = innerListState,
                     modifier = Modifier
                         .fillMaxSize()
                         .lazyColumnScrollbar(innerListState, AppPrimary),
-                    contentPadding = PaddingValues(end = 10.dp),
+                    contentPadding = PaddingValues(start = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
