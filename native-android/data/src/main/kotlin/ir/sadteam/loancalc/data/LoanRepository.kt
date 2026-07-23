@@ -274,17 +274,18 @@ class LoanRepository(
         val startDate = parseStartDate(data)
         val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
         return rows.map { row ->
-            // قسط ۱ سررسیدش یه دوره بعد از startDate ئه (نه خودِ startDate) - پورت renderTable وب.
-            // باگِ گزارش‌شده‌ی کاربر: نسخه‌ی قبلی برای فاصله‌ی «ماهانه» هم ثابت m×۳۰ روز جمع می‌زد،
-            // که چون ۶ ماهِ اولِ سالِ شمسی ۳۱ روزه‌ان هر ماه یه روز عقب می‌رفت (۴/۴ → ۵/۳ → ۶/۲...).
-            // الان فاصله‌های مضربِ ۳۰ (ماهانه/دوماهه/سه‌ماهه) ماهِ تقویمیِ واقعی جلو می‌رن و روزِ
-            // ماه ثابت می‌مونه (با clamp آخرِ ماه)؛ فقط هفتگی/دوهفته‌ای (۷/۱۴) روزشمار می‌مونن.
-            // توجه: این فقط «تاریخِ نمایشیِ» سررسیده - فرمولِ مالی (i = rate×interval/365 تو
-            // LoanCalculator) عمداً همون interval قبلی رو نگه می‌داره، رجوع کن به CLAUDE.md.
+            // قسطِ ۱ سررسیدش خودِ startDate ئه (خواسته‌ی صریحِ کاربر - تاریخی که تو «تاریخ دریافت
+            // وام» می‌زنه مستقیم سررسیدِ قسطِ اول باشه، نه یه دوره جلوتر که رفتارِ قبلی/بانکیِ
+            // استاندارد بود) - برای همین (row.m - 1) به‌جای row.m.
+            // فاصله‌های مضربِ ۳۰ (ماهانه/دوماهه/سه‌ماهه) ماهِ تقویمیِ واقعی جلو می‌رن و روزِ ماه
+            // ثابت می‌مونه (با clamp آخرِ ماه، رفعِ باگِ قدیمیِ لغزشِ روز)؛ فقط هفتگی/دوهفته‌ای
+            // (۷/۱۴) روزشمار می‌مونن. توجه: این فقط «تاریخِ نمایشیِ» سررسیده - فرمولِ مالی
+            // (i = rate×interval/365 تو LoanCalculator) عمداً همون interval قبلی رو نگه می‌داره،
+            // رجوع کن به CLAUDE.md.
             val due = if (intervalDays % 30 == 0) {
-                PersianCalendar.addMonths(startDate, row.m * (intervalDays / 30))
+                PersianCalendar.addMonths(startDate, (row.m - 1) * (intervalDays / 30))
             } else {
-                PersianCalendar.addDays(startDate, row.m * intervalDays)
+                PersianCalendar.addDays(startDate, (row.m - 1) * intervalDays)
             }
             row.toRowMap() + ("dueDate" to mapOf("y" to due.y, "m" to due.m, "d" to due.d))
         }

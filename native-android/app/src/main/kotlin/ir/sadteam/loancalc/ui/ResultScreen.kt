@@ -104,10 +104,13 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
             outcome.startDate
         }
         result.rows.map { row ->
+            // (row.month - 1): خواسته‌ی صریحِ کاربر - تاریخی که تو «تاریخ دریافت وام» می‌زنه خودش
+            // مستقیم سررسیدِ قسطِ اول باشه (نه یه دوره جلوتر، که رفتارِ قبلی/بانکیِ استاندارد بود).
+            // فرمولِ مالی (LoanCalculator) به تاریخ کاری نداره، این تغییر فقط رو نمایشِ تاریخ اثر داره.
             if (interval % 30 == 0) {
-                PersianCalendar.addMonths(base, row.month * (interval / 30))
+                PersianCalendar.addMonths(base, (row.month - 1) * (interval / 30))
             } else {
-                PersianCalendar.addDays(base, row.month * interval)
+                PersianCalendar.addDays(base, (row.month - 1) * interval)
             }
         }
     }

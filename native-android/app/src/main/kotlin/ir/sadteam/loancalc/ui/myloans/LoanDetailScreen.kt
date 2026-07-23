@@ -283,6 +283,10 @@ fun LoanDetailScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    // این ردیف از قبل قابلِ‌ویرایش بود ولی هیچ لیبلی نداشت (برخلافِ فرمِ وامِ دستی
+                    // که همینو تو یه AppCard با عنوانِ «تاریخ دریافت وام» نشون می‌ده) - خواسته‌ی
+                    // کاربر: این گزینه واضح/قابلِ‌کشف باشه.
+                    Text("تاریخ دریافت وام", fontSize = 13.sp, color = AppMuted)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         InlineJalaliDateRow(
                             year = editMetaYear,
