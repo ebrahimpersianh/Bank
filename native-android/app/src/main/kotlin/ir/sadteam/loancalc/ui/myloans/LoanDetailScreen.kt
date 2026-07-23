@@ -520,7 +520,13 @@ fun LoanDetailScreen(
 
         AppCard(label = loan.bank, modifier = Modifier.padding(horizontal = 14.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
+                // weight(1f) فقط رو ستونِ مبلغ - چون متنِ حروفیِ مبلغ (numberToWordsFa) طولش به
+                // اندازه‌ی خودِ عدد فرق می‌کنه، بدونِ weight یه Row معمولی هر دو ستون رو مستقل و با
+                // عرضِ کاملِ Row اندازه می‌گرفت؛ وقتی این متن برای یه مبلغِ بزرگ خیلی بلند می‌شد، جای
+                // کافی برای ستونِ «پرداخت‌شده» نمی‌موند و اون یکی کلمه‌به‌کلمه (حتی حرف‌به‌حرف) می‌شکست
+                // (گزارشِ کاربر با اسکرین‌شات، بعدِ ویرایشِ مبلغ). با weight رو این ستون، Row اول
+                // عرضِ ثابتِ ستونِ «پرداخت‌شده» رو تضمین می‌کنه، بعد باقیِ فضا رو به این ستون می‌ده.
+                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                     Text("مبلغ هر قسط", fontSize = 13.sp, color = AppMuted)
                     Text("${maskIfPrivate(privacyMode, fmt(loan.installment))} ریال", fontSize = 15.sp, color = AppText, fontWeight = FontWeight.Bold)
                     if (!privacyMode) {
