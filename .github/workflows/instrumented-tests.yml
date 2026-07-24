@@ -52,6 +52,11 @@ jobs:
           profile: pixel_5
           disable-animations: true
           working-directory: native-android
+          # پروفایلِ pixel_5 پیش‌فرض ~۷.۴ گیگابایت فضا برای پارتیشنِ userdata می‌خواد، ولی رانرِ
+          # گیت‌هاب بعدِ نصبِ SDK/سیستم‌ایمیج فقط ~۶.۴ گیگ آزاد داره - رانِ اول دقیقاً با همین ارور
+          # ("Not enough space to create userdata partition") فیل شد. این عددِ کوچیک‌تر (۴ گیگ)
+          # برای یه تستِ سبکِ دیتابیس کاملاً کافیه.
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -partition-size 4096
           script: ./gradlew :data:connectedDebugAndroidTest --console=plain
 
       # اگه exportSchema (اولین‌بار امروز روشن شد) اسکیمای جدیدی تو data/schemas/ ساخته، خودکار
