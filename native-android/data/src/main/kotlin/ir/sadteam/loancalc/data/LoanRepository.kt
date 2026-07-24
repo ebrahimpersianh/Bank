@@ -132,6 +132,11 @@ class LoanRepository(
      * وام‌های دستی این فیلد رو ندارن، همیشه «—» برمی‌گردونه. */
     fun getBorrower(loan: LoanEntity): String = (parseData(loan)["borrower"] as? String) ?: "—"
 
+    /** دوره‌ی تنفس (ماه) - برای نشون‌دادنِ توضیحِ دینامیکِ درست کنارِ «تاریخ دریافت وام» تو دیالوگِ
+     * ویرایشِ مشخصات (رجوع کن به LoanDetailScreen.showEditMetaDialog): وامِ دستی همیشه ۰ برمی‌گردونه
+     * (addManualLoan همیشه graceMonths=0 ذخیره می‌کنه)، وامِ محاسبه‌شده هرچی موقعِ محاسبه بوده. */
+    fun getGraceMonths(loan: LoanEntity): Int = (parseData(loan)["graceMonths"] as? Number)?.toInt() ?: 0
+
     /**
      * ویرایشِ مشخصاتِ *غیرمالیِ* هر وامی (دستی یا محاسبه‌شده) - فقط اسم/بانک/وام‌گیرنده/تاریخِ شروع،
      * بدون دست‌زدن به مبلغ/نرخ/تعدادِ اقساط/ردیف‌ها. برخلافِ [updateManualLoan] که مخصوصِ وام‌های
@@ -273,19 +278,27 @@ class LoanRepository(
         val data = parseData(loan)
         val startDate = parseStartDate(data)
         val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
+        // باگِ جداگانه‌ی کشف‌شده و رفع‌شده: وام‌های دارای «دوره‌ی تنفس» (graceMonths، فقط وام‌های
+        // محاسبه‌شده - وامِ دستی همیشه ۰ داره) قبلاً اینجا اصلاً اعمال نمی‌شد - یعنی بعدِ ذخیره‌شدن،
+        // تاریخِ سررسیدِ همه‌ی اقساط بدونِ دوره‌ی تنفس نشون داده می‌شد، درحالی‌که تو پیش‌نمایشِ محاسبه
+        // (ResultScreen، قبل از ذخیره) درست اعمال می‌شد - ناهماهنگیِ بینِ پیش‌نمایش و ذخیره. رفع شد
+        // با اضافه‌کردنِ همون graceMonths به base، هم‌راستا با ResultScreen.
+        val graceMonths = (data["graceMonths"] as? Number)?.toInt() ?: 0
+        val base = if (graceMonths > 0) PersianCalendar.addMonths(startDate, graceMonths) else startDate
         return rows.map { row ->
-            // قسطِ ۱ سررسیدش خودِ startDate ئه (خواسته‌ی صریحِ کاربر - تاریخی که تو «تاریخ دریافت
-            // وام» می‌زنه مستقیم سررسیدِ قسطِ اول باشه، نه یه دوره جلوتر که رفتارِ قبلی/بانکیِ
-            // استاندارد بود) - برای همین (row.m - 1) به‌جای row.m.
+            // قسطِ ۱ سررسیدش خودِ base ئه (خواسته‌ی صریحِ کاربر - تاریخی که تو «تاریخ دریافت وام»
+            // می‌زنه مستقیم سررسیدِ قسطِ اول باشه، نه یه دوره جلوتر که رفتارِ قبلی/بانکیِ استاندارد
+            // بود؛ برای وام‌هایی که دوره‌ی تنفس دارن، قسطِ اول base ئه که خودش startDate+graceMonths
+            // ئه، نه startDate) - برای همین (row.m - 1) به‌جای row.m.
             // فاصله‌های مضربِ ۳۰ (ماهانه/دوماهه/سه‌ماهه) ماهِ تقویمیِ واقعی جلو می‌رن و روزِ ماه
             // ثابت می‌مونه (با clamp آخرِ ماه، رفعِ باگِ قدیمیِ لغزشِ روز)؛ فقط هفتگی/دوهفته‌ای
             // (۷/۱۴) روزشمار می‌مونن. توجه: این فقط «تاریخِ نمایشیِ» سررسیده - فرمولِ مالی
             // (i = rate×interval/365 تو LoanCalculator) عمداً همون interval قبلی رو نگه می‌داره،
             // رجوع کن به CLAUDE.md.
             val due = if (intervalDays % 30 == 0) {
-                PersianCalendar.addMonths(startDate, (row.m - 1) * (intervalDays / 30))
+                PersianCalendar.addMonths(base, (row.m - 1) * (intervalDays / 30))
             } else {
-                PersianCalendar.addDays(startDate, (row.m - 1) * intervalDays)
+                PersianCalendar.addDays(base, (row.m - 1) * intervalDays)
             }
             row.toRowMap() + ("dueDate" to mapOf("y" to due.y, "m" to due.m, "d" to due.d))
         }

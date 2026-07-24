@@ -1,6 +1,9 @@
 package ir.sadteam.loancalc
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
@@ -11,6 +14,9 @@ import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.LoanCalcTheme
 import ir.sadteam.loancalc.ui.theme.ThemeMode
 import org.junit.Rule
@@ -58,6 +64,35 @@ class ScreenshotTest {
         Column(modifier = Modifier.padding(16.dp)) {
             AppCard(label = "وام مسکن") {
                 Text("مبلغ قسط: ۱۲,۷۴۹,۰۰۰ ریال")
+            }
+        }
+    }
+
+    /**
+     * تکرارِ عمدیِ باگِ امروز (رجوع کن به CLAUDE.md، «باگِ درهم‌ریختنِ متنِ پرداخت‌شده») - یه Row با
+     * دو ستون، ستونِ اول با یه متنِ حروفیِ خیلی بلند (دقیقاً هم‌الگو با «مبلغ هر قسط» تو
+     * LoanDetailScreen، با weight(1f)) و ستونِ دومِ کوتاه («پرداخت‌شده»/«X از Y»). اگه یه‌روزِ دیگه
+     * weight از رو ستونِ اول برداشته بشه، این عکس دوباره همون باگِ حرف‌به‌حرف‌شکستن رو نشون می‌ده و
+     * تست fail می‌شه - عکسِ مرجع باید با کدِ درست (weight-دار) ضبط بشه.
+     */
+    @Test
+    fun twoColumnRowWithLongWordsTextDoesNotSqueezeSibling() = snapshotRtl(ThemeMode.LIGHT) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            AppCard(label = "بلوبانک") {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                        Text("مبلغ هر قسط", color = AppMuted)
+                        Text("۱۷,۶۵۲,۲۸۲ ریال", color = AppText)
+                        Text(
+                            "یک میلیون و هفتصد و شصت و پنج هزار و دویست و بیست و هشت تومان",
+                            color = AppMuted,
+                        )
+                    }
+                    Column {
+                        Text("پرداخت‌شده", color = AppMuted)
+                        Text("۵ از ۶", color = AppPrimary)
+                    }
+                }
             }
         }
     }

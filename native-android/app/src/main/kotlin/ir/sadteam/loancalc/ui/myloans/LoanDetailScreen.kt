@@ -255,6 +255,7 @@ fun LoanDetailScreen(
     var editMetaYear by remember { mutableStateOf(1404) }
     var editMetaMonth by remember { mutableStateOf(1) }
     var editMetaDay by remember { mutableStateOf(1) }
+    var editMetaGraceMonths by remember { mutableStateOf(0) }
 
     if (showEditMetaDialog) {
         AlertDialog(
@@ -296,6 +297,17 @@ fun LoanDetailScreen(
                             modifier = Modifier.weight(1f),
                         )
                     }
+                    // همون توضیحِ دینامیکِ BankLoanScreen - این وام (محاسبه‌شده) ممکنه دوره‌ی تنفس
+                    // داشته باشه، پس این تاریخ همیشه سررسیدِ قسطِ اول نیست.
+                    Text(
+                        if (editMetaGraceMonths > 0) {
+                            "قسطِ اول ${toFa(editMetaGraceMonths)} ماه بعد از این تاریخه (به‌خاطرِ دوره‌ی تنفس)"
+                        } else {
+                            "این تاریخ = سررسیدِ قسطِ اول"
+                        },
+                        fontSize = 11.sp,
+                        color = AppMuted,
+                    )
                     // مبلغ/نرخ/تعدادِ اقساط عمداً اینجا نیست - رجوع کن به کامنتِ بالای showEditMetaDialog.
                     Text(
                         "مبلغ/نرخ/تعدادِ اقساط این نوع وام از رو فرمول محاسبه شده و قابلِ‌ویرایش نیست.",
@@ -506,6 +518,7 @@ fun LoanDetailScreen(
                     editMetaYear = sd.y
                     editMetaMonth = sd.m
                     editMetaDay = sd.d
+                    editMetaGraceMonths = viewModel.getLoanGraceMonths(loan)
                     showEditMetaDialog = true
                 }
             }) {

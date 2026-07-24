@@ -331,6 +331,21 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
                         Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
                     }
                 }
+                // توضیحِ دینامیک - چون این فرم دوره‌ی تنفس هم داره، این تاریخ همیشه «سررسیدِ قسطِ
+                // اول» نیست: اگه تنفس روشن باشه، قسطِ اول همون‌قدر بعدتره؛ اگه خاموش باشه، دقیقاً
+                // خودِ همین تاریخه. خواسته‌ی کاربر: به‌جای عوض‌کردنِ اسمِ فیلد (که برای حالتِ تنفس‌دار
+                // گمراه‌کننده می‌شد)، همین توضیحِ کوچیک زیرش اضافه بشه.
+                val graceHint = if (graceOn && graceMonths.toInt() > 0) {
+                    "قسطِ اول ${toFa(graceMonths.toInt())} ماه بعد از این تاریخه (به‌خاطرِ دوره‌ی تنفس)"
+                } else {
+                    "این تاریخ = سررسیدِ قسطِ اول"
+                }
+                Text(
+                    graceHint,
+                    fontSize = 11.sp,
+                    color = AppMuted,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
         }
 
