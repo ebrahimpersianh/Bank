@@ -47,7 +47,3 @@ jobs:
             echo ""
             echo "=== وضعیتِ اشتراکِ حساب‌های تست/دائمی (چک کن آیا حسابِ تست بازارها دائمی‌مشترک مونده) ==="
             sqlite3 ~/VameMan/data.sqlite "SELECT phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE phone IN ('09121111111','09366963867');" 2>&1 || echo "کوئری شکست خورد"
-            echo ""
-            echo "=== [یک‌بارمصرف] برداشتنِ کاملِ فلگِ اشتراک از حسابِ تستِ ۰۹۱۲۱۱۱۱۱۱۱ (برگشت به حالتِ آزمایشیِ خودکار) ==="
-            sqlite3 ~/VameMan/data.sqlite "UPDATE users SET subscribed = 0, subscribed_until = NULL, subscription_tier = NULL WHERE phone = '09121111111';"
-            sqlite3 ~/VameMan/data.sqlite "SELECT phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE phone = '09121111111';"
