@@ -64,18 +64,16 @@ jobs:
           # باز می‌کنیم، ۱۰ ثانیه صبر می‌کنیم، و چک می‌کنیم پروسه‌ش هنوز زنده‌ست - اگه اپ بلافاصله
           # بعدِ باز شدن کرش کنه (دقیقاً همون کلاسِ باگی که نسخه‌ی ۱.۰.۳۱۵ رو کرش می‌کرد)، این مرحله
           # با شکست تمام می‌شه و لاگِ کرش هم چاپ می‌شه.
+          # نکته‌ی مهم: این اکشن (reactivecircus/android-emulator-runner) هر خطِ این script رو با یه
+          # `sh -c` جداگانه اجرا می‌کنه (نه یه اسکریپتِ شِلِ پیوسته) - رانِ اول با یه if/then/else/fi
+          # چندخطی نوشته شده بود که خط به خط پخش شد و «Syntax error: end of file unexpected» داد.
+          # برای همین بررسیِ زنده‌بودنِ پروسه باید تویِ **یه خط** باشه (با `;` به‌جای خط‌های جدا).
           script: |
             ./gradlew :data:connectedDebugAndroidTest --console=plain
             ./gradlew :app:installCafebazaarDebug --console=plain
             adb shell am start -n ir.sadteam.loancalc/.MainActivity
             sleep 10
-            if adb shell pidof ir.sadteam.loancalc > /dev/null 2>&1; then
-              echo "OK: اپ بعد از ۱۰ ثانیه هنوز روشنه - کرش نکرده."
-            else
-              echo "FAIL: اپ کرش کرد یا اصلاً بالا نیومد - این ۳۰۰ خطِ آخرِ logcat:"
-              adb logcat -d -t 300
-              exit 1
-            fi
+            if adb shell pidof ir.sadteam.loancalc > /dev/null 2>&1; then echo "OK: اپ بعد از ۱۰ ثانیه هنوز روشنه - کرش نکرده."; else echo "FAIL: اپ کرش کرد یا اصلاً بالا نیومد - این ۳۰۰ خطِ آخرِ logcat:"; adb logcat -d -t 300; exit 1; fi
 
       # اگه exportSchema (اولین‌بار امروز روشن شد) اسکیمای جدیدی تو data/schemas/ ساخته، خودکار
       # کامیتش کن - هم‌الگو با record-paparazzi-snapshots.yml.
