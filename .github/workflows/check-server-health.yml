@@ -44,3 +44,6 @@ jobs:
             echo ""
             echo "=== ۵ گزارشِ کرشِ آخر ==="
             sqlite3 ~/VameMan/data.sqlite "SELECT id, created_at, app_version, message, stack FROM crash_reports ORDER BY id DESC LIMIT 3;" 2>&1 || echo "sqlite3 نصب نیست یا جدول پیدا نشد"
+            echo ""
+            echo "=== وضعیتِ اشتراکِ حساب‌های تست/دائمی (چک کن آیا حسابِ تست بازارها دائمی‌مشترک مونده) ==="
+            sqlite3 ~/VameMan/data.sqlite "SELECT phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE phone IN ('09121111111','09366963867');" 2>&1 || echo "کوئری شکست خورد"
