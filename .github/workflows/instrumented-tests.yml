@@ -1,8 +1,10 @@
-name: تستِ اینسترومنتد (migration/رمزنگاری - با امولاتورِ واقعی)
+name: تستِ اینسترومنتد + اسموک‌تستِ اپ (با امولاتورِ واقعی)
 
 # جداگانه از build-native-android.yml چون این‌یکی به یه امولاتورِ اندرویدِ واقعی نیاز داره (کندتر،
 # ~۱۰-۱۵ دقیقه‌ی اضافه فقط برای بالا آمدنِ امولاتور) - رجوع کن به CLAUDE.md برای دلیلِ کامل (دیتابیس
-# با SQLCipher رمزنگاری شده، تستِ سبکِ JVM/Paparazzi نمی‌تونه این کتابخونه‌ی نیتیو رو باز کنه).
+# با SQLCipher رمزنگاری شده، تستِ سبکِ JVM/Paparazzi نمی‌تونه این کتابخونه‌ی نیتیو رو باز کنه). علاوه
+# بر تستِ migration، این ورک‌فلو خودِ اپ (نسخه‌ی cafebazaarDebug) رو هم رو همین امولاتور نصب/باز
+# می‌کنه و چک می‌کنه بلافاصله کرش نکنه - یه اسموک‌تستِ ساده ولی واقعی، رو یه دستگاهِ اندرویدِ واقعی.
 on:
   workflow_dispatch:
   push:
@@ -43,7 +45,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: اجرای تستِ اینسترومنتد رو امولاتور (فقط ماژولِ data)
+      - name: اجرای تستِ اینسترومنتد + نصب/بازکردنِ اپ رو امولاتور (بررسیِ کرش‌نکردن)
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
@@ -57,7 +59,23 @@ jobs:
           # ("Not enough space to create userdata partition") فیل شد. این عددِ کوچیک‌تر (۴ گیگ)
           # برای یه تستِ سبکِ دیتابیس کاملاً کافیه.
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -partition-size 4096
-          script: ./gradlew :data:connectedDebugAndroidTest --console=plain
+          # مرحله‌ی اول: تستِ اینسترومنتدِ migration (ماژولِ data، همونی که از قبل بود).
+          # مرحله‌ی دوم (جدید): نسخه‌ی دیباگِ خودِ اپ (فلیورِ cafebazaar) رو رو همین امولاتور نصب و
+          # باز می‌کنیم، ۱۰ ثانیه صبر می‌کنیم، و چک می‌کنیم پروسه‌ش هنوز زنده‌ست - اگه اپ بلافاصله
+          # بعدِ باز شدن کرش کنه (دقیقاً همون کلاسِ باگی که نسخه‌ی ۱.۰.۳۱۵ رو کرش می‌کرد)، این مرحله
+          # با شکست تمام می‌شه و لاگِ کرش هم چاپ می‌شه.
+          script: |
+            ./gradlew :data:connectedDebugAndroidTest --console=plain
+            ./gradlew :app:installCafebazaarDebug --console=plain
+            adb shell am start -n ir.sadteam.loancalc/.MainActivity
+            sleep 10
+            if adb shell pidof ir.sadteam.loancalc > /dev/null 2>&1; then
+              echo "OK: اپ بعد از ۱۰ ثانیه هنوز روشنه - کرش نکرده."
+            else
+              echo "FAIL: اپ کرش کرد یا اصلاً بالا نیومد - این ۳۰۰ خطِ آخرِ logcat:"
+              adb logcat -d -t 300
+              exit 1
+            fi
 
       # اگه exportSchema (اولین‌بار امروز روشن شد) اسکیمای جدیدی تو data/schemas/ ساخته، خودکار
       # کامیتش کن - هم‌الگو با record-paparazzi-snapshots.yml.
