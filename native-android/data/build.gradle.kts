@@ -10,6 +10,9 @@ android {
 
     defaultConfig {
         minSdk = 24
+        // برای تستِ اینسترومنتدِ migration (رجوع کن به AppDatabase.kt/MigrationTest.kt) - این تست‌ها
+        // به یه رانرِ واقعیِ AndroidX نیاز دارن، نه فقط JUnitِ خامِ JVM.
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -21,6 +24,15 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
+// خروجیِ JSONِ اسکیمای Room (برای MigrationTestHelper) - رجوع کن به کامنتِ exportSchema تو
+// AppDatabase.kt. این پوشه باید کامیت بشه (CI خودش بعدِ هر بیلد چک/کامیت می‌کنه، رجوع کن به
+// build-native-android.yml).
+kapt {
+    arguments {
+        arg("room.schemaLocation", "$projectDir/schemas")
     }
 }
 
@@ -52,4 +64,12 @@ dependencies {
     // پسورد رمزنگاری رو خودش نمی‌سازیم/جایی هاردکد نمی‌کنیم - یه کلید تصادفی تولید و با
     // Android Keystore (سخت‌افزاری، هیچ‌وقت از دستگاه خارج نمی‌شه) نگه‌داری می‌شه.
     implementation("androidx.security:security-crypto:1.0.0")
+
+    // تستِ اینسترومنتدِ migration (رجوع کن به AppDatabase.kt/MigrationTest.kt) - چون دیتابیس واقعاً
+    // رمزنگاری‌شده‌ست (SQLCipher، کتابخونه‌ی نیتیوِ اندروید)، این تست فقط رو یه دستگاه/امولاتورِ واقعی
+    // قابلِ‌اجراست (نه JVMِ خام/Robolectric) - رجوع کن به CLAUDE.md برای دلیلِ کامل.
+    androidTestImplementation("androidx.room:room-testing:2.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test:runner:1.5.2")
+    androidTestImplementation("androidx.test:rules:1.5.0")
 }

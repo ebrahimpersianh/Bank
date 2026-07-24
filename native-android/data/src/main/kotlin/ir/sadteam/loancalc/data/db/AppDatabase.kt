@@ -21,7 +21,13 @@ import net.sqlcipher.database.SupportFactory
         CalculationHistoryEntity::class,
     ],
     version = 12,
-    exportSchema = false,
+    // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
+    // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
+    // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
+    // تنظیم شده). چون این گزینه همین الان روشن شده، فقط از نسخه‌ی ۱۲ به بعد اسکیمای واقعی داریم -
+    // migrationِ ۱۱→۱۲ (که قبلاً کرش داشت و رفع شد) قابلِ‌تستِ خودکار نیست چون اسکیمای نسخه‌ی ۱۱
+    // هیچ‌وقت ثبت نشده بود.
+    exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun loanDao(): LoanDao

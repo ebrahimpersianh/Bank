@@ -1,0 +1,70 @@
+name: تستِ اینسترومنتد (migration/رمزنگاری - با امولاتورِ واقعی)
+
+# جداگانه از build-native-android.yml چون این‌یکی به یه امولاتورِ اندرویدِ واقعی نیاز داره (کندتر،
+# ~۱۰-۱۵ دقیقه‌ی اضافه فقط برای بالا آمدنِ امولاتور) - رجوع کن به CLAUDE.md برای دلیلِ کامل (دیتابیس
+# با SQLCipher رمزنگاری شده، تستِ سبکِ JVM/Paparazzi نمی‌تونه این کتابخونه‌ی نیتیو رو باز کنه).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - "native-android/data/**"
+      - ".github/workflows/instrumented-tests.yml"
+
+jobs:
+  instrumented-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        api-level: [29]
+    defaults:
+      run:
+        working-directory: native-android
+    steps:
+      - name: دریافت کد پروژه
+        uses: actions/checkout@v4
+
+      - name: آماده‌سازی Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: کش Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # KVM لازم داره تا امولاتور واقعاً سریع/شتاب‌دهی‌شده اجرا بشه رو رانرِ گیت‌هاب (وگرنه یا اصلاً
+      # بالا نمیاد یا خیلی کند می‌شه).
+      - name: فعال‌سازیِ KVM برای شتاب‌دهیِ امولاتور
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: اجرای تستِ اینسترومنتد رو امولاتور (فقط ماژولِ data)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          disable-animations: true
+          working-directory: native-android
+          script: ./gradlew :data:connectedDebugAndroidTest --console=plain
+
+      # اگه exportSchema (اولین‌بار امروز روشن شد) اسکیمای جدیدی تو data/schemas/ ساخته، خودکار
+      # کامیتش کن - هم‌الگو با record-paparazzi-snapshots.yml.
+      - name: کامیتِ خودکارِ اسکیمای جدیدِ Room (اگه تغییر کرده)
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          if [ -n "$(git status --porcelain native-android/data/schemas)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add native-android/data/schemas
+            git commit -m "بروزرسانیِ خودکارِ اسکیمای Room (data/schemas/)"
+            git push
+          else
+            echo "اسکیمایی تغییر نکرده."
+          fi
