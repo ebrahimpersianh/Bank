@@ -84,10 +84,15 @@ class SubscriptionManager(private val activity: ComponentActivity) {
             onFailed()
             return
         }
+        /* پنلِ توسعه‌دهندگانِ مایکت گزینه‌ی جداگانه‌ای برای «اشتراکِ واقعی» نداره - هر محصولی که اونجا
+           ساخته بشه یه محصولِ درون‌برنامه‌ایِ معمولیه (دقیقاً هم‌الگو با تصمیمِ قبلی برای کافه‌بازار،
+           رجوع کن به Poolakey/purchaseProduct تو فلیورِ cafebazaar). قبلاً اینجا ITEM_TYPE_SUBS
+           فرستاده می‌شد که با نوعِ واقعیِ محصول یکی نبود و باعثِ «خرید ناموفق» فوری می‌شد (گزارشِ
+           بازبینِ مایکت). */
         helper.launchPurchaseFlow(
             activity,
             productId,
-            IabHelper.ITEM_TYPE_SUBS,
+            IabHelper.ITEM_TYPE_INAPP,
             { result: IabResult, purchase: Purchase? ->
                 when {
                     result.isFailure -> onFailed()
