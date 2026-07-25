@@ -1,0 +1,77 @@
+name: تنظیمِ خودکارِ اطلاعاتِ کافه‌بازار رو VPS (فعال‌سازیِ تاییدِ خریدِ درون‌برنامه‌ای)
+
+# اجرای دستی (workflow_dispatch) - فقط برای راه‌اندازیِ یک‌بارمصرفِ اولیه لازمه (رجوع کن به
+# CLAUDE.md/server/README.md برای دلیلِ کامل: بدونِ این سه‌تا، تاییدِ خریدِ کافه‌بازار همیشه
+# 503 cafebazaar_not_configured برمی‌گردونه). سکرت‌های CAFEBAZAAR_CLIENT_ID/CLIENT_SECRET باید
+# از قبل تو گیت‌هاب ست شده باشن؛ کدِ یک‌بارمصرفِ OAuth (از آدرسِ authorize) به‌عنوانِ ورودی گرفته
+# می‌شه چون کوتاه‌عمره و نمی‌شه به‌عنوانِ سکرتِ دائمی نگهش داشت.
+on:
+  workflow_dispatch:
+    inputs:
+      code:
+        description: "کدِ یک‌بارمصرفِ OAuth (از آدرسِ authorize، پارامترِ code تو URLِ ریدایرکت)"
+        required: true
+      redirect_uri:
+        description: "همون redirect_uri که تو آدرسِ authorize استفاده شد"
+        required: true
+        default: "https://example.com"
+
+jobs:
+  set-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: چک کردنِ وجودِ همه‌ی سکرت‌های لازم
+        id: check
+        run: |
+          missing=""
+          [ -z "${{ secrets.VPS_HOST }}" ] && missing="$missing VPS_HOST"
+          [ -z "${{ secrets.VPS_USER }}" ] && missing="$missing VPS_USER"
+          [ -z "${{ secrets.VPS_SSH_KEY }}" ] && missing="$missing VPS_SSH_KEY"
+          [ -z "${{ secrets.CAFEBAZAAR_CLIENT_ID }}" ] && missing="$missing CAFEBAZAAR_CLIENT_ID"
+          [ -z "${{ secrets.CAFEBAZAAR_CLIENT_SECRET }}" ] && missing="$missing CAFEBAZAAR_CLIENT_SECRET"
+          if [ -n "$missing" ]; then
+            echo "::error::این سکرت‌ها ست نشدن:$missing"
+            exit 1
+          fi
+
+      - name: گرفتنِ refresh_token از کافه‌بازار + نوشتنِ تو .env رو VPS + ری‌استارت
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: CAFEBAZAAR_CLIENT_ID,CAFEBAZAAR_CLIENT_SECRET,OAUTH_CODE,REDIRECT_URI
+          script: |
+            set -e
+            RESPONSE=$(curl -s -X POST "https://pardakht.cafebazaar.ir/devapi/v2/auth/token/" \
+              --data-urlencode "grant_type=authorization_code" \
+              --data-urlencode "code=$OAUTH_CODE" \
+              --data-urlencode "client_id=$CAFEBAZAAR_CLIENT_ID" \
+              --data-urlencode "client_secret=$CAFEBAZAAR_CLIENT_SECRET" \
+              --data-urlencode "redirect_uri=$REDIRECT_URI")
+            REFRESH_TOKEN=$(echo "$RESPONSE" | grep -o '"refresh_token"[[:space:]]*:[[:space:]]*"[^"]*"' | sed -E 's/.*:[[:space:]]*"([^"]*)"/\1/')
+            if [ -z "$REFRESH_TOKEN" ]; then
+              echo "::error::گرفتنِ refresh_token شکست خورد. جوابِ کافه‌بازار: $RESPONSE"
+              exit 1
+            fi
+            cd ~/VameMan
+            touch .env
+            set_env_line() {
+              key="$1"; value="$2"
+              if grep -q "^${key}=" .env; then
+                sed -i "s|^${key}=.*|${key}=${value}|" .env
+              else
+                echo "${key}=${value}" >> .env
+              fi
+            }
+            set_env_line "CAFEBAZAAR_CLIENT_ID" "$CAFEBAZAAR_CLIENT_ID"
+            set_env_line "CAFEBAZAAR_CLIENT_SECRET" "$CAFEBAZAAR_CLIENT_SECRET"
+            set_env_line "CAFEBAZAAR_REFRESH_TOKEN" "$REFRESH_TOKEN"
+            pm2 restart loan-calc-api
+            sleep 3
+            pm2 describe loan-calc-api | grep -q "online" && echo "OK: سرویس با اطلاعاتِ جدید بالاست، refresh_token گرفته و ذخیره شد" || (echo "سرویس بالا نیومد!"; exit 1)
+        env:
+          CAFEBAZAAR_CLIENT_ID: ${{ secrets.CAFEBAZAAR_CLIENT_ID }}
+          CAFEBAZAAR_CLIENT_SECRET: ${{ secrets.CAFEBAZAAR_CLIENT_SECRET }}
+          OAUTH_CODE: ${{ inputs.code }}
+          REDIRECT_URI: ${{ inputs.redirect_uri }}
