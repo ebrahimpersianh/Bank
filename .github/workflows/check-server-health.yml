@@ -47,8 +47,3 @@ jobs:
             echo ""
             echo "=== وضعیتِ اشتراکِ حساب‌های تست/دائمی (چک کن آیا حسابِ تست بازارها دائمی‌مشترک مونده) ==="
             sqlite3 ~/VameMan/data.sqlite "SELECT phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE phone IN ('09121111111','09366963867');" 2>&1 || echo "کوئری شکست خورد"
-            echo ""
-            echo "=== [یک‌بارمصرف] چکِ وجودِ کلیدهای کافه‌بازار/مایکت تو .env (فقط وجود، نه مقدار) ==="
-            for key in CAFEBAZAAR_CLIENT_ID CAFEBAZAAR_CLIENT_SECRET CAFEBAZAAR_REFRESH_TOKEN CAFEBAZAAR_PACKAGE_NAME MYKET_ACCESS_TOKEN; do
-              if grep -q "^${key}=" ~/VameMan/.env 2>/dev/null && [ -n "$(grep "^${key}=" ~/VameMan/.env | cut -d= -f2-)" ]; then echo "${key}: ست شده"; else echo "${key}: خالی/ست‌نشده"; fi
-            done
