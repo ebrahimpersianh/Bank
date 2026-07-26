@@ -1,12 +1,9 @@
 package ir.sadteam.loancalc.ui.auth
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Base64
 import android.util.Log
-import android.widget.Toast
 import java.security.MessageDigest
 
 private const val TAG = "SmsRetrieverHash"
@@ -27,10 +24,6 @@ private const val NUM_BASE64_CHAR = 11
  * `adb logcat -s SmsRetrieverHash` (یا فیلترکردنِ لاگ‌کت رو همین تگ) هشِ چاپ‌شده رو بگیره، و دقیقاً
  * همون رشته رو (بدونِ فاصله‌ی اضافه) به یه خطِ جدیدِ آخرِ متنِ پترنِ ملی‌پیامک اضافه کنه - رجوع کن به
  * CLAUDE.md برای جزئیاتِ کامل.
- *
- * چون کاربرِ این پروژه معمولاً به adb/کامپیوتر دسترسی نداره، علاوه بر لاگ، هش رو خودکار تو
- * کلیپ‌بورد هم کپی می‌کنه و یه Toast نشون می‌ده - یعنی فقط با باز کردنِ اپ رو گوشی (بدونِ نیاز به
- * لاگ‌کت) می‌شه هش رو گرفت (پیست کرد جای دیگه).
  */
 object SmsRetrieverHash {
     fun logForDebugging(context: Context) {
@@ -44,9 +37,6 @@ object SmsRetrieverHash {
                 val hash = hash(packageName, signature.toCharsString())
                 if (hash != null) {
                     Log.i(TAG, "هشِ SMS Retriever برای این نصب: $hash")
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                    clipboard?.setPrimaryClip(ClipData.newPlainText("SMS Retriever Hash", hash))
-                    Toast.makeText(context, "هشِ پیامک کپی شد: $hash", Toast.LENGTH_LONG).show()
                 }
             }
         }.onFailure { e -> Log.e(TAG, "محاسبه‌ی هش شکست خورد", e) }
