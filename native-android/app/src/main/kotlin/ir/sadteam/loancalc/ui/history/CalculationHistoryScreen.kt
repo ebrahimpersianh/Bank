@@ -38,6 +38,7 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.CalculationHistoryEntity
 import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -152,7 +153,8 @@ private fun HistoryRow(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    AppCard(modifier = modifier) {
+    SwipeToDeleteRow(onDelete = onDelete, modifier = modifier) {
+    AppCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -173,5 +175,6 @@ private fun HistoryRow(
                 Icon(Icons.Filled.Delete, contentDescription = "حذف", tint = AppDanger)
             }
         }
+    }
     }
 }

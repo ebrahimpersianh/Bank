@@ -134,6 +134,7 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
 import ir.sadteam.loancalc.ui.theme.ThemeRevealHost
@@ -409,6 +410,14 @@ private fun LoanCalcApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: BottomTab.BANK_LOAN.route
 
+    // نوارِ پایینِ ۴تبی موقعِ اسکرولِ رو‌به‌پایینِ لیستِ «وام‌های من» جمع می‌شه، با اسکرولِ رو‌به‌بالا
+    // دوباره ظاهر می‌شه - فقط MyLoansScreen این callback رو صدا می‌زنه (رجوع کن به onBottomBar
+    // VisibilityChanged اونجا)؛ بقیه‌ی تب‌ها همیشه نوار رو نشون می‌دن.
+    var bottomBarVisible by remember { mutableStateOf(true) }
+    LaunchedEffect(currentRoute) {
+        if (currentRoute != BottomTab.MY_LOANS.route) bottomBarVisible = true
+    }
+
     // تپ دوباره رو تب «وام بانکی» وقتی از قبل انتخابه باید فرم رو ریست کنه (دقیقاً رفتار قبلی،
     // قبل از معرفی Navigation) — چون launchSingleTop جلوی navigate دوباره به همون مقصد رو می‌گیره،
     // این ریست از طریق یه کلید جدا اعمال می‌شه.
@@ -510,6 +519,11 @@ private fun LoanCalcApp(
                 )
             },
             bottomBar = {
+                AnimatedVisibility(
+                    visible = bottomBarVisible,
+                    enter = slideInVertically(Motion.standard()) { it },
+                    exit = slideOutVertically(Motion.standard()) { it },
+                ) {
                 Surface(color = AppSurface) {
                     Row(
                         modifier = Modifier
@@ -538,6 +552,7 @@ private fun LoanCalcApp(
                             )
                         }
                     }
+                }
                 }
             },
         ) { padding ->
@@ -579,6 +594,7 @@ private fun LoanCalcApp(
                 composable(BottomTab.MY_LOANS.route) {
                     MyLoansScreen(
                         onManualAddFabPositioned = { rect -> tourBounds[TourTarget.MANUAL_ADD] = rect },
+                        onBottomBarVisibilityChanged = { visible -> bottomBarVisible = visible },
                     )
                 }
             }

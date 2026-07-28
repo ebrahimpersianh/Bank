@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -43,6 +44,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,6 +80,7 @@ import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.BankBadge
@@ -87,6 +91,7 @@ import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.ProgressRing
+import ir.sadteam.loancalc.ui.components.rememberIsScrollingUp
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
 import ir.sadteam.loancalc.ui.theme.Motion
@@ -151,6 +156,10 @@ fun MyLoansScreen(
     // مختصاتِ واقعیِ دکمه‌ی «افزودن دستی وام» رو گزارش می‌ده - برای قدمِ آخرِ AppTourOverlay
     // (TourTarget.MANUAL_ADD تو MainActivity.kt) که این دکمه رو اسپاتلایت می‌کنه.
     onManualAddFabPositioned: (Rect) -> Unit = {},
+    // نوارِ پایینِ ۴تبی (تویِ MainActivity.kt) موقعِ اسکرولِ رو‌به‌پایینِ این لیست جمع می‌شه - این
+    // فقط جهتِ اسکرول رو گزارش می‌ده، خودِ نوارِ پایین رو نمی‌بینه (اونجا تو یه کامپوزیبلِ کاملاً
+    // دیگه‌ست، رجوع کن به LoanCalcApp).
+    onBottomBarVisibilityChanged: (visible: Boolean) -> Unit = {},
 ) {
     var showAddForm by remember { mutableStateOf(false) }
     var openedLoanId by remember { mutableStateOf<Long?>(null) }
@@ -309,7 +318,14 @@ fun MyLoansScreen(
                 },
                 modifier = Modifier.fillMaxSize(),
             ) {
+                val loansListState = rememberLazyListState()
+                val isScrollingUp by rememberIsScrollingUp(loansListState)
+                LaunchedEffect(isScrollingUp) { onBottomBarVisibilityChanged(isScrollingUp) }
+                // اگه از این تب بریم بیرون درحالی‌که نوار پایین جمع‌شده بود (لیست اسکرول‌شده به
+                // پایین)، باید دوباره ظاهر بشه - وگرنه رو تبِ بعدی/جزئیاتِ وام جمع‌شده می‌موند.
+                DisposableEffect(Unit) { onDispose { onBottomBarVisibilityChanged(true) } }
                 LazyColumn(
+                    state = loansListState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 100.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -450,12 +466,14 @@ fun MyLoansScreen(
                                                 Icon(Icons.Filled.Info, contentDescription = "بستن خلاصه", tint = AppMuted)
                                             }
                                         }
-                                        Text(
-                                            "باقی‌مانده: ${maskIfPrivate(LocalPrivacyMode.current, fmt(loan.installment * (loan.n - loan.paidCount)))} ریال",
-                                            color = AppPrimary,
-                                            fontSize = 13.sp,
-                                            modifier = Modifier.padding(top = 6.dp),
-                                        )
+                                        PrivacyCrossfade(LocalPrivacyMode.current) { masked ->
+                                            Text(
+                                                "باقی‌مانده: ${maskIfPrivate(masked, fmt(loan.installment * (loan.n - loan.paidCount)))} ریال",
+                                                color = AppPrimary,
+                                                fontSize = 13.sp,
+                                                modifier = Modifier.padding(top = 6.dp),
+                                            )
+                                        }
                                         Text(
                                             "${toFa(loan.n - loan.paidCount)} قسط باقیمانده از ${toFa(loan.n)}",
                                             color = AppMuted,
@@ -549,16 +567,20 @@ private fun DashboardSummary(
     val privacyMode = LocalPrivacyMode.current
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        DashboardStatCard(
-            title = "وضعیت کلی بدهی‌ها",
-            value = "${maskIfPrivate(privacyMode, fmt(animatedDebt))} ریال",
-            valueColor = AppText,
-        )
-        DashboardStatCard(
-            title = "مجموع اقساط ماهانه",
-            value = "${maskIfPrivate(privacyMode, fmt(animatedMonthly))} ریال",
-            valueColor = AppPrimary,
-        )
+        PrivacyCrossfade(privacyMode) { masked ->
+            DashboardStatCard(
+                title = "وضعیت کلی بدهی‌ها",
+                value = "${maskIfPrivate(masked, fmt(animatedDebt))} ریال",
+                valueColor = AppText,
+            )
+        }
+        PrivacyCrossfade(privacyMode) { masked ->
+            DashboardStatCard(
+                title = "مجموع اقساط ماهانه",
+                value = "${maskIfPrivate(masked, fmt(animatedMonthly))} ریال",
+                valueColor = AppPrimary,
+            )
+        }
 
         // یه پس‌زمینه‌ی سبزِ اختصاصیِ نیمه‌شفاف اینجا امتحان شده بود، ولی رو Surface (که خودش
         // tonalElevation داره) رنگ‌ها بهم می‌ریخت و دوتُنی/کثیف به‌نظر می‌رسید. کاربر خواست دقیقاً
@@ -583,25 +605,29 @@ private fun DashboardSummary(
                                 )
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    "${maskIfPrivate(privacyMode, fmt(income.amount))} ریال",
-                                    color = AppMuted,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(end = 6.dp),
-                                )
+                                PrivacyCrossfade(privacyMode) { masked ->
+                                    Text(
+                                        "${maskIfPrivate(masked, fmt(income.amount))} ریال",
+                                        color = AppMuted,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(end = 6.dp),
+                                    )
+                                }
                                 IconButton(onClick = { onDeleteIncome(income) }) {
                                     Icon(Icons.Filled.Delete, contentDescription = "حذف منبع درآمد", tint = AppDanger)
                                 }
                             }
                         }
                     }
-                    Text(
-                        "جمع درآمد: ${maskIfPrivate(privacyMode, fmt(totalIncome))} ریال",
-                        color = AppText,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            "جمع درآمد: ${maskIfPrivate(masked, fmt(totalIncome))} ریال",
+                            color = AppText,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
                 }
             }
 

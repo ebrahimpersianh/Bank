@@ -7,6 +7,7 @@ import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -59,7 +60,9 @@ import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
 import ir.sadteam.loancalc.ui.myloans.MyLoansViewModel
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -177,7 +180,9 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                     )
                     MoneyParticleBurst(trigger = result, modifier = Modifier.size(220.dp))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(maskIfPrivate(privacyMode, fmt(animatedInstallment)), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        PrivacyCrossfade(privacyMode) { masked ->
+                            Text(maskIfPrivate(masked, fmt(animatedInstallment)), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        }
                         Text("قسط ماهانه (ریال)", fontSize = 12.5.sp, color = AppMuted)
                     }
                 }
@@ -197,7 +202,13 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
         }
 
         item {
-            if (saved) {
+            // این صفحه بعدِ ذخیره جایی نمی‌ره (برخلافِ فرمِ افزودنِ دستی/چک که می‌بندن) - همینجا
+            // دکمه با این متنِ تاییدی عوض می‌شه. قبلاً این تعویض یهویی بود؛ الان با AnimatedVisibility
+            // یه ورودِ فنریِ کوچیک (بزرگ‌شدن از ۰.۸ + محو) داره.
+            AnimatedVisibility(
+                visible = saved,
+                enter = fadeIn(tween(Motion.FADE_IN_MS)) + scaleIn(animationSpec = Motion.snappy(), initialScale = 0.8f),
+            ) {
                 Text(
                     "✓ وام تو «وام‌های من» ذخیره شد",
                     color = AppPrimary,
@@ -206,7 +217,8 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
                 )
-            } else {
+            }
+            if (!saved) {
                 GradientButton(
                     enabled = !saving,
                     onClick = {
@@ -250,7 +262,9 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
         item {
             StaggerIn(2) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    StatBox("کل بازپرداخت (ریال)", maskIfPrivate(privacyMode, fmt(animatedTotal)), Modifier.weight(1.3f))
+                    PrivacyCrossfade(privacyMode, modifier = Modifier.weight(1.3f)) { masked ->
+                        StatBox("کل بازپرداخت (ریال)", maskIfPrivate(masked, fmt(animatedTotal)))
+                    }
                     StatBox("سررسید هر ماه", ordinalFa(outcome.startDate.d), Modifier.weight(1f))
                     StatBox("مدت وام", "${toFa(outcome.n)} ماه", Modifier.weight(1f))
                 }
@@ -282,11 +296,12 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                 } else {
                     outcome.ratePct.toString()
                 }
-                StatBox(
-                    "کارمزد سالانه (قرض‌الحسنه)",
-                    "${maskIfPrivate(privacyMode, fmt(feeAmount))} ریال (${toFa(rateLabel)}٪ سالانه)",
-                    Modifier.fillMaxWidth(),
-                )
+                PrivacyCrossfade(privacyMode, modifier = Modifier.fillMaxWidth()) { masked ->
+                    StatBox(
+                        "کارمزد سالانه (قرض‌الحسنه)",
+                        "${maskIfPrivate(masked, fmt(feeAmount))} ریال (${toFa(rateLabel)}٪ سالانه)",
+                    )
+                }
             }
         }
 
@@ -324,7 +339,9 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                             ) {
                                 Text("قسط ${toFa(row.month)}", fontSize = 12.sp)
                                 Text(dateLabel, fontSize = 12.sp)
-                                Text("${maskIfPrivate(privacyMode, fmt(row.installment))} ریال", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                                PrivacyCrossfade(privacyMode) { masked ->
+                                    Text("${maskIfPrivate(masked, fmt(row.installment))} ریال", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                                }
                             }
                             if (idx != result.rows.lastIndex) HorizontalDivider(color = AppLine)
                         }

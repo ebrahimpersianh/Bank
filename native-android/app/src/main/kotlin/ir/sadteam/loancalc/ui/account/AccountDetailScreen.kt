@@ -44,6 +44,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
@@ -251,7 +252,8 @@ fun AccountDetailScreen(
 
 @Composable
 private fun TransactionRow(tx: AccountTransactionEntity, onDelete: () -> Unit, modifier: Modifier = Modifier) {
-    AppCard(modifier = modifier) {
+    SwipeToDeleteRow(onDelete = onDelete, modifier = modifier) {
+    AppCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -288,6 +290,7 @@ private fun TransactionRow(tx: AccountTransactionEntity, onDelete: () -> Unit, m
                 }
             }
         }
+    }
     }
 }
 

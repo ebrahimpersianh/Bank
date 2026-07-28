@@ -60,6 +60,7 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
@@ -403,6 +404,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                         ChequeCard(
                             cheque = cheque,
                             onClick = { openedChequeId = cheque.id },
+                            onDelete = { viewModel.deleteCheque(cheque.id) },
                             modifier = Modifier.animateItem(),
                         )
                     }
@@ -416,8 +418,14 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
 }
 
 @Composable
-private fun ChequeCard(cheque: ChequeEntity, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    AppCard(modifier = modifier.pressScaleClickable(onClick = onClick)) {
+private fun ChequeCard(
+    cheque: ChequeEntity,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SwipeToDeleteRow(onDelete = onDelete, modifier = modifier) {
+    AppCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -443,6 +451,7 @@ private fun ChequeCard(cheque: ChequeEntity, onClick: () -> Unit, modifier: Modi
                 )
             }
         }
+    }
     }
 }
 

@@ -99,6 +99,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.CoroutineScope
@@ -532,7 +533,11 @@ fun LoanDetailScreen(
         val principalFrac = if (loan.totalPaid > 0) (loan.amount / loan.totalPaid).toFloat() else 1f
         LoanDonut(
             principalFraction = principalFrac,
-            centerTop = maskIfPrivate(privacyMode, fmt(loan.installment)),
+            centerTop = {
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(maskIfPrivate(masked, fmt(loan.installment)), color = AppText, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                }
+            },
             centerBottom = "قسط ماهانه (ریال)",
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         )
@@ -547,7 +552,9 @@ fun LoanDetailScreen(
                 // عرضِ ثابتِ ستونِ «پرداخت‌شده» رو تضمین می‌کنه، بعد باقیِ فضا رو به این ستون می‌ده.
                 Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                     Text("مبلغ هر قسط", fontSize = 13.sp, color = AppMuted)
-                    Text("${maskIfPrivate(privacyMode, fmt(loan.installment))} ریال", fontSize = 15.sp, color = AppText, fontWeight = FontWeight.Bold)
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text("${maskIfPrivate(masked, fmt(loan.installment))} ریال", fontSize = 15.sp, color = AppText, fontWeight = FontWeight.Bold)
+                    }
                     if (!privacyMode) {
                         Text(
                             "${numberToWordsFa(loan.installment / 10)} تومان",
@@ -868,7 +875,9 @@ private fun InstallmentRow(
             Text("قسط شماره ${toFa(m)}", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Text(dueLabel, color = AppMuted, fontSize = 12.sp)
         }
-        Text("${maskIfPrivate(privacyMode, fmt(installment))} ریال", color = AppText, fontSize = 13.sp)
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text("${maskIfPrivate(masked, fmt(installment))} ریال", color = AppText, fontSize = 13.sp)
+        }
         // وضعیت پرداخت تو یه باکس رنگیِ گوشه‌گرد (بج) - تا از بقیه‌ی متن جدا و واضح دیده بشه
         // (خواسته‌ی کاربر). رنگ پس‌زمینه نسخه‌ی کم‌رنگِ رنگ وضعیته.
         Box(
@@ -904,7 +913,7 @@ private fun InstallmentRow(
 @Composable
 private fun LoanDonut(
     principalFraction: Float,
-    centerTop: String,
+    centerTop: @Composable () -> Unit,
     centerBottom: String,
     modifier: Modifier = Modifier,
 ) {
@@ -929,7 +938,7 @@ private fun LoanDonut(
             )
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(centerTop, color = AppText, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+            centerTop()
             Text(centerBottom, color = AppMuted, fontSize = 11.sp)
         }
     }
