@@ -133,6 +133,9 @@ import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
+import ir.sadteam.loancalc.ui.theme.ThemeRevealHost
+import ir.sadteam.loancalc.ui.theme.ThemeRevealState
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.LoanCalcTheme
@@ -240,10 +243,14 @@ class MainActivity : FragmentActivity() {
             val themeMode by themeViewModel.themeMode.collectAsState()
             val fontScale by themeViewModel.fontScale.collectAsState()
             val baseDensity = LocalDensity.current
+            // عمداً بیرونِ LoanCalcTheme: این state باید از تعویضِ خودِ تم جونِ سالم به‌در ببره،
+            // چون دقیقاً وسطِ همون تعویض داره کار می‌کنه (رجوع کن به ThemeReveal.kt).
+            val themeReveal = remember { ThemeRevealState() }
             LoanCalcTheme(themeMode = themeMode) {
                 CompositionLocalProvider(
                     LocalLayoutDirection provides LayoutDirection.Rtl,
                     LocalSubscriptionManager provides subscriptionManager,
+                    LocalThemeReveal provides themeReveal,
                     // پورت .app.fs-small/fs-medium/fs-large (CSS zoom) تو www/index.html - هم
                     // فونت هم فاصله‌ها (dp) با هم مقیاس می‌شن، دقیقاً مثل زوم کل کانتینر .app.
                     LocalDensity provides Density(
@@ -251,7 +258,9 @@ class MainActivity : FragmentActivity() {
                         fontScale = baseDensity.fontScale * fontScale,
                     ),
                 ) {
-                    AppRoot()
+                    ThemeRevealHost(state = themeReveal, revealKey = themeMode) {
+                        AppRoot()
+                    }
                 }
             }
         }
@@ -380,6 +389,9 @@ private fun LoanCalcApp(
     val themeMode by themeViewModel.themeMode.collectAsState()
     val privacyMode by privacyModeViewModel.enabled.collectAsState()
     val buzz = rememberBuzz()
+    // افکتِ دایره‌ایِ تعویضِ تم (سبکِ تلگرام) - خودِ اورلی تو MainActivity.setContent نصب شده،
+    // اینجا فقط ماشه‌ش کشیده می‌شه. رجوع کن به ThemeReveal.kt.
+    val themeReveal = LocalThemeReveal.current
 
     // وضعیت اشتراک/دوره‌ی آزمایشی رو هر بار اپ باز می‌شه از سرور تازه می‌کنیم (نه فقط لحظه‌ی ورود) -
     // وگرنه اگه اپ لاگین‌شده بمونه، دقیقاً روزی که دوره‌ی آزمایشی تموم می‌شه هیچ‌وقت خودش رو به‌روز
@@ -439,7 +451,19 @@ private fun LoanCalcApp(
                     title = { Text("وام من") },
                     navigationIcon = {
                         IconButton(
-                            onClick = { buzz(); themeViewModel.cycleThemeMode() },
+                            onClick = {
+                                buzz()
+                                // ترتیب مهمه: اول اسنپ‌شاتِ تمِ فعلی، بعد عوض‌کردنِ تم - رجوع کن
+                                // به ThemeReveal.kt. دایره از مرکزِ خودِ همین دکمه باز می‌شه، برای
+                                // همین از همون مستطیلی که پایین برای تور ثبت می‌شه استفاده می‌کنیم.
+                                if (!themeReveal.inProgress) {
+                                    themeReveal.startReveal(
+                                        origin = tourBounds[TourTarget.DARK_MODE]?.center ?: Offset.Zero,
+                                        currentKey = themeMode,
+                                    )
+                                    themeViewModel.cycleThemeMode()
+                                }
+                            },
                             // مختصاتِ واقعیِ این آیکون رو گزارش می‌ده - برای قدمِ TourTarget.DARK_MODE
                             // تو AppTourOverlay، رجوع کن به onPositioned مشابه رو BottomNavItem.
                             modifier = Modifier.onGloballyPositioned {

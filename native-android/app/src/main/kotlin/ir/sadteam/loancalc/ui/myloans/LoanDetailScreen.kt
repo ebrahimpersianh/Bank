@@ -90,6 +90,7 @@ import ir.sadteam.loancalc.ui.components.ReminderOverrideCard
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -689,6 +690,9 @@ fun LoanDetailScreen(
                 ) {
                     items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
                         InstallmentRow(
+                            // وقتی تعدادِ اقساطِ یه وام ویرایش می‌شه، ردیف‌های اضافه/کم‌شده
+                            // به‌جای پرشِ ناگهانی نرم میان و می‌رن.
+                            modifier = Modifier.animateItem(),
                             row = row,
                             loan = loan,
                             privacyMode = privacyMode,
@@ -758,8 +762,8 @@ fun LoanDetailScreen(
 
         AnimatedVisibility(
             visible = calendarMessage != null,
-            enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 2 },
-            exit = fadeOut(tween(180)) + slideOutVertically(tween(180)) { it / 2 },
+            enter = fadeIn(tween(Motion.FADE_IN_MS)) + slideInVertically(Motion.offset()) { it / 2 },
+            exit = fadeOut(tween(Motion.FADE_OUT_MS)) + slideOutVertically(Motion.offset()) { it / 2 },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 24.dp),
@@ -824,6 +828,7 @@ private fun InstallmentRow(
     onTogglePaid: (m: Int, paid: Boolean) -> Unit,
     onOpenPhoto: (m: Int) -> Unit,
     onEditAmount: (m: Int, installment: Double) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val m = (row["m"] as? Number)?.toInt() ?: 0
     val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
@@ -846,7 +851,7 @@ private fun InstallmentRow(
     val rowShape = RoundedCornerShape(14.dp)
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(installmentRowHeight)
             .background(AppSurface, rowShape)

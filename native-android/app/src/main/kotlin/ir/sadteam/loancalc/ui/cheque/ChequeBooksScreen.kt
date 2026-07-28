@@ -83,7 +83,7 @@ fun ChequeBooksScreen(
             }
         } else {
             items(books, key = { it.id }) { book ->
-                AppCard {
+                AppCard(modifier = Modifier.animateItem()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,

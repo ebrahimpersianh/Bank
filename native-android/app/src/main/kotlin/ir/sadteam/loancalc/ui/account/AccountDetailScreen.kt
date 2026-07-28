@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -42,6 +43,7 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
+import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
@@ -228,9 +230,12 @@ fun AccountDetailScreen(
 
         if (transactions.isEmpty()) {
             item {
-                Box(modifier = Modifier.fillMaxWidth().padding(top = 30.dp), contentAlignment = Alignment.Center) {
-                    Text("هنوز تراکنشی ثبت نشده", color = AppText, fontSize = 14.sp)
-                }
+                EmptyState(
+                    icon = Icons.Outlined.SwapVert,
+                    title = "هنوز تراکنشی ثبت نشده",
+                    description = "واریز و برداشت‌های این حساب که ثبت بشن، همین‌جا " +
+                        "به‌ترتیبِ تاریخ می‌بینیشون.",
+                )
             }
         } else {
             items(transactions, key = { it.id }) { tx ->

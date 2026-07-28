@@ -51,6 +51,7 @@ import ir.sadteam.loancalc.core.toFa
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
+import ir.sadteam.loancalc.ui.components.StaggerIn
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.LottieSpinner
@@ -365,20 +366,6 @@ private fun MoneyParticleBurst(trigger: Any, modifier: Modifier = Modifier) {
                 center = Offset(x, y),
             )
         }
-    }
-}
-
-/** ورود پلکانی آیتم‌های صفحه‌ی نتیجه: هر بخش با یه تاخیر کوچیک بعد از قبلی fade+slide میاد بالا -
- * حس «چیده شدن» نتیجه، به‌جای ظاهر شدن یهویی همه‌چیز. فقط یه‌بار موقع ساخته‌شدن صفحه اجرا می‌شه. */
-@Composable
-private fun StaggerIn(index: Int, content: @Composable () -> Unit) {
-    val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
-    AnimatedVisibility(
-        visibleState = visibleState,
-        enter = fadeIn(tween(340, delayMillis = index * 55)) +
-            slideInVertically(tween(340, delayMillis = index * 55)) { it / 8 },
-    ) {
-        content()
     }
 }
 
