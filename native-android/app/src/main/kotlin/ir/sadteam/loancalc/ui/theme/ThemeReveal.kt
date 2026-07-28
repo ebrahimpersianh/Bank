@@ -8,13 +8,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -22,13 +22,12 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import androidx.core.view.drawToBitmap
 import kotlinx.coroutines.delay
 import kotlin.math.hypot
 
@@ -51,9 +50,26 @@ private const val THEME_APPLY_TIMEOUT_MS = 350L
  * رندر شده. کاری که این کلاس می‌کنه اینه که اسنپ‌شاتِ تمِ قدیمی رو روش می‌ندازه و با
  * [BlendMode.Clear] یه سوراخِ گردِ روبه‌رشد توش می‌زنه.
  *
- * ترتیبِ حیاتی موقعِ تپ: **اول** اسنپ‌شات گرفته بشه، **بعد** تم عوض بشه ([startReveal] قبل از
- * `cycleThemeMode()`) - وگرنه چیزی که به‌عنوانِ «تمِ قدیمی» ثبت می‌شه خودِ تمِ جدیده و افکت
- * بی‌معنی می‌شه.
+ * ⚠️ نسخه‌ی اولِ این فایل از `View.drawToBitmap()` استفاده می‌کرد (کاربر گزارش داد رو گوشیِ واقعی
+ * **هیچ افکتی دیده نمی‌شد** - نه فقط ضعیف/کندی که هرچی دیگه‌ای). `drawToBitmap()` یه اکستنشنِ
+ * قدیمیِ `View` هست که رو بعضی گوشی/ROMها (بسته به مسیرِ رندرِ سخت‌افزاری) خروجیِ خالی/بلانک
+ * می‌ده، بدونِ هیچ خطایی - دقیقاً همون نشانه‌ای که کاربر دید. الان به‌جاش از
+ * `GraphicsLayer`/`rememberGraphicsLayer` استفاده می‌شه - API رسمیِ خودِ Compose (از نسخه‌ی ۱.۷،
+ * تویِ این پروژه از `compose-bom:2024.09.00` در دسترسه) دقیقاً برای همین سناریو (گرفتنِ
+ * اسکرین‌شاتِ یه بخشِ کامپوز)، که مستقیم رو گراف رندرِ خودِ Compose کار می‌کنه، نه رو Viewِ
+ * اندروید - قابلِ‌اعتمادتره.
+ *
+ * ترتیبِ حیاتی موقعِ تپ: **اول** اسنپ‌شات گرفته بشه، **بعد** تم عوض بشه. چون [toImageBitmap]
+ * (تویِ [startReveal]) suspend ئه، فراخوانی‌کننده باید حتماً تویِ یه کوروتین این ترتیب رو رعایت
+ * کنه:
+ * ```
+ * scope.launch {
+ *     themeReveal.startReveal(origin, themeMode)
+ *     themeViewModel.cycleThemeMode() // بعد از اتمامِ گرفتنِ عکس
+ * }
+ * ```
+ * صدازدنِ `cycleThemeMode()` قبل از اتمامِ `startReveal` (یا هم‌زمان، تو یه launch جدا) یعنی
+ * اسنپ‌شات ممکنه دیرتر از تغییرِ واقعیِ تم گرفته بشه و افکت بی‌معنی بشه.
  */
 @Stable
 class ThemeRevealState {
@@ -76,21 +92,22 @@ class ThemeRevealState {
     var inProgress by mutableStateOf(false)
         private set
 
-    /** توسطِ [ThemeRevealHost] پر می‌شه (چون فقط اون به `LocalView` دسترسی داره). */
-    internal var capturer: ((Offset, Any?) -> Boolean)? = null
+    /** توسطِ [ThemeRevealHost] پر می‌شه (چون فقط اون به `GraphicsLayer` دسترسی داره). */
+    internal var capturer: (suspend (Offset, Any?) -> Boolean)? = null
 
     /**
      * اسنپ‌شاتِ تمِ فعلی رو می‌گیره و افکت رو مسلح می‌کنه. باید **بلافاصله قبل از** عوض‌کردنِ
-     * واقعیِ تم صدا زده بشه.
+     * واقعیِ تم (تویِ همون کوروتین، نه یه launch جدا) صدا زده بشه - رجوع کن به کامنتِ بالای کلاس.
      *
      * @param origin مرکزِ دایره تو مختصاتِ کلِ صفحه (معمولاً مرکزِ خودِ دکمه‌ی تم).
      * @param currentKey مقدارِ فعلیِ تم، برای تشخیصِ اینکه کِی واقعاً عوض شد.
      * @return false یعنی افکت اجرا نشد (یا وسطِ یه افکتِ دیگه‌ایم یا گرفتنِ عکس شکست خورد) - تو
      *   این حالت تم بازم باید عوض بشه، فقط بدونِ انیمیشن.
      */
-    fun startReveal(origin: Offset, currentKey: Any?): Boolean {
+    suspend fun startReveal(origin: Offset, currentKey: Any?): Boolean {
         if (inProgress) return false
-        return capturer?.invoke(origin, currentKey) ?: false
+        val capture = capturer ?: return false
+        return capture(origin, currentKey)
     }
 
     internal fun arm(bitmap: ImageBitmap, from: Offset, key: Any?) {
@@ -122,25 +139,29 @@ fun ThemeRevealHost(
     revealKey: Any,
     content: @Composable () -> Unit,
 ) {
-    val view = LocalView.current
-
-    // تو SideEffect (نه مستقیم وسطِ composition) تا اگه composition دور ریخته/دوباره اجرا شد،
-    // یه لامبدای نصفه‌کاره جا نمونه. هر بار هم به‌روز می‌شه تا همیشه به viewِ فعلی اشاره کنه.
-    SideEffect {
-        state.capturer = capturer@{ origin, currentKey ->
-            // drawToBitmap رندرِ نرم‌افزاریه: چون این پروژه عمداً از بلورِ سخت‌افزاری
-            // (RenderEffect) استفاده نمی‌کنه (رجوع کن به کامنتِ AuroraBackground)، خروجیش
-            // دقیقاً همون چیزیه که کاربر می‌بینه.
-            if (view.width <= 0 || view.height <= 0) return@capturer false
-            val bitmap = runCatching { view.drawToBitmap().asImageBitmap() }.getOrNull()
-                ?: return@capturer false
-            state.arm(bitmap, origin, currentKey)
-            true
-        }
+    // `record` تو هر فریم (رجوع کن به Modifier.drawWithContent پایین‌تر) دوباره صدا زده می‌شه، پس
+    // این لایه همیشه آخرین چیزی که واقعاً رو صفحه رندر شده رو نگه می‌داره - لحظه‌ی تپ، یعنی هنوز
+    // تمِ قدیمی.
+    val graphicsLayer = rememberGraphicsLayer()
+    state.capturer = capturer@{ origin, currentKey ->
+        val bitmap = runCatching { graphicsLayer.toImageBitmap() }.getOrNull() ?: return@capturer false
+        state.arm(bitmap, origin, currentKey)
+        true
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        content()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                // این Boxِ داخلی *فقط* شاملِ content()ه (نه اورلیِ خودِ افکت) - وگرنه لایه‌ی
+                // ضبط‌شده شاملِ دایره‌ی درحالِ‌بازشدنِ خودش هم می‌شد و نتیجه‌ی بعدی خراب می‌شد.
+                .drawWithContent {
+                    graphicsLayer.record { this@drawWithContent.drawContent() }
+                    drawLayer(graphicsLayer)
+                },
+        ) {
+            content()
+        }
 
         val snapshot = state.snapshot
         if (snapshot != null) {
@@ -154,7 +175,7 @@ fun ThemeRevealHost(
                 state.radius.animateTo(
                     targetValue = maxRevealRadius(
                         origin = state.origin,
-                        size = Size(view.width.toFloat(), view.height.toFloat()),
+                        size = Size(bitmapWidth(snapshot), bitmapHeight(snapshot)),
                     ),
                     animationSpec = tween(REVEAL_DURATION_MS, easing = FastOutSlowInEasing),
                 )
@@ -171,6 +192,9 @@ fun ThemeRevealHost(
         }
     }
 }
+
+private fun bitmapWidth(bitmap: ImageBitmap): Float = bitmap.width.toFloat()
+private fun bitmapHeight(bitmap: ImageBitmap): Float = bitmap.height.toFloat()
 
 /** فاصله تا دورترین گوشه‌ی صفحه - یعنی شعاعی که دایره باید بهش برسه تا کلِ صفحه پوشیده بشه. */
 private fun maxRevealRadius(origin: Offset, size: Size): Float {

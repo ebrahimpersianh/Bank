@@ -59,6 +59,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -120,6 +121,7 @@ import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
 import ir.sadteam.loancalc.ui.theme.ThemeMode
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
+import kotlinx.coroutines.launch
 
 private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
 private val themeModeOptions = listOf(ThemeMode.LIGHT to "روشن", ThemeMode.DARK to "تاریک")
@@ -590,6 +592,9 @@ private fun SettingsMainContent(
                 // رجوع کن به ThemeReveal.kt.
                 val themeReveal = LocalThemeReveal.current
                 val chipCenters = remember { mutableStateMapOf<ThemeMode, Offset>() }
+                // startReveal الان suspend ئه - رجوع کن به کامنتِ کاملِ ThemeReveal.kt دربارهٔ
+                // اینکه چرا اسنپ‌شات و عوض‌کردنِ تم باید تویِ یه کوروتینِ واحد پشتِ‌سرهم باشن.
+                val themeToggleScope = rememberCoroutineScope()
                 AppCard(label = "تم", modifier = Modifier.padding(top = 10.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                         themeModeOptions.forEach { (mode, label) ->
@@ -600,12 +605,14 @@ private fun SettingsMainContent(
                                     // فقط وقتی واقعاً داره عوض می‌شه افکت معنی داره - زدنِ دوباره‌ی
                                     // چیپِ ازقبل‌فعال نباید کلِ صفحه رو بی‌دلیل جارو کنه.
                                     if (mode != themeMode && !themeReveal.inProgress) {
-                                        themeReveal.startReveal(
-                                            origin = chipCenters[mode] ?: Offset.Zero,
-                                            currentKey = themeMode,
-                                        )
+                                        val origin = chipCenters[mode] ?: Offset.Zero
+                                        themeToggleScope.launch {
+                                            themeReveal.startReveal(origin = origin, currentKey = themeMode)
+                                            themeViewModel.setThemeMode(mode)
+                                        }
+                                    } else {
+                                        themeViewModel.setThemeMode(mode)
                                     }
-                                    themeViewModel.setThemeMode(mode)
                                 },
                                 modifier = Modifier.onGloballyPositioned {
                                     chipCenters[mode] = it.boundsInRoot().center

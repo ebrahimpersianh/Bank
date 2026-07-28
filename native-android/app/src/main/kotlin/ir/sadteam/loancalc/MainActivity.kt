@@ -75,6 +75,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -103,6 +104,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 import androidx.fragment.app.FragmentActivity
 import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.ui.AffordScreen
@@ -392,6 +394,10 @@ private fun LoanCalcApp(
     // افکتِ دایره‌ایِ تعویضِ تم (سبکِ تلگرام) - خودِ اورلی تو MainActivity.setContent نصب شده،
     // اینجا فقط ماشه‌ش کشیده می‌شه. رجوع کن به ThemeReveal.kt.
     val themeReveal = LocalThemeReveal.current
+    // startReveal الان suspend ئه (رجوع کن به ThemeReveal.kt) - برای تضمینِ اینکه اسنپ‌شات
+    // *قبل* از عوض‌شدنِ واقعیِ تم گرفته می‌شه، هر دو کار باید تویِ یه کوروتینِ واحد و پشتِ‌سرهم
+    // اجرا بشن، نه دو تا launch جدا (که ترتیبشون تضمین‌شده نیست).
+    val themeToggleScope = rememberCoroutineScope()
 
     // وضعیت اشتراک/دوره‌ی آزمایشی رو هر بار اپ باز می‌شه از سرور تازه می‌کنیم (نه فقط لحظه‌ی ورود) -
     // وگرنه اگه اپ لاگین‌شده بمونه، دقیقاً روزی که دوره‌ی آزمایشی تموم می‌شه هیچ‌وقت خودش رو به‌روز
@@ -457,11 +463,11 @@ private fun LoanCalcApp(
                                 // به ThemeReveal.kt. دایره از مرکزِ خودِ همین دکمه باز می‌شه، برای
                                 // همین از همون مستطیلی که پایین برای تور ثبت می‌شه استفاده می‌کنیم.
                                 if (!themeReveal.inProgress) {
-                                    themeReveal.startReveal(
-                                        origin = tourBounds[TourTarget.DARK_MODE]?.center ?: Offset.Zero,
-                                        currentKey = themeMode,
-                                    )
-                                    themeViewModel.cycleThemeMode()
+                                    val origin = tourBounds[TourTarget.DARK_MODE]?.center ?: Offset.Zero
+                                    themeToggleScope.launch {
+                                        themeReveal.startReveal(origin = origin, currentKey = themeMode)
+                                        themeViewModel.cycleThemeMode()
+                                    }
                                 }
                             },
                             // مختصاتِ واقعیِ این آیکون رو گزارش می‌ده - برای قدمِ TourTarget.DARK_MODE
