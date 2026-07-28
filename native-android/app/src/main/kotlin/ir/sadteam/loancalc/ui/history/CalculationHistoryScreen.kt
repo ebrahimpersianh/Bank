@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
@@ -35,6 +37,8 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.CalculationHistoryEntity
+import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -107,11 +111,22 @@ fun CalculationHistoryScreen(onBack: () -> Unit, viewModel: CalculationHistoryVi
 
         if (filtered.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    if (history.isEmpty()) "هنوز محاسبه‌ای ثبت نشده" else "چیزی پیدا نشد",
-                    color = AppMuted,
-                    fontSize = 13.sp,
-                )
+                // دو حالتِ کاملاً متفاوت: «هیچ‌وقت چیزی نبوده» در برابر «هست ولی جستجو چیزی
+                // پیدا نکرد» - متن و آیکونِ یکسان برای این دوتا گیج‌کننده بود.
+                if (history.isEmpty()) {
+                    EmptyState(
+                        icon = Icons.Outlined.History,
+                        title = "هنوز محاسبه‌ای ثبت نشده",
+                        description = "هر محاسبه‌ای که انجام بدی خودکار اینجا ذخیره می‌شه " +
+                            "تا بعداً بتونی دوباره ببینیش.",
+                    )
+                } else {
+                    EmptyState(
+                        icon = Icons.Outlined.SearchOff,
+                        title = "چیزی پیدا نشد",
+                        description = "با این عبارت محاسبه‌ای پیدا نکردم؛ یه کلمه‌ی دیگه رو امتحان کن.",
+                    )
+                }
             }
         } else {
             LazyColumn(
@@ -119,7 +134,13 @@ fun CalculationHistoryScreen(onBack: () -> Unit, viewModel: CalculationHistoryVi
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(filtered, key = { it.id }) { entry ->
-                    HistoryRow(entry, onDelete = { viewModel.delete(entry) })
+                    // بدونِ این، فیلترشدنِ لیست با هر حرفی که تو جستجو تایپ می‌شه یه پرشِ
+                    // ناگهانیه؛ با این، ردیف‌ها نرم جابه‌جا/محو می‌شن.
+                    HistoryRow(
+                        entry,
+                        onDelete = { viewModel.delete(entry) },
+                        modifier = Modifier.animateItem(),
+                    )
                 }
             }
         }
@@ -127,7 +148,12 @@ fun CalculationHistoryScreen(onBack: () -> Unit, viewModel: CalculationHistoryVi
 }
 
 @Composable
-private fun HistoryRow(entry: CalculationHistoryEntity, onDelete: () -> Unit) {
+private fun HistoryRow(
+    entry: CalculationHistoryEntity,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SwipeToDeleteRow(onDelete = onDelete, modifier = modifier) {
     AppCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
@@ -149,5 +175,6 @@ private fun HistoryRow(entry: CalculationHistoryEntity, onDelete: () -> Unit) {
                 Icon(Icons.Filled.Delete, contentDescription = "حذف", tint = AppDanger)
             }
         }
+    }
     }
 }

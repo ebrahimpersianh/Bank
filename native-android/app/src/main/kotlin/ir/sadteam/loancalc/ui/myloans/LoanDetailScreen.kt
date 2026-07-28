@@ -89,7 +89,9 @@ import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
 import ir.sadteam.loancalc.ui.components.ReminderOverrideCard
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -97,6 +99,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.CoroutineScope
@@ -530,7 +533,11 @@ fun LoanDetailScreen(
         val principalFrac = if (loan.totalPaid > 0) (loan.amount / loan.totalPaid).toFloat() else 1f
         LoanDonut(
             principalFraction = principalFrac,
-            centerTop = maskIfPrivate(privacyMode, fmt(loan.installment)),
+            centerTop = {
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(maskIfPrivate(masked, fmt(loan.installment)), color = AppText, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                }
+            },
             centerBottom = "قسط ماهانه (ریال)",
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         )
@@ -545,7 +552,9 @@ fun LoanDetailScreen(
                 // عرضِ ثابتِ ستونِ «پرداخت‌شده» رو تضمین می‌کنه، بعد باقیِ فضا رو به این ستون می‌ده.
                 Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                     Text("مبلغ هر قسط", fontSize = 13.sp, color = AppMuted)
-                    Text("${maskIfPrivate(privacyMode, fmt(loan.installment))} ریال", fontSize = 15.sp, color = AppText, fontWeight = FontWeight.Bold)
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text("${maskIfPrivate(masked, fmt(loan.installment))} ریال", fontSize = 15.sp, color = AppText, fontWeight = FontWeight.Bold)
+                    }
                     if (!privacyMode) {
                         Text(
                             "${numberToWordsFa(loan.installment / 10)} تومان",
@@ -689,6 +698,9 @@ fun LoanDetailScreen(
                 ) {
                     items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
                         InstallmentRow(
+                            // وقتی تعدادِ اقساطِ یه وام ویرایش می‌شه، ردیف‌های اضافه/کم‌شده
+                            // به‌جای پرشِ ناگهانی نرم میان و می‌رن.
+                            modifier = Modifier.animateItem(),
                             row = row,
                             loan = loan,
                             privacyMode = privacyMode,
@@ -758,8 +770,8 @@ fun LoanDetailScreen(
 
         AnimatedVisibility(
             visible = calendarMessage != null,
-            enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 2 },
-            exit = fadeOut(tween(180)) + slideOutVertically(tween(180)) { it / 2 },
+            enter = fadeIn(tween(Motion.FADE_IN_MS)) + slideInVertically(Motion.offset()) { it / 2 },
+            exit = fadeOut(tween(Motion.FADE_OUT_MS)) + slideOutVertically(Motion.offset()) { it / 2 },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 24.dp),
@@ -824,6 +836,7 @@ private fun InstallmentRow(
     onTogglePaid: (m: Int, paid: Boolean) -> Unit,
     onOpenPhoto: (m: Int) -> Unit,
     onEditAmount: (m: Int, installment: Double) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val m = (row["m"] as? Number)?.toInt() ?: 0
     val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
@@ -846,12 +859,14 @@ private fun InstallmentRow(
     val rowShape = RoundedCornerShape(14.dp)
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(installmentRowHeight)
             .background(AppSurface, rowShape)
             .border(1.dp, AppPrimary.copy(alpha = 0.4f), rowShape)
-            .clickable { onTogglePaid(m, paid) }
+            // پرتپ‌ترین المانِ کلِ اپ (علامت‌زدنِ پرداختِ هر قسط) ولی تا الان هیچ واکنشِ لمسی
+            // نداشت - حالا مثلِ بقیه‌ی کارت‌ها فشرده می‌شه و یه tick هپتیک می‌ده.
+            .pressScaleClickable(scale = 0.975f) { onTogglePaid(m, paid) }
             .padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -860,7 +875,9 @@ private fun InstallmentRow(
             Text("قسط شماره ${toFa(m)}", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Text(dueLabel, color = AppMuted, fontSize = 12.sp)
         }
-        Text("${maskIfPrivate(privacyMode, fmt(installment))} ریال", color = AppText, fontSize = 13.sp)
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text("${maskIfPrivate(masked, fmt(installment))} ریال", color = AppText, fontSize = 13.sp)
+        }
         // وضعیت پرداخت تو یه باکس رنگیِ گوشه‌گرد (بج) - تا از بقیه‌ی متن جدا و واضح دیده بشه
         // (خواسته‌ی کاربر). رنگ پس‌زمینه نسخه‌ی کم‌رنگِ رنگ وضعیته.
         Box(
@@ -896,7 +913,7 @@ private fun InstallmentRow(
 @Composable
 private fun LoanDonut(
     principalFraction: Float,
-    centerTop: String,
+    centerTop: @Composable () -> Unit,
     centerBottom: String,
     modifier: Modifier = Modifier,
 ) {
@@ -921,7 +938,7 @@ private fun LoanDonut(
             )
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(centerTop, color = AppText, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+            centerTop()
             Text(centerBottom, color = AppMuted, fontSize = 11.sp)
         }
     }

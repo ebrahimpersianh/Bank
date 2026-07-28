@@ -291,6 +291,20 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
+    /**
+     * همگام‌سازیِ دستی (کشیدنِ لیست به پایین تو [MyLoansScreen]).
+     *
+     * عمداً فقط **پوش** می‌کنه، نه بازیابی از سرور: یه ژستِ ساده‌ی کشیدن نباید بتونه داده‌ی محلی رو
+     * با نسخه‌ی سرور جایگزین کنه (اون کارِ «بازیابی از سرورِ ابری» تو تنظیماته، با تاییدِ صریح).
+     * برای کاربرِ مهمان/خارج‌شده هیچ‌کاری نمی‌کنه و فوراً [onDone] رو صدا می‌زنه.
+     */
+    fun syncNow(onDone: () -> Unit) {
+        viewModelScope.launch {
+            syncIfLoggedIn()
+            onDone()
+        }
+    }
+
     private suspend fun syncIfLoggedIn() {
         val token = authPrefs.authToken.first()
         if (!token.isNullOrEmpty()) loanRepository.pushToServer(token)

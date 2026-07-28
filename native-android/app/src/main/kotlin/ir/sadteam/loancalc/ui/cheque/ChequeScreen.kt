@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.DropdownMenu
@@ -58,11 +59,14 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ChequeEntity
+import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -233,7 +237,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
     Box(modifier = Modifier.fillMaxSize()) {
     AnimatedContent(
         targetState = screenKey,
-        transitionSpec = { fadeIn(tween(200)).togetherWith(fadeOut(tween(150))) },
+        transitionSpec = { Motion.contentEnter togetherWith Motion.contentExit },
         label = "chequeScreen",
     ) { key ->
         when (key) {
@@ -388,18 +392,19 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
 
                 if (visibleCheques.isEmpty()) {
                     item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(top = 60.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text("هنوز چکی ثبت نشده", color = AppText, fontSize = 15.sp)
-                        }
+                        EmptyState(
+                            icon = Icons.Outlined.ReceiptLong,
+                            title = "هنوز چکی ثبت نشده",
+                            description = "چک‌های دریافتی و پرداختیت رو اینجا ثبت کن تا " +
+                                "قبل از سررسیدِ هرکدوم بهت یادآوری بشه.",
+                        )
                     }
                 } else {
                     items(visibleCheques, key = { it.id }) { cheque ->
                         ChequeCard(
                             cheque = cheque,
                             onClick = { openedChequeId = cheque.id },
+                            onDelete = { viewModel.deleteCheque(cheque.id) },
                             modifier = Modifier.animateItem(),
                         )
                     }
@@ -413,8 +418,14 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
 }
 
 @Composable
-private fun ChequeCard(cheque: ChequeEntity, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    AppCard(modifier = modifier.pressScaleClickable(onClick = onClick)) {
+private fun ChequeCard(
+    cheque: ChequeEntity,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SwipeToDeleteRow(onDelete = onDelete, modifier = modifier) {
+    AppCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -440,6 +451,7 @@ private fun ChequeCard(cheque: ChequeEntity, onClick: () -> Unit, modifier: Modi
                 )
             }
         }
+    }
     }
 }
 

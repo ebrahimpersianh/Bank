@@ -10,9 +10,12 @@ import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -53,11 +56,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.boundsInRoot
@@ -102,6 +108,7 @@ import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
 import ir.sadteam.loancalc.ui.stats.StatsScreen
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -111,8 +118,10 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
 import ir.sadteam.loancalc.ui.theme.ThemeMode
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
+import kotlinx.coroutines.launch
 
 private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
 private val themeModeOptions = listOf(ThemeMode.LIGHT to "روشن", ThemeMode.DARK to "تاریک")
@@ -166,7 +175,7 @@ fun SettingsScreen(
 
     AnimatedContent(
         targetState = screenKey,
-        transitionSpec = { fadeIn(tween(200)).togetherWith(fadeOut(tween(150))) },
+        transitionSpec = { Motion.contentEnter togetherWith Motion.contentExit },
         label = "settingsScreen",
     ) { key ->
         when (key) {
@@ -252,8 +261,17 @@ private fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable 
         // تویِ همون پنلِ AppSurface پشتشون رندر می‌شدن مشکلی نبود؛ حالا که تو ویندویِ جدای خودشونن،
         // بدونِ این Box پشتِ محتوا کاملاً شفاف می‌مونه و صفحه‌ی زیرین (تبِ فعلی + پنلِ نیمه‌محوِ قدیمی)
         // ازش رد می‌شه - این Box تضمین می‌کنه همیشه کاملاً کدر و تمام‌صفحه باشه.
-        Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
-            content()
+        // ورودِ نرم: قبلاً این زیرصفحه‌ها یهو ظاهر می‌شدن (Dialog خودش هیچ انیمیشنی نداره). حالا
+        // از پایین سُر می‌خورن بالا و محو ظاهر می‌شن. خروج عمداً انیمیشن نداره - وقتی Dialog بسته
+        // می‌شه ویندوش بلافاصله از بین می‌ره و هر انیمیشنِ خروجی نصفه‌کاره قطع می‌شد.
+        val appear = remember { MutableTransitionState(false).apply { targetState = true } }
+        AnimatedVisibility(
+            visibleState = appear,
+            enter = fadeIn(tween(Motion.FADE_IN_MS)) + slideInVertically(Motion.offset()) { it / 10 },
+        ) {
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                content()
+            }
         }
     }
 }
@@ -570,13 +588,35 @@ private fun SettingsMainContent(
 
             if (matches("تم", "رنگ برنامه")) {
                 val themeMode by themeViewModel.themeMode.collectAsState()
+                // همون افکتِ دایره‌ایِ نوارِ بالا، این‌بار از مرکزِ خودِ چیپی که زده شد باز می‌شه -
+                // رجوع کن به ThemeReveal.kt.
+                val themeReveal = LocalThemeReveal.current
+                val chipCenters = remember { mutableStateMapOf<ThemeMode, Offset>() }
+                // startReveal الان suspend ئه - رجوع کن به کامنتِ کاملِ ThemeReveal.kt دربارهٔ
+                // اینکه چرا اسنپ‌شات و عوض‌کردنِ تم باید تویِ یه کوروتینِ واحد پشتِ‌سرهم باشن.
+                val themeToggleScope = rememberCoroutineScope()
                 AppCard(label = "تم", modifier = Modifier.padding(top = 10.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                         themeModeOptions.forEach { (mode, label) ->
                             AppChip(
                                 label = label,
                                 selected = themeMode == mode,
-                                onClick = { themeViewModel.setThemeMode(mode) },
+                                onClick = {
+                                    // فقط وقتی واقعاً داره عوض می‌شه افکت معنی داره - زدنِ دوباره‌ی
+                                    // چیپِ ازقبل‌فعال نباید کلِ صفحه رو بی‌دلیل جارو کنه.
+                                    if (mode != themeMode && !themeReveal.inProgress) {
+                                        val origin = chipCenters[mode] ?: Offset.Zero
+                                        themeToggleScope.launch {
+                                            themeReveal.startReveal(origin = origin, currentKey = themeMode)
+                                            themeViewModel.setThemeMode(mode)
+                                        }
+                                    } else {
+                                        themeViewModel.setThemeMode(mode)
+                                    }
+                                },
+                                modifier = Modifier.onGloballyPositioned {
+                                    chipCenters[mode] = it.boundsInRoot().center
+                                },
                             )
                         }
                     }

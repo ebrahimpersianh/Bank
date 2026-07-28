@@ -111,6 +111,7 @@ fun Route.authRoutes() {
                 try {
                     sendOtpSms(phone, code)
                 } catch (e: SmsSendException) {
+                    println("[SMS-FAIL] ارسالِ OTP برای $phone شکست خورد: ${e.message}")
                     call.respond(HttpStatusCode.BadGateway, mapOf("error" to "sms_send_failed"))
                     return@post
                 }

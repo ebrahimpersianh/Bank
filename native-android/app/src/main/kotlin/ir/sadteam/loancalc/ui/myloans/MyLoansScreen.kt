@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -39,7 +41,11 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -73,17 +80,21 @@ import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.BankBadge
+import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.ProgressRing
+import ir.sadteam.loancalc.ui.components.rememberIsScrollingUp
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -114,12 +125,30 @@ private fun List<LoanEntity>.sortedByOption(option: LoanSortOption): List<LoanEn
 }
 
 /**
+ * مرکزِ یه کارت رو به [TransformOrigin] (کسرِ ۰..۱ از کلِ ظرف) تبدیل می‌کنه - ورودیِ لازمِ
+ * `scaleIn/scaleOut` تا صفحه‌ی جزئیات از روی همون کارت باز بشه، نه از وسطِ صفحه.
+ *
+ * اگه ظرف هنوز اندازه‌گیری نشده (عرض/ارتفاعِ صفر، مثلاً اولین فریم)، برمی‌گرده به مرکز - وگرنه
+ * تقسیم بر صفر یه origin نامعتبر می‌ساخت.
+ */
+private fun Rect.heroOriginIn(container: Rect): TransformOrigin {
+    if (container.width <= 0f || container.height <= 0f) return TransformOrigin.Center
+    return TransformOrigin(
+        pivotFractionX = ((center.x - container.left) / container.width).coerceIn(0f, 1f),
+        pivotFractionY = ((center.y - container.top) / container.height).coerceIn(0f, 1f),
+    )
+}
+
+/**
  * لیست محلی Room + افزودن دستی/حذف/بازکردن جزئیات (پرداخت قسط)، پشتیبان‌گیری/بازیابی رو نشون می‌ده.
  *
  * پورت canSaveAnotherLoan/handleLoanLimitReached تو www/index.html: بعد از اولین وام، مهمون‌ها
  * باید وارد بشن (LoginScreen غیراجباری، با دکمه‌ی بازگشت)، کاربرهای واردشده‌ی بدون اشتراک به
  * [SubscriptionScreen] (خرید واقعی با Poolakey) می‌رن.
  */
+// PullToRefreshBox تو material3 هنوز experimental ئه (BOM 2024.09) - تنها API رسمیِ
+// «کشیدن برای تازه‌سازی» تو Compose همینه.
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyLoansScreen(
     viewModel: MyLoansViewModel = hiltViewModel(),
@@ -127,6 +156,10 @@ fun MyLoansScreen(
     // مختصاتِ واقعیِ دکمه‌ی «افزودن دستی وام» رو گزارش می‌ده - برای قدمِ آخرِ AppTourOverlay
     // (TourTarget.MANUAL_ADD تو MainActivity.kt) که این دکمه رو اسپاتلایت می‌کنه.
     onManualAddFabPositioned: (Rect) -> Unit = {},
+    // نوارِ پایینِ ۴تبی (تویِ MainActivity.kt) موقعِ اسکرولِ رو‌به‌پایینِ این لیست جمع می‌شه - این
+    // فقط جهتِ اسکرول رو گزارش می‌ده، خودِ نوارِ پایین رو نمی‌بینه (اونجا تو یه کامپوزیبلِ کاملاً
+    // دیگه‌ست، رجوع کن به LoanCalcApp).
+    onBottomBarVisibilityChanged: (visible: Boolean) -> Unit = {},
 ) {
     var showAddForm by remember { mutableStateOf(false) }
     var openedLoanId by remember { mutableStateOf<Long?>(null) }
@@ -136,6 +169,9 @@ fun MyLoansScreen(
     // نه لیست.
     var editingLoanId by remember { mutableStateOf<Long?>(null) }
     var showLoginPrompt by remember { mutableStateOf(false) }
+    // «کشیدن به پایین برای همگام‌سازی» - رجوع کن به MyLoansViewModel.syncNow برای اینکه
+    // چرا این ژست عمداً فقط پوش می‌کنه و داده‌ی محلی رو با سرور جایگزین نمی‌کنه.
+    var syncing by remember { mutableStateOf(false) }
     var showSubscriptionScreen by remember { mutableStateOf(false) }
 
     val rawLoans by viewModel.loans.collectAsState()
@@ -210,10 +246,33 @@ fun MyLoansScreen(
         else -> "list"
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    // ترنزیشنِ «هیرو»: صفحه‌ی جزئیات به‌جای اینکه از وسطِ صفحه باز بشه، از روی همون کارتی که
+    // زده شد باز/بسته می‌شه. عمداً SharedTransitionLayout (المانِ مشترکِ واقعی) استفاده نشده -
+    // اون کلِ ساختارِ این AnimatedContent رو می‌خواست عوض کنه و پرریسک بود؛ این‌جوری با فقط
+    // جابه‌جا کردنِ مرکزِ بزرگ‌شدن (transformOrigin) تقریباً همون حس رو می‌ده.
+    var heroOrigin by remember { mutableStateOf(TransformOrigin.Center) }
+    var listBounds by remember { mutableStateOf(Rect.Zero) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onGloballyPositioned { listBounds = it.boundsInRoot() },
+    ) {
     AnimatedContent(
         targetState = screenKey,
-        transitionSpec = { fadeIn(tween(200)).togetherWith(fadeOut(tween(150))) },
+        transitionSpec = {
+            if (targetState == "detail" || initialState == "detail") {
+                // فقط برای گذرِ لیست↔جزئیات؛ بقیه‌ی گذرها همون تعویضِ استانداردِ Motion رو دارن.
+                (fadeIn(tween(Motion.FADE_IN_MS)) +
+                    scaleIn(animationSpec = Motion.standard(), initialScale = 0.86f, transformOrigin = heroOrigin)
+                    ) togetherWith (
+                    fadeOut(tween(Motion.FADE_OUT_MS)) +
+                        scaleOut(animationSpec = Motion.standard(), targetScale = 0.94f, transformOrigin = heroOrigin)
+                    )
+            } else {
+                Motion.contentEnter togetherWith Motion.contentExit
+            }
+        },
         label = "myLoansScreen",
     ) { key ->
         when (key) {
@@ -248,163 +307,180 @@ fun MyLoansScreen(
                     viewModel = viewModel,
                 )
             }
-            else -> LazyColumn(
+            else -> PullToRefreshBox(
+                isRefreshing = syncing,
+                onRefresh = {
+                    syncing = true
+                    viewModel.syncNow {
+                        syncing = false
+                        banner.show("همگام‌سازی انجام شد", isSuccess = true)
+                    }
+                },
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 100.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                item {
-                    DashboardSummary(
-                        loans = loans,
-                        incomes = incomes,
-                        onAddIncome = { label, amount, type -> viewModel.addIncome(label, amount, type) },
-                        onDeleteIncome = { viewModel.deleteIncome(it) },
-                    )
-                }
-
-                if (loans.isNotEmpty()) {
+                val loansListState = rememberLazyListState()
+                val isScrollingUp by rememberIsScrollingUp(loansListState)
+                LaunchedEffect(isScrollingUp) { onBottomBarVisibilityChanged(isScrollingUp) }
+                // اگه از این تب بریم بیرون درحالی‌که نوار پایین جمع‌شده بود (لیست اسکرول‌شده به
+                // پایین)، باید دوباره ظاهر بشه - وگرنه رو تبِ بعدی/جزئیاتِ وام جمع‌شده می‌موند.
+                DisposableEffect(Unit) { onDispose { onBottomBarVisibilityChanged(true) } }
+                LazyColumn(
+                    state = loansListState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 100.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
                     item {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            LoanSortMenu(selected = sortOption, onSelect = { sortOption = it })
-                        }
+                        DashboardSummary(
+                            loans = loans,
+                            incomes = incomes,
+                            onAddIncome = { label, amount, type -> viewModel.addIncome(label, amount, type) },
+                            onDeleteIncome = { viewModel.deleteIncome(it) },
+                        )
                     }
-                }
 
-                item {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(
-                            onClick = { openDocumentLauncher.launch(arrayOf("application/json")) },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text("بازیابی", fontSize = 12.sp)
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                viewModel.exportBackup { json ->
-                                    pendingExportJson = json
-                                    createDocumentLauncher.launch("loans-backup.json")
-                                }
-                            },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text("پشتیبان‌گیری", fontSize = 12.sp)
-                        }
-                    }
-                }
-
-                if (loans.isEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 60.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center,
-                            ) {
-                                Text("هنوز وامی ذخیره نشده", color = AppText, fontSize = 15.sp)
-                                Text(
-                                    "با دکمه‌ی + یه وام دستی اضافه کن",
-                                    color = AppMuted,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(top = 6.dp),
-                                )
+                    if (loans.isNotEmpty()) {
+                        item {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                LoanSortMenu(selected = sortOption, onSelect = { sortOption = it })
                             }
                         }
                     }
-                } else {
-                    items(loans, key = { it.id }) { loan ->
-                        // انیمیشنِ فلیپِ کارت (خواسته‌ی «انیمیشن‌های سفارشی») - آیکونِ اطلاعات، کارت رو
-                        // مثل یه چکِ فیزیکی می‌چرخونه و خلاصه‌ی پرداخت رو پشتش نشون می‌ده؛ ضربه‌ی اصلیِ
-                        // کارت هنوز باز کردنِ جزئیاتِ وامه، این فقط یه لایه‌ی جدا و مستقله.
-                        var flipped by remember { mutableStateOf(false) }
-                        val density = LocalDensity.current
-                        val rotation by animateFloatAsState(
-                            targetValue = if (flipped) 180f else 0f,
-                            animationSpec = tween(500),
-                            label = "loanCardFlip",
-                        )
-                        // animateItem: اضافه/حذف/جابه‌جایی وام‌ها با انیمیشن نرم (نه پرش یهویی).
-                        AppCard(
-                            modifier = Modifier
-                                .animateItem()
-                                .pressScaleClickable { openedLoanId = loan.id }
-                                .graphicsLayer {
-                                    rotationY = rotation
-                                    cameraDistance = 12f * density.density
+
+                    item {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = { openDocumentLauncher.launch(arrayOf("application/json")) },
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text("بازیابی", fontSize = 12.sp)
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    viewModel.exportBackup { json ->
+                                        pendingExportJson = json
+                                        createDocumentLauncher.launch("loans-backup.json")
+                                    }
                                 },
-                        ) {
-                            if (rotation <= 90f) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    // لوگوی بانک سمت راست کارت (لبه‌ی leading در RTL) - از رو اسم بانک.
-                                    BankBadge(bankName = loan.bank)
-                                    Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                                        Text(loan.name, color = AppText, fontSize = 15.sp)
-                                        Text(loan.bank, color = AppMuted, fontSize = 12.sp)
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text("پشتیبان‌گیری", fontSize = 12.sp)
+                            }
+                        }
+                    }
+
+                    if (loans.isEmpty()) {
+                        item {
+                            EmptyState(
+                                icon = Icons.Outlined.AccountBalanceWallet,
+                                title = "هنوز وامی ذخیره نشده",
+                                description = "وام‌هات رو اینجا نگه دار تا سررسیدِ هر قسط، " +
+                                    "مبلغِ باقی‌مونده و پیشرفتِ پرداختت همیشه جلوی چشمت باشه.",
+                                actionLabel = "افزودن وام",
+                                onAction = { onAddLoanClick() },
+                            )
+                        }
+                    } else {
+                        items(loans, key = { it.id }) { loan ->
+                            // انیمیشنِ فلیپِ کارت (خواسته‌ی «انیمیشن‌های سفارشی») - آیکونِ اطلاعات، کارت رو
+                            // مثل یه چکِ فیزیکی می‌چرخونه و خلاصه‌ی پرداخت رو پشتش نشون می‌ده؛ ضربه‌ی اصلیِ
+                            // کارت هنوز باز کردنِ جزئیاتِ وامه، این فقط یه لایه‌ی جدا و مستقله.
+                            var flipped by remember { mutableStateOf(false) }
+                            val density = LocalDensity.current
+                            val rotation by animateFloatAsState(
+                                targetValue = if (flipped) 180f else 0f,
+                                animationSpec = tween(500),
+                                label = "loanCardFlip",
+                            )
+                            // animateItem: اضافه/حذف/جابه‌جایی وام‌ها با انیمیشن نرم (نه پرش یهویی).
+                            var cardBounds by remember { mutableStateOf(Rect.Zero) }
+                            AppCard(
+                                modifier = Modifier
+                                    .animateItem()
+                                    .onGloballyPositioned { cardBounds = it.boundsInRoot() }
+                                    .pressScaleClickable {
+                                        // مرکزِ همین کارت رو به کسرِ ۰..۱ از کلِ صفحه تبدیل می‌کنیم تا
+                                        // بزرگ‌شدنِ صفحه‌ی جزئیات دقیقاً از همین‌جا شروع بشه.
+                                        heroOrigin = cardBounds.heroOriginIn(listBounds)
+                                        openedLoanId = loan.id
+                                    }
+                                    .graphicsLayer {
+                                        rotationY = rotation
+                                        cameraDistance = 12f * density.density
+                                    },
+                            ) {
+                                if (rotation <= 90f) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        // لوگوی بانک سمت راست کارت (لبه‌ی leading در RTL) - از رو اسم بانک.
+                                        BankBadge(bankName = loan.bank)
+                                        Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                                            Text(loan.name, color = AppText, fontSize = 15.sp)
+                                            Text(loan.bank, color = AppMuted, fontSize = 12.sp)
+                                            Text(
+                                                "${loan.paidCount} از ${loan.n} قسط پرداخت‌شده",
+                                                color = AppPrimary,
+                                                fontSize = 11.sp,
+                                                modifier = Modifier.padding(top = 2.dp),
+                                            )
+                                        }
+                                        // حلقه‌ی پیشرفتِ گرادیانی (سبزآبی→طلایی) با درصدِ اقساطِ
+                                        // پرداخت‌شده - رجوع کن به ProgressRing؛ هرچی به تسویه نزدیک‌تر،
+                                        // نوکِ قوس طلایی‌تر.
+                                        val paidPct = if (loan.n > 0) loan.paidCount.toFloat() / loan.n else 0f
+                                        ProgressRing(
+                                            progress = paidPct,
+                                            size = 40.dp,
+                                            strokeWidth = 4.dp,
+                                        ) {
+                                            Text(
+                                                "${toFa((paidPct * 100).roundToInt())}٪",
+                                                color = AppText,
+                                                fontSize = 9.sp,
+                                            )
+                                        }
+                                        IconButton(onClick = { flipped = true }) {
+                                            Icon(Icons.Filled.Info, contentDescription = "خلاصه پرداخت", tint = AppMuted)
+                                        }
+                                        IconButton(onClick = { viewModel.deleteLoan(loan.id) }) {
+                                            Icon(Icons.Filled.Delete, contentDescription = "حذف وام", tint = AppDanger)
+                                        }
+                                    }
+                                } else {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .graphicsLayer { rotationY = 180f },
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Text(loan.name, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                            IconButton(onClick = { flipped = false }) {
+                                                Icon(Icons.Filled.Info, contentDescription = "بستن خلاصه", tint = AppMuted)
+                                            }
+                                        }
+                                        PrivacyCrossfade(LocalPrivacyMode.current) { masked ->
+                                            Text(
+                                                "باقی‌مانده: ${maskIfPrivate(masked, fmt(loan.installment * (loan.n - loan.paidCount)))} ریال",
+                                                color = AppPrimary,
+                                                fontSize = 13.sp,
+                                                modifier = Modifier.padding(top = 6.dp),
+                                            )
+                                        }
                                         Text(
-                                            "${loan.paidCount} از ${loan.n} قسط پرداخت‌شده",
-                                            color = AppPrimary,
-                                            fontSize = 11.sp,
+                                            "${toFa(loan.n - loan.paidCount)} قسط باقیمانده از ${toFa(loan.n)}",
+                                            color = AppMuted,
+                                            fontSize = 12.sp,
                                             modifier = Modifier.padding(top = 2.dp),
                                         )
                                     }
-                                    // حلقه‌ی پیشرفتِ گرادیانی (سبزآبی→طلایی) با درصدِ اقساطِ
-                                    // پرداخت‌شده - رجوع کن به ProgressRing؛ هرچی به تسویه نزدیک‌تر،
-                                    // نوکِ قوس طلایی‌تر.
-                                    val paidPct = if (loan.n > 0) loan.paidCount.toFloat() / loan.n else 0f
-                                    ProgressRing(
-                                        progress = paidPct,
-                                        size = 40.dp,
-                                        strokeWidth = 4.dp,
-                                    ) {
-                                        Text(
-                                            "${toFa((paidPct * 100).roundToInt())}٪",
-                                            color = AppText,
-                                            fontSize = 9.sp,
-                                        )
-                                    }
-                                    IconButton(onClick = { flipped = true }) {
-                                        Icon(Icons.Filled.Info, contentDescription = "خلاصه پرداخت", tint = AppMuted)
-                                    }
-                                    IconButton(onClick = { viewModel.deleteLoan(loan.id) }) {
-                                        Icon(Icons.Filled.Delete, contentDescription = "حذف وام", tint = AppDanger)
-                                    }
-                                }
-                            } else {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .graphicsLayer { rotationY = 180f },
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Text(loan.name, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                                        IconButton(onClick = { flipped = false }) {
-                                            Icon(Icons.Filled.Info, contentDescription = "بستن خلاصه", tint = AppMuted)
-                                        }
-                                    }
-                                    Text(
-                                        "باقی‌مانده: ${maskIfPrivate(LocalPrivacyMode.current, fmt(loan.installment * (loan.n - loan.paidCount)))} ریال",
-                                        color = AppPrimary,
-                                        fontSize = 13.sp,
-                                        modifier = Modifier.padding(top = 6.dp),
-                                    )
-                                    Text(
-                                        "${toFa(loan.n - loan.paidCount)} قسط باقیمانده از ${toFa(loan.n)}",
-                                        color = AppMuted,
-                                        fontSize = 12.sp,
-                                        modifier = Modifier.padding(top = 2.dp),
-                                    )
                                 }
                             }
                         }
@@ -491,16 +567,20 @@ private fun DashboardSummary(
     val privacyMode = LocalPrivacyMode.current
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        DashboardStatCard(
-            title = "وضعیت کلی بدهی‌ها",
-            value = "${maskIfPrivate(privacyMode, fmt(animatedDebt))} ریال",
-            valueColor = AppText,
-        )
-        DashboardStatCard(
-            title = "مجموع اقساط ماهانه",
-            value = "${maskIfPrivate(privacyMode, fmt(animatedMonthly))} ریال",
-            valueColor = AppPrimary,
-        )
+        PrivacyCrossfade(privacyMode) { masked ->
+            DashboardStatCard(
+                title = "وضعیت کلی بدهی‌ها",
+                value = "${maskIfPrivate(masked, fmt(animatedDebt))} ریال",
+                valueColor = AppText,
+            )
+        }
+        PrivacyCrossfade(privacyMode) { masked ->
+            DashboardStatCard(
+                title = "مجموع اقساط ماهانه",
+                value = "${maskIfPrivate(masked, fmt(animatedMonthly))} ریال",
+                valueColor = AppPrimary,
+            )
+        }
 
         // یه پس‌زمینه‌ی سبزِ اختصاصیِ نیمه‌شفاف اینجا امتحان شده بود، ولی رو Surface (که خودش
         // tonalElevation داره) رنگ‌ها بهم می‌ریخت و دوتُنی/کثیف به‌نظر می‌رسید. کاربر خواست دقیقاً
@@ -525,25 +605,29 @@ private fun DashboardSummary(
                                 )
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    "${maskIfPrivate(privacyMode, fmt(income.amount))} ریال",
-                                    color = AppMuted,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(end = 6.dp),
-                                )
+                                PrivacyCrossfade(privacyMode) { masked ->
+                                    Text(
+                                        "${maskIfPrivate(masked, fmt(income.amount))} ریال",
+                                        color = AppMuted,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(end = 6.dp),
+                                    )
+                                }
                                 IconButton(onClick = { onDeleteIncome(income) }) {
                                     Icon(Icons.Filled.Delete, contentDescription = "حذف منبع درآمد", tint = AppDanger)
                                 }
                             }
                         }
                     }
-                    Text(
-                        "جمع درآمد: ${maskIfPrivate(privacyMode, fmt(totalIncome))} ریال",
-                        color = AppText,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            "جمع درآمد: ${maskIfPrivate(masked, fmt(totalIncome))} ریال",
+                            color = AppText,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
                 }
             }
 

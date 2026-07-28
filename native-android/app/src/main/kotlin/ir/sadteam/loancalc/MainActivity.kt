@@ -75,6 +75,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -103,6 +104,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 import androidx.fragment.app.FragmentActivity
 import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.ui.AffordScreen
@@ -132,7 +134,11 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
+import ir.sadteam.loancalc.ui.theme.ThemeRevealHost
+import ir.sadteam.loancalc.ui.theme.ThemeRevealState
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.LoanCalcTheme
@@ -240,10 +246,14 @@ class MainActivity : FragmentActivity() {
             val themeMode by themeViewModel.themeMode.collectAsState()
             val fontScale by themeViewModel.fontScale.collectAsState()
             val baseDensity = LocalDensity.current
+            // عمداً بیرونِ LoanCalcTheme: این state باید از تعویضِ خودِ تم جونِ سالم به‌در ببره،
+            // چون دقیقاً وسطِ همون تعویض داره کار می‌کنه (رجوع کن به ThemeReveal.kt).
+            val themeReveal = remember { ThemeRevealState() }
             LoanCalcTheme(themeMode = themeMode) {
                 CompositionLocalProvider(
                     LocalLayoutDirection provides LayoutDirection.Rtl,
                     LocalSubscriptionManager provides subscriptionManager,
+                    LocalThemeReveal provides themeReveal,
                     // پورت .app.fs-small/fs-medium/fs-large (CSS zoom) تو www/index.html - هم
                     // فونت هم فاصله‌ها (dp) با هم مقیاس می‌شن، دقیقاً مثل زوم کل کانتینر .app.
                     LocalDensity provides Density(
@@ -251,7 +261,9 @@ class MainActivity : FragmentActivity() {
                         fontScale = baseDensity.fontScale * fontScale,
                     ),
                 ) {
-                    AppRoot()
+                    ThemeRevealHost(state = themeReveal, revealKey = themeMode) {
+                        AppRoot()
+                    }
                 }
             }
         }
@@ -380,6 +392,13 @@ private fun LoanCalcApp(
     val themeMode by themeViewModel.themeMode.collectAsState()
     val privacyMode by privacyModeViewModel.enabled.collectAsState()
     val buzz = rememberBuzz()
+    // افکتِ دایره‌ایِ تعویضِ تم (سبکِ تلگرام) - خودِ اورلی تو MainActivity.setContent نصب شده،
+    // اینجا فقط ماشه‌ش کشیده می‌شه. رجوع کن به ThemeReveal.kt.
+    val themeReveal = LocalThemeReveal.current
+    // startReveal الان suspend ئه (رجوع کن به ThemeReveal.kt) - برای تضمینِ اینکه اسنپ‌شات
+    // *قبل* از عوض‌شدنِ واقعیِ تم گرفته می‌شه، هر دو کار باید تویِ یه کوروتینِ واحد و پشتِ‌سرهم
+    // اجرا بشن، نه دو تا launch جدا (که ترتیبشون تضمین‌شده نیست).
+    val themeToggleScope = rememberCoroutineScope()
 
     // وضعیت اشتراک/دوره‌ی آزمایشی رو هر بار اپ باز می‌شه از سرور تازه می‌کنیم (نه فقط لحظه‌ی ورود) -
     // وگرنه اگه اپ لاگین‌شده بمونه، دقیقاً روزی که دوره‌ی آزمایشی تموم می‌شه هیچ‌وقت خودش رو به‌روز
@@ -390,6 +409,14 @@ private fun LoanCalcApp(
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: BottomTab.BANK_LOAN.route
+
+    // نوارِ پایینِ ۴تبی موقعِ اسکرولِ رو‌به‌پایینِ لیستِ «وام‌های من» جمع می‌شه، با اسکرولِ رو‌به‌بالا
+    // دوباره ظاهر می‌شه - فقط MyLoansScreen این callback رو صدا می‌زنه (رجوع کن به onBottomBar
+    // VisibilityChanged اونجا)؛ بقیه‌ی تب‌ها همیشه نوار رو نشون می‌دن.
+    var bottomBarVisible by remember { mutableStateOf(true) }
+    LaunchedEffect(currentRoute) {
+        if (currentRoute != BottomTab.MY_LOANS.route) bottomBarVisible = true
+    }
 
     // تپ دوباره رو تب «وام بانکی» وقتی از قبل انتخابه باید فرم رو ریست کنه (دقیقاً رفتار قبلی،
     // قبل از معرفی Navigation) — چون launchSingleTop جلوی navigate دوباره به همون مقصد رو می‌گیره،
@@ -439,7 +466,19 @@ private fun LoanCalcApp(
                     title = { Text("وام من") },
                     navigationIcon = {
                         IconButton(
-                            onClick = { buzz(); themeViewModel.cycleThemeMode() },
+                            onClick = {
+                                buzz()
+                                // ترتیب مهمه: اول اسنپ‌شاتِ تمِ فعلی، بعد عوض‌کردنِ تم - رجوع کن
+                                // به ThemeReveal.kt. دایره از مرکزِ خودِ همین دکمه باز می‌شه، برای
+                                // همین از همون مستطیلی که پایین برای تور ثبت می‌شه استفاده می‌کنیم.
+                                if (!themeReveal.inProgress) {
+                                    val origin = tourBounds[TourTarget.DARK_MODE]?.center ?: Offset.Zero
+                                    themeToggleScope.launch {
+                                        themeReveal.startReveal(origin = origin, currentKey = themeMode)
+                                        themeViewModel.cycleThemeMode()
+                                    }
+                                }
+                            },
                             // مختصاتِ واقعیِ این آیکون رو گزارش می‌ده - برای قدمِ TourTarget.DARK_MODE
                             // تو AppTourOverlay، رجوع کن به onPositioned مشابه رو BottomNavItem.
                             modifier = Modifier.onGloballyPositioned {
@@ -480,6 +519,11 @@ private fun LoanCalcApp(
                 )
             },
             bottomBar = {
+                AnimatedVisibility(
+                    visible = bottomBarVisible,
+                    enter = slideInVertically(Motion.standard()) { it },
+                    exit = slideOutVertically(Motion.standard()) { it },
+                ) {
                 Surface(color = AppSurface) {
                     Row(
                         modifier = Modifier
@@ -508,6 +552,7 @@ private fun LoanCalcApp(
                             )
                         }
                     }
+                }
                 }
             },
         ) { padding ->
@@ -549,6 +594,7 @@ private fun LoanCalcApp(
                 composable(BottomTab.MY_LOANS.route) {
                     MyLoansScreen(
                         onManualAddFabPositioned = { rect -> tourBounds[TourTarget.MANUAL_ADD] = rect },
+                        onBottomBarVisibilityChanged = { visible -> bottomBarVisible = visible },
                     )
                 }
             }

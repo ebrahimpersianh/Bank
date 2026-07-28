@@ -61,6 +61,7 @@ import ir.sadteam.loancalc.data.CreditRatesViewModel
 import ir.sadteam.loancalc.data.banks
 import ir.sadteam.loancalc.data.loanPresets
 import ir.sadteam.loancalc.ui.cheque.ChequeScreen
+import ir.sadteam.loancalc.ui.components.StaggerIn
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
@@ -165,253 +166,270 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         item {
-            // این کارت قبلاً یه حاشیه‌ی مشکی مخصوص خودش داشت؛ کاربر بعداً همون تصمیمِ «بدون خط دور»ی
-            // که رو بقیه‌ی اپ اعمال شد رو اینجا هم خواست، پس override حذف شد - حالا مثل همه‌ی
-            // AppCardهای دیگه از پیش‌فرضِ بدون‌حاشیه استفاده می‌کنه.
-            AppCard(label = "وام‌های پرتکرار") {
-                // LazyRow به‌جای Row+horizontalScroll: فقط کارت‌های قابل‌دیدن compose می‌شن (پرفورمنس).
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(loanPresets, key = { it.key }) { p ->
-                        PresetCard(
-                            icon = p.icon,
-                            title = p.title,
-                            sub = p.sub,
-                            selected = selectedPresetKey == p.key,
-                            onClick = {
-                                selectedPresetKey = p.key
-                                applyAmount(p.amount)
-                                amountSliderRange = 100_000_000f..10_000_000_000f
-                                rateText = trimRate(p.ratePct)
-                                rateSlider = p.ratePct.toFloat()
-                                selectedMonths = p.months
-                                customMonthsText = ""
-                                graceOn = p.graceMonths > 0
-                                if (p.graceMonths > 0) graceMonths = p.graceMonths.toFloat()
-                            },
-                        )
-                    }
-                }
-            }
-        }
-
-        item {
-            AppCard(label = "نام وام‌گیرنده") {
-                OutlinedTextField(
-                    value = borrowerName,
-                    onValueChange = { borrowerName = it },
-                    placeholder = { Text("نام وام‌گیرنده") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = appFieldColors(),
-                )
-            }
-        }
-
-        item {
-            AppCard(label = "بانک یا سرویس اعتباری") {
-                // LazyRow به‌جای Row+horizontalScroll: قبلاً هر ۳۴ لوگوی بانک + ۶ سرویس همیشه یک‌جا
-                // compose می‌شدن (یکی از منابع اصلی لگ تعویض تب)؛ حالا فقط ~۵ تای قابل‌دیدن.
-                val banksScroll = rememberLazyListState()
-                val creditScroll = rememberLazyListState()
-                // هایلایتِ نوریِ مدام رو نشانگرهای اسکرولِ زیرِ بانک‌ها/خدمات (خواسته‌ی کاربر «اسکرول
-                // زیر بانک‌ها رو یکم شیک‌تر بکن») - مستقل از خودِ اسکرول، همیشه در حال حرکته.
-                val shimmerTransition = rememberInfiniteTransition(label = "bankScrollShimmer")
-                val shimmerPhase by shimmerTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart),
-                    label = "shimmerPhase",
-                )
-                Text("بانک‌ها", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
-                LazyRow(
-                    state = banksScroll,
-                    modifier = Modifier.padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    items(banks, key = { it.name }) { b ->
-                        BankTile(
-                            bank = b,
-                            selected = selectedBank?.name == b.name,
-                            onClick = { selectedBank = b },
-                        )
-                    }
-                }
-                // نشانگر اسکرول افقی زیر ردیفِ بانک‌ها (تو همون فاصله‌ی ظریفِ زیرِ لیبل).
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 6.dp, bottom = 8.dp)
-                        .height(4.dp)
-                        .lazyRowScrollbar(banksScroll, AppPrimary, shimmerPhase = shimmerPhase),
-                )
-                Text("خدمات اعتباری", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
-                if (creditRatesLoading) {
-                    Row(
-                        modifier = Modifier.padding(top = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        repeat(5) { BankTileShimmer() }
-                    }
-                } else {
-                    LazyRow(
-                        state = creditScroll,
-                        modifier = Modifier.padding(top = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        items(creditServices, key = { it.name }) { b ->
-                            BankTile(
-                                bank = b,
-                                selected = selectedBank?.name == b.name,
+            StaggerIn(0) {
+                // این کارت قبلاً یه حاشیه‌ی مشکی مخصوص خودش داشت؛ کاربر بعداً همون تصمیمِ «بدون خط دور»ی
+                // که رو بقیه‌ی اپ اعمال شد رو اینجا هم خواست، پس override حذف شد - حالا مثل همه‌ی
+                // AppCardهای دیگه از پیش‌فرضِ بدون‌حاشیه استفاده می‌کنه.
+                AppCard(label = "وام‌های پرتکرار") {
+                    // LazyRow به‌جای Row+horizontalScroll: فقط کارت‌های قابل‌دیدن compose می‌شن (پرفورمنس).
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(loanPresets, key = { it.key }) { p ->
+                            PresetCard(
+                                icon = p.icon,
+                                title = p.title,
+                                sub = p.sub,
+                                selected = selectedPresetKey == p.key,
                                 onClick = {
-                                    selectedBank = b
-                                    rateText = trimRate(b.ratePct)
-                                    rateSlider = b.ratePct.toFloat()
-                                    selectedMonths = b.months
+                                    selectedPresetKey = p.key
+                                    applyAmount(p.amount)
+                                    amountSliderRange = 100_000_000f..10_000_000_000f
+                                    rateText = trimRate(p.ratePct)
+                                    rateSlider = p.ratePct.toFloat()
+                                    selectedMonths = p.months
                                     customMonthsText = ""
-                                    val mid = (b.minAmount + b.maxAmount) / 2
-                                    applyAmount(mid)
-                                    amountSliderRange = b.minAmount.toFloat()..b.maxAmount.toFloat()
-                                    selectedPresetKey = null
+                                    graceOn = p.graceMonths > 0
+                                    if (p.graceMonths > 0) graceMonths = p.graceMonths.toFloat()
                                 },
                             )
                         }
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 6.dp)
-                        .height(4.dp)
-                        .lazyRowScrollbar(creditScroll, AppPrimary, shimmerPhase = shimmerPhase),
-                )
             }
         }
 
         item {
-            // «امور چک» مستقیم زیرِ بانک‌ها/خدمات اعتباری (خواسته‌ی کاربر) - قبلاً فقط از تنظیمات
-            // در دسترس بود.
-            AppCard {
-                Row(
-                    modifier = Modifier.fillMaxWidth().pressScaleClickable { showCheque = true },
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column {
-                        Text("امور چک", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            "چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                    Icon(Icons.Filled.ArrowBack, contentDescription = null, tint = AppMuted)
-                }
-            }
-        }
-
-        item {
-            AppCard(label = "تاریخ دریافت وام") {
-                // تاریخ اینلاینِ چرخونه‌ای (روی روز/ماه/سال اسکرول می‌کنی) - همینجا عوض می‌شه بدون
-                // رفتن به یه صفحه‌ی جدا (خواسته‌ی کاربر، چندبار تکرار شد). آیکون تقویم کنارش، برای
-                // کسی که تقویم گریدیِ کامل رو بخواد.
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    InlineJalaliDateRow(
-                        year = startYear,
-                        month = startMonth,
-                        day = startDay,
-                        onDateChange = { y, m, d -> startYear = y; startMonth = m; startDay = d },
-                        modifier = Modifier.weight(1f),
+            StaggerIn(1) {
+                AppCard(label = "نام وام‌گیرنده") {
+                    OutlinedTextField(
+                        value = borrowerName,
+                        onValueChange = { borrowerName = it },
+                        placeholder = { Text("نام وام‌گیرنده") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = appFieldColors(),
                     )
-                    IconButton(onClick = { showCalendarPicker = true }) {
-                        Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
-                    }
                 }
-                // توضیحِ دینامیک - چون این فرم دوره‌ی تنفس هم داره، این تاریخ همیشه «سررسیدِ قسطِ
-                // اول» نیست: اگه تنفس روشن باشه، قسطِ اول همون‌قدر بعدتره؛ اگه خاموش باشه، دقیقاً
-                // خودِ همین تاریخه. خواسته‌ی کاربر: به‌جای عوض‌کردنِ اسمِ فیلد (که برای حالتِ تنفس‌دار
-                // گمراه‌کننده می‌شد)، همین توضیحِ کوچیک زیرش اضافه بشه.
-                val graceHint = if (graceOn && graceMonths.toInt() > 0) {
-                    "قسطِ اول ${toFa(graceMonths.toInt())} ماه بعد از این تاریخه (به‌خاطرِ دوره‌ی تنفس)"
-                } else {
-                    "این تاریخ = سررسیدِ قسطِ اول"
-                }
-                Text(
-                    graceHint,
-                    fontSize = 11.sp,
-                    color = AppMuted,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
             }
         }
 
         item {
-            AppCard(label = "مبلغ وام") {
-                OutlinedTextField(
-                    value = amountText,
-                    onValueChange = { raw ->
-                        // فقط رقم تو state می‌مونه؛ فرمتِ هزارگان نمایشیه (ThousandsSeparatorTransformation) -
-                        // فرمت‌کردن تو onValueChange مکان‌نما رو می‌پروند و رقم وسطِ عدد درج می‌شد.
-                        val digits = cleanNum(raw)
-                        val n = digits.toLongOrNull() ?: 0L
-                        amountText = digits
-                        if (n in amountSliderRange.start.toLong()..amountSliderRange.endInclusive.toLong()) {
-                            amountSlider = n.toFloat()
+            StaggerIn(2) {
+                AppCard(label = "بانک یا سرویس اعتباری") {
+                    // LazyRow به‌جای Row+horizontalScroll: قبلاً هر ۳۴ لوگوی بانک + ۶ سرویس همیشه یک‌جا
+                    // compose می‌شدن (یکی از منابع اصلی لگ تعویض تب)؛ حالا فقط ~۵ تای قابل‌دیدن.
+                    val banksScroll = rememberLazyListState()
+                    val creditScroll = rememberLazyListState()
+                    // هایلایتِ نوریِ مدام رو نشانگرهای اسکرولِ زیرِ بانک‌ها/خدمات (خواسته‌ی کاربر «اسکرول
+                    // زیر بانک‌ها رو یکم شیک‌تر بکن») - مستقل از خودِ اسکرول، همیشه در حال حرکته.
+                    val shimmerTransition = rememberInfiniteTransition(label = "bankScrollShimmer")
+                    val shimmerPhase by shimmerTransition.animateFloat(
+                        initialValue = 0f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart),
+                        label = "shimmerPhase",
+                    )
+                    Text("بانک‌ها", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
+                    LazyRow(
+                        state = banksScroll,
+                        modifier = Modifier.padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        items(banks, key = { it.name }) { b ->
+                            BankTile(
+                                bank = b,
+                                selected = selectedBank?.name == b.name,
+                                onClick = { selectedBank = b },
+                            )
                         }
-                    },
-                    visualTransformation = ThousandsSeparatorTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = appFieldColors(),
-                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
-                )
-                val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
-                if (rialVal > 0) {
-                    // همیشه تک‌خطی - اگه جا نشه فونت کوچیک می‌شه، نه این‌که به خط دوم بشکنه.
-                    AutoShrinkText(
-                        text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
+                    }
+                    // نشانگر اسکرول افقی زیر ردیفِ بانک‌ها (تو همون فاصله‌ی ظریفِ زیرِ لیبل).
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 6.dp, bottom = 8.dp)
+                            .height(4.dp)
+                            .lazyRowScrollbar(banksScroll, AppPrimary, shimmerPhase = shimmerPhase),
+                    )
+                    Text("خدمات اعتباری", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
+                    if (creditRatesLoading) {
+                        Row(
+                            modifier = Modifier.padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            repeat(5) { BankTileShimmer() }
+                        }
+                    } else {
+                        LazyRow(
+                            state = creditScroll,
+                            modifier = Modifier.padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            // این لیست برخلافِ بانک‌ها ثابت نیست: نرخ‌ها از سرور می‌رسن و لیست
+                            // جایگزین می‌شه - بدونِ animateItem اون لحظه یه پرشِ ناگهانیه.
+                            items(creditServices, key = { it.name }) { b ->
+                                BankTile(
+                                    modifier = Modifier.animateItem(),
+                                    bank = b,
+                                    selected = selectedBank?.name == b.name,
+                                    onClick = {
+                                        selectedBank = b
+                                        rateText = trimRate(b.ratePct)
+                                        rateSlider = b.ratePct.toFloat()
+                                        selectedMonths = b.months
+                                        customMonthsText = ""
+                                        val mid = (b.minAmount + b.maxAmount) / 2
+                                        applyAmount(mid)
+                                        amountSliderRange = b.minAmount.toFloat()..b.maxAmount.toFloat()
+                                        selectedPresetKey = null
+                                    },
+                                )
+                            }
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 6.dp)
+                            .height(4.dp)
+                            .lazyRowScrollbar(creditScroll, AppPrimary, shimmerPhase = shimmerPhase),
+                    )
+                }
+            }
+        }
+
+        item {
+            StaggerIn(3) {
+                // «امور چک» مستقیم زیرِ بانک‌ها/خدمات اعتباری (خواسته‌ی کاربر) - قبلاً فقط از تنظیمات
+                // در دسترس بود.
+                AppCard {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().pressScaleClickable { showCheque = true },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column {
+                            Text("امور چک", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                "چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                        Icon(Icons.Filled.ArrowBack, contentDescription = null, tint = AppMuted)
+                    }
+                }
+            }
+        }
+
+        item {
+            StaggerIn(4) {
+                AppCard(label = "تاریخ دریافت وام") {
+                    // تاریخ اینلاینِ چرخونه‌ای (روی روز/ماه/سال اسکرول می‌کنی) - همینجا عوض می‌شه بدون
+                    // رفتن به یه صفحه‌ی جدا (خواسته‌ی کاربر، چندبار تکرار شد). آیکون تقویم کنارش، برای
+                    // کسی که تقویم گریدیِ کامل رو بخواد.
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        InlineJalaliDateRow(
+                            year = startYear,
+                            month = startMonth,
+                            day = startDay,
+                            onDateChange = { y, m, d -> startYear = y; startMonth = m; startDay = d },
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(onClick = { showCalendarPicker = true }) {
+                            Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
+                        }
+                    }
+                    // توضیحِ دینامیک - چون این فرم دوره‌ی تنفس هم داره، این تاریخ همیشه «سررسیدِ قسطِ
+                    // اول» نیست: اگه تنفس روشن باشه، قسطِ اول همون‌قدر بعدتره؛ اگه خاموش باشه، دقیقاً
+                    // خودِ همین تاریخه. خواسته‌ی کاربر: به‌جای عوض‌کردنِ اسمِ فیلد (که برای حالتِ تنفس‌دار
+                    // گمراه‌کننده می‌شد)، همین توضیحِ کوچیک زیرش اضافه بشه.
+                    val graceHint = if (graceOn && graceMonths.toInt() > 0) {
+                        "قسطِ اول ${toFa(graceMonths.toInt())} ماه بعد از این تاریخه (به‌خاطرِ دوره‌ی تنفس)"
+                    } else {
+                        "این تاریخ = سررسیدِ قسطِ اول"
+                    }
+                    Text(
+                        graceHint,
+                        fontSize = 11.sp,
                         color = AppMuted,
-                        maxFontSize = 11.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
-                SlimSlider(
-                    value = amountSlider,
-                    onValueChange = { v ->
-                        amountSlider = v
-                        amountText = v.toLong().toString()
-                    },
-                    valueRange = amountSliderRange,
-                )
             }
         }
 
         item {
-            AppCard(label = "نرخ سود سالانه") {
-                OutlinedTextField(
-                    value = rateText,
-                    onValueChange = { raw ->
-                        val filtered = cleanNumDecimal(raw)
-                        rateText = filtered
-                        val num = filtered.toDoubleOrNull()
-                        if (num != null && num in 0.0..35.0) rateSlider = num.toFloat()
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = appFieldColors(),
-                    suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
-                )
-                SlimSlider(
-                    value = rateSlider,
-                    onValueChange = { v -> rateSlider = v; rateText = trimRate(v.toDouble()) },
-                    valueRange = 0f..35f,
-                )
+            StaggerIn(5) {
+                AppCard(label = "مبلغ وام") {
+                    OutlinedTextField(
+                        value = amountText,
+                        onValueChange = { raw ->
+                            // فقط رقم تو state می‌مونه؛ فرمتِ هزارگان نمایشیه (ThousandsSeparatorTransformation) -
+                            // فرمت‌کردن تو onValueChange مکان‌نما رو می‌پروند و رقم وسطِ عدد درج می‌شد.
+                            val digits = cleanNum(raw)
+                            val n = digits.toLongOrNull() ?: 0L
+                            amountText = digits
+                            if (n in amountSliderRange.start.toLong()..amountSliderRange.endInclusive.toLong()) {
+                                amountSlider = n.toFloat()
+                            }
+                        },
+                        visualTransformation = ThousandsSeparatorTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = appFieldColors(),
+                        suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                    )
+                    val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
+                    if (rialVal > 0) {
+                        // همیشه تک‌خطی - اگه جا نشه فونت کوچیک می‌شه، نه این‌که به خط دوم بشکنه.
+                        AutoShrinkText(
+                            text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
+                            color = AppMuted,
+                            maxFontSize = 11.5.sp,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                    SlimSlider(
+                        value = amountSlider,
+                        onValueChange = { v ->
+                            amountSlider = v
+                            amountText = v.toLong().toString()
+                        },
+                        valueRange = amountSliderRange,
+                    )
+                }
+            }
+        }
+
+        item {
+            StaggerIn(6) {
+                AppCard(label = "نرخ سود سالانه") {
+                    OutlinedTextField(
+                        value = rateText,
+                        onValueChange = { raw ->
+                            val filtered = cleanNumDecimal(raw)
+                            rateText = filtered
+                            val num = filtered.toDoubleOrNull()
+                            if (num != null && num in 0.0..35.0) rateSlider = num.toFloat()
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = appFieldColors(),
+                        suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
+                    )
+                    SlimSlider(
+                        value = rateSlider,
+                        onValueChange = { v -> rateSlider = v; rateText = trimRate(v.toDouble()) },
+                        valueRange = 0f..35f,
+                    )
+                }
             }
         }
 

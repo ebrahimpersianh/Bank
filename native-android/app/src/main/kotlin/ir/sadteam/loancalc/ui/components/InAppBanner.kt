@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -85,8 +86,10 @@ fun InAppBannerHost(state: InAppBannerState, modifier: Modifier = Modifier) {
     }
     AnimatedVisibility(
         visible = current != null,
-        enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 2 },
-        exit = fadeOut(tween(180)) + slideOutVertically(tween(180)) { it / 2 },
+        // اسلاید فنری (نه خطی): بنر «پرتاب» می‌شه بالا و نرم می‌ایسته - محوشدنش عمداً
+        // هنوز tween ئه، رجوع کن به قانونِ Motion.kt.
+        enter = fadeIn(tween(Motion.FADE_IN_MS)) + slideInVertically(Motion.offset()) { it / 2 },
+        exit = fadeOut(tween(Motion.FADE_OUT_MS)) + slideOutVertically(Motion.offset()) { it / 2 },
         modifier = modifier.padding(bottom = 24.dp),
     ) {
         Box(
