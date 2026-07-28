@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.theme.AppAccent
+import ir.sadteam.loancalc.ui.theme.Motion
 
 /**
  * پورت افکت لمسی وب (`.chip`, `.preset-card`, `.bank-item`, `.loan-card`, `.cta` همه یه
@@ -49,9 +50,11 @@ fun Modifier.pressScaleClickable(
             buzz()
         }
     }
+    // فنری به‌جای خطی: موقعِ رها کردن یه برگشتِ خیلی ریزِ کِش‌مانند داره، دقیقاً همون حسی که
+    // دکمه‌های iOS می‌دن - رجوع کن به Motion.kt برای دلیلِ کاملِ فنر در برابر tween.
     val animatedScale by animateFloatAsState(
         targetValue = if (pressed) scale else 1f,
-        animationSpec = tween(100),
+        animationSpec = Motion.snappy(),
         label = "pressScale",
     )
     val gold = AppAccent

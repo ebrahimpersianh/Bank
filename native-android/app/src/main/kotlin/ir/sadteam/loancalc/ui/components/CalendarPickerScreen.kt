@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.toFa
@@ -234,7 +235,7 @@ private fun DayGrid(
                                         if (isSelected) AppPrimary else AppBg,
                                         CircleShape,
                                     )
-                                    .clickable { onSelect(thisDate) },
+                                    .pressScaleClickable(scale = 0.9f) { onSelect(thisDate) },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
