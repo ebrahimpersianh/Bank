@@ -3,6 +3,8 @@ package ir.sadteam.loancalc.data
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import ir.sadteam.loancalc.core.LoanCalculator
+import ir.sadteam.loancalc.core.LoanMethod
 import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.data.db.LoanDao
@@ -206,6 +208,64 @@ class LoanRepository(
             ),
         )
         loanRowDao.replaceForLoan(loan.id, newRows)
+    }
+
+    /**
+     * ویرایشِ مبلغ/تعدادِ اقساطِ یه وامِ *محاسبه‌شده* (غیردستی، method != "manual") - برخلافِ
+     * [updateManualLoan] که فقط یه ضرب ساده‌ست، اینجا باید کلِ فرمولِ [LoanCalculator] با نرخ/روش/
+     * دوره‌ی تنفسِ همین وام دوباره اجرا بشه (چون قسط‌ها لزوماً مساوی نیستن - قرض‌الحسنه). برای همین
+     * **فقط وقتی هنوز هیچ قسطی پرداخت نشده** ([loan.paidCount] == 0) صدا زده بشه - وگرنه چون همه‌ی
+     * ردیف‌های قبلی با ردیف‌های تازه‌محاسبه‌شده جایگزین می‌شن، تاریخچه‌ی پرداخت/تاخیر/عکسِ رسیدِ
+     * قسط‌های قبلاً پرداخت‌شده گم می‌شه. این محدودیت با `require` هم اینجا اجباری شده (نه فقط سمتِ UI)
+     * تا اشتباهاً صدا زدنش رو یه وامِ نیمه‌پرداخت‌شده به‌جای پاک‌کردنِ بی‌صدا، کرش کنه.
+     */
+    suspend fun updateComputedLoanAmount(
+        loan: LoanEntity,
+        name: String,
+        bank: String,
+        borrower: String,
+        principalAmount: Double,
+        n: Int,
+        startDate: Map<String, Int>,
+    ) {
+        require(loan.paidCount == 0) {
+            "updateComputedLoanAmount فقط رو وامی که هنوز هیچ قسطی پرداخت نشده مجازه"
+        }
+        val data = parseData(loan)
+        val ratePct = (data["rate"] as? Number)?.toDouble() ?: 0.0
+        val method = if ((data["method"] as? String) == "qarz") LoanMethod.QARZ else LoanMethod.STANDARD
+        val graceMonths = (data["graceMonths"] as? Number)?.toInt() ?: 0
+        val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
+        val result = LoanCalculator.compute(principalAmount, ratePct, n, method, graceMonths, intervalDays)
+
+        val newData = parseDataMutable(loan)
+        newData["name"] = name
+        newData["bank"] = bank
+        newData["borrower"] = borrower
+        newData["amount"] = result.principal
+        newData["n"] = n
+        newData["installment"] = result.installment
+        newData["totalPaid"] = result.totalPaid
+        newData["totalInterest"] = result.totalInterest
+        newData["startDate"] = startDate
+        newData["paidCount"] = 0
+        newData.remove("rows")
+        loanDao.upsert(
+            loan.copy(
+                name = name,
+                bank = bank,
+                amount = result.principal,
+                installment = result.installment,
+                totalPaid = result.totalPaid,
+                n = n,
+                paidCount = 0,
+                dataJson = gson.toJson(newData),
+            ),
+        )
+        loanRowDao.replaceForLoan(
+            loan.id,
+            result.rows.map { LoanRowEntity(loanId = loan.id, m = it.month, installment = it.installment, paid = false) },
+        )
     }
 
     /**

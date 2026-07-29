@@ -246,11 +246,12 @@ fun LoanDetailScreen(
     // مشخصه (خواسته‌ی کاربر).
     var photoRowM by remember { mutableStateOf<Int?>(null) }
 
-    // ویرایشِ مشخصاتِ *غیرمالیِ* وام‌های محاسبه‌شده/قرض‌الحسنه (اسم/بانک/وام‌گیرنده/تاریخ) - برخلافِ
-    // وام‌های دستی که فرمِ کاملِ AddManualLoanScreen رو باز می‌کنن (onEdit، از MyLoansScreen)، این
-    // یه دیالوگِ سبکِ همین‌جاست چون مبلغ/نرخ/تعدادِ اقساط این نوع وام‌ها عمداً قابلِ‌ویرایش نیست
-    // (نیازمندِ اجرای دوباره‌ی فرمولِ کاملِ LoanCalculator و پاک‌شدنِ تاریخچه‌ی پرداخته - خواسته‌ی
-    // کاربر «ادیت کل وام برای همه‌ی وام‌ها» با همین محدودیتِ امن پیاده شد).
+    // ویرایشِ مشخصاتِ وام‌های محاسبه‌شده/قرض‌الحسنه - برخلافِ وام‌های دستی که فرمِ کاملِ
+    // AddManualLoanScreen رو باز می‌کنن (onEdit، از MyLoansScreen)، این یه دیالوگِ سبکِ همین‌جاست.
+    // مبلغ/تعدادِ اقساط این نوع وام‌ها فقط وقتی هنوز هیچ قسطی پرداخت نشده قابلِ‌ویرایشه (رجوع کن به
+    // canEditComputedAmount پایین‌تر + LoanRepository.updateComputedLoanAmount) - چون عوض‌کردنشون
+    // نیازمندِ اجرای دوباره‌ی فرمولِ کاملِ LoanCalculator و بازسازیِ کاملِ ردیف‌هاست، که اگه قبلاً
+    // پرداختی ثبت شده باشه، تاریخچه‌ش گم می‌شه.
     var showEditMetaDialog by remember { mutableStateOf(false) }
     var editMetaName by remember { mutableStateOf("") }
     var editMetaBank by remember { mutableStateOf("") }
@@ -259,6 +260,11 @@ fun LoanDetailScreen(
     var editMetaMonth by remember { mutableStateOf(1) }
     var editMetaDay by remember { mutableStateOf(1) }
     var editMetaGraceMonths by remember { mutableStateOf(0) }
+    // مبلغ/تعدادِ اقساطِ وامِ محاسبه‌شده فقط وقتی هنوز هیچ قسطی پرداخت نشده قابلِ‌ویرایشه - رجوع کن
+    // به کامنتِ LoanRepository.updateComputedLoanAmount برای دلیلِ این محدودیت.
+    val canEditComputedAmount = loan.paidCount == 0
+    var editMetaAmountText by remember { mutableStateOf("") }
+    var editMetaNText by remember { mutableStateOf("") }
 
     if (showEditMetaDialog) {
         AlertDialog(
@@ -311,24 +317,64 @@ fun LoanDetailScreen(
                         fontSize = 11.sp,
                         color = AppMuted,
                     )
-                    // مبلغ/نرخ/تعدادِ اقساط عمداً اینجا نیست - رجوع کن به کامنتِ بالای showEditMetaDialog.
-                    Text(
-                        "مبلغ/نرخ/تعدادِ اقساط این نوع وام از رو فرمول محاسبه شده و قابلِ‌ویرایش نیست.",
-                        color = AppMuted,
-                        fontSize = 11.sp,
-                    )
+                    // مبلغ/تعدادِ اقساط فقط وقتی هیچ قسطی پرداخت نشده قابلِ‌ویرایشه - رجوع کن به
+                    // کامنتِ بالای canEditComputedAmount. اگه یه قسط پرداخت شده باشه، تغییرشون یعنی
+                    // کلِ فرمول دوباره اجرا بشه و تاریخچه‌ی پرداخت گم بشه، برای همین قفله.
+                    if (canEditComputedAmount) {
+                        OutlinedTextField(
+                            value = editMetaAmountText,
+                            onValueChange = { editMetaAmountText = cleanNum(it) },
+                            visualTransformation = ThousandsSeparatorTransformation(),
+                            label = { Text("مبلغ وام") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = editMetaNText,
+                            onValueChange = { editMetaNText = cleanNum(it) },
+                            label = { Text("تعداد اقساط") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Text(
+                            "چون هنوز هیچ قسطی پرداخت نشده، عوض‌کردنِ این دوتا کلِ جدولِ اقساط رو از نو می‌سازه.",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                        )
+                    } else {
+                        Text(
+                            "چون قبلاً حداقل یه قسط پرداخت شده، مبلغ/تعدادِ اقساط دیگه قابلِ‌ویرایش نیست.",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                        )
+                    }
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.updateLoanMeta(
-                        loan = loan,
-                        name = editMetaName.trim().ifEmpty { loan.name },
-                        bank = editMetaBank.trim(),
-                        borrower = editMetaBorrower.trim().ifEmpty { "—" },
-                        startDate = PersianDate(editMetaYear, editMetaMonth, editMetaDay),
-                        onSaved = {},
-                    )
+                    if (canEditComputedAmount) {
+                        viewModel.updateComputedLoanAmount(
+                            loan = loan,
+                            name = editMetaName.trim().ifEmpty { loan.name },
+                            bank = editMetaBank.trim(),
+                            borrower = editMetaBorrower.trim().ifEmpty { "—" },
+                            principalAmount = editMetaAmountText.toDoubleOrNull() ?: loan.amount,
+                            n = editMetaNText.toIntOrNull()?.takeIf { it > 0 } ?: loan.n,
+                            startDate = PersianDate(editMetaYear, editMetaMonth, editMetaDay),
+                            onSaved = {},
+                        )
+                    } else {
+                        viewModel.updateLoanMeta(
+                            loan = loan,
+                            name = editMetaName.trim().ifEmpty { loan.name },
+                            bank = editMetaBank.trim(),
+                            borrower = editMetaBorrower.trim().ifEmpty { "—" },
+                            startDate = PersianDate(editMetaYear, editMetaMonth, editMetaDay),
+                            onSaved = {},
+                        )
+                    }
                     showEditMetaDialog = false
                 }) { Text("ذخیره") }
             },
@@ -522,6 +568,8 @@ fun LoanDetailScreen(
                     editMetaMonth = sd.m
                     editMetaDay = sd.d
                     editMetaGraceMonths = viewModel.getLoanGraceMonths(loan)
+                    editMetaAmountText = loan.amount.toLong().toString()
+                    editMetaNText = loan.n.toString()
                     showEditMetaDialog = true
                 }
             }) {
@@ -529,16 +577,27 @@ fun LoanDetailScreen(
             }
         }
 
+        // اگه اقساطِ پرداخت‌نشده با هم برابر نباشن (مثلاً بعدِ ویرایشِ تکیِ یه قسط، یا وامِ
+        // قرض‌الحسنه‌ای که ذاتاً اقساطِ کارمزدی/اصلِ‌وام نابرابر داره)، loan.installment دیگه
+        // نماینده‌ی «همه‌ی اقساط» نیست - عددِ بالای صفحه به‌جاش مبلغِ اولین قسطِ پرداخت‌نشده
+        // («قسطِ بعدی») رو نشون می‌ده، که هم درسته هم مفیدتره (خواسته‌ی کاربر - قبلاً بعدِ ویرایشِ
+        // تکی، عددِ بالا مبلغِ قدیمی/گمراه‌کننده می‌موند).
+        val unpaidAmounts = remember(rows) {
+            rows.filter { (it["paid"] as? Boolean) != true }.mapNotNull { (it["installment"] as? Number)?.toDouble() }
+        }
+        val installmentsVary = unpaidAmounts.distinct().size > 1
+        val displayInstallment = if (installmentsVary) unpaidAmounts.first() else loan.installment
+
         // دایره‌ی شیک بالای وام (سبز = اصل، طلایی = سود) با قسط ماهانه تو مرکز - مثل نسخه‌ی وب.
         val principalFrac = if (loan.totalPaid > 0) (loan.amount / loan.totalPaid).toFloat() else 1f
         LoanDonut(
             principalFraction = principalFrac,
             centerTop = {
                 PrivacyCrossfade(privacyMode) { masked ->
-                    Text(maskIfPrivate(masked, fmt(loan.installment)), color = AppText, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                    Text(maskIfPrivate(masked, fmt(displayInstallment)), color = AppText, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                 }
             },
-            centerBottom = "قسط ماهانه (ریال)",
+            centerBottom = if (installmentsVary) "قسطِ بعدی (ریال)" else "قسط ماهانه (ریال)",
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         )
 
@@ -551,14 +610,22 @@ fun LoanDetailScreen(
                 // (گزارشِ کاربر با اسکرین‌شات، بعدِ ویرایشِ مبلغ). با weight رو این ستون، Row اول
                 // عرضِ ثابتِ ستونِ «پرداخت‌شده» رو تضمین می‌کنه، بعد باقیِ فضا رو به این ستون می‌ده.
                 Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                    Text("مبلغ هر قسط", fontSize = 13.sp, color = AppMuted)
+                    Text(if (installmentsVary) "قسطِ بعدی" else "مبلغ هر قسط", fontSize = 13.sp, color = AppMuted)
                     PrivacyCrossfade(privacyMode) { masked ->
-                        Text("${maskIfPrivate(masked, fmt(loan.installment))} ریال", fontSize = 15.sp, color = AppText, fontWeight = FontWeight.Bold)
+                        Text("${maskIfPrivate(masked, fmt(displayInstallment))} ریال", fontSize = 15.sp, color = AppText, fontWeight = FontWeight.Bold)
                     }
                     if (!privacyMode) {
                         Text(
-                            "${numberToWordsFa(loan.installment / 10)} تومان",
+                            "${numberToWordsFa(displayInstallment / 10)} تومان",
                             fontSize = 11.sp,
+                            color = AppMuted,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    if (installmentsVary) {
+                        Text(
+                            "چون اقساطِ این وام باهم فرق دارن",
+                            fontSize = 10.sp,
                             color = AppMuted,
                             modifier = Modifier.padding(top = 2.dp),
                         )

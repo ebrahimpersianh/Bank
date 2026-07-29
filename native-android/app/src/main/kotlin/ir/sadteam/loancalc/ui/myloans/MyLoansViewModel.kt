@@ -134,6 +134,33 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
+    /** ویرایشِ مبلغ/تعدادِ اقساطِ یه وامِ محاسبه‌شده - فقط وقتی [loan.paidCount] صفره؛ رجوع کن به
+     * [LoanRepository.updateComputedLoanAmount]. */
+    fun updateComputedLoanAmount(
+        loan: LoanEntity,
+        name: String,
+        bank: String,
+        borrower: String,
+        principalAmount: Double,
+        n: Int,
+        startDate: PersianDate,
+        onSaved: () -> Unit,
+    ) {
+        viewModelScope.launch {
+            loanRepository.updateComputedLoanAmount(
+                loan = loan,
+                name = name,
+                bank = bank,
+                borrower = borrower,
+                principalAmount = principalAmount,
+                n = n,
+                startDate = mapOf("y" to startDate.y, "m" to startDate.m, "d" to startDate.d),
+            )
+            syncIfLoggedIn()
+            onSaved()
+        }
+    }
+
     /** پورت saveLoan تو www/index.html - نتیجه‌ی محاسبه‌ی تب «وام بانکی» رو تو «وام‌های من» ذخیره
      * می‌کنه (با نگه‌داشتن ردیف‌های واقعیِ محاسبه‌شده). محدودیتِ «۱ وام رایگان» باید قبلِ صدا زدن
      * این، سمتِ UI چک بشه (مثل onAddLoanClick تو MyLoansScreen). */
