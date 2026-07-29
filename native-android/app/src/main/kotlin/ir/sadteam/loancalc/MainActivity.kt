@@ -443,13 +443,25 @@ private fun LoanCalcApp(
             showExitHint = false
         }
     }
-    BackHandler(enabled = currentRoute == BottomTab.BANK_LOAN.route) {
-        val now = System.currentTimeMillis()
-        if (now - lastBackPressAt < 2000) {
-            (context as? Activity)?.finish()
+    // اگه رو تبِ اصلی (وام بانکی) نیستیم، اول باید برگردیم به همون تب - نه اینکه یهو از کلِ اپ
+    // خارج بشیم. زیرصفحه‌های داخلِ خودِ هر تب (مثلاً جزئیاتِ وام تو «وام‌های من») اول با
+    // BackHandlerِ خودشون (اولویتِ بالاتر، چون دیرتر رجیستر می‌شن) بسته می‌شن؛ این فقط وقتی به کار
+    // میاد که همون تب رو ریشه‌ی خودشه.
+    BackHandler(enabled = true) {
+        if (currentRoute == BottomTab.BANK_LOAN.route) {
+            val now = System.currentTimeMillis()
+            if (now - lastBackPressAt < 2000) {
+                (context as? Activity)?.finish()
+            } else {
+                lastBackPressAt = now
+                showExitHint = true
+            }
         } else {
-            lastBackPressAt = now
-            showExitHint = true
+            navController.navigate(BottomTab.BANK_LOAN.route) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
         }
     }
 

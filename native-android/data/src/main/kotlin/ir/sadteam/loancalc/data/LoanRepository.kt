@@ -143,6 +143,21 @@ class LoanRepository(
      * تغییرِ schema نداره. پیش‌فرض رشته‌ی خالی، نه هیچ‌کدومِ وام‌های قدیمی‌تر این کلید رو ندارن. */
     fun getNotes(loan: LoanEntity): String = (parseData(loan)["notes"] as? String) ?: ""
 
+    /** ترتیبِ دلخواهِ کاربر (کشیدن‌ورهاکردنِ کارتِ وام تو MyLoansScreen) - تو dataJson ذخیره می‌شه
+     * (`sortOrder`)، نیازی به تغییرِ schema نداره. null یعنی این وام هنوز هیچ‌وقت دستی جابه‌جا نشده -
+     * تو مرتب‌سازیِ CUSTOM همیشه آخر می‌افته. */
+    fun getSortOrder(loan: LoanEntity): Long? = (parseData(loan)["sortOrder"] as? Number)?.toLong()
+
+    /** بعدِ رهاکردنِ کارتِ یه وامِ کشیده‌شده - همه‌ی وام‌های [orderedLoans] رو به همون ترتیب
+     * عددگذاری (۰..n-۱) و ذخیره می‌کنه؛ از این به بعد مرتب‌سازیِ CUSTOM از رو همین عدد کار می‌کنه. */
+    suspend fun reorderLoans(orderedLoans: List<LoanEntity>) {
+        orderedLoans.forEachIndexed { index, loan ->
+            val data = parseDataMutable(loan)
+            data["sortOrder"] = index
+            loanDao.upsert(loan.copy(dataJson = gson.toJson(data)))
+        }
+    }
+
     /** ذخیره‌ی یادداشتِ وام - رو هر نوع وامی (دستی یا محاسبه‌شده) امنه، چون فقط dataJson رو دست
      * می‌زنه، نه مبلغ/نرخ/ردیف‌ها. */
     suspend fun updateNotes(loan: LoanEntity, notes: String) {
@@ -301,6 +316,9 @@ class LoanRepository(
         startDate: Map<String, Int>,
         intervalDays: Int,
         rows: List<Pair<Int, Double>>,
+        // برای وامی که تازه (نه از امروز) واقعاً وجود داره و کاربر داره از رو محاسبه‌گر واردش
+        // می‌کنه - همون قابلیتِ فرمِ افزودنِ دستی (addManualLoan)، این‌جا هم برای وامِ محاسبه‌شده.
+        paidCount: Int = 0,
     ): Long {
         val id = System.currentTimeMillis()
         val createdAt = isoNow()
@@ -319,7 +337,7 @@ class LoanRepository(
             "totalInterest" to totalInterest,
             "startDate" to startDate,
             "intervalDays" to intervalDays,
-            "paidCount" to 0,
+            "paidCount" to paidCount,
             "createdAt" to createdAt,
         )
         loanDao.upsert(
@@ -331,13 +349,13 @@ class LoanRepository(
                 installment = installment,
                 totalPaid = totalPaid,
                 n = n,
-                paidCount = 0,
+                paidCount = paidCount,
                 createdAt = createdAt,
                 dataJson = gson.toJson(webShape),
             ),
         )
         loanRowDao.upsertAll(
-            rows.map { (m, inst) -> LoanRowEntity(loanId = id, m = m, installment = inst, paid = false) },
+            rows.map { (m, inst) -> LoanRowEntity(loanId = id, m = m, installment = inst, paid = m <= paidCount) },
         )
         return id
     }
@@ -376,6 +394,26 @@ class LoanRepository(
         }
     }
 
+    /** سررسیدِ اولین قسطِ پرداخت‌نشده - برای مرتب‌سازیِ «نزدیک‌ترین سررسید» تو MyLoansScreen. عمداً
+     * کاملاً سینکرونه (فقط از رو dataJson/paidCountِ خودِ [loan]، بدونِ کوئریِ loan_rows) چون این
+     * تابع باید رو کلِ لیستِ وام‌ها (مرتب‌سازیِ محلی) بدونِ suspend/کوروتین اجرا بشه - همون فرمولِ
+     * تاریخِ [getRows] رو تکرار می‌کنه، فقط برای شماره‌قسطِ `paidCount + 1`. اگه وام تسویه شده
+     * (paidCount >= n) یا اصلاً قسطی نداره، null برمی‌گردونه (تو مرتب‌سازی همیشه آخر می‌افته). */
+    fun getNextDueDate(loan: LoanEntity): PersianDate? {
+        if (loan.n <= 0 || loan.paidCount >= loan.n) return null
+        val data = parseData(loan)
+        val startDate = parseStartDate(data)
+        val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
+        val graceMonths = (data["graceMonths"] as? Number)?.toInt() ?: 0
+        val base = if (graceMonths > 0) PersianCalendar.addMonths(startDate, graceMonths) else startDate
+        val m = loan.paidCount + 1
+        return if (intervalDays % 30 == 0) {
+            PersianCalendar.addMonths(base, (m - 1) * (intervalDays / 30))
+        } else {
+            PersianCalendar.addDays(base, (m - 1) * intervalDays)
+        }
+    }
+
     private fun parseStartDate(data: Map<String, Any?>): PersianDate {
         val sd = data["startDate"] as? Map<*, *>
         val y = (sd?.get("y") as? Number)?.toInt() ?: 1404
@@ -410,11 +448,36 @@ class LoanRepository(
         row.copy(photoPath = null)
     }
 
+    /** پرداختِ گروهیِ چندتا قسط باهم (خواسته‌ی کاربر: به‌جای تک‌تک زدنِ هرکدوم، چندتا رو انتخاب کنه
+     * و یه‌جا «به‌موقع» علامت بزنه) - رجوع کن به [ir.sadteam.loancalc.ui.myloans.LoanDetailScreen]. */
+    suspend fun setRowsPaidOnTime(loan: LoanEntity, ms: List<Int>) = updateRowsPayment(loan, ms) { row ->
+        row.copy(paid = true, paidLate = false, paidDateY = null, paidDateM = null, paidDateD = null)
+    }
+
+    /** معادلِ گروهیِ [setRowPaidLate] - همون [paidDate] برای همه‌ی [ms] اعمال می‌شه. */
+    suspend fun setRowsPaidLate(loan: LoanEntity, ms: List<Int>, paidDate: Map<String, Int>) = updateRowsPayment(loan, ms) { row ->
+        row.copy(paid = true, paidLate = true, paidDateY = paidDate["y"], paidDateM = paidDate["m"], paidDateD = paidDate["d"])
+    }
+
     private suspend fun updateRowPayment(loan: LoanEntity, m: Int, transform: (LoanRowEntity) -> LoanRowEntity) {
         val rows = getOrMigrateRows(loan)
         val current = rows.firstOrNull { it.m == m }
             ?: LoanRowEntity(loanId = loan.id, m = m, installment = loan.installment, paid = false)
         loanRowDao.upsertAll(listOf(transform(current)))
+        val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
+        loanDao.upsert(loan.copy(paidCount = newPaidCount))
+    }
+
+    /** هم‌الگو با [updateRowPayment] ولی رو چندتا قسط باهم - یه upsertAll/یه محاسبه‌ی paidCount
+     * برای کلِ دسته، نه یکی جدا به‌ازای هر قسط (کارآمدتر + یه سینکِ سرور به‌جای N تا). */
+    private suspend fun updateRowsPayment(loan: LoanEntity, ms: List<Int>, transform: (LoanRowEntity) -> LoanRowEntity) {
+        if (ms.isEmpty()) return
+        val rows = getOrMigrateRows(loan).associateBy { it.m }
+        val updated = ms.map { m ->
+            val current = rows[m] ?: LoanRowEntity(loanId = loan.id, m = m, installment = loan.installment, paid = false)
+            transform(current)
+        }
+        loanRowDao.upsertAll(updated)
         val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
         loanDao.upsert(loan.copy(paidCount = newPaidCount))
     }

@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -12,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +52,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,6 +63,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -68,6 +72,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.IncomeType
 import ir.sadteam.loancalc.core.cleanNum
@@ -88,6 +93,7 @@ import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.components.countUpDouble
@@ -116,14 +122,25 @@ private enum class LoanSortOption(val label: String) {
     NAME("نام (الفبا)"),
     AMOUNT_DESC("بیشترین مبلغ"),
     PROGRESS_DESC("بیشترین پیشرفت پرداخت"),
+    NEXT_DUE("نزدیک‌ترین سررسید"),
+    // با نگه‌داشتن+کشیدنِ کارتِ یه وام فعال می‌شه (رجوع کن به orderedLoans/reorderLoans تو
+    // MyLoansScreen) - تو منوی «فیلتر» هم انتخاب‌پذیره تا کاربر بتونه دستی برگرده روش.
+    CUSTOM("دلخواه (کشیدن و رهاکردن)"),
 }
 
-private fun List<LoanEntity>.sortedByOption(option: LoanSortOption): List<LoanEntity> = when (option) {
+private fun List<LoanEntity>.sortedByOption(option: LoanSortOption, viewModel: MyLoansViewModel): List<LoanEntity> = when (option) {
     LoanSortOption.NEWEST -> sortedByDescending { it.createdAt }
     LoanSortOption.OLDEST -> sortedBy { it.createdAt }
     LoanSortOption.NAME -> sortedBy { it.name }
     LoanSortOption.AMOUNT_DESC -> sortedByDescending { it.amount }
     LoanSortOption.PROGRESS_DESC -> sortedByDescending { if (it.n > 0) it.paidCount.toDouble() / it.n else 0.0 }
+    // وامِ تسویه‌شده/بدونِ قسطِ پرداخت‌نشده (getLoanNextDueDate == null) همیشه آخرِ لیست می‌افته
+    // (Int.MAX_VALUE به‌جای null، تا مقایسه‌ی ساده‌ی sortedBy بدونِ کامپریتورِ جدا کافی باشه).
+    LoanSortOption.NEXT_DUE -> sortedBy { loan ->
+        viewModel.getLoanNextDueDate(loan)?.let { it.y * 10000 + it.m * 100 + it.d } ?: Int.MAX_VALUE
+    }
+    // وامِ بدونِ sortOrderِ ذخیره‌شده (هنوز هیچ‌وقت دستی جابه‌جا نشده) همیشه آخر می‌افته.
+    LoanSortOption.CUSTOM -> sortedBy { loan -> viewModel.getLoanSortOrder(loan) ?: Long.MAX_VALUE }
 }
 
 /** وامی که همه‌ی اقساطش پرداخت شده - رجوع کن به بخشِ «وام‌های تسویه‌شده» تو MyLoansScreen. عمداً از
@@ -183,7 +200,7 @@ fun MyLoansScreen(
 
     val rawLoans by viewModel.loans.collectAsState()
     var sortOption by remember { mutableStateOf(LoanSortOption.NEWEST) }
-    val loans = remember(rawLoans, sortOption) { rawLoans.sortedByOption(sortOption) }
+    val loans = remember(rawLoans, sortOption) { rawLoans.sortedByOption(sortOption, viewModel) }
     // «وام‌های تسویه‌شده»: هم‌الگو با showArchived تو ChequeScreen - وامی که تسویه شده (isLoanSettled)
     // خودکار از لیستِ فعال بیرون میره، پشتِ همین تاگل نمایش داده می‌شه. لیستِ اصلی (loans، برای
     // openedLoan/editingLoan/canSaveAnotherLoan/DashboardSummary) عمداً فیلتر نمی‌شه - فقط لیستِ
@@ -191,6 +208,20 @@ fun MyLoansScreen(
     var showSettled by remember { mutableStateOf(false) }
     val visibleLoans = remember(loans, showSettled) { loans.filter { isLoanSettled(it) == showSettled } }
     val settledCount = remember(loans) { loans.count { isLoanSettled(it) } }
+
+    // جابه‌جاییِ دستیِ کارت‌های وام (نگه‌داشتنِ چندثانیه‌ای + کشیدن بالا/پایین) - orderedLoans یه
+    // کپیِ محلیِ visibleLoans ئه که حینِ کشیدن زنده جابه‌جا می‌شه؛ وقتی کشیدن تمومه (draggingLoanId
+    // == null) دوباره از visibleLoانsِ واقعی (بعدِ هر سورت/فیلترِ جدید) پر می‌شه. شروعِ کشیدن خودکار
+    // sortOption رو به CUSTOM می‌بره - وگرنه با فیلترهای دیگه (جدیدترین/بیشترین مبلغ...) بلافاصله
+    // ترتیبِ دستی زیر پا گذاشته می‌شد.
+    var draggingLoanId by remember { mutableStateOf<Long?>(null) }
+    var dragOffsetY by remember { mutableStateOf(0f) }
+    var orderedLoans by remember { mutableStateOf(visibleLoans) }
+    LaunchedEffect(visibleLoans) {
+        if (draggingLoanId == null) orderedLoans = visibleLoans
+    }
+    val loanCardHeights = remember { mutableStateMapOf<Long, Int>() }
+    val buzz = rememberBuzz()
     val incomes by viewModel.incomes.collectAsState()
     val gateState by authViewModel.gateState.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
@@ -258,6 +289,20 @@ fun MyLoansScreen(
         editingLoan != null -> "edit"
         openedLoan != null -> "detail"
         else -> "list"
+    }
+
+    // دکمه‌ی برگشتِ سیستمی/سخت‌افزاری: تا وقتی رو زیرصفحه‌ای غیر از لیستیم (جزئیاتِ وام/ویرایش/
+    // افزودن/ورود/اشتراک)، اول باید همون زیرصفحه بسته بشه و برگردیم به سطحِ قبلی - نه اینکه از
+    // کلِ تب یا کل اپ خارج بشیم. هر شاخه دقیقاً همون onBack/onCancel رو صدا می‌زنه که خودِ دکمه‌ی
+    // بازگشتِ داخلِ صفحه هم صدا می‌زنه.
+    BackHandler(enabled = screenKey != "list") {
+        when (screenKey) {
+            "login" -> showLoginPrompt = false
+            "subscription" -> showSubscriptionScreen = false
+            "add" -> showAddForm = false
+            "edit" -> editingLoanId = null
+            "detail" -> openedLoanId = null
+        }
     }
 
     // ترنزیشنِ «هیرو»: صفحه‌ی جزئیات به‌جای اینکه از وسطِ صفحه باز بشه، از روی همون کارتی که
@@ -421,7 +466,7 @@ fun MyLoansScreen(
                             }
                         }
                     } else {
-                        items(visibleLoans, key = { it.id }) { loan ->
+                        items(orderedLoans, key = { it.id }) { loan ->
                             // انیمیشنِ فلیپِ کارت (خواسته‌ی «انیمیشن‌های سفارشی») - آیکونِ اطلاعات، کارت رو
                             // مثل یه چکِ فیزیکی می‌چرخونه و خلاصه‌ی پرداخت رو پشتش نشون می‌ده؛ ضربه‌ی اصلیِ
                             // کارت هنوز باز کردنِ جزئیاتِ وامه، این فقط یه لایه‌ی جدا و مستقله.
@@ -434,10 +479,55 @@ fun MyLoansScreen(
                             )
                             // animateItem: اضافه/حذف/جابه‌جایی وام‌ها با انیمیشن نرم (نه پرش یهویی).
                             var cardBounds by remember { mutableStateOf(Rect.Zero) }
+                            val isDragging = loan.id == draggingLoanId
                             AppCard(
                                 modifier = Modifier
-                                    .animateItem()
-                                    .onGloballyPositioned { cardBounds = it.boundsInRoot() }
+                                    .zIndex(if (isDragging) 1f else 0f)
+                                    .then(if (isDragging) Modifier else Modifier.animateItem())
+                                    .onGloballyPositioned {
+                                        cardBounds = it.boundsInRoot()
+                                        loanCardHeights[loan.id] = it.size.height
+                                    }
+                                    // نگه‌داشتنِ چندثانیه‌ای رو کارت، بعد کشیدن بالا/پایین برای
+                                    // جابه‌جاییِ دستیِ ترتیبِ لیست - خواسته‌ی صریحِ کاربر. تپِ سریعِ
+                                    // معمولی (بدونِ نگه‌داشتن) دستِ detectDragGesturesAfterLongPress
+                                    // رو نمی‌رسه، همون pressScaleClickable پایین‌تر جواب می‌ده.
+                                    .pointerInput(loan.id) {
+                                        detectDragGesturesAfterLongPress(
+                                            onDragStart = {
+                                                draggingLoanId = loan.id
+                                                dragOffsetY = 0f
+                                                buzz()
+                                                if (sortOption != LoanSortOption.CUSTOM) sortOption = LoanSortOption.CUSTOM
+                                            },
+                                            onDragEnd = {
+                                                draggingLoanId = null
+                                                dragOffsetY = 0f
+                                                viewModel.reorderLoans(orderedLoans)
+                                            },
+                                            onDragCancel = {
+                                                draggingLoanId = null
+                                                dragOffsetY = 0f
+                                            },
+                                            onDrag = { change, dragAmount ->
+                                                change.consume()
+                                                dragOffsetY += dragAmount.y
+                                                val currentIndex = orderedLoans.indexOfFirst { it.id == loan.id }
+                                                val step = (loanCardHeights[loan.id] ?: 200) + 10
+                                                if (dragOffsetY > step / 2 && currentIndex < orderedLoans.lastIndex) {
+                                                    orderedLoans = orderedLoans.toMutableList().apply {
+                                                        add(currentIndex + 1, removeAt(currentIndex))
+                                                    }
+                                                    dragOffsetY -= step
+                                                } else if (dragOffsetY < -step / 2 && currentIndex > 0) {
+                                                    orderedLoans = orderedLoans.toMutableList().apply {
+                                                        add(currentIndex - 1, removeAt(currentIndex))
+                                                    }
+                                                    dragOffsetY += step
+                                                }
+                                            },
+                                        )
+                                    }
                                     .pressScaleClickable {
                                         // مرکزِ همین کارت رو به کسرِ ۰..۱ از کلِ صفحه تبدیل می‌کنیم تا
                                         // بزرگ‌شدنِ صفحه‌ی جزئیات دقیقاً از همین‌جا شروع بشه.
@@ -447,6 +537,7 @@ fun MyLoansScreen(
                                     .graphicsLayer {
                                         rotationY = rotation
                                         cameraDistance = 12f * density.density
+                                        translationY = if (isDragging) dragOffsetY else 0f
                                     },
                             ) {
                                 if (rotation <= 90f) {

@@ -111,6 +111,21 @@ class MyLoansViewModel @Inject constructor(
     /** دوره‌ی تنفسِ وام (ماه) - رجوع کن به [LoanRepository.getGraceMonths]. */
     fun getLoanGraceMonths(loan: LoanEntity): Int = loanRepository.getGraceMonths(loan)
 
+    /** سررسیدِ اولین قسطِ پرداخت‌نشده - برای مرتب‌سازیِ «نزدیک‌ترین سررسید»، رجوع کن به
+     * [LoanRepository.getNextDueDate]. */
+    fun getLoanNextDueDate(loan: LoanEntity): PersianDate? = loanRepository.getNextDueDate(loan)
+
+    /** ترتیبِ دلخواهِ کاربر (کشیدن‌ورهاکردن) - رجوع کن به [LoanRepository.getSortOrder]. */
+    fun getLoanSortOrder(loan: LoanEntity): Long? = loanRepository.getSortOrder(loan)
+
+    /** بعدِ رهاکردنِ کارتِ یه وامِ کشیده‌شده - رجوع کن به [LoanRepository.reorderLoans]. */
+    fun reorderLoans(orderedLoans: List<LoanEntity>) {
+        viewModelScope.launch {
+            loanRepository.reorderLoans(orderedLoans)
+            syncIfLoggedIn()
+        }
+    }
+
     /** یادداشتِ آزادِ وام - رجوع کن به [LoanRepository.getNotes]/[LoanRepository.updateNotes]. */
     fun getLoanNotes(loan: LoanEntity): String = loanRepository.getNotes(loan)
 
@@ -175,7 +190,7 @@ class MyLoansViewModel @Inject constructor(
     /** پورت saveLoan تو www/index.html - نتیجه‌ی محاسبه‌ی تب «وام بانکی» رو تو «وام‌های من» ذخیره
      * می‌کنه (با نگه‌داشتن ردیف‌های واقعیِ محاسبه‌شده). محدودیتِ «۱ وام رایگان» باید قبلِ صدا زدن
      * این، سمتِ UI چک بشه (مثل onAddLoanClick تو MyLoansScreen). */
-    fun saveComputedLoan(outcome: BankLoanOutcome, onSaved: () -> Unit) {
+    fun saveComputedLoan(outcome: BankLoanOutcome, paidCount: Int = 0, onSaved: () -> Unit) {
         viewModelScope.launch {
             val r = outcome.result
             val loanName = outcome.borrower.takeIf { it != "—" && it.isNotBlank() } ?: outcome.bankName
@@ -194,6 +209,7 @@ class MyLoansViewModel @Inject constructor(
                 startDate = mapOf("y" to outcome.startDate.y, "m" to outcome.startDate.m, "d" to outcome.startDate.d),
                 intervalDays = r.intervalDays,
                 rows = r.rows.map { it.month to it.installment },
+                paidCount = paidCount,
             )
             syncIfLoggedIn()
             onSaved()
@@ -270,6 +286,26 @@ class MyLoansViewModel @Inject constructor(
             loanRepository.setRowPaidLate(
                 loan,
                 m,
+                mapOf("y" to paidDate.y, "m" to paidDate.m, "d" to paidDate.d),
+            )
+            syncIfLoggedIn()
+        }
+    }
+
+    /** پرداختِ گروهیِ چندتا قسطِ پرداخت‌نشده به‌موقع - رجوع کن به [LoanRepository.setRowsPaidOnTime]. */
+    fun setRowsPaidOnTime(loan: LoanEntity, ms: List<Int>) {
+        viewModelScope.launch {
+            loanRepository.setRowsPaidOnTime(loan, ms)
+            syncIfLoggedIn()
+        }
+    }
+
+    /** پرداختِ گروهیِ چندتا قسط با تاخیر - رجوع کن به [LoanRepository.setRowsPaidLate]. */
+    fun setRowsPaidLate(loan: LoanEntity, ms: List<Int>, paidDate: PersianDate) {
+        viewModelScope.launch {
+            loanRepository.setRowsPaidLate(
+                loan,
+                ms,
                 mapOf("y" to paidDate.y, "m" to paidDate.m, "d" to paidDate.d),
             )
             syncIfLoggedIn()

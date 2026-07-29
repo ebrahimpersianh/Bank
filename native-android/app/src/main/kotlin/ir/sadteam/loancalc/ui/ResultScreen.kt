@@ -23,10 +23,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,11 +46,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.LoanMethod
 import ir.sadteam.loancalc.core.PersianCalendar
+import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.ordinalFa
@@ -60,6 +64,7 @@ import ir.sadteam.loancalc.ui.components.StaggerIn
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.LottieSpinner
+import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
 import ir.sadteam.loancalc.ui.myloans.MyLoansViewModel
@@ -163,6 +168,9 @@ fun ResultScreen(
     // توش هست)، دکمه هنوز دیده می‌شد و قابلِ تپِ دوباره بود - با تاخیرِ شبکه، چندبار زدن می‌تونست
     // چندتا وامِ تکراری بسازه.
     var saving by remember { mutableStateOf(false) }
+    // برای وامی که تازه واقعاً وجود داره و کاربر داره از رو محاسبه‌گر واردش می‌کنه (نه یه وامِ
+    // کاملاً جدید) - هم‌الگو با فیلدِ «تعداد اقساط پرداخت‌شده» تو فرمِ افزودنِ وامِ دستی.
+    var paidCountText by remember { mutableStateOf("") }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -240,14 +248,31 @@ fun ResultScreen(
                 )
             }
             if (!saved) {
+                AppCard(label = "تعداد اقساط پرداخت‌شده (اختیاری)", modifier = Modifier.padding(bottom = 10.dp)) {
+                    Text(
+                        "اگه این وام از قبل هست و چندتا قسطش رو پرداخت کردی، اینجا بنویس",
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                    OutlinedTextField(
+                        value = paidCountText,
+                        onValueChange = { paidCountText = cleanNum(it) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = appFieldColors(),
+                    )
+                }
                 GradientButton(
                     enabled = !saving,
                     onClick = {
                         if (saving) return@GradientButton
+                        val paidCount = (paidCountText.toIntOrNull() ?: 0).coerceIn(0, outcome.n)
                         when {
                             canSaveAnotherLoan -> {
                                 saving = true
-                                myLoansViewModel.saveComputedLoan(outcome) {
+                                myLoansViewModel.saveComputedLoan(outcome, paidCount) {
                                     saving = false
                                     saved = true
                                     saveMessage = null
