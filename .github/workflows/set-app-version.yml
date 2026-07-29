@@ -1,0 +1,46 @@
+name: ثبتِ نسخه‌ی جدید تو جدولِ app_version (بعدِ تاییدِ استور)
+
+# اجرای دستی، بعدِ اینکه یه نسخه‌ی جدید رو کافه‌بازار/مایکت واقعاً تایید/منتشر شد - رجوع کن به
+# کامنتِ بالای AppVersionRoutes.kt. عددِ versionCodeِ همون بیلدی که تایید شده رو به‌عنوانِ ورودی
+# می‌گیره و مستقیم رو دیتابیسِ VPS آپدیت می‌کنه؛ جایگزینِ زدنِ دستیِ دستورِ sqlite3.
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: "versionCode بیلدی که تازه تو استور(ها) تایید شده (مثلاً 332)"
+        required: true
+        type: number
+
+jobs:
+  set-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: چک کردنِ وجودِ سکرت‌های VPS
+        run: |
+          missing=""
+          [ -z "${{ secrets.VPS_HOST }}" ] && missing="$missing VPS_HOST"
+          [ -z "${{ secrets.VPS_USER }}" ] && missing="$missing VPS_USER"
+          [ -z "${{ secrets.VPS_SSH_KEY }}" ] && missing="$missing VPS_SSH_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::این سکرت‌ها ست نشدن:$missing"
+            exit 1
+          fi
+
+      - name: آپدیتِ latest_version_code رو دیتابیسِ VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: VERSION_CODE
+          script: |
+            set -e
+            sqlite3 ~/VameMan/data.sqlite \
+              "UPDATE app_version SET latest_version_code = ${VERSION_CODE},
+               cafebazaar_url = 'https://cafebazaar.ir/app/ir.sadteam.loancalc',
+               myket_url = 'https://myket.ir/app/ir.sadteam.loancalc',
+               updated_at = datetime('now') WHERE id = 1;"
+            echo "--- ردیفِ جدید ---"
+            sqlite3 ~/VameMan/data.sqlite "SELECT * FROM app_version WHERE id = 1;"
+        env:
+          VERSION_CODE: ${{ github.event.inputs.version_code }}
