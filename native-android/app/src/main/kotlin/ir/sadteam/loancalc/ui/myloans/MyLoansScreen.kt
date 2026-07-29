@@ -27,6 +27,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Info
@@ -124,6 +126,11 @@ private fun List<LoanEntity>.sortedByOption(option: LoanSortOption): List<LoanEn
     LoanSortOption.PROGRESS_DESC -> sortedByDescending { if (it.n > 0) it.paidCount.toDouble() / it.n else 0.0 }
 }
 
+/** وامی که همه‌ی اقساطش پرداخت شده - رجوع کن به بخشِ «وام‌های تسویه‌شده» تو MyLoansScreen. عمداً از
+ * رو paidCount/n مشتق می‌شه (نه یه ستونِ جداگانه تو دیتابیس)؛ همون منطقی که سکه‌بارونِ
+ * LoanDetailScreen (wasFullyPaid) هم استفاده می‌کنه. */
+private fun isLoanSettled(loan: LoanEntity) = loan.n > 0 && loan.paidCount >= loan.n
+
 /**
  * مرکزِ یه کارت رو به [TransformOrigin] (کسرِ ۰..۱ از کلِ ظرف) تبدیل می‌کنه - ورودیِ لازمِ
  * `scaleIn/scaleOut` تا صفحه‌ی جزئیات از روی همون کارت باز بشه، نه از وسطِ صفحه.
@@ -177,6 +184,12 @@ fun MyLoansScreen(
     val rawLoans by viewModel.loans.collectAsState()
     var sortOption by remember { mutableStateOf(LoanSortOption.NEWEST) }
     val loans = remember(rawLoans, sortOption) { rawLoans.sortedByOption(sortOption) }
+    // «وام‌های تسویه‌شده»: هم‌الگو با showArchived تو ChequeScreen - وامی که تسویه شده (isLoanSettled)
+    // خودکار از لیستِ فعال بیرون میره، پشتِ همین تاگل نمایش داده می‌شه. لیستِ اصلی (loans، برای
+    // openedLoan/editingLoan/canSaveAnotherLoan/DashboardSummary) عمداً فیلتر نمی‌شه - فقط لیستِ
+    // نمایشیِ پایینِ صفحه (visibleLoans).
+    var showSettled by remember { mutableStateOf(false) }
+    val visibleLoans = remember(loans, showSettled) { loans.filter { isLoanSettled(it) == showSettled } }
     val incomes by viewModel.incomes.collectAsState()
     val gateState by authViewModel.gateState.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
@@ -339,10 +352,26 @@ fun MyLoansScreen(
                         )
                     }
 
+                    val settledCount = remember(loans) { loans.count { isLoanSettled(it) } }
                     if (loans.isNotEmpty()) {
                         item {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                LoanSortMenu(selected = sortOption, onSelect = { sortOption = it })
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                if (settledCount > 0) {
+                                    SettledLoansToggle(
+                                        showSettled = showSettled,
+                                        settledCount = settledCount,
+                                        onToggle = { showSettled = !showSettled },
+                                    )
+                                } else {
+                                    Box {}
+                                }
+                                if (!showSettled && loans.isNotEmpty()) {
+                                    LoanSortMenu(selected = sortOption, onSelect = { sortOption = it })
+                                }
                             }
                         }
                     }
@@ -371,19 +400,28 @@ fun MyLoansScreen(
                         }
                     }
 
-                    if (loans.isEmpty()) {
+                    if (visibleLoans.isEmpty()) {
                         item {
-                            EmptyState(
-                                icon = Icons.Outlined.AccountBalanceWallet,
-                                title = "هنوز وامی ذخیره نشده",
-                                description = "وام‌هات رو اینجا نگه دار تا سررسیدِ هر قسط، " +
-                                    "مبلغِ باقی‌مونده و پیشرفتِ پرداختت همیشه جلوی چشمت باشه.",
-                                actionLabel = "افزودن وام",
-                                onAction = { onAddLoanClick() },
-                            )
+                            if (showSettled) {
+                                EmptyState(
+                                    icon = Icons.Filled.CheckCircle,
+                                    title = "هنوز وامی تسویه نشده",
+                                    description = "وقتی آخرین قسطِ یه وام رو پرداخت کنی، " +
+                                        "خودکار میاد همین‌جا.",
+                                )
+                            } else {
+                                EmptyState(
+                                    icon = Icons.Outlined.AccountBalanceWallet,
+                                    title = "هنوز وامی ذخیره نشده",
+                                    description = "وام‌هات رو اینجا نگه دار تا سررسیدِ هر قسط، " +
+                                        "مبلغِ باقی‌مونده و پیشرفتِ پرداختت همیشه جلوی چشمت باشه.",
+                                    actionLabel = "افزودن وام",
+                                    onAction = { onAddLoanClick() },
+                                )
+                            }
                         }
                     } else {
-                        items(loans, key = { it.id }) { loan ->
+                        items(visibleLoans, key = { it.id }) { loan ->
                             // انیمیشنِ فلیپِ کارت (خواسته‌ی «انیمیشن‌های سفارشی») - آیکونِ اطلاعات، کارت رو
                             // مثل یه چکِ فیزیکی می‌چرخونه و خلاصه‌ی پرداخت رو پشتش نشون می‌ده؛ ضربه‌ی اصلیِ
                             // کارت هنوز باز کردنِ جزئیاتِ وامه، این فقط یه لایه‌ی جدا و مستقله.
@@ -735,6 +773,25 @@ private fun DashboardSummary(
 private fun DashboardStatCard(title: String, value: String, valueColor: Color) {
     AppCard(label = title) {
         Text(value, color = valueColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+/** تاگلِ «وام‌های تسویه‌شده» بالای لیستِ وام‌ها - هم‌الگو با دکمه‌ی بایگانیِ ChequeScreen. وقتی رو
+ * لیستِ فعاله دکمه‌ی ورود به تسویه‌شده‌ها رو نشون می‌ده (با تعدادشون)؛ وقتی رو تسویه‌شده‌هاست، برعکس. */
+@Composable
+private fun SettledLoansToggle(showSettled: Boolean, settledCount: Int, onToggle: () -> Unit) {
+    TextButton(onClick = onToggle) {
+        Icon(
+            if (showSettled) Icons.Filled.ArrowForward else Icons.Filled.CheckCircle,
+            contentDescription = null,
+            tint = AppPrimary,
+            modifier = Modifier.padding(end = 4.dp),
+        )
+        Text(
+            if (showSettled) "بازگشت به وام‌های فعال" else "وام‌های تسویه‌شده (${toFa(settledCount)})",
+            color = AppPrimary,
+            fontSize = 13.sp,
+        )
     }
 }
 
