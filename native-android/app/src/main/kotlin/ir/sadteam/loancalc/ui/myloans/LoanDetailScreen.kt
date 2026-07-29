@@ -83,7 +83,9 @@ import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.CoinCelebration
+import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
 import ir.sadteam.loancalc.ui.components.ReminderOverrideCard
@@ -644,6 +646,52 @@ fun LoanDetailScreen(
             onRemove = { viewModel.removeLoanPhoto(loan) },
             modifier = Modifier.padding(horizontal = 14.dp),
         )
+
+        // یادداشتِ آزادِ وام (خواسته‌ی کاربر: جایی برای نوشتنِ شماره‌حساب/شماره‌کارت و مواردِ مشابه).
+        // isDirty به‌جای مقایسه با یه «آخرین مقدارِ ذخیره‌شده»ی جدا نگه داشته می‌شه - چون بعدِ ذخیره،
+        // خودِ loan (پارامترِ این کامپوزیبل) با یه تاخیر از رو Room/Flow آپدیت می‌شه، مقایسه‌ی مستقیم
+        // می‌تونست دکمه‌ی ذخیره رو حتی بعدِ ذخیره‌ی موفق هنوز نمایان نگه داره.
+        run {
+            var noteText by remember(loan.id) { mutableStateOf(viewModel.getLoanNotes(loan)) }
+            var noteDirty by remember(loan.id) { mutableStateOf(false) }
+            AppCard(label = "یادداشت", modifier = Modifier.padding(horizontal = 14.dp)) {
+                Text(
+                    "مثلاً شماره حساب یا شماره کارتِ مربوط به این وام",
+                    color = AppMuted,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 8.dp)) {
+                    listOf("شماره حساب", "شماره کارت", "شماره پیگیری", "توضیحات").forEach { preset ->
+                        AppChip(
+                            label = preset,
+                            selected = false,
+                            onClick = {
+                                noteText = if (noteText.isBlank()) "$preset: " else "$noteText\n$preset: "
+                                noteDirty = true
+                            },
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = noteText,
+                    onValueChange = { noteText = it; noteDirty = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                )
+                if (noteDirty) {
+                    GradientButton(
+                        onClick = {
+                            viewModel.updateLoanNotes(loan, noteText)
+                            noteDirty = false
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    ) {
+                        Text("ذخیره یادداشت")
+                    }
+                }
+            }
+        }
 
         // هر قسط یه باکس مینیمالِ گوشه‌گرد با حاشیه‌ی سبزه (خواسته‌ی کاربر). وضعیت پرداخت:
         // به‌موقع=سبز «پرداخت شد»، با تأخیر=قرمز «با تأخیر»، پرداخت‌نشده=مشکی «پرداخت نشده».

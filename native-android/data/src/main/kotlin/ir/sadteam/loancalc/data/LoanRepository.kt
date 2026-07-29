@@ -139,6 +139,18 @@ class LoanRepository(
      * (addManualLoan همیشه graceMonths=0 ذخیره می‌کنه)، وامِ محاسبه‌شده هرچی موقعِ محاسبه بوده. */
     fun getGraceMonths(loan: LoanEntity): Int = (parseData(loan)["graceMonths"] as? Number)?.toInt() ?: 0
 
+    /** یادداشتِ آزادِ کاربر رو این وام (مثلاً شماره حساب/کارت) - تو dataJson ذخیره می‌شه، نیازی به
+     * تغییرِ schema نداره. پیش‌فرض رشته‌ی خالی، نه هیچ‌کدومِ وام‌های قدیمی‌تر این کلید رو ندارن. */
+    fun getNotes(loan: LoanEntity): String = (parseData(loan)["notes"] as? String) ?: ""
+
+    /** ذخیره‌ی یادداشتِ وام - رو هر نوع وامی (دستی یا محاسبه‌شده) امنه، چون فقط dataJson رو دست
+     * می‌زنه، نه مبلغ/نرخ/ردیف‌ها. */
+    suspend fun updateNotes(loan: LoanEntity, notes: String) {
+        val data = parseDataMutable(loan)
+        data["notes"] = notes
+        loanDao.upsert(loan.copy(dataJson = gson.toJson(data)))
+    }
+
     /**
      * ویرایشِ مشخصاتِ *غیرمالیِ* هر وامی (دستی یا محاسبه‌شده) - فقط اسم/بانک/وام‌گیرنده/تاریخِ شروع،
      * بدون دست‌زدن به مبلغ/نرخ/تعدادِ اقساط/ردیف‌ها. برخلافِ [updateManualLoan] که مخصوصِ وام‌های

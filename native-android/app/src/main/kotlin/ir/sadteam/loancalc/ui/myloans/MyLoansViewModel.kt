@@ -111,6 +111,17 @@ class MyLoansViewModel @Inject constructor(
     /** دوره‌ی تنفسِ وام (ماه) - رجوع کن به [LoanRepository.getGraceMonths]. */
     fun getLoanGraceMonths(loan: LoanEntity): Int = loanRepository.getGraceMonths(loan)
 
+    /** یادداشتِ آزادِ وام - رجوع کن به [LoanRepository.getNotes]/[LoanRepository.updateNotes]. */
+    fun getLoanNotes(loan: LoanEntity): String = loanRepository.getNotes(loan)
+
+    fun updateLoanNotes(loan: LoanEntity, notes: String, onSaved: () -> Unit = {}) {
+        viewModelScope.launch {
+            loanRepository.updateNotes(loan, notes)
+            syncIfLoggedIn()
+            onSaved()
+        }
+    }
+
     /** ویرایشِ مشخصاتِ *غیرمالیِ* هر نوع وامی (اسم/بانک/وام‌گیرنده/تاریخ) - رجوع کن به
      * [LoanRepository.updateLoanMeta]. */
     fun updateLoanMeta(

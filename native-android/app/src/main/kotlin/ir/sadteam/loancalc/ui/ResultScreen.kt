@@ -23,8 +23,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -82,7 +86,11 @@ private val faMonthNamesResult = listOf(
 )
 
 @Composable
-fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryViewModel = hiltViewModel()) {
+fun ResultScreen(
+    outcome: BankLoanOutcome,
+    onEdit: () -> Unit = {},
+    historyViewModel: CalculationHistoryViewModel = hiltViewModel(),
+) {
     val result = outcome.result
     val privacyMode = LocalPrivacyMode.current
 
@@ -162,12 +170,24 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         item {
-            Text(
-                text = if (outcome.borrower != "—") "وام ${outcome.borrower}" else "نتیجه محاسبه",
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                modifier = Modifier.padding(bottom = 10.dp),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = if (outcome.borrower != "—") "وام ${outcome.borrower}" else "نتیجه محاسبه",
+                    color = AppText,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                )
+                // برگشت به فرم برای اصلاحِ یه فیلدِ اشتباه، بدونِ پاک‌شدنِ بقیه‌ی مقادیر - رجوع کن به
+                // کامنتِ BankLoanTab تو MainActivity.kt (SaveableStateHolder).
+                TextButton(onClick = onEdit) {
+                    Icon(Icons.Filled.Edit, contentDescription = null, tint = AppPrimary, modifier = Modifier.padding(end = 4.dp))
+                    Text("ویرایش", color = AppPrimary, fontSize = 13.sp)
+                }
+            }
         }
 
         item {

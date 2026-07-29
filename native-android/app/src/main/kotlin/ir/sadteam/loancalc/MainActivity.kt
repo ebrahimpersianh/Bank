@@ -76,6 +76,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -843,6 +844,13 @@ private fun AppTourOverlay(
 @Composable
 private fun BankLoanTab() {
     var loanOutcome by remember { mutableStateOf<BankLoanOutcome?>(null) }
+    // نگه‌دارنده‌ی حالتِ ذخیره‌پذیر (SaveableStateHolder): وقتی loanOutcome پر می‌شه، BankLoanScreen
+    // کاملاً از کامپوزیشن بیرون می‌ره (جایگزینِ ResultScreen می‌شه) - remember/rememberSaveableِ
+    // معمولیِ توش با این کار پاک می‌شد (خواسته‌ی کاربر: «اگه اشتباه زده باشم باید از نو بزنم»).
+    // با پیچوندنِ BankLoanScreen تو SaveableStateProvider با یه کلیدِ ثابت، حالتِ rememberSaveableِ
+    // فیلدهاش (مبلغ/نرخ/ماه/تاریخ/بانکِ‌انتخابی) حتی بعدِ بیرون‌رفتن از کامپوزیشن حفظ می‌شه و با
+    // برگشتن (دکمه‌ی «ویرایش» تو ResultScreen) دوباره برمی‌گرده - نه از صفر.
+    val formStateHolder = rememberSaveableStateHolder()
     // اسلاید جهت‌دار فرم→نتیجه (هم‌خانواده‌ی اسلاید تب‌های پایین): نتیجه از چپ میاد تو و فرم به
     // راست می‌ره؛ برگشت به فرم برعکس - به‌جای fade+scale قبلی.
     AnimatedContent(
@@ -860,9 +868,11 @@ private fun BankLoanTab() {
         label = "bankLoanTab",
     ) { outcome ->
         if (outcome == null) {
-            BankLoanScreen(onCalculated = { loanOutcome = it })
+            formStateHolder.SaveableStateProvider("bankLoanForm") {
+                BankLoanScreen(onCalculated = { loanOutcome = it })
+            }
         } else {
-            ResultScreen(outcome = outcome)
+            ResultScreen(outcome = outcome, onEdit = { loanOutcome = null })
         }
     }
 }

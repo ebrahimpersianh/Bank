@@ -103,7 +103,14 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
     // پس‌زمینه (که Compose گاهی state رو از دست می‌ده) دیگه فرمِ نیمه‌پرشده رو پاک نمی‌کنه. انتخابِ
     // بانک (BankEntry، شامل Color) عمداً هنوز remember ساده‌ست چون Saver سفارشی می‌خواد.
     var borrowerName by rememberSaveable { mutableStateOf("") }
-    var selectedBank by remember { mutableStateOf<BankEntry?>(null) }
+    // فقط اسمِ بانک (String، قابلِ‌ذخیره) نگه داشته می‌شه، نه خودِ BankEntry (که Color داره و Saverِ
+    // ساده نداره) - خودِ BankEntry هر بار از رو همین اسم از لیستِ بانک‌ها/خدماتِ اعتباری پیدا می‌شه.
+    // این یعنی انتخابِ بانک هم مثلِ بقیه‌ی فیلدها، موقعِ برگشتن از «نتیجه‌ی محاسبه» (رجوع کن به
+    // BankLoanTab تو MainActivity.kt) از دست نمی‌ره.
+    var selectedBankName by rememberSaveable { mutableStateOf<String?>(null) }
+    val selectedBank = remember(selectedBankName, creditServices) {
+        selectedBankName?.let { n -> banks.firstOrNull { it.name == n } ?: creditServices.firstOrNull { it.name == n } }
+    }
     var selectedPresetKey by rememberSaveable { mutableStateOf<String?>(null) }
 
     var startYear by rememberSaveable { mutableStateOf(1404) }
@@ -237,8 +244,8 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
                         items(banks, key = { it.name }) { b ->
                             BankTile(
                                 bank = b,
-                                selected = selectedBank?.name == b.name,
-                                onClick = { selectedBank = b },
+                                selected = selectedBankName == b.name,
+                                onClick = { selectedBankName = b.name },
                             )
                         }
                     }
@@ -270,9 +277,9 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
                                 BankTile(
                                     modifier = Modifier.animateItem(),
                                     bank = b,
-                                    selected = selectedBank?.name == b.name,
+                                    selected = selectedBankName == b.name,
                                     onClick = {
-                                        selectedBank = b
+                                        selectedBankName = b.name
                                         rateText = trimRate(b.ratePct)
                                         rateSlider = b.ratePct.toFloat()
                                         selectedMonths = b.months
