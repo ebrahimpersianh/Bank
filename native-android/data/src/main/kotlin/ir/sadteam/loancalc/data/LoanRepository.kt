@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.data
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.LoanCalculator
 import ir.sadteam.loancalc.core.LoanMethod
 import ir.sadteam.loancalc.core.PersianCalendar
@@ -412,6 +413,17 @@ class LoanRepository(
         } else {
             PersianCalendar.addDays(base, (m - 1) * intervalDays)
         }
+    }
+
+    /** آیا سررسیدِ اولین قسطِ پرداخت‌نشده از امروز گذشته (بازپرداخت عقب‌افتاده)؟ - برای بجِ هشدارِ
+     * قرمز رو کارتِ وام تو MyLoansScreen. وامِ تسویه‌شده (getNextDueDate == null) هیچ‌وقت عقب‌افتاده
+     * نیست. */
+    fun isOverdue(loan: LoanEntity): Boolean {
+        val next = getNextDueDate(loan) ?: return false
+        val today = JalaliCalendar.today()
+        val nextCode = next.y * 10000 + next.m * 100 + next.d
+        val todayCode = today.y * 10000 + today.m * 100 + today.d
+        return nextCode < todayCode
     }
 
     private fun parseStartDate(data: Map<String, Any?>): PersianDate {

@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -480,7 +481,11 @@ fun MyLoansScreen(
                             // animateItem: اضافه/حذف/جابه‌جایی وام‌ها با انیمیشن نرم (نه پرش یهویی).
                             var cardBounds by remember { mutableStateOf(Rect.Zero) }
                             val isDragging = loan.id == draggingLoanId
+                            // بازپرداختِ عقب‌افتاده: سررسیدِ اولین قسطِ پرداخت‌نشده از امروز گذشته -
+                            // خودِ کارت حاشیه‌ی قرمز می‌گیره + یه بجِ «!» کنارِ اسمِ وام.
+                            val overdue = remember(loan) { viewModel.isLoanOverdue(loan) }
                             AppCard(
+                                borderColor = if (overdue) AppDanger else null,
                                 modifier = Modifier
                                     .zIndex(if (isDragging) 1f else 0f)
                                     .then(if (isDragging) Modifier else Modifier.animateItem())
@@ -548,12 +553,31 @@ fun MyLoansScreen(
                                         // لوگوی بانک سمت راست کارت (لبه‌ی leading در RTL) - از رو اسم بانک.
                                         BankBadge(bankName = loan.bank)
                                         Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                                            Text(loan.name, color = AppText, fontSize = 15.sp)
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(loan.name, color = AppText, fontSize = 15.sp)
+                                                if (overdue) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .padding(start = 6.dp)
+                                                            .size(16.dp)
+                                                            .background(AppDanger, CircleShape),
+                                                        contentAlignment = Alignment.Center,
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Filled.PriorityHigh,
+                                                            contentDescription = "بازپرداخت عقب‌افتاده",
+                                                            tint = Color.White,
+                                                            modifier = Modifier.size(11.dp),
+                                                        )
+                                                    }
+                                                }
+                                            }
                                             Text(loan.bank, color = AppMuted, fontSize = 12.sp)
                                             Text(
-                                                "${loan.paidCount} از ${loan.n} قسط پرداخت‌شده",
-                                                color = AppPrimary,
+                                                if (overdue) "عقب‌افتاده" else "${loan.paidCount} از ${loan.n} قسط پرداخت‌شده",
+                                                color = if (overdue) AppDanger else AppPrimary,
                                                 fontSize = 11.sp,
+                                                fontWeight = if (overdue) FontWeight.Bold else FontWeight.Normal,
                                                 modifier = Modifier.padding(top = 2.dp),
                                             )
                                         }

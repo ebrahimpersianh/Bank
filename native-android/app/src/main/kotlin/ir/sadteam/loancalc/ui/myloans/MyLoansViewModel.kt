@@ -115,6 +115,10 @@ class MyLoansViewModel @Inject constructor(
      * [LoanRepository.getNextDueDate]. */
     fun getLoanNextDueDate(loan: LoanEntity): PersianDate? = loanRepository.getNextDueDate(loan)
 
+    /** آیا بازپرداختِ این وام عقب‌افتاده (سررسیدِ اولین قسطِ پرداخت‌نشده گذشته)؟ - برای بجِ هشدارِ
+     * قرمز رو کارتِ وام، رجوع کن به [LoanRepository.isOverdue]. */
+    fun isLoanOverdue(loan: LoanEntity): Boolean = loanRepository.isOverdue(loan)
+
     /** ترتیبِ دلخواهِ کاربر (کشیدن‌ورهاکردن) - رجوع کن به [LoanRepository.getSortOrder]. */
     fun getLoanSortOrder(loan: LoanEntity): Long? = loanRepository.getSortOrder(loan)
 
