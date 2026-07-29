@@ -69,6 +69,7 @@ import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface2
+import ir.sadteam.loancalc.ui.theme.AppText
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToLong
@@ -181,7 +182,7 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                     MoneyParticleBurst(trigger = result, modifier = Modifier.size(220.dp))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         PrivacyCrossfade(privacyMode) { masked ->
-                            Text(maskIfPrivate(masked, fmt(animatedInstallment)), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text(maskIfPrivate(masked, fmt(animatedInstallment)), color = AppText, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                         Text("قسط ماهانه (ریال)", fontSize = 12.5.sp, color = AppMuted)
                     }
