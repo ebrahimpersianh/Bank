@@ -190,6 +190,7 @@ fun MyLoansScreen(
     // نمایشیِ پایینِ صفحه (visibleLoans).
     var showSettled by remember { mutableStateOf(false) }
     val visibleLoans = remember(loans, showSettled) { loans.filter { isLoanSettled(it) == showSettled } }
+    val settledCount = remember(loans) { loans.count { isLoanSettled(it) } }
     val incomes by viewModel.incomes.collectAsState()
     val gateState by authViewModel.gateState.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
@@ -352,7 +353,6 @@ fun MyLoansScreen(
                         )
                     }
 
-                    val settledCount = remember(loans) { loans.count { isLoanSettled(it) } }
                     if (loans.isNotEmpty()) {
                         item {
                             Row(
