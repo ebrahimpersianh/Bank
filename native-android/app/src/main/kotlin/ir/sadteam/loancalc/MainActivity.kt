@@ -884,7 +884,17 @@ private fun BankLoanTab() {
                 BankLoanScreen(onCalculated = { loanOutcome = it })
             }
         } else {
-            ResultScreen(outcome = outcome, onEdit = { loanOutcome = null })
+            ResultScreen(
+                outcome = outcome,
+                onEdit = { loanOutcome = null },
+                // بعدِ ذخیره‌ی موفقِ وام: برخلافِ onEdit، اینجا حالتِ ذخیره‌شده‌ی فرم (مبلغ/بانک/...)
+                // هم صریحاً پاک می‌شه - وگرنه فرم برای وامِ *بعدی* هنوز اعدادِ وامِ قبلاً ذخیره‌شده رو
+                // نشون می‌داد (باگِ گزارش‌شده‌ی کاربر: «ذخیره که می‌کنم بازم اعداد و بانک هستن»).
+                onNewCalculation = {
+                    formStateHolder.removeState("bankLoanForm")
+                    loanOutcome = null
+                },
+            )
         }
     }
 }

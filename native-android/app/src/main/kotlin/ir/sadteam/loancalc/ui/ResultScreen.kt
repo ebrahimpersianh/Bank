@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -94,6 +95,11 @@ private val faMonthNamesResult = listOf(
 fun ResultScreen(
     outcome: BankLoanOutcome,
     onEdit: () -> Unit = {},
+    // بعدِ ذخیره‌ی موفقِ وام، «ویرایش» دیگه معنی نداره (وام از قبل با همین اطلاعات ذخیره شده) -
+    // این callback به‌جاش صدا زده می‌شه و باید فرم رو کاملاً خالی/ریست کنه (نه فقط نگه‌داشتنِ
+    // مقادیرِ قبلی مثلِ onEdit) تا کاربر بتونه بدونِ باقی‌موندنِ اعداد/بانکِ وامِ قبلی، وامِ بعدی رو
+    // وارد کنه - رجوع کن به BankLoanTab تو MainActivity.kt (formStateHolder.removeState).
+    onNewCalculation: () -> Unit = {},
     historyViewModel: CalculationHistoryViewModel = hiltViewModel(),
 ) {
     val result = outcome.result
@@ -189,11 +195,20 @@ fun ResultScreen(
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                 )
-                // برگشت به فرم برای اصلاحِ یه فیلدِ اشتباه، بدونِ پاک‌شدنِ بقیه‌ی مقادیر - رجوع کن به
-                // کامنتِ BankLoanTab تو MainActivity.kt (SaveableStateHolder).
-                TextButton(onClick = onEdit) {
-                    Icon(Icons.Filled.Edit, contentDescription = null, tint = AppPrimary, modifier = Modifier.padding(end = 4.dp))
-                    Text("ویرایش", color = AppPrimary, fontSize = 13.sp)
+                if (saved) {
+                    // بعدِ ذخیره‌ی موفق، به‌جای «ویرایش» (که مقادیرِ قبلی رو نگه می‌داشت) یه دکمه‌ی
+                    // «محاسبه‌ی جدید» میاد که فرم رو کاملاً خالی می‌کنه.
+                    TextButton(onClick = onNewCalculation) {
+                        Icon(Icons.Filled.Add, contentDescription = null, tint = AppPrimary, modifier = Modifier.padding(end = 4.dp))
+                        Text("محاسبه‌ی جدید", color = AppPrimary, fontSize = 13.sp)
+                    }
+                } else {
+                    // برگشت به فرم برای اصلاحِ یه فیلدِ اشتباه، بدونِ پاک‌شدنِ بقیه‌ی مقادیر - رجوع کن
+                    // به کامنتِ BankLoanTab تو MainActivity.kt (SaveableStateHolder).
+                    TextButton(onClick = onEdit) {
+                        Icon(Icons.Filled.Edit, contentDescription = null, tint = AppPrimary, modifier = Modifier.padding(end = 4.dp))
+                        Text("ویرایش", color = AppPrimary, fontSize = 13.sp)
+                    }
                 }
             }
         }
