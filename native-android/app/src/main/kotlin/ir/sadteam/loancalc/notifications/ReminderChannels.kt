@@ -4,7 +4,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -12,6 +11,8 @@ import android.graphics.Shader
 import android.media.AudioAttributes
 import android.net.Uri
 import android.os.Build
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import ir.sadteam.loancalc.R
 
 /**
@@ -61,11 +62,14 @@ object ReminderChannels {
     // آیکونِ کوچیکِ نوارِ وضعیت (setSmallIcon) طبقِ قانونِ خودِ اندروید همیشه فقط سیلوئتِ تک‌رنگه
     // (سیستم رنگش می‌کنه، لوگوی رنگی روش اثر نداره) - این تغییرناپذیره، بگ نیست. ولی «آیکونِ بزرگ»
     // (setLargeIcon تو خودِ نوتیف، رجوع کن به DueDateReminderWorker/ReminderSettingsScreen) می‌تونه
-    // لوگوی کاملِ رنگیِ اپ رو نشون بده - این همون چیزیه که کاربر بعدِ دیدنِ پیش‌نمایش تاییدِ کرد.
-    // دایره‌ای بریده می‌شه (نه لوگوی مربعیِ گردگوشه‌ی خام) - دقیقاً هم‌شکلِ همون پیش‌نمایشی که تاییدِ
-    // کاربر رو گرفت.
+    // رنگی باشه. به‌جای کراپِ لوگوی کاملِ اپ (که سکه هم توش بود)، از ic_notification_large_color.xml
+    // استفاده می‌شه - دقیقاً هم‌شکلِ آیکونِ کوچیکِ سیاه‌سفید (همون بدنه/صفحه‌نمایش/شبکه‌ی دکمه‌ها)، فقط
+    // رنگی و بدونِ سکه - خواسته‌ی صریحِ کاربر بعدِ چند دورِ پیش‌نمایش، تا بالا/پایینِ نوتیف یه‌دست بشن.
     fun largeIcon(context: Context): Bitmap? = runCatching {
-        val square = BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher)
+        val drawable = ContextCompat.getDrawable(context, R.drawable.ic_notification_large_color)
+            ?: return@runCatching null
+        val size = 192
+        val square = drawable.toBitmap(width = size, height = size, config = Bitmap.Config.ARGB_8888)
         circleCrop(square)
     }.getOrNull()
 

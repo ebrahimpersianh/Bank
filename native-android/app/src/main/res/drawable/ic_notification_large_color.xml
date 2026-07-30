@@ -1,0 +1,66 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="192dp"
+    android:height="192dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- آیکونِ بزرگِ رنگیِ نوتیف (setLargeIcon تو DueDateReminderWorker/ReminderSettingsScreen) -
+         دقیقاً هم‌شکلِ آیکونِ کوچیکِ سیاه‌سفیدِ ic_notification.xml (بدنه + صفحه‌نمایش + شبکه‌ی
+         ۳ستون×۲ردیفِ دکمه‌های مربع)، این‌بار با رنگ‌های خودِ لوگو (طلایی/مشکی/سبزآبی) و بدونِ سکه‌ها -
+         خواسته‌ی صریحِ کاربر بعدِ چند دورِ پیش‌نمایش، تا بالا/پایینِ نوتیف یه‌دست بشن. رو یه دایره‌ی
+         تیره رسم می‌شه چون این drawable قبل از نمایش تو ReminderChannels.largeIcon() دایره‌ای
+         بریده می‌شه (بدونِ این پس‌زمینه، بیرونِ بدنه‌ی گردگوشه تو دایره خالی/شفاف می‌موند). -->
+    <path android:pathData="M12,0 A12,12 0 1 0 12,24 A12,12 0 1 0 12,0 Z" android:fillColor="#0A0F0D" />
+    <path android:pathData="M7.400,1.140 L16.600,1.140 A4.100,4.100 0 0 1 20.700,5.240 L20.700,19.240 A4.100,4.100 0 0 1 16.600,23.340 L7.400,23.340 A4.100,4.100 0 0 1 3.300,19.240 L3.300,5.240 A4.100,4.100 0 0 1 7.400,1.140 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:angle="45"
+                android:startColor="#F6D580"
+                android:centerColor="#D9A63C"
+                android:endColor="#8A6212" />
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#0C1210"
+        android:pathData="M7.400,1.740 L16.600,1.740 A3.500,3.500 0 0 1 20.100,5.240 L20.100,19.240 A3.500,3.500 0 0 1 16.600,22.740 L7.400,22.740 A3.500,3.500 0 0 1 3.900,19.240 L3.900,5.240 A3.500,3.500 0 0 1 7.400,1.740 Z" />
+    <path android:pathData="M6.960,3.350 L17.040,3.350 A1.200,1.200 0 0 1 18.240,4.550 L18.240,6.750 A1.200,1.200 0 0 1 17.040,7.950 L6.960,7.950 A1.200,1.200 0 0 1 5.760,6.750 L5.760,4.550 A1.200,1.200 0 0 1 6.960,3.350 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:angle="45"
+                android:startColor="#4BE0AE"
+                android:endColor="#0E8F6C" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M6.850,11.404 L8.350,11.404 A0.650,0.650 0 0 1 9.000,12.054 L9.000,13.554 A0.650,0.650 0 0 1 8.350,14.204 L6.850,14.204 A0.650,0.650 0 0 1 6.200,13.554 L6.200,12.054 A0.650,0.650 0 0 1 6.850,11.404 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:angle="45" android:startColor="#F6D580" android:centerColor="#D9A63C" android:endColor="#8A6212" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M11.250,11.404 L12.750,11.404 A0.650,0.650 0 0 1 13.400,12.054 L13.400,13.554 A0.650,0.650 0 0 1 12.750,14.204 L11.250,14.204 A0.650,0.650 0 0 1 10.600,13.554 L10.600,12.054 A0.650,0.650 0 0 1 11.250,11.404 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:angle="45" android:startColor="#F6D580" android:centerColor="#D9A63C" android:endColor="#8A6212" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M15.650,11.404 L17.150,11.404 A0.650,0.650 0 0 1 17.800,12.054 L17.800,13.554 A0.650,0.650 0 0 1 17.150,14.204 L15.650,14.204 A0.650,0.650 0 0 1 15.000,13.554 L15.000,12.054 A0.650,0.650 0 0 1 15.650,11.404 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:angle="45" android:startColor="#F6D580" android:centerColor="#D9A63C" android:endColor="#8A6212" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M6.850,16.004 L8.350,16.004 A0.650,0.650 0 0 1 9.000,16.654 L9.000,18.154 A0.650,0.650 0 0 1 8.350,18.804 L6.850,18.804 A0.650,0.650 0 0 1 6.200,18.154 L6.200,16.654 A0.650,0.650 0 0 1 6.850,16.004 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:angle="45" android:startColor="#F6D580" android:centerColor="#D9A63C" android:endColor="#8A6212" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M11.250,16.004 L12.750,16.004 A0.650,0.650 0 0 1 13.400,16.654 L13.400,18.154 A0.650,0.650 0 0 1 12.750,18.804 L11.250,18.804 A0.650,0.650 0 0 1 10.600,18.154 L10.600,16.654 A0.650,0.650 0 0 1 11.250,16.004 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:angle="45" android:startColor="#F6D580" android:centerColor="#D9A63C" android:endColor="#8A6212" />
+        </aapt:attr>
+    </path>
+    <path android:pathData="M15.650,16.004 L17.150,16.004 A0.650,0.650 0 0 1 17.800,16.654 L17.800,18.154 A0.650,0.650 0 0 1 17.150,18.804 L15.650,18.804 A0.650,0.650 0 0 1 15.000,18.154 L15.000,16.654 A0.650,0.650 0 0 1 15.650,16.004 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:angle="45" android:startColor="#F6D580" android:centerColor="#D9A63C" android:endColor="#8A6212" />
+        </aapt:attr>
+    </path>
+</vector>
