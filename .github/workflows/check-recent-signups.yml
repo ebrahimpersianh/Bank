@@ -1,0 +1,57 @@
+name: چکِ آخرین شماره‌هایی که کد گرفتن + چندتاشون اطلاعات ذخیره کردن
+
+# اجرای دستی - ۵۰ تا آخرین درخواستِ کدِ تایید (OTP) رو از دیتابیسِ VPS می‌خونه، مشخص می‌کنه کدوم‌هاشون
+# واقعاً وارد شدن (تو جدولِ users هستن)، و از بینِ اون‌ها چندتاشون واقعاً چیزی (وام/چک/حساب) رو سرور
+# ذخیره/سینک کردن (نه فقط ثبت‌نامِ خالی).
+on:
+  workflow_dispatch:
+
+jobs:
+  check-signups:
+    runs-on: ubuntu-latest
+    steps:
+      - name: چکِ وجودِ سکرت‌های VPS
+        id: check
+        run: |
+          if [ -n "${{ secrets.VPS_HOST }}" ] && [ -n "${{ secrets.VPS_USER }}" ] && [ -n "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::سکرت‌های VPS ست نشدن."
+            exit 1
+          fi
+
+      - name: کوئریِ دیتابیس
+        if: steps.check.outputs.ready == 'true'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            DB=~/VameMan/data.sqlite
+            echo "=== ۵۰ درخواستِ اخیرِ کدِ تایید (شماره + زمان) ==="
+            sqlite3 -header -column "$DB" \
+              "SELECT phone, created_at FROM otps ORDER BY created_at DESC LIMIT 50;"
+            echo ""
+            echo "=== از این ۵۰ تا، کدوم‌ها واقعاً وارد شدن (تو جدولِ users هستن) ==="
+            sqlite3 -header -column "$DB" \
+              "SELECT DISTINCT o.phone, u.created_at AS registered_at
+               FROM (SELECT phone FROM otps ORDER BY created_at DESC LIMIT 50) o
+               JOIN users u ON u.phone = o.phone
+               ORDER BY u.created_at DESC;"
+            echo ""
+            echo "=== تعدادِ کلی: چند شماره‌ی یکتا تو این ۵۰ درخواست، و چندتاشون واقعاً وارد شدن ==="
+            sqlite3 "$DB" \
+              "SELECT
+                 (SELECT COUNT(DISTINCT phone) FROM (SELECT phone FROM otps ORDER BY created_at DESC LIMIT 50)) AS unique_phones,
+                 (SELECT COUNT(DISTINCT o.phone) FROM (SELECT phone FROM otps ORDER BY created_at DESC LIMIT 50) o JOIN users u ON u.phone=o.phone) AS actually_registered;"
+            echo ""
+            echo "=== از کاربرهایی که واقعاً وارد شدن، چندتاشون چیزی (وام/چک/حساب) رو سرور ذخیره کردن ==="
+            sqlite3 "$DB" \
+              "SELECT COUNT(*) AS users_with_saved_data FROM users u WHERE u.phone IN
+                 (SELECT phone FROM otps ORDER BY created_at DESC LIMIT 50)
+               AND (
+                 EXISTS (SELECT 1 FROM loans l WHERE l.user_id = u.id AND l.data IS NOT NULL AND l.data != '[]')
+                 OR EXISTS (SELECT 1 FROM cheques_backup c WHERE c.user_id = u.id AND c.data IS NOT NULL AND c.data != '{}')
+                 OR EXISTS (SELECT 1 FROM accounts_backup a WHERE a.user_id = u.id AND a.data IS NOT NULL AND a.data != '{}')
+               );"
