@@ -251,6 +251,7 @@ private fun sendTestReminderNotification(context: android.content.Context, sound
     val channelId = ReminderChannels.ensure(context, soundUri, vibrate)
     val notification = NotificationCompat.Builder(context, channelId)
         .setSmallIcon(R.drawable.ic_notification)
+        .setLargeIcon(ReminderChannels.largeIcon(context))
         .setContentTitle("یادآوریِ آزمایشی")
         .setContentText("این یه نوتیفِ نمونه‌ست - دقیقاً با همین صدا/ویبره، یادآوریِ واقعیِ سررسید هم میاد")
         .setAutoCancel(true)
