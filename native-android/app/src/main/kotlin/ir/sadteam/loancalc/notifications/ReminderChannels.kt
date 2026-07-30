@@ -5,6 +5,10 @@ import android.app.NotificationManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BitmapShader
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Shader
 import android.media.AudioAttributes
 import android.net.Uri
 import android.os.Build
@@ -57,7 +61,22 @@ object ReminderChannels {
     // آیکونِ کوچیکِ نوارِ وضعیت (setSmallIcon) طبقِ قانونِ خودِ اندروید همیشه فقط سیلوئتِ تک‌رنگه
     // (سیستم رنگش می‌کنه، لوگوی رنگی روش اثر نداره) - این تغییرناپذیره، بگ نیست. ولی «آیکونِ بزرگ»
     // (setLargeIcon تو خودِ نوتیف، رجوع کن به DueDateReminderWorker/ReminderSettingsScreen) می‌تونه
-    // لوگوی کاملِ رنگیِ اپ رو نشون بده - این همون چیزیه که خواسته‌ی کاربر بود.
-    fun largeIcon(context: Context): Bitmap? =
-        runCatching { BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher) }.getOrNull()
+    // لوگوی کاملِ رنگیِ اپ رو نشون بده - این همون چیزیه که کاربر بعدِ دیدنِ پیش‌نمایش تاییدِ کرد.
+    // دایره‌ای بریده می‌شه (نه لوگوی مربعیِ گردگوشه‌ی خام) - دقیقاً هم‌شکلِ همون پیش‌نمایشی که تاییدِ
+    // کاربر رو گرفت.
+    fun largeIcon(context: Context): Bitmap? = runCatching {
+        val square = BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher)
+        circleCrop(square)
+    }.getOrNull()
+
+    private fun circleCrop(source: Bitmap): Bitmap {
+        val size = minOf(source.width, source.height)
+        val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = BitmapShader(source, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        }
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
+        return output
+    }
 }
