@@ -58,6 +58,19 @@ class SubscriptionManager(private val activity: ComponentActivity) {
         connected = false
     }
 
+    /** بازیابیِ خریدهای «مالکیت‌شده ولی هنوز سمتِ سرور تاییدنشده» - برای کاربرهایی که قبل از رفعِ
+     * باگِ [handleActivityResult] خرید کردن: پولشون از مایکت کم شده و خریدشون هنوز رو حسابشون
+     * (مصرف‌نشده) مونده، فقط callbackِ purchase() هیچ‌وقت اجرا نشده بود که به سرور خبر بده. هر بار
+     * اپ باز/متصل می‌شه (نه فقط موقعِ زدنِ دکمه‌ی خرید)، این تابع از [queryInventoryAsync]ی همون
+     * connect() چک می‌کنه چه SKUهایی رو کاربر واقعاً مالکه، و توکن‌شون رو برمی‌گردونه تا صفحه‌ی
+     * اشتراک بی‌صدا دوباره به سرور بفرستشون - بدونِ نیازِ خریدِ دوباره یا تماس با پشتیبانی. */
+    fun restorePurchases(): List<Pair<String, String>> {
+        val inventory = latestInventory ?: return emptyList()
+        return subscriptionTiers.mapNotNull { (productId, _) ->
+            inventory.getPurchase(productId)?.let { productId to it.token }
+        }
+    }
+
     fun getPrices(
         productIds: List<String>,
         onResult: (Map<String, String>) -> Unit,

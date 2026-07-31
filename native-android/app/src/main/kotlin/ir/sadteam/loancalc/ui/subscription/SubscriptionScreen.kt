@@ -68,6 +68,21 @@ fun SubscriptionScreen(
         )
     }
 
+    // بازیابیِ خودکارِ خریدهایی که پول‌شون گرفته شده ولی (به‌خاطرِ باگِ قبلیِ فلیورِ myket، رجوع کن
+    // به SubscriptionManager.handleActivityResult) هیچ‌وقت به سرور اعلام نشدن - کاربر مجبور نیست
+    // دوباره پول بده یا با پشتیبانی تماس بگیره، فقط با بازکردنِ همین صفحه خودش حل می‌شه.
+    LaunchedEffect(subscriptionManager, gateState) {
+        if (gateState != GateState.LOGGED_IN) return@LaunchedEffect
+        subscriptionManager?.restorePurchases()?.forEach { (productId, purchaseToken) ->
+            authViewModel.verifySubscriptionPurchase(
+                productId = productId,
+                purchaseToken = purchaseToken,
+                onSuccess = { onSubscribed() },
+                onError = { },
+            )
+        }
+    }
+
     LazyColumn(modifier = Modifier.fillMaxWidth()) {
         item {
             Row(
