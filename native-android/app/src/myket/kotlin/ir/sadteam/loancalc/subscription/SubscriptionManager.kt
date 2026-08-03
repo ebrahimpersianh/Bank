@@ -117,19 +117,14 @@ class SubscriptionManager(private val activity: ComponentActivity) {
         )
     }
 
-    /** باگِ جدیِ رفع‌شده (گزارشِ بازبینِ مایکت رو نسخه‌ی ۳۴۸: «پرداخت موفق، ولی بعدِ برگشت به اپ
-     * محصول فعال نمی‌شه»): این متد قبلاً کاملاً خالی بود، با این توجیهِ اشتباه که IabHelperِ مایکت
-     * (پورتِ خودشون از الگوی کلاسیکِ Google IAB v3) نتیجه‌ی خرید رو خودش داخلی مدیریت می‌کنه. ولی
-     * دقیقاً برعکس - این الگوی کلاسیک (مثلِ IabHelperِ اصلیِ گوگل که TrivialDrive/بقیه‌ی
-     * سمپل‌های قدیمی ازش استفاده می‌کردن) *نیاز داره* اکتیویتیِ میزبان نتیجه‌ی onActivityResultِ
-     * خام رو صریحاً به helper.handleActivityResult پاس بده تا اون بتونه Intentِ برگشتی رو پارس کنه
-     * و listenerِ launchPurchaseFlow رو صدا بزنه. بدونِ این پاس‌دادن، بعدِ یه خریدِ *واقعاً موفق*
-     * (پول از کاربر کم می‌شه)، callbackِ purchase() هیچ‌وقت اجرا نمی‌شه - نه onSucceed نه onFailed -
-     * پس درخواستِ تاییدِ سمتِ سرور (verifySubscriptionPurchase) هم هیچ‌وقت فرستاده نمی‌شه و اشتراک
-     * فعال نمی‌مونه؛ دقیقاً هم‌راستا با علامتِ گزارش‌شده. */
-    fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        helper.handleActivityResult(requestCode, resultCode, data)
-    }
+    /** ⚠️ اصلاحیه: نسخه‌ی قبلیِ همین کامنت (که می‌گفت باید helper.handleActivityResult صدا زده بشه)
+     * اشتباه بود و اصلاً کامپایل نمی‌شد - IabHelperِ مایکت (برخلافِ IabHelperِ کلاسیکِ خودِ گوگل)
+     * چنین متدی رو عمومی نداره (تاییدشده از رو سورسِ واقعیِ myketstore/myket-billing-client،
+     * فایلِ IabHelper.java). launchPurchaseFlow داخلی به یه iabConnection (ServiceIAB یا
+     * BroadcastIAB) پاس داده می‌شه که ظاهراً خودش نتیجه رو می‌گیره، نه از مسیرِ onActivityResultِ
+     * اکتیویتی - یعنی این متدِ no-op از اول درست بود. ریشه‌ی واقعیِ گزارشِ بازبینِ مایکت («پرداخت
+     * موفق، محصول فعال نمی‌شه») هنوز درحالِ بررسیه - رجوع کن به CLAUDE.md. */
+    fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {}
 }
 
 /** null یعنی هنوز وصل نشده/در دسترس نیست (مثلاً مایکت رو گوشی نصب نیست) - صفحه‌ی اشتراک باید این
