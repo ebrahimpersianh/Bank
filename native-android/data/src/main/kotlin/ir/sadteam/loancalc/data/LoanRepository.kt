@@ -426,6 +426,34 @@ class LoanRepository(
         return nextCode < todayCode
     }
 
+    /** مبلغِ قسطِ همینِ الان (اولین قسطِ پرداخت‌نشده‌ی این وام، بر اساسِ ردیفِ واقعی نه
+     * loan.installmentِ کهنه) - برای مورد ۱۴/۳۵: بعدِ ویرایشِ تکیِ یه قسط، loan.installment دیگه
+     * نماینده‌ی «همه‌ی اقساط» نیست (رجوع کن به همون منطقِ displayInstallment تو LoanDetailScreen،
+     * اینجا فقط تعمیمِ همون برای مصرفِ داشبورد/جای دیگه‌ست). اگه وام تسویه شده صفر برمی‌گردونه. */
+    suspend fun currentInstallmentAmount(loan: LoanEntity): Double {
+        val firstUnpaid = getRows(loan).firstOrNull { it["paid"] != true } ?: return 0.0
+        return (firstUnpaid["installment"] as? Number)?.toDouble() ?: 0.0
+    }
+
+    /** جمعِ مبلغِ همه‌ی اقساطِ پرداخت‌نشده‌ای که سررسیدشون از امروز گذشته - برای مورد ۱۹ («جمعِ
+     * اقساطِ معوق» تو داشبورد). برخلافِ [isOverdue] (که فقط بولین/اولین قسطِ پرداخت‌نشده رو چک
+     * می‌کنه)، این همه‌ی ردیف‌های واقعاً معوق رو (اگه کاربر چندین ماهه پرداخت نکرده) با مبلغِ
+     * واقعیِ خودِ همون ردیف (نه loan.installmentِ کهنه) جمع می‌زنه - برای همین به [getRows] که
+     * suspendه نیاز داره. */
+    suspend fun overdueInstallmentsTotal(loan: LoanEntity): Double {
+        val today = JalaliCalendar.today()
+        val todayCode = today.y * 10000 + today.m * 100 + today.d
+        return getRows(loan).sumOf { row ->
+            if (row["paid"] == true) return@sumOf 0.0
+            val due = row["dueDate"] as? Map<*, *> ?: return@sumOf 0.0
+            val y = (due["y"] as? Number)?.toInt() ?: return@sumOf 0.0
+            val mo = (due["m"] as? Number)?.toInt() ?: return@sumOf 0.0
+            val d = (due["d"] as? Number)?.toInt() ?: return@sumOf 0.0
+            val dueCode = y * 10000 + mo * 100 + d
+            if (dueCode < todayCode) (row["installment"] as? Number)?.toDouble() ?: 0.0 else 0.0
+        }
+    }
+
     private fun parseStartDate(data: Map<String, Any?>): PersianDate {
         val sd = data["startDate"] as? Map<*, *>
         val y = (sd?.get("y") as? Number)?.toInt() ?: 1404

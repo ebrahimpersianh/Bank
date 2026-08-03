@@ -59,6 +59,7 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ChequeEntity
+import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.AppCard
@@ -424,7 +425,8 @@ private fun ChequeCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SwipeToDeleteRow(onDelete = onDelete, modifier = modifier) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    SwipeToDeleteRow(onDelete = { showDeleteConfirm = true }, confirmDismiss = false, modifier = modifier) {
     AppCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -452,6 +454,14 @@ private fun ChequeCard(
             }
         }
     }
+    }
+    if (showDeleteConfirm) {
+        ConfirmDeleteDialog(
+            title = "حذف چک",
+            text = "چکِ شماره‌ی «${toFa(cheque.chequeNumber)}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+            onConfirm = onDelete,
+            onDismiss = { showDeleteConfirm = false },
+        )
     }
 }
 

@@ -117,8 +117,10 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                         onValueChange = { raw ->
                             val filtered = cleanNumDecimal(raw)
                             rateText = filtered
+                            // اسلایدر فقط تا ۵۰ می‌ره، ولی خودِ فیلد بالاتر از ۵۰ رو هم دستی قبول
+                            // می‌کنه (خواسته‌ی صریحِ کاربر) - رجوع کن به مورد ۱ تو CLAUDE.md.
                             val num = filtered.toDoubleOrNull()
-                            if (num != null && num in 0.0..35.0) rateSlider = num.toFloat()
+                            if (num != null && num in 0.0..50.0) rateSlider = num.toFloat()
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.fillMaxWidth(),
@@ -128,8 +130,13 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                     )
                     SlimSlider(
                         value = rateSlider,
-                        onValueChange = { v -> rateSlider = v; rateText = if (v == v.toLong().toFloat()) v.toLong().toString() else v.toString() },
-                        valueRange = 0f..35f,
+                        onValueChange = { v ->
+                            rateSlider = v
+                            // نمایشِ حداکثر دو رقمِ اعشار - رجوع کن به BankLoanScreen.trimRate.
+                            rateText = if (v == v.toLong().toFloat()) v.toLong().toString() else "%.2f".format(v)
+                        },
+                        valueRange = 0f..50f,
+                        steps = 99,
                     )
                 }
             }

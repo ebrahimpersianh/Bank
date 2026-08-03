@@ -6,8 +6,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -29,6 +34,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -87,9 +93,12 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.LoanEntity
+import ir.sadteam.loancalc.data.banks
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.BankTile
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.CoinCelebration
+import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
@@ -266,6 +275,7 @@ fun LoanDetailScreen(
     // نیازمندِ اجرای دوباره‌ی فرمولِ کاملِ LoanCalculator و بازسازیِ کاملِ ردیف‌هاست، که اگه قبلاً
     // پرداختی ثبت شده باشه، تاریخچه‌ش گم می‌شه.
     var showEditMetaDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
     var editMetaName by remember { mutableStateOf("") }
     var editMetaBank by remember { mutableStateOf("") }
     var editMetaBorrower by remember { mutableStateOf("") }
@@ -299,6 +309,20 @@ fun LoanDetailScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    // انتخابِ لوگو - مورد ۱۷: قبلاً فقط یه فیلدِ متنیِ خام بود، کاربر باید اسمِ بانک
+                    // رو دقیقاً درست تایپ می‌کرد تا لوگوش تو LoanDetailScreen/MyLoansScreen پیدا
+                    // بشه (که با BankBadge از رو تطبیقِ اسم لوگو رو نشون می‌ده). این ردیف همون
+                    // BankTileیِ BankLoanScreen رو استفاده می‌کنه - لمسِ یه لوگو اسمِ دقیقش رو تو
+                    // فیلدِ بالا می‌ذاره؛ فیلد همچنان برای بانک/فروشنده‌ی خارج از لیست دستی باز می‌مونه.
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(banks, key = { it.name }) { b ->
+                            BankTile(
+                                bank = b,
+                                selected = editMetaBank == b.name,
+                                onClick = { editMetaBank = b.name },
+                            )
+                        }
+                    }
                     OutlinedTextField(
                         value = editMetaBorrower,
                         onValueChange = { editMetaBorrower = it },
@@ -306,10 +330,17 @@ fun LoanDetailScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    // این ردیف از قبل قابلِ‌ویرایش بود ولی هیچ لیبلی نداشت (برخلافِ فرمِ وامِ دستی
-                    // که همینو تو یه AppCard با عنوانِ «تاریخ دریافت وام» نشون می‌ده) - خواسته‌ی
-                    // کاربر: این گزینه واضح/قابلِ‌کشف باشه.
-                    Text("تاریخ دریافت وام", fontSize = 13.sp, color = AppMuted)
+                    // برچسب + توضیحِ دینامیک قبلاً دو تیکه‌ی جدا بودن - همون رفعِ مورد ۳ که تو
+                    // BankLoanScreen انجام شد، اینجا هم یکی‌شون کردیم به یه جمله‌ی تمیز.
+                    Text(
+                        if (editMetaGraceMonths > 0) {
+                            "تاریخ دریافت وام (قسطِ اول ${toFa(editMetaGraceMonths)} ماه بعد، به‌خاطرِ دوره‌ی تنفس)"
+                        } else {
+                            "تاریخ دریافت وام (سررسیدِ قسطِ اول)"
+                        },
+                        fontSize = 13.sp,
+                        color = AppMuted,
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         InlineJalaliDateRow(
                             year = editMetaYear,
@@ -319,17 +350,6 @@ fun LoanDetailScreen(
                             modifier = Modifier.weight(1f),
                         )
                     }
-                    // همون توضیحِ دینامیکِ BankLoanScreen - این وام (محاسبه‌شده) ممکنه دوره‌ی تنفس
-                    // داشته باشه، پس این تاریخ همیشه سررسیدِ قسطِ اول نیست.
-                    Text(
-                        if (editMetaGraceMonths > 0) {
-                            "قسطِ اول ${toFa(editMetaGraceMonths)} ماه بعد از این تاریخه (به‌خاطرِ دوره‌ی تنفس)"
-                        } else {
-                            "این تاریخ = سررسیدِ قسطِ اول"
-                        },
-                        fontSize = 11.sp,
-                        color = AppMuted,
-                    )
                     // مبلغ/تعدادِ اقساط فقط وقتی هیچ قسطی پرداخت نشده قابلِ‌ویرایشه - رجوع کن به
                     // کامنتِ بالای canEditComputedAmount. اگه یه قسط پرداخت شده باشه، تغییرشون یعنی
                     // کلِ فرمول دوباره اجرا بشه و تاریخچه‌ی پرداخت گم بشه، برای همین قفله.
@@ -995,13 +1015,21 @@ fun LoanDetailScreen(
                 Text(if (isExportingCalendar) "در حال افزودن..." else "افزودن سررسیدها به تقویم گوشی")
             }
             OutlinedButton(
-                onClick = onDelete,
+                onClick = { showDeleteConfirm = true },
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 24.dp),
             ) {
                 Text("حذف وام")
+            }
+            if (showDeleteConfirm) {
+                ConfirmDeleteDialog(
+                    title = "حذف وام",
+                    text = "وامِ «${loan.name}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+                    onConfirm = onDelete,
+                    onDismiss = { showDeleteConfirm = false },
+                )
             }
         }
         }
@@ -1092,10 +1120,13 @@ private fun InstallmentRow(
         paid -> "پرداخت شد"
         else -> "پرداخت نشده"
     }
+    // مورد ۱۰: بجِ «پرداخت نشده» قبلاً با AppText (رنگِ خنثیِ متنِ معمولی) رنگ می‌شد - دقیقاً حسِ
+    // یه لیبلِ غیرفعال/خاموش می‌داد، نه چیزیِ قابلِ‌لمس. الان با AppPrimary (همون رنگِ اکشنِ اپ)
+    // + یه پالسِ ظریفِ زیرش (پایین‌تر) مشخص می‌شه که این ردیف واقعاً قابلِ‌تپه.
     val statusColor = when {
         paidLate -> AppDanger
         paid -> AppPrimary
-        else -> AppText
+        else -> AppPrimary
     }
     val rowShape = RoundedCornerShape(14.dp)
     // موقعِ پرداختِ گروهی، اقساطِ ازقبل‌پرداخت‌شده اصلاً قابلِ‌انتخاب نیستن (کم‌رنگ‌تر نشون داده
@@ -1129,9 +1160,23 @@ private fun InstallmentRow(
         }
         // وضعیت پرداخت تو یه باکس رنگیِ گوشه‌گرد (بج) - تا از بقیه‌ی متن جدا و واضح دیده بشه
         // (خواسته‌ی کاربر). رنگ پس‌زمینه نسخه‌ی کم‌رنگِ رنگ وضعیته.
+        // مورد ۱۰: فقط موقعِ «پرداخت نشده» یه پالسِ خیلی ظریفِ بزرگ/کوچیک‌شدن اضافه شده - تا کاربر
+        // بفهمه این بج (و کلِ ردیف زیرش) واقعاً قابلِ‌لمسه، نه فقط یه لیبلِ خاموش.
+        val unpaidPulse = rememberInfiniteTransition(label = "unpaidBadgePulse")
+        val pulseScale by if (!paid) {
+            unpaidPulse.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.08f,
+                animationSpec = infiniteRepeatable(tween(700, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+                label = "pulseScale",
+            )
+        } else {
+            remember { mutableStateOf(1f) }
+        }
         Box(
             modifier = Modifier
                 .padding(horizontal = 6.dp)
+                .scale(pulseScale)
                 .background(statusColor.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
                 .padding(horizontal = 8.dp, vertical = 4.dp),
         ) {

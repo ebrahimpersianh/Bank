@@ -8,6 +8,7 @@ import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.AuthRepository
 import ir.sadteam.loancalc.data.AuthResult
 import ir.sadteam.loancalc.data.ChequeRepository
+import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.SyncOutcome
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -32,6 +33,7 @@ class AuthViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
     private val chequeRepository: ChequeRepository,
     private val accountRepository: AccountRepository,
+    private val incomeRepository: IncomeRepository,
 ) : ViewModel() {
     val gateState: StateFlow<GateState?> = combine(authPrefs.authToken, authPrefs.guestMode) { token, guest ->
         val state: GateState? = when {
@@ -112,6 +114,7 @@ class AuthViewModel @Inject constructor(
             loanRepository.clearLocal()
             chequeRepository.clearLocal()
             accountRepository.clearLocal()
+            incomeRepository.clearLocal()
         }
     }
 
@@ -188,6 +191,7 @@ class AuthViewModel @Inject constructor(
                     loanRepository.clearLocal()
                     chequeRepository.clearLocal()
                     accountRepository.clearLocal()
+                    incomeRepository.clearLocal()
                     onSuccess()
                 }
                 is AuthResult.Error -> onError(result.code)

@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material3.ButtonDefaults
@@ -94,6 +95,7 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.BankBadge
+import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
@@ -187,6 +189,11 @@ fun MyLoansScreen(
     // فقط جهتِ اسکرول رو گزارش می‌ده، خودِ نوارِ پایین رو نمی‌بینه (اونجا تو یه کامپوزیبلِ کاملاً
     // دیگه‌ست، رجوع کن به LoanCalcApp).
     onBottomBarVisibilityChanged: (visible: Boolean) -> Unit = {},
+    // زدنِ نوتیفیکیشنِ یادآوریِ قسط باید مستقیم همون وام رو باز کنه (مورد ۵) - رجوع کن به
+    // DeepLinkTarget/DeepLinkViewModel تو MainActivity.kt. غیرِnull یعنی «این وام رو باز کن»؛
+    // بعدِ مصرف [onDeepLinkConsumed] صدا زده می‌شه تا با چرخشِ صفحه/رفرش دوباره تریگر نشه.
+    deepLinkLoanId: Long? = null,
+    onDeepLinkConsumed: () -> Unit = {},
 ) {
     var showAddForm by remember { mutableStateOf(false) }
     var openedLoanId by remember { mutableStateOf<Long?>(null) }
@@ -204,6 +211,14 @@ fun MyLoansScreen(
     val rawLoans by viewModel.loans.collectAsState()
     var sortOption by remember { mutableStateOf(LoanSortOption.NEWEST) }
     val loans = remember(rawLoans, sortOption) { rawLoans.sortedByOption(sortOption, viewModel) }
+    // جمعِ کلِ اقساطِ معوق (مورد ۱۹) - نیازمندِ کوئریِ suspend رو ردیف‌های واقعیِ هر وام، برای همین
+    // با LaunchedEffect جدا از بقیه‌ی مبالغِ سینکرونِ داشبورد حساب می‌شه.
+    var totalOverdue by remember { mutableStateOf(0.0) }
+    LaunchedEffect(loans) { totalOverdue = viewModel.totalOverdueAmount(loans) }
+    // «مجموع اقساط ماهانه» (مورد ۱۴/۳۵) - قبلاً از loan.installmentِ کهنه حساب می‌شد که بعدِ
+    // ویرایشِ تکیِ یه قسط دیگه درست نبود؛ الان از رو مبلغِ واقعیِ قسطِ همینِ الانِ هر وام.
+    var totalMonthlyInstallment by remember { mutableStateOf(0.0) }
+    LaunchedEffect(loans) { totalMonthlyInstallment = viewModel.totalCurrentInstallment(loans) }
     // «وام‌های تسویه‌شده»: هم‌الگو با showArchived تو ChequeScreen - وامی که تسویه شده (isLoanSettled)
     // خودکار از لیستِ فعال بیرون میره، پشتِ همین تاگل نمایش داده می‌شه. لیستِ اصلی (loans، برای
     // openedLoan/editingLoan/canSaveAnotherLoan/DashboardSummary) عمداً فیلتر نمی‌شه - فقط لیستِ
@@ -231,6 +246,29 @@ fun MyLoansScreen(
     val canSaveAnotherLoan = loans.isEmpty() || (gateState == GateState.LOGGED_IN && subscribed)
     val openedLoan = openedLoanId?.let { id -> loans.firstOrNull { it.id == id } }
     val editingLoan = editingLoanId?.let { id -> loans.firstOrNull { it.id == id } }
+    // قفلِ وام‌ها بعدِ اتمامِ دوره‌ی آزمایشی (مورد ۱۱): همون منطقِ canSaveAnotherLoan (فقط کاربرِ
+    // مشترک/تو دوره‌ی آزمایشی می‌تونه بیشتر از یه وام داشته باشه)، ولی برعکس - این‌جا برای وام‌های
+    // *ازقبل‌موجود* (نه محدودیتِ ساختنِ وامِ جدید). قدیمی‌ترین وام (بر اساسِ createdAt) همیشه رایگان/
+    // بازه؛ بقیه اگه subscribed=false شدن (چه اصلاً مشترک نبوده چه دوره‌ی آزمایشیش تموم شده) قفل
+    // می‌شن - نه حذف/پاک، فقط غیرقابلِ‌بازشدن، و به‌محضِ subscribed=true شدن (خریدِ واقعی یا حتی
+    // دوباره واردِ دوره‌ی آزمایشی) خودکار باز می‌شن چون این فقط یه محاسبه‌ی مشتق‌شده‌ست، نه یه
+    // فلگِ ذخیره‌شده.
+    val oldestLoanId = remember(loans) { loans.minByOrNull { it.createdAt }?.id }
+    fun isLoanLocked(loan: LoanEntity): Boolean = !subscribed && loan.id != oldestLoanId
+
+    // زدنِ نوتیفیکیشنِ یادآوریِ قسط (مورد ۵) نباید بتونه یه وامِ قفل‌شده رو دور بزنه - این افکت باید
+    // بعدِ محاسبه‌ی isLoanLocked باشه (اینجا، نه بالای فایل جایی که loans/subscribed هنوز مقداردهی
+    // نشدن).
+    LaunchedEffect(deepLinkLoanId) {
+        val target = deepLinkLoanId ?: return@LaunchedEffect
+        val loan = loans.firstOrNull { it.id == target }
+        if (loan != null && isLoanLocked(loan)) {
+            if (gateState != GateState.LOGGED_IN) showLoginPrompt = true else showSubscriptionScreen = true
+        } else {
+            openedLoanId = target
+        }
+        onDeepLinkConsumed()
+    }
 
     fun onAddLoanClick() {
         when {
@@ -396,6 +434,8 @@ fun MyLoansScreen(
                         DashboardSummary(
                             loans = loans,
                             incomes = incomes,
+                            totalOverdue = totalOverdue,
+                            totalMonthlyInstallment = totalMonthlyInstallment,
                             onAddIncome = { label, amount, type -> viewModel.addIncome(label, amount, type) },
                             onDeleteIncome = { viewModel.deleteIncome(it) },
                         )
@@ -474,6 +514,7 @@ fun MyLoansScreen(
                             // مثل یه چکِ فیزیکی می‌چرخونه و خلاصه‌ی پرداخت رو پشتش نشون می‌ده؛ ضربه‌ی اصلیِ
                             // کارت هنوز باز کردنِ جزئیاتِ وامه، این فقط یه لایه‌ی جدا و مستقله.
                             var flipped by remember { mutableStateOf(false) }
+                            var showDeleteConfirm by remember { mutableStateOf(false) }
                             val density = LocalDensity.current
                             val rotation by animateFloatAsState(
                                 targetValue = if (flipped) 180f else 0f,
@@ -486,8 +527,9 @@ fun MyLoansScreen(
                             // بازپرداختِ عقب‌افتاده: سررسیدِ اولین قسطِ پرداخت‌نشده از امروز گذشته -
                             // خودِ کارت حاشیه‌ی قرمز می‌گیره + یه بجِ «!» کنارِ اسمِ وام.
                             val overdue = remember(loan) { viewModel.isLoanOverdue(loan) }
+                            val isLocked = isLoanLocked(loan)
                             AppCard(
-                                borderColor = if (overdue) AppDanger else null,
+                                borderColor = if (overdue && !isLocked) AppDanger else null,
                                 modifier = Modifier
                                     .zIndex(if (isDragging) 1f else 0f)
                                     .then(if (isDragging) Modifier else Modifier.animateItem())
@@ -536,6 +578,17 @@ fun MyLoansScreen(
                                         )
                                     }
                                     .pressScaleClickable {
+                                        if (isLocked) {
+                                            // نه واردِ جزئیات می‌شه نه چیزی پاک/عوض می‌کنه - فقط
+                                            // مستقیم می‌بره سراغِ خریدِ اشتراک، چون تنها راهِ بازشدنِ
+                                            // این وام همونه.
+                                            if (gateState != GateState.LOGGED_IN) {
+                                                showLoginPrompt = true
+                                            } else {
+                                                showSubscriptionScreen = true
+                                            }
+                                            return@pressScaleClickable
+                                        }
                                         // مرکزِ همین کارت رو به کسرِ ۰..۱ از کلِ صفحه تبدیل می‌کنیم تا
                                         // بزرگ‌شدنِ صفحه‌ی جزئیات دقیقاً از همین‌جا شروع بشه.
                                         heroOrigin = cardBounds.heroOriginIn(listBounds)
@@ -545,6 +598,7 @@ fun MyLoansScreen(
                                         rotationY = rotation
                                         cameraDistance = 12f * density.density
                                         translationY = if (isDragging) dragOffsetY else 0f
+                                        alpha = if (isLocked) 0.55f else 1f
                                     },
                             ) {
                                 if (rotation <= 90f) {
@@ -557,6 +611,17 @@ fun MyLoansScreen(
                                         Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Text(loan.name, color = AppText, fontSize = 15.sp)
+                                                // مورد ۱۱: وامِ قفل‌شده (بعدِ اتمامِ آزمایشی، غیرِ
+                                                // وامِ اولی) - قفل رو مستقیم کنارِ اسم نشون می‌ده تا
+                                                // کاربر بفهمه چرا با تپ چیزی باز نمی‌شه.
+                                                if (isLocked) {
+                                                    Icon(
+                                                        Icons.Filled.Lock,
+                                                        contentDescription = "این وام قفله - برای بازکردنش مشترک شو",
+                                                        tint = AppMuted,
+                                                        modifier = Modifier.padding(start = 6.dp).size(15.dp),
+                                                    )
+                                                }
                                                 if (overdue) {
                                                     Box(
                                                         modifier = Modifier
@@ -601,8 +666,16 @@ fun MyLoansScreen(
                                         IconButton(onClick = { flipped = true }) {
                                             Icon(Icons.Filled.Info, contentDescription = "خلاصه پرداخت", tint = AppMuted)
                                         }
-                                        IconButton(onClick = { viewModel.deleteLoan(loan.id) }) {
+                                        IconButton(onClick = { showDeleteConfirm = true }) {
                                             Icon(Icons.Filled.Delete, contentDescription = "حذف وام", tint = AppDanger)
+                                        }
+                                        if (showDeleteConfirm) {
+                                            ConfirmDeleteDialog(
+                                                title = "حذف وام",
+                                                text = "وامِ «${loan.name}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+                                                onConfirm = { viewModel.deleteLoan(loan.id) },
+                                                onDismiss = { showDeleteConfirm = false },
+                                            )
                                         }
                                     }
                                 } else {
@@ -685,13 +758,17 @@ fun MyLoansScreen(
 private fun DashboardSummary(
     loans: List<LoanEntity>,
     incomes: List<IncomeEntity>,
+    // جمعِ مبلغِ اقساطِ معوق (مورد ۱۹) + مجموعِ اقساطِ ماهانه‌ی واقعی (مورد ۱۴/۳۵) - هردو از بیرون
+    // پاس داده می‌شن چون محاسبه‌شون suspend ئه (رجوع کن به LaunchedEffect(loans) تو MyLoansScreen)؛
+    // totalMonthlyInstallment قبلاً همین‌جا از loan.installmentِ کهنه حساب می‌شد.
+    totalOverdue: Double,
+    totalMonthlyInstallment: Double,
     onAddIncome: (label: String, amount: Double, type: IncomeType) -> Unit,
     onDeleteIncome: (IncomeEntity) -> Unit,
 ) {
     val totalRemainingDebt = remember(loans) {
         loans.sumOf { it.installment * (it.n - it.paidCount) }
     }
-    val totalMonthlyInstallment = remember(loans) { loans.sumOf { it.installment } }
     val totalIncome = remember(incomes) { incomes.sumOf { it.amount } }
     val ratio = if (totalIncome > 0) totalMonthlyInstallment / totalIncome else 0.0
     val statusLabel: String?
@@ -715,6 +792,7 @@ private fun DashboardSummary(
     var label by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
     var type by remember { mutableStateOf(IncomeType.FIXED) }
+    var incomePendingDelete by remember { mutableStateOf<IncomeEntity?>(null) }
 
     // شمارش صعودی اعداد بزرگ داشبورد (پورت animateNumber وب) - حس «پریمیوم» موقع ورود به تب.
     val animatedDebt = countUpDouble(totalRemainingDebt)
@@ -735,6 +813,18 @@ private fun DashboardSummary(
                 value = "${maskIfPrivate(masked, fmt(animatedMonthly))} ریال",
                 valueColor = AppPrimary,
             )
+        }
+        // مورد ۱۹: فقط وقتی واقعاً چیزی معوقه نشون داده می‌شه - وگرنه برای اکثرِ کاربرها (که عقب
+        // نیستن) یه کارتِ همیشگیِ صفرِ بی‌فایده می‌شد.
+        if (totalOverdue > 0) {
+            val animatedOverdue = countUpDouble(totalOverdue)
+            PrivacyCrossfade(privacyMode) { masked ->
+                DashboardStatCard(
+                    title = "اقساط معوق",
+                    value = "${maskIfPrivate(masked, fmt(animatedOverdue))} ریال",
+                    valueColor = AppDanger,
+                )
+            }
         }
 
         // یه پس‌زمینه‌ی سبزِ اختصاصیِ نیمه‌شفاف اینجا امتحان شده بود، ولی رو Surface (که خودش
@@ -768,11 +858,19 @@ private fun DashboardSummary(
                                         modifier = Modifier.padding(end = 6.dp),
                                     )
                                 }
-                                IconButton(onClick = { onDeleteIncome(income) }) {
+                                IconButton(onClick = { incomePendingDelete = income }) {
                                     Icon(Icons.Filled.Delete, contentDescription = "حذف منبع درآمد", tint = AppDanger)
                                 }
                             }
                         }
+                    }
+                    incomePendingDelete?.let { income ->
+                        ConfirmDeleteDialog(
+                            title = "حذف منبع درآمد",
+                            text = "منبعِ درآمدِ «${income.label}» حذف بشه؟",
+                            onConfirm = { onDeleteIncome(income) },
+                            onDismiss = { incomePendingDelete = null },
+                        )
                     }
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(

@@ -34,6 +34,13 @@ class IncomeRepository(private val incomeDao: IncomeDao) {
         incomeDao.delete(income)
     }
 
+    /** پورت پاک‌سازیِ لوکالِ بعد از خروج - رجوع کن به توضیح [ir.sadteam.loancalc.data.LoanRepository.clearLocal].
+     * باگِ رفع‌شده: این جدول (برخلافِ وام/چک/حساب) اصلاً تو AuthViewModel.logout صدا زده نمی‌شد -
+     * منابعِ درآمد رو گوشی بینِ خروج/ورودِ حساب‌های مختلف باقی می‌موند. */
+    suspend fun clearLocal() {
+        incomeDao.clear()
+    }
+
     private fun isoNow(): String {
         val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
         fmt.timeZone = TimeZone.getTimeZone("UTC")

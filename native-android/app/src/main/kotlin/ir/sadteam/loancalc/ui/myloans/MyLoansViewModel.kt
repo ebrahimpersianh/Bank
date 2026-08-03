@@ -119,6 +119,16 @@ class MyLoansViewModel @Inject constructor(
      * قرمز رو کارتِ وام، رجوع کن به [LoanRepository.isOverdue]. */
     fun isLoanOverdue(loan: LoanEntity): Boolean = loanRepository.isOverdue(loan)
 
+    /** جمعِ کلِ اقساطِ معوقِ همه‌ی وام‌ها - برای مورد ۱۹ (خلاصه‌ی داشبورد)، رجوع کن به
+     * [LoanRepository.overdueInstallmentsTotal]. */
+    suspend fun totalOverdueAmount(loans: List<LoanEntity>): Double =
+        loans.sumOf { loanRepository.overdueInstallmentsTotal(it) }
+
+    /** جمعِ مبلغِ قسطِ همینِ الانِ همه‌ی وام‌ها («مجموع اقساط ماهانه» تو داشبورد) - مورد ۱۴/۳۵،
+     * رجوع کن به [LoanRepository.currentInstallmentAmount]. */
+    suspend fun totalCurrentInstallment(loans: List<LoanEntity>): Double =
+        loans.sumOf { loanRepository.currentInstallmentAmount(it) }
+
     /** ترتیبِ دلخواهِ کاربر (کشیدن‌ورهاکردن) - رجوع کن به [LoanRepository.getSortOrder]. */
     fun getLoanSortOrder(loan: LoanEntity): Long? = loanRepository.getSortOrder(loan)
 

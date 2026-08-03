@@ -30,6 +30,11 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
  * `SwipeToDismissBox` خودش جمع‌شدنِ ردیف رو انیمیشن می‌کنه و بلافاصله بعدش خودِ آیتم از لیستِ
  * واقعی (Room) حذف می‌شه، پس نیازی به ریست‌کردنِ دستیِ state نیست؛ کامپوزیبل خودش از کامپوزیشن
  * بیرون می‌ره.
+ *
+ * [confirmDismiss]=false (مثلاً برای چک‌ها، رجوع کن به مورد ۹ تو CLAUDE.md) یعنی [onDelete] فقط
+ * *قصدِ* حذف رو اعلام می‌کنه (مثلاً بازکردنِ یه دیالوگِ تایید) نه خودِ حذفِ واقعی - ردیف خودکار به
+ * جای اولش برمی‌گرده (چون `confirmValueChange` false برمی‌گردونه) و حذفِ واقعی/خروجِ ردیف از
+ * لیست فقط بعد از تاییدِ کاربر، از رو حذف‌شدنِ آیتم از دیتای واقعی اتفاق می‌افته.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +44,7 @@ fun SwipeToDeleteRow(
     // شکلِ پس‌زمینه‌ی قرمز باید هم‌شکلِ خودِ کارتی باشه که این ردیف رو می‌پیچه، وگرنه گوشه‌های
     // تیزِ قرمز از زیرِ کارتِ گردگوشه بیرون می‌زنن.
     shape: Shape = RoundedCornerShape(14.dp),
+    confirmDismiss: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
@@ -46,7 +52,7 @@ fun SwipeToDeleteRow(
             if (value == SwipeToDismissBoxValue.StartToEnd || value == SwipeToDismissBoxValue.EndToStart) {
                 onDelete()
             }
-            true
+            confirmDismiss
         },
     )
     SwipeToDismissBox(

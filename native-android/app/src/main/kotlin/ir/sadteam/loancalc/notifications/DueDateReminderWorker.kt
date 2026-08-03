@@ -1,7 +1,9 @@
 package ir.sadteam.loancalc.notifications
 
 import android.Manifest
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.ActivityCompat
@@ -12,6 +14,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import ir.sadteam.loancalc.MainActivity
 import ir.sadteam.loancalc.R
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
@@ -90,15 +93,29 @@ class DueDateReminderWorker @AssistedInject constructor(
 
     private fun notifyLoan(loan: LoanEntity, m: Int, daysLeft: Int, channelId: String) {
         val whenLabel = dayLabel(daysLeft)
+        val notificationId = "${loan.id}_$m".hashCode()
+        // زدنِ نوتیفیکیشن باید مستقیم همون وام رو باز کنه (مورد ۵ تو CLAUDE.md) - رجوع کن به
+        // DeepLinkTarget/MainActivity.handleDeepLinkIntent. requestCode باید یکتا باشه وگرنه
+        // extras یه PendingIntentِ قدیمی‌تر رو بازنویسی نمی‌کنن.
+        val contentIntent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(EXTRA_OPEN_LOAN_ID, loan.id)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            notificationId,
+            contentIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
         val notification = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
             .setContentTitle("یادآوری قسط ${loan.name}")
             .setContentText("قسط شماره $m وام «${loan.name}» $whenLabel سررسید می‌شه")
+            .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
-        val notificationId = "${loan.id}_$m".hashCode()
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
     }
 

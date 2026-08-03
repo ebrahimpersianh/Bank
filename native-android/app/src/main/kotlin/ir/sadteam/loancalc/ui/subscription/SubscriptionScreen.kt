@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.subscription
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Icon
@@ -24,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.subscriptionTiers
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
@@ -34,7 +37,17 @@ import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
+
+/** درصدِ صرفه‌جویی نسبت به N× قیمتِ پلنِ ۱ماهه (۳۰۰٬۰۰۰/۸۱۰٬۰۰۰/۱٬۴۴۰٬۰۰۰/۲٬۵۲۰٬۰۰۰ ریال) - تاییدشده
+ * تو CLAUDE.md. مورد ۲۱: قبلاً این بجِ تخفیف اصلاً هیچ‌جای این صفحه نبود، الان رو هر سه پلنِ
+ * چندماهه (نه فقط سه‌ماهه) نشون داده می‌شه. */
+private val discountPercentByProductId = mapOf(
+    "unlimited_loans_3m" to 10,
+    "unlimited_loans_6m" to 20,
+    "unlimited_loans_1y" to 30,
+)
 
 /**
  * پورت #subscriptionModal تو www/index.html - ۴ پلن پلکانی، خرید واقعی با SDK بومیِ استور (Poolakey
@@ -126,7 +139,20 @@ fun SubscriptionScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column {
-                            Text(label, color = AppText, fontSize = 14.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(label, color = AppText, fontSize = 14.sp)
+                                discountPercentByProductId[productId]?.let { pct ->
+                                    Text(
+                                        "٪${toFa(pct)} تخفیف",
+                                        color = AppPrimary,
+                                        fontSize = 11.sp,
+                                        modifier = Modifier
+                                            .padding(start = 6.dp)
+                                            .background(AppPrimary.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                                    )
+                                }
+                            }
                             Text(prices[productId] ?: "…", color = AppMuted, fontSize = 12.sp)
                         }
                         GradientButton(

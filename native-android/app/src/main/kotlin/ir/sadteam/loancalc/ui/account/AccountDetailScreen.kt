@@ -47,6 +47,7 @@ import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -85,6 +86,7 @@ fun AccountDetailScreen(
     var txMonth by remember { mutableStateOf(today.m) }
     var txDay by remember { mutableStateOf(today.d) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -122,7 +124,7 @@ fun AccountDetailScreen(
                     Text("ویرایش حساب")
                 }
                 OutlinedButton(
-                    onClick = onDelete,
+                    onClick = { showDeleteConfirm = true },
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
                     modifier = Modifier.weight(1f),
                 ) {
@@ -247,6 +249,14 @@ fun AccountDetailScreen(
                 )
             }
         }
+    }
+    if (showDeleteConfirm) {
+        ConfirmDeleteDialog(
+            title = "حذف حساب",
+            text = "حسابِ «${account.name} - ${account.bankName}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+            onConfirm = onDelete,
+            onDismiss = { showDeleteConfirm = false },
+        )
     }
 }
 

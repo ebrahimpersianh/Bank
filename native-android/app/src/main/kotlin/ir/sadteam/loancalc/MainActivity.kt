@@ -108,6 +108,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
 import androidx.fragment.app.FragmentActivity
 import dagger.hilt.android.AndroidEntryPoint
+import ir.sadteam.loancalc.notifications.DeepLinkTarget
+import ir.sadteam.loancalc.notifications.DeepLinkViewModel
+import ir.sadteam.loancalc.notifications.EXTRA_OPEN_LOAN_ID
 import ir.sadteam.loancalc.ui.AffordScreen
 import ir.sadteam.loancalc.ui.BankLoanOutcome
 import ir.sadteam.loancalc.ui.BankLoanScreen
@@ -132,6 +135,8 @@ import ir.sadteam.loancalc.subscription.SubscriptionManager
 import ir.sadteam.loancalc.ui.myloans.MyLoansScreen
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
+import ir.sadteam.loancalc.ui.rating.RatePromptDialog
+import ir.sadteam.loancalc.ui.rating.RatePromptViewModel
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -146,6 +151,7 @@ import ir.sadteam.loancalc.ui.theme.LoanCalcTheme
 import ir.sadteam.loancalc.ui.theme.ThemeMode
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 import kotlinx.coroutines.delay
+import javax.inject.Inject
 
 // آیکون‌های نوار پایین: حالت عادی outline (مینیمال، مثل نسخه‌ی وب)، تب فعال پُر (filled). آیکونِ
 // «سود سپرده» قبلاً Savings بود که رو گوشی شکل یه خوکِ قلک درمیاد (گزارش کاربر) - با TrendingUp
@@ -236,10 +242,21 @@ class MainActivity : FragmentActivity() {
     // Hilt-managed نیست و اینجا مستقیم ساخته می‌شه.
     private lateinit var subscriptionManager: SubscriptionManager
 
+    // زدنِ نوتیفیکیشنِ یادآوریِ قسط باید مستقیم همون وام رو باز کنه (مورد ۵ تو CLAUDE.md) - رجوع
+    // کن به کامنتِ DeepLinkTarget. این Activityِ ساده‌ست، کامپوزیبل نیست، پس field-injection.
+    @Inject
+    lateinit var deepLinkTarget: DeepLinkTarget
+
+    private fun handleDeepLinkIntent(intent: Intent?) {
+        val loanId = intent?.getLongExtra(EXTRA_OPEN_LOAN_ID, -1L) ?: -1L
+        if (loanId > 0) deepLinkTarget.setLoanId(loanId)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        handleDeepLinkIntent(intent)
         subscriptionManager = SubscriptionManager(this)
         subscriptionManager.connect { }
         setContent {
@@ -273,6 +290,15 @@ class MainActivity : FragmentActivity() {
     override fun onDestroy() {
         subscriptionManager.disconnect()
         super.onDestroy()
+    }
+
+    // وقتی اپ از قبل باز/تو پس‌زمینه‌ست و کاربر رو نوتیفیکیشن می‌زنه، onCreate دوباره صدا زده نمی‌شه -
+    // اینتنتِ جدید از همین‌جا می‌رسه (launchMode="singleTask" تو AndroidManifest.xml همین رو تضمین
+    // می‌کنه).
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleDeepLinkIntent(intent)
     }
 
     // فلیورِ myket برخلافِ cafebazaar (که با ActivityResultRegistryِ مدرن کار می‌کنه) هنوز الگوی
@@ -382,6 +408,7 @@ private fun LoanCalcApp(
     authViewModel: AuthViewModel = hiltViewModel(),
     privacyModeViewModel: PrivacyModeViewModel = hiltViewModel(),
     appUpdateViewModel: AppUpdateViewModel = hiltViewModel(),
+    deepLinkViewModel: DeepLinkViewModel = hiltViewModel(),
 ) {
     var showSettings by remember { mutableStateOf(false) }
     // قدمِ فعلیِ تور (اگه تور در حالِ اجراست) - AppTourOverlay.onStepChanged پرش می‌کنه؛ برای
@@ -389,6 +416,9 @@ private fun LoanCalcApp(
     // فیلتر/اسپاتلایت کنیم - رجوع کن به SettingsScreen(tourHighlightQuery = ...) پایین‌تر.
     var currentTourTarget by remember { mutableStateOf<TourTarget?>(null) }
     val updateUrl by appUpdateViewModel.updateUrl.collectAsState()
+    // تورِ راهنمای اولین ورود (پایین‌تر) - رجوع کن به رفعِ تداخلِ بنرِ آپدیت/تور: بنر فقط بعدِ تمومِ
+    // تور نشون داده می‌شه، وگرنه هم‌زمان با اسپاتلایتِ تور بالای صفحه شلوغ/رو هم می‌افتادن.
+    val tourSeen by authViewModel.tourSeen.collectAsState()
 
     val themeMode by themeViewModel.themeMode.collectAsState()
     val privacyMode by privacyModeViewModel.enabled.collectAsState()
@@ -411,6 +441,42 @@ private fun LoanCalcApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: BottomTab.BANK_LOAN.route
 
+    // زدنِ نوتیفیکیشنِ یادآوریِ قسط (مورد ۵) - رجوع کن به کامنتِ DeepLinkTarget. اگه رو تبِ
+    // «وام‌های من» نیستیم، اول باید بریم اونجا؛ خودِ بازکردنِ وامِ خاص تو MyLoansScreen انجام می‌شه
+    // (پارامترِ deepLinkLoanId پایین‌تر).
+    val deepLinkLoanId by deepLinkViewModel.pendingLoanId.collectAsState()
+    LaunchedEffect(deepLinkLoanId) {
+        if (deepLinkLoanId != null && currentRoute != BottomTab.MY_LOANS.route) {
+            navController.navigate(BottomTab.MY_LOANS.route) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
+
+    // یادآوریِ دوره‌ایِ امتیازدادن تو استور (مورد ۲۵) - رجوع کن به RatePromptViewModel برای منطقِ
+    // زمان‌بندی. onAppOpened فقط یه‌بار به‌ازای هر ورودِ موفق به LoanCalcApp صدا زده می‌شه.
+    val context = LocalContext.current
+    val ratePromptViewModel: RatePromptViewModel = hiltViewModel()
+    val showRatePrompt by ratePromptViewModel.shouldShow.collectAsState()
+    LaunchedEffect(Unit) { ratePromptViewModel.onAppOpened() }
+    if (showRatePrompt) {
+        RatePromptDialog(
+            onRateNow = {
+                ratePromptViewModel.onRateNow()
+                val storeUrl = if (BuildConfig.FLAVOR == "myket") {
+                    "https://myket.ir/app/ir.sadteam.loancalc"
+                } else {
+                    "https://cafebazaar.ir/app/ir.sadteam.loancalc"
+                }
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(storeUrl))) }
+            },
+            onLater = { ratePromptViewModel.onLater() },
+            onDismissForever = { ratePromptViewModel.onDismissForever() },
+        )
+    }
+
     // نوارِ پایینِ ۴تبی موقعِ اسکرولِ رو‌به‌پایینِ لیستِ «وام‌های من» جمع می‌شه، با اسکرولِ رو‌به‌بالا
     // دوباره ظاهر می‌شه - فقط MyLoansScreen این callback رو صدا می‌زنه (رجوع کن به onBottomBar
     // VisibilityChanged اونجا)؛ بقیه‌ی تب‌ها همیشه نوار رو نشون می‌دن.
@@ -419,10 +485,12 @@ private fun LoanCalcApp(
         if (currentRoute != BottomTab.MY_LOANS.route) bottomBarVisible = true
     }
 
-    // تپ دوباره رو تب «وام بانکی» وقتی از قبل انتخابه باید فرم رو ریست کنه (دقیقاً رفتار قبلی،
-    // قبل از معرفی Navigation) — چون launchSingleTop جلوی navigate دوباره به همون مقصد رو می‌گیره،
-    // این ریست از طریق یه کلید جدا اعمال می‌شه.
-    var bankLoanResetKey by remember { mutableIntStateOf(0) }
+    // تپ دوباره رو هر تبی که از قبل انتخابه باید به صفحه‌ی اصلیِ همون تب ریست کنه (قبلاً فقط «وام
+    // بانکی» این رفتار رو داشت؛ الان رو هر ۴ تب یکسانه) — چون launchSingleTop جلوی navigate دوباره
+    // به همون مقصد رو می‌گیره، این ریست از طریق یه کلیدِ جدا به‌ازای هر تب اعمال می‌شه (remount کامل
+    // یعنی هر state داخلیِ خودِ اسکرین - فرم‌های نیمه‌پرشده، جزئیاتِ بازشده‌ی یه وام، و... - به مقدارِ
+    // اولیه برمی‌گرده).
+    val tabResetKeys = remember { mutableStateMapOf<BottomTab, Int>() }
 
     // مختصاتِ واقعیِ هر هدفِ تور رو صفحه (چهارتا تبِ نوارِ پایین + سه‌تا آیکونِ TopAppBar + دکمه‌ی
     // افزودنِ دستیِ MyLoansScreen) - برای اینکه AppTourOverlay بتونه دقیقاً دورِ المانِ واقعی یه
@@ -432,7 +500,6 @@ private fun LoanCalcApp(
     // پورت رفتار «یه‌بار برگشت بزنی هشدار بده، دوباره بزنی خارج شو» - فقط رو تب پیش‌فرض (وام بانکی)
     // فعاله، چون تو بقیه‌ی تب‌ها/تنظیمات دکمه‌ی برگشت باید همون رفتار عادیش (برگشت به تب قبلی/بستن
     // تنظیمات) رو داشته باشه.
-    val context = LocalContext.current
     var lastBackPressAt by remember { mutableStateOf(0L) }
     // هینت خروج به‌صورت overlay داخلِ اپ نشون داده می‌شه، نه Toast سیستمی - چون بعضی رام‌ها
     // (مثل MIUI) کنار هر Toast آیکون لانچرِ اپ رو می‌چسبونن، که کاربر خواست حذف بشه.
@@ -550,8 +617,8 @@ private fun LoanCalcApp(
                                 selected = currentRoute == tab.route,
                                 onPositioned = { rect -> tourBounds[tab.asTourTarget()] = rect },
                                 onClick = {
-                                    if (tab.route == currentRoute && tab == BottomTab.BANK_LOAN) {
-                                        bankLoanResetKey++
+                                    if (tab.route == currentRoute) {
+                                        tabResetKeys[tab] = (tabResetKeys[tab] ?: 0) + 1
                                     } else {
                                         navController.navigate(tab.route) {
                                             popUpTo(navController.graph.findStartDestination().id) {
@@ -600,15 +667,23 @@ private fun LoanCalcApp(
                 },
             ) {
                 composable(BottomTab.BANK_LOAN.route) {
-                    key(bankLoanResetKey) { BankLoanTab() }
+                    key(tabResetKeys[BottomTab.BANK_LOAN] ?: 0) { BankLoanTab() }
                 }
-                composable(BottomTab.AFFORD.route) { AffordScreen() }
-                composable(BottomTab.DEPOSIT.route) { DepositScreen() }
+                composable(BottomTab.AFFORD.route) {
+                    key(tabResetKeys[BottomTab.AFFORD] ?: 0) { AffordScreen() }
+                }
+                composable(BottomTab.DEPOSIT.route) {
+                    key(tabResetKeys[BottomTab.DEPOSIT] ?: 0) { DepositScreen() }
+                }
                 composable(BottomTab.MY_LOANS.route) {
-                    MyLoansScreen(
-                        onManualAddFabPositioned = { rect -> tourBounds[TourTarget.MANUAL_ADD] = rect },
-                        onBottomBarVisibilityChanged = { visible -> bottomBarVisible = visible },
-                    )
+                    key(tabResetKeys[BottomTab.MY_LOANS] ?: 0) {
+                        MyLoansScreen(
+                            onManualAddFabPositioned = { rect -> tourBounds[TourTarget.MANUAL_ADD] = rect },
+                            onBottomBarVisibilityChanged = { visible -> bottomBarVisible = visible },
+                            deepLinkLoanId = deepLinkLoanId,
+                            onDeepLinkConsumed = { deepLinkViewModel.consume() },
+                        )
+                    }
                 }
             }
         }
@@ -691,7 +766,7 @@ private fun LoanCalcApp(
         // بنرِ آپدیتِ خودکار - رجوع کن به AppUpdateViewModel. برخلافِ هینتِ خروج، خودش محو نمی‌شه؛
         // تا کاربر یا بزنه «بروزرسانی» (بازکردنِ صفحه‌ی استور) یا خودش با ضربدر ببندتش.
         AnimatedVisibility(
-            visible = updateUrl != null,
+            visible = updateUrl != null && tourSeen != false,
             enter = fadeIn(tween(200)) + slideInVertically(tween(200)) { -it },
             exit = fadeOut(tween(150)) + slideOutVertically(tween(150)) { -it },
             modifier = Modifier
@@ -711,7 +786,7 @@ private fun LoanCalcApp(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "نسخه‌ی جدیدِ اپ موجوده",
+                        "نسخه‌ی جدیدِ برنامه‌ی وام من موجوده",
                         color = Color.White,
                         fontSize = 13.sp,
                         modifier = Modifier.weight(1f),
@@ -734,7 +809,7 @@ private fun LoanCalcApp(
 
         // تورِ راهنمای اولین ورود - «تو خود برنامه بگه کجا بری» (خواسته‌ی صریح کاربر، به‌جای صفحه‌ی
         // جدای قبلی) - رجوع کن به AppTourOverlay پایین‌تر. آخرین بچه‌ی Box تا رو همه‌چیز دیگه بشینه.
-        val tourSeen by authViewModel.tourSeen.collectAsState()
+        // (tourSeen بالاتر جمع‌آوری شده، برای گیت‌کردنِ بنرِ آپدیت هم استفاده می‌شه)
         if (tourSeen == false) {
             AppTourOverlay(
                 steps = TourTarget.entries.toList(),

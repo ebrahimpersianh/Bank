@@ -33,6 +33,7 @@ import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -41,8 +42,8 @@ import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
  * لیست دسته‌چک‌ها (برای پیشنهاد خودکار شماره‌ی سریال بعدی تو فرم افزودن چک) + یه فرم ساده‌ی افزودن
- * دسته‌چک جدید (مالک، بانک، بازه‌ی سریال). حذف مستقیمه، بدون مودال تایید - هم‌الگو با حذف وام/چک تو
- * بقیه‌ی صفحات این پروژه.
+ * دسته‌چک جدید (مالک، بانک، بازه‌ی سریال). حذف قبلاً مستقیم/بدون مودالِ تایید بود - رجوع کن به مورد ۹
+ * تو CLAUDE.md، الان قبلش تاییدِ صریح می‌گیره (هم‌الگو با حذف وام/چک/حساب/درآمد).
  */
 @Composable
 fun ChequeBooksScreen(
@@ -57,6 +58,7 @@ fun ChequeBooksScreen(
     var startText by remember { mutableStateOf("") }
     var endText by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var bookPendingDelete by remember { mutableStateOf<ChequeBookEntity?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -104,7 +106,7 @@ fun ChequeBooksScreen(
                             )
                         }
                         OutlinedButton(
-                            onClick = { onDelete(book) },
+                            onClick = { bookPendingDelete = book },
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
                         ) {
                             Text("حذف", fontSize = 12.sp)
@@ -197,5 +199,13 @@ fun ChequeBooksScreen(
                 }
             }
         }
+    }
+    bookPendingDelete?.let { book ->
+        ConfirmDeleteDialog(
+            title = "حذف دسته‌چک",
+            text = "دسته‌چکِ «${book.ownerName} - ${book.bankName}» حذف بشه؟",
+            onConfirm = { onDelete(book) },
+            onDismiss = { bookPendingDelete = null },
+        )
     }
 }

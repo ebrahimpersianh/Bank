@@ -17,6 +17,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -27,6 +31,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
@@ -51,6 +56,7 @@ fun ChequeDetailScreen(
 ) {
     val typeLabel = if (cheque.type == "RECEIVED") "دریافتی" else "پرداختی"
     val banner = rememberInAppBanner()
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
@@ -146,7 +152,7 @@ fun ChequeDetailScreen(
 
         item {
             OutlinedButton(
-                onClick = onDelete,
+                onClick = { showDeleteConfirm = true },
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -156,6 +162,14 @@ fun ChequeDetailScreen(
     }
 
         InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
+    }
+    if (showDeleteConfirm) {
+        ConfirmDeleteDialog(
+            title = "حذف چک",
+            text = "چکِ شماره‌ی «${toFa(cheque.chequeNumber)}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+            onConfirm = onDelete,
+            onDismiss = { showDeleteConfirm = false },
+        )
     }
 }
 

@@ -331,7 +331,15 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
 
         item {
             StaggerIn(4) {
-                AppCard(label = "تاریخ دریافت وام") {
+                // برچسب + توضیحِ دینامیک قبلاً دو تیکه‌ی جدا بودن (لیبلِ کارت + یه خطِ راهنمای زیرش) -
+                // خواسته‌ی صریحِ کاربر (مورد ۳) یکی‌شدنشون تو یه جمله‌ی تمیزه، پس الان خودِ لیبلِ
+                // کارت این توضیح رو داره، بدونِ نیازِ خط/متنِ جدا زیرِ تاریخ.
+                val dateLabel = if (graceOn && graceMonths.toInt() > 0) {
+                    "تاریخ دریافت وام (قسطِ اول ${toFa(graceMonths.toInt())} ماه بعد، به‌خاطرِ دوره‌ی تنفس)"
+                } else {
+                    "تاریخ دریافت وام (سررسیدِ قسطِ اول)"
+                }
+                AppCard(label = dateLabel) {
                     // تاریخ اینلاینِ چرخونه‌ای (روی روز/ماه/سال اسکرول می‌کنی) - همینجا عوض می‌شه بدون
                     // رفتن به یه صفحه‌ی جدا (خواسته‌ی کاربر، چندبار تکرار شد). آیکون تقویم کنارش، برای
                     // کسی که تقویم گریدیِ کامل رو بخواد.
@@ -351,21 +359,6 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
                             Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
                         }
                     }
-                    // توضیحِ دینامیک - چون این فرم دوره‌ی تنفس هم داره، این تاریخ همیشه «سررسیدِ قسطِ
-                    // اول» نیست: اگه تنفس روشن باشه، قسطِ اول همون‌قدر بعدتره؛ اگه خاموش باشه، دقیقاً
-                    // خودِ همین تاریخه. خواسته‌ی کاربر: به‌جای عوض‌کردنِ اسمِ فیلد (که برای حالتِ تنفس‌دار
-                    // گمراه‌کننده می‌شد)، همین توضیحِ کوچیک زیرش اضافه بشه.
-                    val graceHint = if (graceOn && graceMonths.toInt() > 0) {
-                        "قسطِ اول ${toFa(graceMonths.toInt())} ماه بعد از این تاریخه (به‌خاطرِ دوره‌ی تنفس)"
-                    } else {
-                        "این تاریخ = سررسیدِ قسطِ اول"
-                    }
-                    Text(
-                        graceHint,
-                        fontSize = 11.sp,
-                        color = AppMuted,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
                 }
             }
         }
@@ -422,8 +415,10 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
                         onValueChange = { raw ->
                             val filtered = cleanNumDecimal(raw)
                             rateText = filtered
+                            // اسلایدر فقط تا ۵۰ می‌ره، ولی خودِ فیلد بالاتر از ۵۰ رو هم دستی قبول
+                            // می‌کنه (خواسته‌ی صریحِ کاربر) - رجوع کن به مورد ۱ تو CLAUDE.md.
                             val num = filtered.toDoubleOrNull()
-                            if (num != null && num in 0.0..35.0) rateSlider = num.toFloat()
+                            if (num != null && num in 0.0..50.0) rateSlider = num.toFloat()
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.fillMaxWidth(),
@@ -434,7 +429,9 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
                     SlimSlider(
                         value = rateSlider,
                         onValueChange = { v -> rateSlider = v; rateText = trimRate(v.toDouble()) },
-                        valueRange = 0f..35f,
+                        valueRange = 0f..50f,
+                        // پله‌ی ۰.۵ درصدی - رجوع کن به کامنتِ SlimSlider برای فرمولِ steps.
+                        steps = 99,
                     )
                 }
             }
@@ -560,5 +557,7 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
 }
 
 private fun trimRate(v: Double): String {
-    return if (v == v.toLong().toDouble()) v.toLong().toString() else v.toString()
+    // نمایشِ حداکثر دو رقمِ اعشار (خواسته‌ی صریحِ کاربر، مورد ۱) - وگرنه v.toString() خامِ فلوتینگ-
+    // پوینت می‌تونست چیزی مثلِ «23.500000001» نشون بده.
+    return if (v == v.toLong().toDouble()) v.toLong().toString() else "%.2f".format(v)
 }
