@@ -63,7 +63,7 @@ object AccountingPdfExporter {
         }
 
         var y = 30f
-        y += drawRtlLine(canvas, "گزارشِ حسابداری - وام من", titlePaint, y) + 10f
+        y += drawRtlLine(canvas, "گزارشِ حسابداری - حسابدار من", titlePaint, y) + 10f
         y += drawRtlLine(canvas, "بازه: $rangeLabel — حساب: $accountLabel", labelPaint, y) + 16f
 
         val summaryLines = listOf(
