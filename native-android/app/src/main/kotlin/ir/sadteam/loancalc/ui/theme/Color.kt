@@ -32,28 +32,31 @@ data class AppColorPalette(
     val glassHighlight: Color,
 )
 
-// خواسته‌ی صریح کاربر: primary/primaryDim از یه سبزِ فیروزه‌ایِ نزدیک به سبز (hue ~169°) به یه
-// سبزآبیِ واضح‌تر و پررنگ‌تر (hue ~185-187°، اشباعِ ~100%، حداقل ۳۰٪ پررنگ‌تر از قبل) تغییر کرد.
-// چون همه‌ی پس‌زمینه‌های کم‌رنگِ باکس‌ها تو کل اپ با AppPrimary.copy(alpha=...) ساخته می‌شن، همین
-// یه تغییر رنگِ پایه کافیه که همه‌جا (دکمه، آیکون، پس‌زمینه‌ها) یکجا آپدیت بشه.
+// دورِ چهارمِ تمِ تیره - «Glassmorphism مشکی + سبزِ نئونی» (خواسته‌ی صریحِ کاربر، الهام از یه رفرنسِ
+// UIِ فینتکِ تیره - پس‌زمینه‌ی تقریباً مشکی + کارت‌های شیشه‌ایِ نیمه‌شفاف با گلوِ سبزِ نئونی). primary
+// از سبزآبیِ قبلی به یه سبزِ نئونیِ واقعی عوض شد؛ چون همه‌ی پس‌زمینه‌های کم‌رنگِ باکس‌ها/Aurora/دکمه‌ها
+// تو کل اپ با AppPrimary.copy(alpha=...) ساخته می‌شن، همین یه تغییرِ رنگِ پایه کافیه که همه‌جا (دکمه،
+// آیکون، Aurora، حاشیه‌ی شیشه‌ای) یکجا آپدیت بشه. accent (طلایی) عمداً دست‌نخورده موند - نشانه‌ی
+// جداگانه‌ی «پرمیوم/اشتراک» تو کل اپ (بج‌های اشتراک، GoldSheenBox) که نباید با رنگِ اصلیِ جدید قاطی
+// بشه. تمِ روشن ([LightAppColors] پایین) عمداً تغییر نکرد - رفرنسِ کاربر فقط تیره بود.
 val DarkAppColors = AppColorPalette(
-    bg = Color(0xFF0D1321),
-    surface = Color(0xFF161F35),
-    surface2 = Color(0xFF1D2A46),
-    primary = Color(0xFF00C2D1),
-    primaryDim = Color(0xFF00838D),
+    bg = Color(0xFF070B09),
+    surface = Color(0xFF0F1712),
+    surface2 = Color(0xFF16211C),
+    primary = Color(0xFF00FF9C),
+    primaryDim = Color(0xFF00B873),
     accent = Color(0xFFFFB020),
     text = Color(0xFFEEF1F8),
-    muted = Color(0xFF7C879E),
+    muted = Color(0xFF869489),
     danger = Color(0xFFE56B6F),
-    line = Color(0x14EEF1F8), // rgba(238,241,248,0.08)
-    // دورِ سومِ شیشه‌ای‌شدن («Liquid Glass» - رجوع کن به کامنتِ glassHighlight بالا): پایه شفاف‌تر شد
-    // (۴۲٪→۳۲٪، Aurora بیشتر دیده می‌شه)، حاشیه روشن‌تر/تیزتر شد (لبه‌ی شیشه‌ی واقعی‌تر).
-    glassBase = Color(0x52161F35), // surface تیره با آلفای ~۳۲٪
-    glassGradientStart = Color(0x26FFFFFF), // سفید با آلفای ~۱۵٪
-    glassGradientEnd = Color(0x00FFFFFF), // کاملاً شفاف
-    glassBorder = Color(0x38FFFFFF), // سفید با آلفای ~۲۲٪
-    glassHighlight = Color(0x45FFFFFF), // سفید با آلفای ~۲۷٪
+    line = Color(0x1400FF9C), // سبزِ نئونی با آلفای ~۸٪ - جداکننده‌های ظریف
+    // پایه‌ی کارت کمی روشن‌تر از bg (که تقریباً مشکیه) تا کارت‌ها رو زمینه دیده بشن؛ گرادیان/حاشیه/
+    // هایلایت همه سبزِ نئونی شدن (به‌جای سفیدِ خنثیِ قبلی) تا حسِ «گلوِ نئونی»ِ رفرنس رو بدن.
+    glassBase = Color(0x6614241E), // مشکیِ سبزتاب با آلفای ~۴۰٪
+    glassGradientStart = Color(0x2A00FF9C), // سبزِ نئونی با آلفای ~۱۶٪
+    glassGradientEnd = Color(0x0000FF9C), // کاملاً شفاف
+    glassBorder = Color(0x5500FF9C), // سبزِ نئونی با آلفای ~۳۳٪ - لبه‌ی نورانی
+    glassHighlight = Color(0x5000FF9C), // سبزِ نئونی با آلفای ~۳۱٪
 )
 
 val LightAppColors = AppColorPalette(

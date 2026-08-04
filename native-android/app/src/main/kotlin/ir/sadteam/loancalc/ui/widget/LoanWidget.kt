@@ -84,7 +84,7 @@ private fun WidgetContent(next: NextInstallment?) {
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(Color(0xFF0D1321))
+            .background(Color(0xFF070B09))
             .padding(12.dp)
             .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
     ) {
