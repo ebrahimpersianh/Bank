@@ -102,12 +102,23 @@ private val faMonthNamesAccounting = listOf(
 )
 
 /**
- * تبِ «حسابداری» - نسخه‌ی اولِ ماژولِ حسابداریِ شخصیِ اپ (رجوع کن به CLAUDE.md، بخشِ
- * «تغییرِ نامِ اپ + افزودنِ ماژولِ حسابداریِ شخصی»). رو همون [AccountRepository]/[AccountEntity]ِ
- * موجودِ «حساب بانکی» ساخته شده - حساب‌ها همونا هستن، فقط تراکنش‌ها الان دسته‌بندی هم دارن.
+ * تبِ «دارایی» (قبلاً «حسابداری») - لیستِ حساب‌ها/تراکنش‌ها + جستجو + گزارشِ ماهانه‌ی خلاصه.
+ * «بودجه‌بندی»/«گزارش‌گیری» تبِ مستقلِ خودشون شدن ([BudgetScreen]/[ReportScreen])، و
+ * «پرداختِ تکراری» به تبِ «سررسید» منتقل شد ([RecurringPaymentsScreen]) - رجوع کن به CLAUDE.md،
+ * «بازسازیِ نوارِ پایین به ۵ تبِ رفرنس».
  */
 @Composable
-fun AccountingScreen(
+fun AssetsScreen(
+    viewModel: AccountViewModel = hiltViewModel(),
+    categoryViewModel: CategoryViewModel = hiltViewModel(),
+) {
+    MainSection(viewModel = viewModel, categoryViewModel = categoryViewModel)
+}
+
+/** تبِ مستقلِ «بودجه» - قبلاً زیرصفحه‌ی حسابداری بود. «دسته‌بندی‌ها» هم اینجا زیرمجموعه‌ست (رجوع
+ * کن به CLAUDE.md) چون مفهوماً به بودجه نزدیک‌تره تا دارایی. */
+@Composable
+fun BudgetScreen(
     viewModel: AccountViewModel = hiltViewModel(),
     categoryViewModel: CategoryViewModel = hiltViewModel(),
 ) {
@@ -115,33 +126,42 @@ fun AccountingScreen(
     AnimatedContent(
         targetState = screenKey,
         transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(150)) },
-        label = "accountingScreen",
+        label = "budgetScreen",
     ) { key ->
         when (key) {
-            "budget" -> BudgetSection(viewModel = viewModel, categoryViewModel = categoryViewModel, onBack = { screenKey = "main" })
-            "recurring" -> RecurringSection(viewModel = viewModel, categoryViewModel = categoryViewModel, onBack = { screenKey = "main" })
             "categories" -> CategoryManagementScreen(onBack = { screenKey = "main" }, viewModel = categoryViewModel)
-            "report" -> ReportSection(viewModel = viewModel, onBack = { screenKey = "main" })
-            else -> MainSection(
+            else -> BudgetSection(
                 viewModel = viewModel,
                 categoryViewModel = categoryViewModel,
-                onOpenBudget = { screenKey = "budget" },
-                onOpenRecurring = { screenKey = "recurring" },
                 onOpenCategories = { screenKey = "categories" },
-                onOpenReport = { screenKey = "report" },
             )
         }
     }
+}
+
+/** تبِ مستقلِ «گزارش» - قبلاً زیرصفحه‌ی حسابداری بود، حالا خودش یه تبه، پس دیگه دکمه‌ی برگشت
+ * نداره (رجوع کن به [ReportSection]). */
+@Composable
+fun ReportScreen(viewModel: AccountViewModel = hiltViewModel()) {
+    ReportSection(viewModel = viewModel)
+}
+
+/** «پرداختِ تکراری» به تبِ «سررسید» منتقل شد (رجوع کن به CLAUDE.md) - این فقط یه پوششِ نازک رو
+ * [RecurringSection]ِ خصوصیِ همین فایله، تا DueScreen.kt (پکیجِ جدا) بتونه صداش بزنه بدونِ اینکه
+ * خودِ RecurringSection عمومی بشه. */
+@Composable
+fun RecurringPaymentsScreen(
+    onBack: () -> Unit,
+    viewModel: AccountViewModel = hiltViewModel(),
+    categoryViewModel: CategoryViewModel = hiltViewModel(),
+) {
+    RecurringSection(viewModel = viewModel, categoryViewModel = categoryViewModel, onBack = onBack)
 }
 
 @Composable
 private fun MainSection(
     viewModel: AccountViewModel,
     categoryViewModel: CategoryViewModel,
-    onOpenBudget: () -> Unit,
-    onOpenRecurring: () -> Unit,
-    onOpenCategories: () -> Unit,
-    onOpenReport: () -> Unit,
 ) {
     val accounts by viewModel.accounts.collectAsState()
     val allTransactions by viewModel.transactions.collectAsState()
@@ -207,21 +227,6 @@ private fun MainSection(
 
         item {
             StaggerIn(1) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onOpenBudget, modifier = Modifier.weight(1f)) { Text("بودجه‌بندی", fontSize = 12.sp) }
-                        OutlinedButton(onClick = onOpenRecurring, modifier = Modifier.weight(1f)) { Text("پرداختِ تکراری", fontSize = 12.sp) }
-                    }
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onOpenCategories, modifier = Modifier.weight(1f)) { Text("دسته‌بندی‌ها", fontSize = 12.sp) }
-                        OutlinedButton(onClick = onOpenReport, modifier = Modifier.weight(1f)) { Text("گزارش‌گیری", fontSize = 12.sp) }
-                    }
-                }
-            }
-        }
-
-        item {
-            StaggerIn(2) {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -469,7 +474,7 @@ private fun AddTransactionForm(
 }
 
 @Composable
-private fun BudgetSection(viewModel: AccountViewModel, categoryViewModel: CategoryViewModel, onBack: () -> Unit) {
+private fun BudgetSection(viewModel: AccountViewModel, categoryViewModel: CategoryViewModel, onOpenCategories: () -> Unit) {
     val budgets by viewModel.budgets.collectAsState()
     val allTransactions by viewModel.transactions.collectAsState()
     val today = remember { JalaliCalendar.today() }
@@ -485,9 +490,13 @@ private fun BudgetSection(viewModel: AccountViewModel, categoryViewModel: Catego
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت") }
-                Text("بودجه‌بندیِ ماهانه", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("بودجه‌بندیِ ماهانه", color = AppText, fontSize = 16.sp)
+                OutlinedButton(onClick = onOpenCategories) { Text("دسته‌بندی‌ها", fontSize = 12.sp) }
             }
         }
         items(expenseCats, key = { it.name }) { cat ->
@@ -718,7 +727,7 @@ private fun AddRecurringForm(
  * CLAUDE.md، «تکمیلِ گزارش‌گیری»). پیش‌فرضِ بازه از اولِ همین ماه تا امروزه، دقیقاً هم‌قدم با
  * کارتِ «گزارشِ ماهانه»ی صفحه‌ی اصلی، ولی کاملاً قابلِ‌تغییره. */
 @Composable
-private fun ReportSection(viewModel: AccountViewModel, onBack: () -> Unit) {
+private fun ReportSection(viewModel: AccountViewModel) {
     val accounts by viewModel.accounts.collectAsState()
     val allTransactions by viewModel.transactions.collectAsState()
     val today = remember { JalaliCalendar.today() }
@@ -795,10 +804,12 @@ private fun ReportSection(viewModel: AccountViewModel, onBack: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت") }
-                Text("گزارش‌گیری", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
-            }
+            Text(
+                "گزارش‌گیری",
+                color = AppText,
+                fontSize = 16.sp,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            )
         }
         item {
             AppCard(label = "حساب‌کتاب") {

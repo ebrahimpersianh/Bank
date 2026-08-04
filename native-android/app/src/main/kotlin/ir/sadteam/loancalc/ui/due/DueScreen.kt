@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.ui.accounting.RecurringPaymentsScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.debt.DebtScreen
@@ -48,7 +50,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.Motion
 
-private enum class DueSubView { NONE, DEBT, NOTES }
+private enum class DueSubView { NONE, DEBT, NOTES, RECURRING }
 
 private data class DueShortcut(
     val title: String,
@@ -74,10 +76,11 @@ fun DueScreen(onNavigateToRoute: (String) -> Unit) {
         listOf(
             DueShortcut("طلب و بدهی", Icons.Filled.Handshake, null, DueSubView.DEBT),
             DueShortcut("یادداشت", Icons.Filled.EditNote, null, DueSubView.NOTES),
-            DueShortcut("تراکنش", Icons.Filled.SwapHoriz, "accounting", null),
+            DueShortcut("پرداختِ تکراری", Icons.Filled.Repeat, null, DueSubView.RECURRING),
+            DueShortcut("تراکنش", Icons.Filled.SwapHoriz, "assets", null),
             DueShortcut("قسط و وام", Icons.Filled.Payments, "loan", null),
             DueShortcut("چک", Icons.Filled.ReceiptLong, "cheque", null),
-            DueShortcut("حساب‌کتاب", Icons.Filled.AccountBalanceWallet, "accounting", null),
+            DueShortcut("حساب‌کتاب", Icons.Filled.AccountBalanceWallet, "assets", null),
         )
     }
 
@@ -89,6 +92,7 @@ fun DueScreen(onNavigateToRoute: (String) -> Unit) {
         when (current) {
             DueSubView.DEBT -> DebtScreen(onBack = { subView = DueSubView.NONE })
             DueSubView.NOTES -> NoteScreen(onBack = { subView = DueSubView.NONE })
+            DueSubView.RECURRING -> RecurringPaymentsScreen(onBack = { subView = DueSubView.NONE })
             DueSubView.NONE -> DueGrid(
                 shortcuts = shortcuts,
                 onNavigateToRoute = onNavigateToRoute,
@@ -113,7 +117,7 @@ private fun DueGrid(
             AppCard {
                 Text("سررسید", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    "میان‌برِ سریع به طلب‌وبدهی، یادداشت، تراکنش، قسط و چک.",
+                    "میان‌برِ سریع به طلب‌وبدهی، یادداشت، پرداختِ تکراری، تراکنش، قسط و چک.",
                     color = AppMuted,
                     fontSize = 12.5.sp,
                     modifier = Modifier.padding(top = 4.dp),
@@ -125,7 +129,11 @@ private fun DueGrid(
                 columns = GridCells.Fixed(2),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .size(480.dp),
+                    // ۷ کاشی/۲ ستون = ۴ ردیف (قبلاً ۶ کاشی/۳ ردیف بود، رجوع کن به «پرداختِ تکراری»
+                    // که این نشست اضافه شد) - ارتفاعِ ثابت باید هم‌قدم با تعدادِ ردیف‌ها بیشتر بشه،
+                    // وگرنه ردیفِ آخر (چون این گرید تویِ یه LazyColumnِ دیگه‌س و ارتفاعش ثابته، نه
+                    // wrap-content) کلاً کلیپ/نامرئی می‌مونه.
+                    .size(640.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {

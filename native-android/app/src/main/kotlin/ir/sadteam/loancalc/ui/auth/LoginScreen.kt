@@ -197,12 +197,11 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             if (step == LoginStep.PHONE) {
-                Text("به «وام من» خوش اومدی!", color = AppText, fontSize = 19.sp, fontWeight = FontWeight.Bold)
                 Text(
                     "برای ذخیره‌ی «وام‌های من» در سرور ابری و همگام‌سازی بین گوشی‌ها، شماره‌موبایلت رو وارد کن",
                     color = AppMuted,
                     fontSize = 12.5.sp,
-                    modifier = Modifier.padding(top = 6.dp, bottom = 20.dp),
+                    modifier = Modifier.padding(bottom = 20.dp),
                 )
 
                 AppCard {

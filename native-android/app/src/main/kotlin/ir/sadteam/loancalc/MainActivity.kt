@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.RequestQuote
 import androidx.compose.material.icons.filled.Folder
@@ -59,6 +60,10 @@ import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.filled.ReceiptLong
@@ -125,7 +130,9 @@ import ir.sadteam.loancalc.ui.BankLoanOutcome
 import ir.sadteam.loancalc.ui.BankLoanScreen
 import ir.sadteam.loancalc.ui.DepositScreen
 import ir.sadteam.loancalc.ui.ResultScreen
-import ir.sadteam.loancalc.ui.accounting.AccountingScreen
+import ir.sadteam.loancalc.ui.accounting.AssetsScreen
+import ir.sadteam.loancalc.ui.accounting.BudgetScreen
+import ir.sadteam.loancalc.ui.accounting.ReportScreen
 import ir.sadteam.loancalc.ui.cheque.ChequeScreen
 import ir.sadteam.loancalc.ui.due.DueScreen
 import ir.sadteam.loancalc.ui.home.HomeScreen
@@ -172,6 +179,14 @@ import javax.inject.Inject
 // محاسبه‌گر/سود سپرده/وام‌های من) + حسابداری بودن. الان زیرِ یه تبِ واحدِ «وام» ادغام شدن (رجوع کن
 // به [LoanTab]/[LoanSubTab])، «چک» که قبلاً فقط زیرمجموعه‌ی تبِ وام بانکی/تنظیمات بود ترفیع گرفته
 // به تبِ مستقل، و دو تبِ کاملاً جدید («خانه»، «سررسید») اضافه شدن.
+//
+// دورِ دومِ بازطراحی (خواسته‌ی صریحِ کاربر: «تب‌های پایین دقیقاً مثل اون برنامه [رفرنس] باشه») - نوارِ
+// پایین دیگه «وام»/«چک»/«حسابداری» نداره؛ به‌جاش «دارایی»/«گزارش»/«بودجه» (دقیقاً هم‌الگو با
+// رفرنس). «وام» و «چک» دیگه تبِ بالانوارِ پایین نیستن - از تبِ «سررسید» (میان‌برهای «قسط و وام»/
+// «چک») به‌عنوانِ یه صفحه‌ی پوش‌شده (با دکمه‌ی برگشتِ خودشون - رجوع کن به [LOAN_ROUTE]/
+// [CHEQUE_ROUTE]) باز می‌شن. «حسابداری»ِ قبلی سه‌جا شد: لیستِ حساب‌ها/تراکنش‌ها → «دارایی»
+// (AssetsScreen)، گزارش‌گیری → تبِ مستقلِ «گزارش» (ReportScreen)، بودجه‌بندی → تبِ مستقلِ «بودجه»
+// (BudgetScreen). «پرداختِ تکراری» رفت زیرِ «سررسید»، «دسته‌بندی‌ها» رفت زیرِ «بودجه».
 private enum class BottomTab(
     val route: String,
     val label: String,
@@ -179,11 +194,17 @@ private enum class BottomTab(
     val selectedIcon: ImageVector,
 ) {
     HOME("home", "خانه", Icons.Outlined.Home, Icons.Filled.Home),
-    LOAN("loan", "وام", Icons.Outlined.Payments, Icons.Filled.Payments),
-    CHEQUE("cheque", "چک", Icons.Outlined.ReceiptLong, Icons.Filled.ReceiptLong),
-    ACCOUNTING("accounting", "حسابداری", Icons.Outlined.AccountBalanceWallet, Icons.Filled.AccountBalanceWallet),
+    ASSETS("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, Icons.Filled.AccountBalanceWallet),
+    REPORT("report", "گزارش", Icons.Outlined.BarChart, Icons.Filled.BarChart),
+    BUDGET("budget", "بودجه", Icons.Outlined.Savings, Icons.Filled.Savings),
     DUE("due", "سررسید", Icons.Outlined.EventNote, Icons.Filled.EventNote),
 }
+
+/** «وام» و «چک» دیگه تبِ نوارِ پایین نیستن (رجوع کن به کامنتِ بالای [BottomTab]) - این دو route
+ * مستقیم به‌عنوانِ رشته تعریف شدن (نه عضوِ enumِ BottomTab) چون فقط از تبِ «سررسید»/«خانه» به‌عنوانِ
+ * صفحه‌ی پوش‌شده باز می‌شن، تو نوارِ پایین رندر نمی‌شن. */
+private const val LOAN_ROUTE = "loan"
+private const val CHEQUE_ROUTE = "cheque"
 
 /** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
 private enum class LoanSubTab(val label: String) {
@@ -221,72 +242,42 @@ private enum class TourTarget(val title: String, val hint: String) {
         "امور چک",
         "این‌م همینجا تو تنظیماته - چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن.",
     ),
-    BANK_LOAN(
-        "وام بانکی",
-        "قسطِ وام‌های بانکی و قرض‌الحسنه رو اینجا دقیق محاسبه کن.",
+    ASSETS(
+        "دارایی",
+        "حساب‌ها و تراکنش‌هات رو اینجا ثبت و پیگیری کن.",
     ),
-    AFFORD(
-        "محاسبه‌گر",
-        "با پرداختِ ماهانه‌ای که مقدوره، ببین چقدر وام می‌تونی بگیری.",
+    REPORT(
+        "گزارش",
+        "با فیلترِ حساب و بازه‌ی دلخواه، گزارشِ دخل‌وخرجت رو ببین و PDF/اکسل بگیر.",
     ),
-    DEPOSIT(
-        "سود سپرده",
-        "قبل از سپرده‌گذاری، سودِ نهایی رو از قبل حساب کن.",
-    ),
-    MY_LOANS(
-        "وام‌های من",
-        "وام‌ها و چک‌هات رو یه‌جا ذخیره کن و وضعیتِ هر قسط رو پیگیری کن.",
-    ),
-    ACCOUNTING(
-        "حسابداری",
-        "دخل‌وخرجِ روزمره‌ت رو با دسته‌بندی ثبت کن، بودجه بذار، و گزارشِ ماهانه ببین.",
-    ),
-    MANUAL_ADD(
-        "افزودن دستی وام",
-        "با این دکمه یه وام رو دستی (بدونِ محاسبه) اضافه کن و اقساطش رو خودت پیگیری کن - آخرین قدمِ تور!",
+    BUDGET(
+        "بودجه",
+        "برای هر دسته‌بندی یه سقفِ ماهانه بذار تا هزینه‌هات دستت باشه - آخرین قدمِ تور!",
     ),
 }
 
 // نگاشتِ TourTarget های تبی → BottomTab واقعی (برای این‌که AppTourOverlay بدونه با کدوم تب باید
-// هماهنگ بشه - هم گرفتنِ مختصات از BottomNavItem هم ناوبریِ خودکار موقعِ قدمِ MANUAL_ADD). چهارتا
-// قدمِ قدیمی (BANK_LOAN/AFFORD/DEPOSIT/MY_LOANS) الان همه به همون یه تبِ ادغام‌شده‌ی «وام» می‌رن -
-// رجوع کن به [asLoanSubTab] برای اینکه کدوم زیرصفحه‌ی داخلیش هدف قرار می‌گیره.
+// هماهنگ بشه - هم گرفتنِ مختصات از BottomNavItem هم ناوبریِ خودکار). «وام»/«چک» دیگه تبِ نوارِ
+// پایین نیستن (رجوع کن به کامنتِ بالای BottomTab)، پس دیگه قدمِ تورِ مستقل ندارن.
 private fun TourTarget.asBottomTab(): BottomTab? = when (this) {
-    TourTarget.BANK_LOAN, TourTarget.AFFORD, TourTarget.DEPOSIT,
-    TourTarget.MY_LOANS, TourTarget.MANUAL_ADD,
-    -> BottomTab.LOAN
-    TourTarget.ACCOUNTING -> BottomTab.ACCOUNTING
+    TourTarget.ASSETS -> BottomTab.ASSETS
+    TourTarget.REPORT -> BottomTab.REPORT
+    TourTarget.BUDGET -> BottomTab.BUDGET
     else -> null
 }
 
-/** زیرصفحه‌ی داخلیِ [LoanTab] که این قدمِ تور باید هدف بگیره - null یعنی این قدم اصلاً ربطی به
- * تبِ وام نداره (asBottomTab برمی‌گردونه null یا یه تبِ دیگه). */
-private fun TourTarget.asLoanSubTab(): LoanSubTab? = when (this) {
-    TourTarget.BANK_LOAN -> LoanSubTab.BANK
-    TourTarget.AFFORD -> LoanSubTab.AFFORD
-    TourTarget.DEPOSIT -> LoanSubTab.DEPOSIT
-    TourTarget.MY_LOANS, TourTarget.MANUAL_ADD -> LoanSubTab.MY_LOANS
-    else -> null
-}
-
-/** مختصاتِ آیکونِ نوارِ پایینِ یه تب رو تویِ [tourBounds] برای همه‌ی قدم‌های تورِ مربوط به همون تب
- * ثبت می‌کنه - تبِ «وام» چهارتا قدمِ زیرصفحه (BANK_LOAN/AFFORD/DEPOSIT/MY_LOANS) داره که همه رو
- * همون یه آیکون می‌شینن، پس هر چهارتا همین یه مستطیل رو می‌گیرن. MANUAL_ADD جدا از رو FABِ خودِ
- * MyLoansScreen ثبت می‌شه (رجوع کن به onManualAddFabPositioned)، اینجا دست‌نخورده می‌مونه. */
+/** مختصاتِ آیکونِ نوارِ پایینِ یه تب رو تویِ [tourBounds] برای قدمِ تورِ مربوط به همون تب ثبت
+ * می‌کنه. */
 private fun registerTabTourBounds(
     tab: BottomTab,
     rect: Rect,
     tourBounds: MutableMap<TourTarget, Rect>,
 ) {
     when (tab) {
-        BottomTab.LOAN -> {
-            tourBounds[TourTarget.BANK_LOAN] = rect
-            tourBounds[TourTarget.AFFORD] = rect
-            tourBounds[TourTarget.DEPOSIT] = rect
-            tourBounds[TourTarget.MY_LOANS] = rect
-        }
-        BottomTab.ACCOUNTING -> tourBounds[TourTarget.ACCOUNTING] = rect
-        BottomTab.HOME, BottomTab.CHEQUE, BottomTab.DUE -> {}
+        BottomTab.ASSETS -> tourBounds[TourTarget.ASSETS] = rect
+        BottomTab.REPORT -> tourBounds[TourTarget.REPORT] = rect
+        BottomTab.BUDGET -> tourBounds[TourTarget.BUDGET] = rect
+        BottomTab.HOME, BottomTab.DUE -> {}
     }
 }
 
@@ -494,7 +485,19 @@ private fun LoanCalcApp(
 
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route ?: BottomTab.LOAN.route
+    val currentRoute = backStackEntry?.destination?.route ?: BottomTab.HOME.route
+
+    // ناوبریِ مشترک - همون الگویی که قبلاً تو ۴+ جا تکرار شده بود (تبِ پایین، دیپ‌لینک، تور،
+    // برگشتن از «وام»/«چک»...) یه جا جمع شد. popUpTo+saveState+restoreState یعنی هر مقصد مثلِ یه
+    // «تبِ هم‌سطح» رفتار می‌کنه - حتی «وام»/«چک» که دیگه عضوِ BottomTab نیستن (رجوع کن به کامنتِ
+    // بالای BottomTab).
+    fun navigateTo(route: String) {
+        navController.navigate(route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
 
     // «وام‌های من» دیگه تبِ جداگانه‌ی خودش نیست، یه زیرصفحه‌ی داخلِ تبِ «وام»ه (رجوع کن به
     // [LoanTab]/[LoanSubTab]) - این state بهش می‌گه کدوم زیرصفحه رو باز کنه، مستقل از اینکه کاربر
@@ -508,13 +511,7 @@ private fun LoanCalcApp(
     LaunchedEffect(deepLinkLoanId) {
         if (deepLinkLoanId != null) {
             requestedLoanSubTab = LoanSubTab.MY_LOANS
-            if (currentRoute != BottomTab.LOAN.route) {
-                navController.navigate(BottomTab.LOAN.route) {
-                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            }
+            if (currentRoute != LOAN_ROUTE) navigateTo(LOAN_ROUTE)
         }
     }
 
@@ -548,7 +545,7 @@ private fun LoanCalcApp(
     // می‌شه.
     var bottomBarVisible by remember { mutableStateOf(true) }
     LaunchedEffect(currentRoute) {
-        if (currentRoute != BottomTab.LOAN.route) bottomBarVisible = true
+        if (currentRoute != LOAN_ROUTE) bottomBarVisible = true
     }
 
     // تپ دوباره رو هر تبی که از قبل انتخابه باید به صفحه‌ی اصلیِ همون تب ریست کنه (قبلاً فقط «وام
@@ -576,12 +573,14 @@ private fun LoanCalcApp(
             showExitHint = false
         }
     }
-    // اگه رو تبِ اصلی (وام) نیستیم، اول باید برگردیم به همون تب - نه اینکه یهو از کلِ اپ خارج بشیم.
-    // زیرصفحه‌های داخلِ خودِ هر تب (مثلاً جزئیاتِ وام تو «وام‌های من»، یا خودِ سوییچِ بینِ زیرصفحه‌های
-    // تبِ «وام» تو [LoanTab]) اول با BackHandlerِ خودشون (اولویتِ بالاتر، چون دیرتر رجیستر می‌شن)
-    // بسته می‌شن؛ این فقط وقتی به کار میاد که همون تب رو ریشه‌ی خودشه.
+    // اگه رو تبِ اصلی (خانه) نیستیم، اول باید برگردیم به همون تب - نه اینکه یهو از کلِ اپ خارج
+    // بشیم. زیرصفحه‌های داخلِ خودِ هر تب (مثلاً جزئیاتِ وام تو «وام‌های من»، یا خودِ سوییچِ بینِ
+    // زیرصفحه‌های تبِ «وام» تو [LoanTab]) اول با BackHandlerِ خودشون (اولویتِ بالاتر، چون دیرتر
+    // رجیستر می‌شن) بسته می‌شن؛ این فقط وقتی به کار میاد که همون تب رو ریشه‌ی خودشه. «وام»/«چک»
+    // (که دیگه عضوِ BottomTab نیستن) هم از همینجا رد می‌شن - برگشت ازشون یعنی برو خونه، دقیقاً
+    // مثلِ برگشت از هر تبِ دیگه‌ای.
     BackHandler(enabled = true) {
-        if (currentRoute == BottomTab.LOAN.route) {
+        if (currentRoute == BottomTab.HOME.route) {
             val now = System.currentTimeMillis()
             if (now - lastBackPressAt < 2000) {
                 (context as? Activity)?.finish()
@@ -590,11 +589,7 @@ private fun LoanCalcApp(
                 showExitHint = true
             }
         } else {
-            navController.navigate(BottomTab.LOAN.route) {
-                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                launchSingleTop = true
-                restoreState = true
-            }
+            navigateTo(BottomTab.HOME.route)
         }
     }
 
@@ -686,13 +681,7 @@ private fun LoanCalcApp(
                                     if (tab.route == currentRoute) {
                                         tabResetKeys[tab] = (tabResetKeys[tab] ?: 0) + 1
                                     } else {
-                                        navController.navigate(tab.route) {
-                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                saveState = true
-                                            }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
+                                        navigateTo(tab.route)
                                     }
                                 },
                             )
@@ -704,7 +693,7 @@ private fun LoanCalcApp(
         ) { padding ->
             NavHost(
                 navController = navController,
-                startDestination = BottomTab.LOAN.route,
+                startDestination = BottomTab.HOME.route,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
@@ -737,44 +726,38 @@ private fun LoanCalcApp(
                         // route به‌عنوانِ رشته پاس داده می‌شه (نه خودِ enumِ BottomTab) چون
                         // BottomTab تویِ همین فایلِ MainActivity.kt خصوصیه و HomeScreen تو یه
                         // فایلِ جدا (ui/home/HomeScreen.kt) زندگی می‌کنه.
-                        HomeScreen(onNavigateToRoute = { route ->
-                            navController.navigate(route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        })
+                        HomeScreen(onNavigateToRoute = ::navigateTo)
                     }
                 }
-                composable(BottomTab.LOAN.route) {
-                    key(tabResetKeys[BottomTab.LOAN] ?: 0) {
-                        LoanTab(
-                            requestedSubTab = requestedLoanSubTab,
-                            onManualAddFabPositioned = { rect -> tourBounds[TourTarget.MANUAL_ADD] = rect },
-                            onBottomBarVisibilityChanged = { visible -> bottomBarVisible = visible },
-                            deepLinkLoanId = deepLinkLoanId,
-                            onDeepLinkConsumed = { deepLinkViewModel.consume() },
-                        )
-                    }
+                composable(BottomTab.ASSETS.route) {
+                    key(tabResetKeys[BottomTab.ASSETS] ?: 0) { AssetsScreen() }
                 }
-                composable(BottomTab.CHEQUE.route) {
-                    key(tabResetKeys[BottomTab.CHEQUE] ?: 0) {
-                        ChequeScreen(onBack = {}, standalone = true)
-                    }
+                composable(BottomTab.REPORT.route) {
+                    key(tabResetKeys[BottomTab.REPORT] ?: 0) { ReportScreen() }
                 }
-                composable(BottomTab.ACCOUNTING.route) {
-                    key(tabResetKeys[BottomTab.ACCOUNTING] ?: 0) { AccountingScreen() }
+                composable(BottomTab.BUDGET.route) {
+                    key(tabResetKeys[BottomTab.BUDGET] ?: 0) { BudgetScreen() }
                 }
                 composable(BottomTab.DUE.route) {
                     key(tabResetKeys[BottomTab.DUE] ?: 0) {
-                        DueScreen(onNavigateToRoute = { route ->
-                            navController.navigate(route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        })
+                        DueScreen(onNavigateToRoute = ::navigateTo)
                     }
+                }
+                // «وام» و «چک» دیگه تبِ نوارِ پایین نیستن (رجوع کن به کامنتِ بالای BottomTab) - از
+                // تبِ «سررسید»/«خانه» به‌عنوانِ صفحه‌ی پوش‌شده باز می‌شن، پس خودشون یه دکمه‌ی
+                // برگشتِ واقعی لازم دارن (رجوع کن به onBack پایین).
+                composable(LOAN_ROUTE) {
+                    LoanTab(
+                        onBack = { navigateTo(BottomTab.HOME.route) },
+                        requestedSubTab = requestedLoanSubTab,
+                        onManualAddFabPositioned = {},
+                        onBottomBarVisibilityChanged = { visible -> bottomBarVisible = visible },
+                        deepLinkLoanId = deepLinkLoanId,
+                        onDeepLinkConsumed = { deepLinkViewModel.consume() },
+                    )
+                }
+                composable(CHEQUE_ROUTE) {
+                    ChequeScreen(onBack = { navigateTo(BottomTab.HOME.route) }, standalone = false)
                 }
             }
         }
@@ -913,18 +896,10 @@ private fun LoanCalcApp(
                         showSettings = true
                     } else {
                         showSettings = false
-                        // قدم‌هایی که رو یه تبِ خاص زندگی می‌کنن (مثلاً افزودنِ دستی که فقط رو
-                        // زیرصفحه‌ی «وام‌های من» وجود داره) خودکار به همون تب/زیرصفحه می‌رن - وگرنه
+                        // قدم‌هایی که رو یه تبِ خاص زندگی می‌کنن خودکار به همون تب می‌رن - وگرنه
                         // المانِ هدف اصلاً رندر/قابل‌اندازه‌گیری نیست.
-                        target.asLoanSubTab()?.let { subTab -> requestedLoanSubTab = subTab }
                         target.asBottomTab()?.let { tab ->
-                            if (currentRoute != tab.route) {
-                                navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
+                            if (currentRoute != tab.route) navigateTo(tab.route)
                         }
                     }
                 },
@@ -1076,6 +1051,7 @@ private fun BankLoanTab() {
  */
 @Composable
 private fun LoanTab(
+    onBack: () -> Unit,
     requestedSubTab: LoanSubTab?,
     onManualAddFabPositioned: (Rect) -> Unit,
     onBottomBarVisibilityChanged: (Boolean) -> Unit,
@@ -1093,11 +1069,24 @@ private fun LoanTab(
         if (subTab != LoanSubTab.MY_LOANS) onBottomBarVisibilityChanged(true)
     }
     // برگشتن از یه زیرصفحه‌ی غیرِ«بانکی» به «بانکی» (زیرصفحه‌ی پیش‌فرض) - قبل از رسیدن به
-    // BackHandlerِ بیرونیِ LoanCalcApp (که دیگه معنیش خروج/برگشتنِ بینِ تب‌هاست). زیرصفحه‌های داخلیِ
+    // BackHandlerِ بیرونیِ LoanCalcApp (که دیگه معنیش برگشتن به «خانه»ست). زیرصفحه‌های داخلیِ
     // خودِ هر اسکرین (مثلاً جزئیاتِ وام تو MyLoansScreen) اولویتِ بالاتری دارن چون دیرتر رجیستر می‌شن.
     BackHandler(enabled = subTab != LoanSubTab.BANK) { subTab = LoanSubTab.BANK }
 
     Column(modifier = Modifier.fillMaxSize()) {
+        // «وام» دیگه تبِ نوارِ پایین نیست (رجوع کن به کامنتِ بالای BottomTab تو این فایل) - چون از
+        // «سررسید»/«خانه» به‌عنوانِ صفحه‌ی پوش‌شده باز می‌شه، یه دکمه‌ی برگشتِ واقعی لازم داره.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+            }
+            Text("وام", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()

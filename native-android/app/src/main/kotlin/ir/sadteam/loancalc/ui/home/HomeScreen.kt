@@ -60,7 +60,7 @@ fun HomeScreen(onNavigateToRoute: (String) -> Unit) {
     val shortcuts = listOf(
         HomeShortcut("loan", "وام", "محاسبه و پیگیریِ اقساط", Icons.Filled.Payments, AppPrimary),
         HomeShortcut("cheque", "چک", "دریافتی/پرداختی و دسته‌چک", Icons.Filled.ReceiptLong, Color(0xFFB8860B)),
-        HomeShortcut("accounting", "حسابداری", "دخل‌وخرج، بودجه، گزارش", Icons.Filled.AccountBalanceWallet, Color(0xFF2E7D32)),
+        HomeShortcut("assets", "دارایی", "دخل‌وخرج، بودجه، گزارش", Icons.Filled.AccountBalanceWallet, Color(0xFF2E7D32)),
         HomeShortcut("due", "سررسید", "یادداشت و پرداخت‌های نزدیک", Icons.Filled.EventNote, Color(0xFF1565C0)),
     )
     LazyColumn(
