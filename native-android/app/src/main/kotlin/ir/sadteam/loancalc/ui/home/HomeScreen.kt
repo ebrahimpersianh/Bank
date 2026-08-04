@@ -5,124 +5,294 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.PersianCalendar
+import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.data.db.AccountTransactionEntity
+import ir.sadteam.loancalc.data.findCategory
+import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.note.NoteViewModel
+import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
+import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
+import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 
-private data class HomeShortcut(
-    val route: String,
-    val title: String,
-    val subtitle: String,
-    val icon: ImageVector,
-    val color: Color,
-)
+private val homeFaWeekDayNames = listOf("شنبه", "یک‌شنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه")
 
 /**
- * تبِ «خانه» - داشبوردِ ورودیِ اصلیِ اپ (بازسازیِ فازِ اولِ تب‌بندی، رجوع کن به CLAUDE.md). این
- * نسخه‌ی *اولیه*ست - فقط میان‌برهای سریع به بقیه‌ی تب‌ها، بدونِ جمع‌بندیِ عددی/آماریِ کاملِ اپِ
- * مرجع (که نیازمندِ جمع‌کردنِ داده از چند ViewModelِ جدا با ریسکِ بیشتره - عمداً به فازِ بعدی
- * موکول شده).
+ * تبِ «خانه» - داشبوردِ ورودیِ اصلیِ اپ، هم‌راستا با نمونه‌ی رفرنس (Poolaki - رجوع کن به CLAUDE.md،
+ * «بازطراحیِ تبِ خانه»): خلاصه‌ی مانده‌ی کلِ حساب‌ها بالای صفحه، کارتِ «امروز» با میان‌برِ سریعِ
+ * قسط/چک/یادداشت، لیستِ تراکنش‌های اخیر، دکمه‌ی شناورِ افزودن. چون پرداختِ قسط/چک خودکار تو
+ * تراکنشِ حسابداری هم ثبت می‌شه (رجوع کن به «سینکِ خودکارِ پرداختِ وام/چک ↔ تراکنشِ حسابداری» تو
+ * CLAUDE.md)، همون [AccountViewModel.transactions] برای «تراکنش‌های اخیر» کافیه - نیازی به ادغامِ
+ * جداگانه‌ی جدولِ اقساط نیست.
  */
 @Composable
-fun HomeScreen(onNavigateToRoute: (String) -> Unit) {
-    // عمداً بدونِ remember: AppPrimary یه گترِ @Composable ئه (رجوع کن به CompositionLocal تو
-    // Color.kt) که هر بار با تعویضِ تم مقدارش عوض می‌شه - رمِمبرکردنِ این لیست هم خودش کامپایل
-    // نمی‌شد (فراخوانیِ @Composable بیرون از یه context @Composable) هم رنگِ اولین تم رو برای
-    // همیشه قفل می‌کرد.
-    val shortcuts = listOf(
-        HomeShortcut("loan", "وام", "محاسبه و پیگیریِ اقساط", Icons.Filled.Payments, AppPrimary),
-        HomeShortcut("cheque", "چک", "دریافتی/پرداختی و دسته‌چک", Icons.Filled.ReceiptLong, Color(0xFFB8860B)),
-        HomeShortcut("assets", "دارایی", "دخل‌وخرج، بودجه، گزارش", Icons.Filled.AccountBalanceWallet, Color(0xFF2E7D32)),
-        HomeShortcut("due", "سررسید", "یادداشت و پرداخت‌های نزدیک", Icons.Filled.EventNote, Color(0xFF1565C0)),
-    )
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+fun HomeScreen(
+    onNavigateToRoute: (String) -> Unit,
+    accountViewModel: AccountViewModel = hiltViewModel(),
+    noteViewModel: NoteViewModel = hiltViewModel(),
+) {
+    val accounts by accountViewModel.accounts.collectAsState()
+    val transactions by accountViewModel.transactions.collectAsState()
+    val privacyMode = LocalPrivacyMode.current
+
+    val totalBalance = remember(accounts, transactions) {
+        accounts.sumOf { accountViewModel.balanceOf(it, transactions) }
+    }
+    val recentTransactions = remember(transactions) {
+        transactions
+            .sortedWith(
+                compareByDescending<AccountTransactionEntity> { it.year }
+                    .thenByDescending { it.month }
+                    .thenByDescending { it.day }
+                    .thenByDescending { it.id },
+            )
+            .take(6)
+    }
+
+    var selectedDate by remember { mutableStateOf(JalaliCalendar.today()) }
+    var showAddNote by remember { mutableStateOf(false) }
+
+    if (showAddNote) {
+        QuickAddNoteDialog(
+            date = selectedDate,
+            onDismiss = { showAddNote = false },
+            onSubmit = { text ->
+                noteViewModel.addNote(text, selectedDate.y, selectedDate.m, selectedDate.d, null)
+                showAddNote = false
+            },
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 100.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            "${maskIfPrivate(masked, fmt(totalBalance))} ریال",
+                            color = if (totalBalance < 0) AppDanger else AppText,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    Text(
+                        "${toFa(accounts.size)} حساب‌کتاب",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+            item {
+                TodayCard(
+                    date = selectedDate,
+                    onPrevDay = { selectedDate = PersianCalendar.addDays(selectedDate, -1) },
+                    onNextDay = { selectedDate = PersianCalendar.addDays(selectedDate, 1) },
+                    onAddInstallment = { onNavigateToRoute("loan") },
+                    onAddCheque = { onNavigateToRoute("cheque") },
+                    onAddNote = { showAddNote = true },
+                )
+            }
+            item {
+                AppCard(label = "تراکنش‌های اخیر") {
+                    if (recentTransactions.isEmpty()) {
+                        EmptyState(
+                            icon = Icons.Filled.SwapHoriz,
+                            title = "هنوز تراکنشی نیست",
+                            description = "پرداختِ اقساط/چک‌ها یا ثبتِ دخل‌وخرج، همینجا دیده می‌شه.",
+                        )
+                    } else {
+                        Column {
+                            recentTransactions.forEachIndexed { index, tx ->
+                                val accountName = accounts.firstOrNull { it.id == tx.accountId }?.name ?: "—"
+                                RecentTransactionRow(tx, accountName, privacyMode)
+                                if (index != recentTransactions.lastIndex) {
+                                    Box(modifier = Modifier.padding(vertical = 4.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        FloatingActionButton(
+            onClick = { onNavigateToRoute("assets") },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(20.dp),
+            containerColor = AppPrimary,
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = "افزودنِ تراکنش")
+        }
+    }
+}
+
+@Composable
+private fun TodayCard(
+    date: PersianDate,
+    onPrevDay: () -> Unit,
+    onNextDay: () -> Unit,
+    onAddInstallment: () -> Unit,
+    onAddCheque: () -> Unit,
+    onAddNote: () -> Unit,
+) {
+    val weekDay = homeFaWeekDayNames[JalaliCalendar.dayOfWeekSaturdayFirst(date)]
+    val dateText = "$weekDay، ${toFa(date.d)} ${persianMonthName(date.m)}"
+
+    AppCard(label = "امروز") {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onPrevDay) {
+                Icon(Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل")
+            }
+            Text(dateText, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            IconButton(onClick = onNextDay) {
+                Icon(Icons.Filled.ChevronRight, contentDescription = "روزِ بعد")
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            TodayQuickAction("قسط", Icons.Filled.Payments, Modifier.weight(1f), onAddInstallment)
+            TodayQuickAction("چک", Icons.Filled.ReceiptLong, Modifier.weight(1f), onAddCheque)
+            TodayQuickAction("یادداشت", Icons.Filled.EditNote, Modifier.weight(1f), onAddNote)
+        }
+    }
+}
+
+@Composable
+private fun TodayQuickAction(label: String, icon: ImageVector, modifier: Modifier, onClick: () -> Unit) {
+    Column(
+        modifier = modifier
+            .background(AppPrimary.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+            .pressScaleClickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        item {
-            AppCard {
-                Text("خوش اومدی!", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Icon(icon, contentDescription = label, tint = AppPrimary, modifier = Modifier.size(20.dp))
+        Text(label, color = AppPrimary, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
+    }
+}
+
+@Composable
+private fun RecentTransactionRow(tx: AccountTransactionEntity, accountName: String, privacyMode: Boolean) {
+    val category = findCategory(tx.category)
+    val isIncome = tx.type == "DEPOSIT"
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (category != null) {
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .background(category.color.copy(alpha = 0.16f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(category.icon, contentDescription = null, tint = category.color, modifier = Modifier.size(16.dp))
+                }
+            }
+            Column(modifier = Modifier.padding(start = 10.dp)) {
+                Text(category?.name ?: (if (isIncome) "واریز" else "برداشت"), color = AppText, fontSize = 13.sp)
                 Text(
-                    "از اینجا سریع به وام، چک، حسابداری و سررسیدهات دسترسی داری.",
+                    "$accountName — ${toFa(tx.day)}/${toFa(tx.month)}/${toFa(tx.year)}",
                     color = AppMuted,
-                    fontSize = 12.5.sp,
-                    modifier = Modifier.padding(top = 4.dp),
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 2.dp),
                 )
             }
         }
-        item {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .size(320.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                items(shortcuts) { shortcut -> HomeShortcutTile(shortcut, onNavigateToRoute) }
-            }
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text(
+                "${if (isIncome) "+" else "-"}${maskIfPrivate(masked, fmt(tx.amount))}",
+                color = if (isIncome) AppPrimary else AppDanger,
+                fontSize = 13.sp,
+            )
         }
     }
 }
 
 @Composable
-private fun HomeShortcutTile(shortcut: HomeShortcut, onClick: (String) -> Unit) {
-    AppCard(
-        modifier = Modifier
-            .aspectRatio(1.35f)
-            .pressScaleClickable { onClick(shortcut.route) },
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .background(shortcut.color.copy(alpha = 0.16f), CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(shortcut.icon, contentDescription = shortcut.title, tint = shortcut.color)
-            }
-            Text(
-                shortcut.title,
-                color = AppText,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 10.dp),
+private fun QuickAddNoteDialog(date: PersianDate, onDismiss: () -> Unit, onSubmit: (String) -> Unit) {
+    var text by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("یادداشتِ ${toFa(date.d)} ${persianMonthName(date.m)}") },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier.fillMaxWidth(),
             )
-            Text(
-                shortcut.subtitle,
-                color = AppMuted,
-                fontSize = 11.sp,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
-    }
+        },
+        confirmButton = {
+            TextButton(onClick = { if (text.isNotBlank()) onSubmit(text.trim()) }) { Text("ثبت") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("انصراف") }
+        },
+    )
 }
+
+private val homeFaMonthNames = listOf(
+    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
+    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
+)
+
+private fun persianMonthName(month: Int): String = homeFaMonthNames[(month - 1).coerceIn(0, 11)]
