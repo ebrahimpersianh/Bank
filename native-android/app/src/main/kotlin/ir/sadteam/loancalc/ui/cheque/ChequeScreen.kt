@@ -131,7 +131,15 @@ fun chequeStatusLabel(status: String) = when (status) {
  * books) عین MyLoansScreen با یه screenKey مشتق‌شده + AnimatedContent.
  */
 @Composable
-fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel()) {
+fun ChequeScreen(
+    onBack: () -> Unit,
+    // وقتی چک به‌عنوانِ تبِ مستقلِ نوارِ پایین استفاده می‌شه (رجوع کن به CLAUDE.md - بازسازیِ
+    // تب‌بندی)، دیگه «برگشت» معنی نداره (همتای بقیه‌ی تب‌هاست، نه زیرصفحه‌ی یه تبِ دیگه) - دکمه‌ی
+    // برگشتِ ردیفِ بالای لیست مخفی می‌شه. زیرصفحه‌های داخلی (افزودن/جزئیات/گزارش/...) دست‌نخورده
+    // می‌مونن، چون اون‌ها همیشه با همون منطقِ داخلیِ خودشون به لیست برمی‌گردن، نه به بیرونِ ChequeScreen.
+    standalone: Boolean = false,
+    viewModel: ChequeViewModel = hiltViewModel(),
+) {
     var showAddForm by remember { mutableStateOf(false) }
     var editingChequeId by remember { mutableStateOf<Long?>(null) }
     var openedChequeId by remember { mutableStateOf<Long?>(null) }
@@ -291,14 +299,16 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                        if (!standalone) {
+                            IconButton(onClick = onBack) {
+                                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                            }
                         }
                         Text(
                             if (showArchived) "بایگانی چک" else "امور چک",
                             color = AppText,
                             fontSize = 16.sp,
-                            modifier = Modifier.padding(start = 4.dp),
+                            modifier = Modifier.padding(start = if (standalone) 0.dp else 4.dp),
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         // تنظیمات این بخش (دسته‌چک‌ها/بایگانی/پشتیبان‌گیری/بازیابی) زیر آیکون
