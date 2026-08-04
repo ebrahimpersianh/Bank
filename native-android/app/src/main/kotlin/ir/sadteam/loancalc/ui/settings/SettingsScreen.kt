@@ -145,6 +145,7 @@ fun SettingsScreen(
     appLockViewModel: AppLockViewModel = hiltViewModel(),
     autoBackupViewModel: AutoBackupViewModel = hiltViewModel(),
     hapticsViewModel: HapticsViewModel = hiltViewModel(),
+    smsAutoImportViewModel: SmsAutoImportViewModel = hiltViewModel(),
     // برای تورِ راهنمای اولین ورود (AppTourOverlay تو MainActivity.kt، قدم‌های SETTINGS_CALENDAR/
     // SETTINGS_CHEQUE): وقتی non-null باشه، جستجوی همین پنل خودکار رو همین عنوان فیلتر می‌شه (دقیقاً
     // مثلِ تایپ‌کردنِ کاربر تو «جستجو تو تنظیمات») تا ردیفِ هدف بدونِ نیاز به اسکرول پیدا بشه.
@@ -220,6 +221,7 @@ fun SettingsScreen(
                 appLockViewModel = appLockViewModel,
                 autoBackupViewModel = autoBackupViewModel,
                 hapticsViewModel = hapticsViewModel,
+                smsAutoImportViewModel = smsAutoImportViewModel,
                 onShowLoginPrompt = { showLoginPrompt = true },
                 onShowFinancialCalendar = { showFinancialCalendar = true },
                 onShowStats = { showStats = true },
@@ -286,6 +288,7 @@ private fun SettingsMainContent(
     appLockViewModel: AppLockViewModel,
     autoBackupViewModel: AutoBackupViewModel,
     hapticsViewModel: HapticsViewModel,
+    smsAutoImportViewModel: SmsAutoImportViewModel,
     onShowLoginPrompt: () -> Unit,
     onShowFinancialCalendar: () -> Unit,
     onShowStats: () -> Unit,
@@ -310,10 +313,15 @@ private fun SettingsMainContent(
     val autoBackupEnabled by autoBackupViewModel.enabled.collectAsState()
     val lastAutoBackupAt by autoBackupViewModel.lastBackupAt.collectAsState()
     val vibrationEnabled by hapticsViewModel.enabled.collectAsState()
+    val smsAutoImportEnabled by smsAutoImportViewModel.enabled.collectAsState()
+    val lastSmsImportAt by smsAutoImportViewModel.lastImportAt.collectAsState()
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) notificationsViewModel.enable() }
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) smsAutoImportViewModel.enable() }
     var searchQuery by remember { mutableStateOf(tourHighlightQuery ?: "") }
     // اگه تور یه قدمِ جدید رو پنلِ تنظیمات فعال کرد (مثلاً از SETTINGS_CALENDAR به SETTINGS_CHEQUE)،
     // جستجو رو خودکار با همون فیلترِ جدید هم‌قدم کن - دقیقاً همون کاری که خودِ کاربر با تایپ می‌کرد.
@@ -770,6 +778,48 @@ private fun SettingsMainContent(
                         ) {
                             Text("بازیابی از سرور ابری")
                         }
+                    }
+                }
+            }
+
+            if (matches("پیامک بانکی", "خواندن خودکار پیامک")) {
+                AppCard(label = "خوندنِ خودکارِ پیامکِ بانکی", modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "با رسیدنِ پیامکِ برداشت/واریزِ بانک، خودکار یه تراکنش تو حسابداری ثبت کن",
+                                color = AppMuted,
+                                fontSize = 12.sp,
+                            )
+                            if (lastSmsImportAt != null) {
+                                Text(
+                                    "آخرین ثبتِ خودکار: $lastSmsImportAt",
+                                    color = AppMuted,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                )
+                            }
+                        }
+                        Switch(
+                            checked = smsAutoImportEnabled,
+                            onCheckedChange = { checked ->
+                                if (!checked) {
+                                    smsAutoImportViewModel.disable()
+                                } else if (ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.RECEIVE_SMS,
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    smsAutoImportViewModel.enable()
+                                } else {
+                                    smsPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS)
+                                }
+                            },
+                            colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
+                        )
                     }
                 }
             }

@@ -29,6 +29,8 @@ class UiPrefs(private val context: Context) {
         val RATE_PROMPT_OPENS = intPreferencesKey("rate_prompt_opens")
         val RATE_PROMPT_DISMISSED = booleanPreferencesKey("rate_prompt_dismissed")
         val RATE_PROMPT_LAST_SHOWN_AT_OPENS = intPreferencesKey("rate_prompt_last_shown_at_opens")
+        val SMS_AUTO_IMPORT_ENABLED = booleanPreferencesKey("sms_auto_import_enabled")
+        val LAST_SMS_IMPORT_AT = stringPreferencesKey("last_sms_import_at")
     }
 
     // پیش‌فرض روشن/سفید (به‌درخواست کاربر «تم اصلی برنامه سفید باشه») - کاربری که قبلاً دستی
@@ -138,5 +140,19 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setRateDialogLastShownAtOpens(value: Int) {
         context.uiPrefsDataStore.edit { it[Keys.RATE_PROMPT_LAST_SHOWN_AT_OPENS] = value }
+    }
+
+    /** خوندنِ خودکارِ پیامکِ بانکی (رجوع کن به BankSmsReceiver/BankSmsParser تو core) - پیش‌فرض
+     * خاموش (مجوزِ حساسیه، فقط با سوییچِ صریحِ کاربر تو تنظیمات روشن و مجوزِ Runtime درخواست می‌شه). */
+    val smsAutoImportEnabled: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.SMS_AUTO_IMPORT_ENABLED] ?: false }
+
+    suspend fun setSmsAutoImportEnabled(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.SMS_AUTO_IMPORT_ENABLED] = value }
+    }
+
+    val lastSmsImportAt: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.LAST_SMS_IMPORT_AT] }
+
+    suspend fun setLastSmsImportAt(value: String) {
+        context.uiPrefsDataStore.edit { it[Keys.LAST_SMS_IMPORT_AT] = value }
     }
 }
