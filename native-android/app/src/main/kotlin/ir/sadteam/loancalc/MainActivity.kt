@@ -543,7 +543,7 @@ private fun LoanCalcApp(
             topBar = {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                    title = { Text("وام من") },
+                    title = { Text("حسابدار من") },
                     navigationIcon = {
                         IconButton(
                             onClick = {
@@ -786,7 +786,7 @@ private fun LoanCalcApp(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "نسخه‌ی جدیدِ برنامه‌ی وام من موجوده",
+                        "نسخه‌ی جدیدِ برنامه‌ی حسابدار من موجوده",
                         color = Color.White,
                         fontSize = 13.sp,
                         modifier = Modifier.weight(1f),
