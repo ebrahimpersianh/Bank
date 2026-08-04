@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
+import ir.sadteam.loancalc.ui.sound.rememberDeleteSound
 import ir.sadteam.loancalc.ui.theme.AppDanger
 
 /**
@@ -47,9 +48,13 @@ fun SwipeToDeleteRow(
     confirmDismiss: Boolean = true,
     content: @Composable () -> Unit,
 ) {
+    val playDeleteSound = rememberDeleteSound()
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.StartToEnd || value == SwipeToDismissBoxValue.EndToStart) {
+                // فقط وقتی این ژست خودش تصمیمِ نهاییِ حذفه (نه صرفاً بازکردنِ یه دیالوگِ تاییدِ
+                // دیگه که خودش صدای مستقل داره - رجوع کن به ConfirmDeleteDialog) صدا پخش می‌شه.
+                if (confirmDismiss) playDeleteSound()
                 onDelete()
             }
             confirmDismiss

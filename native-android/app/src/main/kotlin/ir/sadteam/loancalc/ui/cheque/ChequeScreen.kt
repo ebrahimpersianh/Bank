@@ -28,12 +28,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -150,12 +152,23 @@ fun ChequeScreen(
     var showSayadInquiry by remember { mutableStateOf(false) }
     var showReport by remember { mutableStateOf(false) }
     var showReminderSettings by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     val allCheques by viewModel.cheques.collectAsState()
     val chequeBooks by viewModel.chequeBooks.collectAsState()
-    val visibleCheques = remember(allCheques, typeFilter, showArchived) {
+    val visibleCheques = remember(allCheques, typeFilter, showArchived, searchQuery) {
         val filterName = typeFilter?.name
-        allCheques.filter { it.archived == showArchived && (filterName == null || it.type == filterName) }
+        val q = searchQuery.trim()
+        allCheques.filter {
+            it.archived == showArchived &&
+                (filterName == null || it.type == filterName) &&
+                (
+                    q.isBlank() ||
+                        it.ownerName.contains(q, ignoreCase = true) ||
+                        it.chequeNumber.contains(q, ignoreCase = true) ||
+                        it.bankName.contains(q, ignoreCase = true)
+                    )
+        }
     }
     val stats = remember(allCheques) { computeChequeStats(allCheques) }
     val openedCheque = openedChequeId?.let { id -> allCheques.firstOrNull { it.id == id } }
@@ -358,6 +371,17 @@ fun ChequeScreen(
                             }
                         }
                     }
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("جستجو تو چک‌ها (اسم/شماره/بانک)...") },
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
                 }
 
                 item {

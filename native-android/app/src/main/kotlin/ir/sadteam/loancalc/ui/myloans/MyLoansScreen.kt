@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PriorityHigh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -224,7 +225,14 @@ fun MyLoansScreen(
     // openedLoan/editingLoan/canSaveAnotherLoan/DashboardSummary) عمداً فیلتر نمی‌شه - فقط لیستِ
     // نمایشیِ پایینِ صفحه (visibleLoans).
     var showSettled by remember { mutableStateOf(false) }
-    val visibleLoans = remember(loans, showSettled) { loans.filter { isLoanSettled(it) == showSettled } }
+    var searchQuery by remember { mutableStateOf("") }
+    val visibleLoans = remember(loans, showSettled, searchQuery) {
+        val q = searchQuery.trim()
+        loans.filter {
+            isLoanSettled(it) == showSettled &&
+                (q.isBlank() || it.name.contains(q, ignoreCase = true) || it.bank.contains(q, ignoreCase = true))
+        }
+    }
     val settledCount = remember(loans) { loans.count { isLoanSettled(it) } }
 
     // جابه‌جاییِ دستیِ کارت‌های وام (نگه‌داشتنِ چندثانیه‌ای + کشیدن بالا/پایین) - orderedLoans یه
@@ -443,6 +451,16 @@ fun MyLoansScreen(
 
                     if (loans.isNotEmpty()) {
                         item {
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                placeholder = { Text("جستجو تو وام‌ها (اسم/بانک)...") },
+                                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                            )
+                        }
+                        item {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -490,7 +508,13 @@ fun MyLoansScreen(
 
                     if (visibleLoans.isEmpty()) {
                         item {
-                            if (showSettled) {
+                            if (searchQuery.isNotBlank()) {
+                                EmptyState(
+                                    icon = Icons.Filled.Search,
+                                    title = "چیزی پیدا نشد",
+                                    description = "وامی با این اسم/بانک پیدا نشد.",
+                                )
+                            } else if (showSettled) {
                                 EmptyState(
                                     icon = Icons.Filled.CheckCircle,
                                     title = "هنوز وامی تسویه نشده",

@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Handshake
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -133,6 +134,11 @@ private fun DebtList(
 ) {
     val privacyMode = LocalPrivacyMode.current
     var newName by rememberSaveable { mutableStateOf("") }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val visibleCounterparties = remember(counterparties, searchQuery) {
+        val q = searchQuery.trim()
+        if (q.isBlank()) counterparties else counterparties.filter { it.name.contains(q, ignoreCase = true) }
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -145,6 +151,18 @@ private fun DebtList(
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                 }
                 Text("طلب و بدهی", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        if (counterparties.isNotEmpty()) {
+            item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("جستجو تو طرف‌حساب‌ها...") },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
             }
         }
         if (showAddCounterparty) {
@@ -177,16 +195,20 @@ private fun DebtList(
                 ) { Text("افزودنِ طرفِ‌حساب") }
             }
         }
-        if (counterparties.isEmpty()) {
+        if (visibleCounterparties.isEmpty()) {
             item {
                 EmptyState(
                     icon = Icons.Filled.Handshake,
-                    title = "هنوز طرفِ‌حسابی نداری",
-                    description = "طلب یا بدهیِ خودت با یه شخص رو اینجا ثبت کن تا فراموش نشه.",
+                    title = if (counterparties.isEmpty()) "هنوز طرفِ‌حسابی نداری" else "چیزی پیدا نشد",
+                    description = if (counterparties.isEmpty()) {
+                        "طلب یا بدهیِ خودت با یه شخص رو اینجا ثبت کن تا فراموش نشه."
+                    } else {
+                        "طرفِ‌حسابی با این اسم پیدا نشد."
+                    },
                 )
             }
         } else {
-            items(counterparties, key = { it.id }) { counterparty ->
+            items(visibleCounterparties, key = { it.id }) { counterparty ->
                 val balance = netBalance(counterparty.id)
                 AppCard(modifier = Modifier.pressScaleClickable { onOpen(counterparty) }) {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

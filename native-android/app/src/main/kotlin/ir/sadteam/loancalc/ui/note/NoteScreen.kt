@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -53,6 +54,11 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
     var month by rememberSaveable { mutableStateOf(today.m) }
     var day by rememberSaveable { mutableStateOf(today.d) }
     var pendingDelete by remember { mutableStateOf<NoteEntity?>(null) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val visibleNotes = remember(notes, searchQuery) {
+        val q = searchQuery.trim()
+        if (q.isBlank()) notes else notes.filter { it.text.contains(q, ignoreCase = true) }
+    }
 
     pendingDelete?.let { note ->
         ConfirmDeleteDialog(
@@ -74,6 +80,18 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                 }
                 Text("یادداشت‌ها", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        if (notes.isNotEmpty()) {
+            item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("جستجو تو یادداشت‌ها...") },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
             }
         }
         item {
