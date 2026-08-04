@@ -57,6 +57,8 @@ import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.RequestQuote
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -116,6 +118,7 @@ import ir.sadteam.loancalc.ui.BankLoanOutcome
 import ir.sadteam.loancalc.ui.BankLoanScreen
 import ir.sadteam.loancalc.ui.DepositScreen
 import ir.sadteam.loancalc.ui.ResultScreen
+import ir.sadteam.loancalc.ui.accounting.AccountingScreen
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
@@ -166,6 +169,7 @@ private enum class BottomTab(
     AFFORD("afford", "محاسبه‌گر", Icons.Outlined.RequestQuote, Icons.Filled.RequestQuote),
     DEPOSIT("deposit", "سود سپرده", Icons.Outlined.TrendingUp, Icons.Filled.TrendingUp),
     MY_LOANS("my_loans", "وام‌های من", Icons.Outlined.FolderOpen, Icons.Filled.Folder),
+    ACCOUNTING("accounting", "حسابداری", Icons.Outlined.AccountBalanceWallet, Icons.Filled.AccountBalanceWallet),
 }
 
 // ترتیب/محتوای کاملِ تورِ راهنمای اولین ورود (AppTourOverlay) - رجوع کن به همون کامپوننت پایین‌تر
@@ -212,6 +216,10 @@ private enum class TourTarget(val title: String, val hint: String) {
         "وام‌های من",
         "وام‌ها و چک‌هات رو یه‌جا ذخیره کن و وضعیتِ هر قسط رو پیگیری کن.",
     ),
+    ACCOUNTING(
+        "حسابداری",
+        "دخل‌وخرجِ روزمره‌ت رو با دسته‌بندی ثبت کن، بودجه بذار، و گزارشِ ماهانه ببین.",
+    ),
     MANUAL_ADD(
         "افزودن دستی وام",
         "با این دکمه یه وام رو دستی (بدونِ محاسبه) اضافه کن و اقساطش رو خودت پیگیری کن - آخرین قدمِ تور!",
@@ -225,6 +233,7 @@ private fun TourTarget.asBottomTab(): BottomTab? = when (this) {
     TourTarget.AFFORD -> BottomTab.AFFORD
     TourTarget.DEPOSIT -> BottomTab.DEPOSIT
     TourTarget.MY_LOANS, TourTarget.MANUAL_ADD -> BottomTab.MY_LOANS
+    TourTarget.ACCOUNTING -> BottomTab.ACCOUNTING
     else -> null
 }
 
@@ -233,6 +242,7 @@ private fun BottomTab.asTourTarget(): TourTarget = when (this) {
     BottomTab.AFFORD -> TourTarget.AFFORD
     BottomTab.DEPOSIT -> TourTarget.DEPOSIT
     BottomTab.MY_LOANS -> TourTarget.MY_LOANS
+    BottomTab.ACCOUNTING -> TourTarget.ACCOUNTING
 }
 
 @AndroidEntryPoint
@@ -684,6 +694,9 @@ private fun LoanCalcApp(
                             onDeepLinkConsumed = { deepLinkViewModel.consume() },
                         )
                     }
+                }
+                composable(BottomTab.ACCOUNTING.route) {
+                    key(tabResetKeys[BottomTab.ACCOUNTING] ?: 0) { AccountingScreen() }
                 }
             }
         }

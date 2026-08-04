@@ -14,4 +14,5 @@ data class AccountTransactionEntity(
     val month: Int,
     val day: Int,
     val createdAt: String,
+    val category: String? = null,
 )

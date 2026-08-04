@@ -17,12 +17,14 @@ import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.db.AccountDao
 import ir.sadteam.loancalc.data.db.AccountTransactionDao
 import ir.sadteam.loancalc.data.db.AppDatabase
+import ir.sadteam.loancalc.data.db.BudgetDao
 import ir.sadteam.loancalc.data.db.CalculationHistoryDao
 import ir.sadteam.loancalc.data.db.ChequeBookDao
 import ir.sadteam.loancalc.data.db.ChequeDao
 import ir.sadteam.loancalc.data.db.IncomeDao
 import ir.sadteam.loancalc.data.db.LoanDao
 import ir.sadteam.loancalc.data.db.LoanRowDao
+import ir.sadteam.loancalc.data.db.RecurringPaymentDao
 import ir.sadteam.loancalc.data.network.ApiClient
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -103,12 +105,20 @@ object AppModule {
     fun provideAccountTransactionDao(database: AppDatabase): AccountTransactionDao = database.accountTransactionDao()
 
     @Provides
+    fun provideBudgetDao(database: AppDatabase): BudgetDao = database.budgetDao()
+
+    @Provides
+    fun provideRecurringPaymentDao(database: AppDatabase): RecurringPaymentDao = database.recurringPaymentDao()
+
+    @Provides
     @Singleton
     fun provideAccountRepository(
         accountDao: AccountDao,
         transactionDao: AccountTransactionDao,
         apiService: ApiService,
-    ): AccountRepository = AccountRepository(accountDao, transactionDao, apiService)
+        budgetDao: BudgetDao,
+        recurringPaymentDao: RecurringPaymentDao,
+    ): AccountRepository = AccountRepository(accountDao, transactionDao, apiService, budgetDao, recurringPaymentDao)
 
     @Provides
     @Singleton

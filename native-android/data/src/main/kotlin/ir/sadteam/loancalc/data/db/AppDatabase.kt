@@ -19,8 +19,10 @@ import net.sqlcipher.database.SupportFactory
         AccountTransactionEntity::class,
         IncomeEntity::class,
         CalculationHistoryEntity::class,
+        BudgetEntity::class,
+        RecurringPaymentEntity::class,
     ],
-    version = 12,
+    version = 13,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -38,6 +40,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun accountTransactionDao(): AccountTransactionDao
     abstract fun incomeDao(): IncomeDao
     abstract fun calculationHistoryDao(): CalculationHistoryDao
+    abstract fun budgetDao(): BudgetDao
+    abstract fun recurringPaymentDao(): RecurringPaymentDao
 
     companion object {
         private val MIGRATION_9_10 = object : Migration(9, 10) {
@@ -120,6 +124,38 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** پایه‌ی ماژولِ حسابداریِ شخصی («حسابدار من») - دسته‌بندی روی تراکنشِ حسابِ موجود
+         * ([AccountTransactionEntity]) + دو جدولِ جدید برای بودجه‌بندی و پرداخت‌های تکراری. */
+        private val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE account_transactions ADD COLUMN category TEXT")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS budgets (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        categoryName TEXT NOT NULL,
+                        monthlyCap REAL NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS recurring_payments (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        amount REAL NOT NULL,
+                        type TEXT NOT NULL,
+                        categoryName TEXT,
+                        accountId INTEGER,
+                        dayOfMonth INTEGER NOT NULL,
+                        reminderDayOffsets TEXT,
+                        createdAt TEXT NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -145,7 +181,7 @@ abstract class AppDatabase : RoomDatabase() {
                         // می‌کنه - یه migration واقعی نوشتیم که ستون جدید رو اضافه کنه بدون پاک‌کردنِ
                         // جدول‌ها. fallbackToDestructiveMigration فقط برای نسخه‌های خیلی قدیمی‌تر
                         // (قبل از این migration) که پوشش داده نشدن نگه داشته شده.
-                        .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+                        .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
                         .fallbackToDestructiveMigration()
                         .build()
                         .also { instance = it }
