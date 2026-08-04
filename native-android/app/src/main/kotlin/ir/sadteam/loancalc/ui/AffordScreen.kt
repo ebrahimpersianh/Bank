@@ -44,6 +44,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
+import ir.sadteam.loancalc.ui.components.amountSliderSteps
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.countUpDouble
@@ -115,6 +116,9 @@ fun AffordScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel()
                             payText = v.toLong().toString()
                         },
                         valueRange = 10_000_000f..500_000_000f,
+                        // پله‌بندی به گامِ نیم‌میلیون‌تومانی (رنجِ این فیلد کوچیک‌تر از مبلغِ وامه،
+                        // برای همین گامِ ریزتر - رجوع کن به amountSliderSteps).
+                        steps = amountSliderSteps(10_000_000f..500_000_000f, chunk = 5_000_000f),
                     )
                 }
             }
@@ -279,6 +283,7 @@ private fun RateFinderCard() {
                 onValueChange = { v -> amountSlider = v; amountText = v.toLong().toString() },
                 valueRange = 100_000_000f..10_000_000_000f,
                 modifier = Modifier.padding(top = 6.dp),
+                steps = amountSliderSteps(100_000_000f..10_000_000_000f),
             )
             OutlinedTextField(
                 value = installmentText,
@@ -305,6 +310,7 @@ private fun RateFinderCard() {
                 onValueChange = { v -> installmentSlider = v; installmentText = v.toLong().toString() },
                 valueRange = 1_000_000f..200_000_000f,
                 modifier = Modifier.padding(top = 6.dp),
+                steps = amountSliderSteps(1_000_000f..200_000_000f, chunk = 1_000_000f),
             )
             OutlinedTextField(
                 value = monthsText,

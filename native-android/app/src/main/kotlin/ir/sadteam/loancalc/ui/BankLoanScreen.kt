@@ -73,6 +73,7 @@ import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.PresetCard
 import ir.sadteam.loancalc.ui.components.SlimSlider
+import ir.sadteam.loancalc.ui.components.amountSliderSteps
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyRowScrollbar
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
@@ -402,6 +403,10 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
                             amountText = v.toLong().toString()
                         },
                         valueRange = amountSliderRange,
+                        // پله‌بندی به گام‌های ۱۰میلیون‌تومانی (۱۰۰,۰۰۰,۰۰۰ ریال) - خواسته‌ی صریحِ
+                        // کاربر: کشیدنِ اسلایدر باید عددِ گرد بده (۲۰۰ بعد ۲۱۰ میلیون تومان...)، نه
+                        // مقادیرِ پیوسته/نامرتب. رجوع کن به amountSliderSteps پایینِ فایل.
+                        steps = amountSliderSteps(amountSliderRange),
                     )
                 }
             }

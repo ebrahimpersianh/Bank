@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -69,15 +71,18 @@ import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.ordinalFa
 import ir.sadteam.loancalc.core.toFa
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.data.banks
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.components.StaggerIn
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.BankTile
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
+import ir.sadteam.loancalc.ui.components.amountSliderSteps
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
@@ -136,6 +141,9 @@ fun ResultScreen(
     // عوض می‌شه)، ویرایشِ قبلی خودکار پاک/بازنشانی می‌شه.
     var editMode by remember { mutableStateOf(false) }
     var editAmountText by remember(outcome) { mutableStateOf(outcome.result.originalPrincipal.toLong().toString()) }
+    var editAmountSlider by remember(outcome) {
+        mutableStateOf(outcome.result.originalPrincipal.toFloat().coerceIn(100_000_000f, 10_000_000_000f))
+    }
     var editRateText by remember(outcome) { mutableStateOf(trimRateResult(outcome.ratePct)) }
     var editRateSlider by remember(outcome) { mutableStateOf(outcome.ratePct.toFloat().coerceIn(0f, 50f)) }
     var editNText by remember(outcome) { mutableStateOf(outcome.n.toString()) }
@@ -295,13 +303,35 @@ fun ResultScreen(
                     AppCard(label = "مبلغ وام") {
                         OutlinedTextField(
                             value = editAmountText,
-                            onValueChange = { editAmountText = cleanNum(it) },
+                            onValueChange = { raw ->
+                                val digits = cleanNum(raw)
+                                editAmountText = digits
+                                val n = digits.toLongOrNull() ?: 0L
+                                if (n in 100_000_000L..10_000_000_000L) editAmountSlider = n.toFloat()
+                            },
                             visualTransformation = ThousandsSeparatorTransformation(),
                             suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             colors = appFieldColors(),
+                        )
+                        (editAmountText.toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { r ->
+                            Text(
+                                "${numberToWordsFa((r / 10).toDouble())} تومان",
+                                color = AppMuted,
+                                fontSize = 11.5.sp,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
+                        SlimSlider(
+                            value = editAmountSlider,
+                            onValueChange = { v ->
+                                editAmountSlider = v
+                                editAmountText = v.toLong().toString()
+                            },
+                            valueRange = 100_000_000f..10_000_000_000f,
+                            steps = amountSliderSteps(100_000_000f..10_000_000_000f),
                         )
                     }
                     AppCard(label = "نرخ سود سالانه") {
@@ -391,6 +421,21 @@ fun ResultScreen(
                             singleLine = true,
                             colors = appFieldColors(),
                         )
+                        // انتخابِ لوگو - همون الگویی که رو دیالوگِ ویرایشِ مشخصاتِ LoanDetailScreen
+                        // پیاده شده؛ لمسِ یه لوگو اسمِ دقیقش رو تو فیلدِ بالا می‌ذاره، فیلد همچنان
+                        // برای بانک/فروشنده‌ی خارج از لیست دستی باز می‌مونه.
+                        LazyRow(
+                            modifier = Modifier.padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            items(banks, key = { it.name }) { b ->
+                                BankTile(
+                                    bank = b,
+                                    selected = editBankName == b.name,
+                                    onClick = { editBankName = b.name },
+                                )
+                            }
+                        }
                     }
                     AppCard(label = "وام‌گیرنده (اختیاری)") {
                         OutlinedTextField(

@@ -35,6 +35,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
+import ir.sadteam.loancalc.ui.components.amountSliderSteps
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.countUpDouble
@@ -104,6 +105,8 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                             amountText = v.toLong().toString()
                         },
                         valueRange = 100_000_000f..10_000_000_000f,
+                        // پله‌بندی به گامِ ۱۰میلیون‌تومانی - رجوع کن به amountSliderSteps.
+                        steps = amountSliderSteps(100_000_000f..10_000_000_000f),
                     )
                 }
             }

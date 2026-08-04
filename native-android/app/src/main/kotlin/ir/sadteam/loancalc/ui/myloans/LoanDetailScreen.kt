@@ -635,16 +635,21 @@ fun LoanDetailScreen(
             }
         }
 
-        // اگه اقساطِ پرداخت‌نشده با هم برابر نباشن (مثلاً بعدِ ویرایشِ تکیِ یه قسط، یا وامِ
-        // قرض‌الحسنه‌ای که ذاتاً اقساطِ کارمزدی/اصلِ‌وام نابرابر داره)، loan.installment دیگه
-        // نماینده‌ی «همه‌ی اقساط» نیست - عددِ بالای صفحه به‌جاش مبلغِ اولین قسطِ پرداخت‌نشده
-        // («قسطِ بعدی») رو نشون می‌ده، که هم درسته هم مفیدتره (خواسته‌ی کاربر - قبلاً بعدِ ویرایشِ
-        // تکی، عددِ بالا مبلغِ قدیمی/گمراه‌کننده می‌موند).
+        // عددِ بالای صفحه همیشه باید مبلغِ *واقعیِ* اولین قسطِ پرداخت‌نشده رو نشون بده، نه
+        // loan.installmentِ کهنه - رجوع کن به مورد ۱۴/۱۶ تو CLAUDE.md.
+        // باگِ رفع‌شده: نسخه‌ی قبلی فقط وقتی «قسط‌های پرداخت‌نشده با هم فرق دارن»
+        // (unpaidAmounts.distinct().size > 1) این مبلغِ واقعی رو نشون می‌داد - اگه فقط یه قسطِ
+        // پرداخت‌نشده مونده باشه (مثلاً وامِ ۲قسطی که قسطِ ۱ با مبلغِ دیگه‌ای پرداخت شده)، distinct
+        // size همیشه ۱ می‌شه (چیزی برای «تنوع» نیست) و کد اشتباهی fallback به فیلدِ کهنه می‌کرد،
+        // با اینکه اون قسطِ تکیِ باقی‌مونده هم می‌تونست کاملاً با loan.installment فرق داشته باشه.
         val unpaidAmounts = remember(rows) {
             rows.filter { (it["paid"] as? Boolean) != true }.mapNotNull { (it["installment"] as? Number)?.toDouble() }
         }
-        val installmentsVary = unpaidAmounts.distinct().size > 1
-        val displayInstallment = if (installmentsVary) unpaidAmounts.first() else loan.installment
+        val nextUnpaidAmount = unpaidAmounts.firstOrNull()
+        val displayInstallment = nextUnpaidAmount ?: loan.installment
+        // فقط برای انتخابِ برچسب («قسطِ بعدی» در برابرِ «قسط ماهانه») - اگه قسطِ بعدی با فیلدِ کهنه
+        // فرق داره یعنی دیگه «همه‌ی اقساط» یکسان نیستن.
+        val installmentsVary = nextUnpaidAmount != null && nextUnpaidAmount != loan.installment
 
         // دایره‌ی شیک بالای وام (سبز = اصل، طلایی = سود) با قسط ماهانه تو مرکز - مثل نسخه‌ی وب.
         val principalFrac = if (loan.totalPaid > 0) (loan.amount / loan.totalPaid).toFloat() else 1f
@@ -1120,13 +1125,12 @@ private fun InstallmentRow(
         paid -> "پرداخت شد"
         else -> "پرداخت نشده"
     }
-    // مورد ۱۰: بجِ «پرداخت نشده» قبلاً با AppText (رنگِ خنثیِ متنِ معمولی) رنگ می‌شد - دقیقاً حسِ
-    // یه لیبلِ غیرفعال/خاموش می‌داد، نه چیزیِ قابلِ‌لمس. الان با AppPrimary (همون رنگِ اکشنِ اپ)
-    // + یه پالسِ ظریفِ زیرش (پایین‌تر) مشخص می‌شه که این ردیف واقعاً قابلِ‌تپه.
+    // مورد ۱۰: بجِ «پرداخت نشده» رنگش همون خاکستریِ قبلی (AppText) می‌مونه - کاربر صریح خواستِ رنگ
+    // عوض نشه، فقط پالسِ ظریفِ زیرش (پایین‌تر) قابلِ‌تپه‌بودنش رو نشون بده.
     val statusColor = when {
         paidLate -> AppDanger
         paid -> AppPrimary
-        else -> AppPrimary
+        else -> AppText
     }
     val rowShape = RoundedCornerShape(14.dp)
     // موقعِ پرداختِ گروهی، اقساطِ ازقبل‌پرداخت‌شده اصلاً قابلِ‌انتخاب نیستن (کم‌رنگ‌تر نشون داده
