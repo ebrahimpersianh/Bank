@@ -12,19 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,7 +44,8 @@ import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.EmptyState
-import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.components.TodayCard
+import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.note.NoteViewModel
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
@@ -61,8 +54,6 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
-
-private val homeFaWeekDayNames = listOf("شنبه", "یک‌شنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه")
 
 /**
  * تبِ «خانه» - داشبوردِ ورودیِ اصلیِ اپ، هم‌راستا با نمونه‌ی رفرنس (Poolaki - رجوع کن به CLAUDE.md،
@@ -192,69 +183,6 @@ fun HomeScreen(
 }
 
 @Composable
-private fun TodayCard(
-    date: PersianDate,
-    onPrevDay: () -> Unit,
-    onNextDay: () -> Unit,
-    onDateClick: () -> Unit,
-    onAddInstallment: () -> Unit,
-    onAddCheque: () -> Unit,
-    onAddNote: () -> Unit,
-) {
-    val weekDay = homeFaWeekDayNames[JalaliCalendar.dayOfWeekSaturdayFirst(date)]
-    val dateText = "$weekDay، ${toFa(date.d)} ${persianMonthName(date.m)}"
-
-    AppCard(label = "امروز") {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // خواسته‌ی صریحِ کاربر: تپ رو تاریخ صفحه‌ی تقویمِ کامل باز کنه، و فلش‌های قبلی/بعدی کنارِ
-            // هم باشن (نه دو سرِ ردیف) - برای همین تاریخ با weight فضای باقی‌مونده رو می‌گیره و هر دو
-            // فلش تویِ یه Rowِ مجزا کنارِ هم می‌شینن.
-            Text(
-                dateText,
-                color = AppText,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f).pressScaleClickable(onClick = onDateClick),
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onPrevDay) {
-                    Icon(Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل")
-                }
-                IconButton(onClick = onNextDay) {
-                    Icon(Icons.Filled.ChevronRight, contentDescription = "روزِ بعد")
-                }
-            }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            TodayQuickAction("قسط", Icons.Filled.Payments, Modifier.weight(1f), onAddInstallment)
-            TodayQuickAction("چک", Icons.Filled.ReceiptLong, Modifier.weight(1f), onAddCheque)
-            TodayQuickAction("یادداشت", Icons.Filled.EditNote, Modifier.weight(1f), onAddNote)
-        }
-    }
-}
-
-@Composable
-private fun TodayQuickAction(label: String, icon: ImageVector, modifier: Modifier, onClick: () -> Unit) {
-    Column(
-        modifier = modifier
-            .background(AppPrimary.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
-            .pressScaleClickable(onClick = onClick)
-            .padding(vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(icon, contentDescription = label, tint = AppPrimary, modifier = Modifier.size(20.dp))
-        Text(label, color = AppPrimary, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
-    }
-}
-
-@Composable
 private fun RecentTransactionRow(tx: AccountTransactionEntity, accountName: String, privacyMode: Boolean) {
     val category = findCategory(tx.category)
     val isIncome = tx.type == "DEPOSIT"
@@ -316,9 +244,3 @@ private fun QuickAddNoteDialog(date: PersianDate, onDismiss: () -> Unit, onSubmi
     )
 }
 
-private val homeFaMonthNames = listOf(
-    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
-)
-
-private fun persianMonthName(month: Int): String = homeFaMonthNames[(month - 1).coerceIn(0, 11)]

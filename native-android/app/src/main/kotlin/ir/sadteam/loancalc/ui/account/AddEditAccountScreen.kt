@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.ui.account
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -24,6 +26,7 @@ import ir.sadteam.loancalc.core.cleanNumDecimal
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.detectBankByCardNumber
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -95,13 +98,19 @@ fun AddEditAccountScreen(
             }
         }
         item {
+            // خواسته‌ی صریحِ کاربر: بعدِ تشخیصِ خودکار (یا انتخابِ دستی)، لوگوی واقعیِ بانک هم کنارِ
+            // فیلد دیده بشه، نه فقط اسمِ متنی - رجوع کن به BankBadge (همون کامپوننتِ مشترکی که
+            // BankLoanScreen/LoanDetailScreen هم استفاده می‌کنن).
             AppCard(label = "بانک") {
-                OutlinedTextField(
-                    value = bankName,
-                    onValueChange = { bankName = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    BankBadge(bankName = bankName, size = 42.dp)
+                    OutlinedTextField(
+                        value = bankName,
+                        onValueChange = { bankName = it },
+                        modifier = Modifier.weight(1f).padding(start = 10.dp),
+                        singleLine = true,
+                    )
+                }
             }
         }
         item {

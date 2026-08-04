@@ -40,8 +40,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.ui.accounting.RecurringPaymentsScreen
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
+import ir.sadteam.loancalc.ui.components.TodayCard
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.debt.DebtScreen
 import ir.sadteam.loancalc.ui.note.NoteScreen
@@ -108,6 +112,21 @@ private fun DueGrid(
     onNavigateToRoute: (String) -> Unit,
     onOpenSubView: (DueSubView) -> Unit,
 ) {
+    // کارتِ «امروز» (ناوبرِ روز + میان‌برِ سریعِ قسط/چک/یادداشت) - خواسته‌ی صریحِ کاربر با اسکرین‌شاتِ
+    // رفرنس: تبِ «سررسید» هم دقیقاً همینو زیرِ کاشی‌های میان‌بر داشته باشه، عینِ تبِ «خانه» (هر دو از
+    // همون TodayCardِ مشترک تو ui/components استفاده می‌کنن).
+    var selectedDate by remember { mutableStateOf(JalaliCalendar.today()) }
+    var showCalendarPicker by remember { mutableStateOf(false) }
+
+    if (showCalendarPicker) {
+        CalendarPickerScreen(
+            initialDate = selectedDate,
+            onDateSelected = { date -> selectedDate = date; showCalendarPicker = false },
+            onBack = { showCalendarPicker = false },
+        )
+        return
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 24.dp),
@@ -147,6 +166,17 @@ private fun DueGrid(
                     )
                 }
             }
+        }
+        item {
+            TodayCard(
+                date = selectedDate,
+                onPrevDay = { selectedDate = PersianCalendar.addDays(selectedDate, -1) },
+                onNextDay = { selectedDate = PersianCalendar.addDays(selectedDate, 1) },
+                onDateClick = { showCalendarPicker = true },
+                onAddInstallment = { onNavigateToRoute("loan") },
+                onAddCheque = { onNavigateToRoute("cheque") },
+                onAddNote = { onOpenSubView(DueSubView.NOTES) },
+            )
         }
     }
 }
