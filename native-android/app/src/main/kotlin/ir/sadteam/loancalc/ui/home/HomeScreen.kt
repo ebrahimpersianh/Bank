@@ -24,7 +24,6 @@ import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,14 +53,16 @@ private data class HomeShortcut(
  */
 @Composable
 fun HomeScreen(onNavigateToRoute: (String) -> Unit) {
-    val shortcuts = remember {
-        listOf(
-            HomeShortcut("loan", "وام", "محاسبه و پیگیریِ اقساط", Icons.Filled.Payments, AppPrimary),
-            HomeShortcut("cheque", "چک", "دریافتی/پرداختی و دسته‌چک", Icons.Filled.ReceiptLong, Color(0xFFB8860B)),
-            HomeShortcut("accounting", "حسابداری", "دخل‌وخرج، بودجه، گزارش", Icons.Filled.AccountBalanceWallet, Color(0xFF2E7D32)),
-            HomeShortcut("due", "سررسید", "یادداشت و پرداخت‌های نزدیک", Icons.Filled.EventNote, Color(0xFF1565C0)),
-        )
-    }
+    // عمداً بدونِ remember: AppPrimary یه گترِ @Composable ئه (رجوع کن به CompositionLocal تو
+    // Color.kt) که هر بار با تعویضِ تم مقدارش عوض می‌شه - رمِمبرکردنِ این لیست هم خودش کامپایل
+    // نمی‌شد (فراخوانیِ @Composable بیرون از یه context @Composable) هم رنگِ اولین تم رو برای
+    // همیشه قفل می‌کرد.
+    val shortcuts = listOf(
+        HomeShortcut("loan", "وام", "محاسبه و پیگیریِ اقساط", Icons.Filled.Payments, AppPrimary),
+        HomeShortcut("cheque", "چک", "دریافتی/پرداختی و دسته‌چک", Icons.Filled.ReceiptLong, Color(0xFFB8860B)),
+        HomeShortcut("accounting", "حسابداری", "دخل‌وخرج، بودجه، گزارش", Icons.Filled.AccountBalanceWallet, Color(0xFF2E7D32)),
+        HomeShortcut("due", "سررسید", "یادداشت و پرداخت‌های نزدیک", Icons.Filled.EventNote, Color(0xFF1565C0)),
+    )
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 24.dp),
