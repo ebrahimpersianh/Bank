@@ -141,12 +141,10 @@ import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AuroraBackground
 import ir.sadteam.loancalc.ui.components.GradientButton
-import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.onboarding.AnimatedAppEntrance
 import ir.sadteam.loancalc.ui.onboarding.BenefitsScreen
 import ir.sadteam.loancalc.ui.onboarding.PermissionGateScreen
 import ir.sadteam.loancalc.ui.onboarding.SplashIntroScreen
-import ir.sadteam.loancalc.ui.onboarding.WelcomeMessageScreen
 import ir.sadteam.loancalc.ui.update.AppUpdateViewModel
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.LockScreen
@@ -366,8 +364,8 @@ class MainActivity : FragmentActivity() {
  * قبل از این گیت هم، [PermissionGateScreen] چک می‌شه - برخلاف گیت ورود، این یکی هر بار اپ باز
  * می‌شه دوباره ارزیابی می‌شه (نه فقط یه‌بار)، چون کاربر می‌تونه مجوزها رو از تنظیمات گوشی خاموش کنه.
  * بعد از گیت مجوز و قبل از گیت ورود، [BenefitsScreen] هم فقط یه‌بار تو کل عمر نصب نشون داده می‌شه.
- * بعد از حل شدن گیت ورود/مهمان، هر بار [WelcomeMessageScreen] (پیام خوش‌آمد شبیه چت‌بات) نشون داده
- * می‌شه، بعد صفحه‌ی اصلی با یه افکت swoosh سریع (`AnimatedAppEntrance`) از بالا-چپ میاد تو.
+ * بعد از حل شدن گیت ورود/مهمان، صفحه‌ی اصلی مستقیم با یه افکت swoosh سریع (`AnimatedAppEntrance`) از
+ * بالا-چپ میاد تو - پیامِ خوش‌آمدِ جداگانه‌ای (که قبلاً هر بار نشون داده می‌شد) به‌خواستِ کاربر حذف شد.
  *
  * قبل از همه‌ی این‌ها هم [LockScreen] چک می‌شه، فقط اگه کاربر از تنظیمات قفل PIN/اثر انگشت رو فعال
  * کرده باشه (پیش‌فرض خاموشه، هیچ‌کس رفتار قبلی رو نمی‌بینه) - رجوع کن به [AppLockViewModel].
@@ -422,21 +420,12 @@ private fun AppRoot(
         null -> Surface(modifier = Modifier.fillMaxSize(), color = AppSurface) {}
         GateState.NEEDS_LOGIN -> LoginScreen()
         GateState.GUEST, GateState.LOGGED_IN -> {
-            var welcomeDone by remember { mutableStateOf(false) }
-            if (!welcomeDone) {
-                val phone by authViewModel.phone.collectAsState()
-                val name = if (gateState == GateState.LOGGED_IN && !phone.isNullOrEmpty()) {
-                    toFa(phone!!)
-                } else {
-                    "مهمان"
-                }
-                WelcomeMessageScreen(name = name, onDone = { welcomeDone = true })
-            } else {
-                // تورِ راهنمای اولین ورود دیگه یه گیتِ جداگانه‌ی قبل از ورود نیست - کاربر خواستِ
-                // «تو خود برنامه بگه کجا بری»، پس حالا یه اورلیِ spotlight داخلِ خودِ LoanCalcApp
-                // (رو المان‌های واقعیِ چیدمان) نشون داده می‌شه - رجوع کن به AppTourOverlay اونجا.
-                AnimatedAppEntrance { LoanCalcApp() }
-            }
+            // پیامِ خوش‌آمدِ «خوش اومدی، [شماره]» که هر بار باز شدنِ اپ نشون داده می‌شد (WelcomeMessageScreen)
+            // به‌خواستِ صریحِ کاربر حذف شد - بعدِ حلِ گیتِ ورود/مهمان مستقیم می‌ره سراغِ صفحه‌ی اصلی.
+            // تورِ راهنمای اولین ورود دیگه یه گیتِ جداگانه‌ی قبل از ورود نیست - کاربر خواستِ
+            // «تو خود برنامه بگه کجا بری»، پس یه اورلیِ spotlight داخلِ خودِ LoanCalcApp
+            // (رو المان‌های واقعیِ چیدمان) نشون داده می‌شه - رجوع کن به AppTourOverlay اونجا.
+            AnimatedAppEntrance { LoanCalcApp() }
         }
     }
 }
