@@ -593,7 +593,15 @@ private fun LoanCalcApp(
             topBar = {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                    title = { Text("حسابدار من") },
+                    // اسمِ اپ («حسابدار من») به‌خواستِ صریحِ کاربر کاملاً از بالای هر تب حذف شد -
+                    // به‌جاش عنوانِ خودِ همون تب نشون داده می‌شه (شبیهِ رفرنس)؛ تبِ «خانه» عنوان نداره
+                    // چون خودِ HomeScreen از قبل خلاصه‌ی مانده‌ی حساب رو بالای محتواش نشون می‌ده.
+                    title = {
+                        val tabLabel = BottomTab.entries.find { it.route == currentRoute }?.label
+                        if (currentRoute != BottomTab.HOME.route && tabLabel != null) {
+                            Text(tabLabel)
+                        }
+                    },
                     navigationIcon = {
                         IconButton(
                             onClick = {

@@ -61,8 +61,14 @@ import kotlinx.coroutines.withContext
  * navigation داخلی عین ChequeScreen (screenKey مشتق‌شده + AnimatedContent).
  */
 @Composable
-fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewModel()) {
-    var showAddForm by remember { mutableStateOf(false) }
+fun AccountsScreen(
+    onBack: () -> Unit,
+    // خواسته‌ی صریحِ کاربر: افزودنِ حساب دیگه فقط از تنظیمات نباشه، از تبِ «دارایی» هم مستقیم قابلِ‌
+    // دسترسی باشه - وقتی true باشه، این صفحه مستقیم با فرمِ بازِ افزودنِ حساب باز می‌شه، نه لیستِ خالی.
+    startInAddMode: Boolean = false,
+    viewModel: AccountViewModel = hiltViewModel(),
+) {
+    var showAddForm by remember { mutableStateOf(startInAddMode) }
     var editingAccountId by remember { mutableStateOf<Long?>(null) }
     var openedAccountId by remember { mutableStateOf<Long?>(null) }
 

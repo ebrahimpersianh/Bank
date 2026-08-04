@@ -31,6 +31,7 @@ class UiPrefs(private val context: Context) {
         val RATE_PROMPT_LAST_SHOWN_AT_OPENS = intPreferencesKey("rate_prompt_last_shown_at_opens")
         val SMS_AUTO_IMPORT_ENABLED = booleanPreferencesKey("sms_auto_import_enabled")
         val LAST_SMS_IMPORT_AT = stringPreferencesKey("last_sms_import_at")
+        val DAILY_EXPENSE_REMINDER_ENABLED = booleanPreferencesKey("daily_expense_reminder_enabled")
     }
 
     // پیش‌فرض روشن/سفید (به‌درخواست کاربر «تم اصلی برنامه سفید باشه») - کاربری که قبلاً دستی
@@ -154,5 +155,14 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setLastSmsImportAt(value: String) {
         context.uiPrefsDataStore.edit { it[Keys.LAST_SMS_IMPORT_AT] = value }
+    }
+
+    /** یادآوریِ روزانه‌ی «دخل‌وخرج امروز یادت نره» (رجوع کن به DueDateReminderWorker) - پیش‌فرض خاموش
+     * مثلِ بقیه‌ی یادآوری‌های اپ، فقط با سوییچِ صریحِ کاربر تو تنظیمات روشن می‌شه. */
+    val dailyExpenseReminderEnabled: Flow<Boolean> =
+        context.uiPrefsDataStore.data.map { it[Keys.DAILY_EXPENSE_REMINDER_ENABLED] ?: false }
+
+    suspend fun setDailyExpenseReminderEnabled(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.DAILY_EXPENSE_REMINDER_ENABLED] = value }
     }
 }

@@ -25,9 +25,17 @@ class NotificationsViewModel @Inject constructor(
     val enabled: StateFlow<Boolean> = uiPrefs.notificationsEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    /** یادآوریِ روزانه‌ی «دخل‌وخرج امروز یادت نره» (رجوع کن به DueDateReminderWorker) - سوییچِ
+     * جداگانه‌ای از یادآوریِ سررسید، ولی از همون Workerِ زمان‌بندی‌شده استفاده می‌کنه؛ برای همین باید
+     * حواسمون باشه اگه یکی از این دو خاموش شد ولی اون‌یکی هنوز روشنه، زمان‌بندی لغو نشه. */
+    val dailyExpenseReminderEnabled: StateFlow<Boolean> = uiPrefs.dailyExpenseReminderEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     init {
         viewModelScope.launch {
-            if (uiPrefs.notificationsEnabled.first()) reminderScheduler.schedule()
+            if (uiPrefs.notificationsEnabled.first() || uiPrefs.dailyExpenseReminderEnabled.first()) {
+                reminderScheduler.schedule()
+            }
         }
     }
 
@@ -42,7 +50,21 @@ class NotificationsViewModel @Inject constructor(
     fun disable() {
         viewModelScope.launch {
             uiPrefs.setNotificationsEnabled(false)
-            reminderScheduler.cancel()
+            if (!uiPrefs.dailyExpenseReminderEnabled.first()) reminderScheduler.cancel()
+        }
+    }
+
+    fun enableDailyExpenseReminder() {
+        viewModelScope.launch {
+            uiPrefs.setDailyExpenseReminderEnabled(true)
+            reminderScheduler.schedule()
+        }
+    }
+
+    fun disableDailyExpenseReminder() {
+        viewModelScope.launch {
+            uiPrefs.setDailyExpenseReminderEnabled(false)
+            if (!uiPrefs.notificationsEnabled.first()) reminderScheduler.cancel()
         }
     }
 }

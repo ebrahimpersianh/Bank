@@ -97,6 +97,18 @@ class DueDateReminderWorker @AssistedInject constructor(
             val daysLeft = JalaliCalendar.daysBetween(today, due)
             if (daysLeft in offsets) notifyRecurringPayment(payment, daysLeft, channelId)
         }
+
+        // یادآوریِ روزانه‌ی «دخل‌وخرج امروز یادت نره» (رجوع کن به CLAUDE.md، الهام از اپِ رفرنسِ
+        // Poolaki) - این workerِ هر۲۴ساعته بدونِ زمانِ ثابتِ روزانه اجرا می‌شه (رجوع کن به
+        // ReminderScheduler)، پس این یادآوری هم best-effort یه‌بار در روزه، نه دقیقاً عصر/شب. اگه
+        // امروز هیچ تراکنشی (چه دخل چه خرج) تو هیچ حسابی ثبت نشده باشه، یه نوتیفِ ساده یادآوری می‌ده.
+        if (uiPrefs.dailyExpenseReminderEnabled.first()) {
+            val todayHasTransaction = accountRepository.observeTransactions().first()
+                .any { it.year == today.y && it.month == today.m && it.day == today.d }
+            if (!todayHasTransaction) {
+                notifyDailyExpenseReminder(channelId)
+            }
+        }
         return Result.success()
     }
 
@@ -172,5 +184,32 @@ class DueDateReminderWorker @AssistedInject constructor(
             .build()
         val notificationId = "recurring_${payment.id}".hashCode()
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
+    }
+
+    private fun notifyDailyExpenseReminder(channelId: String) {
+        val contentIntent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            DAILY_EXPENSE_REMINDER_REQUEST_CODE,
+            contentIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = NotificationCompat.Builder(applicationContext, channelId)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
+            .setContentTitle("دخل‌وخرج امروز یادت نره")
+            .setContentText("امروز هنوز هیچ تراکنشی ثبت نکردی - یه سر بزن به «حسابدار من»")
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+        NotificationManagerCompat.from(applicationContext).notify(DAILY_EXPENSE_REMINDER_NOTIFICATION_ID, notification)
+    }
+
+    private companion object {
+        const val DAILY_EXPENSE_REMINDER_REQUEST_CODE = 990011
+        const val DAILY_EXPENSE_REMINDER_NOTIFICATION_ID = 990011
     }
 }

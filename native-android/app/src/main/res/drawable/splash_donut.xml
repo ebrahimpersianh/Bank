@@ -22,7 +22,7 @@
     <!-- کمانِ سبز: ۲۵۲ درجه‌ی باقی‌مونده (۷۰٪) -->
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#00FF9C"
+        android:strokeColor="#34D399"
         android:strokeWidth="9"
         android:strokeLineCap="round"
         android:pathData="M92.04,66.36 A40,40 0 1 1 54,14" />

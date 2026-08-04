@@ -315,6 +315,7 @@ private fun SettingsMainContent(
     val vibrationEnabled by hapticsViewModel.enabled.collectAsState()
     val smsAutoImportEnabled by smsAutoImportViewModel.enabled.collectAsState()
     val lastSmsImportAt by smsAutoImportViewModel.lastImportAt.collectAsState()
+    val dailyExpenseReminderEnabled by notificationsViewModel.dailyExpenseReminderEnabled.collectAsState()
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -322,6 +323,9 @@ private fun SettingsMainContent(
     val smsPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) smsAutoImportViewModel.enable() }
+    val dailyExpenseReminderPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) notificationsViewModel.enableDailyExpenseReminder() }
     var searchQuery by remember { mutableStateOf(tourHighlightQuery ?: "") }
     // اگه تور یه قدمِ جدید رو پنلِ تنظیمات فعال کرد (مثلاً از SETTINGS_CALENDAR به SETTINGS_CHEQUE)،
     // جستجو رو خودکار با همون فیلترِ جدید هم‌قدم کن - دقیقاً همون کاری که خودِ کاربر با تایپ می‌کرد.
@@ -816,6 +820,40 @@ private fun SettingsMainContent(
                                     smsAutoImportViewModel.enable()
                                 } else {
                                     smsPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS)
+                                }
+                            },
+                            colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
+                        )
+                    }
+                }
+            }
+
+            if (matches("دخل و خرج امروز", "یادآوری روزانه")) {
+                AppCard(label = "یادآوریِ روزانه‌ی دخل‌وخرج", modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "اگه یه روز هنوز چیزی تو حسابداری ثبت نکرده باشی، یادت بندازه",
+                            color = AppMuted,
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Switch(
+                            checked = dailyExpenseReminderEnabled,
+                            onCheckedChange = { checked ->
+                                if (!checked) {
+                                    notificationsViewModel.disableDailyExpenseReminder()
+                                } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                                    ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.POST_NOTIFICATIONS,
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    notificationsViewModel.enableDailyExpenseReminder()
+                                } else {
+                                    dailyExpenseReminderPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                 }
                             },
                             colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),

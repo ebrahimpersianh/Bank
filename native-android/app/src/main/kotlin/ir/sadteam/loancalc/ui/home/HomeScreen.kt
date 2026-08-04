@@ -50,6 +50,7 @@ import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.data.findCategory
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.note.NoteViewModel
@@ -97,6 +98,7 @@ fun HomeScreen(
 
     var selectedDate by remember { mutableStateOf(JalaliCalendar.today()) }
     var showAddNote by remember { mutableStateOf(false) }
+    var showCalendarPicker by remember { mutableStateOf(false) }
 
     if (showAddNote) {
         QuickAddNoteDialog(
@@ -107,6 +109,17 @@ fun HomeScreen(
                 showAddNote = false
             },
         )
+    }
+
+    // خواسته‌ی صریحِ کاربر: تپ رو خودِ متنِ تاریخ تو کارتِ «امروز» یه صفحه‌ی تقویمِ کامل باز کنه، نه
+    // فقط قدم‌به‌قدم با فلش. همون CalendarPickerScreenِ مشترکِ اپ (الگوی AddManualLoanScreen و...).
+    if (showCalendarPicker) {
+        CalendarPickerScreen(
+            initialDate = selectedDate,
+            onDateSelected = { date -> selectedDate = date; showCalendarPicker = false },
+            onBack = { showCalendarPicker = false },
+        )
+        return
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -138,6 +151,7 @@ fun HomeScreen(
                     date = selectedDate,
                     onPrevDay = { selectedDate = PersianCalendar.addDays(selectedDate, -1) },
                     onNextDay = { selectedDate = PersianCalendar.addDays(selectedDate, 1) },
+                    onDateClick = { showCalendarPicker = true },
                     onAddInstallment = { onNavigateToRoute("loan") },
                     onAddCheque = { onNavigateToRoute("cheque") },
                     onAddNote = { showAddNote = true },
@@ -182,6 +196,7 @@ private fun TodayCard(
     date: PersianDate,
     onPrevDay: () -> Unit,
     onNextDay: () -> Unit,
+    onDateClick: () -> Unit,
     onAddInstallment: () -> Unit,
     onAddCheque: () -> Unit,
     onAddNote: () -> Unit,
@@ -195,12 +210,23 @@ private fun TodayCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onPrevDay) {
-                Icon(Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل")
-            }
-            Text(dateText, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            IconButton(onClick = onNextDay) {
-                Icon(Icons.Filled.ChevronRight, contentDescription = "روزِ بعد")
+            // خواسته‌ی صریحِ کاربر: تپ رو تاریخ صفحه‌ی تقویمِ کامل باز کنه، و فلش‌های قبلی/بعدی کنارِ
+            // هم باشن (نه دو سرِ ردیف) - برای همین تاریخ با weight فضای باقی‌مونده رو می‌گیره و هر دو
+            // فلش تویِ یه Rowِ مجزا کنارِ هم می‌شینن.
+            Text(
+                dateText,
+                color = AppText,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f).pressScaleClickable(onClick = onDateClick),
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onPrevDay) {
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل")
+                }
+                IconButton(onClick = onNextDay) {
+                    Icon(Icons.Filled.ChevronRight, contentDescription = "روزِ بعد")
+                }
             }
         }
         Row(
