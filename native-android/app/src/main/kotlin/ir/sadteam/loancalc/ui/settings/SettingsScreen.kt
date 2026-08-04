@@ -1176,7 +1176,7 @@ private fun AccordionCard(title: String, modifier: Modifier = Modifier, content:
 
 // نسخه‌ی «۱» قبلاً هاردکد بود (همیشه ثابت، هیچ‌وقت آپدیت نمی‌شد) - خواسته‌ی کاربر: نسخه‌ی واقعیِ
 // نصب‌شده رو نشون بده. BuildConfig.VERSION_NAME همون versionNameِ CI (مثلاً "1.0.332") ئه.
-private val aboutText = "حسابدار من — نسخه ${BuildConfig.VERSION_NAME}\n" +
+private val aboutText = "وام من — نسخه ${BuildConfig.VERSION_NAME}\n" +
     "این اپ برای محاسبه سریع و شفاف اقساط وام، سود سپرده و برنامه‌ریزی مالی طراحی شده.\n" +
     "Powered By Sad Team"
 

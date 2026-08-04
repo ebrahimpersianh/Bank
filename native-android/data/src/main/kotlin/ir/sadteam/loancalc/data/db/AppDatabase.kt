@@ -124,7 +124,7 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        /** پایه‌ی ماژولِ حسابداریِ شخصی («حسابدار من») - دسته‌بندی روی تراکنشِ حسابِ موجود
+        /** پایه‌ی ماژولِ حسابداریِ شخصیِ اپ - دسته‌بندی روی تراکنشِ حسابِ موجود
          * ([AccountTransactionEntity]) + دو جدولِ جدید برای بودجه‌بندی و پرداخت‌های تکراری. */
         private val MIGRATION_12_13 = object : Migration(12, 13) {
             override fun migrate(db: SupportSQLiteDatabase) {

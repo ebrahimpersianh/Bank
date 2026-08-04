@@ -88,7 +88,7 @@ private fun WidgetContent(next: NextInstallment?) {
             .padding(12.dp)
             .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
     ) {
-        Text("حسابدار من", style = textStyle)
+        Text("وام من", style = textStyle)
         if (next == null) {
             Text("قسطِ پرداخت‌نشده‌ای ثبت نشده", style = textStyle)
         } else {

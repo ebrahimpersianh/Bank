@@ -25,7 +25,7 @@ fun RatePromptDialog(
     AlertDialog(
         onDismissRequest = onLater,
         icon = { Icon(Icons.Filled.Star, contentDescription = null, tint = AppPrimary) },
-        title = { Text("لذت بردی از «حسابدار من»؟") },
+        title = { Text("لذت بردی از «وام من»؟") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("اگه اپ رو مفید دیدی، یه امتیازِ ۵ ستاره تو استور خیلی به ما کمک می‌کنه.")

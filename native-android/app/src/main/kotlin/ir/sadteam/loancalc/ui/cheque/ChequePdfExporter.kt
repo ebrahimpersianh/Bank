@@ -44,7 +44,7 @@ object ChequePdfExporter {
         val labelPaint = TextPaint().apply { textSize = 12.5f }
 
         var y = 30f
-        y += drawRtlLine(canvas, "گزارش چک‌ها - حسابدار من", titlePaint, y) + 16f
+        y += drawRtlLine(canvas, "گزارش چک‌ها - وام من", titlePaint, y) + 16f
 
         val active = cheques.filter { !it.archived }
         val received = active.count { it.type == "RECEIVED" }
