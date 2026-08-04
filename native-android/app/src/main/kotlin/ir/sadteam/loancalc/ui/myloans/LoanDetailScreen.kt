@@ -61,6 +61,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -88,12 +89,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.calendar.DeviceCalendarExporter
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.data.banks
+import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.components.AccountPickerDialog
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.BankTile
 import ir.sadteam.loancalc.ui.components.AppChip
@@ -128,6 +133,11 @@ private val faMonthNamesDetail = listOf(
     "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
 )
 
+/** یه عملِ «پرداخت‌شده کردن»ِ درحالِ‌انتظار - قبل از اجرای واقعیش، اگه حسابی وجود داشته باشه اول
+ * باید حساب/کارتِ پرداخت‌کننده انتخاب بشه (رجوع کن به AccountPickerDialog تو LoanDetailScreen).
+ * paidDate == null یعنی «به‌موقع»، غیرِnull یعنی «با تاخیر» با همون تاریخ. */
+private data class PendingLoanPayment(val ms: List<Int>, val paidDate: PersianDate?)
+
 /**
  * پورت openDetail/renderTable تو www/index.html، برای وام‌های دستی (method=manual): هر قسط
  * وضعیت پرداخت مستقل داره و تاریخ سررسید واقعی (از startDate + intervalDays محاسبه می‌شه). تپ رو
@@ -143,8 +153,10 @@ fun LoanDetailScreen(
     onDelete: () -> Unit,
     onEdit: () -> Unit,
     viewModel: MyLoansViewModel = hiltViewModel(),
+    accountViewModel: AccountViewModel = hiltViewModel(),
 ) {
     val privacyMode = LocalPrivacyMode.current
+    val accounts by accountViewModel.accounts.collectAsState()
     // rows دیگه نمی‌تونه محاسبه‌ی همزمان (remember{}) باشه چون از رو رَدیف‌های واقعیِ Room
     // (loan_rows) می‌خونه، نه دیگه از رو JSONِ درون‌حافظه‌ای که همیشه از قبل تو خودِ loan بود - رجوع
     // کن به CLAUDE.md. با هر تغییرِ loan (مثلاً بعدِ پرداختِ یه قسط) دوباره لود می‌شه، دقیقاً همون
@@ -267,6 +279,57 @@ fun LoanDetailScreen(
     var bulkPayMode by remember { mutableStateOf(false) }
     var selectedBulkMs by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var bulkPayChoiceOpen by remember { mutableStateOf(false) }
+
+    // سینکِ خودکارِ پرداختِ وام ↔ حسابداری (تصمیمِ صریحِ کاربر، رجوع کن به CLAUDE.md): بعدِ انتخابِ
+    // «به‌موقع»/«با تاخیر»، قبلِ ثبتِ واقعیِ پرداخت، باید حساب/کارتِ پرداخت‌کننده مشخص بشه - فقط
+    // وقتی حداقل یه حساب از قبل ساخته شده (وگرنه این مرحله معنی نداره، مستقیم ثبت می‌شه).
+    var pendingPayment by remember { mutableStateOf<PendingLoanPayment?>(null) }
+    fun commitPayment(payment: PendingLoanPayment, account: AccountEntity?) {
+        if (payment.ms.size == 1) {
+            val m = payment.ms.first()
+            if (payment.paidDate != null) viewModel.setRowPaidLate(loan, m, payment.paidDate) else viewModel.setRowPaidOnTime(loan, m)
+        } else {
+            if (payment.paidDate != null) viewModel.setRowsPaidLate(loan, payment.ms, payment.paidDate) else viewModel.setRowsPaidOnTime(loan, payment.ms)
+        }
+        if (account != null) {
+            val amount = payment.ms.sumOf { m ->
+                (rows.firstOrNull { (it["m"] as? Number)?.toInt() == m }?.get("installment") as? Number)?.toDouble()
+                    ?: loan.installment
+            }
+            val today = JalaliCalendar.today()
+            val description = if (payment.ms.size == 1) {
+                "قسط ${toFa(payment.ms.first())} - ${loan.name}"
+            } else {
+                "${toFa(payment.ms.size)} قسط - ${loan.name}"
+            }
+            accountViewModel.addTransaction(
+                accountId = account.id,
+                type = TransactionType.WITHDRAWAL,
+                amount = amount,
+                description = description,
+                year = today.y,
+                month = today.m,
+                day = today.d,
+                category = "قسط/چک",
+            )
+        }
+    }
+    // اگه هنوز هیچ حسابی ساخته نشده، مرحله‌ی انتخابِ حساب معنی نداره - مستقیم ثبت می‌شه (بدونِ
+    // تراکنشِ حسابداری)؛ وگرنه اول AccountPickerDialog باز می‌شه (رجوع کن به تصمیمِ کاربر - فعلاً
+    // اجباری).
+    fun applyPayment(payment: PendingLoanPayment) {
+        if (accounts.isEmpty()) commitPayment(payment, null) else pendingPayment = payment
+    }
+    if (pendingPayment != null && accounts.isNotEmpty()) {
+        AccountPickerDialog(
+            accounts = accounts,
+            onSelect = { account ->
+                commitPayment(pendingPayment!!, account)
+                pendingPayment = null
+            },
+            onDismiss = { pendingPayment = null },
+        )
+    }
 
     // ویرایشِ مشخصاتِ وام‌های محاسبه‌شده/قرض‌الحسنه - برخلافِ وام‌های دستی که فرمِ کاملِ
     // AddManualLoanScreen رو باز می‌کنن (onEdit، از MyLoansScreen)، این یه دیالوگِ سبکِ همین‌جاست.
@@ -498,7 +561,7 @@ fun LoanDetailScreen(
             text = { Text("این قسط سر موعد پرداخت شده یا با تاخیر؟") },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.setRowPaidOnTime(loan, m)
+                    applyPayment(PendingLoanPayment(listOf(m), null))
                     payChoiceM = null
                 }) { Text("پرداخت به‌موقع") }
             },
@@ -523,7 +586,7 @@ fun LoanDetailScreen(
             text = { Text("این اقساط سرِ موعد پرداخت شدن یا با تاخیر؟") },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.setRowsPaidOnTime(loan, selectedBulkMs.toList())
+                    applyPayment(PendingLoanPayment(selectedBulkMs.toList(), null))
                     selectedBulkMs = emptySet()
                     bulkPayChoiceOpen = false
                     bulkPayMode = false
@@ -531,7 +594,7 @@ fun LoanDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = {
-                    viewModel.setRowsPaidLate(loan, selectedBulkMs.toList(), JalaliCalendar.today())
+                    applyPayment(PendingLoanPayment(selectedBulkMs.toList(), JalaliCalendar.today()))
                     selectedBulkMs = emptySet()
                     bulkPayChoiceOpen = false
                     bulkPayMode = false
@@ -569,7 +632,7 @@ fun LoanDetailScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.setRowPaidLate(loan, m, PersianDate(lateYear, lateMonth, lateDay))
+                    applyPayment(PendingLoanPayment(listOf(m), PersianDate(lateYear, lateMonth, lateDay)))
                     lateDateM = null
                 }) { Text("ثبت") }
             },

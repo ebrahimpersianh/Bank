@@ -21,8 +21,11 @@ import net.sqlcipher.database.SupportFactory
         CalculationHistoryEntity::class,
         BudgetEntity::class,
         RecurringPaymentEntity::class,
+        CounterpartyEntity::class,
+        DebtEntity::class,
+        NoteEntity::class,
     ],
-    version = 13,
+    version = 15,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -42,6 +45,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun calculationHistoryDao(): CalculationHistoryDao
     abstract fun budgetDao(): BudgetDao
     abstract fun recurringPaymentDao(): RecurringPaymentDao
+    abstract fun counterpartyDao(): CounterpartyDao
+    abstract fun debtDao(): DebtDao
+    abstract fun noteDao(): NoteDao
 
     companion object {
         private val MIGRATION_9_10 = object : Migration(9, 10) {
@@ -156,6 +162,61 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** طلب‌وبدهی (طرفِ‌حساب + ردیف‌های طلب/بدهی) و یادداشتِ مستقل - رجوع کن به CLAUDE.md، بخشِ
+         * تبِ «سررسید». طبقِ درسِ کرشِ migrationِ ۱۱→۱۲ (هر CREATE INDEXِ دستی باید تو indicesِ
+         * @Entity هم اعلام بشه)، ایندکسِ debts.counterpartyId هم اینجا هم تو DebtEntity هست. */
+        private val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS counterparties (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        createdAt TEXT NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS debts (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        counterpartyId INTEGER NOT NULL,
+                        amount REAL NOT NULL,
+                        type TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        year INTEGER NOT NULL,
+                        month INTEGER NOT NULL,
+                        day INTEGER NOT NULL,
+                        settled INTEGER NOT NULL,
+                        createdAt TEXT NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_debts_counterpartyId ON debts(counterpartyId)")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS notes (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        text TEXT NOT NULL,
+                        year INTEGER NOT NULL,
+                        month INTEGER NOT NULL,
+                        day INTEGER NOT NULL,
+                        reminderDayOffsets TEXT,
+                        createdAt TEXT NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
+        /** فیلدِ اختیاریِ شماره‌کارت رو حساب‌ها - برای تشخیصِ خودکارِ بانک از رو BIN (رجوع کن به
+         * CLAUDE.md، خواسته‌ی صریحِ کاربر). */
+        private val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE accounts ADD COLUMN cardNumber TEXT")
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -181,7 +242,14 @@ abstract class AppDatabase : RoomDatabase() {
                         // می‌کنه - یه migration واقعی نوشتیم که ستون جدید رو اضافه کنه بدون پاک‌کردنِ
                         // جدول‌ها. fallbackToDestructiveMigration فقط برای نسخه‌های خیلی قدیمی‌تر
                         // (قبل از این migration) که پوشش داده نشدن نگه داشته شده.
-                        .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
+                        .addMigrations(
+                            MIGRATION_9_10,
+                            MIGRATION_10_11,
+                            MIGRATION_11_12,
+                            MIGRATION_12_13,
+                            MIGRATION_13_14,
+                            MIGRATION_14_15,
+                        )
                         .fallbackToDestructiveMigration()
                         .build()
                         .also { instance = it }

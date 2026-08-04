@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.due
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +28,10 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -34,35 +40,69 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.debt.DebtScreen
+import ir.sadteam.loancalc.ui.note.NoteScreen
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.Motion
+
+private enum class DueSubView { NONE, DEBT, NOTES }
 
 private data class DueShortcut(
     val title: String,
     val icon: ImageVector,
-    // route == null یعنی این فیچر هنوز پیاده نشده (طلب‌وبدهی/یادداشتِ مستقل - رجوع کن به CLAUDE.md،
-    // بخشِ فازهای بعدیِ بازسازیِ جامع) - تپ‌کردنش فعلاً کاری نمی‌کنه، فقط برچسبِ «به‌زودی» می‌گیره.
+    // برای «تراکنش»/«قسط و وام»/«چک»/«حساب‌کتاب» که به تبِ دیگه‌ای می‌رن؛ null یعنی این کاشی
+    // زیرصفحه‌ی داخلیِ خودِ همین تبه (رجوع کن به [subView]).
     val route: String?,
+    val subView: DueSubView?,
 )
 
 /**
- * تبِ «سررسید» - نسخه‌ی *اولیه*. گریدِ میان‌برِ کاشی‌ای، هم‌الگو با صفحه‌ی مرجع - تراکنش/قسط‌ووام/
- * چک/حساب‌کتاب به بخش‌های موجودِ اپ وصل می‌شن؛ طلب‌وبدهی و یادداشتِ مستقل هنوز وجود ندارن (فازِ
- * بعدی).
+ * تبِ «سررسید» - گریدِ میان‌برِ کاشی‌ای، هم‌الگو با صفحه‌ی مرجع. تراکنش/قسط‌ووام/چک/حساب‌کتاب به
+ * بخش‌های موجودِ اپ (وامِ ادغام‌شده/چک/حسابداری) وصل می‌شن؛ طلب‌وبدهی و یادداشتِ مستقل زیرصفحه‌ی
+ * داخلیِ خودِ همین تبن (رجوع کن به [DueSubView]) - هم‌الگو با ChequeScreen.screenKey.
  */
 @Composable
 fun DueScreen(onNavigateToRoute: (String) -> Unit) {
+    var subView by rememberSaveable { mutableStateOf(DueSubView.NONE) }
+    // برگشتن از طلب‌وبدهی/یادداشت به گریدِ اصلی - قبل از رسیدن به BackHandlerِ بیرونیِ LoanCalcApp
+    // (که دیگه معنیش خروج/برگشتنِ بینِ تب‌هاست)، هم‌الگو با LoanTab.
+    BackHandler(enabled = subView != DueSubView.NONE) { subView = DueSubView.NONE }
     val shortcuts = remember {
         listOf(
-            DueShortcut("طلب و بدهی", Icons.Filled.Handshake, null),
-            DueShortcut("یادداشت", Icons.Filled.EditNote, null),
-            DueShortcut("تراکنش", Icons.Filled.SwapHoriz, "accounting"),
-            DueShortcut("قسط و وام", Icons.Filled.Payments, "loan"),
-            DueShortcut("چک", Icons.Filled.ReceiptLong, "cheque"),
-            DueShortcut("حساب‌کتاب", Icons.Filled.AccountBalanceWallet, "accounting"),
+            DueShortcut("طلب و بدهی", Icons.Filled.Handshake, null, DueSubView.DEBT),
+            DueShortcut("یادداشت", Icons.Filled.EditNote, null, DueSubView.NOTES),
+            DueShortcut("تراکنش", Icons.Filled.SwapHoriz, "accounting", null),
+            DueShortcut("قسط و وام", Icons.Filled.Payments, "loan", null),
+            DueShortcut("چک", Icons.Filled.ReceiptLong, "cheque", null),
+            DueShortcut("حساب‌کتاب", Icons.Filled.AccountBalanceWallet, "accounting", null),
         )
     }
+
+    AnimatedContent(
+        targetState = subView,
+        transitionSpec = { Motion.contentEnter togetherWith Motion.contentExit },
+        label = "dueScreen",
+    ) { current ->
+        when (current) {
+            DueSubView.DEBT -> DebtScreen(onBack = { subView = DueSubView.NONE })
+            DueSubView.NOTES -> NoteScreen(onBack = { subView = DueSubView.NONE })
+            DueSubView.NONE -> DueGrid(
+                shortcuts = shortcuts,
+                onNavigateToRoute = onNavigateToRoute,
+                onOpenSubView = { subView = it },
+            )
+        }
+    }
+}
+
+@Composable
+private fun DueGrid(
+    shortcuts: List<DueShortcut>,
+    onNavigateToRoute: (String) -> Unit,
+    onOpenSubView: (DueSubView) -> Unit,
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 24.dp),
@@ -72,8 +112,7 @@ fun DueScreen(onNavigateToRoute: (String) -> Unit) {
             AppCard {
                 Text("سررسید", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    "میان‌برِ سریع به یادداشت، تراکنش، قسط و چک - نسخه‌ی کاملِ این تب (طلب‌وبدهی و " +
-                        "یادداشتِ مستقل) تو فازِ بعدی اضافه می‌شه.",
+                    "میان‌برِ سریع به طلب‌وبدهی، یادداشت، تراکنش، قسط و چک.",
                     color = AppMuted,
                     fontSize = 12.5.sp,
                     modifier = Modifier.padding(top = 4.dp),
@@ -89,43 +128,43 @@ fun DueScreen(onNavigateToRoute: (String) -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                items(shortcuts) { shortcut -> DueShortcutTile(shortcut, onNavigateToRoute) }
+                items(shortcuts) { shortcut ->
+                    DueShortcutTile(
+                        shortcut = shortcut,
+                        onClick = {
+                            shortcut.subView?.let(onOpenSubView)
+                            shortcut.route?.let(onNavigateToRoute)
+                        },
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun DueShortcutTile(shortcut: DueShortcut, onClick: (String) -> Unit) {
-    val comingSoon = shortcut.route == null
+private fun DueShortcutTile(shortcut: DueShortcut, onClick: () -> Unit) {
     AppCard(
         modifier = Modifier
             .aspectRatio(1.35f)
-            .pressScaleClickable { shortcut.route?.let(onClick) },
+            .pressScaleClickable(onClick = onClick),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .size(38.dp)
-                    .background(AppPrimary.copy(alpha = if (comingSoon) 0.08f else 0.16f), CircleShape),
+                    .background(AppPrimary.copy(alpha = 0.16f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    shortcut.icon,
-                    contentDescription = shortcut.title,
-                    tint = if (comingSoon) AppMuted else AppPrimary,
-                )
+                Icon(shortcut.icon, contentDescription = shortcut.title, tint = AppPrimary)
             }
             Text(
                 shortcut.title,
-                color = if (comingSoon) AppMuted else AppText,
+                color = AppText,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 10.dp),
             )
-            if (comingSoon) {
-                Text("به‌زودی", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
-            }
         }
     }
 }
