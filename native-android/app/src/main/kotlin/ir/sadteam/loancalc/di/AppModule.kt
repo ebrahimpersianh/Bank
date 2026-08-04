@@ -10,6 +10,7 @@ import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.AuthRepository
 import ir.sadteam.loancalc.data.CalculationHistoryRepository
+import ir.sadteam.loancalc.data.CategoryRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.CrashRepository
 import ir.sadteam.loancalc.data.DebtRepository
@@ -21,6 +22,7 @@ import ir.sadteam.loancalc.data.db.AccountTransactionDao
 import ir.sadteam.loancalc.data.db.AppDatabase
 import ir.sadteam.loancalc.data.db.BudgetDao
 import ir.sadteam.loancalc.data.db.CalculationHistoryDao
+import ir.sadteam.loancalc.data.db.CategoryDao
 import ir.sadteam.loancalc.data.db.ChequeBookDao
 import ir.sadteam.loancalc.data.db.ChequeDao
 import ir.sadteam.loancalc.data.db.CounterpartyDao
@@ -156,4 +158,11 @@ object AppModule {
     @Provides
     @Singleton
     fun provideNoteRepository(noteDao: NoteDao): NoteRepository = NoteRepository(noteDao)
+
+    @Provides
+    fun provideCategoryDao(database: AppDatabase): CategoryDao = database.categoryDao()
+
+    @Provides
+    @Singleton
+    fun provideCategoryRepository(categoryDao: CategoryDao): CategoryRepository = CategoryRepository(categoryDao)
 }

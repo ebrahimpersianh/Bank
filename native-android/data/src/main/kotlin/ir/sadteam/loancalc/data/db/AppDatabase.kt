@@ -24,8 +24,10 @@ import net.sqlcipher.database.SupportFactory
         CounterpartyEntity::class,
         DebtEntity::class,
         NoteEntity::class,
+        CustomCategoryEntity::class,
+        CategoryOrderEntity::class,
     ],
-    version = 15,
+    version = 16,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -48,6 +50,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun counterpartyDao(): CounterpartyDao
     abstract fun debtDao(): DebtDao
     abstract fun noteDao(): NoteDao
+    abstract fun categoryDao(): CategoryDao
 
     companion object {
         private val MIGRATION_9_10 = object : Migration(9, 10) {
@@ -217,6 +220,35 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** مدیریتِ کاملِ دسته‌بندی‌های حسابداری - دسته‌های دلخواهِ کاربر (کنارِ لیستِ ثابتِ
+         * Category.kt تو :app) + ترتیبِ دلخواهِ جابه‌جاشده. هیچ‌کدوم `indices` ندارن (نه تو SQL نه
+         * تو @Entity)، پس کلاس‌باگِ migrationِ ۱۱→۱۲ اینجا مصداق نداره. */
+        private val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS custom_categories (
+                        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        colorArgb INTEGER NOT NULL,
+                        iconKey TEXT NOT NULL,
+                        type TEXT NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS category_order (
+                        type TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        sortOrder INTEGER NOT NULL,
+                        PRIMARY KEY(type, name)
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -249,6 +281,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_12_13,
                             MIGRATION_13_14,
                             MIGRATION_14_15,
+                            MIGRATION_15_16,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

@@ -56,13 +56,14 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.formatReminderOffsets
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.CategoryEntry
-import ir.sadteam.loancalc.data.categoriesFor
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.data.db.BudgetEntity
 import ir.sadteam.loancalc.data.db.RecurringPaymentEntity
 import ir.sadteam.loancalc.data.findCategory
 import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.category.CategoryManagementScreen
+import ir.sadteam.loancalc.ui.category.CategoryViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
@@ -94,7 +95,10 @@ private val faMonthNamesAccounting = listOf(
  * موجودِ «حساب بانکی» ساخته شده - حساب‌ها همونا هستن، فقط تراکنش‌ها الان دسته‌بندی هم دارن.
  */
 @Composable
-fun AccountingScreen(viewModel: AccountViewModel = hiltViewModel()) {
+fun AccountingScreen(
+    viewModel: AccountViewModel = hiltViewModel(),
+    categoryViewModel: CategoryViewModel = hiltViewModel(),
+) {
     var screenKey by remember { mutableStateOf("main") }
     AnimatedContent(
         targetState = screenKey,
@@ -102,12 +106,15 @@ fun AccountingScreen(viewModel: AccountViewModel = hiltViewModel()) {
         label = "accountingScreen",
     ) { key ->
         when (key) {
-            "budget" -> BudgetSection(viewModel = viewModel, onBack = { screenKey = "main" })
-            "recurring" -> RecurringSection(viewModel = viewModel, onBack = { screenKey = "main" })
+            "budget" -> BudgetSection(viewModel = viewModel, categoryViewModel = categoryViewModel, onBack = { screenKey = "main" })
+            "recurring" -> RecurringSection(viewModel = viewModel, categoryViewModel = categoryViewModel, onBack = { screenKey = "main" })
+            "categories" -> CategoryManagementScreen(onBack = { screenKey = "main" }, viewModel = categoryViewModel)
             else -> MainSection(
                 viewModel = viewModel,
+                categoryViewModel = categoryViewModel,
                 onOpenBudget = { screenKey = "budget" },
                 onOpenRecurring = { screenKey = "recurring" },
+                onOpenCategories = { screenKey = "categories" },
             )
         }
     }
@@ -116,14 +123,19 @@ fun AccountingScreen(viewModel: AccountViewModel = hiltViewModel()) {
 @Composable
 private fun MainSection(
     viewModel: AccountViewModel,
+    categoryViewModel: CategoryViewModel,
     onOpenBudget: () -> Unit,
     onOpenRecurring: () -> Unit,
+    onOpenCategories: () -> Unit,
 ) {
     val accounts by viewModel.accounts.collectAsState()
     val allTransactions by viewModel.transactions.collectAsState()
     val privacyMode = LocalPrivacyMode.current
     val today = remember { JalaliCalendar.today() }
     val (income, expense) = remember(allTransactions) { viewModel.monthlyTotals(allTransactions, today.y, today.m) }
+    val expenseCategories by categoryViewModel.expenseCategories.collectAsState()
+    val incomeCategories by categoryViewModel.incomeCategories.collectAsState()
+    val allCategoryEntries = remember(expenseCategories, incomeCategories) { expenseCategories + incomeCategories }
 
     var searchQuery by remember { mutableStateOf("") }
     var showAddForm by remember { mutableStateOf(false) }
@@ -181,8 +193,9 @@ private fun MainSection(
         item {
             StaggerIn(1) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onOpenBudget, modifier = Modifier.weight(1f)) { Text("بودجه‌بندی") }
-                    OutlinedButton(onClick = onOpenRecurring, modifier = Modifier.weight(1f)) { Text("پرداختِ تکراری") }
+                    OutlinedButton(onClick = onOpenBudget, modifier = Modifier.weight(1f)) { Text("بودجه‌بندی", fontSize = 12.sp) }
+                    OutlinedButton(onClick = onOpenRecurring, modifier = Modifier.weight(1f)) { Text("پرداختِ تکراری", fontSize = 12.sp) }
+                    OutlinedButton(onClick = onOpenCategories, modifier = Modifier.weight(1f)) { Text("دسته‌بندی‌ها", fontSize = 12.sp) }
                 }
             }
         }
@@ -212,6 +225,7 @@ private fun MainSection(
             } else if (showAddForm) {
                 AddTransactionForm(
                     accounts = accounts,
+                    categoryViewModel = categoryViewModel,
                     onCancel = { showAddForm = false },
                     onSubmit = { accountId, type, amount, category, desc, y, m, d ->
                         viewModel.addTransaction(accountId, type, amount, desc, y, m, d, category)
@@ -241,7 +255,12 @@ private fun MainSection(
             items(filtered, key = { it.id }) { tx ->
                 val accountName = accounts.firstOrNull { it.id == tx.accountId }?.name ?: "—"
                 SwipeToDeleteRow(onDelete = { deletingTx = tx }, modifier = Modifier.animateItem()) {
-                    AccountingTransactionRow(tx = tx, accountName = accountName, privacyMode = privacyMode)
+                    AccountingTransactionRow(
+                        tx = tx,
+                        accountName = accountName,
+                        privacyMode = privacyMode,
+                        categories = allCategoryEntries,
+                    )
                 }
             }
         }
@@ -258,8 +277,13 @@ private fun MainSection(
 }
 
 @Composable
-private fun AccountingTransactionRow(tx: AccountTransactionEntity, accountName: String, privacyMode: Boolean) {
-    val category = findCategory(tx.category)
+private fun AccountingTransactionRow(
+    tx: AccountTransactionEntity,
+    accountName: String,
+    privacyMode: Boolean,
+    categories: List<CategoryEntry>,
+) {
+    val category = categories.find { it.name == tx.category } ?: findCategory(tx.category)
     val isIncome = tx.type == TransactionType.DEPOSIT.name
     AppCard {
         Row(
@@ -307,10 +331,14 @@ private fun AccountingTransactionRow(tx: AccountTransactionEntity, accountName: 
 @Composable
 private fun AddTransactionForm(
     accounts: List<AccountEntity>,
+    categoryViewModel: CategoryViewModel,
     onCancel: () -> Unit,
     onSubmit: (accountId: Long, type: TransactionType, amount: Double, category: String?, desc: String, y: Int, m: Int, d: Int) -> Unit,
 ) {
     var type by remember { mutableStateOf(TransactionType.WITHDRAWAL) }
+    val expenseCategories by categoryViewModel.expenseCategories.collectAsState()
+    val incomeCategories by categoryViewModel.incomeCategories.collectAsState()
+    val categoriesForType = if (type == TransactionType.WITHDRAWAL) expenseCategories else incomeCategories
     var selectedAccountId by remember { mutableStateOf(accounts.first().id) }
     var selectedCategory by remember { mutableStateOf<CategoryEntry?>(null) }
     var amountText by remember { mutableStateOf("") }
@@ -339,7 +367,7 @@ private fun AddTransactionForm(
 
         AppCard(label = "دسته‌بندی") {
             androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(categoriesFor(type), key = { it.name }) { cat ->
+                items(categoriesForType, key = { it.name }) { cat ->
                     AppChip(label = cat.name, selected = selectedCategory?.name == cat.name, onClick = { selectedCategory = cat })
                 }
             }
@@ -421,12 +449,12 @@ private fun AddTransactionForm(
 }
 
 @Composable
-private fun BudgetSection(viewModel: AccountViewModel, onBack: () -> Unit) {
+private fun BudgetSection(viewModel: AccountViewModel, categoryViewModel: CategoryViewModel, onBack: () -> Unit) {
     val budgets by viewModel.budgets.collectAsState()
     val allTransactions by viewModel.transactions.collectAsState()
     val today = remember { JalaliCalendar.today() }
     val spend = remember(allTransactions) { viewModel.spendByCategory(allTransactions, today.y, today.m) }
-    val expenseCats = remember { ir.sadteam.loancalc.data.expenseCategories }
+    val expenseCats by categoryViewModel.expenseCategories.collectAsState()
 
     var editingCategory by remember { mutableStateOf<CategoryEntry?>(null) }
     var capText by remember { mutableStateOf("") }
@@ -508,7 +536,7 @@ private fun BudgetSection(viewModel: AccountViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-private fun RecurringSection(viewModel: AccountViewModel, onBack: () -> Unit) {
+private fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: CategoryViewModel, onBack: () -> Unit) {
     val payments by viewModel.recurringPayments.collectAsState()
     val accounts by viewModel.accounts.collectAsState()
     var showAddForm by remember { mutableStateOf(false) }
@@ -537,6 +565,7 @@ private fun RecurringSection(viewModel: AccountViewModel, onBack: () -> Unit) {
             if (showAddForm) {
                 AddRecurringForm(
                     accounts = accounts,
+                    categoryViewModel = categoryViewModel,
                     onCancel = { showAddForm = false },
                     onSubmit = { name, amount, type, category, accountId, day, offsets ->
                         viewModel.addRecurringPayment(name, amount, type, category, accountId, day, offsets)
@@ -596,12 +625,16 @@ private fun RecurringSection(viewModel: AccountViewModel, onBack: () -> Unit) {
 @Composable
 private fun AddRecurringForm(
     accounts: List<AccountEntity>,
+    categoryViewModel: CategoryViewModel,
     onCancel: () -> Unit,
     onSubmit: (name: String, amount: Double, type: TransactionType, category: String?, accountId: Long?, dayOfMonth: Int, offsets: String?) -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
     var type by remember { mutableStateOf(TransactionType.WITHDRAWAL) }
+    val expenseCategories by categoryViewModel.expenseCategories.collectAsState()
+    val incomeCategories by categoryViewModel.incomeCategories.collectAsState()
+    val categoriesForType = if (type == TransactionType.WITHDRAWAL) expenseCategories else incomeCategories
     var selectedCategory by remember { mutableStateOf<CategoryEntry?>(null) }
     var selectedAccountId by remember { mutableStateOf(accounts.firstOrNull()?.id) }
     var dayOfMonth by remember { mutableStateOf(1) }
@@ -631,7 +664,7 @@ private fun AddRecurringForm(
         }
         AppCard(label = "دسته‌بندی (اختیاری)") {
             androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(categoriesFor(type), key = { it.name }) { cat ->
+                items(categoriesForType, key = { it.name }) { cat ->
                     AppChip(label = cat.name, selected = selectedCategory?.name == cat.name, onClick = { selectedCategory = cat })
                 }
             }
