@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 
 // رنگ‌های عینِ اسپلشِ اپ وب (#splash تو www/index.html)، حالا به‌جز پس‌زمینه با تم هماهنگ (خواسته‌ی
 // کاربر: «اسپلش سفید و مشکی باشه بنا به دارک‌مود تغییر کنه» - قبلاً همیشه تیره بود، مستقل از تم).
-private val SplashBgDark = Color(0xFF070B09) // هم‌رنگِ AppBgِ جدید (تقریباً مشکی، دورِ چهارمِ تمِ تیره)
+private val SplashBgDark = Color(0xFF000000) // هم‌رنگِ AppBgِ جدید (کاملاً مشکی، دورِ چهارمِ تمِ تیره)
 private val SplashBgLight = Color(0xFFFFFFFF)
 private val RingBase = Color(0xFF16211C) // هم‌رنگِ AppSurface2ِ جدید
 private val RingGold = Color(0xFFFFB020) // هم‌رنگِ AppAccent (طلایی) - دست‌نخورده موند
