@@ -1,14 +1,18 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -37,12 +41,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.background
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -69,12 +75,15 @@ import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.InAppBannerHost
+import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.ReminderOverrideCard
 import ir.sadteam.loancalc.ui.components.StaggerIn
 import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
+import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
@@ -83,6 +92,9 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private val faMonthNamesAccounting = listOf(
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
@@ -109,12 +121,14 @@ fun AccountingScreen(
             "budget" -> BudgetSection(viewModel = viewModel, categoryViewModel = categoryViewModel, onBack = { screenKey = "main" })
             "recurring" -> RecurringSection(viewModel = viewModel, categoryViewModel = categoryViewModel, onBack = { screenKey = "main" })
             "categories" -> CategoryManagementScreen(onBack = { screenKey = "main" }, viewModel = categoryViewModel)
+            "report" -> ReportSection(viewModel = viewModel, onBack = { screenKey = "main" })
             else -> MainSection(
                 viewModel = viewModel,
                 categoryViewModel = categoryViewModel,
                 onOpenBudget = { screenKey = "budget" },
                 onOpenRecurring = { screenKey = "recurring" },
                 onOpenCategories = { screenKey = "categories" },
+                onOpenReport = { screenKey = "report" },
             )
         }
     }
@@ -127,6 +141,7 @@ private fun MainSection(
     onOpenBudget: () -> Unit,
     onOpenRecurring: () -> Unit,
     onOpenCategories: () -> Unit,
+    onOpenReport: () -> Unit,
 ) {
     val accounts by viewModel.accounts.collectAsState()
     val allTransactions by viewModel.transactions.collectAsState()
@@ -192,10 +207,15 @@ private fun MainSection(
 
         item {
             StaggerIn(1) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onOpenBudget, modifier = Modifier.weight(1f)) { Text("بودجه‌بندی", fontSize = 12.sp) }
-                    OutlinedButton(onClick = onOpenRecurring, modifier = Modifier.weight(1f)) { Text("پرداختِ تکراری", fontSize = 12.sp) }
-                    OutlinedButton(onClick = onOpenCategories, modifier = Modifier.weight(1f)) { Text("دسته‌بندی‌ها", fontSize = 12.sp) }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = onOpenBudget, modifier = Modifier.weight(1f)) { Text("بودجه‌بندی", fontSize = 12.sp) }
+                        OutlinedButton(onClick = onOpenRecurring, modifier = Modifier.weight(1f)) { Text("پرداختِ تکراری", fontSize = 12.sp) }
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = onOpenCategories, modifier = Modifier.weight(1f)) { Text("دسته‌بندی‌ها", fontSize = 12.sp) }
+                        OutlinedButton(onClick = onOpenReport, modifier = Modifier.weight(1f)) { Text("گزارش‌گیری", fontSize = 12.sp) }
+                    }
                 }
             }
         }
@@ -691,6 +711,190 @@ private fun AddRecurringForm(
             ) { Text("ثبت") }
             OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("انصراف") }
         }
+    }
+}
+
+/** گزارش‌گیریِ کامل - فیلترِ حساب‌کتاب + بازه‌ی دلخواهِ تاریخ + خروجیِ PDF/اکسل (رجوع کن به
+ * CLAUDE.md، «تکمیلِ گزارش‌گیری»). پیش‌فرضِ بازه از اولِ همین ماه تا امروزه، دقیقاً هم‌قدم با
+ * کارتِ «گزارشِ ماهانه»ی صفحه‌ی اصلی، ولی کاملاً قابلِ‌تغییره. */
+@Composable
+private fun ReportSection(viewModel: AccountViewModel, onBack: () -> Unit) {
+    val accounts by viewModel.accounts.collectAsState()
+    val allTransactions by viewModel.transactions.collectAsState()
+    val today = remember { JalaliCalendar.today() }
+
+    var selectedAccountId by remember { mutableStateOf<Long?>(null) }
+    var fromYear by remember { mutableStateOf(today.y) }
+    var fromMonth by remember { mutableStateOf(today.m) }
+    var fromDay by remember { mutableStateOf(1) }
+    var toYear by remember { mutableStateOf(today.y) }
+    var toMonth by remember { mutableStateOf(today.m) }
+    var toDay by remember { mutableStateOf(today.d) }
+
+    fun dateKey(y: Int, m: Int, d: Int) = y * 10000 + m * 100 + d
+
+    val filtered = remember(allTransactions, selectedAccountId, fromYear, fromMonth, fromDay, toYear, toMonth, toDay) {
+        val from = dateKey(fromYear, fromMonth, fromDay)
+        val to = dateKey(toYear, toMonth, toDay)
+        allTransactions.filter { tx ->
+            (selectedAccountId == null || tx.accountId == selectedAccountId) &&
+                dateKey(tx.year, tx.month, tx.day) in minOf(from, to)..maxOf(from, to)
+        }.sortedWith(compareBy({ it.year }, { it.month }, { it.day }))
+    }
+    val income = remember(filtered) { filtered.filter { it.type == TransactionType.DEPOSIT.name }.sumOf { it.amount } }
+    val expense = remember(filtered) { filtered.filter { it.type == TransactionType.WITHDRAWAL.name }.sumOf { it.amount } }
+    val categoryBreakdown = remember(filtered) {
+        filtered.groupBy { it.category ?: "بدونِ دسته" }
+            .map { (name, txs) -> name to txs.sumOf { it.amount } }
+            .sortedByDescending { it.second }
+    }
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val banner = rememberInAppBanner()
+    val accountLabel = accounts.firstOrNull { it.id == selectedAccountId }?.name ?: "همه‌ی حساب‌ها"
+    val rangeLabel = "${toFa(fromYear)}/${toFa(fromMonth)}/${toFa(fromDay)} تا ${toFa(toYear)}/${toFa(toMonth)}/${toFa(toDay)}"
+
+    val createPdfLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/pdf"),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch(Dispatchers.IO) {
+                val ok = runCatching {
+                    context.contentResolver.openOutputStream(uri)?.use { out ->
+                        AccountingPdfExporter.export(rangeLabel, accountLabel, income, expense, categoryBreakdown, filtered, out)
+                    }
+                }.isSuccess
+                withContext(Dispatchers.Main) {
+                    banner.show(if (ok) "PDF ذخیره شد" else "ذخیره‌ی PDF ناموفق بود", isSuccess = ok)
+                }
+            }
+        }
+    }
+    val createXlsxLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch(Dispatchers.IO) {
+                val ok = runCatching {
+                    context.contentResolver.openOutputStream(uri)?.use { out ->
+                        AccountingXlsxExporter.export(income, expense, categoryBreakdown, filtered, out)
+                    }
+                }.isSuccess
+                withContext(Dispatchers.Main) {
+                    banner.show(if (ok) "اکسل ذخیره شد" else "ذخیره‌ی اکسل ناموفق بود", isSuccess = ok)
+                }
+            }
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item {
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت") }
+                Text("گزارش‌گیری", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+            }
+        }
+        item {
+            AppCard(label = "حساب‌کتاب") {
+                AccountingDropdown(
+                    options = listOf<Pair<Long?, String>>(null to "همه‌ی حساب‌ها") + accounts.map { it.id to it.name },
+                    selected = selectedAccountId,
+                    onSelect = { selectedAccountId = it },
+                )
+            }
+        }
+        item {
+            AppCard(label = "از تاریخ") {
+                InlineJalaliDateRow(
+                    year = fromYear,
+                    month = fromMonth,
+                    day = fromDay,
+                    onDateChange = { y, m, d -> fromYear = y; fromMonth = m; fromDay = d },
+                )
+            }
+        }
+        item {
+            AppCard(label = "تا تاریخ") {
+                InlineJalaliDateRow(
+                    year = toYear,
+                    month = toMonth,
+                    day = toDay,
+                    onDateChange = { y, m, d -> toYear = y; toMonth = m; toDay = d },
+                )
+            }
+        }
+        item {
+            AppCard(label = "خلاصه‌ی بازه") {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column {
+                        Text("درآمد", color = AppMuted, fontSize = 12.sp)
+                        Text("${fmt(income)} ریال", color = AppPrimary, fontSize = 14.sp)
+                    }
+                    Column {
+                        Text("هزینه", color = AppMuted, fontSize = 12.sp)
+                        Text("${fmt(expense)} ریال", color = AppDanger, fontSize = 14.sp)
+                    }
+                    Column {
+                        Text("مانده", color = AppMuted, fontSize = 12.sp)
+                        Text(
+                            "${fmt(income - expense)} ریال",
+                            color = if (income - expense >= 0) AppText else AppDanger,
+                            fontSize = 14.sp,
+                        )
+                    }
+                }
+            }
+        }
+        if (categoryBreakdown.isNotEmpty()) {
+            item {
+                AppCard(label = "تفکیکِ دسته‌بندی") {
+                    Column {
+                        categoryBreakdown.forEach { (name, amount) ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(name, color = AppText, fontSize = 12.5.sp)
+                                Text("${fmt(amount)} ریال", color = AppMuted, fontSize = 12.5.sp)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { createPdfLauncher.launch("gozaresh-hesabdari.pdf") },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
+                    enabled = filtered.isNotEmpty(),
+                    modifier = Modifier.weight(1f),
+                ) { Text("دانلود PDF", fontSize = 12.sp) }
+                OutlinedButton(
+                    onClick = { createXlsxLauncher.launch("gozaresh-hesabdari.xlsx") },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
+                    enabled = filtered.isNotEmpty(),
+                    modifier = Modifier.weight(1f),
+                ) { Text("دانلود اکسل", fontSize = 12.sp) }
+            }
+        }
+        if (filtered.isEmpty()) {
+            item {
+                EmptyState(
+                    icon = Icons.Outlined.AccountBalanceWallet,
+                    title = "تراکنشی تو این بازه نیست",
+                    description = "بازه یا حساب رو عوض کن تا تراکنش‌های اون بازه اینجا دیده بشه.",
+                )
+            }
+        }
+    }
+    InAppBannerHost(banner)
     }
 }
 
