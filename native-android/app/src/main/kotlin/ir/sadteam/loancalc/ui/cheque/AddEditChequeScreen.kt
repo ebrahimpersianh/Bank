@@ -4,6 +4,8 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -51,6 +53,7 @@ import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
+import ir.sadteam.loancalc.ui.components.SuccessCheckmarkOverlay
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -86,6 +89,8 @@ fun AddEditChequeScreen(
     var chequeBookId by remember { mutableStateOf(existing?.chequeBookId) }
     var photoPath by remember { mutableStateOf(existing?.photoPath) }
     var showMoreInfo by remember { mutableStateOf(false) }
+    // بعدِ ذخیره‌ی موفق، یه تیکِ سبزِ متحرک قبل از بستنِ صفحه - رجوع کن به SuccessCheckmark.kt.
+    var savedOk by remember { mutableStateOf(false) }
     var nationalId by remember { mutableStateOf(existing?.nationalId ?: "") }
     var previousBalanceText by remember { mutableStateOf(existing?.previousBalance?.let { fmt(it) } ?: "") }
     var depositAmountText by remember { mutableStateOf(existing?.depositAmount?.let { fmt(it) } ?: "") }
@@ -106,6 +111,7 @@ fun AddEditChequeScreen(
         return
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -411,7 +417,7 @@ fun AddEditChequeScreen(
                                     nationalId = nationalId.trim(),
                                     previousBalance = cleanNumDecimal(previousBalanceText).toDoubleOrNull(),
                                     depositAmount = cleanNumDecimal(depositAmountText).toDoubleOrNull(),
-                                    onSaved = onSaved,
+                                    onSaved = { savedOk = true },
                                 )
                             } else {
                                 viewModel.updateCheque(
@@ -433,7 +439,7 @@ fun AddEditChequeScreen(
                                         previousBalance = cleanNumDecimal(previousBalanceText).toDoubleOrNull(),
                                         depositAmount = cleanNumDecimal(depositAmountText).toDoubleOrNull(),
                                     ),
-                                    onSaved = onSaved,
+                                    onSaved = { savedOk = true },
                                 )
                             }
                         }
@@ -448,6 +454,8 @@ fun AddEditChequeScreen(
             }
         }
     }
+    }
+    SuccessCheckmarkOverlay(visible = savedOk, onFinished = onSaved)
 }
 
 @Composable

@@ -10,19 +10,28 @@ import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.AuthRepository
 import ir.sadteam.loancalc.data.CalculationHistoryRepository
+import ir.sadteam.loancalc.data.CategoryRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.CrashRepository
+import ir.sadteam.loancalc.data.DebtRepository
 import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
+import ir.sadteam.loancalc.data.NoteRepository
 import ir.sadteam.loancalc.data.db.AccountDao
 import ir.sadteam.loancalc.data.db.AccountTransactionDao
 import ir.sadteam.loancalc.data.db.AppDatabase
+import ir.sadteam.loancalc.data.db.BudgetDao
 import ir.sadteam.loancalc.data.db.CalculationHistoryDao
+import ir.sadteam.loancalc.data.db.CategoryDao
 import ir.sadteam.loancalc.data.db.ChequeBookDao
 import ir.sadteam.loancalc.data.db.ChequeDao
+import ir.sadteam.loancalc.data.db.CounterpartyDao
+import ir.sadteam.loancalc.data.db.DebtDao
 import ir.sadteam.loancalc.data.db.IncomeDao
 import ir.sadteam.loancalc.data.db.LoanDao
 import ir.sadteam.loancalc.data.db.LoanRowDao
+import ir.sadteam.loancalc.data.db.NoteDao
+import ir.sadteam.loancalc.data.db.RecurringPaymentDao
 import ir.sadteam.loancalc.data.network.ApiClient
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -103,12 +112,20 @@ object AppModule {
     fun provideAccountTransactionDao(database: AppDatabase): AccountTransactionDao = database.accountTransactionDao()
 
     @Provides
+    fun provideBudgetDao(database: AppDatabase): BudgetDao = database.budgetDao()
+
+    @Provides
+    fun provideRecurringPaymentDao(database: AppDatabase): RecurringPaymentDao = database.recurringPaymentDao()
+
+    @Provides
     @Singleton
     fun provideAccountRepository(
         accountDao: AccountDao,
         transactionDao: AccountTransactionDao,
         apiService: ApiService,
-    ): AccountRepository = AccountRepository(accountDao, transactionDao, apiService)
+        budgetDao: BudgetDao,
+        recurringPaymentDao: RecurringPaymentDao,
+    ): AccountRepository = AccountRepository(accountDao, transactionDao, apiService, budgetDao, recurringPaymentDao)
 
     @Provides
     @Singleton
@@ -123,4 +140,29 @@ object AppModule {
     @Singleton
     fun provideCalculationHistoryRepository(dao: CalculationHistoryDao): CalculationHistoryRepository =
         CalculationHistoryRepository(dao)
+
+    @Provides
+    fun provideCounterpartyDao(database: AppDatabase): CounterpartyDao = database.counterpartyDao()
+
+    @Provides
+    fun provideDebtDao(database: AppDatabase): DebtDao = database.debtDao()
+
+    @Provides
+    @Singleton
+    fun provideDebtRepository(counterpartyDao: CounterpartyDao, debtDao: DebtDao): DebtRepository =
+        DebtRepository(counterpartyDao, debtDao)
+
+    @Provides
+    fun provideNoteDao(database: AppDatabase): NoteDao = database.noteDao()
+
+    @Provides
+    @Singleton
+    fun provideNoteRepository(noteDao: NoteDao): NoteRepository = NoteRepository(noteDao)
+
+    @Provides
+    fun provideCategoryDao(database: AppDatabase): CategoryDao = database.categoryDao()
+
+    @Provides
+    @Singleton
+    fun provideCategoryRepository(categoryDao: CategoryDao): CategoryRepository = CategoryRepository(categoryDao)
 }

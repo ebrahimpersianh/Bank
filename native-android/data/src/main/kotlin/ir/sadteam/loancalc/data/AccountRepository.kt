@@ -7,6 +7,10 @@ import ir.sadteam.loancalc.data.db.AccountDao
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionDao
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
+import ir.sadteam.loancalc.data.db.BudgetDao
+import ir.sadteam.loancalc.data.db.BudgetEntity
+import ir.sadteam.loancalc.data.db.RecurringPaymentDao
+import ir.sadteam.loancalc.data.db.RecurringPaymentEntity
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.network.BackupBlobRequest
 import kotlinx.coroutines.flow.Flow
@@ -24,13 +28,15 @@ class AccountRepository(
     private val accountDao: AccountDao,
     private val transactionDao: AccountTransactionDao,
     private val apiService: ApiService,
+    private val budgetDao: BudgetDao,
+    private val recurringPaymentDao: RecurringPaymentDao,
 ) {
     fun observeAccounts(): Flow<List<AccountEntity>> = accountDao.observeAll()
     fun observeTransactions(): Flow<List<AccountTransactionEntity>> = transactionDao.observeAll()
     fun observeTransactionsForAccount(accountId: Long): Flow<List<AccountTransactionEntity>> =
         transactionDao.observeForAccount(accountId)
 
-    suspend fun addAccount(name: String, bankName: String, initialBalance: Double) {
+    suspend fun addAccount(name: String, bankName: String, initialBalance: Double, cardNumber: String? = null) {
         accountDao.upsert(
             AccountEntity(
                 id = System.currentTimeMillis(),
@@ -38,6 +44,7 @@ class AccountRepository(
                 bankName = bankName,
                 initialBalance = initialBalance,
                 createdAt = isoNow(),
+                cardNumber = cardNumber,
             ),
         )
     }
@@ -55,6 +62,8 @@ class AccountRepository(
     suspend fun clearLocal() {
         accountDao.clear()
         transactionDao.clear()
+        budgetDao.clear()
+        recurringPaymentDao.clear()
     }
 
     suspend fun addTransaction(
@@ -65,6 +74,7 @@ class AccountRepository(
         year: Int,
         month: Int,
         day: Int,
+        category: String? = null,
     ) {
         transactionDao.upsert(
             AccountTransactionEntity(
@@ -77,6 +87,7 @@ class AccountRepository(
                 month = month,
                 day = day,
                 createdAt = isoNow(),
+                category = category,
             ),
         )
     }
@@ -91,6 +102,58 @@ class AccountRepository(
         val deposits = forAccount.filter { it.type == TransactionType.DEPOSIT.name }.sumOf { it.amount }
         val withdrawals = forAccount.filter { it.type == TransactionType.WITHDRAWAL.name }.sumOf { it.amount }
         return account.initialBalance + deposits - withdrawals
+    }
+
+    // ---- بودجه‌بندی ----
+    fun observeBudgets(): Flow<List<BudgetEntity>> = budgetDao.observeAll()
+
+    suspend fun setBudget(categoryName: String, monthlyCap: Double, existingId: Long? = null) {
+        budgetDao.upsert(BudgetEntity(id = existingId ?: System.currentTimeMillis(), categoryName = categoryName, monthlyCap = monthlyCap))
+    }
+
+    suspend fun deleteBudget(budget: BudgetEntity) {
+        budgetDao.delete(budget)
+    }
+
+    /** جمعِ خرجِ هر دسته تو یه ماهِ خاص (فقط برداشت‌ها) - برای مقایسه با سقفِ بودجه. */
+    fun spendByCategory(transactions: List<AccountTransactionEntity>, year: Int, month: Int): Map<String, Double> =
+        transactions
+            .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == year && it.month == month && !it.category.isNullOrBlank() }
+            .groupBy { it.category!! }
+            .mapValues { (_, list) -> list.sumOf { it.amount } }
+
+    // ---- پرداخت‌های تکراری ----
+    fun observeRecurringPayments(): Flow<List<RecurringPaymentEntity>> = recurringPaymentDao.observeAll()
+
+    /** پورت suspend (نه Flow) - برای DueDateReminderWorker، هم‌الگو با LoanRepository.getLoans(). */
+    suspend fun getRecurringPayments(): List<RecurringPaymentEntity> = recurringPaymentDao.getAll()
+
+    suspend fun addRecurringPayment(
+        name: String,
+        amount: Double,
+        type: TransactionType,
+        categoryName: String?,
+        accountId: Long?,
+        dayOfMonth: Int,
+        reminderDayOffsets: String?,
+    ) {
+        recurringPaymentDao.upsert(
+            RecurringPaymentEntity(
+                id = System.currentTimeMillis(),
+                name = name,
+                amount = amount,
+                type = type.name,
+                categoryName = categoryName,
+                accountId = accountId,
+                dayOfMonth = dayOfMonth,
+                reminderDayOffsets = reminderDayOffsets,
+                createdAt = isoNow(),
+            ),
+        )
+    }
+
+    suspend fun deleteRecurringPayment(payment: RecurringPaymentEntity) {
+        recurringPaymentDao.delete(payment)
     }
 
     /** پورت جدا از بکاپ وام/چک - یه فایل JSON مستقل برای حساب‌ها و تراکنش‌هاشون. */

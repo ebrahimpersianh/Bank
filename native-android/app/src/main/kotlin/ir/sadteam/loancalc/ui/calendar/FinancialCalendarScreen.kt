@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.fmt
@@ -159,7 +160,7 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
                                             if (isSelected) AppPrimary.copy(alpha = 0.18f) else AppBg,
                                             CircleShape,
                                         )
-                                        .clickable { selectedDate = thisDate },
+                                        .pressScaleClickable(scale = 0.9f) { selectedDate = thisDate },
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {

@@ -111,6 +111,46 @@ class MyLoansViewModel @Inject constructor(
     /** دوره‌ی تنفسِ وام (ماه) - رجوع کن به [LoanRepository.getGraceMonths]. */
     fun getLoanGraceMonths(loan: LoanEntity): Int = loanRepository.getGraceMonths(loan)
 
+    /** سررسیدِ اولین قسطِ پرداخت‌نشده - برای مرتب‌سازیِ «نزدیک‌ترین سررسید»، رجوع کن به
+     * [LoanRepository.getNextDueDate]. */
+    fun getLoanNextDueDate(loan: LoanEntity): PersianDate? = loanRepository.getNextDueDate(loan)
+
+    /** آیا بازپرداختِ این وام عقب‌افتاده (سررسیدِ اولین قسطِ پرداخت‌نشده گذشته)؟ - برای بجِ هشدارِ
+     * قرمز رو کارتِ وام، رجوع کن به [LoanRepository.isOverdue]. */
+    fun isLoanOverdue(loan: LoanEntity): Boolean = loanRepository.isOverdue(loan)
+
+    /** جمعِ کلِ اقساطِ معوقِ همه‌ی وام‌ها - برای مورد ۱۹ (خلاصه‌ی داشبورد)، رجوع کن به
+     * [LoanRepository.overdueInstallmentsTotal]. */
+    suspend fun totalOverdueAmount(loans: List<LoanEntity>): Double =
+        loans.sumOf { loanRepository.overdueInstallmentsTotal(it) }
+
+    /** جمعِ مبلغِ قسطِ همینِ الانِ همه‌ی وام‌ها («مجموع اقساط ماهانه» تو داشبورد) - مورد ۱۴/۳۵،
+     * رجوع کن به [LoanRepository.currentInstallmentAmount]. */
+    suspend fun totalCurrentInstallment(loans: List<LoanEntity>): Double =
+        loans.sumOf { loanRepository.currentInstallmentAmount(it) }
+
+    /** ترتیبِ دلخواهِ کاربر (کشیدن‌ورهاکردن) - رجوع کن به [LoanRepository.getSortOrder]. */
+    fun getLoanSortOrder(loan: LoanEntity): Long? = loanRepository.getSortOrder(loan)
+
+    /** بعدِ رهاکردنِ کارتِ یه وامِ کشیده‌شده - رجوع کن به [LoanRepository.reorderLoans]. */
+    fun reorderLoans(orderedLoans: List<LoanEntity>) {
+        viewModelScope.launch {
+            loanRepository.reorderLoans(orderedLoans)
+            syncIfLoggedIn()
+        }
+    }
+
+    /** یادداشتِ آزادِ وام - رجوع کن به [LoanRepository.getNotes]/[LoanRepository.updateNotes]. */
+    fun getLoanNotes(loan: LoanEntity): String = loanRepository.getNotes(loan)
+
+    fun updateLoanNotes(loan: LoanEntity, notes: String, onSaved: () -> Unit = {}) {
+        viewModelScope.launch {
+            loanRepository.updateNotes(loan, notes)
+            syncIfLoggedIn()
+            onSaved()
+        }
+    }
+
     /** ویرایشِ مشخصاتِ *غیرمالیِ* هر نوع وامی (اسم/بانک/وام‌گیرنده/تاریخ) - رجوع کن به
      * [LoanRepository.updateLoanMeta]. */
     fun updateLoanMeta(
@@ -134,10 +174,37 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
+    /** ویرایشِ مبلغ/تعدادِ اقساطِ یه وامِ محاسبه‌شده - فقط وقتی [loan.paidCount] صفره؛ رجوع کن به
+     * [LoanRepository.updateComputedLoanAmount]. */
+    fun updateComputedLoanAmount(
+        loan: LoanEntity,
+        name: String,
+        bank: String,
+        borrower: String,
+        principalAmount: Double,
+        n: Int,
+        startDate: PersianDate,
+        onSaved: () -> Unit,
+    ) {
+        viewModelScope.launch {
+            loanRepository.updateComputedLoanAmount(
+                loan = loan,
+                name = name,
+                bank = bank,
+                borrower = borrower,
+                principalAmount = principalAmount,
+                n = n,
+                startDate = mapOf("y" to startDate.y, "m" to startDate.m, "d" to startDate.d),
+            )
+            syncIfLoggedIn()
+            onSaved()
+        }
+    }
+
     /** پورت saveLoan تو www/index.html - نتیجه‌ی محاسبه‌ی تب «وام بانکی» رو تو «وام‌های من» ذخیره
      * می‌کنه (با نگه‌داشتن ردیف‌های واقعیِ محاسبه‌شده). محدودیتِ «۱ وام رایگان» باید قبلِ صدا زدن
      * این، سمتِ UI چک بشه (مثل onAddLoanClick تو MyLoansScreen). */
-    fun saveComputedLoan(outcome: BankLoanOutcome, onSaved: () -> Unit) {
+    fun saveComputedLoan(outcome: BankLoanOutcome, paidCount: Int = 0, onSaved: () -> Unit) {
         viewModelScope.launch {
             val r = outcome.result
             val loanName = outcome.borrower.takeIf { it != "—" && it.isNotBlank() } ?: outcome.bankName
@@ -156,6 +223,7 @@ class MyLoansViewModel @Inject constructor(
                 startDate = mapOf("y" to outcome.startDate.y, "m" to outcome.startDate.m, "d" to outcome.startDate.d),
                 intervalDays = r.intervalDays,
                 rows = r.rows.map { it.month to it.installment },
+                paidCount = paidCount,
             )
             syncIfLoggedIn()
             onSaved()
@@ -238,6 +306,26 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
+    /** پرداختِ گروهیِ چندتا قسطِ پرداخت‌نشده به‌موقع - رجوع کن به [LoanRepository.setRowsPaidOnTime]. */
+    fun setRowsPaidOnTime(loan: LoanEntity, ms: List<Int>) {
+        viewModelScope.launch {
+            loanRepository.setRowsPaidOnTime(loan, ms)
+            syncIfLoggedIn()
+        }
+    }
+
+    /** پرداختِ گروهیِ چندتا قسط با تاخیر - رجوع کن به [LoanRepository.setRowsPaidLate]. */
+    fun setRowsPaidLate(loan: LoanEntity, ms: List<Int>, paidDate: PersianDate) {
+        viewModelScope.launch {
+            loanRepository.setRowsPaidLate(
+                loan,
+                ms,
+                mapOf("y" to paidDate.y, "m" to paidDate.m, "d" to paidDate.d),
+            )
+            syncIfLoggedIn()
+        }
+    }
+
     /** پیوست/حذف عکس رسیدِ مخصوصِ یه قسطِ خاص (نه یه عکسِ کلیِ رو کل وام) - خواسته‌ی کاربر که مشخص
      * باشه رسید برای کدوم وام و کدوم قسطه؛ چون [loan] و [m] همیشه صریح داده می‌شن، این خودش تضمین
      * می‌شه. عکس قبلیِ همون قسط (اگه بود) قبل از جایگزینی پاک می‌شه. */
@@ -288,6 +376,20 @@ class MyLoansViewModel @Inject constructor(
             val ok = loanRepository.importBackupJson(json)
             if (ok) syncIfLoggedIn()
             onResult(ok)
+        }
+    }
+
+    /**
+     * همگام‌سازیِ دستی (کشیدنِ لیست به پایین تو [MyLoansScreen]).
+     *
+     * عمداً فقط **پوش** می‌کنه، نه بازیابی از سرور: یه ژستِ ساده‌ی کشیدن نباید بتونه داده‌ی محلی رو
+     * با نسخه‌ی سرور جایگزین کنه (اون کارِ «بازیابی از سرورِ ابری» تو تنظیماته، با تاییدِ صریح).
+     * برای کاربرِ مهمان/خارج‌شده هیچ‌کاری نمی‌کنه و فوراً [onDone] رو صدا می‌زنه.
+     */
+    fun syncNow(onDone: () -> Unit) {
+        viewModelScope.launch {
+            syncIfLoggedIn()
+            onDone()
         }
     }
 

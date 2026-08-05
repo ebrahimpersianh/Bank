@@ -74,7 +74,7 @@ fun BenefitsScreen(onContinue: () -> Unit) {
     ) {
         Spacer(Modifier.height(24.dp))
         Text(
-            "به «وام من» خوش اومدی",
+            "به «حسابدار من» خوش اومدی",
             color = AppText,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,

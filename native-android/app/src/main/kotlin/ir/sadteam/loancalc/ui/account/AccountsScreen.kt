@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -39,11 +40,13 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.data.db.AccountEntity
+import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -58,8 +61,14 @@ import kotlinx.coroutines.withContext
  * navigation داخلی عین ChequeScreen (screenKey مشتق‌شده + AnimatedContent).
  */
 @Composable
-fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewModel()) {
-    var showAddForm by remember { mutableStateOf(false) }
+fun AccountsScreen(
+    onBack: () -> Unit,
+    // خواسته‌ی صریحِ کاربر: افزودنِ حساب دیگه فقط از تنظیمات نباشه، از تبِ «دارایی» هم مستقیم قابلِ‌
+    // دسترسی باشه - وقتی true باشه، این صفحه مستقیم با فرمِ بازِ افزودنِ حساب باز می‌شه، نه لیستِ خالی.
+    startInAddMode: Boolean = false,
+    viewModel: AccountViewModel = hiltViewModel(),
+) {
+    var showAddForm by remember { mutableStateOf(startInAddMode) }
     var editingAccountId by remember { mutableStateOf<Long?>(null) }
     var openedAccountId by remember { mutableStateOf<Long?>(null) }
 
@@ -122,7 +131,7 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewMod
     Box(modifier = Modifier.fillMaxSize()) {
     AnimatedContent(
         targetState = screenKey,
-        transitionSpec = { fadeIn(tween(200)).togetherWith(fadeOut(tween(150))) },
+        transitionSpec = { Motion.contentEnter togetherWith Motion.contentExit },
         label = "accountsScreen",
     ) { key ->
         when (key) {
@@ -190,12 +199,12 @@ fun AccountsScreen(onBack: () -> Unit, viewModel: AccountViewModel = hiltViewMod
 
                 if (accounts.isEmpty()) {
                     item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(top = 60.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text("هنوز حسابی ثبت نشده", color = AppText, fontSize = 15.sp)
-                        }
+                        EmptyState(
+                            icon = Icons.Outlined.AccountBalance,
+                            title = "هنوز حسابی ثبت نشده",
+                            description = "حساب‌های بانکیت رو اضافه کن تا موجودی و " +
+                                "گردشِ هرکدوم رو یک‌جا داشته باشی.",
+                        )
                     }
                 } else {
                     items(accounts, key = { it.id }) { account ->

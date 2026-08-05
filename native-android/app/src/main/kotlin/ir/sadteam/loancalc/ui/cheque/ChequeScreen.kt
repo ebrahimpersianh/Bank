@@ -25,14 +25,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,11 +61,15 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ChequeEntity
+import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
+import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -126,7 +133,15 @@ fun chequeStatusLabel(status: String) = when (status) {
  * books) عین MyLoansScreen با یه screenKey مشتق‌شده + AnimatedContent.
  */
 @Composable
-fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel()) {
+fun ChequeScreen(
+    onBack: () -> Unit,
+    // وقتی چک به‌عنوانِ تبِ مستقلِ نوارِ پایین استفاده می‌شه (رجوع کن به CLAUDE.md - بازسازیِ
+    // تب‌بندی)، دیگه «برگشت» معنی نداره (همتای بقیه‌ی تب‌هاست، نه زیرصفحه‌ی یه تبِ دیگه) - دکمه‌ی
+    // برگشتِ ردیفِ بالای لیست مخفی می‌شه. زیرصفحه‌های داخلی (افزودن/جزئیات/گزارش/...) دست‌نخورده
+    // می‌مونن، چون اون‌ها همیشه با همون منطقِ داخلیِ خودشون به لیست برمی‌گردن، نه به بیرونِ ChequeScreen.
+    standalone: Boolean = false,
+    viewModel: ChequeViewModel = hiltViewModel(),
+) {
     var showAddForm by remember { mutableStateOf(false) }
     var editingChequeId by remember { mutableStateOf<Long?>(null) }
     var openedChequeId by remember { mutableStateOf<Long?>(null) }
@@ -137,12 +152,23 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
     var showSayadInquiry by remember { mutableStateOf(false) }
     var showReport by remember { mutableStateOf(false) }
     var showReminderSettings by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     val allCheques by viewModel.cheques.collectAsState()
     val chequeBooks by viewModel.chequeBooks.collectAsState()
-    val visibleCheques = remember(allCheques, typeFilter, showArchived) {
+    val visibleCheques = remember(allCheques, typeFilter, showArchived, searchQuery) {
         val filterName = typeFilter?.name
-        allCheques.filter { it.archived == showArchived && (filterName == null || it.type == filterName) }
+        val q = searchQuery.trim()
+        allCheques.filter {
+            it.archived == showArchived &&
+                (filterName == null || it.type == filterName) &&
+                (
+                    q.isBlank() ||
+                        it.ownerName.contains(q, ignoreCase = true) ||
+                        it.chequeNumber.contains(q, ignoreCase = true) ||
+                        it.bankName.contains(q, ignoreCase = true)
+                    )
+        }
     }
     val stats = remember(allCheques) { computeChequeStats(allCheques) }
     val openedCheque = openedChequeId?.let { id -> allCheques.firstOrNull { it.id == id } }
@@ -233,7 +259,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
     Box(modifier = Modifier.fillMaxSize()) {
     AnimatedContent(
         targetState = screenKey,
-        transitionSpec = { fadeIn(tween(200)).togetherWith(fadeOut(tween(150))) },
+        transitionSpec = { Motion.contentEnter togetherWith Motion.contentExit },
         label = "chequeScreen",
     ) { key ->
         when (key) {
@@ -286,14 +312,16 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                        if (!standalone) {
+                            IconButton(onClick = onBack) {
+                                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                            }
                         }
                         Text(
                             if (showArchived) "بایگانی چک" else "امور چک",
                             color = AppText,
                             fontSize = 16.sp,
-                            modifier = Modifier.padding(start = 4.dp),
+                            modifier = Modifier.padding(start = if (standalone) 0.dp else 4.dp),
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         // تنظیمات این بخش (دسته‌چک‌ها/بایگانی/پشتیبان‌گیری/بازیابی) زیر آیکون
@@ -346,6 +374,17 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                 }
 
                 item {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("جستجو تو چک‌ها (اسم/شماره/بانک)...") },
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                }
+
+                item {
                     // وضعیتِ چک‌های وضع‌نشده - چندتا دریافتی و چندتا پرداختی هنوز منتظرن.
                     AppCard(label = "وضعیت چک‌های وضع‌نشده") {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -388,18 +427,19 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
 
                 if (visibleCheques.isEmpty()) {
                     item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(top = 60.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text("هنوز چکی ثبت نشده", color = AppText, fontSize = 15.sp)
-                        }
+                        EmptyState(
+                            icon = Icons.Outlined.ReceiptLong,
+                            title = "هنوز چکی ثبت نشده",
+                            description = "چک‌های دریافتی و پرداختیت رو اینجا ثبت کن تا " +
+                                "قبل از سررسیدِ هرکدوم بهت یادآوری بشه.",
+                        )
                     }
                 } else {
                     items(visibleCheques, key = { it.id }) { cheque ->
                         ChequeCard(
                             cheque = cheque,
                             onClick = { openedChequeId = cheque.id },
+                            onDelete = { viewModel.deleteCheque(cheque.id) },
                             modifier = Modifier.animateItem(),
                         )
                     }
@@ -413,8 +453,15 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
 }
 
 @Composable
-private fun ChequeCard(cheque: ChequeEntity, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    AppCard(modifier = modifier.pressScaleClickable(onClick = onClick)) {
+private fun ChequeCard(
+    cheque: ChequeEntity,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    SwipeToDeleteRow(onDelete = { showDeleteConfirm = true }, confirmDismiss = false, modifier = modifier) {
+    AppCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -440,6 +487,15 @@ private fun ChequeCard(cheque: ChequeEntity, onClick: () -> Unit, modifier: Modi
                 )
             }
         }
+    }
+    }
+    if (showDeleteConfirm) {
+        ConfirmDeleteDialog(
+            title = "حذف چک",
+            text = "چکِ شماره‌ی «${toFa(cheque.chequeNumber)}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+            onConfirm = onDelete,
+            onDismiss = { showDeleteConfirm = false },
+        )
     }
 }
 

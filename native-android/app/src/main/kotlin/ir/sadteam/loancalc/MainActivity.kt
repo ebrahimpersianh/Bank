@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.RequestQuote
 import androidx.compose.material.icons.filled.Folder
@@ -57,6 +58,18 @@ import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.RequestQuote
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.outlined.Savings
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -75,6 +88,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -93,6 +108,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -103,24 +119,32 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 import androidx.fragment.app.FragmentActivity
 import dagger.hilt.android.AndroidEntryPoint
+import ir.sadteam.loancalc.notifications.DeepLinkTarget
+import ir.sadteam.loancalc.notifications.DeepLinkViewModel
+import ir.sadteam.loancalc.notifications.EXTRA_OPEN_LOAN_ID
 import ir.sadteam.loancalc.ui.AffordScreen
 import ir.sadteam.loancalc.ui.BankLoanOutcome
 import ir.sadteam.loancalc.ui.BankLoanScreen
 import ir.sadteam.loancalc.ui.DepositScreen
 import ir.sadteam.loancalc.ui.ResultScreen
+import ir.sadteam.loancalc.ui.accounting.AssetsScreen
+import ir.sadteam.loancalc.ui.accounting.BudgetScreen
+import ir.sadteam.loancalc.ui.accounting.ReportScreen
+import ir.sadteam.loancalc.ui.cheque.ChequeScreen
+import ir.sadteam.loancalc.ui.due.DueScreen
+import ir.sadteam.loancalc.ui.home.HomeScreen
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AuroraBackground
 import ir.sadteam.loancalc.ui.components.GradientButton
-import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.onboarding.AnimatedAppEntrance
 import ir.sadteam.loancalc.ui.onboarding.BenefitsScreen
 import ir.sadteam.loancalc.ui.onboarding.PermissionGateScreen
 import ir.sadteam.loancalc.ui.onboarding.SplashIntroScreen
-import ir.sadteam.loancalc.ui.onboarding.WelcomeMessageScreen
 import ir.sadteam.loancalc.ui.update.AppUpdateViewModel
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.LockScreen
@@ -129,30 +153,63 @@ import ir.sadteam.loancalc.subscription.SubscriptionManager
 import ir.sadteam.loancalc.ui.myloans.MyLoansScreen
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
+import ir.sadteam.loancalc.ui.rating.RatePromptDialog
+import ir.sadteam.loancalc.ui.rating.RatePromptViewModel
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
+import ir.sadteam.loancalc.ui.theme.ThemeRevealHost
+import ir.sadteam.loancalc.ui.theme.ThemeRevealState
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.LoanCalcTheme
 import ir.sadteam.loancalc.ui.theme.ThemeMode
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 import kotlinx.coroutines.delay
+import javax.inject.Inject
 
-// آیکون‌های نوار پایین: حالت عادی outline (مینیمال، مثل نسخه‌ی وب)، تب فعال پُر (filled). آیکونِ
-// «سود سپرده» قبلاً Savings بود که رو گوشی شکل یه خوکِ قلک درمیاد (گزارش کاربر) - با TrendingUp
-// (رشد/سود، مینیمال‌تر) عوض شد.
+// آیکون‌های نوار پایین: حالت عادی outline (مینیمال، مثل نسخه‌ی وب)، تب فعال پُر (filled).
+//
+// بازطراحیِ تب‌بندی (فازِ اولِ بازسازیِ جامع، رجوع کن به CLAUDE.md): قبلاً ۴ تبِ جدا (وام بانکی/
+// محاسبه‌گر/سود سپرده/وام‌های من) + حسابداری بودن. الان زیرِ یه تبِ واحدِ «وام» ادغام شدن (رجوع کن
+// به [LoanTab]/[LoanSubTab])، «چک» که قبلاً فقط زیرمجموعه‌ی تبِ وام بانکی/تنظیمات بود ترفیع گرفته
+// به تبِ مستقل، و دو تبِ کاملاً جدید («خانه»، «سررسید») اضافه شدن.
+//
+// دورِ دومِ بازطراحی (خواسته‌ی صریحِ کاربر: «تب‌های پایین دقیقاً مثل اون برنامه [رفرنس] باشه») - نوارِ
+// پایین دیگه «وام»/«چک»/«حسابداری» نداره؛ به‌جاش «دارایی»/«گزارش»/«بودجه» (دقیقاً هم‌الگو با
+// رفرنس). «وام» و «چک» دیگه تبِ بالانوارِ پایین نیستن - از تبِ «سررسید» (میان‌برهای «قسط و وام»/
+// «چک») به‌عنوانِ یه صفحه‌ی پوش‌شده (با دکمه‌ی برگشتِ خودشون - رجوع کن به [LOAN_ROUTE]/
+// [CHEQUE_ROUTE]) باز می‌شن. «حسابداری»ِ قبلی سه‌جا شد: لیستِ حساب‌ها/تراکنش‌ها → «دارایی»
+// (AssetsScreen)، گزارش‌گیری → تبِ مستقلِ «گزارش» (ReportScreen)، بودجه‌بندی → تبِ مستقلِ «بودجه»
+// (BudgetScreen). «پرداختِ تکراری» رفت زیرِ «سررسید»، «دسته‌بندی‌ها» رفت زیرِ «بودجه».
 private enum class BottomTab(
     val route: String,
     val label: String,
     val icon: ImageVector,
     val selectedIcon: ImageVector,
 ) {
-    BANK_LOAN("bank_loan", "وام بانکی", Icons.Outlined.Payments, Icons.Filled.Payments),
-    AFFORD("afford", "محاسبه‌گر", Icons.Outlined.RequestQuote, Icons.Filled.RequestQuote),
-    DEPOSIT("deposit", "سود سپرده", Icons.Outlined.TrendingUp, Icons.Filled.TrendingUp),
-    MY_LOANS("my_loans", "وام‌های من", Icons.Outlined.FolderOpen, Icons.Filled.Folder),
+    HOME("home", "خانه", Icons.Outlined.Home, Icons.Filled.Home),
+    ASSETS("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, Icons.Filled.AccountBalanceWallet),
+    REPORT("report", "گزارش", Icons.Outlined.BarChart, Icons.Filled.BarChart),
+    BUDGET("budget", "بودجه", Icons.Outlined.Savings, Icons.Filled.Savings),
+    DUE("due", "سررسید", Icons.Outlined.EventNote, Icons.Filled.EventNote),
+}
+
+/** «وام» و «چک» دیگه تبِ نوارِ پایین نیستن (رجوع کن به کامنتِ بالای [BottomTab]) - این دو route
+ * مستقیم به‌عنوانِ رشته تعریف شدن (نه عضوِ enumِ BottomTab) چون فقط از تبِ «سررسید»/«خانه» به‌عنوانِ
+ * صفحه‌ی پوش‌شده باز می‌شن، تو نوارِ پایین رندر نمی‌شن. */
+private const val LOAN_ROUTE = "loan"
+private const val CHEQUE_ROUTE = "cheque"
+
+/** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
+private enum class LoanSubTab(val label: String) {
+    BANK("بانکی"),
+    AFFORD("محاسبه‌گر"),
+    DEPOSIT("سپرده"),
+    MY_LOANS("وام‌های من"),
 }
 
 // ترتیب/محتوای کاملِ تورِ راهنمای اولین ورود (AppTourOverlay) - رجوع کن به همون کامپوننت پایین‌تر
@@ -183,43 +240,43 @@ private enum class TourTarget(val title: String, val hint: String) {
         "امور چک",
         "این‌م همینجا تو تنظیماته - چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن.",
     ),
-    BANK_LOAN(
-        "وام بانکی",
-        "قسطِ وام‌های بانکی و قرض‌الحسنه رو اینجا دقیق محاسبه کن.",
+    ASSETS(
+        "دارایی",
+        "حساب‌ها و تراکنش‌هات رو اینجا ثبت و پیگیری کن.",
     ),
-    AFFORD(
-        "محاسبه‌گر",
-        "با پرداختِ ماهانه‌ای که مقدوره، ببین چقدر وام می‌تونی بگیری.",
+    REPORT(
+        "گزارش",
+        "با فیلترِ حساب و بازه‌ی دلخواه، گزارشِ دخل‌وخرجت رو ببین و PDF/اکسل بگیر.",
     ),
-    DEPOSIT(
-        "سود سپرده",
-        "قبل از سپرده‌گذاری، سودِ نهایی رو از قبل حساب کن.",
-    ),
-    MY_LOANS(
-        "وام‌های من",
-        "وام‌ها و چک‌هات رو یه‌جا ذخیره کن و وضعیتِ هر قسط رو پیگیری کن.",
-    ),
-    MANUAL_ADD(
-        "افزودن دستی وام",
-        "با این دکمه یه وام رو دستی (بدونِ محاسبه) اضافه کن و اقساطش رو خودت پیگیری کن - آخرین قدمِ تور!",
+    BUDGET(
+        "بودجه",
+        "برای هر دسته‌بندی یه سقفِ ماهانه بذار تا هزینه‌هات دستت باشه - آخرین قدمِ تور!",
     ),
 }
 
 // نگاشتِ TourTarget های تبی → BottomTab واقعی (برای این‌که AppTourOverlay بدونه با کدوم تب باید
-// هماهنگ بشه - هم گرفتنِ مختصات از BottomNavItem هم ناوبریِ خودکار موقعِ قدمِ MANUAL_ADD).
+// هماهنگ بشه - هم گرفتنِ مختصات از BottomNavItem هم ناوبریِ خودکار). «وام»/«چک» دیگه تبِ نوارِ
+// پایین نیستن (رجوع کن به کامنتِ بالای BottomTab)، پس دیگه قدمِ تورِ مستقل ندارن.
 private fun TourTarget.asBottomTab(): BottomTab? = when (this) {
-    TourTarget.BANK_LOAN -> BottomTab.BANK_LOAN
-    TourTarget.AFFORD -> BottomTab.AFFORD
-    TourTarget.DEPOSIT -> BottomTab.DEPOSIT
-    TourTarget.MY_LOANS, TourTarget.MANUAL_ADD -> BottomTab.MY_LOANS
+    TourTarget.ASSETS -> BottomTab.ASSETS
+    TourTarget.REPORT -> BottomTab.REPORT
+    TourTarget.BUDGET -> BottomTab.BUDGET
     else -> null
 }
 
-private fun BottomTab.asTourTarget(): TourTarget = when (this) {
-    BottomTab.BANK_LOAN -> TourTarget.BANK_LOAN
-    BottomTab.AFFORD -> TourTarget.AFFORD
-    BottomTab.DEPOSIT -> TourTarget.DEPOSIT
-    BottomTab.MY_LOANS -> TourTarget.MY_LOANS
+/** مختصاتِ آیکونِ نوارِ پایینِ یه تب رو تویِ [tourBounds] برای قدمِ تورِ مربوط به همون تب ثبت
+ * می‌کنه. */
+private fun registerTabTourBounds(
+    tab: BottomTab,
+    rect: Rect,
+    tourBounds: MutableMap<TourTarget, Rect>,
+) {
+    when (tab) {
+        BottomTab.ASSETS -> tourBounds[TourTarget.ASSETS] = rect
+        BottomTab.REPORT -> tourBounds[TourTarget.REPORT] = rect
+        BottomTab.BUDGET -> tourBounds[TourTarget.BUDGET] = rect
+        BottomTab.HOME, BottomTab.DUE -> {}
+    }
 }
 
 @AndroidEntryPoint
@@ -229,10 +286,21 @@ class MainActivity : FragmentActivity() {
     // Hilt-managed نیست و اینجا مستقیم ساخته می‌شه.
     private lateinit var subscriptionManager: SubscriptionManager
 
+    // زدنِ نوتیفیکیشنِ یادآوریِ قسط باید مستقیم همون وام رو باز کنه (مورد ۵ تو CLAUDE.md) - رجوع
+    // کن به کامنتِ DeepLinkTarget. این Activityِ ساده‌ست، کامپوزیبل نیست، پس field-injection.
+    @Inject
+    lateinit var deepLinkTarget: DeepLinkTarget
+
+    private fun handleDeepLinkIntent(intent: Intent?) {
+        val loanId = intent?.getLongExtra(EXTRA_OPEN_LOAN_ID, -1L) ?: -1L
+        if (loanId > 0) deepLinkTarget.setLoanId(loanId)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        handleDeepLinkIntent(intent)
         subscriptionManager = SubscriptionManager(this)
         subscriptionManager.connect { }
         setContent {
@@ -240,10 +308,14 @@ class MainActivity : FragmentActivity() {
             val themeMode by themeViewModel.themeMode.collectAsState()
             val fontScale by themeViewModel.fontScale.collectAsState()
             val baseDensity = LocalDensity.current
+            // عمداً بیرونِ LoanCalcTheme: این state باید از تعویضِ خودِ تم جونِ سالم به‌در ببره،
+            // چون دقیقاً وسطِ همون تعویض داره کار می‌کنه (رجوع کن به ThemeReveal.kt).
+            val themeReveal = remember { ThemeRevealState() }
             LoanCalcTheme(themeMode = themeMode) {
                 CompositionLocalProvider(
                     LocalLayoutDirection provides LayoutDirection.Rtl,
                     LocalSubscriptionManager provides subscriptionManager,
+                    LocalThemeReveal provides themeReveal,
                     // پورت .app.fs-small/fs-medium/fs-large (CSS zoom) تو www/index.html - هم
                     // فونت هم فاصله‌ها (dp) با هم مقیاس می‌شن، دقیقاً مثل زوم کل کانتینر .app.
                     LocalDensity provides Density(
@@ -251,7 +323,9 @@ class MainActivity : FragmentActivity() {
                         fontScale = baseDensity.fontScale * fontScale,
                     ),
                 ) {
-                    AppRoot()
+                    ThemeRevealHost(state = themeReveal, revealKey = themeMode) {
+                        AppRoot()
+                    }
                 }
             }
         }
@@ -260,6 +334,15 @@ class MainActivity : FragmentActivity() {
     override fun onDestroy() {
         subscriptionManager.disconnect()
         super.onDestroy()
+    }
+
+    // وقتی اپ از قبل باز/تو پس‌زمینه‌ست و کاربر رو نوتیفیکیشن می‌زنه، onCreate دوباره صدا زده نمی‌شه -
+    // اینتنتِ جدید از همین‌جا می‌رسه (launchMode="singleTask" تو AndroidManifest.xml همین رو تضمین
+    // می‌کنه).
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleDeepLinkIntent(intent)
     }
 
     // فلیورِ myket برخلافِ cafebazaar (که با ActivityResultRegistryِ مدرن کار می‌کنه) هنوز الگوی
@@ -281,8 +364,8 @@ class MainActivity : FragmentActivity() {
  * قبل از این گیت هم، [PermissionGateScreen] چک می‌شه - برخلاف گیت ورود، این یکی هر بار اپ باز
  * می‌شه دوباره ارزیابی می‌شه (نه فقط یه‌بار)، چون کاربر می‌تونه مجوزها رو از تنظیمات گوشی خاموش کنه.
  * بعد از گیت مجوز و قبل از گیت ورود، [BenefitsScreen] هم فقط یه‌بار تو کل عمر نصب نشون داده می‌شه.
- * بعد از حل شدن گیت ورود/مهمان، هر بار [WelcomeMessageScreen] (پیام خوش‌آمد شبیه چت‌بات) نشون داده
- * می‌شه، بعد صفحه‌ی اصلی با یه افکت swoosh سریع (`AnimatedAppEntrance`) از بالا-چپ میاد تو.
+ * بعد از حل شدن گیت ورود/مهمان، صفحه‌ی اصلی مستقیم با یه افکت swoosh سریع (`AnimatedAppEntrance`) از
+ * بالا-چپ میاد تو - پیامِ خوش‌آمدِ جداگانه‌ای (که قبلاً هر بار نشون داده می‌شد) به‌خواستِ کاربر حذف شد.
  *
  * قبل از همه‌ی این‌ها هم [LockScreen] چک می‌شه، فقط اگه کاربر از تنظیمات قفل PIN/اثر انگشت رو فعال
  * کرده باشه (پیش‌فرض خاموشه، هیچ‌کس رفتار قبلی رو نمی‌بینه) - رجوع کن به [AppLockViewModel].
@@ -337,21 +420,12 @@ private fun AppRoot(
         null -> Surface(modifier = Modifier.fillMaxSize(), color = AppSurface) {}
         GateState.NEEDS_LOGIN -> LoginScreen()
         GateState.GUEST, GateState.LOGGED_IN -> {
-            var welcomeDone by remember { mutableStateOf(false) }
-            if (!welcomeDone) {
-                val phone by authViewModel.phone.collectAsState()
-                val name = if (gateState == GateState.LOGGED_IN && !phone.isNullOrEmpty()) {
-                    toFa(phone!!)
-                } else {
-                    "مهمان"
-                }
-                WelcomeMessageScreen(name = name, onDone = { welcomeDone = true })
-            } else {
-                // تورِ راهنمای اولین ورود دیگه یه گیتِ جداگانه‌ی قبل از ورود نیست - کاربر خواستِ
-                // «تو خود برنامه بگه کجا بری»، پس حالا یه اورلیِ spotlight داخلِ خودِ LoanCalcApp
-                // (رو المان‌های واقعیِ چیدمان) نشون داده می‌شه - رجوع کن به AppTourOverlay اونجا.
-                AnimatedAppEntrance { LoanCalcApp() }
-            }
+            // پیامِ خوش‌آمدِ «خوش اومدی، [شماره]» که هر بار باز شدنِ اپ نشون داده می‌شد (WelcomeMessageScreen)
+            // به‌خواستِ صریحِ کاربر حذف شد - بعدِ حلِ گیتِ ورود/مهمان مستقیم می‌ره سراغِ صفحه‌ی اصلی.
+            // تورِ راهنمای اولین ورود دیگه یه گیتِ جداگانه‌ی قبل از ورود نیست - کاربر خواستِ
+            // «تو خود برنامه بگه کجا بری»، پس یه اورلیِ spotlight داخلِ خودِ LoanCalcApp
+            // (رو المان‌های واقعیِ چیدمان) نشون داده می‌شه - رجوع کن به AppTourOverlay اونجا.
+            AnimatedAppEntrance { LoanCalcApp() }
         }
     }
 }
@@ -369,6 +443,7 @@ private fun LoanCalcApp(
     authViewModel: AuthViewModel = hiltViewModel(),
     privacyModeViewModel: PrivacyModeViewModel = hiltViewModel(),
     appUpdateViewModel: AppUpdateViewModel = hiltViewModel(),
+    deepLinkViewModel: DeepLinkViewModel = hiltViewModel(),
 ) {
     var showSettings by remember { mutableStateOf(false) }
     // قدمِ فعلیِ تور (اگه تور در حالِ اجراست) - AppTourOverlay.onStepChanged پرش می‌کنه؛ برای
@@ -376,10 +451,20 @@ private fun LoanCalcApp(
     // فیلتر/اسپاتلایت کنیم - رجوع کن به SettingsScreen(tourHighlightQuery = ...) پایین‌تر.
     var currentTourTarget by remember { mutableStateOf<TourTarget?>(null) }
     val updateUrl by appUpdateViewModel.updateUrl.collectAsState()
+    // تورِ راهنمای اولین ورود (پایین‌تر) - رجوع کن به رفعِ تداخلِ بنرِ آپدیت/تور: بنر فقط بعدِ تمومِ
+    // تور نشون داده می‌شه، وگرنه هم‌زمان با اسپاتلایتِ تور بالای صفحه شلوغ/رو هم می‌افتادن.
+    val tourSeen by authViewModel.tourSeen.collectAsState()
 
     val themeMode by themeViewModel.themeMode.collectAsState()
     val privacyMode by privacyModeViewModel.enabled.collectAsState()
     val buzz = rememberBuzz()
+    // افکتِ دایره‌ایِ تعویضِ تم (سبکِ تلگرام) - خودِ اورلی تو MainActivity.setContent نصب شده،
+    // اینجا فقط ماشه‌ش کشیده می‌شه. رجوع کن به ThemeReveal.kt.
+    val themeReveal = LocalThemeReveal.current
+    // startReveal الان suspend ئه (رجوع کن به ThemeReveal.kt) - برای تضمینِ اینکه اسنپ‌شات
+    // *قبل* از عوض‌شدنِ واقعیِ تم گرفته می‌شه، هر دو کار باید تویِ یه کوروتینِ واحد و پشتِ‌سرهم
+    // اجرا بشن، نه دو تا launch جدا (که ترتیبشون تضمین‌شده نیست).
+    val themeToggleScope = rememberCoroutineScope()
 
     // وضعیت اشتراک/دوره‌ی آزمایشی رو هر بار اپ باز می‌شه از سرور تازه می‌کنیم (نه فقط لحظه‌ی ورود) -
     // وگرنه اگه اپ لاگین‌شده بمونه، دقیقاً روزی که دوره‌ی آزمایشی تموم می‌شه هیچ‌وقت خودش رو به‌روز
@@ -389,12 +474,75 @@ private fun LoanCalcApp(
 
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route ?: BottomTab.BANK_LOAN.route
+    val currentRoute = backStackEntry?.destination?.route ?: BottomTab.HOME.route
 
-    // تپ دوباره رو تب «وام بانکی» وقتی از قبل انتخابه باید فرم رو ریست کنه (دقیقاً رفتار قبلی،
-    // قبل از معرفی Navigation) — چون launchSingleTop جلوی navigate دوباره به همون مقصد رو می‌گیره،
-    // این ریست از طریق یه کلید جدا اعمال می‌شه.
-    var bankLoanResetKey by remember { mutableIntStateOf(0) }
+    // ناوبریِ مشترک - همون الگویی که قبلاً تو ۴+ جا تکرار شده بود (تبِ پایین، دیپ‌لینک، تور،
+    // برگشتن از «وام»/«چک»...) یه جا جمع شد. popUpTo+saveState+restoreState یعنی هر مقصد مثلِ یه
+    // «تبِ هم‌سطح» رفتار می‌کنه - حتی «وام»/«چک» که دیگه عضوِ BottomTab نیستن (رجوع کن به کامنتِ
+    // بالای BottomTab).
+    fun navigateTo(route: String) {
+        navController.navigate(route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
+    // «وام‌های من» دیگه تبِ جداگانه‌ی خودش نیست، یه زیرصفحه‌ی داخلِ تبِ «وام»ه (رجوع کن به
+    // [LoanTab]/[LoanSubTab]) - این state بهش می‌گه کدوم زیرصفحه رو باز کنه، مستقل از اینکه کاربر
+    // خودش دستی رو کدوم زیرصفحه بوده.
+    var requestedLoanSubTab by remember { mutableStateOf<LoanSubTab?>(null) }
+
+    // زدنِ نوتیفیکیشنِ یادآوریِ قسط (مورد ۵) - رجوع کن به کامنتِ DeepLinkTarget. اگه رو تبِ «وام»
+    // نیستیم، اول باید بریم اونجا و زیرصفحه‌ی «وام‌های من» رو باز کنیم؛ خودِ بازکردنِ وامِ خاص تو
+    // MyLoansScreen انجام می‌شه (پارامترِ deepLinkLoanId پایین‌تر).
+    val deepLinkLoanId by deepLinkViewModel.pendingLoanId.collectAsState()
+    LaunchedEffect(deepLinkLoanId) {
+        if (deepLinkLoanId != null) {
+            requestedLoanSubTab = LoanSubTab.MY_LOANS
+            if (currentRoute != LOAN_ROUTE) navigateTo(LOAN_ROUTE)
+        }
+    }
+
+    // یادآوریِ دوره‌ایِ امتیازدادن تو استور (مورد ۲۵) - رجوع کن به RatePromptViewModel برای منطقِ
+    // زمان‌بندی. onAppOpened فقط یه‌بار به‌ازای هر ورودِ موفق به LoanCalcApp صدا زده می‌شه.
+    val context = LocalContext.current
+    val ratePromptViewModel: RatePromptViewModel = hiltViewModel()
+    val showRatePrompt by ratePromptViewModel.shouldShow.collectAsState()
+    LaunchedEffect(Unit) { ratePromptViewModel.onAppOpened() }
+    if (showRatePrompt) {
+        RatePromptDialog(
+            onRateNow = {
+                ratePromptViewModel.onRateNow()
+                val storeUrl = if (BuildConfig.FLAVOR == "myket") {
+                    "https://myket.ir/app/ir.sadteam.loancalc"
+                } else {
+                    "https://cafebazaar.ir/app/ir.sadteam.loancalc"
+                }
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(storeUrl))) }
+            },
+            onLater = { ratePromptViewModel.onLater() },
+            onDismissForever = { ratePromptViewModel.onDismissForever() },
+        )
+    }
+
+    // نوارِ پایینِ تب‌ها موقعِ اسکرولِ رو‌به‌پایینِ لیستِ «وام‌های من» جمع می‌شه، با اسکرولِ رو‌به‌بالا
+    // دوباره ظاهر می‌شه - فقط MyLoansScreen این callback رو صدا می‌زنه (رجوع کن به onBottomBar
+    // VisibilityChanged اونجا)؛ بقیه‌ی تب‌ها/زیرصفحه‌ها همیشه نوار رو نشون می‌دن. چون «وام‌های من»
+    // الان زیرصفحه‌ی داخلِ تبِ «وام»ه (نه یه route جدا)، ریست‌شدنِ موقعِ تغییرِ تبِ اصلی اینجا کافیه؛
+    // ریست‌شدنِ موقعِ سوییچِ بینِ زیرصفحه‌ها (مثلاً «وام‌های من» ← «بانکی») تو خودِ [LoanTab] انجام
+    // می‌شه.
+    var bottomBarVisible by remember { mutableStateOf(true) }
+    LaunchedEffect(currentRoute) {
+        if (currentRoute != LOAN_ROUTE) bottomBarVisible = true
+    }
+
+    // تپ دوباره رو هر تبی که از قبل انتخابه باید به صفحه‌ی اصلیِ همون تب ریست کنه (قبلاً فقط «وام
+    // بانکی» این رفتار رو داشت؛ الان رو هر ۴ تب یکسانه) — چون launchSingleTop جلوی navigate دوباره
+    // به همون مقصد رو می‌گیره، این ریست از طریق یه کلیدِ جدا به‌ازای هر تب اعمال می‌شه (remount کامل
+    // یعنی هر state داخلیِ خودِ اسکرین - فرم‌های نیمه‌پرشده، جزئیاتِ بازشده‌ی یه وام، و... - به مقدارِ
+    // اولیه برمی‌گرده).
+    val tabResetKeys = remember { mutableStateMapOf<BottomTab, Int>() }
 
     // مختصاتِ واقعیِ هر هدفِ تور رو صفحه (چهارتا تبِ نوارِ پایین + سه‌تا آیکونِ TopAppBar + دکمه‌ی
     // افزودنِ دستیِ MyLoansScreen) - برای اینکه AppTourOverlay بتونه دقیقاً دورِ المانِ واقعی یه
@@ -404,7 +552,6 @@ private fun LoanCalcApp(
     // پورت رفتار «یه‌بار برگشت بزنی هشدار بده، دوباره بزنی خارج شو» - فقط رو تب پیش‌فرض (وام بانکی)
     // فعاله، چون تو بقیه‌ی تب‌ها/تنظیمات دکمه‌ی برگشت باید همون رفتار عادیش (برگشت به تب قبلی/بستن
     // تنظیمات) رو داشته باشه.
-    val context = LocalContext.current
     var lastBackPressAt by remember { mutableStateOf(0L) }
     // هینت خروج به‌صورت overlay داخلِ اپ نشون داده می‌شه، نه Toast سیستمی - چون بعضی رام‌ها
     // (مثل MIUI) کنار هر Toast آیکون لانچرِ اپ رو می‌چسبونن، که کاربر خواست حذف بشه.
@@ -415,13 +562,23 @@ private fun LoanCalcApp(
             showExitHint = false
         }
     }
-    BackHandler(enabled = currentRoute == BottomTab.BANK_LOAN.route) {
-        val now = System.currentTimeMillis()
-        if (now - lastBackPressAt < 2000) {
-            (context as? Activity)?.finish()
+    // اگه رو تبِ اصلی (خانه) نیستیم، اول باید برگردیم به همون تب - نه اینکه یهو از کلِ اپ خارج
+    // بشیم. زیرصفحه‌های داخلِ خودِ هر تب (مثلاً جزئیاتِ وام تو «وام‌های من»، یا خودِ سوییچِ بینِ
+    // زیرصفحه‌های تبِ «وام» تو [LoanTab]) اول با BackHandlerِ خودشون (اولویتِ بالاتر، چون دیرتر
+    // رجیستر می‌شن) بسته می‌شن؛ این فقط وقتی به کار میاد که همون تب رو ریشه‌ی خودشه. «وام»/«چک»
+    // (که دیگه عضوِ BottomTab نیستن) هم از همینجا رد می‌شن - برگشت ازشون یعنی برو خونه، دقیقاً
+    // مثلِ برگشت از هر تبِ دیگه‌ای.
+    BackHandler(enabled = true) {
+        if (currentRoute == BottomTab.HOME.route) {
+            val now = System.currentTimeMillis()
+            if (now - lastBackPressAt < 2000) {
+                (context as? Activity)?.finish()
+            } else {
+                lastBackPressAt = now
+                showExitHint = true
+            }
         } else {
-            lastBackPressAt = now
-            showExitHint = true
+            navigateTo(BottomTab.HOME.route)
         }
     }
 
@@ -436,10 +593,30 @@ private fun LoanCalcApp(
             topBar = {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                    title = { Text("وام من") },
+                    // اسمِ اپ («حسابدار من») به‌خواستِ صریحِ کاربر کاملاً از بالای هر تب حذف شد -
+                    // به‌جاش عنوانِ خودِ همون تب نشون داده می‌شه (شبیهِ رفرنس)؛ تبِ «خانه» عنوان نداره
+                    // چون خودِ HomeScreen از قبل خلاصه‌ی مانده‌ی حساب رو بالای محتواش نشون می‌ده.
+                    title = {
+                        val tabLabel = BottomTab.entries.find { it.route == currentRoute }?.label
+                        if (currentRoute != BottomTab.HOME.route && tabLabel != null) {
+                            Text(tabLabel)
+                        }
+                    },
                     navigationIcon = {
                         IconButton(
-                            onClick = { buzz(); themeViewModel.cycleThemeMode() },
+                            onClick = {
+                                buzz()
+                                // ترتیب مهمه: اول اسنپ‌شاتِ تمِ فعلی، بعد عوض‌کردنِ تم - رجوع کن
+                                // به ThemeReveal.kt. دایره از مرکزِ خودِ همین دکمه باز می‌شه، برای
+                                // همین از همون مستطیلی که پایین برای تور ثبت می‌شه استفاده می‌کنیم.
+                                if (!themeReveal.inProgress) {
+                                    val origin = tourBounds[TourTarget.DARK_MODE]?.center ?: Offset.Zero
+                                    themeToggleScope.launch {
+                                        themeReveal.startReveal(origin = origin, currentKey = themeMode)
+                                        themeViewModel.cycleThemeMode()
+                                    }
+                                }
+                            },
                             // مختصاتِ واقعیِ این آیکون رو گزارش می‌ده - برای قدمِ TourTarget.DARK_MODE
                             // تو AppTourOverlay، رجوع کن به onPositioned مشابه رو BottomNavItem.
                             modifier = Modifier.onGloballyPositioned {
@@ -480,6 +657,11 @@ private fun LoanCalcApp(
                 )
             },
             bottomBar = {
+                AnimatedVisibility(
+                    visible = bottomBarVisible,
+                    enter = slideInVertically(Motion.standard()) { it },
+                    exit = slideOutVertically(Motion.standard()) { it },
+                ) {
                 Surface(color = AppSurface) {
                     Row(
                         modifier = Modifier
@@ -491,29 +673,24 @@ private fun LoanCalcApp(
                             BottomNavItem(
                                 tab = tab,
                                 selected = currentRoute == tab.route,
-                                onPositioned = { rect -> tourBounds[tab.asTourTarget()] = rect },
+                                onPositioned = { rect -> registerTabTourBounds(tab, rect, tourBounds) },
                                 onClick = {
-                                    if (tab.route == currentRoute && tab == BottomTab.BANK_LOAN) {
-                                        bankLoanResetKey++
+                                    if (tab.route == currentRoute) {
+                                        tabResetKeys[tab] = (tabResetKeys[tab] ?: 0) + 1
                                     } else {
-                                        navController.navigate(tab.route) {
-                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                saveState = true
-                                            }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
+                                        navigateTo(tab.route)
                                     }
                                 },
                             )
                         }
                     }
                 }
+                }
             },
         ) { padding ->
             NavHost(
                 navController = navController,
-                startDestination = BottomTab.BANK_LOAN.route,
+                startDestination = BottomTab.HOME.route,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
@@ -541,15 +718,43 @@ private fun LoanCalcApp(
                     slideOutHorizontally(animationSpec = tween(180)) { -dir * it / 4 } + fadeOut(tween(150))
                 },
             ) {
-                composable(BottomTab.BANK_LOAN.route) {
-                    key(bankLoanResetKey) { BankLoanTab() }
+                composable(BottomTab.HOME.route) {
+                    key(tabResetKeys[BottomTab.HOME] ?: 0) {
+                        // route به‌عنوانِ رشته پاس داده می‌شه (نه خودِ enumِ BottomTab) چون
+                        // BottomTab تویِ همین فایلِ MainActivity.kt خصوصیه و HomeScreen تو یه
+                        // فایلِ جدا (ui/home/HomeScreen.kt) زندگی می‌کنه.
+                        HomeScreen(onNavigateToRoute = ::navigateTo)
+                    }
                 }
-                composable(BottomTab.AFFORD.route) { AffordScreen() }
-                composable(BottomTab.DEPOSIT.route) { DepositScreen() }
-                composable(BottomTab.MY_LOANS.route) {
-                    MyLoansScreen(
-                        onManualAddFabPositioned = { rect -> tourBounds[TourTarget.MANUAL_ADD] = rect },
+                composable(BottomTab.ASSETS.route) {
+                    key(tabResetKeys[BottomTab.ASSETS] ?: 0) { AssetsScreen() }
+                }
+                composable(BottomTab.REPORT.route) {
+                    key(tabResetKeys[BottomTab.REPORT] ?: 0) { ReportScreen() }
+                }
+                composable(BottomTab.BUDGET.route) {
+                    key(tabResetKeys[BottomTab.BUDGET] ?: 0) { BudgetScreen() }
+                }
+                composable(BottomTab.DUE.route) {
+                    key(tabResetKeys[BottomTab.DUE] ?: 0) {
+                        DueScreen(onNavigateToRoute = ::navigateTo)
+                    }
+                }
+                // «وام» و «چک» دیگه تبِ نوارِ پایین نیستن (رجوع کن به کامنتِ بالای BottomTab) - از
+                // تبِ «سررسید»/«خانه» به‌عنوانِ صفحه‌ی پوش‌شده باز می‌شن، پس خودشون یه دکمه‌ی
+                // برگشتِ واقعی لازم دارن (رجوع کن به onBack پایین).
+                composable(LOAN_ROUTE) {
+                    LoanTab(
+                        onBack = { navigateTo(BottomTab.HOME.route) },
+                        requestedSubTab = requestedLoanSubTab,
+                        onManualAddFabPositioned = {},
+                        onBottomBarVisibilityChanged = { visible -> bottomBarVisible = visible },
+                        deepLinkLoanId = deepLinkLoanId,
+                        onDeepLinkConsumed = { deepLinkViewModel.consume() },
                     )
+                }
+                composable(CHEQUE_ROUTE) {
+                    ChequeScreen(onBack = { navigateTo(BottomTab.HOME.route) }, standalone = false)
                 }
             }
         }
@@ -632,7 +837,7 @@ private fun LoanCalcApp(
         // بنرِ آپدیتِ خودکار - رجوع کن به AppUpdateViewModel. برخلافِ هینتِ خروج، خودش محو نمی‌شه؛
         // تا کاربر یا بزنه «بروزرسانی» (بازکردنِ صفحه‌ی استور) یا خودش با ضربدر ببندتش.
         AnimatedVisibility(
-            visible = updateUrl != null,
+            visible = updateUrl != null && tourSeen != false,
             enter = fadeIn(tween(200)) + slideInVertically(tween(200)) { -it },
             exit = fadeOut(tween(150)) + slideOutVertically(tween(150)) { -it },
             modifier = Modifier
@@ -652,7 +857,7 @@ private fun LoanCalcApp(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "نسخه‌ی جدیدِ اپ موجوده",
+                        "نسخه‌ی جدیدِ برنامه‌ی حسابدار من موجوده",
                         color = Color.White,
                         fontSize = 13.sp,
                         modifier = Modifier.weight(1f),
@@ -675,7 +880,7 @@ private fun LoanCalcApp(
 
         // تورِ راهنمای اولین ورود - «تو خود برنامه بگه کجا بری» (خواسته‌ی صریح کاربر، به‌جای صفحه‌ی
         // جدای قبلی) - رجوع کن به AppTourOverlay پایین‌تر. آخرین بچه‌ی Box تا رو همه‌چیز دیگه بشینه.
-        val tourSeen by authViewModel.tourSeen.collectAsState()
+        // (tourSeen بالاتر جمع‌آوری شده، برای گیت‌کردنِ بنرِ آپدیت هم استفاده می‌شه)
         if (tourSeen == false) {
             AppTourOverlay(
                 steps = TourTarget.entries.toList(),
@@ -688,17 +893,10 @@ private fun LoanCalcApp(
                         showSettings = true
                     } else {
                         showSettings = false
-                        // قدم‌هایی که رو یه تبِ خاص زندگی می‌کنن (مثلاً افزودنِ دستی که فقط رو تبِ
-                        // «وام‌های من» وجود داره) خودکار به همون تب می‌رن - وگرنه المانِ هدف اصلاً
-                        // رندر/قابل‌اندازه‌گیری نیست.
+                        // قدم‌هایی که رو یه تبِ خاص زندگی می‌کنن خودکار به همون تب می‌رن - وگرنه
+                        // المانِ هدف اصلاً رندر/قابل‌اندازه‌گیری نیست.
                         target.asBottomTab()?.let { tab ->
-                            if (currentRoute != tab.route) {
-                                navController.navigate(tab.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
+                            if (currentRoute != tab.route) navigateTo(tab.route)
                         }
                     }
                 },
@@ -797,6 +995,13 @@ private fun AppTourOverlay(
 @Composable
 private fun BankLoanTab() {
     var loanOutcome by remember { mutableStateOf<BankLoanOutcome?>(null) }
+    // نگه‌دارنده‌ی حالتِ ذخیره‌پذیر (SaveableStateHolder): وقتی loanOutcome پر می‌شه، BankLoanScreen
+    // کاملاً از کامپوزیشن بیرون می‌ره (جایگزینِ ResultScreen می‌شه) - remember/rememberSaveableِ
+    // معمولیِ توش با این کار پاک می‌شد (خواسته‌ی کاربر: «اگه اشتباه زده باشم باید از نو بزنم»).
+    // با پیچوندنِ BankLoanScreen تو SaveableStateProvider با یه کلیدِ ثابت، حالتِ rememberSaveableِ
+    // فیلدهاش (مبلغ/نرخ/ماه/تاریخ/بانکِ‌انتخابی) حتی بعدِ بیرون‌رفتن از کامپوزیشن حفظ می‌شه و با
+    // برگشتن (دکمه‌ی «ویرایش» تو ResultScreen) دوباره برمی‌گرده - نه از صفر.
+    val formStateHolder = rememberSaveableStateHolder()
     // اسلاید جهت‌دار فرم→نتیجه (هم‌خانواده‌ی اسلاید تب‌های پایین): نتیجه از چپ میاد تو و فرم به
     // راست می‌ره؛ برگشت به فرم برعکس - به‌جای fade+scale قبلی.
     AnimatedContent(
@@ -814,9 +1019,114 @@ private fun BankLoanTab() {
         label = "bankLoanTab",
     ) { outcome ->
         if (outcome == null) {
-            BankLoanScreen(onCalculated = { loanOutcome = it })
+            formStateHolder.SaveableStateProvider("bankLoanForm") {
+                BankLoanScreen(onCalculated = { loanOutcome = it })
+            }
         } else {
-            ResultScreen(outcome = outcome)
+            ResultScreen(
+                outcome = outcome,
+                // ویرایش دیگه اینجا (BankLoanTab) مدیریت نمی‌شه - مورد ۴، ResultScreen خودش با
+                // یه پنلِ اینلاین ویرایش می‌کنه، دیگه نیازی به onEdit/برگشتن به فرم نیست.
+                // بعدِ ذخیره‌ی موفقِ وام، حالتِ ذخیره‌شده‌ی فرم (مبلغ/بانک/...) صریحاً پاک می‌شه -
+                // وگرنه فرم برای وامِ *بعدی* هنوز اعدادِ وامِ قبلاً ذخیره‌شده رو نشون می‌داد (باگِ
+                // گزارش‌شده‌ی کاربر: «ذخیره که می‌کنم بازم اعداد و بانک هستن»).
+                onNewCalculation = {
+                    formStateHolder.removeState("bankLoanForm")
+                    loanOutcome = null
+                },
+            )
+        }
+    }
+}
+
+/**
+ * تبِ ادغام‌شده‌ی «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی (وام بانکی/محاسبه‌گر/سود سپرده/وام‌های من).
+ * یه انتخابگرِ افقیِ ساده بالای صفحه بینِ چهار زیرصفحه‌ی موجود سوییچ می‌کنه - خودِ صفحه‌ها
+ * ([BankLoanTab]/[AffordScreen]/[DepositScreen]/[MyLoansScreen]) دست‌نخورده می‌مونن.
+ * [requestedSubTab] برای ناوبریِ خارجی (تور/نوتیفیکیشنِ دیپ‌لینک) استفاده می‌شه - وقتی مقدارش عوض
+ * می‌شه، زیرصفحه‌ی متناظر باز می‌شه.
+ */
+@Composable
+private fun LoanTab(
+    onBack: () -> Unit,
+    requestedSubTab: LoanSubTab?,
+    onManualAddFabPositioned: (Rect) -> Unit,
+    onBottomBarVisibilityChanged: (Boolean) -> Unit,
+    deepLinkLoanId: Long?,
+    onDeepLinkConsumed: () -> Unit,
+) {
+    var subTab by remember { mutableStateOf(LoanSubTab.BANK) }
+    LaunchedEffect(requestedSubTab) {
+        requestedSubTab?.let { subTab = it }
+    }
+    // نوارِ پایینِ تب‌ها (که فقط MyLoansScreen موقعِ اسکرول جمعش می‌کنه) باید موقعِ سوییچ به هر
+    // زیرصفحه‌ی دیگه‌ای دوباره نمایان بشه - چون از دیدِ ناوبریِ بیرونی، این سوییچ اصلاً route عوض
+    // نمی‌کنه که خودش این ریست رو انجام بده.
+    LaunchedEffect(subTab) {
+        if (subTab != LoanSubTab.MY_LOANS) onBottomBarVisibilityChanged(true)
+    }
+    // برگشتن از یه زیرصفحه‌ی غیرِ«بانکی» به «بانکی» (زیرصفحه‌ی پیش‌فرض) - قبل از رسیدن به
+    // BackHandlerِ بیرونیِ LoanCalcApp (که دیگه معنیش برگشتن به «خانه»ست). زیرصفحه‌های داخلیِ
+    // خودِ هر اسکرین (مثلاً جزئیاتِ وام تو MyLoansScreen) اولویتِ بالاتری دارن چون دیرتر رجیستر می‌شن.
+    BackHandler(enabled = subTab != LoanSubTab.BANK) { subTab = LoanSubTab.BANK }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // «وام» دیگه تبِ نوارِ پایین نیست (رجوع کن به کامنتِ بالای BottomTab تو این فایل) - چون از
+        // «سررسید»/«خانه» به‌عنوانِ صفحه‌ی پوش‌شده باز می‌شه، یه دکمه‌ی برگشتِ واقعی لازم داره.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+            }
+            Text("وام", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            LoanSubTab.entries.forEach { entry ->
+                val selected = entry == subTab
+                Surface(
+                    color = if (selected) AppPrimary.copy(alpha = 0.16f) else Color.Transparent,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { subTab = entry },
+                ) {
+                    Text(
+                        entry.label,
+                        color = if (selected) AppPrimary else AppMuted,
+                        fontSize = 12.5.sp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                    )
+                }
+            }
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            when (subTab) {
+                LoanSubTab.BANK -> BankLoanTab()
+                LoanSubTab.AFFORD -> AffordScreen()
+                LoanSubTab.DEPOSIT -> DepositScreen()
+                LoanSubTab.MY_LOANS -> MyLoansScreen(
+                    onManualAddFabPositioned = onManualAddFabPositioned,
+                    onBottomBarVisibilityChanged = onBottomBarVisibilityChanged,
+                    deepLinkLoanId = deepLinkLoanId,
+                    onDeepLinkConsumed = onDeepLinkConsumed,
+                )
+            }
         }
     }
 }

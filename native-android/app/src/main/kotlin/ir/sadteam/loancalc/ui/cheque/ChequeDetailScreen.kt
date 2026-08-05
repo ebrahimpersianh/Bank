@@ -17,16 +17,28 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.ChequeStatus
+import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.ChequeEntity
+import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.components.AccountPickerDialog
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
@@ -48,9 +60,40 @@ fun ChequeDetailScreen(
     onDelete: () -> Unit,
     onSayadInquiry: () -> Unit,
     viewModel: ChequeViewModel,
+    accountViewModel: AccountViewModel = hiltViewModel(),
 ) {
     val typeLabel = if (cheque.type == "RECEIVED") "دریافتی" else "پرداختی"
     val banner = rememberInAppBanner()
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    // سینکِ خودکارِ پاس‌شدنِ چک ↔ حسابداری (تصمیمِ صریحِ کاربر، رجوع کن به CLAUDE.md، هم‌الگو با
+    // LoanDetailScreen) - فقط موقعِ گذر *به* «پاس‌شده» (نه سایرِ وضعیت‌ها، نه وقتی از قبل پاس‌شده)
+    // پرسیده می‌شه. چکِ دریافتی یعنی پول میاد تو (DEPOSIT)، چکِ پرداختی یعنی پول می‌ره (WITHDRAWAL).
+    val accounts by accountViewModel.accounts.collectAsState()
+    var pendingPassStatus by remember { mutableStateOf(false) }
+    fun commitPass(account: AccountEntity?) {
+        viewModel.setStatus(cheque, ChequeStatus.PASSED)
+        if (account != null) {
+            val today = JalaliCalendar.today()
+            accountViewModel.addTransaction(
+                accountId = account.id,
+                type = if (cheque.type == "RECEIVED") TransactionType.DEPOSIT else TransactionType.WITHDRAWAL,
+                amount = cheque.amount,
+                description = "چک ${typeLabel} - ${cheque.ownerName}",
+                year = today.y,
+                month = today.m,
+                day = today.d,
+                category = "قسط/چک",
+            )
+        }
+    }
+    if (pendingPassStatus && accounts.isNotEmpty()) {
+        AccountPickerDialog(
+            accounts = accounts,
+            onSelect = { account -> commitPass(account); pendingPassStatus = false },
+            onDismiss = { pendingPassStatus = false },
+        )
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
@@ -107,7 +150,13 @@ fun ChequeDetailScreen(
                         AppChip(
                             label = status.label,
                             selected = cheque.status == status.name,
-                            onClick = { viewModel.setStatus(cheque, status) },
+                            onClick = {
+                                if (status == ChequeStatus.PASSED && cheque.status != ChequeStatus.PASSED.name) {
+                                    if (accounts.isEmpty()) commitPass(null) else pendingPassStatus = true
+                                } else {
+                                    viewModel.setStatus(cheque, status)
+                                }
+                            },
                         )
                     }
                 }
@@ -146,7 +195,7 @@ fun ChequeDetailScreen(
 
         item {
             OutlinedButton(
-                onClick = onDelete,
+                onClick = { showDeleteConfirm = true },
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -156,6 +205,14 @@ fun ChequeDetailScreen(
     }
 
         InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
+    }
+    if (showDeleteConfirm) {
+        ConfirmDeleteDialog(
+            title = "حذف چک",
+            text = "چکِ شماره‌ی «${toFa(cheque.chequeNumber)}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+            onConfirm = onDelete,
+            onDismiss = { showDeleteConfirm = false },
+        )
     }
 }
 

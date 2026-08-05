@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +26,12 @@ class UiPrefs(private val context: Context) {
         val REMINDER_DAY_OFFSETS = stringPreferencesKey("reminder_day_offsets")
         val REMINDER_SOUND_URI = stringPreferencesKey("reminder_sound_uri")
         val REMINDER_VIBRATE = booleanPreferencesKey("reminder_vibrate")
+        val RATE_PROMPT_OPENS = intPreferencesKey("rate_prompt_opens")
+        val RATE_PROMPT_DISMISSED = booleanPreferencesKey("rate_prompt_dismissed")
+        val RATE_PROMPT_LAST_SHOWN_AT_OPENS = intPreferencesKey("rate_prompt_last_shown_at_opens")
+        val SMS_AUTO_IMPORT_ENABLED = booleanPreferencesKey("sms_auto_import_enabled")
+        val LAST_SMS_IMPORT_AT = stringPreferencesKey("last_sms_import_at")
+        val DAILY_EXPENSE_REMINDER_ENABLED = booleanPreferencesKey("daily_expense_reminder_enabled")
     }
 
     // پیش‌فرض روشن/سفید (به‌درخواست کاربر «تم اصلی برنامه سفید باشه») - کاربری که قبلاً دستی
@@ -105,5 +112,57 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setReminderVibrate(value: Boolean) {
         context.uiPrefsDataStore.edit { it[Keys.REMINDER_VIBRATE] = value }
+    }
+
+    /** یادآوریِ دوره‌ایِ امتیازدهی تو استور (مورد ۲۵) - [rateDialogOpens] یه‌بار به‌ازای هر بازشدنِ
+     * موفقِ اپ زیاد می‌شه؛ [rateDialogDismissedForever] با «نه ممنون» یا «بله امتیاز می‌دم» true
+     * می‌شه (دیگه هیچ‌وقت دوباره نشون داده نمی‌شه)؛ [rateDialogLastShownAtOpens] با «بعداً» یا اولین
+     * نمایش آپدیت می‌شه تا فاصله‌ی نمایشِ بعدی از روش حساب بشه - رجوع کن به RatePrompt.kt. */
+    val rateDialogOpens: Flow<Int> = context.uiPrefsDataStore.data.map { it[Keys.RATE_PROMPT_OPENS] ?: 0 }
+
+    suspend fun incrementRateDialogOpens(): Int {
+        var result = 0
+        context.uiPrefsDataStore.edit {
+            result = (it[Keys.RATE_PROMPT_OPENS] ?: 0) + 1
+            it[Keys.RATE_PROMPT_OPENS] = result
+        }
+        return result
+    }
+
+    val rateDialogDismissedForever: Flow<Boolean> =
+        context.uiPrefsDataStore.data.map { it[Keys.RATE_PROMPT_DISMISSED] ?: false }
+
+    suspend fun setRateDialogDismissedForever(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.RATE_PROMPT_DISMISSED] = value }
+    }
+
+    val rateDialogLastShownAtOpens: Flow<Int?> =
+        context.uiPrefsDataStore.data.map { it[Keys.RATE_PROMPT_LAST_SHOWN_AT_OPENS] }
+
+    suspend fun setRateDialogLastShownAtOpens(value: Int) {
+        context.uiPrefsDataStore.edit { it[Keys.RATE_PROMPT_LAST_SHOWN_AT_OPENS] = value }
+    }
+
+    /** خوندنِ خودکارِ پیامکِ بانکی (رجوع کن به BankSmsReceiver/BankSmsParser تو core) - پیش‌فرض
+     * خاموش (مجوزِ حساسیه، فقط با سوییچِ صریحِ کاربر تو تنظیمات روشن و مجوزِ Runtime درخواست می‌شه). */
+    val smsAutoImportEnabled: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.SMS_AUTO_IMPORT_ENABLED] ?: false }
+
+    suspend fun setSmsAutoImportEnabled(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.SMS_AUTO_IMPORT_ENABLED] = value }
+    }
+
+    val lastSmsImportAt: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.LAST_SMS_IMPORT_AT] }
+
+    suspend fun setLastSmsImportAt(value: String) {
+        context.uiPrefsDataStore.edit { it[Keys.LAST_SMS_IMPORT_AT] = value }
+    }
+
+    /** یادآوریِ روزانه‌ی «دخل‌وخرج امروز یادت نره» (رجوع کن به DueDateReminderWorker) - پیش‌فرض خاموش
+     * مثلِ بقیه‌ی یادآوری‌های اپ، فقط با سوییچِ صریحِ کاربر تو تنظیمات روشن می‌شه. */
+    val dailyExpenseReminderEnabled: Flow<Boolean> =
+        context.uiPrefsDataStore.data.map { it[Keys.DAILY_EXPENSE_REMINDER_ENABLED] ?: false }
+
+    suspend fun setDailyExpenseReminderEnabled(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.DAILY_EXPENSE_REMINDER_ENABLED] = value }
     }
 }

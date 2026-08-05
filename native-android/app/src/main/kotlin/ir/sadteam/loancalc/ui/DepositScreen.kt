@@ -30,10 +30,12 @@ import ir.sadteam.loancalc.core.cleanNumDecimal
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.components.StaggerIn
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
+import ir.sadteam.loancalc.ui.components.amountSliderSteps
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.countUpDouble
@@ -68,99 +70,116 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         item {
-            AppCard(label = "مبلغ سپرده") {
-                OutlinedTextField(
-                    value = amountText,
-                    onValueChange = { raw ->
-                        // فقط رقم تو state؛ کاما نمایشیه (ThousandsSeparatorTransformation) - فرمت تو
-                        // onValueChange مکان‌نما رو می‌پروند و رقم وسطِ عدد درج می‌شد (باگ گزارش‌شده).
-                        val digits = cleanNum(raw)
-                        val n = digits.toLongOrNull() ?: 0L
-                        amountText = digits
-                        if (n in 100_000_000L..10_000_000_000L) amountSlider = n.toFloat()
-                    },
-                    visualTransformation = ThousandsSeparatorTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = appFieldColors(),
-                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
-                )
-                val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
-                if (rialVal > 0) {
-                    Text(
-                        text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
-                        color = AppMuted,
-                        fontSize = 11.5.sp,
-                        modifier = Modifier.padding(top = 4.dp),
+            StaggerIn(0) {
+                AppCard(label = "مبلغ سپرده") {
+                    OutlinedTextField(
+                        value = amountText,
+                        onValueChange = { raw ->
+                            // فقط رقم تو state؛ کاما نمایشیه (ThousandsSeparatorTransformation) - فرمت تو
+                            // onValueChange مکان‌نما رو می‌پروند و رقم وسطِ عدد درج می‌شد (باگ گزارش‌شده).
+                            val digits = cleanNum(raw)
+                            val n = digits.toLongOrNull() ?: 0L
+                            amountText = digits
+                            if (n in 100_000_000L..10_000_000_000L) amountSlider = n.toFloat()
+                        },
+                        visualTransformation = ThousandsSeparatorTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = appFieldColors(),
+                        suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
                     )
-                }
-                SlimSlider(
-                    value = amountSlider,
-                    onValueChange = { v ->
-                        amountSlider = v
-                        amountText = v.toLong().toString()
-                    },
-                    valueRange = 100_000_000f..10_000_000_000f,
-                )
-            }
-        }
-
-        item {
-            AppCard(label = "نرخ سود سالانه") {
-                OutlinedTextField(
-                    value = rateText,
-                    onValueChange = { raw ->
-                        val filtered = cleanNumDecimal(raw)
-                        rateText = filtered
-                        val num = filtered.toDoubleOrNull()
-                        if (num != null && num in 0.0..35.0) rateSlider = num.toFloat()
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = appFieldColors(),
-                    suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
-                )
-                SlimSlider(
-                    value = rateSlider,
-                    onValueChange = { v -> rateSlider = v; rateText = if (v == v.toLong().toFloat()) v.toLong().toString() else v.toString() },
-                    valueRange = 0f..35f,
-                )
-            }
-        }
-
-        item {
-            AppCard(label = "مدت سپرده") {
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    depositMonthOptions.forEach { (v, label) ->
-                        AppChip(label = label, selected = selectedMonths == v, onClick = { selectedMonths = v })
-                    }
-                }
-            }
-        }
-
-        item {
-            GradientButton(
-                onClick = {
-                    val principal = cleanNum(amountText).toLongOrNull() ?: 0L
-                    if (principal > 0) {
-                        val computed = DepositCalculator.compute(principal.toDouble(), rateText.toDoubleOrNull() ?: 0.0, selectedMonths)
-                        result = computed
-                        historyViewModel.log(
-                            kind = "DEPOSIT",
-                            title = "سود سپرده",
-                            summary = "مبلغ ${fmt(principal.toDouble())} ریال × ${toFa(selectedMonths)} ماه",
-                            amount = computed.finalAmount,
+                    val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
+                    if (rialVal > 0) {
+                        Text(
+                            text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
+                            color = AppMuted,
+                            fontSize = 11.5.sp,
+                            modifier = Modifier.padding(top = 4.dp),
                         )
                     }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("محاسبه سود سپرده")
+                    SlimSlider(
+                        value = amountSlider,
+                        onValueChange = { v ->
+                            amountSlider = v
+                            amountText = v.toLong().toString()
+                        },
+                        valueRange = 100_000_000f..10_000_000_000f,
+                        // پله‌بندی به گامِ ۱۰میلیون‌تومانی - رجوع کن به amountSliderSteps.
+                        steps = amountSliderSteps(100_000_000f..10_000_000_000f),
+                    )
+                }
+            }
+        }
+
+        item {
+            StaggerIn(1) {
+                AppCard(label = "نرخ سود سالانه") {
+                    OutlinedTextField(
+                        value = rateText,
+                        onValueChange = { raw ->
+                            val filtered = cleanNumDecimal(raw)
+                            rateText = filtered
+                            // اسلایدر فقط تا ۵۰ می‌ره، ولی خودِ فیلد بالاتر از ۵۰ رو هم دستی قبول
+                            // می‌کنه (خواسته‌ی صریحِ کاربر) - رجوع کن به مورد ۱ تو CLAUDE.md.
+                            val num = filtered.toDoubleOrNull()
+                            if (num != null && num in 0.0..50.0) rateSlider = num.toFloat()
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = appFieldColors(),
+                        suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
+                    )
+                    SlimSlider(
+                        value = rateSlider,
+                        onValueChange = { v ->
+                            rateSlider = v
+                            // نمایشِ حداکثر دو رقمِ اعشار - رجوع کن به BankLoanScreen.trimRate.
+                            rateText = if (v == v.toLong().toFloat()) v.toLong().toString() else "%.2f".format(v)
+                        },
+                        valueRange = 0f..50f,
+                        steps = 99,
+                    )
+                }
+            }
+        }
+
+        item {
+            StaggerIn(2) {
+                AppCard(label = "مدت سپرده") {
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                    ) {
+                        depositMonthOptions.forEach { (v, label) ->
+                            AppChip(label = label, selected = selectedMonths == v, onClick = { selectedMonths = v })
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            StaggerIn(3) {
+                GradientButton(
+                    onClick = {
+                        val principal = cleanNum(amountText).toLongOrNull() ?: 0L
+                        if (principal > 0) {
+                            val computed = DepositCalculator.compute(principal.toDouble(), rateText.toDoubleOrNull() ?: 0.0, selectedMonths)
+                            result = computed
+                            historyViewModel.log(
+                                kind = "DEPOSIT",
+                                title = "سود سپرده",
+                                summary = "مبلغ ${fmt(principal.toDouble())} ریال × ${toFa(selectedMonths)} ماه",
+                                amount = computed.finalAmount,
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("محاسبه سود سپرده")
+                }
             }
         }
 

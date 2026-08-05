@@ -46,7 +46,7 @@ object StatsPdfExporter {
         val labelPaint = TextPaint().apply { textSize = 13f }
 
         var y = 30f
-        y += drawRtlLine(canvas, "گزارش آمار وام‌ها - وام من", titlePaint, y) + 16f
+        y += drawRtlLine(canvas, "گزارش آمار وام‌ها - حسابدار من", titlePaint, y) + 16f
 
         val lines = listOf(
             "تعداد وام‌ها: ${summary.loanCount}",

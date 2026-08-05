@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -42,8 +43,11 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
+import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -82,6 +86,7 @@ fun AccountDetailScreen(
     var txMonth by remember { mutableStateOf(today.m) }
     var txDay by remember { mutableStateOf(today.d) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -119,7 +124,7 @@ fun AccountDetailScreen(
                     Text("ویرایش حساب")
                 }
                 OutlinedButton(
-                    onClick = onDelete,
+                    onClick = { showDeleteConfirm = true },
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
                     modifier = Modifier.weight(1f),
                 ) {
@@ -228,9 +233,12 @@ fun AccountDetailScreen(
 
         if (transactions.isEmpty()) {
             item {
-                Box(modifier = Modifier.fillMaxWidth().padding(top = 30.dp), contentAlignment = Alignment.Center) {
-                    Text("هنوز تراکنشی ثبت نشده", color = AppText, fontSize = 14.sp)
-                }
+                EmptyState(
+                    icon = Icons.Outlined.SwapVert,
+                    title = "هنوز تراکنشی ثبت نشده",
+                    description = "واریز و برداشت‌های این حساب که ثبت بشن، همین‌جا " +
+                        "به‌ترتیبِ تاریخ می‌بینیشون.",
+                )
             }
         } else {
             items(transactions, key = { it.id }) { tx ->
@@ -242,11 +250,20 @@ fun AccountDetailScreen(
             }
         }
     }
+    if (showDeleteConfirm) {
+        ConfirmDeleteDialog(
+            title = "حذف حساب",
+            text = "حسابِ «${account.name} - ${account.bankName}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+            onConfirm = onDelete,
+            onDismiss = { showDeleteConfirm = false },
+        )
+    }
 }
 
 @Composable
 private fun TransactionRow(tx: AccountTransactionEntity, onDelete: () -> Unit, modifier: Modifier = Modifier) {
-    AppCard(modifier = modifier) {
+    SwipeToDeleteRow(onDelete = onDelete, modifier = modifier) {
+    AppCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -283,6 +300,7 @@ private fun TransactionRow(tx: AccountTransactionEntity, onDelete: () -> Unit, m
                 }
             }
         }
+    }
     }
 }
 

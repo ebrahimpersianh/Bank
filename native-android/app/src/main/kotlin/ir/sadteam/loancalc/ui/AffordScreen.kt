@@ -39,10 +39,12 @@ import ir.sadteam.loancalc.core.cleanNumDecimal
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.components.StaggerIn
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
+import ir.sadteam.loancalc.ui.components.amountSliderSteps
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.countUpDouble
@@ -81,114 +83,132 @@ fun AffordScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel()
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         item {
-            AppCard(label = "مبلغی که می‌تونم ماهانه قسط بدم") {
-                OutlinedTextField(
-                    value = payText,
-                    onValueChange = { raw ->
-                        val digits = cleanNum(raw)
-                        val n = digits.toLongOrNull() ?: 0L
-                        payText = digits
-                        if (n in 10_000_000L..500_000_000L) paySlider = n.toFloat()
-                    },
-                    visualTransformation = ThousandsSeparatorTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = appFieldColors(),
-                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
-                )
-                val rialVal = cleanNum(payText).toLongOrNull() ?: 0L
-                if (rialVal > 0) {
-                    Text(
-                        text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
-                        color = AppMuted,
-                        fontSize = 11.5.sp,
-                        modifier = Modifier.padding(top = 4.dp),
+            StaggerIn(0) {
+                AppCard(label = "مبلغی که می‌تونم ماهانه قسط بدم") {
+                    OutlinedTextField(
+                        value = payText,
+                        onValueChange = { raw ->
+                            val digits = cleanNum(raw)
+                            val n = digits.toLongOrNull() ?: 0L
+                            payText = digits
+                            if (n in 10_000_000L..500_000_000L) paySlider = n.toFloat()
+                        },
+                        visualTransformation = ThousandsSeparatorTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = appFieldColors(),
+                        suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                    )
+                    val rialVal = cleanNum(payText).toLongOrNull() ?: 0L
+                    if (rialVal > 0) {
+                        Text(
+                            text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
+                            color = AppMuted,
+                            fontSize = 11.5.sp,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                    SlimSlider(
+                        value = paySlider,
+                        onValueChange = { v ->
+                            paySlider = v
+                            payText = v.toLong().toString()
+                        },
+                        valueRange = 10_000_000f..500_000_000f,
+                        // پله‌بندی به گامِ نیم‌میلیون‌تومانی (رنجِ این فیلد کوچیک‌تر از مبلغِ وامه،
+                        // برای همین گامِ ریزتر - رجوع کن به amountSliderSteps).
+                        steps = amountSliderSteps(10_000_000f..500_000_000f, chunk = 5_000_000f),
                     )
                 }
-                SlimSlider(
-                    value = paySlider,
-                    onValueChange = { v ->
-                        paySlider = v
-                        payText = v.toLong().toString()
-                    },
-                    valueRange = 10_000_000f..500_000_000f,
-                )
             }
         }
 
         item {
-            AppCard(label = "نرخ سود سالانه") {
-                OutlinedTextField(
-                    value = rateText,
-                    onValueChange = { raw ->
-                        val filtered = cleanNumDecimal(raw)
-                        rateText = filtered
-                        val num = filtered.toDoubleOrNull()
-                        if (num != null && num in 0.0..35.0) rateSlider = num.toFloat()
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = appFieldColors(),
-                    suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
-                )
-                SlimSlider(
-                    value = rateSlider,
-                    onValueChange = { v -> rateSlider = v; rateText = if (v == v.toLong().toFloat()) v.toLong().toString() else v.toString() },
-                    valueRange = 0f..35f,
-                )
-            }
-        }
-
-        item {
-            AppCard(label = "تعداد اقساط (ماه)") {
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    affordMonthChipValues.forEach { v ->
-                        AppChip(
-                            label = toFa(v),
-                            selected = monthsText == v.toString(),
-                            onClick = { monthsText = v.toString() },
-                        )
-                    }
+            StaggerIn(1) {
+                AppCard(label = "نرخ سود سالانه") {
+                    OutlinedTextField(
+                        value = rateText,
+                        onValueChange = { raw ->
+                            val filtered = cleanNumDecimal(raw)
+                            rateText = filtered
+                            // اسلایدر فقط تا ۵۰ می‌ره، ولی خودِ فیلد بالاتر از ۵۰ رو هم دستی قبول
+                            // می‌کنه (خواسته‌ی صریحِ کاربر) - رجوع کن به مورد ۱ تو CLAUDE.md.
+                            val num = filtered.toDoubleOrNull()
+                            if (num != null && num in 0.0..50.0) rateSlider = num.toFloat()
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = appFieldColors(),
+                        suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
+                    )
+                    SlimSlider(
+                        value = rateSlider,
+                        onValueChange = { v ->
+                            rateSlider = v
+                            // نمایشِ حداکثر دو رقمِ اعشار - رجوع کن به BankLoanScreen.trimRate.
+                            rateText = if (v == v.toLong().toFloat()) v.toLong().toString() else "%.2f".format(v)
+                        },
+                        valueRange = 0f..50f,
+                        steps = 99,
+                    )
                 }
-                OutlinedTextField(
-                    value = monthsText,
-                    onValueChange = { monthsText = cleanNum(it) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp),
-                    singleLine = true,
-                    colors = appFieldColors(),
-                    suffix = { Text("ماه", color = AppMuted, fontSize = 13.sp) },
-                )
             }
         }
 
         item {
-            val pay = cleanNum(payText).toLongOrNull() ?: 0L
-            val rate = rateText.toDoubleOrNull() ?: 0.0
-            val n = monthsText.toIntOrNull() ?: 36
-            GradientButton(
-                onClick = {
-                    if (pay > 0) {
-                        val maxPrincipal = AffordabilityCalculator.computeMaxPrincipal(pay.toDouble(), rate, n)
-                        result = maxPrincipal
-                        historyViewModel.log(
-                            kind = "AFFORD",
-                            title = "محاسبه‌گر سقف وام",
-                            summary = "قسط ${fmt(pay.toDouble())} ریال × ${toFa(n)} ماه، نرخ ${toFa(rate)}٪",
-                            amount = maxPrincipal,
-                        )
+            StaggerIn(2) {
+                AppCard(label = "تعداد اقساط (ماه)") {
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                    ) {
+                        affordMonthChipValues.forEach { v ->
+                            AppChip(
+                                label = toFa(v),
+                                selected = monthsText == v.toString(),
+                                onClick = { monthsText = v.toString() },
+                            )
+                        }
                     }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("محاسبه حداکثر وام")
+                    OutlinedTextField(
+                        value = monthsText,
+                        onValueChange = { monthsText = cleanNum(it) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp),
+                        singleLine = true,
+                        colors = appFieldColors(),
+                        suffix = { Text("ماه", color = AppMuted, fontSize = 13.sp) },
+                    )
+                }
+            }
+        }
+
+        item {
+            StaggerIn(3) {
+                val pay = cleanNum(payText).toLongOrNull() ?: 0L
+                val rate = rateText.toDoubleOrNull() ?: 0.0
+                val n = monthsText.toIntOrNull() ?: 36
+                GradientButton(
+                    onClick = {
+                        if (pay > 0) {
+                            val maxPrincipal = AffordabilityCalculator.computeMaxPrincipal(pay.toDouble(), rate, n)
+                            result = maxPrincipal
+                            historyViewModel.log(
+                                kind = "AFFORD",
+                                title = "محاسبه‌گر سقف وام",
+                                summary = "قسط ${fmt(pay.toDouble())} ریال × ${toFa(n)} ماه، نرخ ${toFa(rate)}٪",
+                                amount = maxPrincipal,
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("محاسبه حداکثر وام")
+                }
             }
         }
 
@@ -263,6 +283,7 @@ private fun RateFinderCard() {
                 onValueChange = { v -> amountSlider = v; amountText = v.toLong().toString() },
                 valueRange = 100_000_000f..10_000_000_000f,
                 modifier = Modifier.padding(top = 6.dp),
+                steps = amountSliderSteps(100_000_000f..10_000_000_000f),
             )
             OutlinedTextField(
                 value = installmentText,
@@ -289,6 +310,7 @@ private fun RateFinderCard() {
                 onValueChange = { v -> installmentSlider = v; installmentText = v.toLong().toString() },
                 valueRange = 1_000_000f..200_000_000f,
                 modifier = Modifier.padding(top = 6.dp),
+                steps = amountSliderSteps(1_000_000f..200_000_000f, chunk = 1_000_000f),
             )
             OutlinedTextField(
                 value = monthsText,

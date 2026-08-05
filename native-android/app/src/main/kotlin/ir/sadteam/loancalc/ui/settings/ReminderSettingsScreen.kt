@@ -33,10 +33,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.R
 import ir.sadteam.loancalc.core.REMINDER_OFFSET_OPTIONS
 import ir.sadteam.loancalc.core.reminderOffsetLabel
+import ir.sadteam.loancalc.notifications.ReminderChannels
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -64,6 +68,25 @@ fun ReminderSettingsScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) notificationsViewModel.enable() }
+
+    // «تستِ نوتیفیکیشن»: خواسته‌ی کاربر که بدونِ صبرکردن برای اجرای روزانه‌ی DueDateReminderWorker
+    // (که تا ۲۴ ساعت طول می‌کشه) بتونه همون لحظه صدا/ویبره/مجوز رو تایید کنه. دقیقاً از همون
+    // ReminderChannels.ensure استفاده می‌کنه که خودِ Worker استفاده می‌کنه، پس نتیجه‌ش واقعاً
+    // نشون‌دهنده‌ی نوتیفِ واقعیه، نه یه نمونه‌ی جداگانه با تنظیماتِ متفاوت.
+    val testPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) sendTestReminderNotification(context, soundUri, vibrate) }
+
+    fun fireTestNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            testPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            sendTestReminderNotification(context, soundUri, vibrate)
+        }
+    }
 
     val soundPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
@@ -128,6 +151,25 @@ fun ReminderSettingsScreen(
                         },
                         colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
                     )
+                }
+            }
+        }
+
+        item {
+            AppCard(label = "تستِ نوتیفیکیشن") {
+                Column {
+                    Text(
+                        "بدونِ نیاز به صبرکردن (چک‌کردنِ روزانه تا ۲۴ ساعت طول می‌کشه)، همین الان یه " +
+                            "نوتیفِ نمونه با همین صدا/ویبره‌ی تنظیم‌شده بفرست تا مطمئن بشی درست کار می‌کنه.",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                    )
+                    OutlinedButton(
+                        onClick = { fireTestNotification() },
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) {
+                        Text("ارسالِ نوتیفِ آزمایشی")
+                    }
                 }
             }
         }
@@ -202,3 +244,20 @@ fun ReminderSettingsScreen(
         }
     }
 }
+
+/** دقیقاً هم‌الگو با notifyLoan/notifyCheque تو DueDateReminderWorker.kt - همون کانال، همون سبک؛
+ * فقط عنوان/متن مشخص می‌کنه که این یه تستِ دستیه، نه یه یادآوریِ واقعی. */
+private fun sendTestReminderNotification(context: android.content.Context, soundUri: String?, vibrate: Boolean) {
+    val channelId = ReminderChannels.ensure(context, soundUri, vibrate)
+    val notification = NotificationCompat.Builder(context, channelId)
+        .setSmallIcon(R.drawable.ic_notification)
+        .setLargeIcon(ReminderChannels.largeIcon(context))
+        .setContentTitle("یادآوریِ آزمایشی")
+        .setContentText("این یه نوتیفِ نمونه‌ست - دقیقاً با همین صدا/ویبره، یادآوریِ واقعیِ سررسید هم میاد")
+        .setAutoCancel(true)
+        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        .build()
+    NotificationManagerCompat.from(context).notify(TEST_NOTIFICATION_ID, notification)
+}
+
+private const val TEST_NOTIFICATION_ID = 999999

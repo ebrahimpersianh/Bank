@@ -58,6 +58,19 @@ class SubscriptionManager(private val activity: ComponentActivity) {
         connected = false
     }
 
+    /** بازیابیِ خریدهای «مالکیت‌شده ولی هنوز سمتِ سرور تاییدنشده» - برای کاربرهایی که قبل از رفعِ
+     * باگِ [handleActivityResult] خرید کردن: پولشون از مایکت کم شده و خریدشون هنوز رو حسابشون
+     * (مصرف‌نشده) مونده، فقط callbackِ purchase() هیچ‌وقت اجرا نشده بود که به سرور خبر بده. هر بار
+     * اپ باز/متصل می‌شه (نه فقط موقعِ زدنِ دکمه‌ی خرید)، این تابع از [queryInventoryAsync]ی همون
+     * connect() چک می‌کنه چه SKUهایی رو کاربر واقعاً مالکه، و توکن‌شون رو برمی‌گردونه تا صفحه‌ی
+     * اشتراک بی‌صدا دوباره به سرور بفرستشون - بدونِ نیازِ خریدِ دوباره یا تماس با پشتیبانی. */
+    fun restorePurchases(): List<Pair<String, String>> {
+        val inventory = latestInventory ?: return emptyList()
+        return subscriptionTiers.mapNotNull { (productId, _) ->
+            inventory.getPurchase(productId)?.let { productId to it.token }
+        }
+    }
+
     fun getPrices(
         productIds: List<String>,
         onResult: (Map<String, String>) -> Unit,
@@ -84,10 +97,15 @@ class SubscriptionManager(private val activity: ComponentActivity) {
             onFailed()
             return
         }
+        /* پنلِ توسعه‌دهندگانِ مایکت گزینه‌ی جداگانه‌ای برای «اشتراکِ واقعی» نداره - هر محصولی که اونجا
+           ساخته بشه یه محصولِ درون‌برنامه‌ایِ معمولیه (دقیقاً هم‌الگو با تصمیمِ قبلی برای کافه‌بازار،
+           رجوع کن به Poolakey/purchaseProduct تو فلیورِ cafebazaar). قبلاً اینجا ITEM_TYPE_SUBS
+           فرستاده می‌شد که با نوعِ واقعیِ محصول یکی نبود و باعثِ «خرید ناموفق» فوری می‌شد (گزارشِ
+           بازبینِ مایکت). */
         helper.launchPurchaseFlow(
             activity,
             productId,
-            IabHelper.ITEM_TYPE_SUBS,
+            IabHelper.ITEM_TYPE_INAPP,
             { result: IabResult, purchase: Purchase? ->
                 when {
                     result.isFailure -> onFailed()
@@ -99,10 +117,13 @@ class SubscriptionManager(private val activity: ComponentActivity) {
         )
     }
 
-    /** برخلافِ Google IAB v3 اصلی، IabHelperِ مایکت متدِ handleActivityResult نداره (نمونه‌ی رسمیِ
-     * خودشون - myketstore/myket-billing-client/sample - هم هیچ‌جا onActivityResult رو override
-     * نمی‌کنه)، پس ظاهراً نتیجه‌ی خرید رو خودش داخلی مدیریت می‌کنه. این متد فقط برای یکسان‌بودنِ
-     * امضا با فلیورِ cafebazaar اینجاست (رجوع کن به MainActivity.onActivityResult). */
+    /** ⚠️ اصلاحیه: نسخه‌ی قبلیِ همین کامنت (که می‌گفت باید helper.handleActivityResult صدا زده بشه)
+     * اشتباه بود و اصلاً کامپایل نمی‌شد - IabHelperِ مایکت (برخلافِ IabHelperِ کلاسیکِ خودِ گوگل)
+     * چنین متدی رو عمومی نداره (تاییدشده از رو سورسِ واقعیِ myketstore/myket-billing-client،
+     * فایلِ IabHelper.java). launchPurchaseFlow داخلی به یه iabConnection (ServiceIAB یا
+     * BroadcastIAB) پاس داده می‌شه که ظاهراً خودش نتیجه رو می‌گیره، نه از مسیرِ onActivityResultِ
+     * اکتیویتی - یعنی این متدِ no-op از اول درست بود. ریشه‌ی واقعیِ گزارشِ بازبینِ مایکت («پرداخت
+     * موفق، محصول فعال نمی‌شه») هنوز درحالِ بررسیه - رجوع کن به CLAUDE.md. */
     fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {}
 }
 

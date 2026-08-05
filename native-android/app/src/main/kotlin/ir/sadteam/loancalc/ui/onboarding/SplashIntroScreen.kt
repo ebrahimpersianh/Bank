@@ -44,11 +44,11 @@ import kotlinx.coroutines.launch
 
 // رنگ‌های عینِ اسپلشِ اپ وب (#splash تو www/index.html)، حالا به‌جز پس‌زمینه با تم هماهنگ (خواسته‌ی
 // کاربر: «اسپلش سفید و مشکی باشه بنا به دارک‌مود تغییر کنه» - قبلاً همیشه تیره بود، مستقل از تم).
-private val SplashBgDark = Color(0xFF0D1321)
+private val SplashBgDark = Color(0xFF000000) // هم‌رنگِ AppBgِ جدید (کاملاً مشکی، دورِ چهارمِ تمِ تیره)
 private val SplashBgLight = Color(0xFFFFFFFF)
-private val RingBase = Color(0xFF1D2A46)
-private val RingGold = Color(0xFFFFB020) // هم‌رنگِ AppAccent جدید (طلایی پررنگ‌تر)
-private val RingTeal = Color(0xFF00C2D1) // هم‌رنگِ AppPrimary جدید (سبزآبی، نه سبزِ قبلی)
+private val RingBase = Color(0xFF16211C) // هم‌رنگِ AppSurface2ِ جدید
+private val RingGold = Color(0xFFFFB020) // هم‌رنگِ AppAccent (طلایی) - دست‌نخورده موند
+private val RingTeal = Color(0xFF34D399) // هم‌رنگِ AppPrimaryِ جدید (زمردیِ ملایم، دورِ پنجمِ تمِ تیره)
 private val FireCore = Color(0xFFFF5A1F) // هسته‌ی گرمِ نارنجی/قرمز برای حسِ «آتیشِ روشن»
 private val SplashNameDark = Color(0xFFEEF1F8)
 private val SplashNameLight = Color(0xFF1A2033)
@@ -57,7 +57,7 @@ private val SplashSubLight = Color(0xFF8D96AC)
 
 /**
  * اینتروِ باز شدن اپ - پورت دقیق اسپلشِ اپ وب (`#splash` تو www/index.html): زمینه‌ی هماهنگ با تم، یه
- * حلقه‌ی دونات (پایه‌ی تیره + کمانِ طلایی ۳۰٪ + کمانِ سبز ۷۰٪، عین نمودار دونات وام)، اسم «وام من»، سه
+ * حلقه‌ی دونات (پایه‌ی تیره + کمانِ طلایی ۳۰٪ + کمانِ سبز ۷۰٪، عین نمودار دونات وام)، اسم «حسابدار من»، سه
  * نقطه‌ی چشمک‌زن و «Powered By Sad Team». بعد از ~۱.۸ ثانیه [onDone] صدا زده می‌شه.
  *
  * خواسته‌ی آخرِ کاربر (این دور): حلقه‌ی بازتابِ نورِ دورِ دونات (که قبلاً اینجا بود) حذف شد - فقط
@@ -215,7 +215,7 @@ fun SplashIntroScreen(isDarkTheme: Boolean, onDone: () -> Unit) {
             }
 
             Text(
-                "وام من",
+                "حسابدار من",
                 color = splashName,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.ExtraBold,

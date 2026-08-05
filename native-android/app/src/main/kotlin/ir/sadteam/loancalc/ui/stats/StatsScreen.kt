@@ -21,6 +21,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -202,9 +206,18 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
     }
 }
 
+/** مدتِ انیمیشنِ ورودِ هر دو نمودار (میلی‌ثانیه). */
+private const val CHART_ANIM_MS = 900
+
 @Composable
 private fun ProgressDonut(ratio: Double) {
-    val sweep = (ratio.coerceIn(0.0, 1.0) * 360f).toFloat()
+    val targetSweep = (ratio.coerceIn(0.0, 1.0) * 360f).toFloat()
+    // قبلاً کمانِ پیشرفت یهو کاملاً رسم می‌شد. حالا هر بار مقدارِ واقعی عوض بشه (یا صفحه اولین بار
+    // باز بشه)، از صفر تا مقدارِ واقعی می‌چرخه - همون حسِ نموداری که تویِ اپ‌های مالیِ خوب هست.
+    val animatedSweep = remember { Animatable(0f) }
+    LaunchedEffect(targetSweep) {
+        animatedSweep.animateTo(targetSweep, tween(CHART_ANIM_MS, easing = FastOutSlowInEasing))
+    }
     val trackColor = AppLine
     val progressColor = AppPrimary
     Box(modifier = Modifier.size(140.dp), contentAlignment = Alignment.Center) {
@@ -220,14 +233,16 @@ private fun ProgressDonut(ratio: Double) {
             drawArc(
                 color = progressColor,
                 startAngle = -90f,
-                sweepAngle = sweep,
+                sweepAngle = animatedSweep.value,
                 useCenter = false,
                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
             )
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                "${toFa((ratio * 100).toInt())}٪",
+                // درصدِ متنی هم هم‌قدمِ خودِ کمان بالا می‌ره - چیدنِ عدد و کمانِ درحالِ‌رشد
+                // یهویی/ناهماهنگ به‌نظر می‌رسید.
+                "${toFa((animatedSweep.value / 360f * 100).toInt())}٪",
                 color = AppText,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
@@ -244,6 +259,13 @@ private fun ProgressDonut(ratio: Double) {
 private fun PaymentHistoryLineChart(points: List<PaymentHistoryPoint>) {
     val lineColor = AppPrimary
     val gridColor = AppLine
+    // قبلاً کلِ خط یهو رسم می‌شد. حالا از چپ به راست «کشیده» می‌شه - با کلیپ‌کردنِ بومِ رسم به یه
+    // عرضِ روبه‌رشد، نه با استخراجِ بخشی از مسیر (که برای این تعداد نقطه‌ی کم اضافه‌کاریه).
+    val reveal = remember { Animatable(0f) }
+    LaunchedEffect(points) {
+        reveal.snapTo(0f)
+        reveal.animateTo(1f, tween(CHART_ANIM_MS, easing = FastOutSlowInEasing))
+    }
     Column(modifier = Modifier.fillMaxWidth()) {
         Canvas(
             modifier = Modifier
@@ -260,24 +282,26 @@ private fun PaymentHistoryLineChart(points: List<PaymentHistoryPoint>) {
                 strokeWidth = 1.dp.toPx(),
             )
 
-            if (points.size == 1) {
-                val y = size.height - (points[0].cumulativeAmount / maxAmount * size.height).toFloat()
-                drawCircle(color = lineColor, radius = 4.dp.toPx(), center = Offset(size.width / 2f, y))
-                return@Canvas
-            }
+            clipRect(right = size.width * reveal.value) {
+                if (points.size == 1) {
+                    val y = size.height - (points[0].cumulativeAmount / maxAmount * size.height).toFloat()
+                    drawCircle(color = lineColor, radius = 4.dp.toPx(), center = Offset(size.width / 2f, y))
+                    return@clipRect
+                }
 
-            val path = Path()
-            points.forEachIndexed { index, point ->
-                val x = stepX * index
-                val y = size.height - (point.cumulativeAmount / maxAmount * size.height).toFloat()
-                if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-            }
-            drawPath(path = path, color = lineColor, style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round))
+                val path = Path()
+                points.forEachIndexed { index, point ->
+                    val x = stepX * index
+                    val y = size.height - (point.cumulativeAmount / maxAmount * size.height).toFloat()
+                    if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                }
+                drawPath(path = path, color = lineColor, style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round))
 
-            points.forEachIndexed { index, point ->
-                val x = stepX * index
-                val y = size.height - (point.cumulativeAmount / maxAmount * size.height).toFloat()
-                drawCircle(color = lineColor, radius = 3.dp.toPx(), center = Offset(x, y))
+                points.forEachIndexed { index, point ->
+                    val x = stepX * index
+                    val y = size.height - (point.cumulativeAmount / maxAmount * size.height).toFloat()
+                    drawCircle(color = lineColor, radius = 3.dp.toPx(), center = Offset(x, y))
+                }
             }
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

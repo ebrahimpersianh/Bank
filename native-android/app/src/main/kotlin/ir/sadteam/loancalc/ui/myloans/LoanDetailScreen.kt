@@ -6,8 +6,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -29,6 +34,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,10 +42,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -52,6 +61,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,6 +70,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.geometry.Offset
@@ -76,20 +87,32 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.calendar.DeviceCalendarExporter
+import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.LoanEntity
+import ir.sadteam.loancalc.data.banks
+import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.components.AccountPickerDialog
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.BankTile
+import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.CoinCelebration
+import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
+import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
 import ir.sadteam.loancalc.ui.components.ReminderOverrideCard
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -97,6 +120,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.CoroutineScope
@@ -108,6 +132,11 @@ private val faMonthNamesDetail = listOf(
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
     "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
 )
+
+/** یه عملِ «پرداخت‌شده کردن»ِ درحالِ‌انتظار - قبل از اجرای واقعیش، اگه حسابی وجود داشته باشه اول
+ * باید حساب/کارتِ پرداخت‌کننده انتخاب بشه (رجوع کن به AccountPickerDialog تو LoanDetailScreen).
+ * paidDate == null یعنی «به‌موقع»، غیرِnull یعنی «با تاخیر» با همون تاریخ. */
+private data class PendingLoanPayment(val ms: List<Int>, val paidDate: PersianDate?)
 
 /**
  * پورت openDetail/renderTable تو www/index.html، برای وام‌های دستی (method=manual): هر قسط
@@ -124,8 +153,10 @@ fun LoanDetailScreen(
     onDelete: () -> Unit,
     onEdit: () -> Unit,
     viewModel: MyLoansViewModel = hiltViewModel(),
+    accountViewModel: AccountViewModel = hiltViewModel(),
 ) {
     val privacyMode = LocalPrivacyMode.current
+    val accounts by accountViewModel.accounts.collectAsState()
     // rows دیگه نمی‌تونه محاسبه‌ی همزمان (remember{}) باشه چون از رو رَدیف‌های واقعیِ Room
     // (loan_rows) می‌خونه، نه دیگه از رو JSONِ درون‌حافظه‌ای که همیشه از قبل تو خودِ loan بود - رجوع
     // کن به CLAUDE.md. با هر تغییرِ loan (مثلاً بعدِ پرداختِ یه قسط) دوباره لود می‌شه، دقیقاً همون
@@ -243,12 +274,71 @@ fun LoanDetailScreen(
     // مشخصه (خواسته‌ی کاربر).
     var photoRowM by remember { mutableStateOf<Int?>(null) }
 
-    // ویرایشِ مشخصاتِ *غیرمالیِ* وام‌های محاسبه‌شده/قرض‌الحسنه (اسم/بانک/وام‌گیرنده/تاریخ) - برخلافِ
-    // وام‌های دستی که فرمِ کاملِ AddManualLoanScreen رو باز می‌کنن (onEdit، از MyLoansScreen)، این
-    // یه دیالوگِ سبکِ همین‌جاست چون مبلغ/نرخ/تعدادِ اقساط این نوع وام‌ها عمداً قابلِ‌ویرایش نیست
-    // (نیازمندِ اجرای دوباره‌ی فرمولِ کاملِ LoanCalculator و پاک‌شدنِ تاریخچه‌ی پرداخته - خواسته‌ی
-    // کاربر «ادیت کل وام برای همه‌ی وام‌ها» با همین محدودیتِ امن پیاده شد).
+    // پرداختِ گروهیِ اقساط: چندتا قسطِ پرداخت‌نشده رو انتخاب می‌کنیم، بعد یه‌جا (با یه سوالِ
+    // «به‌موقع یا با تاخیر» مشترک برای همه‌شون) پرداخت‌شده علامت می‌زنیم - به‌جای تک‌تک زدنِ هرکدوم.
+    var bulkPayMode by remember { mutableStateOf(false) }
+    var selectedBulkMs by remember { mutableStateOf<Set<Int>>(emptySet()) }
+    var bulkPayChoiceOpen by remember { mutableStateOf(false) }
+
+    // سینکِ خودکارِ پرداختِ وام ↔ حسابداری (تصمیمِ صریحِ کاربر، رجوع کن به CLAUDE.md): بعدِ انتخابِ
+    // «به‌موقع»/«با تاخیر»، قبلِ ثبتِ واقعیِ پرداخت، باید حساب/کارتِ پرداخت‌کننده مشخص بشه - فقط
+    // وقتی حداقل یه حساب از قبل ساخته شده (وگرنه این مرحله معنی نداره، مستقیم ثبت می‌شه).
+    var pendingPayment by remember { mutableStateOf<PendingLoanPayment?>(null) }
+    fun commitPayment(payment: PendingLoanPayment, account: AccountEntity?) {
+        if (payment.ms.size == 1) {
+            val m = payment.ms.first()
+            if (payment.paidDate != null) viewModel.setRowPaidLate(loan, m, payment.paidDate) else viewModel.setRowPaidOnTime(loan, m)
+        } else {
+            if (payment.paidDate != null) viewModel.setRowsPaidLate(loan, payment.ms, payment.paidDate) else viewModel.setRowsPaidOnTime(loan, payment.ms)
+        }
+        if (account != null) {
+            val amount = payment.ms.sumOf { m ->
+                (rows.firstOrNull { (it["m"] as? Number)?.toInt() == m }?.get("installment") as? Number)?.toDouble()
+                    ?: loan.installment
+            }
+            val today = JalaliCalendar.today()
+            val description = if (payment.ms.size == 1) {
+                "قسط ${toFa(payment.ms.first())} - ${loan.name}"
+            } else {
+                "${toFa(payment.ms.size)} قسط - ${loan.name}"
+            }
+            accountViewModel.addTransaction(
+                accountId = account.id,
+                type = TransactionType.WITHDRAWAL,
+                amount = amount,
+                description = description,
+                year = today.y,
+                month = today.m,
+                day = today.d,
+                category = "قسط/چک",
+            )
+        }
+    }
+    // اگه هنوز هیچ حسابی ساخته نشده، مرحله‌ی انتخابِ حساب معنی نداره - مستقیم ثبت می‌شه (بدونِ
+    // تراکنشِ حسابداری)؛ وگرنه اول AccountPickerDialog باز می‌شه (رجوع کن به تصمیمِ کاربر - فعلاً
+    // اجباری).
+    fun applyPayment(payment: PendingLoanPayment) {
+        if (accounts.isEmpty()) commitPayment(payment, null) else pendingPayment = payment
+    }
+    if (pendingPayment != null && accounts.isNotEmpty()) {
+        AccountPickerDialog(
+            accounts = accounts,
+            onSelect = { account ->
+                commitPayment(pendingPayment!!, account)
+                pendingPayment = null
+            },
+            onDismiss = { pendingPayment = null },
+        )
+    }
+
+    // ویرایشِ مشخصاتِ وام‌های محاسبه‌شده/قرض‌الحسنه - برخلافِ وام‌های دستی که فرمِ کاملِ
+    // AddManualLoanScreen رو باز می‌کنن (onEdit، از MyLoansScreen)، این یه دیالوگِ سبکِ همین‌جاست.
+    // مبلغ/تعدادِ اقساط این نوع وام‌ها فقط وقتی هنوز هیچ قسطی پرداخت نشده قابلِ‌ویرایشه (رجوع کن به
+    // canEditComputedAmount پایین‌تر + LoanRepository.updateComputedLoanAmount) - چون عوض‌کردنشون
+    // نیازمندِ اجرای دوباره‌ی فرمولِ کاملِ LoanCalculator و بازسازیِ کاملِ ردیف‌هاست، که اگه قبلاً
+    // پرداختی ثبت شده باشه، تاریخچه‌ش گم می‌شه.
     var showEditMetaDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
     var editMetaName by remember { mutableStateOf("") }
     var editMetaBank by remember { mutableStateOf("") }
     var editMetaBorrower by remember { mutableStateOf("") }
@@ -256,6 +346,11 @@ fun LoanDetailScreen(
     var editMetaMonth by remember { mutableStateOf(1) }
     var editMetaDay by remember { mutableStateOf(1) }
     var editMetaGraceMonths by remember { mutableStateOf(0) }
+    // مبلغ/تعدادِ اقساطِ وامِ محاسبه‌شده فقط وقتی هنوز هیچ قسطی پرداخت نشده قابلِ‌ویرایشه - رجوع کن
+    // به کامنتِ LoanRepository.updateComputedLoanAmount برای دلیلِ این محدودیت.
+    val canEditComputedAmount = loan.paidCount == 0
+    var editMetaAmountText by remember { mutableStateOf("") }
+    var editMetaNText by remember { mutableStateOf("") }
 
     if (showEditMetaDialog) {
         AlertDialog(
@@ -277,6 +372,20 @@ fun LoanDetailScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    // انتخابِ لوگو - مورد ۱۷: قبلاً فقط یه فیلدِ متنیِ خام بود، کاربر باید اسمِ بانک
+                    // رو دقیقاً درست تایپ می‌کرد تا لوگوش تو LoanDetailScreen/MyLoansScreen پیدا
+                    // بشه (که با BankBadge از رو تطبیقِ اسم لوگو رو نشون می‌ده). این ردیف همون
+                    // BankTileیِ BankLoanScreen رو استفاده می‌کنه - لمسِ یه لوگو اسمِ دقیقش رو تو
+                    // فیلدِ بالا می‌ذاره؛ فیلد همچنان برای بانک/فروشنده‌ی خارج از لیست دستی باز می‌مونه.
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(banks, key = { it.name }) { b ->
+                            BankTile(
+                                bank = b,
+                                selected = editMetaBank == b.name,
+                                onClick = { editMetaBank = b.name },
+                            )
+                        }
+                    }
                     OutlinedTextField(
                         value = editMetaBorrower,
                         onValueChange = { editMetaBorrower = it },
@@ -284,10 +393,17 @@ fun LoanDetailScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    // این ردیف از قبل قابلِ‌ویرایش بود ولی هیچ لیبلی نداشت (برخلافِ فرمِ وامِ دستی
-                    // که همینو تو یه AppCard با عنوانِ «تاریخ دریافت وام» نشون می‌ده) - خواسته‌ی
-                    // کاربر: این گزینه واضح/قابلِ‌کشف باشه.
-                    Text("تاریخ دریافت وام", fontSize = 13.sp, color = AppMuted)
+                    // برچسب + توضیحِ دینامیک قبلاً دو تیکه‌ی جدا بودن - همون رفعِ مورد ۳ که تو
+                    // BankLoanScreen انجام شد، اینجا هم یکی‌شون کردیم به یه جمله‌ی تمیز.
+                    Text(
+                        if (editMetaGraceMonths > 0) {
+                            "تاریخ دریافت وام (قسطِ اول ${toFa(editMetaGraceMonths)} ماه بعد، به‌خاطرِ دوره‌ی تنفس)"
+                        } else {
+                            "تاریخ دریافت وام (سررسیدِ قسطِ اول)"
+                        },
+                        fontSize = 13.sp,
+                        color = AppMuted,
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         InlineJalaliDateRow(
                             year = editMetaYear,
@@ -297,35 +413,64 @@ fun LoanDetailScreen(
                             modifier = Modifier.weight(1f),
                         )
                     }
-                    // همون توضیحِ دینامیکِ BankLoanScreen - این وام (محاسبه‌شده) ممکنه دوره‌ی تنفس
-                    // داشته باشه، پس این تاریخ همیشه سررسیدِ قسطِ اول نیست.
-                    Text(
-                        if (editMetaGraceMonths > 0) {
-                            "قسطِ اول ${toFa(editMetaGraceMonths)} ماه بعد از این تاریخه (به‌خاطرِ دوره‌ی تنفس)"
-                        } else {
-                            "این تاریخ = سررسیدِ قسطِ اول"
-                        },
-                        fontSize = 11.sp,
-                        color = AppMuted,
-                    )
-                    // مبلغ/نرخ/تعدادِ اقساط عمداً اینجا نیست - رجوع کن به کامنتِ بالای showEditMetaDialog.
-                    Text(
-                        "مبلغ/نرخ/تعدادِ اقساط این نوع وام از رو فرمول محاسبه شده و قابلِ‌ویرایش نیست.",
-                        color = AppMuted,
-                        fontSize = 11.sp,
-                    )
+                    // مبلغ/تعدادِ اقساط فقط وقتی هیچ قسطی پرداخت نشده قابلِ‌ویرایشه - رجوع کن به
+                    // کامنتِ بالای canEditComputedAmount. اگه یه قسط پرداخت شده باشه، تغییرشون یعنی
+                    // کلِ فرمول دوباره اجرا بشه و تاریخچه‌ی پرداخت گم بشه، برای همین قفله.
+                    if (canEditComputedAmount) {
+                        OutlinedTextField(
+                            value = editMetaAmountText,
+                            onValueChange = { editMetaAmountText = cleanNum(it) },
+                            visualTransformation = ThousandsSeparatorTransformation(),
+                            label = { Text("مبلغ وام") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = editMetaNText,
+                            onValueChange = { editMetaNText = cleanNum(it) },
+                            label = { Text("تعداد اقساط") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Text(
+                            "چون هنوز هیچ قسطی پرداخت نشده، عوض‌کردنِ این دوتا کلِ جدولِ اقساط رو از نو می‌سازه.",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                        )
+                    } else {
+                        Text(
+                            "چون قبلاً حداقل یه قسط پرداخت شده، مبلغ/تعدادِ اقساط دیگه قابلِ‌ویرایش نیست.",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                        )
+                    }
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.updateLoanMeta(
-                        loan = loan,
-                        name = editMetaName.trim().ifEmpty { loan.name },
-                        bank = editMetaBank.trim(),
-                        borrower = editMetaBorrower.trim().ifEmpty { "—" },
-                        startDate = PersianDate(editMetaYear, editMetaMonth, editMetaDay),
-                        onSaved = {},
-                    )
+                    if (canEditComputedAmount) {
+                        viewModel.updateComputedLoanAmount(
+                            loan = loan,
+                            name = editMetaName.trim().ifEmpty { loan.name },
+                            bank = editMetaBank.trim(),
+                            borrower = editMetaBorrower.trim().ifEmpty { "—" },
+                            principalAmount = editMetaAmountText.toDoubleOrNull() ?: loan.amount,
+                            n = editMetaNText.toIntOrNull()?.takeIf { it > 0 } ?: loan.n,
+                            startDate = PersianDate(editMetaYear, editMetaMonth, editMetaDay),
+                            onSaved = {},
+                        )
+                    } else {
+                        viewModel.updateLoanMeta(
+                            loan = loan,
+                            name = editMetaName.trim().ifEmpty { loan.name },
+                            bank = editMetaBank.trim(),
+                            borrower = editMetaBorrower.trim().ifEmpty { "—" },
+                            startDate = PersianDate(editMetaYear, editMetaMonth, editMetaDay),
+                            onSaved = {},
+                        )
+                    }
                     showEditMetaDialog = false
                 }) { Text("ذخیره") }
             },
@@ -416,7 +561,7 @@ fun LoanDetailScreen(
             text = { Text("این قسط سر موعد پرداخت شده یا با تاخیر؟") },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.setRowPaidOnTime(loan, m)
+                    applyPayment(PendingLoanPayment(listOf(m), null))
                     payChoiceM = null
                 }) { Text("پرداخت به‌موقع") }
             },
@@ -429,6 +574,31 @@ fun LoanDetailScreen(
                     lateDateM = m
                     payChoiceM = null
                 }) { Text("پرداخت با تاخیر") }
+            },
+        )
+    }
+
+    if (bulkPayChoiceOpen) {
+        val count = selectedBulkMs.size
+        AlertDialog(
+            onDismissRequest = { bulkPayChoiceOpen = false },
+            title = { Text("ثبت پرداختِ ${toFa(count)} قسط") },
+            text = { Text("این اقساط سرِ موعد پرداخت شدن یا با تاخیر؟") },
+            confirmButton = {
+                TextButton(onClick = {
+                    applyPayment(PendingLoanPayment(selectedBulkMs.toList(), null))
+                    selectedBulkMs = emptySet()
+                    bulkPayChoiceOpen = false
+                    bulkPayMode = false
+                }) { Text("پرداخت به‌موقع") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    applyPayment(PendingLoanPayment(selectedBulkMs.toList(), JalaliCalendar.today()))
+                    selectedBulkMs = emptySet()
+                    bulkPayChoiceOpen = false
+                    bulkPayMode = false
+                }) { Text("امروز (با تاخیر)") }
             },
         )
     }
@@ -462,7 +632,7 @@ fun LoanDetailScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.setRowPaidLate(loan, m, PersianDate(lateYear, lateMonth, lateDay))
+                    applyPayment(PendingLoanPayment(listOf(m), PersianDate(lateYear, lateMonth, lateDay)))
                     lateDateM = null
                 }) { Text("ثبت") }
             },
@@ -519,6 +689,8 @@ fun LoanDetailScreen(
                     editMetaMonth = sd.m
                     editMetaDay = sd.d
                     editMetaGraceMonths = viewModel.getLoanGraceMonths(loan)
+                    editMetaAmountText = loan.amount.toLong().toString()
+                    editMetaNText = loan.n.toString()
                     showEditMetaDialog = true
                 }
             }) {
@@ -526,12 +698,32 @@ fun LoanDetailScreen(
             }
         }
 
+        // عددِ بالای صفحه همیشه باید مبلغِ *واقعیِ* اولین قسطِ پرداخت‌نشده رو نشون بده، نه
+        // loan.installmentِ کهنه - رجوع کن به مورد ۱۴/۱۶ تو CLAUDE.md.
+        // باگِ رفع‌شده: نسخه‌ی قبلی فقط وقتی «قسط‌های پرداخت‌نشده با هم فرق دارن»
+        // (unpaidAmounts.distinct().size > 1) این مبلغِ واقعی رو نشون می‌داد - اگه فقط یه قسطِ
+        // پرداخت‌نشده مونده باشه (مثلاً وامِ ۲قسطی که قسطِ ۱ با مبلغِ دیگه‌ای پرداخت شده)، distinct
+        // size همیشه ۱ می‌شه (چیزی برای «تنوع» نیست) و کد اشتباهی fallback به فیلدِ کهنه می‌کرد،
+        // با اینکه اون قسطِ تکیِ باقی‌مونده هم می‌تونست کاملاً با loan.installment فرق داشته باشه.
+        val unpaidAmounts = remember(rows) {
+            rows.filter { (it["paid"] as? Boolean) != true }.mapNotNull { (it["installment"] as? Number)?.toDouble() }
+        }
+        val nextUnpaidAmount = unpaidAmounts.firstOrNull()
+        val displayInstallment = nextUnpaidAmount ?: loan.installment
+        // فقط برای انتخابِ برچسب («قسطِ بعدی» در برابرِ «قسط ماهانه») - اگه قسطِ بعدی با فیلدِ کهنه
+        // فرق داره یعنی دیگه «همه‌ی اقساط» یکسان نیستن.
+        val installmentsVary = nextUnpaidAmount != null && nextUnpaidAmount != loan.installment
+
         // دایره‌ی شیک بالای وام (سبز = اصل، طلایی = سود) با قسط ماهانه تو مرکز - مثل نسخه‌ی وب.
         val principalFrac = if (loan.totalPaid > 0) (loan.amount / loan.totalPaid).toFloat() else 1f
         LoanDonut(
             principalFraction = principalFrac,
-            centerTop = maskIfPrivate(privacyMode, fmt(loan.installment)),
-            centerBottom = "قسط ماهانه (ریال)",
+            centerTop = {
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(maskIfPrivate(masked, fmt(displayInstallment)), color = AppText, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                }
+            },
+            centerBottom = if (installmentsVary) "قسطِ بعدی (ریال)" else "قسط ماهانه (ریال)",
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         )
 
@@ -544,12 +736,22 @@ fun LoanDetailScreen(
                 // (گزارشِ کاربر با اسکرین‌شات، بعدِ ویرایشِ مبلغ). با weight رو این ستون، Row اول
                 // عرضِ ثابتِ ستونِ «پرداخت‌شده» رو تضمین می‌کنه، بعد باقیِ فضا رو به این ستون می‌ده.
                 Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                    Text("مبلغ هر قسط", fontSize = 13.sp, color = AppMuted)
-                    Text("${maskIfPrivate(privacyMode, fmt(loan.installment))} ریال", fontSize = 15.sp, color = AppText, fontWeight = FontWeight.Bold)
+                    Text(if (installmentsVary) "قسطِ بعدی" else "مبلغ هر قسط", fontSize = 13.sp, color = AppMuted)
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text("${maskIfPrivate(masked, fmt(displayInstallment))} ریال", fontSize = 15.sp, color = AppText, fontWeight = FontWeight.Bold)
+                    }
                     if (!privacyMode) {
                         Text(
-                            "${numberToWordsFa(loan.installment / 10)} تومان",
+                            "${numberToWordsFa(displayInstallment / 10)} تومان",
                             fontSize = 11.sp,
+                            color = AppMuted,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    if (installmentsVary) {
+                        Text(
+                            "چون اقساطِ این وام باهم فرق دارن",
+                            fontSize = 10.sp,
                             color = AppMuted,
                             modifier = Modifier.padding(top = 2.dp),
                         )
@@ -562,22 +764,139 @@ fun LoanDetailScreen(
             }
         }
 
-        PhotoAttachmentCard(
-            photoPath = loan.photoPath,
-            onPick = { uri -> viewModel.setLoanPhoto(loan, uri) },
-            onRemove = { viewModel.removeLoanPhoto(loan) },
-            modifier = Modifier.padding(horizontal = 14.dp),
-        )
+        // دو دکمه‌ی فشرده‌ی هم‌اندازه («عکس رسید»/«یادداشت»، نصف‌نصف) به‌جای دو باکسِ همیشه‌بازِ
+        // قبلی که کلی جای صفحه رو می‌گرفتن - هرکدوم بزنیم محتواش دقیقاً همون‌جا زیرِ ردیف باز
+        // می‌شه، دوباره زدنش می‌بندتش. isDirty به‌جای مقایسه با یه «آخرین مقدارِ ذخیره‌شده»ی جدا
+        // نگه داشته می‌شه - چون بعدِ ذخیره، خودِ loan (پارامترِ این کامپوزیبل) با یه تاخیر از رو
+        // Room/Flow آپدیت می‌شه، مقایسه‌ی مستقیم می‌تونست دکمه‌ی ذخیره رو حتی بعدِ ذخیره‌ی موفق
+        // هنوز نمایان نگه داره.
+        run {
+            var expandedAttachment by remember(loan.id) { mutableStateOf<String?>(null) }
+            var noteText by remember(loan.id) { mutableStateOf(viewModel.getLoanNotes(loan)) }
+            var noteDirty by remember(loan.id) { mutableStateOf(false) }
+
+            Column(modifier = Modifier.padding(horizontal = 14.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    AttachmentToggleButton(
+                        label = "عکس رسید",
+                        icon = Icons.Filled.PhotoCamera,
+                        filled = loan.photoPath != null,
+                        expanded = expandedAttachment == "photo",
+                        onClick = { expandedAttachment = if (expandedAttachment == "photo") null else "photo" },
+                        modifier = Modifier.weight(1f),
+                    )
+                    AttachmentToggleButton(
+                        label = "یادداشت",
+                        icon = Icons.Filled.EditNote,
+                        filled = noteText.isNotBlank(),
+                        expanded = expandedAttachment == "note",
+                        onClick = { expandedAttachment = if (expandedAttachment == "note") null else "note" },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                AnimatedVisibility(visible = expandedAttachment == "photo") {
+                    PhotoAttachmentCard(
+                        photoPath = loan.photoPath,
+                        onPick = { uri -> viewModel.setLoanPhoto(loan, uri) },
+                        onRemove = { viewModel.removeLoanPhoto(loan) },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    )
+                }
+                AnimatedVisibility(visible = expandedAttachment == "note") {
+                    AppCard(label = "یادداشت", modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                        Text(
+                            "مثلاً شماره حساب یا شماره کارتِ مربوط به این وام",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(bottom = 8.dp),
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 8.dp)) {
+                            listOf("شماره حساب", "شماره کارت", "شماره پیگیری", "توضیحات").forEach { preset ->
+                                AppChip(
+                                    label = preset,
+                                    selected = false,
+                                    onClick = {
+                                        noteText = if (noteText.isBlank()) "$preset: " else "$noteText\n$preset: "
+                                        noteDirty = true
+                                    },
+                                )
+                            }
+                        }
+                        OutlinedTextField(
+                            value = noteText,
+                            onValueChange = { noteText = it; noteDirty = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3,
+                            trailingIcon = {
+                                if (noteText.isNotEmpty()) {
+                                    IconButton(onClick = { noteText = ""; noteDirty = true }) {
+                                        Icon(Icons.Filled.Close, contentDescription = "پاک‌کردنِ یادداشت")
+                                    }
+                                }
+                            },
+                        )
+                        if (noteDirty) {
+                            GradientButton(
+                                onClick = {
+                                    viewModel.updateLoanNotes(loan, noteText)
+                                    noteDirty = false
+                                },
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            ) {
+                                Text("ذخیره یادداشت")
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         // هر قسط یه باکس مینیمالِ گوشه‌گرد با حاشیه‌ی سبزه (خواسته‌ی کاربر). وضعیت پرداخت:
         // به‌موقع=سبز «پرداخت شد»، با تأخیر=قرمز «با تأخیر»، پرداخت‌نشده=مشکی «پرداخت نشده».
-            Text(
-                "اقساط",
-                color = AppMuted,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = 18.dp, top = 4.dp),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 18.dp, end = 14.dp, top = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "اقساط",
+                    color = AppMuted,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                // پرداختِ گروهی: به‌جای تک‌تک زدنِ هر قسط، چندتا رو انتخاب می‌کنیم و یه‌جا پرداخت
+                // می‌کنیم - فقط وقتی حداقل یه قسطِ پرداخت‌نشده داشته باشیم معنی داره.
+                if (rows.any { it["paid"] != true }) {
+                    TextButton(onClick = {
+                        bulkPayMode = !bulkPayMode
+                        selectedBulkMs = emptySet()
+                    }) {
+                        Text(
+                            if (bulkPayMode) "انصراف" else "پرداخت گروهی",
+                            color = if (bulkPayMode) AppDanger else AppPrimary,
+                            fontSize = 13.sp,
+                        )
+                    }
+                }
+            }
+            AnimatedVisibility(visible = bulkPayMode) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        if (selectedBulkMs.isEmpty()) "چندتا قسطِ پرداخت‌نشده رو انتخاب کن" else "${toFa(selectedBulkMs.size)} قسط انتخاب شده",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                    )
+                    if (selectedBulkMs.isNotEmpty()) {
+                        GradientButton(onClick = { bulkPayChoiceOpen = true }) {
+                            Text("ثبت پرداخت", fontSize = 13.sp)
+                        }
+                    }
+                }
+            }
         }
         }
 
@@ -688,14 +1007,34 @@ fun LoanDetailScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
+                        val m = (row["m"] as? Number)?.toInt() ?: 0
                         InstallmentRow(
+                            // وقتی تعدادِ اقساطِ یه وام ویرایش می‌شه، ردیف‌های اضافه/کم‌شده
+                            // به‌جای پرشِ ناگهانی نرم میان و می‌رن.
+                            modifier = Modifier.animateItem(),
                             row = row,
                             loan = loan,
                             privacyMode = privacyMode,
-                            onTogglePaid = { m, paid -> if (paid) viewModel.setRowUnpaid(loan, m) else payChoiceM = m },
-                            onOpenPhoto = { m -> photoRowM = m },
-                            onEditAmount = { m, installment ->
-                                editingRowM = m
+                            bulkPayMode = bulkPayMode,
+                            selected = m in selectedBulkMs,
+                            onTogglePaid = { rowM, paid ->
+                                if (bulkPayMode) {
+                                    if (row["paid"] != true) {
+                                        selectedBulkMs = if (rowM in selectedBulkMs) {
+                                            selectedBulkMs - rowM
+                                        } else {
+                                            selectedBulkMs + rowM
+                                        }
+                                    }
+                                } else if (paid) {
+                                    viewModel.setRowUnpaid(loan, rowM)
+                                } else {
+                                    payChoiceM = rowM
+                                }
+                            },
+                            onOpenPhoto = { rowM -> photoRowM = rowM },
+                            onEditAmount = { rowM, installment ->
+                                editingRowM = rowM
                                 editAmountText = installment.toLong().toString()
                             },
                         )
@@ -744,7 +1083,7 @@ fun LoanDetailScreen(
                 Text(if (isExportingCalendar) "در حال افزودن..." else "افزودن سررسیدها به تقویم گوشی")
             }
             OutlinedButton(
-                onClick = onDelete,
+                onClick = { showDeleteConfirm = true },
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -752,14 +1091,22 @@ fun LoanDetailScreen(
             ) {
                 Text("حذف وام")
             }
+            if (showDeleteConfirm) {
+                ConfirmDeleteDialog(
+                    title = "حذف وام",
+                    text = "وامِ «${loan.name}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+                    onConfirm = onDelete,
+                    onDismiss = { showDeleteConfirm = false },
+                )
+            }
         }
         }
     }
 
         AnimatedVisibility(
             visible = calendarMessage != null,
-            enter = fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 2 },
-            exit = fadeOut(tween(180)) + slideOutVertically(tween(180)) { it / 2 },
+            enter = fadeIn(tween(Motion.FADE_IN_MS)) + slideInVertically(Motion.offset()) { it / 2 },
+            exit = fadeOut(tween(Motion.FADE_OUT_MS)) + slideOutVertically(Motion.offset()) { it / 2 },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 24.dp),
@@ -824,6 +1171,9 @@ private fun InstallmentRow(
     onTogglePaid: (m: Int, paid: Boolean) -> Unit,
     onOpenPhoto: (m: Int) -> Unit,
     onEditAmount: (m: Int, installment: Double) -> Unit,
+    modifier: Modifier = Modifier,
+    bulkPayMode: Boolean = false,
+    selected: Boolean = false,
 ) {
     val m = (row["m"] as? Number)?.toInt() ?: 0
     val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
@@ -838,34 +1188,62 @@ private fun InstallmentRow(
         paid -> "پرداخت شد"
         else -> "پرداخت نشده"
     }
+    // مورد ۱۰: بجِ «پرداخت نشده» رنگش همون خاکستریِ قبلی (AppText) می‌مونه - کاربر صریح خواستِ رنگ
+    // عوض نشه، فقط پالسِ ظریفِ زیرش (پایین‌تر) قابلِ‌تپه‌بودنش رو نشون بده.
     val statusColor = when {
         paidLate -> AppDanger
         paid -> AppPrimary
         else -> AppText
     }
     val rowShape = RoundedCornerShape(14.dp)
+    // موقعِ پرداختِ گروهی، اقساطِ ازقبل‌پرداخت‌شده اصلاً قابلِ‌انتخاب نیستن (کم‌رنگ‌تر نشون داده
+    // می‌شن)؛ فقط اقساطِ پرداخت‌نشده با تپ انتخاب/لغوِ انتخاب می‌شن.
+    val bulkSelectable = bulkPayMode && !paid
+    val borderColor = if (selected) AppPrimary else AppPrimary.copy(alpha = 0.4f)
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(installmentRowHeight)
-            .background(AppSurface, rowShape)
-            .border(1.dp, AppPrimary.copy(alpha = 0.4f), rowShape)
-            .clickable { onTogglePaid(m, paid) }
+            .alpha(if (bulkPayMode && paid) 0.5f else 1f)
+            .background(if (selected) AppPrimary.copy(alpha = 0.10f) else AppSurface, rowShape)
+            .border(if (selected) 1.5.dp else 1.dp, borderColor, rowShape)
+            // پرتپ‌ترین المانِ کلِ اپ (علامت‌زدنِ پرداختِ هر قسط) ولی تا الان هیچ واکنشِ لمسی
+            // نداشت - حالا مثلِ بقیه‌ی کارت‌ها فشرده می‌شه و یه tick هپتیک می‌ده.
+            .pressScaleClickable(scale = 0.975f) { onTogglePaid(m, paid) }
             .padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (bulkPayMode) {
+            Checkbox(checked = selected, onCheckedChange = null, enabled = bulkSelectable)
+        }
         Column(modifier = Modifier.weight(1f)) {
             Text("قسط شماره ${toFa(m)}", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Text(dueLabel, color = AppMuted, fontSize = 12.sp)
         }
-        Text("${maskIfPrivate(privacyMode, fmt(installment))} ریال", color = AppText, fontSize = 13.sp)
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text("${maskIfPrivate(masked, fmt(installment))} ریال", color = AppText, fontSize = 13.sp)
+        }
         // وضعیت پرداخت تو یه باکس رنگیِ گوشه‌گرد (بج) - تا از بقیه‌ی متن جدا و واضح دیده بشه
         // (خواسته‌ی کاربر). رنگ پس‌زمینه نسخه‌ی کم‌رنگِ رنگ وضعیته.
+        // مورد ۱۰: فقط موقعِ «پرداخت نشده» یه پالسِ خیلی ظریفِ بزرگ/کوچیک‌شدن اضافه شده - تا کاربر
+        // بفهمه این بج (و کلِ ردیف زیرش) واقعاً قابلِ‌لمسه، نه فقط یه لیبلِ خاموش.
+        val unpaidPulse = rememberInfiniteTransition(label = "unpaidBadgePulse")
+        val pulseScale by if (!paid) {
+            unpaidPulse.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.08f,
+                animationSpec = infiniteRepeatable(tween(700, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+                label = "pulseScale",
+            )
+        } else {
+            remember { mutableStateOf(1f) }
+        }
         Box(
             modifier = Modifier
                 .padding(horizontal = 6.dp)
+                .scale(pulseScale)
                 .background(statusColor.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
                 .padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
@@ -876,27 +1254,74 @@ private fun InstallmentRow(
                 fontWeight = FontWeight.Bold,
             )
         }
-        if (paid) {
-            IconButton(onClick = { onOpenPhoto(m) }) {
-                val hasPhoto = (row["photoPath"] as? String) != null
-                Icon(
-                    Icons.Filled.PhotoCamera,
-                    contentDescription = "رسید قسط",
-                    tint = if (hasPhoto) AppPrimary else AppMuted,
-                )
+        if (!bulkPayMode) {
+            if (paid) {
+                IconButton(onClick = { onOpenPhoto(m) }) {
+                    val hasPhoto = (row["photoPath"] as? String) != null
+                    Icon(
+                        Icons.Filled.PhotoCamera,
+                        contentDescription = "رسید قسط",
+                        tint = if (hasPhoto) AppPrimary else AppMuted,
+                    )
+                }
             }
-        }
-        IconButton(onClick = { onEditAmount(m, installment) }) {
-            Icon(Icons.Filled.Edit, contentDescription = "ویرایش مبلغ", tint = AppMuted)
+            IconButton(onClick = { onEditAmount(m, installment) }) {
+                Icon(Icons.Filled.Edit, contentDescription = "ویرایش مبلغ", tint = AppMuted)
+            }
         }
     }
 }
 
 /** دایره‌ی وام (سبز = اصل، طلایی = سود) با قسط ماهانه تو مرکز - پورت حس دونات نتیجه‌ی وب. */
+/** دکمه‌ی فشرده‌ی toggle برای «عکس رسید»/«یادداشت» - نقطه‌ی کوچیکِ [filled] یعنی محتوا از قبل داره. */
+@Composable
+private fun AttachmentToggleButton(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    filled: Boolean,
+    expanded: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    val borderColor = if (expanded) AppPrimary else AppMuted.copy(alpha = 0.35f)
+    val bg = if (expanded) AppPrimary.copy(alpha = 0.10f) else AppSurface2
+    Row(
+        modifier = modifier
+            .pressScaleClickable(goldBorderShape = shape, onClick = onClick)
+            .background(bg, shape)
+            .border(1.dp, borderColor, shape)
+            .padding(horizontal = 8.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = if (expanded) AppPrimary else AppMuted,
+            modifier = Modifier.size(18.dp),
+        )
+        Text(
+            label,
+            color = if (expanded) AppPrimary else AppText,
+            fontSize = 13.sp,
+            modifier = Modifier.padding(start = 6.dp),
+        )
+        if (filled) {
+            Box(
+                modifier = Modifier
+                    .padding(start = 6.dp)
+                    .size(6.dp)
+                    .background(AppPrimary, androidx.compose.foundation.shape.CircleShape),
+            )
+        }
+    }
+}
+
 @Composable
 private fun LoanDonut(
     principalFraction: Float,
-    centerTop: String,
+    centerTop: @Composable () -> Unit,
     centerBottom: String,
     modifier: Modifier = Modifier,
 ) {
@@ -921,7 +1346,7 @@ private fun LoanDonut(
             )
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(centerTop, color = AppText, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+            centerTop()
             Text(centerBottom, color = AppMuted, fontSize = 11.sp)
         }
     }

@@ -9,14 +9,15 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -98,12 +99,23 @@ fun SlimSlider(
                 )
             }
         },
+        // تِرکِ سفارشی به‌جای SliderDefaults.Track پیش‌فرض - پیش‌فرضِ متریال۳ وقتی steps>۰ باشه یه
+        // ردیف نقطه‌ی ریزِ تیک رو مسیرِ اسلایدر می‌کشه (خواسته‌ی کاربر: این نقطه‌ها زشتن، همه‌ی
+        // اسلایدرها - چه پله‌دار چه پیوسته - باید دقیقاً مثلِ هم، یه خطِ صافِ یک‌دست باشن).
         track = { sliderState ->
-            SliderDefaults.Track(
-                sliderState = sliderState,
-                modifier = Modifier.height(5.dp),
-                colors = SliderDefaults.colors(activeTrackColor = AppPrimary, inactiveTrackColor = AppBg),
-            )
+            val fraction = remember(sliderState.value, sliderState.valueRange) {
+                val range = sliderState.valueRange.endInclusive - sliderState.valueRange.start
+                if (range <= 0f) 0f else ((sliderState.value - sliderState.valueRange.start) / range).coerceIn(0f, 1f)
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(5.dp)
+                    .clip(RoundedCornerShape(50)),
+            ) {
+                Box(modifier = Modifier.fillMaxWidth().fillMaxHeight().background(AppBg))
+                Box(modifier = Modifier.fillMaxWidth(fraction).fillMaxHeight().background(AppPrimary))
+            }
         },
     )
 }

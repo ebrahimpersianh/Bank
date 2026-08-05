@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.settings
 
+import ir.sadteam.loancalc.BuildConfig
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -10,9 +11,12 @@ import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -53,11 +57,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.boundsInRoot
@@ -102,6 +109,7 @@ import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
 import ir.sadteam.loancalc.ui.stats.StatsScreen
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -111,8 +119,10 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
 import ir.sadteam.loancalc.ui.theme.ThemeMode
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
+import kotlinx.coroutines.launch
 
 private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
 private val themeModeOptions = listOf(ThemeMode.LIGHT to "روشن", ThemeMode.DARK to "تاریک")
@@ -135,6 +145,7 @@ fun SettingsScreen(
     appLockViewModel: AppLockViewModel = hiltViewModel(),
     autoBackupViewModel: AutoBackupViewModel = hiltViewModel(),
     hapticsViewModel: HapticsViewModel = hiltViewModel(),
+    smsAutoImportViewModel: SmsAutoImportViewModel = hiltViewModel(),
     // برای تورِ راهنمای اولین ورود (AppTourOverlay تو MainActivity.kt، قدم‌های SETTINGS_CALENDAR/
     // SETTINGS_CHEQUE): وقتی non-null باشه، جستجوی همین پنل خودکار رو همین عنوان فیلتر می‌شه (دقیقاً
     // مثلِ تایپ‌کردنِ کاربر تو «جستجو تو تنظیمات») تا ردیفِ هدف بدونِ نیاز به اسکرول پیدا بشه.
@@ -166,7 +177,7 @@ fun SettingsScreen(
 
     AnimatedContent(
         targetState = screenKey,
-        transitionSpec = { fadeIn(tween(200)).togetherWith(fadeOut(tween(150))) },
+        transitionSpec = { Motion.contentEnter togetherWith Motion.contentExit },
         label = "settingsScreen",
     ) { key ->
         when (key) {
@@ -210,6 +221,7 @@ fun SettingsScreen(
                 appLockViewModel = appLockViewModel,
                 autoBackupViewModel = autoBackupViewModel,
                 hapticsViewModel = hapticsViewModel,
+                smsAutoImportViewModel = smsAutoImportViewModel,
                 onShowLoginPrompt = { showLoginPrompt = true },
                 onShowFinancialCalendar = { showFinancialCalendar = true },
                 onShowStats = { showStats = true },
@@ -252,8 +264,17 @@ private fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable 
         // تویِ همون پنلِ AppSurface پشتشون رندر می‌شدن مشکلی نبود؛ حالا که تو ویندویِ جدای خودشونن،
         // بدونِ این Box پشتِ محتوا کاملاً شفاف می‌مونه و صفحه‌ی زیرین (تبِ فعلی + پنلِ نیمه‌محوِ قدیمی)
         // ازش رد می‌شه - این Box تضمین می‌کنه همیشه کاملاً کدر و تمام‌صفحه باشه.
-        Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
-            content()
+        // ورودِ نرم: قبلاً این زیرصفحه‌ها یهو ظاهر می‌شدن (Dialog خودش هیچ انیمیشنی نداره). حالا
+        // از پایین سُر می‌خورن بالا و محو ظاهر می‌شن. خروج عمداً انیمیشن نداره - وقتی Dialog بسته
+        // می‌شه ویندوش بلافاصله از بین می‌ره و هر انیمیشنِ خروجی نصفه‌کاره قطع می‌شد.
+        val appear = remember { MutableTransitionState(false).apply { targetState = true } }
+        AnimatedVisibility(
+            visibleState = appear,
+            enter = fadeIn(tween(Motion.FADE_IN_MS)) + slideInVertically(Motion.offset()) { it / 10 },
+        ) {
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                content()
+            }
         }
     }
 }
@@ -267,6 +288,7 @@ private fun SettingsMainContent(
     appLockViewModel: AppLockViewModel,
     autoBackupViewModel: AutoBackupViewModel,
     hapticsViewModel: HapticsViewModel,
+    smsAutoImportViewModel: SmsAutoImportViewModel,
     onShowLoginPrompt: () -> Unit,
     onShowFinancialCalendar: () -> Unit,
     onShowStats: () -> Unit,
@@ -291,10 +313,19 @@ private fun SettingsMainContent(
     val autoBackupEnabled by autoBackupViewModel.enabled.collectAsState()
     val lastAutoBackupAt by autoBackupViewModel.lastBackupAt.collectAsState()
     val vibrationEnabled by hapticsViewModel.enabled.collectAsState()
+    val smsAutoImportEnabled by smsAutoImportViewModel.enabled.collectAsState()
+    val lastSmsImportAt by smsAutoImportViewModel.lastImportAt.collectAsState()
+    val dailyExpenseReminderEnabled by notificationsViewModel.dailyExpenseReminderEnabled.collectAsState()
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) notificationsViewModel.enable() }
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) smsAutoImportViewModel.enable() }
+    val dailyExpenseReminderPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) notificationsViewModel.enableDailyExpenseReminder() }
     var searchQuery by remember { mutableStateOf(tourHighlightQuery ?: "") }
     // اگه تور یه قدمِ جدید رو پنلِ تنظیمات فعال کرد (مثلاً از SETTINGS_CALENDAR به SETTINGS_CHEQUE)،
     // جستجو رو خودکار با همون فیلترِ جدید هم‌قدم کن - دقیقاً همون کاری که خودِ کاربر با تایپ می‌کرد.
@@ -570,13 +601,35 @@ private fun SettingsMainContent(
 
             if (matches("تم", "رنگ برنامه")) {
                 val themeMode by themeViewModel.themeMode.collectAsState()
+                // همون افکتِ دایره‌ایِ نوارِ بالا، این‌بار از مرکزِ خودِ چیپی که زده شد باز می‌شه -
+                // رجوع کن به ThemeReveal.kt.
+                val themeReveal = LocalThemeReveal.current
+                val chipCenters = remember { mutableStateMapOf<ThemeMode, Offset>() }
+                // startReveal الان suspend ئه - رجوع کن به کامنتِ کاملِ ThemeReveal.kt دربارهٔ
+                // اینکه چرا اسنپ‌شات و عوض‌کردنِ تم باید تویِ یه کوروتینِ واحد پشتِ‌سرهم باشن.
+                val themeToggleScope = rememberCoroutineScope()
                 AppCard(label = "تم", modifier = Modifier.padding(top = 10.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                         themeModeOptions.forEach { (mode, label) ->
                             AppChip(
                                 label = label,
                                 selected = themeMode == mode,
-                                onClick = { themeViewModel.setThemeMode(mode) },
+                                onClick = {
+                                    // فقط وقتی واقعاً داره عوض می‌شه افکت معنی داره - زدنِ دوباره‌ی
+                                    // چیپِ ازقبل‌فعال نباید کلِ صفحه رو بی‌دلیل جارو کنه.
+                                    if (mode != themeMode && !themeReveal.inProgress) {
+                                        val origin = chipCenters[mode] ?: Offset.Zero
+                                        themeToggleScope.launch {
+                                            themeReveal.startReveal(origin = origin, currentKey = themeMode)
+                                            themeViewModel.setThemeMode(mode)
+                                        }
+                                    } else {
+                                        themeViewModel.setThemeMode(mode)
+                                    }
+                                },
+                                modifier = Modifier.onGloballyPositioned {
+                                    chipCenters[mode] = it.boundsInRoot().center
+                                },
                             )
                         }
                     }
@@ -729,6 +782,82 @@ private fun SettingsMainContent(
                         ) {
                             Text("بازیابی از سرور ابری")
                         }
+                    }
+                }
+            }
+
+            if (matches("پیامک بانکی", "خواندن خودکار پیامک")) {
+                AppCard(label = "خوندنِ خودکارِ پیامکِ بانکی", modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "با رسیدنِ پیامکِ برداشت/واریزِ بانک، خودکار یه تراکنش تو حسابداری ثبت کن",
+                                color = AppMuted,
+                                fontSize = 12.sp,
+                            )
+                            if (lastSmsImportAt != null) {
+                                Text(
+                                    "آخرین ثبتِ خودکار: $lastSmsImportAt",
+                                    color = AppMuted,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                )
+                            }
+                        }
+                        Switch(
+                            checked = smsAutoImportEnabled,
+                            onCheckedChange = { checked ->
+                                if (!checked) {
+                                    smsAutoImportViewModel.disable()
+                                } else if (ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.RECEIVE_SMS,
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    smsAutoImportViewModel.enable()
+                                } else {
+                                    smsPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS)
+                                }
+                            },
+                            colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
+                        )
+                    }
+                }
+            }
+
+            if (matches("دخل و خرج امروز", "یادآوری روزانه")) {
+                AppCard(label = "یادآوریِ روزانه‌ی دخل‌وخرج", modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "اگه یه روز هنوز چیزی تو حسابداری ثبت نکرده باشی، یادت بندازه",
+                            color = AppMuted,
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Switch(
+                            checked = dailyExpenseReminderEnabled,
+                            onCheckedChange = { checked ->
+                                if (!checked) {
+                                    notificationsViewModel.disableDailyExpenseReminder()
+                                } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                                    ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.POST_NOTIFICATIONS,
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    notificationsViewModel.enableDailyExpenseReminder()
+                                } else {
+                                    dailyExpenseReminderPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                            },
+                            colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
+                        )
                     }
                 }
             }
@@ -1133,7 +1262,9 @@ private fun AccordionCard(title: String, modifier: Modifier = Modifier, content:
     }
 }
 
-private const val aboutText = "وام من — نسخه ۱\n" +
+// نسخه‌ی «۱» قبلاً هاردکد بود (همیشه ثابت، هیچ‌وقت آپدیت نمی‌شد) - خواسته‌ی کاربر: نسخه‌ی واقعیِ
+// نصب‌شده رو نشون بده. BuildConfig.VERSION_NAME همون versionNameِ CI (مثلاً "1.0.332") ئه.
+private val aboutText = "حسابدار من — نسخه ${BuildConfig.VERSION_NAME}\n" +
     "این اپ برای محاسبه سریع و شفاف اقساط وام، سود سپرده و برنامه‌ریزی مالی طراحی شده.\n" +
     "Powered By Sad Team"
 

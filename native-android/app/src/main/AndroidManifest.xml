@@ -16,6 +16,11 @@
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <!-- برای ویبره‌ی واقعی رو تپ‌های اصلی (ui/haptics/Haptics.kt) - ویژگی اشتراکی. -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- برای «خوندنِ خودکارِ پیامکِ بانکی» (notifications/BankSmsReceiver.kt) - runtime تو
+         SettingsScreen درخواست می‌شه، فقط وقتی کاربر صریح سوییچش رو روشن می‌کنه؛ پیش‌فرضِ فیچر خودش
+         هم خاموشه (UiPrefs.smsAutoImportEnabled). READ_SMS لازم نیست چون فقط از رو Intentِ
+         SMS_RECEIVED می‌خونیم، نه از رو کلِ صندوقِ پیامک. -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
 
     <!-- allowBackup عمداً false: بکاپ خودکار اندروید موقع نصب مجدد، فلگ‌های «یه‌بار پرسیده شده»
          (ورود/مهمان، benefits، گیت مجوزها) رو از نصب قبلی برمی‌گردوند و در نتیجه سوال‌های اولین
@@ -33,6 +38,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.LoanCalc.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -50,6 +56,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/loan_widget_info" />
+        </receiver>
+
+        <!-- خوندنِ خودکارِ پیامکِ بانکی - رجوع کن به notifications/BankSmsReceiver.kt. exported=true
+             اجباریه چون سیستم (نه خودِ اپ) این Broadcast رو می‌فرسته؛ android:permission محدودش
+             می‌کنه که فقط خودِ سیستم (که BROADCAST_SMS داره) بتونه این Broadcast رو بفرسته. -->
+        <receiver
+            android:name=".notifications.BankSmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
         </receiver>
 
         <!-- WorkManager رو خودمون با HiltWorkerFactory مقداردهی می‌کنیم (LoanCalcApplication پیاده‌ی

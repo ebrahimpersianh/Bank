@@ -84,11 +84,11 @@ private fun WidgetContent(next: NextInstallment?) {
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(Color(0xFF0D1321))
+            .background(Color(0xFF000000))
             .padding(12.dp)
             .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
     ) {
-        Text("وام من", style = textStyle)
+        Text("حسابدار من", style = textStyle)
         if (next == null) {
             Text("قسطِ پرداخت‌نشده‌ای ثبت نشده", style = textStyle)
         } else {

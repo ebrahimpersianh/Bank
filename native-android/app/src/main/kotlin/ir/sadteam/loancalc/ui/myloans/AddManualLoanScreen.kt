@@ -1,6 +1,8 @@
 package ir.sadteam.loancalc.ui.myloans
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +38,7 @@ import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.LottieSpinner
+import ir.sadteam.loancalc.ui.components.SuccessCheckmarkOverlay
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -74,6 +77,9 @@ fun AddManualLoanScreen(
     // کاربر چندبار زد و ۶-۷ تا وامِ تکراری ساخته شد. الان دکمه موقعِ saving غیرفعال می‌شه و اسپینر
     // نشون می‌ده، همون الگوی LoginScreen.
     var saving by remember { mutableStateOf(false) }
+    // بعدِ ذخیره‌ی موفق، به‌جای بستنِ فوریِ صفحه، یه تیکِ سبزِ متحرک نشون داده می‌شه - رجوع کن به
+    // SuccessCheckmark.kt. onSaved واقعی همون‌جا (بعدِ یه تاخیرِ کوتاه) صدا زده می‌شه.
+    var savedOk by remember { mutableStateOf(false) }
 
     if (showCalendarPicker) {
         CalendarPickerScreen(
@@ -84,6 +90,7 @@ fun AddManualLoanScreen(
         return
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -223,6 +230,12 @@ fun AddManualLoanScreen(
                             installment <= 0 -> "مبلغ قسط رو وارد کن"
                             n <= 0 -> "تعداد کل اقساط رو وارد کن"
                             editingLoan == null && paidCount > n -> "تعداد پرداخت‌شده نمی‌تونه از کل اقساط بیشتر باشه"
+                            // باگِ رفع‌شده (مورد ۲۳): این گارد قبلاً فقط مسیرِ ساختنِ وامِ جدید رو
+                            // چک می‌کرد، نه مسیرِ ویرایش - کاربر می‌تونست n رو کمتر از تعدادِ
+                            // اقساطِ ازقبل‌پرداخت‌شده بذاره، که تشخیصِ «تسویه‌شده»/داشبورد رو خراب
+                            // می‌کرد.
+                            editingLoan != null && n < editingLoan.paidCount ->
+                                "تعداد کل اقساط نمی‌تونه از تعدادِ اقساطِ ازقبل‌پرداخت‌شده (${editingLoan.paidCount}) کمتر باشه"
                             else -> null
                         }
                         if (error == null) {
@@ -236,7 +249,7 @@ fun AddManualLoanScreen(
                                     installment = installment,
                                     n = n,
                                     startDate = startDate,
-                                    onSaved = onSaved,
+                                    onSaved = { savedOk = true },
                                 )
                             } else {
                                 viewModel.saveManualLoan(
@@ -246,7 +259,7 @@ fun AddManualLoanScreen(
                                     n = n,
                                     paidCount = paidCount,
                                     startDate = startDate,
-                                    onSaved = onSaved,
+                                    onSaved = { savedOk = true },
                                 )
                             }
                         }
@@ -265,4 +278,6 @@ fun AddManualLoanScreen(
             }
         }
     }
+    }
+    SuccessCheckmarkOverlay(visible = savedOk, onFinished = onSaved)
 }
