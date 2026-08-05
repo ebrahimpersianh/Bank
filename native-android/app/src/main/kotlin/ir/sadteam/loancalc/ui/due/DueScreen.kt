@@ -49,7 +49,6 @@ import ir.sadteam.loancalc.ui.components.TodayCard
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.debt.DebtScreen
 import ir.sadteam.loancalc.ui.note.NoteScreen
-import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.Motion
@@ -132,27 +131,19 @@ private fun DueGrid(
         contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item {
-            AppCard {
-                Text("سررسید", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-                Text(
-                    "میان‌برِ سریع به طلب‌وبدهی، یادداشت، پرداختِ تکراری، تراکنش، قسط و چک.",
-                    color = AppMuted,
-                    fontSize = 12.5.sp,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            }
-        }
+        // کارتِ توضیحیِ قبلی («سررسید: میان‌برِ سریع به...») به‌خواستِ صریحِ کاربر حذف شد - رفرنس
+        // (Poolaki) هیچ کارتی قبلِ گریدِ کاشی‌ها نداره، مستقیم از زیرِ نوارِ بالا شروع می‌شه.
         item {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
+                // خواسته‌ی صریحِ کاربر: «دقیقاً مثلِ پولکی» - رفرنس ۳ ستونه (نه ۲)، برای همین کاشی‌ها
+                // به همون سایزِ فشرده‌تر و مربعی‌ترِ رفرنس نزدیک می‌شن.
+                columns = GridCells.Fixed(3),
                 modifier = Modifier
                     .fillMaxWidth()
-                    // ۷ کاشی/۲ ستون = ۴ ردیف (قبلاً ۶ کاشی/۳ ردیف بود، رجوع کن به «پرداختِ تکراری»
-                    // که این نشست اضافه شد) - ارتفاعِ ثابت باید هم‌قدم با تعدادِ ردیف‌ها بیشتر بشه،
-                    // وگرنه ردیفِ آخر (چون این گرید تویِ یه LazyColumnِ دیگه‌س و ارتفاعش ثابته، نه
-                    // wrap-content) کلاً کلیپ/نامرئی می‌مونه.
-                    .size(640.dp),
+                    // ۷ کاشی/۳ ستون = ۳ ردیف (ردیفِ آخر فقط یه کاشی داره) - ارتفاعِ ثابت باید هم‌قدم
+                    // با تعدادِ ردیف‌ها باشه، وگرنه ردیفِ آخر (چون این گرید تویِ یه LazyColumnِ دیگه‌س
+                    // و ارتفاعش ثابته، نه wrap-content) کلاً کلیپ/نامرئی می‌مونه.
+                    .size(480.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
