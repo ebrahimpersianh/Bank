@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -37,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianCalendar
-import ir.sadteam.loancalc.ui.accounting.RecurringPaymentsScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.TodayCard
@@ -48,7 +46,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.Motion
 
-private enum class DueSubView { NONE, DEBT, NOTES, RECURRING }
+private enum class DueSubView { NONE, DEBT, NOTES }
 
 private data class DueShortcut(
     val title: String,
@@ -72,8 +70,10 @@ fun DueScreen(onNavigateToRoute: (String) -> Unit) {
     BackHandler(enabled = subView != DueSubView.NONE) { subView = DueSubView.NONE }
     // ترتیب دقیقاً هم‌چیدمانِ رفرنس (خواسته‌ی صریحِ کاربر: «دقیقا مثل هم بشند») - تو RTL آیتمِ اولِ
     // لیست سمتِ راستِ ردیفِ اول می‌شینه، پس ردیفِ اول از راست: تراکنش/یادداشت/طلب‌وبدهی و ردیفِ دوم
-    // از راست: حساب‌کتاب/چک/قسط‌ووام. «پرداختِ تکراری» تو رفرنس نیست (فیچرِ اضافه‌ی خودِ ما)، برای
-    // همین آخر می‌شینه.
+    // از راست: حساب‌کتاب/چک/قسط‌ووام. «پرداختِ تکراری» (فیچرِ اضافه‌ی خودِ ما، تو رفرنس نبود) از
+    // اینجا به تبِ «بودجه» منتقل شد - رجوع کن به CLAUDE.md، «تصمیمِ کاشیِ پرداختِ تکراری» - چون
+    // مفهوماً یه هزینه‌ی برنامه‌ریزی‌شده‌ی ماهانه‌ست (به بودجه نزدیک‌تره)، و اینجا هم گرید دوباره
+    // دقیقاً ۶ کاشی/۲ ردیفِ کاملِ هم‌شکلِ رفرنس شد (بدونِ کاشیِ تنهای ردیفِ سوم).
     val shortcuts = remember {
         listOf(
             DueShortcut("تراکنش", Icons.Filled.SwapHoriz, "assets", null),
@@ -82,7 +82,6 @@ fun DueScreen(onNavigateToRoute: (String) -> Unit) {
             DueShortcut("حساب‌کتاب", Icons.Filled.AccountBalanceWallet, "assets", null),
             DueShortcut("چک", Icons.Filled.ReceiptLong, "cheque", null),
             DueShortcut("قسط و وام", Icons.Filled.Payments, "loan", null),
-            DueShortcut("پرداختِ تکراری", Icons.Filled.Repeat, null, DueSubView.RECURRING),
         )
     }
 
@@ -94,7 +93,6 @@ fun DueScreen(onNavigateToRoute: (String) -> Unit) {
         when (current) {
             DueSubView.DEBT -> DebtScreen(onBack = { subView = DueSubView.NONE })
             DueSubView.NOTES -> NoteScreen(onBack = { subView = DueSubView.NONE })
-            DueSubView.RECURRING -> RecurringPaymentsScreen(onBack = { subView = DueSubView.NONE })
             DueSubView.NONE -> DueGrid(
                 shortcuts = shortcuts,
                 onNavigateToRoute = onNavigateToRoute,

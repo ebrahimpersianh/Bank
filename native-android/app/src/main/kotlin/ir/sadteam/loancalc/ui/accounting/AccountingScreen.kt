@@ -116,9 +116,9 @@ private val faWeekDayNamesAccounting = listOf("شنبه", "یک‌شنبه", "د
 
 /**
  * تبِ «دارایی» (قبلاً «حسابداری») - لیستِ حساب‌ها/تراکنش‌ها + جستجو + گزارشِ ماهانه‌ی خلاصه.
- * «بودجه‌بندی»/«گزارش‌گیری» تبِ مستقلِ خودشون شدن ([BudgetScreen]/[ReportScreen])، و
- * «پرداختِ تکراری» به تبِ «سررسید» منتقل شد ([RecurringPaymentsScreen]) - رجوع کن به CLAUDE.md،
- * «بازسازیِ نوارِ پایین به ۵ تبِ رفرنس».
+ * «بودجه‌بندی»/«گزارش‌گیری» تبِ مستقلِ خودشون شدن ([BudgetScreen]/[ReportScreen]) - رجوع کن به
+ * CLAUDE.md، «بازسازیِ نوارِ پایین به ۵ تبِ رفرنس». «پرداختِ تکراری» هم تویِ همون [BudgetScreen]ه
+ * (رجوع کن به CLAUDE.md، «تصمیمِ کاشیِ پرداختِ تکراری»).
  */
 @Composable
 fun AssetsScreen(
@@ -129,7 +129,10 @@ fun AssetsScreen(
 }
 
 /** تبِ مستقلِ «بودجه» - قبلاً زیرصفحه‌ی حسابداری بود. «دسته‌بندی‌ها» هم اینجا زیرمجموعه‌ست (رجوع
- * کن به CLAUDE.md) چون مفهوماً به بودجه نزدیک‌تره تا دارایی. */
+ * کن به CLAUDE.md) چون مفهوماً به بودجه نزدیک‌تره تا دارایی. «پرداختِ تکراری» هم از تبِ «سررسید»
+ * به اینجا منتقل شد (رجوع کن به CLAUDE.md، «تصمیمِ کاشیِ پرداختِ تکراری») - مفهوماً یه هزینه/درآمدِ
+ * برنامه‌ریزی‌شده‌ی ماهانه‌ست، دقیقاً همون چیزی که بودجه‌بندی درباره‌شه؛ اینجا هم دیگه لازم نیست
+ * تنها تو ردیفِ سومِ گریدِ «سررسید» بشینه. */
 @Composable
 fun BudgetScreen(
     viewModel: AccountViewModel = hiltViewModel(),
@@ -143,10 +146,16 @@ fun BudgetScreen(
     ) { key ->
         when (key) {
             "categories" -> CategoryManagementScreen(onBack = { screenKey = "main" }, viewModel = categoryViewModel)
+            "recurring" -> RecurringSection(
+                viewModel = viewModel,
+                categoryViewModel = categoryViewModel,
+                onBack = { screenKey = "main" },
+            )
             else -> BudgetSection(
                 viewModel = viewModel,
                 categoryViewModel = categoryViewModel,
                 onOpenCategories = { screenKey = "categories" },
+                onOpenRecurring = { screenKey = "recurring" },
             )
         }
     }
@@ -157,18 +166,6 @@ fun BudgetScreen(
 @Composable
 fun ReportScreen(viewModel: AccountViewModel = hiltViewModel()) {
     ReportSection(viewModel = viewModel)
-}
-
-/** «پرداختِ تکراری» به تبِ «سررسید» منتقل شد (رجوع کن به CLAUDE.md) - این فقط یه پوششِ نازک رو
- * [RecurringSection]ِ خصوصیِ همین فایله، تا DueScreen.kt (پکیجِ جدا) بتونه صداش بزنه بدونِ اینکه
- * خودِ RecurringSection عمومی بشه. */
-@Composable
-fun RecurringPaymentsScreen(
-    onBack: () -> Unit,
-    viewModel: AccountViewModel = hiltViewModel(),
-    categoryViewModel: CategoryViewModel = hiltViewModel(),
-) {
-    RecurringSection(viewModel = viewModel, categoryViewModel = categoryViewModel, onBack = onBack)
 }
 
 @Composable
@@ -527,7 +524,12 @@ private fun AddTransactionForm(
  * فقط عددِ خرج‌شده‌ست که با تغییرِ ماهِ ناوبری‌شده عوض می‌شه.
  */
 @Composable
-private fun BudgetSection(viewModel: AccountViewModel, categoryViewModel: CategoryViewModel, onOpenCategories: () -> Unit) {
+private fun BudgetSection(
+    viewModel: AccountViewModel,
+    categoryViewModel: CategoryViewModel,
+    onOpenCategories: () -> Unit,
+    onOpenRecurring: () -> Unit,
+) {
     val budgets by viewModel.budgets.collectAsState()
     val allTransactions by viewModel.transactions.collectAsState()
     val today = remember { JalaliCalendar.today() }
@@ -582,8 +584,9 @@ private fun BudgetSection(viewModel: AccountViewModel, categoryViewModel: Catego
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.End),
             ) {
+                OutlinedButton(onClick = onOpenRecurring) { Text("پرداختِ تکراری", fontSize = 12.sp) }
                 OutlinedButton(onClick = onOpenCategories) { Text("دسته‌بندی‌ها", fontSize = 12.sp) }
             }
         }
