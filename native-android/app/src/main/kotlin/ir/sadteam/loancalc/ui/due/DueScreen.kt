@@ -3,21 +3,16 @@ package ir.sadteam.loancalc.ui.due
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.EditNote
@@ -75,15 +70,19 @@ fun DueScreen(onNavigateToRoute: (String) -> Unit) {
     // برگشتن از طلب‌وبدهی/یادداشت به گریدِ اصلی - قبل از رسیدن به BackHandlerِ بیرونیِ LoanCalcApp
     // (که دیگه معنیش خروج/برگشتنِ بینِ تب‌هاست)، هم‌الگو با LoanTab.
     BackHandler(enabled = subView != DueSubView.NONE) { subView = DueSubView.NONE }
+    // ترتیب دقیقاً هم‌چیدمانِ رفرنس (خواسته‌ی صریحِ کاربر: «دقیقا مثل هم بشند») - تو RTL آیتمِ اولِ
+    // لیست سمتِ راستِ ردیفِ اول می‌شینه، پس ردیفِ اول از راست: تراکنش/یادداشت/طلب‌وبدهی و ردیفِ دوم
+    // از راست: حساب‌کتاب/چک/قسط‌ووام. «پرداختِ تکراری» تو رفرنس نیست (فیچرِ اضافه‌ی خودِ ما)، برای
+    // همین آخر می‌شینه.
     val shortcuts = remember {
         listOf(
-            DueShortcut("طلب و بدهی", Icons.Filled.Handshake, null, DueSubView.DEBT),
-            DueShortcut("یادداشت", Icons.Filled.EditNote, null, DueSubView.NOTES),
-            DueShortcut("پرداختِ تکراری", Icons.Filled.Repeat, null, DueSubView.RECURRING),
             DueShortcut("تراکنش", Icons.Filled.SwapHoriz, "assets", null),
-            DueShortcut("قسط و وام", Icons.Filled.Payments, "loan", null),
-            DueShortcut("چک", Icons.Filled.ReceiptLong, "cheque", null),
+            DueShortcut("یادداشت", Icons.Filled.EditNote, null, DueSubView.NOTES),
+            DueShortcut("طلب و بدهی", Icons.Filled.Handshake, null, DueSubView.DEBT),
             DueShortcut("حساب‌کتاب", Icons.Filled.AccountBalanceWallet, "assets", null),
+            DueShortcut("چک", Icons.Filled.ReceiptLong, "cheque", null),
+            DueShortcut("قسط و وام", Icons.Filled.Payments, "loan", null),
+            DueShortcut("پرداختِ تکراری", Icons.Filled.Repeat, null, DueSubView.RECURRING),
         )
     }
 
@@ -134,27 +133,26 @@ private fun DueGrid(
         // کارتِ توضیحیِ قبلی («سررسید: میان‌برِ سریع به...») به‌خواستِ صریحِ کاربر حذف شد - رفرنس
         // (Poolaki) هیچ کارتی قبلِ گریدِ کاشی‌ها نداره، مستقیم از زیرِ نوارِ بالا شروع می‌شه.
         item {
-            LazyVerticalGrid(
-                // خواسته‌ی صریحِ کاربر: «دقیقاً مثلِ پولکی» - رفرنس ۳ ستونه (نه ۲)، برای همین کاشی‌ها
-                // به همون سایزِ فشرده‌تر و مربعی‌ترِ رفرنس نزدیک می‌شن.
-                columns = GridCells.Fixed(3),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    // ۷ کاشی/۳ ستون = ۳ ردیف (ردیفِ آخر فقط یه کاشی داره) - ارتفاعِ ثابت باید هم‌قدم
-                    // با تعدادِ ردیف‌ها باشه، وگرنه ردیفِ آخر (چون این گرید تویِ یه LazyColumnِ دیگه‌س
-                    // و ارتفاعش ثابته، نه wrap-content) کلاً کلیپ/نامرئی می‌مونه.
-                    .size(480.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                items(shortcuts) { shortcut ->
-                    DueShortcutTile(
-                        shortcut = shortcut,
-                        onClick = {
-                            shortcut.subView?.let(onOpenSubView)
-                            shortcut.route?.let(onNavigateToRoute)
-                        },
-                    )
+            // عمداً LazyVerticalGrid نیست: یه گریدِ تنبل تویِ یه LazyColumnِ دیگه نمی‌تونه
+            // wrap-content باشه و باید ارتفاعِ ثابت بگیره - همون ارتفاعِ ثابت بود که یه فاصله‌ی
+            // خالیِ بزرگ بینِ کاشی‌ها و کارتِ «امروز» می‌انداخت (گزارشِ کاربر با اسکرین‌شات). با
+            // چیدنِ دستیِ ردیف‌ها (chunked(3))، ارتفاع دقیقاً به‌اندازه‌ی خودِ کاشی‌هاست.
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                shortcuts.chunked(3).forEach { rowItems ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        rowItems.forEach { shortcut ->
+                            DueShortcutTile(
+                                shortcut = shortcut,
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    shortcut.subView?.let(onOpenSubView)
+                                    shortcut.route?.let(onNavigateToRoute)
+                                },
+                            )
+                        }
+                        // جای خالیِ ردیفِ ناقصِ آخر، وگرنه کاشیِ تنها کلِ عرض رو می‌گیره.
+                        repeat(3 - rowItems.size) { Spacer(modifier = Modifier.weight(1f)) }
+                    }
                 }
             }
         }
@@ -172,28 +170,37 @@ private fun DueGrid(
     }
 }
 
+/**
+ * کاشیِ میان‌بر - هم‌شکلِ رفرنس: آیکونِ ساده‌ی وسط‌چین (نه تویِ دایره‌ی رنگی) با نوشته‌ی زیرش. نسبتِ
+ * ابعاد عمداً از ۱.۳۵ کمتر شد (کاشی کمی بلندتر): با پدینگِ ۱۴dpی خودِ [AppCard]، ارتفاعِ قبلی
+ * جا برای آیکون + نوشته نداشت و نوشته‌ی هر کاشی از پایین بریده/نامرئی می‌شد (گزارشِ کاربر با
+ * اسکرین‌شات).
+ */
 @Composable
-private fun DueShortcutTile(shortcut: DueShortcut, onClick: () -> Unit) {
+private fun DueShortcutTile(shortcut: DueShortcut, modifier: Modifier = Modifier, onClick: () -> Unit) {
     AppCard(
-        modifier = Modifier
-            .aspectRatio(1.35f)
+        modifier = modifier
+            .aspectRatio(1.28f)
             .pressScaleClickable(onClick = onClick),
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .background(AppPrimary.copy(alpha = 0.16f), CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(shortcut.icon, contentDescription = shortcut.title, tint = AppPrimary)
-            }
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Icon(
+                shortcut.icon,
+                contentDescription = shortcut.title,
+                tint = AppPrimary,
+                modifier = Modifier.size(22.dp),
+            )
             Text(
                 shortcut.title,
                 color = AppText,
-                fontSize = 14.sp,
+                fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 10.dp),
+                maxLines = 1,
+                modifier = Modifier.padding(top = 6.dp),
             )
         }
     }

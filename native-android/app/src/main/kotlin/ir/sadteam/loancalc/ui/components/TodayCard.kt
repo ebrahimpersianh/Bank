@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EditNote
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 
@@ -57,52 +59,78 @@ fun TodayCard(
     val weekDay = todayCardWeekDayNames[JalaliCalendar.dayOfWeekSaturdayFirst(date)]
     val dateText = "$weekDay، ${toFa(date.d)} ${persianMonthName(date.m)}"
 
-    AppCard(label = "امروز") {
+    AppCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // خواسته‌ی صریحِ کاربر: تپ رو تاریخ صفحه‌ی تقویمِ کامل باز کنه، و فلش‌های قبلی/بعدی کنارِ
-            // هم باشن (نه دو سرِ ردیف) - برای همین تاریخ با weight فضای باقی‌مونده رو می‌گیره و هر دو
-            // فلش تویِ یه Rowِ مجزا کنارِ هم می‌شینن.
-            Text(
-                dateText,
-                color = AppText,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f).pressScaleClickable(onClick = onDateClick),
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onPrevDay) {
-                    Icon(Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل")
+            // چیدمانِ سرِ کارت دقیقاً هم‌شکلِ رفرنس: آیکونِ تقویم + «امروز» تو خطِ اول، خودِ تاریخ
+            // (کم‌رنگ‌تر/کوچیک‌تر) خطِ دوم، و هر دو فلش کنارِ هم سمتِ دیگه‌ی ردیف. تپ رو همین بلوک،
+            // صفحه‌ی تقویمِ کامل رو باز می‌کنه (خواسته‌ی قبلیِ کاربر).
+            Column(modifier = Modifier.weight(1f).pressScaleClickable(onClick = onDateClick)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.CalendarMonth,
+                        contentDescription = null,
+                        tint = AppText,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(
+                        "امروز",
+                        color = AppText,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 6.dp),
+                    )
                 }
+                Text(
+                    dateText,
+                    color = AppMuted,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
+            }
+            // ترتیبِ فلش‌ها هم‌شکلِ رفرنس - تو RTL آیتمِ اولِ Row سمتِ راست می‌شینه، پس «بعدی» (>)
+            // راست و «قبلی» (<) چپ دیده می‌شه.
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onNextDay) {
                     Icon(Icons.Filled.ChevronRight, contentDescription = "روزِ بعد")
+                }
+                IconButton(onClick = onPrevDay) {
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل")
                 }
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         ) {
-            TodayQuickAction("قسط", Icons.Filled.Payments, Modifier.weight(1f), onAddInstallment)
-            TodayQuickAction("چک", Icons.Filled.ReceiptLong, Modifier.weight(1f), onAddCheque)
-            TodayQuickAction("یادداشت", Icons.Filled.EditNote, Modifier.weight(1f), onAddNote)
+            TodayQuickAction("یادداشت", Icons.Filled.EditNote, onAddNote)
+            TodayQuickAction("چک", Icons.Filled.ReceiptLong, onAddCheque)
+            TodayQuickAction("قسط", Icons.Filled.Payments, onAddInstallment)
         }
     }
 }
 
+/** دکمه‌ی کپسولیِ میان‌بر - هم‌شکلِ رفرنس: آیکون و نوشته کنارِ هم (نه زیرِ هم)، عرض به‌اندازه‌ی
+ * محتوا (نه تقسیمِ مساویِ عرضِ کارت). */
 @Composable
-private fun TodayQuickAction(label: String, icon: ImageVector, modifier: Modifier, onClick: () -> Unit) {
-    Column(
-        modifier = modifier
-            .background(AppPrimary.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+private fun TodayQuickAction(label: String, icon: ImageVector, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .background(AppPrimary.copy(alpha = 0.12f), RoundedCornerShape(50))
             .pressScaleClickable(onClick = onClick)
-            .padding(vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(horizontal = 14.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = label, tint = AppPrimary, modifier = Modifier.size(20.dp))
-        Text(label, color = AppPrimary, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
+        Icon(icon, contentDescription = label, tint = AppPrimary, modifier = Modifier.size(17.dp))
+        Text(
+            label,
+            color = AppPrimary,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 6.dp),
+        )
     }
 }
