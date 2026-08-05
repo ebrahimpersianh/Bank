@@ -43,6 +43,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -80,6 +81,7 @@ import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.account.AccountsScreen
 import ir.sadteam.loancalc.ui.category.CategoryManagementScreen
 import ir.sadteam.loancalc.ui.category.CategoryViewModel
+import ir.sadteam.loancalc.ui.components.AccountPickerDialog
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
@@ -190,6 +192,35 @@ private fun MainSection(
     var showAccountsScreen by remember { mutableStateOf(false) }
     var accountsAddMode by remember { mutableStateOf(false) }
 
+    // همگام‌سازیِ گذشته‌نگرِ وام/چکِ ازقبل‌پرداخت‌شده با حسابداری (خواسته‌ی صریحِ کاربر: «قرار شد کل
+    // برنامه سینک باشه» - رجوع کن به CLAUDE.md، AccountViewModel.backfillHistoricalTransactions).
+    // وقتی دقیقاً یه حساب هست، ابهامی نیست که این پرداخت‌های قدیمی به کدوم حساب نسبت داده بشن، پس
+    // خودکار و بی‌صدا (بدونِ بنر) هر بار همین تب باز می‌شه اجرا می‌شه - چون idempotentه، دفعاتِ بعدی
+    // فقط صفر می‌گیره. با ≥۲ حساب ابهام داره، برای همین دکمه‌ی دستی زیرِ چیپ‌های حساب می‌ذاریم.
+    val banner = rememberInAppBanner()
+    val syncScope = rememberCoroutineScope()
+    var showSyncAccountPicker by remember { mutableStateOf(false) }
+    LaunchedEffect(accounts.size) {
+        if (accounts.size == 1) viewModel.backfillHistoricalTransactions(accounts.first().id)
+    }
+    fun runManualBackfill(accountId: Long) {
+        syncScope.launch {
+            val n = viewModel.backfillHistoricalTransactions(accountId)
+            banner.show(
+                if (n > 0) "$n قسط/چکِ قدیمی به حسابداری اضافه شد" else "همه‌چیز از قبل همگام بود",
+                isSuccess = true,
+            )
+        }
+    }
+    if (showSyncAccountPicker) {
+        AccountPickerDialog(
+            accounts = accounts,
+            title = "قسط/چک‌های قدیمی از کدوم حساب کسر بشن؟",
+            onSelect = { account -> showSyncAccountPicker = false; runManualBackfill(account.id) },
+            onDismiss = { showSyncAccountPicker = false },
+        )
+    }
+
     if (showAccountsScreen) {
         AccountsScreen(
             onBack = { showAccountsScreen = false },
@@ -211,6 +242,7 @@ private fun MainSection(
     }
 
     val listState = rememberLazyListState()
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxWidth().lazyColumnScrollbar(listState, AppPrimary),
@@ -278,6 +310,16 @@ private fun MainSection(
                         selected = true,
                         onClick = { accountsAddMode = true; showAccountsScreen = true },
                     )
+                    // با یه حساب، همگام‌سازیِ گذشته‌نگر خودکار/بی‌صدا انجام می‌شه (رجوع کن به
+                    // LaunchedEffectِ بالا)؛ با چندتا حساب ابهام داره، برای همین این چیپِ دستی رو
+                    // اضافه کن تا کاربر خودش تعیین کنه پرداخت‌های قدیمی به کدوم حساب نسبت داده بشن.
+                    if (accounts.size > 1) {
+                        AppChip(
+                            label = "همگام‌سازیِ وام/چکِ قدیمی",
+                            selected = false,
+                            onClick = { showSyncAccountPicker = true },
+                        )
+                    }
                 }
             }
         }
@@ -342,6 +384,8 @@ private fun MainSection(
             onConfirm = { viewModel.deleteTransaction(tx); deletingTx = null },
             onDismiss = { deletingTx = null },
         )
+    }
+    InAppBannerHost(banner)
     }
 }
 

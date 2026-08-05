@@ -27,7 +27,7 @@ import net.sqlcipher.database.SupportFactory
         CustomCategoryEntity::class,
         CategoryOrderEntity::class,
     ],
-    version = 16,
+    version = 17,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -249,6 +249,26 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** ردیابیِ منبعِ تراکنش‌های خودکارِ ساخته‌شده از پرداختِ قسط/چک - رجوع کن به CLAUDE.md، «قرار
+         * شد کل برنامه سینک باشه». کاربر گزارش داد وام‌های ازقبل‌ثبت‌شده تو تبِ «دارایی»/گزارش نیستن
+         * - چون سینکِ خودکار (AccountPickerDialog تو LoanDetailScreen/ChequeDetailScreen) فقط از
+         * لحظه‌ی اضافه‌شدنش به بعد کار می‌کنه، پرداخت‌های قدیمی‌تر هیچ‌وقت تراکنشِ متناظر نگرفتن. این
+         * دو ستون امکانِ همگام‌سازیِ گذشته‌نگرِ idempotent رو می‌ده (رجوع کن به
+         * AccountViewModel.backfillHistoricalTransactions) - بدونِ این‌ها هیچ راهی برای تشخیصِ
+         * «این تراکنش قبلاً برای همین قسط ساخته شده یا نه» نبود. */
+        // نکته برای بعد: هیچ‌کدوم از اسکیمای نسخه‌های ۱۳-۱۶ تو data/schemas/ کامیت نشدن (فقط ۱۲.json
+        // هست) - چون instrumented-tests.yml فقط رو پوش به main اجرا می‌شه و این migrationها همه رو
+        // برنچِ فیچر اضافه شدن، بدونِ اینکه main هیچ‌وقت باهاشون رفرش بشه. یعنی تستِ خودکارِ
+        // migrate16To17 (طبقِ الگوی MigrationTest.kt) الان ممکن نیست - نیازمندِ schemas/16.jsonه که
+        // دیگه قابلِ‌بازسازی نیست. از نسخه‌ی ۱۷ (همین) به بعد، اولین CIِ موفق (رو هر برنچی که اجرا
+        // بشه) خودش schemas/17.json رو می‌سازه، پس migrationِ بعدی (۱۷→۱۸) قابلِ‌تستِ خودکار می‌مونه.
+        private val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE account_transactions ADD COLUMN sourceType TEXT")
+                db.execSQL("ALTER TABLE account_transactions ADD COLUMN sourceId TEXT")
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -282,6 +302,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_13_14,
                             MIGRATION_14_15,
                             MIGRATION_15_16,
+                            MIGRATION_16_17,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

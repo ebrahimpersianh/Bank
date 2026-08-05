@@ -84,6 +84,8 @@ fun ChequeDetailScreen(
                 month = today.m,
                 day = today.d,
                 category = "قسط/چک",
+                sourceType = "cheque",
+                sourceId = cheque.id.toString(),
             )
         }
     }
