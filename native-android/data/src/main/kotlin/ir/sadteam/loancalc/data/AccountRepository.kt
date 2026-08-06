@@ -36,8 +36,6 @@ class AccountRepository(
     fun observeTransactionsForAccount(accountId: Long): Flow<List<AccountTransactionEntity>> =
         transactionDao.observeForAccount(accountId)
 
-    suspend fun getAllTransactions(): List<AccountTransactionEntity> = transactionDao.getAll()
-
     suspend fun addAccount(name: String, bankName: String, initialBalance: Double, cardNumber: String? = null) {
         accountDao.upsert(
             AccountEntity(
@@ -79,15 +77,10 @@ class AccountRepository(
         category: String? = null,
         sourceType: String? = null,
         sourceId: String? = null,
-        // پیش‌فرض از رو ساعتِ سیستمه (رفتارِ همیشگی، برای یه تپِ تکیِ کاربر کافیه)؛ فراخوان‌های
-        // حلقه‌ای/دسته‌ای (رجوع کن به AccountViewModel.backfillHistoricalTransactions) باید صریحاً
-        // یه id یکتا بدن، وگرنه چندتا تراکنش تو یه میلی‌ثانیه یه id یکسان می‌گیرن و @Upsert قبلی رو
-        // بی‌صدا جایگزین می‌کنه (داده گم می‌شه، نه خطا).
-        id: Long = System.currentTimeMillis(),
     ) {
         transactionDao.upsert(
             AccountTransactionEntity(
-                id = id,
+                id = System.currentTimeMillis(),
                 accountId = accountId,
                 type = type.name,
                 amount = amount,
@@ -105,12 +98,6 @@ class AccountRepository(
 
     suspend fun deleteTransaction(transaction: AccountTransactionEntity) {
         transactionDao.delete(transaction)
-    }
-
-    /** یه تراکنشِ موجود (معمولاً از سینکِ قدیمی‌تر، قبل از اضافه‌شدنِ sourceType/sourceId) رو با
-     * منبعِ مشخص تگ می‌کنه - رجوع کن به AccountViewModel.backfillHistoricalTransactions. */
-    suspend fun retagTransaction(transaction: AccountTransactionEntity, sourceType: String, sourceId: String) {
-        transactionDao.upsert(transaction.copy(sourceType = sourceType, sourceId = sourceId))
     }
 
     /** موجودی فعلی = موجودی اولیه + جمع واریزها - جمع برداشت‌ها. */

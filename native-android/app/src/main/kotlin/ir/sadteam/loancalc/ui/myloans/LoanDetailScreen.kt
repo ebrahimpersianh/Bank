@@ -311,8 +311,6 @@ fun LoanDetailScreen(
                 month = today.m,
                 day = today.d,
                 category = "قسط/چک",
-                // سینکِ گذشته‌نگر (AccountViewModel.backfillHistoricalTransactions) از رو همین
-                // sourceId تشخیص می‌ده این قسط‌ها قبلاً تراکنش گرفتن، دوباره نسازتشون.
                 sourceType = "loan",
                 sourceId = "${loan.id}:${payment.ms.joinToString(",")}",
             )

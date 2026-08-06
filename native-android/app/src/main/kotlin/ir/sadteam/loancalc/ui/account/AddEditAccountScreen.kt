@@ -22,13 +22,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.cleanNum
-import ir.sadteam.loancalc.core.cleanNumDecimal
+import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.detectBankByCardNumber
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.Ltr
+import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 
@@ -44,7 +45,7 @@ fun AddEditAccountScreen(
     var name by remember { mutableStateOf(existing?.name ?: "") }
     var bankName by remember { mutableStateOf(existing?.bankName ?: "") }
     var cardNumberText by remember { mutableStateOf(existing?.cardNumber ?: "") }
-    var initialBalanceText by remember { mutableStateOf(existing?.initialBalance?.let { fmtPlain(it) } ?: "") }
+    var initialBalanceText by remember { mutableStateOf(existing?.initialBalance?.toLong()?.toString() ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
 
     // تشخیصِ خودکارِ بانک از رو ۶ رقمِ اولِ شماره‌کارت (رجوع کن به data/BankBin.kt) - فقط یه
@@ -79,7 +80,7 @@ fun AddEditAccountScreen(
             }
         }
         item {
-            AppCard(label = "شماره کارت (اختیاری)") {
+            AppCard(label = "شماره کارت") {
                 Ltr {
                     OutlinedTextField(
                         value = cardNumberText,
@@ -89,12 +90,6 @@ fun AddEditAccountScreen(
                         singleLine = true,
                     )
                 }
-                Text(
-                    "با واردکردنِ ۶ رقمِ اول، بانک خودکار تشخیص داده می‌شه.",
-                    color = AppMuted,
-                    fontSize = 11.sp,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
             }
         }
         item {
@@ -114,14 +109,25 @@ fun AddEditAccountScreen(
             }
         }
         item {
-            AppCard(label = "موجودی اولیه (ریال)") {
+            AppCard(label = "موجودی اولیه") {
                 OutlinedTextField(
                     value = initialBalanceText,
-                    onValueChange = { initialBalanceText = cleanNumDecimal(it) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    onValueChange = { initialBalanceText = cleanNum(it) },
+                    visualTransformation = ThousandsSeparatorTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
                 )
+                val balanceRial = initialBalanceText.toLongOrNull() ?: 0L
+                if (balanceRial > 0) {
+                    Text(
+                        "${numberToWordsFa((balanceRial / 10).toDouble())} تومان",
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
         }
         if (error != null) {
@@ -167,6 +173,3 @@ fun AddEditAccountScreen(
         }
     }
 }
-
-private fun fmtPlain(value: Double): String =
-    if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()

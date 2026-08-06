@@ -3,12 +3,8 @@ package ir.sadteam.loancalc.ui.account
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.core.TransactionType
-import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.AccountRepository
-import ir.sadteam.loancalc.data.ChequeRepository
-import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.data.db.BudgetEntity
@@ -25,8 +21,6 @@ import javax.inject.Inject
 class AccountViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val authPrefs: AuthPrefs,
-    private val loanRepository: LoanRepository,
-    private val chequeRepository: ChequeRepository,
 ) : ViewModel() {
     val accounts: StateFlow<List<AccountEntity>> = accountRepository.observeAccounts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -88,114 +82,6 @@ class AccountViewModel @Inject constructor(
             accountRepository.addTransaction(accountId, type, amount, description, year, month, day, category, sourceType, sourceId)
             syncIfLoggedIn()
         }
-    }
-
-    /** همگام‌سازیِ گذشته‌نگر (خواسته‌ی صریحِ کاربر: «قرار شد کل برنامه سینک باشه») - قسط‌های وامِ
-     * پرداخت‌شده و چک‌های پاس‌شده که هنوز تراکنشِ حسابداریِ متناظر ندارن (چون سینکِ خودکار فقط از
-     * لحظه‌ی اضافه‌شدنش به بعد کار می‌کنه - رجوع کن به LoanDetailScreen/ChequeDetailScreen) رو به
-     * [accountId] نسبت می‌ده. idempotent - اگه دوباره اجرا بشه (مثلاً بعدِ ثبتِ قسطِ جدید)، چیزی رو
-     * که قبلاً ساخته دوباره نمی‌سازه (رجوع کن به sourceType/sourceId تو AccountTransactionEntity).
-     *
-     * قبل از ساختنِ تراکنشِ تازه، اول سعی می‌کنه قسط/چک رو به یه تراکنشِ **تگ‌نشده**‌ی موجود (از سینکِ
-     * قدیمی‌تر، قبل از اضافه‌شدنِ sourceType/sourceId - رجوع کن به CLAUDE.md) با تطبیقِ مبلغ+توضیح
-     * وصل (retag) کنه، نه اینکه یه تراکنشِ تکراری بسازه. هر تراکنشِ تگ‌نشده فقط یه‌بار مصرف می‌شه
-     * (pool) - وگرنه چند قسطِ هم‌مبلغ همه با یه تراکنشِ قدیمیِ تنها «پوشش‌داده‌شده» حساب می‌شدن.
-     *
-     * عددِ تراکنش‌هایی که تازه ساخته شدن رو برمی‌گردونه (retagِ تراکنشِ قدیمی جزوِ این عدد نیست، چون
-     * چیزِ جدیدی به حسابداری اضافه نشده). */
-    suspend fun backfillHistoricalTransactions(accountId: Long): Int {
-        val existing = accountRepository.getAllTransactions()
-        val coveredLoanMonths: MutableMap<Long, MutableSet<Int>> = mutableMapOf()
-        existing.filter { it.sourceType == "loan" && it.sourceId != null }.forEach { tx ->
-            val parts = tx.sourceId!!.split(":")
-            val loanId = parts.getOrNull(0)?.toLongOrNull()
-            if (parts.size == 2 && loanId != null) {
-                val months = parts[1].split(",").mapNotNull { it.toIntOrNull() }
-                coveredLoanMonths.getOrPut(loanId) { mutableSetOf() }.addAll(months)
-            }
-        }
-        val coveredChequeIds: MutableSet<Long> = existing
-            .filter { it.sourceType == "cheque" }
-            .mapNotNull { it.sourceId?.toLongOrNull() }
-            .toMutableSet()
-        val untaggedPool: MutableList<AccountTransactionEntity> = existing
-            .filter { it.sourceType == null && it.category == "قسط/چک" }
-            .toMutableList()
-
-        var nextId = System.currentTimeMillis()
-        var count = 0
-
-        for (loan in loanRepository.getLoans()) {
-            val covered = coveredLoanMonths.getOrPut(loan.id) { mutableSetOf() }
-            for (row in loanRepository.getRows(loan)) {
-                if (row["paid"] != true) continue
-                val m = (row["m"] as? Number)?.toInt() ?: continue
-                if (m in covered) continue
-                val amount = (row["installment"] as? Number)?.toDouble() ?: continue
-
-                val legacyMatch = untaggedPool.firstOrNull { it.amount == amount && it.description.contains(loan.name) }
-                if (legacyMatch != null) {
-                    untaggedPool.remove(legacyMatch)
-                    accountRepository.retagTransaction(legacyMatch, "loan", "${loan.id}:$m")
-                    covered.add(m)
-                    continue
-                }
-
-                val paidDate = row["paidDate"] as? Map<*, *>
-                val dueDate = row["dueDate"] as? Map<*, *>
-                val y = (paidDate?.get("y") as? Number)?.toInt() ?: (dueDate?.get("y") as? Number)?.toInt() ?: continue
-                val mo = (paidDate?.get("m") as? Number)?.toInt() ?: (dueDate?.get("m") as? Number)?.toInt() ?: continue
-                val d = (paidDate?.get("d") as? Number)?.toInt() ?: (dueDate?.get("d") as? Number)?.toInt() ?: 1
-                accountRepository.addTransaction(
-                    accountId = accountId,
-                    type = TransactionType.WITHDRAWAL,
-                    amount = amount,
-                    description = "قسط ${toFa(m)} - ${loan.name}",
-                    year = y,
-                    month = mo,
-                    day = d,
-                    category = "قسط/چک",
-                    sourceType = "loan",
-                    sourceId = "${loan.id}:$m",
-                    id = nextId++,
-                )
-                covered.add(m)
-                count++
-            }
-        }
-
-        for (cheque in chequeRepository.getAllCheques()) {
-            if (cheque.status != ChequeStatus.PASSED.name) continue
-            if (cheque.id in coveredChequeIds) continue
-
-            val legacyMatch = untaggedPool.firstOrNull { it.amount == cheque.amount && it.description.contains(cheque.ownerName) }
-            if (legacyMatch != null) {
-                untaggedPool.remove(legacyMatch)
-                accountRepository.retagTransaction(legacyMatch, "cheque", cheque.id.toString())
-                coveredChequeIds.add(cheque.id)
-                continue
-            }
-
-            val typeLabel = if (cheque.type == "RECEIVED") "دریافتی" else "پرداختی"
-            accountRepository.addTransaction(
-                accountId = accountId,
-                type = if (cheque.type == "RECEIVED") TransactionType.DEPOSIT else TransactionType.WITHDRAWAL,
-                amount = cheque.amount,
-                description = "چک ${typeLabel} - ${cheque.ownerName}",
-                year = cheque.dueYear,
-                month = cheque.dueMonth,
-                day = cheque.dueDay,
-                category = "قسط/چک",
-                sourceType = "cheque",
-                sourceId = cheque.id.toString(),
-                id = nextId++,
-            )
-            coveredChequeIds.add(cheque.id)
-            count++
-        }
-
-        if (count > 0) syncIfLoggedIn()
-        return count
     }
 
     fun deleteTransaction(transaction: AccountTransactionEntity) {

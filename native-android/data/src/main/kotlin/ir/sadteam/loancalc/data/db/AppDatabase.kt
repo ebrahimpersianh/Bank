@@ -27,7 +27,7 @@ import net.sqlcipher.database.SupportFactory
         CustomCategoryEntity::class,
         CategoryOrderEntity::class,
     ],
-    version = 17,
+    version = 18,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -249,23 +249,36 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        /** ردیابیِ منبعِ تراکنش‌های خودکارِ ساخته‌شده از پرداختِ قسط/چک - رجوع کن به CLAUDE.md، «قرار
-         * شد کل برنامه سینک باشه». کاربر گزارش داد وام‌های ازقبل‌ثبت‌شده تو تبِ «دارایی»/گزارش نیستن
-         * - چون سینکِ خودکار (AccountPickerDialog تو LoanDetailScreen/ChequeDetailScreen) فقط از
-         * لحظه‌ی اضافه‌شدنش به بعد کار می‌کنه، پرداخت‌های قدیمی‌تر هیچ‌وقت تراکنشِ متناظر نگرفتن. این
-         * دو ستون امکانِ همگام‌سازیِ گذشته‌نگرِ idempotent رو می‌ده (رجوع کن به
-         * AccountViewModel.backfillHistoricalTransactions) - بدونِ این‌ها هیچ راهی برای تشخیصِ
-         * «این تراکنش قبلاً برای همین قسط ساخته شده یا نه» نبود. */
+        /** ردیابیِ منبعِ تراکنش‌های خودکارِ ساخته‌شده از پرداختِ قسط/چک (sourceType/sourceId) - در
+         * اصل برای یه فیچرِ همگون‌سازیِ گذشته‌نگر اضافه شده بود که بعداً به‌خواستِ کاربر کاملاً حذف
+         * شد (رجوع کن به CLAUDE.md، MIGRATION_17_18)؛ این دو ستون خودشون هنوز لازمن - سینکِ رو-به-جلو
+         * (LoanDetailScreen.commitPayment/ChequeDetailScreen.commitPass) همچنان باهاشون منبعِ هر
+         * تراکنش رو تگ می‌کنه. */
         // نکته برای بعد: هیچ‌کدوم از اسکیمای نسخه‌های ۱۳-۱۶ تو data/schemas/ کامیت نشدن (فقط ۱۲.json
         // هست) - چون instrumented-tests.yml فقط رو پوش به main اجرا می‌شه و این migrationها همه رو
         // برنچِ فیچر اضافه شدن، بدونِ اینکه main هیچ‌وقت باهاشون رفرش بشه. یعنی تستِ خودکارِ
         // migrate16To17 (طبقِ الگوی MigrationTest.kt) الان ممکن نیست - نیازمندِ schemas/16.jsonه که
-        // دیگه قابلِ‌بازسازی نیست. از نسخه‌ی ۱۷ (همین) به بعد، اولین CIِ موفق (رو هر برنچی که اجرا
-        // بشه) خودش schemas/17.json رو می‌سازه، پس migrationِ بعدی (۱۷→۱۸) قابلِ‌تستِ خودکار می‌مونه.
+        // دیگه قابلِ‌بازسازی نیست. از نسخه‌ی ۱۷ به بعد، اولین CIِ موفق (رو هر برنچی که اجرا بشه)
+        // خودش schemas/17.json رو می‌سازه، پس migrationِ بعدی (۱۷→۱۸) قابلِ‌تستِ خودکار می‌مونه.
         private val MIGRATION_16_17 = object : Migration(16, 17) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE account_transactions ADD COLUMN sourceType TEXT")
                 db.execSQL("ALTER TABLE account_transactions ADD COLUMN sourceId TEXT")
+            }
+        }
+
+        /** لغوِ همگام‌سازیِ گذشته‌نگر (خواسته‌ی صریحِ کاربر - رجوع کن به CLAUDE.md، «حذفِ همگام‌سازیِ
+         * گذشته‌نگر»): «موجودیِ اولیه»ی یه حساب یعنی موجودیِ *الان*، پس کم‌کردنِ قسط/چک‌هایی که از
+         * قبل پرداخت شده بودن از همون موجودی غلطه (دوبار کم‌کردنِ پولی که از قبل تو موجودیِ الان
+         * لحاظ شده) - دقیقاً همون چیزی که باعثِ موجودیِ منفیِ کاذبِ گزارش‌شده‌ی کاربر شد. این migration
+         * هر تراکنشی که خودکار از پرداختِ قسط/چک ساخته شده (sourceType = "loan" یا "cheque") رو پاک
+         * می‌کنه - چه از فیچرِ بک‌فیلِ حذف‌شده اومده باشه چه از سینکِ رو-به-جلو. از این به بعد فقط
+         * قسط/چکی که *بعدِ* همین آپدیت پرداخت بشه، تراکنشِ حسابداری می‌گیره (کدِ
+         * LoanDetailScreen.commitPayment/ChequeDetailScreen.commitPass دست‌نخورده مونده، فقط دیگه
+         * چیزی گذشته‌نگر صداشون نمی‌زنه). تراکنش‌های دستیِ کاربر (sourceType نال) دست‌نخورده می‌مونن. */
+        private val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DELETE FROM account_transactions WHERE sourceType IN ('loan', 'cheque')")
             }
         }
 
@@ -303,6 +316,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_14_15,
                             MIGRATION_15_16,
                             MIGRATION_16_17,
+                            MIGRATION_17_18,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

@@ -38,8 +38,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.TransactionType
-import ir.sadteam.loancalc.core.cleanNumDecimal
+import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
@@ -49,6 +50,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -87,6 +89,7 @@ fun AccountDetailScreen(
     var txDay by remember { mutableStateOf(today.d) }
     var error by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deletingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -150,14 +153,25 @@ fun AccountDetailScreen(
                             )
                         }
                     }
-                    AppCard(label = "مبلغ (ریال)") {
+                    AppCard(label = "مبلغ") {
                         OutlinedTextField(
                             value = amountText,
-                            onValueChange = { amountText = cleanNumDecimal(it) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            onValueChange = { amountText = cleanNum(it) },
+                            visualTransformation = ThousandsSeparatorTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
+                            suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
                         )
+                        val amountRial = amountText.toLongOrNull() ?: 0L
+                        if (amountRial > 0) {
+                            Text(
+                                "${numberToWordsFa((amountRial / 10).toDouble())} تومان",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
                     }
                     AppCard(label = "توضیح (اختیاری)") {
                         OutlinedTextField(
@@ -244,7 +258,7 @@ fun AccountDetailScreen(
             items(transactions, key = { it.id }) { tx ->
                 TransactionRow(
                     tx = tx,
-                    onDelete = { viewModel.deleteTransaction(tx) },
+                    onDelete = { deletingTx = tx },
                     modifier = Modifier.animateItem(),
                 )
             }
@@ -258,11 +272,19 @@ fun AccountDetailScreen(
             onDismiss = { showDeleteConfirm = false },
         )
     }
+    deletingTx?.let { tx ->
+        ConfirmDeleteDialog(
+            title = "حذفِ تراکنش",
+            text = "این تراکنش حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+            onConfirm = { viewModel.deleteTransaction(tx); deletingTx = null },
+            onDismiss = { deletingTx = null },
+        )
+    }
 }
 
 @Composable
 private fun TransactionRow(tx: AccountTransactionEntity, onDelete: () -> Unit, modifier: Modifier = Modifier) {
-    SwipeToDeleteRow(onDelete = onDelete, modifier = modifier) {
+    SwipeToDeleteRow(onDelete = onDelete, confirmDismiss = false, modifier = modifier) {
     AppCard {
         Row(
             modifier = Modifier.fillMaxWidth(),

@@ -15,10 +15,10 @@ data class AccountTransactionEntity(
     val day: Int,
     val createdAt: String,
     val category: String? = null,
-    // ردیابیِ تراکنش‌هایی که خودکار از پرداختِ قسطِ وام/چک ساخته شدن - برای جلوگیری از دوباره‌سازیِ
-    // تکراری موقعِ همگام‌سازیِ گذشته‌نگر (رجوع کن به AccountViewModel.backfillHistoricalTransactions
-    // و CLAUDE.md). sourceType یکی از "loan"/"cheque"ه؛ sourceId برای وام "loanId:m1,m2,..."ه (چون
-    // پرداختِ گروهیِ چند قسط با هم می‌تونه یه تراکنشِ ترکیبی بسازه)، برای چک همون chequeId.
+    // ردیابیِ تراکنش‌هایی که خودکار از پرداختِ قسطِ وام/چک ساخته شدن (رجوع کن به
+    // LoanDetailScreen.commitPayment/ChequeDetailScreen.commitPass). sourceType یکی از
+    // "loan"/"cheque"ه؛ sourceId برای وام "loanId:m1,m2,..."ه (چون پرداختِ گروهیِ چند قسط با هم
+    // می‌تونه یه تراکنشِ ترکیبی بسازه)، برای چک همون chequeId.
     val sourceType: String? = null,
     val sourceId: String? = null,
 )

@@ -5,6 +5,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -12,12 +14,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -50,6 +54,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.SideEffect
 import androidx.compose.foundation.background
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,6 +75,7 @@ import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.formatReminderOffsets
+import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.CategoryEntry
 import ir.sadteam.loancalc.data.db.AccountEntity
@@ -192,34 +198,7 @@ private fun MainSection(
     var showAccountsScreen by remember { mutableStateOf(false) }
     var accountsAddMode by remember { mutableStateOf(false) }
 
-    // همگام‌سازیِ گذشته‌نگرِ وام/چکِ ازقبل‌پرداخت‌شده با حسابداری (خواسته‌ی صریحِ کاربر: «قرار شد کل
-    // برنامه سینک باشه» - رجوع کن به CLAUDE.md، AccountViewModel.backfillHistoricalTransactions).
-    // وقتی دقیقاً یه حساب هست، ابهامی نیست که این پرداخت‌های قدیمی به کدوم حساب نسبت داده بشن، پس
-    // خودکار و بی‌صدا (بدونِ بنر) هر بار همین تب باز می‌شه اجرا می‌شه - چون idempotentه، دفعاتِ بعدی
-    // فقط صفر می‌گیره. با ≥۲ حساب ابهام داره، برای همین دکمه‌ی دستی زیرِ چیپ‌های حساب می‌ذاریم.
     val banner = rememberInAppBanner()
-    val syncScope = rememberCoroutineScope()
-    var showSyncAccountPicker by remember { mutableStateOf(false) }
-    LaunchedEffect(accounts.size) {
-        if (accounts.size == 1) viewModel.backfillHistoricalTransactions(accounts.first().id)
-    }
-    fun runManualBackfill(accountId: Long) {
-        syncScope.launch {
-            val n = viewModel.backfillHistoricalTransactions(accountId)
-            banner.show(
-                if (n > 0) "$n قسط/چکِ قدیمی به حسابداری اضافه شد" else "همه‌چیز از قبل همگام بود",
-                isSuccess = true,
-            )
-        }
-    }
-    if (showSyncAccountPicker) {
-        AccountPickerDialog(
-            accounts = accounts,
-            title = "قسط/چک‌های قدیمی از کدوم حساب کسر بشن؟",
-            onSelect = { account -> showSyncAccountPicker = false; runManualBackfill(account.id) },
-            onDismiss = { showSyncAccountPicker = false },
-        )
-    }
 
     if (showAccountsScreen) {
         AccountsScreen(
@@ -310,16 +289,6 @@ private fun MainSection(
                         selected = true,
                         onClick = { accountsAddMode = true; showAccountsScreen = true },
                     )
-                    // با یه حساب، همگام‌سازیِ گذشته‌نگر خودکار/بی‌صدا انجام می‌شه (رجوع کن به
-                    // LaunchedEffectِ بالا)؛ با چندتا حساب ابهام داره، برای همین این چیپِ دستی رو
-                    // اضافه کن تا کاربر خودش تعیین کنه پرداخت‌های قدیمی به کدوم حساب نسبت داده بشن.
-                    if (accounts.size > 1) {
-                        AppChip(
-                            label = "همگام‌سازیِ وام/چکِ قدیمی",
-                            selected = false,
-                            onClick = { showSyncAccountPicker = true },
-                        )
-                    }
                 }
             }
         }
@@ -366,7 +335,7 @@ private fun MainSection(
         } else {
             items(filtered, key = { it.id }) { tx ->
                 val accountName = accounts.firstOrNull { it.id == tx.accountId }?.name ?: "—"
-                SwipeToDeleteRow(onDelete = { deletingTx = tx }, modifier = Modifier.animateItem()) {
+                SwipeToDeleteRow(onDelete = { deletingTx = tx }, confirmDismiss = false, modifier = Modifier.animateItem()) {
                     AccountingTransactionRow(
                         tx = tx,
                         accountName = accountName,
@@ -497,7 +466,7 @@ private fun AddTransactionForm(
             }
         }
 
-        AppCard(label = "مبلغ (ریال)") {
+        AppCard(label = "مبلغ") {
             OutlinedTextField(
                 value = amountText,
                 onValueChange = { amountText = cleanNum(it) },
@@ -506,7 +475,17 @@ private fun AddTransactionForm(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = appFieldColors(),
+                suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
             )
+            val amountRial = amountText.toLongOrNull() ?: 0L
+            if (amountRial > 0) {
+                Text(
+                    "${numberToWordsFa((amountRial / 10).toDouble())} تومان",
+                    color = AppMuted,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
         }
 
         AppCard(label = "توضیح (اختیاری)") {
@@ -663,17 +642,17 @@ private fun BudgetSection(
                     },
                 )
                 if (editingCategory?.name == cat.name) {
-                    AppCard(modifier = Modifier.padding(top = 6.dp)) {
+                    AppCard(label = "سقفِ ماهانه", modifier = Modifier.padding(top = 6.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             OutlinedTextField(
                                 value = capText,
                                 onValueChange = { capText = cleanNum(it) },
                                 visualTransformation = ThousandsSeparatorTransformation(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                placeholder = { Text("سقفِ ماهانه (ریال)") },
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
                                 colors = appFieldColors(),
+                                suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
                             )
                             GradientButton(
                                 onClick = {
@@ -683,6 +662,15 @@ private fun BudgetSection(
                                 },
                                 modifier = Modifier.padding(start = 8.dp),
                             ) { Text("ذخیره", fontSize = 12.sp) }
+                        }
+                        val capRial = capText.toLongOrNull() ?: 0L
+                        if (capRial > 0) {
+                            Text(
+                                "${numberToWordsFa((capRial / 10).toDouble())} تومان",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
                         }
                     }
                 }
@@ -789,7 +777,7 @@ private fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Cat
             }
         } else {
             items(payments, key = { it.id }) { p ->
-                SwipeToDeleteRow(onDelete = { deletingPayment = p }, modifier = Modifier.animateItem()) {
+                SwipeToDeleteRow(onDelete = { deletingPayment = p }, confirmDismiss = false, modifier = Modifier.animateItem()) {
                     AppCard {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column {
@@ -846,7 +834,7 @@ private fun AddRecurringForm(
         AppCard(label = "اسم (مثلاً «اجاره‌خونه»)") {
             OutlinedTextField(value = name, onValueChange = { name = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors())
         }
-        AppCard(label = "مبلغ (ریال)") {
+        AppCard(label = "مبلغ") {
             OutlinedTextField(
                 value = amountText,
                 onValueChange = { amountText = cleanNum(it) },
@@ -855,7 +843,17 @@ private fun AddRecurringForm(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = appFieldColors(),
+                suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
             )
+            val amountRial = amountText.toLongOrNull() ?: 0L
+            if (amountRial > 0) {
+                Text(
+                    "${numberToWordsFa((amountRial / 10).toDouble())} تومان",
+                    color = AppMuted,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
         }
         AppCard(label = "نوع") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -891,6 +889,88 @@ private fun AddRecurringForm(
                 modifier = Modifier.weight(1f),
             ) { Text("ثبت") }
             OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("انصراف") }
+        }
+    }
+}
+
+/** ترتیبِ خطیِ روز/ماه/سالِ شمسی، فقط برای مقایسه‌ی «جلوتر/عقب‌تر» (نه محاسبه‌ی تقویمیِ واقعی) -
+ * ماه‌های شمسی حداکثر ۳۱ روزن، پس ضریبِ ۳۲ برای day و ۴۰۰ برای year کاملاً کافیه. */
+private fun PersianDate.ordinal(): Int = y * 400 + m * 32 + d
+
+/**
+ * ناوبرِ تاریخِ تبِ گزارش - خواسته‌ی صریحِ کاربر («تقویم رو منحصربه‌فرد کن و سوپرایزم کن») بعدِ
+ * رفعِ باگِ PersianCalendar.addDays (رجوع کن به CLAUDE.md). به‌جای دو فلشِ ساده‌ی کنارِ یه متنِ
+ * ثابت، یه نوارِ هفتگیِ تعاملی: متنِ تاریخِ کامل با اسلایدِ افقیِ هم‌جهت با حرکت (AnimatedContent)،
+ * و زیرش ۷ کپسولِ روزِ قابل‌تپ (سه روزِ قبل تا سه روزِ بعد، وسطی = روزِ انتخاب‌شده) که با یه تپ
+ * مستقیم می‌شه به هر کدوم پرید - نه فقط قدم‌به‌قدم.
+ */
+@Composable
+private fun DateRibbonHeader(viewDate: PersianDate, onDateChange: (PersianDate) -> Unit) {
+    var previousOrdinal by remember { mutableStateOf(viewDate.ordinal()) }
+    val goingForward = viewDate.ordinal() >= previousOrdinal
+    SideEffect { previousOrdinal = viewDate.ordinal() }
+
+    AppCard {
+        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            AnimatedContent(
+                targetState = viewDate,
+                transitionSpec = {
+                    val dir = if (goingForward) 1 else -1
+                    (slideInHorizontally(tween(220)) { w -> dir * w } + fadeIn(tween(220))) togetherWith
+                        (slideOutHorizontally(tween(220)) { w -> -dir * w } + fadeOut(tween(220)))
+                },
+                label = "reportDateText",
+            ) { d ->
+                val weekDay = faWeekDayNamesAccounting[JalaliCalendar.dayOfWeekSaturdayFirst(d)]
+                Text(
+                    "$weekDay، ${toFa(d.d)} ${faMonthNamesAccounting[d.m - 1]} ${toFa(d.y)}",
+                    color = AppText,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = { onDateChange(PersianCalendar.addDays(viewDate, -1)) }) {
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل")
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    (-3..3).forEach { offset ->
+                        val d = PersianCalendar.addDays(viewDate, offset)
+                        val selected = offset == 0
+                        val weekDayShort = faWeekDayNamesAccounting[JalaliCalendar.dayOfWeekSaturdayFirst(d)].take(1)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .width(34.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (selected) AppPrimary else Color.Transparent)
+                                .pressScaleClickable(onClick = { onDateChange(d) })
+                                .padding(vertical = 6.dp),
+                        ) {
+                            Text(
+                                weekDayShort,
+                                color = if (selected) Color.White else AppMuted,
+                                fontSize = 10.sp,
+                            )
+                            Text(
+                                toFa(d.d),
+                                color = if (selected) Color.White else AppText,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 1.dp),
+                            )
+                        }
+                    }
+                }
+                IconButton(onClick = { onDateChange(PersianCalendar.addDays(viewDate, 1)) }) {
+                    Icon(Icons.Filled.ChevronRight, contentDescription = "روزِ بعد")
+                }
+            }
         }
     }
 }
@@ -1016,27 +1096,7 @@ private fun ReportSection(viewModel: AccountViewModel) {
     ) {
         item {
             StaggerIn(0) {
-                AppCard {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        IconButton(onClick = { viewDate = PersianCalendar.addDays(viewDate, -1) }) {
-                            Icon(Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل")
-                        }
-                        val weekDay = faWeekDayNamesAccounting[JalaliCalendar.dayOfWeekSaturdayFirst(viewDate)]
-                        Text(
-                            "$weekDay، ${toFa(viewDate.d)} ${faMonthNamesAccounting[viewDate.m - 1]} ${toFa(viewDate.y)}",
-                            color = AppText,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        IconButton(onClick = { viewDate = PersianCalendar.addDays(viewDate, 1) }) {
-                            Icon(Icons.Filled.ChevronRight, contentDescription = "روزِ بعد")
-                        }
-                    }
-                }
+                DateRibbonHeader(viewDate = viewDate, onDateChange = { viewDate = it })
             }
         }
         item {

@@ -41,6 +41,7 @@ import ir.sadteam.loancalc.core.DebtType
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.CounterpartyEntity
 import ir.sadteam.loancalc.data.db.DebtEntity
@@ -299,10 +300,20 @@ private fun CounterpartyDetail(
                         OutlinedTextField(
                             value = amountText,
                             onValueChange = { amountText = cleanNum(it) },
-                            label = { Text("مبلغ (ریال)") },
+                            label = { Text("مبلغ") },
                             visualTransformation = ThousandsSeparatorTransformation(),
                             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                             singleLine = true,
+                            suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                        )
+                    }
+                    val amountRial = amountText.toLongOrNull() ?: 0L
+                    if (amountRial > 0) {
+                        Text(
+                            "${numberToWordsFa((amountRial / 10).toDouble())} تومان",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 4.dp),
                         )
                     }
                     OutlinedTextField(

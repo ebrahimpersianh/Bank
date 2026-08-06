@@ -41,20 +41,23 @@ val DarkAppColors = AppColorPalette(
     bg = Color(0xFF000000), // کاملاً مشکی (خواسته‌ی صریحِ کاربر: «پشت کامل مشکی»)
     surface = Color(0xFF0F1712),
     surface2 = Color(0xFF16211C),
-    primary = Color(0xFF34D399),
-    primaryDim = Color(0xFF0F9D6D),
+    // دورِ ششم - رنگِ سبز از رو نمودارِ لوگوی مرجعِ جدیدِ کاربر نمونه‌برداری شد (Python/PIL، خوشه‌ی
+    // غالبِ رنگیِ خودِ میله‌های نمودار ≈ #63C37A) - رجوع کن به CLAUDE.md. line/glass* همه از همون
+    // مبنای رنگیِ primary (فقط آلفای متفاوت) مشتق شدن، هم‌الگو با دورهای قبلی.
+    primary = Color(0xFF63C37A),
+    primaryDim = Color(0xFF33974B),
     accent = Color(0xFFFFB020),
     text = Color(0xFFEEF1F8),
     muted = Color(0xFF869489),
     danger = Color(0xFFE56B6F),
-    line = Color(0x1034D399), // زمردیِ ملایم با آلفای ~۶٪ - جداکننده‌های ظریف
+    line = Color(0x1063C37A), // سبزِ جدید با آلفای ~۶٪ - جداکننده‌های ظریف
     // پایه‌ی کارت کمی روشن‌تر از bg (که تقریباً مشکیه) تا کارت‌ها رو زمینه دیده بشن؛ گرادیان/حاشیه/
-    // هایلایت زمردیِ ملایم‌ان (آلفای کمتر از دورِ قبل، برای حسِ مینیمال‌تر/کمتر پرزرق‌وبرق).
+    // هایلایت با همون سبزِ جدید (آلفاها از دورِ قبل دست‌نخورده موندن، فقط رنگِ مبنا عوض شد).
     glassBase = Color(0x5C14241E), // مشکیِ سبزتاب با آلفای ~۳۶٪
-    glassGradientStart = Color(0x2034D399), // زمردیِ ملایم با آلفای ~۱۲٪
-    glassGradientEnd = Color(0x0034D399), // کاملاً شفاف
-    glassBorder = Color(0x4034D399), // زمردیِ ملایم با آلفای ~۲۵٪ - لبه‌ی ظریف‌تر از قبل
-    glassHighlight = Color(0x3A34D399), // زمردیِ ملایم با آلفای ~۲۳٪
+    glassGradientStart = Color(0x2063C37A), // سبزِ جدید با آلفای ~۱۲٪
+    glassGradientEnd = Color(0x0063C37A), // کاملاً شفاف
+    glassBorder = Color(0x4063C37A), // سبزِ جدید با آلفای ~۲۵٪
+    glassHighlight = Color(0x3A63C37A), // سبزِ جدید با آلفای ~۲۳٪
 )
 
 // دورِ پنجمِ تمِ روشن - هم‌قدم با تعدیلِ تمِ تیره‌ی بالا (کاربر: «تو حالتِ روشن قشنگ نیست خیلی»).
@@ -64,22 +67,23 @@ val LightAppColors = AppColorPalette(
     bg = Color(0xFFFFFFFF), // کاملاً سفید (خواسته‌ی صریحِ کاربر: «پشت کامل سفید»)
     surface = Color(0xFFFFFFFF),
     surface2 = Color(0xFFF1F7F3),
-    primary = Color(0xFF10B981),
-    primaryDim = Color(0xFF047857),
+    // دورِ ششم - هم‌قدم با تمِ تیره‌ی بالا، از همون نمونه‌برداریِ لوگوی مرجع (کمی تیره‌تر/اشباع‌تر
+    // برای کنتراستِ کافی رو زمینه‌ی سفید).
+    primary = Color(0xFF3DB65A),
+    primaryDim = Color(0xFF287F3D),
     accent = Color(0xFFB8860B),
     text = Color(0xFF141A2A),
     muted = Color(0xFF62705F),
     danger = Color(0xFFC6474B),
-    line = Color(0x1010B981), // زمردیِ متعادل با آلفای ~۶٪
+    line = Color(0x103DB65A), // سبزِ جدید با آلفای ~۶٪
     // باگِ رفع‌شده (تاریخی): مقادیرِ اولیه (پایه‌ی ۷۰٪ + گرادیانِ ۸٪ + حاشیه‌ی ۱۲٪) رو زمینه‌ی از قبل
     // تقریباً سفیدِ تمِ روشن عملاً نامرئی بود - کاربر گزارش داد «تو حالت عادی باکس‌ها اصلاً شیشه‌ای
     // نیست سفیده». پایه‌ی نیمه‌شفاف‌تر شد و گرادیان/حاشیه پررنگ‌تر - همون درس اینجا هم رعایت شد.
-    // دورِ پنجم: هم رنگ (زمردیِ متعادل‌تر به‌جای سبزِ خیلی پررنگ) هم آلفا (کمتر) تعدیل شد.
     glassBase = Color(0x5CFFFFFF), // سفید با آلفای ~۳۶٪
-    glassGradientStart = Color(0x1810B981), // زمردیِ متعادل با آلفای ~۹٪
-    glassGradientEnd = Color(0x0010B981), // کاملاً شفاف
-    glassBorder = Color(0x3810B981), // زمردیِ متعادل با آلفای ~۲۲٪
-    glassHighlight = Color(0x4510B981), // زمردیِ متعادل با آلفای ~۲۷٪
+    glassGradientStart = Color(0x183DB65A), // سبزِ جدید با آلفای ~۹٪
+    glassGradientEnd = Color(0x003DB65A), // کاملاً شفاف
+    glassBorder = Color(0x383DB65A), // سبزِ جدید با آلفای ~۲۲٪
+    glassHighlight = Color(0x453DB65A), // سبزِ جدید با آلفای ~۲۷٪
 )
 
 val LocalAppColors = staticCompositionLocalOf { DarkAppColors }
