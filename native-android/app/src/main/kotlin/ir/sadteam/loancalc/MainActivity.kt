@@ -24,6 +24,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -94,9 +95,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
@@ -157,6 +161,10 @@ import ir.sadteam.loancalc.ui.rating.RatePromptDialog
 import ir.sadteam.loancalc.ui.rating.RatePromptViewModel
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
+import ir.sadteam.loancalc.ui.theme.AppGlassBase
+import ir.sadteam.loancalc.ui.theme.AppGlassBorder
+import ir.sadteam.loancalc.ui.theme.AppGlassGradientEnd
+import ir.sadteam.loancalc.ui.theme.AppGlassGradientStart
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -658,16 +666,33 @@ private fun LoanCalcApp(
                 )
             },
             bottomBar = {
+                // نوارِ ناوبریِ شناور - بروزرسانیِ کلیِ محیطِ اپ (خواسته‌ی صریحِ کاربر: «کلا محیط
+                // برنامه رو بروز کن»). قبلاً یه Surface تخت‌رنگِ چسبیده به لبه‌های صفحه بود؛ الان
+                // همون رسپیِ دقیقِ «شیشه‌ای»ِ AppCard (shadow→clip→background(base+gradient)→border)
+                // با فاصله از لبه‌ها و گوشه‌های کاملاً گرد، پس Aurora از پشتش (بینِ نوار و لبه‌ی
+                // صفحه) دیده می‌شه - هم‌راستا با TopAppBar/کارت‌هایی که از قبل شیشه‌این.
                 AnimatedVisibility(
                     visible = bottomBarVisible,
                     enter = slideInVertically(Motion.standard()) { it },
                     exit = slideOutVertically(Motion.standard()) { it },
                 ) {
-                Surface(color = AppSurface) {
+                    val navShape = RoundedCornerShape(28.dp)
+                    val navGlassGradient = Brush.verticalGradient(listOf(AppGlassGradientStart, AppGlassGradientEnd))
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 10.dp, vertical = 12.dp),
+                            .padding(horizontal = 16.dp, vertical = 10.dp)
+                            .shadow(
+                                elevation = 20.dp,
+                                shape = navShape,
+                                ambientColor = AppPrimary.copy(alpha = 0.22f),
+                                spotColor = AppPrimary.copy(alpha = 0.22f),
+                            )
+                            .clip(navShape)
+                            .background(AppGlassBase)
+                            .background(navGlassGradient)
+                            .border(1.dp, AppGlassBorder, navShape)
+                            .padding(horizontal = 6.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         BottomTab.entries.forEach { tab ->
@@ -685,7 +710,6 @@ private fun LoanCalcApp(
                             )
                         }
                     }
-                }
                 }
             },
         ) { padding ->
