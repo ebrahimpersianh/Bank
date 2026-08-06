@@ -3,8 +3,13 @@ package ir.sadteam.loancalc.ui.accounting
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -35,17 +40,21 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.PieChart
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -87,7 +96,6 @@ import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.account.AccountsScreen
 import ir.sadteam.loancalc.ui.category.CategoryManagementScreen
 import ir.sadteam.loancalc.ui.category.CategoryViewModel
-import ir.sadteam.loancalc.ui.components.AccountPickerDialog
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
@@ -566,6 +574,7 @@ private fun BudgetSection(
 
     var editingCategory by remember { mutableStateOf<CategoryEntry?>(null) }
     var capText by remember { mutableStateOf("") }
+    var showAddBudgetDialog by remember { mutableStateOf(false) }
 
     fun stepMonth(delta: Int) {
         var m = viewMonth + delta
@@ -576,107 +585,222 @@ private fun BudgetSection(
         viewYear = y
     }
 
+    // فقط دسته‌هایی که کاربر واقعاً براشون سقف تعیین کرده - قبلاً همه‌ی دسته‌های هزینه (حتی
+    // «سقفی تعیین نشده») تو لیست بودن که صفحه رو الکی پر می‌کرد (خواسته‌ی صریحِ کاربر با تطبیق با
+    // یه اپِ رفرنس: «اگه چیزی هست رو بزار الکی صحفه رو پر نکن»).
     val budgetedCats = remember(expenseCats, budgets) { expenseCats.filter { cat -> budgets.any { it.categoryName == cat.name } } }
+    val unbudgetedCats = remember(expenseCats, budgetedCats) { expenseCats - budgetedCats.toSet() }
     val totalCap = remember(budgets, budgetedCats) { budgetedCats.sumOf { cat -> budgets.first { it.categoryName == cat.name }.monthlyCap } }
     val totalSpent = remember(spend, budgetedCats) { budgetedCats.sumOf { spend[it.name] ?: 0.0 } }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = { stepMonth(-1) }) {
-                    Icon(Icons.Filled.ChevronLeft, contentDescription = "ماهِ قبل")
-                }
-                Text(
-                    "${faMonthNamesAccounting[viewMonth - 1]} ${toFa(viewYear)}",
-                    color = AppText,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                IconButton(onClick = { stepMonth(1) }) {
-                    Icon(Icons.Filled.ChevronRight, contentDescription = "ماهِ بعد")
-                }
-            }
-        }
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.End),
-            ) {
-                OutlinedButton(onClick = onOpenRecurring) { Text("پرداختِ تکراری", fontSize = 12.sp) }
-                OutlinedButton(onClick = onOpenCategories) { Text("دسته‌بندی‌ها", fontSize = 12.sp) }
-            }
-        }
-        if (budgetedCats.isNotEmpty()) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             item {
-                BudgetRow(
-                    icon = Icons.Filled.Add,
-                    iconTint = AppPrimary,
-                    name = "همه دسته‌بندی‌ها",
-                    spent = totalSpent,
-                    cap = totalCap,
-                    onClick = null,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = { stepMonth(-1) }) {
+                        Icon(Icons.Filled.ChevronLeft, contentDescription = "ماهِ قبل")
+                    }
+                    Text(
+                        "${faMonthNamesAccounting[viewMonth - 1]} ${toFa(viewYear)}",
+                        color = AppText,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    IconButton(onClick = { stepMonth(1) }) {
+                        Icon(Icons.Filled.ChevronRight, contentDescription = "ماهِ بعد")
+                    }
+                }
             }
-        }
-        items(expenseCats, key = { it.name }) { cat ->
-            val budget = budgets.firstOrNull { it.categoryName == cat.name }
-            val spent = spend[cat.name] ?: 0.0
-            Column(modifier = Modifier.animateItem()) {
-                BudgetRow(
-                    icon = cat.icon,
-                    iconTint = cat.color,
-                    name = cat.name,
-                    spent = spent,
-                    cap = budget?.monthlyCap,
-                    onClick = {
-                        editingCategory = cat
-                        capText = budget?.monthlyCap?.toLong()?.toString() ?: ""
-                    },
-                )
-                if (editingCategory?.name == cat.name) {
-                    AppCard(label = "سقفِ ماهانه", modifier = Modifier.padding(top = 6.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(
-                                value = capText,
-                                onValueChange = { capText = cleanNum(it) },
-                                visualTransformation = ThousandsSeparatorTransformation(),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.weight(1f),
-                                singleLine = true,
-                                colors = appFieldColors(),
-                                suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
-                            )
-                            GradientButton(
-                                onClick = {
-                                    val cap = capText.toDoubleOrNull() ?: 0.0
-                                    if (cap > 0) viewModel.setBudget(cat.name, cap, budget?.id)
-                                    editingCategory = null
-                                },
-                                modifier = Modifier.padding(start = 8.dp),
-                            ) { Text("ذخیره", fontSize = 12.sp) }
-                        }
-                        val capRial = capText.toLongOrNull() ?: 0L
-                        if (capRial > 0) {
-                            Text(
-                                "${numberToWordsFa((capRial / 10).toDouble())} تومان",
-                                color = AppMuted,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(top = 4.dp),
-                            )
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.End),
+                ) {
+                    OutlinedButton(onClick = onOpenRecurring) { Text("پرداختِ تکراری", fontSize = 12.sp) }
+                    OutlinedButton(onClick = onOpenCategories) { Text("دسته‌بندی‌ها", fontSize = 12.sp) }
+                }
+            }
+            if (budgetedCats.isEmpty()) {
+                item {
+                    EmptyState(
+                        icon = Icons.Outlined.PieChart,
+                        title = "هنوز بودجه‌ای تعیین نکردی",
+                        description = "برای هر دسته‌ی هزینه یه سقفِ ماهانه بذار تا خرجت رو زیرِ نظر داشته باشی. با دکمه‌ی + پایینِ صفحه شروع کن.",
+                    )
+                }
+            } else {
+                item {
+                    BudgetRow(
+                        icon = Icons.Filled.Add,
+                        iconTint = AppPrimary,
+                        name = "همه دسته‌بندی‌ها",
+                        spent = totalSpent,
+                        cap = totalCap,
+                        onClick = null,
+                    )
+                }
+                items(budgetedCats, key = { it.name }) { cat ->
+                    val budget = budgets.firstOrNull { it.categoryName == cat.name }
+                    val spent = spend[cat.name] ?: 0.0
+                    Column(modifier = Modifier.animateItem()) {
+                        BudgetRow(
+                            icon = cat.icon,
+                            iconTint = cat.color,
+                            name = cat.name,
+                            spent = spent,
+                            cap = budget?.monthlyCap,
+                            onClick = {
+                                editingCategory = cat
+                                capText = budget?.monthlyCap?.toLong()?.toString() ?: ""
+                            },
+                        )
+                        if (editingCategory?.name == cat.name) {
+                            AppCard(label = "سقفِ ماهانه", modifier = Modifier.padding(top = 6.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    OutlinedTextField(
+                                        value = capText,
+                                        onValueChange = { capText = cleanNum(it) },
+                                        visualTransformation = ThousandsSeparatorTransformation(),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        modifier = Modifier.weight(1f),
+                                        singleLine = true,
+                                        colors = appFieldColors(),
+                                        suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                                    )
+                                    GradientButton(
+                                        onClick = {
+                                            val cap = capText.toDoubleOrNull() ?: 0.0
+                                            if (cap > 0) viewModel.setBudget(cat.name, cap, budget?.id)
+                                            editingCategory = null
+                                        },
+                                        modifier = Modifier.padding(start = 8.dp),
+                                    ) { Text("ذخیره", fontSize = 12.sp) }
+                                }
+                                val capRial = capText.toLongOrNull() ?: 0L
+                                if (capRial > 0) {
+                                    Text(
+                                        "${numberToWordsFa((capRial / 10).toDouble())} تومان",
+                                        color = AppMuted,
+                                        fontSize = 11.sp,
+                                        modifier = Modifier.padding(top = 4.dp),
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+
+        // دکمه‌ی «+» شناور - دقیقاً هم‌الگو با FAB افزودنِ وامِ دستی تو MyLoansScreen.kt (BottomEnd
+        // که تو RTL یعنی گوشه‌ی پایین-چپ، پاپِ فنری). تنها وقتی نشون داده می‌شه که حداقل یه دسته‌ی
+        // بی‌بودجه مونده باشه - اگه همه‌ی دسته‌ها بودجه گرفتن، دیگه چیزی برای افزودن نیست.
+        AnimatedVisibility(
+            visible = unbudgetedCats.isNotEmpty(),
+            enter = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) + fadeIn(tween(150)),
+            exit = scaleOut(tween(120)) + fadeOut(tween(120)),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
+        ) {
+            FloatingActionButton(
+                onClick = { showAddBudgetDialog = true },
+                containerColor = AppPrimary,
+                contentColor = Color.White,
+                shape = CircleShape,
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "افزودنِ بودجه")
+            }
+        }
     }
+
+    if (showAddBudgetDialog) {
+        AddBudgetDialog(
+            categories = unbudgetedCats,
+            onDismiss = { showAddBudgetDialog = false },
+            onSave = { cat, cap ->
+                viewModel.setBudget(cat.name, cap, null)
+                showAddBudgetDialog = false
+            },
+        )
+    }
+}
+
+/** دیالوگِ دومرحله‌ای افزودنِ بودجه‌ی جدید (از رو FABِ بالا) - اول یه دسته‌ی بی‌بودجه انتخاب می‌شه،
+ * بعد سقفِ ماهانه‌ش وارد می‌شه. الگوی «انتخاب → مقدار» هم‌راستا با AccountPickerDialogِ موجود تو
+ * ui/components. */
+@Composable
+private fun AddBudgetDialog(
+    categories: List<CategoryEntry>,
+    onDismiss: () -> Unit,
+    onSave: (CategoryEntry, Double) -> Unit,
+) {
+    var selected by remember { mutableStateOf<CategoryEntry?>(null) }
+    var capText by remember { mutableStateOf("") }
+    val cat = selected
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (cat == null) "برای کدوم دسته بودجه بزاریم؟" else "سقفِ ماهانه‌ی «${cat.name}»") },
+        text = {
+            if (cat == null) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    categories.forEach { c ->
+                        TextButton(
+                            onClick = { selected = c },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(c.icon, contentDescription = null, tint = c.color, modifier = Modifier.size(20.dp))
+                                Text(c.name, color = AppText, fontSize = 14.sp, modifier = Modifier.padding(start = 8.dp))
+                            }
+                        }
+                    }
+                }
+            } else {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = capText,
+                        onValueChange = { capText = cleanNum(it) },
+                        visualTransformation = ThousandsSeparatorTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = appFieldColors(),
+                        suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                    )
+                    val capRial = capText.toLongOrNull() ?: 0L
+                    if (capRial > 0) {
+                        Text(
+                            "${numberToWordsFa((capRial / 10).toDouble())} تومان",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (cat != null) {
+                TextButton(onClick = {
+                    val capVal = capText.toDoubleOrNull() ?: 0.0
+                    if (capVal > 0) onSave(cat, capVal)
+                }) { Text("ذخیره") }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { if (cat != null) selected = null else onDismiss() }) {
+                Text(if (cat != null) "بازگشت" else "انصراف")
+            }
+        },
+    )
 }
 
 /** یه ردیفِ بودجه‌ی تک (رجوع کن به BudgetSection بالا) - نوارِ پیشرفت + خرج‌شده/باقی‌مانده همیشه‌نمایان،
