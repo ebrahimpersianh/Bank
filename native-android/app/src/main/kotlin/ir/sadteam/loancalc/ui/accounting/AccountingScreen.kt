@@ -329,7 +329,8 @@ private fun MainSection(
                 EmptyState(
                     icon = Icons.Outlined.AccountBalanceWallet,
                     title = "اول یه حساب بساز",
-                    description = "برای ثبتِ تراکنش، اول یه حساب (نقدی یا بانکی) بساز.",
+                    description = "برای ثبتِ تراکنش، اول یه حساب (نقدی یا بانکی) بساز - قسط/چکِ " +
+                        "پرداخت‌شده‌ت هم خودکار همون‌موقع میاد اینجا.",
                     actionLabel = "افزودنِ حساب",
                     onAction = { accountsAddMode = true; showAccountsScreen = true },
                 )

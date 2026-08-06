@@ -87,6 +87,10 @@ fun ChequeDetailScreen(
                 sourceType = "cheque",
                 sourceId = cheque.id.toString(),
             )
+        } else {
+            // خواسته‌ی صریحِ کاربر («باید جایی اعلام کنی») - قبلاً وقتی هیچ حسابی نبود، پرداخت
+            // بی‌سروصدا تو حسابداری ثبت نمی‌شد و هیچ توضیحی هم داده نمی‌شد.
+            banner.show("این چک تو حسابداری ثبت نشد - برای اینکه خودکار ثبت بشه، از تبِ «دارایی» یه حساب بساز.")
         }
     }
     if (pendingPassStatus && accounts.isNotEmpty()) {
