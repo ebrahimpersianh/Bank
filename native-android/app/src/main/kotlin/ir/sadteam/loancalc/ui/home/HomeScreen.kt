@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,8 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
@@ -29,6 +32,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,8 +56,11 @@ import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppGlassBase
+import ir.sadteam.loancalc.ui.theme.AppGlassBorder
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -120,20 +128,48 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                Column(modifier = Modifier.fillMaxWidth()) {
+                // کارتِ بزرگِ گرادیانیِ موجودی - بروزرسانیِ ظاهرِ کلیِ اپ (خواسته‌ی صریحِ کاربر:
+                // «کل برنامه مدرن‌تر بشه»). قبلاً فقط یه متنِ ساده‌ی معلق رو پس‌زمینه‌ی Aurora بود؛
+                // الان یه کارتِ شیشه‌ای با گرادیانِ رنگِ اصلیِ اپ، شبیهِ کارتِ بانکی.
+                val balanceGradient = Brush.linearGradient(
+                    listOf(AppPrimary.copy(alpha = 0.40f), AppPrimaryDim.copy(alpha = 0.18f)),
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(AppGlassBase)
+                        .background(balanceGradient)
+                        .border(1.dp, AppGlassBorder, RoundedCornerShape(24.dp))
+                        .padding(20.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("مانده‌ی کل", color = AppMuted, fontSize = 13.sp)
+                        Box(
+                            modifier = Modifier.size(34.dp).background(AppPrimary.copy(alpha = 0.18f), CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(Icons.Filled.AccountBalanceWallet, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
+                        }
+                    }
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
                             "${maskIfPrivate(masked, fmt(totalBalance))} ریال",
                             color = if (totalBalance < 0) AppDanger else AppText,
-                            fontSize = 24.sp,
+                            fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 10.dp),
                         )
                     }
                     Text(
                         "${toFa(accounts.size)} حساب‌کتاب",
                         color = AppMuted,
                         fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 2.dp),
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
             }

@@ -105,6 +105,7 @@ import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.ReminderOverrideCard
+import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.components.StaggerIn
 import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
@@ -442,18 +443,14 @@ private fun AddTransactionForm(
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         AppCard(label = "نوع تراکنش") {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AppChip(
-                    label = "هزینه",
-                    selected = type == TransactionType.WITHDRAWAL,
-                    onClick = { type = TransactionType.WITHDRAWAL; selectedCategory = null },
-                )
-                AppChip(
-                    label = "درآمد",
-                    selected = type == TransactionType.DEPOSIT,
-                    onClick = { type = TransactionType.DEPOSIT; selectedCategory = null },
-                )
-            }
+            SegmentedToggle(
+                options = listOf("هزینه", "درآمد"),
+                selectedIndex = if (type == TransactionType.WITHDRAWAL) 0 else 1,
+                onSelect = { index ->
+                    type = if (index == 0) TransactionType.WITHDRAWAL else TransactionType.DEPOSIT
+                    selectedCategory = null
+                },
+            )
         }
 
         AppCard(label = "دسته‌بندی") {
@@ -774,8 +771,13 @@ private fun AddBudgetDialog(
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(c.icon, contentDescription = null, tint = c.color, modifier = Modifier.size(20.dp))
-                                Text(c.name, color = AppText, fontSize = 14.sp, modifier = Modifier.padding(start = 8.dp))
+                                Box(
+                                    modifier = Modifier.size(28.dp).background(c.color.copy(alpha = 0.16f), CircleShape),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(c.icon, contentDescription = null, tint = c.color, modifier = Modifier.size(15.dp))
+                                }
+                                Text(c.name, color = AppText, fontSize = 14.sp, modifier = Modifier.padding(start = 10.dp))
                             }
                         }
                     }
@@ -836,8 +838,15 @@ private fun BudgetRow(
     AppCard(modifier = if (onClick != null) Modifier.pressScaleClickable(onClick = onClick) else Modifier) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
-                Text(name, color = AppText, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp))
+                // آیکونِ توی دایره‌ی رنگیِ ملایم - هم‌الگو با RecentTransactionRowِ تبِ خانه، برای
+                // یکدستیِ ظاهرِ کلِ اپ (خواسته‌ی صریحِ کاربر: «کل برنامه مدرن‌تر بشه»).
+                Box(
+                    modifier = Modifier.size(30.dp).background(iconTint.copy(alpha = 0.16f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(16.dp))
+                }
+                Text(name, color = AppText, fontSize = 13.sp, modifier = Modifier.padding(start = 10.dp))
             }
             LinearProgressIndicator(
                 progress = fraction,
@@ -997,10 +1006,14 @@ private fun AddRecurringForm(
             }
         }
         AppCard(label = "نوع") {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AppChip(label = "هزینه", selected = type == TransactionType.WITHDRAWAL, onClick = { type = TransactionType.WITHDRAWAL; selectedCategory = null })
-                AppChip(label = "درآمد", selected = type == TransactionType.DEPOSIT, onClick = { type = TransactionType.DEPOSIT; selectedCategory = null })
-            }
+            SegmentedToggle(
+                options = listOf("هزینه", "درآمد"),
+                selectedIndex = if (type == TransactionType.WITHDRAWAL) 0 else 1,
+                onSelect = { index ->
+                    type = if (index == 0) TransactionType.WITHDRAWAL else TransactionType.DEPOSIT
+                    selectedCategory = null
+                },
+            )
         }
         AppCard(label = "دسته‌بندی (اختیاری)") {
             androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1243,10 +1256,12 @@ private fun ReportSection(viewModel: AccountViewModel) {
         item {
             StaggerIn(1) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        AppChip(label = "دخل", selected = !showExpenseTab, onClick = { showExpenseTab = false }, modifier = Modifier.weight(1f))
-                        AppChip(label = "خرج", selected = showExpenseTab, onClick = { showExpenseTab = true }, modifier = Modifier.weight(1f))
-                    }
+                    SegmentedToggle(
+                        options = listOf("دخل", "خرج"),
+                        selectedIndex = if (showExpenseTab) 1 else 0,
+                        onSelect = { index -> showExpenseTab = index == 1 },
+                        selectedColor = if (showExpenseTab) AppDanger else AppPrimary,
+                    )
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp).height(4.dp).clip(CircleShape),
                     ) {
