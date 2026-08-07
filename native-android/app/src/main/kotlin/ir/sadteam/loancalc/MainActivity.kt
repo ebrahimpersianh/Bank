@@ -383,14 +383,12 @@ class MainActivity : FragmentActivity() {
 private fun AppRoot(
     authViewModel: AuthViewModel = hiltViewModel(),
     appLockViewModel: AppLockViewModel = hiltViewModel(),
-    themeViewModel: ThemeViewModel = hiltViewModel(),
 ) {
-    // اینتروِ دوناتی (پورت اسپلشِ اپ وب) - یه‌بار در هر بار باز شدن اپ، قبل از همه‌چیز. رنگِ زمینه‌ش
-    // با دارک/لایت‌مودِ فعلی هماهنگه (خواسته‌ی کاربر) - برای همین themeMode هم اینجا لازمه.
+    // اینتروِ باز شدن اپ - یه‌بار در هر بار باز شدن، قبل از همه‌چیز. دیگه به تمِ فعلی وابسته نیست
+    // (زمینه‌ش همیشه مشکیه، چون خودِ تصویرِ اسپلش زمینه‌ی مشکی داره) - رجوع کن به SplashIntroScreen.
     var introDone by remember { mutableStateOf(false) }
     if (!introDone) {
-        val themeMode by themeViewModel.themeMode.collectAsState()
-        SplashIntroScreen(isDarkTheme = themeMode == ThemeMode.DARK, onDone = { introDone = true })
+        SplashIntroScreen(onDone = { introDone = true })
         return
     }
 
