@@ -1,6 +1,5 @@
 package ir.sadteam.loancalc.ui.home
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,8 +17,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
@@ -37,15 +33,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -62,7 +51,6 @@ import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.TodayCard
 import ir.sadteam.loancalc.ui.components.persianMonthName
-import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.note.NoteViewModel
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
@@ -186,116 +174,6 @@ fun HomeScreen(
                 }
             }
             item {
-                // نمودارِ روندِ ۶ماهه‌ی درآمد/هزینه + خلاصه‌ی ماهِ جاری - هم‌الگو با عکسِ مرجعِ کاربر
-                // («نمودارِ جریانِ مالی» بالای تبِ خانه). از رو همون AccountViewModel.monthlyTotals
-                // (که قبلاً برای بودجه استفاده می‌شد) برای هر ماه حساب می‌شه.
-                val trend = remember(transactions) {
-                    (5 downTo 0).map { offset ->
-                        val d = PersianCalendar.addMonths(JalaliCalendar.today(), -offset)
-                        val (inc, exp) = accountViewModel.monthlyTotals(transactions, d.y, d.m)
-                        Triple(d.m, inc, exp)
-                    }
-                }
-                val curIncome = trend.last().second
-                val curExpense = trend.last().third
-                val maxTrendValue = (trend.maxOfOrNull { maxOf(it.second, it.third) } ?: 0.0).coerceAtLeast(1.0)
-                // رنگ‌ها باید بیرونِ Canvas خونده بشن - AppPrimary/AppDanger پراپرتیِ @Composable ان
-                // (get() تم‌آگاه)، و بلوکِ رسمِ Canvas یه DrawScope معمولی‌ه نه @Composable، پس
-                // مستقیم صداکردنشون اونجا خطای کامپایل می‌ده.
-                val incomeLineColor = AppPrimary
-                val expenseLineColor = AppDanger
-                AppCard(label = "نمودارِ جریانِ مالی") {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column {
-                            Text("درآمدِ این ماه", color = AppMuted, fontSize = 12.sp)
-                            PrivacyCrossfade(privacyMode) { masked ->
-                                Text(
-                                    "${maskIfPrivate(masked, fmt(curIncome))} ریال",
-                                    color = AppPrimary,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("هزینه‌ی این ماه", color = AppMuted, fontSize = 12.sp)
-                            PrivacyCrossfade(privacyMode) { masked ->
-                                Text(
-                                    "${maskIfPrivate(masked, fmt(curExpense))} ریال",
-                                    color = AppDanger,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-                        }
-                    }
-                    Canvas(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(90.dp)
-                            .padding(top = 14.dp),
-                    ) {
-                        if (trend.size < 2) return@Canvas
-                        val stepX = size.width / (trend.size - 1)
-                        fun pointsFor(selector: (Triple<Int, Double, Double>) -> Double): List<Offset> =
-                            trend.mapIndexed { index, t ->
-                                val value = selector(t)
-                                val y = size.height - (value / maxTrendValue).toFloat() * size.height
-                                Offset(index * stepX, y.coerceIn(0f, size.height))
-                            }
-                        fun drawTrendLine(points: List<Offset>, color: Color) {
-                            val path = Path()
-                            points.forEachIndexed { i, p -> if (i == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y) }
-                            drawPath(path, color = color, style = Stroke(width = 5f, cap = StrokeCap.Round))
-                        }
-                        drawTrendLine(pointsFor { it.second }, incomeLineColor)
-                        drawTrendLine(pointsFor { it.third }, expenseLineColor)
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        trend.forEach { (m, _, _) ->
-                            Text(persianMonthName(m).take(4), color = AppMuted, fontSize = 9.sp)
-                        }
-                    }
-                }
-            }
-            item {
-                // شبکه‌ی «دسترسیِ سریع» - هم‌الگو با عکسِ مرجعِ کاربر (۴ دکمه: تراکنشِ جدید، گزارش‌ها،
-                // دسته‌بندی‌ها، حساب‌ها). هرکدوم به نزدیک‌ترین تبی که همون قابلیت رو داره می‌بره.
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    QuickAccessButton(
-                        icon = Icons.Filled.Add,
-                        label = "تراکنشِ جدید",
-                        tint = AppPrimary,
-                        onClick = { onNavigateToRoute("assets") },
-                        modifier = Modifier.weight(1f),
-                    )
-                    QuickAccessButton(
-                        icon = Icons.Filled.BarChart,
-                        label = "گزارش‌ها",
-                        tint = AppText,
-                        onClick = { onNavigateToRoute("report") },
-                        modifier = Modifier.weight(1f),
-                    )
-                    QuickAccessButton(
-                        icon = Icons.Filled.Category,
-                        label = "دسته‌بندی‌ها",
-                        tint = AppText,
-                        onClick = { onNavigateToRoute("budget") },
-                        modifier = Modifier.weight(1f),
-                    )
-                    QuickAccessButton(
-                        icon = Icons.Filled.AccountBalanceWallet,
-                        label = "حساب‌ها",
-                        tint = AppText,
-                        onClick = { onNavigateToRoute("assets") },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-            item {
                 TodayCard(
                     date = selectedDate,
                     onPrevDay = { selectedDate = PersianCalendar.addDays(selectedDate, -1) },
@@ -337,41 +215,6 @@ fun HomeScreen(
         ) {
             Icon(Icons.Filled.Add, contentDescription = "افزودنِ تراکنش")
         }
-    }
-}
-
-/** یه دکمه‌ی مربعیِ «دسترسیِ سریع» - آیکونِ توی دایره‌ی رنگیِ ملایم + لیبل زیرش، هم‌الگو با
- * BudgetRow/RecentTransactionRow (رجوع کن به CLAUDE.md، «مدرن‌ترکردنِ ظاهرِ کلیِ اپ»). */
-@Composable
-private fun QuickAccessButton(
-    icon: ImageVector,
-    label: String,
-    tint: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(AppGlassBase)
-            .border(1.dp, AppGlassBorder, RoundedCornerShape(16.dp))
-            .pressScaleClickable(onClick = onClick)
-            .padding(vertical = 14.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
-            modifier = Modifier.size(38.dp).background(tint.copy(alpha = 0.16f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
-        }
-        Text(
-            label,
-            color = AppText,
-            fontSize = 11.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 6.dp),
-        )
     }
 }
 

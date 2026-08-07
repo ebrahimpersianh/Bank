@@ -26,7 +26,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +37,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -46,7 +44,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.RequestQuote
@@ -171,7 +168,6 @@ import ir.sadteam.loancalc.ui.theme.AppGlassGradientStart
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
 import ir.sadteam.loancalc.ui.theme.ThemeRevealHost
 import ir.sadteam.loancalc.ui.theme.ThemeRevealState
@@ -698,47 +694,8 @@ private fun LoanCalcApp(
                             .border(1.dp, AppGlassBorder, navShape)
                             .padding(horizontal = 6.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        val tabs = BottomTab.entries.toList()
-                        tabs.take(2).forEach { tab ->
-                            BottomNavItem(
-                                tab = tab,
-                                selected = currentRoute == tab.route,
-                                onPositioned = { rect -> registerTabTourBounds(tab, rect, tourBounds) },
-                                onClick = {
-                                    if (tab.route == currentRoute) {
-                                        tabResetKeys[tab] = (tabResetKeys[tab] ?: 0) + 1
-                                    } else {
-                                        navigateTo(tab.route)
-                                    }
-                                },
-                            )
-                        }
-                        // دکمه‌ی «+» برجسته‌ی وسطِ نوار - هم‌الگو با اپ‌های فینتکِ رفرنس (اسکرین‌شاتِ
-                        // کاربر): یه دایره‌ی سبزِ گرادیانی که از خطِ نوار بالاتر می‌زنه، برای
-                        // دسترسیِ سریع به «افزودنِ تراکنش» (تبِ دارایی که خودش فرمِ افزودن رو بالا داره).
-                        Box(
-                            modifier = Modifier
-                                .offset(y = (-14).dp)
-                                .size(52.dp)
-                                .shadow(
-                                    elevation = 10.dp,
-                                    shape = CircleShape,
-                                    ambientColor = AppPrimary.copy(alpha = 0.5f),
-                                    spotColor = AppPrimary.copy(alpha = 0.5f),
-                                )
-                                .clip(CircleShape)
-                                .background(Brush.verticalGradient(listOf(AppPrimary, AppPrimaryDim)))
-                                .clickable {
-                                    buzz()
-                                    if (currentRoute != BottomTab.ASSETS.route) navigateTo(BottomTab.ASSETS.route)
-                                },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(Icons.Filled.Add, contentDescription = "افزودنِ سریعِ تراکنش", tint = Color.White)
-                        }
-                        tabs.drop(2).forEach { tab ->
+                        BottomTab.entries.forEach { tab ->
                             BottomNavItem(
                                 tab = tab,
                                 selected = currentRoute == tab.route,

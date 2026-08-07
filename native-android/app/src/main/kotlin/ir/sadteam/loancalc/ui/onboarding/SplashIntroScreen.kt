@@ -19,6 +19,11 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,91 +32,92 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Text
 import kotlin.math.PI
 import kotlin.math.sin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// رنگ‌های عینِ اسپلشِ اپ وب (#splash تو www/index.html)، حالا به‌جز پس‌زمینه با تم هماهنگ (خواسته‌ی
-// کاربر: «اسپلش سفید و مشکی باشه بنا به دارک‌مود تغییر کنه» - قبلاً همیشه تیره بود، مستقل از تم).
-private val SplashBgDark = Color(0xFF000000) // هم‌رنگِ AppBgِ جدید (کاملاً مشکی، دورِ چهارمِ تمِ تیره)
+// رنگ‌های اسپلش - پس‌زمینه با تم هماهنگه (کاربر قبلاً صریح خواسته بود: «سفید و مشکی بنا به
+// دارک‌مود تغییر کنه»)، ولی خودِ نور/آیکون/حلقه همیشه سبزِ برندِ اپه (هم‌رنگِ AppPrimaryِ فعلی)،
+// دقیقاً مثلِ عکسِ مرجعِ کاربر که هیچ رنگِ دیگه‌ای (طلایی/نارنجی) نداره.
+private val SplashBgDark = Color(0xFF000000)
 private val SplashBgLight = Color(0xFFFFFFFF)
-private val RingBase = Color(0xFF16211C) // هم‌رنگِ AppSurface2ِ جدید
-private val RingGold = Color(0xFFFFB020) // هم‌رنگِ AppAccent (طلایی) - دست‌نخورده موند
-private val RingTeal = Color(0xFF63C37A) // هم‌رنگِ AppPrimaryِ جدید (نمونه‌برداری‌شده از لوگوی مرجع، دورِ ششمِ تمِ تیره)
-private val FireCore = Color(0xFFFF5A1F) // هسته‌ی گرمِ نارنجی/قرمز برای حسِ «آتیشِ روشن»
+private val RingTeal = Color(0xFF63C37A)
+private val RingTealDim = Color(0xFF2E7A47)
+private val CardDark = Color(0xFF0B0F0C)
 private val SplashNameDark = Color(0xFFEEF1F8)
 private val SplashNameLight = Color(0xFF1A2033)
 private val SplashSubDark = Color(0xFF4A5570)
 private val SplashSubLight = Color(0xFF8D96AC)
 
 /**
- * اینتروِ باز شدن اپ - پورت دقیق اسپلشِ اپ وب (`#splash` تو www/index.html): زمینه‌ی هماهنگ با تم، یه
- * حلقه‌ی دونات (پایه‌ی تیره + کمانِ طلایی ۳۰٪ + کمانِ سبز ۷۰٪، عین نمودار دونات وام)، اسم «حسابدار من»، سه
- * نقطه‌ی چشمک‌زن و «Powered By Sad Team». بعد از ~۱.۸ ثانیه [onDone] صدا زده می‌شه.
+ * اینتروِ باز شدن اپ - بازسازیِ مستقیمِ استوری‌بردِ ۶مرحله‌ایِ عکسِ مرجعِ کاربر:
+ * ۱) بارشِ ذراتِ نور از بالا  ۲) شکل‌گیریِ یه حلقه‌ی بیضی‌مایلِ نوری در مرکز  ۳) ظهورِ آیکون
+ * (پشته‌ی سه‌کارتیِ سبزآبی) از دلِ نور  ۴) نورپردازی/درخشان‌ترشدنِ آیکون  ۵) نمایشِ اسمِ
+ * «حسابدار من» + شعار  ۶) حالتِ نهایی. بعد از ~۲.۱ ثانیه [onDone] صدا زده می‌شه.
  *
- * خواسته‌ی آخرِ کاربر (این دور): حلقه‌ی بازتابِ نورِ دورِ دونات (که قبلاً اینجا بود) حذف شد - فقط
- * خودِ «یک حلقه‌ی بسته» (دونات) می‌مونه؛ به‌جاش هاله‌ی پشتِ حلقه بزرگ‌تر و گرم‌تر شد تا حسِ «آتیشِ
- * روشن» بده (هسته‌ی نارنجی/قرمز [FireCore] + طلایی، با یه لایه‌ی سایه‌ی تیره‌ی افتاده‌ی پشتش)، و
- * هم‌زمان با چرخشِ [spin] یه تکونِ ریزِ نفس‌مانند (wobbleScale، مستقیم مشتق از خودِ spin.value، نه یه
- * انیمیشنِ جدا) می‌خوره - نه یه‌ذره پرت از حلقه، عینِ شعله‌ای که با چرخش می‌لرزه.
+ * آیکونِ داخلِ کارتِ جلو عمداً از [Icons.Filled.TrendingUp] (میله‌های نمودار + فلشِ صعودی، همون
+ * مفهومِ چارتِ عکسِ مرجع) استفاده می‌کنه، نه یه مسیرِ سفارشیِ دستی با Path - چون سندباکس نمی‌تونه
+ * native-android رو بیلد/تست کنه، یه آیکونِ آماده‌ی استانداردِ Material ریسکِ خطای کامپایل یا
+ * شکلِ بدِ یه فلشِ دستی‌کشیده رو خیلی کمتر می‌کنه.
  */
 @Composable
 fun SplashIntroScreen(isDarkTheme: Boolean, onDone: () -> Unit) {
     val splashBg = if (isDarkTheme) SplashBgDark else SplashBgLight
     val splashName = if (isDarkTheme) SplashNameDark else SplashNameLight
     val splashSub = if (isDarkTheme) SplashSubDark else SplashSubLight
-    val pop = remember { Animatable(0.75f) }
-    LaunchedEffect(Unit) {
-        pop.animateTo(1f, animationSpec = tween(800, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
-    }
-    // چرخش کامل حلقه موقع ورود (خواسته‌ی کاربر: «دایره بچرخه، خیلی پریمیوم می‌شه»، بعد «چرخش رو یه
-    // دور بیشتر کن») - دو دور کامل (۷۲۰ درجه) با همون easing نرم، همزمان با pop، بعد آروم می‌ایسته.
-    // تاخیرِ onDone هم متناسب زیاد شده تا اسپلش قبل از تموم‌شدنِ چرخش قطع نشه.
-    val spin = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        spin.animateTo(720f, animationSpec = tween(1600, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
-    }
-    LaunchedEffect(Unit) {
-        delay(1800)
-        onDone()
-    }
-    // «Powered By SadTeam» پایینِ اسپلش قبلاً هیچ افکتی نداشت، همون اول یهو بود. خواسته‌ی کاربر:
-    // انگار داره «ظاهر می‌شه» - محو (alpha) + یه‌کم بالا اومدن (offset) با تاخیر بعد از حلقه، تا
-    // حسِ لایه‌به‌لایه ظاهرشدن بده، نه یهویی.
+
+    val rainProgress = remember { Animatable(0f) }
+    val ringProgress = remember { Animatable(0f) }
+    val iconAppear = remember { Animatable(0f) }
+    val iconGlow = remember { Animatable(0f) }
+    val nameAlpha = remember { Animatable(0f) }
+    val nameOffset = remember { Animatable(10f) }
     val poweredByAlpha = remember { Animatable(0f) }
     val poweredByOffset = remember { Animatable(12f) }
+
     LaunchedEffect(Unit) {
-        delay(900)
-        launch { poweredByAlpha.animateTo(1f, animationSpec = tween(700)) }
+        // مرحله‌ی ۱: بارش
+        launch { rainProgress.animateTo(1f, animationSpec = tween(600, easing = LinearEasing)) }
+        // مرحله‌ی ۲: شکل‌گیریِ حلقه
         launch {
-            poweredByOffset.animateTo(0f, animationSpec = tween(700, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
+            delay(350)
+            ringProgress.animateTo(1f, animationSpec = tween(700, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
+        }
+        // مرحله‌ی ۳: ظهورِ آیکون
+        launch {
+            delay(850)
+            iconAppear.animateTo(1f, animationSpec = tween(550, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
+        }
+        // مرحله‌ی ۴: نورپردازی/درخشان‌ترشدنِ آیکون
+        launch {
+            delay(1300)
+            iconGlow.animateTo(1f, animationSpec = tween(400))
+        }
+        // مرحله‌ی ۵: نمایشِ اسم
+        launch {
+            delay(1500)
+            launch { nameAlpha.animateTo(1f, animationSpec = tween(500)) }
+            launch { nameOffset.animateTo(0f, animationSpec = tween(500, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))) }
+        }
+        launch {
+            delay(1600)
+            launch { poweredByAlpha.animateTo(1f, animationSpec = tween(600)) }
+            launch { poweredByOffset.animateTo(0f, animationSpec = tween(600, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))) }
         }
     }
-
-    // تکونِ نفس‌مانندِ هاله (خواسته‌ی کاربر: «هم‌زمان با چرخش یه تکونی بخوره») - مستقیم از رو
-    // spin.value مشتق می‌شه (نه یه Animatable جدا)، پس دقیقاً هم‌زمانِ خودِ چرخشِ حلقه‌ست: تا وقتی
-    // spin در حال چرخیدنه هاله هم می‌لرزه، وقتی چرخش می‌ایسته لرزش هم می‌ایسته.
-    val wobbleScale = 1f + 0.05f * sin(Math.toRadians(spin.value * 3.0)).toFloat()
-
-    // بارشِ ذراتِ نورِ عمودی از بالا (خواسته‌ی کاربر: عکسِ مرجعِ اسپلش - «ذرات و خطوط نوری از بالا
-    // می‌بارند» بعد «حلقه‌ی نوری در مرکز شکل می‌گیرد») - قبل از اینکه حلقه/هاله ظاهر بشه، چندتا خطِ
-    // نورِ عمودی از بالا به‌سمتِ مرکز می‌بارن و محو می‌شن؛ فقط یه‌بار، هم‌زمان با شروعِ pop/spin.
-    val rainProgress = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        rainProgress.animateTo(1f, animationSpec = tween(650, easing = LinearEasing))
+        delay(2100)
+        onDone()
     }
 
     Box(
@@ -119,133 +125,98 @@ fun SplashIntroScreen(isDarkTheme: Boolean, onDone: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            // قبلاً هاله‌ی نور و حلقه‌ی اصلی هرکدوم مستقیم زیرِ Box بیرونی بودن، پس رو کلِ صفحه
-            // (با متن/نقطه‌های پایینش) وسط‌چین می‌شدن، نه رو خودِ حلقه - همین باعث می‌شد هاله و
-            // حلقه هم‌مرکز نباشن (باگی که کاربر با اسکرین‌شات نشون داد). حالا همه‌شون تو یه Box
-            // جدا و هم‌مرکز کنار همدیگه‌ان.
-            Box(contentAlignment = Alignment.Center) {
-                // بارشِ ذراتِ نور - رجوع کن به کامنتِ rainProgress بالا.
-                Canvas(modifier = Modifier.size(360.dp)) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(230.dp)) {
+                // ۱) بارشِ ذراتِ نورِ عمودی
+                Canvas(modifier = Modifier.size(230.dp)) {
                     val particleCount = 12
                     for (i in 0 until particleCount) {
                         val phase = i / particleCount.toFloat() * 0.45f
                         val localT = ((rainProgress.value - phase) / (1f - phase)).coerceIn(0f, 1f)
                         if (localT <= 0f || localT >= 1f) continue
-                        // پخشِ شبه‌تصادفیِ x بر اساسِ نسبتِ طلایی - بدونِ نیازِ Random، همیشه یه
-                        // الگوی ثابت و یکنواخت رو عرض می‌ده.
+                        // پخشِ شبه‌تصادفیِ x بر اساسِ نسبتِ طلایی - بدونِ نیازِ Random.
                         val xFrac = (i * 0.618f) % 1f
                         val x = size.width * xFrac
-                        val startY = -size.height * 0.25f
+                        val startY = -size.height * 0.15f
                         val endY = size.height * 0.5f
                         val y = startY + (endY - startY) * localT
-                        val streakAlpha = sin((localT * PI).toFloat()).coerceIn(0f, 1f) * 0.65f
-                        val streakColor = if (i % 3 == 0) RingGold else RingTeal
+                        val streakAlpha = sin((localT * PI).toFloat()).coerceIn(0f, 1f) * 0.6f
                         drawLine(
-                            color = streakColor.copy(alpha = streakAlpha),
+                            color = RingTeal.copy(alpha = streakAlpha),
                             start = Offset(x, y),
-                            end = Offset(x, y + 36f),
+                            end = Offset(x, y + 30f),
                             strokeWidth = 3f,
                             cap = StrokeCap.Round,
                         )
                     }
                 }
-                // سایه‌ی افتاده‌ی پشتِ آتیش (خواسته‌ی کاربر: «سایه‌اش افتاده پشت») - یه هاله‌ی تیره‌ی
-                // بزرگ، کمی به پایین آفست‌شده، طوری که انگار نورِ آتیش از بالا می‌تابه و سایه‌ش پشتِ
-                // حلقه می‌افته.
+
+                // هاله‌ی نرمِ سبزِ پشتِ همه‌چیز - با خودِ حلقه هم‌زمان محو می‌شه تو دید
                 Box(
                     modifier = Modifier
-                        .size(360.dp)
-                        .offset(y = 20.dp)
-                        .scale(wobbleScale)
+                        .size(220.dp)
+                        .alpha(ringProgress.value)
                         .clip(CircleShape)
                         .background(
                             Brush.radialGradient(
-                                colors = listOf(Color.Black.copy(alpha = 0.30f), Color.Transparent),
-                            ),
-                        ),
-                )
-                // هاله‌ی بیرونیِ آتیش - هسته‌ی گرمِ نارنجی/قرمز (FireCore) که به طلایی محو می‌شه،
-                // بزرگ‌تر از قبل (خواسته‌ی کاربر: «بزرگ هم باشه») تا حسِ «آتیشِ روشن» بده.
-                Box(
-                    modifier = Modifier
-                        .size(400.dp)
-                        .scale(wobbleScale)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    FireCore.copy(alpha = 0.26f),
-                                    RingGold.copy(alpha = 0.20f),
-                                    Color.Transparent,
-                                ),
-                            ),
-                        ),
-                )
-                // هاله‌ی میانیِ گرم‌تر و فشرده‌تر، نزدیک‌تر به خودِ حلقه
-                Box(
-                    modifier = Modifier
-                        .size(270.dp)
-                        .scale(wobbleScale)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(RingGold.copy(alpha = 0.30f), Color.Transparent),
-                            ),
-                        ),
-                )
-                // هاله‌ی محو سبزآبی چسبیده به خودِ حلقه (پورت .glow) - برای این‌که رنگِ برندِ اپ هم
-                // تو اسپلش بمونه، نه فقط گرم/آتیشی.
-                Box(
-                    modifier = Modifier
-                        .size(190.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(RingTeal.copy(alpha = 0.18f), Color.Transparent),
+                                colors = listOf(RingTeal.copy(alpha = 0.22f), Color.Transparent),
                             ),
                         ),
                 )
 
+                // ۲) حلقه‌ی بیضی‌مایلِ نوری - از یه نقطه (اسکیلِ صفر) باز می‌شه، کمی کج (رجوع کن
+                // به عکسِ مرجع - یه حلقه‌ی تخت نیست، زاویه‌دار مثلِ اورویتِ سیاره‌ست).
                 Canvas(
                     modifier = Modifier
-                        .size(100.dp)
-                        .scale(pop.value)
-                        .graphicsLayer { rotationZ = spin.value },
+                        .size(190.dp, 92.dp)
+                        .graphicsLayer {
+                            rotationZ = -18f
+                            scaleX = 0.4f + 0.6f * ringProgress.value
+                            scaleY = 0.4f + 0.6f * ringProgress.value
+                            alpha = ringProgress.value
+                        },
                 ) {
-                    val stroke = 12.dp.toPx()
-                    val inset = stroke / 2f
-                    val arcSize = Size(size.width - stroke, size.height - stroke)
-                    val topLeft = Offset(inset, inset)
-                    // پایه‌ی حلقه (کل دایره)
-                    drawArc(
-                        color = RingBase,
-                        startAngle = -90f,
-                        sweepAngle = 360f,
-                        useCenter = false,
-                        topLeft = topLeft,
-                        size = arcSize,
-                        style = Stroke(width = stroke),
+                    drawOval(color = RingTeal, style = Stroke(width = 3.dp.toPx()))
+                }
+
+                // ۳)+۴) پشته‌ی سه‌کارتیِ آیکون - ظهور از دلِ نور (اسکیل+آلفا) + درخشان‌ترشدنِ
+                // تدریجیِ رنگِ خودِ آیکونِ داخلِ کارتِ جلو.
+                Box(
+                    modifier = Modifier
+                        .graphicsLayer {
+                            scaleX = 0.55f + 0.45f * iconAppear.value
+                            scaleY = 0.55f + 0.45f * iconAppear.value
+                            alpha = iconAppear.value
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(68.dp, 96.dp)
+                            .graphicsLayer { rotationZ = -14f; translationX = -18f }
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(RingTeal.copy(alpha = 0.85f)),
                     )
-                    // کمانِ طلایی: ۳۰٪ از بالا (۱۰۸ درجه)
-                    drawArc(
-                        color = RingGold,
-                        startAngle = -90f,
-                        sweepAngle = 108f,
-                        useCenter = false,
-                        topLeft = topLeft,
-                        size = arcSize,
-                        style = Stroke(width = stroke, cap = StrokeCap.Round),
+                    Box(
+                        modifier = Modifier
+                            .size(68.dp, 96.dp)
+                            .graphicsLayer { rotationZ = 9f; translationX = 16f }
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(RingTealDim.copy(alpha = 0.9f)),
                     )
-                    // کمانِ سبز: ۷۰٪ باقی‌مونده (۲۵۲ درجه)
-                    drawArc(
-                        color = RingTeal,
-                        startAngle = -90f + 108f,
-                        sweepAngle = 252f,
-                        useCenter = false,
-                        topLeft = topLeft,
-                        size = arcSize,
-                        style = Stroke(width = stroke, cap = StrokeCap.Round),
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(74.dp, 104.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(CardDark),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Filled.TrendingUp,
+                            contentDescription = null,
+                            tint = RingTeal.copy(alpha = 0.65f + 0.35f * iconGlow.value),
+                            modifier = Modifier.size(36.dp),
+                        )
+                    }
                 }
             }
 
@@ -254,10 +225,13 @@ fun SplashIntroScreen(isDarkTheme: Boolean, onDone: () -> Unit) {
                 color = splashName,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.ExtraBold,
-                modifier = Modifier.padding(top = 20.dp),
+                modifier = Modifier
+                    .padding(top = 20.dp)
+                    .alpha(nameAlpha.value)
+                    .offset(y = nameOffset.value.dp),
             )
 
-            BlinkingDots(modifier = Modifier.padding(top = 26.dp))
+            BlinkingDots(modifier = Modifier.padding(top = 26.dp).alpha(nameAlpha.value))
         }
 
         Text(
