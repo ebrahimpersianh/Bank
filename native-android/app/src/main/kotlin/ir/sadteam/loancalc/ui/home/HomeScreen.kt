@@ -199,6 +199,11 @@ fun HomeScreen(
                 val curIncome = trend.last().second
                 val curExpense = trend.last().third
                 val maxTrendValue = (trend.maxOfOrNull { maxOf(it.second, it.third) } ?: 0.0).coerceAtLeast(1.0)
+                // رنگ‌ها باید بیرونِ Canvas خونده بشن - AppPrimary/AppDanger پراپرتیِ @Composable ان
+                // (get() تم‌آگاه)، و بلوکِ رسمِ Canvas یه DrawScope معمولی‌ه نه @Composable، پس
+                // مستقیم صداکردنشون اونجا خطای کامپایل می‌ده.
+                val incomeLineColor = AppPrimary
+                val expenseLineColor = AppDanger
                 AppCard(label = "نمودارِ جریانِ مالی") {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column {
@@ -243,8 +248,8 @@ fun HomeScreen(
                             points.forEachIndexed { i, p -> if (i == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y) }
                             drawPath(path, color = color, style = Stroke(width = 5f, cap = StrokeCap.Round))
                         }
-                        drawTrendLine(pointsFor { it.second }, AppPrimary)
-                        drawTrendLine(pointsFor { it.third }, AppDanger)
+                        drawTrendLine(pointsFor { it.second }, incomeLineColor)
+                        drawTrendLine(pointsFor { it.third }, expenseLineColor)
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
