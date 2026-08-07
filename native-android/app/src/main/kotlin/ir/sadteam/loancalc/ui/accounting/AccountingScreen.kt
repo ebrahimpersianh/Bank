@@ -663,27 +663,22 @@ private fun BudgetSection(
                             },
                         )
                         if (editingCategory?.name == cat.name) {
+                            // باگِ رفع‌شده: قبلاً فیلدِ مبلغ کنارِ دکمه‌ی «ذخیره» تو یه Rowِ باریک
+                            // جا می‌شد (weight(1f) کنارِ یه دکمه‌ی هم‌ردیف) و عملاً جایی برای تایپِ
+                            // عدد نمی‌موند - کاربر با اسکرین‌شات گزارش داد. الان فیلد تمامِ عرضِ
+                            // کارت رو می‌گیره (هم‌الگو با بقیه‌ی فرم‌های اپ، مثلِ AddTransactionForm)،
+                            // دکمه‌ها زیرش تو یه ردیفِ جدا اومدن.
                             AppCard(label = "سقفِ ماهانه", modifier = Modifier.padding(top = 6.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    OutlinedTextField(
-                                        value = capText,
-                                        onValueChange = { capText = cleanNum(it) },
-                                        visualTransformation = ThousandsSeparatorTransformation(),
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        modifier = Modifier.weight(1f),
-                                        singleLine = true,
-                                        colors = appFieldColors(),
-                                        suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
-                                    )
-                                    GradientButton(
-                                        onClick = {
-                                            val cap = capText.toDoubleOrNull() ?: 0.0
-                                            if (cap > 0) viewModel.setBudget(cat.name, cap, budget?.id)
-                                            editingCategory = null
-                                        },
-                                        modifier = Modifier.padding(start = 8.dp),
-                                    ) { Text("ذخیره", fontSize = 12.sp) }
-                                }
+                                OutlinedTextField(
+                                    value = capText,
+                                    onValueChange = { capText = cleanNum(it) },
+                                    visualTransformation = ThousandsSeparatorTransformation(),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    colors = appFieldColors(),
+                                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                                )
                                 val capRial = capText.toLongOrNull() ?: 0L
                                 if (capRial > 0) {
                                     Text(
@@ -692,6 +687,28 @@ private fun BudgetSection(
                                         fontSize = 11.sp,
                                         modifier = Modifier.padding(top = 4.dp),
                                     )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    if (budget != null) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                viewModel.deleteBudget(budget)
+                                                editingCategory = null
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                        ) { Text("حذفِ سقف", fontSize = 12.sp, color = AppDanger) }
+                                    }
+                                    GradientButton(
+                                        onClick = {
+                                            val cap = capText.toDoubleOrNull() ?: 0.0
+                                            if (cap > 0) viewModel.setBudget(cat.name, cap, budget?.id)
+                                            editingCategory = null
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                    ) { Text("ذخیره", fontSize = 12.sp) }
                                 }
                             }
                         }
