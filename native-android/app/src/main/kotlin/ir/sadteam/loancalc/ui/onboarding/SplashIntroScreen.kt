@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.ui.onboarding
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
+import kotlin.math.PI
 import kotlin.math.sin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -104,6 +106,14 @@ fun SplashIntroScreen(isDarkTheme: Boolean, onDone: () -> Unit) {
     // spin در حال چرخیدنه هاله هم می‌لرزه، وقتی چرخش می‌ایسته لرزش هم می‌ایسته.
     val wobbleScale = 1f + 0.05f * sin(Math.toRadians(spin.value * 3.0)).toFloat()
 
+    // بارشِ ذراتِ نورِ عمودی از بالا (خواسته‌ی کاربر: عکسِ مرجعِ اسپلش - «ذرات و خطوط نوری از بالا
+    // می‌بارند» بعد «حلقه‌ی نوری در مرکز شکل می‌گیرد») - قبل از اینکه حلقه/هاله ظاهر بشه، چندتا خطِ
+    // نورِ عمودی از بالا به‌سمتِ مرکز می‌بارن و محو می‌شن؛ فقط یه‌بار، هم‌زمان با شروعِ pop/spin.
+    val rainProgress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        rainProgress.animateTo(1f, animationSpec = tween(650, easing = LinearEasing))
+    }
+
     Box(
         modifier = Modifier.fillMaxSize().background(splashBg),
         contentAlignment = Alignment.Center,
@@ -114,6 +124,31 @@ fun SplashIntroScreen(isDarkTheme: Boolean, onDone: () -> Unit) {
             // حلقه هم‌مرکز نباشن (باگی که کاربر با اسکرین‌شات نشون داد). حالا همه‌شون تو یه Box
             // جدا و هم‌مرکز کنار همدیگه‌ان.
             Box(contentAlignment = Alignment.Center) {
+                // بارشِ ذراتِ نور - رجوع کن به کامنتِ rainProgress بالا.
+                Canvas(modifier = Modifier.size(360.dp)) {
+                    val particleCount = 12
+                    for (i in 0 until particleCount) {
+                        val phase = i / particleCount.toFloat() * 0.45f
+                        val localT = ((rainProgress.value - phase) / (1f - phase)).coerceIn(0f, 1f)
+                        if (localT <= 0f || localT >= 1f) continue
+                        // پخشِ شبه‌تصادفیِ x بر اساسِ نسبتِ طلایی - بدونِ نیازِ Random، همیشه یه
+                        // الگوی ثابت و یکنواخت رو عرض می‌ده.
+                        val xFrac = (i * 0.618f) % 1f
+                        val x = size.width * xFrac
+                        val startY = -size.height * 0.25f
+                        val endY = size.height * 0.5f
+                        val y = startY + (endY - startY) * localT
+                        val streakAlpha = sin((localT * PI).toFloat()).coerceIn(0f, 1f) * 0.65f
+                        val streakColor = if (i % 3 == 0) RingGold else RingTeal
+                        drawLine(
+                            color = streakColor.copy(alpha = streakAlpha),
+                            start = Offset(x, y),
+                            end = Offset(x, y + 36f),
+                            strokeWidth = 3f,
+                            cap = StrokeCap.Round,
+                        )
+                    }
+                }
                 // سایه‌ی افتاده‌ی پشتِ آتیش (خواسته‌ی کاربر: «سایه‌اش افتاده پشت») - یه هاله‌ی تیره‌ی
                 // بزرگ، کمی به پایین آفست‌شده، طوری که انگار نورِ آتیش از بالا می‌تابه و سایه‌ش پشتِ
                 // حلقه می‌افته.
