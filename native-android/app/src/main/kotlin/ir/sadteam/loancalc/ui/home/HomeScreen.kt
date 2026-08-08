@@ -51,6 +51,7 @@ import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.TodayCard
 import ir.sadteam.loancalc.ui.components.persianMonthName
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.note.NoteViewModel
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
@@ -141,6 +142,9 @@ fun HomeScreen(
                         .background(AppGlassBase)
                         .background(balanceGradient)
                         .border(1.dp, AppGlassBorder, RoundedCornerShape(24.dp))
+                        // خواسته‌ی صریحِ کاربر: تپ رو کارتِ موجودی ببره تبِ «دارایی» - قبلاً این
+                        // کارت اصلاً قابل‌تپ نبود.
+                        .pressScaleClickable(onClick = { onNavigateToRoute("assets") })
                         .padding(20.dp),
                 ) {
                     Row(
