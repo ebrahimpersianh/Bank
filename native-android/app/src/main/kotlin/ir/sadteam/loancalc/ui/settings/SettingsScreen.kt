@@ -37,8 +37,19 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
@@ -72,6 +83,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -87,9 +99,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
-import ir.sadteam.loancalc.ui.account.AccountsScreen
 import ir.sadteam.loancalc.ui.calendar.FinancialCalendarScreen
-import ir.sadteam.loancalc.ui.cheque.ChequeScreen
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import ir.sadteam.loancalc.ui.components.AppCard
@@ -127,15 +137,6 @@ import kotlinx.coroutines.launch
 private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
 private val themeModeOptions = listOf(ThemeMode.LIGHT to "روشن", ThemeMode.DARK to "تاریک")
 
-/** پورت ساده‌شده‌ی view-settings تو www/index.html - کارت حساب (accountCard) + خروج/ورود، اندازه
- * فونت (fontSizeChips)، یادآوری سررسید (کاملاً native-only، وب هنوز نداره - رجوع کن به
- * notifications/)، درباره‌برنامه/حریم‌خصوصی (toggleAbout/togglePrivacy، متن عینِ وب)، و صفحه‌ی
- * پشتیبانی (ایمیل/تلگرام/بله - پورت مفهومی از اپ رقیب VAMMAN؛ مقادیر SUPPORT_EMAIL/TELEGRAM/BALE
- * فعلاً placeholder ان، باید با اطلاعات واقعی جایگزین بشن). فرم «نظرات و مشکلات» عمداً پورت نشده -
- * رو خودِ وب هم صرفاً UI نمایشی/localStorage-فقط بود، هیچ‌وقت واقعاً کاربردی نبود (رجوع کن به کامنت
- * خودِ وب). «تنظیمات پیشرفته یادآوری» برخلافِ اون، حالا واقعاً پیاده شده - رجوع کن به
- * [ReminderSettingsScreen] (زمان‌بندی/صدا/ویبره‌ی سراسری) و `ReminderOverrideCard` تو
- * LoanDetailScreen/ChequeDetailScreen (سفارشی‌سازیِ اختصاصیِ هر وام/چک). */
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -146,32 +147,21 @@ fun SettingsScreen(
     autoBackupViewModel: AutoBackupViewModel = hiltViewModel(),
     hapticsViewModel: HapticsViewModel = hiltViewModel(),
     smsAutoImportViewModel: SmsAutoImportViewModel = hiltViewModel(),
-    // برای تورِ راهنمای اولین ورود (AppTourOverlay تو MainActivity.kt، قدم‌های SETTINGS_CALENDAR/
-    // SETTINGS_CHEQUE): وقتی non-null باشه، جستجوی همین پنل خودکار رو همین عنوان فیلتر می‌شه (دقیقاً
-    // مثلِ تایپ‌کردنِ کاربر تو «جستجو تو تنظیمات») تا ردیفِ هدف بدونِ نیاز به اسکرول پیدا بشه.
-    tourHighlightQuery: String? = null,
-    onTourRowPositioned: (Rect) -> Unit = {},
 ) {
+    var route by remember { mutableStateOf(SettingsRoute.MAIN) }
+    // زیرصفحه‌های «فیچری» (تقویم/آمار/تاریخچه) از رو خودِ صفحه‌ی «ابزارها» باز می‌شن، پس یه استیتِ
+    // جدا لازم دارن تا با برگشت، به «ابزارها» برگردن نه به ریشه‌ی تنظیمات.
+    var tool by remember { mutableStateOf<String?>(null) }
     var showLoginPrompt by remember { mutableStateOf(false) }
-    var showFinancialCalendar by remember { mutableStateOf(false) }
-    var showStats by remember { mutableStateOf(false) }
-    var showCheque by remember { mutableStateOf(false) }
-    var showAccounts by remember { mutableStateOf(false) }
     var showSubscription by remember { mutableStateOf(false) }
-    var showHistory by remember { mutableStateOf(false) }
     var showReminderSettings by remember { mutableStateOf(false) }
 
-    // پورت حس تعویض نرم بین حالت‌های مختلف پنل تنظیمات (اصلی/ورود/تقویم مالی/آمار/چک/حساب) - قبلاً
-    // هرکدوم با یه return زودهنگام یهو جایگزین بقیه می‌شد؛ حالا با AnimatedContent (fade ظریف) عوض می‌شه.
     val screenKey = when {
         showLoginPrompt -> "login"
-        showFinancialCalendar -> "calendar"
-        showStats -> "stats"
-        showCheque -> "cheque"
-        showAccounts -> "accounts"
         showSubscription -> "subscription"
-        showHistory -> "history"
         showReminderSettings -> "reminderSettings"
+        tool != null -> "tool"
+        route != SettingsRoute.MAIN -> "sub"
         else -> "main"
     }
 
@@ -181,24 +171,10 @@ fun SettingsScreen(
         label = "settingsScreen",
     ) { key ->
         when (key) {
-            // هر صفحه‌ی زیرمجموعه‌ی تنظیمات (که خودش پنلی با عرضِ ۸۵٪ صفحه‌ست، رجوع کن به
-            // AnimatedVisibility تو MainActivity.kt) باید کاملاً فول‌اسکرین باشه، نه محدود به همون
-            // عرض - برای همین همه‌شون تو FullScreenDialog (پایینِ همین فایل) نشون داده می‌شن که تو
-            // ویندویی جدا و مستقل از محدودیتِ عرضِ والد رندر می‌شه.
+            // هر زیرصفحه‌ی تنظیمات (که خودش پنلی با عرضِ ۸۵٪ صفحه‌ست، رجوع کن به AnimatedVisibility
+            // تو MainActivity.kt) باید کاملاً فول‌اسکرین باشه - رجوع کن به [FullScreenDialog].
             "login" -> FullScreenDialog(onDismissRequest = { showLoginPrompt = false }) {
                 LoginScreen(onDismiss = { showLoginPrompt = false }, onLoginSuccess = { showLoginPrompt = false })
-            }
-            "calendar" -> FullScreenDialog(onDismissRequest = { showFinancialCalendar = false }) {
-                FinancialCalendarScreen(onBack = { showFinancialCalendar = false })
-            }
-            "stats" -> FullScreenDialog(onDismissRequest = { showStats = false }) {
-                StatsScreen(onBack = { showStats = false })
-            }
-            "cheque" -> FullScreenDialog(onDismissRequest = { showCheque = false }) {
-                ChequeScreen(onBack = { showCheque = false })
-            }
-            "accounts" -> FullScreenDialog(onDismissRequest = { showAccounts = false }) {
-                AccountsScreen(onBack = { showAccounts = false })
             }
             "subscription" -> FullScreenDialog(onDismissRequest = { showSubscription = false }) {
                 SubscriptionScreen(
@@ -207,33 +183,802 @@ fun SettingsScreen(
                     onNeedsLogin = { showLoginPrompt = true },
                 )
             }
-            "history" -> FullScreenDialog(onDismissRequest = { showHistory = false }) {
-                CalculationHistoryScreen(onBack = { showHistory = false })
-            }
             "reminderSettings" -> FullScreenDialog(onDismissRequest = { showReminderSettings = false }) {
                 ReminderSettingsScreen(onBack = { showReminderSettings = false })
+            }
+            "tool" -> FullScreenDialog(onDismissRequest = { tool = null }) {
+                when (tool) {
+                    "calendar" -> FinancialCalendarScreen(onBack = { tool = null })
+                    "stats" -> StatsScreen(onBack = { tool = null })
+                    else -> CalculationHistoryScreen(onBack = { tool = null })
+                }
+            }
+            "sub" -> FullScreenDialog(onDismissRequest = { route = SettingsRoute.MAIN }) {
+                SettingsSubPage(
+                    route = route,
+                    onBack = { route = SettingsRoute.MAIN },
+                    authViewModel = authViewModel,
+                    themeViewModel = themeViewModel,
+                    notificationsViewModel = notificationsViewModel,
+                    appLockViewModel = appLockViewModel,
+                    autoBackupViewModel = autoBackupViewModel,
+                    smsAutoImportViewModel = smsAutoImportViewModel,
+                    onShowLoginPrompt = { showLoginPrompt = true },
+                    onShowSubscription = { showSubscription = true },
+                    onShowReminderSettings = { showReminderSettings = true },
+                    onOpenTool = { tool = it },
+                )
             }
             else -> SettingsMainContent(
                 onBack = onBack,
                 authViewModel = authViewModel,
-                themeViewModel = themeViewModel,
-                notificationsViewModel = notificationsViewModel,
-                appLockViewModel = appLockViewModel,
-                autoBackupViewModel = autoBackupViewModel,
                 hapticsViewModel = hapticsViewModel,
-                smsAutoImportViewModel = smsAutoImportViewModel,
-                onShowLoginPrompt = { showLoginPrompt = true },
-                onShowFinancialCalendar = { showFinancialCalendar = true },
-                onShowStats = { showStats = true },
-                onShowCheque = { showCheque = true },
-                onShowAccounts = { showAccounts = true },
+                onOpen = { route = it },
                 onShowSubscription = { showSubscription = true },
-                onShowHistory = { showHistory = true },
-                onShowReminderSettings = { showReminderSettings = true },
-                tourHighlightQuery = tourHighlightQuery,
-                onTourRowPositioned = onTourRowPositioned,
             )
         }
+    }
+}
+
+/** ردیف‌های ریشه‌ی تنظیمات؛ هر کدوم یه زیرصفحه‌ی تمام‌صفحه باز می‌کنه (بازطراحیِ خواسته‌ی کاربر طبقِ
+ * اپِ مرجع - قبلاً همه‌ی سوییچ‌ها/فرم‌ها مستقیم تو خودِ لیستِ ریشه باز بودن و صفحه شلوغ بود). */
+private enum class SettingsRoute(val title: String, val keywords: List<String>) {
+    MAIN("تنظیمات", emptyList()),
+    ACCOUNT("حساب کاربری", listOf("حساب", "اشتراک", "خروج", "شماره موبایل")),
+    APPEARANCE("ظاهر برنامه", listOf("تم", "رنگ", "اندازه فونت", "روشن", "تاریک")),
+    REMINDERS("یادآورها", listOf("یادآوری سررسید", "یادآوری روزانه", "نوتیف")),
+    DATA("مدیریت داده‌های من", listOf("پشتیبان", "بکاپ", "بازیابی")),
+    SMS("پیامک‌های بانکی", listOf("پیامک", "بانک", "خواندن خودکار")),
+    TOOLS("ابزارها", listOf("تقویم مالی", "آمار", "گزارش", "تاریخچه محاسبات")),
+    SECURITY("امنیت", listOf("قفل", "PIN", "اثر انگشت")),
+    ABOUT("درباره‌ی برنامه", listOf("درباره", "پشتیبانی", "حریم خصوصی", "نسخه")),
+}
+
+@Composable
+private fun SettingsMainContent(
+    onBack: () -> Unit,
+    authViewModel: AuthViewModel,
+    hapticsViewModel: HapticsViewModel,
+    onOpen: (SettingsRoute) -> Unit,
+    onShowSubscription: () -> Unit,
+) {
+    val gateState by authViewModel.gateState.collectAsState()
+    val phone by authViewModel.phone.collectAsState()
+    val subscribed by authViewModel.subscribed.collectAsState()
+    val trialDaysLeft by authViewModel.trialDaysLeft.collectAsState()
+    val vibrationEnabled by hapticsViewModel.enabled.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+    fun matches(route: SettingsRoute) = searchQuery.isBlank() ||
+        route.title.contains(searchQuery.trim()) ||
+        route.keywords.any { it.contains(searchQuery.trim()) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .verticalScroll(rememberScrollState())
+            .navigationBarsPadding(),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (subscribed) {
+                        Modifier.background(
+                            Brush.horizontalGradient(listOf(AppAccent.copy(alpha = 0.28f), Color.Transparent)),
+                        )
+                    } else {
+                        Modifier
+                    },
+                )
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+            }
+            Box(
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .size(40.dp)
+                    .background(AppSurface2, CircleShape)
+                    .border(if (subscribed) 3.dp else 1.dp, if (subscribed) AppAccent else AppLine, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.Person,
+                    contentDescription = null,
+                    tint = if (subscribed) AppAccent else AppMuted,
+                )
+            }
+            Column(modifier = Modifier.padding(start = 8.dp)) {
+                Text("تنظیمات", color = AppText, fontSize = 16.sp)
+                Text(
+                    if (subscribed) "نسخه اشتراکی" else "نسخه عادی",
+                    color = if (subscribed) AppAccent else AppMuted,
+                    fontSize = 11.sp,
+                )
+            }
+        }
+
+        Column(modifier = Modifier.padding(horizontal = 14.dp)) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("جستجو تو تنظیمات") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            if (matches(SettingsRoute.ACCOUNT)) {
+                SettingsRow(
+                    icon = Icons.Filled.Person,
+                    route = SettingsRoute.ACCOUNT,
+                    value = if (gateState == GateState.LOGGED_IN) toFa(phone ?: "") else "وارد نشدی",
+                    onClick = { onOpen(SettingsRoute.ACCOUNT) },
+                )
+            }
+
+            // همون کارتِ خریدِ اشتراک با همون منطقِ قبلی (رجوع کن به CLAUDE.md: عمداً به کاربرِ
+            // ازقبل‌مشترک نشون داده نمی‌شه، این باگ نیست) - فقط جاش زیرِ ردیفِ حسابه.
+            val onlyTrialSubscribed = subscribed && trialDaysLeft != null && trialDaysLeft in 1..7
+            if ((!subscribed || onlyTrialSubscribed) && searchQuery.isBlank()) {
+                PulseGlowBox(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+                    GoldSheenBox {
+                        AppCard(backgroundColor = lerp(AppSurface, AppAccent, 0.14f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.Star, contentDescription = null, tint = AppAccent)
+                                Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                                    Text("ارتقا به نسخه اشتراکی", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        "وام/چک نامحدود، همگام‌سازی چند دستگاه و موارد دیگر",
+                                        color = AppMuted,
+                                        fontSize = 11.sp,
+                                        modifier = Modifier.padding(top = 2.dp),
+                                    )
+                                }
+                            }
+                            GradientButton(
+                                onClick = onShowSubscription,
+                                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                            ) {
+                                Text("مشاهده پلن‌ها")
+                            }
+                        }
+                    }
+                }
+            }
+
+            SettingsSectionLabel("شخصی‌سازی")
+            if (matches(SettingsRoute.APPEARANCE)) {
+                SettingsRow(Icons.Filled.Palette, SettingsRoute.APPEARANCE) { onOpen(SettingsRoute.APPEARANCE) }
+            }
+            // تنها سوییچی که عمداً تو ریشه موند: یه گزینه‌ی تک‌حالته‌ست، زیرصفحه‌ی جدا براش
+            // بی‌خودی یه تپِ اضافه می‌شد.
+            if (searchQuery.isBlank() || "ویبره".contains(searchQuery.trim()) || "هپتیک".contains(searchQuery.trim())) {
+                SettingsSwitchRow(
+                    icon = Icons.Filled.Vibration,
+                    title = "ویبره‌ی لمسی",
+                    subtitle = "موقع لمس دکمه‌ها یه لرزش کوتاه",
+                    checked = vibrationEnabled,
+                    onCheckedChange = { hapticsViewModel.setEnabled(it) },
+                )
+            }
+
+            SettingsSectionLabel("یادآوری و داده‌ها")
+            if (matches(SettingsRoute.REMINDERS)) {
+                SettingsRow(Icons.Filled.Notifications, SettingsRoute.REMINDERS) { onOpen(SettingsRoute.REMINDERS) }
+            }
+            if (matches(SettingsRoute.DATA)) {
+                SettingsRow(Icons.Filled.CloudUpload, SettingsRoute.DATA) { onOpen(SettingsRoute.DATA) }
+            }
+            if (matches(SettingsRoute.SMS)) {
+                SettingsRow(Icons.Filled.Sms, SettingsRoute.SMS) { onOpen(SettingsRoute.SMS) }
+            }
+
+            SettingsSectionLabel("بیشتر")
+            if (matches(SettingsRoute.TOOLS)) {
+                SettingsRow(Icons.Filled.Assessment, SettingsRoute.TOOLS) { onOpen(SettingsRoute.TOOLS) }
+            }
+            if (matches(SettingsRoute.SECURITY)) {
+                SettingsRow(Icons.Filled.Lock, SettingsRoute.SECURITY) { onOpen(SettingsRoute.SECURITY) }
+            }
+            if (matches(SettingsRoute.ABOUT)) {
+                SettingsRow(
+                    icon = Icons.Filled.Info,
+                    route = SettingsRoute.ABOUT,
+                    value = "نسخه ${toFa(BuildConfig.VERSION_NAME)}",
+                    onClick = { onOpen(SettingsRoute.ABOUT) },
+                )
+            }
+            Box(modifier = Modifier.padding(bottom = 16.dp))
+        }
+    }
+}
+
+/** ردیفِ استانداردِ تنظیمات: آیکون + عنوان (+ مقدارِ فعلی) + فلشِ ورود به زیرصفحه. طبقِ قاعده‌ی
+ * پروژه هیچ کارتی دستی ساخته نمی‌شه - همیشه [AppCard]. */
+@Composable
+private fun SettingsRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    route: SettingsRoute,
+    value: String? = null,
+    onClick: () -> Unit,
+) {
+    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.99f, onClick = onClick),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
+            Text(
+                route.title,
+                color = AppText,
+                fontSize = 14.sp,
+                modifier = Modifier.weight(1f).padding(start = 10.dp),
+            )
+            if (value != null) {
+                Text(value, color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(end = 6.dp))
+            }
+            // تو RTL فلشِ «برو تو» سمتِ چپِ ردیفه و رو به چپ - KeyboardArrowLeft خودش آینه نمی‌شه.
+            Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+@Composable
+private fun SettingsSwitchRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
+            Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                Text(title, color = AppText, fontSize = 14.sp)
+                if (subtitle != null) {
+                    Text(subtitle, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+                }
+            }
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsSectionLabel(text: String) {
+    Text(
+        text,
+        color = AppMuted,
+        fontSize = 12.sp,
+        modifier = Modifier.padding(top = 16.dp, start = 4.dp),
+    )
+}
+
+/** سرآیندِ مشترکِ همه‌ی زیرصفحه‌های تنظیمات (عنوان وسط + ضربدرِ بستن) - هم‌شکلِ اپِ مرجع. */
+@Composable
+private fun SettingsSubPageScaffold(
+    title: String,
+    onBack: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .verticalScroll(rememberScrollState())
+            .navigationBarsPadding(),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Filled.Close, contentDescription = "بستن")
+            }
+            Text(
+                title,
+                color = AppText,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+            )
+            // هم‌عرضِ دکمه‌ی بستن، تا عنوان دقیقاً وسط بمونه.
+            Box(modifier = Modifier.size(48.dp))
+        }
+        Column(modifier = Modifier.padding(horizontal = 14.dp)) { content() }
+        Box(modifier = Modifier.padding(bottom = 20.dp))
+    }
+}
+
+@Composable
+private fun SettingsSubPage(
+    route: SettingsRoute,
+    onBack: () -> Unit,
+    authViewModel: AuthViewModel,
+    themeViewModel: ThemeViewModel,
+    notificationsViewModel: NotificationsViewModel,
+    appLockViewModel: AppLockViewModel,
+    autoBackupViewModel: AutoBackupViewModel,
+    smsAutoImportViewModel: SmsAutoImportViewModel,
+    onShowLoginPrompt: () -> Unit,
+    onShowSubscription: () -> Unit,
+    onShowReminderSettings: () -> Unit,
+    onOpenTool: (String) -> Unit,
+) {
+    val banner = rememberInAppBanner()
+    Box(modifier = Modifier.fillMaxSize()) {
+        SettingsSubPageScaffold(title = route.title, onBack = onBack) {
+            when (route) {
+                SettingsRoute.ACCOUNT -> AccountSettings(authViewModel, banner, onShowLoginPrompt, onShowSubscription)
+                SettingsRoute.APPEARANCE -> AppearanceSettings(themeViewModel)
+                SettingsRoute.REMINDERS -> ReminderToggles(notificationsViewModel, onShowReminderSettings)
+                SettingsRoute.DATA -> DataSettings(authViewModel, autoBackupViewModel, banner)
+                SettingsRoute.SMS -> SmsSettings(smsAutoImportViewModel)
+                SettingsRoute.TOOLS -> ToolsSettings(onOpenTool)
+                SettingsRoute.SECURITY -> AppCard { SecuritySettings(appLockViewModel) }
+                SettingsRoute.ABOUT -> AboutSettings(banner)
+                SettingsRoute.MAIN -> Unit
+            }
+        }
+        InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
+    }
+}
+
+@Composable
+private fun AccountSettings(
+    authViewModel: AuthViewModel,
+    banner: InAppBannerState,
+    onShowLoginPrompt: () -> Unit,
+    onShowSubscription: () -> Unit,
+) {
+    val gateState by authViewModel.gateState.collectAsState()
+    val phone by authViewModel.phone.collectAsState()
+    val subscribed by authViewModel.subscribed.collectAsState()
+    val trialDaysLeft by authViewModel.trialDaysLeft.collectAsState()
+    val subscribedUntil by authViewModel.subscribedUntil.collectAsState()
+    val subscriptionTier by authViewModel.subscriptionTier.collectAsState()
+    var showDeleteAccountConfirm by remember { mutableStateOf(false) }
+    var deleteAccountInProgress by remember { mutableStateOf(false) }
+
+    if (gateState == GateState.LOGGED_IN) {
+        AppCard(modifier = Modifier.padding(top = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Person, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
+                Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                    Text("شماره موبایل", color = AppMuted, fontSize = 11.sp)
+                    Ltr { Text(toFa(phone ?: ""), color = AppText, fontSize = 15.sp) }
+                }
+            }
+        }
+        AppCard(modifier = Modifier.padding(top = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Star, contentDescription = null, tint = if (subscribed) AppAccent else AppMuted, modifier = Modifier.size(22.dp))
+                Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                    // متنِ نوعِ اشتراک - رجوع کن به توضیحِ کاملِ همین منطق تو AuthViewModel/سرور:
+                    // subscriptionTier فقط برای خریدِ واقعیِ زمان‌دار پر می‌شه.
+                    val tierLabel = when (subscriptionTier) {
+                        "1m" -> "اشتراک یک‌ماهه"
+                        "3m" -> "اشتراک سه‌ماهه"
+                        "6m" -> "اشتراک شش‌ماهه"
+                        "1y" -> "اشتراک یک‌ساله"
+                        else -> null
+                    }
+                    Text(
+                        when {
+                            !subscribed -> "نسخه‌ی عادی"
+                            tierLabel != null -> tierLabel
+                            else -> "مشترک"
+                        },
+                        color = AppText,
+                        fontSize = 14.sp,
+                    )
+                    if (subscribed && trialDaysLeft != null && trialDaysLeft in 1..7) {
+                        Text(
+                            "دوره‌ی آزمایشی رایگان: ${toFa(trialDaysLeft.toString())} روز مانده",
+                            color = AppAccent,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    } else if (subscribed && subscribedUntil == null) {
+                        Text("اشتراک دائمی", color = AppAccent, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+                    }
+                }
+            }
+            OutlinedButton(onClick = onShowSubscription, modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+                Text(if (subscribed) "مدیریت اشتراک" else "مشاهده پلن‌ها")
+            }
+        }
+        AppCard(modifier = Modifier.padding(top = 8.dp)) {
+            Button(
+                onClick = { authViewModel.logout() },
+                colors = ButtonDefaults.buttonColors(containerColor = AppDanger),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("خروج از حساب")
+            }
+            // الزامِ استانداردِ فروشگاه‌ها: راهِ داخل‌برنامه‌ای برای حذفِ کاملِ حساب. عمداً
+            // OutlinedButton (نه پرشده مثلِ خروج) - شدتِ بصریِ کمتر برای یه عملِ جدی‌تر.
+            OutlinedButton(
+                onClick = { showDeleteAccountConfirm = true },
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) {
+                Text("حذف حساب کاربری")
+            }
+        }
+    } else {
+        AppCard(modifier = Modifier.padding(top = 8.dp)) {
+            Text("ورود به حساب انجام نشده", color = AppText, fontSize = 15.sp)
+            Text(
+                "برای همگام‌سازی ابری وارد شو",
+                color = AppMuted,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+            GradientButton(onClick = onShowLoginPrompt, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+                Text("ورود")
+            }
+        }
+        AppCard(modifier = Modifier.padding(top = 8.dp)) {
+            OutlinedButton(onClick = onShowSubscription, modifier = Modifier.fillMaxWidth()) {
+                Text("مشاهده پلن‌های اشتراک")
+            }
+        }
+    }
+
+    if (showDeleteAccountConfirm) {
+        AlertDialog(
+            onDismissRequest = { if (!deleteAccountInProgress) showDeleteAccountConfirm = false },
+            title = { Text("حذف حساب کاربری") },
+            text = {
+                Text(
+                    "شماره‌ی حساب و وام‌ها/پشتیبان‌های ابری‌ای که سمت سرور ذخیره شدن برای همیشه " +
+                        "پاک می‌شن و قابل بازگشت نیستن. داده‌های محلیِ همین گوشی (وام‌ها/چک‌های " +
+                        "ذخیره‌شده) دست‌نخورده می‌مونه. مطمئنی؟",
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        deleteAccountInProgress = true
+                        authViewModel.deleteAccount(
+                            onSuccess = {
+                                deleteAccountInProgress = false
+                                showDeleteAccountConfirm = false
+                                banner.show("حساب کاربری حذف شد")
+                            },
+                            onError = {
+                                deleteAccountInProgress = false
+                                banner.show("حذف حساب ناموفق بود؛ دوباره امتحان کن")
+                            },
+                        )
+                    },
+                    enabled = !deleteAccountInProgress,
+                    colors = ButtonDefaults.buttonColors(containerColor = AppDanger),
+                ) {
+                    if (deleteAccountInProgress) {
+                        LottieSpinner(modifier = Modifier.size(18.dp))
+                    } else {
+                        Text("حذف کن")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAccountConfirm = false }, enabled = !deleteAccountInProgress) {
+                    Text("انصراف")
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun AppearanceSettings(themeViewModel: ThemeViewModel) {
+    val themeMode by themeViewModel.themeMode.collectAsState()
+    val fontScale by themeViewModel.fontScale.collectAsState()
+    // همون افکتِ دایره‌ایِ تعویضِ تم که از مرکزِ خودِ چیپِ زده‌شده باز می‌شه - رجوع کن به ThemeReveal.kt.
+    val themeReveal = LocalThemeReveal.current
+    val chipCenters = remember { mutableStateMapOf<ThemeMode, Offset>() }
+    val themeToggleScope = rememberCoroutineScope()
+
+    AppCard(label = "تم", modifier = Modifier.padding(top = 8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            themeModeOptions.forEach { (mode, label) ->
+                AppChip(
+                    label = label,
+                    selected = themeMode == mode,
+                    onClick = {
+                        if (mode != themeMode && !themeReveal.inProgress) {
+                            val origin = chipCenters[mode] ?: Offset.Zero
+                            themeToggleScope.launch {
+                                themeReveal.startReveal(origin = origin, currentKey = themeMode)
+                                themeViewModel.setThemeMode(mode)
+                            }
+                        } else {
+                            themeViewModel.setThemeMode(mode)
+                        }
+                    },
+                    modifier = Modifier.onGloballyPositioned { chipCenters[mode] = it.boundsInRoot().center },
+                )
+            }
+        }
+    }
+    AppCard(label = "اندازه فونت", modifier = Modifier.padding(top = 8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            fontSizeOptions.forEach { (scale, label) ->
+                AppChip(label = label, selected = fontScale == scale, onClick = { themeViewModel.setFontScale(scale) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReminderToggles(
+    notificationsViewModel: NotificationsViewModel,
+    onShowReminderSettings: () -> Unit,
+) {
+    val context = LocalContext.current
+    val notificationsEnabled by notificationsViewModel.enabled.collectAsState()
+    val dailyExpenseReminderEnabled by notificationsViewModel.dailyExpenseReminderEnabled.collectAsState()
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) notificationsViewModel.enable() }
+    val dailyPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) notificationsViewModel.enableDailyExpenseReminder() }
+
+    /** مجوزِ نوتیفیکیشن فقط از اندروید ۱۳ (TIRAMISU) به بعد لازمه. */
+    fun withNotificationPermission(onGranted: () -> Unit, launcher: () -> Unit) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            onGranted()
+        } else {
+            launcher()
+        }
+    }
+
+    SettingsSwitchRow(
+        icon = Icons.Filled.Notifications,
+        title = "یادآوری سررسید",
+        subtitle = "برای اقساط و چک‌های نزدیک به سررسید نوتیف بده",
+        checked = notificationsEnabled,
+        onCheckedChange = { checked ->
+            if (!checked) {
+                notificationsViewModel.disable()
+            } else {
+                withNotificationPermission(
+                    onGranted = { notificationsViewModel.enable() },
+                    launcher = { permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) },
+                )
+            }
+        },
+    )
+    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.99f, onClick = onShowReminderSettings),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Schedule, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
+            Text(
+                "زمان‌بندی، صدا و ویبره",
+                color = AppText,
+                fontSize = 14.sp,
+                modifier = Modifier.weight(1f).padding(start = 10.dp),
+            )
+            Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
+        }
+    }
+    SettingsSwitchRow(
+        icon = Icons.Filled.Notifications,
+        title = "یادآوری روزانه‌ی دخل‌وخرج",
+        subtitle = "اگه یه روز چیزی ثبت نکردی، یادت بندازه",
+        checked = dailyExpenseReminderEnabled,
+        onCheckedChange = { checked ->
+            if (!checked) {
+                notificationsViewModel.disableDailyExpenseReminder()
+            } else {
+                withNotificationPermission(
+                    onGranted = { notificationsViewModel.enableDailyExpenseReminder() },
+                    launcher = { dailyPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) },
+                )
+            }
+        },
+    )
+}
+
+@Composable
+private fun DataSettings(
+    authViewModel: AuthViewModel,
+    autoBackupViewModel: AutoBackupViewModel,
+    banner: InAppBannerState,
+) {
+    val gateState by authViewModel.gateState.collectAsState()
+    val subscribed by authViewModel.subscribed.collectAsState()
+    val autoBackupEnabled by autoBackupViewModel.enabled.collectAsState()
+    val lastAutoBackupAt by autoBackupViewModel.lastBackupAt.collectAsState()
+
+    SettingsSwitchRow(
+        icon = Icons.Filled.CloudUpload,
+        title = "پشتیبان‌گیری خودکار روزانه",
+        subtitle = "هر روز یه اسنپ‌شات از وام/چک/حساب ذخیره کن",
+        checked = autoBackupEnabled,
+        onCheckedChange = { checked -> if (checked) autoBackupViewModel.enable() else autoBackupViewModel.disable() },
+    )
+    val lastBackupLabel = remember(lastAutoBackupAt) {
+        lastAutoBackupAt?.let { iso ->
+            runCatching {
+                val date = JalaliCalendar.fromGregorian(
+                    iso.substring(0, 4).toInt(),
+                    iso.substring(5, 7).toInt(),
+                    iso.substring(8, 10).toInt(),
+                )
+                "${toFa(date.d)}/${toFa(date.m)}/${toFa(date.y)}"
+            }.getOrNull()
+        }
+    }
+    if (lastAutoBackupAt != null) {
+        AppCard(modifier = Modifier.padding(top = 8.dp)) {
+            if (lastBackupLabel != null) {
+                Text("آخرین پشتیبان: $lastBackupLabel", color = AppMuted, fontSize = 12.sp)
+            }
+            OutlinedButton(
+                onClick = {
+                    autoBackupViewModel.restoreFromAutoBackup { ok ->
+                        banner.show(
+                            if (ok) "بازیابی از پشتیبان خودکار انجام شد" else "پشتیبانی برای بازیابی پیدا نشد",
+                            isSuccess = ok,
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) {
+                Text("بازیابی از پشتیبان خودکار")
+            }
+            // برخلافِ دکمه‌ی بالا (فقط همین گوشی)، این از سرور می‌گیره - برای وقتی گوشی عوض شده یا
+            // اپ پاک/نصب شده. فقط برای کاربرِ لاگین‌شده‌ی مشترک، چون پوش به سرور هم فقط برای همینه.
+            if (gateState == GateState.LOGGED_IN && subscribed) {
+                OutlinedButton(
+                    onClick = {
+                        autoBackupViewModel.restoreFromCloud { ok ->
+                            banner.show(
+                                if (ok) "بازیابی از سرور ابری انجام شد" else "پشتیبانی رو سرور ابری پیدا نشد",
+                                isSuccess = ok,
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) {
+                    Text("بازیابی از سرور ابری")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SmsSettings(smsAutoImportViewModel: SmsAutoImportViewModel) {
+    val context = LocalContext.current
+    val enabled by smsAutoImportViewModel.enabled.collectAsState()
+    val lastImportAt by smsAutoImportViewModel.lastImportAt.collectAsState()
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) smsAutoImportViewModel.enable() }
+
+    SettingsSwitchRow(
+        icon = Icons.Filled.Sms,
+        title = "خوندنِ خودکارِ پیامکِ بانکی",
+        subtitle = "با رسیدنِ پیامکِ برداشت/واریز، خودکار یه تراکنش ثبت کن",
+        checked = enabled,
+        onCheckedChange = { checked ->
+            if (!checked) {
+                smsAutoImportViewModel.disable()
+            } else if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) ==
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                smsAutoImportViewModel.enable()
+            } else {
+                smsPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS)
+            }
+        },
+    )
+    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+        Text(
+            "برای اینکه هر پیامک رو حسابِ درستش بشینه، تو صفحه‌ی «دارایی» شماره‌ی پیامکِ هر بانک رو " +
+                "تو خودِ همون حساب وارد کن. هیچ پیامکی هیچ‌جا فرستاده نمی‌شه - همه‌چی رو خودِ گوشیه.",
+            color = AppMuted,
+            fontSize = 12.sp,
+            lineHeight = 20.sp,
+        )
+        if (lastImportAt != null) {
+            Text("آخرین ثبتِ خودکار: $lastImportAt", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+        }
+    }
+}
+
+/** «ابزارها»: تقویمِ مالی/آمار/تاریخچه‌ی محاسبات. این‌ها فیچرن نه تنظیمات، ولی هیچ نقطه‌ی ورودیِ
+ * دیگه‌ای تو اپ ندارن - پس به‌جای حذف از تنظیمات (که یعنی گم‌شدنشون)، زیرِ یه ردیفِ واحد جمع شدن. */
+@Composable
+private fun ToolsSettings(onOpenTool: (String) -> Unit) {
+    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+        ToolRow(Icons.Filled.DateRange, "تقویم مالی", "سررسیدِ اقساطِ همه‌ی وام‌هات رو رو تقویم ببین") { onOpenTool("calendar") }
+    }
+    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+        ToolRow(Icons.Filled.Assessment, "آمار و گزارشات", "آمارِ کلیِ وام‌هات + خروجی PDF") { onOpenTool("stats") }
+    }
+    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+        ToolRow(Icons.Filled.History, "تاریخچه‌ی محاسبات", "مرورِ محاسبه‌های قبلیِ وام/سقف وام/سود سپرده") { onOpenTool("history") }
+    }
+}
+
+@Composable
+private fun ToolRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.99f, onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
+        Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+            Text(title, color = AppText, fontSize = 14.sp)
+            Text(subtitle, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+        }
+        Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
+    }
+}
+
+@Composable
+private fun AboutSettings(banner: InAppBannerState) {
+    val context = LocalContext.current
+    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Info, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
+            Column(modifier = Modifier.padding(start = 10.dp)) {
+                Text("حسابدار من", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Text("نسخه ${toFa(BuildConfig.VERSION_NAME)}", color = AppMuted, fontSize = 12.sp)
+            }
+        }
+        Text(aboutText, color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 10.dp))
+    }
+    AppCard(label = "امتیازدهی", modifier = Modifier.padding(top = 8.dp)) {
+        OutlinedButton(
+            onClick = {
+                // همون لینکِ فلیورِ فعلی که بنرِ آپدیت هم استفاده می‌کنه (MainActivity.kt).
+                val storeUrl = if (BuildConfig.FLAVOR == "myket") {
+                    "https://myket.ir/app/ir.sadteam.loancalc"
+                } else {
+                    "https://cafebazaar.ir/app/ir.sadteam.loancalc"
+                }
+                try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(storeUrl)))
+                } catch (e: ActivityNotFoundException) {
+                    banner.show("اپِ فروشگاه رو گوشیت پیدا نشد")
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("به برنامه امتیاز بده")
+        }
+    }
+    AppCard(label = "پشتیبانی", modifier = Modifier.padding(top = 8.dp)) {
+        SupportContacts(banner)
+    }
+    AppCard(label = "حریم خصوصی", modifier = Modifier.padding(top = 8.dp)) {
+        Text(privacyText, color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp)
     }
 }
 
@@ -279,756 +1024,6 @@ private fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable 
     }
 }
 
-@Composable
-private fun SettingsMainContent(
-    onBack: () -> Unit,
-    authViewModel: AuthViewModel,
-    themeViewModel: ThemeViewModel,
-    notificationsViewModel: NotificationsViewModel,
-    appLockViewModel: AppLockViewModel,
-    autoBackupViewModel: AutoBackupViewModel,
-    hapticsViewModel: HapticsViewModel,
-    smsAutoImportViewModel: SmsAutoImportViewModel,
-    onShowLoginPrompt: () -> Unit,
-    onShowFinancialCalendar: () -> Unit,
-    onShowStats: () -> Unit,
-    onShowCheque: () -> Unit,
-    onShowAccounts: () -> Unit,
-    onShowSubscription: () -> Unit,
-    onShowHistory: () -> Unit,
-    onShowReminderSettings: () -> Unit,
-    tourHighlightQuery: String? = null,
-    onTourRowPositioned: (Rect) -> Unit = {},
-) {
-    val gateState by authViewModel.gateState.collectAsState()
-    val phone by authViewModel.phone.collectAsState()
-    val subscribed by authViewModel.subscribed.collectAsState()
-    // بالا کشیده شد (قبلاً فقط داخلِ شاخه‌ی LOGGED_IN تعریف می‌شد) چون کارتِ «خرید اشتراک» پایین‌تر
-    // هم بهش نیاز داره - رجوع کن به کامنتِ همون‌جا.
-    val trialDaysLeft by authViewModel.trialDaysLeft.collectAsState()
-    val subscribedUntil by authViewModel.subscribedUntil.collectAsState()
-    val subscriptionTier by authViewModel.subscriptionTier.collectAsState()
-    val fontScale by themeViewModel.fontScale.collectAsState()
-    val notificationsEnabled by notificationsViewModel.enabled.collectAsState()
-    val autoBackupEnabled by autoBackupViewModel.enabled.collectAsState()
-    val lastAutoBackupAt by autoBackupViewModel.lastBackupAt.collectAsState()
-    val vibrationEnabled by hapticsViewModel.enabled.collectAsState()
-    val smsAutoImportEnabled by smsAutoImportViewModel.enabled.collectAsState()
-    val lastSmsImportAt by smsAutoImportViewModel.lastImportAt.collectAsState()
-    val dailyExpenseReminderEnabled by notificationsViewModel.dailyExpenseReminderEnabled.collectAsState()
-    val context = LocalContext.current
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted -> if (granted) notificationsViewModel.enable() }
-    val smsPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted -> if (granted) smsAutoImportViewModel.enable() }
-    val dailyExpenseReminderPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted -> if (granted) notificationsViewModel.enableDailyExpenseReminder() }
-    var searchQuery by remember { mutableStateOf(tourHighlightQuery ?: "") }
-    // اگه تور یه قدمِ جدید رو پنلِ تنظیمات فعال کرد (مثلاً از SETTINGS_CALENDAR به SETTINGS_CHEQUE)،
-    // جستجو رو خودکار با همون فیلترِ جدید هم‌قدم کن - دقیقاً همون کاری که خودِ کاربر با تایپ می‌کرد.
-    LaunchedEffect(tourHighlightQuery) {
-        if (tourHighlightQuery != null) searchQuery = tourHighlightQuery
-    }
-    fun matches(vararg titles: String) =
-        searchQuery.isBlank() || titles.any { it.contains(searchQuery.trim()) }
-    val banner = rememberInAppBanner()
-    var showDeleteAccountConfirm by remember { mutableStateOf(false) }
-    var deleteAccountInProgress by remember { mutableStateOf(false) }
-
-    // به‌درخواست کاربر، منوی تنظیمات دیگه زیرِ نوار وضعیتِ گوشی گم نمی‌شه (statusBarsPadding) و تا
-    // ته قابل‌اسکرول‌شدنه (verticalScroll + navigationBarsPadding پایین) - قبلاً هیچ‌کدوم نبود.
-    Box(modifier = Modifier.fillMaxSize()) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .navigationBarsPadding(),
-    ) {
-        // پورت پروفایل بالای پنل تنظیمات اپ رقیب (VAMMAN): آواتار + برچسب وضعیت («نسخه عادی»/«نسخه
-        // اشتراکی»)؛ اگه مشترک باشیم، کادر دور آواتار طلایی و ضخیم‌تر می‌شه + یه گرادینت طلاییِ
-        // ظریف پشتِ کل ردیف (خواسته‌ی کاربر «منو تنظیمات هم همون رنگ طلایی کمی قاطیش کن»).
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(
-                    if (subscribed) {
-                        Modifier.background(
-                            Brush.horizontalGradient(listOf(AppAccent.copy(alpha = 0.28f), Color.Transparent)),
-                        )
-                    } else {
-                        Modifier
-                    },
-                )
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
-            }
-            Box(
-                modifier = Modifier
-                    .padding(start = 4.dp)
-                    .size(40.dp)
-                    .background(AppSurface2, CircleShape)
-                    .border(if (subscribed) 3.dp else 1.dp, if (subscribed) AppAccent else AppLine, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Filled.Person,
-                    contentDescription = null,
-                    tint = if (subscribed) AppAccent else AppMuted,
-                )
-            }
-            Column(modifier = Modifier.padding(start = 8.dp)) {
-                Text("تنظیمات", color = AppText, fontSize = 16.sp)
-                Text(
-                    if (subscribed) "نسخه اشتراکی" else "نسخه عادی",
-                    color = if (subscribed) AppAccent else AppMuted,
-                    fontSize = 11.sp,
-                )
-            }
-        }
-
-        Column(modifier = Modifier.padding(horizontal = 14.dp)) {
-            AppCard {
-                when (gateState) {
-                    GateState.LOGGED_IN -> {
-                        Text(toFa(phone ?: ""), color = AppText, fontSize = 15.sp)
-                        // خواسته‌ی کاربر: زیرِ شماره فقط نوعِ اشتراک (یک‌ماهه/سه‌ماهه/شش‌ماهه/یک‌ساله)
-                        // باشه، نه متنِ قبلیِ «مشترک — وام‌های من همگام‌سازی می‌شه». subscriptionTier
-                        // فقط برای خریدِ واقعیِ زمان‌دار پر می‌شه (سرور، رجوع کن به
-                        // SubscriptionRoutes.kt/PRODUCT_TIER_CODE)؛ برای دوره‌ی آزمایشی/اشتراکِ دستیِ
-                        // دائمی یا خریدِ قدیمی‌تر (قبل از این فیلد) که تیرش معلوم نیست، فقط «مشترک»
-                        // ساده نشون داده می‌شه - جزئیاتِ بیشترش رو بجِ آزمایشی/دائمیِ پایین‌تر می‌ده.
-                        val tierLabel = when (subscriptionTier) {
-                            "1m" -> "اشتراک یک‌ماهه"
-                            "3m" -> "اشتراک سه‌ماهه"
-                            "6m" -> "اشتراک شش‌ماهه"
-                            "1y" -> "اشتراک یک‌ساله"
-                            else -> null
-                        }
-                        Text(
-                            when {
-                                !subscribed -> "وارد حساب شدی"
-                                tierLabel != null -> tierLabel
-                                else -> "مشترک"
-                            },
-                            color = AppMuted,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
-                        // اگه دلیل «مشترک بودن» فعلاً فقط دوره‌ی آزمایشیِ ۷روزه‌ست (نه خرید واقعی)،
-                        // مهلتِ باقی‌مونده رو نشون بده - وقتی تموم شد، خودکار (سمت سرور) به حالت
-                        // عادی برمی‌گرده و همون پیامِ «باید اشتراک بگیری» جای این رو می‌گیره. عددش
-                        // مستقیم از سرور میاد (با ساعتِ سرور حساب شده)، نه از یه محاسبه‌ی محلی روی
-                        // ساعتِ گوشی - وگرنه دستکاری‌کردنِ تاریخِ گوشی می‌تونست این نمایش رو
-                        // (نه خودِ دسترسیِ واقعی، که همیشه سمت سرور تصمیم‌گیری می‌شه) اشتباه نشون بده.
-                        // باگِ رفع‌شده: قبلاً trialDaysLeft بی‌قید و شرط از سرور می‌اومد، پس حتی یه
-                        // حسابِ **دائمیِ** دستی (subscribed=1 رو دیتابیس، برای پشتیبانی/تست) که
-                        // تصادفاً تو ۷ روزِ اولِ ثبت‌نامش بود، همچنان همین بجِ «آزمایشی» گمراه‌کننده
-                        // رو می‌گرفت. سرور الان فقط وقتی trialDaysLeft واقعاً دلیلِ مشترک‌بودنه
-                        // (نه دستی/دائمی، نه خریدِ زمان‌دار) عدد می‌ده - رجوع کن به
-                        // trialDaysLeftIfApplicable سمتِ سرور.
-                        if (subscribed && trialDaysLeft != null && trialDaysLeft in 1..7) {
-                            // GoldSheenBox: برقِ گذرای طلایی رو بجِ آزمایشی (رجوع کن به GoldSheen.kt).
-                            GoldSheenBox(
-                                modifier = Modifier.padding(top = 4.dp),
-                                cornerRadius = 8.dp,
-                            ) {
-                                Text(
-                                    "دوره‌ی آزمایشی رایگان: ${toFa(trialDaysLeft.toString())} روز مانده",
-                                    color = AppText,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier
-                                        .background(AppAccent.copy(alpha = 0.24f), RoundedCornerShape(8.dp))
-                                        .border(1.dp, AppAccent.copy(alpha = 0.85f), RoundedCornerShape(8.dp))
-                                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                                )
-                            }
-                        } else if (subscribed && subscribedUntil == null) {
-                            // subscribed=true ولی نه از دوره‌ی آزمایشی نه از یه خریدِ زمان‌دار (که
-                            // subscribedUntil رو پر می‌کرد) - یعنی همون فلگِ دستیِ subscribed=1 رو
-                            // دیتابیس (حسابِ تست/شخصیِ توسعه‌دهنده)، واقعاً دائمیه.
-                            GoldSheenBox(
-                                modifier = Modifier.padding(top = 4.dp),
-                                cornerRadius = 8.dp,
-                            ) {
-                                Text(
-                                    "اشتراک دائمی",
-                                    color = AppText,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier
-                                        .background(AppAccent.copy(alpha = 0.24f), RoundedCornerShape(8.dp))
-                                        .border(1.dp, AppAccent.copy(alpha = 0.85f), RoundedCornerShape(8.dp))
-                                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                                )
-                            }
-                        }
-                        Button(
-                            onClick = { authViewModel.logout() },
-                            colors = ButtonDefaults.buttonColors(containerColor = AppDanger),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 12.dp),
-                        ) {
-                            Text("خروج از حساب")
-                        }
-                    }
-                    else -> {
-                        Text("ورود به حساب انجام نشده", color = AppText, fontSize = 15.sp)
-                        Text(
-                            "برای همگام‌سازی ابری وارد شو",
-                            color = AppMuted,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
-                        GradientButton(
-                            onClick = onShowLoginPrompt,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 12.dp),
-                        ) {
-                            Text("ورود")
-                        }
-                    }
-                }
-            }
-
-            if (showDeleteAccountConfirm) {
-                AlertDialog(
-                    onDismissRequest = { if (!deleteAccountInProgress) showDeleteAccountConfirm = false },
-                    title = { Text("حذف حساب کاربری") },
-                    text = {
-                        Text(
-                            "شماره‌ی حساب و وام‌ها/پشتیبان‌های ابری‌ای که سمت سرور ذخیره شدن برای همیشه " +
-                                "پاک می‌شن و قابل بازگشت نیستن. داده‌های محلیِ همین گوشی (وام‌ها/چک‌های " +
-                                "ذخیره‌شده) دست‌نخورده می‌مونه. مطمئنی؟",
-                        )
-                    },
-                    confirmButton = {
-                        Button(
-                            onClick = {
-                                deleteAccountInProgress = true
-                                authViewModel.deleteAccount(
-                                    onSuccess = {
-                                        deleteAccountInProgress = false
-                                        showDeleteAccountConfirm = false
-                                        banner.show("حساب کاربری حذف شد")
-                                    },
-                                    onError = {
-                                        deleteAccountInProgress = false
-                                        banner.show("حذف حساب ناموفق بود؛ دوباره امتحان کن")
-                                    },
-                                )
-                            },
-                            enabled = !deleteAccountInProgress,
-                            colors = ButtonDefaults.buttonColors(containerColor = AppDanger),
-                        ) {
-                            if (deleteAccountInProgress) {
-                                LottieSpinner(modifier = Modifier.size(18.dp))
-                            } else {
-                                Text("حذف کن")
-                            }
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = { showDeleteAccountConfirm = false },
-                            enabled = !deleteAccountInProgress,
-                        ) {
-                            Text("انصراف")
-                        }
-                    },
-                )
-            }
-
-            // این کارت قبلاً فقط برای LOGGED_IN نشون داده می‌شد - یعنی کاربر مهمان (GateState.GUEST)
-            // اصلاً هیچ نقطه‌ی ورودی‌ای برای خرید اشتراک نمی‌دید (خواسته‌ی صریح کاربر: «تو تنظیمات
-            // زیر حساب کاربری بجا باشه برای خرید اشتراک اصلا جایی نزاشتی اونو»). بعد کاربر گفت حتی
-            // دیدنِ قیمتِ پلن‌ها هم نباید اول ورود بخواد («می‌خوام اشتراک‌ها قیمتشون معلوم باشه، نیاز
-            // نباشه حتما ورود کرد») - پس حالا تپ‌کردن همیشه مستقیم می‌ره صفحه‌ی پلن‌ها (SubscriptionScreen
-            // قیمت‌ها رو بی‌قید و شرط از کافه‌بازار می‌گیره، نیاز به توکن نداره)؛ فقط خودِ دکمه‌ی «خرید»
-            // تو اون صفحه (نه اینجا) اگه کاربر لاگین نبود، اول می‌بره سراغ ورود - رجوع کن به
-            // SubscriptionScreen.onNeedsLogin.
-            // subscribed هم با خریدِ واقعی true می‌شه هم با دوره‌ی آزمایشیِ ۷روزه؛ اگه فقط شرطِ
-            // !subscribed می‌بود، کاربرِ تو دوره‌ی آزمایشی اصلاً این کارت رو نمی‌دید و نمی‌تونست زودتر
-            // از تمومِ آزمایشی، خرید کنه (خواسته‌ی صریح کاربر: «شاید یکی دوست داشت از همون اول
-            // بگیره») - برای همین وقتی دلیلِ subscribed فقط دوره‌ی آزمایشیه (نه خریدِ واقعی)، همچنان
-            // این کارت نشون داده می‌شه.
-            val onlyTrialSubscribed = subscribed && trialDaysLeft != null && trialDaysLeft in 1..7
-            if ((!subscribed || onlyTrialSubscribed) && matches("اشتراک", "خرید اشتراک")) {
-                PulseGlowBox(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
-                    // GoldSheenBox: هر چند ثانیه یه موجِ نورِ طلایی از رو کارت رد می‌شه (لهجه‌ی
-                    // طلایی رو افکت/پس‌زمینه، طبق الگوی مصوب) - مکملِ هاله‌ی ضربان‌دارِ PulseGlow.
-                    GoldSheenBox {
-                    AppCard(backgroundColor = lerp(AppSurface, AppAccent, 0.14f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.Star, contentDescription = null, tint = AppAccent)
-                            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                                Text("ارتقا به نسخه اشتراکی", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                Text(
-                                    "وام/چک نامحدود، همگام‌سازی چند دستگاه و موارد دیگر",
-                                    color = AppMuted,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.padding(top = 2.dp),
-                                )
-                            }
-                        }
-                        GradientButton(
-                            onClick = onShowSubscription,
-                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                        ) {
-                            Text("مشاهده پلن‌ها")
-                        }
-                    }
-                    }
-                }
-            }
-
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = { Text("جستجو تو تنظیمات") },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 10.dp),
-            )
-
-            if (matches("تم", "رنگ برنامه")) {
-                val themeMode by themeViewModel.themeMode.collectAsState()
-                // همون افکتِ دایره‌ایِ نوارِ بالا، این‌بار از مرکزِ خودِ چیپی که زده شد باز می‌شه -
-                // رجوع کن به ThemeReveal.kt.
-                val themeReveal = LocalThemeReveal.current
-                val chipCenters = remember { mutableStateMapOf<ThemeMode, Offset>() }
-                // startReveal الان suspend ئه - رجوع کن به کامنتِ کاملِ ThemeReveal.kt دربارهٔ
-                // اینکه چرا اسنپ‌شات و عوض‌کردنِ تم باید تویِ یه کوروتینِ واحد پشتِ‌سرهم باشن.
-                val themeToggleScope = rememberCoroutineScope()
-                AppCard(label = "تم", modifier = Modifier.padding(top = 10.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                        themeModeOptions.forEach { (mode, label) ->
-                            AppChip(
-                                label = label,
-                                selected = themeMode == mode,
-                                onClick = {
-                                    // فقط وقتی واقعاً داره عوض می‌شه افکت معنی داره - زدنِ دوباره‌ی
-                                    // چیپِ ازقبل‌فعال نباید کلِ صفحه رو بی‌دلیل جارو کنه.
-                                    if (mode != themeMode && !themeReveal.inProgress) {
-                                        val origin = chipCenters[mode] ?: Offset.Zero
-                                        themeToggleScope.launch {
-                                            themeReveal.startReveal(origin = origin, currentKey = themeMode)
-                                            themeViewModel.setThemeMode(mode)
-                                        }
-                                    } else {
-                                        themeViewModel.setThemeMode(mode)
-                                    }
-                                },
-                                modifier = Modifier.onGloballyPositioned {
-                                    chipCenters[mode] = it.boundsInRoot().center
-                                },
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (matches("اندازه فونت")) {
-                AppCard(label = "اندازه فونت", modifier = Modifier.padding(top = 10.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                        fontSizeOptions.forEach { (scale, label) ->
-                            AppChip(
-                                label = label,
-                                selected = fontScale == scale,
-                                onClick = { themeViewModel.setFontScale(scale) },
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (matches("یادآوری سررسید")) {
-                AppCard(label = "یادآوری سررسید", modifier = Modifier.padding(top = 10.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "برای اقساط و چک‌های نزدیک به سررسید یه نوتیف بده",
-                            color = AppMuted,
-                            fontSize = 12.sp,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Switch(
-                            checked = notificationsEnabled,
-                            onCheckedChange = { checked ->
-                                if (!checked) {
-                                    notificationsViewModel.disable()
-                                } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                                    notificationsViewModel.enable()
-                                } else if (ContextCompat.checkSelfPermission(
-                                        context,
-                                        Manifest.permission.POST_NOTIFICATIONS,
-                                    ) == PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    notificationsViewModel.enable()
-                                } else {
-                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                }
-                            },
-                            colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-                        )
-                    }
-                    TextButton(onClick = onShowReminderSettings, modifier = Modifier.padding(top = 2.dp)) {
-                        Text("زمان‌بندی، صدا و ویبره رو شخصی‌سازی کن", fontSize = 12.sp)
-                    }
-                }
-            }
-
-            if (matches("هپتیک فیدبک", "ویبره")) {
-                AppCard(label = "هپتیک فیدبک", modifier = Modifier.padding(top = 10.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "موقع لمس دکمه‌ها و اسلایدرها یه لرزش کوتاه حس کن",
-                            color = AppMuted,
-                            fontSize = 12.sp,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Switch(
-                            checked = vibrationEnabled,
-                            onCheckedChange = { hapticsViewModel.setEnabled(it) },
-                            colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-                        )
-                    }
-                }
-            }
-
-            if (matches("پشتیبان‌گیری خودکار روزانه")) {
-                AppCard(label = "پشتیبان‌گیری خودکار روزانه", modifier = Modifier.padding(top = 10.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "هر روز یه اسنپ‌شات از وام/چک/حساب رو خودکار ذخیره کن",
-                                color = AppMuted,
-                                fontSize = 12.sp,
-                            )
-                            val lastBackupLabel = remember(lastAutoBackupAt) {
-                                lastAutoBackupAt?.let { iso ->
-                                    runCatching {
-                                        val date = JalaliCalendar.fromGregorian(
-                                            iso.substring(0, 4).toInt(),
-                                            iso.substring(5, 7).toInt(),
-                                            iso.substring(8, 10).toInt(),
-                                        )
-                                        "${toFa(date.d)}/${toFa(date.m)}/${toFa(date.y)}"
-                                    }.getOrNull()
-                                }
-                            }
-                            if (lastBackupLabel != null) {
-                                Text(
-                                    "آخرین پشتیبان: $lastBackupLabel",
-                                    color = AppMuted,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.padding(top = 2.dp),
-                                )
-                            }
-                        }
-                        Switch(
-                            checked = autoBackupEnabled,
-                            onCheckedChange = { checked ->
-                                if (checked) autoBackupViewModel.enable() else autoBackupViewModel.disable()
-                            },
-                            colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-                        )
-                    }
-                    if (lastAutoBackupAt != null) {
-                        OutlinedButton(
-                            onClick = {
-                                autoBackupViewModel.restoreFromAutoBackup { ok ->
-                                    val message = if (ok) "بازیابی از پشتیبان خودکار انجام شد" else "پشتیبانی برای بازیابی پیدا نشد"
-                                    banner.show(message, isSuccess = ok)
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                        ) {
-                            Text("بازیابی از پشتیبان خودکار")
-                        }
-                    }
-                    // برخلاف دکمه‌ی بالا (که فقط رو همون گوشی کار می‌کنه)، این از سرور می‌گیره - برای
-                    // وقتی گوشی عوض شده یا اپ پاک/نصب شده. فقط برای کاربر لاگین‌شده‌ی مشترک نشون داده
-                    // می‌شه چون پوش‌شدن به سرور هم فقط برای همین گروه فعاله (رجوع کن به AutoBackupWorker).
-                    if (gateState == GateState.LOGGED_IN && subscribed) {
-                        OutlinedButton(
-                            onClick = {
-                                autoBackupViewModel.restoreFromCloud { ok ->
-                                    val message = if (ok) "بازیابی از سرور ابری انجام شد" else "پشتیبانی رو سرور ابری پیدا نشد"
-                                    banner.show(message, isSuccess = ok)
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                        ) {
-                            Text("بازیابی از سرور ابری")
-                        }
-                    }
-                }
-            }
-
-            if (matches("پیامک بانکی", "خواندن خودکار پیامک")) {
-                AppCard(label = "خوندنِ خودکارِ پیامکِ بانکی", modifier = Modifier.padding(top = 10.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "با رسیدنِ پیامکِ برداشت/واریزِ بانک، خودکار یه تراکنش تو حسابداری ثبت کن",
-                                color = AppMuted,
-                                fontSize = 12.sp,
-                            )
-                            if (lastSmsImportAt != null) {
-                                Text(
-                                    "آخرین ثبتِ خودکار: $lastSmsImportAt",
-                                    color = AppMuted,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.padding(top = 2.dp),
-                                )
-                            }
-                        }
-                        Switch(
-                            checked = smsAutoImportEnabled,
-                            onCheckedChange = { checked ->
-                                if (!checked) {
-                                    smsAutoImportViewModel.disable()
-                                } else if (ContextCompat.checkSelfPermission(
-                                        context,
-                                        Manifest.permission.RECEIVE_SMS,
-                                    ) == PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    smsAutoImportViewModel.enable()
-                                } else {
-                                    smsPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS)
-                                }
-                            },
-                            colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-                        )
-                    }
-                }
-            }
-
-            if (matches("دخل و خرج امروز", "یادآوری روزانه")) {
-                AppCard(label = "یادآوریِ روزانه‌ی دخل‌وخرج", modifier = Modifier.padding(top = 10.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "اگه یه روز هنوز چیزی تو حسابداری ثبت نکرده باشی، یادت بندازه",
-                            color = AppMuted,
-                            fontSize = 12.sp,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Switch(
-                            checked = dailyExpenseReminderEnabled,
-                            onCheckedChange = { checked ->
-                                if (!checked) {
-                                    notificationsViewModel.disableDailyExpenseReminder()
-                                } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                                    ContextCompat.checkSelfPermission(
-                                        context,
-                                        Manifest.permission.POST_NOTIFICATIONS,
-                                    ) == PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    notificationsViewModel.enableDailyExpenseReminder()
-                                } else {
-                                    dailyExpenseReminderPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                }
-                            },
-                            colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-                        )
-                    }
-                }
-            }
-
-            if (matches("تقویم مالی")) {
-                AppCard(
-                    modifier = Modifier
-                        .padding(top = 10.dp)
-                        // برای قدمِ SETTINGS_CALENDARِ AppTourOverlay - رجوع کن به
-                        // onTourRowPositioned/tourHighlightQuery بالا.
-                        .onGloballyPositioned { onTourRowPositioned(it.boundsInRoot()) },
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("تقویم مالی", color = AppText, fontSize = 13.sp)
-                            Text(
-                                "سررسید اقساط همه‌ی وام‌هات رو رو تقویم ببین",
-                                color = AppMuted,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
-                        OutlinedButton(onClick = onShowFinancialCalendar) {
-                            Text("مشاهده")
-                        }
-                    }
-                }
-            }
-
-            if (matches("آمار و گزارشات")) {
-                AppCard(modifier = Modifier.padding(top = 10.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("آمار و گزارشات", color = AppText, fontSize = 13.sp)
-                            Text(
-                                "آمار کلی وام‌هات + خروجی PDF",
-                                color = AppMuted,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
-                        OutlinedButton(onClick = onShowStats) {
-                            Text("مشاهده")
-                        }
-                    }
-                }
-            }
-
-            if (matches("تاریخچه محاسبات")) {
-                AppCard(modifier = Modifier.padding(top = 10.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("تاریخچه محاسبات", color = AppText, fontSize = 13.sp)
-                            Text(
-                                "مرور و جستجوی محاسبه‌های قبلی وام/سقف وام/سود سپرده",
-                                color = AppMuted,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
-                        OutlinedButton(onClick = onShowHistory) {
-                            Text("مشاهده")
-                        }
-                    }
-                }
-            }
-
-            if (matches("امور چک")) {
-                AppCard(
-                    modifier = Modifier
-                        .padding(top = 10.dp)
-                        // برای قدمِ SETTINGS_CHEQUEِ AppTourOverlay - رجوع کن به
-                        // onTourRowPositioned/tourHighlightQuery بالا.
-                        .onGloballyPositioned { onTourRowPositioned(it.boundsInRoot()) },
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("امور چک", color = AppText, fontSize = 13.sp)
-                            Text(
-                                "چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن",
-                                color = AppMuted,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
-                        OutlinedButton(onClick = onShowCheque) {
-                            Text("مشاهده")
-                        }
-                    }
-                }
-            }
-
-            if (matches("حساب‌های بانکی")) {
-                AppCard(modifier = Modifier.padding(top = 10.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("حساب‌های بانکی", color = AppText, fontSize = 13.sp)
-                            Text(
-                                "موجودی و تراکنش‌های واریز/برداشت هر حساب رو دنبال کن",
-                                color = AppMuted,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
-                        OutlinedButton(onClick = onShowAccounts) {
-                            Text("مشاهده")
-                        }
-                    }
-                }
-            }
-
-            if (matches("امنیت", "قفل", "PIN", "اثر انگشت")) {
-                AccordionCard(title = "امنیت", modifier = Modifier.padding(top = 10.dp)) {
-                    SecuritySettings(appLockViewModel)
-                }
-            }
-
-            if (matches("پشتیبانی")) {
-                AccordionCard(title = "پشتیبانی", modifier = Modifier.padding(top = 10.dp)) {
-                    SupportContacts(banner)
-                }
-            }
-
-            if (matches("درباره برنامه")) {
-                AccordionCard(title = "درباره برنامه", modifier = Modifier.padding(top = 10.dp)) {
-                    Text(aboutText, color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp)
-                }
-            }
-
-            if (matches("حریم خصوصی")) {
-                AccordionCard(title = "حریم خصوصی", modifier = Modifier.padding(top = 10.dp)) {
-                    Text(privacyText, color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp)
-                }
-            }
-
-            // خواسته‌ی کاربر: «حذف حساب کاربری» بیاد پایینِ پایینِ لیستِ تنظیمات - قبلاً بالای لیست،
-            // تویِ کارتِ وضعیتِ حساب بود. الزامِ استانداردِ فروشگاه‌های اپ: راهِ داخل‌برنامه‌ای برای
-            // حذفِ کاملِ حساب، نه فقط خروج - عمداً OutlinedButton (نه پرشده مثلِ خروج) - شدتِ بصریِ
-            // کمتر برای یه عملِ به‌مراتب جدی‌تر و غیرقابل‌بازگشت، تا اشتباهی باهاش قاطی نشه.
-            if (gateState == GateState.LOGGED_IN && matches("حذف حساب")) {
-                AppCard(modifier = Modifier.padding(top = 10.dp)) {
-                    OutlinedButton(
-                        onClick = { showDeleteAccountConfirm = true },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("حذف حساب کاربری")
-                    }
-                }
-            }
-        }
-    }
-
-        InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
-    }
-}
 
 private const val SUPPORT_EMAIL = "vamman.pbs@gmail.com"
 
@@ -1237,30 +1232,6 @@ private fun SupportRow(label: String, value: String, modifier: Modifier = Modifi
     }
 }
 
-/** پورت toggleAbout/toggleAbout (آکاردئون settings-item + grace-box تو www/index.html). */
-@Composable
-private fun AccordionCard(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    AppCard(modifier = modifier) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .pressScaleClickable(scale = 0.99f) { expanded = !expanded },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(title, color = AppText, fontSize = 13.sp)
-            Icon(
-                if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                contentDescription = null,
-                tint = AppMuted,
-            )
-        }
-        if (expanded) {
-            Column(modifier = Modifier.padding(top = 8.dp)) { content() }
-        }
-    }
-}
 
 // نسخه‌ی «۱» قبلاً هاردکد بود (همیشه ثابت، هیچ‌وقت آپدیت نمی‌شد) - خواسته‌ی کاربر: نسخه‌ی واقعیِ
 // نصب‌شده رو نشون بده. BuildConfig.VERSION_NAME همون versionNameِ CI (مثلاً "1.0.332") ئه.

@@ -233,21 +233,12 @@ private enum class TourTarget(val title: String, val hint: String) {
         "تمِ روشن/تاریک",
         "با این آیکون بینِ تمِ روشن و تاریک جابه‌جا شو.",
     ),
+    // قدم‌های جدای «تقویم مالی»/«امور چک» حذف شدن: بعدِ بازطراحیِ تنظیمات (ردیف‌های جمع‌شده +
+    // زیرصفحه‌ها) دیگه ردیفِ مستقیمی برای اسپاتلایت‌کردن وجود نداره - جاشون تو همین توضیح ادغام شد.
     SETTINGS(
         "تنظیمات",
-        "از اینجا به یادآوریِ سررسید، پشتیبان‌گیری، آمار و گزارشات، امنیت و حساب‌های بانکی هم " +
-            "دسترسی داری.",
-    ),
-    // این دو قدم، برخلافِ بقیه، پنلِ تنظیمات رو خودکار باز می‌کنن و با فیلترِ جستجوی خودِ همون پنل
-    // (matches() تو SettingsScreen.kt) دقیقاً ردیفِ خودشون رو نشون می‌دن - رجوع کن به
-    // tourHighlightQuery تو SettingsScreen.kt.
-    SETTINGS_CALENDAR(
-        "تقویم مالی",
-        "همینجا تو تنظیماته - سررسیدِ اقساطِ همه‌ی وام‌هات رو رو یه تقویمِ جلالی یه‌جا ببین.",
-    ),
-    SETTINGS_CHEQUE(
-        "امور چک",
-        "این‌م همینجا تو تنظیماته - چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن.",
+        "از اینجا به یادآوریِ سررسید، پشتیبان‌گیری، پیامکِ بانکی، امنیت و ابزارها (تقویمِ مالی، " +
+            "آمار و گزارشات، تاریخچه‌ی محاسبات) دسترسی داری.",
     ),
     ASSETS(
         "دارایی",
@@ -453,10 +444,6 @@ private fun LoanCalcApp(
     deepLinkViewModel: DeepLinkViewModel = hiltViewModel(),
 ) {
     var showSettings by remember { mutableStateOf(false) }
-    // قدمِ فعلیِ تور (اگه تور در حالِ اجراست) - AppTourOverlay.onStepChanged پرش می‌کنه؛ برای
-    // قدم‌های SETTINGS_CALENDAR/SETTINGS_CHEQUE لازمه بدونیم کدوم ردیفِ پنلِ تنظیمات رو باید
-    // فیلتر/اسپاتلایت کنیم - رجوع کن به SettingsScreen(tourHighlightQuery = ...) پایین‌تر.
-    var currentTourTarget by remember { mutableStateOf<TourTarget?>(null) }
     val updateUrl by appUpdateViewModel.updateUrl.collectAsState()
     // تورِ راهنمای اولین ورود (پایین‌تر) - رجوع کن به رفعِ تداخلِ بنرِ آپدیت/تور: بنر فقط بعدِ تمومِ
     // تور نشون داده می‌شه، وگرنه هم‌زمان با اسپاتلایتِ تور بالای صفحه شلوغ/رو هم می‌افتادن.
@@ -808,15 +795,7 @@ private fun LoanCalcApp(
                 .align(Alignment.CenterEnd),
         ) {
             Surface(color = AppSurface, modifier = Modifier.fillMaxSize()) {
-                SettingsScreen(
-                    onBack = { showSettings = false },
-                    tourHighlightQuery = when (currentTourTarget) {
-                        TourTarget.SETTINGS_CALENDAR -> "تقویم مالی"
-                        TourTarget.SETTINGS_CHEQUE -> "امور چک"
-                        else -> null
-                    },
-                    onTourRowPositioned = { rect -> currentTourTarget?.let { tourBounds[it] = rect } },
-                )
+                SettingsScreen(onBack = { showSettings = false })
             }
         }
 
@@ -909,18 +888,11 @@ private fun LoanCalcApp(
                 steps = TourTarget.entries.toList(),
                 bounds = tourBounds,
                 onStepChanged = { target ->
-                    currentTourTarget = target
-                    if (target == TourTarget.SETTINGS_CALENDAR || target == TourTarget.SETTINGS_CHEQUE) {
-                        // این دو قدم رو خودِ پنلِ تنظیمات زندگی می‌کنن - خودکار بازش کن، وگرنه ردیفِ
-                        // هدف اصلاً رندر نمی‌شه.
-                        showSettings = true
-                    } else {
-                        showSettings = false
-                        // قدم‌هایی که رو یه تبِ خاص زندگی می‌کنن خودکار به همون تب می‌رن - وگرنه
-                        // المانِ هدف اصلاً رندر/قابل‌اندازه‌گیری نیست.
-                        target.asBottomTab()?.let { tab ->
-                            if (currentRoute != tab.route) navigateTo(tab.route)
-                        }
+                    showSettings = false
+                    // قدم‌هایی که رو یه تبِ خاص زندگی می‌کنن خودکار به همون تب می‌رن - وگرنه
+                    // المانِ هدف اصلاً رندر/قابل‌اندازه‌گیری نیست.
+                    target.asBottomTab()?.let { tab ->
+                        if (currentRoute != tab.route) navigateTo(tab.route)
                     }
                 },
                 onDone = {
