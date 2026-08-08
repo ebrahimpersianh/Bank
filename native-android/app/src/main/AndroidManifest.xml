@@ -18,9 +18,14 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- برای «خوندنِ خودکارِ پیامکِ بانکی» (notifications/BankSmsReceiver.kt) - runtime تو
          SettingsScreen درخواست می‌شه، فقط وقتی کاربر صریح سوییچش رو روشن می‌کنه؛ پیش‌فرضِ فیچر خودش
-         هم خاموشه (UiPrefs.smsAutoImportEnabled). READ_SMS لازم نیست چون فقط از رو Intentِ
-         SMS_RECEIVED می‌خونیم، نه از رو کلِ صندوقِ پیامک. -->
+         هم خاموشه (UiPrefs.smsAutoImportEnabled). -->
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <!-- فقط برای «انتخابِ شماره‌ی پیامکِ بانک از رو صندوقِ پیامک» تو فرمِ افزودن/ویرایشِ حساب
+         (ui/account/SmsSenderPicker.kt) - خواسته‌ی صریحِ کاربر، تا مجبور نباشه سرشماره رو دستی
+         تایپ کنه. runtime و فقط لحظه‌ی زدنِ همون دکمه درخواست می‌شه؛ اپ فقط فرستنده و یه نمونه‌ی
+         کوتاه از متن رو *رو خودِ گوشی* می‌خونه تا لیست رو نشون بده و هیچ‌چیزی جایی فرستاده نمی‌شه.
+         اگه کاربر اجازه نده، تایپِ دستی همچنان کار می‌کنه. -->
+    <uses-permission android:name="android.permission.READ_SMS" />
 
     <!-- allowBackup عمداً false: بکاپ خودکار اندروید موقع نصب مجدد، فلگ‌های «یه‌بار پرسیده شده»
          (ورود/مهمان، benefits، گیت مجوزها) رو از نصب قبلی برمی‌گردوند و در نتیجه سوال‌های اولین

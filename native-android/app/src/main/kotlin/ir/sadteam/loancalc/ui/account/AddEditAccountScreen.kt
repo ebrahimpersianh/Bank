@@ -48,6 +48,17 @@ fun AddEditAccountScreen(
     var smsSenderText by remember { mutableStateOf(existing?.smsSender ?: "") }
     var initialBalanceText by remember { mutableStateOf(existing?.initialBalance?.toLong()?.toString() ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
+    var showSmsSenderPicker by remember { mutableStateOf(false) }
+
+    if (showSmsSenderPicker) {
+        SmsSenderPickerDialog(
+            onDismiss = { showSmsSenderPicker = false },
+            onPick = { picked ->
+                smsSenderText = picked
+                showSmsSenderPicker = false
+            },
+        )
+    }
 
     // تشخیصِ خودکارِ بانک از رو ۶ رقمِ اولِ شماره‌کارت (رجوع کن به data/BankBin.kt) - فقط یه
     // پیشنهاده: اگه فیلدِ بانک خالیه یا هنوز همون پیشنهادِ خودکارِ قبلیه، به‌روزش می‌کنه؛ اگه کاربر
@@ -123,6 +134,13 @@ fun AddEditAccountScreen(
                         singleLine = true,
                         placeholder = { Text("مثلاً 100011111 یا BANKMELLAT", fontSize = 12.sp) },
                     )
+                }
+                // خواسته‌ی صریحِ کاربر: به‌جای تایپِ دستی، بره تو پیامک‌های گوشی و همون‌جا انتخاب کنه.
+                OutlinedButton(
+                    onClick = { showSmsSenderPicker = true },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) {
+                    Text("انتخاب از پیامک‌های گوشی")
                 }
                 Text(
                     "اختیاری. اگه پرش کنی، هر پیامکِ برداشت/واریز از این شماره خودکار رو همین حساب " +

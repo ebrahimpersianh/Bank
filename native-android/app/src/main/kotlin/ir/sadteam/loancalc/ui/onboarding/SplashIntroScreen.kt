@@ -66,18 +66,25 @@ fun SplashIntroScreen(onDone: () -> Unit) {
 
     LaunchedEffect(Unit) {
         launch {
-            reveal.animateTo(1f, animationSpec = tween(900, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
+            reveal.animateTo(1f, animationSpec = tween(700, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
         }
+        // زمان‌بندی‌ها با کوتاه‌شدنِ کلِ اسپلش جلو کشیده شدن، وگرنه «Powered By» درست وسطِ محوشدنِ
+        // خروج تازه کامل ظاهر می‌شد.
         launch {
-            delay(900)
-            launch { poweredByAlpha.animateTo(1f, animationSpec = tween(600)) }
+            delay(600)
+            launch { poweredByAlpha.animateTo(1f, animationSpec = tween(450)) }
             launch {
-                poweredByOffset.animateTo(0f, animationSpec = tween(600, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
+                poweredByOffset.animateTo(0f, animationSpec = tween(450, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
             }
         }
     }
+    // خواسته‌ی کاربر: «بعد از اسپلش یه انیمیشن، ولی سریع وارد برنامه بشیم». پس هم کلِ مدتِ اسپلش
+    // کوتاه‌تر شد (۲۱۵۰ → ۱۴۵۰ میلی‌ثانیه)، هم به‌جای ناپدیدشدنِ ناگهانی، صحنه با یه بزرگ‌نماییِ
+    // خیلی کوتاه محو می‌شه و بلافاصله [AnimatedAppEntrance] صفحه‌ی اصلی رو با همون حس میاره تو.
+    val exit = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        delay(2150)
+        delay(1450)
+        exit.animateTo(1f, animationSpec = tween(260, easing = CubicBezierEasing(0.4f, 0f, 1f, 1f)))
         onDone()
     }
 
@@ -102,9 +109,11 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                 .fillMaxSize()
                 .graphicsLayer {
                     val enter = 0.94f + 0.06f * reveal.value
-                    scaleX = enter * breatheScale
-                    scaleY = enter * breatheScale
-                    alpha = reveal.value
+                    // خروج: کمی بزرگ‌تر می‌شه و هم‌زمان محو - حسِ «رفتن به داخلِ برنامه».
+                    val leave = 1f + 0.08f * exit.value
+                    scaleX = enter * breatheScale * leave
+                    scaleY = enter * breatheScale * leave
+                    alpha = reveal.value * (1f - exit.value)
                 },
         )
 
@@ -116,7 +125,7 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 34.dp)
                 .offset(y = poweredByOffset.value.dp)
-                .alpha(poweredByAlpha.value),
+                .alpha(poweredByAlpha.value * (1f - exit.value)),
         )
     }
 }
