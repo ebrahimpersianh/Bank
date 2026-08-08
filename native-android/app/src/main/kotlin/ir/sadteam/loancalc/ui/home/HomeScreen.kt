@@ -1,7 +1,6 @@
 package ir.sadteam.loancalc.ui.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -32,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -129,23 +126,15 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                // کارتِ بزرگِ گرادیانیِ موجودی - بروزرسانیِ ظاهرِ کلیِ اپ (خواسته‌ی صریحِ کاربر:
-                // «کل برنامه مدرن‌تر بشه»). قبلاً فقط یه متنِ ساده‌ی معلق رو پس‌زمینه‌ی Aurora بود؛
-                // الان یه کارتِ شیشه‌ای با گرادیانِ رنگِ اصلیِ اپ، شبیهِ کارتِ بانکی.
+                // کارتِ «قهرمانِ» موجودی - همون AppCardِ مشترکِ کلِ اپ (پس گوشه/سایه/حاشیه/هایلایتش
+                // دقیقاً مثلِ بقیه‌ی کارت‌هاست)، فقط با یه لایه‌ی گرادیانِ سبزِ نیمه‌شفاف روش تا
+                // برجسته‌تر باشه. تپ روش می‌بره تبِ «دارایی».
                 val balanceGradient = Brush.linearGradient(
                     listOf(AppPrimary.copy(alpha = 0.40f), AppPrimaryDim.copy(alpha = 0.18f)),
                 )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(AppGlassBase)
-                        .background(balanceGradient)
-                        .border(1.dp, AppGlassBorder, RoundedCornerShape(24.dp))
-                        // خواسته‌ی صریحِ کاربر: تپ رو کارتِ موجودی ببره تبِ «دارایی» - قبلاً این
-                        // کارت اصلاً قابل‌تپ نبود.
-                        .pressScaleClickable(onClick = { onNavigateToRoute("assets") })
-                        .padding(20.dp),
+                AppCard(
+                    accentGradient = balanceGradient,
+                    modifier = Modifier.pressScaleClickable(onClick = { onNavigateToRoute("assets") }),
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

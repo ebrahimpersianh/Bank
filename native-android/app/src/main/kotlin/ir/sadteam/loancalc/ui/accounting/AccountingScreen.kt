@@ -14,7 +14,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,6 +76,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -121,8 +121,6 @@ import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppDanger
-import ir.sadteam.loancalc.ui.theme.AppGlassBase
-import ir.sadteam.loancalc.ui.theme.AppGlassBorder
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
@@ -255,15 +253,7 @@ private fun MainSection(
                 val heroGradient = Brush.linearGradient(
                     listOf(AppPrimary.copy(alpha = 0.40f), AppPrimaryDim.copy(alpha = 0.18f)),
                 )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(AppGlassBase)
-                        .background(heroGradient)
-                        .border(1.dp, AppGlassBorder, RoundedCornerShape(24.dp))
-                        .padding(20.dp),
-                ) {
+                AppCard(accentGradient = heroGradient) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -320,49 +310,53 @@ private fun MainSection(
         // مرجعِ کاربر. یه ردیفِ افقیِ اسکرول‌شونده: اول دکمه‌ی «+ حساب جدید»، بعد کارتِ هر حساب.
         item {
             StaggerIn(1) {
+                // هر دو نوعِ کارت (افزودن/حساب) از همون AppCardِ مشترک ساخته می‌شن و ارتفاعِ ثابتِ
+                // یکسان دارن، تا با هم و با بقیه‌ی کارت‌های صفحه کاملاً یک‌دست باشن.
+                val accountCardHeight = 116.dp
                 Row(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Column(
+                    AppCard(
                         modifier = Modifier
-                            .width(120.dp)
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(AppSurface2)
-                            .border(1.dp, AppGlassBorder, RoundedCornerShape(18.dp))
-                            .pressScaleClickable(onClick = { accountsAddMode = true; showAccountsScreen = true })
-                            .padding(14.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                            .width(126.dp)
+                            .height(accountCardHeight)
+                            .pressScaleClickable(onClick = { accountsAddMode = true; showAccountsScreen = true }),
                     ) {
-                        Box(
-                            modifier = Modifier.size(32.dp).background(AppPrimary.copy(alpha = 0.16f), CircleShape),
-                            contentAlignment = Alignment.Center,
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
                         ) {
-                            Icon(Icons.Filled.Add, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
+                            Box(
+                                modifier = Modifier.size(32.dp).background(AppPrimary.copy(alpha = 0.16f), CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(Icons.Filled.Add, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
+                            }
+                            Text(
+                                "حساب جدید",
+                                color = AppText,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
                         }
-                        Text(
-                            "حساب جدید",
-                            color = AppText,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
                     }
                     accounts.forEach { acc ->
                         val accBalance = remember(acc, allTransactions) { viewModel.balanceOf(acc, allTransactions) }
-                        Column(
+                        AppCard(
                             modifier = Modifier
-                                .width(150.dp)
-                                .clip(RoundedCornerShape(18.dp))
-                                .background(AppGlassBase)
-                                .border(1.dp, AppGlassBorder, RoundedCornerShape(18.dp))
-                                .pressScaleClickable(onClick = { showAccountsScreen = true })
-                                .padding(14.dp),
+                                .width(158.dp)
+                                .height(accountCardHeight)
+                                .pressScaleClickable(onClick = { showAccountsScreen = true }),
                         ) {
                             BankBadge(bankName = acc.bankName, size = 32.dp)
                             Text(
                                 acc.name,
                                 color = AppText,
                                 fontSize = 12.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.padding(top = 8.dp),
                             )
                             PrivacyCrossfade(privacyMode) { masked ->
@@ -371,6 +365,8 @@ private fun MainSection(
                                     color = if (accBalance < 0) AppDanger else AppPrimary,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.padding(top = 4.dp),
                                 )
                             }

@@ -64,6 +64,7 @@ fun AppCard(
     label: String? = null,
     borderColor: Color? = null,
     backgroundColor: Color? = null,
+    accentGradient: Brush? = null,
     content: @Composable () -> Unit,
 ) {
     val shape = RoundedCornerShape(22.dp)
@@ -101,6 +102,13 @@ fun AppCard(
                 .clip(shape)
                 .background(AppGlassBase)
                 .background(glassGradient)
+                // [accentGradient] یه لایه‌ی رنگیِ نیمه‌شفافِ اختیاری رو همون پایه‌ی شیشه‌ایه - برای
+                // کارت‌های «قهرمانِ» صفحه (مانده‌ی کلِ تبِ خانه/دارایی) که باید برجسته‌تر باشن ولی
+                // *دقیقاً همون* گوشه/سایه/حاشیه/هایلایتِ بقیه‌ی کارت‌ها رو داشته باشن. قبلاً این
+                // کارت‌ها دستی با clip/background/border ساخته می‌شدن و برای همین با بقیه یک‌دست
+                // نبودن (گوشه‌ی ۲۴dp به‌جای ۲۲dp، بدونِ سایه و بدونِ هایلایت) - خواسته‌ی صریحِ کاربر:
+                // «یک‌دست بکن همه باکس‌ها رو».
+                .then(if (accentGradient != null) Modifier.background(accentGradient) else Modifier)
                 .background(highlightBrush)
                 .border(1.dp, borderColor ?: AppGlassBorder, shape)
                 .padding(14.dp),

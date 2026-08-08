@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppGlassBase
+import ir.sadteam.loancalc.ui.theme.AppGlassBorder
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 
@@ -95,7 +96,11 @@ fun GradientButton(
         shape = shape,
         color = Color.Transparent,
         contentColor = AppText,
-        border = BorderStroke(1.dp, AppAccent.copy(alpha = 0.45f)),
+        // حاشیه از طلاییِ [AppAccent] به همون [AppGlassBorder]ی کارت‌ها عوض شد - خواسته‌ی صریحِ
+        // کاربر («یک‌دست بکن همه باکس‌ها رو»): تو یه ستونِ کارت‌های سبز، یه دکمه‌ی حاشیه‌طلایی
+        // تنها چیزیه که ناهماهنگ به‌نظر می‌رسه. طلایی همچنان نشانه‌ی «پرمیوم/اشتراک» می‌مونه
+        // (بج‌های اشتراک، GoldSheenBox) و نوارِ شیمرِ خیلی محوِ همین دکمه هم هنوز طلاییه.
+        border = BorderStroke(1.dp, AppGlassBorder),
     ) {
         Box(
             modifier = Modifier
