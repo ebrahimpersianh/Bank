@@ -86,6 +86,31 @@ sqlite3 ~/VameMan/data.sqlite \
 
 ---
 
+## دستورهای واقعیِ بیلد/تست (تاییدشده از رو ورک‌فلوها، نه حدس)
+هیچ‌کدوم از این‌ها تو سندباکس برای `native-android` کار نمی‌کنن (`dl.google.com` مسدوده) - این‌ها
+همون چیزین که CI اجرا می‌کنه. `server/` رو ولی همین‌جا واقعاً می‌شه اجرا کرد.
+
+**اپِ اندروید** (از `native-android/`):
+```bash
+./gradlew :core:test                          # تستِ موتورِ محاسبه (JVM، سریع)
+./gradlew :app:testCafebazaarDebugUnitTest    # تستِ اسکرین‌شاتِ Paparazzi
+./gradlew :app:assembleRelease                # هر دو فلیور (cafebazaar + myket)
+./gradlew :data:connectedDebugAndroidTest     # تستِ migration - امولاتورِ واقعی لازم داره
+```
+**سرور** (از `server/`):
+```bash
+./gradlew test
+./gradlew fatJar        # جارِ runnable که به VPS فرستاده می‌شه
+```
+**ساختارِ ریشه**: `native-android/` (اپ: `app`/`data`/`core`) · `server/` (Ktor) ·
+`.github/workflows/` · `ci-debug.keystore` (کلیدِ ثابتِ دیباگ، پاکش نکن).
+
+**ورک‌فلوها**: `build-native-android.yml` (بیلدِ APK + ریلیز) · `build-server.yml` (دیپلویِ خودکار)
+· `instrumented-tests.yml` (امولاتور) · `record-paparazzi-snapshots.yml` (بازسازیِ عکس‌های مرجع،
+دستی) · `publish-release.yml` · `set-*-env.yml` · `check-server-health.yml` · `check-recent-signups.yml`.
+
+---
+
 ## 🔑 درس‌ها و قواعدِ فنیِ ماندگار (مهم‌ترین بخش - قبل از هر کارِ مرتبط بخون)
 
 ### دیتابیس و Migration (پرریسک‌ترین بخش)
