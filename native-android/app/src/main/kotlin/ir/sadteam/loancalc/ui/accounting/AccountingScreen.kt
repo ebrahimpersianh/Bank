@@ -14,6 +14,8 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +32,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -68,6 +71,7 @@ import androidx.compose.foundation.background
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -98,6 +102,7 @@ import ir.sadteam.loancalc.ui.category.CategoryManagementScreen
 import ir.sadteam.loancalc.ui.category.CategoryViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
@@ -116,8 +121,11 @@ import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppGlassBase
+import ir.sadteam.loancalc.ui.theme.AppGlassBorder
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
@@ -200,8 +208,10 @@ private fun MainSection(
     val allCategoryEntries = remember(expenseCategories, incomeCategories) { expenseCategories + incomeCategories }
 
     var searchQuery by remember { mutableStateOf("") }
+    var showSearch by remember { mutableStateOf(false) }
     var showAddForm by remember { mutableStateOf(false) }
     var deletingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
+    val totalBalance = remember(accounts, allTransactions) { accounts.sumOf { viewModel.balanceOf(it, allTransactions) } }
     // خواسته‌ی صریحِ کاربر: افزودن/مدیریتِ حساب دیگه فقط از تنظیمات نباشه، مستقیم از همین تبِ «دارایی»
     // هم در دسترس باشه. `accountsAddMode` تعیین می‌کنه AccountsScreen مستقیم با فرمِ باز بیاد یا لیستِ عادی.
     var showAccountsScreen by remember { mutableStateOf(false) }
@@ -237,8 +247,141 @@ private fun MainSection(
         contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        // کارتِ بزرگِ موجودیِ کل - هم‌الگو با کارتِ خانه، به‌علاوه‌ی آیکونِ جستجو که فیلدِ جستجو
+        // رو باز/بسته می‌کنه (خواسته‌ی کاربر: «کلا شبیهِ اون بشه» - عکسِ مرجعش دقیقاً همین ترکیب رو
+        // داشت: مانده‌ی کل بزرگ بالا + آیکونِ جستجو کنارش).
         item {
             StaggerIn(0) {
+                val heroGradient = Brush.linearGradient(
+                    listOf(AppPrimary.copy(alpha = 0.40f), AppPrimaryDim.copy(alpha = 0.18f)),
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(AppGlassBase)
+                        .background(heroGradient)
+                        .border(1.dp, AppGlassBorder, RoundedCornerShape(24.dp))
+                        .padding(20.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("مانده‌ی کل", color = AppMuted, fontSize = 13.sp)
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .background(AppPrimary.copy(alpha = 0.18f), CircleShape)
+                                .pressScaleClickable(onClick = { showSearch = !showSearch }),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(Icons.Filled.Search, contentDescription = "جستجو", tint = AppPrimary, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            "${maskIfPrivate(masked, fmt(totalBalance))} ریال",
+                            color = if (totalBalance < 0) AppDanger else AppText,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 10.dp),
+                        )
+                    }
+                    Text(
+                        "${toFa(accounts.size)} حساب‌کتاب",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+            }
+        }
+
+        if (showSearch) {
+            item {
+                StaggerIn(1) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("جستجو تو تراکنش‌ها...") },
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = appFieldColors(),
+                    )
+                }
+            }
+        }
+
+        // خواسته‌ی صریحِ کاربر: مدیریت/افزودنِ حساب مستقیم همینجا (نه فقط تنظیمات)، به‌شکلِ کارت
+        // (نه چیپِ ساده) با بجِ بانک/لوگو و مانده‌ی رنگیِ خودِ همون حساب - عیناً هم‌الگو با عکسِ
+        // مرجعِ کاربر. یه ردیفِ افقیِ اسکرول‌شونده: اول دکمه‌ی «+ حساب جدید»، بعد کارتِ هر حساب.
+        item {
+            StaggerIn(1) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .width(120.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(AppSurface2)
+                            .border(1.dp, AppGlassBorder, RoundedCornerShape(18.dp))
+                            .pressScaleClickable(onClick = { accountsAddMode = true; showAccountsScreen = true })
+                            .padding(14.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Box(
+                            modifier = Modifier.size(32.dp).background(AppPrimary.copy(alpha = 0.16f), CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
+                        }
+                        Text(
+                            "حساب جدید",
+                            color = AppText,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
+                    accounts.forEach { acc ->
+                        val accBalance = remember(acc, allTransactions) { viewModel.balanceOf(acc, allTransactions) }
+                        Column(
+                            modifier = Modifier
+                                .width(150.dp)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(AppGlassBase)
+                                .border(1.dp, AppGlassBorder, RoundedCornerShape(18.dp))
+                                .pressScaleClickable(onClick = { showAccountsScreen = true })
+                                .padding(14.dp),
+                        ) {
+                            BankBadge(bankName = acc.bankName, size = 32.dp)
+                            Text(
+                                acc.name,
+                                color = AppText,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                            PrivacyCrossfade(privacyMode) { masked ->
+                                Text(
+                                    "${maskIfPrivate(masked, fmt(accBalance))} ریال",
+                                    color = if (accBalance < 0) AppDanger else AppPrimary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            StaggerIn(2) {
                 AppCard(label = "گزارشِ ${faMonthNamesAccounting[today.m - 1]}") {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column {
@@ -264,40 +407,6 @@ private fun MainSection(
                             }
                         }
                     }
-                }
-            }
-        }
-
-        item {
-            StaggerIn(1) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("جستجو تو تراکنش‌ها...") },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = appFieldColors(),
-                )
-            }
-        }
-
-        // خواسته‌ی صریحِ کاربر: مدیریت/افزودنِ حساب مستقیم همینجا (نه فقط تنظیمات) - یه ردیفِ چیپیِ
-        // حساب‌های موجود + یه چیپِ «+ حساب جدید» که همیشه (حتی وقتی از قبل حساب داری) در دسترسه.
-        item {
-            StaggerIn(1) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    accounts.forEach { acc ->
-                        AppChip(label = acc.name, selected = false, onClick = { showAccountsScreen = true })
-                    }
-                    AppChip(
-                        label = "+ حساب جدید",
-                        selected = true,
-                        onClick = { accountsAddMode = true; showAccountsScreen = true },
-                    )
                 }
             }
         }
