@@ -41,3 +41,31 @@ object BankSmsParser {
         return ParsedBankSms(amountRial, type, cardSuffix)
     }
 }
+
+/**
+ * نرمال‌سازیِ فرستنده‌ی پیامک برای تطبیق با [ir.sadteam.loancalc.data.db.AccountEntity.smsSender]:
+ * ارقامِ فارسی به لاتین، حذفِ فاصله/خط‌تیره/پرانتز، حروف بزرگ. پیش‌شماره‌ی ایران هم یکدست می‌شه
+ * (`+98…`/`0098…`/`98…` → `0…`) چون یه سرشماره‌ی یکسان بعضی گوشی‌ها با پیش‌شماره و بعضی بدونش
+ * نشون داده می‌شه و کاربر هر کدوم رو ببینه همون رو وارد می‌کنه.
+ */
+fun normalizeSmsSender(raw: String?): String {
+    if (raw.isNullOrBlank()) return ""
+    var s = toEnDigits(raw).uppercase().filter { it.isLetterOrDigit() || it == '+' }
+    s = s.removePrefix("+")
+    if (s.startsWith("0098")) s = s.removePrefix("0098")
+    if (s.length > 10 && s.startsWith("98")) s = s.removePrefix("98")
+    if (s.isNotEmpty() && s.first().isDigit() && !s.startsWith("0")) s = "0$s"
+    return s
+}
+
+/** آیا فرستنده‌ی این پیامک همونیه که کاربر برای این حساب ثبت کرده؟ برای اینکه یه سرشماره‌ی
+ * ۱۰-۱۴رقمی که اپراتورها گاهی با چند رقمِ اضافه تحویل می‌دن هم بگیره، تطبیقِ «یکی پسوندِ اون یکی
+ * باشه» هم قبوله (با حداقلِ ۴ کاراکتر، تا دو سرشماره‌ی بی‌ربط تصادفی جور در نیان). */
+fun smsSenderMatches(accountSender: String?, incoming: String?): Boolean {
+    val a = normalizeSmsSender(accountSender)
+    val b = normalizeSmsSender(incoming)
+    if (a.isEmpty() || b.isEmpty()) return false
+    if (a == b) return true
+    val min = minOf(a.length, b.length)
+    return min >= 4 && (a.endsWith(b) || b.endsWith(a))
+}

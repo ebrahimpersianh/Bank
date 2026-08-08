@@ -27,7 +27,7 @@ import net.sqlcipher.database.SupportFactory
         CustomCategoryEntity::class,
         CategoryOrderEntity::class,
     ],
-    version = 18,
+    version = 19,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -282,6 +282,16 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** وصل‌کردنِ شماره/سرشماره‌ی پیامکِ بانک به یه حساب (خواسته‌ی صریحِ کاربر) - تا وقتی پیامکِ
+         * برداشت/واریز میاد، BankSmsReceiver دقیقاً بدونه مالِ کدوم حسابه، نه اینکه (مثلِ قبل) اگه
+         * شماره‌کارت تو متنِ پیامک نبود بی‌برو‌برگرد رو حسابِ اول ثبتش کنه. ستون nullableست، پس
+         * حساب‌های موجود دست‌نخورده می‌مونن و رفتارِ قبلی براشون تغییری نمی‌کنه. */
+        private val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE accounts ADD COLUMN smsSender TEXT")
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -317,6 +327,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_15_16,
                             MIGRATION_16_17,
                             MIGRATION_17_18,
+                            MIGRATION_18_19,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

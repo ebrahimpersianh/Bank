@@ -7,6 +7,7 @@ import android.provider.Telephony
 import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.core.BankSmsParser
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.smsSenderMatches
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.prefs.UiPrefs
@@ -36,6 +37,7 @@ class BankSmsReceiver : BroadcastReceiver() {
         if (messages.isNullOrEmpty()) return
         val body = messages.joinToString("") { it.messageBody ?: "" }
         if (body.isBlank()) return
+        val sender = messages.firstNotNullOfOrNull { it.originatingAddress }
 
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
@@ -43,9 +45,19 @@ class BankSmsReceiver : BroadcastReceiver() {
                 if (!uiPrefs.smsAutoImportEnabled.first()) return@launch
                 val parsed = BankSmsParser.parse(body) ?: return@launch
                 val accounts = accountRepository.observeAccounts().first()
-                val account = accounts.firstOrNull { acc ->
-                    parsed.cardSuffix != null && acc.cardNumber?.takeLast(4) == parsed.cardSuffix
-                } ?: accounts.firstOrNull() ?: return@launch
+                // ترتیبِ تشخیصِ حساب، از مطمئن‌ترین به ضعیف‌ترین:
+                // ۱) شماره/سرشماره‌ی پیامکی که کاربر خودش موقعِ ساختِ حساب وصل کرده (خواسته‌ی صریحِ
+                //    کاربر - قابلِ‌اعتمادترین، چون هر بانک سرشماره‌ی خودش رو داره)
+                // ۲) ۴ رقمِ آخرِ کارت اگه تو متنِ پیامک اومده باشه
+                // ۳) اگه هیچ حسابی سرشماره ثبت نکرده، همون رفتارِ قبلی (حسابِ اول) - ولی اگه حداقل
+                //    یه حساب سرشماره داره، دیگه حدس نمی‌زنیم و پیامکِ ناشناس نادیده گرفته می‌شه،
+                //    وگرنه پیامکِ بانکِ B بی‌سروصدا رو حسابِ بانکِ A ثبت می‌شد.
+                val account = accounts.firstOrNull { acc -> smsSenderMatches(acc.smsSender, sender) }
+                    ?: accounts.firstOrNull { acc ->
+                        parsed.cardSuffix != null && acc.cardNumber?.takeLast(4) == parsed.cardSuffix
+                    }
+                    ?: accounts.takeIf { list -> list.none { !it.smsSender.isNullOrBlank() } }?.firstOrNull()
+                    ?: return@launch
 
                 val today = JalaliCalendar.today()
                 accountRepository.addTransaction(

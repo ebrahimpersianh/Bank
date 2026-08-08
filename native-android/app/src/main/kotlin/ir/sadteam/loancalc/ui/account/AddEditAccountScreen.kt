@@ -45,6 +45,7 @@ fun AddEditAccountScreen(
     var name by remember { mutableStateOf(existing?.name ?: "") }
     var bankName by remember { mutableStateOf(existing?.bankName ?: "") }
     var cardNumberText by remember { mutableStateOf(existing?.cardNumber ?: "") }
+    var smsSenderText by remember { mutableStateOf(existing?.smsSender ?: "") }
     var initialBalanceText by remember { mutableStateOf(existing?.initialBalance?.toLong()?.toString() ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -109,6 +110,31 @@ fun AddEditAccountScreen(
             }
         }
         item {
+            // خواسته‌ی صریحِ کاربر: شماره‌ی پیامکِ بانک به حساب وصل بشه تا هر واریز/برداشتی که از
+            // همون شماره پیامک می‌شه، خودکار رو همین حساب ثبت بشه (رجوع کن به BankSmsReceiver).
+            // Ltr چون سرشماره ذاتاً چپ‌به‌راسته؛ KeyboardType.Text چون بعضی بانک‌ها به‌جای عدد یه
+            // نامِ حرفی می‌فرستن (مثلاً BANKMELLAT).
+            AppCard(label = "شماره‌ی پیامکِ بانک") {
+                Ltr {
+                    OutlinedTextField(
+                        value = smsSenderText,
+                        onValueChange = { smsSenderText = it.trim() },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("مثلاً 100011111 یا BANKMELLAT", fontSize = 12.sp) },
+                    )
+                }
+                Text(
+                    "اختیاری. اگه پرش کنی، هر پیامکِ برداشت/واریز از این شماره خودکار رو همین حساب " +
+                        "ثبت می‌شه (باید «خوندنِ خودکارِ پیامکِ بانکی» رو تو تنظیمات روشن کرده باشی). " +
+                        "شماره رو عیناً از روی پیامکِ بانک تو گوشیت بردار.",
+                    color = AppMuted,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+        item {
             AppCard(label = "موجودی اولیه") {
                 OutlinedTextField(
                     value = initialBalanceText,
@@ -147,8 +173,9 @@ fun AddEditAccountScreen(
                         }
                         if (error == null) {
                             val cardNumber = cardNumberText.trim().ifBlank { null }
+                            val smsSender = smsSenderText.trim().ifBlank { null }
                             if (existing == null) {
-                                viewModel.addAccount(name.trim(), bankName.trim(), initialBalance, cardNumber)
+                                viewModel.addAccount(name.trim(), bankName.trim(), initialBalance, cardNumber, smsSender)
                             } else {
                                 viewModel.updateAccount(
                                     existing.copy(
@@ -156,6 +183,7 @@ fun AddEditAccountScreen(
                                         bankName = bankName.trim(),
                                         initialBalance = initialBalance,
                                         cardNumber = cardNumber,
+                                        smsSender = smsSender,
                                     ),
                                 )
                             }

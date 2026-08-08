@@ -36,7 +36,13 @@ class AccountRepository(
     fun observeTransactionsForAccount(accountId: Long): Flow<List<AccountTransactionEntity>> =
         transactionDao.observeForAccount(accountId)
 
-    suspend fun addAccount(name: String, bankName: String, initialBalance: Double, cardNumber: String? = null) {
+    suspend fun addAccount(
+        name: String,
+        bankName: String,
+        initialBalance: Double,
+        cardNumber: String? = null,
+        smsSender: String? = null,
+    ) {
         accountDao.upsert(
             AccountEntity(
                 id = System.currentTimeMillis(),
@@ -45,6 +51,7 @@ class AccountRepository(
                 initialBalance = initialBalance,
                 createdAt = isoNow(),
                 cardNumber = cardNumber,
+                smsSender = smsSender,
             ),
         )
     }

@@ -45,9 +45,15 @@ class AccountViewModel @Inject constructor(
     fun balanceOf(account: AccountEntity, allTransactions: List<AccountTransactionEntity>): Double =
         accountRepository.currentBalance(account, allTransactions)
 
-    fun addAccount(name: String, bankName: String, initialBalance: Double, cardNumber: String? = null) {
+    fun addAccount(
+        name: String,
+        bankName: String,
+        initialBalance: Double,
+        cardNumber: String? = null,
+        smsSender: String? = null,
+    ) {
         viewModelScope.launch {
-            accountRepository.addAccount(name, bankName, initialBalance, cardNumber)
+            accountRepository.addAccount(name, bankName, initialBalance, cardNumber, smsSender)
             syncIfLoggedIn()
         }
     }
