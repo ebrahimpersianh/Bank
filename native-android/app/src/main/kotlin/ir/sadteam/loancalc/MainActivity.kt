@@ -377,9 +377,18 @@ private fun AppRoot(
 ) {
     // اینتروِ باز شدن اپ - یه‌بار در هر بار باز شدن، قبل از همه‌چیز. دیگه به تمِ فعلی وابسته نیست
     // (زمینه‌ش همیشه مشکیه، چون خودِ تصویرِ اسپلش زمینه‌ی مشکی داره) - رجوع کن به SplashIntroScreen.
-    var introDone by remember { mutableStateOf(false) }
-    if (!introDone) {
-        SplashIntroScreen(onDone = { introDone = true })
+    //
+    // **باگِ رفع‌شده (فلاشِ سفید)**: قبلاً به‌محضِ تموم‌شدنِ تایمرِ اسپلش این گیت رد می‌شد، ولی
+    // `benefitsSeen`/`gateState` (که از DataStore میان) هنوز `null` بودن - پس یکی از اون دوتا
+    // `Surface(color = AppSurface)`ِ پایین رندر می‌شد که تو تمِ روشن **سفیدِ خالیه**. نتیجه:
+    // اسپلشِ مشکی → یه فریمِ سفید → صفحه‌ی اصلی. کاربر این رو به‌عنوانِ «یه لحظه سفید می‌شه» گزارش داد.
+    // رفع: تا وقتی این دوتا حاضر نشدن اسپلش سرِ جاش می‌مونه (هر دو محلی‌ان و سریع میان، پس ریسکِ
+    // گیرکردن نداره - شبکه توش دخیل نیست).
+    val benefitsSeen by authViewModel.benefitsSeen.collectAsState()
+    val gateState by authViewModel.gateState.collectAsState()
+    var introTimerDone by remember { mutableStateOf(false) }
+    if (!introTimerDone || benefitsSeen == null || gateState == null) {
+        SplashIntroScreen(onDone = { introTimerDone = true })
         return
     }
 
@@ -403,19 +412,15 @@ private fun AppRoot(
         return
     }
 
-    val benefitsSeen by authViewModel.benefitsSeen.collectAsState()
+    // این‌جا `benefitsSeen`/`gateState` قطعاً non-nullن (گیتِ اسپلشِ بالا تضمینش می‌کنه)، پس دیگه
+    // شاخه‌ی «هنوز لود نشده» با صفحه‌ی خالیِ سفید لازم نیست.
     if (benefitsSeen != true) {
-        if (benefitsSeen == false) {
-            BenefitsScreen(onContinue = { authViewModel.markBenefitsSeen() })
-        } else {
-            Surface(modifier = Modifier.fillMaxSize(), color = AppSurface) {}
-        }
+        BenefitsScreen(onContinue = { authViewModel.markBenefitsSeen() })
         return
     }
 
-    val gateState by authViewModel.gateState.collectAsState()
     when (gateState) {
-        null -> Surface(modifier = Modifier.fillMaxSize(), color = AppSurface) {}
+        null -> Unit // غیرممکن (گیتِ اسپلش)، فقط برای کاملی‌ی when
         GateState.NEEDS_LOGIN -> LoginScreen()
         GateState.GUEST, GateState.LOGGED_IN -> {
             // پیامِ خوش‌آمدِ «خوش اومدی، [شماره]» که هر بار باز شدنِ اپ نشون داده می‌شد (WelcomeMessageScreen)

@@ -291,14 +291,10 @@ private fun SettingsMainContent(
                     tint = if (subscribed) AppAccent else AppMuted,
                 )
             }
-            Column(modifier = Modifier.padding(start = 8.dp)) {
-                Text("تنظیمات", color = AppText, fontSize = 16.sp)
-                Text(
-                    if (subscribed) "نسخه اشتراکی" else "نسخه عادی",
-                    color = if (subscribed) AppAccent else AppMuted,
-                    fontSize = 11.sp,
-                )
-            }
+            // برچسبِ «نسخه اشتراکی/عادی» زیرِ عنوان به‌خواستِ صریحِ کاربر حذف شد - اضافه بود، چون
+            // همون اطلاعات (با جزئیاتِ بیشتر) تو ردیفِ «حساب کاربری» هست. حلقه‌ی طلاییِ دورِ آیکونِ
+            // بالا عمداً موند: تنها نشانه‌ی بصریِ باقی‌مونده‌ی وضعیتِ اشتراک تو خودِ هدره.
+            Text("تنظیمات", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 8.dp))
         }
 
         Column(modifier = Modifier.padding(horizontal = 14.dp)) {
