@@ -705,16 +705,25 @@ private fun LoanCalcApp(
                             ),
                             label = "navIndicatorOffset",
                         )
-                        Box(
-                            modifier = Modifier
-                                .offset(x = indicatorOffset)
-                                .width(segmentWidth)
-                                .fillMaxHeight()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(AppPrimary.copy(alpha = 0.12f)),
-                        )
+                        // ⚠️ نشانگر **نباید** ارتفاعِ نوار رو تعیین کنه: اسلاتِ bottomBarِ Scaffold با
+                        // قیدِ ارتفاعِ «آزاد» (تا کلِ صفحه) اندازه‌گیری می‌شه، پس یه fillMaxHeight/
+                        // fillMaxSizeِ مستقیم اینجا کلِ صفحه رو به نوار می‌ده و محتوای اپ صفرارتفاع
+                        // و خالی می‌شه (باگِ گزارش‌شده: آیکون‌های تب‌ها می‌رفتن بالای صفحه، وسط سفید
+                        // می‌موند و یه نوارِ سبزِ عمودی کلِ صفحه رو می‌گرفت).
+                        // `matchParentSize` اندازه رو از باکس *می‌گیره* به‌جای اینکه بهش تحمیل کنه،
+                        // پس ارتفاع رو همون Rowِ تب‌ها (که wrap-contentـه) تعیین می‌کنه.
+                        Box(modifier = Modifier.matchParentSize()) {
+                            Box(
+                                modifier = Modifier
+                                    .offset(x = indicatorOffset)
+                                    .width(segmentWidth)
+                                    .fillMaxHeight()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(AppPrimary.copy(alpha = 0.12f)),
+                            )
+                        }
                         Row(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             tabs.forEach { tab ->
