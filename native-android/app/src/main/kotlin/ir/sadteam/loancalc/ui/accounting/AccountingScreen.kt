@@ -1332,6 +1332,8 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
     val accounts by viewModel.accounts.collectAsState()
     val allTransactions by viewModel.transactions.collectAsState()
     val today = remember { JalaliCalendar.today() }
+    // مبلغِ وسطِ نمودارِ دونات هم باید تو حالتِ خصوصی مخفی بشه، مثلِ بقیه‌ی مبلغ‌های اپ.
+    val privacyMode = LocalPrivacyMode.current
     // برای رنگِ تکه‌های نمودارِ دونات - دسته‌های ساخته‌ی خودِ کاربر هم رنگِ درستشون رو بگیرن،
     // نه فقط دسته‌های ثابتِ findCategory.
     val reportExpenseCats by categoryViewModel.expenseCategories.collectAsState()
