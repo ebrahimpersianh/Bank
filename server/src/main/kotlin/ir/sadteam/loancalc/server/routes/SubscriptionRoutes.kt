@@ -5,6 +5,7 @@ import io.ktor.server.application.call
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.CafebazaarException
@@ -47,6 +48,19 @@ private data class VerifyBody(
     val purchaseToken: String? = null,
     val store: String? = null,
 )
+
+@Serializable
+private data class PurchaseDto(
+    val productId: String,
+    val tier: String? = null,
+    val store: String,
+    val durationDays: Int,
+    val subscribedUntil: String,
+    val createdAt: String,
+)
+
+@Serializable
+private data class HistoryResponse(val ok: Boolean = true, val items: List<PurchaseDto>)
 
 @Serializable
 private data class VerifyResponse(val ok: Boolean = true, val subscribed: Boolean = true, val subscribedUntil: String)
@@ -114,8 +128,52 @@ fun Route.subscriptionRoutes() {
                     "UPDATE users SET subscribed_until = ?, subscription_tier = ? WHERE id = ?",
                     newExpiry, tierCode, authed.uid,
                 )
+                /* ثبتِ خرید تو تاریخچه - purchase_token یکتاست، پس اگه همین خرید دوباره فرستاده بشه
+                   (مثلاً restorePurchases بعدِ گم‌شدنِ callback) ردیفِ تکراری ساخته نمی‌شه. */
+                conn.execute(
+                    """
+                    INSERT INTO subscription_purchases
+                        (user_id, product_id, tier, store, purchase_token, duration_days, subscribed_until)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(purchase_token) DO NOTHING
+                    """.trimIndent(),
+                    authed.uid, productId, tierCode, store, purchaseToken, durationDays, newExpiry,
+                )
             }
             call.respond(VerifyResponse(subscribedUntil = newExpiry))
+        }
+
+        /* تاریخچه‌ی خریدهای همین کاربر - صفحه‌ی «اشتراک» تو اپ ازش برای لیستِ «اشتراک‌های خریداری‌شده»
+           استفاده می‌کنه. خالی‌بودنش طبیعیه (خریدهای قبل از اضافه‌شدنِ این جدول ثبت نشدن). */
+        get("/history") {
+            val authed = call.requireAuth() ?: return@get
+            val items = Db.withConnection { conn ->
+                conn.prepareStatement(
+                    """
+                    SELECT product_id, tier, store, duration_days, subscribed_until, created_at
+                    FROM subscription_purchases WHERE user_id = ? ORDER BY id DESC
+                    """.trimIndent(),
+                ).use { ps ->
+                    ps.setLong(1, authed.uid)
+                    ps.executeQuery().use { rs ->
+                        val list = mutableListOf<PurchaseDto>()
+                        while (rs.next()) {
+                            list.add(
+                                PurchaseDto(
+                                    productId = rs.getString("product_id"),
+                                    tier = rs.getString("tier"),
+                                    store = rs.getString("store"),
+                                    durationDays = rs.getInt("duration_days"),
+                                    subscribedUntil = rs.getString("subscribed_until"),
+                                    createdAt = rs.getString("created_at"),
+                                ),
+                            )
+                        }
+                        list
+                    }
+                }
+            }
+            call.respond(HistoryResponse(items = items))
         }
     }
 }
