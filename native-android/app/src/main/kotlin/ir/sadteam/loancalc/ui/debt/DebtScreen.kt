@@ -46,6 +46,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.CounterpartyEntity
 import ir.sadteam.loancalc.data.db.DebtEntity
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.CoinCelebration
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
@@ -73,6 +74,11 @@ fun DebtScreen(onBack: () -> Unit, viewModel: DebtViewModel = hiltViewModel()) {
     var openedCounterpartyId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showAddCounterparty by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<CounterpartyEntity?>(null) }
+    // جشنِ کوچیکِ «تسویه شد» (بستهٔ ارتقاهای گرافیکی، خواسته‌ی صریحِ کاربر). عمداً فقط وقتی
+    // **آخرین** ردیفِ بازِ یه طرف‌حساب تسویه می‌شه اجرا می‌شه، نه هر تسویه‌ی تکی - یه اتفاقِ نادر و
+    // واقعاً «رسیدن به هدف»ه، پس تکراری/آزاردهنده نمی‌شه. (هم‌الگو با جشنِ تسویه‌ی کاملِ وام تو
+    // LoanDetailScreen.)
+    var celebrate by remember { mutableStateOf(false) }
 
     val opened = openedCounterpartyId?.let { id -> counterparties.firstOrNull { it.id == id } }
     val screenKey = when {
@@ -89,6 +95,7 @@ fun DebtScreen(onBack: () -> Unit, viewModel: DebtViewModel = hiltViewModel()) {
         )
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     AnimatedContent(
         targetState = screenKey,
         transitionSpec = { Motion.contentEnter togetherWith Motion.contentExit },
@@ -104,7 +111,16 @@ fun DebtScreen(onBack: () -> Unit, viewModel: DebtViewModel = hiltViewModel()) {
                     onAddDebt = { amount, type, description, y, m, d ->
                         viewModel.addDebt(counterparty.id, amount, type, description, y, m, d)
                     },
-                    onToggleSettled = { debt, settled -> viewModel.setSettled(debt, settled) },
+                    onToggleSettled = { debt, settled ->
+                        viewModel.setSettled(debt, settled)
+                        // اگه این تسویه، آخرین ردیفِ بازِ این طرف‌حساب رو ببنده → جشن.
+                        if (settled) {
+                            val stillOpen = debts.any {
+                                it.counterpartyId == counterparty.id && it.id != debt.id && !it.settled
+                            }
+                            if (!stillOpen) celebrate = true
+                        }
+                    },
                     onDeleteDebt = { viewModel.deleteDebt(it) },
                 )
             }
@@ -119,6 +135,15 @@ fun DebtScreen(onBack: () -> Unit, viewModel: DebtViewModel = hiltViewModel()) {
                 netBalance = { id -> viewModel.netBalance(id, debts) },
             )
         }
+    }
+
+    // رو همه‌چیزِ صفحه (آخرین بچه‌ی Box) - لمس رو مصرف نمی‌کنه، فقط چند ثانیه سکه می‌باره.
+    if (celebrate) {
+        CoinCelebration(
+            modifier = Modifier.fillMaxSize(),
+            onFinished = { celebrate = false },
+        )
+    }
     }
 }
 

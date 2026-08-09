@@ -13,6 +13,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -30,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -37,9 +39,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.WindowInsets
@@ -668,7 +672,9 @@ private fun LoanCalcApp(
                 ) {
                     val navShape = RoundedCornerShape(28.dp)
                     val navGlassGradient = Brush.verticalGradient(listOf(AppGlassGradientStart, AppGlassGradientEnd))
-                    Row(
+                    // BoxWithConstraints (نه Row) چون عرضِ واقعیِ نوار برای محاسبه‌ی جای نشانگرِ
+                    // لغزنده لازمه - رجوع کن به کامنتِ داخلش.
+                    BoxWithConstraints(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 10.dp)
@@ -683,21 +689,48 @@ private fun LoanCalcApp(
                             .background(navGlassGradient)
                             .border(1.dp, AppGlassBorder, navShape)
                             .padding(horizontal = 6.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        BottomTab.entries.forEach { tab ->
-                            BottomNavItem(
-                                tab = tab,
-                                selected = currentRoute == tab.route,
-                                onPositioned = { rect -> registerTabTourBounds(tab, rect, tourBounds) },
-                                onClick = {
-                                    if (tab.route == currentRoute) {
-                                        tabResetKeys[tab] = (tabResetKeys[tab] ?: 0) + 1
-                                    } else {
-                                        navigateTo(tab.route)
-                                    }
-                                },
-                            )
+                        // نشانگرِ لغزنده‌ی تبِ فعال (بستهٔ ارتقاهای گرافیکی، خواسته‌ی صریحِ کاربر):
+                        // قبلاً هر تب «قرصِ» پس‌زمینه‌ی خودش رو داشت که فقط fade می‌شد؛ حالا یه قرصِ
+                        // واحد با فنر بینِ تب‌ها سُر می‌خوره. `offset` (نه absoluteOffset) جهت‌آگاهه،
+                        // پس تو RTL خودبه‌خود درست می‌شینه - همون الگوی SegmentedToggle.
+                        val tabs = BottomTab.entries.toList()
+                        val selectedIndex = tabs.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
+                        val segmentWidth = this@BoxWithConstraints.maxWidth / tabs.size
+                        val indicatorOffset by animateDpAsState(
+                            targetValue = segmentWidth * selectedIndex,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessMedium,
+                            ),
+                            label = "navIndicatorOffset",
+                        )
+                        Box(
+                            modifier = Modifier
+                                .offset(x = indicatorOffset)
+                                .width(segmentWidth)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(AppPrimary.copy(alpha = 0.12f)),
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            tabs.forEach { tab ->
+                                BottomNavItem(
+                                    tab = tab,
+                                    selected = currentRoute == tab.route,
+                                    onPositioned = { rect -> registerTabTourBounds(tab, rect, tourBounds) },
+                                    onClick = {
+                                        if (tab.route == currentRoute) {
+                                            tabResetKeys[tab] = (tabResetKeys[tab] ?: 0) + 1
+                                        } else {
+                                            navigateTo(tab.route)
+                                        }
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -1146,18 +1179,13 @@ private fun RowScope.BottomNavItem(
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
         label = "navIconScale",
     )
-    // «قرصِ» پس‌زمینه‌ی تب فعال حالا نرم fade می‌شه (قبلاً یهو ظاهر/محو می‌شد).
-    val pillAlpha by animateFloatAsState(
-        targetValue = if (selected) 1f else 0f,
-        animationSpec = tween(250),
-        label = "navPillAlpha",
-    )
-    val pillColor = AppPrimary
+    // «قرصِ» پس‌زمینه‌ی تبِ فعال دیگه اینجا نیست: یه نشانگرِ **واحدِ لغزنده** تو خودِ نوار
+    // (رجوع کن به bottomBar تو LoanCalcApp) جاش رو گرفته که با فنر بینِ تب‌ها سُر می‌خوره -
+    // قبلاً هر تب قرصِ خودش رو داشت که فقط fade می‌شد.
     val buzz = rememberBuzz()
     Column(
         modifier = Modifier
             .weight(1f)
-            .background(pillColor.copy(alpha = 0.10f * pillAlpha), RoundedCornerShape(14.dp))
             .clickable(onClick = { buzz(); onClick() })
             .padding(vertical = 6.dp)
             // مختصاتِ ریشه‌ی خودِ تب رو گزارش می‌ده - برای AppTourOverlay که دقیقاً همین محدوده رو

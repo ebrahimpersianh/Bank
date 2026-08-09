@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.PieChart
@@ -84,6 +85,7 @@ import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.REMINDER_OFFSET_OPTIONS
 import ir.sadteam.loancalc.core.TransactionType
+import ir.sadteam.loancalc.core.DebtType
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.formatReminderOffsets
@@ -120,6 +122,8 @@ import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
+import ir.sadteam.loancalc.ui.debt.DebtScreen
+import ir.sadteam.loancalc.ui.debt.DebtViewModel
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
@@ -201,6 +205,7 @@ fun ReportScreen(
 private fun MainSection(
     viewModel: AccountViewModel,
     categoryViewModel: CategoryViewModel,
+    debtViewModel: DebtViewModel = hiltViewModel(),
 ) {
     val accounts by viewModel.accounts.collectAsState()
     val allTransactions by viewModel.transactions.collectAsState()
@@ -220,6 +225,11 @@ private fun MainSection(
     // هم در دسترس باشه. `accountsAddMode` تعیین می‌کنه AccountsScreen مستقیم با فرمِ باز بیاد یا لیستِ عادی.
     var showAccountsScreen by remember { mutableStateOf(false) }
     var accountsAddMode by remember { mutableStateOf(false) }
+    // «طلب و بدهی» تا الان فقط از یه کاشی تو تبِ «سررسید» باز می‌شد و کاربر گفت اونجا پیدا نمی‌شه.
+    // حالا از همین تبِ «دارایی» هم باز می‌شه - مفهوماً هم اینجا درست‌تره (طلب یه دارایی و بدهی یه
+    // تعهده). کاشیِ تبِ سررسید عمداً حذف نشد: اون گریدِ ۶کاشیه با رفرنسِ کاربر مو‌به‌مو تطبیق داده
+    // شده بود و حذفِ یه کاشی به‌همش می‌ریخت.
+    var showDebtScreen by remember { mutableStateOf(false) }
 
     val banner = rememberInAppBanner()
 
@@ -230,6 +240,20 @@ private fun MainSection(
             viewModel = viewModel,
         )
         return
+    }
+
+    if (showDebtScreen) {
+        DebtScreen(onBack = { showDebtScreen = false })
+        return
+    }
+
+    // خلاصه‌ی طلب/بدهی برای کارتِ پایین‌تر - فقط ردیف‌های تسویه‌نشده.
+    val debtRows by debtViewModel.debts.collectAsState()
+    val owedToMe = remember(debtRows) {
+        debtRows.filter { !it.settled && it.type == DebtType.OWED_TO_ME.name }.sumOf { it.amount }
+    }
+    val iOwe = remember(debtRows) {
+        debtRows.filter { !it.settled && it.type == DebtType.I_OWE.name }.sumOf { it.amount }
     }
 
     val filtered = remember(allTransactions, searchQuery) {
@@ -407,6 +431,58 @@ private fun MainSection(
                                     "${maskIfPrivate(masked, fmt(income - expense))} ریال",
                                     color = if (income - expense >= 0) AppText else AppDanger,
                                     fontSize = 15.sp,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ورودیِ «طلب و بدهی» - به‌جای یه کاشیِ صرفاً لینک، خودِ عددها رو هم نشون می‌ده تا با یه
+        // نگاه معلوم باشه چقدر طلبکاری و چقدر بدهکار. تپ روش صفحه‌ی کاملش رو باز می‌کنه.
+        item {
+            StaggerIn(3) {
+                AppCard(modifier = Modifier.pressScaleClickable(onClick = { showDebtScreen = true })) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier.size(30.dp).background(AppPrimary.copy(alpha = 0.16f), CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(Icons.Filled.Handshake, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(17.dp))
+                            }
+                            Text("طلب و بدهی", color = AppText, fontSize = 13.sp, modifier = Modifier.padding(start = 10.dp))
+                        }
+                        Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column {
+                            Text("ازم طلبکارن", color = AppMuted, fontSize = 11.sp)
+                            PrivacyCrossfade(privacyMode) { masked ->
+                                Text(
+                                    "${maskIfPrivate(masked, fmt(iOwe))} ریال",
+                                    color = if (iOwe > 0) AppDanger else AppMuted,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("ازشون طلبکارم", color = AppMuted, fontSize = 11.sp)
+                            PrivacyCrossfade(privacyMode) { masked ->
+                                Text(
+                                    "${maskIfPrivate(masked, fmt(owedToMe))} ریال",
+                                    color = if (owedToMe > 0) AppPrimary else AppMuted,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
                                 )
                             }
                         }
