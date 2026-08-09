@@ -305,7 +305,7 @@ fun SubscriptionScreen(
                                 }
                                 error = null
                                 purchasingProductId = productId
-                                subscriptionManager.purchase(
+                                subscriptionManager?.purchase(
                                     productId = productId,
                                     onSucceed = { purchaseToken ->
                                         authViewModel.verifySubscriptionPurchase(
