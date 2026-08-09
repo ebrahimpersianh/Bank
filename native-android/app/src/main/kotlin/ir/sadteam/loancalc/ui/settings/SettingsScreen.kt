@@ -105,6 +105,8 @@ import ir.sadteam.loancalc.ui.calendar.FinancialCalendarScreen
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.persianMonthName
+import ir.sadteam.loancalc.ui.subscription.parseSubscribedUntil
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
@@ -579,9 +581,20 @@ private fun AccountSettings(
                         color = AppText,
                         fontSize = 14.sp,
                     )
+                    // تاریخِ انقضا + شمارشِ روزِ باقی‌مونده (خواسته‌ی صریحِ کاربر، هم‌الگو با
+                    // اپِ رفرنس: «تا ۱۳ شهریور ۱۴۰۵ (۲۸ روز دیگر)») - قبلاً فقط بجِ آزمایشی/دائمی بود.
+                    val expiry = remember(subscribedUntil) { parseSubscribedUntil(subscribedUntil) }
                     if (subscribed && trialDaysLeft != null && trialDaysLeft in 1..7) {
                         Text(
                             "دوره‌ی آزمایشی رایگان: ${toFa(trialDaysLeft.toString())} روز مانده",
+                            color = AppAccent,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    } else if (subscribed && expiry != null) {
+                        Text(
+                            "تا ${toFa(expiry.date.d)} ${persianMonthName(expiry.date.m)} ${toFa(expiry.date.y)} " +
+                                "(${toFa(expiry.daysLeft)} روزِ دیگه)",
                             color = AppAccent,
                             fontSize = 11.sp,
                             modifier = Modifier.padding(top = 2.dp),

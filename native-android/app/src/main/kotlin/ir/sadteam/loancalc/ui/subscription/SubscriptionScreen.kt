@@ -11,6 +11,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -27,11 +32,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.subscriptionTiers
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.LottieSpinner
@@ -69,9 +79,15 @@ fun SubscriptionScreen(
 ) {
     val subscriptionManager = LocalSubscriptionManager.current
     val gateState by authViewModel.gateState.collectAsState()
+    val subscribed by authViewModel.subscribed.collectAsState()
+    val subscribedUntil by authViewModel.subscribedUntil.collectAsState()
+    val subscriptionTier by authViewModel.subscriptionTier.collectAsState()
     var prices by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var purchasingProductId by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+    // این صفحه دو نما داره (خواسته‌ی صریحِ کاربر، هم‌الگو با اپِ رفرنس): «مرورِ اشتراک» که وضعیت و
+    // مزیت‌ها رو نشون می‌ده، و «تعرفه‌ها» که همون لیستِ خریدِ قبلیه. پیش‌فرض مرورـه.
+    var showPlans by remember { mutableStateOf(false) }
 
     LaunchedEffect(subscriptionManager) {
         subscriptionManager?.getPrices(
@@ -107,11 +123,136 @@ fun SubscriptionScreen(
                 IconButton(onClick = onBack) {
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                 }
-                Text("اشتراک", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+                Text(
+                    if (showPlans) "تعرفه‌ها" else "اشتراک",
+                    color = AppText,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
             }
         }
 
-        if (subscriptionManager == null) {
+        // ── نمای «مرورِ اشتراک» (پیش‌فرض) ─────────────────────────────────────────────────
+        if (!showPlans) {
+            item {
+                val expiry = remember(subscribedUntil) { parseSubscribedUntil(subscribedUntil) }
+                AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        androidx.compose.foundation.layout.Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(AppAccent.copy(alpha = 0.16f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Filled.WorkspacePremium,
+                                contentDescription = null,
+                                tint = AppAccent,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                        Column(modifier = Modifier.padding(start = 10.dp)) {
+                            Text(PLUS_NAME, color = AppText, fontSize = 15.sp)
+                            Text(
+                                "بدونِ محدودیت از همه‌ی امکاناتِ اپ استفاده کن",
+                                color = AppMuted,
+                                fontSize = 11.5.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                    }
+                    // وضعیتِ فعلی: نوعِ اشتراک + تاریخِ انقضا با شمارشِ روزِ باقی‌مونده.
+                    val tierLabel = when (subscriptionTier) {
+                        "1m" -> "اشتراکِ یک‌ماهه"
+                        "3m" -> "اشتراکِ سه‌ماهه"
+                        "6m" -> "اشتراکِ شش‌ماهه"
+                        "1y" -> "اشتراکِ یک‌ساله"
+                        else -> null
+                    }
+                    Text(
+                        when {
+                            !subscribed -> "الان اشتراکِ فعالی نداری"
+                            tierLabel != null -> tierLabel
+                            else -> "اشتراکِ فعال"
+                        },
+                        color = AppText,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(top = 12.dp),
+                    )
+                    if (subscribed) {
+                        if (expiry != null) {
+                            Text(
+                                "تا ${toFa(expiry.date.d)} ${persianMonthName(expiry.date.m)} ${toFa(expiry.date.y)} " +
+                                    "(${toFa(expiry.daysLeft)} روزِ دیگه)",
+                                color = AppAccent,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        } else {
+                            Text("اشتراکِ دائمی", color = AppAccent, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
+                        }
+                    }
+                }
+            }
+
+            item {
+                // باکسِ «وقتی اشتراکم تموم بشه چی می‌شه؟» - محتواش عمداً دقیقاً همون چیزیه که تو
+                // کد واقعاً پشتِ اشتراکه (MyLoansScreen.canSaveAnotherLoan و AutoBackupWorker)،
+                // نه یه متنِ تبلیغاتیِ کلی.
+                AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                    Text("وقتی اشتراکم تموم بشه چی می‌شه؟", color = AppText, fontSize = 13.5.sp)
+                    Text(
+                        "نگران نباش، هیچ داده‌ای پاک نمی‌شه. کلِ حسابداری (دخل و خرج، بودجه، " +
+                            "دسته‌بندی‌ها، گزارش‌ها و طلب و بدهی) بدونِ محدودیت باز می‌مونه.\n\n" +
+                            "فقط دو چیز محدود می‌شه: از وام‌های ذخیره‌شده‌ت اولی باز می‌مونه و بقیه " +
+                            "قفل می‌شن (قفل، نه حذف - با تمدید دوباره باز می‌شن)، و پشتیبان‌گیریِ " +
+                            "خودکار رو سرور متوقف می‌شه.",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                        lineHeight = 20.sp,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            }
+
+            item {
+                AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                    SubscriptionRow(
+                        icon = Icons.Filled.LocalOffer,
+                        title = "مشاهده‌ی تعرفه‌ها",
+                        subtitle = "قیمتِ پلن‌ها و خریدِ اشتراک",
+                        onClick = { showPlans = true },
+                    )
+                }
+            }
+
+            item {
+                AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                    Text("با اشتراک چی گیرت میاد؟", color = AppText, fontSize = 13.5.sp)
+                    Column(modifier = Modifier.padding(top = 8.dp)) {
+                        SubscriptionBenefit(
+                            icon = Icons.Filled.WorkspacePremium,
+                            title = "وامِ نامحدود",
+                            subtitle = "هر تعداد وام که خواستی ذخیره کن، بدونِ قفل شدن",
+                        )
+                        SubscriptionBenefit(
+                            icon = Icons.Filled.CloudDone,
+                            title = "پشتیبان‌گیریِ خودکارِ ابری",
+                            subtitle = "اگه گوشیت گم شد یا عوض کردی، داده‌هات برمی‌گردن",
+                        )
+                        SubscriptionBenefit(
+                            icon = Icons.Filled.Sms,
+                            title = "ثبتِ خودکار از پیامک و اعلانِ بانک",
+                            subtitle = "برداشت و واریز خودکار ثبت می‌شه، بدونِ تایپِ دستی",
+                        )
+                    }
+                }
+            }
+        }
+
+        // ── نمای «تعرفه‌ها» ───────────────────────────────────────────────────────────────
+        if (showPlans && subscriptionManager == null) {
             item {
                 Text(
                     "این قابلیت فقط رو نسخه‌ی نصبی اپ (از کافه‌بازار) کار می‌کنه.",
@@ -120,7 +261,7 @@ fun SubscriptionScreen(
                     modifier = Modifier.padding(horizontal = 14.dp),
                 )
             }
-        } else {
+        } else if (showPlans) {
             if (gateState != GateState.LOGGED_IN) {
                 item {
                     Text(
@@ -193,6 +334,17 @@ fun SubscriptionScreen(
             }
         }
 
+        if (showPlans) {
+            item {
+                androidx.compose.material3.OutlinedButton(
+                    onClick = { showPlans = false },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                ) {
+                    Text("بازگشت به وضعیتِ اشتراک", fontSize = 12.5.sp)
+                }
+            }
+        }
+
         if (error != null) {
             item {
                 Text(
@@ -202,6 +354,60 @@ fun SubscriptionScreen(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                 )
             }
+        }
+    }
+}
+
+/** یه ردیفِ قابلِ‌تپِ صفحه‌ی اشتراک (تعرفه‌ها/تاریخچه) - آیکون + عنوان + زیرعنوان + فلش. */
+@Composable
+private fun SubscriptionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .pressScaleClickable(onClick = onClick)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(CircleShape)
+                    .background(AppPrimary.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(17.dp))
+            }
+            Column(modifier = Modifier.padding(start = 10.dp)) {
+                Text(title, color = AppText, fontSize = 13.sp)
+                Text(subtitle, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+            }
+        }
+        Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
+    }
+}
+
+/** یه مزیتِ اشتراک تو لیستِ «با اشتراک چی گیرت میاد؟». */
+@Composable
+private fun SubscriptionBenefit(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
+        Column(modifier = Modifier.padding(start = 10.dp)) {
+            Text(title, color = AppText, fontSize = 12.5.sp)
+            Text(subtitle, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
         }
     }
 }
