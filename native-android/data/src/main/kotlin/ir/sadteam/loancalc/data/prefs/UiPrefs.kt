@@ -31,6 +31,8 @@ class UiPrefs(private val context: Context) {
         val RATE_PROMPT_LAST_SHOWN_AT_OPENS = intPreferencesKey("rate_prompt_last_shown_at_opens")
         val SMS_AUTO_IMPORT_ENABLED = booleanPreferencesKey("sms_auto_import_enabled")
         val LAST_SMS_IMPORT_AT = stringPreferencesKey("last_sms_import_at")
+        val NOTIF_AUTO_IMPORT_ENABLED = booleanPreferencesKey("notif_auto_import_enabled")
+        val NOTIF_AUTO_IMPORT_PACKAGES = stringPreferencesKey("notif_auto_import_packages")
         val DAILY_EXPENSE_REMINDER_ENABLED = booleanPreferencesKey("daily_expense_reminder_enabled")
     }
 
@@ -155,6 +157,32 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setLastSmsImportAt(value: String) {
         context.uiPrefsDataStore.edit { it[Keys.LAST_SMS_IMPORT_AT] = value }
+    }
+
+    /** خوندنِ خودکارِ **نوتیفیکیشنِ** بانکی - برای بانک‌های دیجیتال (بلوبانک و…) که اصلاً پیامک
+     * نمی‌فرستن و فقط اعلانِ درون‌اپی می‌دن، پس مسیرِ پیامکیِ بالا براشون بی‌فایده‌ست.
+     * پیش‌فرض خاموش؛ علاوه بر این سوییچ، کاربر باید دسترسیِ «خواندن اعلان‌ها» رو هم دستی از
+     * تنظیماتِ خودِ گوشی بده (مجوزِ Runtime نداره) - رجوع کن به BankNotificationListener. */
+    val notifAutoImportEnabled: Flow<Boolean> =
+        context.uiPrefsDataStore.data.map { it[Keys.NOTIF_AUTO_IMPORT_ENABLED] ?: false }
+
+    suspend fun setNotifAutoImportEnabled(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.NOTIF_AUTO_IMPORT_ENABLED] = value }
+    }
+
+    /** بسته‌نامِ اپ‌هایی که کاربر **خودش** انتخاب کرده اعلانشون خونده بشه (با `,` جدا شده).
+     * عمداً لیستِ سفیده نه «همه‌ی اپ‌ها»: هم حریمِ خصوصی، هم جوابِ روشن برای بازبینِ استور. */
+    val notifAutoImportPackages: Flow<Set<String>> = context.uiPrefsDataStore.data.map { prefs ->
+        prefs[Keys.NOTIF_AUTO_IMPORT_PACKAGES]
+            ?.split(',')
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?.toSet()
+            ?: emptySet()
+    }
+
+    suspend fun setNotifAutoImportPackages(value: Set<String>) {
+        context.uiPrefsDataStore.edit { it[Keys.NOTIF_AUTO_IMPORT_PACKAGES] = value.joinToString(",") }
     }
 
     /** یادآوریِ روزانه‌ی «دخل‌وخرج امروز یادت نره» (رجوع کن به DueDateReminderWorker) - پیش‌فرض خاموش

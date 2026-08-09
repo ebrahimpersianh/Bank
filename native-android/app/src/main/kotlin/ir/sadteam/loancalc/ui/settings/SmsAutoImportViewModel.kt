@@ -33,4 +33,14 @@ class SmsAutoImportViewModel @Inject constructor(
     fun disable() {
         viewModelScope.launch { uiPrefs.setSmsAutoImportEnabled(false) }
     }
+
+    /** سوییچِ خوندنِ خودکارِ **اعلانِ** بانکی - رجوع کن به BankNotificationListener. برخلافِ
+     * پیامک، مجوزش دیالوگِ Runtime نداره و کاربر باید دستی از تنظیماتِ گوشی بده؛ این پرچم فقط
+     * خواستِ خودِ کاربره، نه وضعیتِ واقعیِ مجوز. */
+    val notifEnabled: StateFlow<Boolean> = uiPrefs.notifAutoImportEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setNotifEnabled(value: Boolean) {
+        viewModelScope.launch { uiPrefs.setNotifAutoImportEnabled(value) }
+    }
 }

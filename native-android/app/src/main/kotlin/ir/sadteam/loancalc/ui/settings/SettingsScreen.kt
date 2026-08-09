@@ -4,6 +4,7 @@ import ir.sadteam.loancalc.BuildConfig
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.provider.Settings
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -46,6 +47,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sms
@@ -899,6 +901,68 @@ private fun SmsSettings(smsAutoImportViewModel: SmsAutoImportViewModel) {
         if (lastImportAt != null) {
             Text("آخرین ثبتِ خودکار: $lastImportAt", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
         }
+    }
+
+    NotificationImportSettings(smsAutoImportViewModel)
+}
+
+/**
+ * سوییچِ دومِ همین بخش: خوندنِ خودکارِ **اعلانِ** بانکی - برای بانک‌های دیجیتال (بلوبانک و…) که
+ * اصلاً پیامک نمی‌فرستن. خواسته‌ی صریحِ کاربر، با این شرط که «اجباری نباشه و توضیح بدی کجا بره».
+ *
+ * مجوزِ خواندنِ اعلان‌ها دیالوگِ Runtime نداره؛ تنها راهش بازکردنِ صفحه‌ی مخصوصِ خودِ اندروید با
+ * [Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS]ه - دکمه‌ی زیرِ سوییچ همون رو باز می‌کنه.
+ */
+@Composable
+private fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
+    val context = LocalContext.current
+    val notifEnabled by viewModel.notifEnabled.collectAsState()
+
+    SettingsSwitchRow(
+        icon = Icons.Filled.NotificationsActive,
+        title = "خوندنِ خودکارِ اعلانِ بانکی",
+        subtitle = "برای بانک‌هایی که پیامک نمی‌دن و فقط اعلان می‌فرستن",
+        checked = notifEnabled,
+        onCheckedChange = { checked -> viewModel.setNotifEnabled(checked) },
+    )
+    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+        Text(
+            "بعضی بانک‌ها (مثلِ بلوبانک) اصلاً پیامکِ برداشت/واریز نمی‌فرستن و فقط تو خودِ گوشی " +
+                "اعلان می‌دن. اگه حسابی داری که این‌طوریه، این گزینه رو روشن کن تا اپ از رو همون " +
+                "اعلان تراکنش رو ثبت کنه. اگه بانکت پیامک می‌فرسته، لازم نیست روشنش کنی.",
+            color = AppMuted,
+            fontSize = 12.sp,
+            lineHeight = 20.sp,
+        )
+        Text(
+            "این قابلیت یه اجازه‌ی جداگانه لازم داره که اندروید فقط از تنظیماتِ خودش می‌ده. " +
+                "دکمه‌ی زیر رو بزن، تو لیستی که باز می‌شه «حسابدار من» رو پیدا کن و روشنش کن.",
+            color = AppMuted,
+            fontSize = 12.sp,
+            lineHeight = 20.sp,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        OutlinedButton(
+            onClick = {
+                runCatching {
+                    context.startActivity(
+                        Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        ) {
+            Text("بازکردنِ تنظیماتِ دسترسی به اعلان‌ها")
+        }
+        Text(
+            "هیچ اعلانی هیچ‌جا فرستاده نمی‌شه - همه‌چی رو خودِ گوشیه، و فقط اعلانِ همون بانکی " +
+                "خونده می‌شه که خودت انتخاب کردی.",
+            color = AppMuted,
+            fontSize = 11.sp,
+            lineHeight = 18.sp,
+            modifier = Modifier.padding(top = 10.dp),
+        )
     }
 }
 

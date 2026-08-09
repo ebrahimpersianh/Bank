@@ -75,6 +75,23 @@
             </intent-filter>
         </receiver>
 
+        <!-- خوندنِ خودکارِ اعلانِ اپ‌های بانکی - برای بانک‌های دیجیتال (بلوبانک و…) که اصلاً پیامک
+             نمی‌فرستن. رجوع کن به notifications/BankNotificationListener.kt.
+             این سرویس **فقط** وقتی کار می‌کنه که هر سه شرط برقرار باشه: (۱) کاربر سوییچش رو تو
+             تنظیمات روشن کرده باشه (پیش‌فرض خاموش)، (۲) دسترسیِ «خواندن اعلان‌ها» رو دستی از
+             تنظیماتِ گوشی داده باشه (دیالوگِ Runtime نداره)، و (۳) اپِ فرستنده تو لیستِ سفیدِ
+             انتخاب‌شده‌ی خودش باشه. exported=true اجباریه چون سیستم به سرویس bind می‌کنه؛
+             android:permission محدودش می‌کنه که فقط خودِ سیستم بتونه bind کنه. -->
+        <service
+            android:name=".notifications.BankNotificationListener"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <!-- WorkManager رو خودمون با HiltWorkerFactory مقداردهی می‌کنیم (LoanCalcApplication پیاده‌ی
              Configuration.Provider هست) - initializer پیش‌فرض androidx.startup باید غیرفعال بشه. -->
         <provider
