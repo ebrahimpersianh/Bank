@@ -18,6 +18,29 @@ const val PLUS_NAME = "حسابدار من پلاس"
  */
 data class SubscriptionExpiry(val date: PersianDate, val daysLeft: Int)
 
+/** تاریخِ میلادیِ سرور (چه ISO-8601 چه `yyyy-MM-dd HH:mm:ss`ِ SQLite) → شمسی. فقط ۱۰ کاراکترِ اولِ
+ * رشته خونده می‌شه، پس هر دو فرمت کار می‌کنن. */
+fun parseServerDate(raw: String?): PersianDate? {
+    if (raw.isNullOrBlank()) return null
+    val parts = raw.take(10).split("-")
+    if (parts.size != 3) return null
+    val gy = parts[0].toIntOrNull() ?: return null
+    val gm = parts[1].toIntOrNull() ?: return null
+    val gd = parts[2].toIntOrNull() ?: return null
+    if (gm !in 1..12 || gd !in 1..31) return null
+    return runCatching { JalaliCalendar.fromGregorian(gy, gm, gd) }.getOrNull()
+}
+
+/** نامِ فارسیِ پلن از روی کدِ کوتاهِ سرور ("1m"/"3m"/"6m"/"1y") - رجوع کن به PRODUCT_TIER_CODE
+ * تو server/.../SubscriptionRoutes.kt. */
+fun tierDisplayName(tier: String?): String = when (tier) {
+    "1m" -> "اشتراک یک‌ماهه"
+    "3m" -> "اشتراک سه‌ماهه"
+    "6m" -> "اشتراک شش‌ماهه"
+    "1y" -> "اشتراک یک‌ساله"
+    else -> "اشتراک"
+}
+
 fun parseSubscribedUntil(raw: String?): SubscriptionExpiry? {
     if (raw.isNullOrBlank()) return null
     val datePart = raw.take(10) // yyyy-MM-dd

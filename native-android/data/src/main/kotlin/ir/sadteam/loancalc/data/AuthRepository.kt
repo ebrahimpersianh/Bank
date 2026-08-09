@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.network.RequestOtpRequest
+import ir.sadteam.loancalc.data.network.SubscriptionPurchaseDto
 import ir.sadteam.loancalc.data.network.VerifySubscriptionRequest
 import ir.sadteam.loancalc.data.network.VerifyOtpRequest
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -94,6 +95,18 @@ class AuthRepository(
             AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))
         } catch (e: Exception) {
             AuthResult.Error(null)
+        }
+    }
+
+    /** تاریخچه‌ی خریدهای اشتراک. اگه کاربر لاگین نباشه یا سرور در دسترس نباشه لیستِ خالی برمی‌گرده
+     * (صفحه‌ی اشتراک اون‌وقت فقط پیامِ «تاریخچه‌ای نیست» نشون می‌ده، نه خطا). */
+    suspend fun subscriptionHistory(): List<SubscriptionPurchaseDto> {
+        val token = authPrefs.authToken.first()
+        if (token.isNullOrEmpty()) return emptyList()
+        return try {
+            apiService.subscriptionHistory("Bearer $token").items
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 

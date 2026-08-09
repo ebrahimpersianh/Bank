@@ -47,6 +47,13 @@ interface ApiService {
         @Body body: VerifySubscriptionRequest,
     ): VerifySubscriptionResponse
 
+    // تاریخچه‌ی خریدهای اشتراک - سرور از نسخه‌ی مرداد ۱۴۰۵ هر خریدِ تاییدشده رو تو
+    // subscription_purchases ثبت می‌کنه؛ خریدهای قبل از اون تو تاریخچه نیستن.
+    @GET("api/subscription/history")
+    suspend fun subscriptionHistory(
+        @Header("Authorization") authHeader: String,
+    ): SubscriptionHistoryResponse
+
     @POST("api/crash")
     suspend fun reportCrash(@Body body: CrashReportRequest): Response<Unit>
 
@@ -117,6 +124,19 @@ data class PutLoansRequest(val loans: List<Map<String, Any?>>)
 data class VerifySubscriptionRequest(val productId: String, val purchaseToken: String, val store: String)
 
 data class VerifySubscriptionResponse(val ok: Boolean, val subscribed: Boolean, val subscribedUntil: String)
+
+/** یه ردیفِ تاریخچه‌ی خرید. `createdAt` فرمتِ `yyyy-MM-dd HH:mm:ss` (خروجیِ datetime('now')ِ
+ * SQLite) و `subscribedUntil` ISO-8601ه - رجوع کن به SubscriptionRoutes.kt سمتِ سرور. */
+data class SubscriptionPurchaseDto(
+    val productId: String,
+    val tier: String?,
+    val store: String,
+    val durationDays: Int,
+    val subscribedUntil: String,
+    val createdAt: String,
+)
+
+data class SubscriptionHistoryResponse(val ok: Boolean, val items: List<SubscriptionPurchaseDto>)
 
 data class BackupBlobResponse(val data: String, val updatedAt: String?)
 

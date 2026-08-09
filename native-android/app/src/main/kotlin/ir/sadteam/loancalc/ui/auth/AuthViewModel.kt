@@ -13,6 +13,7 @@ import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.NoteRepository
 import ir.sadteam.loancalc.data.SyncOutcome
+import ir.sadteam.loancalc.data.network.SubscriptionPurchaseDto
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -97,6 +98,8 @@ class AuthViewModel @Inject constructor(
      * تصمیم کاربر (resolveSyncConflict) می‌مونه؛ UI (LoginScreen) اینو observe می‌کنه. */
     private val _syncConflict = MutableStateFlow<List<Map<String, Any?>>?>(null)
     val syncConflict: StateFlow<List<Map<String, Any?>>?> = _syncConflict.asStateFlow()
+
+    private val _purchaseHistory = MutableStateFlow<List<SubscriptionPurchaseDto>?>(null)
 
     fun continueAsGuest() {
         viewModelScope.launch { authPrefs.setGuestMode(true) }
@@ -221,5 +224,12 @@ class AuthViewModel @Inject constructor(
                 is AuthResult.Error -> onError(result.code)
             }
         }
+    }
+
+    /** تاریخچه‌ی خریدهای اشتراک - صفحه‌ی اشتراک هر بار که باز می‌شه یه‌بار می‌خونتش. */
+    val purchaseHistory: StateFlow<List<SubscriptionPurchaseDto>?> = _purchaseHistory
+
+    fun loadPurchaseHistory() {
+        viewModelScope.launch { _purchaseHistory.value = authRepository.subscriptionHistory() }
     }
 }

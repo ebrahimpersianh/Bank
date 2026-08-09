@@ -88,6 +88,11 @@ fun SubscriptionScreen(
     // این صفحه دو نما داره (خواسته‌ی صریحِ کاربر، هم‌الگو با اپِ رفرنس): «مرورِ اشتراک» که وضعیت و
     // مزیت‌ها رو نشون می‌ده، و «تعرفه‌ها» که همون لیستِ خریدِ قبلیه. پیش‌فرض مرورـه.
     var showPlans by remember { mutableStateOf(false) }
+    val purchaseHistory by authViewModel.purchaseHistory.collectAsState()
+
+    LaunchedEffect(gateState) {
+        if (gateState == GateState.LOGGED_IN) authViewModel.loadPurchaseHistory()
+    }
 
     LaunchedEffect(subscriptionManager) {
         subscriptionManager?.getPrices(
@@ -224,6 +229,71 @@ fun SubscriptionScreen(
                         subtitle = "قیمتِ پلن‌ها و خریدِ اشتراک",
                         onClick = { showPlans = true },
                     )
+                }
+            }
+
+            item {
+                // تاریخچه‌ی خریدها - از GET /api/subscription/history میاد. سرور فقط از مرداد ۱۴۰۵
+                // خریدها رو ثبت می‌کنه، پس برای کاربرِ قدیمی می‌تونه خالی باشه و این طبیعیه.
+                AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                    Text("اشتراک‌های خریداری‌شده", color = AppText, fontSize = 13.5.sp)
+                    val history = purchaseHistory
+                    when {
+                        gateState != GateState.LOGGED_IN -> Text(
+                            "برای دیدنِ تاریخچه‌ی خرید باید وارد حسابت بشی.",
+                            color = AppMuted,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                        history == null -> Text(
+                            "در حال دریافت…",
+                            color = AppMuted,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                        history.isEmpty() -> Text(
+                            "هنوز خریدی ثبت نشده.",
+                            color = AppMuted,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                        else -> Column(modifier = Modifier.padding(top = 8.dp)) {
+                            history.forEach { p ->
+                                val bought = parseServerDate(p.createdAt)
+                                val until = parseServerDate(p.subscribedUntil)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        Icons.Filled.WorkspacePremium,
+                                        contentDescription = null,
+                                        tint = AppAccent,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Column(modifier = Modifier.padding(start = 8.dp).weight(1f)) {
+                                        Text(tierDisplayName(p.tier), color = AppText, fontSize = 13.sp)
+                                        if (until != null) {
+                                            Text(
+                                                "اعتبار تا ${toFa(until.d)} ${persianMonthName(until.m)} ${toFa(until.y)}",
+                                                color = AppMuted,
+                                                fontSize = 11.sp,
+                                            )
+                                        }
+                                    }
+                                    if (bought != null) {
+                                        Text(
+                                            "${toFa(bought.d)} ${persianMonthName(bought.m)} ${toFa(bought.y)}",
+                                            color = AppMuted,
+                                            fontSize = 11.sp,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

@@ -123,6 +123,29 @@ object Db {
                 st.executeUpdate(
                     "INSERT INTO app_version (id, latest_version_code) VALUES (1, 1) ON CONFLICT(id) DO NOTHING"
                 )
+
+                // تاریخچه‌ی خریدِ اشتراک - تا قبل از این فقط وضعیتِ *فعلی* رو users نگه داشته می‌شد
+                // (subscribed_until + subscription_tier) و کاربر هیچ‌جا نمی‌تونست ببینه کِی چی خریده.
+                // هر ردیف یه خریدِ تاییدشده‌ست؛ purchase_token یکتاست تا اگه کلاینت یه خرید رو دوباره
+                // بفرسته (مثلاً restorePurchases) ردیفِ تکراری ساخته نشه.
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS subscription_purchases (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        product_id TEXT NOT NULL,
+                        tier TEXT,
+                        store TEXT NOT NULL,
+                        purchase_token TEXT NOT NULL UNIQUE,
+                        duration_days INTEGER NOT NULL,
+                        subscribed_until TEXT NOT NULL,
+                        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                    """.trimIndent()
+                )
+                st.executeUpdate(
+                    "CREATE INDEX IF NOT EXISTS idx_subscription_purchases_user ON subscription_purchases(user_id)"
+                )
             }
             /* migration برای دیتابیس‌های قدیمی که از قبل جدول users رو بدون این ستون‌ها دارن */
             runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN subscribed INTEGER NOT NULL DEFAULT 0") } }
