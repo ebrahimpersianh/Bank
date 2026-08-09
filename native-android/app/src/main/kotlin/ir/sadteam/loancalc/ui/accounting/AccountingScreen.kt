@@ -52,7 +52,6 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -102,7 +101,11 @@ import ir.sadteam.loancalc.ui.category.CategoryManagementScreen
 import ir.sadteam.loancalc.ui.category.CategoryViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.AppProgressBar
 import ir.sadteam.loancalc.ui.components.BankBadge
+import ir.sadteam.loancalc.ui.components.CategoryDonut
+import ir.sadteam.loancalc.ui.components.DonutSlice
+import ir.sadteam.loancalc.ui.components.countUpAmount
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
@@ -187,8 +190,11 @@ fun BudgetScreen(
 /** تبِ مستقلِ «گزارش» - قبلاً زیرصفحه‌ی حسابداری بود، حالا خودش یه تبه، پس دیگه دکمه‌ی برگشت
  * نداره (رجوع کن به [ReportSection]). */
 @Composable
-fun ReportScreen(viewModel: AccountViewModel = hiltViewModel()) {
-    ReportSection(viewModel = viewModel)
+fun ReportScreen(
+    viewModel: AccountViewModel = hiltViewModel(),
+    categoryViewModel: CategoryViewModel = hiltViewModel(),
+) {
+    ReportSection(viewModel = viewModel, categoryViewModel = categoryViewModel)
 }
 
 @Composable
@@ -270,9 +276,11 @@ private fun MainSection(
                             Icon(Icons.Filled.Search, contentDescription = "جستجو", tint = AppPrimary, modifier = Modifier.size(18.dp))
                         }
                     }
+                    // شمارشِ بالارونده - تو حالتِ خصوصی خاموشه (عدد پشتِ ••• مخفیه، انیمیشن بی‌معنیه).
+                    val shownBalance = countUpAmount(totalBalance, enabled = !privacyMode)
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            "${maskIfPrivate(masked, fmt(totalBalance))} ریال",
+                            "${maskIfPrivate(masked, fmt(shownBalance))} ریال",
                             color = if (totalBalance < 0) AppDanger else AppText,
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
@@ -953,11 +961,13 @@ private fun BudgetRow(
                 }
                 Text(name, color = AppText, fontSize = 13.sp, modifier = Modifier.padding(start = 10.dp))
             }
-            LinearProgressIndicator(
-                progress = fraction,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp).clip(CircleShape),
+            // نوارِ خودیِ اپ به‌جای LinearProgressIndicatorِ تخت‌رنگِ متریال - گرادیانی، گوشه‌گرد و
+            // با پرشدنِ انیمیشنی (بستهٔ ارتقاهای گرافیکی، خواسته‌ی صریحِ کاربر).
+            AppProgressBar(
+                fraction = fraction,
                 color = if (over) AppDanger else AppPrimary,
                 trackColor = AppSurface2,
+                modifier = Modifier.padding(top = 8.dp),
             )
             if (cap != null) {
                 Row(
@@ -1242,10 +1252,15 @@ private fun DateRibbonHeader(viewDate: PersianDate, onDateChange: (PersianDate) 
  * نشد - پشتِ یه دکمه‌ی «گزارشِ سفارشی و خروجی» جمع شد تا هم نمای روزانه‌ی جدید هم قابلیتِ قبلی بمونه.
  */
 @Composable
-private fun ReportSection(viewModel: AccountViewModel) {
+private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: CategoryViewModel) {
     val accounts by viewModel.accounts.collectAsState()
     val allTransactions by viewModel.transactions.collectAsState()
     val today = remember { JalaliCalendar.today() }
+    // برای رنگِ تکه‌های نمودارِ دونات - دسته‌های ساخته‌ی خودِ کاربر هم رنگِ درستشون رو بگیرن،
+    // نه فقط دسته‌های ثابتِ findCategory.
+    val reportExpenseCats by categoryViewModel.expenseCategories.collectAsState()
+    val reportIncomeCats by categoryViewModel.incomeCategories.collectAsState()
+    val allCategoryEntries = remember(reportExpenseCats, reportIncomeCats) { reportExpenseCats + reportIncomeCats }
 
     var viewDate by remember { mutableStateOf(today) }
     var showExpenseTab by remember { mutableStateOf(true) }
@@ -1452,14 +1467,69 @@ private fun ReportSection(viewModel: AccountViewModel) {
         if (dayCategoryBreakdown.isNotEmpty()) {
             item {
                 StaggerIn(4) {
+                    // نمودارِ دوناتِ سهمِ دسته‌ها + راهنمای رنگی زیرش (خواسته‌ی صریحِ کاربر، بستهٔ
+                    // ارتقاهای گرافیکی). قبلاً فقط یه لیستِ متنیِ ساده بود.
+                    val breakdownTotal = remember(dayCategoryBreakdown) { dayCategoryBreakdown.sumOf { it.second } }
+                    // رنگِ هر دسته از خودِ تعریفِ دسته میاد تا با آیکون‌های رنگیِ بقیه‌ی اپ یکی باشه؛
+                    // دسته‌ی ناشناس (مثلاً «سایر») رنگِ خنثی می‌گیره.
+                    val fallbackSliceColor = AppMuted
+                    val donutSlices = remember(dayCategoryBreakdown, allCategoryEntries) {
+                        dayCategoryBreakdown.map { (name, amount) ->
+                            val c = allCategoryEntries.find { it.name == name }?.color
+                                ?: findCategory(name)?.color
+                                ?: fallbackSliceColor
+                            DonutSlice(value = amount, color = c)
+                        }
+                    }
                     AppCard(label = if (showExpenseTab) "پولم کجا خرج شده؟" else "درآمدم از کجا اومده؟") {
-                        Column {
-                            dayCategoryBreakdown.forEach { (name, amount) ->
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            CategoryDonut(slices = donutSlices) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        if (showExpenseTab) "کلِ خرج" else "کلِ دخل",
+                                        color = AppMuted,
+                                        fontSize = 10.sp,
+                                    )
+                                    PrivacyCrossfade(privacyMode) { masked ->
+                                        Text(
+                                            maskIfPrivate(masked, fmt(breakdownTotal)),
+                                            color = AppText,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+                                    Text("ریال", color = AppMuted, fontSize = 9.sp)
+                                }
+                            }
+                        }
+                        Column(modifier = Modifier.padding(top = 12.dp)) {
+                            dayCategoryBreakdown.forEachIndexed { index, (name, amount) ->
+                                val share = if (breakdownTotal > 0) (amount / breakdownTotal * 100).toInt() else 0
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(name, color = AppText, fontSize = 12.5.sp)
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(10.dp)
+                                                .clip(CircleShape)
+                                                .background(donutSlices[index].color),
+                                        )
+                                        Text(
+                                            name,
+                                            color = AppText,
+                                            fontSize = 12.5.sp,
+                                            modifier = Modifier.padding(start = 8.dp),
+                                        )
+                                        Text(
+                                            "٪${toFa(share)}",
+                                            color = AppMuted,
+                                            fontSize = 11.sp,
+                                            modifier = Modifier.padding(start = 6.dp),
+                                        )
+                                    }
                                     Text("${fmt(amount)} ریال", color = AppMuted, fontSize = 12.5.sp)
                                 }
                             }

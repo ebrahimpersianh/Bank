@@ -47,6 +47,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.TodayCard
+import ir.sadteam.loancalc.ui.components.countUpAmount
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.note.NoteViewModel
@@ -149,9 +150,11 @@ fun HomeScreen(
                             Icon(Icons.Filled.AccountBalanceWallet, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
                         }
                     }
+                    // شمارشِ بالارونده - تو حالتِ خصوصی خاموشه (عدد پشتِ ••• مخفیه، انیمیشن بی‌معنیه).
+                    val shownBalance = countUpAmount(totalBalance, enabled = !privacyMode)
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            "${maskIfPrivate(masked, fmt(totalBalance))} ریال",
+                            "${maskIfPrivate(masked, fmt(shownBalance))} ریال",
                             color = if (totalBalance < 0) AppDanger else AppText,
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
