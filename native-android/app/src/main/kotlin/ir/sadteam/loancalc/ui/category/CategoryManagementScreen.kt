@@ -18,6 +18,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,12 +44,13 @@ import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.categoryIconChoices
 import ir.sadteam.loancalc.data.db.CustomCategoryEntity
 import ir.sadteam.loancalc.ui.components.AppCard
-import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 
 private val categoryColorChoices = listOf(
@@ -88,17 +91,36 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                 IconButton(onClick = onBack) {
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                 }
-                Text("مدیریتِ دسته‌بندی‌ها", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "دسته‌بندی‌ها",
+                    color = AppText,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+                // دکمه‌ی + بالای صفحه (خواسته‌ی صریحِ کاربر طبقِ اپِ مرجع) - قبلاً یه دکمه‌ی پهنِ
+                // وسطِ لیست بود که هر بار باید تا بالای لیست اسکرول می‌کردی.
+                IconButton(onClick = { showAddForm = !showAddForm }) {
+                    Icon(
+                        if (showAddForm) Icons.Filled.Close else Icons.Filled.Add,
+                        contentDescription = "افزودنِ دسته‌بندی",
+                        tint = AppPrimary,
+                    )
+                }
             }
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AppChip(label = "هزینه", selected = type == TransactionType.WITHDRAWAL, onClick = { type = TransactionType.WITHDRAWAL })
-                AppChip(label = "درآمد", selected = type == TransactionType.DEPOSIT, onClick = { type = TransactionType.DEPOSIT })
-            }
+            // تبِ خرج/دخل با رنگِ متفاوت (خواسته‌ی صریحِ کاربر): خرج قرمز، دخل سبز. رنگِ تاگل با
+            // خودِ تبِ فعال عوض می‌شه - همون الگوی شیتِ «تراکنش جدید».
+            SegmentedToggle(
+                options = listOf("خرج", "دخل"),
+                selectedIndex = if (type == TransactionType.WITHDRAWAL) 0 else 1,
+                onSelect = { type = if (it == 0) TransactionType.WITHDRAWAL else TransactionType.DEPOSIT },
+                selectedColor = if (type == TransactionType.WITHDRAWAL) AppDanger else AppPrimary,
+            )
         }
-        item {
-            if (showAddForm) {
+        if (showAddForm) {
+            item {
                 AddCategoryForm(
                     onCancel = { showAddForm = false },
                     onSubmit = { name, color, iconKey ->
@@ -106,10 +128,6 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                         showAddForm = false
                     },
                 )
-            } else {
-                GradientButton(onClick = { showAddForm = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text("+ دسته‌ی دلخواه")
-                }
             }
         }
         itemsIndexed(categories, key = { _, cat -> cat.name }) { index, cat ->

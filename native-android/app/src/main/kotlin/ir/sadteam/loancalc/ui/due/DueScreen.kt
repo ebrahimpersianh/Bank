@@ -36,10 +36,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianCalendar
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.TodayCard
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.collectAsState
+import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.cheque.ChequeViewModel
+import ir.sadteam.loancalc.ui.debt.DebtViewModel
+import ir.sadteam.loancalc.ui.myloans.MyLoansViewModel
+import ir.sadteam.loancalc.ui.note.NoteViewModel
 import ir.sadteam.loancalc.ui.debt.DebtScreen
 import ir.sadteam.loancalc.ui.note.NoteScreen
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -55,6 +66,9 @@ private data class DueShortcut(
     // زیرصفحه‌ی داخلیِ خودِ همین تبه (رجوع کن به [subView]).
     val route: String?,
     val subView: DueSubView?,
+    /** بجِ عددیِ گوشه‌ی کاشی (خواسته‌ی صریحِ کاربر: «اینطوری عدد بیاد بغلِ اینایی که وارد کردم»).
+     * صفر یعنی هیچ بجی نشون داده نمی‌شه - وگرنه یه «۰» رو هر کاشیِ خالی فقط شلوغی می‌کرد. */
+    val badge: Int = 0,
 )
 
 /**
@@ -63,7 +77,14 @@ private data class DueShortcut(
  * داخلیِ خودِ همین تبن (رجوع کن به [DueSubView]) - هم‌الگو با ChequeScreen.screenKey.
  */
 @Composable
-fun DueScreen(onNavigateToRoute: (String) -> Unit) {
+fun DueScreen(
+    onNavigateToRoute: (String) -> Unit,
+    accountViewModel: AccountViewModel = hiltViewModel(),
+    noteViewModel: NoteViewModel = hiltViewModel(),
+    debtViewModel: DebtViewModel = hiltViewModel(),
+    chequeViewModel: ChequeViewModel = hiltViewModel(),
+    myLoansViewModel: MyLoansViewModel = hiltViewModel(),
+) {
     var subView by rememberSaveable { mutableStateOf(DueSubView.NONE) }
     // برگشتن از طلب‌وبدهی/یادداشت به گریدِ اصلی - قبل از رسیدن به BackHandlerِ بیرونیِ LoanCalcApp
     // (که دیگه معنیش خروج/برگشتنِ بینِ تب‌هاست)، هم‌الگو با LoanTab.
@@ -74,14 +95,21 @@ fun DueScreen(onNavigateToRoute: (String) -> Unit) {
     // اینجا به تبِ «بودجه» منتقل شد - رجوع کن به CLAUDE.md، «تصمیمِ کاشیِ پرداختِ تکراری» - چون
     // مفهوماً یه هزینه‌ی برنامه‌ریزی‌شده‌ی ماهانه‌ست (به بودجه نزدیک‌تره)، و اینجا هم گرید دوباره
     // دقیقاً ۶ کاشی/۲ ردیفِ کاملِ هم‌شکلِ رفرنس شد (بدونِ کاشیِ تنهای ردیفِ سوم).
-    val shortcuts = remember {
+    // عددهای واقعیِ بجِ کاشی‌ها - از همون ViewModelهای موجود خونده می‌شن، نه یه شمارنده‌ی جدا.
+    val accounts by accountViewModel.accounts.collectAsState()
+    val notes by noteViewModel.notes.collectAsState()
+    val debts by debtViewModel.debts.collectAsState()
+    val cheques by chequeViewModel.cheques.collectAsState()
+    val loans by myLoansViewModel.loans.collectAsState()
+
+    val shortcuts = remember(accounts, notes, debts, cheques, loans) {
         listOf(
             DueShortcut("تراکنش", Icons.Filled.SwapHoriz, "assets", null),
-            DueShortcut("یادداشت", Icons.Filled.EditNote, null, DueSubView.NOTES),
-            DueShortcut("طلب و بدهی", Icons.Filled.Handshake, null, DueSubView.DEBT),
-            DueShortcut("حساب‌کتاب", Icons.Filled.AccountBalanceWallet, "assets", null),
-            DueShortcut("چک", Icons.Filled.ReceiptLong, "cheque", null),
-            DueShortcut("قسط و وام", Icons.Filled.Payments, "loan", null),
+            DueShortcut("یادداشت", Icons.Filled.EditNote, null, DueSubView.NOTES, notes.size),
+            DueShortcut("طلب و بدهی", Icons.Filled.Handshake, null, DueSubView.DEBT, debts.size),
+            DueShortcut("حساب‌کتاب", Icons.Filled.AccountBalanceWallet, "assets", null, accounts.size),
+            DueShortcut("چک", Icons.Filled.ReceiptLong, "cheque", null, cheques.size),
+            DueShortcut("قسط و وام", Icons.Filled.Payments, "loan", null, loans.size),
         )
     }
 
@@ -181,25 +209,40 @@ private fun DueShortcutTile(shortcut: DueShortcut, modifier: Modifier = Modifier
             .aspectRatio(1.28f)
             .pressScaleClickable(onClick = onClick),
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Icon(
-                shortcut.icon,
-                contentDescription = shortcut.title,
-                tint = AppPrimary,
-                modifier = Modifier.size(22.dp),
-            )
-            Text(
-                shortcut.title,
-                color = AppText,
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                modifier = Modifier.padding(top = 6.dp),
-            )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(
+                    shortcut.icon,
+                    contentDescription = shortcut.title,
+                    tint = AppPrimary,
+                    modifier = Modifier.size(22.dp),
+                )
+                Text(
+                    shortcut.title,
+                    color = AppText,
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+            // بجِ عددی - گوشه‌ی بالا-چپ (تو RTL یعنی سمتِ «شروع»ِ بصری، همون‌جایی که رفرنس داره).
+            if (shortcut.badge > 0) {
+                Text(
+                    toFa(shortcut.badge),
+                    color = AppPrimary,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .background(AppPrimary.copy(alpha = 0.16f), CircleShape)
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                )
+            }
         }
     }
 }

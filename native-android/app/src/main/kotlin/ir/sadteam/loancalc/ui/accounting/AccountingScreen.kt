@@ -198,7 +198,23 @@ fun ReportScreen(
     viewModel: AccountViewModel = hiltViewModel(),
     categoryViewModel: CategoryViewModel = hiltViewModel(),
 ) {
-    ReportSection(viewModel = viewModel, categoryViewModel = categoryViewModel)
+    // خواسته‌ی صریحِ کاربر: «گزارش خوبه ولی اون پایین به‌اضافه باشه که با زدنش همون صفحه‌ی
+    // دخل/خرج/جابجایی بیاد» - همون شیتِ مشترکِ تبِ خانه، نه یه فرمِ جدا.
+    var showNewTransaction by remember { mutableStateOf(false) }
+    if (showNewTransaction) {
+        NewTransactionSheet(onDismiss = { showNewTransaction = false })
+        return
+    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        ReportSection(viewModel = viewModel, categoryViewModel = categoryViewModel)
+        FloatingActionButton(
+            onClick = { showNewTransaction = true },
+            modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
+            containerColor = AppPrimary,
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = "افزودنِ تراکنش")
+        }
+    }
 }
 
 @Composable
