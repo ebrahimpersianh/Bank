@@ -505,7 +505,7 @@ class LoanRepository(
             ?: LoanRowEntity(loanId = loan.id, m = m, installment = loan.installment, paid = false)
         loanRowDao.upsertAll(listOf(transform(current)))
         val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
-        loanDao.upsert(loan.copy(paidCount = newPaidCount))
+        loanDao.upsert(loan.withPaidCount(newPaidCount))
     }
 
     /** هم‌الگو با [updateRowPayment] ولی رو چندتا قسط باهم - یه upsertAll/یه محاسبه‌ی paidCount
@@ -519,7 +519,7 @@ class LoanRepository(
         }
         loanRowDao.upsertAll(updated)
         val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
-        loanDao.upsert(loan.copy(paidCount = newPaidCount))
+        loanDao.upsert(loan.withPaidCount(newPaidCount))
     }
 
     /** ویرایش دستی مبلغ یه قسط (کارمزد/جریمه‌ی بانکی که نمی‌تونیم حدس بزنیم) - پورت
@@ -557,6 +557,42 @@ class LoanRepository(
         val legacy = legacyRowsFromDataJson(loan).map { it.toLoanRowEntity(loan.id) }
         if (legacy.isNotEmpty()) loanRowDao.upsertAll(legacy)
         return legacy
+    }
+
+    /**
+     * ستونِ `paidCount` و کپیِ همون عدد تو `dataJson` رو **با هم** به‌روز می‌کنه.
+     *
+     * قبلاً فقط ستون به‌روز می‌شد و کپیِ dataJson کهنه می‌موند؛ چون [toWebMap] (چیزی که به سرور و
+     * فایلِ پشتیبان می‌ره) metaـش رو از dataJson می‌سازه، عددِ کهنه بیرون می‌رفت و بعدِ خروج/ورودِ
+     * دوباره پیشرفتِ وام‌ها صفر می‌شد - رجوع کن به کامنتِ کاملِ باگ تو [toWebMap].
+     */
+    private fun LoanEntity.withPaidCount(newPaidCount: Int): LoanEntity {
+        val data = parseDataMutable(this)
+        data["paidCount"] = newPaidCount
+        return copy(paidCount = newPaidCount, dataJson = gson.toJson(data))
+    }
+
+    /**
+     * ترمیمِ خودکارِ وام‌هایی که پیشرفتشون قبلاً به‌خاطرِ همون باگ صفر شده.
+     *
+     * ردیف‌های قسط (`loan_rows`) سالم موندن - فقط عددِ خلاصه‌ی `paidCount` گم شده بود. پس هرجا این
+     * عدد با تعدادِ واقعیِ ردیف‌های پرداخت‌شده نخونه، از رو خودِ ردیف‌ها بازسازی می‌شه. برای وامی که
+     * ردیفی نداره کاری نمی‌کنه (نباید عددِ درست رو با ۰ خراب کنه).
+     *
+     * تعدادِ وام‌های ترمیم‌شده رو برمی‌گردونه. اجرای دوباره‌ش بی‌ضرره (بارِ دوم چیزی برای اصلاح نیست).
+     */
+    suspend fun repairPaidCounts(): Int {
+        var repaired = 0
+        loanDao.getAll().forEach { loan ->
+            val rows = loanRowDao.getForLoan(loan.id)
+            if (rows.isEmpty()) return@forEach
+            val actual = rows.count { it.paid }
+            if (actual != loan.paidCount) {
+                loanDao.upsert(loan.withPaidCount(actual))
+                repaired++
+            }
+        }
+        return repaired
     }
 
     private fun buildInitialRowEntities(loanId: Long, installment: Double, n: Int, paidCount: Int): List<LoanRowEntity> =
@@ -714,8 +750,18 @@ class LoanRepository(
      * کپیِ احتمالاً روبه‌زوالِ dataJson) تا سرور/بک‌آپ همیشه آخرین وضعیتِ واقعیِ پرداخت رو بگیره. */
     private suspend fun toWebMap(entity: LoanEntity): Map<String, Any?> {
         val meta = parseDataMutable(entity)
-        val rows = getOrMigrateRows(entity).sortedBy { it.m }.map { it.toRowMap() }
-        meta["rows"] = rows
+        val rows = getOrMigrateRows(entity).sortedBy { it.m }
+        // 🚨 باگِ از دست رفتنِ پیشرفتِ وام (گزارشِ واقعیِ کاربر، ۲۰ مرداد):
+        // [updateRowPayment] موقعِ «پرداخت‌شده» زدنِ یه قسط فقط ستونِ paidCountِ جدولِ loans رو
+        // به‌روز می‌کنه و به کپیِ قدیمیِ همون عدد تو dataJson دست نمی‌زنه. چون این تابع metaـش رو
+        // از همون dataJson می‌سازه، عددی که به سرور می‌رفت **کهنه** بود (معمولاً همون ۰ لحظه‌ی
+        // ساختِ وام). محلی مشکلی دیده نمی‌شد چون UI ستون رو می‌خونه؛ ولی به‌محضِ خروج از حساب
+        // (که محلی رو پاک می‌کنه) و ورودِ دوباره، [replaceAllWithServerData] همون ۰ رو برمی‌گردوند
+        // و پیشرفتِ همه‌ی وام‌ها صفر می‌شد + همه «عقب‌افتاده» می‌شدن (چون قسطِ اولِ پرداخت‌نشده
+        // سررسیدش گذشته بود).
+        // رفع: عددِ ارسالی همیشه از خودِ ردیف‌ها (منبعِ حقیقت) شمرده می‌شه، نه از کپیِ dataJson.
+        meta["paidCount"] = rows.count { it.paid }
+        meta["rows"] = rows.map { it.toRowMap() }
         return meta
     }
 
@@ -729,13 +775,21 @@ class LoanRepository(
         val installment = (map["installment"] as? Number)?.toDouble() ?: 0.0
         val totalPaid = (map["totalPaid"] as? Number)?.toDouble() ?: amount
         val n = (map["n"] as? Number)?.toInt() ?: 0
-        val paidCount = (map["paidCount"] as? Number)?.toInt() ?: 0
         val createdAt = map["createdAt"] as? String ?: isoNow()
         val rows = (map["rows"] as? List<*>)
             ?.mapNotNull { it as? Map<*, *> }
             ?.map { row -> row.entries.associate { it.key.toString() to it.value }.toLoanRowEntity(id) }
             ?: emptyList()
-        val metaOnly = map.toMutableMap().apply { remove("rows") }
+        // اگه ردیف‌ها اومده باشن خودشون منبعِ حقیقتن - کپیِ paidCountِ توی نسخه‌های قدیمیِ سرور
+        // می‌تونه کهنه/صفر باشه (رجوع کن به کامنتِ باگ تو [toWebMap]). این‌جوری داده‌ی خرابی که
+        // از قبل رو سرور نشسته هم موقعِ بازیابی خودبه‌خود ترمیم می‌شه.
+        val paidCount = if (rows.isNotEmpty()) rows.count { it.paid } else ((map["paidCount"] as? Number)?.toInt() ?: 0)
+        // کپیِ dataJson هم با همون عددِ درست نوشته می‌شه، وگرنه دوباره از ستون فاصله می‌گیره و
+        // دفعه‌ی بعد که این وام به سرور پوش می‌شه همون باگ برمی‌گرده.
+        val metaOnly = map.toMutableMap().apply {
+            remove("rows")
+            put("paidCount", paidCount)
+        }
         val entity = LoanEntity(
             id = id,
             name = name,

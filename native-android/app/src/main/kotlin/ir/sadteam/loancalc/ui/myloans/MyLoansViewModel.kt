@@ -33,6 +33,14 @@ class MyLoansViewModel @Inject constructor(
     private val incomeRepository: IncomeRepository,
     private val attachmentStorage: AttachmentStorage,
 ) : ViewModel() {
+    init {
+        // ترمیمِ یک‌بارِ وام‌هایی که پیشرفتشون قبلاً صفر شده بود (باگِ گزارش‌شده‌ی کاربر: بعد از
+        // خروج و ورودِ دوباره، همه‌ی وام‌ها ۰٪ و «عقب‌افتاده» شدن). ردیف‌های قسط سالم موندن، پس
+        // عددِ خلاصه از رو خودشون بازسازی می‌شه - رجوع کن به LoanRepository.repairPaidCounts.
+        // اجرای دوباره‌ش بی‌ضرره، پس نیازی به پرچمِ «یه‌بار انجام شد» نیست.
+        viewModelScope.launch { loanRepository.repairPaidCounts() }
+    }
+
     val loans: StateFlow<List<LoanEntity>> = loanRepository.observeLoans()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
