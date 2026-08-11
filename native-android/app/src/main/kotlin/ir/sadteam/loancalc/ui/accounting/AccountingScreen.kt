@@ -766,6 +766,7 @@ private fun BudgetSection(
 ) {
     val budgets by viewModel.budgets.collectAsState()
     val allTransactions by viewModel.transactions.collectAsState()
+    val accounts by viewModel.accounts.collectAsState()
     val today = remember { JalaliCalendar.today() }
     var viewYear by remember { mutableStateOf(today.y) }
     var viewMonth by remember { mutableStateOf(today.m) }
@@ -940,11 +941,14 @@ private fun BudgetSection(
     }
 
     if (showAddBudgetDialog) {
-        AddBudgetDialog(
+        // شیتِ «بودجه‌ی جدید» طبقِ اپِ مرجع: مقدار → حساب‌کتاب (با گزینه‌ی «همه حساب‌کتاب‌ها») →
+        // دسته‌بندی. جایگزینِ دیالوگِ دومرحله‌ای قبلی که فقط دسته و مبلغ می‌گرفت.
+        NewBudgetSheet(
             categories = unbudgetedCats,
+            accounts = accounts,
             onDismiss = { showAddBudgetDialog = false },
-            onSave = { cat, cap ->
-                viewModel.setBudget(cat.name, cap, null)
+            onSave = { cat, cap, accId ->
+                viewModel.setBudget(cat.name, cap, null, accId)
                 showAddBudgetDialog = false
             },
         )
@@ -1766,4 +1770,117 @@ private fun <T> AccountingDropdown(
             }
         }
     }
+}
+
+
+/**
+ * شیتِ «بودجه‌ی جدید» - خواسته‌ی صریحِ کاربر طبقِ اپِ مرجع: سه بخشِ پشتِ‌هم، نه یه دیالوگِ
+ * دومرحله‌ای. حساب‌کتاب پیش‌فرض «همه حساب‌کتاب‌ها»ست (یعنی `null`)، دقیقاً مثلِ رفتارِ قبلیِ
+ * بودجه‌ها - پس کسی که این فیلد رو دست نزنه، همون چیزی رو می‌گیره که قبلاً می‌گرفت.
+ */
+@Composable
+private fun NewBudgetSheet(
+    categories: List<CategoryEntry>,
+    accounts: List<AccountEntity>,
+    onDismiss: () -> Unit,
+    onSave: (CategoryEntry, Double, Long?) -> Unit,
+) {
+    var capText by remember { mutableStateOf("") }
+    var selectedCat by remember { mutableStateOf<CategoryEntry?>(null) }
+    var selectedAccountId by remember { mutableStateOf<Long?>(null) }
+    var showAccountPicker by remember { mutableStateOf(false) }
+    var showCategoryPicker by remember { mutableStateOf(false) }
+
+    if (showAccountPicker) {
+        AlertDialog(
+            onDismissRequest = { showAccountPicker = false },
+            title = { Text("حساب‌کتاب‌ها", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    TextButton(
+                        onClick = { selectedAccountId = null; showAccountPicker = false },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("همه حساب‌کتاب‌ها", modifier = Modifier.fillMaxWidth()) }
+                    accounts.forEach { acc ->
+                        TextButton(
+                            onClick = { selectedAccountId = acc.id; showAccountPicker = false },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text(acc.name, modifier = Modifier.fillMaxWidth()) }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showAccountPicker = false }) { Text("انصراف") } },
+        )
+    }
+
+    if (showCategoryPicker) {
+        AlertDialog(
+            onDismissRequest = { showCategoryPicker = false },
+            title = { Text("دسته‌بندی", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    categories.forEach { c ->
+                        TextButton(
+                            onClick = { selectedCat = c; showCategoryPicker = false },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(c.icon, contentDescription = null, tint = c.color, modifier = Modifier.size(18.dp))
+                                Text(c.name, modifier = Modifier.padding(start = 8.dp))
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showCategoryPicker = false }) { Text("انصراف") } },
+        )
+    }
+
+    val accountLabel = accounts.firstOrNull { it.id == selectedAccountId }?.name ?: "همه حساب‌کتاب‌ها"
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("بودجه‌ی جدید", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("مقدار بودجه", color = AppMuted, fontSize = 11.sp)
+                OutlinedTextField(
+                    value = capText,
+                    onValueChange = { capText = cleanNum(it) },
+                    visualTransformation = ThousandsSeparatorTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                )
+                val rial = capText.toLongOrNull() ?: 0L
+                if (rial > 0) {
+                    Text("${numberToWordsFa((rial / 10).toDouble())} تومان", color = AppMuted, fontSize = 11.sp)
+                }
+
+                Text("حساب", color = AppMuted, fontSize = 11.sp)
+                OutlinedButton(onClick = { showAccountPicker = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text(accountLabel, modifier = Modifier.fillMaxWidth(), fontSize = 13.sp)
+                }
+
+                Text("دسته‌بندی", color = AppMuted, fontSize = 11.sp)
+                OutlinedButton(onClick = { showCategoryPicker = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text(selectedCat?.name ?: "دسته‌بندی", modifier = Modifier.fillMaxWidth(), fontSize = 13.sp)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val cap = capText.toDoubleOrNull() ?: 0.0
+                    val cat = selectedCat
+                    if (cap > 0 && cat != null) onSave(cat, cap, selectedAccountId)
+                },
+                enabled = (capText.toDoubleOrNull() ?: 0.0) > 0 && selectedCat != null,
+            ) { Text("ثبت بودجه") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("انصراف") } },
+    )
 }

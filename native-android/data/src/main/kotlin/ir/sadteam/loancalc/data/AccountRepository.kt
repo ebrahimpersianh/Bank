@@ -130,8 +130,21 @@ class AccountRepository(
     // ---- بودجه‌بندی ----
     fun observeBudgets(): Flow<List<BudgetEntity>> = budgetDao.observeAll()
 
-    suspend fun setBudget(categoryName: String, monthlyCap: Double, existingId: Long? = null) {
-        budgetDao.upsert(BudgetEntity(id = existingId ?: System.currentTimeMillis(), categoryName = categoryName, monthlyCap = monthlyCap))
+    /** [accountId] برابرِ null یعنی «همه‌ی حساب‌کتاب‌ها» (پیش‌فرض و رفتارِ قبلی). */
+    suspend fun setBudget(
+        categoryName: String,
+        monthlyCap: Double,
+        existingId: Long? = null,
+        accountId: Long? = null,
+    ) {
+        budgetDao.upsert(
+            BudgetEntity(
+                id = existingId ?: System.currentTimeMillis(),
+                categoryName = categoryName,
+                monthlyCap = monthlyCap,
+                accountId = accountId,
+            ),
+        )
     }
 
     suspend fun deleteBudget(budget: BudgetEntity) {
@@ -139,8 +152,15 @@ class AccountRepository(
     }
 
     /** جمعِ خرجِ هر دسته تو یه ماهِ خاص (فقط برداشت‌ها) - برای مقایسه با سقفِ بودجه. */
-    fun spendByCategory(transactions: List<AccountTransactionEntity>, year: Int, month: Int): Map<String, Double> =
+    fun spendByCategory(
+        transactions: List<AccountTransactionEntity>,
+        year: Int,
+        month: Int,
+        /** فقط خرجِ همین حساب‌کتاب حساب بشه؛ null یعنی همه‌ی حساب‌کتاب‌ها (رفتارِ قبلی). */
+        accountId: Long? = null,
+    ): Map<String, Double> =
         transactions
+            .filter { accountId == null || it.accountId == accountId }
             .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == year && it.month == month && !it.category.isNullOrBlank() }
             .groupBy { it.category!! }
             .mapValues { (_, list) -> list.sumOf { it.amount } }

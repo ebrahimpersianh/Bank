@@ -159,12 +159,16 @@ class AccountViewModel @Inject constructor(
         return income to expense
     }
 
-    fun spendByCategory(allTransactions: List<AccountTransactionEntity>, year: Int, month: Int): Map<String, Double> =
-        accountRepository.spendByCategory(allTransactions, year, month)
+    fun spendByCategory(
+        allTransactions: List<AccountTransactionEntity>,
+        year: Int,
+        month: Int,
+        accountId: Long? = null,
+    ): Map<String, Double> = accountRepository.spendByCategory(allTransactions, year, month, accountId)
 
-    fun setBudget(categoryName: String, monthlyCap: Double, existingId: Long? = null) {
+    fun setBudget(categoryName: String, monthlyCap: Double, existingId: Long? = null, accountId: Long? = null) {
         viewModelScope.launch {
-            accountRepository.setBudget(categoryName, monthlyCap, existingId)
+            accountRepository.setBudget(categoryName, monthlyCap, existingId, accountId)
             syncIfLoggedIn()
         }
     }

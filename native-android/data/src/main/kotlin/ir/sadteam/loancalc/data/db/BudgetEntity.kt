@@ -10,4 +10,7 @@ data class BudgetEntity(
     @PrimaryKey val id: Long,
     val categoryName: String,
     val monthlyCap: Double,
+    /** به کدوم حساب‌کتاب محدوده؟ `null` یعنی **همه‌ی حساب‌کتاب‌ها** (رفتارِ قبلی و پیش‌فرض) -
+     * خواسته‌ی صریحِ کاربر طبقِ اپِ مرجع: موقعِ تعیینِ بودجه بشه یه حساب‌کتابِ خاص رو انتخاب کرد. */
+    val accountId: Long? = null,
 )

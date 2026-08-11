@@ -27,7 +27,7 @@ import net.sqlcipher.database.SupportFactory
         CustomCategoryEntity::class,
         CategoryOrderEntity::class,
     ],
-    version = 20,
+    version = 21,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -302,6 +302,14 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** محدودکردنِ بودجه به یه حساب‌کتابِ خاص - nullable، پس بودجه‌های موجود خودبه‌خود
+         * «همه‌ی حساب‌کتاب‌ها» می‌مونن و رفتارشون عوض نمی‌شه. */
+        private val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE budgets ADD COLUMN accountId INTEGER")
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -339,6 +347,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_17_18,
                             MIGRATION_18_19,
                             MIGRATION_19_20,
+                            MIGRATION_20_21,
                         )
                         .fallbackToDestructiveMigration()
                         .build()
