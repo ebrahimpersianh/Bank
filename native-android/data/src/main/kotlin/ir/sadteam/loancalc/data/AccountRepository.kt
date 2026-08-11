@@ -91,10 +91,15 @@ class AccountRepository(
         category: String? = null,
         sourceType: String? = null,
         sourceId: String? = null,
+        /** ⚠️ هر جا تو یه حلقه/پشتِ‌هم چند تراکنش می‌سازی، **شمارنده‌ی صریح پاس بده**: پیش‌فرضِ
+         * `System.currentTimeMillis()` تو فراخوانی‌های سریعِ پشتِ‌هم می‌تونه یکی دربیاد و چون
+         * DAO از `@Upsert` استفاده می‌کنه، تراکنش‌ها بی‌صدا رو هم نوشته می‌شن (باگِ ثبت‌شده تو
+         * CLAUDE.md). برای ثبتِ تکیِ عادی خالی گذاشتنش امنه. */
+        id: Long? = null,
     ) {
         transactionDao.upsert(
             AccountTransactionEntity(
-                id = System.currentTimeMillis(),
+                id = id ?: System.currentTimeMillis(),
                 accountId = accountId,
                 type = type.name,
                 amount = amount,

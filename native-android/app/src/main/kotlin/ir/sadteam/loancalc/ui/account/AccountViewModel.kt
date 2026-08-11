@@ -75,6 +75,54 @@ class AccountViewModel @Inject constructor(
         }
     }
 
+    /**
+     * جابجاییِ پول بینِ دو حساب‌کتاب - یه «برداشت» از مبدا و یه «واریز» به مقصد.
+     *
+     * عمداً جدول/نوعِ تراکنشِ جدیدی اضافه نشده: از دیدِ موجودیِ حساب‌ها، انتقال دقیقاً همینه.
+     * هر دو ردیف `sourceType = "transfer"` و یه `sourceId`ِ مشترک می‌گیرن تا بعداً بشه جفتشون رو
+     * به‌هم ربط داد.
+     *
+     * ⚠️ به `addTransaction` **idِ صریح** پاس داده می‌شه (`transferId` و `transferId + 1`): پیش‌فرضِ
+     * `System.currentTimeMillis()` تو دو فراخوانیِ پشتِ‌هم می‌تونه یکی دربیاد و `@Upsert` بی‌صدا
+     * یکی رو رو اون یکی بنویسه - همون باگی که قبلاً تو حلقه‌های ساختِ تراکنش پیش اومد (CLAUDE.md).
+     */
+    fun addTransfer(
+        fromAccountId: Long,
+        toAccountId: Long,
+        amount: Double,
+        description: String,
+        year: Int,
+        month: Int,
+        day: Int,
+    ) {
+        viewModelScope.launch {
+            val transferId = System.currentTimeMillis()
+            accountRepository.addTransaction(
+                accountId = fromAccountId,
+                type = TransactionType.WITHDRAWAL,
+                amount = amount,
+                description = description,
+                year = year, month = month, day = day,
+                category = null,
+                sourceType = "transfer",
+                sourceId = transferId.toString(),
+                id = transferId,
+            )
+            accountRepository.addTransaction(
+                accountId = toAccountId,
+                type = TransactionType.DEPOSIT,
+                amount = amount,
+                description = description,
+                year = year, month = month, day = day,
+                category = null,
+                sourceType = "transfer",
+                sourceId = transferId.toString(),
+                id = transferId + 1,
+            )
+            syncIfLoggedIn()
+        }
+    }
+
     fun addTransaction(
         accountId: Long,
         type: TransactionType,
@@ -86,9 +134,12 @@ class AccountViewModel @Inject constructor(
         category: String? = null,
         sourceType: String? = null,
         sourceId: String? = null,
+        id: Long? = null,
     ) {
         viewModelScope.launch {
-            accountRepository.addTransaction(accountId, type, amount, description, year, month, day, category, sourceType, sourceId)
+            accountRepository.addTransaction(
+                accountId, type, amount, description, year, month, day, category, sourceType, sourceId, id,
+            )
             syncIfLoggedIn()
         }
     }

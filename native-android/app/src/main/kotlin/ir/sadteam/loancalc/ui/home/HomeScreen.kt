@@ -15,6 +15,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
@@ -43,6 +45,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.data.findCategory
 import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.accounting.NewTransactionSheet
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.EmptyState
@@ -97,6 +100,14 @@ fun HomeScreen(
     var selectedDate by remember { mutableStateOf(JalaliCalendar.today()) }
     var showAddNote by remember { mutableStateOf(false) }
     var showCalendarPicker by remember { mutableStateOf(false) }
+    // شیتِ «تراکنش جدید» (خرج/دخل/جابجایی) - خواسته‌ی صریحِ کاربر: دکمه‌ی + تو تبِ خانه همین رو
+    // باز کنه، نه اینکه ببره تبِ دارایی.
+    var showNewTransaction by remember { mutableStateOf(false) }
+
+    if (showNewTransaction) {
+        NewTransactionSheet(onDismiss = { showNewTransaction = false })
+        return
+    }
 
     if (showAddNote) {
         QuickAddNoteDialog(
@@ -180,6 +191,39 @@ fun HomeScreen(
                     onAddNote = { showAddNote = true },
                 )
             }
+            // کارتِ «هنوز سرشماره اضافه نکردی» - خواسته‌ی صریحِ کاربر طبقِ اپِ مرجع. فقط وقتی
+            // دیده می‌شه که **هیچ** حساب‌کتابی سرشماره‌ی پیامک نداره؛ به‌محضِ اینکه یکی اضافه شد
+            // خودش محو می‌شه (نه یه بنرِ همیشگیِ آزاردهنده).
+            val noSmsSender = accounts.isNotEmpty() && accounts.none { !it.smsSender.isNullOrBlank() }
+            if (noSmsSender) {
+                item {
+                    AppCard(modifier = Modifier.pressScaleClickable(onClick = { onNavigateToRoute("assets") })) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Filled.Sms,
+                                contentDescription = null,
+                                tint = AppPrimary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Text(
+                                "هنوز سرشماره اضافه نکردی",
+                                color = AppText,
+                                fontSize = 13.sp,
+                                modifier = Modifier.weight(1f).padding(start = 10.dp),
+                            )
+                            Icon(
+                                Icons.Filled.Settings,
+                                contentDescription = "تنظیمات پیامک",
+                                tint = AppMuted,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    }
+                }
+            }
             item {
                 AppCard(label = "تراکنش‌های اخیر") {
                     if (recentTransactions.isEmpty()) {
@@ -203,7 +247,7 @@ fun HomeScreen(
             }
         }
         FloatingActionButton(
-            onClick = { onNavigateToRoute("assets") },
+            onClick = { showNewTransaction = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(20.dp),
