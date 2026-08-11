@@ -72,6 +72,8 @@ private data class MeResponse(
     val subscribedUntil: String?,
     val subscriptionTier: String?,
     val trialDaysLeft: Int?,
+    /** true یعنی این کاربر ۱۵ روزِ هدیه‌ی «قدیمی‌بودن» گرفته - اپ جمله‌ی اضافه رو نشون می‌ده. */
+    val legacyGift: Boolean = false,
 )
 
 private data class OtpRow(val id: Long, val codeHash: String, val expiresAt: Long, val attempts: Int)
@@ -203,6 +205,7 @@ fun Route.authRoutes() {
                 MeResponse(
                     phone = user.phone,
                     subscribed = isSubscribed(user),
+                    legacyGift = user.legacyGift,
                     subscribedUntil = user.subscribedUntil,
                     subscriptionTier = user.subscriptionTier,
                     trialDaysLeft = trialDaysLeftIfApplicable(user)

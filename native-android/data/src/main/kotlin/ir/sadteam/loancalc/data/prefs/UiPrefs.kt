@@ -32,6 +32,8 @@ class UiPrefs(private val context: Context) {
         val SMS_AUTO_IMPORT_ENABLED = booleanPreferencesKey("sms_auto_import_enabled")
         val LAST_SMS_IMPORT_AT = stringPreferencesKey("last_sms_import_at")
         val NOTIF_AUTO_IMPORT_ENABLED = booleanPreferencesKey("notif_auto_import_enabled")
+        val COME_BACK_REMINDER_ENABLED = booleanPreferencesKey("come_back_reminder_enabled")
+        val LAST_COME_BACK_NOTIFIED_AT = stringPreferencesKey("last_come_back_notified_at")
         val NOTIF_AUTO_IMPORT_PACKAGES = stringPreferencesKey("notif_auto_import_packages")
         val DAILY_EXPENSE_REMINDER_ENABLED = booleanPreferencesKey("daily_expense_reminder_enabled")
     }
@@ -168,6 +170,24 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setNotifAutoImportEnabled(value: Boolean) {
         context.uiPrefsDataStore.edit { it[Keys.NOTIF_AUTO_IMPORT_ENABLED] = value }
+    }
+
+    /** اعلانِ «X روزه تراکنش ثبت نکردی» - رجوع کن به ComeBackWorker. پیش‌فرض روشنه چون کاربر
+     * صریحاً خواستش؛ از تنظیمات قابلِ خاموش‌کردنه. */
+    val comeBackReminderEnabled: Flow<Boolean> =
+        context.uiPrefsDataStore.data.map { it[Keys.COME_BACK_REMINDER_ENABLED] ?: true }
+
+    suspend fun setComeBackReminderEnabled(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.COME_BACK_REMINDER_ENABLED] = value }
+    }
+
+    /** کلیدِ روزِ آخرین اعلانِ برگشت (`y-m-d`) - هم برای «روزی یک‌بار» و هم برای اینکه یادآورِ
+     * روزانه همون روز ساکت بمونه (وگرنه کاربرِ غایب دو تا اعلان می‌گرفت). */
+    val lastComeBackNotifiedAt: Flow<String?> =
+        context.uiPrefsDataStore.data.map { it[Keys.LAST_COME_BACK_NOTIFIED_AT] }
+
+    suspend fun setLastComeBackNotifiedAt(value: String) {
+        context.uiPrefsDataStore.edit { it[Keys.LAST_COME_BACK_NOTIFIED_AT] = value }
     }
 
     /** بسته‌نامِ اپ‌هایی که کاربر **خودش** انتخاب کرده اعلانشون خونده بشه (با `,` جدا شده).

@@ -153,12 +153,48 @@ object Db {
             // پلنِ خریداری‌شده ("1m"/"3m"/"6m"/"1y") - قبلاً اصلاً ذخیره نمی‌شد، فقط تاریخِ انقضا؛
             // برای نمایشِ دقیقِ نوعِ اشتراک تو تنظیمات لازم شد - رجوع کن به SubscriptionRoutes.kt.
             runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN subscription_tier TEXT") } }
+            // هدیه‌ی «کاربرِ قدیمی» - رجوع کن به grantLegacyGift پایین‌تر.
+            runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN legacy_gift_granted INTEGER NOT NULL DEFAULT 0") } }
+            grantLegacyGift(conn)
         }
     }
 
     /* هر فراخوانی یه کانکشن جدا باز/بسته می‌کنه (به‌جای یه کانکشن مشترک سراسری مثل better-sqlite3)
        چون Ktor/Netty چندریسمانیه و JDBC Connection thread-safe نیست؛ با WAL + busy_timeout
        چندین کانکشن هم‌زمان رو یه فایل SQLite بدون قفل‌شدن کار می‌کنن. */
+    /**
+     * هدیه‌ی یک‌بارمصرفِ کاربرانِ قدیمی: **۱۵ روزِ اضافه** (روی ۳۰ روزِ پایه، جمعاً ۴۵) برای هر
+     * شماره‌ای که *در لحظه‌ی اجرای این مهاجرت* از قبل تو دیتابیس بوده.
+     *
+     * خواسته‌ی صریحِ کاربر (۲۰ مرداد). عمداً یه مهاجرتِ خودکاره نه یه دستورِ دستیِ SSH - چون
+     * `sqlite3` رو VPS نصب نیست و اجرای دستیِ SQL رو سرورِ زنده هنوز تاییدنشده‌ست (CLAUDE.md).
+     *
+     * ستونِ `legacy_gift_granted` ضامنِ ضدِتکراره: هر ردیف حداکثر یک بار هدیه می‌گیره، پس
+     * ری‌استارت‌های بعدیِ سرور دوباره تمدیدش نمی‌کنن. کاربرانی که بعد از این نقطه ثبت‌نام کنن،
+     * چون ستونشون از همون اول ۱ ست می‌شه، فقط ۳۰ روزِ پایه رو می‌گیرن.
+     */
+    private fun grantLegacyGift(conn: Connection) {
+        runCatching {
+            // ۴۵ روز از الان: ۳۰ روزِ پایه + ۱۵ روزِ هدیه‌ی قدیمی‌بودن.
+            val until = java.time.Instant.now().plusSeconds(45L * 24 * 60 * 60).toString()
+            conn.prepareStatement(
+                """
+                UPDATE users
+                SET subscribed_until = ?, legacy_gift_granted = 1
+                WHERE legacy_gift_granted = 0
+                  AND (subscribed_until IS NULL OR subscribed_until < ?)
+                """.trimIndent(),
+            ).use { ps ->
+                ps.setString(1, until)
+                ps.setString(2, until)
+                ps.executeUpdate()
+            }
+            // هر کسی که از قبل اشتراکِ طولانی‌تری داشته، فقط علامت می‌خوره تا دوباره بررسی نشه -
+            // اشتراکش عمداً کوتاه نمی‌شه.
+            conn.createStatement().use { it.executeUpdate("UPDATE users SET legacy_gift_granted = 1 WHERE legacy_gift_granted = 0") }
+        }
+    }
+
     fun <T> withConnection(block: (Connection) -> T): T {
         DriverManager.getConnection("jdbc:sqlite:$dbPath").use { conn ->
             conn.createStatement().use { it.executeUpdate("PRAGMA journal_mode=WAL") }
@@ -209,6 +245,9 @@ data class UserRow(
     val subscribed: Boolean,
     val subscribedUntil: String?,
     val subscriptionTier: String?,
+    /** آیا این کاربر جزو «کاربرانِ قدیمی» بود که ۱۵ روزِ هدیه‌ی اضافه گرفت؟ اپ ازش برای نشون‌دادنِ
+     * جمله‌ی «چون از قبل وارد برنامه شده بودی...» استفاده می‌کنه - رجوع کن به grantLegacyGift. */
+    val legacyGift: Boolean,
     val createdAt: String
 )
 
@@ -218,5 +257,7 @@ fun ResultSet.toUserRow(): UserRow = UserRow(
     subscribed = getInt("subscribed") != 0,
     subscribedUntil = getString("subscribed_until"),
     subscriptionTier = getString("subscription_tier"),
+    // runCatching چون دیتابیس‌های خیلی قدیمی ممکنه هنوز این ستون رو نداشته باشن (قبل از migration).
+    legacyGift = runCatching { getInt("legacy_gift_granted") != 0 }.getOrDefault(false),
     createdAt = getString("created_at")
 )

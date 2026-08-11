@@ -11,6 +11,7 @@ import dagger.hilt.android.HiltAndroidApp
 import ir.sadteam.loancalc.crash.CrashReporter
 import ir.sadteam.loancalc.data.banks
 import ir.sadteam.loancalc.data.creditServices
+import ir.sadteam.loancalc.notifications.ComeBackScheduler
 import ir.sadteam.loancalc.ui.auth.SmsRetrieverHash
 import javax.inject.Inject
 
@@ -22,6 +23,9 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
     @Inject
     lateinit var crashReporter: CrashReporter
 
+    @Inject
+    lateinit var comeBackScheduler: ComeBackScheduler
+
     override fun onCreate() {
         super.onCreate()
         crashReporter.install()
@@ -29,6 +33,10 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         // برای هماهنگ‌کردنِ پترنِ پیامکِ OTP با SMS Retriever API - رجوع کن به کامنتِ
         // SmsRetrieverHash.kt. فقط لاگ می‌کنه (Log.i)، هیچ اثرِ دیگه‌ای رو رفتارِ اپ نداره.
         SmsRetrieverHash.logForDebugging(this)
+        // اعلانِ «X روزه تراکنش ثبت نکردی» - اینجا زمان‌بندی می‌شه (نه تو یه ViewModelِ صفحه‌ی
+        // تنظیمات) چون نباید به بازکردنِ اون صفحه وابسته باشه. خودِ Worker قبل از هر اعلان
+        // پرچمِ comeBackReminderEnabled رو چک می‌کنه، پس زمان‌بندیِ بی‌قیدش بی‌ضرره.
+        comeBackScheduler.schedule()
     }
 
     // خواسته‌ی کاربر: لوگوهای بانک/خدمات اعتباری (assets/banks, assets/services - فایل‌های چندکیلوبایتی)

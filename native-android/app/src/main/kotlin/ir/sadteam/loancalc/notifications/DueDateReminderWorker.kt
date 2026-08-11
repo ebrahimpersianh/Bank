@@ -54,6 +54,13 @@ class DueDateReminderWorker @AssistedInject constructor(
             return Result.success()
         }
 
+        // اگه امروز اعلانِ «برگشت» زده شده، یادآورِ عادی ساکت می‌مونه - وگرنه کاربرِ غایب یه روز
+        // دو تا اعلان می‌گرفت که آزاردهنده‌ست (رجوع کن به ComeBackWorker).
+        val today0 = JalaliCalendar.today()
+        if (uiPrefs.lastComeBackNotifiedAt.first() == "${today0.y}-${today0.m}-${today0.d}") {
+            return Result.success()
+        }
+
         val defaultOffsets = parseReminderOffsets(uiPrefs.reminderDayOffsets.first())
         val soundUri = uiPrefs.reminderSoundUri.first()
         val vibrate = uiPrefs.reminderVibrate.first()
