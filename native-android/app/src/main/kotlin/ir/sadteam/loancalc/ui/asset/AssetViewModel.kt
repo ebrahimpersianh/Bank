@@ -1,0 +1,65 @@
+package ir.sadteam.loancalc.ui.asset
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.data.AssetRepository
+import ir.sadteam.loancalc.data.db.AssetEntity
+import ir.sadteam.loancalc.data.db.AssetTradeEntity
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class AssetViewModel @Inject constructor(
+    private val assetRepository: AssetRepository,
+) : ViewModel() {
+    val assets: StateFlow<List<AssetEntity>> = assetRepository.observeAssets()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val trades: StateFlow<List<AssetTradeEntity>> = assetRepository.observeTrades()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun recordTrade(
+        symbol: String,
+        name: String,
+        category: String,
+        isBuy: Boolean,
+        quantity: Double,
+        totalRial: Double,
+        year: Int,
+        month: Int,
+        day: Int,
+        description: String = "",
+        unitPriceRial: Double? = null,
+    ) {
+        viewModelScope.launch {
+            assetRepository.recordTrade(
+                symbol, name, category, isBuy, quantity, totalRial,
+                year, month, day, description, unitPriceRial,
+            )
+        }
+    }
+
+    fun deleteAsset(asset: AssetEntity) {
+        viewModelScope.launch { assetRepository.deleteAsset(asset) }
+    }
+
+    fun quantityOf(assetId: Long, allTrades: List<AssetTradeEntity>): Double =
+        assetRepository.quantityOf(assetId, allTrades)
+
+    fun netCostOf(assetId: Long, allTrades: List<AssetTradeEntity>): Double =
+        assetRepository.netCostOf(assetId, allTrades)
+
+    /** null یعنی قیمتِ روز هنوز در دسترس نیست - UI باید «—» نشون بده، نه صفر. */
+    fun currentValueOf(asset: AssetEntity, allTrades: List<AssetTradeEntity>): Double? =
+        assetRepository.currentValueOf(asset, allTrades)
+
+    /** ارزشِ کلِ سبد؛ null یعنی هیچ‌کدوم از دارایی‌ها قیمت ندارن. */
+    fun totalValue(allAssets: List<AssetEntity>, allTrades: List<AssetTradeEntity>): Double? {
+        val values = allAssets.mapNotNull { assetRepository.currentValueOf(it, allTrades) }
+        return if (values.isEmpty()) null else values.sum()
+    }
+}

@@ -26,8 +26,10 @@ import net.sqlcipher.database.SupportFactory
         NoteEntity::class,
         CustomCategoryEntity::class,
         CategoryOrderEntity::class,
+        AssetEntity::class,
+        AssetTradeEntity::class,
     ],
-    version = 21,
+    version = 22,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -51,6 +53,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun debtDao(): DebtDao
     abstract fun noteDao(): NoteDao
     abstract fun categoryDao(): CategoryDao
+    abstract fun assetDao(): AssetDao
+    abstract fun assetTradeDao(): AssetTradeDao
 
     companion object {
         private val MIGRATION_9_10 = object : Migration(9, 10) {
@@ -310,6 +314,45 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** دارایی‌های غیرنقدی (طلا/سکه/ارز/رمزارز) - خواسته‌ی صریحِ کاربر. دو جدولِ کاملاً جدید،
+         * پس هیچ داده‌ی موجودی دست نمی‌خوره. ⚠️ ایندکس‌ها عیناً همون‌هایی‌ان که تو `indices` هر
+         * `@Entity` اعلام شدن - وگرنه Room موقعِ آپگرید کرش می‌کنه (رجوع کن به CLAUDE.md). */
+        private val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS assets (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        symbol TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        unitPriceRial REAL,
+                        priceUpdatedAt TEXT,
+                        createdAt TEXT NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_assets_symbol ON assets(symbol)")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS asset_trades (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        assetId INTEGER NOT NULL,
+                        isBuy INTEGER NOT NULL,
+                        quantity REAL NOT NULL,
+                        totalRial REAL NOT NULL,
+                        year INTEGER NOT NULL,
+                        month INTEGER NOT NULL,
+                        day INTEGER NOT NULL,
+                        description TEXT NOT NULL DEFAULT '',
+                        createdAt TEXT NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_asset_trades_assetId ON asset_trades(assetId)")
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -348,6 +391,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_18_19,
                             MIGRATION_19_20,
                             MIGRATION_20_21,
+                            MIGRATION_21_22,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

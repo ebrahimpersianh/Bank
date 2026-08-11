@@ -6,6 +6,9 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import ir.sadteam.loancalc.data.AssetRepository
+import ir.sadteam.loancalc.data.db.AssetDao
+import ir.sadteam.loancalc.data.db.AssetTradeDao
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.AuthRepository
@@ -126,6 +129,17 @@ object AppModule {
         budgetDao: BudgetDao,
         recurringPaymentDao: RecurringPaymentDao,
     ): AccountRepository = AccountRepository(accountDao, transactionDao, apiService, budgetDao, recurringPaymentDao)
+
+    @Provides
+    fun provideAssetDao(database: AppDatabase): AssetDao = database.assetDao()
+
+    @Provides
+    fun provideAssetTradeDao(database: AppDatabase): AssetTradeDao = database.assetTradeDao()
+
+    @Provides
+    @Singleton
+    fun provideAssetRepository(assetDao: AssetDao, assetTradeDao: AssetTradeDao): AssetRepository =
+        AssetRepository(assetDao, assetTradeDao)
 
     @Provides
     @Singleton

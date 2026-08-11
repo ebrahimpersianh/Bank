@@ -101,6 +101,9 @@ import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.account.AccountsScreen
 import ir.sadteam.loancalc.ui.category.CategoryManagementScreen
 import ir.sadteam.loancalc.ui.category.CategoryViewModel
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.saveable.rememberSaveable
+import ir.sadteam.loancalc.ui.asset.AssetSection
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.AppProgressBar
@@ -155,7 +158,24 @@ fun AssetsScreen(
     viewModel: AccountViewModel = hiltViewModel(),
     categoryViewModel: CategoryViewModel = hiltViewModel(),
 ) {
-    MainSection(viewModel = viewModel, categoryViewModel = categoryViewModel)
+    // تبِ «دارایی» دو نما داره: حساب‌کتاب‌ها (نقدی/بانکی) و دارایی‌های غیرنقدی (طلا/ارز/رمزارز).
+    // خواسته‌ی صریحِ کاربر: بخشِ دارایی‌های غیرنقدی به اپ اضافه بشه - رجوع کن به ui/asset/.
+    var showNonCash by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = showNonCash) { showNonCash = false }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        SegmentedToggle(
+            options = listOf("حساب‌کتاب‌ها", "دارایی‌ها"),
+            selectedIndex = if (showNonCash) 1 else 0,
+            onSelect = { showNonCash = it == 1 },
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+        )
+        if (showNonCash) {
+            AssetSection()
+        } else {
+            MainSection(viewModel = viewModel, categoryViewModel = categoryViewModel)
+        }
+    }
 }
 
 /** تبِ مستقلِ «بودجه» - قبلاً زیرصفحه‌ی حسابداری بود. «دسته‌بندی‌ها» هم اینجا زیرمجموعه‌ست (رجوع
