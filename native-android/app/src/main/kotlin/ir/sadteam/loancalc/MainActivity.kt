@@ -150,7 +150,8 @@ import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AuroraBackground
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.onboarding.AnimatedAppEntrance
-import ir.sadteam.loancalc.ui.onboarding.BenefitsScreen
+import ir.sadteam.loancalc.ui.onboarding.OnboardingFlow
+import ir.sadteam.loancalc.ui.onboarding.PostLoginSheets
 import ir.sadteam.loancalc.ui.onboarding.PermissionGateScreen
 import ir.sadteam.loancalc.ui.onboarding.SplashIntroScreen
 import ir.sadteam.loancalc.ui.update.AppUpdateViewModel
@@ -367,7 +368,9 @@ class MainActivity : FragmentActivity() {
  *
  * قبل از این گیت هم، [PermissionGateScreen] چک می‌شه - برخلاف گیت ورود، این یکی هر بار اپ باز
  * می‌شه دوباره ارزیابی می‌شه (نه فقط یه‌بار)، چون کاربر می‌تونه مجوزها رو از تنظیمات گوشی خاموش کنه.
- * بعد از گیت مجوز و قبل از گیت ورود، [BenefitsScreen] هم فقط یه‌بار تو کل عمر نصب نشون داده می‌شه.
+ * بعد از گیت مجوز و قبل از گیت ورود، [OnboardingFlow] (مسیرِ ۴مرحله‌ایِ اولین ورود) فقط یه‌بار تو
+ * کل عمر نصب نشون داده می‌شه؛ مرحله‌ی پنجمش همون گیتِ ورودِ پایینه. صفحه‌ی «امکانات» (BenefitsScreen)
+ * به‌خواستِ صریحِ کاربر کاملاً حذف شد.
  * بعد از حل شدن گیت ورود/مهمان، صفحه‌ی اصلی مستقیم با یه افکت swoosh سریع (`AnimatedAppEntrance`) از
  * بالا-چپ میاد تو - پیامِ خوش‌آمدِ جداگانه‌ای (که قبلاً هر بار نشون داده می‌شد) به‌خواستِ کاربر حذف شد.
  *
@@ -383,15 +386,19 @@ private fun AppRoot(
     // (زمینه‌ش همیشه مشکیه، چون خودِ تصویرِ اسپلش زمینه‌ی مشکی داره) - رجوع کن به SplashIntroScreen.
     //
     // **باگِ رفع‌شده (فلاشِ سفید)**: قبلاً به‌محضِ تموم‌شدنِ تایمرِ اسپلش این گیت رد می‌شد، ولی
-    // `benefitsSeen`/`gateState` (که از DataStore میان) هنوز `null` بودن - پس یکی از اون دوتا
+    // `onboardingDone`/`gateState` (که از DataStore میان) هنوز `null` بودن - پس یکی از اون دوتا
     // `Surface(color = AppSurface)`ِ پایین رندر می‌شد که تو تمِ روشن **سفیدِ خالیه**. نتیجه:
     // اسپلشِ مشکی → یه فریمِ سفید → صفحه‌ی اصلی. کاربر این رو به‌عنوانِ «یه لحظه سفید می‌شه» گزارش داد.
     // رفع: تا وقتی این دوتا حاضر نشدن اسپلش سرِ جاش می‌مونه (هر دو محلی‌ان و سریع میان، پس ریسکِ
     // گیرکردن نداره - شبکه توش دخیل نیست).
-    val benefitsSeen by authViewModel.benefitsSeen.collectAsState()
+    val onboardingDone by authViewModel.onboardingDone.collectAsState()
+    val postLoginSheetsSeen by authViewModel.postLoginSheetsSeen.collectAsState()
+    val trialDaysLeft by authViewModel.trialDaysLeft.collectAsState()
+    val legacyGift by authViewModel.legacyGift.collectAsState()
+    val userName by authViewModel.userName.collectAsState()
     val gateState by authViewModel.gateState.collectAsState()
     var introTimerDone by remember { mutableStateOf(false) }
-    if (!introTimerDone || benefitsSeen == null || gateState == null) {
+    if (!introTimerDone || onboardingDone == null || gateState == null) {
         SplashIntroScreen(onDone = { introTimerDone = true })
         return
     }
@@ -416,10 +423,28 @@ private fun AppRoot(
         return
     }
 
-    // این‌جا `benefitsSeen`/`gateState` قطعاً non-nullن (گیتِ اسپلشِ بالا تضمینش می‌کنه)، پس دیگه
+    // این‌جا `onboardingDone`/`gateState` قطعاً non-nullن (گیتِ اسپلشِ بالا تضمینش می‌کنه)، پس دیگه
     // شاخه‌ی «هنوز لود نشده» با صفحه‌ی خالیِ سفید لازم نیست.
-    if (benefitsSeen != true) {
-        BenefitsScreen(onContinue = { authViewModel.markBenefitsSeen() })
+    if (onboardingDone != true) {
+        OnboardingFlow(onFinished = { authViewModel.markOnboardingDone() })
+        return
+    }
+
+    // دو شیتِ «هدیه‌ی اشتراک» + «نگرانِ داده‌هات نباش» - فقط یه‌بار، بلافاصله بعد از اولین ورودِ
+    // موفق. عمداً برای حالتِ مهمان نشون داده نمی‌شه (نه هدیه‌ای گرفته، نه داده‌ای رو سرور داره).
+    // عمداً یه `if`ِ جدا قبل از `when`ه و نه یه شاخه‌ی نگهبان‌دار (`when` با `if`)، چون اون سینتکس
+    // تو نسخه‌ی Kotlinِ این پروژه هنوز پایدار نیست.
+    if (gateState == GateState.LOGGED_IN && postLoginSheetsSeen == false) {
+        // `legacyGift` فقط از GET /api/auth/me میاد (نه از پاسخِ verify-otp)، پس قبل از نشون‌دادنِ
+        // شیتِ هدیه یه‌بار تازه‌سازی می‌شه - وگرنه جمله‌ی «۱۵ روز اضافه» برای کاربرِ قدیمی نمی‌اومد.
+        LaunchedEffect(Unit) { authViewModel.refreshStatus() }
+        PostLoginSheets(
+            trialDaysLeft = trialDaysLeft,
+            legacyGift = legacyGift,
+            currentName = userName,
+            onSaveName = { authViewModel.updateName(it) },
+            onFinished = { authViewModel.markPostLoginSheetsSeen() },
+        )
         return
     }
 

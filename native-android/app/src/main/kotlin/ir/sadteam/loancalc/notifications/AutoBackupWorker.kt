@@ -28,7 +28,7 @@ import java.util.TimeZone
  * علاوه بر اسنپ‌شات محلی، اگه کاربر لاگین و مشترک باشه، همون سه‌تا رو به سرور هم آپلود می‌کنه
  * (LoanRepository/ChequeRepository/AccountRepository.pushToServer) - قبلاً این اسنپ‌شات فقط رو
  * خودِ گوشی می‌موند، یعنی با گم‌شدن/خرابیِ گوشی از بین می‌رفت با اینکه «پشتیبان‌گیری ابری» تو
- * BenefitsScreen به‌عنوان مزیت اشتراک تبلیغ شده بود.
+ * صفحه‌ی امکاناتِ قدیمی (حذف‌شده) به‌عنوان مزیت اشتراک تبلیغ شده بود.
  */
 @HiltWorker
 class AutoBackupWorker @AssistedInject constructor(

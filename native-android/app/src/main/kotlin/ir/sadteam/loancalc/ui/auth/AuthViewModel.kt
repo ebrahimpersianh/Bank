@@ -84,17 +84,34 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch { authRepository.refreshSubscriptionStatus() }
     }
 
-    /** پورت گیت مجوز → [BenefitsScreen] تو AppRoot: تا اولین مقدار واقعی از DataStore نیومده null
-     * می‌مونه (همون الگوی [gateState]) که یه فلش اشتباهی صفحه‌ی امکانات دیده نشه. */
-    val benefitsSeen: StateFlow<Boolean?> = authPrefs.benefitsSeen
+    /** گیتِ مسیرِ اولین ورود ([ir.sadteam.loancalc.ui.onboarding.OnboardingFlow]) تو AppRoot: تا
+     * اولین مقدار واقعی از DataStore نیومده null می‌مونه (همون الگوی [gateState]) که یه فلشِ
+     * اشتباهیِ صفحه‌ی آنبوردینگ دیده نشه.
+     *
+     * کلیدِ DataStore عمداً همون `benefits_seen`ِ قدیمی مونده تا کسی که قبلاً صفحه‌ی امکاناتِ
+     * حذف‌شده رو دیده، حالا مسیرِ آنبوردینگ رو دوباره نبینه. */
+    val onboardingDone: StateFlow<Boolean?> = authPrefs.benefitsSeen
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    fun markBenefitsSeen() {
+    fun markOnboardingDone() {
         viewModelScope.launch { authPrefs.setBenefitsSeen(true) }
     }
 
+    /** true یعنی این شماره از قبل تو سرور بوده و ۱۵ روزِ هدیه‌ی اضافه گرفته - متنِ شیتِ هدیه
+     * ([ir.sadteam.loancalc.ui.onboarding.PostLoginSheets]) بر اساسِ همین عوض می‌شه. */
+    val legacyGift: StateFlow<Boolean> = authPrefs.legacyGift
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /** گیتِ دو شیتِ بعد از ورود - همون الگوی null-تا-لود-شدنِ [onboardingDone]. */
+    val postLoginSheetsSeen: StateFlow<Boolean?> = authPrefs.postLoginSheetsSeen
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun markPostLoginSheetsSeen() {
+        viewModelScope.launch { authPrefs.setPostLoginSheetsSeen(true) }
+    }
+
     /** پورت گیتِ تورِ راهنمای اولین ورود (TabTourOverlay تو LoanCalcApp، نه یه صفحه‌ی جدا) - همون
-     * الگوی null-تا-لود-شدنِ [benefitsSeen]. */
+     * الگوی null-تا-لود-شدنِ [onboardingDone]. */
     val tourSeen: StateFlow<Boolean?> = authPrefs.tourSeen
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 

@@ -27,6 +27,8 @@ class AuthPrefs(private val context: Context) {
         val SUBSCRIBED_UNTIL = stringPreferencesKey("subscribed_until")
         val SUBSCRIPTION_TIER = stringPreferencesKey("subscription_tier")
         val TOUR_SEEN = booleanPreferencesKey("tour_seen")
+        val LEGACY_GIFT = booleanPreferencesKey("legacy_gift")
+        val POST_LOGIN_SHEETS_SEEN = booleanPreferencesKey("post_login_sheets_seen")
     }
 
     val authToken: Flow<String?> = context.authDataStore.data.map { it[Keys.TOKEN] }
@@ -116,6 +118,23 @@ class AuthPrefs(private val context: Context) {
 
     suspend fun setGuestMode(value: Boolean) {
         context.authDataStore.edit { it[Keys.GUEST_MODE] = value }
+    }
+
+    /** true یعنی این شماره از قبل تو سرور بوده و ۱۵ روزِ هدیه‌ی اضافه گرفته (از
+     * [ir.sadteam.loancalc.data.network.MeResponse.legacyGift]) - فقط برای متنِ شیتِ هدیه. */
+    val legacyGift: Flow<Boolean> = context.authDataStore.data.map { it[Keys.LEGACY_GIFT] ?: false }
+
+    suspend fun setLegacyGift(value: Boolean) {
+        context.authDataStore.edit { it[Keys.LEGACY_GIFT] = value }
+    }
+
+    /** دو شیتِ بعد از ورود (هدیه‌ی اشتراک + اطمینان از پشتیبان‌گیری) - فقط یه‌بار بعدِ اولین ورودِ
+     * موفق نشون داده می‌شن. با خروج از حساب ریست **نمی‌شه** (کاربر دوباره نبینتشون). */
+    val postLoginSheetsSeen: Flow<Boolean> =
+        context.authDataStore.data.map { it[Keys.POST_LOGIN_SHEETS_SEEN] ?: false }
+
+    suspend fun setPostLoginSheetsSeen(value: Boolean) {
+        context.authDataStore.edit { it[Keys.POST_LOGIN_SHEETS_SEEN] = value }
     }
 
     suspend fun setBenefitsSeen(value: Boolean) {

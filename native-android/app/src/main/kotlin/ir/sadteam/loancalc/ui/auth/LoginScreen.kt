@@ -197,8 +197,17 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             if (step == LoginStep.PHONE) {
+                // سربرگِ دومرحله‌ای طبقِ اپِ مرجع (پولکی): یه عنوانِ درشتِ خوش‌آمد + یه خطِ توضیحِ
+                // کم‌رنگ - به‌جای تک‌جمله‌ی خاکستریِ قبلی که حسِ «فرمِ خالی» می‌داد.
                 Text(
-                    "برای ذخیره‌ی «وام‌های من» در سرور ابری و همگام‌سازی بین گوشی‌ها، شماره‌موبایلت رو وارد کن",
+                    "ورود به حسابدار من",
+                    color = AppText,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                Text(
+                    "شماره‌موبایلت رو وارد کن تا کدِ تایید برات پیامک بشه. اطلاعاتت روی سرور امن ذخیره و بینِ گوشی‌هات همگام می‌شه.",
                     color = AppMuted,
                     fontSize = 12.5.sp,
                     modifier = Modifier.padding(bottom = 20.dp),

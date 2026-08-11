@@ -74,6 +74,7 @@ class AuthRepository(
             authPrefs.setSubscribedUntil(result.subscribedUntil)
             authPrefs.setSubscriptionTier(result.subscriptionTier)
             authPrefs.setUserName(result.name)
+            authPrefs.setLegacyGift(result.legacyGift)
         } catch (e: Exception) {
             // بی‌صدا نادیده گرفته می‌شه - این فقط یه تازه‌سازیِ پس‌زمینه‌ست؛ اگه شکست بخوره (مثلاً
             // بی‌اینترنتی)، مقدارِ محلیِ قبلی همچنان معتبر می‌مونه تا دفعه‌ی بعد.
