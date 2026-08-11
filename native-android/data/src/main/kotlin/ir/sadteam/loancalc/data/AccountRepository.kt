@@ -4,6 +4,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.db.AccountDao
+import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionDao
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
@@ -36,12 +37,16 @@ class AccountRepository(
     fun observeTransactionsForAccount(accountId: Long): Flow<List<AccountTransactionEntity>> =
         transactionDao.observeForAccount(accountId)
 
+    /** [type] یکی از [ACCOUNT_TYPE_BANK] / [ACCOUNT_TYPE_OTHER]. برای نوعِ «منبعِ دیگر» (نقدی،
+     * کیفِ پول، کارتِ اعتباری…) `bankName` خالی می‌مونه و به‌جاش [iconKey] نشون داده می‌شه. */
     suspend fun addAccount(
         name: String,
         bankName: String,
         initialBalance: Double,
         cardNumber: String? = null,
         smsSender: String? = null,
+        type: String = ACCOUNT_TYPE_BANK,
+        iconKey: String? = null,
     ) {
         accountDao.upsert(
             AccountEntity(
@@ -52,6 +57,8 @@ class AccountRepository(
                 createdAt = isoNow(),
                 cardNumber = cardNumber,
                 smsSender = smsSender,
+                type = type,
+                iconKey = iconKey,
             ),
         )
     }

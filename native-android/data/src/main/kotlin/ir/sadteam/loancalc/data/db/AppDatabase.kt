@@ -27,7 +27,7 @@ import net.sqlcipher.database.SupportFactory
         CustomCategoryEntity::class,
         CategoryOrderEntity::class,
     ],
-    version = 19,
+    version = 20,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -292,6 +292,16 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** «حساب‌کتابِ غیربانکی» (نقدی، کیفِ پول، کارتِ اعتباری…) - خواسته‌ی صریحِ کاربر طبقِ اپِ
+         * مرجع. تا قبل از این هر حساب حتماً یه بانک داشت. هر دو ستون پیش‌فرض‌دار/nullableن، پس
+         * حساب‌های موجود خودبه‌خود «bank» می‌مونن و رفتارشون ذره‌ای عوض نمی‌شه. */
+        private val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE accounts ADD COLUMN type TEXT NOT NULL DEFAULT 'bank'")
+                db.execSQL("ALTER TABLE accounts ADD COLUMN iconKey TEXT")
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -328,6 +338,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_16_17,
                             MIGRATION_17_18,
                             MIGRATION_18_19,
+                            MIGRATION_19_20,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

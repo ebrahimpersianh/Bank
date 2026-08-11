@@ -21,17 +21,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.data.db.AccountEntity
+import ir.sadteam.loancalc.data.DEFAULT_ACCOUNT_ICON_KEY
+import ir.sadteam.loancalc.data.accountIconChoices
+import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
+import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_OTHER
 import ir.sadteam.loancalc.data.detectBankByCardNumber
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppSurface2
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 
 /** فرم افزودن/ویرایش حساب - هم‌الگو با AddEditChequeScreen (نام، بانک، موجودی اولیه). موجودی اولیه
  * تنها فیلد پولی این فرمه چون موجودی فعلی همیشه از رو تراکنش‌ها محاسبه می‌شه، نه دستی وارد بشه. */
@@ -42,6 +60,10 @@ fun AddEditAccountScreen(
     onCancel: () -> Unit,
     viewModel: AccountViewModel,
 ) {
+    // نوعِ حساب‌کتاب (خواسته‌ی صریحِ کاربر طبقِ اپِ مرجع): «کارت بانکی» یا «منبع دیگر» (نقدی،
+    // کیفِ پول، کارتِ اعتباری…). حساب‌های قدیمی همه bank ـن، پس فرمشون دقیقاً مثلِ قبل باز می‌شه.
+    var accountType by remember { mutableStateOf(existing?.type ?: ACCOUNT_TYPE_BANK) }
+    var iconKey by remember { mutableStateOf(existing?.iconKey ?: DEFAULT_ACCOUNT_ICON_KEY) }
     var name by remember { mutableStateOf(existing?.name ?: "") }
     var bankName by remember { mutableStateOf(existing?.bankName ?: "") }
     var cardNumberText by remember { mutableStateOf(existing?.cardNumber ?: "") }
@@ -79,10 +101,66 @@ fun AddEditAccountScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            Text(if (existing == null) "افزودن حساب" else "ویرایش حساب", fontSize = 16.sp)
+            Text(if (existing == null) "افزودن حساب‌کتاب" else "ویرایش حساب‌کتاب", fontSize = 16.sp)
         }
         item {
-            AppCard(label = "اسم حساب") {
+            AppCard(label = "نوع حساب‌کتاب") {
+                SegmentedToggle(
+                    options = listOf("کارت بانکی", "منبع دیگر"),
+                    selectedIndex = if (accountType == ACCOUNT_TYPE_BANK) 0 else 1,
+                    onSelect = { accountType = if (it == 0) ACCOUNT_TYPE_BANK else ACCOUNT_TYPE_OTHER },
+                )
+            }
+        }
+        if (accountType == ACCOUNT_TYPE_OTHER) {
+            item {
+                // آیکونِ حساب‌کتابِ غیربانکی - جایگزینِ لوگوی بانک تو کلِ اپ (رجوع کن به AccountBadge).
+                AppCard(label = "آیکون") {
+                    // گریدِ دستی با chunked+Row (نه LazyVerticalGrid و نه FlowRowِ آزمایشی) - همون
+                    // الگوی مصوبِ پروژه برای گریدِ wrap-contentِ داخلِ یه لیستِ تنبل، رجوع کن به CLAUDE.md.
+                    val perRow = 5
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        accountIconChoices.chunked(perRow).forEach { rowItems ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                rowItems.forEach { (key, icon) ->
+                                    val selected = key == iconKey
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(46.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(
+                                                if (selected) AppPrimary.copy(alpha = 0.22f) else AppSurface2,
+                                            )
+                                            .border(
+                                                width = if (selected) 1.5.dp else 0.dp,
+                                                color = if (selected) AppPrimary else Color.Transparent,
+                                                shape = RoundedCornerShape(12.dp),
+                                            )
+                                            .pressScaleClickable(onClick = { iconKey = key }),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = null,
+                                            tint = if (selected) AppPrimary else AppMuted,
+                                            modifier = Modifier.size(22.dp),
+                                        )
+                                    }
+                                }
+                                // پرکردنِ جای خالیِ ردیفِ ناقص تا کاشی‌ها کش نیان.
+                                repeat(perRow - rowItems.size) { Spacer(modifier = Modifier.weight(1f)) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            AppCard(label = if (accountType == ACCOUNT_TYPE_BANK) "اسم حساب‌کتاب" else "اسم منبع") {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -91,6 +169,7 @@ fun AddEditAccountScreen(
                 )
             }
         }
+        if (accountType == ACCOUNT_TYPE_BANK) {
         item {
             AppCard(label = "شماره کارت") {
                 Ltr {
@@ -145,6 +224,7 @@ fun AddEditAccountScreen(
                 // متنِ توضیحیِ زیرِ این دکمه به‌خواستِ صریحِ کاربر حذف شد - فقط خودِ فیلد و دکمه بمونه.
             }
         }
+        } // پایانِ بخشِ مخصوصِ «کارت بانکی» - منبعِ دیگر شماره‌کارت/بانک/سرشماره نداره.
         item {
             AppCard(label = "موجودی اولیه") {
                 OutlinedTextField(
@@ -177,24 +257,35 @@ fun AddEditAccountScreen(
                 GradientButton(
                     onClick = {
                         val initialBalance = initialBalanceText.toDoubleOrNull() ?: 0.0
+                        val isBank = accountType == ACCOUNT_TYPE_BANK
                         error = when {
-                            name.trim().isEmpty() -> "اسم حساب رو وارد کن"
-                            bankName.trim().isEmpty() -> "اسم بانک رو وارد کن"
+                            name.trim().isEmpty() -> if (isBank) "اسم حساب‌کتاب رو وارد کن" else "اسم منبع رو وارد کن"
+                            isBank && bankName.trim().isEmpty() -> "اسم بانک رو وارد کن"
                             else -> null
                         }
                         if (error == null) {
-                            val cardNumber = cardNumberText.trim().ifBlank { null }
-                            val smsSender = smsSenderText.trim().ifBlank { null }
+                            // برای «منبعِ دیگر» فیلدهای مخصوصِ بانک عمداً پاک می‌شن - اگه کاربر اول
+                            // «کارت بانکی» رو پر کرده و بعد نوع رو عوض کرده، نباید یه شماره‌کارتِ
+                            // یتیم رو حسابِ نقدی بمونه (و بدتر: BankSmsReceiver باهاش مچ کنه).
+                            val cardNumber = if (isBank) cardNumberText.trim().ifBlank { null } else null
+                            val smsSender = if (isBank) smsSenderText.trim().ifBlank { null } else null
+                            val finalBank = if (isBank) bankName.trim() else ""
+                            val finalIcon = if (isBank) null else iconKey
                             if (existing == null) {
-                                viewModel.addAccount(name.trim(), bankName.trim(), initialBalance, cardNumber, smsSender)
+                                viewModel.addAccount(
+                                    name.trim(), finalBank, initialBalance, cardNumber, smsSender,
+                                    accountType, finalIcon,
+                                )
                             } else {
                                 viewModel.updateAccount(
                                     existing.copy(
                                         name = name.trim(),
-                                        bankName = bankName.trim(),
+                                        bankName = finalBank,
                                         initialBalance = initialBalance,
                                         cardNumber = cardNumber,
                                         smsSender = smsSender,
+                                        type = accountType,
+                                        iconKey = finalIcon,
                                     ),
                                 )
                             }
@@ -203,7 +294,7 @@ fun AddEditAccountScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("ذخیره حساب")
+                    Text("ذخیره حساب‌کتاب")
                 }
                 OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
                     Text("انصراف")

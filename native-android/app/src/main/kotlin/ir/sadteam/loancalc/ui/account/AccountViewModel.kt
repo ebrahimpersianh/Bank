@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.data.db.BudgetEntity
@@ -51,9 +52,11 @@ class AccountViewModel @Inject constructor(
         initialBalance: Double,
         cardNumber: String? = null,
         smsSender: String? = null,
+        type: String = ACCOUNT_TYPE_BANK,
+        iconKey: String? = null,
     ) {
         viewModelScope.launch {
-            accountRepository.addAccount(name, bankName, initialBalance, cardNumber, smsSender)
+            accountRepository.addAccount(name, bankName, initialBalance, cardNumber, smsSender, type, iconKey)
             syncIfLoggedIn()
         }
     }
