@@ -19,6 +19,7 @@ class AuthPrefs(private val context: Context) {
     private object Keys {
         val TOKEN = stringPreferencesKey("auth_token")
         val PHONE = stringPreferencesKey("phone")
+        val USER_NAME = stringPreferencesKey("user_name")
         val SUBSCRIBED = booleanPreferencesKey("subscribed")
         val GUEST_MODE = booleanPreferencesKey("guest_mode")
         val BENEFITS_SEEN = booleanPreferencesKey("benefits_seen")
@@ -30,6 +31,10 @@ class AuthPrefs(private val context: Context) {
 
     val authToken: Flow<String?> = context.authDataStore.data.map { it[Keys.TOKEN] }
     val phone: Flow<String?> = context.authDataStore.data.map { it[Keys.PHONE] }
+
+    /** نامِ اختیاریِ کاربر - null یعنی وارد نکرده، که کاملاً عادیه. جای مصرفش سربرگِ خروجیِ
+     * PDF/اکسله؛ عمداً برای پیامِ خوش‌آمد استفاده نمی‌شه (قبلاً ساخته و به‌خواستِ کاربر حذف شد). */
+    val userName: Flow<String?> = context.authDataStore.data.map { it[Keys.USER_NAME] }
     val subscribed: Flow<Boolean> = context.authDataStore.data.map { it[Keys.SUBSCRIBED] ?: false }
     val guestMode: Flow<Boolean> = context.authDataStore.data.map { it[Keys.GUEST_MODE] ?: false }
 
@@ -96,6 +101,12 @@ class AuthPrefs(private val context: Context) {
             if (trialDaysLeft != null) prefs[Keys.TRIAL_DAYS_LEFT] = trialDaysLeft else prefs.remove(Keys.TRIAL_DAYS_LEFT)
             if (subscribedUntil != null) prefs[Keys.SUBSCRIBED_UNTIL] = subscribedUntil else prefs.remove(Keys.SUBSCRIBED_UNTIL)
             if (subscriptionTier != null) prefs[Keys.SUBSCRIPTION_TIER] = subscriptionTier else prefs.remove(Keys.SUBSCRIPTION_TIER)
+        }
+    }
+
+    suspend fun setUserName(value: String?) {
+        context.authDataStore.edit { prefs ->
+            if (value.isNullOrBlank()) prefs.remove(Keys.USER_NAME) else prefs[Keys.USER_NAME] = value
         }
     }
 

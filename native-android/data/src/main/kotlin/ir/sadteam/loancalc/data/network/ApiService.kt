@@ -27,6 +27,13 @@ interface ApiService {
     @GET("api/auth/me")
     suspend fun me(@Header("Authorization") authHeader: String): MeResponse
 
+    // نامِ اختیاریِ کاربر - رجوع کن به AuthRepository.updateName. رشته‌ی خالی/null یعنی پاک‌کردن.
+    @PUT("api/auth/name")
+    suspend fun setName(
+        @Header("Authorization") authHeader: String,
+        @Body body: SetNameRequest,
+    ): Response<Unit>
+
     // حذف کامل حساب (شماره + وام‌ها + پشتیبان‌های ابری چک/حساب سمت سرور) - الزامِ استانداردِ
     // فروشگاه‌های اپ برای هر اپی که ورود با شماره‌موبایل داره.
     @DELETE("api/auth/account")
@@ -111,6 +118,11 @@ data class MeResponse(
     val subscribedUntil: String?,
     val subscriptionTier: String? = null,
     val trialDaysLeft: Int? = null,
+    /** true یعنی این شماره از قبل تو سرور بوده و ۱۵ روزِ هدیه‌ی اضافه گرفته - اپ جمله‌ی
+     * «چون از قبل وارد برنامه شده بودی...» رو نشون می‌ده. */
+    val legacyGift: Boolean = false,
+    /** نامِ اختیاریِ کاربر؛ null کاملاً عادیه (هیچ‌وقت اجباری نیست). */
+    val name: String? = null,
 )
 
 data class LoansResponse(val loans: List<Map<String, Any?>>, val updatedAt: String?)
@@ -137,6 +149,8 @@ data class SubscriptionPurchaseDto(
 )
 
 data class SubscriptionHistoryResponse(val ok: Boolean, val items: List<SubscriptionPurchaseDto>)
+
+data class SetNameRequest(val name: String?)
 
 data class BackupBlobResponse(val data: String, val updatedAt: String?)
 

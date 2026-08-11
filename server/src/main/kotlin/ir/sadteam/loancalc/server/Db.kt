@@ -153,6 +153,8 @@ object Db {
             // پلنِ خریداری‌شده ("1m"/"3m"/"6m"/"1y") - قبلاً اصلاً ذخیره نمی‌شد، فقط تاریخِ انقضا؛
             // برای نمایشِ دقیقِ نوعِ اشتراک تو تنظیمات لازم شد - رجوع کن به SubscriptionRoutes.kt.
             runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN subscription_tier TEXT") } }
+            // نامِ اختیاریِ کاربر - فقط برای سربرگِ خروجیِ PDF/اکسل. هیچ‌وقت اجباری نیست.
+            runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN name TEXT") } }
             // هدیه‌ی «کاربرِ قدیمی» - رجوع کن به grantLegacyGift پایین‌تر.
             runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN legacy_gift_granted INTEGER NOT NULL DEFAULT 0") } }
             grantLegacyGift(conn)
@@ -245,6 +247,8 @@ data class UserRow(
     val subscribed: Boolean,
     val subscribedUntil: String?,
     val subscriptionTier: String?,
+    /** نامِ اختیاریِ کاربر (می‌تونه null باشه) - رجوع کن به مسیرِ PUT /api/auth/name. */
+    val name: String?,
     /** آیا این کاربر جزو «کاربرانِ قدیمی» بود که ۱۵ روزِ هدیه‌ی اضافه گرفت؟ اپ ازش برای نشون‌دادنِ
      * جمله‌ی «چون از قبل وارد برنامه شده بودی...» استفاده می‌کنه - رجوع کن به grantLegacyGift. */
     val legacyGift: Boolean,
@@ -257,6 +261,7 @@ fun ResultSet.toUserRow(): UserRow = UserRow(
     subscribed = getInt("subscribed") != 0,
     subscribedUntil = getString("subscribed_until"),
     subscriptionTier = getString("subscription_tier"),
+    name = runCatching { getString("name") }.getOrNull(),
     // runCatching چون دیتابیس‌های خیلی قدیمی ممکنه هنوز این ستون رو نداشته باشن (قبل از migration).
     legacyGift = runCatching { getInt("legacy_gift_granted") != 0 }.getOrDefault(false),
     createdAt = getString("created_at")

@@ -546,10 +546,38 @@ private fun AccountSettings(
     val trialDaysLeft by authViewModel.trialDaysLeft.collectAsState()
     val subscribedUntil by authViewModel.subscribedUntil.collectAsState()
     val subscriptionTier by authViewModel.subscriptionTier.collectAsState()
+    val savedName by authViewModel.userName.collectAsState()
     var showDeleteAccountConfirm by remember { mutableStateOf(false) }
     var deleteAccountInProgress by remember { mutableStateOf(false) }
 
     if (gateState == GateState.LOGGED_IN) {
+        // نامِ اختیاریِ کاربر - خواسته‌ی صریحِ کاربر: «اجباری نباشه و بشه اسکیپ کرد، ولی اولِ
+        // برنامه نه، بعد از ورود و تو بخشِ حساب کاربری». خالی‌گذاشتنش کاملاً عادیه؛ با پاک‌کردنِ
+        // فیلد هم اسم حذف می‌شه. جای مصرفش سربرگِ خروجیِ PDF/اکسله - عمداً برای پیامِ خوش‌آمد
+        // استفاده نمی‌شه (قبلاً ساخته و به‌خواستِ صریحِ کاربر حذف شد).
+        var nameDraft by remember(savedName) { mutableStateOf(savedName ?: "") }
+        AppCard(modifier = Modifier.padding(top = 8.dp)) {
+            Text("نام (اختیاری)", color = AppMuted, fontSize = 11.sp)
+            OutlinedTextField(
+                value = nameDraft,
+                onValueChange = { nameDraft = it },
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                singleLine = true,
+                placeholder = { Text("مثلاً ابراهیم", color = AppMuted, fontSize = 13.sp) },
+            )
+            if (nameDraft.trim() != (savedName ?: "")) {
+                GradientButton(
+                    onClick = { authViewModel.updateName(nameDraft) },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) { Text(if (nameDraft.isBlank()) "حذفِ نام" else "ذخیره‌ی نام") }
+            }
+            Text(
+                "روی سربرگِ خروجیِ PDF و اکسل نوشته می‌شه. خالی گذاشتنش هیچ مشکلی نداره.",
+                color = AppMuted,
+                fontSize = 10.5.sp,
+                modifier = Modifier.padding(top = 6.dp),
+            )
+        }
         AppCard(modifier = Modifier.padding(top = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Person, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))

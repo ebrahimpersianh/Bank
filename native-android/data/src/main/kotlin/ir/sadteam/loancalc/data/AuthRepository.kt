@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.network.RequestOtpRequest
+import ir.sadteam.loancalc.data.network.SetNameRequest
 import ir.sadteam.loancalc.data.network.SubscriptionPurchaseDto
 import ir.sadteam.loancalc.data.network.VerifySubscriptionRequest
 import ir.sadteam.loancalc.data.network.VerifyOtpRequest
@@ -72,6 +73,7 @@ class AuthRepository(
             authPrefs.setTrialDaysLeft(result.trialDaysLeft)
             authPrefs.setSubscribedUntil(result.subscribedUntil)
             authPrefs.setSubscriptionTier(result.subscriptionTier)
+            authPrefs.setUserName(result.name)
         } catch (e: Exception) {
             // بی‌صدا نادیده گرفته می‌شه - این فقط یه تازه‌سازیِ پس‌زمینه‌ست؛ اگه شکست بخوره (مثلاً
             // بی‌اینترنتی)، مقدارِ محلیِ قبلی همچنان معتبر می‌مونه تا دفعه‌ی بعد.
@@ -95,6 +97,20 @@ class AuthRepository(
             AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))
         } catch (e: Exception) {
             AuthResult.Error(null)
+        }
+    }
+
+    /** ذخیره‌ی نامِ اختیاریِ کاربر رو سرور (تا با عوض‌کردنِ گوشی هم بمونه) + محلی.
+     * رشته‌ی خالی یعنی پاک‌کردنِ اسم. اگه سرور در دسترس نباشه، حداقل محلی ذخیره می‌شه. */
+    suspend fun updateName(name: String?): Boolean {
+        val clean = name?.trim()?.ifBlank { null }
+        authPrefs.setUserName(clean)
+        val token = authPrefs.authToken.first() ?: return false
+        return try {
+            apiService.setName("Bearer $token", SetNameRequest(clean))
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 

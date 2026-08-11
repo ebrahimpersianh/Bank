@@ -8,6 +8,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.Db
 import ir.sadteam.loancalc.server.SmsSendException
@@ -74,7 +75,12 @@ private data class MeResponse(
     val trialDaysLeft: Int?,
     /** true یعنی این کاربر ۱۵ روزِ هدیه‌ی «قدیمی‌بودن» گرفته - اپ جمله‌ی اضافه رو نشون می‌ده. */
     val legacyGift: Boolean = false,
+    /** نامِ اختیاریِ کاربر؛ null یعنی هنوز وارد نکرده (کاملاً عادیه). */
+    val name: String? = null,
 )
+
+@Serializable
+private data class SetNameBody(val name: String? = null)
 
 private data class OtpRow(val id: Long, val codeHash: String, val expiresAt: Long, val attempts: Int)
 
@@ -206,6 +212,7 @@ fun Route.authRoutes() {
                     phone = user.phone,
                     subscribed = isSubscribed(user),
                     legacyGift = user.legacyGift,
+                    name = user.name,
                     subscribedUntil = user.subscribedUntil,
                     subscriptionTier = user.subscriptionTier,
                     trialDaysLeft = trialDaysLeftIfApplicable(user)
@@ -218,6 +225,18 @@ fun Route.authRoutes() {
            Db.kt با ON DELETE CASCADE تعریف نشده، هر جدولِ وابسته به user_id/phone رو دستی و قبل از
            خودِ ردیفِ users پاک می‌کنیم؛ اگه جدولِ جدیدی به user_id/phone وابسته اضافه شد، همینجا هم
            باید اضافه بشه. */
+        /* نامِ اختیاریِ کاربر - همیشه قابلِ خالی‌کردنه (null/رشته‌ی خالی = پاک‌کردنِ اسم).
+           عمداً هیچ اعتبارسنجیِ سخت‌گیرانه‌ای نداره چون این فیلد هیچ‌جا اجباری نیست. */
+        put("/name") {
+            val authed = call.requireAuth() ?: return@put
+            val body = runCatching { call.receive<SetNameBody>() }.getOrNull()
+            val name = body?.name?.trim()?.take(60)?.ifBlank { null }
+            Db.withConnection { conn ->
+                conn.execute("UPDATE users SET name = ? WHERE id = ?", name, authed.uid)
+            }
+            call.respond(mapOf("ok" to true))
+        }
+
         delete("/account") {
             val authed = call.requireAuth() ?: return@delete
             Db.withConnection { conn ->

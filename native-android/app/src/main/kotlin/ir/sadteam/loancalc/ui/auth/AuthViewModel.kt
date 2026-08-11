@@ -72,6 +72,14 @@ class AuthViewModel @Inject constructor(
     val phone: StateFlow<String?> = authPrefs.phone
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** نامِ اختیاریِ کاربر - null یعنی وارد نکرده (کاملاً عادی). */
+    val userName: StateFlow<String?> = authPrefs.userName
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun updateName(name: String?) {
+        viewModelScope.launch { authRepository.updateName(name) }
+    }
+
     fun refreshStatus() {
         viewModelScope.launch { authRepository.refreshSubscriptionStatus() }
     }
