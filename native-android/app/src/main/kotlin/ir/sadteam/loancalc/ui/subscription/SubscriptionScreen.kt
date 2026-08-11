@@ -14,7 +14,12 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material.icons.filled.SupportAgent
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -129,7 +134,7 @@ fun SubscriptionScreen(
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                 }
                 Text(
-                    if (showPlans) "تعرفه‌ها" else "اشتراک",
+                    "اشتراک",
                     color = AppText,
                     fontSize = 16.sp,
                     modifier = Modifier.padding(start = 4.dp),
@@ -137,8 +142,10 @@ fun SubscriptionScreen(
             }
         }
 
-        // ── نمای «مرورِ اشتراک» (پیش‌فرض) ─────────────────────────────────────────────────
-        if (!showPlans) {
+        // ── مرورِ اشتراک - **همیشه** نشون داده می‌شه ────────────────────────────────────────
+        // خواسته‌ی صریحِ کاربر (تسکِ #31): «تعرفه‌ها رو *همون صفحه* باز بشه، نه صفحه‌ی جدا». پس
+        // به‌جای دو نمای جایگزینِ هم، لیستِ تعرفه‌ها زیرِ همین محتوا **باز می‌شه**.
+        run {
             item {
                 val expiry = remember(subscribedUntil) { parseSubscribedUntil(subscribedUntil) }
                 AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
@@ -217,17 +224,6 @@ fun SubscriptionScreen(
                         fontSize = 12.sp,
                         lineHeight = 20.sp,
                         modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-            }
-
-            item {
-                AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                    SubscriptionRow(
-                        icon = Icons.Filled.LocalOffer,
-                        title = "مشاهده‌ی تعرفه‌ها",
-                        subtitle = "قیمتِ پلن‌ها و خریدِ اشتراک",
-                        onClick = { showPlans = true },
                     )
                 }
             }
@@ -316,12 +312,48 @@ fun SubscriptionScreen(
                             title = "ثبتِ خودکار از پیامک و اعلانِ بانک",
                             subtitle = "برداشت و واریز خودکار ثبت می‌شه، بدونِ تایپِ دستی",
                         )
+                        SubscriptionBenefit(
+                            icon = Icons.Filled.Receipt,
+                            title = "چک و دسته‌چکِ نامحدود",
+                            subtitle = "با استعلامِ صیادی، یادآوری و بایگانی",
+                        )
+                        SubscriptionBenefit(
+                            icon = Icons.Filled.Sync,
+                            title = "همگام‌سازی بینِ گوشی‌هات",
+                            subtitle = "با شماره‌ت هرجا وارد شی، همون اطلاعات رو داری",
+                        )
+                        SubscriptionBenefit(
+                            icon = Icons.Filled.Block,
+                            title = "بدونِ تبلیغات",
+                            subtitle = "تا وقتی اشتراک داری هیچ تبلیغی تو برنامه نمی‌بینی",
+                        )
+                        SubscriptionBenefit(
+                            icon = Icons.Filled.Description,
+                            title = "خروجیِ PDF و اکسل",
+                            subtitle = "گزارشِ کاملِ تراکنش‌ها برای چاپ یا آرشیو",
+                        )
+                        SubscriptionBenefit(
+                            icon = Icons.Filled.SupportAgent,
+                            title = "پشتیبانیِ مستقیم",
+                            subtitle = "پیامت اولویت‌دار به تیمِ پشتیبانی می‌رسه",
+                        )
                     }
+                }
+            }
+
+            item {
+                AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                    SubscriptionRow(
+                        icon = Icons.Filled.LocalOffer,
+                        title = if (showPlans) "بستنِ تعرفه‌ها" else "مشاهده‌ی تعرفه‌ها",
+                        subtitle = "قیمتِ پلن‌ها و خریدِ اشتراک",
+                        onClick = { showPlans = !showPlans },
+                    )
                 }
             }
         }
 
-        // ── نمای «تعرفه‌ها» ───────────────────────────────────────────────────────────────
+        // ── تعرفه‌ها - همین‌جا زیرِ همون ردیف باز می‌شه ────────────────────────────────────
         if (showPlans && subscriptionManager == null) {
             item {
                 Text(

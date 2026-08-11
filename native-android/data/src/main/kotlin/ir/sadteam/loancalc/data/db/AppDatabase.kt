@@ -29,7 +29,7 @@ import net.sqlcipher.database.SupportFactory
         AssetEntity::class,
         AssetTradeEntity::class,
     ],
-    version = 22,
+    version = 23,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -353,6 +353,14 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** زیرمجموعه‌ی دسته‌بندی (تسکِ #32) - ستونِ nullable، پس همه‌ی دسته‌های موجود خودبه‌خود
+         * «سطحِ اول» می‌مونن و هیچ رفتاری عوض نمی‌شه. */
+        private val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE custom_categories ADD COLUMN parentName TEXT")
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -392,6 +400,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_19_20,
                             MIGRATION_20_21,
                             MIGRATION_21_22,
+                            MIGRATION_22_23,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

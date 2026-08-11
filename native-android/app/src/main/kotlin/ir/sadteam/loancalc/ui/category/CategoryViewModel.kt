@@ -32,8 +32,14 @@ class CategoryViewModel @Inject constructor(
     fun categoriesFor(type: TransactionType): List<CategoryEntry> =
         if (type == TransactionType.DEPOSIT) incomeCategories.value else expenseCategories.value
 
-    fun addCustomCategory(name: String, color: Color, iconKey: String, type: TransactionType) {
-        viewModelScope.launch { categoryRepository.addCustomCategory(name, color, iconKey, type) }
+    fun addCustomCategory(
+        name: String,
+        color: Color,
+        iconKey: String,
+        type: TransactionType,
+        parentName: String? = null,
+    ) {
+        viewModelScope.launch { categoryRepository.addCustomCategory(name, color, iconKey, type, parentName) }
     }
 
     fun deleteCustomCategory(entity: CustomCategoryEntity) {

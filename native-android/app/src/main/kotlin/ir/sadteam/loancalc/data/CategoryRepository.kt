@@ -35,9 +35,23 @@ class CategoryRepository(private val categoryDao: CategoryDao) {
 
     fun observeCustomCategories(): Flow<List<CustomCategoryEntity>> = categoryDao.observeCustom()
 
-    suspend fun addCustomCategory(name: String, color: Color, iconKey: String, type: TransactionType) {
+    /** [parentName] اگه پر باشه یعنی این یه **زیرمجموعه**ی همون دسته‌ست (تسکِ #32). والد می‌تونه
+     * هم یه دسته‌ی ثابتِ اپ باشه هم یه دسته‌ی دلخواهِ دیگه - چون کلیدِ هر دو «نام»ه. */
+    suspend fun addCustomCategory(
+        name: String,
+        color: Color,
+        iconKey: String,
+        type: TransactionType,
+        parentName: String? = null,
+    ) {
         categoryDao.insertCustom(
-            CustomCategoryEntity(name = name, colorArgb = color.toArgb(), iconKey = iconKey, type = type.name),
+            CustomCategoryEntity(
+                name = name,
+                colorArgb = color.toArgb(),
+                iconKey = iconKey,
+                type = type.name,
+                parentName = parentName,
+            ),
         )
     }
 

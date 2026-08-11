@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
@@ -44,6 +45,7 @@ import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.categoryIconChoices
 import ir.sadteam.loancalc.data.db.CustomCategoryEntity
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SegmentedToggle
@@ -122,16 +124,21 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
         if (showAddForm) {
             item {
                 AddCategoryForm(
+                    parentChoices = categories.map { it.name },
                     onCancel = { showAddForm = false },
-                    onSubmit = { name, color, iconKey ->
-                        viewModel.addCustomCategory(name, color, iconKey, type)
+                    onSubmit = { name, color, iconKey, parentName ->
+                        viewModel.addCustomCategory(name, color, iconKey, type, parentName)
                         showAddForm = false
                     },
                 )
             }
         }
         itemsIndexed(categories, key = { _, cat -> cat.name }) { index, cat ->
-            val isCustom = custom.any { it.name == cat.name && it.type == type.name }
+            val row = custom.firstOrNull { it.name == cat.name && it.type == type.name }
+            val isCustom = row != null
+            // زیرمجموعه‌ها (تسکِ #32) با یه تورفتگی و نامِ والد زیرشون نشون داده می‌شن - ساختارِ
+            // خودِ لیست تخت می‌مونه تا جابه‌جایی/ترتیبِ دستیِ موجود دست‌نخورده کار کنه.
+            val parentName = row?.parentName
             AppCard(modifier = Modifier.animateItem()) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Box(
@@ -142,12 +149,12 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                     ) {
                         Icon(cat.icon, contentDescription = null, tint = cat.color, modifier = Modifier.size(16.dp))
                     }
-                    Text(
-                        cat.name,
-                        color = AppText,
-                        fontSize = 13.sp,
-                        modifier = Modifier.weight(1f).padding(start = 10.dp),
-                    )
+                    Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                        Text(cat.name, color = AppText, fontSize = 13.sp)
+                        if (!parentName.isNullOrBlank()) {
+                            Text("زیرمجموعه‌ی $parentName", color = AppMuted, fontSize = 10.5.sp)
+                        }
+                    }
                     IconButton(onClick = { viewModel.moveUp(type, cat.name) }, enabled = index > 0) {
                         Icon(Icons.Filled.ArrowUpward, contentDescription = "جابه‌جایی به بالا", tint = if (index > 0) AppText else AppMuted)
                     }
@@ -171,12 +178,15 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
 
 @Composable
 private fun AddCategoryForm(
+    parentChoices: List<String>,
     onCancel: () -> Unit,
-    onSubmit: (name: String, color: Color, iconKey: String) -> Unit,
+    onSubmit: (name: String, color: Color, iconKey: String, parentName: String?) -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
     var selectedColor by remember { mutableStateOf(categoryColorChoices.first()) }
     var selectedIconKey by remember { mutableStateOf(categoryIconChoices.first().first) }
+    // null یعنی «دسته‌ی سطحِ اول» - حالتِ پیش‌فرض و همون رفتارِ قبلی.
+    var parentName by remember { mutableStateOf<String?>(null) }
 
     AppCard(label = "دسته‌بندیِ جدید") {
         OutlinedTextField(
@@ -216,9 +226,26 @@ private fun AddCategoryForm(
                 }
             }
         }
+        Text("زیرمجموعه‌ی…", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 10.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
+            item {
+                AppChip(
+                    label = "بدونِ والد",
+                    selected = parentName == null,
+                    onClick = { parentName = null },
+                )
+            }
+            items(parentChoices) { candidate ->
+                AppChip(
+                    label = candidate,
+                    selected = parentName == candidate,
+                    onClick = { parentName = if (parentName == candidate) null else candidate },
+                )
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
             GradientButton(
-                onClick = { if (name.isNotBlank()) onSubmit(name.trim(), selectedColor, selectedIconKey) },
+                onClick = { if (name.isNotBlank()) onSubmit(name.trim(), selectedColor, selectedIconKey, parentName) },
                 modifier = Modifier.weight(1f),
             ) { Text("افزودن") }
             OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("انصراف") }

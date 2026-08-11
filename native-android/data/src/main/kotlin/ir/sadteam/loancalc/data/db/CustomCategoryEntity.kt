@@ -13,4 +13,9 @@ data class CustomCategoryEntity(
     val colorArgb: Int,
     val iconKey: String,
     val type: String,
+    /** نامِ دسته‌بندیِ والد - `null` یعنی این خودش یه دسته‌ی سطحِ اوله. عمداً «نام» ذخیره می‌شه نه
+     * `id`، چون والد می‌تونه یکی از دسته‌های **ثابتِ** اپ هم باشه که اصلاً ردیفی تو دیتابیس نداره
+     * (رجوع کن به CategoryEntry تو :app که کلیدش همیشه نامه - همون چیزی که تو تراکنش‌ها هم ذخیره
+     * می‌شه). */
+    val parentName: String? = null,
 )
