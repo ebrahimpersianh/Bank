@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.EventRepeat
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
@@ -117,6 +118,7 @@ import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.components.ProgressRing
 import ir.sadteam.loancalc.ui.components.ReminderOverrideCard
 import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.components.StaggerIn
@@ -788,6 +790,7 @@ private fun BudgetSection(
     val budgets by viewModel.budgets.collectAsState()
     val allTransactions by viewModel.transactions.collectAsState()
     val accounts by viewModel.accounts.collectAsState()
+    val recurringPayments by viewModel.recurringPayments.collectAsState()
     val today = remember { JalaliCalendar.today() }
     var viewYear by remember { mutableStateOf(today.y) }
     var viewMonth by remember { mutableStateOf(today.m) }
@@ -799,6 +802,7 @@ private fun BudgetSection(
     var editingCategory by remember { mutableStateOf<CategoryEntry?>(null) }
     var capText by remember { mutableStateOf("") }
     var showAddBudgetDialog by remember { mutableStateOf(false) }
+    var budgetSuggestion by remember { mutableStateOf<CategoryEntry?>(null) }
 
     fun stepMonth(delta: Int) {
         var m = viewMonth + delta
@@ -824,53 +828,89 @@ private fun BudgetSection(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = { stepMonth(-1) }) {
-                        Icon(Icons.Filled.ChevronLeft, contentDescription = "ماهِ قبل")
+                // هیرویِ ماه - ناوبر + خرج‌شده/سقفِ کل، جایگزینِ ردیفِ لختِ قبلی و BudgetRowِ «همه
+                // دسته‌بندی‌ها» (که همون اطلاعات رو تکراری نشون می‌داد). عددها از همون
+                // totalSpent/totalCap که از قبل محاسبه می‌شد.
+                val heroAccent = Brush.linearGradient(listOf(AppPrimary.copy(alpha = 0.34f), AppPrimaryDim.copy(alpha = 0.10f)))
+                AppCard(accentGradient = heroAccent) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        MonthNavArrow(icon = Icons.Filled.ChevronLeft, contentDescription = "ماهِ قبل") { stepMonth(-1) }
+                        Text(
+                            "${faMonthNamesAccounting[viewMonth - 1]} ${toFa(viewYear)}",
+                            color = AppText,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                        MonthNavArrow(icon = Icons.Filled.ChevronRight, contentDescription = "ماهِ بعد") { stepMonth(1) }
                     }
                     Text(
-                        "${faMonthNamesAccounting[viewMonth - 1]} ${toFa(viewYear)}",
+                        "${fmt(totalSpent)} ریال",
                         color = AppText,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 10.dp),
                     )
-                    IconButton(onClick = { stepMonth(1) }) {
-                        Icon(Icons.Filled.ChevronRight, contentDescription = "ماهِ بعد")
-                    }
+                    Text("از سقفِ ${fmt(totalCap)} ریال", color = AppMuted, fontSize = 15.sp, modifier = Modifier.padding(top = 2.dp))
+                    AppProgressBar(
+                        fraction = if (totalCap > 0) (totalSpent / totalCap).toFloat().coerceIn(0f, 1f) else 0f,
+                        color = AppPrimary,
+                        trackColor = AppSurface2,
+                        modifier = Modifier.padding(top = 10.dp).height(10.dp),
+                    )
                 }
             }
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.End),
-                ) {
-                    OutlinedButton(onClick = onOpenRecurring) { Text("پرداختِ تکراری", fontSize = 12.sp) }
-                    OutlinedButton(onClick = onOpenCategories) { Text("دسته‌بندی‌ها", fontSize = 12.sp) }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    BudgetToolTile(
+                        icon = Icons.Filled.EventRepeat,
+                        title = "پرداختِ تکراری",
+                        subtitle = "${toFa(recurringPayments.size)} مورد",
+                        onClick = onOpenRecurring,
+                        modifier = Modifier.weight(1f),
+                    )
+                    BudgetToolTile(
+                        icon = Icons.Outlined.PieChart,
+                        title = "دسته‌بندی‌ها",
+                        subtitle = "${toFa(expenseCats.size)} دسته",
+                        onClick = onOpenCategories,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
             if (budgetedCats.isEmpty()) {
                 item {
-                    EmptyState(
-                        icon = Icons.Outlined.PieChart,
-                        title = "هنوز بودجه‌ای تعیین نکردی",
-                        description = "برای هر دسته‌ی هزینه یه سقفِ ماهانه بذار تا خرجت رو زیرِ نظر داشته باشی. با دکمه‌ی + پایینِ صفحه شروع کن.",
-                    )
+                    Column {
+                        EmptyState(
+                            icon = Icons.Outlined.PieChart,
+                            title = "هنوز بودجه‌ای تعیین نکردی",
+                            description = "برای هر دسته‌ی هزینه یه سقفِ ماهانه بذار تا خرجت رو زیرِ نظر داشته باشی. با دکمه‌ی + پایینِ صفحه شروع کن.",
+                        )
+                        // میان‌برِ همون FABِ پایین - دو پرخرج‌ترینِ دسته‌ی بی‌بودجه، تپ همون
+                        // NewBudgetSheet رو با دسته‌ی پیش‌انتخاب‌شده باز می‌کنه. قابلیتِ جدید نیست.
+                        val suggestions = remember(spend, unbudgetedCats) {
+                            unbudgetedCats
+                                .filter { (spend[it.name] ?: 0.0) > 0.0 }
+                                .sortedByDescending { spend[it.name] ?: 0.0 }
+                                .take(2)
+                        }
+                        if (suggestions.isNotEmpty()) {
+                            Column(modifier = Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                suggestions.forEach { cat ->
+                                    BudgetSuggestionRow(
+                                        cat = cat,
+                                        spent = spend[cat.name] ?: 0.0,
+                                        onClick = { budgetSuggestion = cat },
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
-                item {
-                    BudgetRow(
-                        icon = Icons.Filled.Add,
-                        iconTint = AppPrimary,
-                        name = "همه دسته‌بندی‌ها",
-                        spent = totalSpent,
-                        cap = totalCap,
-                        onClick = null,
-                    )
-                }
                 items(budgetedCats, key = { it.name }) { cat ->
                     val budget = budgets.firstOrNull { it.categoryName == cat.name }
                     val spent = spend[cat.name] ?: 0.0
@@ -961,16 +1001,19 @@ private fun BudgetSection(
         }
     }
 
-    if (showAddBudgetDialog) {
+    if (showAddBudgetDialog || budgetSuggestion != null) {
         // شیتِ «بودجه‌ی جدید» طبقِ اپِ مرجع: مقدار → حساب‌کتاب (با گزینه‌ی «همه حساب‌کتاب‌ها») →
-        // دسته‌بندی. جایگزینِ دیالوگِ دومرحله‌ای قبلی که فقط دسته و مبلغ می‌گرفت.
+        // دسته‌بندی. جایگزینِ دیالوگِ دومرحله‌ای قبلی که فقط دسته و مبلغ می‌گرفت. وقتی از میان‌برِ
+        // پیشنهادِ حالتِ خالی باز شده باشه، دسته‌ش از قبل انتخاب‌شده میاد.
         NewBudgetSheet(
             categories = unbudgetedCats,
             accounts = accounts,
-            onDismiss = { showAddBudgetDialog = false },
+            initialCategory = budgetSuggestion,
+            onDismiss = { showAddBudgetDialog = false; budgetSuggestion = null },
             onSave = { cat, cap, accId ->
                 viewModel.setBudget(cat.name, cap, null, accId)
                 showAddBudgetDialog = false
+                budgetSuggestion = null
             },
         )
     }
@@ -1052,8 +1095,58 @@ private fun AddBudgetDialog(
     )
 }
 
-/** یه ردیفِ بودجه‌ی تک (رجوع کن به BudgetSection بالا) - نوارِ پیشرفت + خرج‌شده/باقی‌مانده همیشه‌نمایان،
- * تپ رو ردیف (اگه [onClick] داده شده) فرمِ تعیین/ویرایشِ سقف رو باز می‌کنه. */
+@Composable
+private fun MonthNavArrow(icon: ImageVector, contentDescription: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(30.dp)
+            .clip(CircleShape)
+            .background(AppPrimary.copy(alpha = 0.14f))
+            .pressScaleClickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = contentDescription, tint = AppPrimary, modifier = Modifier.size(16.dp))
+    }
+}
+
+/** دو کارتِ آبیِ ابزاری (پرداختِ تکراری/دسته‌بندی‌ها) - جایگزینِ دو OutlinedButtonِ معلقِ قبلی،
+ * هم‌الگو با کارتِ آبیِ گزارشِ سفارشی تو ReportSection. */
+@Composable
+private fun BudgetToolTile(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    AppCard(modifier = modifier.pressScaleClickable(onClick = onClick), borderColor = AppInfo.copy(alpha = 0.30f)) {
+        Box(
+            modifier = Modifier.size(32.dp).background(AppInfo.copy(alpha = 0.20f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = AppInfo, modifier = Modifier.size(16.dp))
+        }
+        Text(title, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
+        Text(subtitle, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+    }
+}
+
+/** میان‌برِ پیشنهادِ سقف تو حالتِ خالی - همون [BudgetRow]ِ بی‌سقف با دکمه‌ی «+ سقف». */
+@Composable
+private fun BudgetSuggestionRow(cat: CategoryEntry, spent: Double, onClick: () -> Unit) {
+    AppCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(28.dp).background(cat.color.copy(alpha = 0.16f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(cat.icon, contentDescription = null, tint = cat.color, modifier = Modifier.size(14.dp))
+            }
+            Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                Text(cat.name, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                Text("${fmt(spent)} ریال خرج شده", color = AppMuted, fontSize = 10.5.sp)
+            }
+            Text("+ سقف", color = AppPrimary, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+/** یه ردیفِ بودجه‌ی تک (رجوع کن به BudgetSection بالا) - حلقه‌ی پیشرفت + خرج‌شده/باقی‌مانده
+ * همیشه‌نمایان، تپ رو ردیف (اگه [onClick] داده شده) فرمِ تعیین/ویرایشِ سقف رو باز می‌کنه. */
 @Composable
 private fun BudgetRow(
     icon: ImageVector,
@@ -1065,42 +1158,28 @@ private fun BudgetRow(
 ) {
     val fraction = if (cap != null && cap > 0) (spent / cap).toFloat().coerceIn(0f, 1f) else 0f
     val over = cap != null && spent > cap
+    val ringColor = if (over) AppDanger else AppPrimary
     AppCard(modifier = if (onClick != null) Modifier.pressScaleClickable(onClick = onClick) else Modifier) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // آیکونِ توی دایره‌ی رنگیِ ملایم - هم‌الگو با RecentTransactionRowِ تبِ خانه، برای
-                // یکدستیِ ظاهرِ کلِ اپ (خواسته‌ی صریحِ کاربر: «کل برنامه مدرن‌تر بشه»).
-                Box(
-                    modifier = Modifier.size(30.dp).background(iconTint.copy(alpha = 0.16f), CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(16.dp))
-                }
-                Text(name, color = AppText, fontSize = 13.sp, modifier = Modifier.padding(start = 10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ProgressRing(
+                progress = fraction,
+                size = 40.dp,
+                strokeWidth = 4.dp,
+                colors = listOf(ringColor, ringColor),
+            ) {
+                Text("${toFa((fraction * 100).toInt())}", color = ringColor, fontSize = 10.sp, fontWeight = FontWeight.Black)
             }
-            // نوارِ خودیِ اپ به‌جای LinearProgressIndicatorِ تخت‌رنگِ متریال - گرادیانی، گوشه‌گرد و
-            // با پرشدنِ انیمیشنی (بستهٔ ارتقاهای گرافیکی، خواسته‌ی صریحِ کاربر).
-            AppProgressBar(
-                fraction = fraction,
-                color = if (over) AppDanger else AppPrimary,
-                trackColor = AppSurface2,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-            if (cap != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text("${fmt(spent)} ریال", color = AppMuted, fontSize = 11.sp)
-                    Text(
-                        if (over) "بیشتر از سقف!" else "باقی‌مانده ${fmt(cap - spent)} ریال",
-                        color = if (over) AppDanger else AppText,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
+            Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(name, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("${fmt(spent)} ریال", color = ringColor, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
-            } else {
-                Text("سقفی تعیین نشده", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+                Text(
+                    if (cap == null) "سقفی تعیین نشده" else if (over) "بیشتر از سقف!" else "از ${fmt(cap)} — ${fmt(cap - spent)} مانده",
+                    color = if (over) AppDanger else AppMuted,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
             }
         }
     }
@@ -1863,9 +1942,10 @@ private fun NewBudgetSheet(
     accounts: List<AccountEntity>,
     onDismiss: () -> Unit,
     onSave: (CategoryEntry, Double, Long?) -> Unit,
+    initialCategory: CategoryEntry? = null,
 ) {
     var capText by remember { mutableStateOf("") }
-    var selectedCat by remember { mutableStateOf<CategoryEntry?>(null) }
+    var selectedCat by remember { mutableStateOf(initialCategory) }
     var selectedAccountId by remember { mutableStateOf<Long?>(null) }
     var showAccountPicker by remember { mutableStateOf(false) }
     var showCategoryPicker by remember { mutableStateOf(false) }
