@@ -26,6 +26,8 @@ import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -36,6 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,7 +59,6 @@ import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.components.AccountBadge
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
-import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.persianMonthName
@@ -180,7 +183,9 @@ fun NewTransactionSheet(
             )
         }
 
-        AppCard(label = "مبلغ") {
+        // کارتِ مبلغ حاشیه‌ی رنگیِ خودِ accent می‌گیره - همون accentِ تبِ فعال (خرج/دخل/جابجایی)،
+        // طبقِ طرحِ Liquid Glass.
+        AppCard(label = "مبلغ", borderColor = accent.copy(alpha = 0.28f)) {
             OutlinedTextField(
                 value = amountText,
                 onValueChange = { amountText = cleanNum(it) },
@@ -188,6 +193,12 @@ fun NewTransactionSheet(
                 keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                textStyle = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Black, color = accent),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = accent,
+                    unfocusedBorderColor = accent.copy(alpha = 0.35f),
+                    cursorColor = accent,
+                ),
                 suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
             )
             val rial = amountText.toLongOrNull() ?: 0L
@@ -299,7 +310,9 @@ fun NewTransactionSheet(
             Text(error ?: "", color = AppDanger, fontSize = 12.sp)
         }
 
-        GradientButton(
+        AccentPillButton(
+            text = "ثبت تراکنش",
+            accent = accent,
             onClick = {
                 val amount = amountText.toDoubleOrNull() ?: 0.0
                 error = validate(kind, amount, accountId, fromAccountId, toAccountId)
@@ -330,8 +343,25 @@ fun NewTransactionSheet(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("ثبت تراکنش")
+        )
+    }
+}
+
+/** دکمه‌ی قرصیِ توپُرِ رنگِ accent - جایگزینِ [GradientButton]ِ سبزِ ثابت برای این شیت که accentش
+ * با تبِ فعال عوض می‌شه (طرحِ Liquid Glass: «بدونِ گرادیان رو CTAهای اصلی»). رنگِ متن بر اساسِ
+ * روشنیِ خودِ accent انتخاب می‌شه تا کنتراست همیشه کافی بمونه. */
+@Composable
+private fun AccentPillButton(text: String, accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val contentColor = if (accent.luminance() > 0.45f) Color.Black else Color.White
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(999.dp),
+        color = accent,
+        contentColor = contentColor,
+    ) {
+        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 15.dp), contentAlignment = Alignment.Center) {
+            Text(text, fontSize = 14.sp, fontWeight = FontWeight.Black)
         }
     }
 }
