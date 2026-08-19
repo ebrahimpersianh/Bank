@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.ui.stats
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,17 +14,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,6 +40,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -48,10 +54,13 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
+import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -132,44 +141,61 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
             Text("آمار و گزارشات", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
         }
 
+        val heroAccent = Brush.linearGradient(listOf(AppPrimary.copy(alpha = 0.34f), AppPrimaryDim.copy(alpha = 0.10f)))
+        AppCard(
+            accentGradient = heroAccent,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+        ) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                ProgressDonut(ratio = summary.progressRatio)
+                Column(modifier = Modifier.weight(1f).padding(start = 14.dp)) {
+                    Text("پرداخت‌شده", color = AppMuted, fontSize = 11.sp)
+                    Text(
+                        "${fmt(summary.paidAmount)} ریال",
+                        color = AppPrimary,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                    Text("مانده", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 8.dp))
+                    Text(
+                        "${fmt(summary.remainingAmount)} ریال",
+                        color = AppText,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp),
+                .padding(horizontal = 14.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            OutlinedButton(
+            StatsExportTile(
+                icon = Icons.Outlined.Description,
+                label = "دانلود PDF",
                 onClick = { createDocumentLauncher.launch("gozaresh-vamha.pdf") },
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
                 modifier = Modifier.weight(1f),
-            ) {
-                Text("دانلود PDF")
-            }
-            OutlinedButton(
+            )
+            StatsExportTile(
+                icon = Icons.Outlined.GridOn,
+                label = "دانلود اکسل",
                 onClick = { createXlsxLauncher.launch("gozaresh-vamha.xlsx") },
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
                 modifier = Modifier.weight(1f),
-            ) {
-                Text("دانلود اکسل")
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 20.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            ProgressDonut(ratio = summary.progressRatio)
+            )
         }
 
         val statItems = listOf(
-            "تعداد وام‌ها" to toFa(summary.loanCount),
-            "مجموع مبلغ وام‌ها" to "${fmt(summary.totalAmount)} ریال",
-            "مجموع پرداخت‌شده" to "${fmt(summary.paidAmount)} ریال",
-            "مانده‌ی کل" to "${fmt(summary.remainingAmount)} ریال",
-            "اقساط پرداخت‌شده" to "${toFa(summary.paidInstallments)} از ${toFa(summary.totalInstallments)}",
-            "درصد پیشرفت" to "${toFa((summary.progressRatio * 100).toInt())}٪",
+            StatItem("تعداد وام‌ها", toFa(summary.loanCount), null),
+            StatItem("مجموع مبلغ وام‌ها", fmt(summary.totalAmount), "ریال"),
+            StatItem("مجموع پرداخت‌شده", fmt(summary.paidAmount), "ریال"),
+            StatItem("مانده‌ی کل", fmt(summary.remainingAmount), "ریال"),
+            StatItem("اقساط پرداخت‌شده", toFa(summary.paidInstallments), "از ${toFa(summary.totalInstallments)}"),
+            StatItem("درصد پیشرفت", toFa((summary.progressRatio * 100).toInt()), "٪"),
         )
         Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
@@ -180,11 +206,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    rowItems.forEach { (title, value) ->
-                        AppCard(label = title, modifier = Modifier.weight(1f)) {
-                            Text(value, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                        }
-                    }
+                    rowItems.forEach { item -> StatTile(item = item, modifier = Modifier.weight(1f)) }
                     if (rowItems.size == 1) {
                         Box(modifier = Modifier.weight(1f))
                     }
@@ -194,10 +216,13 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
 
         if (paymentHistory.isNotEmpty()) {
             AppCard(
-                label = "تاریخچه پرداخت (تجمعی)",
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
             ) {
-                PaymentHistoryLineChart(points = paymentHistory)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("تاریخچه پرداخت (تجمعی)", color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("${fmt(paymentHistory.last().cumulativeAmount)} ریال", color = AppInfo, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                PaymentHistoryLineChart(points = paymentHistory, modifier = Modifier.padding(top = 10.dp))
             }
         }
     }
@@ -220,9 +245,9 @@ private fun ProgressDonut(ratio: Double) {
     }
     val trackColor = AppLine
     val progressColor = AppPrimary
-    Box(modifier = Modifier.size(140.dp), contentAlignment = Alignment.Center) {
-        Canvas(modifier = Modifier.size(140.dp)) {
-            val strokeWidth = 16.dp.toPx()
+    Box(modifier = Modifier.size(112.dp), contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.size(112.dp)) {
+            val strokeWidth = 15.dp.toPx()
             drawArc(
                 color = trackColor,
                 startAngle = -90f,
@@ -252,12 +277,58 @@ private fun ProgressDonut(ratio: Double) {
     }
 }
 
+@Composable
+private fun StatsExportTile(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(AppInfo.copy(alpha = 0.12f))
+            .pressScaleClickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(9.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))
+        Text(label, color = AppInfo, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+private data class StatItem(val title: String, val value: String, val unit: String?)
+
+@Composable
+private fun StatTile(item: StatItem, modifier: Modifier = Modifier) {
+    // مقادیرِ کوتاه (تعدادها) ۲۰.sp، مبالغ (رشته‌ی طولانی‌تر) ۱۷.sp - همون معیارِ طولِ رشته که
+    // استایلِ قبلی هم ضمنی رعایت می‌کرد.
+    val big = item.value.length <= 3
+    AppCard(modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(26.dp).background(AppPrimary.copy(alpha = 0.16f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {}
+            Text(item.title, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(start = 8.dp))
+        }
+        Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.Bottom) {
+            Text(item.value, color = AppText, fontSize = if (big) 20.sp else 17.sp, fontWeight = FontWeight.Black)
+            if (item.unit != null) {
+                Text(" ${item.unit}", color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 1.dp))
+            }
+        }
+    }
+}
+
 /** پورت نمودار خطی «تاریخچه پرداخت» اپ رقیب (VAMMAN) - رسم دستی با Canvas (بدون کتابخونه‌ی نمودارِ
  * جدید)، عین دونات بالا؛ نقاط از [StatsViewModel.paymentHistory] (مجموع تجمعی اقساط پرداخت‌شده به
  * تفکیک ماه شمسی) میان. */
 @Composable
-private fun PaymentHistoryLineChart(points: List<PaymentHistoryPoint>) {
-    val lineColor = AppPrimary
+private fun PaymentHistoryLineChart(points: List<PaymentHistoryPoint>, modifier: Modifier = Modifier) {
+    val lineColor = AppInfo
+    val fillColors = listOf(AppInfo.copy(alpha = 0.34f), Color.Transparent)
     val gridColor = AppLine
     // قبلاً کلِ خط یهو رسم می‌شد. حالا از چپ به راست «کشیده» می‌شه - با کلیپ‌کردنِ بومِ رسم به یه
     // عرضِ روبه‌رشد، نه با استخراجِ بخشی از مسیر (که برای این تعداد نقطه‌ی کم اضافه‌کاریه).
@@ -266,11 +337,11 @@ private fun PaymentHistoryLineChart(points: List<PaymentHistoryPoint>) {
         reveal.snapTo(0f)
         reveal.animateTo(1f, tween(CHART_ANIM_MS, easing = FastOutSlowInEasing))
     }
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(140.dp),
+                .height(96.dp),
         ) {
             val maxAmount = points.maxOf { it.cumulativeAmount }.coerceAtLeast(1.0)
             val stepX = if (points.size > 1) size.width / (points.size - 1) else 0f
@@ -295,6 +366,15 @@ private fun PaymentHistoryLineChart(points: List<PaymentHistoryPoint>) {
                     val y = size.height - (point.cumulativeAmount / maxAmount * size.height).toFloat()
                     if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
                 }
+
+                // پرشدنِ گرادیانیِ زیرِ خط - مسیرِ خط تا کفِ بوم بسته می‌شه (بدون تغییرِ خودِ path).
+                val fillPath = Path().apply {
+                    addPath(path)
+                    lineTo(stepX * (points.size - 1), size.height)
+                    lineTo(0f, size.height)
+                    close()
+                }
+                drawPath(path = fillPath, brush = Brush.verticalGradient(fillColors))
                 drawPath(path = path, color = lineColor, style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round))
 
                 points.forEachIndexed { index, point ->
