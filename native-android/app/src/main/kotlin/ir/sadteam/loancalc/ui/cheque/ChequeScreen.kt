@@ -75,7 +75,6 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
@@ -530,31 +529,29 @@ private fun LiveDateTimeHeader() {
         ),
     )
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(Brush.horizontalGradient(listOf(AppPrimaryDim, AppPrimary)))
-            .padding(vertical = 16.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(weekDay, color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp)
-            Text(
-                dateText,
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            Box(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color.White.copy(alpha = 0.18f))
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-            ) {
-                Text(timeText, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+    val accentGradient = Brush.linearGradient(
+        listOf(AppPrimary.copy(alpha = 0.30f), AppPrimary.copy(alpha = 0.08f)),
+    )
+    AppCard(accentGradient = accentGradient) {
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(weekDay, color = AppText.copy(alpha = 0.85f), fontSize = 13.sp)
+                Text(
+                    dateText,
+                    color = AppText,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(top = 10.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(AppText.copy(alpha = 0.18f))
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                ) {
+                    Text(timeText, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
