@@ -871,34 +871,40 @@ private fun DataSettings(
             if (lastBackupLabel != null) {
                 Text("آخرین پشتیبان: $lastBackupLabel", color = AppMuted, fontSize = 12.sp)
             }
-            OutlinedButton(
-                onClick = {
-                    autoBackupViewModel.restoreFromAutoBackup { ok ->
-                        banner.show(
-                            if (ok) "بازیابی از پشتیبان خودکار انجام شد" else "پشتیبانی برای بازیابی پیدا نشد",
-                            isSuccess = ok,
-                        )
-                    }
-                },
+            // دو دکمه‌ی بازیابی کنارِ هم (Row) به‌جای زیرِ هم، طبقِ طرحِ Liquid Glass.
+            Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text("بازیابی از پشتیبان خودکار")
-            }
-            // برخلافِ دکمه‌ی بالا (فقط همین گوشی)، این از سرور می‌گیره - برای وقتی گوشی عوض شده یا
-            // اپ پاک/نصب شده. فقط برای کاربرِ لاگین‌شده‌ی مشترک، چون پوش به سرور هم فقط برای همینه.
-            if (gateState == GateState.LOGGED_IN && subscribed) {
                 OutlinedButton(
                     onClick = {
-                        autoBackupViewModel.restoreFromCloud { ok ->
+                        autoBackupViewModel.restoreFromAutoBackup { ok ->
                             banner.show(
-                                if (ok) "بازیابی از سرور ابری انجام شد" else "پشتیبانی رو سرور ابری پیدا نشد",
+                                if (ok) "بازیابی از پشتیبان خودکار انجام شد" else "پشتیبانی برای بازیابی پیدا نشد",
                                 isSuccess = ok,
                             )
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    modifier = Modifier.weight(1f),
                 ) {
-                    Text("بازیابی از سرور ابری")
+                    Text("بازیابی از خودکار", fontSize = 12.sp)
+                }
+                // برخلافِ دکمه‌ی بالا (فقط همین گوشی)، این از سرور می‌گیره - برای وقتی گوشی عوض شده
+                // یا اپ پاک/نصب شده. فقط برای کاربرِ لاگین‌شده‌ی مشترک، چون پوش به سرور هم فقط برای همینه.
+                if (gateState == GateState.LOGGED_IN && subscribed) {
+                    OutlinedButton(
+                        onClick = {
+                            autoBackupViewModel.restoreFromCloud { ok ->
+                                banner.show(
+                                    if (ok) "بازیابی از سرور ابری انجام شد" else "پشتیبانی رو سرور ابری پیدا نشد",
+                                    isSuccess = ok,
+                                )
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("بازیابی از سرور ابری", fontSize = 12.sp)
+                    }
                 }
             }
         }
@@ -1226,16 +1232,22 @@ private fun SecuritySettings(appLockViewModel: AppLockViewModel) {
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            OutlinedButton(onClick = { showPinDialog = true }) {
-                Text(if (pinHash != null) "تغییر PIN" else "تنظیم PIN")
-            }
+            // روشن‌کردن دیالوگِ تنظیمِ PIN موجود رو باز می‌کنه؛ خاموش‌کردن معادلِ حذفِ قفلِ فعلیه -
+            // سوییچ جایگزینِ دکمه‌ی متنی+حذفِ جداگانه‌ی قبلی شد (طرحِ Liquid Glass).
+            Switch(
+                checked = pinHash != null,
+                onCheckedChange = { checked ->
+                    if (checked) showPinDialog = true else appLockViewModel.clearPin()
+                },
+                colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
+            )
         }
         if (pinHash != null) {
             TextButton(
-                onClick = { appLockViewModel.clearPin() },
+                onClick = { showPinDialog = true },
                 modifier = Modifier.padding(top = 4.dp),
             ) {
-                Text("حذف قفل PIN", color = AppDanger)
+                Text("تغییرِ PIN")
             }
         }
 
