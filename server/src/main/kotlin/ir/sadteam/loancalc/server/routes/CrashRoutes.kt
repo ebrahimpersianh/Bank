@@ -9,6 +9,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.Db
 import ir.sadteam.loancalc.server.execute
+import ir.sadteam.loancalc.server.rateLimitOk
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -22,6 +23,9 @@ private data class CrashBody(
 fun Route.crashRoutes() {
     route("/api/crash") {
         post {
+            /* 🚨 این مسیر عمداً بدونِ ورود بازه (کرشِ اپ ممکنه قبل از لاگین رخ بده)، پس تنها
+               محافظش همین سقفه - وگرنه هر کسی می‌تونست دیسکِ سرور رو با ردیفِ بی‌نهایت پر کنه. */
+            if (!call.rateLimitOk("crash", 20, 60 * 60 * 1000L)) return@post
             val body = runCatching { call.receive<CrashBody>() }.getOrNull()
             val message = (body?.message ?: "").take(2000)
             if (message.isEmpty()) {
