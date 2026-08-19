@@ -5,14 +5,13 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.EditNote
@@ -30,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -151,62 +151,58 @@ private fun DueGrid(
         return
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 24.dp),
+    // بازطراحی: فضای خالیِ زیرِ گرید با بزرگ‌کردنِ خودِ محتوا (کاشی‌های بلندتر + Spacerِ وزن‌دار قبل از
+    // کارتِ «امروز») پر شد، نه محتوای تازه - پس دیگه LazyColumn لازم نیست، محتوا هیچ‌وقت از صفحه
+    // بیشتر نمی‌شه.
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(14.dp, 12.dp, 14.dp, 18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // کارتِ توضیحیِ قبلی («سررسید: میان‌برِ سریع به...») به‌خواستِ صریحِ کاربر حذف شد - رفرنس
-        // (Poolaki) هیچ کارتی قبلِ گریدِ کاشی‌ها نداره، مستقیم از زیرِ نوارِ بالا شروع می‌شه.
-        item {
-            // عمداً LazyVerticalGrid نیست: یه گریدِ تنبل تویِ یه LazyColumnِ دیگه نمی‌تونه
-            // wrap-content باشه و باید ارتفاعِ ثابت بگیره - همون ارتفاعِ ثابت بود که یه فاصله‌ی
-            // خالیِ بزرگ بینِ کاشی‌ها و کارتِ «امروز» می‌انداخت (گزارشِ کاربر با اسکرین‌شات). با
-            // چیدنِ دستیِ ردیف‌ها (chunked(3))، ارتفاع دقیقاً به‌اندازه‌ی خودِ کاشی‌هاست.
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                shortcuts.chunked(3).forEach { rowItems ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        rowItems.forEach { shortcut ->
-                            DueShortcutTile(
-                                shortcut = shortcut,
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    shortcut.subView?.let(onOpenSubView)
-                                    shortcut.route?.let(onNavigateToRoute)
-                                },
-                            )
-                        }
-                        // جای خالیِ ردیفِ ناقصِ آخر، وگرنه کاشیِ تنها کلِ عرض رو می‌گیره.
-                        repeat(3 - rowItems.size) { Spacer(modifier = Modifier.weight(1f)) }
+        // عمداً LazyVerticalGrid نیست: یه گریدِ تنبل تویِ یه ستونِ دیگه نمی‌تونه wrap-content باشه.
+        // با چیدنِ دستیِ ردیف‌ها (chunked(3))، ارتفاع دقیقاً به‌اندازه‌ی خودِ کاشی‌هاست.
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            shortcuts.chunked(3).forEach { rowItems ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    rowItems.forEach { shortcut ->
+                        DueShortcutTile(
+                            shortcut = shortcut,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                shortcut.subView?.let(onOpenSubView)
+                                shortcut.route?.let(onNavigateToRoute)
+                            },
+                        )
                     }
+                    // جای خالیِ ردیفِ ناقصِ آخر، وگرنه کاشیِ تنها کلِ عرض رو می‌گیره.
+                    repeat(3 - rowItems.size) { Spacer(modifier = Modifier.weight(1f)) }
                 }
             }
         }
-        item {
-            TodayCard(
-                date = selectedDate,
-                onPrevDay = { selectedDate = PersianCalendar.addDays(selectedDate, -1) },
-                onNextDay = { selectedDate = PersianCalendar.addDays(selectedDate, 1) },
-                onDateClick = { showCalendarPicker = true },
-                onAddInstallment = { onNavigateToRoute("loan") },
-                onAddCheque = { onNavigateToRoute("cheque") },
-                onAddNote = { onOpenSubView(DueSubView.NOTES) },
-            )
-        }
+        Spacer(modifier = Modifier.weight(1f))
+        TodayCard(
+            date = selectedDate,
+            onPrevDay = { selectedDate = PersianCalendar.addDays(selectedDate, -1) },
+            onNextDay = { selectedDate = PersianCalendar.addDays(selectedDate, 1) },
+            onDateClick = { showCalendarPicker = true },
+            onAddInstallment = { onNavigateToRoute("loan") },
+            onAddCheque = { onNavigateToRoute("cheque") },
+            onAddNote = { onOpenSubView(DueSubView.NOTES) },
+        )
     }
 }
 
 /**
- * کاشیِ میان‌بر - هم‌شکلِ رفرنس: آیکونِ ساده‌ی وسط‌چین (نه تویِ دایره‌ی رنگی) با نوشته‌ی زیرش. نسبتِ
- * ابعاد عمداً از ۱.۳۵ کمتر شد (کاشی کمی بلندتر): با پدینگِ ۱۴dpی خودِ [AppCard]، ارتفاعِ قبلی
- * جا برای آیکون + نوشته نداشت و نوشته‌ی هر کاشی از پایین بریده/نامرئی می‌شد (گزارشِ کاربر با
- * اسکرین‌شات).
+ * کاشیِ میان‌بر - آیکون حالا داخلِ یه مربعِ رنگیِ گردگوشه‌ست (نه دیگه وسط‌چینِ لختِ رو کارت)، با
+ * نوشته‌ی زیرش. نسبتِ ابعاد ۱.۰۵ (تقریباً مربع) - فضای خالیِ زیرِ گریدِ سررسید با بزرگ‌کردنِ خودِ
+ * کاشی‌ها پر شد، نه با کارتِ اضافه (رجوع کن به کامنتِ [DueGrid]).
  */
 @Composable
 private fun DueShortcutTile(shortcut: DueShortcut, modifier: Modifier = Modifier, onClick: () -> Unit) {
     AppCard(
         modifier = modifier
-            .aspectRatio(1.28f)
+            .aspectRatio(1.05f)
             .pressScaleClickable(onClick = onClick),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -215,32 +211,41 @@ private fun DueShortcutTile(shortcut: DueShortcut, modifier: Modifier = Modifier
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Icon(
-                    shortcut.icon,
-                    contentDescription = shortcut.title,
-                    tint = AppPrimary,
-                    modifier = Modifier.size(22.dp),
-                )
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(AppPrimary.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        shortcut.icon,
+                        contentDescription = shortcut.title,
+                        tint = AppPrimary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
                 Text(
                     shortcut.title,
                     color = AppText,
-                    fontSize = 11.5.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
-                    modifier = Modifier.padding(top = 6.dp),
+                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
             // بجِ عددی - گوشه‌ی بالا-چپ (تو RTL یعنی سمتِ «شروع»ِ بصری، همون‌جایی که رفرنس داره).
+            // پدینگ/فونتِ بزرگ‌تر از قبل - خواناتر رو پس‌زمینه‌ی کم‌کنتراست.
             if (shortcut.badge > 0) {
                 Text(
                     toFa(shortcut.badge),
                     color = AppPrimary,
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .background(AppPrimary.copy(alpha = 0.16f), CircleShape)
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                        .padding(horizontal = 7.dp, vertical = 2.dp),
                 )
             }
         }

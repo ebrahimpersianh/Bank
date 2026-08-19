@@ -12,18 +12,24 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -34,11 +40,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.AppCard
@@ -48,8 +59,10 @@ import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -79,6 +92,8 @@ fun AccountsScreen(
     val balances = remember(accounts, transactions) {
         accounts.associate { it.id to viewModel.balanceOf(it, transactions) }
     }
+    // جمعِ موجودی برای هیرویِ بالای لیست - همون balances که از قبل حساب شده، جمعش بی‌هزینه‌ست.
+    val totalBalance = remember(balances) { balances.values.sum() }
     val openedAccount = openedAccountId?.let { id -> accounts.firstOrNull { it.id == id } }
     val editingAccount = editingAccountId?.let { id -> accounts.firstOrNull { it.id == id } }
 
@@ -152,7 +167,7 @@ fun AccountsScreen(
             }
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 100.dp),
+                contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 152.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 item {
@@ -167,34 +182,22 @@ fun AccountsScreen(
                     }
                 }
 
-                item {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(
-                            onClick = { openDocumentLauncher.launch(arrayOf("application/json")) },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text("بازیابی", fontSize = 12.sp)
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                viewModel.exportBackup { json ->
-                                    pendingExportJson = json
-                                    createDocumentLauncher.launch("accounts-backup.json")
-                                }
-                            },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text("پشتیبان‌گیری", fontSize = 12.sp)
-                        }
+                if (accounts.isNotEmpty()) {
+                    item {
+                        AccountsTotalHero(total = totalBalance, balances = balances, accounts = accounts)
                     }
                 }
 
                 item {
-                    GradientButton(onClick = { showAddForm = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text("+ افزودن حساب")
-                    }
+                    BackupRestoreCard(
+                        onBackup = {
+                            viewModel.exportBackup { json ->
+                                pendingExportJson = json
+                                createDocumentLauncher.launch("accounts-backup.json")
+                            }
+                        },
+                        onRestore = { openDocumentLauncher.launch(arrayOf("application/json")) },
+                    )
                 }
 
                 if (accounts.isEmpty()) {
@@ -208,9 +211,11 @@ fun AccountsScreen(
                     }
                 } else {
                     items(accounts, key = { it.id }) { account ->
+                        val balance = balances[account.id] ?: account.initialBalance
                         AccountCard(
                             account = account,
-                            balance = balances[account.id] ?: account.initialBalance,
+                            balance = balance,
+                            share = if (totalBalance > 0) (balance / totalBalance).toFloat().coerceIn(0f, 1f) else 0f,
                             onClick = { openedAccountId = account.id },
                             modifier = Modifier.animateItem(),
                         )
@@ -221,26 +226,150 @@ fun AccountsScreen(
     }
 
         InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
+
+        // «+ افزودن حساب» چسبیده به پایینِ صفحه (خواسته‌ی طراحی: همیشه در دست باشه) - فقط تو حالتِ
+        // لیست نشون داده می‌شه، نه موقعِ افزودن/جزئیات.
+        if (screenKey == "list") {
+            GradientButton(
+                onClick = { showAddForm = true },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 24.dp),
+            ) {
+                Text("+ افزودن حساب")
+            }
+        }
+    }
+}
+
+/** هیرویِ جمعِ موجودیِ بالای لیست - عددِ کل + نوارِ سهمِ هر حساب از کل (بدونِ کوئریِ جدید، از همون
+ * balancesِ ازقبل‌محاسبه‌شده). */
+@Composable
+private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accounts: List<AccountEntity>) {
+    AppCard(
+        accentGradient = Brush.linearGradient(listOf(AppPrimary.copy(alpha = 0.34f), AppPrimaryDim.copy(alpha = 0.10f))),
+    ) {
+        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(13.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+                Column {
+                    Text("جمعِ موجودی", color = AppMuted, fontSize = 12.sp)
+                    Text("${fmt(total)}", color = AppText, fontSize = 29.sp)
+                    Text("ریال · ${toFa(accounts.size)} حساب", color = AppMuted, fontSize = 12.sp)
+                }
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(AppPrimary.copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Outlined.AccountBalance, contentDescription = null, tint = AppPrimary)
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(999.dp)),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                val alphas = listOf(1f, 0.55f, 0.25f)
+                accounts.forEachIndexed { index, account ->
+                    val balance = balances[account.id] ?: account.initialBalance
+                    val weight = if (total > 0) (balance / total).toFloat().coerceAtLeast(0.02f) else 1f / accounts.size
+                    Box(
+                        modifier = Modifier
+                            .weight(weight)
+                            .fillMaxSize()
+                            .background(AppPrimary.copy(alpha = alphas.getOrElse(index) { 0.25f })),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** پشتیبان‌گیری/بازیابی - از دو OutlinedButtonِ لختِ قبلی به یه کارتِ آبیِ دوتکه (خواسته‌ی طراحی:
+ * ابزار = آبی، پول = سبز). هر نیمه ناحیه‌ی لمسیِ کاملِ کارت رو داره (≥۴۴.dp با پدینگِ خودِ AppCard). */
+@Composable
+private fun BackupRestoreCard(onBackup: () -> Unit, onRestore: () -> Unit) {
+    AppCard(borderColor = AppInfo.copy(alpha = 0.30f)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.weight(1f).pressScaleClickable(onClick = onBackup),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Box(
+                    modifier = Modifier.size(32.dp).clip(RoundedCornerShape(11.dp)).background(AppInfo.copy(alpha = 0.20f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.CloudUpload, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))
+                }
+                Text("پشتیبان‌گیری", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+            Box(modifier = Modifier.width(1.dp).height(26.dp).background(AppInfo.copy(alpha = 0.22f)))
+            Row(
+                modifier = Modifier.weight(1f).pressScaleClickable(onClick = onRestore),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End,
+            ) {
+                Text(
+                    "بازیابی",
+                    color = AppText,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.End,
+                )
+                Box(
+                    modifier = Modifier.size(32.dp).clip(RoundedCornerShape(11.dp)).background(AppInfo.copy(alpha = 0.20f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.CloudDownload, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun AccountCard(account: AccountEntity, balance: Double, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun AccountCard(
+    account: AccountEntity,
+    balance: Double,
+    share: Float,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     AppCard(modifier = modifier.pressScaleClickable(onClick = onClick)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(account.name, color = AppText, fontSize = 15.sp)
-                Text(account.bankName, color = AppMuted, fontSize = 12.sp)
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(13.dp))
+                    .background(AppPrimary.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(account.bankName.take(2), color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
-            Text(
-                "${fmt(balance)} ریال",
-                color = if (balance < 0) AppDanger else AppText,
-                fontSize = 14.sp,
-            )
+            Column(modifier = Modifier.weight(1f).padding(start = 11.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(account.name, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        "${fmt(balance)} ریال",
+                        color = if (balance < 0) AppDanger else AppText,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(account.bankName, color = AppMuted, fontSize = 11.sp)
+                    Text("٪${toFa((share * 100).toInt())} از دارایی", color = AppMuted, fontSize = 10.sp)
+                }
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(999.dp)).background(AppPrimary.copy(alpha = 0.14f)),
+                ) {
+                    Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(share.coerceIn(0f, 1f)).background(AppPrimary))
+                }
+            }
         }
     }
 }

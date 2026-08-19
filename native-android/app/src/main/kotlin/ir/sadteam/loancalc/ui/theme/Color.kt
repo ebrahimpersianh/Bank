@@ -30,6 +30,9 @@ data class AppColorPalette(
     // واقعی شبیه‌سازی می‌شه، اینجا چون AuroraBackground عمداً بدونِ RenderEffect (بلورِ واقعی، سنگین
     // رو گوشیِ ضعیف) پیاده شده، با یه Brush.radialGradient ثابت تقلید می‌شه.
     val glassHighlight: Color,
+    // آبیِ اطلاعاتی - برای کارت‌های ابزاری/خنثی (پشتیبان‌گیری، بازیابی، گزارشِ سفارشی) که نباید با
+    // primaryِ سبزِ «پول» یا accentِ طلاییِ «پرمیوم» قاطی بشن (بازطراحیِ دارایی/سررسید/گزارش).
+    val info: Color,
 )
 
 // دورِ پنجمِ تمِ تیره - تعدیلِ سبزِ نئونیِ دورِ قبل (خواسته‌ی صریحِ کاربر: «رنگ سبز ملایم‌تر بشه، کل اپ
@@ -58,6 +61,7 @@ val DarkAppColors = AppColorPalette(
     glassGradientEnd = Color(0x0063C37A), // کاملاً شفاف
     glassBorder = Color(0x4063C37A), // سبزِ جدید با آلفای ~۲۵٪
     glassHighlight = Color(0x3A63C37A), // سبزِ جدید با آلفای ~۲۳٪
+    info = Color(0xFF4C9AF5),
 )
 
 // دورِ پنجمِ تمِ روشن - هم‌قدم با تعدیلِ تمِ تیره‌ی بالا (کاربر: «تو حالتِ روشن قشنگ نیست خیلی»).
@@ -84,6 +88,7 @@ val LightAppColors = AppColorPalette(
     glassGradientEnd = Color(0x003DB65A), // کاملاً شفاف
     glassBorder = Color(0x383DB65A), // سبزِ جدید با آلفای ~۲۲٪
     glassHighlight = Color(0x453DB65A), // سبزِ جدید با آلفای ~۲۷٪
+    info = Color(0xFF2F6FD0),
 )
 
 val LocalAppColors = staticCompositionLocalOf { DarkAppColors }
@@ -108,3 +113,4 @@ val AppGlassGradientStart: Color @Composable get() = LocalAppColors.current.glas
 val AppGlassGradientEnd: Color @Composable get() = LocalAppColors.current.glassGradientEnd
 val AppGlassBorder: Color @Composable get() = LocalAppColors.current.glassBorder
 val AppGlassHighlight: Color @Composable get() = LocalAppColors.current.glassHighlight
+val AppInfo: Color @Composable get() = LocalAppColors.current.info

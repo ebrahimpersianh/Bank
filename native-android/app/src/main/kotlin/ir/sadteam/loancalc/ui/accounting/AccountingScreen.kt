@@ -131,6 +131,7 @@ import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
@@ -1282,6 +1283,16 @@ private fun AddRecurringForm(
  * ماه‌های شمسی حداکثر ۳۱ روزن، پس ضریبِ ۳۲ برای day و ۴۰۰ برای year کاملاً کافیه. */
 private fun PersianDate.ordinal(): Int = y * 400 + m * 32 + d
 
+/** ردیفِ راهنمای رنگیِ کارتِ اختلافِ دخل/خرج - مربعِ ۸.dp + برچسب + مبلغ. */
+@Composable
+private fun IncomeExpenseLegendRow(color: Color, label: String, amount: Double) {
+    Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(color))
+        Text(label, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(start = 6.dp).weight(1f))
+        Text("${fmt(amount)} ریال", color = AppText, fontSize = 11.sp)
+    }
+}
+
 /**
  * ناوبرِ تاریخِ تبِ گزارش - خواسته‌ی صریحِ کاربر («تقویم رو منحصربه‌فرد کن و سوپرایزم کن») بعدِ
  * رفعِ باگِ PersianCalendar.addDays (رجوع کن به CLAUDE.md). به‌جای دو فلشِ ساده‌ی کنارِ یه متنِ
@@ -1294,69 +1305,85 @@ private fun DateRibbonHeader(viewDate: PersianDate, onDateChange: (PersianDate) 
     var previousOrdinal by remember { mutableStateOf(viewDate.ordinal()) }
     val goingForward = viewDate.ordinal() >= previousOrdinal
     SideEffect { previousOrdinal = viewDate.ordinal() }
+    val cardAccent = Brush.linearGradient(listOf(AppPrimary.copy(alpha = 0.34f), AppPrimaryDim.copy(alpha = 0.10f)))
 
-    AppCard {
+    AppCard(accentGradient = cardAccent) {
         Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            AnimatedContent(
-                targetState = viewDate,
-                transitionSpec = {
-                    val dir = if (goingForward) 1 else -1
-                    (slideInHorizontally(tween(220)) { w -> dir * w } + fadeIn(tween(220))) togetherWith
-                        (slideOutHorizontally(tween(220)) { w -> -dir * w } + fadeOut(tween(220)))
-                },
-                label = "reportDateText",
-            ) { d ->
-                val weekDay = faWeekDayNamesAccounting[JalaliCalendar.dayOfWeekSaturdayFirst(d)]
-                Text(
-                    "$weekDay، ${toFa(d.d)} ${faMonthNamesAccounting[d.m - 1]} ${toFa(d.y)}",
-                    color = AppText,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-            Spacer(modifier = Modifier.height(10.dp))
+            // سرتیتر: فقط نامِ ماه (نه تاریخِ کاملِ روز) بینِ دو فلشِ دایره‌ای - چیدمانِ هم‌الگو با
+            // ناوبرِ ماهِ تبِ بودجه.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = { onDateChange(PersianCalendar.addDays(viewDate, -1)) }) {
-                    Icon(Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل")
+                DateRibbonArrow(icon = Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل") {
+                    onDateChange(PersianCalendar.addDays(viewDate, -1))
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    (-3..3).forEach { offset ->
-                        val d = PersianCalendar.addDays(viewDate, offset)
-                        val selected = offset == 0
-                        val weekDayShort = faWeekDayNamesAccounting[JalaliCalendar.dayOfWeekSaturdayFirst(d)].take(1)
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .width(34.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (selected) AppPrimary else Color.Transparent)
-                                .pressScaleClickable(onClick = { onDateChange(d) })
-                                .padding(vertical = 6.dp),
-                        ) {
-                            Text(
-                                weekDayShort,
-                                color = if (selected) Color.White else AppMuted,
-                                fontSize = 10.sp,
-                            )
-                            Text(
-                                toFa(d.d),
-                                color = if (selected) Color.White else AppText,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 1.dp),
-                            )
-                        }
+                AnimatedContent(
+                    targetState = viewDate,
+                    transitionSpec = {
+                        val dir = if (goingForward) 1 else -1
+                        (slideInHorizontally(tween(220)) { w -> dir * w } + fadeIn(tween(220))) togetherWith
+                            (slideOutHorizontally(tween(220)) { w -> -dir * w } + fadeOut(tween(220)))
+                    },
+                    label = "reportMonthText",
+                ) { d ->
+                    Text(
+                        "${faMonthNamesAccounting[d.m - 1]} ${toFa(d.y)}",
+                        color = AppText,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                }
+                DateRibbonArrow(icon = Icons.Filled.ChevronRight, contentDescription = "روزِ بعد") {
+                    onDateChange(PersianCalendar.addDays(viewDate, 1))
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                (-3..3).forEach { offset ->
+                    val d = PersianCalendar.addDays(viewDate, offset)
+                    val selected = offset == 0
+                    val weekDayShort = faWeekDayNamesAccounting[JalaliCalendar.dayOfWeekSaturdayFirst(d)].take(1)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .weight(if (selected) 1.25f else 1f)
+                            .clip(RoundedCornerShape(13.dp))
+                            .background(if (selected) AppPrimary else AppPrimary.copy(alpha = 0.10f))
+                            .pressScaleClickable(onClick = { onDateChange(d) })
+                            .padding(vertical = 6.dp),
+                    ) {
+                        Text(
+                            weekDayShort,
+                            color = if (selected) Color.Black else AppMuted,
+                            fontSize = 10.sp,
+                        )
+                        Text(
+                            toFa(d.d),
+                            color = if (selected) Color.Black else AppText,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 1.dp),
+                        )
                     }
-                }
-                IconButton(onClick = { onDateChange(PersianCalendar.addDays(viewDate, 1)) }) {
-                    Icon(Icons.Filled.ChevronRight, contentDescription = "روزِ بعد")
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DateRibbonArrow(icon: ImageVector, contentDescription: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .clip(CircleShape)
+            .background(AppPrimary.copy(alpha = 0.14f))
+            .pressScaleClickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = contentDescription, tint = AppPrimary, modifier = Modifier.size(15.dp))
     }
 }
 
@@ -1511,19 +1538,32 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
         }
         item {
             StaggerIn(2) {
+                val net = dayIncome - dayExpense
                 AppCard {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        AppChip(label = "${toFa(dayTx.size)} تراکنش", selected = false, onClick = {})
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("اختلاف دخل و خرج", color = AppMuted, fontSize = 11.sp)
-                            val net = dayIncome - dayExpense
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            AppChip(label = "${toFa(dayTx.size)} تراکنش", selected = false, onClick = {})
                             Text(
                                 "${if (net < 0) "-" else ""}${fmt(kotlin.math.abs(net))} ریال",
-                                color = if (net < 0) AppDanger else AppPrimary,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
+                                color = if (net >= 0) AppPrimary else AppDanger,
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Black,
+                                modifier = Modifier.padding(top = 10.dp),
                             )
+                            Text("اختلاف دخل و خرج", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
+                            IncomeExpenseLegendRow(color = AppPrimary, label = "دخل", amount = dayIncome)
+                            IncomeExpenseLegendRow(color = AppDanger, label = "خرج", amount = dayExpense)
                         }
+                        // سهمِ دخل روی مسیرِ قرمز (خرج) - همون CategoryDonut/Canvas+Animatableِ موجودِ
+                        // StatsScreen، بدونِ کتابخونه‌ی نموداریِ جدید.
+                        CategoryDonut(
+                            slices = listOf(DonutSlice(dayIncome, AppPrimary)),
+                            size = 88.dp,
+                            strokeWidth = 14.dp,
+                            trackColor = AppDanger.copy(alpha = 0.28f),
+                            gapDegrees = 0f,
+                        )
                     }
                 }
             }
@@ -1657,11 +1697,30 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
             }
         }
         item {
-            OutlinedButton(
-                onClick = { showCustomReport = !showCustomReport },
-                modifier = Modifier.fillMaxWidth(),
+            // دکمه‌ی متنیِ قبلی به کارتِ آبی تبدیل شد (AppInfo، ابزار نه پول) - تپ همون
+            // showCustomReport = !showCustomReport، بدونِ تغییرِ منطق/خروجی‌گیرها.
+            AppCard(
+                modifier = Modifier.pressScaleClickable(onClick = { showCustomReport = !showCustomReport }),
+                borderColor = AppInfo.copy(alpha = 0.26f),
             ) {
-                Text(if (showCustomReport) "بستنِ گزارشِ سفارشی" else "گزارشِ سفارشی و خروجیِ PDF/اکسل", fontSize = 12.5.sp)
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(11.dp)).background(AppInfo.copy(alpha = 0.14f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Outlined.PieChart, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))
+                    }
+                    Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                        Text(
+                            if (showCustomReport) "بستنِ گزارشِ سفارشی" else "گزارشِ سفارشی و خروجی",
+                            color = AppText,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text("بازه‌ی دلخواه · PDF و اکسل", color = AppMuted, fontSize = 11.sp)
+                    }
+                    Text("‹", color = AppMuted, fontSize = 15.sp)
+                }
             }
         }
         if (showCustomReport) {
