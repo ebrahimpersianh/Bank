@@ -129,6 +129,7 @@ fun AddEditChequeScreen(
                     title = "پرداختی",
                     subtitle = "چکی که شما صادر کرده‌اید",
                     selected = type == ChequeType.PAID,
+                    selectedColor = AppDanger,
                     onClick = { type = ChequeType.PAID },
                     modifier = Modifier.weight(1f),
                 )
@@ -136,6 +137,7 @@ fun AddEditChequeScreen(
                     title = "دریافتی",
                     subtitle = "چکی که به شما داده شده",
                     selected = type == ChequeType.RECEIVED,
+                    selectedColor = AppPrimary,
                     onClick = { type = ChequeType.RECEIVED },
                     modifier = Modifier.weight(1f),
                 )
@@ -463,6 +465,7 @@ private fun ChequeTypeToggleCard(
     title: String,
     subtitle: String,
     selected: Boolean,
+    selectedColor: androidx.compose.ui.graphics.Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -470,13 +473,13 @@ private fun ChequeTypeToggleCard(
         onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        color = if (selected) AppPrimary.copy(alpha = 0.16f) else AppSurface,
-        border = BorderStroke(1.dp, if (selected) AppPrimary else AppLine),
+        color = if (selected) selectedColor.copy(alpha = 0.16f) else AppSurface,
+        border = BorderStroke(1.dp, if (selected) selectedColor else AppLine),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 title,
-                color = if (selected) AppPrimary else AppText,
+                color = if (selected) selectedColor else AppText,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
             )
