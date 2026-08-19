@@ -977,7 +977,7 @@ private fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
         )
         Text(
             "این قابلیت یه اجازه‌ی جداگانه لازم داره که اندروید فقط از تنظیماتِ خودش می‌ده. " +
-                "دکمه‌ی زیر رو بزن، تو لیستی که باز می‌شه «حسابدار من» رو پیدا کن و روشنش کن.",
+                "دکمه‌ی زیر رو بزن، تو لیستی که باز می‌شه «جیبک» رو پیدا کن و روشنش کن.",
             color = AppMuted,
             fontSize = 12.sp,
             lineHeight = 20.sp,
@@ -1049,7 +1049,7 @@ private fun AboutSettings(banner: InAppBannerState) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.Info, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
             Column(modifier = Modifier.padding(start = 10.dp)) {
-                Text("حسابدار من", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Text("جیبک", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                 Text("نسخه ${toFa(BuildConfig.VERSION_NAME)}", color = AppMuted, fontSize = 12.sp)
             }
         }
@@ -1336,7 +1336,7 @@ private fun SupportRow(label: String, value: String, modifier: Modifier = Modifi
 
 // نسخه‌ی «۱» قبلاً هاردکد بود (همیشه ثابت، هیچ‌وقت آپدیت نمی‌شد) - خواسته‌ی کاربر: نسخه‌ی واقعیِ
 // نصب‌شده رو نشون بده. BuildConfig.VERSION_NAME همون versionNameِ CI (مثلاً "1.0.332") ئه.
-private val aboutText = "حسابدار من — نسخه ${BuildConfig.VERSION_NAME}\n" +
+private val aboutText = "جیبک — نسخه ${BuildConfig.VERSION_NAME}\n" +
     "این اپ برای محاسبه سریع و شفاف اقساط وام، سود سپرده و برنامه‌ریزی مالی طراحی شده.\n" +
     "Powered By Sad Team"
 

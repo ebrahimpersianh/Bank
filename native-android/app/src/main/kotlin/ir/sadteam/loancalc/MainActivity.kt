@@ -621,7 +621,7 @@ private fun LoanCalcApp(
             topBar = {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                    // اسمِ اپ («حسابدار من») به‌خواستِ صریحِ کاربر کاملاً از بالای هر تب حذف شد -
+                    // اسمِ اپ («جیبک») به‌خواستِ صریحِ کاربر کاملاً از بالای هر تب حذف شد -
                     // به‌جاش عنوانِ خودِ همون تب نشون داده می‌شه (شبیهِ رفرنس)؛ تبِ «خانه» عنوان نداره
                     // چون خودِ HomeScreen از قبل خلاصه‌ی مانده‌ی حساب رو بالای محتواش نشون می‌ده.
                     title = {
@@ -931,7 +931,7 @@ private fun LoanCalcApp(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "نسخه‌ی جدیدِ برنامه‌ی حسابدار من موجوده",
+                        "نسخه‌ی جدیدِ برنامه‌ی جیبک موجوده",
                         color = Color.White,
                         fontSize = 13.sp,
                         modifier = Modifier.weight(1f),

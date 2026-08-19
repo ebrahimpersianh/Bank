@@ -182,7 +182,7 @@ private fun StepHeader(title: String, subtitle: String) {
 private fun WelcomeStep(onNext: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         StepHeader(
-            title = "به حسابدار من خوش اومدی",
+            title = "به جیبک خوش اومدی",
             subtitle = "دخل و خرجت رو ساده ثبت کن، وام و چک و بودجه‌ت رو یک‌جا داشته باش.",
         )
         Spacer(Modifier.height(28.dp))

@@ -4,7 +4,7 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
 
 /** نامِ تجاریِ اشتراکِ اپ - یه‌جا تعریف شده تا اگه عوض شد همه‌جا با هم عوض بشه. */
-const val PLUS_NAME = "حسابدار من پلاس"
+const val PLUS_NAME = "جیبک پلاس"
 
 /**
  * تاریخِ انقضای اشتراک به‌صورتِ شمسی + تعدادِ روزِ باقی‌مونده.

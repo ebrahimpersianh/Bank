@@ -207,7 +207,7 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
             .setContentTitle("دخل‌وخرج امروز یادت نره")
-            .setContentText("امروز هنوز هیچ تراکنشی ثبت نکردی - یه سر بزن به «حسابدار من»")
+            .setContentText("امروز هنوز هیچ تراکنشی ثبت نکردی - یه سر بزن به «جیبک»")
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
