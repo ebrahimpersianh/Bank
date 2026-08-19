@@ -109,6 +109,30 @@ fun Route.subscriptionRoutes() {
                 return@post
             }
 
+            /* 🚨 جلوگیری از **تکرارِ یک رسید** (باگِ امنیتیِ رفع‌شده - مرداد ۱۴۰۵): قبلاً
+               subscribed_until بی‌قید و شرط جلو می‌رفت و فقط ردیفِ تاریخچه با
+               `ON CONFLICT(purchase_token) DO NOTHING` تکراری نمی‌شد. نتیجه: هر کسی می‌تونست
+               **یه رسیدِ واقعی رو n بار بفرسته و n برابر اشتراک بگیره** (API استورها رسیدِ
+               مصرف‌شده رو هم معتبر برمی‌گردونن، پس اعتبارسنجی جلوش رو نمی‌گرفت).
+               حالا اگه این توکن قبلاً پردازش شده، بدونِ هیچ تمدیدی همون وضعیتِ فعلی برگردونده
+               می‌شه - عمداً خطا نمی‌ده، چون `restorePurchases()` سمتِ کلاینت به‌طورِ عادی و مکرر
+               همین رسیدها رو دوباره می‌فرسته و نباید خطا ببینه. */
+            val alreadyProcessed = Db.withConnection { conn ->
+                conn.queryOne(
+                    "SELECT subscribed_until FROM subscription_purchases WHERE purchase_token = ?",
+                    purchaseToken,
+                ) { rs -> rs.getString("subscribed_until") }
+            }
+            if (alreadyProcessed != null) {
+                val until = Db.withConnection { conn ->
+                    conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", authed.uid) { rs ->
+                        rs.getString("subscribed_until")
+                    }
+                } ?: alreadyProcessed
+                call.respond(VerifyResponse(subscribedUntil = until))
+                return@post
+            }
+
             /* اگه اشتراک قبلی هنوز فعاله، از رو همون تاریخ انقضا جلو می‌ریم (نه از الان) تا خرید
                زودتر از موعد، مدت باقی‌مونده رو از دست ندی. */
             val currentSubscribedUntil = Db.withConnection { conn ->

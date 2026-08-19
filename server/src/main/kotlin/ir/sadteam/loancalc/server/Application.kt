@@ -27,7 +27,7 @@ fun main() {
     loadDotEnv()
     Db // فراخوانی برای اجرای init (ساخت جدول‌ها) قبل از بالا اومدن سرور
     val port = env("PORT", "3000").toIntOrNull() ?: 3000
-    println("سرور روی پورت $port بالا اومد")
+    Log.info("server_start", "سرور بالا اومد", "port" to port)
     embeddedServer(Netty, port = port, module = Application::module).start(wait = true)
 }
 

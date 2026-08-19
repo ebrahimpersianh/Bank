@@ -10,9 +10,12 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.Db
+import ir.sadteam.loancalc.server.Log
 import ir.sadteam.loancalc.server.SmsSendException
 import ir.sadteam.loancalc.server.env
 import ir.sadteam.loancalc.server.execute
+import ir.sadteam.loancalc.server.maskPhone
+import ir.sadteam.loancalc.server.rateLimitOk
 import ir.sadteam.loancalc.server.insertReturningId
 import ir.sadteam.loancalc.server.isSubscribed
 import ir.sadteam.loancalc.server.parseUtc
@@ -30,6 +33,14 @@ private val PHONE_RE = Regex("^09\\d{9}$")
 private const val OTP_TTL_MS = 2 * 60 * 1000L // ۲ دقیقه اعتبار کد
 private const val OTP_RESEND_COOLDOWN_MS = 60 * 1000L // حداقل فاصله بین دو درخواست کد برای یه شماره
 private const val MAX_VERIFY_ATTEMPTS = 5
+
+/* سقفِ درخواست به‌ازای هر IP (رجوع کن به RateLimit.kt برای دلیلِ امنیتی). عددها عمداً خیلی
+   بالاتر از نیازِ یه کاربرِ واقعی‌ان (یه آدم عادی روزی چند بار لاگین نمی‌کنه)، ولی جلوی اسکریپتی
+   که می‌خواد اعتبارِ پیامک رو بسوزونه رو کاملاً می‌گیرن. */
+private const val HOUR_MS = 60 * 60 * 1000L
+private const val OTP_REQUESTS_PER_IP_PER_HOUR = 8
+private const val OTP_REQUESTS_PER_IP_PER_DAY = 25
+private const val VERIFY_ATTEMPTS_PER_IP_PER_HOUR = 30
 
 private val secureRandom = SecureRandom()
 
@@ -79,6 +90,10 @@ private data class OtpRow(val id: Long, val codeHash: String, val expiresAt: Lon
 fun Route.authRoutes() {
     route("/api/auth") {
         post("/request-otp") {
+            /* 🚨 دو سقفِ هم‌زمان: ساعتی و روزانه. بدونِ این، کول‌داونِ ۶۰ثانیه‌ایِ پایین که
+               به‌ازای **شماره**ست، با چرخوندنِ شماره‌ها به‌راحتی دور زده می‌شد. */
+            if (!call.rateLimitOk("otp_req_h", OTP_REQUESTS_PER_IP_PER_HOUR, HOUR_MS)) return@post
+            if (!call.rateLimitOk("otp_req_d", OTP_REQUESTS_PER_IP_PER_DAY, 24 * HOUR_MS)) return@post
             val body = runCatching { call.receive<RequestOtpBody>() }.getOrNull()
             val phone = (body?.phone ?: "").trim()
             if (!PHONE_RE.matches(phone)) {
@@ -111,16 +126,20 @@ fun Route.authRoutes() {
                 try {
                     sendOtpSms(phone, code)
                 } catch (e: SmsSendException) {
-                    println("[SMS-FAIL] ارسالِ OTP برای $phone شکست خورد: ${e.message}")
+                    // ⚠️ شماره **ماسک‌شده** لاگ می‌شه (قبلاً کاملِ شماره چاپ می‌شد) و کدِ OTP
+                    // هیچ‌وقت لاگ نمی‌شه - رجوع کن به قاعده‌ی بالای Log.kt.
+                    Log.error("otp_sms_failed", e.message ?: "خطای ناشناخته", "phone" to maskPhone(phone))
                     call.respond(HttpStatusCode.BadGateway, mapOf("error" to "sms_send_failed"))
                     return@post
                 }
             }
 
+            Log.info("otp_sent", "کدِ تایید ارسال شد", "phone" to maskPhone(phone), "test" to testAccount)
             call.respond(mapOf("ok" to true))
         }
 
         post("/verify-otp") {
+            if (!call.rateLimitOk("otp_verify", VERIFY_ATTEMPTS_PER_IP_PER_HOUR, HOUR_MS)) return@post
             val body = runCatching { call.receive<VerifyOtpBody>() }.getOrNull()
             val phone = (body?.phone ?: "").trim()
             val code = (body?.code ?: "").trim()
@@ -149,6 +168,7 @@ fun Route.authRoutes() {
 
             Db.withConnection { conn -> conn.execute("UPDATE otps SET attempts = attempts + 1 WHERE id = ?", otp.id) }
             if (hashCode(code) != otp.codeHash) {
+                Log.warn("login_wrong_code", "کدِ اشتباه", "phone" to maskPhone(phone), "attempt" to (otp.attempts + 1))
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to "wrong_code"))
                 return@post
             }
@@ -172,6 +192,10 @@ fun Route.authRoutes() {
                 }!!
             }
 
+            Log.info(
+                "login_ok", "ورودِ موفق",
+                "uid" to user.id, "phone" to maskPhone(user.phone), "new" to (user.subscribedUntil == null),
+            )
             val token = signToken(user.id, user.phone)
             call.respond(
                 VerifyOtpResponse(
@@ -217,6 +241,7 @@ fun Route.authRoutes() {
            باید اضافه بشه. */
         delete("/account") {
             val authed = call.requireAuth() ?: return@delete
+            Log.info("account_deleted", "حذفِ کاملِ حساب", "uid" to authed.uid, "phone" to maskPhone(authed.phone))
             Db.withConnection { conn ->
                 conn.execute("DELETE FROM loans WHERE user_id = ?", authed.uid)
                 conn.execute("DELETE FROM cheques_backup WHERE user_id = ?", authed.uid)
