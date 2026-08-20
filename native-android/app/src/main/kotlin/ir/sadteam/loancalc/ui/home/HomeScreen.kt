@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -164,13 +165,24 @@ fun HomeScreen(
                     // شمارشِ بالارونده - تو حالتِ خصوصی خاموشه (عدد پشتِ ••• مخفیه، انیمیشن بی‌معنیه).
                     val shownBalance = countUpAmount(totalBalance, enabled = !privacyMode)
                     PrivacyCrossfade(privacyMode) { masked ->
-                        Text(
-                            "${maskIfPrivate(masked, fmt(shownBalance))} ریال",
-                            color = if (totalBalance < 0) AppDanger else AppText,
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold,
+                        Row(
+                            verticalAlignment = Alignment.Bottom,
                             modifier = Modifier.padding(top = 10.dp),
-                        )
+                        ) {
+                            Text(
+                                maskIfPrivate(masked, fmt(shownBalance)),
+                                color = if (totalBalance < 0) AppDanger else AppText,
+                                fontSize = 36.sp,
+                                fontWeight = FontWeight.Black,
+                            )
+                            Text(
+                                " ریال",
+                                color = AppMuted,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(start = 4.dp),
+                            )
+                        }
                     }
                     Text(
                         "${toFa(accounts.size)} حساب‌کتاب",
@@ -250,7 +262,9 @@ fun HomeScreen(
             onClick = { showNewTransaction = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(20.dp),
+                .padding(20.dp)
+                .size(56.dp),
+            shape = RoundedCornerShape(20.dp),
             containerColor = AppPrimary,
         ) {
             Icon(Icons.Filled.Add, contentDescription = "افزودنِ تراکنش")
@@ -271,8 +285,8 @@ private fun RecentTransactionRow(tx: AccountTransactionEntity, accountName: Stri
             if (category != null) {
                 Box(
                     modifier = Modifier
-                        .size(30.dp)
-                        .background(category.color.copy(alpha = 0.16f), CircleShape),
+                        .size(34.dp)
+                        .background(category.color.copy(alpha = 0.16f), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(category.icon, contentDescription = null, tint = category.color, modifier = Modifier.size(16.dp))
