@@ -13,7 +13,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  # build و deploy یه job شدن (به‌جای build → upload-artifact → deploy → download-artifact):
+  # قبلاً چندبار پشتِ‌سرهم دیپلوی فقط چون سهمیه‌ی فضای Artifactِ گیت‌هاب پر بود شکست می‌خورد،
+  # با اینکه jar به‌درستی ساخته شده بود - این سهمیه ربطی به بیلد نداشت، فقط برای رد-و-بدل‌کردنِ
+  # jar بینِ دو jobِ همون یه ران بود. حالا jar مستقیم از همین job (بدونِ Artifact) به VPS می‌ره.
+  build-and-deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,25 +41,6 @@ jobs:
       - name: ساخت jar اجراپذیر (fat jar)
         run: ./gradlew fatJar --console=plain
 
-      # retention-days: این jar فقط برای دستِ‌به‌دست‌شدن بینِ jobِ build و jobِ deploy همین رانه (چند
-      # دقیقه‌ای مصرف می‌شه) - نگه‌داشتنِ ۹۰روزه‌ی پیش‌فرضِ گیت‌هاب لازم نیست و فضای Artifact رو زودتر
-      # از موعد پر می‌کرد (رجوع کن به CLAUDE.md).
-      - name: بارگذاری jar سرور
-        uses: actions/upload-artifact@v4
-        with:
-          name: loan-calculator-server-jar
-          path: server/build/libs/loan-calculator-server-1.0.0-all.jar
-          retention-days: 3
-
-  # دیپلویِ خودکار رو VPS - جایگزینِ آپلودِ دستیِ تیکه‌تیکه‌ی jar که چندبار (jarِ خالی از cat
-  # ناقص، jar تو مسیرِ اشتباه) سرورِ زنده رو کرش کرده بود (رجوع کن به CLAUDE.md). فقط رو پوشِ main
-  # اجرا می‌شه، و فقط اگه سکرت‌های SSH ست شده باشن - وگرنه این job خودش رد می‌شه (skip)، نه fail،
-  # پس نبودِ سکرت باعثِ خرابیِ رانِ build نمی‌شه.
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
       - name: چک کردنِ وجودِ سکرت‌های VPS
         id: check
         run: |
@@ -66,17 +51,13 @@ jobs:
             echo "::warning::سکرت‌های VPS_HOST/VPS_USER/VPS_SSH_KEY ست نشدن - دیپلویِ خودکار رد می‌شه (رجوع کن به server/README.md)."
           fi
 
-      - name: دانلودِ jarِ بیلدشده
-        if: steps.check.outputs.ready == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: loan-calculator-server-jar
-          path: .
+      # فقط رو پوشِ main اجرا می‌شه (نه هر PR/بیلدِ تستی)، و فقط اگه سکرت‌ها ست شده باشن.
+      - name: آماده‌سازیِ jar تو ریشه‌ی مخزن (برای مسیرِ ساده‌ی scp)
+        if: steps.check.outputs.ready == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: cp build/libs/loan-calculator-server-1.0.0-all.jar ../loan-calculator-server-1.0.0-all.jar
 
-      # به‌جای جایگزینیِ مستقیمِ jarِ زنده، اول با یه اسمِ موقت کپی می‌شه؛ استپِ بعدی فقط اگه
-      # فایل واقعاً یه zip/jarِ سالمه (نه خالی/ناقص - دقیقاً همون باگِ قبلی) جایگزینش می‌کنه.
       - name: کپیِ مستقیمِ jar به VPS (با اسمِ موقت)
-        if: steps.check.outputs.ready == 'true'
+        if: steps.check.outputs.ready == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -86,8 +67,10 @@ jobs:
           target: "~/VameMan/incoming/"
           strip_components: 0
 
+      # به‌جای جایگزینیِ مستقیمِ jarِ زنده، اول با یه اسمِ موقت کپی می‌شه؛ این مرحله فقط اگه فایل
+      # واقعاً یه zip/jarِ سالمه (نه خالی/ناقص) جایگزینش می‌کنه.
       - name: تاییدِ سلامتِ jar + جایگزینی + ری‌استارت + تاییدِ بالا اومدن
-        if: steps.check.outputs.ready == 'true'
+        if: steps.check.outputs.ready == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
