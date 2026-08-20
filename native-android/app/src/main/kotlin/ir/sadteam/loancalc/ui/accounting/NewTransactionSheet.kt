@@ -193,7 +193,7 @@ fun NewTransactionSheet(
                 keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                textStyle = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Black, color = accent),
+                textStyle = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Black, color = accent),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = accent,
                     unfocusedBorderColor = accent.copy(alpha = 0.35f),
