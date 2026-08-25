@@ -142,6 +142,13 @@ import ir.sadteam.loancalc.ui.components.AvatarView
 import ir.sadteam.loancalc.ui.components.AvatarPicker
 import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
 import androidx.compose.material.icons.filled.Savings
+import android.content.Context
+import ir.sadteam.loancalc.ui.components.AppCardVariant
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.Lifecycle
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.runtime.DisposableEffect
+import androidx.core.app.NotificationManagerCompat
 
 private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
 private val themeModeOptions =
@@ -996,13 +1003,64 @@ private fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
     val context = LocalContext.current
     val notifEnabled by viewModel.notifEnabled.collectAsState()
 
+    // ⚠️ **قاعده‌ی صریحِ کارتِ `35f`: «سوئیچ دروغ نمی‌گوید».** وضعیتِ واقعیِ مجوز از خودِ اندروید
+    // (`NotificationManagerCompat.getEnabledListenerPackages`) تو هر `onResume` دوباره خونده
+    // می‌شه. قبلاً فقط پرچمِ خواستِ کاربر (DataStore) نشون داده می‌شد، پس اگه کاربر مجوز رو از
+    // تنظیماتِ گوشی برمی‌داشت، سوییچ همچنان «روشن» می‌موند و قابلیت بی‌صدا مرده بود.
+    var listenerGranted by remember { mutableStateOf(notificationListenerGranted(context)) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                listenerGranted = notificationListenerGranted(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    fun openListenerSettings() {
+        runCatching {
+            context.startActivity(
+                Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }
+    }
+
+    // حالتِ سومِ کارتِ `35f`: کاربر روشنش کرده ولی اندروید مجوز رو نداره/پس گرفته.
+    val revoked = notifEnabled && !listenerGranted
+
     SettingsSwitchRow(
         icon = Icons.Filled.NotificationsActive,
         title = "خوندنِ خودکارِ اعلانِ بانکی",
-        subtitle = "برای بانک‌هایی که پیامک نمی‌دن و فقط اعلان می‌فرستن",
-        checked = notifEnabled,
-        onCheckedChange = { checked -> viewModel.setNotifEnabled(checked) },
+        subtitle = when {
+            revoked -> "اجازه در تنظیماتِ گوشی برداشته شده"
+            notifEnabled -> "برای بانک‌هایی که پیامک نمی‌دن و فقط اعلان می‌فرستن"
+            else -> "خرج‌ها را دستی وارد می‌کنی"
+        },
+        checked = notifEnabled && listenerGranted,
+        onCheckedChange = { checked ->
+            viewModel.setNotifEnabled(checked)
+            // روشن‌کردنِ سوییچ بدونِ مجوزِ اندروید بی‌فایده‌ست - همون لحظه می‌بریمش سرِ صفحه‌ی
+            // درست (قاعده‌ی `35b`: «متنِ دکمه صریح می‌گوید کاربر از برنامه بیرون می‌رود»).
+            if (checked && !listenerGranted) openListenerSettings()
+        },
     )
+    if (revoked) {
+        AppCard(variant = AppCardVariant.URGENT, modifier = Modifier.padding(top = 8.dp)) {
+            Text(
+                "اجازه‌ی خواندنِ اعلان از تنظیماتِ گوشی برداشته شده، پس هیچ تراکنشی خودکار ثبت نمی‌شه.",
+                color = AppText,
+                fontSize = 12.sp,
+                lineHeight = 20.sp,
+            )
+            GradientButton(
+                onClick = { openListenerSettings() },
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            ) { Text("درستش کن") }
+        }
+    }
     AppCard(modifier = Modifier.padding(top = 8.dp)) {
         Text(
             "بعضی بانک‌ها (مثلِ بلوبانک) اصلاً پیامکِ برداشت/واریز نمی‌فرستن و فقط تو خودِ گوشی " +
@@ -1012,35 +1070,56 @@ private fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
             fontSize = 12.sp,
             lineHeight = 20.sp,
         )
-        Text(
-            "این قابلیت یه اجازه‌ی جداگانه لازم داره که اندروید فقط از تنظیماتِ خودش می‌ده. " +
-                "دکمه‌ی زیر رو بزن، تو لیستی که باز می‌شه «جیبک» رو پیدا کن و روشنش کن.",
-            color = AppMuted,
-            fontSize = 12.sp,
-            lineHeight = 20.sp,
-            modifier = Modifier.padding(top = 8.dp),
-        )
-        OutlinedButton(
-            onClick = {
-                runCatching {
-                    context.startActivity(
-                        Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                    )
-                }
-            },
-            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        // **راهنمای سه‌قدمیِ کارتِ `35c`** - صفحه‌ای که باز می‌شه مالِ اندروزیده نه جیبک، پس
+        // کاربر باید از قبل بدونه اونجا دنبالِ چی بگرده.
+        NotificationPermissionSteps(modifier = Modifier.padding(top = 12.dp))
+        GradientButton(
+            onClick = { openListenerSettings() },
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         ) {
-            Text("بازکردنِ تنظیماتِ دسترسی به اعلان‌ها")
+            Text("بریم به تنظیماتِ گوشی")
         }
         Text(
-            "هیچ اعلانی هیچ‌جا فرستاده نمی‌شه - همه‌چی رو خودِ گوشیه، و فقط اعلانِ همون بانکی " +
-                "خونده می‌شه که خودت انتخاب کردی.",
+            "فیلتر روی خودِ گوشیه، نه سرور: فقط اعلانِ همون بانکی که خودت انتخاب کردی خونده " +
+                "می‌شه و متنِ خامِ هیچ اعلانِ دیگه‌ای هیچ‌وقت از گوشی بیرون نمی‌ره.",
             color = AppMuted,
             fontSize = 11.sp,
             lineHeight = 18.sp,
             modifier = Modifier.padding(top = 10.dp),
         )
+    }
+}
+
+/** آیا اندروید واقعاً مجوزِ خواندنِ اعلان‌ها رو به این اپ داده؟ (قاعده‌ی «سوئیچ دروغ نمی‌گوید».) */
+private fun notificationListenerGranted(context: Context): Boolean =
+    NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+
+/** سه قدمِ کارتِ `35c` - همون‌طور که طرح می‌خواد: شماره‌دار، کوتاه، و با لحنِ «چی می‌بینی». */
+@Composable
+private fun NotificationPermissionSteps(modifier: Modifier = Modifier) {
+    val steps = listOf(
+        "تو لیستِ «دسترسی به اعلان‌ها» دنبالِ «جیبک» بگرد - لیست الفبایی نیست، تا پایین برو.",
+        "کلیدِ کنارِ اسمش رو روشن کن.",
+        "تو پنجره‌ی تاییدِ اندروید، «اجازه» رو بزن.",
+    )
+    Column(modifier = modifier) {
+        steps.forEachIndexed { index, step ->
+            Row(modifier = Modifier.padding(bottom = 8.dp)) {
+                Text(
+                    toFa(index + 1),
+                    color = AppPrimary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                )
+                Text(
+                    step,
+                    color = AppMuted,
+                    fontSize = 11.5.sp,
+                    lineHeight = 19.sp,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+        }
     }
 }
 

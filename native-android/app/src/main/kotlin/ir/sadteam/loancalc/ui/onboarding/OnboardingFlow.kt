@@ -72,6 +72,11 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.Sms
+import android.provider.Settings
+import android.content.Intent
 
 /**
  * مسیرِ اولین ورود، عیناً به سبکِ اپِ مرجعِ کاربر (پولکی) - خواسته‌ی صریحِ تسکِ #28.
@@ -93,7 +98,7 @@ fun OnboardingFlow(
     viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
     var step by remember { mutableIntStateOf(0) }
-    val lastStep = 3
+    val lastStep = 4
 
     Column(
         modifier = Modifier
@@ -125,6 +130,10 @@ fun OnboardingFlow(
                     onChoose = { viewModel.setDailyReminder(it) },
                     onNext = { step = 3 },
                 )
+                // **کارتِ `35a`**: «یک صفحه برای هر دو مجوز، نه دو صفحه. پیامک اول چون کاربر
+                // انتظارش را دارد؛ اعلان دوم با دلیلِ روشن.» و «بعداً» هم‌عرضِ دکمه‌ی اصلیه چون
+                // «کارِ برنامه بدونِ این دو هم راه می‌افتد».
+                3 -> BankReadingPermissionsStep(onNext = { step = 4 })
                 else -> FirstAccountStep(
                     onSubmit = { name, balance, icon ->
                         viewModel.addFirstAccount(name, "", balance, icon)
@@ -352,7 +361,105 @@ private fun ReminderStep(onChoose: (Boolean) -> Unit, onNext: () -> Unit) {
 }
 
 /**
- * مرحله‌ی چهارم: اولین حساب‌کتاب. عمداً فقط «منبعِ غیربانکی» (نقدی/کیفِ پول…) ساخته می‌شه، نه
+ * **مرحله‌ی مجوزهای خواندنِ خودکار** - کارتِ `35a` فایلِ طراحی.
+ *
+ * دو اجازه‌ی کاملاً متفاوت، تو **یک** صفحه:
+ * - **پیامکِ بانک** - مجوزِ Runtimeِ عادی (`RECEIVE_SMS`)، پس همون‌جا دیالوگ می‌ده.
+ * - **اعلانِ گوشی** - مجوزِ `NotificationListener`ه که دیالوگِ Runtime **نداره**؛ تنها راهش
+ *   صفحه‌ی خودِ اندرویده. برای همین متنِ دکمه صریحاً می‌گه کاربر از برنامه بیرون می‌ره
+ *   (قاعده‌ی `35b`).
+ *
+ * ⚠️ هیچ‌کدوم اجباری نیستن - «بعداً» هم‌عرضِ دکمه‌ی اصلیه، دقیقاً مثلِ طرح.
+ */
+@Composable
+private fun BankReadingPermissionsStep(onNext: () -> Unit) {
+    val context = LocalContext.current
+    val smsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { /* نتیجه مسیر رو قفل نمی‌کنه - کاربر بعداً هم می‌تونه از تنظیمات روشنش کنه. */ }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        StepHeader(
+            title = "دو اجازه لازم دارم",
+            subtitle = "تا خرج‌ها را خودم ثبت کنم و تو مجبور نباشی دستی وارد کنی.",
+        )
+        Spacer(Modifier.height(24.dp))
+        PermissionExplainCard(
+            icon = Icons.Default.Sms,
+            title = "پیامکِ بانک",
+            description = "مبلغ و نامِ فروشنده از پیامکِ خرید خوانده می‌شود",
+        )
+        Spacer(Modifier.height(10.dp))
+        PermissionExplainCard(
+            icon = Icons.Default.Notifications,
+            title = "اعلانِ گوشی",
+            description = "بانک‌هایی مثلِ بلوبانک پیامک نمی‌دهند، فقط اعلان",
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "فقط پیامک و اعلانِ بانک‌های پشتیبانی‌شده خوانده می‌شود. باقیِ پیام‌ها نه خوانده و نه ذخیره می‌شوند.",
+            color = AppMuted,
+            fontSize = 11.sp,
+            lineHeight = 19.sp,
+        )
+        Spacer(Modifier.weight(1f))
+        GradientButton(
+            onClick = {
+                smsLauncher.launch(
+                    arrayOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS),
+                )
+                runCatching {
+                    context.startActivity(
+                        Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                    )
+                }
+                onNext()
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("اجازه می‌دهم")
+        }
+        TextButton(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
+            Text("بعداً", color = AppMuted, fontSize = 13.sp)
+        }
+        Spacer(Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun PermissionExplainCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    description: String,
+) {
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(AppPrimaryPill),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = AppPrimaryInk)
+            }
+            Column(modifier = Modifier.padding(start = 12.dp)) {
+                Text(title, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    description,
+                    color = AppMuted,
+                    fontSize = 12.sp,
+                    lineHeight = 19.sp,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * مرحله‌ی پنجم: اولین حساب‌کتاب. عمداً فقط «منبعِ غیربانکی» (نقدی/کیفِ پول…) ساخته می‌شه، نه
  * کارتِ بانکی - تو اپِ مرجع هم قدمِ اول همون «نقدی»ه؛ کارتِ بانکی با جزئیاتِ کاملش بعداً از
  * تبِ دارایی اضافه می‌شه.
  */
