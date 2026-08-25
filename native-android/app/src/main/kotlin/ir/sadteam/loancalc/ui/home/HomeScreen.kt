@@ -45,6 +45,7 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.data.findCategory
+import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.accounting.NewTransactionSheet
 import ir.sadteam.loancalc.ui.components.AppCard
@@ -85,7 +86,9 @@ fun HomeScreen(
     onNavigateToRoute: (String) -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel(),
     noteViewModel: NoteViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
 ) {
+    val userName by authViewModel.userName.collectAsState()
     val accounts by accountViewModel.accounts.collectAsState()
     val transactions by accountViewModel.transactions.collectAsState()
     val privacyMode = LocalPrivacyMode.current
@@ -167,6 +170,12 @@ fun HomeScreen(
             contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 100.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // سربرگِ صفحه‌ی خانه (کارتِ `15a`): تاریخِ امروز ۱۱/۷۰۰ و زیرش سلام ۱۹/۹۰۰.
+            // اسمِ کاربر اختیاریه (تسکِ #37) - اگه نذاشته باشه «خوش آمدی» میاد، دقیقاً مثلِ
+            // حالتِ خالیِ طرح (کارتِ `15b`).
+            item {
+                HomeGreetingHeader(userName = userName)
+            }
             item {
                 // ⚠️ **بازطراحیِ سبکِ «جیبک»** - کارتِ قهرمانِ خانه (کارتِ `15a`ی فایلِ طراحی).
                 // قبلاً یه AppCardِ شیشه‌ای با گرادیانِ سبزِ نیمه‌شفاف و متنِ تیره بود. الان طبقِ طرح
@@ -281,6 +290,35 @@ fun HomeScreen(
  * بی‌حاشیه با سایه‌ی سبزِ تیره‌ست. این تنها استثنای قاعده‌ی «هیچ کارتی رو دستی نساز»ه و برای
  * همین اینجا یه کامپوننتِ نام‌دارِ جداست، نه یه بلوکِ inline که یه‌بارِ دیگه تکرار بشه.
  */
+/**
+ * سربرگِ تبِ خانه - کارتِ `15a` / `15b`ی فایلِ طراحی.
+ *
+ * تاریخِ امروز (۱۱/۷۰۰ خاکستری) و زیرش سلام (۱۹/۹۰۰). اسمِ کاربر **اختیاریه** (تسکِ #37):
+ * اگه ثبت نکرده باشه «خوش آمدی» میاد - همون متنِ حالتِ خالیِ طرح.
+ *
+ * 📌 قرصِ «فعال» و شمارنده‌ی سکه که طرح اینجا داره **هنوز ساخته نشدن** - گیمیفیکیشن به جدولِ
+ * دیتابیسِ جدید نیاز داره و قدمِ جداییه.
+ */
+@Composable
+private fun HomeGreetingHeader(userName: String?) {
+    val today = remember { JalaliCalendar.today() }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            "${toFa(today.d)} ${persianMonthName(today.m)}",
+            color = AppMuted,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            if (userName.isNullOrBlank()) "خوش آمدی" else "سلامْ $userName",
+            color = AppText,
+            fontSize = 19.sp,
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+    }
+}
+
 @Composable
 private fun HomeBalanceHero(
     todaySpend: Double,
