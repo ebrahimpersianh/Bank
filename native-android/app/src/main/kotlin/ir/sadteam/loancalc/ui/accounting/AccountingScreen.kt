@@ -105,6 +105,7 @@ import ir.sadteam.loancalc.ui.asset.AssetSection
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppFab
 import ir.sadteam.loancalc.ui.components.HeroPillBg
+import ir.sadteam.loancalc.ui.components.HeroSmallPill
 import ir.sadteam.loancalc.ui.components.HeroMuted
 import ir.sadteam.loancalc.ui.components.HeroTone
 import ir.sadteam.loancalc.ui.components.AppHeroCard
@@ -318,15 +319,29 @@ private fun MainSection(
         // داشت: مانده‌ی کل بزرگ بالا + آیکونِ جستجو کنارش).
         item {
             StaggerIn(0) {
-                // کارتِ قهرمانِ تبِ گزارش - **بنفش** طبقِ کارتِ `26a`ی طرح (توکنِ «بنفش = بودجه و
-                // آمار»)، نه سبز. متن‌ها سفیدن چون زمینه رنگیِ ماته.
-                AppHeroCard(tone = HeroTone.PURPLE) {
+                // کارتِ قهرمانِ **تبِ دارایی** - سبزِ توپر طبقِ کارتِ `26b`ی طرح.
+                // (یه دور اشتباهاً بنفش شد چون فکر کردم این بخش تبِ گزارشه؛ `MainSection`
+                // در واقع نمای «حساب‌کتاب‌ها»ی تبِ داراییه - رجوع کن به `AssetsScreen`.)
+                AppHeroCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalAlignment = Alignment.Top,
                     ) {
-                        Text("مانده‌ی کل", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                        Column {
+                            Text("داراییِ کل", color = HeroMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            // شمارشِ بالارونده - تو حالتِ خصوصی خاموشه (عدد پشتِ ••• مخفیه).
+                            val shownBalance = countUpAmount(totalBalance, enabled = !privacyMode)
+                            PrivacyCrossfade(privacyMode) { masked ->
+                                Text(
+                                    maskIfPrivate(masked, fmt(shownBalance)),
+                                    color = Color.White,
+                                    fontSize = 27.sp,
+                                    fontWeight = FontWeight.Black,
+                                    modifier = Modifier.padding(top = 3.dp),
+                                )
+                            }
+                        }
                         Box(
                             modifier = Modifier
                                 .size(32.dp)
@@ -337,24 +352,15 @@ private fun MainSection(
                             Icon(Icons.Filled.Search, contentDescription = "جستجو", tint = Color.White, modifier = Modifier.size(17.dp))
                         }
                     }
-                    // شمارشِ بالارونده - تو حالتِ خصوصی خاموشه (عدد پشتِ ••• مخفیه، انیمیشن بی‌معنیه).
-                    val shownBalance = countUpAmount(totalBalance, enabled = !privacyMode)
-                    PrivacyCrossfade(privacyMode) { masked ->
-                        Text(
-                            "${maskIfPrivate(masked, fmt(shownBalance))} ریال",
-                            color = Color.White,
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.Black,
-                            modifier = Modifier.padding(top = 3.dp),
-                        )
+                    // قرص‌های تفکیکِ زیرِ عدد - طرح سه‌تا داره (نقد/طلا/ارز). اینجا تفکیکِ واقعیِ
+                    // دمِ‌دستی «تعدادِ حساب‌کتاب»ه؛ تفکیکِ دسته‌های دارایی تو نمای «دارایی‌ها»ی
+                    // همین تب (AssetSection) هست.
+                    Row(
+                        modifier = Modifier.padding(top = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                    ) {
+                        HeroSmallPill("${toFa(accounts.size)} حساب‌کتاب")
                     }
-                    Text(
-                        "${toFa(accounts.size)} حساب‌کتاب",
-                        color = HeroMuted,
-                        fontSize = 10.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
                 }
             }
         }
@@ -1478,6 +1484,87 @@ private fun DateRibbonArrow(icon: ImageVector, contentDescription: String, onCli
  * فیلترِ بازه‌ی دلخواه + خروجیِ PDF/اکسلِ قبلی (رجوع کن به CLAUDE.md، «تکمیلِ گزارش‌گیری») عمداً حذف
  * نشد - پشتِ یه دکمه‌ی «گزارشِ سفارشی و خروجی» جمع شد تا هم نمای روزانه‌ی جدید هم قابلیتِ قبلی بمونه.
  */
+/**
+ * کارتِ قهرمانِ تبِ گزارش - کارتِ `26a`ی فایلِ طراحی.
+ *
+ * **بنفش** (`#A56EFF → #7440C9`، سایه‌ی `#5C2FA8`) طبقِ توکنِ «بنفش = بودجه و آمار». مقادیرِ
+ * دقیقِ طرح: برچسبِ ۱۰/۷۰۰ سفیدِ ۸۰٪ · عددِ ۲۶/۹۰۰ · قرصِ تغییر ۹٫۵/۹۰۰ · نمودارِ ۷ ماهه با
+ * ارتفاعِ ۴۰ و فاصله‌ی ۳ (میله‌های گذشته سفیدِ ۳۰٪، ماهِ جاری سفیدِ توپر) · برچسب‌های ۸٫۵.
+ */
+@Composable
+private fun ReportMonthHero(
+    monthLabel: String,
+    thisMonthSpend: Double,
+    prevMonthSpend: Double,
+    monthlySpend: List<Double>,
+    firstMonthLabel: String,
+    privacyMode: Boolean,
+) {
+    val deltaPercent: Int? = if (prevMonthSpend > 0.0) {
+        (((thisMonthSpend - prevMonthSpend) / prevMonthSpend) * 100).toInt()
+    } else {
+        null
+    }
+    val max = monthlySpend.maxOrNull()?.takeIf { it > 0.0 } ?: 1.0
+
+    AppHeroCard(tone = HeroTone.PURPLE) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top,
+        ) {
+            Column {
+                Text("خرجِ $monthLabel", color = HeroMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        maskIfPrivate(masked, fmt(thisMonthSpend)),
+                        color = Color.White,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
+            }
+            if (deltaPercent != null) {
+                HeroSmallPill(
+                    (if (deltaPercent > 0) "▲ " else "▼ ") +
+                        toFa(kotlin.math.abs(deltaPercent)) + "٪ نسبت به ماهِ قبل",
+                )
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+                .height(40.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            monthlySpend.forEachIndexed { index, value ->
+                val isCurrent = index == monthlySpend.lastIndex
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight((value / max).toFloat().coerceIn(0.06f, 1f))
+                        .background(
+                            color = if (isCurrent) Color.White else Color.White.copy(alpha = 0.30f),
+                            shape = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
+                        ),
+                )
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(firstMonthLabel, color = Color.White.copy(alpha = 0.62f), fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
+            Text(monthLabel, color = Color.White, fontSize = 8.5.sp, fontWeight = FontWeight.ExtraBold)
+        }
+    }
+}
+
 @Composable
 private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: CategoryViewModel) {
     val accounts by viewModel.accounts.collectAsState()
@@ -1512,6 +1599,27 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
         txOn(prevDate).filter { it.type == activeType.name }.sumOf { it.amount }
     }
     val diffFromPrev = activeAmount - prevActiveAmount
+
+    // ── کارتِ قهرمانِ بنفشِ بالای گزارش (کارتِ `26a`ی طرح) ───────────────────────────
+    // خرجِ ۷ ماهِ اخیر (قدیمی‌ترین → ماهِ جاری) برای نمودارِ میله‌ای، و مقایسه‌ی ماهِ جاری با
+    // ماهِ قبل. داده‌ی جدیدی لازم نیست - از همون تراکنش‌های موجود.
+    val last7Months = remember(today) {
+        (6 downTo 0).map { back ->
+            var y = today.y
+            var m = today.m - back
+            while (m <= 0) { m += 12; y -= 1 }
+            y to m
+        }
+    }
+    val monthlySpend = remember(allTransactions, last7Months) {
+        last7Months.map { (y, m) ->
+            allTransactions
+                .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == y && it.month == m }
+                .sumOf { it.amount }
+        }
+    }
+    val thisMonthSpend = monthlySpend.last()
+    val prevMonthSpend = monthlySpend[monthlySpend.lastIndex - 1]
 
     val last7Days = remember(viewDate) { (0..6).map { PersianCalendar.addDays(viewDate, -it) }.reversed() }
     val chartValues = remember(allTransactions, last7Days, showExpenseTab) {
@@ -1599,6 +1707,18 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
     ) {
         item {
             StaggerIn(0) {
+                ReportMonthHero(
+                    monthLabel = faMonthNamesAccounting[today.m - 1],
+                    thisMonthSpend = thisMonthSpend,
+                    prevMonthSpend = prevMonthSpend,
+                    monthlySpend = monthlySpend,
+                    firstMonthLabel = faMonthNamesAccounting[last7Months.first().second - 1],
+                    privacyMode = privacyMode,
+                )
+            }
+        }
+        item {
+            StaggerIn(1) {
                 DateRibbonHeader(viewDate = viewDate, onDateChange = { viewDate = it })
             }
         }

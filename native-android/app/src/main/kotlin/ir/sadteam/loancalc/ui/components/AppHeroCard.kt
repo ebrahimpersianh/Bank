@@ -1,5 +1,9 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.Text
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -83,3 +87,19 @@ val HeroPillBg: Color = Color.White.copy(alpha = 0.20f)
 
 /** سایه‌ی سختِ کارتِ قهرمان - `#096F45`، تیره‌ترِ همون سبز (نه خاکستریِ عمومی). */
 private val HeroShadowColor = Color(0xFF096F45)
+
+/**
+ * قرصِ کوچکِ نیمه‌شفافِ رو کارتِ قهرمان - `rgba(255,255,255,.2)`، متنِ ۹/۹۰۰ سفید، پدینگِ ۵×۱۰،
+ * کپسولِ کامل. طبقِ قرص‌های تفکیکِ کارتِ `26b` («نقد ۱۶٫۷M»، «طلا ۹۳٫۹M»...).
+ */
+@Composable
+fun HeroSmallPill(text: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(AppRadius.button))
+            .background(HeroPillBg)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+    ) {
+        Text(text, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
+    }
+}
