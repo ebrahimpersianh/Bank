@@ -69,7 +69,6 @@ import androidx.compose.foundation.background
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -105,6 +104,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import ir.sadteam.loancalc.ui.asset.AssetSection
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppFab
+import ir.sadteam.loancalc.ui.components.HeroPillBg
+import ir.sadteam.loancalc.ui.components.HeroMuted
+import ir.sadteam.loancalc.ui.components.HeroTone
+import ir.sadteam.loancalc.ui.components.AppHeroCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.AppProgressBar
 import ir.sadteam.loancalc.ui.components.BankBadge
@@ -135,7 +138,6 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
@@ -316,24 +318,23 @@ private fun MainSection(
         // داشت: مانده‌ی کل بزرگ بالا + آیکونِ جستجو کنارش).
         item {
             StaggerIn(0) {
-                val heroGradient = Brush.linearGradient(
-                    listOf(AppPrimary.copy(alpha = 0.40f), AppPrimaryDim.copy(alpha = 0.18f)),
-                )
-                AppCard(accentGradient = heroGradient) {
+                // کارتِ قهرمانِ تبِ گزارش - **بنفش** طبقِ کارتِ `26a`ی طرح (توکنِ «بنفش = بودجه و
+                // آمار»)، نه سبز. متن‌ها سفیدن چون زمینه رنگیِ ماته.
+                AppHeroCard(tone = HeroTone.PURPLE) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("مانده‌ی کل", color = AppMuted, fontSize = 13.sp)
+                        Text("مانده‌ی کل", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                         Box(
                             modifier = Modifier
-                                .size(34.dp)
-                                .background(AppPrimary.copy(alpha = 0.18f), CircleShape)
+                                .size(32.dp)
+                                .background(HeroPillBg, CircleShape)
                                 .pressScaleClickable(onClick = { showSearch = !showSearch }),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(Icons.Filled.Search, contentDescription = "جستجو", tint = AppPrimary, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Filled.Search, contentDescription = "جستجو", tint = Color.White, modifier = Modifier.size(17.dp))
                         }
                     }
                     // شمارشِ بالارونده - تو حالتِ خصوصی خاموشه (عدد پشتِ ••• مخفیه، انیمیشن بی‌معنیه).
@@ -341,16 +342,17 @@ private fun MainSection(
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
                             "${maskIfPrivate(masked, fmt(shownBalance))} ریال",
-                            color = if (totalBalance < 0) AppDanger else AppText,
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(top = 10.dp),
+                            color = Color.White,
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(top = 3.dp),
                         )
                     }
                     Text(
                         "${toFa(accounts.size)} حساب‌کتاب",
-                        color = AppMuted,
-                        fontSize = 12.sp,
+                        color = HeroMuted,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
@@ -828,8 +830,8 @@ private fun BudgetSection(
                 // هیرویِ ماه - ناوبر + خرج‌شده/سقفِ کل، جایگزینِ ردیفِ لختِ قبلی و BudgetRowِ «همه
                 // دسته‌بندی‌ها» (که همون اطلاعات رو تکراری نشون می‌داد). عددها از همون
                 // totalSpent/totalCap که از قبل محاسبه می‌شد.
-                val heroAccent = Brush.linearGradient(listOf(AppPrimary.copy(alpha = 0.34f), AppPrimaryDim.copy(alpha = 0.10f)))
-                AppCard(accentGradient = heroAccent) {
+                // کارتِ قهرمانِ تبِ بودجه - سبزِ توپر طبقِ کارتِ `27c`ی طرح.
+                AppHeroCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -838,25 +840,33 @@ private fun BudgetSection(
                         MonthNavArrow(icon = Icons.Filled.ChevronLeft, contentDescription = "ماهِ قبل") { stepMonth(-1) }
                         Text(
                             "${faMonthNamesAccounting[viewMonth - 1]} ${toFa(viewYear)}",
-                            color = AppText,
-                            fontSize = 16.sp,
+                            color = Color.White,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Black,
                         )
                         MonthNavArrow(icon = Icons.Filled.ChevronRight, contentDescription = "ماهِ بعد") { stepMonth(1) }
                     }
                     Text(
                         "${fmt(totalSpent)} ریال",
-                        color = AppText,
-                        fontSize = 28.sp,
+                        color = Color.White,
+                        fontSize = 26.sp,
                         fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(top = 10.dp),
+                        modifier = Modifier.padding(top = 8.dp),
                     )
-                    Text("از سقفِ ${fmt(totalCap)} ریال", color = AppMuted, fontSize = 15.sp, modifier = Modifier.padding(top = 2.dp))
+                    Text(
+                        "از سقفِ ${fmt(totalCap)} ریال",
+                        color = HeroMuted,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                    // نوارِ پیشرفت رو زمینه‌ی سبز: خودِ نوار سفید و مسیرش سفیدِ کم‌آلفا - سبز رو سبز
+                    // اصلاً دیده نمی‌شد.
                     AppProgressBar(
                         fraction = if (totalCap > 0) (totalSpent / totalCap).toFloat().coerceIn(0f, 1f) else 0f,
-                        color = AppPrimary,
-                        trackColor = AppSurface2,
-                        modifier = Modifier.padding(top = 10.dp).height(10.dp),
+                        color = Color.White,
+                        trackColor = HeroPillBg,
+                        modifier = Modifier.padding(top = 10.dp).height(8.dp),
                     )
                 }
             }
@@ -1090,15 +1100,17 @@ private fun AddBudgetDialog(
 
 @Composable
 private fun MonthNavArrow(icon: ImageVector, contentDescription: String, onClick: () -> Unit) {
+    // ⚠️ این فلش فقط داخلِ کارتِ **قهرمانِ رنگیِ** بودجه استفاده می‌شه، پس عمداً سفیده نه سبز -
+    // سبز رو زمینه‌ی سبز اصلاً دیده نمی‌شد.
     Box(
         modifier = Modifier
-            .size(30.dp)
+            .size(28.dp)
             .clip(CircleShape)
-            .background(AppPrimary.copy(alpha = 0.14f))
+            .background(HeroPillBg)
             .pressScaleClickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = contentDescription, tint = AppPrimary, modifier = Modifier.size(16.dp))
+        Icon(icon, contentDescription = contentDescription, tint = Color.White, modifier = Modifier.size(15.dp))
     }
 }
 
@@ -1377,9 +1389,9 @@ private fun DateRibbonHeader(viewDate: PersianDate, onDateChange: (PersianDate) 
     var previousOrdinal by remember { mutableStateOf(viewDate.ordinal()) }
     val goingForward = viewDate.ordinal() >= previousOrdinal
     SideEffect { previousOrdinal = viewDate.ordinal() }
-    val cardAccent = Brush.linearGradient(listOf(AppPrimary.copy(alpha = 0.34f), AppPrimaryDim.copy(alpha = 0.10f)))
-
-    AppCard(accentGradient = cardAccent) {
+    // ⚠️ نوارِ تاریخ عمداً **کارتِ قهرمان نیست** - یه ناوبرِ ابزاریه، نه عددِ اصلیِ صفحه. طبقِ
+    // قاعده‌ی «حداکثر یک رنگِ لهجه در هر صفحه» گرادیانِ سبزش برداشته شد و کارتِ سفیدِ معمولی شد.
+    AppCard {
         Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             // سرتیتر: فقط نامِ ماه (نه تاریخِ کاملِ روز) بینِ دو فلشِ دایره‌ای - چیدمانِ هم‌الگو با
             // ناوبرِ ماهِ تبِ بودجه.

@@ -49,7 +49,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -529,10 +528,9 @@ private fun LiveDateTimeHeader() {
         ),
     )
 
-    val accentGradient = Brush.linearGradient(
-        listOf(AppPrimary.copy(alpha = 0.30f), AppPrimary.copy(alpha = 0.08f)),
-    )
-    AppCard(accentGradient = accentGradient) {
+    // ⚠️ کارتِ نمایشِ تاریخ/ساعته، نه کارتِ **قهرمانِ** صفحه - طبقِ قاعده‌ی «حداکثر یک رنگِ لهجه
+    // در هر صفحه» گرادیانِ سبزش برداشته شد و کارتِ سفیدِ معمولی شد.
+    AppCard {
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(weekDay, color = AppText.copy(alpha = 0.85f), fontSize = 13.sp)

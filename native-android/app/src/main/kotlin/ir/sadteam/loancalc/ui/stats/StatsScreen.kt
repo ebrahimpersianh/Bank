@@ -53,6 +53,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.HeroMuted
+import ir.sadteam.loancalc.ui.components.HeroPillBg
+import ir.sadteam.loancalc.ui.components.HeroTone
+import ir.sadteam.loancalc.ui.components.AppHeroCard
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
@@ -60,7 +64,6 @@ import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -141,26 +144,35 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
             Text("آمار و گزارشات", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
         }
 
-        val heroAccent = Brush.linearGradient(listOf(AppPrimary.copy(alpha = 0.34f), AppPrimaryDim.copy(alpha = 0.10f)))
-        AppCard(
-            accentGradient = heroAccent,
+        // صفحه‌ی آمار - **بنفش** طبقِ توکنِ «بنفش = بودجه و آمار»ِ سیستمِ طراحی (هم‌رنگِ کارتِ
+        // قهرمانِ تبِ گزارش، چون هر دو یه خانواده‌ی معنایی‌ان).
+        AppHeroCard(
+            tone = HeroTone.PURPLE,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
         ) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 ProgressDonut(ratio = summary.progressRatio)
                 Column(modifier = Modifier.weight(1f).padding(start = 14.dp)) {
-                    Text("پرداخت‌شده", color = AppMuted, fontSize = 11.sp)
+                    // رو زمینه‌ی بنفشِ مات همه‌ی متن‌ها سفیدن - رنگ‌های تم‌آگاه (AppText/AppMuted/
+                    // AppPrimary) اینجا نامرئی می‌شدن.
+                    Text("پرداخت‌شده", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                     Text(
                         "${fmt(summary.paidAmount)} ریال",
-                        color = AppPrimary,
+                        color = Color.White,
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(top = 2.dp),
                     )
-                    Text("مانده", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 8.dp))
+                    Text(
+                        "مانده",
+                        color = HeroMuted,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
                     Text(
                         "${fmt(summary.remainingAmount)} ریال",
-                        color = AppText,
+                        color = Color.White,
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(top = 2.dp),
@@ -243,8 +255,11 @@ private fun ProgressDonut(ratio: Double) {
     LaunchedEffect(targetSweep) {
         animatedSweep.animateTo(targetSweep, tween(CHART_ANIM_MS, easing = FastOutSlowInEasing))
     }
-    val trackColor = AppLine
-    val progressColor = AppPrimary
+    // ⚠️ این دونات فقط داخلِ کارتِ **قهرمانِ رنگی** رسم می‌شه، پس رنگ‌هاش سفیدن نه تم‌آگاه.
+    // (توکن‌های رنگ `@Composable`ان و داخلِ `Canvas` صدا زده نمی‌شن - برای همین اینجا تو `val`
+    // محلی خونده می‌شن؛ قاعده‌ی ماندگارِ پروژه.)
+    val trackColor = HeroPillBg
+    val progressColor = Color.White
     Box(modifier = Modifier.size(112.dp), contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.size(112.dp)) {
             val strokeWidth = 15.dp.toPx()
@@ -268,11 +283,11 @@ private fun ProgressDonut(ratio: Double) {
                 // درصدِ متنی هم هم‌قدمِ خودِ کمان بالا می‌ره - چیدنِ عدد و کمانِ درحالِ‌رشد
                 // یهویی/ناهماهنگ به‌نظر می‌رسید.
                 "${toFa((animatedSweep.value / 360f * 100).toInt())}٪",
-                color = AppText,
+                color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
             )
-            Text("پرداخت‌شده", color = AppMuted, fontSize = 11.sp)
+            Text("پرداخت‌شده", color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

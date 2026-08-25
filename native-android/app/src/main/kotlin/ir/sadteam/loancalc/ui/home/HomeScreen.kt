@@ -32,7 +32,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,6 +48,9 @@ import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.accounting.NewTransactionSheet
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppFab
+import ir.sadteam.loancalc.ui.components.HeroPillBg
+import ir.sadteam.loancalc.ui.components.HeroMuted
+import ir.sadteam.loancalc.ui.components.AppHeroCard
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.TodayCard
@@ -64,10 +66,7 @@ import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppRadius
-import ir.sadteam.loancalc.ui.theme.AppSpacing
-import ir.sadteam.loancalc.ui.theme.hardShadow
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -263,75 +262,64 @@ private fun HomeBalanceHero(
     privacyMode: Boolean,
     onClick: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(AppRadius.card)
     // شمارشِ بالارونده - تو حالتِ خصوصی خاموشه (عدد پشتِ ••• مخفیه، انیمیشن بی‌معنیه).
     val shownBalance = countUpAmount(totalBalance, enabled = !privacyMode)
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .hardShadow(HeroShadow, 5.dp, AppRadius.card)
-            .clip(shape)
-            .background(Brush.linearGradient(listOf(AppPrimary, AppPrimaryDim)))
-            .pressScaleClickable(onClick = onClick)
-            .padding(AppSpacing.cardPadding),
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+    AppHeroCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "مانده‌ی کل",
+                color = HeroMuted,
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(HeroPillBg, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.AccountBalanceWallet,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(17.dp),
+                )
+            }
+        }
+        PrivacyCrossfade(privacyMode) { masked ->
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.padding(top = 3.dp),
             ) {
                 Text(
-                    "مانده‌ی کل",
-                    color = Color.White.copy(alpha = 0.78f),
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.Bold,
+                    maskIfPrivate(masked, fmt(shownBalance)),
+                    color = Color.White,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Black,
                 )
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(Color.White.copy(alpha = 0.20f), CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        Icons.Filled.AccountBalanceWallet,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(17.dp),
-                    )
-                }
+                Text(
+                    " ریال",
+                    color = HeroMuted,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
+                )
             }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            HeroPill("${toFa(accountCount)} حساب‌کتاب")
             PrivacyCrossfade(privacyMode) { masked ->
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    modifier = Modifier.padding(top = 3.dp),
-                ) {
-                    Text(
-                        maskIfPrivate(masked, fmt(shownBalance)),
-                        color = Color.White,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Black,
-                    )
-                    Text(
-                        " ریال",
-                        color = Color.White.copy(alpha = 0.78f),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                HeroPill("${toFa(accountCount)} حساب‌کتاب")
-                PrivacyCrossfade(privacyMode) { masked ->
-                    HeroPill("خرجِ امروز: ${maskIfPrivate(masked, fmt(todaySpend))}")
-                }
+                HeroPill("خرجِ امروز: ${maskIfPrivate(masked, fmt(todaySpend))}")
             }
         }
     }
@@ -343,15 +331,13 @@ private fun HeroPill(text: String) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(AppRadius.button))
-            .background(Color.White.copy(alpha = 0.20f))
+            .background(HeroPillBg)
             .padding(horizontal = 10.dp, vertical = 5.dp),
     ) {
         Text(text, color = Color.White, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
     }
 }
 
-/** سایه‌ی سختِ کارتِ سبزِ قهرمان - `#096F45`، تیره‌ترِ همون سبز (نه یه خاکستریِ عمومی). */
-private val HeroShadow = Color(0xFF096F45)
 
 @Composable
 private fun RecentTransactionRow(tx: AccountTransactionEntity, accountName: String, privacyMode: Boolean) {

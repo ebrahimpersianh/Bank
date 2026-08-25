@@ -27,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -35,13 +34,15 @@ import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.HeroMuted
+import ir.sadteam.loancalc.ui.components.HeroTone
+import ir.sadteam.loancalc.ui.components.AppHeroCard
 import ir.sadteam.loancalc.ui.components.ProgressRing
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -78,33 +79,34 @@ internal fun ChequeReportScreen(
             }
         }
         item {
-            val heroAccent = Brush.linearGradient(listOf(AppPrimary.copy(alpha = 0.34f), AppPrimaryDim.copy(alpha = 0.10f)))
-            AppCard(accentGradient = heroAccent) {
+            // گزارشِ چک - هم‌خانواده‌ی «آمار»ه، پس **بنفش** (همون توکنِ «بنفش = بودجه و آمار»).
+            AppHeroCard(tone = HeroTone.PURPLE) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     ProgressRing(
                         progress = (stats.passRatePercent / 100.0).toFloat(),
                         size = 100.dp,
                         strokeWidth = 13.dp,
-                        colors = listOf(AppPrimary, AppPrimary),
+                        // رو زمینه‌ی بنفشِ مات، حلقه و متن‌ها سفیدن نه تم‌آگاه.
+                        colors = listOf(Color.White, Color.White),
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("${toFa(stats.passRatePercent.toInt())}٪", color = AppPrimary, fontSize = 24.sp, fontWeight = FontWeight.Black)
-                            Text("پاس‌شده", color = AppMuted, fontSize = 10.sp)
+                            Text("${toFa(stats.passRatePercent.toInt())}٪", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
+                            Text("پاس‌شده", color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                     Column(modifier = Modifier.weight(1f).padding(start = 15.dp)) {
-                        Text("مانده‌ی خالص", color = AppMuted, fontSize = 11.sp)
+                        Text("مانده‌ی خالص", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                         Text(
                             "${fmt(stats.netBalance)}",
-                            color = if (stats.netBalance >= 0) AppPrimary else AppDanger,
+                            color = Color.White,
                             fontSize = 21.sp,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(top = 2.dp),
                         )
                         Text(
                             "ریال — دریافتیِ پاس‌شده منهای پرداختیِ پاس‌شده",
-                            color = AppMuted,
-                            fontSize = 11.sp,
+                            color = HeroMuted,
+                            fontSize = 9.5.sp,
                             modifier = Modifier.padding(top = 4.dp),
                         )
                     }

@@ -41,8 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,6 +53,10 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.components.HeroPillBg
+import ir.sadteam.loancalc.ui.components.HeroMuted
+import ir.sadteam.loancalc.ui.components.AppHeroCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -62,7 +66,6 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -247,31 +250,43 @@ fun AccountsScreen(
  * balancesِ ازقبل‌محاسبه‌شده). */
 @Composable
 private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accounts: List<AccountEntity>) {
-    AppCard(
-        accentGradient = Brush.linearGradient(listOf(AppPrimary.copy(alpha = 0.34f), AppPrimaryDim.copy(alpha = 0.10f))),
-    ) {
+    // کارتِ `26b`ی طرح: سبزِ توپر با متنِ سفید. عددِ قهرمان ۲۶/۹۰۰ و برچسبِ بالاش ۱۰٫۵/۷۰۰.
+    AppHeroCard {
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(13.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                 Column {
-                    Text("جمعِ موجودی", color = AppMuted, fontSize = 12.sp)
-                    Text("${fmt(total)}", color = AppText, fontSize = 29.sp)
-                    Text("ریال · ${toFa(accounts.size)} حساب", color = AppMuted, fontSize = 12.sp)
+                    Text("جمعِ موجودی", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        "${fmt(total)}",
+                        color = Color.White,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                    Text("ریال · ${toFa(accounts.size)} حساب", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                 }
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(AppPrimary.copy(alpha = 0.18f)),
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(AppRadius.icon))
+                        .background(HeroPillBg),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Outlined.AccountBalance, contentDescription = null, tint = AppPrimary)
+                    Icon(
+                        Icons.Outlined.AccountBalance,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(17.dp),
+                    )
                 }
             }
+            // نوارِ سهمِ هر حساب - رو زمینه‌ی سبز با سفیدهای کم‌آلفا کشیده می‌شه، نه سبزهای کم‌آلفا
+            // (که رو خودِ سبز اصلاً دیده نمی‌شدن).
             Row(
-                modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(999.dp)),
+                modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(AppRadius.button)),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                val alphas = listOf(1f, 0.55f, 0.25f)
+                val alphas = listOf(0.92f, 0.55f, 0.30f)
                 accounts.forEachIndexed { index, account ->
                     val balance = balances[account.id] ?: account.initialBalance
                     val weight = if (total > 0) (balance / total).toFloat().coerceAtLeast(0.02f) else 1f / accounts.size
@@ -279,7 +294,7 @@ private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accoun
                         modifier = Modifier
                             .weight(weight)
                             .fillMaxSize()
-                            .background(AppPrimary.copy(alpha = alphas.getOrElse(index) { 0.25f })),
+                            .background(Color.White.copy(alpha = alphas.getOrElse(index) { 0.30f })),
                     )
                 }
             }
