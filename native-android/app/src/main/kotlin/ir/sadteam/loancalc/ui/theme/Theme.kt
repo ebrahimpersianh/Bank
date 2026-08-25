@@ -34,20 +34,24 @@ private val AppTypography = Typography(
     labelSmall = defaultTypography.labelSmall.copy(fontFamily = VazirmatnFontFamily),
 )
 
-// گوشه‌گردیِ مینیمالِ سراسری - چون OutlinedTextField شکلش رو از shapes.extraSmall می‌گیره، این‌جا
-// یه‌بار گردتر کردنش همه‌ی فیلدهای ورودی اپ رو گوشه‌گرد می‌کنه (به‌درخواست کاربر «همه باکس‌ها ar دار»).
+// ⚠️ **بازطراحیِ جیبک**: این شکل‌ها فقط سلیقه‌ای نیستن - `AlertDialog`، `OutlinedTextField`،
+// `DropdownMenu` و بقیه‌ی کامپوننت‌های آماده‌ی Material شکلشون رو از همین‌جا می‌گیرن. با
+// رسوندنشون به توکن‌های `AppRadius`، دیالوگ‌ها و فیلدهایی که کامپوننتِ خودمون رو ندارن هم
+// خودبه‌خود با بقیه‌ی اپ یک‌دست می‌شن (شش دیالوگ/پیکرِ اپ دقیقاً از همین راه به‌روز شدن).
 private val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(14.dp),
-    small = RoundedCornerShape(14.dp),
-    medium = RoundedCornerShape(18.dp),
+    extraSmall = RoundedCornerShape(AppRadius.icon),
+    small = RoundedCornerShape(AppRadius.row),
+    medium = RoundedCornerShape(AppRadius.card),
+    large = RoundedCornerShape(AppRadius.sheet),
+    extraLarge = RoundedCornerShape(AppRadius.sheet),
 )
 
-/** حالت‌های تمِ اپ - روشن (پیش‌فرض، رایگان) و تاریک (ویژگی اشتراکی، رجوع کن به
- * AuthViewModel.subscribed تو MainActivity/SettingsScreen که تعویض بهش رو گیت می‌کنه). یه تمِ سومِ
- * جدا («طلایی») یه دور امتحان شد ولی کاربر توضیح داد منظورش این نبود - می‌خواست رنگِ طلایی
- * (که همون [AppAccent] موجوده) فقط به‌عنوانِ لهجه‌ی ظریف تو کل اپ (هر دو تمِ روشن/تاریک) بیشتر
- * دیده بشه، نه یه تمِ کاملاً جدا. برای همین تمِ طلاییِ جدا حذف شد؛ [GoldAppColors] (تو Color.kt)
- * دیگه به‌عنوانِ تمِ فعال استفاده نمی‌شه. */
+/**
+ * حالت‌های تمِ اپ. تمِ تاریک الان برای **همه رایگانه** (یه دوره گیتِ اشتراکی داشت، برداشته شد).
+ *
+ * یه تمِ چهارمِ جدا («طلایی») یه دور امتحان شد ولی کاربر توضیح داد منظورش این نبود - می‌خواست
+ * رنگِ طلایی فقط به‌عنوانِ **لهجه‌ی پرمیوم** تو هر دو تم دیده بشه، نه یه تمِ کاملاً جدا.
+ */
 enum class ThemeMode {
     LIGHT,
     DARK,
