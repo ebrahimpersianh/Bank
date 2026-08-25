@@ -47,6 +47,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.pillOverSurface
 
 /**
  * «گزارش‌دهی» - آمار کامل امور چک (که قبلاً فقط تیکه‌تیکه بالای لیست پخش بود: «وضعیت چک‌های
@@ -237,12 +238,12 @@ private fun PendingChequeTile(
         modifier = modifier
             .height(54.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(color.copy(alpha = 0.12f))
+            .background(color.pillOverSurface(0.12f))
             .padding(horizontal = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier.size(32.dp).background(color.copy(alpha = 0.18f), CircleShape),
+            modifier = Modifier.size(32.dp).background(color.pillOverSurface(0.18f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))

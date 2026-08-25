@@ -35,6 +35,10 @@ for path in sorted(glob.glob(os.path.join(ROOT, '**/*.kt'), recursive=True)):
         # سفیدِ کم‌آلفا رو کارتِ قهرمان عمدیه (خودِ طرح داره)
         if token in ('Color', 'White') or 'Hero' in body[max(0, m.start() - 400):m.start()]:
             continue
+        # استثنای عمدی: نانِ/توستِ شناور رو **محتوا** می‌شینه نه رو کارت؛ کمی شفافیت اونجا
+        # همون چیزیه که طرح می‌خواد («روی محتوا»، نه یه سطحِ مستقل).
+        if token == 'AppText' and float(alpha) >= 0.9:
+            continue
         hits[rel].append((body[:m.start()].count('\n') + 1, f'{token}.copy(alpha = {alpha})'))
 
 total = sum(len(v) for v in hits.values())

@@ -8,6 +8,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.runtime.Composable
 
 /**
  * ابعادِ ثابتِ سبکِ «جیبک» - از بخشِ «۳ · شعاع، سایه، فاصله»ی سیستمِ طراحی.
@@ -121,3 +123,15 @@ fun Modifier.hardShadow(
         cornerRadius = CornerRadius(r, r),
     )
 }
+
+/**
+ * ته‌رنگِ **ماتِ** یه رنگِ پویا رو سطحِ کارت.
+ *
+ * سیستمِ طراحی صریحاً «سطحِ کاملاً مات» می‌خواد و برای ته‌رنگ‌های ثابت هم توکنِ مخصوصِ خودشون رو
+ * داره (`AppPrimaryPill`، `AppInfoPill`، …). ولی چند جا رنگ **پویاست** (رنگِ وضعیتِ چک، رنگِ
+ * بانک) و توکنِ آماده نداره؛ اونجا به‌جای `alpha` - که رنگِ پشتش رو نشون می‌ده - همون رنگ با
+ * `compositeOver` رو سطح **ترکیب** می‌شه و نتیجه یه رنگِ کاملاً کدره.
+ */
+@Composable
+fun Color.pillOverSurface(alpha: Float = 0.14f, surface: Color = AppSurface): Color =
+    copy(alpha = alpha).compositeOver(surface)

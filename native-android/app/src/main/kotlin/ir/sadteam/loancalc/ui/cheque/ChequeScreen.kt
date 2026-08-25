@@ -87,6 +87,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
+import ir.sadteam.loancalc.ui.theme.pillOverSurface
 
 internal data class ChequeStats(
     val total: Int,
@@ -498,7 +499,7 @@ private fun ChequeCard(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(AppRadius.icon))
-                    .background(statusInk.copy(alpha = 0.14f)),
+                    .background(statusInk.pillOverSurface()),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -637,7 +638,7 @@ private fun ChequeTypeButton(
         onClick = onClick,
         modifier = modifier.height(44.dp),
         shape = RoundedCornerShape(10.dp),
-        color = if (selected) color.copy(alpha = 0.16f) else AppSurface2,
+        color = if (selected) color.pillOverSurface(0.16f) else AppSurface2,
         border = BorderStroke(1.dp, if (selected) color else Color.Transparent),
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -705,7 +706,7 @@ private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
                 .fillMaxWidth()
                 .padding(top = 12.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(netColor.copy(alpha = 0.10f))
+                .background(netColor.pillOverSurface(0.10f))
                 .padding(12.dp),
         ) {
             Row(

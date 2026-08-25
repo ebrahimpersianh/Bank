@@ -27,6 +27,7 @@ import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_OTHER
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
+import ir.sadteam.loancalc.ui.theme.pillOverSurface
 
 /**
  * بجِ لوگوی بانک/سرویس - از رو اسم (`bankName`) تو `banks`/`creditServices` لوگو رو پیدا می‌کنه و
@@ -51,7 +52,7 @@ fun AccountBadge(account: AccountEntity, modifier: Modifier = Modifier, size: Dp
             modifier = modifier
                 .size(size)
                 .clip(shape)
-                .background(tint.copy(alpha = 0.16f)),
+                .background(tint.pillOverSurface(0.16f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(

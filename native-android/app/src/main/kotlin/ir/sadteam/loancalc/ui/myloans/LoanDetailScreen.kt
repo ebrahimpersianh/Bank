@@ -130,6 +130,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.settings.FullScreenDialog
+import ir.sadteam.loancalc.ui.theme.pillOverSurface
 
 private val faMonthNamesDetail = listOf(
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
@@ -1225,7 +1226,7 @@ private fun InstallmentRow(
             .fillMaxWidth()
             .height(installmentRowHeight)
             .alpha(if (bulkPayMode && paid) 0.5f else 1f)
-            .background(if (selected) AppPrimary.copy(alpha = 0.10f) else AppSurface, rowShape)
+            .background(if (selected) AppPrimary.pillOverSurface(0.10f) else AppSurface, rowShape)
             .border(if (selected) 1.5.dp else 1.dp, borderColor, rowShape)
             // پرتپ‌ترین المانِ کلِ اپ (علامت‌زدنِ پرداختِ هر قسط) ولی تا الان هیچ واکنشِ لمسی
             // نداشت - حالا مثلِ بقیه‌ی کارت‌ها فشرده می‌شه و یه tick هپتیک می‌ده.
@@ -1263,7 +1264,7 @@ private fun InstallmentRow(
             modifier = Modifier
                 .padding(horizontal = 6.dp)
                 .scale(pulseScale)
-                .background(statusColor.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
+                .background(statusColor.pillOverSurface(), RoundedCornerShape(8.dp))
                 .padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
             Text(
@@ -1304,7 +1305,7 @@ private fun AttachmentToggleButton(
 ) {
     val shape = RoundedCornerShape(12.dp)
     val borderColor = if (expanded) AppPrimary else AppMuted.copy(alpha = 0.35f)
-    val bg = if (expanded) AppPrimary.copy(alpha = 0.10f) else AppSurface2
+    val bg = if (expanded) AppPrimary.pillOverSurface(0.10f) else AppSurface2
     Row(
         modifier = modifier
             .pressScaleClickable(goldBorderShape = shape, onClick = onClick)
