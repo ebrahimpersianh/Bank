@@ -41,6 +41,7 @@ import ir.sadteam.loancalc.ui.components.ProgressRing
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppInfo
+import ir.sadteam.loancalc.ui.theme.AppInfoPill
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -236,7 +237,7 @@ private fun ChequeReportExportTile(
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(AppInfo.copy(alpha = 0.12f))
+            .background(AppInfoPill)
             .pressScaleClickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,

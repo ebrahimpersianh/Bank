@@ -137,6 +137,7 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppInfo
+import ir.sadteam.loancalc.ui.theme.AppInfoPill
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppLabel
@@ -1224,7 +1225,7 @@ private fun MonthNavArrow(icon: ImageVector, contentDescription: String, onClick
 private fun BudgetToolTile(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     AppCard(modifier = modifier.pressScaleClickable(onClick = onClick), borderColor = AppInfo.copy(alpha = 0.30f)) {
         Box(
-            modifier = Modifier.size(32.dp).background(AppInfo.copy(alpha = 0.20f), CircleShape),
+            modifier = Modifier.size(32.dp).background(AppInfoPill, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = AppInfo, modifier = Modifier.size(16.dp))
@@ -2007,7 +2008,7 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(11.dp)).background(AppInfo.copy(alpha = 0.14f)),
+                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(11.dp)).background(AppInfoPill),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(Icons.Outlined.PieChart, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))

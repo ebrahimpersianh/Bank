@@ -64,6 +64,7 @@ import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppInfo
+import ir.sadteam.loancalc.ui.theme.AppInfoPill
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -314,14 +315,14 @@ private fun BackupRestoreCard(onBackup: () -> Unit, onRestore: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Box(
-                    modifier = Modifier.size(32.dp).clip(RoundedCornerShape(11.dp)).background(AppInfo.copy(alpha = 0.20f)),
+                    modifier = Modifier.size(32.dp).clip(RoundedCornerShape(11.dp)).background(AppInfoPill),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(Icons.Filled.CloudUpload, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))
                 }
                 Text("پشتیبان‌گیری", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
-            Box(modifier = Modifier.width(1.dp).height(26.dp).background(AppInfo.copy(alpha = 0.22f)))
+            Box(modifier = Modifier.width(1.dp).height(26.dp).background(AppInfoPill))
             Row(
                 modifier = Modifier.weight(1f).pressScaleClickable(onClick = onRestore),
                 verticalAlignment = Alignment.CenterVertically,
@@ -336,7 +337,7 @@ private fun BackupRestoreCard(onBackup: () -> Unit, onRestore: () -> Unit) {
                     textAlign = TextAlign.End,
                 )
                 Box(
-                    modifier = Modifier.size(32.dp).clip(RoundedCornerShape(11.dp)).background(AppInfo.copy(alpha = 0.20f)),
+                    modifier = Modifier.size(32.dp).clip(RoundedCornerShape(11.dp)).background(AppInfoPill),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(Icons.Filled.CloudDownload, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))

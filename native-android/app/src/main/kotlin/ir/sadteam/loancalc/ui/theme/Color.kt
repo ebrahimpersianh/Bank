@@ -38,6 +38,18 @@ data class AppColorPalette(
     val lineRow: Color,
     /** تهرنگِ چیپ و برچسبِ بی‌سایه. */
     val chip: Color,
+    /** ته‌رنگِ قابِ آیکونِ **آبی** (ابزار/اطلاع). */
+    val infoPill: Color,
+    /** ته‌رنگِ قابِ آیکونِ **بنفش** (بودجه/آمار). */
+    val purplePill: Color,
+    /** ته‌رنگِ قابِ آیکونِ **نارنجی** (هشدارِ نرم). */
+    val warningPill: Color,
+    /** جوهرِ متنِ هشدارِ نرم - «با این روند، X تا آخرِ ماه می‌مونه». */
+    val warningInk: Color,
+    /** حاشیه‌ی نقطه‌چینِ حالتِ خالی. */
+    val dashedBorder: Color,
+    /** حاشیه‌ی سبزِ روشنِ دکمه‌ی آیکونیِ سربرگ. */
+    val primaryBorder: Color,
 
     // ── سبز (رنگِ اصلی) ──────────────────────────────────────────────────────────
     /** سبزِ اصلی - دکمه‌ی اصلی، درآمد، حالتِ فعال. */
@@ -122,10 +134,16 @@ val LightAppColors = AppColorPalette(
     surface2 = Color(0xFFF7FAF8),
     text = Color(0xFF16221C),
     muted = Color(0xFF5B6A63),
-    label = Color(0xFF8B9A93),
+    label = Color(0xFF9AA8A1),
     line = Color(0xFFE3ECE7),
     lineRow = Color(0xFFEEF3F0),
     chip = Color(0xFFF1F5F2),
+    infoPill = Color(0xFFEAF1FE),
+    purplePill = Color(0xFFF3EAFE),
+    warningPill = Color(0xFFFFF1DC),
+    warningInk = Color(0xFFB45F00),
+    dashedBorder = Color(0xFFC9D6CF),
+    primaryBorder = Color(0xFF9FE0BC),
 
     primary = Color(0xFF0EA968),
     primaryDim = Color(0xFF0B8C57),
@@ -180,6 +198,14 @@ val DarkAppColors = AppColorPalette(
     line = Color(0xFF2A3640),
     lineRow = Color(0xFF232E38),
     chip = Color(0xFF232E38),
+    // معادل‌های تیره: همون رنگِ لهجه با آلفای کم روی سطحِ #1B2530، **مات** حساب‌شده
+    // (قاعده‌ی «سطحِ کاملاً مات» - قابِ آیکون نباید نیمه‌شفاف باشه).
+    infoPill = Color(0xFF1D2C3A),
+    purplePill = Color(0xFF252436),
+    warningPill = Color(0xFF2E2519),
+    warningInk = Color(0xFFFFB44D),
+    dashedBorder = Color(0xFF3A464F),
+    primaryBorder = Color(0xFF2E6B52),
 
     // سبزِ دکمه عمداً همون سبزِ روشنه (قاعده‌ی صریح)؛ فقط سایه‌ش تیره‌تر می‌شه و سبزِ متن روشن‌تر.
     primary = Color(0xFF0EA968),
@@ -239,6 +265,12 @@ val AppLabel: Color @Composable get() = LocalAppColors.current.label
 val AppLine: Color @Composable get() = LocalAppColors.current.line
 val AppLineRow: Color @Composable get() = LocalAppColors.current.lineRow
 val AppChipBg: Color @Composable get() = LocalAppColors.current.chip
+val AppInfoPill: Color @Composable get() = LocalAppColors.current.infoPill
+val AppPurplePill: Color @Composable get() = LocalAppColors.current.purplePill
+val AppWarningPill: Color @Composable get() = LocalAppColors.current.warningPill
+val AppWarningInk: Color @Composable get() = LocalAppColors.current.warningInk
+val AppDashedBorder: Color @Composable get() = LocalAppColors.current.dashedBorder
+val AppPrimaryBorder: Color @Composable get() = LocalAppColors.current.primaryBorder
 
 val AppPrimary: Color @Composable get() = LocalAppColors.current.primary
 val AppPrimaryDim: Color @Composable get() = LocalAppColors.current.primaryDim
