@@ -8,13 +8,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -66,6 +67,8 @@ import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 
@@ -87,9 +90,6 @@ fun HomeScreen(
     val transactions by accountViewModel.transactions.collectAsState()
     val privacyMode = LocalPrivacyMode.current
 
-    val totalBalance = remember(accounts, transactions) {
-        accounts.sumOf { accountViewModel.balanceOf(it, transactions) }
-    }
     val recentTransactions = remember(transactions) {
         transactions
             .sortedWith(
@@ -101,13 +101,30 @@ fun HomeScreen(
             .take(6)
     }
 
-    // «خرجِ امروز» - کارتِ `15a`ی طرح این عدد رو کنارِ مانده‌ی کل نشون می‌ده. داده‌ی جدیدی لازم
-    // نداره، از همون تراکنش‌های موجود حساب می‌شه.
-    val todaySpend = remember(transactions) {
-        val t = JalaliCalendar.today()
-        transactions
-            .filter { it.type != "DEPOSIT" && it.year == t.y && it.month == t.m && it.day == t.d }
-            .sumOf { it.amount }
+    // خرجِ ۷ روزِ گذشته (قدیمی‌ترین → امروز) برای نمودارِ میله‌ایِ کارتِ قهرمان (`15a`).
+    // داده‌ی جدیدی لازم نداره - از همون تراکنش‌های موجود حساب می‌شه.
+    val weekSpend = remember(transactions) {
+        val today = JalaliCalendar.today()
+        (6 downTo 0).map { back ->
+            val d = PersianCalendar.addDays(today, -back)
+            transactions
+                .filter { it.type != "DEPOSIT" && it.year == d.y && it.month == d.m && it.day == d.d }
+                .sumOf { it.amount }
+        }
+    }
+    val todaySpend = weekSpend.last()
+    val yesterdaySpend = weekSpend[weekSpend.lastIndex - 1]
+
+    // کارتِ «مرورِ هفته»ی طرح - جمعِ این هفته در برابرِ هفته‌ی قبل و درصدِ تغییر.
+    val weekTotal = remember(weekSpend) { weekSpend.sum() }
+    val prevWeekTotal = remember(transactions) {
+        val today = JalaliCalendar.today()
+        (13 downTo 7).sumOf { back ->
+            val d = PersianCalendar.addDays(today, -back)
+            transactions
+                .filter { it.type != "DEPOSIT" && it.year == d.y && it.month == d.m && it.day == d.d }
+                .sumOf { it.amount }
+        }
     }
 
     var selectedDate by remember { mutableStateOf(JalaliCalendar.today()) }
@@ -157,15 +174,25 @@ fun HomeScreen(
                 // سایه‌ی سختِ `0 5px 0 #096F45` + یه هاله‌ی نرمِ سفید تو گوشه‌ی بالا-چپ.
                 // تنها کارتِ «رنگیِ» صفحه‌ست - قاعده‌ی «حداکثر یک رنگِ لهجه در هر صفحه».
                 //
-                // 📌 محتوا عمداً «مانده‌ی کل» موند (نه «خرجِ امروزِ» طرح): تپ روش می‌بره تبِ دارایی و
-                // این یه تصمیمِ محصولیِ از قبل تاییدشده‌ی کاربره. «خرجِ امروز» به‌عنوانِ ردیفِ دومِ
-                // همین کارت اضافه شد تا هر دو عدد دیده بشن.
+                // عددِ قهرمان **«خرجِ امروز»**ه، دقیقاً مثلِ طرح - نه «مانده‌ی کل»ِ نسخه‌ی قبل.
+                // (خواسته‌ی صریحِ کاربر: «کپیِ برابرِ اصل، مو نزنه».) مانده‌ی کل حذف نشد؛
+                // تبِ «دارایی» عددِ اصلیِ خودشه و تپ رو همین کارت هم می‌بره همون‌جا.
                 HomeBalanceHero(
-                    totalBalance = totalBalance,
-                    accountCount = accounts.size,
                     todaySpend = todaySpend,
+                    yesterdaySpend = yesterdaySpend,
+                    weekSpend = weekSpend,
                     privacyMode = privacyMode,
                     onClick = { onNavigateToRoute("assets") },
+                )
+            }
+            // کارتِ «مرورِ هفته» (`15a`) - نوارِ رنگیِ ۴ پیکسلیِ بالا + سه ستونِ جمعِ هفته /
+            // هفته‌ی قبل / تغییر. رنگِ نوار و درصد از **جهتِ** تغییر میاد: بیشتر شدن قرمز،
+            // کمتر شدن سبز.
+            item {
+                WeekReviewCard(
+                    weekTotal = weekTotal,
+                    prevWeekTotal = prevWeekTotal,
+                    privacyMode = privacyMode,
                 )
             }
             item {
@@ -256,88 +283,142 @@ fun HomeScreen(
  */
 @Composable
 private fun HomeBalanceHero(
-    totalBalance: Double,
-    accountCount: Int,
     todaySpend: Double,
+    yesterdaySpend: Double,
+    weekSpend: List<Double>,
     privacyMode: Boolean,
     onClick: () -> Unit,
 ) {
     // شمارشِ بالارونده - تو حالتِ خصوصی خاموشه (عدد پشتِ ••• مخفیه، انیمیشن بی‌معنیه).
-    val shownBalance = countUpAmount(totalBalance, enabled = !privacyMode)
+    val shown = countUpAmount(todaySpend, enabled = !privacyMode)
+    // «۳۱٪ کمتر از دیروز» - نسبت به خرجِ دیروز. اگه دیروز صفر بوده مقایسه بی‌معنیه و قرص نمیاد.
+    val deltaPercent: Int? = if (yesterdaySpend > 0.0) {
+        (((todaySpend - yesterdaySpend) / yesterdaySpend) * 100).toInt()
+    } else {
+        null
+    }
+
     AppHeroCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
         ) {
-            Text(
-                "مانده‌ی کل",
-                color = HeroMuted,
-                fontSize = 10.5.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(HeroPillBg, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Filled.AccountBalanceWallet,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(17.dp),
+            Column {
+                Text("خرجِ امروز", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        maskIfPrivate(masked, fmt(shown)),
+                        color = Color.White,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
+            }
+            if (deltaPercent != null) {
+                HeroPill(
+                    icon = if (deltaPercent < 0) Icons.Filled.ArrowDownward else Icons.Filled.ArrowUpward,
+                    text = if (deltaPercent < 0) {
+                        "${toFa(-deltaPercent)}٪ کمتر از دیروز"
+                    } else {
+                        "${toFa(deltaPercent)}٪ بیشتر از دیروز"
+                    },
                 )
             }
         }
-        PrivacyCrossfade(privacyMode) { masked ->
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                modifier = Modifier.padding(top = 3.dp),
-            ) {
-                Text(
-                    maskIfPrivate(masked, fmt(shownBalance)),
-                    color = Color.White,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black,
-                )
-                Text(
-                    " ریال",
-                    color = HeroMuted,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
-                )
-            }
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            HeroPill("${toFa(accountCount)} حساب‌کتاب")
-            PrivacyCrossfade(privacyMode) { masked ->
-                HeroPill("خرجِ امروز: ${maskIfPrivate(masked, fmt(todaySpend))}")
-            }
-        }
+        HomeSevenDayChart(values = weekSpend, modifier = Modifier.padding(top = 12.dp))
+        HomeSevenDayChartLabels()
     }
 }
 
-/** قرصِ نیمه‌شفافِ سفید رو کارتِ سبز - `rgba(255,255,255,.2)` طبقِ طرح. */
+/**
+ * قرصِ نیمه‌شفافِ سفید رو کارتِ قهرمان - `rgba(255,255,255,.2)`، متنِ ۹٫۵/۹۰۰ طبقِ طرح.
+ * آیکونش اختیاریه (تو طرح یه فلشِ ۱۰ پیکسلی کنارِ درصدِ تغییر داره).
+ */
 @Composable
-private fun HeroPill(text: String) {
-    Box(
+private fun HeroPill(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
+    Row(
         modifier = Modifier
             .clip(RoundedCornerShape(AppRadius.button))
             .background(HeroPillBg)
             .padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(10.dp))
+        }
         Text(text, color = Color.White, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
     }
 }
 
+
+/**
+ * کارتِ «مرورِ هفته» - کارتِ `15a`ی فایلِ طراحی.
+ *
+ * مقادیرِ دقیقِ طرح: کارتِ سفید با **نوارِ رنگیِ ۴ پیکسلی چسبیده به لبه‌ی بالا** (پس پدینگِ کارت
+ * صفره و خودِ محتوا پدینگِ ۱۳×۱۵ می‌گیره)، عنوانِ ۱۲٫۵/۸۰۰، و سه ستون با برچسبِ ۸٫۵/۷۰۰ و
+ * عددِ ۱۲/۹۰۰.
+ *
+ * رنگِ نوار و ستونِ «تغییر» از **جهتِ** تغییر میاد: خرجِ بیشتر قرمز، خرجِ کمتر سبز.
+ */
+@Composable
+private fun WeekReviewCard(weekTotal: Double, prevWeekTotal: Double, privacyMode: Boolean) {
+    val deltaPercent: Int? = if (prevWeekTotal > 0.0) {
+        (((weekTotal - prevWeekTotal) / prevWeekTotal) * 100).toInt()
+    } else {
+        null
+    }
+    val worse = (deltaPercent ?: 0) > 0
+    val stripe = if (worse) AppDanger else AppPrimary
+    val deltaInk = if (worse) AppDangerInk else AppPrimaryDim
+
+    AppCard(contentPadding = 0.dp) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(stripe),
+        )
+        Column(modifier = Modifier.padding(horizontal = 15.dp, vertical = 13.dp)) {
+            Text("مرورِ هفته", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                WeekReviewCell("جمعِ هفته", fmt(weekTotal), AppText, privacyMode)
+                WeekReviewCell("هفته‌ی قبل", fmt(prevWeekTotal), AppText, privacyMode)
+                if (deltaPercent != null) {
+                    WeekReviewCell(
+                        "تغییر",
+                        (if (worse) "▲ " else "▼ ") + toFa(kotlin.math.abs(deltaPercent)) + "٪",
+                        deltaInk,
+                        privacyMode = false, // درصد مبلغ نیست، تو حالتِ خصوصی هم مخفی نمی‌شه
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeekReviewCell(label: String, value: String, ink: Color, privacyMode: Boolean) {
+    Column {
+        Text(label, color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text(
+                maskIfPrivate(masked, value),
+                color = ink,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+    }
+}
 
 @Composable
 private fun RecentTransactionRow(tx: AccountTransactionEntity, accountName: String, privacyMode: Boolean) {

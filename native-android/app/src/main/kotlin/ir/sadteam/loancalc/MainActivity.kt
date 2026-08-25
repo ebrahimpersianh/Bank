@@ -88,6 +88,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -162,6 +163,8 @@ import ir.sadteam.loancalc.ui.theme.ThemeRevealState
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDisabledText
 import ir.sadteam.loancalc.ui.theme.AppLineRow
+import ir.sadteam.loancalc.ui.theme.AppLabel
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -1164,16 +1167,17 @@ private fun RowScope.BottomNavItem(
     onClick: () -> Unit,
     onPositioned: (Rect) -> Unit = {},
 ) {
-    // **بازطراحیِ سبکِ «جیبک»** - مقادیر از بخشِ «۹ · نویگیشنِ پایین»ِ سیستمِ طراحی:
-    // فعال   → آیکونِ توپر، رنگِ سبزِ متن، برچسبِ ۹ / وزنِ ۹۰۰
-    // غیرفعال → آیکونِ خطی، رنگِ #94A5A0 (همون توکنِ «خاموش»)، برچسبِ ۹ / وزنِ ۷۰۰
-    // ⚠️ ضخامتِ خطِ آیکون (۲٫۵ فعال در برابرِ ۲٫۳) تو طرح با SVG کنترل می‌شه؛ اینجا چون آیکون‌ها
-    // Material هستن، معادلِ درستش سوییچِ خطی↔توپر ([tab.icon] / [tab.selectedIcon])ه که از قبل
-    // هست - همون تمایزِ بصری رو با ابزارِ خودِ اندروید می‌سازه.
-    val color = if (selected) AppPrimaryInk else AppDisabledText
+    // **بازطراحیِ سبکِ «جیبک»** - مقادیر مو‌به‌مو از کارتِ `15a`ی فایلِ طراحی (نه از حدس):
+    //   تبِ فعال    → قرصِ #E9F7EF پشتِ آیکون (۴۲×۲۸، گوشه‌ی ۱۱) · آیکونِ ۱۸ سبز · برچسبِ ۹٫۵/۹۰۰ سبز
+    //   تبِ غیرفعال → بدونِ قرص · آیکونِ ۱۸ خاکستری · برچسبِ ۹٫۵/۷۰۰ خاکستری
+    //   فاصله‌ی آیکون تا برچسب ۴ · عرضِ هر تب ۵۲ · پدینگِ نوار ۹×۶
+    //
+    // ⚠️ قرصِ پشتِ آیکون یه دورِ اشتباهاً حذف شده بود (فرضِ غلط: «طرح نشانگر نداره»). خودِ طرح
+    // داره - فقط به‌جای نشانگرِ **لغزنده**ی دورِ قبل، یه قرصِ ثابتِ پشتِ آیکونِ همون تبه.
+    val ink = if (selected) AppPrimaryInk else AppLabel
     // پورت easing فنری تب فعال تو وب (cubic-bezier(.34,1.56,.64,1) رو .nav-item .ic svg).
     val iconScale by animateFloatAsState(
-        targetValue = if (selected) 1.12f else 1f,
+        targetValue = if (selected) 1.08f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
         label = "navIconScale",
     )
@@ -1182,26 +1186,34 @@ private fun RowScope.BottomNavItem(
         modifier = Modifier
             .weight(1f)
             .clickable(onClick = { buzz(); onClick() })
-            .padding(vertical = 4.dp)
+            .padding(vertical = 2.dp)
             // مختصاتِ ریشه‌ی خودِ تب رو گزارش می‌ده - برای AppTourOverlay که دقیقاً همین محدوده رو
             // نورانی می‌کنه، نه یه مختصاتِ حدسی/هاردکد.
             .onGloballyPositioned { coordinates -> onPositioned(coordinates.boundsInRoot()) },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(
-            if (selected) tab.selectedIcon else tab.icon,
-            contentDescription = tab.label,
-            tint = color,
+        Box(
             modifier = Modifier
-                .height(20.dp)
-                .graphicsLayer { scaleX = iconScale; scaleY = iconScale },
-        )
+                .size(width = 42.dp, height = 28.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .background(if (selected) AppPrimaryPill else Color.Transparent),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                if (selected) tab.selectedIcon else tab.icon,
+                contentDescription = tab.label,
+                tint = ink,
+                modifier = Modifier
+                    .size(18.dp)
+                    .graphicsLayer { scaleX = iconScale; scaleY = iconScale },
+            )
+        }
         Text(
             tab.label,
-            color = color,
-            fontSize = 9.sp,
+            color = ink,
+            fontSize = 9.5.sp,
             fontWeight = if (selected) FontWeight.Black else FontWeight.Bold,
-            modifier = Modifier.padding(top = 5.dp),
+            modifier = Modifier.padding(top = 4.dp),
         )
     }
 }
