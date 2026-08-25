@@ -64,6 +64,11 @@ import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.AppCard
+import androidx.compose.material.icons.filled.ReceiptLong
+import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -459,28 +464,74 @@ private fun ChequeCard(
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
     SwipeToDeleteRow(onDelete = { showDeleteConfirm = true }, confirmDismiss = false, modifier = modifier) {
-    AppCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
+    // ⚠️ **بازطراحیِ سبکِ «جیبک»** - ردیفِ چک طبقِ بخشِ «۸ · ردیفِ فهرست»ِ سیستمِ طراحی و
+    // کارتِ `3a`: قابِ آیکونِ ۳۲ با گوشه‌ی ۱۲ و ته‌رنگِ وضعیت · عنوانِ ۱۲٫۵/۸۰۰ ·
+    // فرادادهٔ ۱۰٫۵/۷۰۰ · مبلغِ ۱۲٫۵/۸۰۰.
+    //
+    // گونه‌ی کارت از **وضعیتِ** چک میاد، نه یه کارتِ سفیدِ همیشگی:
+    //   وضع‌نشده‌ی سررسیدگذشته → فوری (زمینه‌ی صورتی، حاشیه و سایه‌ی قرمز)
+    //   پاس‌شده/برگشت‌خورده/مسترد → تمام‌شده (شفافیتِ ۰٫۷۲، بی‌سایه)
+    //   بقیه                    → پیش‌فرض
+    val statusInk = chequeStatusColor(cheque.status)
+    val settled = cheque.status != "PENDING"
+    val overdue = !settled && JalaliCalendar.daysBetween(
+        PersianDate(cheque.dueYear, cheque.dueMonth, cheque.dueDay),
+        JalaliCalendar.today(),
+    ) > 0
+    AppCard(
+        variant = when {
+            overdue -> AppCardVariant.URGENT
+            settled -> AppCardVariant.DONE
+            else -> AppCardVariant.DEFAULT
+        },
+        contentPadding = 12.dp,
+        modifier = Modifier.pressScaleClickable(onClick = onClick),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
-                Text("چک ${toFa(cheque.chequeNumber)}", color = AppText, fontSize = 15.sp)
-                Text(cheque.bankName, color = AppMuted, fontSize = 12.sp)
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(AppRadius.icon))
+                    .background(statusInk.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.ReceiptLong,
+                    contentDescription = null,
+                    tint = statusInk,
+                    modifier = Modifier.size(15.dp),
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "${toFa(cheque.dueDay)}/${toFa(cheque.dueMonth)}/${toFa(cheque.dueYear)}",
-                    color = AppMuted,
-                    fontSize = 11.sp,
+                    "چکِ ${toFa(cheque.chequeNumber)}",
+                    color = AppText,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    "${cheque.bankName} · ${toFa(cheque.dueDay)}/${toFa(cheque.dueMonth)}/${toFa(cheque.dueYear)}",
+                    color = if (overdue) AppDangerInk else AppMuted,
+                    fontSize = 10.5.sp,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text("${fmt(cheque.amount)} ریال", color = AppText, fontSize = 13.sp)
+                Text(
+                    fmt(cheque.amount),
+                    color = AppText,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                )
                 Text(
                     chequeStatusLabel(cheque.status),
-                    color = chequeStatusColor(cheque.status),
-                    fontSize = 11.sp,
+                    color = statusInk,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }

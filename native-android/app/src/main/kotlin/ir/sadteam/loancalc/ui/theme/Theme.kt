@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
@@ -47,7 +48,19 @@ private val AppShapes = Shapes(
  * (که همون [AppAccent] موجوده) فقط به‌عنوانِ لهجه‌ی ظریف تو کل اپ (هر دو تمِ روشن/تاریک) بیشتر
  * دیده بشه، نه یه تمِ کاملاً جدا. برای همین تمِ طلاییِ جدا حذف شد؛ [GoldAppColors] (تو Color.kt)
  * دیگه به‌عنوانِ تمِ فعال استفاده نمی‌شه. */
-enum class ThemeMode { LIGHT, DARK }
+enum class ThemeMode {
+    LIGHT,
+    DARK,
+
+    /**
+     * **تازه (بازطراحیِ جیبک)** - از تنظیماتِ خودِ گوشی پیروی می‌کنه. سیستمِ طراحی صریحاً این
+     * حالت رو می‌خواد («یک `ColorScheme` جفتی + یک `ThemeMode` سه‌حالته»).
+     *
+     * ⚠️ برای کاربرِ قدیمی‌ای که تا الان روشن/تیره ذخیره کرده هیچ‌چی عوض نمی‌شه - این فقط یه
+     * گزینه‌ی **اضافه**‌ست، پیش‌فرض همچنان [LIGHT]ه.
+     */
+    SYSTEM,
+}
 
 /** پورت toggleTheme تو www/index.html (کلاس body.light). پیش‌فرض روشن/سفیده (به‌درخواست کاربر
  * «تم اصلی برنامه سفید باشه»). */
@@ -56,8 +69,14 @@ fun LoanCalcTheme(
     themeMode: ThemeMode = ThemeMode.LIGHT,
     content: @Composable () -> Unit,
 ) {
-    val palette = if (themeMode == ThemeMode.DARK) DarkAppColors else LightAppColors
-    val colorScheme = if (themeMode == ThemeMode.LIGHT) {
+    // حالتِ «سیستم» به تنظیماتِ خودِ گوشی نگاه می‌کنه؛ بقیه صریح‌ان.
+    val dark = when (themeMode) {
+        ThemeMode.DARK -> true
+        ThemeMode.LIGHT -> false
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
+    val palette = if (dark) DarkAppColors else LightAppColors
+    val colorScheme = if (!dark) {
         lightColorScheme(
             background = palette.bg,
             surface = palette.surface,

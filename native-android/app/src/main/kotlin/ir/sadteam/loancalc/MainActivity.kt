@@ -49,6 +49,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Close
@@ -644,10 +645,14 @@ private fun LoanCalcApp(
                                 tourBounds[TourTarget.DARK_MODE] = it.boundsInRoot()
                             },
                         ) {
-                            // پورت sunIcon/moonIcon تو www/index.html: آیکون وضعیت *فعلی* رو نشون
-                            // می‌ده، نه نتیجه‌ی تپ‌کردن. تمِ تاریک الان برای همه رایگانه.
+                            // آیکون وضعیتِ *فعلی* رو نشون می‌ده، نه نتیجه‌ی تپ‌کردن. تمِ تاریک
+                            // برای همه رایگانه. سه حالت: روشن ← تاریک ← خودکار (پیروی از گوشی).
                             Icon(
-                                if (themeMode == ThemeMode.DARK) Icons.Filled.DarkMode else Icons.Filled.LightMode,
+                                when (themeMode) {
+                                    ThemeMode.DARK -> Icons.Filled.DarkMode
+                                    ThemeMode.LIGHT -> Icons.Filled.LightMode
+                                    ThemeMode.SYSTEM -> Icons.Filled.BrightnessAuto
+                                },
                                 contentDescription = "تغییر تم",
                             )
                         }

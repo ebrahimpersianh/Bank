@@ -139,7 +139,8 @@ import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 import kotlinx.coroutines.launch
 
 private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
-private val themeModeOptions = listOf(ThemeMode.LIGHT to "روشن", ThemeMode.DARK to "تاریک")
+private val themeModeOptions =
+    listOf(ThemeMode.LIGHT to "روشن", ThemeMode.DARK to "تاریک", ThemeMode.SYSTEM to "خودکار")
 
 @Composable
 fun SettingsScreen(

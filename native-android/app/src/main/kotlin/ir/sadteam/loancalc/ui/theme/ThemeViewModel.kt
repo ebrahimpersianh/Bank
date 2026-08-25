@@ -17,9 +17,16 @@ class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewMod
         .map { raw -> ThemeMode.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } ?: ThemeMode.LIGHT }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.LIGHT)
 
-    /** بین روشن/تاریک می‌چرخه - چک اشتراکی‌بودنِ کاربر وظیفه‌ی UI (MainActivity) هست، نه اینجا. */
+    /**
+     * بین روشن ← تاریک ← خودکار می‌چرخه - چک اشتراکی‌بودنِ کاربر وظیفه‌ی UI (MainActivity) هست،
+     * نه اینجا. («خودکار» یعنی از تنظیماتِ خودِ گوشی پیروی کن.)
+     */
     fun cycleThemeMode() {
-        val next = if (themeMode.value == ThemeMode.LIGHT) ThemeMode.DARK else ThemeMode.LIGHT
+        val next = when (themeMode.value) {
+            ThemeMode.LIGHT -> ThemeMode.DARK
+            ThemeMode.DARK -> ThemeMode.SYSTEM
+            ThemeMode.SYSTEM -> ThemeMode.LIGHT
+        }
         setThemeMode(next)
     }
 
