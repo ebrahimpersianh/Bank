@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
@@ -22,6 +23,7 @@ import javax.inject.Inject
 class AccountViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val authPrefs: AuthPrefs,
+    private val gamification: GamificationRepository,
 ) : ViewModel() {
     val accounts: StateFlow<List<AccountEntity>> = accountRepository.observeAccounts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -169,6 +171,11 @@ class AccountViewModel @Inject constructor(
     fun setBudget(categoryName: String, monthlyCap: Double, existingId: Long? = null, accountId: Long? = null) {
         viewModelScope.launch {
             accountRepository.setBudget(categoryName, monthlyCap, existingId, accountId)
+            // «اولین بودجه ۲۵ سکه» (جدولِ `20e`) - یک‌باره؛ بودجه‌ی دومی سکه نمی‌ده.
+            gamification.awardOnce(
+                GamificationRepository.Type.FIRST_BUDGET,
+                GamificationRepository.Reward.FIRST_BUDGET,
+            )
             syncIfLoggedIn()
         }
     }

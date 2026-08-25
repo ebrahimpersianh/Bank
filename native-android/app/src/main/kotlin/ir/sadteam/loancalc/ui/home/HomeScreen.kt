@@ -79,6 +79,9 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.profile.AvatarViewModel
 import ir.sadteam.loancalc.ui.components.AvatarView
+import ir.sadteam.loancalc.ui.profile.GamificationViewModel
+import ir.sadteam.loancalc.ui.components.CoinChip
+import ir.sadteam.loancalc.ui.components.ActiveChip
 
 /**
  * تبِ «خانه» - داشبوردِ ورودیِ اصلیِ اپ، هم‌راستا با نمونه‌ی رفرنس (Poolaki - رجوع کن به CLAUDE.md،
@@ -328,6 +331,10 @@ private fun HomeGreetingHeader(userName: String?) {
     // آدمکِ پروفایل - **۳۲px** طبقِ کارتِ `32c` («نوارِ بالای خانه ۳۲px»).
     val avatarViewModel: AvatarViewModel = hiltViewModel()
     val avatar by avatarViewModel.avatar.collectAsState()
+    // قرصِ «فعال» و شمارنده‌ی سکه - همون‌جایی که طرح می‌خواد («چیپِ نوارِ بالای خانه»).
+    val gamification: GamificationViewModel = hiltViewModel()
+    val activeDays by gamification.activeDays.collectAsState()
+    val coins by gamification.coins.collectAsState()
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         AvatarView(avatar, size = 32.dp)
         Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
@@ -344,6 +351,14 @@ private fun HomeGreetingHeader(userName: String?) {
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.padding(top = 2.dp),
             )
+        }
+        // قاعده‌ی `34c`: نشانه فقط جایی که معنیش هست. قرصِ «فعال» تا وقتی زنجیر شروع نشده
+        // اصلاً نمیاد، و سکه هم تا اولین سکه‌ی واقعی.
+        if (activeDays > 0) {
+            ActiveChip(days = activeDays)
+        }
+        if (coins > 0) {
+            CoinChip(coins = coins, modifier = Modifier.padding(start = 6.dp))
         }
     }
 }

@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SmsAutoImportViewModel @Inject constructor(
     private val uiPrefs: UiPrefs,
+    private val gamification: GamificationRepository,
 ) : ViewModel() {
     val enabled: StateFlow<Boolean> = uiPrefs.smsAutoImportEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -27,7 +29,15 @@ class SmsAutoImportViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun enable() {
-        viewModelScope.launch { uiPrefs.setSmsAutoImportEnabled(true) }
+        viewModelScope.launch {
+            uiPrefs.setSmsAutoImportEnabled(true)
+            // «وصل‌کردنِ پیامکِ بانکی ۷۵ سکه» (جدولِ `20e`) - یک‌باره‌ست، پس خاموش/روشنِ دوباره
+            // سکه‌ی تازه نمی‌ده (یگانگی رو خودِ نوعِ رویداد).
+            gamification.awardOnce(
+                GamificationRepository.Type.CONNECT_SMS,
+                GamificationRepository.Reward.CONNECT_SMS,
+            )
+        }
     }
 
     fun disable() {
@@ -41,6 +51,14 @@ class SmsAutoImportViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     fun setNotifEnabled(value: Boolean) {
-        viewModelScope.launch { uiPrefs.setNotifAutoImportEnabled(value) }
+        viewModelScope.launch {
+            uiPrefs.setNotifAutoImportEnabled(value)
+            if (value) {
+                gamification.awardOnce(
+                    GamificationRepository.Type.CONNECT_NOTIFICATION,
+                    GamificationRepository.Reward.CONNECT_NOTIFICATION,
+                )
+            }
+        }
     }
 }

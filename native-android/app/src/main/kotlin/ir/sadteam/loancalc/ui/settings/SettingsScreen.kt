@@ -140,6 +140,8 @@ import kotlinx.coroutines.launch
 import ir.sadteam.loancalc.ui.profile.AvatarViewModel
 import ir.sadteam.loancalc.ui.components.AvatarView
 import ir.sadteam.loancalc.ui.components.AvatarPicker
+import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
+import androidx.compose.material.icons.filled.Savings
 
 private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
 private val themeModeOptions =
@@ -198,6 +200,7 @@ fun SettingsScreen(
                 when (tool) {
                     "calendar" -> FinancialCalendarScreen(onBack = { tool = null })
                     "stats" -> StatsScreen(onBack = { tool = null })
+                    "coins" -> CoinWalletScreen(onBack = { tool = null })
                     else -> CalculationHistoryScreen(onBack = { tool = null })
                 }
             }
@@ -1053,6 +1056,9 @@ private fun ToolsSettings(onOpenTool: (String) -> Unit) {
     }
     AppCard(modifier = Modifier.padding(top = 8.dp)) {
         ToolRow(Icons.Filled.History, "تاریخچه‌ی محاسبات", "مرورِ محاسبه‌های قبلیِ وام/سقف وام/سود سپرده") { onOpenTool("history") }
+        // کیفِ سکه (کارتِ `20d`) - طرح می‌گه «تبِ جدید در نوارِ پایین اضافه نشد؛ پنج تب سقفِ
+        // خوانایی است»، پس از همین‌جا باز می‌شه.
+        ToolRow(Icons.Filled.Savings, "کیفِ سکه", "موجودی و تاریخچه‌ی سکه‌هایی که جمع کردی") { onOpenTool("coins") }
     }
 }
 

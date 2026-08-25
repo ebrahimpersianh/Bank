@@ -11,6 +11,7 @@ import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.DebtRepository
 import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
+import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.NoteRepository
 import ir.sadteam.loancalc.data.SyncOutcome
 import ir.sadteam.loancalc.data.network.SubscriptionPurchaseDto
@@ -39,6 +40,7 @@ class AuthViewModel @Inject constructor(
     private val incomeRepository: IncomeRepository,
     private val debtRepository: DebtRepository,
     private val noteRepository: NoteRepository,
+    private val gamification: GamificationRepository,
 ) : ViewModel() {
     val gateState: StateFlow<GateState?> = combine(authPrefs.authToken, authPrefs.guestMode) { token, guest ->
         val state: GateState? = when {
@@ -77,7 +79,17 @@ class AuthViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun updateName(name: String?) {
-        viewModelScope.launch { authRepository.updateName(name) }
+        viewModelScope.launch {
+            authRepository.updateName(name)
+            // «تکمیلِ پروفایل ۵۰ سکه» (جدولِ `20e`). فقط وقتی اسمِ واقعی ثبت شده، نه وقتی
+            // کاربر اسمش رو پاک کرده.
+            if (!name.isNullOrBlank()) {
+                gamification.awardOnce(
+                    GamificationRepository.Type.COMPLETE_PROFILE,
+                    GamificationRepository.Reward.COMPLETE_PROFILE,
+                )
+            }
+        }
     }
 
     fun refreshStatus() {
