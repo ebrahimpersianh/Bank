@@ -1632,6 +1632,19 @@ private fun ReportMonthHero(
                 )
             }
         }
+        // ⚠️ همون حالتِ خالیِ نمودارِ خانه (رجوع کن به HomeSevenDayChart): بدونِ هیچ خرجی،
+        // هفت میله ارتفاعِ صفر می‌گیرن و یه نوارِ ۴۰ پیکسلیِ خالی مثلِ سوراخ وسطِ کارت می‌مونه.
+        if (monthlySpend.none { it > 0.0 }) {
+            Text(
+                "هنوز خرجی ثبت نکردی - با اولین تراکنش، روندِ ماه‌ها همین‌جا ساخته می‌شه",
+                color = Color.White.copy(alpha = 0.72f),
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.Bold,
+                lineHeight = 18.sp,
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            )
+            return@AppHeroCard
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()

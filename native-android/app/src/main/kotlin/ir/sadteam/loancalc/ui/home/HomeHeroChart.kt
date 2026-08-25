@@ -34,6 +34,20 @@ fun HomeSevenDayChart(
     values: List<Double>,
     modifier: Modifier = Modifier,
 ) {
+    // ⚠️ **حالتِ خالی**: اگه کلِ هفته خرجی نبوده، هر هفت میله ارتفاعِ صفر می‌گیرن و یه نوارِ
+    // ۳۴ پیکسلیِ **کاملاً خالی** وسطِ کارتِ قهرمان جا می‌مونه - رو گوشیِ واقعی مثلِ یه سوراخ
+    // دیده می‌شه (گزارشِ کاربر رو بیلدِ ۴۶۸). قاعده‌ی بخشِ ۳۳ طرح: هیچ‌جا «داده‌ای موجود نیست»
+    // نوشته نمی‌شه، ولی حالتِ خالی هم حق نداره شبیهِ خرابی باشه.
+    if (values.none { it > 0.0 }) {
+        Text(
+            "این هفته هنوز خرجی ثبت نکردی",
+            color = Color.White.copy(alpha = 0.72f),
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = modifier.fillMaxWidth().padding(top = 2.dp),
+        )
+        return
+    }
     val max = values.maxOrNull()?.takeIf { it > 0.0 } ?: 1.0
     Box(modifier = modifier.fillMaxWidth()) {
         Row(
