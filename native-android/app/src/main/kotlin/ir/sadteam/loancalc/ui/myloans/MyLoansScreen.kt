@@ -62,6 +62,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -88,6 +89,7 @@ import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.AppFab
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
@@ -109,6 +111,9 @@ import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
+import ir.sadteam.loancalc.ui.theme.AppGoldInk
+import ir.sadteam.loancalc.ui.theme.AppGoldInk2
+import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -551,8 +556,11 @@ fun MyLoansScreen(
                             // خودِ کارت حاشیه‌ی قرمز می‌گیره + یه بجِ «!» کنارِ اسمِ وام.
                             val overdue = remember(loan) { viewModel.isLoanOverdue(loan) }
                             val isLocked = isLoanLocked(loan)
+                            // وامِ عقب‌افتاده گونه‌ی **فوریِ** کارت رو می‌گیره (زمینه‌ی صورتیِ کم‌رنگ
+                            // + حاشیه و سایه‌ی قرمز)، نه فقط یه حاشیه‌ی قرمز رو کارتِ سفید -
+                            // طبقِ گونه‌ی «فوری»ِ بخشِ ۵ سیستمِ طراحی.
                             AppCard(
-                                borderColor = if (overdue && !isLocked) AppDanger else null,
+                                variant = if (overdue && !isLocked) AppCardVariant.URGENT else AppCardVariant.DEFAULT,
                                 modifier = Modifier
                                     .zIndex(if (isDragging) 1f else 0f)
                                     .then(if (isDragging) Modifier else Modifier.animateItem())
@@ -819,30 +827,39 @@ private fun DashboardSummary(
     val privacyMode = LocalPrivacyMode.current
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        PrivacyCrossfade(privacyMode) { masked ->
-            DashboardStatCard(
-                title = "وضعیت کلی بدهی‌ها",
-                value = "${maskIfPrivate(masked, fmt(animatedDebt))} ریال",
-                valueColor = AppText,
-            )
-        }
-        PrivacyCrossfade(privacyMode) { masked ->
-            DashboardStatCard(
-                title = "مجموع اقساط ماهانه",
-                value = "${maskIfPrivate(masked, fmt(animatedMonthly))} ریال",
-                valueColor = AppPrimary,
-            )
-        }
-        // مورد ۱۹: فقط وقتی واقعاً چیزی معوقه نشون داده می‌شه - وگرنه برای اکثرِ کاربرها (که عقب
-        // نیستن) یه کارتِ همیشگیِ صفرِ بی‌فایده می‌شد.
-        if (totalOverdue > 0) {
-            val animatedOverdue = countUpDouble(totalOverdue)
+        // ⚠️ **بازطراحیِ سبکِ «جیبک»** - کارتِ خلاصه‌ی وام (کارتِ `27a`ی فایلِ طراحی).
+        // قبلاً سه کارتِ سفیدِ جدا بود (بدهی/قسطِ ماهانه/معوق). طرح یه **کارتِ کاغذِ طلاییِ
+        // واحد** با سه ردیفِ جداشده می‌خواد - طلایی اینجا موجهه چون این کارتِ «پول»ه، همون
+        // کاربردی که قاعده‌ی «طلایی فقط پرمیوم/پول» اجازه می‌ده.
+        AppCard(variant = AppCardVariant.GOLD) {
             PrivacyCrossfade(privacyMode) { masked ->
-                DashboardStatCard(
-                    title = "اقساط معوق",
-                    value = "${maskIfPrivate(masked, fmt(animatedOverdue))} ریال",
-                    valueColor = AppDanger,
+                LoanSummaryRow(
+                    label = "مانده‌ی کلِ بدهی",
+                    value = maskIfPrivate(masked, fmt(animatedDebt)),
+                    valueColor = AppGoldInk,
+                    big = true,
                 )
+            }
+            LoanSummaryDivider()
+            PrivacyCrossfade(privacyMode) { masked ->
+                LoanSummaryRow(
+                    label = "قسطِ ماهانه",
+                    value = maskIfPrivate(masked, fmt(animatedMonthly)),
+                    valueColor = AppPrimaryDim,
+                )
+            }
+            // مورد ۱۹: فقط وقتی واقعاً چیزی معوقه نشون داده می‌شه - وگرنه برای اکثرِ کاربرها
+            // (که عقب نیستن) یه ردیفِ همیشگیِ صفرِ بی‌فایده می‌شد.
+            if (totalOverdue > 0) {
+                val animatedOverdue = countUpDouble(totalOverdue)
+                LoanSummaryDivider()
+                PrivacyCrossfade(privacyMode) { masked ->
+                    LoanSummaryRow(
+                        label = "اقساطِ معوق",
+                        value = maskIfPrivate(masked, fmt(animatedOverdue)),
+                        valueColor = AppDangerInk,
+                    )
+                }
             }
         }
 
@@ -1001,6 +1018,60 @@ private fun DashboardSummary(
             }
         }
     }
+}
+
+/**
+ * یه ردیفِ کارتِ خلاصه‌ی وام - کارتِ `27a`ی طرح: برچسبِ ۱۰٫۵/۸۰۰ با جوهرِ طلایی و زیرش عدد.
+ * عددِ ردیفِ اول بزرگ‌تره ([big])، بقیه ۱۳/۹۰۰.
+ */
+@Composable
+private fun LoanSummaryRow(label: String, value: String, valueColor: Color, big: Boolean = false) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(label, color = AppGoldInk2, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold)
+        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
+            Text(
+                value,
+                color = valueColor,
+                fontSize = if (big) 20.sp else 13.sp,
+                fontWeight = FontWeight.Black,
+            )
+            Text(
+                " ریال",
+                color = AppGoldInk2,
+                fontSize = if (big) 11.sp else 9.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 3.dp, bottom = 1.dp),
+            )
+        }
+    }
+}
+
+/**
+ * جداکننده‌ی **نقطه‌چینِ** ردیف‌های کارتِ طلایی - `rgba(139,111,61,.32)` طبقِ قاعده‌ی صریحِ
+ * گونه‌ی «پول و دستاورد» تو بخشِ ۵ سیستمِ طراحی.
+ */
+@Composable
+private fun LoanSummaryDivider() {
+    // ⚠️ توکنِ رنگ `@Composable`ه و داخلِ `drawBehind` صدا زده نمی‌شه - تو `val` محلی خونده می‌شه.
+    val ink = AppGoldInk.copy(alpha = 0.32f)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 11.dp)
+            .height(1.dp)
+            .drawBehind {
+                drawLine(
+                    color = ink,
+                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(size.width, 0f),
+                    strokeWidth = size.height,
+                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                        floatArrayOf(5f, 5f),
+                        0f,
+                    ),
+                )
+            },
+    )
 }
 
 @Composable
