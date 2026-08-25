@@ -481,12 +481,28 @@ class LoanRepository(
      * برای کدوم وام و کدوم قسطه» که چون این تابع همیشه با یه [loan] و یه [m] مشخص صدا زده می‌شه،
      * به‌طور طبیعی تضمین می‌شه. */
     suspend fun setRowPhoto(loan: LoanEntity, m: Int, photoPath: String) = updateRowPayment(loan, m) { row ->
-        row.copy(photoPath = photoPath)
+        // ⚠️ **اضافه‌** می‌کنه، جایگزین نمی‌کنه - طرح (کارتِ `36d`) چند عکسِ رسید برای هر قسط
+        // می‌خواد. نوشتن فقط از راهِ `withPhotoPaths()` (تنها نقطه‌ی نوشتنِ واحد).
+        row.withPhotoPaths(row.photoPaths + photoPath)
     }
 
     suspend fun removeRowPhoto(loan: LoanEntity, m: Int) = updateRowPayment(loan, m) { row ->
         row.copy(photoPath = null)
     }
+
+    /** حذفِ **یک** عکس از بینِ عکس‌های رسیدِ همون قسط. */
+    suspend fun removeRowPhoto(loan: LoanEntity, m: Int, photoPath: String) = updateRowPayment(loan, m) { row ->
+        row.withPhotoPaths(row.photoPaths - photoPath)
+    }
+
+    /** یادداشت و شماره‌ی پیگیریِ یه قسط - کارتِ `36d`. رشته‌ی خالی یعنی «پاک کن». */
+    suspend fun setRowDetails(loan: LoanEntity, m: Int, note: String?, trackingNumber: String?) =
+        updateRowPayment(loan, m) { row ->
+            row.copy(
+                note = note?.trim()?.ifBlank { null },
+                trackingNumber = trackingNumber?.trim()?.ifBlank { null },
+            )
+        }
 
     /** پرداختِ گروهیِ چندتا قسط باهم (خواسته‌ی کاربر: به‌جای تک‌تک زدنِ هرکدوم، چندتا رو انتخاب کنه
      * و یه‌جا «به‌موقع» علامت بزنه) - رجوع کن به [ir.sadteam.loancalc.ui.myloans.LoanDetailScreen]. */
@@ -622,6 +638,10 @@ class LoanRepository(
             map["paidDate"] = mapOf("y" to paidDateY, "m" to paidDateM, "d" to paidDateD)
         }
         if (photoPath != null) map["photoPath"] = photoPath
+        // ⚠️ یادداشت و شماره‌ی پیگیری هم باید تو بکاپ/سینک بره، وگرنه بعدِ خروج و ورودِ دوباره
+        // گم می‌شه - همون درسِ «دو منبعِ حقیقت» که یه‌بار پیشرفتِ همه‌ی وام‌ها رو صفر کرد.
+        if (note != null) map["note"] = note
+        if (trackingNumber != null) map["trackingNumber"] = trackingNumber
         return map
     }
 
@@ -642,6 +662,8 @@ class LoanRepository(
             paidDateM = (paidDate?.get("m") as? Number)?.toInt(),
             paidDateD = (paidDate?.get("d") as? Number)?.toInt(),
             photoPath = photoPath,
+            note = this["note"] as? String,
+            trackingNumber = this["trackingNumber"] as? String,
         )
     }
 

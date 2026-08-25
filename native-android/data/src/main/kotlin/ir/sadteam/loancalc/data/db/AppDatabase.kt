@@ -31,7 +31,7 @@ import net.sqlcipher.database.SupportFactory
         CoinEventEntity::class,
         AchievementEntity::class,
     ],
-    version = 24,
+    version = 25,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -401,6 +401,18 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * جزئیاتِ هر قسط (کارتِ `36d`): یادداشت و شماره‌ی پیگیری. هر دو `nullable`ن پس ردیف‌های
+         * موجود خودبه‌خود خالی می‌مونن و هیچ رفتاری عوض نمی‌شه. چندعکسی ستونِ تازه نگرفت -
+         * تو همون `photoPath` با جداکننده‌ی `|` ذخیره می‌شه.
+         */
+        private val MIGRATION_24_25 = object : Migration(24, 25) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE loan_rows ADD COLUMN note TEXT")
+                db.execSQL("ALTER TABLE loan_rows ADD COLUMN trackingNumber TEXT")
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -442,6 +454,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_21_22,
                             MIGRATION_22_23,
                             MIGRATION_23_24,
+                            MIGRATION_24_25,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

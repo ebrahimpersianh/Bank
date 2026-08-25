@@ -128,6 +128,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ir.sadteam.loancalc.ui.components.persianMonthName
+import ir.sadteam.loancalc.ui.settings.FullScreenDialog
 
 private val faMonthNamesDetail = listOf(
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
@@ -487,28 +489,38 @@ fun LoanDetailScreen(
         )
     }
 
+    // **کارتِ `36d`**: تپ رو هر ردیفِ قسط یه **صفحه‌ی کامل** باز می‌کنه (یادداشت + چند عکسِ
+    // رسید + شماره‌ی پیگیری)، نه دیگه دیالوگِ کوچیکِ تک‌عکسیِ قبلی.
     if (photoRowM != null) {
         val m = photoRowM!!
         val row = rows.firstOrNull { (it["m"] as? Number)?.toInt() == m }
-        val photoPath = row?.get("photoPath") as? String
-        AlertDialog(
-            onDismissRequest = { photoRowM = null },
-            title = { Text("رسید قسط") },
-            text = {
-                Column {
-                    Text("وام: ${loan.name}", color = AppMuted, fontSize = 12.sp)
-                    Text("قسط شماره ${toFa(m)}", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
-                    PhotoAttachmentCard(
-                        photoPath = photoPath,
-                        onPick = { uri -> viewModel.setRowPhoto(loan, m, uri, photoPath) },
-                        onRemove = { viewModel.removeRowPhoto(loan, m, photoPath) },
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { photoRowM = null }) { Text("بستن") }
-            },
-        )
+        val rawPhoto = row?.get("photoPath") as? String
+        val photoPaths = rawPhoto?.split('|')?.filter { it.isNotBlank() } ?: emptyList()
+        val paidDate = row?.get("paidDate") as? Map<*, *>
+        val paidDateLabel = paidDate?.let {
+            val d = (it["d"] as? Number)?.toInt()
+            val mo = (it["m"] as? Number)?.toInt()
+            if (d != null && mo != null) "${toFa(d)} ${persianMonthName(mo)}" else null
+        }
+        FullScreenDialog(onDismissRequest = { photoRowM = null }) {
+            InstallmentDetailScreen(
+                loan = loan,
+                m = m,
+                amount = (row?.get("installment") as? Number)?.toDouble() ?: 0.0,
+                paid = row?.get("paid") == true,
+                paidDateLabel = paidDateLabel,
+                photoPaths = photoPaths,
+                note = row?.get("note") as? String,
+                trackingNumber = row?.get("trackingNumber") as? String,
+                onBack = { photoRowM = null },
+                onPickPhoto = { uri -> viewModel.setRowPhoto(loan, m, uri) },
+                onRemovePhoto = { path -> viewModel.removeRowPhoto(loan, m, path) },
+                onSaveDetails = { note, tracking ->
+                    viewModel.setRowDetails(loan, m, note, tracking)
+                    photoRowM = null
+                },
+            )
+        }
     }
 
     if (editingRowM != null) {

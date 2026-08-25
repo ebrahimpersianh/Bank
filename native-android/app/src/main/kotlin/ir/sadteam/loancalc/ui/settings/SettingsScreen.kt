@@ -1132,7 +1132,7 @@ private fun AboutSettings(banner: InAppBannerState) {
  * می‌شه، و محتوا تو یه `Box` با پس‌زمینه‌ی `AppSurface` پیچیده می‌شه (چون بیشترِ این زیرصفحه‌ها خودشون
  * پس‌زمینه‌ی مستقل ندارن، قبلاً به پس‌زمینه‌ی همون پنلِ پشتشون تکیه می‌کردن). */
 @Composable
-private fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
+internal fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(usePlatformDefaultWidth = false),

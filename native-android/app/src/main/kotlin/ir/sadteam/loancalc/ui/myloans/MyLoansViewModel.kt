@@ -337,19 +337,36 @@ class MyLoansViewModel @Inject constructor(
     /** پیوست/حذف عکس رسیدِ مخصوصِ یه قسطِ خاص (نه یه عکسِ کلیِ رو کل وام) - خواسته‌ی کاربر که مشخص
      * باشه رسید برای کدوم وام و کدوم قسطه؛ چون [loan] و [m] همیشه صریح داده می‌شن، این خودش تضمین
      * می‌شه. عکس قبلیِ همون قسط (اگه بود) قبل از جایگزینی پاک می‌شه. */
-    fun setRowPhoto(loan: LoanEntity, m: Int, uri: Uri, previousPath: String?) {
+    /**
+     * ⚠️ [previousPath] دیگه **پاک نمی‌شه**: طرح (کارتِ `36d`) چند عکسِ رسید برای هر قسط
+     * می‌خواد، پس عکسِ تازه به لیست **اضافه** می‌شه. برای حذفِ یه عکسِ خاص از
+     * [removeRowPhoto] استفاده کن.
+     */
+    fun setRowPhoto(loan: LoanEntity, m: Int, uri: Uri, previousPath: String? = null) {
         viewModelScope.launch {
             val newPath = attachmentStorage.copyToInternalStorage(uri) ?: return@launch
-            attachmentStorage.delete(previousPath)
             loanRepository.setRowPhoto(loan, m, newPath)
             syncIfLoggedIn()
         }
     }
 
+    /** [previousPath] برابرِ null یعنی «همه‌ی عکس‌های این قسط». */
     fun removeRowPhoto(loan: LoanEntity, m: Int, previousPath: String?) {
         viewModelScope.launch {
             attachmentStorage.delete(previousPath)
-            loanRepository.removeRowPhoto(loan, m)
+            if (previousPath == null) {
+                loanRepository.removeRowPhoto(loan, m)
+            } else {
+                loanRepository.removeRowPhoto(loan, m, previousPath)
+            }
+            syncIfLoggedIn()
+        }
+    }
+
+    /** یادداشت و شماره‌ی پیگیریِ یه قسط - کارتِ `36d`. */
+    fun setRowDetails(loan: LoanEntity, m: Int, note: String?, trackingNumber: String?) {
+        viewModelScope.launch {
+            loanRepository.setRowDetails(loan, m, note, trackingNumber)
             syncIfLoggedIn()
         }
     }
