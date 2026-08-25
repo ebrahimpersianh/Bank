@@ -759,7 +759,7 @@ private fun LoanCalcApp(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 6.dp, bottom = 11.dp),
+                                .padding(start = 6.dp, end = 6.dp, bottom = 11.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                         BottomTab.entries.forEach { tab ->
