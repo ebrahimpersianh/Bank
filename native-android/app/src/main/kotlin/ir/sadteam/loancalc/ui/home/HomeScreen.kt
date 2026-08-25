@@ -14,13 +14,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -33,7 +31,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,6 +48,7 @@ import ir.sadteam.loancalc.data.findCategory
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.accounting.NewTransactionSheet
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppFab
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.TodayCard
@@ -58,10 +59,13 @@ import ir.sadteam.loancalc.ui.note.NoteViewModel
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
-import ir.sadteam.loancalc.ui.theme.AppDanger
-import ir.sadteam.loancalc.ui.theme.AppGlassBase
-import ir.sadteam.loancalc.ui.theme.AppGlassBorder
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppLabel
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppSpacing
+import ir.sadteam.loancalc.ui.theme.hardShadow
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -96,6 +100,15 @@ fun HomeScreen(
                     .thenByDescending { it.id },
             )
             .take(6)
+    }
+
+    // «خرجِ امروز» - کارتِ `15a`ی طرح این عدد رو کنارِ مانده‌ی کل نشون می‌ده. داده‌ی جدیدی لازم
+    // نداره، از همون تراکنش‌های موجود حساب می‌شه.
+    val todaySpend = remember(transactions) {
+        val t = JalaliCalendar.today()
+        transactions
+            .filter { it.type != "DEPOSIT" && it.year == t.y && it.month == t.m && it.day == t.d }
+            .sumOf { it.amount }
     }
 
     var selectedDate by remember { mutableStateOf(JalaliCalendar.today()) }
@@ -139,58 +152,22 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                // کارتِ «قهرمانِ» موجودی - همون AppCardِ مشترکِ کلِ اپ (پس گوشه/سایه/حاشیه/هایلایتش
-                // دقیقاً مثلِ بقیه‌ی کارت‌هاست)، فقط با یه لایه‌ی گرادیانِ سبزِ نیمه‌شفاف روش تا
-                // برجسته‌تر باشه. تپ روش می‌بره تبِ «دارایی».
-                val balanceGradient = Brush.linearGradient(
-                    listOf(AppPrimary.copy(alpha = 0.40f), AppPrimaryDim.copy(alpha = 0.18f)),
+                // ⚠️ **بازطراحیِ سبکِ «جیبک»** - کارتِ قهرمانِ خانه (کارتِ `15a`ی فایلِ طراحی).
+                // قبلاً یه AppCardِ شیشه‌ای با گرادیانِ سبزِ نیمه‌شفاف و متنِ تیره بود. الان طبقِ طرح
+                // یه **کارتِ سبزِ توپر** با متنِ سفیده: `linear-gradient(160deg,#0EA968,#0B8C57)` +
+                // سایه‌ی سختِ `0 5px 0 #096F45` + یه هاله‌ی نرمِ سفید تو گوشه‌ی بالا-چپ.
+                // تنها کارتِ «رنگیِ» صفحه‌ست - قاعده‌ی «حداکثر یک رنگِ لهجه در هر صفحه».
+                //
+                // 📌 محتوا عمداً «مانده‌ی کل» موند (نه «خرجِ امروزِ» طرح): تپ روش می‌بره تبِ دارایی و
+                // این یه تصمیمِ محصولیِ از قبل تاییدشده‌ی کاربره. «خرجِ امروز» به‌عنوانِ ردیفِ دومِ
+                // همین کارت اضافه شد تا هر دو عدد دیده بشن.
+                HomeBalanceHero(
+                    totalBalance = totalBalance,
+                    accountCount = accounts.size,
+                    todaySpend = todaySpend,
+                    privacyMode = privacyMode,
+                    onClick = { onNavigateToRoute("assets") },
                 )
-                AppCard(
-                    accentGradient = balanceGradient,
-                    modifier = Modifier.pressScaleClickable(onClick = { onNavigateToRoute("assets") }),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text("مانده‌ی کل", color = AppMuted, fontSize = 13.sp)
-                        Box(
-                            modifier = Modifier.size(34.dp).background(AppPrimary.copy(alpha = 0.18f), CircleShape),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(Icons.Filled.AccountBalanceWallet, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
-                        }
-                    }
-                    // شمارشِ بالارونده - تو حالتِ خصوصی خاموشه (عدد پشتِ ••• مخفیه، انیمیشن بی‌معنیه).
-                    val shownBalance = countUpAmount(totalBalance, enabled = !privacyMode)
-                    PrivacyCrossfade(privacyMode) { masked ->
-                        Row(
-                            verticalAlignment = Alignment.Bottom,
-                            modifier = Modifier.padding(top = 10.dp),
-                        ) {
-                            Text(
-                                maskIfPrivate(masked, fmt(shownBalance)),
-                                color = if (totalBalance < 0) AppDanger else AppText,
-                                fontSize = 36.sp,
-                                fontWeight = FontWeight.Black,
-                            )
-                            Text(
-                                " ریال",
-                                color = AppMuted,
-                                fontSize = 17.sp,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(start = 4.dp),
-                            )
-                        }
-                    }
-                    Text(
-                        "${toFa(accounts.size)} حساب‌کتاب",
-                        color = AppMuted,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                }
             }
             item {
                 TodayCard(
@@ -258,19 +235,123 @@ fun HomeScreen(
                 }
             }
         }
-        FloatingActionButton(
+        AppFab(
             onClick = { showNewTransaction = true },
+            contentDescription = "افزودنِ تراکنش",
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(20.dp)
-                .size(56.dp),
-            shape = RoundedCornerShape(20.dp),
-            containerColor = AppPrimary,
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = "افزودنِ تراکنش")
+                .padding(20.dp),
+        )
+    }
+}
+
+/**
+ * کارتِ قهرمانِ تبِ خانه - کارتِ `15a`ی فایلِ طراحی.
+ *
+ * تنها سطحِ «رنگیِ» صفحه‌ست: سبزِ توپر با متنِ سفید، سایه‌ی سختِ `0 5px 0 #096F45` و یه هاله‌ی
+ * نرمِ سفید تو گوشه‌ی بالا-چپ (تنها گرادیانِ رادیالِ باقی‌مونده‌ی اپ - تو خودِ طرح هست).
+ *
+ * ⚠️ عمداً `AppCard` نیست: `AppCard` سطحِ **مات و بی‌رنگ** با حاشیه‌ی خاکستریه؛ این کارت سبزِ
+ * بی‌حاشیه با سایه‌ی سبزِ تیره‌ست. این تنها استثنای قاعده‌ی «هیچ کارتی رو دستی نساز»ه و برای
+ * همین اینجا یه کامپوننتِ نام‌دارِ جداست، نه یه بلوکِ inline که یه‌بارِ دیگه تکرار بشه.
+ */
+@Composable
+private fun HomeBalanceHero(
+    totalBalance: Long,
+    accountCount: Int,
+    todaySpend: Long,
+    privacyMode: Boolean,
+    onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(AppRadius.card)
+    // شمارشِ بالارونده - تو حالتِ خصوصی خاموشه (عدد پشتِ ••• مخفیه، انیمیشن بی‌معنیه).
+    val shownBalance = countUpAmount(totalBalance, enabled = !privacyMode)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .hardShadow(HeroShadow, 5.dp, AppRadius.card)
+            .clip(shape)
+            .background(Brush.linearGradient(listOf(AppPrimary, AppPrimaryDim)))
+            .pressScaleClickable(onClick = onClick)
+            .padding(AppSpacing.cardPadding),
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "مانده‌ی کل",
+                    color = Color.White.copy(alpha = 0.78f),
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(Color.White.copy(alpha = 0.20f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.AccountBalanceWallet,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(17.dp),
+                    )
+                }
+            }
+            PrivacyCrossfade(privacyMode) { masked ->
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    modifier = Modifier.padding(top = 3.dp),
+                ) {
+                    Text(
+                        maskIfPrivate(masked, fmt(shownBalance)),
+                        color = Color.White,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                    Text(
+                        " ریال",
+                        color = Color.White.copy(alpha = 0.78f),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                HeroPill("${toFa(accountCount)} حساب‌کتاب")
+                PrivacyCrossfade(privacyMode) { masked ->
+                    HeroPill("خرجِ امروز: ${maskIfPrivate(masked, fmt(todaySpend))}")
+                }
+            }
         }
     }
 }
+
+/** قرصِ نیمه‌شفافِ سفید رو کارتِ سبز - `rgba(255,255,255,.2)` طبقِ طرح. */
+@Composable
+private fun HeroPill(text: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(AppRadius.button))
+            .background(Color.White.copy(alpha = 0.20f))
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+    ) {
+        Text(text, color = Color.White, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
+    }
+}
+
+/** سایه‌ی سختِ کارتِ سبزِ قهرمان - `#096F45`، تیره‌ترِ همون سبز (نه یه خاکستریِ عمومی). */
+private val HeroShadow = Color(0xFF096F45)
 
 @Composable
 private fun RecentTransactionRow(tx: AccountTransactionEntity, accountName: String, privacyMode: Boolean) {
@@ -281,32 +362,42 @@ private fun RecentTransactionRow(tx: AccountTransactionEntity, accountName: Stri
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // مقادیر از بخشِ «۸ · ردیفِ فهرست»ِ سیستمِ طراحی: آیکونِ ۱۶ در قابِ ۳۲ با گوشه‌ی ۱۲ و
+        // ته‌رنگِ دسته · عنوانِ ۱۲/۸۰۰ · فرادادهٔ ۹٫۵/۷۰۰ · مبلغِ ۹۰۰.
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (category != null) {
                 Box(
                     modifier = Modifier
-                        .size(34.dp)
-                        .background(category.color.copy(alpha = 0.16f), RoundedCornerShape(12.dp)),
+                        .size(32.dp)
+                        .background(category.color.copy(alpha = 0.16f), RoundedCornerShape(AppRadius.icon)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(category.icon, contentDescription = null, tint = category.color, modifier = Modifier.size(16.dp))
                 }
             }
             Column(modifier = Modifier.padding(start = 10.dp)) {
-                Text(category?.name ?: (if (isIncome) "واریز" else "برداشت"), color = AppText, fontSize = 13.sp)
                 Text(
-                    "$accountName — ${toFa(tx.day)}/${toFa(tx.month)}/${toFa(tx.year)}",
-                    color = AppMuted,
-                    fontSize = 11.sp,
+                    category?.name ?: (if (isIncome) "واریز" else "برداشت"),
+                    color = AppText,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                )
+                Text(
+                    "$accountName · ${toFa(tx.day)}/${toFa(tx.month)}/${toFa(tx.year)}",
+                    color = AppLabel,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
         }
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                "${if (isIncome) "+" else "-"}${maskIfPrivate(masked, fmt(tx.amount))}",
-                color = if (isIncome) AppPrimary else AppDanger,
-                fontSize = 13.sp,
+                // عددِ منفی با «−» میاد نه پرانتز و نه خطِ تیره‌ی ساده - قاعده‌ی صریحِ سیستمِ طراحی.
+                "${if (isIncome) "+" else "−"}${maskIfPrivate(masked, fmt(tx.amount))}",
+                color = if (isIncome) AppPrimaryInk else AppDangerInk,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
             )
         }
     }

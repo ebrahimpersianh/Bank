@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppSurface2
+import ir.sadteam.loancalc.ui.theme.AppChipBg
 
 /**
  * دکمه‌ی دوگزینه‌ای (یا بیشتر) به سبکِ کپسولِ لغزنده - جایگزینِ دو تا [AppChip] جداگانه‌ی کنارِ هم
@@ -50,7 +50,7 @@ fun SegmentedToggle(
             .fillMaxWidth()
             .height(42.dp)
             .clip(RoundedCornerShape(21.dp))
-            .background(AppSurface2)
+            .background(AppChipBg)
             .border(1.dp, AppLine, RoundedCornerShape(21.dp))
             .padding(3.dp),
     ) {
@@ -79,9 +79,11 @@ fun SegmentedToggle(
                 ) {
                     Text(
                         label,
+                        // وزنِ ۹۰۰ برای تبِ فعال و ۸۰۰ برای بقیه - بخشِ «۶ · فیلد، چیپ، تب»ِ
+                        // سیستمِ طراحی («دکمه و چیپ: ۱۰–۱۱ / ۸۰۰»).
                         color = if (index == selectedIndex) Color.White else AppMuted,
-                        fontSize = 13.sp,
-                        fontWeight = if (index == selectedIndex) FontWeight.Bold else FontWeight.Normal,
+                        fontSize = 11.5.sp,
+                        fontWeight = if (index == selectedIndex) FontWeight.Black else FontWeight.ExtraBold,
                     )
                 }
             }

@@ -51,7 +51,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -59,7 +58,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -106,6 +104,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.saveable.rememberSaveable
 import ir.sadteam.loancalc.ui.asset.AssetSection
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppFab
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.AppProgressBar
 import ir.sadteam.loancalc.ui.components.BankBadge
@@ -230,13 +229,11 @@ fun ReportScreen(
     }
     Box(modifier = Modifier.fillMaxSize()) {
         ReportSection(viewModel = viewModel, categoryViewModel = categoryViewModel)
-        FloatingActionButton(
+        AppFab(
             onClick = { showNewTransaction = true },
+            contentDescription = "افزودنِ تراکنش",
             modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
-            containerColor = AppPrimary,
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = "افزودنِ تراکنش")
-        }
+        )
     }
 }
 
@@ -990,14 +987,10 @@ private fun BudgetSection(
             exit = scaleOut(tween(120)) + fadeOut(tween(120)),
             modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
         ) {
-            FloatingActionButton(
+            AppFab(
                 onClick = { showAddBudgetDialog = true },
-                containerColor = AppPrimary,
-                contentColor = Color.White,
-                shape = CircleShape,
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = "افزودنِ بودجه")
-            }
+                contentDescription = "افزودنِ بودجه",
+            )
         }
     }
 

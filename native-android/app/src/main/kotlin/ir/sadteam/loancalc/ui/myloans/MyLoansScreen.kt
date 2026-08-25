@@ -30,7 +30,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
@@ -43,7 +42,6 @@ import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -90,6 +88,7 @@ import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppFab
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
@@ -752,17 +751,13 @@ fun MyLoansScreen(
                 .align(Alignment.BottomEnd)
                 .padding(20.dp),
         ) {
-            FloatingActionButton(
+            AppFab(
                 onClick = { onAddLoanClick() },
-                containerColor = AppPrimary,
-                contentColor = Color.White,
-                shape = CircleShape,
+                contentDescription = "افزودن دستی وام",
                 modifier = Modifier.onGloballyPositioned {
                     onManualAddFabPositioned(it.boundsInRoot())
                 },
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = "افزودن دستی وام")
-            }
+            )
         }
 
         InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))

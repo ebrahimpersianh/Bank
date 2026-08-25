@@ -48,20 +48,12 @@ import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.RequestQuote
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.outlined.Payments
-import androidx.compose.material.icons.outlined.RequestQuote
-import androidx.compose.material.icons.outlined.FolderOpen
-import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.filled.BarChart
@@ -70,8 +62,6 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material3.Icon
@@ -98,7 +88,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
