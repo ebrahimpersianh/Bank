@@ -39,6 +39,7 @@ class UiPrefs(private val context: Context) {
         val AVATAR_SHAPE = stringPreferencesKey("avatar_shape")
         val AVATAR_COLOR = stringPreferencesKey("avatar_color")
         val AVATAR_PHOTO = stringPreferencesKey("avatar_photo")
+        val SHORTCUT_ORDER = stringPreferencesKey("shortcut_order")
     }
 
     // پیش‌فرض روشن/سفید (به‌درخواست کاربر «تم اصلی برنامه سفید باشه») - کاربری که قبلاً دستی
@@ -75,6 +76,18 @@ class UiPrefs(private val context: Context) {
         context.uiPrefsDataStore.edit {
             if (path == null) it.remove(Keys.AVATAR_PHOTO) else it[Keys.AVATAR_PHOTO] = path
         }
+    }
+
+    /**
+     * ترتیبِ میان‌برهای **کشوی میان‌بُر** (بخشِ ۳۱ فایلِ طراحی) - شناسه‌ها با `,` جدا می‌شن.
+     *
+     * ⚠️ طرح این ترتیب رو رو **سرور** (`PATCH /me/shortcuts`) می‌خواد؛ سرورِ فعلی همچین مسیری
+     * نداره، پس فعلاً محلیه. اضافه‌شدنِ مسیرِ سرور فقط یه لایه‌ی سینک روی همین می‌خواد.
+     */
+    val shortcutOrder: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.SHORTCUT_ORDER] }
+
+    suspend fun setShortcutOrder(ids: List<String>) {
+        context.uiPrefsDataStore.edit { it[Keys.SHORTCUT_ORDER] = ids.joinToString(",") }
     }
 
     /** پورت .app.fs-small/fs-medium/fs-large (zoom:0.9/1/1.15) - پیش‌فرض «متوسط» (۱). */

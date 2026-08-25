@@ -175,6 +175,14 @@ import ir.sadteam.loancalc.ui.theme.ThemeMode
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 import kotlinx.coroutines.delay
 import javax.inject.Inject
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material.icons.outlined.Payments
+import ir.sadteam.loancalc.ui.profile.ShortcutViewModel
+import ir.sadteam.loancalc.ui.components.ShortcutDrawerHandle
+import ir.sadteam.loancalc.ui.components.ShortcutDrawer
+import ir.sadteam.loancalc.ui.components.Shortcut
 
 // آیکون‌های نوار پایین: حالت عادی outline (مینیمال، مثل نسخه‌ی وب)، تب فعال پُر (filled).
 //
@@ -207,6 +215,21 @@ private enum class BottomTab(
 /** «وام» و «چک» دیگه تبِ نوارِ پایین نیستن (رجوع کن به کامنتِ بالای [BottomTab]) - این دو route
  * مستقیم به‌عنوانِ رشته تعریف شدن (نه عضوِ enumِ BottomTab) چون فقط از تبِ «سررسید»/«خانه» به‌عنوانِ
  * صفحه‌ی پوش‌شده باز می‌شن، تو نوارِ پایین رندر نمی‌شن. */
+/**
+ * هشت میان‌برِ پیش‌فرضِ **کشوی میان‌بُر** - عیناً همون‌هایی که کارتِ `31b` نشون می‌ده.
+ * ترتیبِ اینجا فقط پیش‌فرضه؛ ترتیبِ واقعی از [ShortcutViewModel] میاد.
+ */
+private val defaultShortcuts = listOf(
+    Shortcut("expense", "ثبتِ خرج", Icons.Outlined.Payments, "home"),
+    Shortcut("transfer", "انتقال", Icons.Outlined.SwapHoriz, "assets"),
+    Shortcut("report", "گزارشِ ماه", Icons.Outlined.BarChart, "report"),
+    Shortcut("cheque", "چک‌ها", Icons.Outlined.Description, "cheque"),
+    Shortcut("gold", "طلا", Icons.Outlined.AccountBalanceWallet, "assets"),
+    Shortcut("budget", "بودجه", Icons.Outlined.Savings, "budget"),
+    Shortcut("due", "سررسید", Icons.Outlined.EventNote, "due"),
+    Shortcut("debt", "دنگ", Icons.Outlined.Groups, "due"),
+)
+
 private const val LOAN_ROUTE = "loan"
 private const val CHEQUE_ROUTE = "cheque"
 
@@ -508,6 +531,18 @@ private fun LoanCalcApp(
         }
     }
 
+    // **کشوی میان‌بُر** (بخشِ ۳۱ فایلِ طراحی). هشت میان‌برِ ثابت که کاربر فقط می‌تونه
+    // **جابه‌جاشون** کنه، نه حذف («غیرقابلِ حذف در نسخه‌ی اول» - قاعده‌ی `31c`).
+    val shortcutViewModel: ShortcutViewModel = hiltViewModel()
+    val savedShortcutOrder by shortcutViewModel.order.collectAsState()
+    var shortcutDrawerOpen by remember { mutableStateOf(false) }
+    val shortcuts = remember(savedShortcutOrder) {
+        // ترتیبِ ذخیره‌شده اول میاد؛ شناسه‌ی ناشناخته نادیده و میان‌برِ تازه ته لیست اضافه می‌شه.
+        val byId = defaultShortcuts.associateBy { it.id }
+        val ordered = savedShortcutOrder.mapNotNull { byId[it] }
+        ordered + defaultShortcuts.filterNot { it.id in savedShortcutOrder }
+    }
+
     // «وام‌های من» دیگه تبِ جداگانه‌ی خودش نیست، یه زیرصفحه‌ی داخلِ تبِ «وام»ه (رجوع کن به
     // [LoanTab]/[LoanSubTab]) - این state بهش می‌گه کدوم زیرصفحه رو باز کنه، مستقل از اینکه کاربر
     // خودش دستی رو کدوم زیرصفحه بوده.
@@ -703,7 +738,7 @@ private fun LoanCalcApp(
                     // ⚠️ توکن‌های رنگ `@Composable`ان و داخلِ `drawBehind` (که `DrawScope`ه) صدا
                     // زده نمی‌شن - قاعده‌ی ماندگارِ پروژه. برای همین اینجا تو یه `val` محلی خونده می‌شه.
                     val navTopLine = AppLineRow
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(AppSurface)
@@ -716,10 +751,17 @@ private fun LoanCalcApp(
                                     size = androidx.compose.ui.geometry.Size(size.width, h),
                                 )
                             }
-                            .navigationBarsPadding()
-                            .padding(horizontal = 6.dp, vertical = 11.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                            .navigationBarsPadding(),
                     ) {
+                        // دستگیره‌ی کشوی میان‌بُر - نوارِ ۲۶ پیکسلیِ بالای تب‌ها. کشیدنِ به بالا
+                        // یا تپِ ساده بازش می‌کنه (قاعده‌ی `31c`).
+                        ShortcutDrawerHandle(onOpen = { shortcutDrawerOpen = true })
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 6.dp, bottom = 11.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
                         BottomTab.entries.forEach { tab ->
                             BottomNavItem(
                                 tab = tab,
@@ -733,6 +775,7 @@ private fun LoanCalcApp(
                                     }
                                 },
                             )
+                        }
                         }
                     }
                 }
@@ -838,6 +881,16 @@ private fun LoanCalcApp(
                 SettingsScreen(onBack = { showSettings = false })
             }
         }
+
+        // کشوی میان‌بُر رو کلِ صفحه می‌شینه (پرده‌ی تیره + خودِ کشو) ولی **زیرِ** نوارِ پایین
+        // نمی‌ره - طرح صریحاً می‌خواد نوار همیشه دیده بشه.
+        ShortcutDrawer(
+            shortcuts = shortcuts,
+            visible = shortcutDrawerOpen,
+            onDismiss = { shortcutDrawerOpen = false },
+            onOpenRoute = { route -> navigateTo(route) },
+            onOrderChanged = { ids -> shortcutViewModel.save(ids) },
+        )
 
         // باگِ رفع‌شده: پنلِ تنظیمات فقط ۸۵٪ عرض می‌گیره؛ چون خودِ پنل (Surface رنگِ AppSurface) و
         // لایه‌ی تیره‌ی پشتش (اسکرمِ ۴۵٪ سیاه) هر دو تا زیرِ نوارِ وضعیتِ گوشی هم کشیده می‌شن، این
