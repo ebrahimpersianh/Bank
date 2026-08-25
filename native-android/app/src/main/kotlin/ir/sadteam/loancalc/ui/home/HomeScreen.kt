@@ -49,6 +49,11 @@ import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.accounting.NewTransactionSheet
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.theme.AppDangerPill
+import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.AppCardVariant
+import ir.sadteam.loancalc.ui.components.AppButtonVariant
+import androidx.compose.material.icons.filled.PriorityHigh
 import ir.sadteam.loancalc.ui.components.AppFab
 import ir.sadteam.loancalc.ui.components.HeroPillBg
 import ir.sadteam.loancalc.ui.components.HeroMuted
@@ -87,8 +92,10 @@ fun HomeScreen(
     accountViewModel: AccountViewModel = hiltViewModel(),
     noteViewModel: NoteViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
+    urgentDueViewModel: UrgentDueViewModel = hiltViewModel(),
 ) {
     val userName by authViewModel.userName.collectAsState()
+    val urgentDue by urgentDueViewModel.urgent.collectAsState()
     val accounts by accountViewModel.accounts.collectAsState()
     val transactions by accountViewModel.transactions.collectAsState()
     val privacyMode = LocalPrivacyMode.current
@@ -193,6 +200,20 @@ fun HomeScreen(
                     privacyMode = privacyMode,
                     onClick = { onNavigateToRoute("assets") },
                 )
+            }
+            // کارتِ **فوریِ** `15a` - نزدیک‌ترین قسطِ سررسیدشده‌ی پرداخت‌نشده، با دکمه‌ی
+            // «پرداخت شد» درجا. تنها کارتِ فوریِ صفحه‌ست (قاعده‌ی «حداکثر یکی در هر صفحه»).
+            urgentDue?.let { due ->
+                item {
+                    UrgentDueCard(
+                        title = "قسطِ ${due.loan.name}",
+                        amount = due.amount,
+                        daysOverdue = due.daysOverdue,
+                        privacyMode = privacyMode,
+                        onPay = { urgentDueViewModel.markPaid(due) },
+                        onOpen = { onNavigateToRoute("loan") },
+                    )
+                }
             }
             // کارتِ «مرورِ هفته» (`15a`) - نوارِ رنگیِ ۴ پیکسلیِ بالا + سه ستونِ جمعِ هفته /
             // هفته‌ی قبل / تغییر. رنگِ نوار و درصد از **جهتِ** تغییر میاد: بیشتر شدن قرمز،
@@ -401,6 +422,68 @@ private fun HeroPill(text: String, icon: androidx.compose.ui.graphics.vector.Ima
  *
  * رنگِ نوار و ستونِ «تغییر» از **جهتِ** تغییر میاد: خرجِ بیشتر قرمز، خرجِ کمتر سبز.
  */
+/**
+ * کارتِ **فوریِ** تبِ خانه - کارتِ `15a`ی فایلِ طراحی.
+ *
+ * مقادیرِ دقیقِ طرح: زمینه `#FFF5F5` · حاشیه‌ی ۲ پیکسلیِ `#FFC9C9` · سایه‌ی سختِ `0 4px 0 #FFECEC`
+ * · قابِ آیکونِ ۳۸ با گوشه‌ی ۱۲ و ته‌رنگِ `#FFECEC` · عنوانِ ۱۲٫۵/۸۰۰ · زیرعنوانِ ۱۰٫۵/۷۰۰ قرمز
+ * · دکمه‌ی «پرداخت شد» کپسولیِ سبز با سایه‌ی `0 3px 0`.
+ *
+ * همه‌ی این‌ها از [AppCardVariant.URGENT] و [AppButtonVariant.IN_ROW] میان - چیزی دستی ساخته نشده.
+ */
+@Composable
+private fun UrgentDueCard(
+    title: String,
+    amount: Double,
+    daysOverdue: Int,
+    privacyMode: Boolean,
+    onPay: () -> Unit,
+    onOpen: () -> Unit,
+) {
+    AppCard(
+        variant = AppCardVariant.URGENT,
+        contentPadding = 14.dp,
+        modifier = Modifier.pressScaleClickable(onClick = onOpen),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(AppRadius.icon))
+                    .background(AppDangerPill),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.PriorityHigh,
+                    contentDescription = null,
+                    tint = AppDanger,
+                    modifier = Modifier.size(17.dp),
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        (if (daysOverdue == 0) "امروز سررسید" else "${toFa(daysOverdue)} روز عقب") +
+                            " — " + maskIfPrivate(masked, fmt(amount)),
+                        color = AppDangerInk,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+            GradientButton(onClick = onPay, variant = AppButtonVariant.IN_ROW) {
+                Text("پرداخت شد")
+            }
+        }
+    }
+}
+
 @Composable
 private fun WeekReviewCard(weekTotal: Double, prevWeekTotal: Double, privacyMode: Boolean) {
     val deltaPercent: Int? = if (prevWeekTotal > 0.0) {
