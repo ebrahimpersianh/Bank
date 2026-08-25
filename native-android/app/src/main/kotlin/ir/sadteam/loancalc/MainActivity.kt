@@ -13,7 +13,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -31,7 +30,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -40,6 +38,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -100,11 +99,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
@@ -147,7 +146,6 @@ import ir.sadteam.loancalc.ui.home.HomeScreen
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
-import ir.sadteam.loancalc.ui.components.AuroraBackground
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.onboarding.AnimatedAppEntrance
 import ir.sadteam.loancalc.ui.onboarding.OnboardingFlow
@@ -166,16 +164,16 @@ import ir.sadteam.loancalc.ui.rating.RatePromptDialog
 import ir.sadteam.loancalc.ui.rating.RatePromptViewModel
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
-import ir.sadteam.loancalc.ui.theme.AppGlassBase
-import ir.sadteam.loancalc.ui.theme.AppGlassBorder
-import ir.sadteam.loancalc.ui.theme.AppGlassGradientEnd
-import ir.sadteam.loancalc.ui.theme.AppGlassGradientStart
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
 import ir.sadteam.loancalc.ui.theme.ThemeRevealHost
 import ir.sadteam.loancalc.ui.theme.ThemeRevealState
+import ir.sadteam.loancalc.ui.theme.AppBg
+import ir.sadteam.loancalc.ui.theme.AppDisabledText
+import ir.sadteam.loancalc.ui.theme.AppLineRow
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.LoanCalcTheme
@@ -612,12 +610,14 @@ private fun LoanCalcApp(
 
     CompositionLocalProvider(LocalPrivacyMode provides privacyMode) {
     Box(modifier = Modifier.fillMaxSize()) {
-        // پس‌زمینه‌ی زنده‌ی شفق (سبزآبی+طلایی، رجوع کن به AuroraBackground) پشتِ کل تب‌ها -
-        // containerColor خودِ Scaffold و TopAppBar عمداً Transparent شدن تا این دیده بشه؛ هیچ‌کدوم
-        // از ۴ تبِ اصلی پس‌زمینه‌ی مات ندارن (فقط کارت‌هاشون Surface دارن) پس بینِ کارت‌ها پیداست.
-        AuroraBackground(modifier = Modifier.fillMaxSize())
+        // ⚠️ **بازطراحیِ سبکِ «جیبک»**: پس‌زمینه‌ی زنده‌ی «شفق» (`AuroraBackground` - دو هاله‌ی
+        // گرادیانیِ سبزآبی/طلایی که آروم نفس می‌کشیدن) **حذف شد**. سبکِ جدید یه زمینه‌ی
+        // **تختِ تک‌رنگ** می‌خواد (`#F5FBFF` روشن / `#10181F` تیره) تا کارت‌های ماتِ سفید و
+        // سایه‌های سختشون رو یه سطحِ آروم بشینن؛ هاله‌ی متحرک پشتشون همون «شلوغیِ» بصری‌ای بود
+        // که این بازطراحی می‌خواد ازش فاصله بگیره.
+        // `AuroraBackground.kt` عمداً پاک نشد (ممکنه برای اسپلش/صفحه‌ی خوش‌آمد لازم بشه).
         Scaffold(
-            containerColor = Color.Transparent,
+            containerColor = AppBg,
             topBar = {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
@@ -685,86 +685,56 @@ private fun LoanCalcApp(
                 )
             },
             bottomBar = {
-                // نوارِ ناوبریِ شناور - بروزرسانیِ کلیِ محیطِ اپ (خواسته‌ی صریحِ کاربر: «کلا محیط
-                // برنامه رو بروز کن»). قبلاً یه Surface تخت‌رنگِ چسبیده به لبه‌های صفحه بود؛ الان
-                // همون رسپیِ دقیقِ «شیشه‌ای»ِ AppCard (shadow→clip→background(base+gradient)→border)
-                // با فاصله از لبه‌ها و گوشه‌های کاملاً گرد، پس Aurora از پشتش (بینِ نوار و لبه‌ی
-                // صفحه) دیده می‌شه - هم‌راستا با TopAppBar/کارت‌هایی که از قبل شیشه‌این.
+                // نوارِ ناوبریِ پایین - **پنج تب و فقط همین پنج**: خانه، دارایی، گزارش، بودجه،
+                // سررسید. «وام» و «چک» عمداً تب نیستن و از داخلِ صفحه‌های دیگه باز می‌شن، و
+                // **دکمه‌ی شناورِ میانی هم نداریم** (یه‌بار اضافه و به‌خواستِ کاربر برداشته شد؛
+                // سیستمِ طراحی هم صریحاً همینو می‌گه) - افزودنِ تراکنش از دکمه‌ی درونِ تبِ خانه‌ست.
                 AnimatedVisibility(
                     visible = bottomBarVisible,
                     enter = slideInVertically(Motion.standard()) { it },
                     exit = slideOutVertically(Motion.standard()) { it },
                 ) {
-                    val navShape = RoundedCornerShape(28.dp)
-                    val navGlassGradient = Brush.verticalGradient(listOf(AppGlassGradientStart, AppGlassGradientEnd))
-                    // BoxWithConstraints (نه Row) چون عرضِ واقعیِ نوار برای محاسبه‌ی جای نشانگرِ
-                    // لغزنده لازمه - رجوع کن به کامنتِ داخلش.
-                    BoxWithConstraints(
+                    // ⚠️ **بازطراحیِ سبکِ «جیبک»**: نوارِ «شناورِ شیشه‌ای»ِ دورِ قبل (کارتِ گردگوشه‌ی
+                    // جدا از لبه با گرادیانِ نوری و سایه‌ی تارِ سبز + نشانگرِ قرصیِ لغزنده) کاملاً
+                    // حذف شد. طبقِ بخشِ «۹ · نویگیشنِ پایین»ِ سیستمِ طراحی نوار حالا:
+                    // - به لبه‌ی پایین **چسبیده**، سطحِ **مات** (`#FFFFFF` / `#1B2530`)
+                    // - فقط یه **خطِ بالایی ۲ پیکسلی** داره (`#EEF3F0` / `#232E38`) - نه سایه، نه گرادیان
+                    // - **هیچ نشانگرِ قرصی/لغزنده‌ای نداره** - تبِ فعال فقط با رنگ، ضخامتِ آیکون و
+                    //   وزنِ ۹۰۰ِ برچسب مشخص می‌شه
+                    //
+                    // ⚠️ توکن‌های رنگ `@Composable`ان و داخلِ `drawBehind` (که `DrawScope`ه) صدا
+                    // زده نمی‌شن - قاعده‌ی ماندگارِ پروژه. برای همین اینجا تو یه `val` محلی خونده می‌شه.
+                    val navTopLine = AppLineRow
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 10.dp)
-                            .shadow(
-                                elevation = 20.dp,
-                                shape = navShape,
-                                ambientColor = AppPrimary.copy(alpha = 0.22f),
-                                spotColor = AppPrimary.copy(alpha = 0.22f),
-                            )
-                            .clip(navShape)
-                            .background(AppGlassBase)
-                            .background(navGlassGradient)
-                            .border(1.dp, AppGlassBorder, navShape)
-                            .padding(horizontal = 6.dp, vertical = 10.dp),
-                    ) {
-                        // نشانگرِ لغزنده‌ی تبِ فعال (بستهٔ ارتقاهای گرافیکی، خواسته‌ی صریحِ کاربر):
-                        // قبلاً هر تب «قرصِ» پس‌زمینه‌ی خودش رو داشت که فقط fade می‌شد؛ حالا یه قرصِ
-                        // واحد با فنر بینِ تب‌ها سُر می‌خوره. `offset` (نه absoluteOffset) جهت‌آگاهه،
-                        // پس تو RTL خودبه‌خود درست می‌شینه - همون الگوی SegmentedToggle.
-                        val tabs = BottomTab.entries.toList()
-                        val selectedIndex = tabs.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
-                        val segmentWidth = this@BoxWithConstraints.maxWidth / tabs.size
-                        val indicatorOffset by animateDpAsState(
-                            targetValue = segmentWidth * selectedIndex,
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessMedium,
-                            ),
-                            label = "navIndicatorOffset",
-                        )
-                        // ⚠️ نشانگر **نباید** ارتفاعِ نوار رو تعیین کنه: اسلاتِ bottomBarِ Scaffold با
-                        // قیدِ ارتفاعِ «آزاد» (تا کلِ صفحه) اندازه‌گیری می‌شه، پس یه fillMaxHeight/
-                        // fillMaxSizeِ مستقیم اینجا کلِ صفحه رو به نوار می‌ده و محتوای اپ صفرارتفاع
-                        // و خالی می‌شه (باگِ گزارش‌شده: آیکون‌های تب‌ها می‌رفتن بالای صفحه، وسط سفید
-                        // می‌موند و یه نوارِ سبزِ عمودی کلِ صفحه رو می‌گرفت).
-                        // `matchParentSize` اندازه رو از باکس *می‌گیره* به‌جای اینکه بهش تحمیل کنه،
-                        // پس ارتفاع رو همون Rowِ تب‌ها (که wrap-contentـه) تعیین می‌کنه.
-                        Box(modifier = Modifier.matchParentSize()) {
-                            Box(
-                                modifier = Modifier
-                                    .offset(x = indicatorOffset)
-                                    .width(segmentWidth)
-                                    .fillMaxHeight()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(AppPrimary.copy(alpha = 0.12f)),
-                            )
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            tabs.forEach { tab ->
-                                BottomNavItem(
-                                    tab = tab,
-                                    selected = currentRoute == tab.route,
-                                    onPositioned = { rect -> registerTabTourBounds(tab, rect, tourBounds) },
-                                    onClick = {
-                                        if (tab.route == currentRoute) {
-                                            tabResetKeys[tab] = (tabResetKeys[tab] ?: 0) + 1
-                                        } else {
-                                            navigateTo(tab.route)
-                                        }
-                                    },
+                            .background(AppSurface)
+                            .drawBehind {
+                                // خطِ بالاییِ ۲ پیکسلی. `drawBehind` (نه `border`) چون فقط یه ضلعه.
+                                val h = 2.dp.toPx()
+                                drawRect(
+                                    color = navTopLine,
+                                    topLeft = androidx.compose.ui.geometry.Offset(0f, 0f),
+                                    size = androidx.compose.ui.geometry.Size(size.width, h),
                                 )
                             }
+                            .navigationBarsPadding()
+                            .padding(horizontal = 6.dp, vertical = 11.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        BottomTab.entries.forEach { tab ->
+                            BottomNavItem(
+                                tab = tab,
+                                selected = currentRoute == tab.route,
+                                onPositioned = { rect -> registerTabTourBounds(tab, rect, tourBounds) },
+                                onClick = {
+                                    if (tab.route == currentRoute) {
+                                        tabResetKeys[tab] = (tabResetKeys[tab] ?: 0) + 1
+                                    } else {
+                                        navigateTo(tab.route)
+                                    }
+                                },
+                            )
                         }
                     }
                 }
@@ -1205,23 +1175,25 @@ private fun RowScope.BottomNavItem(
     onClick: () -> Unit,
     onPositioned: (Rect) -> Unit = {},
 ) {
-    val color = if (selected) AppPrimary else AppMuted
-    // پورت easing فنری تب فعال تو وب (cubic-bezier(.34,1.56,.64,1) رو .nav-item .ic svg) - قبلاً
-    // آیکون تب انتخاب‌شده هیچ افکتی نداشت، فقط رنگش عوض می‌شد.
+    // **بازطراحیِ سبکِ «جیبک»** - مقادیر از بخشِ «۹ · نویگیشنِ پایین»ِ سیستمِ طراحی:
+    // فعال   → آیکونِ توپر، رنگِ سبزِ متن، برچسبِ ۹ / وزنِ ۹۰۰
+    // غیرفعال → آیکونِ خطی، رنگِ #94A5A0 (همون توکنِ «خاموش»)، برچسبِ ۹ / وزنِ ۷۰۰
+    // ⚠️ ضخامتِ خطِ آیکون (۲٫۵ فعال در برابرِ ۲٫۳) تو طرح با SVG کنترل می‌شه؛ اینجا چون آیکون‌ها
+    // Material هستن، معادلِ درستش سوییچِ خطی↔توپر ([tab.icon] / [tab.selectedIcon])ه که از قبل
+    // هست - همون تمایزِ بصری رو با ابزارِ خودِ اندروید می‌سازه.
+    val color = if (selected) AppPrimaryInk else AppDisabledText
+    // پورت easing فنری تب فعال تو وب (cubic-bezier(.34,1.56,.64,1) رو .nav-item .ic svg).
     val iconScale by animateFloatAsState(
-        targetValue = if (selected) 1.15f else 1f,
+        targetValue = if (selected) 1.12f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
         label = "navIconScale",
     )
-    // «قرصِ» پس‌زمینه‌ی تبِ فعال دیگه اینجا نیست: یه نشانگرِ **واحدِ لغزنده** تو خودِ نوار
-    // (رجوع کن به bottomBar تو LoanCalcApp) جاش رو گرفته که با فنر بینِ تب‌ها سُر می‌خوره -
-    // قبلاً هر تب قرصِ خودش رو داشت که فقط fade می‌شد.
     val buzz = rememberBuzz()
     Column(
         modifier = Modifier
             .weight(1f)
             .clickable(onClick = { buzz(); onClick() })
-            .padding(vertical = 6.dp)
+            .padding(vertical = 4.dp)
             // مختصاتِ ریشه‌ی خودِ تب رو گزارش می‌ده - برای AppTourOverlay که دقیقاً همین محدوده رو
             // نورانی می‌کنه، نه یه مختصاتِ حدسی/هاردکد.
             .onGloballyPositioned { coordinates -> onPositioned(coordinates.boundsInRoot()) },
@@ -1232,15 +1204,15 @@ private fun RowScope.BottomNavItem(
             contentDescription = tab.label,
             tint = color,
             modifier = Modifier
-                .height(22.dp)
+                .height(20.dp)
                 .graphicsLayer { scaleX = iconScale; scaleY = iconScale },
         )
         Text(
             tab.label,
             color = color,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 4.dp),
+            fontSize = 9.sp,
+            fontWeight = if (selected) FontWeight.Black else FontWeight.Bold,
+            modifier = Modifier.padding(top = 5.dp),
         )
     }
 }

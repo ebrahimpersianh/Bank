@@ -4,113 +4,288 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
-/** دقیقاً هم‌راستا با :root {}/body.light {} تو www/index.html. */
+/**
+ * پالتِ رنگیِ اپ - **بازطراحیِ دومِ ظاهری، سبکِ Duolingo/«جیبک»** (مرداد ۱۴۰۵).
+ *
+ * مقادیر مو‌به‌مو از `design_handoff_bank_redesign/سیستمِ طراحی جیبک.dc.html` (بخشِ «۱ · رنگ» و
+ * جدولِ «نقشه‌ی توکن»ِ حالتِ تیره) برداشته شدن - **حدس زده نشدن**.
+ *
+ * ⚠️ **تفاوتِ بنیادی با دورِ قبل («Liquid Glass»)**: سطحِ نیمه‌شفاف، گرادیانِ نوری، حاشیه‌ی درخشان و
+ * بلورِ پس‌زمینه **همه حذف شدن**. زبانِ جدید: سطحِ کاملاً مات، حاشیه‌ی ۲ پیکسلیِ توپر، سایه‌ی
+ * **سختِ عمودی بدونِ تاری** (`0 4px 0` هم‌رنگِ تیره‌ترِ خودش)، دکمه‌ی کپسولی، و **حداکثر یک رنگِ
+ * لهجه در هر صفحه**.
+ *
+ * فیلدهای `glass*` عمداً حذف نشدن (چند فایل هنوز ازشون استفاده می‌کنن) ولی به معادلِ **تختِ** خودشون
+ * اشاره می‌کنن تا هیچ جای اپ سطحِ شیشه‌ای باقی نمونه - رجوع کن به کامنتِ خودشون پایین‌تر.
+ */
 data class AppColorPalette(
+    // ── سطح و متن ────────────────────────────────────────────────────────────────
+    /** زمینه‌ی صفحه. **هیچ‌وقت مشکیِ خالص نیست** (قاعده‌ی صریحِ سیستمِ طراحی). */
     val bg: Color,
+    /** سطحِ کارت. */
     val surface: Color,
+    /** سطحِ دوم - ردیفِ جدول، بخشِ فرعیِ داخلِ کارت. */
     val surface2: Color,
-    val primary: Color,
-    val primaryDim: Color,
-    val accent: Color,
+    /** متنِ اصلی (تیتر و عدد). **هیچ‌وقت مشکیِ خالص نیست.** */
     val text: Color,
+    /** متنِ دوم - توضیح. */
     val muted: Color,
-    val danger: Color,
+    /** متنِ سوم - برچسبِ ریز، فراداده‌ی ردیف. */
+    val label: Color,
+    /** حاشیه‌ی کارت (۲ پیکسل). */
     val line: Color,
-    // سبکِ «شیشه‌ای» باکس‌های بزرگ (AppCard) - الهام‌گرفته از اپِ «تقویم من» (خواسته‌ی صریحِ کاربر،
-    // با پیش‌نمایش تاییدشده). دو تمِ روشن/تیره عمداً یه معکوسِ ساده‌ی هم نیستن: تو تیره یه گرادیانِ
-    // نورِ سفید رو یه پایه‌ی سرمه‌ای نیمه‌شفاف نشسته (چون پس‌زمینه تیره‌ست، «نور» باید روشن‌تر از
-    // زمینه باشه)؛ تو روشن یه گرادیانِ سایه‌ی تیره رو یه پایه‌ی سفیدِ نیمه‌شفاف (چون زمینه‌ش از قبل
-    // روشنه، سفیدِ اضافه اثری نداره - سایه‌ی ظریف حسِ لبه‌ی شیشه رو می‌ده).
+    /** حاشیه‌ی ردیف‌های فهرست - عمداً روشن‌تر از [line]. */
+    val lineRow: Color,
+    /** تهرنگِ چیپ و برچسبِ بی‌سایه. */
+    val chip: Color,
+
+    // ── سبز (رنگِ اصلی) ──────────────────────────────────────────────────────────
+    /** سبزِ اصلی - دکمه‌ی اصلی، درآمد، حالتِ فعال. */
+    val primary: Color,
+    /** سایه‌ی سختِ زیرِ دکمه‌ی سبز + رنگِ متنِ لینک. */
+    val primaryDim: Color,
+    /**
+     * سبزِ **متن و آیکون**. تو تمِ روشن با [primary] یکیه؛ تو تیره روشن‌تره (`#3DDC96`) چون
+     * سبزِ دکمه رو زمینه‌ی تیره برای متن کنتراستِ کافی نداره. قاعده‌ی صریحِ سیستمِ طراحی:
+     * «سبزِ دکمه عوض نمی‌شود؛ فقط سایه» ولی سبزِ متن/آیکون عوض می‌شود.
+     */
+    val primaryInk: Color,
+    /** تهرنگِ قرصِ سبز (چیپِ وضعیتِ مثبت). */
+    val primaryPill: Color,
+    /** حاشیه‌ی قرصِ سبز - تو روشن شفافه، تو تیره دیده می‌شه. */
+    val primaryPillBorder: Color,
+
+    // ── قرمزِ هزینه ──────────────────────────────────────────────────────────────
+    /** قرمزِ پرکننده - دکمه‌ی حذف، نوارِ هشدار. */
+    val danger: Color,
+    /** قرمزِ **متن** - عددِ منفی، سررسیدِ گذشته. تو روشن تیره‌تر از [danger] برای خوانایی. */
+    val dangerInk: Color,
+    /** تهرنگِ قرصِ قرمز. */
+    val dangerPill: Color,
+    /** زمینه‌ی کارتِ **فوری** (سررسیدِ امروز/فردا). حداکثر یکی در هر صفحه، بالای فهرست. */
+    val urgentBg: Color,
+    /** حاشیه‌ی کارتِ فوری. */
+    val urgentBorder: Color,
+    /** سایه‌ی سختِ کارتِ فوری (`0 4px 0`). */
+    val urgentShadow: Color,
+
+    // ── بقیه‌ی رنگ‌های معنایی ────────────────────────────────────────────────────
+    /** آبی - اطلاع، انتقال بینِ حساب‌ها. */
+    val info: Color,
+    /** بنفش - بودجه و آمار. */
+    val purple: Color,
+    /** نارنجی - هشدارِ نرم، بودجه‌ی بالای ۷۰٪. */
+    val warning: Color,
+
+    // ── کاغذِ طلایی (کارتِ پول و دستاورد) ────────────────────────────────────────
+    /** شروعِ گرادیانِ کارتِ طلایی. */
+    val goldFrom: Color,
+    /** پایانِ گرادیانِ کارتِ طلایی. */
+    val goldTo: Color,
+    /** حاشیه‌ی کارتِ طلایی. */
+    val goldBorder: Color,
+    /** متنِ اصلیِ رو کاغذِ طلایی. */
+    val goldInk: Color,
+    /** متنِ دومِ رو کاغذِ طلایی. */
+    val goldInk2: Color,
+
+    // ── حالتِ غیرفعال و سایه ─────────────────────────────────────────────────────
+    /** پرکننده‌ی دکمه‌ی خاموش. */
+    val disabledFill: Color,
+    /** متنِ دکمه‌ی خاموش. */
+    val disabledText: Color,
+    /** سایه‌ی سختِ خنثی (`0 3px 0`) - زیرِ کارت و چیپِ بی‌رنگ. */
+    val shadowNeutral: Color,
+
+    // ── سازگاریِ عقب‌رو (فیلدهای دورِ «Liquid Glass») ─────────────────────────────
+    // این‌ها حذف نشدن چون چند فایل (GradientButton، HomeScreen، MainActivity) هنوز مستقیم
+    // صداشون می‌زنن؛ ولی همه به معادلِ **تختِ** خودشون اشاره می‌کنن تا حتی قبل از بازنویسیِ اون
+    // فایل‌ها هم هیچ سطحِ شیشه‌ای/گرادیانِ نوری‌ای تو اپ باقی نمونه.
+    // 🚫 **تو کدِ جدید ازشون استفاده نکن** - به‌جاش surface/line/Transparent.
     val glassBase: Color,
     val glassGradientStart: Color,
     val glassGradientEnd: Color,
     val glassBorder: Color,
-    // نقطه‌ی نورِ نوکِ‌تیزِ گوشه‌ی بالا-چپِ AppCard (خواسته‌ی کاربر: طرحِ «Liquid Glass»ِ iOS از بینِ
-    // ۴ طرحِ پیش‌نمایش‌شده‌ی HTML انتخاب شد) - همون هایلایتِ نوریِ مشخصه‌ی شیشه‌ی اپل که با یه بلورِ
-    // واقعی شبیه‌سازی می‌شه، اینجا چون AuroraBackground عمداً بدونِ RenderEffect (بلورِ واقعی، سنگین
-    // رو گوشیِ ضعیف) پیاده شده، با یه Brush.radialGradient ثابت تقلید می‌شه.
     val glassHighlight: Color,
-    // آبیِ اطلاعاتی - برای کارت‌های ابزاری/خنثی (پشتیبان‌گیری، بازیابی، گزارشِ سفارشی) که نباید با
-    // primaryِ سبزِ «پول» یا accentِ طلاییِ «پرمیوم» قاطی بشن (بازطراحیِ دارایی/سررسید/گزارش).
-    val info: Color,
+
+    /** برای تشخیصِ روشن/تیره داخلِ کامپوننت‌ها بدونِ نیاز به پاس‌دادنِ [ThemeMode]. */
+    val isDark: Boolean,
 )
 
-// دورِ پنجمِ تمِ تیره - تعدیلِ سبزِ نئونیِ دورِ قبل (خواسته‌ی صریحِ کاربر: «رنگ سبز ملایم‌تر بشه، کل اپ
-// مینیمال‌تر باشه»). primary از سبزِ نئونیِ خالص (#00FF9C) به یه زمردیِ ملایم‌تر (#34D399، هم‌خانواده
-// ولی کمتر چشم‌آزار/تبلیغاتی) عوض شد. آلفای گرادیان/حاشیه/هایلایتِ شیشه‌ای هم کم شد تا افکتِ «گلو»
-// کمتر توی‌ذوق‌بزن باشه - حسِ مینیمال‌تر عمدتاً از همین‌جا میاد (نه حذفِ خودِ افکت‌ها). accent (طلایی)
-// عمداً دست‌نخورده موند - نشانه‌ی جداگانه‌ی «پرمیوم/اشتراک» تو کل اپ (بج‌های اشتراک، GoldSheenBox).
-val DarkAppColors = AppColorPalette(
-    bg = Color(0xFF000000), // کاملاً مشکی (خواسته‌ی صریحِ کاربر: «پشت کامل مشکی»)
-    surface = Color(0xFF0F1712),
-    surface2 = Color(0xFF16211C),
-    // دورِ ششم - رنگِ سبز از رو نمودارِ لوگوی مرجعِ جدیدِ کاربر نمونه‌برداری شد (Python/PIL، خوشه‌ی
-    // غالبِ رنگیِ خودِ میله‌های نمودار ≈ #63C37A) - رجوع کن به CLAUDE.md. line/glass* همه از همون
-    // مبنای رنگیِ primary (فقط آلفای متفاوت) مشتق شدن، هم‌الگو با دورهای قبلی.
-    primary = Color(0xFF63C37A),
-    primaryDim = Color(0xFF33974B),
-    accent = Color(0xFFFFB020),
-    text = Color(0xFFEEF1F8),
-    muted = Color(0xFF869489),
-    danger = Color(0xFFE56B6F),
-    line = Color(0x1063C37A), // سبزِ جدید با آلفای ~۶٪ - جداکننده‌های ظریف
-    // پایه‌ی کارت کمی روشن‌تر از bg (که تقریباً مشکیه) تا کارت‌ها رو زمینه دیده بشن؛ گرادیان/حاشیه/
-    // هایلایت با همون سبزِ جدید (آلفاها از دورِ قبل دست‌نخورده موندن، فقط رنگِ مبنا عوض شد).
-    glassBase = Color(0x5C14241E), // مشکیِ سبزتاب با آلفای ~۳۶٪
-    glassGradientStart = Color(0x2063C37A), // سبزِ جدید با آلفای ~۱۲٪
-    glassGradientEnd = Color(0x0063C37A), // کاملاً شفاف
-    glassBorder = Color(0x4063C37A), // سبزِ جدید با آلفای ~۲۵٪
-    glassHighlight = Color(0x3A63C37A), // سبزِ جدید با آلفای ~۲۳٪
-    info = Color(0xFF4C9AF5),
-)
-
-// دورِ پنجمِ تمِ روشن - هم‌قدم با تعدیلِ تمِ تیره‌ی بالا (کاربر: «تو حالتِ روشن قشنگ نیست خیلی»).
-// primary/primaryDim به یه زمردیِ متعادل‌تر (نه سبزِ خیلی پررنگِ دورِ قبل) عوض شد که رو پس‌زمینه‌ی
-// سفید هم کنتراستِ خوبی داره هم چشم‌آزار نیست. آلفای گرادیان/حاشیه/هایلایت هم کم شد (حسِ مینیمال‌تر).
+/**
+ * تمِ **روشن** - حالتِ پایه‌ی طرح. زمینه‌ی صفحه یه سفیدِ کمی آبی‌تاب (`#F5FBFF`)ه نه سفیدِ خالص، تا
+ * کارت‌های سفیدِ روش دیده بشن.
+ */
 val LightAppColors = AppColorPalette(
-    bg = Color(0xFFFFFFFF), // کاملاً سفید (خواسته‌ی صریحِ کاربر: «پشت کامل سفید»)
+    bg = Color(0xFFF5FBFF),
     surface = Color(0xFFFFFFFF),
-    surface2 = Color(0xFFF1F7F3),
-    // دورِ ششم - هم‌قدم با تمِ تیره‌ی بالا، از همون نمونه‌برداریِ لوگوی مرجع (کمی تیره‌تر/اشباع‌تر
-    // برای کنتراستِ کافی رو زمینه‌ی سفید).
-    primary = Color(0xFF3DB65A),
-    primaryDim = Color(0xFF287F3D),
-    accent = Color(0xFFB8860B),
-    text = Color(0xFF141A2A),
-    muted = Color(0xFF62705F),
-    danger = Color(0xFFC6474B),
-    line = Color(0x103DB65A), // سبزِ جدید با آلفای ~۶٪
-    // باگِ رفع‌شده (تاریخی): مقادیرِ اولیه (پایه‌ی ۷۰٪ + گرادیانِ ۸٪ + حاشیه‌ی ۱۲٪) رو زمینه‌ی از قبل
-    // تقریباً سفیدِ تمِ روشن عملاً نامرئی بود - کاربر گزارش داد «تو حالت عادی باکس‌ها اصلاً شیشه‌ای
-    // نیست سفیده». پایه‌ی نیمه‌شفاف‌تر شد و گرادیان/حاشیه پررنگ‌تر - همون درس اینجا هم رعایت شد.
-    glassBase = Color(0x5CFFFFFF), // سفید با آلفای ~۳۶٪
-    glassGradientStart = Color(0x183DB65A), // سبزِ جدید با آلفای ~۹٪
-    glassGradientEnd = Color(0x003DB65A), // کاملاً شفاف
-    glassBorder = Color(0x383DB65A), // سبزِ جدید با آلفای ~۲۲٪
-    glassHighlight = Color(0x453DB65A), // سبزِ جدید با آلفای ~۲۷٪
-    info = Color(0xFF2F6FD0),
+    surface2 = Color(0xFFF7FAF8),
+    text = Color(0xFF16221C),
+    muted = Color(0xFF5B6A63),
+    label = Color(0xFF8B9A93),
+    line = Color(0xFFE3ECE7),
+    lineRow = Color(0xFFEEF3F0),
+    chip = Color(0xFFF1F5F2),
+
+    primary = Color(0xFF0EA968),
+    primaryDim = Color(0xFF0B8C57),
+    primaryInk = Color(0xFF0EA968),
+    primaryPill = Color(0xFFE9F7EF),
+    primaryPillBorder = Color(0x00000000), // تو روشن قرصِ سبز حاشیه نداره
+
+    danger = Color(0xFFFF4B4B),
+    dangerInk = Color(0xFFD93838),
+    dangerPill = Color(0xFFFFECEC),
+    urgentBg = Color(0xFFFFF5F5),
+    urgentBorder = Color(0xFFFFC9C9),
+    urgentShadow = Color(0xFFFFECEC),
+
+    info = Color(0xFF1CB0F6),
+    purple = Color(0xFFA56EFF),
+    warning = Color(0xFFFF9600),
+
+    goldFrom = Color(0xFFFFFCF4),
+    goldTo = Color(0xFFF3E7CE),
+    goldBorder = Color(0xFFEBD9B4),
+    goldInk = Color(0xFF8B6F3D),
+    goldInk2 = Color(0xFFA98D5B),
+
+    disabledFill = Color(0xFFDDE7E2),
+    disabledText = Color(0xFF94A5A0),
+    shadowNeutral = Color(0xFFE8EFEB),
+
+    glassBase = Color(0xFFFFFFFF),
+    glassGradientStart = Color(0x00000000),
+    glassGradientEnd = Color(0x00000000),
+    glassBorder = Color(0xFFE3ECE7),
+    glassHighlight = Color(0x00000000),
+
+    isDark = false,
 )
 
-val LocalAppColors = staticCompositionLocalOf { DarkAppColors }
+/**
+ * تمِ **تیره** - طبقِ قاعده‌ی صریحِ سیستمِ طراحی «یک نقشه‌ی توکن، نه یک طراحیِ دوم»: اندازه، فاصله،
+ * گوشه و ضخامتِ حاشیه **عیناً** مثلِ روشنه، فقط رنگ عوض می‌شه.
+ *
+ * ⚠️ زمینه `#10181F`ه نه مشکیِ خالص - این عمدیه و با دورِ قبل (که `#000000` بود، خواسته‌ی وقتِ خودِ
+ * کاربر) فرق داره. تو سبکِ جدید مشکیِ خالص لبه‌ی کارت‌ها رو می‌خوره.
+ */
+val DarkAppColors = AppColorPalette(
+    bg = Color(0xFF10181F),
+    surface = Color(0xFF1B2530),
+    surface2 = Color(0xFF202B36),
+    text = Color(0xFFF3F7F5),
+    muted = Color(0xFF8B9A94),
+    label = Color(0xFF7A8A84),
+    line = Color(0xFF2A3640),
+    lineRow = Color(0xFF232E38),
+    chip = Color(0xFF232E38),
+
+    // سبزِ دکمه عمداً همون سبزِ روشنه (قاعده‌ی صریح)؛ فقط سایه‌ش تیره‌تر می‌شه و سبزِ متن روشن‌تر.
+    primary = Color(0xFF0EA968),
+    primaryDim = Color(0xFF07724A),
+    primaryInk = Color(0xFF3DDC96),
+    primaryPill = Color(0x243DDC96), // rgba(61,220,150,.14)
+    primaryPillBorder = Color(0x593DDC96), // rgba(61,220,150,.35)
+
+    danger = Color(0xFFFF6B6B),
+    dangerInk = Color(0xFFFF6B6B),
+    dangerPill = Color(0x1FFF6B6B), // rgba(255,107,107,.12)
+    // معادلِ تیره‌ی کارتِ فوری - همون قرمزِ #FF6B6B با آلفای کم، ولی **مات** روی سطحِ #1B2530
+    // حساب‌شده (کارت نباید نیمه‌شفاف باشه؛ قاعده‌ی «سطحِ کاملاً مات»).
+    urgentBg = Color(0xFF2A1E22),
+    urgentBorder = Color(0xFF4A2E2E),
+    urgentShadow = Color(0xFF1E1519),
+
+    info = Color(0xFF55C8FF),
+    purple = Color(0xFFBE97FF),
+    warning = Color(0xFFFFB44D),
+
+    goldFrom = Color(0xFF242018),
+    goldTo = Color(0xFF1B1712),
+    goldBorder = Color(0xFF3A3226),
+    goldInk = Color(0xFFF0D9A8),
+    goldInk2 = Color(0xFFC9AE74),
+
+    disabledFill = Color(0xFF232E38),
+    disabledText = Color(0xFF6C7B75),
+    shadowNeutral = Color(0xFF0B131A),
+
+    glassBase = Color(0xFF1B2530),
+    glassGradientStart = Color(0x00000000),
+    glassGradientEnd = Color(0x00000000),
+    glassBorder = Color(0xFF2A3640),
+    glassHighlight = Color(0x00000000),
+
+    isDark = true,
+)
+
+val LocalAppColors = staticCompositionLocalOf { LightAppColors }
 
 /**
  * این‌ها عمداً property هستن نه val ثابت (با `@Composable get()`) - همه‌ی صفحه‌ها همین اسم‌ها رو
- * مستقیم import می‌کنن (`AppText`، `AppPrimary`، ...)، این‌جوری فقط با اضافه‌کردن تم روشن به
- * [LocalAppColors]، بدون تغییر تک‌تک صفحه‌ها همه‌جا رنگ درست به‌روز می‌شه.
+ * مستقیم import می‌کنن (`AppText`، `AppPrimary`، ...)، این‌جوری با عوض‌شدنِ [LocalAppColors]
+ * بدونِ تغییرِ تک‌تکِ صفحه‌ها همه‌جا رنگِ درست به‌روز می‌شه.
+ *
+ * ⚠️ **این‌ها `@Composable`ان** - صداکردنشون داخلِ بلوکِ `Canvas` (که `DrawScope`ه) خطای کامپایل
+ * می‌ده. همیشه قبل از `Canvas` تو یه `val` محلی بخونشون.
  */
 val AppBg: Color @Composable get() = LocalAppColors.current.bg
 val AppSurface: Color @Composable get() = LocalAppColors.current.surface
 val AppSurface2: Color @Composable get() = LocalAppColors.current.surface2
-val AppPrimary: Color @Composable get() = LocalAppColors.current.primary
-val AppPrimaryDim: Color @Composable get() = LocalAppColors.current.primaryDim
-val AppAccent: Color @Composable get() = LocalAppColors.current.accent
 val AppText: Color @Composable get() = LocalAppColors.current.text
 val AppMuted: Color @Composable get() = LocalAppColors.current.muted
-val AppDanger: Color @Composable get() = LocalAppColors.current.danger
+val AppLabel: Color @Composable get() = LocalAppColors.current.label
 val AppLine: Color @Composable get() = LocalAppColors.current.line
-val AppGlassBase: Color @Composable get() = LocalAppColors.current.glassBase
-val AppGlassGradientStart: Color @Composable get() = LocalAppColors.current.glassGradientStart
-val AppGlassGradientEnd: Color @Composable get() = LocalAppColors.current.glassGradientEnd
-val AppGlassBorder: Color @Composable get() = LocalAppColors.current.glassBorder
-val AppGlassHighlight: Color @Composable get() = LocalAppColors.current.glassHighlight
+val AppLineRow: Color @Composable get() = LocalAppColors.current.lineRow
+val AppChipBg: Color @Composable get() = LocalAppColors.current.chip
+
+val AppPrimary: Color @Composable get() = LocalAppColors.current.primary
+val AppPrimaryDim: Color @Composable get() = LocalAppColors.current.primaryDim
+val AppPrimaryInk: Color @Composable get() = LocalAppColors.current.primaryInk
+val AppPrimaryPill: Color @Composable get() = LocalAppColors.current.primaryPill
+val AppPrimaryPillBorder: Color @Composable get() = LocalAppColors.current.primaryPillBorder
+
+val AppDanger: Color @Composable get() = LocalAppColors.current.danger
+val AppDangerInk: Color @Composable get() = LocalAppColors.current.dangerInk
+val AppDangerPill: Color @Composable get() = LocalAppColors.current.dangerPill
+
 val AppInfo: Color @Composable get() = LocalAppColors.current.info
+val AppPurple: Color @Composable get() = LocalAppColors.current.purple
+val AppWarning: Color @Composable get() = LocalAppColors.current.warning
+
+val AppGoldFrom: Color @Composable get() = LocalAppColors.current.goldFrom
+val AppGoldTo: Color @Composable get() = LocalAppColors.current.goldTo
+val AppGoldBorder: Color @Composable get() = LocalAppColors.current.goldBorder
+val AppGoldInk: Color @Composable get() = LocalAppColors.current.goldInk
+val AppGoldInk2: Color @Composable get() = LocalAppColors.current.goldInk2
+
+val AppDisabledFill: Color @Composable get() = LocalAppColors.current.disabledFill
+val AppDisabledText: Color @Composable get() = LocalAppColors.current.disabledText
+val AppShadowNeutral: Color @Composable get() = LocalAppColors.current.shadowNeutral
+
+val AppIsDark: Boolean @Composable get() = LocalAppColors.current.isDark
+
+/**
+ * طلاییِ «پرمیوم/اشتراک». تو کلِ اپ (بج‌های اشتراک، `GoldSheenBox`) به این اسم صدا زده می‌شه.
+ * تو سبکِ جدید همون جوهرِ کاغذِ طلاییه.
+ *
+ * ⚠️ قاعده‌ی ماندگار: **طلایی فقط نشانه‌ی پرمیوم/اشتراکه** - رو حاشیه‌ی دکمه‌های معمولی نه.
+ */
+val AppAccent: Color @Composable get() = LocalAppColors.current.goldInk
+
+// ── سازگاریِ عقب‌رو - رجوع کن به کامنتِ [AppColorPalette.glassBase] ─────────────────
+@Deprecated("سبکِ شیشه‌ای حذف شد. به‌جاش AppSurface.", ReplaceWith("AppSurface"))
+val AppGlassBase: Color @Composable get() = LocalAppColors.current.glassBase
+
+@Deprecated("سبکِ شیشه‌ای حذف شد - همیشه شفافه.", ReplaceWith("Color.Transparent"))
+val AppGlassGradientStart: Color @Composable get() = LocalAppColors.current.glassGradientStart
+
+@Deprecated("سبکِ شیشه‌ای حذف شد - همیشه شفافه.", ReplaceWith("Color.Transparent"))
+val AppGlassGradientEnd: Color @Composable get() = LocalAppColors.current.glassGradientEnd
+
+@Deprecated("سبکِ شیشه‌ای حذف شد. به‌جاش AppLine.", ReplaceWith("AppLine"))
+val AppGlassBorder: Color @Composable get() = LocalAppColors.current.glassBorder
+
+@Deprecated("سبکِ شیشه‌ای حذف شد - همیشه شفافه.", ReplaceWith("Color.Transparent"))
+val AppGlassHighlight: Color @Composable get() = LocalAppColors.current.glassHighlight
