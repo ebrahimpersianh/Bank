@@ -138,6 +138,10 @@ import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppChipBg
+import ir.sadteam.loancalc.ui.theme.AppLabel
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -826,6 +830,35 @@ private fun BudgetSection(
     val totalCap = remember(budgets, budgetedCats) { budgetedCats.sumOf { cat -> budgets.first { it.categoryName == cat.name }.monthlyCap } }
     val totalSpent = remember(spend, budgetedCats) { budgetedCats.sumOf { spend[it.name] ?: 0.0 } }
 
+    // ── داده‌ی کارتِ قهرمانِ بودجه (کارتِ `27c`ی طرح) ─────────────────────────────────
+    // «امروز می‌تونی خرج کنی» = مانده‌ی سقفِ ماه تقسیم بر روزهای باقی‌مانده‌ی ماه. فقط برای
+    // **ماهِ جاری** معنی داره؛ برای ماهِ گذشته/آینده عددش نمایش داده نمی‌شه.
+    val isCurrentMonth = viewYear == today.y && viewMonth == today.m
+    val daysInViewMonth = remember(viewYear, viewMonth) { JalaliCalendar.daysInMonth(viewYear, viewMonth) }
+    val daysLeft = if (isCurrentMonth) (daysInViewMonth - today.d + 1).coerceAtLeast(1) else daysInViewMonth
+    val dailyAllowance = if (totalCap > 0) ((totalCap - totalSpent) / daysLeft).coerceAtLeast(0.0) else 0.0
+    // سهمِ منصفانه‌ی هر روز (سقف تقسیم بر کلِ روزهای ماه) - مبنای نقطه‌های ۷ روزِ اخیر.
+    val fairShare = if (totalCap > 0) totalCap / daysInViewMonth else 0.0
+    // هفت روزِ اخیر: هر روزی که خرجش زیرِ سهمِ منصفانه بوده یه نقطه‌ی سفیدِ توپر می‌گیره.
+    val weekUnderShare = remember(allTransactions, today, fairShare, isCurrentMonth) {
+        if (!isCurrentMonth || fairShare <= 0.0) {
+            emptyList()
+        } else {
+            (6 downTo 0).map { back ->
+                val d = PersianCalendar.addDays(today, -back)
+                val daySpend = allTransactions
+                    .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == d.y && it.month == d.m && it.day == d.d }
+                    .sumOf { it.amount }
+                daySpend <= fairShare
+            }
+        }
+    }
+    val savedSoFar = if (isCurrentMonth && fairShare > 0) {
+        (fairShare * today.d - totalSpent).coerceAtLeast(0.0)
+    } else {
+        0.0
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
@@ -836,7 +869,8 @@ private fun BudgetSection(
                 // هیرویِ ماه - ناوبر + خرج‌شده/سقفِ کل، جایگزینِ ردیفِ لختِ قبلی و BudgetRowِ «همه
                 // دسته‌بندی‌ها» (که همون اطلاعات رو تکراری نشون می‌داد). عددها از همون
                 // totalSpent/totalCap که از قبل محاسبه می‌شد.
-                // کارتِ قهرمانِ تبِ بودجه - سبزِ توپر طبقِ کارتِ `27c`ی طرح.
+                // کارتِ قهرمانِ تبِ بودجه - کارتِ `27c`ی طرح. عددِ قهرمان **«امروز می‌تونی خرج
+                // کنی»**ه (سهمِ روزانه)، نه «خرجِ ماه» - همون چیزی که طرح می‌خواد.
                 AppHeroCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -847,32 +881,96 @@ private fun BudgetSection(
                         Text(
                             "${faMonthNamesAccounting[viewMonth - 1]} ${toFa(viewYear)}",
                             color = Color.White,
-                            fontSize = 13.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Black,
                         )
                         MonthNavArrow(icon = Icons.Filled.ChevronRight, contentDescription = "ماهِ بعد") { stepMonth(1) }
                     }
                     Text(
-                        "${fmt(totalSpent)} ریال",
-                        color = Color.White,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(top = 8.dp),
+                        if (isCurrentMonth) "امروز می‌تونی خرج کنی" else "خرجِ این ماه",
+                        color = HeroMuted,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 10.dp),
                     )
                     Text(
-                        "از سقفِ ${fmt(totalCap)} ریال",
-                        color = HeroMuted,
-                        fontSize = 10.5.sp,
-                        fontWeight = FontWeight.Bold,
+                        fmt(if (isCurrentMonth && totalCap > 0) dailyAllowance else totalSpent),
+                        color = Color.White,
+                        fontSize = 29.sp,
+                        fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(top = 2.dp),
                     )
-                    // نوارِ پیشرفت رو زمینه‌ی سبز: خودِ نوار سفید و مسیرش سفیدِ کم‌آلفا - سبز رو سبز
-                    // اصلاً دیده نمی‌شد.
+                    // هفت نقطه‌ی ۶ پیکسلی - هر روزِ زیرِ سهم سفیدِ توپر، هر روزِ بالای سهم
+                    // سفیدِ ۳۵٪. طبقِ طرح.
+                    if (weekUnderShare.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            weekUnderShare.forEach { under ->
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(AppRadius.button))
+                                        .background(if (under) Color.White else Color.White.copy(alpha = 0.35f)),
+                                )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                "${toFa(weekUnderShare.count { it })} روز زیرِ سهم موندی",
+                                color = Color.White.copy(alpha = 0.82f),
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            if (savedSoFar > 0) {
+                                Text(
+                                    "+${fmt(savedSoFar)} ذخیره",
+                                    color = Color.White,
+                                    fontSize = 9.5.sp,
+                                    fontWeight = FontWeight.Black,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            // کارتِ سفیدِ «کلِ ماه» - جدا از کارتِ قهرمان، دقیقاً مثلِ طرح.
+            item {
+                AppCard {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("کلِ ماه", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                        Text(
+                            "${toFa(if (totalCap > 0) ((totalSpent / totalCap) * 100).toInt() else 0)}٪",
+                            color = AppPrimaryInk,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
                     AppProgressBar(
                         fraction = if (totalCap > 0) (totalSpent / totalCap).toFloat().coerceIn(0f, 1f) else 0f,
-                        color = Color.White,
-                        trackColor = HeroPillBg,
-                        modifier = Modifier.padding(top = 10.dp).height(8.dp),
+                        color = AppPrimary,
+                        trackColor = AppChipBg,
+                        modifier = Modifier.padding(top = 10.dp).height(14.dp),
+                    )
+                    Text(
+                        "${fmt(totalSpent)} از سقفِ ${fmt(totalCap)} ریال",
+                        color = AppLabel,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
             }
