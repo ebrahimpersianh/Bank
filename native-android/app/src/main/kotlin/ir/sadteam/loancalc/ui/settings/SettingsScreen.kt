@@ -137,6 +137,9 @@ import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
 import ir.sadteam.loancalc.ui.theme.ThemeMode
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 import kotlinx.coroutines.launch
+import ir.sadteam.loancalc.ui.profile.AvatarViewModel
+import ir.sadteam.loancalc.ui.components.AvatarView
+import ir.sadteam.loancalc.ui.components.AvatarPicker
 
 private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
 private val themeModeOptions =
@@ -552,6 +555,30 @@ private fun AccountSettings(
     var deleteAccountInProgress by remember { mutableStateOf(false) }
 
     if (gateState == GateState.LOGGED_IN) {
+        // **آدمکِ پروفایل** - بخشِ ۳۲ فایلِ طراحی. سرِ پروفایل ۵۶px طبقِ کارتِ `32c`؛ انتخاب
+        // با حلقه‌ی دوجداره نه تیک (قاعده‌ی `32b`). هر تغییر بی‌درنگ ذخیره می‌شه، پس دکمه‌ی
+        // «ثبت»ِ جدا لازم نیست.
+        val avatarViewModel: AvatarViewModel = hiltViewModel()
+        val avatar by avatarViewModel.avatar.collectAsState()
+        AppCard(modifier = Modifier.padding(top = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AvatarView(avatar, size = 56.dp)
+                Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                    Text("آدمکت را انتخاب کن", color = AppText, fontSize = 14.sp)
+                    Text(
+                        if (savedName.isNullOrBlank()) "بدونِ چهره - فقط یه نشانِ شخصی" else savedName!!,
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+            AvatarPicker(
+                avatar = avatar,
+                onChange = { avatarViewModel.save(it) },
+                modifier = Modifier.padding(top = 12.dp),
+            )
+        }
         // نامِ اختیاریِ کاربر - خواسته‌ی صریحِ کاربر: «اجباری نباشه و بشه اسکیپ کرد، ولی اولِ
         // برنامه نه، بعد از ورود و تو بخشِ حساب کاربری». خالی‌گذاشتنش کاملاً عادیه؛ با پاک‌کردنِ
         // فیلد هم اسم حذف می‌شه. جای مصرفش سربرگِ خروجیِ PDF/اکسله - عمداً برای پیامِ خوش‌آمد

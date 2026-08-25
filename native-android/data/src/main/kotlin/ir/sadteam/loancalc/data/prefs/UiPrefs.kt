@@ -36,6 +36,9 @@ class UiPrefs(private val context: Context) {
         val LAST_COME_BACK_NOTIFIED_AT = stringPreferencesKey("last_come_back_notified_at")
         val NOTIF_AUTO_IMPORT_PACKAGES = stringPreferencesKey("notif_auto_import_packages")
         val DAILY_EXPENSE_REMINDER_ENABLED = booleanPreferencesKey("daily_expense_reminder_enabled")
+        val AVATAR_SHAPE = stringPreferencesKey("avatar_shape")
+        val AVATAR_COLOR = stringPreferencesKey("avatar_color")
+        val AVATAR_PHOTO = stringPreferencesKey("avatar_photo")
     }
 
     // پیش‌فرض روشن/سفید (به‌درخواست کاربر «تم اصلی برنامه سفید باشه») - کاربری که قبلاً دستی
@@ -48,6 +51,30 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setThemeMode(value: String) {
         context.uiPrefsDataStore.edit { it[Keys.THEME_MODE] = value }
+    }
+
+    /**
+     * **آدمکِ پروفایل** (بخشِ ۳۲ فایلِ طراحی). سه مقدارِ ساده‌ی متنی نگه داشته می‌شن نه یه شیِ
+     * سریال‌شده، تا اضافه‌شدنِ رنگ/شکلِ تازه تو آینده مقدارِ ذخیره‌شده رو خراب نکنه.
+     *
+     * ⚠️ `null` بودنِ شکل/رنگ یعنی **کاربر هنوز انتخاب نکرده** - طرح صریحاً می‌گه پیش‌فرض
+     * تصادفی نباشه، پس UI باید حالتِ خنثی رو نشون بده.
+     */
+    val avatarShape: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.AVATAR_SHAPE] }
+    val avatarColor: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.AVATAR_COLOR] }
+    val avatarPhoto: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.AVATAR_PHOTO] }
+
+    suspend fun setAvatar(shape: String, color: String) {
+        context.uiPrefsDataStore.edit {
+            it[Keys.AVATAR_SHAPE] = shape
+            it[Keys.AVATAR_COLOR] = color
+        }
+    }
+
+    suspend fun setAvatarPhoto(path: String?) {
+        context.uiPrefsDataStore.edit {
+            if (path == null) it.remove(Keys.AVATAR_PHOTO) else it[Keys.AVATAR_PHOTO] = path
+        }
     }
 
     /** پورت .app.fs-small/fs-medium/fs-large (zoom:0.9/1/1.15) - پیش‌فرض «متوسط» (۱). */

@@ -77,6 +77,8 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.profile.AvatarViewModel
+import ir.sadteam.loancalc.ui.components.AvatarView
 
 /**
  * تبِ «خانه» - داشبوردِ ورودیِ اصلیِ اپ، هم‌راستا با نمونه‌ی رفرنس (Poolaki - رجوع کن به CLAUDE.md،
@@ -323,20 +325,26 @@ fun HomeScreen(
 @Composable
 private fun HomeGreetingHeader(userName: String?) {
     val today = remember { JalaliCalendar.today() }
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            "${toFa(today.d)} ${persianMonthName(today.m)}",
-            color = AppMuted,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            if (userName.isNullOrBlank()) "خوش آمدی" else "سلامْ $userName",
-            color = AppText,
-            fontSize = 19.sp,
-            fontWeight = FontWeight.Black,
-            modifier = Modifier.padding(top = 2.dp),
-        )
+    // آدمکِ پروفایل - **۳۲px** طبقِ کارتِ `32c` («نوارِ بالای خانه ۳۲px»).
+    val avatarViewModel: AvatarViewModel = hiltViewModel()
+    val avatar by avatarViewModel.avatar.collectAsState()
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        AvatarView(avatar, size = 32.dp)
+        Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+            Text(
+                "${toFa(today.d)} ${persianMonthName(today.m)}",
+                color = AppMuted,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                if (userName.isNullOrBlank()) "خوش آمدی" else "سلامْ $userName",
+                color = AppText,
+                fontSize = 19.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
     }
 }
 

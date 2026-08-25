@@ -38,9 +38,19 @@ def strip(src: str) -> str:
         i += 1
     return ''.join(out)
 
+REPO_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..')
+
 bad = []
 for rel in sys.argv[1:]:
-    path = rel if rel.startswith('/') else os.path.join(ROOT, rel)
+    # مسیرها می‌تونن هم نسبت به ماژولِ اپ باشن هم نسبت به ریشه‌ی ریپو (فایلِ ماژولِ `data`
+    # از دومی میاد) - هرکدوم که واقعاً وجود داشت.
+    candidates = [rel] if rel.startswith('/') else [
+        os.path.join(ROOT, rel),
+        os.path.join(REPO_ROOT, rel),
+    ]
+    path = next((c for c in candidates if os.path.isfile(c)), None)
+    if path is None:
+        continue
     s = strip(open(path, encoding='utf-8').read())
     for open_c, close_c, name in (('{', '}', 'آکولاد'), ('(', ')', 'پرانتز'), ('[', ']', 'براکت')):
         d = s.count(open_c) - s.count(close_c)
