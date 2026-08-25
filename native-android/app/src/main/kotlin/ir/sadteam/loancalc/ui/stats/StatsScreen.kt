@@ -70,6 +70,9 @@ import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ir.sadteam.loancalc.ui.myloans.AddManualLoanScreen
+import ir.sadteam.loancalc.ui.components.EmptyState
+import androidx.compose.material.icons.outlined.BarChart
 
 /**
  * پورت مفهومی «آمار و گزارشات» اپ رقیب (VAMMAN) - ۶ کارت آماری بزرگ + یه نمودار دونات ساده (رسم
@@ -128,6 +131,19 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
         }
     }
 
+    // بخشِ ۳۳ فایلِ طراحی (جدولِ `33d`): «آمارِ وام» حالتِ خالیِ اختصاصی داره - بدونِ وام،
+    // قبلاً یه صفحه‌ی پر از صفر و دوناتِ خالی نشون داده می‌شد. دکمه‌ی طرح («ثبتِ وام») همین‌جا
+    // فرمِ افزودنِ دستیِ وام رو باز می‌کنه چون این صفحه از «ابزارها» باز می‌شه و مسیرِ دیگه‌ای
+    // به تبِ وام نداره.
+    var addingLoan by remember { mutableStateOf(false) }
+    if (addingLoan) {
+        AddManualLoanScreen(
+            onSaved = { addingLoan = false },
+            onCancel = { addingLoan = false },
+        )
+        return
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
@@ -144,6 +160,18 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
             }
             Text("آمار و گزارشات", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+        }
+
+        if (loans.isEmpty()) {
+            EmptyState(
+                icon = Icons.Outlined.BarChart,
+                title = "وامی ثبت نشده",
+                description = "با ثبتِ وام، جدولِ اقساط ساخته می‌شود و آمارش همین‌جا می‌آید.",
+                actionLabel = "ثبتِ وام",
+                onAction = { addingLoan = true },
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+            )
+            return@Column
         }
 
         // صفحه‌ی آمار - **بنفش** طبقِ توکنِ «بنفش = بودجه و آمار»ِ سیستمِ طراحی (هم‌رنگِ کارتِ

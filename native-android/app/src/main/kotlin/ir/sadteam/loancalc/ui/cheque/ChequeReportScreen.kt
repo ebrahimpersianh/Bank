@@ -37,6 +37,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.HeroMuted
 import ir.sadteam.loancalc.ui.components.HeroTone
 import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.ProgressRing
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -63,7 +64,32 @@ internal fun ChequeReportScreen(
     onBack: () -> Unit,
     onDownloadPdf: () -> Unit,
     onDownloadXlsx: () -> Unit,
+    onAddCheque: () -> Unit,
 ) {
+    // بخشِ ۳۳ فایلِ طراحی (کارتِ `33b` و جدولِ `33d`): گزارشِ چک حالتِ خالیِ اختصاصیِ خودش رو
+    // داره - قبلاً با صفرِ چک یه صفحه‌ی پر از عددِ صفر و نمودارِ خالی نشون داده می‌شد.
+    if (stats.total == 0) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                }
+                Text("گزارش‌دهی", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+            }
+            EmptyState(
+                icon = Icons.Outlined.Description,
+                title = "هنوز چکی ثبت نکردی",
+                description = "چکِ صادرشده و دریافتی را که وارد کنی، گزارشِ ماهانه و سررسیدها همین‌جا ساخته می‌شود.",
+                actionLabel = "ثبتِ اولین چک",
+                onAction = onAddCheque,
+                modifier = Modifier.padding(horizontal = 14.dp),
+            )
+        }
+        return
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 40.dp),

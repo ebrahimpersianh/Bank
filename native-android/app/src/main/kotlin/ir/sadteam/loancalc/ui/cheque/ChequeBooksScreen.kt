@@ -39,6 +39,8 @@ import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.components.EmptyState
+import androidx.compose.material.icons.outlined.MenuBook
 
 /**
  * لیست دسته‌چک‌ها (برای پیشنهاد خودکار شماره‌ی سریال بعدی تو فرم افزودن چک) + یه فرم ساده‌ی افزودن
@@ -79,9 +81,16 @@ fun ChequeBooksScreen(
 
         if (books.isEmpty() && !showAddForm) {
             item {
-                Box(modifier = Modifier.fillMaxWidth().padding(top = 60.dp), contentAlignment = Alignment.Center) {
-                    Text("هنوز دسته‌چکی ثبت نشده", color = AppText, fontSize = 15.sp)
-                }
+                // بخشِ ۳۳ فایلِ طراحی (جدولِ `33d`): متنِ لختِ وسطِ صفحه جاش رو به کارتِ
+                // خط‌چینِ استانداردِ حالتِ خالی داد.
+                EmptyState(
+                    icon = Icons.Outlined.MenuBook,
+                    title = "دسته‌چکی ثبت نشده",
+                    description = "با ثبتِ دسته‌چک، شماره‌ی برگه‌ها و شناسه‌ی صیادی خودکار پر می‌شود.",
+                    actionLabel = "ثبتِ دسته‌چک",
+                    onAction = { showAddForm = true },
+                    modifier = Modifier.padding(top = 12.dp),
+                )
             }
         } else {
             items(books, key = { it.id }) { book ->

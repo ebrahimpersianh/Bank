@@ -38,6 +38,8 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.components.EmptyState
+import androidx.compose.material.icons.outlined.SwapHoriz
 
 /**
  * جزئیاتِ یه دارایی - مقدارِ فعلی، ارزشِ روز (اگه قیمت داشته باشیم)، هزینه‌ی خالص، و تاریخچه‌ی
@@ -154,6 +156,19 @@ fun AssetDetailScreen(
 
         item {
             Text("تاریخچه", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+        }
+
+        // بخشِ ۳۳ فایلِ طراحی (جدولِ `33d`، ردیفِ «جزئیاتِ دارایی»).
+        if (trades.isEmpty()) {
+            item {
+                EmptyState(
+                    icon = Icons.Outlined.SwapHoriz,
+                    title = "این دارایی هنوز خرید و فروشی ندارد",
+                    description = "اولین خرید را ثبت کن تا سود و زیان حساب شود.",
+                    actionLabel = "ثبتِ خرید",
+                    onAction = { sellMode = false; showTrade = true },
+                )
+            }
         }
 
         items(trades, key = { it.id }) { trade ->

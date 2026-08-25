@@ -289,6 +289,7 @@ fun ChequeScreen(
                 onBack = { showReport = false },
                 onDownloadPdf = { createPdfLauncher.launch("cheques.pdf") },
                 onDownloadXlsx = { createXlsxLauncher.launch("cheques.xlsx") },
+                onAddCheque = { showReport = false; showAddForm = true },
             )
             "reminders" -> ChequeReminderSettingsScreen(onBack = { showReminderSettings = false })
             "detail" -> openedCheque?.let { cheque ->
