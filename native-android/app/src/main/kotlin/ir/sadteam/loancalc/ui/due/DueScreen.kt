@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +43,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.CircleShape
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.HeroPillBg
+import ir.sadteam.loancalc.ui.components.HeroMuted
+import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.TodayCard
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -106,6 +111,16 @@ fun DueScreen(
     val cheques by chequeViewModel.cheques.collectAsState()
     val loans by myLoansViewModel.loans.collectAsState()
 
+    // ── کارتِ سبزِ «مجموعِ سررسیدهای معلق» (کارتِ `3a`ی طرح) ────────────────────────
+    // معلق = چکِ در جریان (PENDING که بایگانی نشده) + طلب/بدهیِ تسویه‌نشده. عددها از همون
+    // ViewModelهای موجود میان، نه یه منبعِ جدید.
+    val pendingCheques = remember(cheques) { cheques.filter { it.status == "PENDING" && !it.archived } }
+    val openDebts = remember(debts) { debts.filter { !it.settled } }
+    val pendingCount = pendingCheques.size + openDebts.size
+    val pendingAmount = remember(pendingCheques, openDebts) {
+        pendingCheques.sumOf { it.amount } + openDebts.sumOf { it.amount }
+    }
+
     val shortcuts = remember(accounts, notes, debts, cheques, loans) {
         listOf(
             DueShortcut("تراکنش", Icons.Filled.SwapHoriz, "assets", null),
@@ -127,6 +142,8 @@ fun DueScreen(
             DueSubView.NOTES -> NoteScreen(onBack = { subView = DueSubView.NONE })
             DueSubView.NONE -> DueGrid(
                 shortcuts = shortcuts,
+                pendingCount = pendingCount,
+                pendingAmount = pendingAmount,
                 onNavigateToRoute = onNavigateToRoute,
                 onOpenSubView = { subView = it },
             )
@@ -137,6 +154,8 @@ fun DueScreen(
 @Composable
 private fun DueGrid(
     shortcuts: List<DueShortcut>,
+    pendingCount: Int,
+    pendingAmount: Double,
     onNavigateToRoute: (String) -> Unit,
     onOpenSubView: (DueSubView) -> Unit,
 ) {
@@ -164,6 +183,56 @@ private fun DueGrid(
             .padding(14.dp, 12.dp, 14.dp, 18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        // کارتِ سبزِ «مجموعِ سررسیدهای معلق» - کارتِ `3a`ی فایلِ طراحی. بالای گریدِ میان‌برها
+        // می‌شینه، با تعدادِ موردهای معلق تو یه قرصِ سفیدِ نیمه‌شفاف.
+        if (pendingCount > 0) {
+            AppHeroCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(CircleShape)
+                            .background(HeroPillBg),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            toFa(pendingCount),
+                            color = Color.White,
+                            fontSize = 19.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
+                    Column {
+                        Text(
+                            "مجموعِ سررسیدهای معلق",
+                            color = HeroMuted,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
+                            Text(
+                                fmt(pendingAmount),
+                                color = Color.White,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Black,
+                            )
+                            Text(
+                                " ریال",
+                                color = HeroMuted,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(start = 3.dp, bottom = 1.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         // عمداً LazyVerticalGrid نیست: یه گریدِ تنبل تویِ یه ستونِ دیگه نمی‌تونه wrap-content باشه.
         // با چیدنِ دستیِ ردیف‌ها (chunked(3))، ارتفاع دقیقاً به‌اندازه‌ی خودِ کاشی‌هاست.
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
