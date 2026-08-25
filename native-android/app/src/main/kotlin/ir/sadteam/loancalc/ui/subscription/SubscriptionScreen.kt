@@ -46,6 +46,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppGoldFrom
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
@@ -53,6 +54,7 @@ import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /** درصدِ صرفه‌جویی نسبت به N× قیمتِ پلنِ ۱ماهه (۳۰۰٬۰۰۰/۸۱۰٬۰۰۰/۱٬۴۴۰٬۰۰۰/۲٬۵۲۰٬۰۰۰ ریال) - تاییدشده
@@ -154,7 +156,7 @@ fun SubscriptionScreen(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(CircleShape)
-                                .background(AppAccent.copy(alpha = 0.16f)),
+                                .background(AppGoldFrom),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
@@ -391,7 +393,7 @@ fun SubscriptionScreen(
                                         fontSize = 11.sp,
                                         modifier = Modifier
                                             .padding(start = 6.dp)
-                                            .background(AppPrimary.copy(alpha = 0.14f), RoundedCornerShape(8.dp))
+                                            .background(AppPrimaryPill, RoundedCornerShape(8.dp))
                                             .padding(horizontal = 6.dp, vertical = 2.dp),
                                     )
                                 }
@@ -481,7 +483,7 @@ private fun SubscriptionRow(
                 modifier = Modifier
                     .size(30.dp)
                     .clip(CircleShape)
-                    .background(AppPrimary.copy(alpha = 0.16f)),
+                    .background(AppPrimaryPill),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(17.dp))

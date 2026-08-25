@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.delay
@@ -120,7 +121,7 @@ private fun AnimatedCheckmark(modifier: Modifier = Modifier) {
         modifier = modifier
             .size(18.dp)
             .clip(CircleShape)
-            .background(AppPrimary.copy(alpha = 0.18f)),
+            .background(AppPrimaryPill),
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.size(12.dp)) {

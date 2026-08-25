@@ -63,11 +63,13 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppGoldFrom
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 
@@ -207,7 +209,7 @@ private fun WelcomeBullet(text: String) {
             modifier = Modifier
                 .size(22.dp)
                 .clip(CircleShape)
-                .background(AppPrimary.copy(alpha = 0.14f)),
+                .background(AppPrimaryPill),
             contentAlignment = Alignment.Center,
         ) {
             Icon(Icons.Default.Check, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(14.dp))
@@ -309,7 +311,7 @@ private fun ReminderStep(onChoose: (Boolean) -> Unit, onNext: () -> Unit) {
                     modifier = Modifier
                         .size(44.dp)
                         .clip(CircleShape)
-                        .background(AppAccent.copy(alpha = 0.14f)),
+                        .background(AppGoldFrom),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(Icons.Default.Notifications, contentDescription = null, tint = AppAccent)

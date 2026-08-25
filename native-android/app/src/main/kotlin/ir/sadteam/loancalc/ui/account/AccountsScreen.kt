@@ -67,6 +67,7 @@ import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppInfoPill
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -361,7 +362,7 @@ private fun AccountCard(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(RoundedCornerShape(AppRadius.icon))
-                    .background(AppPrimary.copy(alpha = 0.16f)),
+                    .background(AppPrimaryPill),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(account.bankName.take(2), color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -381,7 +382,7 @@ private fun AccountCard(
                     Text("٪${toFa((share * 100).toInt())} از دارایی", color = AppMuted, fontSize = 10.sp)
                 }
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(999.dp)).background(AppPrimary.copy(alpha = 0.14f)),
+                    modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(999.dp)).background(AppPrimaryPill),
                 ) {
                     Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(share.coerceIn(0f, 1f)).background(AppPrimary))
                 }

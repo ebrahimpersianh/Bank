@@ -30,6 +30,7 @@ import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
 
 val todayCardWeekDayNames = listOf("شنبه", "یک‌شنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه")
@@ -119,7 +120,7 @@ fun TodayCard(
 private fun TodayQuickAction(label: String, icon: ImageVector, onClick: () -> Unit) {
     Row(
         modifier = Modifier
-            .background(AppPrimary.copy(alpha = 0.12f), RoundedCornerShape(50))
+            .background(AppPrimaryPill, RoundedCornerShape(50))
             .pressScaleClickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,

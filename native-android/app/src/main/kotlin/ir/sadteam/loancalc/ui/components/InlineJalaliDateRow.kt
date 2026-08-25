@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 
 private val inlineMonthNames = listOf(
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
@@ -51,7 +52,7 @@ fun InlineJalaliDateRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(InlineWheelItemHeight)
-                .background(AppPrimary.copy(alpha = 0.10f), RoundedCornerShape(10.dp))
+                .background(AppPrimaryPill, RoundedCornerShape(10.dp))
                 .border(1.dp, AppPrimary.copy(alpha = 0.45f), RoundedCornerShape(10.dp)),
         )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {

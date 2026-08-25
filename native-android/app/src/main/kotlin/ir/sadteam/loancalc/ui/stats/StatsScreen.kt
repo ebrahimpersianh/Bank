@@ -65,6 +65,7 @@ import ir.sadteam.loancalc.ui.theme.AppInfoPill
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -324,7 +325,7 @@ private fun StatTile(item: StatItem, modifier: Modifier = Modifier) {
     AppCard(modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.size(26.dp).background(AppPrimary.copy(alpha = 0.16f), CircleShape),
+                modifier = Modifier.size(26.dp).background(AppPrimaryPill, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {}
             Text(item.title, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(start = 8.dp))

@@ -53,6 +53,7 @@ import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -100,7 +101,7 @@ fun WheelDatePickerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(WheelItemHeight)
-                        .background(AppPrimary.copy(alpha = 0.10f), RoundedCornerShape(14.dp))
+                        .background(AppPrimaryPill, RoundedCornerShape(14.dp))
                         .border(1.dp, AppPrimary.copy(alpha = 0.45f), RoundedCornerShape(14.dp)),
                 )
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {

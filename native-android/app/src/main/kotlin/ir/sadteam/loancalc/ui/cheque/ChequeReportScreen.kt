@@ -44,6 +44,7 @@ import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppInfoPill
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -138,7 +139,7 @@ internal fun ChequeReportScreen(
                         val total = stats.total.coerceAtLeast(1)
                         Box(modifier = Modifier.weight(stats.passed.toFloat().coerceAtLeast(0.001f) / total).fillMaxSize().background(AppPrimary))
                         Box(modifier = Modifier.weight(stats.bounced.toFloat().coerceAtLeast(0.001f) / total).fillMaxSize().background(AppDanger))
-                        Box(modifier = Modifier.weight(stats.pending.toFloat().coerceAtLeast(0.001f) / total).fillMaxSize().background(AppPrimary.copy(alpha = 0.22f)))
+                        Box(modifier = Modifier.weight(stats.pending.toFloat().coerceAtLeast(0.001f) / total).fillMaxSize().background(AppPrimaryPill))
                     }
                 }
             }

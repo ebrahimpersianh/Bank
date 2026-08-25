@@ -63,6 +63,7 @@ import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -436,7 +437,7 @@ private fun AccountSlotTile(
                 AccountBadge(account = account, size = 30.dp)
             } else {
                 Box(
-                    modifier = Modifier.size(30.dp).background(AppMuted.copy(alpha = 0.18f), CircleShape),
+                    modifier = Modifier.size(30.dp).background(AppChipBg, CircleShape),
                 )
             }
             Text(

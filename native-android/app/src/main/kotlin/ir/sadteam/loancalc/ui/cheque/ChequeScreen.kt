@@ -66,6 +66,7 @@ import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.AppCard
 import androidx.compose.material.icons.filled.ReceiptLong
 import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.components.AppCardVariant
@@ -596,7 +597,7 @@ private fun LiveDateTimeHeader() {
                     modifier = Modifier
                         .padding(top = 10.dp)
                         .clip(RoundedCornerShape(20.dp))
-                        .background(AppText.copy(alpha = 0.18f))
+                        .background(AppChipBg)
                         .padding(horizontal = 16.dp, vertical = 6.dp),
                 ) {
                     Text(timeText, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)

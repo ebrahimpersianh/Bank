@@ -43,6 +43,7 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -152,7 +153,7 @@ private fun AssetRow(
     AppCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.size(36.dp).background(AppPrimary.copy(alpha = 0.16f), CircleShape),
+                modifier = Modifier.size(36.dp).background(AppPrimaryPill, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Filled.TrendingUp, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))

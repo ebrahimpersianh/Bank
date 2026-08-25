@@ -144,6 +144,7 @@ import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
@@ -410,7 +411,7 @@ private fun MainSection(
                             verticalArrangement = Arrangement.Center,
                         ) {
                             Box(
-                                modifier = Modifier.size(32.dp).background(AppPrimary.copy(alpha = 0.16f), CircleShape),
+                                modifier = Modifier.size(32.dp).background(AppPrimaryPill, CircleShape),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(Icons.Filled.Add, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
@@ -500,7 +501,7 @@ private fun MainSection(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
-                                modifier = Modifier.size(30.dp).background(AppPrimary.copy(alpha = 0.16f), CircleShape),
+                                modifier = Modifier.size(30.dp).background(AppPrimaryPill, CircleShape),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(Icons.Filled.Handshake, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(17.dp))
@@ -1568,7 +1569,7 @@ private fun DateRibbonArrow(icon: ImageVector, contentDescription: String, onCli
         modifier = Modifier
             .size(28.dp)
             .clip(CircleShape)
-            .background(AppPrimary.copy(alpha = 0.14f))
+            .background(AppPrimaryPill)
             .pressScaleClickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
