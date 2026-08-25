@@ -22,6 +22,10 @@ for path in glob.glob(os.path.join(ROOT, '**/*.kt'), recursive=True):
         continue
     src = open(path, encoding='utf-8').read()
     rel = os.path.relpath(path, ROOT)
+    # ⚠️ استثنای عمدی: **سکه** پول نیست، یه شمارنده‌ی صحیحه (طرح صریحاً می‌گه سکه به پول
+    # تبدیل نمی‌شه). پس `amount: Int` تو دفترِ سکه درسته، نه باگ.
+    if 'Gamification' in rel or 'CoinEvent' in rel or 'CoinDao' in rel:
+        continue
     # هر امضای تابع
     for m in re.finditer(r'fun\s+\w+\s*\(([^)]*)\)', src, re.S):
         params = m.group(1)

@@ -28,8 +28,10 @@ import net.sqlcipher.database.SupportFactory
         CategoryOrderEntity::class,
         AssetEntity::class,
         AssetTradeEntity::class,
+        CoinEventEntity::class,
+        AchievementEntity::class,
     ],
-    version = 23,
+    version = 24,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -39,6 +41,8 @@ import net.sqlcipher.database.SupportFactory
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
+    abstract fun coinDao(): CoinDao
+    abstract fun achievementDao(): AchievementDao
     abstract fun loanDao(): LoanDao
     abstract fun loanRowDao(): LoanRowDao
     abstract fun chequeDao(): ChequeDao
@@ -361,6 +365,42 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * **گیمیفیکیشن** (سکه + نشان). دو جدولِ کاملاً تازه‌ان، پس هیچ داده‌ی موجودی لمس
+         * نمی‌شه و مسیرِ آپگرید بی‌خطره.
+         *
+         * ⚠️ ایندکسِ یکتای `(type, dateKey)` عیناً همونیه که تو `@Entity`ِ `CoinEventEntity`
+         * اعلام شده - قاعده‌ی ماندگارِ پروژه؛ نبودِ این تطابق یه‌بار کلِ آپدیت رو کرش داد.
+         */
+        private val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS coin_events (
+                        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        type TEXT NOT NULL,
+                        amount INTEGER NOT NULL,
+                        dateKey TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        refId TEXT
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_coin_events_type_dateKey " +
+                        "ON coin_events(type, dateKey)",
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS achievements (
+                        code TEXT NOT NULL PRIMARY KEY,
+                        unlockedAt INTEGER NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -401,6 +441,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_20_21,
                             MIGRATION_21_22,
                             MIGRATION_22_23,
+                            MIGRATION_23_24,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

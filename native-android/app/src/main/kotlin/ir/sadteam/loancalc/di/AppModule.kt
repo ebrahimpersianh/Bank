@@ -41,6 +41,9 @@ import ir.sadteam.loancalc.data.prefs.AuthPrefs
 import ir.sadteam.loancalc.data.prefs.SecurityPrefs
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import javax.inject.Singleton
+import ir.sadteam.loancalc.data.db.CoinDao
+import ir.sadteam.loancalc.data.db.AchievementDao
+import ir.sadteam.loancalc.data.GamificationRepository
 
 /**
  * لایه‌ی داده (:data) عمداً از Hilt/هر فریم‌ورک DI بی‌خبره؛ سیم‌کشی وابستگی‌ها همینجا تو :app
@@ -128,7 +131,9 @@ object AppModule {
         apiService: ApiService,
         budgetDao: BudgetDao,
         recurringPaymentDao: RecurringPaymentDao,
-    ): AccountRepository = AccountRepository(accountDao, transactionDao, apiService, budgetDao, recurringPaymentDao)
+        gamification: GamificationRepository,
+    ): AccountRepository =
+        AccountRepository(accountDao, transactionDao, apiService, budgetDao, recurringPaymentDao, gamification)
 
     @Provides
     fun provideAssetDao(database: AppDatabase): AssetDao = database.assetDao()
@@ -172,6 +177,20 @@ object AppModule {
     @Provides
     @Singleton
     fun provideNoteRepository(noteDao: NoteDao): NoteRepository = NoteRepository(noteDao)
+
+    // گیمیفیکیشن (سکه + نشانِ «فعال») - رجوع کن به GamificationRepository.
+    @Provides
+    fun provideCoinDao(database: AppDatabase): CoinDao = database.coinDao()
+
+    @Provides
+    fun provideAchievementDao(database: AppDatabase): AchievementDao = database.achievementDao()
+
+    @Provides
+    @Singleton
+    fun provideGamificationRepository(
+        coinDao: CoinDao,
+        achievementDao: AchievementDao,
+    ): GamificationRepository = GamificationRepository(coinDao, achievementDao)
 
     @Provides
     fun provideCategoryDao(database: AppDatabase): CategoryDao = database.categoryDao()

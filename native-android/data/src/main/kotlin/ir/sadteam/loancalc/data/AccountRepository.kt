@@ -31,6 +31,11 @@ class AccountRepository(
     private val apiService: ApiService,
     private val budgetDao: BudgetDao,
     private val recurringPaymentDao: RecurringPaymentDao,
+    /**
+     * گیمیفیکیشن - اختیاریه تا مسیرهایی که این ریپازیتوری رو دستی می‌سازن (تست، بکاپ) مجبور
+     * نباشن دفترِ سکه هم بسازن. `null` یعنی «سکه‌ای در کار نیست»، نه خطا.
+     */
+    private val gamification: GamificationRepository? = null,
 ) {
     fun observeAccounts(): Flow<List<AccountEntity>> = accountDao.observeAll()
     fun observeTransactions(): Flow<List<AccountTransactionEntity>> = transactionDao.observeAll()
@@ -113,6 +118,10 @@ class AccountRepository(
                 sourceId = sourceId,
             ),
         )
+        // «هر روزِ ثبتِ تراکنش ۱۰ سکه» (کارتِ `20e`). عمداً اینجاست نه تو ViewModel، تا ثبتِ
+        // خودکار از پیامک/اعلانِ بانک هم حساب بشه - اونم فعالیتِ همون روزه. تکرارِ همون روز
+        // خودبه‌خود نادیده گرفته می‌شه (ایندکسِ یکتای `(type, dateKey)`).
+        gamification?.awardDailyLog()
     }
 
     suspend fun deleteTransaction(transaction: AccountTransactionEntity) {
