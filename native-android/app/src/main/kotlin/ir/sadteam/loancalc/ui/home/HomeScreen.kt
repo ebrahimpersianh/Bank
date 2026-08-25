@@ -256,9 +256,9 @@ fun HomeScreen(
  */
 @Composable
 private fun HomeBalanceHero(
-    totalBalance: Long,
+    totalBalance: Double,
     accountCount: Int,
-    todaySpend: Long,
+    todaySpend: Double,
     privacyMode: Boolean,
     onClick: () -> Unit,
 ) {
