@@ -154,6 +154,7 @@ import ir.sadteam.loancalc.ui.rating.RatePromptDialog
 import ir.sadteam.loancalc.ui.rating.RatePromptViewModel
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -858,7 +859,7 @@ private fun LoanCalcApp(
         ) {
             Surface(
                 color = AppText.copy(alpha = 0.92f),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(AppRadius.sheet),
                 shadowElevation = 6.dp,
             ) {
                 Text(

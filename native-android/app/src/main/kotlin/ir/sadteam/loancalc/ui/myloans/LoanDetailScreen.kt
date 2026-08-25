@@ -112,6 +112,7 @@ import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -1119,7 +1120,7 @@ fun LoanDetailScreen(
         ) {
             Box(
                 modifier = Modifier
-                    .background(AppText.copy(alpha = 0.92f), RoundedCornerShape(24.dp))
+                    .background(AppText.copy(alpha = 0.92f), RoundedCornerShape(AppRadius.button))
                     .padding(horizontal = 20.dp, vertical = 12.dp),
             ) {
                 Text(calendarMessage ?: "", color = AppSurface, fontSize = 13.sp)

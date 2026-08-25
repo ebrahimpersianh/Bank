@@ -1476,7 +1476,7 @@ private fun PersianDate.ordinal(): Int = y * 400 + m * 32 + d
 @Composable
 private fun IncomeExpenseLegendRow(color: Color, label: String, amount: Double) {
     Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(color))
+        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(color))
         Text(label, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(start = 6.dp).weight(1f))
         Text("${fmt(amount)} ریال", color = AppText, fontSize = 11.sp)
     }
@@ -1538,7 +1538,7 @@ private fun DateRibbonHeader(viewDate: PersianDate, onDateChange: (PersianDate) 
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .weight(if (selected) 1.25f else 1f)
-                            .clip(RoundedCornerShape(13.dp))
+                            .clip(RoundedCornerShape(AppRadius.icon))
                             .background(if (selected) AppPrimary else AppPrimary.copy(alpha = 0.10f))
                             .pressScaleClickable(onClick = { onDateChange(d) })
                             .padding(vertical = 6.dp),

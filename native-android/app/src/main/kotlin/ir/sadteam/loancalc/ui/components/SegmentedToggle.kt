@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -49,9 +50,9 @@ fun SegmentedToggle(
         modifier = modifier
             .fillMaxWidth()
             .height(42.dp)
-            .clip(RoundedCornerShape(21.dp))
+            .clip(RoundedCornerShape(AppRadius.button))
             .background(AppChipBg)
-            .border(1.dp, AppLine, RoundedCornerShape(21.dp))
+            .border(1.dp, AppLine, RoundedCornerShape(AppRadius.button))
             .padding(3.dp),
     ) {
         val segmentWidth = maxWidth / options.size

@@ -360,7 +360,7 @@ private fun AccountCard(
             Box(
                 modifier = Modifier
                     .size(38.dp)
-                    .clip(RoundedCornerShape(13.dp))
+                    .clip(RoundedCornerShape(AppRadius.icon))
                     .background(AppPrimary.copy(alpha = 0.16f)),
                 contentAlignment = Alignment.Center,
             ) {

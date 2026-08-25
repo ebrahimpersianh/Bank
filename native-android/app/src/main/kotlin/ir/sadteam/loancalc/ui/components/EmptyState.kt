@@ -1,47 +1,49 @@
 package ir.sadteam.loancalc.ui.components
 
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ir.sadteam.loancalc.ui.theme.AppAccent
+import ir.sadteam.loancalc.ui.theme.AppDashedBorder
 import ir.sadteam.loancalc.ui.theme.AppMuted
-import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
- * حالتِ «هنوز چیزی اینجا نیست» - قبلاً هر لیستِ خالی فقط یه خطِ متنِ خشکِ وسطِ صفحه بود
- * («هنوز وامی ذخیره نشده») که حسِ اپِ ناتمام می‌داد. این کامپوننت به‌جاش یه آیکونِ بزرگ تو یه
- * هاله‌ی نرمِ نفس‌کِش + عنوان + یه جمله‌ی راهنما + (اختیاری) دکمه‌ی اقدام نشون می‌ده.
+ * حالتِ «هنوز چیزی اینجا نیست» - **بازطراحیِ سبکِ «جیبک»** (بخشِ ۲۱ فایلِ طراحی، کارت‌های
+ * `21a`..`21e`).
  *
- * هاله عمداً یه گرادیانِ شعاعیِ خیلی کم‌رنگه، نه بلورِ واقعی - هم‌راستا با تصمیمِ سراسریِ پروژه که
- * هیچ‌جا `RenderEffect` واقعی استفاده نشه (رجوع کن به کامنتِ `AuroraBackground`) تا رو گوشیِ ضعیف
- * هم روان بمونه.
+ * ⚠️ **تفاوت با دورِ قبل**: هاله‌ی گرادیانِ شعاعیِ نفس‌کِشِ پشتِ آیکون **حذف شد** (سبکِ جدید
+ * گرادیانِ نوری نداره). جاش طبقِ طرح:
+ * - کارتِ سفید با **حاشیه‌ی نقطه‌چینِ ۲ پیکسلی** (`#C9D6CF`) - نشانه‌ی «اینجا هنوز خالیه»
+ * - قابِ آیکونِ ۶۴ با گوشه‌ی ۲۰ و ته‌رنگِ سبزِ کم‌رنگ
+ * - عنوانِ ۱۴/۹۰۰ و توضیحِ ۱۱/۷۰۰
+ * - دکمه‌ی اصلیِ تمام‌عرض (اختیاری)
  *
- * @param actionLabel اگه non-null باشه یه [GradientButton] زیرِ متن نشون داده می‌شه.
+ * قاعده‌ی صریحِ طرح: «حاشیه‌ی خط‌چین، یک دکمه‌ی اصلی، و یک میان‌بُرِ متنی زیرش».
+ *
+ * @param actionLabel اگه non-null باشه یه [GradientButton]ِ تمام‌عرض زیرِ متن نشون داده می‌شه.
  */
 @Composable
 fun EmptyState(
@@ -52,73 +54,71 @@ fun EmptyState(
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
 ) {
-    // نفس‌کشیدنِ خیلی آروم (۳ ثانیه رفت‌وبرگشت) - فقط اونقدر که صفحه «مُرده» به‌نظر نیاد؛ عمداً
-    // ملایم‌تر از حدیه که حواسِ کاربر رو پرت کنه.
-    val breathe = rememberInfiniteTransition(label = "emptyStateBreathe")
-    val pulse by breathe.animateFloat(
-        initialValue = 0.94f,
-        targetValue = 1.06f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "emptyStatePulse",
-    )
+    // ⚠️ توکن‌های رنگ `@Composable`ان و داخلِ `drawBehind` (که `DrawScope`ه) صدا زده نمی‌شن -
+    // قاعده‌ی ماندگارِ پروژه. برای همین اینجا تو یه `val` محلی خونده می‌شن.
+    val dashColor = AppDashedBorder
+    val cardRadius = AppRadius.card
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 32.dp, vertical = 40.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            // هاله‌ی پشتِ آیکون - همون دو رنگِ هویتیِ اپ (سبزآبی + طلایی) که تو Aurora/ProgressRing
-            // هم استفاده می‌شن، فقط خیلی رقیق‌تر.
-            Box(
-                modifier = Modifier
-                    .size(132.dp)
-                    .graphicsLayer { scaleX = pulse; scaleY = pulse }
-                    .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                AppPrimary.copy(alpha = 0.16f),
-                                AppAccent.copy(alpha = 0.07f),
-                                AppPrimary.copy(alpha = 0f),
-                            ),
-                        ),
+            .clip(RoundedCornerShape(cardRadius))
+            .background(AppSurface)
+            .drawBehind {
+                // حاشیه‌ی نقطه‌چین - `Modifier.border` الگوی خط‌چین نداره، پس دستی کشیده می‌شه.
+                val stroke = 2.dp.toPx()
+                val r = cardRadius.toPx()
+                drawRoundRect(
+                    color = dashColor,
+                    topLeft = androidx.compose.ui.geometry.Offset(stroke / 2, stroke / 2),
+                    size = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke),
+                    cornerRadius = CornerRadius(r, r),
+                    style = Stroke(
+                        width = stroke,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(9f, 7f), 0f),
                     ),
-            )
+                )
+            }
+            .padding(horizontal = 16.dp, vertical = 22.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(RoundedCornerShape(cardRadius))
+                .background(AppPrimaryPill),
+            contentAlignment = Alignment.Center,
+        ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = AppPrimary.copy(alpha = 0.75f),
-                modifier = Modifier.size(56.dp),
+                tint = AppPrimaryInk,
+                modifier = Modifier.size(30.dp),
             )
         }
-
         Text(
             text = title,
             color = AppText,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Black,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 18.dp),
+            modifier = Modifier.padding(top = 12.dp),
         )
         Text(
             text = description,
             color = AppMuted,
-            fontSize = 13.sp,
-            lineHeight = 21.sp,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            lineHeight = 19.sp,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(top = 6.dp),
         )
-
         if (actionLabel != null && onAction != null) {
             GradientButton(
                 onClick = onAction,
-                modifier = Modifier.padding(top = 22.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 14.dp),
             ) {
                 Text(actionLabel)
             }

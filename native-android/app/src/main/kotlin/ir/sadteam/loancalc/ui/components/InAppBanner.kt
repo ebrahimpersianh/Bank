@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
@@ -94,7 +95,7 @@ fun InAppBannerHost(state: InAppBannerState, modifier: Modifier = Modifier) {
     ) {
         Box(
             modifier = Modifier
-                .background(AppText.copy(alpha = 0.92f), RoundedCornerShape(24.dp))
+                .background(AppText.copy(alpha = 0.92f), RoundedCornerShape(AppRadius.button))
                 .padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
