@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,6 +54,9 @@ import ir.sadteam.loancalc.ui.myloans.MyLoansViewModel
 import ir.sadteam.loancalc.ui.note.NoteViewModel
 import ir.sadteam.loancalc.ui.debt.DebtScreen
 import ir.sadteam.loancalc.ui.note.NoteScreen
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.Motion
@@ -211,25 +215,27 @@ private fun DueShortcutTile(shortcut: DueShortcut, modifier: Modifier = Modifier
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
+                // قابِ آیکون: گوشه‌ی ۱۲ طبقِ توکنِ «۱۲ آیکون»ِ سیستمِ طراحی (قبلاً ۱۶ بود که
+                // توکنِ ردیفِ فهرسته، نه قابِ آیکون).
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(AppPrimary.copy(alpha = 0.16f)),
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(AppRadius.icon))
+                        .background(AppPrimaryPill),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         shortcut.icon,
                         contentDescription = shortcut.title,
-                        tint = AppPrimary,
-                        modifier = Modifier.size(24.dp),
+                        tint = AppPrimaryInk,
+                        modifier = Modifier.size(22.dp),
                     )
                 }
                 Text(
                     shortcut.title,
                     color = AppText,
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     maxLines = 1,
                     modifier = Modifier.padding(top = 8.dp),
                 )
@@ -239,12 +245,12 @@ private fun DueShortcutTile(shortcut: DueShortcut, modifier: Modifier = Modifier
             if (shortcut.badge > 0) {
                 Text(
                     toFa(shortcut.badge),
-                    color = AppPrimary,
-                    fontSize = 10.sp,
+                    color = Color.White,
+                    fontSize = 9.5.sp,
                     fontWeight = FontWeight.Black,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .background(AppPrimary.copy(alpha = 0.16f), CircleShape)
+                        .background(AppPrimary, CircleShape)
                         .padding(horizontal = 7.dp, vertical = 2.dp),
                 )
             }
