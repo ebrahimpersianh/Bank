@@ -21,8 +21,7 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.NorthEast
+import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -87,6 +86,10 @@ import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppWarningInk
+import androidx.compose.foundation.layout.widthIn
+import ir.sadteam.loancalc.ui.components.AvatarView
+import ir.sadteam.loancalc.ui.profile.AvatarViewModel
+import ir.sadteam.loancalc.ui.theme.AppWarningPill
 
 /**
  * تبِ **خانه** - بازسازیِ کاملِ فریمِ `15a` (حالتِ عادی) و `15b` (روزِ اول / خالی).
@@ -117,6 +120,7 @@ import ir.sadteam.loancalc.ui.theme.AppWarningInk
 @Composable
 fun HomeScreen(
     onNavigateToRoute: (String) -> Unit,
+    onOpenSettings: () -> Unit = {},
     accountViewModel: AccountViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
     urgentDueViewModel: UrgentDueViewModel = hiltViewModel(),
@@ -170,7 +174,7 @@ fun HomeScreen(
                     userName = userName,
                     activeDays = activeDays,
                     coins = coins,
-                    hasData = transactions.isNotEmpty(),
+                    onOpenSettings = onOpenSettings,
                 )
             }
 
@@ -197,14 +201,14 @@ fun HomeScreen(
                             onClick = { onNavigateToRoute("budget") },
                         )
                         StarterTile(
-                            icon = Icons.Outlined.Description,
+                            icon = Icons.Outlined.CreditCard,
                             tint = AppDanger,
                             pill = AppDangerPill,
                             label = "افزودنِ چک",
                             onClick = { onNavigateToRoute("cheque") },
                         )
                         StarterTile(
-                            icon = Icons.Outlined.NorthEast,
+                            icon = Icons.Filled.ArrowUpward,
                             tint = AppPrimary,
                             pill = AppPrimaryPill,
                             label = "ثبتِ وام",
@@ -212,16 +216,7 @@ fun HomeScreen(
                         )
                     }
                 }
-                item {
-                    Text(
-                        "با اولین ثبت ۱۰ سکه می‌گیری و روزهای فعالت روشن می‌شه",
-                        color = AppLabel,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
+                item { FirstRewardNote() }
                 return@LazyColumn
             }
 
@@ -280,7 +275,9 @@ fun HomeScreen(
             }
         }
 
-        AppFab(
+        // فریمِ `15b` دکمه‌ی شناور نداره: تو حالتِ خالی اقدامِ اصلی همون دکمه‌ی تمام‌عرضِ
+        // «ثبتِ اولین خرج»ه و دو تا دکمه‌ی هم‌کار گیج‌کننده‌ست.
+        if (transactions.isNotEmpty()) AppFab(
             onClick = { showNewTransaction = true },
             contentDescription = "ثبتِ تراکنش",
             modifier = Modifier
@@ -308,8 +305,10 @@ private fun HomeHeader(
     userName: String?,
     activeDays: Int,
     coins: Int,
-    hasData: Boolean,
+    onOpenSettings: () -> Unit,
 ) {
+    val avatarViewModel: AvatarViewModel = hiltViewModel()
+    val avatar by avatarViewModel.avatar.collectAsState()
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -323,11 +322,7 @@ private fun HomeHeader(
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                if (userName.isNullOrBlank()) {
-                    if (hasData) "خوش آمدی" else "خوش آمدی"
-                } else {
-                    "سلامْ $userName"
-                },
+                if (userName.isNullOrBlank()) "خوش آمدی" else "سلامْ $userName",
                 color = AppText,
                 fontSize = 19.sp,
                 fontWeight = FontWeight.Black,
@@ -337,6 +332,16 @@ private fun HomeHeader(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             if (activeDays > 0) ActiveChip(days = activeDays)
             if (coins > 0) CoinChip(coins = coins)
+            // ⚠️ **درِ ورودیِ تنظیمات.** فریم‌های تب‌ها هیچ دکمه‌ای برای تنظیمات ندارن و طرح
+            // نگفته کاربر از کجا بره؛ کارتِ `32c` ولی صریحاً می‌گه آدمک تو «نوارِ بالای خانه»
+            // با اندازه‌ی ۳۲ می‌شینه. همون آدمک اینجا هم تناقضِ طرح رو حل می‌کنه هم جای خالیِ
+            // ناوبری رو - تمِ روشن/تیره و حالتِ خصوصی رفتن داخلِ خودِ تنظیمات (ردیفِ «ظاهر و
+            // تم»ِ فریمِ `27d`).
+            AvatarView(
+                avatar = avatar,
+                size = 32.dp,
+                modifier = Modifier.pressScaleClickable(onClick = onOpenSettings),
+            )
         }
     }
 }
@@ -713,7 +718,9 @@ private fun HomeEmptyHero(onAddFirst: () -> Unit) {
             fontSize = 11.5.sp,
             lineHeight = 21.sp,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 5.dp),
+            // ⚠️ `max-width:230px`ِ صریحِ فریم. بدونش رو گوشیِ واقعی (که از قابِ ۳۳۶ پیکسلیِ
+            // ماک‌آپ عریض‌تره) خط‌ها دراز می‌شن و صفحه «پهن» دیده می‌شه - گزارشِ کاربر.
+            modifier = Modifier.widthIn(max = 230.dp).padding(top = 5.dp),
         )
         GradientButton(
             onClick = onAddFirst,
@@ -721,6 +728,34 @@ private fun HomeEmptyHero(onAddFirst: () -> Unit) {
         ) {
             Text("ثبتِ اولین خرج")
         }
+    }
+}
+
+/** یادداشتِ پاداشِ اولین ثبت - کارتِ نارنجیِ فریمِ `15b` با ستاره‌ی کوچیک. */
+@Composable
+private fun FirstRewardNote() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(AppRadius.row))
+            .background(AppWarningPill)
+            .padding(horizontal = 13.dp, vertical = 11.dp),
+    ) {
+        Icon(
+            Icons.Filled.AutoAwesome,
+            contentDescription = null,
+            tint = AppWarningInk,
+            modifier = Modifier.size(12.dp),
+        )
+        Text(
+            "با اولین ثبت ۱۰ سکه می‌گیری و روزهای فعالت روشن می‌شه",
+            color = AppWarningInk,
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Bold,
+            lineHeight = 18.sp,
+            modifier = Modifier.padding(start = 7.dp),
+        )
     }
 }
 

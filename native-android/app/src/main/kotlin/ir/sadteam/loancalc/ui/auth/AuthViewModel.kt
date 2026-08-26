@@ -201,6 +201,12 @@ class AuthViewModel @Inject constructor(
                             launch { accountRepository.pushToServer(token) }
                         }
                     }
+                    // «هدیه‌ی شماره‌ی تازه ۵۰ سکه» (جدولِ `20e`). یک‌باره‌ست، پس ورودهای بعدی
+                    // دوباره سکه نمی‌دن (یگانگی رو خودِ نوعِ رویداد تو دفترِ سکه).
+                    gamification.awardOnce(
+                        GamificationRepository.Type.NEW_PHONE_GIFT,
+                        GamificationRepository.Reward.NEW_PHONE_GIFT,
+                    )
                     onSuccess()
                 }
                 is AuthResult.Error -> onError(result.code)

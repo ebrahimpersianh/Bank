@@ -648,7 +648,14 @@ private fun LoanCalcApp(
         Scaffold(
             containerColor = AppBg,
             topBar = {
-                TopAppBar(
+                // ⚠️ **تبِ خانه نوارِ بالا نداره.** فریمِ `15a`/`15b` هیچ نوارِ بالایی نشون نمی‌ده
+                // و کاربر هم صریحاً گفت «اون تنظیمات بالا نباشن، حالت شب نباشه». راهِ رفتن به
+                // تنظیمات از **آدمکِ داخلِ هدرِ خودِ خانه**ست (کارتِ `32c`)، و تم رفته داخلِ
+                // تنظیمات (ردیفِ «ظاهر برنامه»).
+                //
+                // بقیه‌ی تب‌ها فعلاً نوارِ قدیمی رو نگه داشتن تا نوبتِ بازنویسیِ خودشون برسه -
+                // هر کدوم تو فریمش عنوانِ درون‌صفحه‌ای داره و اون‌موقع این نوار کاملاً حذف می‌شه.
+                if (currentRoute != BottomTab.HOME.route) TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                     // اسمِ اپ («جیبک») به‌خواستِ صریحِ کاربر کاملاً از بالای هر تب حذف شد -
                     // به‌جاش عنوانِ خودِ همون تب نشون داده می‌شه (شبیهِ رفرنس)؛ تبِ «خانه» عنوان نداره
@@ -816,7 +823,10 @@ private fun LoanCalcApp(
                         // route به‌عنوانِ رشته پاس داده می‌شه (نه خودِ enumِ BottomTab) چون
                         // BottomTab تویِ همین فایلِ MainActivity.kt خصوصیه و HomeScreen تو یه
                         // فایلِ جدا (ui/home/HomeScreen.kt) زندگی می‌کنه.
-                        HomeScreen(onNavigateToRoute = ::navigateTo)
+                        HomeScreen(
+                            onNavigateToRoute = ::navigateTo,
+                            onOpenSettings = { showSettings = true },
+                        )
                     }
                 }
                 composable(BottomTab.ASSETS.route) {
