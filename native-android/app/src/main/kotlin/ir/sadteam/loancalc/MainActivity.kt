@@ -132,7 +132,7 @@ import ir.sadteam.loancalc.ui.accounting.AssetsScreen
 import ir.sadteam.loancalc.ui.accounting.BudgetScreen
 import ir.sadteam.loancalc.ui.accounting.ReportScreen
 import ir.sadteam.loancalc.ui.cheque.ChequeScreen
-import ir.sadteam.loancalc.ui.due.DueScreen
+import ir.sadteam.loancalc.ui.due.DueTabScreen
 import ir.sadteam.loancalc.ui.home.HomeScreen
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
@@ -844,9 +844,8 @@ private fun LoanCalcApp(
                     key(tabResetKeys[BottomTab.BUDGET] ?: 0) { BudgetScreen() }
                 }
                 composable(BottomTab.DUE.route) {
-                    key(tabResetKeys[BottomTab.DUE] ?: 0) {
-                        DueScreen(onNavigateToRoute = ::navigateTo)
-                    }
+                    // ⚠️ **بازنویسیِ فریمِ `3a`** - رجوع کن به `ui/due/DueTabScreen.kt`.
+                    key(tabResetKeys[BottomTab.DUE] ?: 0) { DueTabScreen() }
                 }
                 // «وام» و «چک» دیگه تبِ نوارِ پایین نیستن (رجوع کن به کامنتِ بالای BottomTab) - از
                 // تبِ «سررسید»/«خانه» به‌عنوانِ صفحه‌ی پوش‌شده باز می‌شن، پس خودشون یه دکمه‌ی
