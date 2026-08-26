@@ -48,6 +48,7 @@ run "ایمپورتِ شکسته" "$DIR/verify2.py"
 run "نوعِ پول" "$DIR/moneytypes.py"
 run "فیلدهای پالت" "$DIR/palette.py"
 run "اکستنشن و آرگومانِ Modifier" "$DIR/modifiers.py"
+run "کامنتِ زودبسته‌شده" "$DIR/comments.py"
 
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
