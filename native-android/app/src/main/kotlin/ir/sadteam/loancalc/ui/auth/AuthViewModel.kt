@@ -42,6 +42,21 @@ class AuthViewModel @Inject constructor(
     private val noteRepository: NoteRepository,
     private val gamification: GamificationRepository,
 ) : ViewModel() {
+    init {
+        // ⚠️ **هدیه‌ی ۵۰ سکه فقط موقعِ `verifyOtp` داده می‌شد**، یعنی کاربری که از قبل وارد
+        // شده بود هیچ‌وقت نمی‌گرفتش (گزارشِ کاربر رو بیلدِ ۴۷۱: شمارنده ۱۰ بود نه ۶۰).
+        // اینجا هر بار که اپ با توکنِ معتبر بالا میاد یه‌بار تلاش می‌شه؛ تکرارش بی‌اثره
+        // چون دفترِ سکه رو نوعِ رویداد ایندکسِ یکتا داره.
+        viewModelScope.launch {
+            if (!authPrefs.authToken.first().isNullOrEmpty()) {
+                gamification.awardOnce(
+                    GamificationRepository.Type.NEW_PHONE_GIFT,
+                    GamificationRepository.Reward.NEW_PHONE_GIFT,
+                )
+            }
+        }
+    }
+
     val gateState: StateFlow<GateState?> = combine(authPrefs.authToken, authPrefs.guestMode) { token, guest ->
         val state: GateState? = when {
             !token.isNullOrEmpty() -> GateState.LOGGED_IN

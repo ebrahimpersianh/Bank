@@ -90,6 +90,7 @@ import androidx.compose.foundation.layout.widthIn
 import ir.sadteam.loancalc.ui.components.AvatarView
 import ir.sadteam.loancalc.ui.profile.AvatarViewModel
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
+import androidx.compose.material.icons.filled.ChevronLeft
 
 /**
  * تبِ **خانه** - بازسازیِ کاملِ فریمِ `15a` (حالتِ عادی) و `15b` (روزِ اول / خالی).
@@ -639,15 +640,25 @@ private fun WeekReviewCard(
     } else {
         null
     }
-    val stripe = when {
-        delta == null -> AppLineRow
-        delta > 0 -> AppDanger
-        else -> AppPrimary
-    }
+    // ⚠️ نوار **همیشه قرمزه**، نه وابسته به جهتِ تغییر. اولش فکر کردم رنگش از جهت میاد،
+    // ولی فریمِ `15a` با تغییرِ **کاهشی** (سبز) بازم نوارِ `#FF4B4B` داره - یعنی نوار
+    // نشانه‌ی «این کارت مالِ خرجه»ست، نه خوب/بد بودنِ عدد.
     AppCard(contentPadding = 0.dp, modifier = Modifier.pressScaleClickable(onClick = onClick)) {
-        Box(modifier = Modifier.fillMaxWidth().height(4.dp).background(stripe))
+        Box(modifier = Modifier.fillMaxWidth().height(4.dp).background(AppDanger))
         Column(modifier = Modifier.padding(horizontal = 15.dp, vertical = 13.dp)) {
-            Text("مرورِ هفته", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("مرورِ هفته", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
+                Icon(
+                    Icons.Filled.ChevronLeft,
+                    contentDescription = null,
+                    tint = WeekChevron,
+                    modifier = Modifier.size(13.dp),
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -672,6 +683,10 @@ private fun WeekReviewCard(
         }
     }
 }
+
+@Composable
+/** رنگِ شِورانِ کارتِ مرورِ هفته - مقدارِ صریحِ فریم. */
+private val WeekChevron = Color(0xFFC7D2CC)
 
 @Composable
 private fun WeekCell(label: String, value: String, ink: Color, privacyMode: Boolean) {

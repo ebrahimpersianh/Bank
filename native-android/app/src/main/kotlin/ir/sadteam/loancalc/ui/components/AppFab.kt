@@ -27,6 +27,9 @@ import ir.sadteam.loancalc.ui.theme.AppElevation
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.hardShadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.shape.CircleShape
 
 /**
  * دکمه‌ی شناورِ افزودن - **بازطراحیِ سبکِ «جیبک»**.
@@ -45,18 +48,24 @@ fun AppFab(
     icon: ImageVector = Icons.Filled.Add,
     contentDescription: String? = "افزودن",
 ) {
-    val shape = RoundedCornerShape(20.dp)
+    // ⚠️ **دایره، نه گردگوشه.** فریمِ `15a` صریحاً `border-radius:50%` داره. اندازه ۵۶،
+    // سایه‌ی سختِ ۵ پیکسلی، و یه گرادیانِ شعاعیِ ملایم (`#17C57D` → `#0EA968` تا ۶۵٪).
+    //
+    // فریم یه هاله‌ی تارِ طلایی هم داره (`0 7px 16px rgba(185,134,11,.28)`) که **عمداً
+    // پیاده نشد** - بندِ ۳ سیستمِ طراحی صریحاً می‌گه «هیچ سایه‌ی تارِ رنگی؛ عمق فقط با
+    // سایه‌ی سختِ عمودی». تنها جایی که فریم و سیستمِ طراحی با هم مخالف‌ان و قاعده رو ترجیح دادم.
+    val shape = CircleShape
     val buzz = rememberBuzz()
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
 
     val shadow by animateDpAsState(
-        if (pressed) AppElevation.pressed else AppElevation.raised,
+        if (pressed) AppElevation.pressed else FabShadow,
         tween(70),
         label = "fabShadow",
     )
     val sink by animateDpAsState(
-        AppElevation.raised - shadow,
+        FabShadow - shadow,
         tween(70),
         label = "fabSink",
     )
@@ -65,9 +74,15 @@ fun AppFab(
         modifier = modifier
             .offset(y = sink)
             .size(56.dp)
-            .hardShadow(AppPrimaryDim, shadow, 20.dp)
+            .hardShadow(AppPrimaryDim, shadow, 28.dp)
             .clip(shape)
-            .background(AppPrimary)
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(Color(0xFF17C57D), AppPrimary),
+                    center = Offset(0.32f * 56f, 0.26f * 56f),
+                    radius = 56f * 0.9f,
+                ),
+            )
             .clickable(
                 interactionSource = interaction,
                 indication = null,
@@ -83,3 +98,6 @@ fun AppFab(
         )
     }
 }
+
+/** سایه‌ی سختِ دکمه‌ی شناور - ۵ پیکسل طبقِ فریم، نه ۴ پیکسلِ دکمه‌های معمولی. */
+private val FabShadow = 5.dp

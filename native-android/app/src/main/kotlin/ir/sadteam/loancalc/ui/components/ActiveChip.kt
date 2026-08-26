@@ -29,6 +29,9 @@ import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import ir.sadteam.loancalc.ui.theme.AppWarningInk
 import ir.sadteam.loancalc.ui.theme.AppWarning
 import ir.sadteam.loancalc.ui.theme.AppText
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.Icons
 
 /**
  * قرصِ **«فعال»** و شمارنده‌ی **سکه** برای نوارِ بالای خانه (کارتِ `34c`: «چیپِ نوارِ بالای
@@ -53,11 +56,12 @@ fun ActiveChip(days: Int, modifier: Modifier = Modifier) {
             SpiderWebIcon(size = 12.dp, color = AppWarning)
         } else {
             // زیرِ ۷ روز: خودِ زنجیرِ بخشِ ۳۴ تو کوچک‌ترین اندازه‌ش.
-            ActiveChainMark(
-                filled = days.coerceAtLeast(0),
-                total = 3,
-                ringSize = 6.dp,
-                ringColor = AppWarning,
+            // فریمِ `15a` زیرِ ۷ روز یه **شعله**ی ۱۲ پیکسلی داره، نه حلقه‌های زنجیر.
+            Icon(
+                Icons.Filled.LocalFireDepartment,
+                contentDescription = null,
+                tint = AppWarning,
+                modifier = Modifier.size(12.dp),
             )
         }
         // ⚠️ فریمِ `15a` فقط **عدد** داره، نه «X روز فعال» - متنِ اضافه قرص رو پهن می‌کرد.
