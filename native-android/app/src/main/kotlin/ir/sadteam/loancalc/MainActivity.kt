@@ -183,6 +183,7 @@ import ir.sadteam.loancalc.ui.profile.ShortcutViewModel
 import ir.sadteam.loancalc.ui.components.ShortcutDrawerHandle
 import ir.sadteam.loancalc.ui.components.ShortcutDrawer
 import ir.sadteam.loancalc.ui.components.Shortcut
+import ir.sadteam.loancalc.ui.asset.AssetsTabScreen
 
 // آیکون‌های نوار پایین: حالت عادی outline (مینیمال، مثل نسخه‌ی وب)، تب فعال پُر (filled).
 //
@@ -830,7 +831,9 @@ private fun LoanCalcApp(
                     }
                 }
                 composable(BottomTab.ASSETS.route) {
-                    key(tabResetKeys[BottomTab.ASSETS] ?: 0) { AssetsScreen() }
+                    // ⚠️ **بازنویسیِ فریمِ `26b`**: `AssetsScreen`ِ قدیمی دو نمای جدا با تاگل
+                    // بود؛ فریم یه صفحه‌ی پیوسته‌ست - رجوع کن به `ui/asset/AssetsTabScreen.kt`.
+                    key(tabResetKeys[BottomTab.ASSETS] ?: 0) { AssetsTabScreen() }
                 }
                 composable(BottomTab.REPORT.route) {
                     key(tabResetKeys[BottomTab.REPORT] ?: 0) { ReportScreen() }
