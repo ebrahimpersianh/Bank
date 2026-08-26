@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -40,6 +41,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.DateRange
@@ -57,11 +59,13 @@ import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -81,6 +85,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -109,9 +114,13 @@ import androidx.lifecycle.LifecycleEventObserver
 import ir.sadteam.loancalc.BuildConfig
 import ir.sadteam.loancalc.core.BankSmsParser
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.ParsedBankSms
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.cleanNum
+import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
+import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
@@ -144,8 +153,10 @@ import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
 import ir.sadteam.loancalc.ui.subscription.parseSubscribedUntil
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppBg
+import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppDisabledText
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -156,6 +167,7 @@ import ir.sadteam.loancalc.ui.theme.AppSpacing
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppUrgentShadow
 import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.ThemeMode
@@ -1026,91 +1038,93 @@ private fun SmsSettings(
 ) {
     val context = LocalContext.current
     val enabled by smsAutoImportViewModel.enabled.collectAsState()
-    val lastImportAt by smsAutoImportViewModel.lastImportAt.collectAsState()
     val accounts by accountViewModel.accounts.collectAsState()
-    val smsPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted -> if (granted) smsAutoImportViewModel.enable() }
-    var showParseTest by remember { mutableStateOf(false) }
-
-    // ── کلیدِ اصلی، تنها تو کارتِ خودش (بخشِ «ج»ی فایلِ طراح) ──────────────────
-    SettingsGroup(modifier = Modifier.padding(top = 8.dp)) {
-        SettingsRowItem(
-            title = "خوندنِ خودکارِ پیامکِ بانکی",
-            icon = Icons.Filled.Sms,
-            tone = SettingsTone.GREEN,
-            status = if (enabled) {
-                lastImportAt?.let { "آخرین ثبت: $it" } ?: "روشن - منتظرِ اولین پیامک"
-            } else {
-                "خاموش"
-            },
-            statusTone = if (enabled) StatusTone.HEALTHY else StatusTone.NEUTRAL,
-            checked = enabled,
-            onCheckedChange = { checked ->
-                if (!checked) {
-                    smsAutoImportViewModel.disable()
-                } else if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) ==
-                    PackageManager.PERMISSION_GRANTED
-                ) {
-                    smsAutoImportViewModel.enable()
-                } else {
-                    smsPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS)
-                }
-            },
+    val scope = rememberCoroutineScope()
+    var permissionGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) ==
+                PackageManager.PERMISSION_GRANTED,
         )
     }
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        permissionGranted = granted
+        if (granted) smsAutoImportViewModel.enable()
+    }
+    var showParseTest by remember { mutableStateOf(false) }
 
-    // ── فهرستِ بانک‌ها ────────────────────────────────────────────────────────
-    // ⚠️ **آگاهانه با طرح فرق داره**: طرح برای هر بانک یه کلید می‌خواد، ولی تو دیتابیسِ ما
-    // «فعال بودن» یه فلگِ جدا نیست - همون پُربودنِ سرشماره‌ی حسابه. یه کلیدِ خاموش یعنی
-    // پاک‌کردنِ سرشماره‌ی کاربر، که برگشت‌ناپذیره. پس ردیف شِورون می‌گیره و می‌بره به
-    // همون حساب‌کتاب. اگه ستونِ جدای «فعال» اضافه شد، اینجا کلید می‌شه.
-    val bankAccounts = accounts.filter { it.bankName.isNotBlank() }
-    if (bankAccounts.isNotEmpty()) {
+    if (showParseTest) {
+        SmsParseTestScreen(onBack = { showParseTest = false })
+        return
+    }
+
+    // ── کارتِ وضعیت - تنها کارتِ برجسته‌ی صفحه، سه حالت ──────────────────────
+    // تصمیمِ تاییدشده‌ی طراح: اگه اجازه قطع شده، **کلید حالتِ چهارم نمی‌گیره** - همین کارت
+    // به حالتِ خطا می‌ره و دکمه‌ی «اجازه بده» می‌گیره.
+    val listed = accounts.filter { it.type == ACCOUNT_TYPE_BANK }
+    val activeCount = listed.count { it.smsEnabled && !it.smsSender.isNullOrBlank() }
+    SmsStatusCard(
+        enabled = enabled,
+        permissionGranted = permissionGranted,
+        activeCount = activeCount,
+        totalCount = listed.size,
+        onToggle = { checked ->
+            if (!checked) {
+                smsAutoImportViewModel.disable()
+            } else if (permissionGranted) {
+                smsAutoImportViewModel.enable()
+            } else {
+                smsPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS)
+            }
+        },
+        onGrant = { smsPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS) },
+    )
+
+    // ── گروهِ بانک‌ها ─────────────────────────────────────────────────────────
+    // حساب‌کتابِ بی‌سرشماره هم میاد (ته فهرست) - تنها جاییه که کاربر می‌فهمه وصل نیست.
+    if (listed.isNotEmpty()) {
         SettingsGroupLabel("بانک‌ها")
-        SettingsGroup {
-            bankAccounts.forEachIndexed { index, account ->
-                val sender = account.smsSender
+        val ordered = listed.sortedBy { it.smsSender.isNullOrBlank() }
+        SettingsGroup(
+            modifier = Modifier
+                .then(if (enabled) Modifier else Modifier.alpha(0.5f)),
+        ) {
+            ordered.forEachIndexed { index, account ->
+                val hasSender = !account.smsSender.isNullOrBlank()
                 SettingsRowItem(
                     title = account.name,
                     icon = Icons.Filled.AccountBalance,
-                    tone = if (sender.isNullOrBlank()) SettingsTone.NEUTRAL else SettingsTone.GREEN,
-                    status = if (sender.isNullOrBlank()) {
-                        "سرشماره ثبت نشده - پیامکِ این بانک خونده نمی‌شه"
+                    tone = if (hasSender) SettingsTone.GREEN else SettingsTone.NEUTRAL,
+                    status = smsStatusText(account),
+                    statusTone = smsStatusTone(account),
+                    // سرشماره داره → کلید. نداره → شِورون. **هیچ‌وقت هر دو.**
+                    checked = if (hasSender && enabled) account.smsEnabled else null,
+                    onCheckedChange = if (hasSender && enabled) {
+                        { checked ->
+                            scope.launch {
+                                accountViewModel.updateAccount(account.copy(smsEnabled = checked))
+                            }
+                        }
                     } else {
-                        "سرشماره: ${toFa(sender)}"
+                        null
                     },
-                    statusTone = if (sender.isNullOrBlank()) StatusTone.BROKEN else StatusTone.HEALTHY,
-                    onClick = null,
+                    onClick = if (hasSender) null else ({}),
                 )
-                if (index != bankAccounts.lastIndex) SettingsDivider()
+                if (index != ordered.lastIndex) SettingsDivider()
             }
         }
     }
 
-    // ── آزمایشِ تشخیص ─────────────────────────────────────────────────────────
-    // «پیامکِ آزمایشی» شدنی نیست (اپ نمی‌تونه به صندوقِ ورودیِ خودش پیامک تزریق کنه)، پس
-    // به‌جاش کاربر متنِ یه پیامکِ واقعی رو پیست می‌کنه و می‌بینه موتور چی ازش درآورد.
-    SettingsGroupLabel("آزمایش")
+    // ── گروهِ ابزارها ────────────────────────────────────────────────────────
+    SettingsGroupLabel("ابزارها")
     SettingsGroup {
         SettingsRowItem(
             title = "آزمایشِ تشخیص",
             icon = Icons.Filled.Science,
-            tone = SettingsTone.BLUE,
-            status = "متنِ یه پیامکِ بانکی رو بچسبون تا ببینی چی ازش درمیاد",
+            tone = SettingsTone.GREEN,
+            status = "متنِ یک پیامک را امتحان کن",
             onClick = { showParseTest = true },
-        )
-    }
-    if (showParseTest) {
-        SmsParseTestDialog(onDismiss = { showParseTest = false })
-    }
-
-    AppCard(modifier = Modifier.padding(top = 8.dp)) {
-        Text(
-            "هیچ پیامکی هیچ‌جا فرستاده نمی‌شه - همه‌ی پردازش رو خودِ گوشیه.",
-            color = AppMuted,
-            fontSize = 11.sp,
-            lineHeight = 20.sp,
         )
     }
 
@@ -1118,46 +1132,225 @@ private fun SmsSettings(
 }
 
 /**
- * آزمایشِ زنده‌ی موتورِ تشخیص - کاربر متنِ یه پیامکِ واقعی رو می‌چسبونه و همون‌جا می‌بینه
- * `BankSmsParser` چی ازش درآورد. هم برای اطمینانِ کاربره هم برای دیباگِ ما.
+ * زیرنویسِ ردیفِ هر بانک - **چهار حالته، مرزِ ۳۰ روز عمدیه** (قاعده‌ی صریحِ طراح: کوتاه‌ترش
+ * کاربرِ کم‌تراکنش رو بی‌دلیل می‌ترسونه، بلندترش خرابیِ واقعی رو دیر می‌گه).
  */
+private fun smsStatusText(account: AccountEntity): String {
+    if (account.smsSender.isNullOrBlank()) return "سرشماره ثبت نشده"
+    val last = account.lastSmsAt ?: return "هنوز پیامکی نیامده"
+    val days = ((System.currentTimeMillis() - last) / 86_400_000L).toInt()
+    return when {
+        days > 30 -> "۳۰ روز پیامکی نیامده"
+        days <= 0 -> "آخرین پیامک: امروز"
+        days == 1 -> "آخرین پیامک: دیروز"
+        else -> "آخرین پیامک: ${toFa(days)} روز پیش"
+    }
+}
+
+private fun smsStatusTone(account: AccountEntity): StatusTone {
+    if (account.smsSender.isNullOrBlank()) return StatusTone.NEUTRAL
+    val last = account.lastSmsAt ?: return StatusTone.BROKEN
+    val days = (System.currentTimeMillis() - last) / 86_400_000L
+    return if (days > 30) StatusTone.BROKEN else StatusTone.NEUTRAL
+}
+
 @Composable
-private fun SmsParseTestDialog(onDismiss: () -> Unit) {
-    var text by remember { mutableStateOf("") }
-    val parsed = remember(text) { if (text.isBlank()) null else BankSmsParser.parse(text) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("بستن") } },
-        title = { Text("آزمایشِ تشخیص", fontWeight = FontWeight.Black) },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    placeholder = { Text("متنِ پیامک رو اینجا بچسبون") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
+private fun SmsStatusCard(
+    enabled: Boolean,
+    permissionGranted: Boolean,
+    activeCount: Int,
+    totalCount: Int,
+    onToggle: (Boolean) -> Unit,
+    onGrant: () -> Unit,
+) {
+    val missingPermission = enabled && !permissionGranted
+    AppCard(
+        variant = if (missingPermission) AppCardVariant.URGENT else AppCardVariant.DEFAULT,
+        backgroundColor = if (!missingPermission && enabled) AppPrimaryPill else null,
+        borderColor = if (!missingPermission && enabled) AppPrimaryBorder else null,
+        shadow = missingPermission,
+        modifier = Modifier.padding(top = 8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        when {
+                            missingPermission -> AppUrgentShadow
+                            enabled -> AppPrimary
+                            else -> AppChipBg
+                        },
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    if (missingPermission) Icons.Filled.Warning else Icons.Filled.Sms,
+                    contentDescription = null,
+                    tint = when {
+                        missingPermission -> AppDanger
+                        enabled -> Color.White
+                        else -> AppLabel
+                    },
+                    modifier = Modifier.size(19.dp),
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    when {
+                        missingPermission -> "اجازه‌ی خواندنِ پیامک قطع است"
+                        enabled -> "ثبتِ خودکار روشن است"
+                        else -> "ثبتِ خودکار خاموش است"
+                    },
+                    color = AppText,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Black,
                 )
                 Text(
                     when {
-                        text.isBlank() -> "منتظرِ متن..."
-                        parsed == null -> "این متن شناخته نشد - از این پیامک تراکنشی ساخته نمی‌شه."
-                        else -> buildString {
-                            append(if (parsed.type == TransactionType.WITHDRAWAL) "برداشت" else "واریز")
-                            append(" · ")
-                            append(fmt(parsed.amountRial))
-                            append(" ریال")
-                            parsed.cardSuffix?.let { append(" · کارتِ ${toFa(it)}") }
-                        }
+                        missingPermission -> "بدونِ این اجازه پیامکِ بانک خوانده نمی‌شود."
+                        enabled -> "${toFa(activeCount)} از ${toFa(totalCount)} بانک فعال"
+                        else -> "تراکنش‌ها را دستی وارد می‌کنی"
                     },
-                    color = if (parsed == null && text.isNotBlank()) AppDangerInk else AppPrimaryInk,
-                    fontSize = 12.sp,
+                    color = when {
+                        missingPermission -> AppDangerInk
+                        enabled -> AppPrimaryInk
+                        else -> AppMuted
+                    },
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 10.dp),
+                    lineHeight = 17.sp,
+                    modifier = Modifier.padding(top = 2.dp),
                 )
             }
-        },
-    )
+            // تو حالتِ «اجازه ندارد» کلید جاش رو به دکمه‌ی تمام‌عرضِ پایین می‌ده.
+            if (!missingPermission) AppSwitch(checked = enabled, onCheckedChange = onToggle)
+        }
+        if (missingPermission) {
+            GradientButton(
+                onClick = onGrant,
+                modifier = Modifier.fillMaxWidth().padding(top = 11.dp),
+            ) {
+                Text("اجازه بده")
+            }
+        }
+    }
+}
+
+/**
+ * صفحه‌ی **آزمایشِ تشخیص** - زیرصفحه‌ی خودش، نه شیت (خروجیش خونده می‌شه و شیت جا کم داره).
+ *
+ * ⚠️ حالتِ «ج»ی طرح (این متن اصلاً پیامکِ بانکی نیست) پیاده **نشد**، چون
+ * `BankSmsParser.parse` برای هر دو حالت `null` برمی‌گردونه و از هم تفکیکشون نمی‌کنه -
+ * خودِ طراح گفت اگه موتور تفکیک نمی‌کنه ولش کن.
+ */
+@Composable
+private fun SmsParseTestScreen(onBack: () -> Unit) {
+    var text by remember { mutableStateOf("") }
+    var result by remember { mutableStateOf<ParsedBankSms?>(null) }
+    var checked by remember { mutableStateOf(false) }
+
+    SettingsSubPageScaffold(title = "آزمایشِ تشخیص", onBack = onBack) {
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it; checked = false },
+            placeholder = { Text("متنِ پیامکِ بانک را اینجا بچسبان") },
+            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 100.dp),
+            textStyle = LocalTextStyle.current.copy(fontSize = 11.sp, lineHeight = 20.sp),
+        )
+        Text(
+            "متن ذخیره نمی‌شود.",
+            color = AppLabel,
+            fontSize = 9.5.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        GradientButton(
+            onClick = { result = BankSmsParser.parse(text); checked = true },
+            enabled = text.isNotBlank(),
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+        ) {
+            Text("بررسی")
+        }
+        if (checked) {
+            val parsed = result
+            if (parsed != null) {
+                AppCard(
+                    backgroundColor = AppPrimaryPill,
+                    borderColor = AppPrimaryBorder,
+                    modifier = Modifier.padding(top = 12.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = AppPrimary,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(
+                            "شناسایی شد",
+                            color = AppText,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(start = 6.dp),
+                        )
+                    }
+                    ParseResultRow(
+                        label = "مبلغ",
+                        value = "${fmt(parsed.amountRial)} ریال",
+                        valueColor = if (parsed.type == TransactionType.WITHDRAWAL) AppDangerInk else AppPrimaryInk,
+                    )
+                    ParseResultRow(
+                        label = "نوع",
+                        value = if (parsed.type == TransactionType.WITHDRAWAL) "برداشت" else "واریز",
+                    )
+                    ParseResultRow(
+                        label = "کارت",
+                        value = parsed.cardSuffix?.let { toFa(it) },
+                    )
+                }
+            } else {
+                AppCard(
+                    variant = AppCardVariant.URGENT,
+                    modifier = Modifier.padding(top = 12.dp),
+                ) {
+                    Text("شناسایی نشد", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                    Text(
+                        "موتور از این متن مبلغ و نوعِ تراکنش درنیاورد. اگه این پیامکِ واقعیِ " +
+                            "بانکته، متنش رو برای ما بفرست تا موتور بهترش کنیم.",
+                        color = AppDangerInk,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 19.sp,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** یه ردیفِ کلید-مقدارِ نتیجه‌ی آزمایش. مقدارِ درنیامده «—»ی کم‌رنگ می‌شه، نه خالی. */
+@Composable
+private fun ParseResultRow(label: String, value: String?, valueColor: Color = AppText) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 9.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Text(
+            value ?: "—",
+            color = if (value == null) AppDisabledText else valueColor,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Black,
+        )
+    }
 }
 
 /**

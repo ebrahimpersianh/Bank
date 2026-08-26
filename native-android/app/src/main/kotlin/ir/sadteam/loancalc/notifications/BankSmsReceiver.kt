@@ -52,11 +52,13 @@ class BankSmsReceiver : BroadcastReceiver() {
                 // ۳) اگه هیچ حسابی سرشماره ثبت نکرده، همون رفتارِ قبلی (حسابِ اول) - ولی اگه حداقل
                 //    یه حساب سرشماره داره، دیگه حدس نمی‌زنیم و پیامکِ ناشناس نادیده گرفته می‌شه،
                 //    وگرنه پیامکِ بانکِ B بی‌سروصدا رو حسابِ بانکِ A ثبت می‌شد.
-                val account = accounts.firstOrNull { acc -> smsSenderMatches(acc.smsSender, sender) }
-                    ?: accounts.firstOrNull { acc ->
+                // کلیدِ هر بانک: حسابی که کاربر خاموشش کرده اصلاً نامزدِ تطبیق نیست.
+                val candidates = accounts.filter { it.smsEnabled }
+                val account = candidates.firstOrNull { acc -> smsSenderMatches(acc.smsSender, sender) }
+                    ?: candidates.firstOrNull { acc ->
                         parsed.cardSuffix != null && acc.cardNumber?.takeLast(4) == parsed.cardSuffix
                     }
-                    ?: accounts.takeIf { list -> list.none { !it.smsSender.isNullOrBlank() } }?.firstOrNull()
+                    ?: candidates.takeIf { list -> list.none { !it.smsSender.isNullOrBlank() } }?.firstOrNull()
                     ?: return@launch
 
                 val today = JalaliCalendar.today()
@@ -71,6 +73,8 @@ class BankSmsReceiver : BroadcastReceiver() {
                     category = if (parsed.type == TransactionType.WITHDRAWAL) "سایر هزینه" else "سایر درآمد",
                 )
                 uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
+                // زمانِ آخرین پیامکِ **همین حساب** - زیرنویسِ صفحه‌ی تنظیماتِ پیامک از این ساخته می‌شه.
+                accountRepository.updateAccount(account.copy(lastSmsAt = System.currentTimeMillis()))
             } finally {
                 pendingResult.finish()
             }
