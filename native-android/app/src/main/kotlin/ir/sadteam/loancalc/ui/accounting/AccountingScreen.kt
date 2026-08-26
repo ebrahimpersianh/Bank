@@ -212,11 +212,12 @@ fun BudgetScreen(
                 categoryViewModel = categoryViewModel,
                 onBack = { screenKey = "main" },
             )
-            else -> BudgetSection(
-                viewModel = viewModel,
-                categoryViewModel = categoryViewModel,
+            // ⚠️ **بازنویسیِ فریمِ `27c`** - رجوع کن به `ui/accounting/BudgetTabScreen.kt`.
+            else -> BudgetTabScreen(
                 onOpenCategories = { screenKey = "categories" },
                 onOpenRecurring = { screenKey = "recurring" },
+                viewModel = viewModel,
+                categoryViewModel = categoryViewModel,
             )
         }
     }
@@ -2175,7 +2176,7 @@ private fun <T> AccountingDropdown(
  * بودجه‌ها - پس کسی که این فیلد رو دست نزنه، همون چیزی رو می‌گیره که قبلاً می‌گرفت.
  */
 @Composable
-private fun NewBudgetSheet(
+internal fun NewBudgetSheet(
     categories: List<CategoryEntry>,
     accounts: List<AccountEntity>,
     onDismiss: () -> Unit,
