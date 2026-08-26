@@ -37,6 +37,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Close
@@ -52,6 +53,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Vibration
@@ -105,9 +107,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import ir.sadteam.loancalc.BuildConfig
+import ir.sadteam.loancalc.core.BankSmsParser
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
@@ -140,6 +145,7 @@ import ir.sadteam.loancalc.ui.subscription.parseSubscribedUntil
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -1014,45 +1020,144 @@ private fun DataSettings(
 }
 
 @Composable
-private fun SmsSettings(smsAutoImportViewModel: SmsAutoImportViewModel) {
+private fun SmsSettings(
+    smsAutoImportViewModel: SmsAutoImportViewModel,
+    accountViewModel: AccountViewModel = hiltViewModel(),
+) {
     val context = LocalContext.current
     val enabled by smsAutoImportViewModel.enabled.collectAsState()
     val lastImportAt by smsAutoImportViewModel.lastImportAt.collectAsState()
+    val accounts by accountViewModel.accounts.collectAsState()
     val smsPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) smsAutoImportViewModel.enable() }
+    var showParseTest by remember { mutableStateOf(false) }
 
-    SettingsSwitchRow(
-        icon = Icons.Filled.Sms,
-        title = "خوندنِ خودکارِ پیامکِ بانکی",
-        subtitle = "با رسیدنِ پیامکِ برداشت/واریز، خودکار یه تراکنش ثبت کن",
-        checked = enabled,
-        onCheckedChange = { checked ->
-            if (!checked) {
-                smsAutoImportViewModel.disable()
-            } else if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) ==
-                PackageManager.PERMISSION_GRANTED
-            ) {
-                smsAutoImportViewModel.enable()
+    // ── کلیدِ اصلی، تنها تو کارتِ خودش (بخشِ «ج»ی فایلِ طراح) ──────────────────
+    SettingsGroup(modifier = Modifier.padding(top = 8.dp)) {
+        SettingsRowItem(
+            title = "خوندنِ خودکارِ پیامکِ بانکی",
+            icon = Icons.Filled.Sms,
+            tone = SettingsTone.GREEN,
+            status = if (enabled) {
+                lastImportAt?.let { "آخرین ثبت: $it" } ?: "روشن - منتظرِ اولین پیامک"
             } else {
-                smsPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS)
-            }
-        },
-    )
-    AppCard(modifier = Modifier.padding(top = 8.dp)) {
-        Text(
-            "برای اینکه هر پیامک رو حسابِ درستش بشینه، تو صفحه‌ی «دارایی» شماره‌ی پیامکِ هر بانک رو " +
-                "تو خودِ همون حساب وارد کن. هیچ پیامکی هیچ‌جا فرستاده نمی‌شه - همه‌چی رو خودِ گوشیه.",
-            color = AppMuted,
-            fontSize = 12.sp,
-            lineHeight = 20.sp,
+                "خاموش"
+            },
+            statusTone = if (enabled) StatusTone.HEALTHY else StatusTone.NEUTRAL,
+            checked = enabled,
+            onCheckedChange = { checked ->
+                if (!checked) {
+                    smsAutoImportViewModel.disable()
+                } else if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) ==
+                    PackageManager.PERMISSION_GRANTED
+                ) {
+                    smsAutoImportViewModel.enable()
+                } else {
+                    smsPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS)
+                }
+            },
         )
-        if (lastImportAt != null) {
-            Text("آخرین ثبتِ خودکار: $lastImportAt", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+    }
+
+    // ── فهرستِ بانک‌ها ────────────────────────────────────────────────────────
+    // ⚠️ **آگاهانه با طرح فرق داره**: طرح برای هر بانک یه کلید می‌خواد، ولی تو دیتابیسِ ما
+    // «فعال بودن» یه فلگِ جدا نیست - همون پُربودنِ سرشماره‌ی حسابه. یه کلیدِ خاموش یعنی
+    // پاک‌کردنِ سرشماره‌ی کاربر، که برگشت‌ناپذیره. پس ردیف شِورون می‌گیره و می‌بره به
+    // همون حساب‌کتاب. اگه ستونِ جدای «فعال» اضافه شد، اینجا کلید می‌شه.
+    val bankAccounts = accounts.filter { it.bankName.isNotBlank() }
+    if (bankAccounts.isNotEmpty()) {
+        SettingsGroupLabel("بانک‌ها")
+        SettingsGroup {
+            bankAccounts.forEachIndexed { index, account ->
+                val sender = account.smsSender
+                SettingsRowItem(
+                    title = account.name,
+                    icon = Icons.Filled.AccountBalance,
+                    tone = if (sender.isNullOrBlank()) SettingsTone.NEUTRAL else SettingsTone.GREEN,
+                    status = if (sender.isNullOrBlank()) {
+                        "سرشماره ثبت نشده - پیامکِ این بانک خونده نمی‌شه"
+                    } else {
+                        "سرشماره: ${toFa(sender)}"
+                    },
+                    statusTone = if (sender.isNullOrBlank()) StatusTone.BROKEN else StatusTone.HEALTHY,
+                    onClick = null,
+                )
+                if (index != bankAccounts.lastIndex) SettingsDivider()
+            }
         }
     }
 
+    // ── آزمایشِ تشخیص ─────────────────────────────────────────────────────────
+    // «پیامکِ آزمایشی» شدنی نیست (اپ نمی‌تونه به صندوقِ ورودیِ خودش پیامک تزریق کنه)، پس
+    // به‌جاش کاربر متنِ یه پیامکِ واقعی رو پیست می‌کنه و می‌بینه موتور چی ازش درآورد.
+    SettingsGroupLabel("آزمایش")
+    SettingsGroup {
+        SettingsRowItem(
+            title = "آزمایشِ تشخیص",
+            icon = Icons.Filled.Science,
+            tone = SettingsTone.BLUE,
+            status = "متنِ یه پیامکِ بانکی رو بچسبون تا ببینی چی ازش درمیاد",
+            onClick = { showParseTest = true },
+        )
+    }
+    if (showParseTest) {
+        SmsParseTestDialog(onDismiss = { showParseTest = false })
+    }
+
+    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+        Text(
+            "هیچ پیامکی هیچ‌جا فرستاده نمی‌شه - همه‌ی پردازش رو خودِ گوشیه.",
+            color = AppMuted,
+            fontSize = 11.sp,
+            lineHeight = 20.sp,
+        )
+    }
+
     NotificationImportSettings(smsAutoImportViewModel)
+}
+
+/**
+ * آزمایشِ زنده‌ی موتورِ تشخیص - کاربر متنِ یه پیامکِ واقعی رو می‌چسبونه و همون‌جا می‌بینه
+ * `BankSmsParser` چی ازش درآورد. هم برای اطمینانِ کاربره هم برای دیباگِ ما.
+ */
+@Composable
+private fun SmsParseTestDialog(onDismiss: () -> Unit) {
+    var text by remember { mutableStateOf("") }
+    val parsed = remember(text) { if (text.isBlank()) null else BankSmsParser.parse(text) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text("بستن") } },
+        title = { Text("آزمایشِ تشخیص", fontWeight = FontWeight.Black) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    placeholder = { Text("متنِ پیامک رو اینجا بچسبون") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                )
+                Text(
+                    when {
+                        text.isBlank() -> "منتظرِ متن..."
+                        parsed == null -> "این متن شناخته نشد - از این پیامک تراکنشی ساخته نمی‌شه."
+                        else -> buildString {
+                            append(if (parsed.type == TransactionType.WITHDRAWAL) "برداشت" else "واریز")
+                            append(" · ")
+                            append(fmt(parsed.amountRial))
+                            append(" ریال")
+                            parsed.cardSuffix?.let { append(" · کارتِ ${toFa(it)}") }
+                        }
+                    },
+                    color = if (parsed == null && text.isNotBlank()) AppDangerInk else AppPrimaryInk,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
+            }
+        },
+    )
 }
 
 /**

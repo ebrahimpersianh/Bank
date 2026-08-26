@@ -14,6 +14,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import ir.sadteam.loancalc.ui.theme.Motion
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -31,9 +32,18 @@ class PrivacyModeViewModel @Inject constructor(
     val enabled: StateFlow<Boolean> = uiPrefs.privacyModeEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    /**
+     * 🚨 **باگِ رفع‌شده (گزارشِ کاربر: «یه‌بار روشن می‌کنی، دیگه خاموش نمی‌شه»)**
+     *
+     * قبلاً این تابع از `enabled.value` می‌خوند. ولی `enabled` یه `stateIn(WhileSubscribed)`ه و
+     * هر تب **نمونه‌ی ViewModelِ خودش** رو می‌گیره، در حالی که خودِ صفحه مقدار رو از
+     * [LocalPrivacyMode] (نمونه‌ی `MainActivity`) می‌خونه - یعنی رو نمونه‌ی تب هیچ‌کس
+     * `enabled` رو collect نمی‌کنه، پس `.value` همیشه رو مقدارِ اولیه‌ی `false` می‌مونه و
+     * `!false` هر بار «روشن کن» می‌شد. حالا مقدارِ واقعی مستقیم از DataStore خونده می‌شه.
+     */
     fun toggle() {
         viewModelScope.launch {
-            uiPrefs.setPrivacyModeEnabled(!enabled.value)
+            uiPrefs.setPrivacyModeEnabled(!uiPrefs.privacyModeEnabled.first())
         }
     }
 }

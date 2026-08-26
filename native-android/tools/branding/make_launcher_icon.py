@@ -108,7 +108,8 @@ def build(px):
     d._image = img
     # لبه‌ی روشنِ دورِ کاشی (بندِ v4)
     d.rounded_rectangle([0, 0, s - 1, s - 1], radius=round(s * 0.28), outline=(255, 255, 255, 72), width=max(1, round(s * 0.011)))
-    w = s * 0.636
+    # خواسته‌ی صریحِ کاربر: لوگو کلِ آیکون رو پر کنه، نه یه نشانِ کوچیکِ وسطِ کاشی.
+    w = s * 0.86
     h = w * 76 / 96
     wallet(d, (s - w) / 2, (s - h) / 2, w)
     return img.resize((px, px), Image.LANCZOS)

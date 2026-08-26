@@ -95,9 +95,8 @@ fun SplashIntroScreen(onDone: () -> Unit) {
             },
         contentAlignment = Alignment.Center,
     ) {
-        // ⚠️ `maxWidth` یه پراپرتیِ `BoxWithConstraintsScope`ه و **داخلِ لامبدای `Column`
-        // در دسترس نیست** (گیرنده‌ی ضمنی عوض می‌شه). همین‌جا تو یه val محلی خونده می‌شه.
-        val logoWidth = maxWidth * 0.72f
+        // اسپلش عمداً **عادی**ه؛ خواسته‌ی کاربر «لوگوی تمام‌صفحه» مالِ آیکونِ لانچر بود نه این.
+        val logoWidth = 96.dp
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(26.dp),
@@ -109,10 +108,9 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                 alpha = reveal.value * (1f - exit.value)
             },
         ) {
-            // خواسته‌ی صریحِ کاربر: لوگو **تمام‌عرض** باشه نه یه نشانِ کوچیکِ وسط.
             Box(
                 modifier = Modifier
-                    .size(logoWidth * 1.2f)
+                    .size(116.dp)
                     .drawBehind {
                         drawCircle(
                             brush = Brush.radialGradient(
@@ -129,7 +127,7 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(7.dp),
             ) {
-                Text("جیبک", color = Color.White, fontSize = 38.sp, fontWeight = FontWeight.Black)
+                Text("جیبک", color = Color.White, fontSize = 33.sp, fontWeight = FontWeight.Black)
                 Text(
                     "کیفِ پولت، مرتب",
                     color = Color.White.copy(alpha = 0.86f),
