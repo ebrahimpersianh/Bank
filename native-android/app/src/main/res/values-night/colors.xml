@@ -1,0 +1,4 @@
+<resources>
+    <!-- همتای تیره‌ی app_bg - رنگِ `DarkAppColors.bg`ی سیستمِ طراحی (#10181F)، نه مشکیِ خالص. -->
+    <color name="app_bg">#10181F</color>
+</resources>
