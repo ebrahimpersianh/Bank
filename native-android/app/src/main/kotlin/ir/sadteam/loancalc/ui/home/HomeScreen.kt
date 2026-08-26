@@ -729,33 +729,48 @@ private fun HomeEmptyHero(onAddFirst: () -> Unit) {
     }
 }
 
-/** یادداشتِ پاداشِ اولین ثبت - کارتِ نارنجیِ فریمِ `15b` با ستاره‌ی کوچیک. */
+/**
+ * یادداشتِ پاداشِ اولین ثبت - کارتِ نارنجیِ فریمِ `15b`.
+ *
+ * ⚠️ این کارت **تم‌آگاه نیست**: تو فریمِ روشن و تیره **عیناً همین رنگ‌ها**ست
+ * (`#FFF1DC` / `#FFD79A` / `#8B5A00`). هر دو فریم چک شدن، پس مقادیر ثابت درست‌ان -
+ * برخلافِ اشتباهِ ریلِ نوارِ بودجه که فقط از رو یه فریم حدس زده بودم.
+ *
+ * مقادیرِ صریحِ فریم: گوشه ۱۸ · پدینگِ ۱۳ در ۱۵ · حاشیه‌ی ۱٫۵ · فاصله‌ی آیکون تا متن ۱۰ ·
+ * متنِ ۱۰٫۵ با وزنِ ۷۰۰ و ارتفاعِ خطِ ۱٫۸.
+ */
 @Composable
 private fun FirstRewardNote() {
+    val shape = RoundedCornerShape(18.dp)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(AppRadius.row))
-            .background(AppWarningPill)
-            .padding(horizontal = 13.dp, vertical = 11.dp),
+            .clip(shape)
+            .background(RewardNoteBg)
+            .border(1.5.dp, RewardNoteBorder, shape)
+            .padding(horizontal = 15.dp, vertical = 13.dp),
     ) {
         Icon(
             Icons.Filled.AutoAwesome,
             contentDescription = null,
-            tint = AppWarningInk,
+            tint = RewardNoteInk,
             modifier = Modifier.size(12.dp),
         )
         Text(
             "با اولین ثبت ۱۰ سکه می‌گیری و روزهای فعالت روشن می‌شه",
-            color = AppWarningInk,
+            color = RewardNoteInk,
             fontSize = 10.5.sp,
             fontWeight = FontWeight.Bold,
-            lineHeight = 18.sp,
-            modifier = Modifier.padding(start = 7.dp),
+            lineHeight = 19.sp,
+            modifier = Modifier.padding(start = 10.dp),
         )
     }
 }
+
+private val RewardNoteBg = Color(0xFFFFF1DC)
+private val RewardNoteBorder = Color(0xFFFFD79A)
+private val RewardNoteInk = Color(0xFF8B5A00)
 
 /** یکی از سه کاشیِ «یا از اینجا شروع کن». */
 @Composable
