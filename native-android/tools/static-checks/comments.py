@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""دنباله‌ی `**/` داخلِ کامنت - کامنت رو **زودتر از موعد می‌بنده**.
+"""دو خطای متنیِ ساده که کامپایلر می‌گیره ولی بررسیِ ایمپورت‌محور نه:
+
+۱. دنباله‌ی `**/` داخلِ کامنت - کامنت رو **زودتر از موعد می‌بنده**.
+۲. `@Composable` که به‌جای تابع رو یه `val` نشسته (خطای «annotation is not applicable»).
 
 تو متنِ فارسیِ توضیحاتِ فریم زیاد پیش میاد چیزی مثلِ «عدد **۲۷**/۹۰۰» نوشته بشه؛ همون `**` +
 `/` از دیدِ کاتلین یعنی `*/` و بقیه‌ی کامنت کدِ آزاد حساب می‌شه (بیلدِ ۴۷۲ دقیقاً همین‌جا شکست).
@@ -17,7 +20,22 @@ for f in root.rglob("*.kt"):
         if "**/" in line and not stripped.endswith("**/"):
             bad.append(f"  {f.relative_to(root)}:{n}\n     {line.strip()}")
 
+# ۲ · @Composable رو یه پراپرتی (نه تابع)
+for f in root.rglob("*.kt"):
+    lines = f.read_text(encoding="utf-8").splitlines()
+    for n, line in enumerate(lines):
+        if line.strip() != "@Composable":
+            continue
+        # اولین خطِ بعدی که کامنت/انوتیشن نیست
+        for nxt in lines[n + 1:]:
+            t = nxt.strip()
+            if not t or t.startswith(("//", "*", "/*", "@")):
+                continue
+            if " val " in f" {t} " or " var " in f" {t} ":
+                bad.append(f"  {f.relative_to(root)}:{n + 1}\n     @Composable رو پراپرتی: {t}")
+            break
+
 if bad:
-    print(f"❌ {len(bad)} کامنتِ زودبسته‌شده (`**/`):\n" + "\n".join(bad))
+    print(f"❌ {len(bad)} مشکلِ متنیِ کامنت/انوتیشن:\n" + "\n".join(bad))
     sys.exit(1)
-print("✅ هیچ کامنتی زودتر بسته نشده")
+print("✅ هیچ کامنتِ زودبسته یا @Composableِ بدجا پیدا نشد")

@@ -684,7 +684,6 @@ private fun WeekReviewCard(
     }
 }
 
-@Composable
 /** رنگِ شِورانِ کارتِ مرورِ هفته - مقدارِ صریحِ فریم. */
 private val WeekChevron = Color(0xFFC7D2CC)
 
