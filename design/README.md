@@ -116,3 +116,15 @@ No external images. All icons are placeholder inline SVGs — replace with the a
 3. **The clickable prototype covers the core flows only** — not all 189 frames. Side paths are not wired.
 4. **Dark-frame captions are repetitive** ("same layout as X with the dark map"). The colour work itself was re-judged — surfaces, icon inks and `0 3px 0` elevation were corrected per-case — but the captions carry little information for a developer.
 5. **All imagery is placeholder.** Icons → the app's existing Material set; the mascot/logo needs a real vector before shipping.
+
+
+## Section ۳۷ — implementation answers (added 2026-08-26)
+
+Read `ANSWERS-section-37.md` alongside the design file. It resolves six ambiguities raised during build:
+settings entry point (37a), privacy/mask toggle (37b), savings-goal create (37c) and edit/delete (37d),
+plus three rules with no new frame (37e): active-tab stroke weight, budget-rail token, and the discovery-card data rule.
+
+One copy change shipped with it: the «نان ۲۲٪ گران‌تر شد» card is now «خوراک ۲۲٪ بیشتر از معمول / نسبت به میانگینِ سه ماه»
+in all three places (light, dark, section ۱۹) — the original was not derivable from amount + category alone.
+
+Active-tab stroke weight: the design system wins (2.5 active / 2.3 inactive). Frame 15a draws 2.4/2.4; that is a drawing shortcut, not the rule.

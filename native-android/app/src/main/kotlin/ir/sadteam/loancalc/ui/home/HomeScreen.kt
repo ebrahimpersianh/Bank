@@ -477,10 +477,11 @@ private fun MonthBudgetCard(
 /** نوارِ ۱۴ پیکسلیِ بودجه با سکه‌ی ۱۷ پیکسلی رو لبه‌ی پرشده - عیناً از فریمِ `15a`. */
 @Composable
 private fun BudgetBarWithCoin(ratio: Float, modifier: Modifier = Modifier) {
-    // ⚠️ ریل عمداً **تیره**ست حتی تو تمِ روشن - خودِ فریمِ `15a` مقدارِ `#232E38` داره تا
-    // سکه‌ی طلایی و سبزِ پرشده روش خونده بشن. این رنگ تو سیستمِ طراحی هست («چیپ و خطِ نازکِ
-    // تیره»)، پس قاعده‌ی «رنگِ خارج از سیستم ممنوع» نقض نمی‌شه.
-    val track = BudgetTrack
+    // ⚠️ **اشتباهِ خودم، اصلاح‌شده**: اول `#232E38` خونده بودم و فکر کردم عمدیه. کلاد دیزاین
+    // تو `design/ANSWERS-section-37.md` بندِ ۴ تایید کرد که سهو بوده - اون رنگ فقط تو
+    // نقشه‌ی **تیره** به کار می‌ره و تو هیچ فریمِ روشنی نیست. ریلِ درست `#EEF3F0`ه، یعنی
+    // همون توکنِ `AppLineRow` که تو تمِ تیره خودش `#232E38` می‌شه.
+    val track = AppLineRow
     Box(modifier = modifier.fillMaxWidth().height(20.dp), contentAlignment = Alignment.CenterStart) {
         Box(
             modifier = Modifier
@@ -503,9 +504,6 @@ private fun BudgetBarWithCoin(ratio: Float, modifier: Modifier = Modifier) {
         }
     }
 }
-
-/** ریلِ نوارِ بودجه - مقدارِ صریحِ فریمِ `15a`. */
-private val BudgetTrack = Color(0xFF232E38)
 
 // ═══ ۴ · قسطِ سررسیدشده ════════════════════════════════════════════════════════
 @Composable
