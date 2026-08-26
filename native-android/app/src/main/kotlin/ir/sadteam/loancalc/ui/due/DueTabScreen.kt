@@ -267,21 +267,28 @@ private fun NothingDueCard(onAddCheque: () -> Unit, onAddLoan: () -> Unit) {
                 modifier = Modifier.size(28.dp),
             )
         }
-        Text(
-            "هیچ چک و قسطی در راه نیست",
-            color = AppText,
-            fontSize = 15.5.sp,
-            fontWeight = FontWeight.Black,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            "وقتی چک یا وامی ثبت کنی، سررسیدهایش اینجا و روی ویجت دیده می‌شود.",
-            color = AppMuted,
-            fontSize = 12.sp,
-            lineHeight = 22.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = (-7).dp),
-        )
+        // ⚠️ عنوان و توضیح **یه بلوکِ واحد**ن با فاصله‌ی ۶ (مثلِ `margin-top`ی فریم)، نه دو
+        // آیتمِ جدا با فاصله‌ی منفی - `Modifier.padding` عددِ منفی رو قبول نمی‌کنه و همون
+        // لحظه‌ی رسم کرش می‌ده (کرشِ نسخه‌ی ۱.۰.۴۷۷: «Padding must be non-negative»).
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                "هیچ چک و قسطی در راه نیست",
+                color = AppText,
+                fontSize = 15.5.sp,
+                fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                "وقتی چک یا وامی ثبت کنی، سررسیدهایش اینجا و روی ویجت دیده می‌شود.",
+                color = AppMuted,
+                fontSize = 12.sp,
+                lineHeight = 22.sp,
+                textAlign = TextAlign.Center,
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

@@ -326,21 +326,28 @@ private fun NoAccountCard(onAddAccount: () -> Unit) {
             }
             CoinIcon(26.dp, Modifier.align(Alignment.TopEnd).padding(end = 25.dp))
         }
-        Text(
-            "هنوز حسابی اضافه نکردی",
-            color = AppText,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Black,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            "با اضافه‌کردنِ حسابِ بانکی، موجودی و خرج‌هایت خودکار از پیامک خوانده می‌شود.",
-            color = AppMuted,
-            fontSize = 12.5.sp,
-            lineHeight = 23.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = (-8).dp),
-        )
+        // ⚠️ عنوان و توضیح **یه بلوکِ واحد**ن با فاصله‌ی ۶ (مثلِ `margin-top`ی فریم)، نه دو
+        // آیتمِ جدا با فاصله‌ی منفی - `Modifier.padding` عددِ منفی رو قبول نمی‌کنه و همون
+        // لحظه‌ی رسم کرش می‌ده (کرشِ نسخه‌ی ۱.۰.۴۷۷: «Padding must be non-negative»).
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                "هنوز حسابی اضافه نکردی",
+                color = AppText,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                "با اضافه‌کردنِ حسابِ بانکی، موجودی و خرج‌هایت خودکار از پیامک خوانده می‌شود.",
+                color = AppMuted,
+                fontSize = 12.5.sp,
+                lineHeight = 23.sp,
+                textAlign = TextAlign.Center,
+            )
+        }
         Text(
             "افزودنِ حساب",
             color = Color.White,

@@ -307,21 +307,28 @@ private fun NoChartCard(onAddTransaction: () -> Unit) {
                     .background(SkeletonBaseline),
             )
         }
-        Text(
-            "نموداری برای کشیدن نیست",
-            color = AppText,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Black,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            "با سه تراکنش، اولین نمودارت شکل می‌گیرد. با یک ماه، مقایسه‌ی ماه‌به‌ماه هم اضافه می‌شود.",
-            color = AppMuted,
-            fontSize = 12.5.sp,
-            lineHeight = 23.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = (-8).dp),
-        )
+        // ⚠️ عنوان و توضیح **یه بلوکِ واحد**ن با فاصله‌ی ۶ (مثلِ `margin-top`ی فریم)، نه دو
+        // آیتمِ جدا با فاصله‌ی منفی - `Modifier.padding` عددِ منفی رو قبول نمی‌کنه و همون
+        // لحظه‌ی رسم کرش می‌ده (کرشِ نسخه‌ی ۱.۰.۴۷۷: «Padding must be non-negative»).
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                "نموداری برای کشیدن نیست",
+                color = AppText,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                "با سه تراکنش، اولین نمودارت شکل می‌گیرد. با یک ماه، مقایسه‌ی ماه‌به‌ماه هم اضافه می‌شود.",
+                color = AppMuted,
+                fontSize = 12.5.sp,
+                lineHeight = 23.sp,
+                textAlign = TextAlign.Center,
+            )
+        }
         Text(
             "ثبتِ اولین خرج",
             color = Color.White,

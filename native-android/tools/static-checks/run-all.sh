@@ -50,6 +50,7 @@ run "فیلدهای پالت" "$DIR/palette.py"
 run "اکستنشن و آرگومانِ Modifier" "$DIR/modifiers.py"
 run "کامنت و انوتیشن" "$DIR/comments.py"
 run "نمادِ پروژه بدونِ ایمپورت" "$DIR/ownsymbols.py"
+run "مقدارِ منفیِ غیرمجاز" "$DIR/negativedp.py"
 
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
