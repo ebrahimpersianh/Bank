@@ -47,6 +47,7 @@ import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_GOLD
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AssetEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.account.AccountsScreen
 import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
