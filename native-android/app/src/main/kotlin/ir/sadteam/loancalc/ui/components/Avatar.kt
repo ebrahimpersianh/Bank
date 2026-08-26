@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ir.sadteam.loancalc.ui.theme.AppIsDark
+import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
  * **آدمکِ پروفایل** - بخشِ ۳۲ فایلِ طراحی (کارت‌های `32a`..`32c`).
@@ -44,9 +45,12 @@ enum class AvatarShape { BOY, GIRL }
  * هگزها همین‌جا می‌مونن و به `AppPrimaryPill` و امثالش ارجاع داده نمی‌شن، حتی جایی که عدد یکیه.
  *
  * ولی **نسخه‌ی تیره لازمه**: پس‌زمینه‌های خیلی روشنِ تمِ روشن رو زمینه‌ی `#10181F` پُرنور
- * می‌زدن. هر پس‌زمینه‌ی تیره شفافیتِ ۱۲-۱۴٪ رنگِ خطِ خودشه - همون نسبتی که پالتِ روشن رو
- * سفید داره. دو تاشون (سبز و قرمز) عمداً آلفادارن نه هگزِ مات، چون آدمک هم رو
- * `AppSurface` (#1B2530) می‌شینه هم رو `AppBg` (#10181F) و با آلفا هر دو درست درمیاد.
+ * می‌زدن.
+ *
+ * ⚠️ هر شش پس‌زمینه‌ی تیره **مات**ن نه آلفادار، و این عمدیه: آدمک هم رو `AppBg` (نوارِ بالای
+ * خانه) می‌شینه هم رو `AppSurface` (کارتِ تنظیمات). با پس‌زمینه‌ی آلفادار رنگِ آدمک بینِ این
+ * دو جا فرق می‌کرد - و این رنگِ **هویتیِ** کاربره، باید همون‌جا که انتخابش کرده همون‌طور تو
+ * هدر هم دیده بشه. مبنا `AppBg`ه.
  */
 enum class AvatarColor(
     private val inkLight: Color,
@@ -54,11 +58,11 @@ enum class AvatarColor(
     private val inkDark: Color,
     private val tintDark: Color,
 ) {
-    GREEN(Color(0xFF0B8C57), Color(0xFFE9F7EF), Color(0xFF3DDC96), Color(0x243DDC96)),
+    GREEN(Color(0xFF0B8C57), Color(0xFFE9F7EF), Color(0xFF3DDC96), Color(0xFF16302A)),
     PURPLE(Color(0xFF7C4DD1), Color(0xFFF3EAFE), Color(0xFFBE97FF), Color(0xFF252436)),
     BLUE(Color(0xFF1E6FD9), Color(0xFFEAF1FE), Color(0xFF55C8FF), Color(0xFF1D2C3A)),
     ORANGE(Color(0xFFB45F00), Color(0xFFFFF1DC), Color(0xFFFFB44D), Color(0xFF2A2317)),
-    RED(Color(0xFFD93838), Color(0xFFFFECEC), Color(0xFFFF6B6B), Color(0x1FFF6B6B)),
+    RED(Color(0xFFD93838), Color(0xFFFFECEC), Color(0xFFFF6B6B), Color(0xFF2A1E23)),
 
     /** پیش‌فرضِ «هنوز انتخاب نشده» - خاکستریِ خنثی. */
     NEUTRAL(Color(0xFF5B6A63), Color(0xFFF1F5F3), Color(0xFF8B9A94), Color(0xFF232E38));
@@ -68,6 +72,16 @@ enum class AvatarColor(
 
     /** پس‌زمینه‌ی هم‌رنگِ روشن‌ترش. */
     val tint: Color @Composable get() = if (AppIsDark) tintDark else tintLight
+
+    /**
+     * رنگِ **حلقه‌ی انتخاب‌شده** - معمولاً همون [ink]ه، ولی برای [NEUTRAL] تو تمِ تیره نه:
+     * خاکستریِ `#8B9A94` فقط ۱۲ واحد از `AppLine`ی تیره فاصله داره و حلقه‌ش کم‌جون می‌شه،
+     * یعنی کاربر نمی‌فهمه کدوم انتخاب شده. اونجا `AppText` می‌شینه.
+     *
+     * عمداً فقط **حلقه** روشن می‌شه، نه خودِ خطوطِ آدمک - آدمکِ خاکستری باید آروم بمونه.
+     */
+    val ringInk: Color
+        @Composable get() = if (this == NEUTRAL && AppIsDark) AppText else ink
 }
 
 /** حالتِ ذخیره‌شده‌ی آدمک. `photoPath` اگه پر باشه **جای آدمک رو می‌گیره** (قاعده‌ی `32c`). */
@@ -181,7 +195,7 @@ fun AvatarPicker(
                         .clip(CircleShape)
                         .then(
                             if (selected) {
-                                Modifier.border(3.dp, avatar.color.ink, CircleShape)
+                                Modifier.border(3.dp, avatar.color.ringInk, CircleShape)
                             } else {
                                 Modifier
                             },
@@ -203,7 +217,7 @@ fun AvatarPicker(
                         .size(40.dp)
                         .clip(CircleShape)
                         .then(
-                            if (selected) Modifier.border(3.dp, color.ink, CircleShape) else Modifier,
+                            if (selected) Modifier.border(3.dp, color.ringInk, CircleShape) else Modifier,
                         )
                         .pressScaleClickable { onChange(avatar.copy(color = color)) },
                     contentAlignment = Alignment.Center,
