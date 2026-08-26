@@ -184,6 +184,7 @@ import ir.sadteam.loancalc.ui.components.ShortcutDrawerHandle
 import ir.sadteam.loancalc.ui.components.ShortcutDrawer
 import ir.sadteam.loancalc.ui.components.Shortcut
 import ir.sadteam.loancalc.ui.asset.AssetsTabScreen
+import ir.sadteam.loancalc.ui.accounting.ReportTabScreen
 
 // آیکون‌های نوار پایین: حالت عادی outline (مینیمال، مثل نسخه‌ی وب)، تب فعال پُر (filled).
 //
@@ -836,7 +837,8 @@ private fun LoanCalcApp(
                     key(tabResetKeys[BottomTab.ASSETS] ?: 0) { AssetsTabScreen() }
                 }
                 composable(BottomTab.REPORT.route) {
-                    key(tabResetKeys[BottomTab.REPORT] ?: 0) { ReportScreen() }
+                    // ⚠️ **بازنویسیِ فریمِ `26a`** - رجوع کن به `ui/accounting/ReportTabScreen.kt`.
+                    key(tabResetKeys[BottomTab.REPORT] ?: 0) { ReportTabScreen() }
                 }
                 composable(BottomTab.BUDGET.route) {
                     key(tabResetKeys[BottomTab.BUDGET] ?: 0) { BudgetScreen() }
