@@ -87,7 +87,9 @@ fun AppCard(
     borderColor: Color? = null,
     backgroundColor: Color? = null,
     accentGradient: Brush? = null,
-    contentPadding: androidx.compose.ui.unit.Dp = AppSpacing.cardPadding,
+    // طبقِ بندِ ۴ فایلِ توکنِ طراحی پدینگِ خودِ کارت `cardPaddingTight` (۱۴)ه؛
+    // ۱۶ مالِ کارتِ قهرمانه. قبلاً هر دو ۱۶ بودن.
+    contentPadding: androidx.compose.ui.unit.Dp = AppSpacing.cardPaddingTight,
     content: @Composable () -> Unit,
 ) {
     val shape = RoundedCornerShape(AppRadius.card)

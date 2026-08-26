@@ -134,7 +134,7 @@ val LightAppColors = AppColorPalette(
     surface2 = Color(0xFFF7FAF8),
     text = Color(0xFF16221C),
     muted = Color(0xFF5B6A63),
-    label = Color(0xFF9AA8A1),
+    label = Color(0xFF8B9A93),
     line = Color(0xFFE3ECE7),
     lineRow = Color(0xFFEEF3F0),
     chip = Color(0xFFF1F5F2),
@@ -147,13 +147,13 @@ val LightAppColors = AppColorPalette(
 
     primary = Color(0xFF0EA968),
     primaryDim = Color(0xFF0B8C57),
-    primaryInk = Color(0xFF0EA968),
+    primaryInk = Color(0xFF0B8C57),
     primaryPill = Color(0xFFE9F7EF),
     primaryPillBorder = Color(0x00000000), // تو روشن قرصِ سبز حاشیه نداره
 
     danger = Color(0xFFFF4B4B),
     dangerInk = Color(0xFFD93838),
-    dangerPill = Color(0xFFFFECEC),
+    dangerPill = Color(0xFFFFF5F5),
     urgentBg = Color(0xFFFFF5F5),
     urgentBorder = Color(0xFFFFC9C9),
     urgentShadow = Color(0xFFFFECEC),
@@ -165,7 +165,7 @@ val LightAppColors = AppColorPalette(
     goldFrom = Color(0xFFFFFCF4),
     goldTo = Color(0xFFF3E7CE),
     goldBorder = Color(0xFFEBD9B4),
-    goldInk = Color(0xFF8B6F3D),
+    goldInk = Color(0xFF5A3E12),
     goldInk2 = Color(0xFFA98D5B),
 
     disabledFill = Color(0xFFDDE7E2),
@@ -196,16 +196,16 @@ val DarkAppColors = AppColorPalette(
     muted = Color(0xFF8B9A94),
     label = Color(0xFF7A8A84),
     line = Color(0xFF2A3640),
-    lineRow = Color(0xFF232E38),
+    lineRow = Color(0xFF2A3640),
     chip = Color(0xFF232E38),
     // معادل‌های تیره: همون رنگِ لهجه با آلفای کم روی سطحِ #1B2530، **مات** حساب‌شده
     // (قاعده‌ی «سطحِ کاملاً مات» - قابِ آیکون نباید نیمه‌شفاف باشه).
     infoPill = Color(0xFF1D2C3A),
     purplePill = Color(0xFF252436),
-    warningPill = Color(0xFF2E2519),
-    warningInk = Color(0xFFFFB44D),
+    warningPill = Color(0xFF2A2317),
+    warningInk = Color(0xFFF0D9A8),
     dashedBorder = Color(0xFF3A464F),
-    primaryBorder = Color(0xFF2E6B52),
+    primaryBorder = Color(0x593DDC96),
 
     // سبزِ دکمه عمداً همون سبزِ روشنه (قاعده‌ی صریح)؛ فقط سایه‌ش تیره‌تر می‌شه و سبزِ متن روشن‌تر.
     primary = Color(0xFF0EA968),
@@ -227,15 +227,15 @@ val DarkAppColors = AppColorPalette(
     purple = Color(0xFFBE97FF),
     warning = Color(0xFFFFB44D),
 
-    goldFrom = Color(0xFF242018),
-    goldTo = Color(0xFF1B1712),
-    goldBorder = Color(0xFF3A3226),
+    goldFrom = Color(0xFF2A2317),
+    goldTo = Color(0xFF2A2317),
+    goldBorder = Color(0xFF4A3D22),
     goldInk = Color(0xFFF0D9A8),
     goldInk2 = Color(0xFFC9AE74),
 
     disabledFill = Color(0xFF232E38),
-    disabledText = Color(0xFF6C7B75),
-    shadowNeutral = Color(0xFF0B131A),
+    disabledText = Color(0xFF7A8A84),
+    shadowNeutral = Color(0xFF141C24),
 
     glassBase = Color(0xFF1B2530),
     glassGradientStart = Color(0x00000000),

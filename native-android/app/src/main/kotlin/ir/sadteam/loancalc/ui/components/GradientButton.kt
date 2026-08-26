@@ -156,7 +156,7 @@ fun GradientButton(
             LocalContentColor provides ink,
             LocalTextStyle provides LocalTextStyle.current.copy(
                 color = ink,
-                fontSize = if (variant == AppButtonVariant.IN_ROW) 10.5.sp else 13.sp,
+                fontSize = if (variant == AppButtonVariant.IN_ROW) 10.5.sp else 14.sp,
                 fontWeight = FontWeight.Black,
             ),
         ) {

@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import ir.sadteam.loancalc.ui.theme.AppIsDark
 
 /**
  * **آدمکِ پروفایل** - بخشِ ۳۲ فایلِ طراحی (کارت‌های `32a`..`32c`).
@@ -39,18 +40,34 @@ enum class AvatarShape { BOY, GIRL }
  * پنج رنگِ طرح + [NEUTRAL]. `ink` رنگِ سر و شانه‌ست و `tint` پس‌زمینه‌ی روشنِ **همون** رنگ
  * (قاعده‌ی `32a`: «سر و شانه هم‌رنگ، پس‌زمینه‌ی روشنِ همان رنگ»).
  *
- * این رنگ‌ها عمداً **ثابت**ن و از پالتِ تم‌آگاه نمیان: آدمک یه هویتِ شخصیه که کاربر انتخاب کرده،
- * نباید با عوض‌کردنِ تم رنگش عوض بشه.
+ * این پالت عمداً **از توکن‌های `Color.kt` جداست**: رنگِ شخصیِ کاربره، نه رنگِ سیستم. پس
+ * هگزها همین‌جا می‌مونن و به `AppPrimaryPill` و امثالش ارجاع داده نمی‌شن، حتی جایی که عدد یکیه.
+ *
+ * ولی **نسخه‌ی تیره لازمه**: پس‌زمینه‌های خیلی روشنِ تمِ روشن رو زمینه‌ی `#10181F` پُرنور
+ * می‌زدن. هر پس‌زمینه‌ی تیره شفافیتِ ۱۲-۱۴٪ رنگِ خطِ خودشه - همون نسبتی که پالتِ روشن رو
+ * سفید داره. دو تاشون (سبز و قرمز) عمداً آلفادارن نه هگزِ مات، چون آدمک هم رو
+ * `AppSurface` (#1B2530) می‌شینه هم رو `AppBg` (#10181F) و با آلفا هر دو درست درمیاد.
  */
-enum class AvatarColor(val ink: Color, val tint: Color) {
-    GREEN(Color(0xFF0B8C57), Color(0xFFE9F7EF)),
-    PURPLE(Color(0xFF7C4DD1), Color(0xFFF3EAFE)),
-    BLUE(Color(0xFF1E6FD9), Color(0xFFEAF1FE)),
-    ORANGE(Color(0xFFB45F00), Color(0xFFFFF1DC)),
-    RED(Color(0xFFD93838), Color(0xFFFFECEC)),
+enum class AvatarColor(
+    private val inkLight: Color,
+    private val tintLight: Color,
+    private val inkDark: Color,
+    private val tintDark: Color,
+) {
+    GREEN(Color(0xFF0B8C57), Color(0xFFE9F7EF), Color(0xFF3DDC96), Color(0x243DDC96)),
+    PURPLE(Color(0xFF7C4DD1), Color(0xFFF3EAFE), Color(0xFFBE97FF), Color(0xFF252436)),
+    BLUE(Color(0xFF1E6FD9), Color(0xFFEAF1FE), Color(0xFF55C8FF), Color(0xFF1D2C3A)),
+    ORANGE(Color(0xFFB45F00), Color(0xFFFFF1DC), Color(0xFFFFB44D), Color(0xFF2A2317)),
+    RED(Color(0xFFD93838), Color(0xFFFFECEC), Color(0xFFFF6B6B), Color(0x1FFF6B6B)),
 
     /** پیش‌فرضِ «هنوز انتخاب نشده» - خاکستریِ خنثی. */
-    NEUTRAL(Color(0xFF5B6A63), Color(0xFFF1F5F3)),
+    NEUTRAL(Color(0xFF5B6A63), Color(0xFFF1F5F3), Color(0xFF8B9A94), Color(0xFF232E38));
+
+    /** رنگِ سر و شانه. */
+    val ink: Color @Composable get() = if (AppIsDark) inkDark else inkLight
+
+    /** پس‌زمینه‌ی هم‌رنگِ روشن‌ترش. */
+    val tint: Color @Composable get() = if (AppIsDark) tintDark else tintLight
 }
 
 /** حالتِ ذخیره‌شده‌ی آدمک. `photoPath` اگه پر باشه **جای آدمک رو می‌گیره** (قاعده‌ی `32c`). */
@@ -83,8 +100,8 @@ fun AvatarView(
             photoContent(photo)
             return@Box
         }
-        // ⚠️ توکن‌های رنگِ اپ `@Composable`ان و داخلِ `Canvas` (که `DrawScope`ه) صدا زده
-        // نمی‌شن؛ اینجا مشکلی نیست چون رنگِ آدمک ثابته و از `enum` میاد، نه از پالت.
+        // ⚠️ `ink`/`tint` حالا خودشون `@Composable`ان (نسخه‌ی روشن/تیره دارن)، پس **باید**
+        // قبل از `Canvas` تو یه val محلی خونده بشن - داخلِ `DrawScope` صدا زده نمی‌شن.
         val ink = avatar.color.ink
         val tint = avatar.color.tint
         val girl = avatar.shape == AvatarShape.GIRL

@@ -1,0 +1,56 @@
+/*
+ * پالتِ آدمکِ جیبک — نسخه‌ی تمِ تیره، برای ui/components/Avatar.kt
+ *
+ * این پالت عمداً از توکن‌های Color.kt جداست: رنگِ شخصیِ کاربر است، نه رنگِ سیستم.
+ * پس این مقدارها هم همان‌جا، به‌شکلِ هگزِ مستقیم، کنارِ پالتِ روشن بنشینند —
+ * به AppPrimaryPill و امثالش ارجاع نده، حتی جایی که عدد یکی است.
+ *
+ * منطقِ انتخاب: هر پس‌زمینه شفافیتِ ۱۲–۱۴ درصدیِ رنگِ خطِ خودش روی #10181F است،
+ * یا معادلِ مات‌شده‌اش. دقیقاً همان نسبتی که پالتِ روشن روی #FFFFFF دارد.
+ */
+
+// نام      خط (تیره)   پس‌زمینه (تیره)
+// GREEN    #3DDC96     0x243DDC96   ← rgba(61,220,150,.14)
+// PURPLE   #BE97FF     #252436
+// BLUE     #55C8FF     #1D2C3A
+// ORANGE   #FFB44D     #2A2317
+// RED      #FF6B6B     0x1FFF6B6B   ← rgba(255,107,107,.12)
+// NEUTRAL  #8B9A94     #232E38
+
+private val AvatarGreenInkDark      = Color(0xFF3DDC96)
+private val AvatarGreenBgDark       = Color(0x243DDC96)
+
+private val AvatarPurpleInkDark     = Color(0xFFBE97FF)
+private val AvatarPurpleBgDark      = Color(0xFF252436)
+
+private val AvatarBlueInkDark       = Color(0xFF55C8FF)
+private val AvatarBlueBgDark        = Color(0xFF1D2C3A)
+
+private val AvatarOrangeInkDark     = Color(0xFFFFB44D)
+private val AvatarOrangeBgDark      = Color(0xFF2A2317)
+
+private val AvatarRedInkDark        = Color(0xFFFF6B6B)
+private val AvatarRedBgDark         = Color(0x1FFF6B6B)
+
+private val AvatarNeutralInkDark    = Color(0xFF8B9A94)
+private val AvatarNeutralBgDark     = Color(0xFF232E38)
+
+/*
+ * دو مقدارِ پس‌زمینه با آلفا آمده‌اند (GREEN و RED) نه هگزِ مات.
+ * دلیلش این است که آدمک همیشه روی AppSurface (#1B2530) نمی‌نشیند — در هدر روی
+ * AppBg (#10181F) است. با آلفا هر دو حالت درست درمی‌آید؛ با هگزِ مات یکی‌شان
+ * یک پله جدا می‌افتد. اگر Avatar همیشه روی یک سطحِ ثابت است، بگو تا معادلِ
+ * ماتشان را بدهم.
+ */
+
+/*
+ * ── دو اختلافِ ریز در پالتِ روشنِ فعلیت که وقتِ تطبیق می‌بینی ──
+ *
+ * ۱. NEUTRAL پس‌زمینه‌اش #F1F5F3 است ولی AppChipBg روشن #F1F5F2 — یک رقم
+ *    اختلاف در کانالِ آبی. غیرقابلِ تشخیص است. اگر خواستی یکی‌شان کنی،
+ *    #F1F5F2 مرجع است؛ ولی چون پالت جداست، عوض‌نکردنش هم غلط نیست.
+ *
+ * ۲. RED پس‌زمینه‌اش #FFECEC است، که AppDangerPill (#FFF5F5) نیست —
+ *    مقدارِ سایه‌ی سختِ کارتِ فوری است. اینجا تیره‌تر و اشباع‌تر است و
+ *    برای آدمک بهتر هم کار می‌کند، پس دست نزن. فقط بدان تصادفی نبوده.
+ */
