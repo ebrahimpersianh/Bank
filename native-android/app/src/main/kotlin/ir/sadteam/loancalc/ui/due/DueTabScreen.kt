@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -41,13 +43,17 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.foundation.Canvas
+import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.CoinIcon
+import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
@@ -75,6 +81,8 @@ import ir.sadteam.loancalc.ui.theme.hardShadow
  */
 @Composable
 fun DueTabScreen(
+    onAddCheque: () -> Unit = {},
+    onAddLoan: () -> Unit = {},
     viewModel: DueListViewModel = hiltViewModel(),
 ) {
     var tab by remember { mutableStateOf(DueTab.INSTALLMENTS) }
@@ -89,12 +97,22 @@ fun DueTabScreen(
         DueTab.DEBTS -> debts
     }
 
+    // هیچ ردیفی تو هیچ‌کدوم از سه تب نیست → **فریمِ `21e`**: تقویمِ ماه + کارتِ خط‌چین.
+    // نه تاگل، نه کارتِ قهرمانِ صفر - عیناً همون چیزی که فریمِ خالی نشون می‌ده.
+    val everythingEmpty = listOf(installments, cheques, debts)
+        .all { it.overdue.isEmpty() && it.thisWeek.isEmpty() && it.paid.isEmpty() }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 110.dp),
-        verticalArrangement = Arrangement.spacedBy(9.dp),
+        verticalArrangement = Arrangement.spacedBy(if (everythingEmpty) 13.dp else 9.dp),
     ) {
-        item { Text("سررسید", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Black) }
+        item { Text("سررسید", color = AppText, fontSize = if (everythingEmpty) 18.sp else 17.sp, fontWeight = FontWeight.Black) }
+        if (everythingEmpty) {
+            item { MonthStripCard(dueDays = emptySet()) }
+            item { NothingDueCard(onAddCheque = onAddCheque, onAddLoan = onAddLoan) }
+            return@LazyColumn
+        }
         item {
             DueTabBar(
                 selected = tab,
@@ -109,6 +127,10 @@ fun DueTabScreen(
                 progress = buckets.paidShare,
                 privacyMode = privacyMode,
             )
+        }
+        // این تب خالیه ولی تبِ دیگه‌ای داده داره - کارتِ خالیِ کوچیک، نه کلِ صفحه‌ی `21e`.
+        if (buckets.overdue.isEmpty() && buckets.thisWeek.isEmpty() && buckets.paid.isEmpty()) {
+            item { NothingDueCard(onAddCheque = onAddCheque, onAddLoan = onAddLoan) }
         }
         if (buckets.overdue.isNotEmpty()) {
             item { GroupLabel("عقب‌افتاده", OverdueInk) }
@@ -141,6 +163,160 @@ private val DueListViewModel.DueBuckets.paidShare: Float
         val total = overdue.size + thisWeek.size + paid.size
         return if (total == 0) 0f else paid.size.toFloat() / total
     }
+
+// ═══ ۱ب · تقویمِ ماه (فقط حالتِ خالی، فریمِ `21e`) ═══════════════════════════════
+/**
+ * نوارِ تقویمِ ماهِ جاری - دو ردیفِ هفت‌تایی از **چهارده روزِ پیشِ رو** با امروزِ حاشیه‌دار.
+ *
+ * تو فریم فقط هفت خانه‌ی اول شماره دارن و بقیه خالی‌ان؛ اون یه طرحِ نمادینه، پس اینجا هر
+ * چهارده خانه شماره‌ی واقعیِ روز رو دارن. یادداشتِ خودِ فریم می‌گه «تقویم پنهان نمی‌شود -
+ * یکدست روشن می‌ماند» و «هیچ سررسیدی نداری» خبرِ خوبه نه خطا.
+ */
+@Composable
+private fun MonthStripCard(dueDays: Set<Int>) {
+    val today = remember { JalaliCalendar.today() }
+    val days = remember(today) { (0 until 14).map { PersianCalendar.addDays(today, it) } }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(AppSurface)
+            .border(2.dp, CardBorder, RoundedCornerShape(20.dp))
+            .padding(16.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "${persianMonthName(today.m)} ${toFa(today.y)}",
+                color = AppText,
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+            Text(
+                if (dueDays.isEmpty()) "هیچ سررسیدی نداری" else "${toFa(dueDays.size)} سررسید",
+                color = DueGreenDeep,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+        }
+        // ⚠️ گریدِ تنبل داخلِ لیستِ تنبل نمی‌شه - قاعده‌ی ماندگارِ پروژه: chunked + Row.
+        days.chunked(7).forEachIndexed { rowIndex, week ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = if (rowIndex == 0) 13.dp else 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                week.forEach { day ->
+                    val isToday = day.y == today.y && day.m == today.m && day.d == today.d
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(30.dp)
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(if (isToday) AppSurface else DayCellBg)
+                            .then(
+                                if (isToday) {
+                                    Modifier.border(2.dp, DueGreen, RoundedCornerShape(9.dp))
+                                } else {
+                                    Modifier
+                                }
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            toFa(day.d),
+                            color = if (isToday) DueGreenDeep else DayCellInk,
+                            fontSize = 10.5.sp,
+                            fontWeight = if (isToday) FontWeight.Black else FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ═══ ۱ج · کارتِ خط‌چینِ «چیزی در راه نیست» ═════════════════════════════════════════
+@Composable
+private fun NothingDueCard(onAddCheque: () -> Unit, onAddLoan: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(AppSurface)
+            .dashedBorder(20.dp)
+            .padding(horizontal = 16.dp, vertical = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(13.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(GreenIconBg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.EventAvailable,
+                contentDescription = null,
+                tint = DueGreen,
+                modifier = Modifier.size(28.dp),
+            )
+        }
+        Text(
+            "هیچ چک و قسطی در راه نیست",
+            color = AppText,
+            fontSize = 15.5.sp,
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            "وقتی چک یا وامی ثبت کنی، سررسیدهایش اینجا و روی ویجت دیده می‌شود.",
+            color = AppMuted,
+            fontSize = 12.sp,
+            lineHeight = 22.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = (-7).dp),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                "افزودنِ چک",
+                color = Color.White,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .hardShadow(DueGreenDeep, 3.dp, 999.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(DueGreen)
+                    .pressScaleClickable(onClick = onAddCheque)
+                    .padding(vertical = 13.dp),
+            )
+            Text(
+                "افزودنِ وام",
+                color = AppMuted,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AppSurface)
+                    .border(1.5.dp, OutlineBorder, RoundedCornerShape(999.dp))
+                    .pressScaleClickable(onClick = onAddLoan)
+                    .padding(vertical = 13.dp),
+            )
+        }
+    }
+}
 
 // ═══ ۲ · تاگلِ سه‌تایی ═══════════════════════════════════════════════════════════
 @Composable
@@ -433,4 +609,8 @@ private val OverdueBorder = Color(0xFFFFC9C9)
 private val OverdueIconBg = Color(0xFFFFECEC)
 private val PlainBorder = Color(0xFFEEF3F0)
 private val GreenIconBg = Color(0xFFE6F8EE)
+private val CardBorder = Color(0xFFE3ECE7)
+private val DayCellBg = Color(0xFFF5F8F6)
+private val DayCellInk = Color(0xFF9AA8A1)
+private val OutlineBorder = Color(0xFFDCE7E1)
 private val WarnIconBg = Color(0xFFFFF1DC)

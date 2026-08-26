@@ -13,10 +13,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Download
@@ -37,6 +39,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -47,6 +50,7 @@ import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.asset.compact
 import ir.sadteam.loancalc.ui.components.CategoryDonut
+import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.DonutSlice
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -103,6 +107,11 @@ fun ReportTabScreen(
     val stats = remember(transactions, recurring, period) {
         buildReportStats(transactions, recurring, today, period)
     }
+    var showNewTransaction by remember { mutableStateOf(false) }
+    if (showNewTransaction) {
+        NewTransactionSheet(onDismiss = { showNewTransaction = false })
+        return
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -115,7 +124,16 @@ fun ReportTabScreen(
                 onPeriod = { period = it },
                 privacyMode = privacyMode,
                 onTogglePrivacy = { privacyViewModel.toggle() },
+                showControls = transactions.isNotEmpty(),
             )
+        }
+        // هیچ تراکنشی ثبت نشده → **فریمِ `21c`**: کارتِ خط‌چینِ نمودارِ خالی، یادآوریِ پیامکِ
+        // بانکی، و لیستِ «وقتی داده داشته باشی اینها را می‌بینی». هیرویِ بنفشِ صفر نشون داده نمی‌شه.
+        if (transactions.isEmpty()) {
+            item { NoChartCard(onAddTransaction = { showNewTransaction = true }) }
+            item { BankSmsHintCard() }
+            item { ComingSoonCard() }
+            return@LazyColumn
         }
         item {
             PeriodSpendHero(
@@ -188,6 +206,7 @@ private fun ReportHeader(
     onPeriod: (ReportPeriod) -> Unit,
     privacyMode: Boolean,
     onTogglePrivacy: () -> Unit,
+    showControls: Boolean = true,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -195,6 +214,8 @@ private fun ReportHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text("گزارش", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
+        // تو حالتِ خالی نه بازه‌ای برای انتخاب هست نه مبلغی برای پنهان‌کردن (فریمِ `21c` هدرِ لخت).
+        if (!showControls) return@Row
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
             // تاگلِ ماه/فصل/سال - انتخاب‌شده قرصِ سبزِ پرشده، بقیه فقط متن.
             ReportPeriod.entries.forEach { p ->
@@ -240,6 +261,160 @@ private val PrivacyOffBg = Color(0xFFF5F8F6)
 private val PrivacyOnBg = Color(0xFFFFF1DC)
 private val PrivacyOnBorder = Color(0xFFF0CE9B)
 private val PrivacyOnInk = Color(0xFFB45F00)
+
+// ═══ ۱ب · کارتِ خط‌چینِ «نموداری برای کشیدن نیست» (فریمِ `21c`) ═════════════════════
+@Composable
+private fun NoChartCard(onAddTransaction: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(AppSurface)
+            .dashedBorder(20.dp)
+            .padding(horizontal = 16.dp, vertical = 22.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        // چهار میله‌ی خط‌چینِ خالی که یکی‌شون سبزِ توپره - «شکلِ نمودارِ پیشاپیش».
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(
+                modifier = Modifier.height(92.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(9.dp),
+            ) {
+                listOf(30.dp to false, 51.dp to false, 39.dp to true, 69.dp to false).forEach { (h, filled) ->
+                    val shape = RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
+                    Box(
+                        modifier = Modifier
+                            .width(23.dp)
+                            .height(h)
+                            .clip(shape)
+                            .background(if (filled) SkeletonBarFill else SkeletonBarBg)
+                            .then(
+                                if (filled) {
+                                    Modifier.border(1.5.dp, AppPrimary, shape)
+                                } else {
+                                    Modifier.dashedBorder(6.dp, width = 1.5.dp)
+                                }
+                            ),
+                    )
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .width(150.dp)
+                    .height(2.dp)
+                    .background(SkeletonBaseline),
+            )
+        }
+        Text(
+            "نموداری برای کشیدن نیست",
+            color = AppText,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            "با سه تراکنش، اولین نمودارت شکل می‌گیرد. با یک ماه، مقایسه‌ی ماه‌به‌ماه هم اضافه می‌شود.",
+            color = AppMuted,
+            fontSize = 12.5.sp,
+            lineHeight = 23.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = (-8).dp),
+        )
+        Text(
+            "ثبتِ اولین خرج",
+            color = Color.White,
+            fontSize = 14.5.sp,
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .hardShadow(PrimaryShadow, 4.dp, 999.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(AppPrimary)
+                .pressScaleClickable(onClick = onAddTransaction)
+                .padding(vertical = 15.dp),
+        )
+    }
+}
+
+/** نوارِ طلاییِ «اگر پیامکِ بانکی را وصل کنی، گزارش خودش پر می‌شود». */
+@Composable
+private fun BankSmsHintCard() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(GoldHintBg)
+            .border(1.5.dp, GoldHintBorder, RoundedCornerShape(18.dp))
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Icon(
+            Icons.Filled.AutoAwesome,
+            contentDescription = null,
+            tint = GoldHintIcon,
+            modifier = Modifier.size(17.dp),
+        )
+        Text(
+            "اگر پیامکِ بانکی را وصل کنی، گزارش خودش پر می‌شود",
+            color = GoldHintInk,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
+            lineHeight = 21.sp,
+        )
+    }
+}
+
+/** «وقتی داده داشته باشی اینها را می‌بینی» - سه نقطه‌ی رنگیِ فریم. */
+@Composable
+private fun ComingSoonCard() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(AppSurface)
+            .border(2.dp, AppLineRow, RoundedCornerShape(18.dp))
+            .padding(15.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            "وقتی داده داشته باشی اینها را می‌بینی",
+            color = AppMuted,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.ExtraBold,
+        )
+        listOf(
+            AppDanger to "سهمِ هر دسته از خرجِ ماه",
+            AppInfo to "مقایسه‌ی این ماه با ماهِ قبل و پارسال",
+            AppPurple to "تفکیکِ خرجِ ثابت از متغیر",
+        ).forEach { (dot, label) ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(9.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(dot),
+                )
+                Text(label, color = AppMuted, fontSize = 11.5.sp)
+            }
+        }
+    }
+}
+
+private val SkeletonBarBg = Color(0xFFEEF3F0)
+private val SkeletonBarFill = Color(0xFFE9F7EF)
+private val SkeletonBaseline = Color(0xFFDCE7E1)
+private val PrimaryShadow = Color(0xFF0B8C57)
+private val GoldHintBg = Color(0xFFFFF1DC)
+private val GoldHintBorder = Color(0xFFFFD79A)
+private val GoldHintIcon = Color(0xFFB45F00)
+private val GoldHintInk = Color(0xFF8B5A00)
 
 // ═══ ۲ · هیرویِ بنفش ════════════════════════════════════════════════════════════
 @Composable

@@ -247,21 +247,10 @@ private enum class LoanSubTab(val label: String) {
 // برای جزئیاتِ فنیِ اسپاتلایت. هر مرحله یه المانِ *واقعیِ* رو صفحه رو هدف می‌گیره (مختصاتش تو
 // tourBounds تو LoanCalcApp اندازه‌گیری می‌شه) - نه یه توضیحِ مستقلِ بدونِ هدف.
 private enum class TourTarget(val title: String, val hint: String) {
-    PRIVACY(
-        "حالت خصوصی",
-        "با این آیکون همه‌ی مبلغ‌های صفحه رو پشتِ ••• مخفی کن - برای وقتی گوشیتو دستِ کسی می‌دی.",
-    ),
-    DARK_MODE(
-        "تمِ روشن/تاریک",
-        "با این آیکون بینِ تمِ روشن و تاریک جابه‌جا شو.",
-    ),
-    // قدم‌های جدای «تقویم مالی»/«امور چک» حذف شدن: بعدِ بازطراحیِ تنظیمات (ردیف‌های جمع‌شده +
-    // زیرصفحه‌ها) دیگه ردیفِ مستقیمی برای اسپاتلایت‌کردن وجود نداره - جاشون تو همین توضیح ادغام شد.
-    SETTINGS(
-        "تنظیمات",
-        "از اینجا به یادآوریِ سررسید، پشتیبان‌گیری، پیامکِ بانکی، امنیت و ابزارها (تقویمِ مالی، " +
-            "آمار و گزارشات، تاریخچه‌ی محاسبات) دسترسی داری.",
-    ),
+    // ⚠️ قدم‌های «حالت خصوصی»/«تمِ روشن-تاریک»/«تنظیمات» حذف شدن: بعدِ بازطراحیِ Duolingo دیگه
+    // نوارِ بالای ثابتی وجود نداره که این سه آیکون توش بشینن (هر تب هدرِ خودشو داره، تم رفته
+    // داخلِ تنظیمات، و درِ ورودیِ تنظیمات آدمکِ هدرِ خانه‌ست). قدمِ توری که المانِ واقعی نداره
+    // فقط یه اسپاتلایتِ خالی می‌شه.
     ASSETS(
         "دارایی",
         "حساب‌ها و تراکنش‌هات رو اینجا ثبت و پیگیری کن.",
@@ -605,6 +594,9 @@ private fun LoanCalcApp(
     // افزودنِ دستیِ MyLoansScreen) - برای اینکه AppTourOverlay بتونه دقیقاً دورِ المانِ واقعی یه
     // سوراخِ نورانی بکشه، نه یه مختصاتِ حدسی. رجوع کن به onGloballyPositioned رو هر کدوم پایین‌تر.
     val tourBounds = remember { mutableStateMapOf<TourTarget, Rect>() }
+    // مرکزِ آیکونِ تم - مبدأ دایره‌ی بازشونده‌ی ThemeReveal. قبلاً از tourBounds خونده می‌شد،
+    // ولی اون قدمِ تور حذف شد (رجوع کن به TourTarget).
+    var themeIconCenter by remember { mutableStateOf(Offset.Zero) }
 
     // پورت رفتار «یه‌بار برگشت بزنی هشدار بده، دوباره بزنی خارج شو» - فقط رو تب پیش‌فرض (وام بانکی)
     // فعاله، چون تو بقیه‌ی تب‌ها/تنظیمات دکمه‌ی برگشت باید همون رفتار عادیش (برگشت به تب قبلی/بستن
@@ -655,9 +647,10 @@ private fun LoanCalcApp(
                 // تنظیمات از **آدمکِ داخلِ هدرِ خودِ خانه**ست (کارتِ `32c`)، و تم رفته داخلِ
                 // تنظیمات (ردیفِ «ظاهر برنامه»).
                 //
-                // بقیه‌ی تب‌ها فعلاً نوارِ قدیمی رو نگه داشتن تا نوبتِ بازنویسیِ خودشون برسه -
-                // هر کدوم تو فریمش عنوانِ درون‌صفحه‌ای داره و اون‌موقع این نوار کاملاً حذف می‌شه.
-                if (currentRoute != BottomTab.HOME.route) TopAppBar(
+                // **هر پنج تب** حالا هدرِ درون‌صفحه‌ی خودشو داره (فریم‌های `15a`/`26b`/`26a`/
+                // `27c`/`3a`)، پس نوارِ بالا فقط رو صفحه‌های پوش‌شده‌ی «وام»/«چک» می‌مونه -
+                // وگرنه عنوان دو بار پشتِ‌هم دیده می‌شد (گزارشِ کاربر با اسکرین‌شات).
+                if (BottomTab.entries.none { it.route == currentRoute }) TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                     // اسمِ اپ («جیبک») به‌خواستِ صریحِ کاربر کاملاً از بالای هر تب حذف شد -
                     // به‌جاش عنوانِ خودِ همون تب نشون داده می‌شه (شبیهِ رفرنس)؛ تبِ «خانه» عنوان نداره
@@ -676,7 +669,7 @@ private fun LoanCalcApp(
                                 // به ThemeReveal.kt. دایره از مرکزِ خودِ همین دکمه باز می‌شه، برای
                                 // همین از همون مستطیلی که پایین برای تور ثبت می‌شه استفاده می‌کنیم.
                                 if (!themeReveal.inProgress) {
-                                    val origin = tourBounds[TourTarget.DARK_MODE]?.center ?: Offset.Zero
+                                    val origin = themeIconCenter
                                     themeToggleScope.launch {
                                         themeReveal.startReveal(origin = origin, currentKey = themeMode)
                                         themeViewModel.cycleThemeMode()
@@ -686,7 +679,7 @@ private fun LoanCalcApp(
                             // مختصاتِ واقعیِ این آیکون رو گزارش می‌ده - برای قدمِ TourTarget.DARK_MODE
                             // تو AppTourOverlay، رجوع کن به onPositioned مشابه رو BottomNavItem.
                             modifier = Modifier.onGloballyPositioned {
-                                tourBounds[TourTarget.DARK_MODE] = it.boundsInRoot()
+                                themeIconCenter = it.boundsInRoot().center
                             },
                         ) {
                             // آیکون وضعیتِ *فعلی* رو نشون می‌ده، نه نتیجه‌ی تپ‌کردن. تمِ تاریک
@@ -706,9 +699,6 @@ private fun LoanCalcApp(
                         // گوشیتو دستِ کسی می‌دی)، بدون نیاز به رفتن تو تنظیمات.
                         IconButton(
                             onClick = { buzz(); privacyModeViewModel.toggle() },
-                            modifier = Modifier.onGloballyPositioned {
-                                tourBounds[TourTarget.PRIVACY] = it.boundsInRoot()
-                            },
                         ) {
                             Icon(
                                 if (privacyMode) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
@@ -717,9 +707,6 @@ private fun LoanCalcApp(
                         }
                         IconButton(
                             onClick = { showSettings = true },
-                            modifier = Modifier.onGloballyPositioned {
-                                tourBounds[TourTarget.SETTINGS] = it.boundsInRoot()
-                            },
                         ) {
                             Icon(Icons.Filled.Settings, contentDescription = "تنظیمات")
                         }
@@ -845,7 +832,12 @@ private fun LoanCalcApp(
                 }
                 composable(BottomTab.DUE.route) {
                     // ⚠️ **بازنویسیِ فریمِ `3a`** - رجوع کن به `ui/due/DueTabScreen.kt`.
-                    key(tabResetKeys[BottomTab.DUE] ?: 0) { DueTabScreen() }
+                    key(tabResetKeys[BottomTab.DUE] ?: 0) {
+                        DueTabScreen(
+                            onAddCheque = { navigateTo(CHEQUE_ROUTE) },
+                            onAddLoan = { navigateTo(LOAN_ROUTE) },
+                        )
+                    }
                 }
                 // «وام» و «چک» دیگه تبِ نوارِ پایین نیستن (رجوع کن به کامنتِ بالای BottomTab) - از
                 // تبِ «سررسید»/«خانه» به‌عنوانِ صفحه‌ی پوش‌شده باز می‌شن، پس خودشون یه دکمه‌ی

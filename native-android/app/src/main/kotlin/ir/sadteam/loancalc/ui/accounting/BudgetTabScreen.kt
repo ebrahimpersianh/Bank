@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -53,7 +54,7 @@ import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.asset.compact
 import ir.sadteam.loancalc.ui.category.CategoryViewModel
 import ir.sadteam.loancalc.ui.components.CoinIcon
-import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
@@ -138,20 +139,49 @@ fun BudgetTabScreen(
     }
     val transfer = remember(rows) { suggestTransfer(rows) }
 
+    // پیشنهادِ حالتِ خالی (فریمِ `21d`): دو دسته‌ی پرخرجِ **ماهِ قبل**. اگه تاریخچه‌ای نباشه،
+    // خودِ فریم می‌گه این بخش اصلاً نشون داده نمی‌شه.
+    val prevMonth = remember(today) { if (today.m == 1) 12 to today.y - 1 else today.m - 1 to today.y }
+    val lastMonthSpend = remember(allTransactions, prevMonth) {
+        viewModel.spendByCategory(allTransactions, prevMonth.second, prevMonth.first)
+    }
+    val starterSuggestions = remember(lastMonthSpend, expenseCats) {
+        expenseCats
+            .mapNotNull { cat -> (lastMonthSpend[cat.name] ?: 0.0).takeIf { it > 0 }?.let { cat to it } }
+            .sortedByDescending { it.second }
+            .take(2)
+            .map { (cat, spent) -> BudgetStarter(cat, spent, suggestedCap(spent)) }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 110.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { BudgetHeader(onAdd = { showAddBudget = true }) }
-            item {
-                DailyAllowanceHero(
-                    allowance = dailyAllowance,
-                    week = weekUnderShare,
-                    saved = savedSoFar,
-                    privacyMode = privacyMode,
-                )
+            item { BudgetHeader(onAdd = { showAddBudget = true }, showAdd = rows.isNotEmpty()) }
+            if (rows.isEmpty()) {
+                item { NoBudgetCard(onCreate = { showAddBudget = true }) }
+                if (starterSuggestions.isNotEmpty()) {
+                    item {
+                        StarterSuggestions(
+                            starters = starterSuggestions,
+                            privacyMode = privacyMode,
+                            onAcceptAll = {
+                                starterSuggestions.forEach { viewModel.setBudget(it.category.name, it.cap) }
+                            },
+                        )
+                    }
+                }
+            } else {
+                item {
+                    DailyAllowanceHero(
+                        allowance = dailyAllowance,
+                        week = weekUnderShare,
+                        saved = savedSoFar,
+                        privacyMode = privacyMode,
+                    )
+                }
             }
             if (totalCap > 0) {
                 item {
@@ -163,18 +193,8 @@ fun BudgetTabScreen(
                     )
                 }
             }
-            if (rows.isEmpty()) {
-                item {
-                    EmptyState(
-                        icon = Icons.Outlined.PieChart,
-                        title = "هنوز بودجه‌ای تعیین نکردی",
-                        description = "برای هر دسته‌ی هزینه یه سقفِ ماهانه بذار تا خرجت رو زیرِ نظر داشته باشی. با دکمه‌ی + بالای صفحه شروع کن.",
-                    )
-                }
-            } else {
-                items(rows, key = { it.category.name }) { row ->
-                    CategoryBudgetRow(row, privacyMode)
-                }
+            items(rows, key = { it.category.name }) { row ->
+                CategoryBudgetRow(row, privacyMode)
             }
             transfer?.let { t ->
                 item {
@@ -257,13 +277,14 @@ private fun suggestTransfer(rows: List<BudgetRowData>): BudgetTransfer? {
 
 // ═══ ۱ · هدر ═══════════════════════════════════════════════════════════════════
 @Composable
-private fun BudgetHeader(onAdd: () -> Unit) {
+private fun BudgetHeader(onAdd: () -> Unit, showAdd: Boolean = true) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text("بودجه", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
+        if (!showAdd) return@Row
         Box(
             modifier = Modifier
                 .size(32.dp)
@@ -280,6 +301,171 @@ private fun BudgetHeader(onAdd: () -> Unit) {
                 modifier = Modifier.size(15.dp),
             )
         }
+    }
+}
+
+// ═══ ۱ب · کارتِ خط‌چینِ «بودجه‌ای تعیین نشده» (فریمِ `21d`) ═════════════════════════
+@Composable
+private fun NoBudgetCard(onCreate: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(AppSurface)
+            .dashedBorder(20.dp)
+            .padding(horizontal = 16.dp, vertical = 22.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        // سه نوارِ خط‌چینِ خالی با یه سکه‌ی طلایی رو سرِ نوارِ اول - «شکلِ نمودارِ پیشاپیش».
+        Column(
+            modifier = Modifier.fillMaxWidth(0.55f),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            repeat(3) { index ->
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(20.dp),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(15.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(RailTrack)
+                            .dashedBorder(999.dp, width = 1.5.dp),
+                    )
+                    // تو RTL «سرِ نوار» سمتِ راسته - سکه نصفش بیرونِ نوار می‌شینه.
+                    if (index == 0) {
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                            CoinIcon(20.dp)
+                        }
+                    }
+                }
+            }
+        }
+        Text(
+            "بودجه‌ای تعیین نشده",
+            color = AppText,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            "یک سقفِ ماهانه بگذار تا جیبک بگوید امروز چقدر می‌توانی خرج کنی.",
+            color = AppMuted,
+            fontSize = 12.5.sp,
+            lineHeight = 23.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = (-8).dp),
+        )
+        Text(
+            "ساختنِ بودجه",
+            color = Color.White,
+            fontSize = 14.5.sp,
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .hardShadow(BudgetGreenDeep, 4.dp, 999.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(BudgetGreen)
+                .pressScaleClickable(onClick = onCreate)
+                .padding(vertical = 15.dp),
+        )
+    }
+}
+
+/** یه دسته‌ی پرخرجِ ماهِ قبل با سقفِ پیشنهادی. */
+data class BudgetStarter(val category: CategoryEntry, val lastMonth: Double, val cap: Double)
+
+/**
+ * سقفِ پیشنهادی از رو خرجِ ماهِ قبل - کمی **زیرِ** خودِ خرج، تا پیشنهاد یه قدمِ رو به جلو باشه
+ * نه تاییدِ وضعِ موجود (فریم: ماهِ قبل ۴٫۵M → پیشنهاد ۴٫۲M). گرد می‌شه به صد هزار ریال.
+ */
+private fun suggestedCap(lastMonth: Double): Double {
+    val step = 100_000.0
+    return ((lastMonth * 0.94) / step).toLong().toDouble() * step
+}
+
+@Composable
+private fun StarterSuggestions(
+    starters: List<BudgetStarter>,
+    privacyMode: Boolean,
+    onAcceptAll: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Text(
+            "پیشنهادِ جیبک بر پایه‌ی خرجِ ماهِ قبلت",
+            color = AppMuted,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.ExtraBold,
+        )
+        starters.forEach { starter ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(AppSurface)
+                    .border(2.dp, RailTrack, RoundedCornerShape(18.dp))
+                    .padding(horizontal = 15.dp, vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(starter.category.color.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        starter.category.icon,
+                        contentDescription = null,
+                        tint = starter.category.color,
+                        modifier = Modifier.size(15.dp),
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        starter.category.name,
+                        color = AppText,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            "ماهِ قبل ${maskIfPrivate(masked, compact(starter.lastMonth))}",
+                            color = AppMuted,
+                            fontSize = 10.5.sp,
+                            modifier = Modifier.padding(top = 1.dp),
+                        )
+                    }
+                }
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        maskIfPrivate(masked, compact(starter.cap)),
+                        color = BudgetGreenDeep,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                }
+            }
+        }
+        Text(
+            if (starters.size == 1) "پذیرشِ پیشنهاد" else "پذیرشِ هر دو پیشنهاد",
+            color = BudgetGreenDeep,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(999.dp))
+                .background(AppSurface)
+                .border(1.5.dp, BudgetGreen, RoundedCornerShape(999.dp))
+                .pressScaleClickable(onClick = onAcceptAll)
+                .padding(vertical = 13.dp),
+        )
     }
 }
 
