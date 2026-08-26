@@ -95,6 +95,9 @@ fun SplashIntroScreen(onDone: () -> Unit) {
             },
         contentAlignment = Alignment.Center,
     ) {
+        // ⚠️ `maxWidth` یه پراپرتیِ `BoxWithConstraintsScope`ه و **داخلِ لامبدای `Column`
+        // در دسترس نیست** (گیرنده‌ی ضمنی عوض می‌شه). همین‌جا تو یه val محلی خونده می‌شه.
+        val logoWidth = maxWidth * 0.72f
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(26.dp),
@@ -106,9 +109,7 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                 alpha = reveal.value * (1f - exit.value)
             },
         ) {
-            // خواسته‌ی صریحِ کاربر: لوگو **تمام‌عرض** باشه نه یه نشانِ کوچیکِ وسط. اندازه از
-            // عرضِ واقعیِ صفحه میاد (۷۲٪)، پس رو هر گوشی‌ای همون نسبت رو داره.
-            val logoWidth = maxWidth * 0.72f
+            // خواسته‌ی صریحِ کاربر: لوگو **تمام‌عرض** باشه نه یه نشانِ کوچیکِ وسط.
             Box(
                 modifier = Modifier
                     .size(logoWidth * 1.2f)

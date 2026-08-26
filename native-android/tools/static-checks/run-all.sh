@@ -51,6 +51,7 @@ run "اکستنشن و آرگومانِ Modifier" "$DIR/modifiers.py"
 run "کامنت و انوتیشن" "$DIR/comments.py"
 run "نمادِ پروژه بدونِ ایمپورت" "$DIR/ownsymbols.py"
 run "مقدارِ منفیِ غیرمجاز" "$DIR/negativedp.py"
+run "پراپرتیِ BoxWithConstraints" "$DIR/scopeprops.py"
 
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
