@@ -142,6 +142,7 @@ import ir.sadteam.loancalc.ui.onboarding.AnimatedAppEntrance
 import ir.sadteam.loancalc.ui.onboarding.OnboardingFlow
 import ir.sadteam.loancalc.ui.onboarding.PostLoginSheets
 import ir.sadteam.loancalc.ui.onboarding.PermissionGateScreen
+import ir.sadteam.loancalc.ui.onboarding.permissionGateSatisfied
 import ir.sadteam.loancalc.ui.onboarding.SplashIntroScreen
 import ir.sadteam.loancalc.ui.update.AppUpdateViewModel
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
@@ -423,7 +424,10 @@ private fun AppRoot(
         return
     }
 
-    var permissionsOk by remember { mutableStateOf(false) }
+    val permissionContext = LocalContext.current
+    // مقدارِ اولیه **هم‌زمان** خونده می‌شه، نه `false` - وگرنه هر بار باز شدنِ اپ یه فریم از
+    // صفحه‌ی مجوز فلش می‌زنه حتی وقتی کاربر قبلاً هر دو مجوز رو داده.
+    var permissionsOk by remember { mutableStateOf(permissionGateSatisfied(permissionContext)) }
     if (!permissionsOk) {
         PermissionGateScreen(onAllGranted = { permissionsOk = true })
         return

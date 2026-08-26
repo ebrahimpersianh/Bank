@@ -60,6 +60,16 @@ private fun batteryUnrestricted(context: Context): Boolean {
 }
 
 /**
+ * هر دو شرطِ گیت از قبل برقرارن؟ - **هم‌زمان (بدونِ رندر)** حساب می‌شه.
+ *
+ * باگی که با این رفع شد: `AppRoot` گیت رو با مقدارِ اولیه‌ی `false` شروع می‌کرد، پس حتی وقتی
+ * کاربر هر دو مجوز رو از قبل داده بود یه فریم از صفحه‌ی مجوز رندر می‌شد و بعد `LaunchedEffect`
+ * ردش می‌کرد - کاربر این رو به‌عنوانِ «هر بار بعدِ اسپلش یه صفحه سریع میاد» گزارش داد.
+ */
+fun permissionGateSatisfied(context: Context): Boolean =
+    notificationsGranted(context) && batteryUnrestricted(context)
+
+/**
  * پورت گیت مجوز اولیه‌ی اپ رقیب (VAMMAN) - قبل از هر چیز دیگه‌ای (حتی گیت ورود/مهمان) نشون داده
  * می‌شه. برخلاف رقیب که ۳ شرط داشت (یکیش «Exact Alarm» که برای معماری ما - WorkManager، نه
  * AlarmManager خام - اصلاً لازم نیست)، اینجا فقط دو شرطی که واقعاً رو کارکرد یادآوری سررسید تاثیر
@@ -96,6 +106,8 @@ fun PermissionGateScreen(onAllGranted: () -> Unit) {
     LaunchedEffect(notifOk, batteryOk) {
         if (notifOk && batteryOk) onAllGranted()
     }
+    // بدونِ این، لحظه‌ی گرفتنِ آخرین مجوز یه فریمِ اضافه از خودِ صفحه دیده می‌شه.
+    if (notifOk && batteryOk) return
 
     Column(
         modifier = Modifier

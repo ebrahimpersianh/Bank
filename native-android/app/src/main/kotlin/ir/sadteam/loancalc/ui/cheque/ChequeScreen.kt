@@ -9,11 +9,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,14 +23,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -57,37 +59,45 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.ChequeType
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ChequeEntity
+import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
-import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
-import ir.sadteam.loancalc.ui.components.AppCard
-import androidx.compose.material.icons.filled.ReceiptLong
-import ir.sadteam.loancalc.core.PersianDate
-import ir.sadteam.loancalc.ui.theme.AppChipBg
-import ir.sadteam.loancalc.ui.theme.AppDangerInk
-import ir.sadteam.loancalc.ui.theme.AppRadius
-import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
+import ir.sadteam.loancalc.ui.components.Ltr
+import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
-import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
+import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppInfo
+import ir.sadteam.loancalc.ui.theme.AppInfoPill
+import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppPurple
+import ir.sadteam.loancalc.ui.theme.AppPurplePill
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.Motion
+import ir.sadteam.loancalc.ui.theme.pillOverSurface
+import java.util.Calendar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Calendar
-import ir.sadteam.loancalc.ui.theme.pillOverSurface
 
 internal data class ChequeStats(
     val total: Int,
@@ -446,6 +456,11 @@ fun ChequeScreen(
                             cheque = cheque,
                             onClick = { openedChequeId = cheque.id },
                             onDelete = { viewModel.deleteCheque(cheque.id) },
+                            onRestore = if (cheque.archived) {
+                                { viewModel.setArchived(cheque, false) }
+                            } else {
+                                null
+                            },
                             modifier = Modifier.animateItem(),
                         )
                     }
@@ -464,6 +479,7 @@ private fun ChequeCard(
     onClick: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
+    onRestore: (() -> Unit)? = null,
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
     SwipeToDeleteRow(onDelete = { showDeleteConfirm = true }, confirmDismiss = false, modifier = modifier) {
@@ -495,47 +511,84 @@ private fun ChequeCard(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // قابِ آیکون از **نوعِ** چک رنگ می‌گیره نه وضعیتش (فریمِ بخشِ ۳۶): دریافتی بنفش،
+            // پرداختی آبی. چکِ بایگانی خاکستری می‌شه.
+            val received = cheque.type == "RECEIVED"
+            val frameFill = when {
+                cheque.archived -> AppChipBg
+                received -> AppPurplePill
+                else -> AppInfoPill
+            }
+            val frameInk = when {
+                cheque.archived -> AppLabel
+                received -> AppPurple
+                else -> AppInfo
+            }
             Box(
                 modifier = Modifier
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(AppRadius.icon))
-                    .background(statusInk.pillOverSurface()),
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(frameFill),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     Icons.Filled.ReceiptLong,
                     contentDescription = null,
-                    tint = statusInk,
-                    modifier = Modifier.size(15.dp),
+                    tint = frameInk,
+                    modifier = Modifier.size(16.dp),
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
+                // شماره‌ی چک ذاتاً چپ‌به‌راسته - فقط همون تکه تو `Ltr` می‌ره، نه کلِ سطر.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "${cheque.bankName} · ",
+                        color = AppText,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                    Ltr {
+                        Text(
+                            toFa(cheque.chequeNumber.takeLast(4)),
+                            color = AppText,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                        )
+                    }
+                }
                 Text(
-                    "چکِ ${toFa(cheque.chequeNumber)}",
-                    color = AppText,
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    "${cheque.bankName} · ${toFa(cheque.dueDay)}/${toFa(cheque.dueMonth)}/${toFa(cheque.dueYear)}",
+                    "${chequeStatusLabel(cheque.status)} · ${toFa(cheque.dueDay)}/${toFa(cheque.dueMonth)}/${toFa(cheque.dueYear)}",
                     color = if (overdue) AppDangerInk else AppMuted,
-                    fontSize = 10.5.sp,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    fmt(cheque.amount),
-                    color = AppText,
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                )
-                Text(
-                    chequeStatusLabel(cheque.status),
-                    color = statusInk,
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            // ردیفِ بایگانی مبلغ نداره؛ جاش چیپِ «برگردان» می‌شینه (فریمِ بخشِ ۳۶).
+            if (cheque.archived && onRestore != null) {
+                Box(modifier = Modifier.height(44.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppPrimaryPill)
+                            .border(1.dp, AppPrimaryBorder, RoundedCornerShape(999.dp))
+                            .pressScaleClickable(onClick = onRestore)
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                    ) {
+                        Text(
+                            "برگردان",
+                            color = AppPrimaryInk,
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
+                }
+            } else {
+                Text(
+                    fmt(cheque.amount),
+                    color = AppText,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
                 )
             }
         }
