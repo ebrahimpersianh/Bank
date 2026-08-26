@@ -14,14 +14,12 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -39,65 +37,43 @@ import androidx.compose.ui.unit.dp
  * نباید باشد.» - قبل از گذاشتنِ هرکدوم تو یه صفحه‌ی تازه، این جمله رو دوباره بخون.
  */
 
-/** پالتِ طلاییِ سکه، عیناً از فایلِ «آیکونِ سکه». */
-private val CoinEdgeDark = Color(0xFF8F6403)
+/** پالتِ طلاییِ سکه، عیناً از فایلِ «آیکونِ سکه» (گونه‌ی «آ»). */
 private val CoinEdge = Color(0xFFB07E0C)
 private val CoinFace = Color(0xFFD9A32C)
 private val CoinFaceLight = Color(0xFFF0C356)
-private val CoinHighlight = Color(0xFFF7D68C)
 
 /**
- * آیکونِ سکه - گونه‌ی **«لبه‌ی دندانه‌دار»** (پیشنهادِ «پ»ی فایلِ «آیکونِ سکه»).
+ * **آیکونِ سکه** - گونه‌ی **«آ · تخت با حاشیه»**، انتخابِ صریحِ کاربر از بینِ چهار پیشنهادِ
+ * `design/آیکونِ سکه.dc.html` («طرح یک، برای کلِ برنامه»).
  *
- * ⚠️ **این انتخاب هنوز تاییدِ کاربر رو نگرفته**: فایلِ طراحی چهار گونه پیشنهاد داده و گفته
- * «اسمِ یکی را بگو». گونه‌ی «پ» انتخاب شد چون تنها گونه‌ایه که هر سه قاعده‌ی صریحِ همون فایل رو
- * با هم نگه می‌داره (شیار فقط رو حاشیه، صورتِ صاف، حذفِ جزئیات زیرِ ۲۰px). عوض‌کردنش فقط همین
- * تابعه.
+ * مقادیر عیناً از همون فایل، رو ویوباکسِ ۳۲×۳۲:
+ * - حاشیه‌ی ضخیمِ تیره: دایره‌ی `r=15` با `#B07E0C`
+ * - صورتِ صاف: دایره‌ی `r=12.6` با `#F0C356`
+ * - حلقه‌ی نازکِ داخلی: `r=9.4`، خطِ `#D9A32C` به ضخامتِ ۱٫۵
  *
- * قاعده‌ی صریح: **صورتِ سکه خالیه** - حرف و عدد روش نمی‌ره، چون عددش همیشه کنارشه.
+ * ⚠️ **زیرِ ۲۰ پیکسل حلقه‌ی داخلی حذف می‌شه** و صورت به `r=11.4` بزرگ می‌شه - قاعده‌ی صریحِ
+ * همون فایل: «در ۱۳px حلقه و حرف حذف می‌شوند و فقط دو دایره می‌ماند».
+ *
+ * ⚠️ **صورتِ سکه خالیه** - حرف و عدد روش نمی‌ره، چون عددش همیشه کنارشه.
  */
 @Composable
 fun CoinIcon(size: Dp, modifier: Modifier = Modifier) {
-    val smallSize = size.value < 20f
+    val small = size.value < 20f
     Box(modifier = modifier.size(size)) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val d = this.size.minDimension
-            val r = d / 2f
-            val center = Offset(this.size.width / 2f, this.size.height / 2f)
+            val r = this.size.minDimension / 2f
+            val c = Offset(this.size.width / 2f, this.size.height / 2f)
+            // نسبت‌ها بر پایه‌ی شعاعِ ۱۶ واحدیِ ویوباکس
+            fun k(v: Float) = r * v / 16f
 
-            // حاشیه‌ی تیره
-            drawCircle(color = CoinEdgeDark, radius = r, center = center)
-            // دندانه‌ها فقط رو حاشیه؛ زیرِ ۲۰px درشت‌تر و کم‌شمارتر می‌شن (قاعده‌ی فایلِ طراحی).
-            val teeth = if (smallSize) 10 else 18
-            val toothW = d * (if (smallSize) 0.10f else 0.055f)
-            val toothH = d * 0.10f
-            repeat(teeth) { i ->
-                rotate(degrees = 360f / teeth * i, pivot = center) {
-                    drawRoundRect(
-                        color = CoinEdge,
-                        topLeft = Offset(center.x - toothW / 2f, center.y - r),
-                        size = Size(toothW, toothH),
-                        cornerRadius = CornerRadius(toothW / 2f, toothW / 2f),
-                    )
-                }
-            }
-            // صورتِ صاف - گرادیانِ ملایم، بدونِ هیچ نشانه‌ای روش.
-            drawCircle(
-                brush = Brush.linearGradient(
-                    colors = listOf(CoinHighlight, CoinFaceLight, CoinFace),
-                    start = Offset(center.x - r, center.y - r),
-                    end = Offset(center.x + r, center.y + r),
-                ),
-                radius = r * 0.78f,
-                center = center,
-            )
-            if (!smallSize) {
-                // حلقه‌ی نازکِ داخلی - زیرِ ۲۰px حذف می‌شه.
+            drawCircle(color = CoinEdge, radius = k(15f), center = c)
+            drawCircle(color = CoinFaceLight, radius = k(if (small) 11.4f else 12.6f), center = c)
+            if (!small) {
                 drawCircle(
-                    color = CoinEdge.copy(alpha = 0.45f),
-                    radius = r * 0.60f,
-                    center = center,
-                    style = Stroke(width = d * 0.035f),
+                    color = CoinFace,
+                    radius = k(9.4f),
+                    center = c,
+                    style = Stroke(width = k(1.5f)),
                 )
             }
         }

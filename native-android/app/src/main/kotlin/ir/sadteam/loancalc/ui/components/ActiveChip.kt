@@ -23,14 +23,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.toFa
-import ir.sadteam.loancalc.ui.theme.AppGoldBorder
-import ir.sadteam.loancalc.ui.theme.AppGoldFrom
-import ir.sadteam.loancalc.ui.theme.AppGoldInk
-import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
-import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
-import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import kotlin.math.cos
 import kotlin.math.sin
+import ir.sadteam.loancalc.ui.theme.AppWarningPill
+import ir.sadteam.loancalc.ui.theme.AppWarningInk
+import ir.sadteam.loancalc.ui.theme.AppWarning
+import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
  * قرصِ **«فعال»** و شمارنده‌ی **سکه** برای نوارِ بالای خانه (کارتِ `34c`: «چیپِ نوارِ بالای
@@ -47,27 +45,28 @@ fun ActiveChip(days: Int, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(AppPrimaryPill)
-            .border(1.5.dp, AppPrimaryBorder, RoundedCornerShape(999.dp))
-            .padding(horizontal = 9.dp, vertical = 5.dp),
+            // رنگِ قرص طبقِ فریم نارنجیِ کم‌رنگه (`#FFF1DC`)، نه سبز.
+            .background(AppWarningPill)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
     ) {
         if (days >= 7) {
-            SpiderWebIcon(size = 16.dp, color = AppPrimaryInk)
+            SpiderWebIcon(size = 12.dp, color = AppWarning)
         } else {
             // زیرِ ۷ روز: خودِ زنجیرِ بخشِ ۳۴ تو کوچک‌ترین اندازه‌ش.
             ActiveChainMark(
                 filled = days.coerceAtLeast(0),
                 total = 3,
-                ringSize = 7.dp,
-                ringColor = AppPrimaryInk,
+                ringSize = 6.dp,
+                ringColor = AppWarning,
             )
         }
+        // ⚠️ فریمِ `15a` فقط **عدد** داره، نه «X روز فعال» - متنِ اضافه قرص رو پهن می‌کرد.
         Text(
-            "${toFa(days)} روز فعال",
-            color = AppPrimaryInk,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.padding(start = 6.dp),
+            toFa(days),
+            color = AppWarningInk,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.padding(start = 4.dp),
         )
     }
 }
@@ -75,22 +74,15 @@ fun ActiveChip(days: Int, modifier: Modifier = Modifier) {
 /** شمارنده‌ی سکه - همون قرص، ولی طلایی، چون طلایی نشانه‌ی پاداش/پرمیومه. */
 @Composable
 fun CoinChip(coins: Int, modifier: Modifier = Modifier) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(AppGoldFrom)
-            .border(1.5.dp, AppGoldBorder, RoundedCornerShape(999.dp))
-            .padding(horizontal = 9.dp, vertical = 5.dp),
-    ) {
-        CoinIcon(size = 15.dp)
+    // ⚠️ فریمِ `15a` برای سکه **قرص نداره** - فقط عدد و بعدش خودِ سکه.
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         Text(
             toFa(coins),
-            color = AppGoldInk,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.padding(start = 6.dp),
+            color = AppText,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
         )
+        CoinIcon(size = 15.dp, modifier = Modifier.padding(start = 4.dp))
     }
 }
 
