@@ -87,9 +87,13 @@ fun AppCard(
     borderColor: Color? = null,
     backgroundColor: Color? = null,
     accentGradient: Brush? = null,
-    // طبقِ بندِ ۴ فایلِ توکنِ طراحی پدینگِ خودِ کارت `cardPaddingTight` (۱۴)ه؛
-    // ۱۶ مالِ کارتِ قهرمانه. قبلاً هر دو ۱۶ بودن.
+    // پدینگِ کارت **دو مقداره‌ست**: عمودی ۱۴، افقی ۱۶ (اصلاحیه‌ی طراح - قبلاً هر دو ۱۶
+    // بود و بعد هر دو ۱۴ شد؛ هیچ‌کدوم درست نبود).
     contentPadding: androidx.compose.ui.unit.Dp = AppSpacing.cardPaddingTight,
+    horizontalPadding: androidx.compose.ui.unit.Dp = AppSpacing.cardPadding,
+    // قاعده‌ی طراح: کارتِ **فوری** وقتی تنها عنصرِ برجسته‌ی صفحه‌ست سایه می‌گیره؛ وقتی
+    // درست زیرِ `AppHeroCard` نشسته نه - دو سایه‌ی سختِ پشتِ‌هم صفحه رو شلوغ می‌کنه.
+    shadow: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val shape = RoundedCornerShape(AppRadius.card)
@@ -120,7 +124,11 @@ fun AppCard(
         AppCardVariant.URGENT -> colors.urgentShadow
         else -> AppShadowNeutral
     }
-    val shadowOffset = if (variant == AppCardVariant.URGENT) AppElevation.raised else AppElevation.neutral
+    val shadowOffset = when {
+        !shadow -> 0.dp
+        variant == AppCardVariant.URGENT -> AppElevation.raised
+        else -> AppElevation.neutral
+    }
     // رنگِ متنِ پیش‌فرضِ داخلِ کارت - رو کاغذِ طلایی باید جوهرِ طلایی باشه نه متنِ معمولی.
     val ink = if (variant == AppCardVariant.GOLD) AppGoldInk else AppText
     val labelInk = if (variant == AppCardVariant.GOLD) AppGoldInk2 else AppMuted
@@ -135,7 +143,7 @@ fun AppCard(
             .then(if (fillBrush != null) Modifier.background(fillBrush) else Modifier)
             .then(if (accentGradient != null) Modifier.background(accentGradient) else Modifier)
             .border(strokeWidth, strokeColor, shape)
-            .padding(contentPadding),
+            .padding(horizontal = horizontalPadding, vertical = contentPadding),
     ) {
         CompositionLocalProvider(LocalContentColor provides ink) {
             if (label != null) {

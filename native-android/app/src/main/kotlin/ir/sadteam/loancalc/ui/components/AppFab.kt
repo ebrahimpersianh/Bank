@@ -80,7 +80,8 @@ fun AppFab(
                 Brush.radialGradient(
                     colors = listOf(Color(0xFF17C57D), AppPrimary),
                     center = Offset(0.32f * 56f, 0.26f * 56f),
-                    radius = 56f * 0.9f,
+                    // مرکزِ ۳۲٪/۲۶٪ و پایانِ گرادیان رو ۶۵٪ - مقدارِ صریحِ فریمِ `15a`.
+                    radius = 56f * 0.65f,
                 ),
             )
             .clickable(

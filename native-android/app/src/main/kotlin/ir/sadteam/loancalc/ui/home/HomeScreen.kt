@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.PriorityHigh
@@ -84,6 +86,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppPurple
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.AppSpacing
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppWarningInk
 import androidx.compose.foundation.layout.widthIn
@@ -338,11 +341,17 @@ private fun HomeHeader(
             // با اندازه‌ی ۳۲ می‌شینه. همون آدمک اینجا هم تناقضِ طرح رو حل می‌کنه هم جای خالیِ
             // ناوبری رو - تمِ روشن/تیره و حالتِ خصوصی رفتن داخلِ خودِ تنظیمات (ردیفِ «ظاهر و
             // تم»ِ فریمِ `27d`).
-            AvatarView(
-                avatar = avatar,
-                size = 32.dp,
-                modifier = Modifier.pressScaleClickable(onClick = onOpenSettings),
-            )
+            // ⚠️ آدمک ۳۲ پیکسله ولی **هدفِ لمسی باید ۴۴ باشه** (`AppSpacing.minTouchTarget`).
+            // پس یه جعبه‌ی ۴۴ دورش می‌شینه و کلیک رو اون می‌افته - نه اینکه خودِ آدمک
+            // بزرگ‌تر بشه (تذکرِ صریحِ طراح).
+            Box(
+                modifier = Modifier
+                    .size(AppSpacing.minTouchTarget)
+                    .pressScaleClickable(onClick = onOpenSettings),
+                contentAlignment = Alignment.Center,
+            ) {
+                AvatarView(avatar = avatar, size = 32.dp)
+            }
         }
     }
 }
@@ -374,8 +383,11 @@ private fun TodaySpendHero(
                     Text(
                         maskIfPrivate(masked, fmt(shown)),
                         color = Color.White,
-                        // ۲۸/۹۰۰ - «عددِ قهرمان»ِ بندِ ۲ سیستمِ طراحی.
-                        fontSize = 28.sp,
+                        // ⚠️ **۲۶/۹۰۰ با letterSpacing منفی**، نه ۲۸. جدولِ تایپوگرافی دو
+                        // ردیفِ جدا داره: «عددِ قهرمان» ۲۸ (بقیه‌ی تب‌ها) و «عددِ کارتِ
+                        // سبزِ خانه» ۲۶ - و همین یکی مالِ این کارته.
+                        fontSize = 26.sp,
+                        letterSpacing = (-0.5).sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(top = 3.dp),
                     )
@@ -387,26 +399,26 @@ private fun TodaySpendHero(
                     modifier = Modifier
                         .clip(RoundedCornerShape(999.dp))
                         .background(HeroPillBg)
-                        .padding(horizontal = 9.dp, vertical = 5.dp),
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
                 ) {
                     Icon(
                         if (deltaPercent < 0) Icons.Filled.ArrowDownward else Icons.Filled.ArrowUpward,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(11.dp),
+                        modifier = Modifier.size(10.dp),
                     )
                     Text(
                         (if (deltaPercent < 0) "${toFa(-deltaPercent)}٪ کمتر" else "${toFa(deltaPercent)}٪ بیشتر") +
                             " از دیروز",
                         color = Color.White,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(start = 4.dp),
                     )
                 }
             }
         }
-        HomeSevenDayChart(values = weekSpend, modifier = Modifier.padding(top = 12.dp))
+        HomeSevenDayChart(values = weekSpend, modifier = Modifier.padding(top = 14.dp))
         HomeSevenDayChartLabels()
     }
 }
@@ -493,14 +505,20 @@ private fun BudgetBarWithCoin(ratio: Float, modifier: Modifier = Modifier) {
         )
         Box(
             modifier = Modifier
-                .fillMaxWidth(ratio.coerceAtLeast(0.04f))
+                .fillMaxWidth(ratio.coerceIn(0f, 1f))
                 .height(14.dp)
                 .clip(RoundedCornerShape(999.dp))
-                .background(Brush.horizontalGradient(listOf(AppPrimaryDim, AppPrimary))),
+                .background(Brush.horizontalGradient(listOf(AppPrimary, BarGradientEnd))),
         )
         // سکه دقیقاً رو لبه‌ی پرشده می‌شینه. تو RTL «شروع» سمتِ راسته، پس با کسرِ عرض
         // جابه‌جا می‌شه نه با offsetِ ثابت.
-        Box(modifier = Modifier.fillMaxWidth(ratio.coerceAtLeast(0.04f)), contentAlignment = Alignment.CenterEnd) {
+        //
+        // ⚠️ **فقط موقعیتِ سکه** بینِ ۶٪ و ۹۴٪ محدود می‌شه، نه خودِ عرضِ پر - وگرنه تو
+        // درصدهای خیلی کم/زیاد نصفِ سکه بیرونِ کارت می‌زد (تذکرِ صریحِ طراح).
+        Box(
+            modifier = Modifier.fillMaxWidth(ratio.coerceIn(0.06f, 0.94f)),
+            contentAlignment = Alignment.CenterEnd,
+        ) {
             ir.sadteam.loancalc.ui.components.CoinIcon(size = 17.dp)
         }
     }
@@ -516,9 +534,11 @@ private fun UrgentDueCard(
     onPay: () -> Unit,
     onOpen: () -> Unit,
 ) {
+    // ⚠️ **بی‌سایه** - این کارت درست زیرِ کارتِ قهرمان می‌شینه و دو سایه‌ی سختِ پشتِ‌هم
+    // شلوغ می‌شه (قاعده‌ی صریحِ طراح برای همین فریم؛ تو فریم‌های دیگه سایه داره).
     AppCard(
         variant = AppCardVariant.URGENT,
-        contentPadding = 14.dp,
+        shadow = false,
         modifier = Modifier.pressScaleClickable(onClick = onOpen),
     ) {
         Row(
@@ -530,7 +550,9 @@ private fun UrgentDueCard(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(RoundedCornerShape(AppRadius.icon))
-                    .background(AppDangerPill),
+                    // قابِ آیکون مقدارِ محلیِ خودشه (#FFECEC)، نه `AppDangerPill` که
+                    // روشن‌تره (#FFF5F5) - همون تفکیکی که طراح تو فایلِ آدمک هم تاکید کرد.
+                    .background(UrgentIconBg),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Filled.PriorityHigh, contentDescription = null, tint = AppDanger, modifier = Modifier.size(17.dp))
@@ -579,7 +601,9 @@ private fun CategoryBreakdownCard(
                             fontWeight = FontWeight.Black,
                         )
                     }
-                    Text("این ماه", color = AppLabel, fontSize = 7.sp, fontWeight = FontWeight.Bold)
+                    // فریم ۷sp داره ولی از حدِ خوانا کمتره؛ خودِ طراح گفت «اگه می‌خوای امن
+                    // باشه ۸ بذار، جا هست». امن رو انتخاب کردم.
+                    Text("این ماه", color = AppLabel, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Column(
@@ -640,11 +664,12 @@ private fun WeekReviewCard(
     } else {
         null
     }
-    // ⚠️ نوار **همیشه قرمزه**، نه وابسته به جهتِ تغییر. اولش فکر کردم رنگش از جهت میاد،
-    // ولی فریمِ `15a` با تغییرِ **کاهشی** (سبز) بازم نوارِ `#FF4B4B` داره - یعنی نوار
-    // نشانه‌ی «این کارت مالِ خرجه»ست، نه خوب/بد بودنِ عدد.
-    AppCard(contentPadding = 0.dp, modifier = Modifier.pressScaleClickable(onClick = onClick)) {
-        Box(modifier = Modifier.fillMaxWidth().height(4.dp).background(AppDanger))
+    // ⚠️ **اصلاحِ برداشتِ قبلیِ من**: فکر کرده بودم نوار همیشه قرمزه چون تو فریم با
+    // تغییرِ کاهشی هم قرمز بود. طراح تصریح کرد که اون فقط داده‌ی نمونه‌ی بدتر بوده و
+    // رنگ **وضعیت** رو می‌گه: خرجِ بیشتر از هفته‌ی قبل قرمز، کمتر سبز.
+    val statusColor = if (delta != null && delta > 0) AppDanger else AppPrimary
+    AppCard(contentPadding = 0.dp, horizontalPadding = 0.dp, modifier = Modifier.pressScaleClickable(onClick = onClick)) {
+        Box(modifier = Modifier.fillMaxWidth().height(4.dp).background(statusColor))
         Column(modifier = Modifier.padding(horizontal = 15.dp, vertical = 13.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -665,40 +690,65 @@ private fun WeekReviewCard(
             ) {
                 WeekCell("جمعِ هفته", fmt(weekTotal), AppText, privacyMode)
                 WeekCell("هفته‌ی قبل", fmt(prevWeekTotal), AppText, privacyMode)
+                // ⚠️ مثلثِ ▲/▼ رو **با کاراکتر ننویس** - Vazirmatn رندرش نمی‌کنه و مربعِ
+                // خالی می‌شه (تذکرِ صریحِ طراح). آیکونِ ۹ پیکسلی جاشه.
                 WeekCell(
-                    "تغییر",
-                    when {
-                        delta == null -> "—"
-                        delta > 0 -> "▲ ${toFa(delta)}٪"
-                        else -> "▼ ${toFa(-delta)}٪"
-                    },
-                    when {
+                    label = "تغییر",
+                    value = if (delta == null) "—" else "${toFa(kotlin.math.abs(delta))}٪",
+                    ink = when {
                         delta == null -> AppMuted
                         delta > 0 -> AppDangerInk
-                        else -> AppPrimaryDim
+                        else -> AppPrimaryInk
                     },
                     privacyMode = false,
+                    trend = delta,
                 )
             }
         }
     }
 }
 
+/** انتهای گرادیانِ نوارِ سبزِ بودجه - مقدارِ محلیِ فریم، توکن نیست. */
+private val BarGradientEnd = Color(0xFF3DDC96)
+
+/** قابِ آیکونِ کارتِ فوری - مقدارِ محلیِ فریم. */
+private val UrgentIconBg = Color(0xFFFFECEC)
+
 /** رنگِ شِورانِ کارتِ مرورِ هفته - مقدارِ صریحِ فریم. */
 private val WeekChevron = Color(0xFFC7D2CC)
 
 @Composable
-private fun WeekCell(label: String, value: String, ink: Color, privacyMode: Boolean) {
+private fun WeekCell(
+    label: String,
+    value: String,
+    ink: Color,
+    privacyMode: Boolean,
+    /** مثبت = افزایش (مثلثِ بالا)، منفی = کاهش، `null` = بدونِ مثلث. */
+    trend: Int? = null,
+) {
     Column {
         Text(label, color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
         PrivacyCrossfade(privacyMode) { masked ->
-            Text(
-                maskIfPrivate(masked, value),
-                color = ink,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Black,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(top = 2.dp),
-            )
+            ) {
+                if (trend != null) {
+                    Icon(
+                        if (trend > 0) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                        contentDescription = null,
+                        tint = ink,
+                        modifier = Modifier.size(9.dp),
+                    )
+                }
+                Text(
+                    maskIfPrivate(masked, value),
+                    color = ink,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = if (trend != null) Modifier.padding(start = 2.dp) else Modifier,
+                )
+            }
         }
     }
 }

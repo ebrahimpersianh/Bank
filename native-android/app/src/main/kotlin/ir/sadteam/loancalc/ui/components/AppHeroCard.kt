@@ -22,6 +22,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSpacing
+import androidx.compose.ui.geometry.Offset
 import ir.sadteam.loancalc.ui.theme.hardShadow
 
 /**
@@ -65,12 +66,20 @@ fun AppHeroCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(AppRadius.card)
+    // ⚠️ گرادیان **۱۶۰ درجه**ست نه عمودی (اصلاحیه‌ی طراح؛ دورِ قبل عمودی گفته بود و اشتباه
+    // بود). نسخه‌ی بنفشِ فریمِ `26a` هم همینه، پس هر دو گونه یه جهت دارن. جهتش مهمه نه
+    // عددِ دقیقش: از بالا-راست به پایین-چپ.
+    val gradient = Brush.linearGradient(
+        colors = listOf(Color(tone.from), Color(tone.to)),
+        start = Offset.Zero,
+        end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+    )
     Column(
         modifier = modifier
             .fillMaxWidth()
             .hardShadow(Color(tone.shadow), 5.dp, AppRadius.card)
             .clip(shape)
-            .background(Brush.linearGradient(listOf(Color(tone.from), Color(tone.to))))
+            .background(gradient)
             .padding(AppSpacing.cardPadding),
     ) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
