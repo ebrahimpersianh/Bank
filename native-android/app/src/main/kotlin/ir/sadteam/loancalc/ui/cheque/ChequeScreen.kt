@@ -44,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -70,6 +71,7 @@ import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.Ltr
+import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
@@ -163,7 +165,10 @@ fun ChequeScreen(
     var showChequeBooks by remember { mutableStateOf(false) }
     var typeFilter by remember { mutableStateOf<ChequeType?>(null) }
     var menuExpanded by remember { mutableStateOf(false) }
-    var showArchived by remember { mutableStateOf(false) }
+    // سه‌حالته‌ی بالای فهرست (فریمِ بخشِ ۳۶): در جریان · پاس‌شده · بایگانی.
+    // قبلاً «بایگانی» فقط یه آیتمِ منوی سه‌خط بود و دیده نمی‌شد.
+    var chequeTab by remember { mutableIntStateOf(0) }
+    val showArchived = chequeTab == 2
     var showSayadInquiry by remember { mutableStateOf(false) }
     var showReport by remember { mutableStateOf(false) }
     var showReminderSettings by remember { mutableStateOf(false) }
@@ -171,11 +176,13 @@ fun ChequeScreen(
 
     val allCheques by viewModel.cheques.collectAsState()
     val chequeBooks by viewModel.chequeBooks.collectAsState()
-    val visibleCheques = remember(allCheques, typeFilter, showArchived, searchQuery) {
+    val visibleCheques = remember(allCheques, typeFilter, chequeTab, searchQuery) {
         val filterName = typeFilter?.name
         val q = searchQuery.trim()
         allCheques.filter {
             it.archived == showArchived &&
+                (chequeTab != 0 || it.status == "PENDING") &&
+                (chequeTab != 1 || it.status != "PENDING") &&
                 (filterName == null || it.type == filterName) &&
                 (
                     q.isBlank() ||
@@ -336,7 +343,9 @@ fun ChequeScreen(
                         Text(
                             if (showArchived) "بایگانی چک" else "امور چک",
                             color = AppText,
-                            fontSize = 16.sp,
+                            // ۱۵ نه ۱۸ - این صفحه یه لایه تودرتوست (از سررسید/خانه باز می‌شه).
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(start = if (standalone) 0.dp else 4.dp),
                         )
                         Spacer(modifier = Modifier.weight(1f))
@@ -365,7 +374,7 @@ fun ChequeScreen(
                                 )
                                 DropdownMenuItem(
                                     text = { Text(if (showArchived) "بازگشت به لیست اصلی" else "بایگانی") },
-                                    onClick = { menuExpanded = false; showArchived = !showArchived; typeFilter = null },
+                                    onClick = { menuExpanded = false; chequeTab = if (showArchived) 0 else 2; typeFilter = null },
                                 )
                                 DropdownMenuItem(
                                     text = { Text("پشتیبان‌گیری") },
@@ -387,6 +396,14 @@ fun ChequeScreen(
                             }
                         }
                     }
+                }
+
+                item {
+                    SegmentedToggle(
+                        options = listOf("در جریان", "پاس‌شده", "بایگانی"),
+                        selectedIndex = chequeTab,
+                        onSelect = { chequeTab = it; typeFilter = null },
+                    )
                 }
 
                 item {
