@@ -55,10 +55,13 @@ import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
+import ir.sadteam.loancalc.ui.theme.AppAssetBorder
+import ir.sadteam.loancalc.ui.theme.AppAssetInk
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppGoldBorder
 import ir.sadteam.loancalc.ui.theme.AppGoldFrom
 import ir.sadteam.loancalc.ui.theme.AppGoldInk
+import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -278,10 +281,12 @@ private fun HeaderSquareButton(
     }
 }
 
-private val PrivacyOffBg = Color(0xFFF5F8F6)
+private val PrivacyOffBg: Color
+    @Composable get() = AppIconFrame
 private val PrivacyOnBg: Color
     @Composable get() = AppWarningPill
-private val PrivacyOnBorder = Color(0xFFF0CE9B)
+private val PrivacyOnBorder: Color
+    @Composable get() = AppAssetBorder
 private val PrivacyOnInk: Color
     @Composable get() = AppWarningInk
 private val AppPrimaryBorderLine: Color
@@ -434,8 +439,8 @@ private val AddTileBg: Color
     @Composable get() = AppPrimaryPill
 private val AddTileBorder: Color
     @Composable get() = AppPrimaryBorder
-private val NeutralTileBg = Color(0xFFF5F8F6)
-
+private val NeutralTileBg: Color
+    @Composable get() = AppIconFrame
 // ═══ ۲ · هیرویِ داراییِ کل ══════════════════════════════════════════════════════
 /**
  * کارتِ سبز با **هاله‌ی نرمِ گوشه‌ی بالا-چپ** و سه قرصِ نیمه‌شفاف.
@@ -628,7 +633,8 @@ private val GoldPaperBorder: Color
     @Composable get() = AppGoldBorder
 private val GoldInkDeep: Color
     @Composable get() = AppGoldInk
-private val GoldInkSoft = Color(0xFF8B6F3D)
+private val GoldInkSoft: Color
+    @Composable get() = AppAssetInk
 private val ProfitUp = Color(0xFF0B8C57)
 private val ProfitDown: Color
     @Composable get() = AppDangerInk

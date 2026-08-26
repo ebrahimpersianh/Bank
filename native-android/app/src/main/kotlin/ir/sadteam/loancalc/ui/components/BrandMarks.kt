@@ -19,11 +19,16 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 
 /**
  * **امضاهای بصریِ برند** - بخشِ ۳۴ فایلِ طراحی (کارت‌های `34a`..`34c`).
@@ -234,3 +239,70 @@ object ReceiptRibbonShape : Shape {
         return Outline.Generic(path)
     }
 }
+
+/**
+ * **مدالِ روبان‌دارِ وامِ تسویه‌شده** - مشخصاتِ عددیِ طراح (جعبه‌ی ۳۴×۴۴).
+ *
+ * سه لایه از پایین به بالا: روبانِ چپ (`#0B8C57`، چرخشِ ‎-۹°)، روبانِ راست (`#12A46A`، ‎+۹°)،
+ * و دیسکِ ۳۴ با تیکِ سفید. هر روبان ۸×۱۹ با دُمِ چنگالی (نوکِ بریدگی رو ۷۴٪ ارتفاع).
+ *
+ * ⚠️ **مدال آلفا نمی‌گیره.** کارتِ وامِ تسویه‌شده شفافیتِ ۰٫۷ داره؛ اگه مدال هم توش بیفته
+ * دستاورد از خودِ کارت محوتر دیده می‌شه - قاعده‌ی صریحِ طراح: آلفا رو **محتوای** کارت، نه مدال.
+ */
+@Composable
+fun SettledMedal(modifier: Modifier = Modifier, height: Dp = 44.dp) {
+    val disk = AppPrimary
+    val diskBorder = AppPrimaryDim
+    Box(modifier = modifier.width(height * 34f / 44f).height(height)) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val k = size.height / 44f
+            fun u(v: Float) = v * k
+            val rw = u(8f)
+            val rh = u(19f)
+            val top = u(23f)
+
+            fun ribbon(left: Float, color: Color, degrees: Float) {
+                val path = Path().apply {
+                    moveTo(left, top)
+                    lineTo(left + rw, top)
+                    lineTo(left + rw, top + rh)
+                    lineTo(left + rw / 2f, top + rh * 0.74f)
+                    lineTo(left, top + rh)
+                    close()
+                }
+                rotate(degrees, pivot = Offset(left + rw / 2f, top + rh / 2f)) {
+                    drawPath(path, color = color)
+                }
+            }
+            ribbon(u(8f), RibbonLeft, -9f)
+            ribbon(size.width - u(8f) - rw, RibbonRight, 9f)
+
+            // دیسک - حاشیه‌ی ۲٫۵ درونیه، پس قطرِ بیرونی همون ۳۴ می‌مونه.
+            val d = u(34f)
+            val c = Offset(size.width / 2f, d / 2f)
+            drawCircle(color = disk, radius = d / 2f, center = c)
+            drawCircle(
+                color = diskBorder,
+                radius = d / 2f - u(2.5f) / 2f,
+                center = c,
+                style = Stroke(width = u(2.5f)),
+            )
+            // تیکِ ۱۵dp، ضخامتِ ۳، سرِ گرد
+            val t = u(15f)
+            val tick = Path().apply {
+                moveTo(c.x - t * 0.34f, c.y + t * 0.02f)
+                lineTo(c.x - t * 0.08f, c.y + t * 0.26f)
+                lineTo(c.x + t * 0.36f, c.y - t * 0.26f)
+            }
+            drawPath(
+                tick,
+                color = Color.White,
+                style = Stroke(width = u(3f), cap = StrokeCap.Round, join = StrokeJoin.Round),
+            )
+        }
+    }
+}
+
+/** رنگِ روبان‌ها - تو هر دو تم یکی‌ان (تاییدِ صریحِ طراح). */
+private val RibbonLeft = Color(0xFF0B8C57)
+private val RibbonRight = Color(0xFF12A46A)

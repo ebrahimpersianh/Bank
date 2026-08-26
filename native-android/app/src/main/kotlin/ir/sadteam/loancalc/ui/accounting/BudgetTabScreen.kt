@@ -61,6 +61,8 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
+import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -848,9 +850,11 @@ private val OverInk: Color
     @Composable get() = AppDanger
 private val GoldBg: Color
     @Composable get() = AppWarningPill
-private val GoldBorder = Color(0xFFFFD79A)
+private val GoldBorder: Color
+    @Composable get() = AppGoldPillSoft
 private val GoldInk: Color
     @Composable get() = AppWarningInk
-private val GoldTextInk = Color(0xFF8B5A00)
+private val GoldTextInk: Color
+    @Composable get() = AppGoldInkSoft
 private val GoldButton: Color
     @Composable get() = AppWarning

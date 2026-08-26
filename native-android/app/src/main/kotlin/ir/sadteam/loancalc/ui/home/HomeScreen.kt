@@ -78,10 +78,13 @@ import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
+import ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
+import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppInfoPill
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLineRow
+import ir.sadteam.loancalc.ui.theme.AppMarkOff
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
@@ -716,8 +719,8 @@ private val BarGradientEnd = Color(0xFF3DDC96)
 private val UrgentIconBg: Color
     @Composable get() = AppUrgentShadow
 /** رنگِ شِورانِ کارتِ مرورِ هفته - مقدارِ صریحِ فریم. */
-private val WeekChevron = Color(0xFFC7D2CC)
-
+private val WeekChevron: Color
+    @Composable get() = AppMarkOff
 @Composable
 private fun WeekCell(
     label: String,
@@ -835,9 +838,10 @@ private fun FirstRewardNote() {
 
 private val RewardNoteBg: Color
     @Composable get() = AppWarningPill
-private val RewardNoteBorder = Color(0xFFFFD79A)
-private val RewardNoteInk = Color(0xFF8B5A00)
-
+private val RewardNoteBorder: Color
+    @Composable get() = AppGoldPillSoft
+private val RewardNoteInk: Color
+    @Composable get() = AppGoldInkSoft
 /** یکی از سه کاشیِ «یا از اینجا شروع کن». */
 @Composable
 private fun RowScope.StarterTile(

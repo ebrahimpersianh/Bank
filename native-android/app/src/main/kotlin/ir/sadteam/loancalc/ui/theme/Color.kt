@@ -81,6 +81,24 @@ data class AppColorPalette(
     /** سایه‌ی سختِ کارتِ فوری (`0 4px 0`). */
     val urgentShadow: Color,
 
+    // ── هفت رنگی که تا امروز تو خودِ صفحه‌ها هاردکد بودن (جدولِ تیره‌ی طراح) ─────
+    /** قابِ آیکونِ خنثی - سطحِ زیرِ آیکونِ بی‌رنگ. */
+    val iconFrame: Color,
+    /** قرصِ طلاییِ دوم - «هدف»/«پس‌انداز»، نه کاغذِ طلایی. */
+    val goldPillSoft: Color,
+    /** جوهرِ روی [goldPillSoft]. */
+    val goldInkSoft: Color,
+    /** حاشیه‌ی کارتِ دارایی. */
+    val assetBorder: Color,
+    /** جوهرِ کارتِ دارایی. */
+    val assetInk: Color,
+    /** خطِ شبکه‌ی نمودار. */
+    val chartGrid: Color,
+    /** نشانه‌ی خاموش و شِوْرونِ کم‌رنگ. */
+    val markOff: Color,
+    /** طلایِ جشنِ سکه. */
+    val celebrationGold: Color,
+
     // ── بقیه‌ی رنگ‌های معنایی ────────────────────────────────────────────────────
     /** آبی - اطلاع، انتقال بینِ حساب‌ها. */
     val info: Color,
@@ -157,6 +175,14 @@ val LightAppColors = AppColorPalette(
     urgentBg = Color(0xFFFFF5F5),
     urgentBorder = Color(0xFFFFC9C9),
     urgentShadow = Color(0xFFFFECEC),
+    iconFrame = Color(0xFFF5F8F6),
+    goldPillSoft = Color(0xFFFFD79A),
+    goldInkSoft = Color(0xFF8B5A00),
+    assetBorder = Color(0xFFF0CE9B),
+    assetInk = Color(0xFF8B6F3D),
+    chartGrid = Color(0xFFDCE7E1),
+    markOff = Color(0xFFC7D2CC),
+    celebrationGold = Color(0xFFD4AF37),
 
     info = Color(0xFF1CB0F6),
     purple = Color(0xFFA56EFF),
@@ -222,6 +248,14 @@ val DarkAppColors = AppColorPalette(
     urgentBg = Color(0xFF2A1E22),
     urgentBorder = Color(0xFF4A2E2E),
     urgentShadow = Color(0xFF1E1519),
+    iconFrame = Color(0xFF232E38),
+    goldPillSoft = Color(0xFF3A2E15),
+    goldInkSoft = Color(0xFFF5D9A0),
+    assetBorder = Color(0xFF4A3D22),
+    assetInk = Color(0xFFC9AE74),
+    chartGrid = Color(0xFF2A3640),
+    markOff = Color(0xFF4E5C64),
+    celebrationGold = Color(0xFFE8C766),
 
     info = Color(0xFF55C8FF),
     purple = Color(0xFFBE97FF),
@@ -300,6 +334,15 @@ val AppShadowNeutral: Color @Composable get() = LocalAppColors.current.shadowNeu
 val AppUrgentBg: Color @Composable get() = LocalAppColors.current.urgentBg
 val AppUrgentBorder: Color @Composable get() = LocalAppColors.current.urgentBorder
 val AppUrgentShadow: Color @Composable get() = LocalAppColors.current.urgentShadow
+
+val AppIconFrame: Color @Composable get() = LocalAppColors.current.iconFrame
+val AppGoldPillSoft: Color @Composable get() = LocalAppColors.current.goldPillSoft
+val AppGoldInkSoft: Color @Composable get() = LocalAppColors.current.goldInkSoft
+val AppAssetBorder: Color @Composable get() = LocalAppColors.current.assetBorder
+val AppAssetInk: Color @Composable get() = LocalAppColors.current.assetInk
+val AppChartGrid: Color @Composable get() = LocalAppColors.current.chartGrid
+val AppMarkOff: Color @Composable get() = LocalAppColors.current.markOff
+val AppCelebrationGold: Color @Composable get() = LocalAppColors.current.celebrationGold
 
 val AppIsDark: Boolean @Composable get() = LocalAppColors.current.isDark
 

@@ -59,8 +59,10 @@ import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
+import ir.sadteam.loancalc.ui.theme.AppChartGrid
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -634,8 +636,10 @@ private val PlainBorder: Color
 private val GreenIconBg = Color(0xFFE6F8EE)
 private val CardBorder: Color
     @Composable get() = AppLine
-private val DayCellBg = Color(0xFFF5F8F6)
+private val DayCellBg: Color
+    @Composable get() = AppIconFrame
 private val DayCellInk = Color(0xFF9AA8A1)
-private val OutlineBorder = Color(0xFFDCE7E1)
+private val OutlineBorder: Color
+    @Composable get() = AppChartGrid
 private val WarnIconBg: Color
     @Composable get() = AppWarningPill

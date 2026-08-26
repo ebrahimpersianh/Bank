@@ -68,6 +68,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Rect
@@ -109,6 +110,7 @@ import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.ProgressRing
+import ir.sadteam.loancalc.ui.components.SettledMedal
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -582,6 +584,8 @@ fun MyLoansScreen(
                                     overdue && !isLocked -> AppCardVariant.URGENT
                                     else -> AppCardVariant.DEFAULT
                                 },
+                                // مدالِ تسویه نباید با بقیه‌ی محتوا محو بشه.
+                                dimContent = false,
                                 modifier = Modifier
                                     .zIndex(if (isDragging) 1f else 0f)
                                     .then(if (isDragging) Modifier else Modifier.animateItem())
@@ -665,13 +669,16 @@ fun MyLoansScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         LoanStateRing(
+                                            dim = settled,
                                             progress = if (settled) 1f else paidPct,
                                             settled = settled,
                                             urgent = overdue && !isLocked,
                                             showCoin = overdue && !isLocked,
                                         )
                                         Column(
-                                            modifier = Modifier.weight(1f),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .then(if (settled) Modifier.alpha(0.7f) else Modifier),
                                             verticalArrangement = Arrangement.spacedBy(3.dp),
                                         ) {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -726,7 +733,7 @@ fun MyLoansScreen(
                                             }
                                         }
                                         when {
-                                            settled -> CoinIcon(size = 20.dp)
+                                            settled -> SettledMedal(height = 44.dp)
                                             overdue && !isLocked -> LoanPayButton(
                                                 onClick = {
                                                     heroOrigin = cardBounds.heroOriginIn(listBounds)
@@ -820,7 +827,13 @@ fun MyLoansScreen(
  * @param showCoin سکه‌ی ۱۱dpیِ «نزدیک‌ترین قسط» رو گوشه‌ی بالا-راستِ حلقه (فقط حالتِ فوری).
  */
 @Composable
-private fun LoanStateRing(progress: Float, settled: Boolean, urgent: Boolean, showCoin: Boolean) {
+private fun LoanStateRing(
+    progress: Float,
+    settled: Boolean,
+    urgent: Boolean,
+    showCoin: Boolean,
+    dim: Boolean = false,
+) {
     // ⚠️ توکن‌های رنگ `@Composable`ان و داخلِ `Canvas` صدا زده نمی‌شن.
     val track = when {
         settled -> AppPrimaryPill
@@ -833,7 +846,12 @@ private fun LoanStateRing(progress: Float, settled: Boolean, urgent: Boolean, sh
         urgent -> AppDangerInk
         else -> AppPrimaryInk
     }
-    Box(modifier = Modifier.size(52.dp), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier
+            .size(52.dp)
+            .then(if (dim) Modifier.alpha(0.7f) else Modifier),
+        contentAlignment = Alignment.Center,
+    ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val stroke = 6.5.dp.toPx()
             val inset = stroke / 2f

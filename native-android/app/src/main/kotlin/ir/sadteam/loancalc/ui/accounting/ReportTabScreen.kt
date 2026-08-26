@@ -58,13 +58,20 @@ import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
+import ir.sadteam.loancalc.ui.theme.AppAssetBorder
+import ir.sadteam.loancalc.ui.theme.AppAssetInk
+import ir.sadteam.loancalc.ui.theme.AppChartGrid
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
+import ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
+import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
+import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
+import ir.sadteam.loancalc.ui.theme.AppMarkOff
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
@@ -262,10 +269,12 @@ private fun ReportHeader(
     }
 }
 
-private val PrivacyOffBg = Color(0xFFF5F8F6)
+private val PrivacyOffBg: Color
+    @Composable get() = AppIconFrame
 private val PrivacyOnBg: Color
     @Composable get() = AppWarningPill
-private val PrivacyOnBorder = Color(0xFFF0CE9B)
+private val PrivacyOnBorder: Color
+    @Composable get() = AppAssetBorder
 private val PrivacyOnInk: Color
     @Composable get() = AppWarningInk
 // ═══ ۱ب · کارتِ خط‌چینِ «نموداری برای کشیدن نیست» (فریمِ `21c`) ═════════════════════
@@ -424,15 +433,17 @@ private val SkeletonBarBg: Color
     @Composable get() = AppLineRow
 private val SkeletonBarFill: Color
     @Composable get() = AppPrimaryPill
-private val SkeletonBaseline = Color(0xFFDCE7E1)
+private val SkeletonBaseline: Color
+    @Composable get() = AppChartGrid
 private val PrimaryShadow = Color(0xFF0B8C57)
 private val GoldHintBg: Color
     @Composable get() = AppWarningPill
-private val GoldHintBorder = Color(0xFFFFD79A)
+private val GoldHintBorder: Color
+    @Composable get() = AppGoldPillSoft
 private val GoldHintIcon: Color
     @Composable get() = AppWarningInk
-private val GoldHintInk = Color(0xFF8B5A00)
-
+private val GoldHintInk: Color
+    @Composable get() = AppGoldInkSoft
 // ═══ ۲ · هیرویِ بنفش ════════════════════════════════════════════════════════════
 @Composable
 private fun PeriodSpendHero(
@@ -707,10 +718,13 @@ private fun DiscoveryCard(
 
 private val DiscoverWarnBg: Color
     @Composable get() = AppWarningPill
-private val DiscoverWarnBorder = Color(0xFFFFD79A)
+private val DiscoverWarnBorder: Color
+    @Composable get() = AppGoldPillSoft
 private val DiscoverWarnPill = Color(0xFFFFE3B8)
-private val DiscoverWarnInk = Color(0xFF8B5A00)
-private val DiscoverWarnSubInk = Color(0xFF8B6F3D)
+private val DiscoverWarnInk: Color
+    @Composable get() = AppGoldInkSoft
+private val DiscoverWarnSubInk: Color
+    @Composable get() = AppAssetInk
 private val DiscoverWarnIconInk: Color
     @Composable get() = AppWarningInk
 private val DiscoverDangerBg: Color
@@ -719,8 +733,8 @@ private val DiscoverDangerBorder: Color
     @Composable get() = AppUrgentBorder
 private val DiscoverDangerPill: Color
     @Composable get() = AppUrgentShadow
-private val ChevronInk = Color(0xFFC7D2CC)
-
+private val ChevronInk: Color
+    @Composable get() = AppMarkOff
 // ═══ ۷ · خروجی ═════════════════════════════════════════════════════════════════
 @Composable
 private fun ExportRow(onClick: () -> Unit) {

@@ -87,6 +87,10 @@ fun AppCard(
     borderColor: Color? = null,
     backgroundColor: Color? = null,
     accentGradient: Brush? = null,
+    // قاعده‌ی صریحِ طراح: شفافیتِ گونه‌ی «تمام‌شده» باید رو **محتوا** بشینه نه کلِ کارت، وگرنه
+    // نشانه‌ی دستاورد (مدالِ وامِ تسویه‌شده) از خودِ کارت هم محوتر دیده می‌شه. هر جا نشانه‌ای
+    // داخلِ کارت هست `false` بده و آلفا رو خودت رو همون تکه‌ی متن/حلقه بذار.
+    dimContent: Boolean = true,
     // پدینگِ کارت **دو مقداره‌ست**: عمودی ۱۴، افقی ۱۶ (اصلاحیه‌ی طراح - قبلاً هر دو ۱۶
     // بود و بعد هر دو ۱۴ شد؛ هیچ‌کدوم درست نبود).
     contentPadding: androidx.compose.ui.unit.Dp = AppSpacing.cardPaddingTight,
@@ -136,7 +140,7 @@ fun AppCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .then(if (variant == AppCardVariant.DONE) Modifier.alpha(0.72f) else Modifier)
+            .then(if (variant == AppCardVariant.DONE && dimContent) Modifier.alpha(0.72f) else Modifier)
             .hardShadow(shadowColor, shadowOffset, AppRadius.card)
             .clip(shape)
             .background(fillColor)
