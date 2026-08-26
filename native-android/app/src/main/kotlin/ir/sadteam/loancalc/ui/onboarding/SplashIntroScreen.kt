@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -72,7 +73,7 @@ fun SplashIntroScreen(onDone: () -> Unit) {
         onDone()
     }
 
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(Brush.linearGradient(listOf(SplashTop, SplashMid, SplashDeep)))
@@ -105,9 +106,12 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                 alpha = reveal.value * (1f - exit.value)
             },
         ) {
+            // خواسته‌ی صریحِ کاربر: لوگو **تمام‌عرض** باشه نه یه نشانِ کوچیکِ وسط. اندازه از
+            // عرضِ واقعیِ صفحه میاد (۷۲٪)، پس رو هر گوشی‌ای همون نسبت رو داره.
+            val logoWidth = maxWidth * 0.72f
             Box(
                 modifier = Modifier
-                    .size(116.dp)
+                    .size(logoWidth * 1.2f)
                     .drawBehind {
                         drawCircle(
                             brush = Brush.radialGradient(
@@ -118,13 +122,13 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                     },
                 contentAlignment = Alignment.Center,
             ) {
-                JibakLogo(width = 96.dp)
+                JibakLogo(width = logoWidth)
             }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(7.dp),
             ) {
-                Text("جیبک", color = Color.White, fontSize = 33.sp, fontWeight = FontWeight.Black)
+                Text("جیبک", color = Color.White, fontSize = 38.sp, fontWeight = FontWeight.Black)
                 Text(
                     "کیفِ پولت، مرتب",
                     color = Color.White.copy(alpha = 0.86f),
