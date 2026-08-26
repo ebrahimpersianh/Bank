@@ -241,25 +241,31 @@ object ReceiptRibbonShape : Shape {
 }
 
 /**
- * **مدالِ روبان‌دارِ وامِ تسویه‌شده** - مشخصاتِ عددیِ طراح (جعبه‌ی ۳۴×۴۴).
+ * **مدالِ روبان‌دار** - نسبت‌های طراح، همه نسبت به **قطرِ دیسک** ([diskSize]).
  *
- * سه لایه از پایین به بالا: روبانِ چپ (`#0B8C57`، چرخشِ ‎-۹°)، روبانِ راست (`#12A46A`، ‎+۹°)،
- * و دیسکِ ۳۴ با تیکِ سفید. هر روبان ۸×۱۹ با دُمِ چنگالی (نوکِ بریدگی رو ۷۴٪ ارتفاع).
+ * فریمِ `27e` نسخه‌ی نارنجیِ ۶۴ رو هم داره، پس مدال مقیاس‌پذیره: جعبه‌ی کل `d × ۱٫۲۹`،
+ * روبانِ `۰٫۲۳d × ۰٫۵۶d` با چرخشِ ∓۹° و دُمِ چنگالی (نوک رو ۷۴٪ ارتفاع).
+ * **روبانِ سمتِ راست همیشه روشن‌ترِ جفته.**
  *
  * ⚠️ **مدال آلفا نمی‌گیره.** کارتِ وامِ تسویه‌شده شفافیتِ ۰٫۷ داره؛ اگه مدال هم توش بیفته
- * دستاورد از خودِ کارت محوتر دیده می‌شه - قاعده‌ی صریحِ طراح: آلفا رو **محتوای** کارت، نه مدال.
+ * دستاورد از خودِ کارت محوتر دیده می‌شه - قاعده‌ی صریحِ طراح: آلفا رو **محتوای** کارت.
  */
 @Composable
-fun SettledMedal(modifier: Modifier = Modifier, height: Dp = 44.dp) {
-    val disk = AppPrimary
-    val diskBorder = AppPrimaryDim
-    Box(modifier = modifier.width(height * 34f / 44f).height(height)) {
+fun SettledMedal(
+    modifier: Modifier = Modifier,
+    diskSize: Dp = 34.dp,
+    disk: Color = AppPrimary,
+    diskBorder: Color = AppPrimaryDim,
+    ribbonDark: Color = RibbonGreenDark,
+    ribbonLight: Color = RibbonGreenLight,
+) {
+    Box(modifier = modifier.width(diskSize).height(diskSize * 1.29f)) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val k = size.height / 44f
-            fun u(v: Float) = v * k
-            val rw = u(8f)
-            val rh = u(19f)
-            val top = u(23f)
+            val d = size.width
+            val rw = d * 0.23f
+            val rh = d * 0.56f
+            val top = d * 0.69f
+            val side = d * 0.24f
 
             fun ribbon(left: Float, color: Color, degrees: Float) {
                 val path = Path().apply {
@@ -274,21 +280,16 @@ fun SettledMedal(modifier: Modifier = Modifier, height: Dp = 44.dp) {
                     drawPath(path, color = color)
                 }
             }
-            ribbon(u(8f), RibbonLeft, -9f)
-            ribbon(size.width - u(8f) - rw, RibbonRight, 9f)
+            ribbon(side, ribbonDark, -9f)
+            ribbon(d - side - rw, ribbonLight, 9f)
 
-            // دیسک - حاشیه‌ی ۲٫۵ درونیه، پس قطرِ بیرونی همون ۳۴ می‌مونه.
-            val d = u(34f)
-            val c = Offset(size.width / 2f, d / 2f)
+            // دیسک - حاشیه درونیه، پس قطرِ بیرونی همون d می‌مونه.
+            val c = Offset(d / 2f, d / 2f)
+            val border = d * 0.07f
             drawCircle(color = disk, radius = d / 2f, center = c)
-            drawCircle(
-                color = diskBorder,
-                radius = d / 2f - u(2.5f) / 2f,
-                center = c,
-                style = Stroke(width = u(2.5f)),
-            )
-            // تیکِ ۱۵dp، ضخامتِ ۳، سرِ گرد
-            val t = u(15f)
+            drawCircle(color = diskBorder, radius = d / 2f - border / 2f, center = c, style = Stroke(width = border))
+
+            val t = d * 0.44f
             val tick = Path().apply {
                 moveTo(c.x - t * 0.34f, c.y + t * 0.02f)
                 lineTo(c.x - t * 0.08f, c.y + t * 0.26f)
@@ -297,12 +298,14 @@ fun SettledMedal(modifier: Modifier = Modifier, height: Dp = 44.dp) {
             drawPath(
                 tick,
                 color = Color.White,
-                style = Stroke(width = u(3f), cap = StrokeCap.Round, join = StrokeJoin.Round),
+                style = Stroke(width = d * 0.09f, cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
         }
     }
 }
 
-/** رنگِ روبان‌ها - تو هر دو تم یکی‌ان (تاییدِ صریحِ طراح). */
-private val RibbonLeft = Color(0xFF0B8C57)
-private val RibbonRight = Color(0xFF12A46A)
+/** جفتِ سبز (وامِ تسویه‌شده) و جفتِ نارنجی (نشانِ «فعال») - تو هر دو تم یکی‌ان. */
+private val RibbonGreenDark = Color(0xFF0B8C57)
+private val RibbonGreenLight = Color(0xFF12A46A)
+val RibbonOrangeDark = Color(0xFFC97500)
+val RibbonOrangeLight = Color(0xFFE08600)

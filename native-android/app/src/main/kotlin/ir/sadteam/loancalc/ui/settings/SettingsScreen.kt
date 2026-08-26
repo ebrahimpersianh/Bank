@@ -1,20 +1,20 @@
 package ir.sadteam.loancalc.ui.settings
 
-import ir.sadteam.loancalc.BuildConfig
 import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
-import android.provider.Settings
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -23,9 +23,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -49,11 +49,12 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sms
-import androidx.compose.material.icons.filled.Vibration
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -66,6 +67,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -77,24 +79,32 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import ir.sadteam.loancalc.BuildConfig
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.toFa
@@ -102,53 +112,49 @@ import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.calendar.FinancialCalendarScreen
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import ir.sadteam.loancalc.ui.components.AppCard
-import ir.sadteam.loancalc.ui.components.persianMonthName
-import ir.sadteam.loancalc.ui.subscription.parseSubscribedUntil
+import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.AppHeroRow
+import ir.sadteam.loancalc.ui.components.AvatarPicker
+import ir.sadteam.loancalc.ui.components.AvatarView
+import ir.sadteam.loancalc.ui.components.GoldSheenBox
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.InAppBannerState
 import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.components.Ltr
-import ir.sadteam.loancalc.ui.components.GoldSheenBox
 import ir.sadteam.loancalc.ui.components.PulseGlowBox
+import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.haptics.HapticsViewModel
 import ir.sadteam.loancalc.ui.history.CalculationHistoryScreen
+import ir.sadteam.loancalc.ui.profile.AvatarViewModel
+import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
 import ir.sadteam.loancalc.ui.stats.StatsScreen
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
-import ir.sadteam.loancalc.ui.theme.Motion
+import ir.sadteam.loancalc.ui.subscription.parseSubscribedUntil
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppSpacing
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.ThemeMode
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 import kotlinx.coroutines.launch
-import ir.sadteam.loancalc.ui.profile.AvatarViewModel
-import ir.sadteam.loancalc.ui.components.AvatarView
-import ir.sadteam.loancalc.ui.components.AvatarPicker
-import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
-import androidx.compose.material.icons.filled.Savings
-import android.content.Context
-import ir.sadteam.loancalc.ui.components.AppCardVariant
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.Lifecycle
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.runtime.DisposableEffect
-import androidx.core.app.NotificationManagerCompat
 
 private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
 private val themeModeOptions =
@@ -324,120 +330,189 @@ private fun SettingsMainContent(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            if (matches(SettingsRoute.ACCOUNT)) {
-                SettingsRow(
-                    icon = Icons.Filled.Person,
-                    route = SettingsRoute.ACCOUNT,
-                    value = if (gateState == GateState.LOGGED_IN) toFa(phone ?: "") else "وارد نشدی",
-                    onClick = { onOpen(SettingsRoute.ACCOUNT) },
-                )
-            }
-
-            // همون کارتِ خریدِ اشتراک با همون منطقِ قبلی (رجوع کن به CLAUDE.md: عمداً به کاربرِ
-            // ازقبل‌مشترک نشون داده نمی‌شه، این باگ نیست) - فقط جاش زیرِ ردیفِ حسابه.
-            val onlyTrialSubscribed = subscribed && trialDaysLeft != null && trialDaysLeft in 1..7
-            if ((!subscribed || onlyTrialSubscribed) && searchQuery.isBlank()) {
-                PulseGlowBox(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
-                    GoldSheenBox {
-                        AppCard(backgroundColor = lerp(AppSurface, AppAccent, 0.14f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.Star, contentDescription = null, tint = AppAccent)
-                                Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                                    Text("ارتقا به نسخه اشتراکی", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            // ── ردیفِ پروفایل (فریمِ `27d`) ────────────────────────────────────────
+            if (searchQuery.isBlank()) {
+                AppCard(
+                    modifier = Modifier
+                        .padding(top = 10.dp)
+                        .pressScaleClickable(scale = 0.99f) { onOpen(SettingsRoute.ACCOUNT) },
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(AppPrimaryPill)
+                                .border(2.dp, AppPrimary, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Filled.Person,
+                                contentDescription = null,
+                                tint = AppPrimaryInk,
+                                modifier = Modifier.size(30.dp),
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                if (gateState == GateState.LOGGED_IN) "حساب کاربری" else "وارد نشدی",
+                                color = AppText,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Black,
+                            )
+                            if (gateState == GateState.LOGGED_IN && phone != null) {
+                                // شماره ذاتاً چپ‌به‌راسته ولی جای خودش راست‌چین می‌مونه.
+                                Ltr {
                                     Text(
-                                        "وام/چک نامحدود، همگام‌سازی چند دستگاه و موارد دیگر",
+                                        toFa(phone ?: ""),
                                         color = AppMuted,
-                                        fontSize = 11.sp,
+                                        fontSize = 9.5.sp,
+                                        fontWeight = FontWeight.Bold,
                                         modifier = Modifier.padding(top = 2.dp),
                                     )
                                 }
                             }
-                            GradientButton(
-                                onClick = onShowSubscription,
-                                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                            ) {
-                                Text("مشاهده پلن‌ها")
-                            }
                         }
+                        Icon(
+                            Icons.Filled.KeyboardArrowLeft,
+                            contentDescription = null,
+                            tint = AppLabel,
+                            modifier = Modifier.size(13.dp),
+                        )
                     }
+                }
+            } else if (matches(SettingsRoute.ACCOUNT)) {
+                SettingsGroup(modifier = Modifier.padding(top = 8.dp)) {
+                    SettingsRow(
+                        icon = Icons.Filled.Person,
+                        route = SettingsRoute.ACCOUNT,
+                        value = if (gateState == GateState.LOGGED_IN) toFa(phone ?: "") else "وارد نشدی",
+                        onClick = { onOpen(SettingsRoute.ACCOUNT) },
+                    )
                 }
             }
 
-            SettingsSectionLabel("شخصی‌سازی")
-            if (matches(SettingsRoute.APPEARANCE)) {
-                SettingsRow(Icons.Filled.Palette, SettingsRoute.APPEARANCE) { onOpen(SettingsRoute.APPEARANCE) }
-            }
-            // تنها سوییچی که عمداً تو ریشه موند: یه گزینه‌ی تک‌حالته‌ست، زیرصفحه‌ی جدا براش
-            // بی‌خودی یه تپِ اضافه می‌شد.
-            if (searchQuery.isBlank() || "ویبره".contains(searchQuery.trim()) || "هپتیک".contains(searchQuery.trim())) {
-                SettingsSwitchRow(
-                    icon = Icons.Filled.Vibration,
-                    title = "ویبره‌ی لمسی",
-                    subtitle = "موقع لمس دکمه‌ها یه لرزش کوتاه",
-                    checked = vibrationEnabled,
-                    onCheckedChange = { hapticsViewModel.setEnabled(it) },
+            // ── کارتِ اشتراک - `AppHeroRow` (سایه‌ی ۴، پدینگِ ۱۴؛ عمداً `AppHeroCard` نیست) ──
+            // همون منطقِ قبلی: به کاربرِ ازقبل‌مشترک نشون داده نمی‌شه، این باگ نیست.
+            val onlyTrialSubscribed = subscribed && trialDaysLeft != null && trialDaysLeft in 1..7
+            if ((!subscribed || onlyTrialSubscribed) && searchQuery.isBlank()) {
+                AppHeroRow(
+                    icon = Icons.Filled.Star,
+                    title = "ارتقا به نسخه اشتراکی",
+                    subtitle = "وام و چکِ نامحدود، همگام‌سازیِ چند دستگاه و بیشتر",
+                    actionLabel = "مشاهده پلن‌ها",
+                    onAction = onShowSubscription,
+                    modifier = Modifier.padding(top = 10.dp),
                 )
             }
 
-            SettingsSectionLabel("یادآوری و داده‌ها")
-            if (matches(SettingsRoute.REMINDERS)) {
-                SettingsRow(Icons.Filled.Notifications, SettingsRoute.REMINDERS) { onOpen(SettingsRoute.REMINDERS) }
-            }
-            if (matches(SettingsRoute.DATA)) {
-                SettingsRow(Icons.Filled.CloudUpload, SettingsRoute.DATA) { onOpen(SettingsRoute.DATA) }
-            }
-            if (matches(SettingsRoute.SMS)) {
-                SettingsRow(Icons.Filled.Sms, SettingsRoute.SMS) { onOpen(SettingsRoute.SMS) }
+            SettingsSectionLabel("ثبتِ خودکار")
+            SettingsGroup {
+                if (matches(SettingsRoute.SMS)) {
+                    SettingsRow(
+                        Icons.Filled.Sms,
+                        SettingsRoute.SMS,
+                        tone = SettingsTone.GREEN,
+                    ) { onOpen(SettingsRoute.SMS) }
+                    SettingsDivider()
+                }
+                if (matches(SettingsRoute.DATA)) {
+                    SettingsRow(
+                        Icons.Filled.CloudUpload,
+                        SettingsRoute.DATA,
+                        tone = SettingsTone.GREEN,
+                    ) { onOpen(SettingsRoute.DATA) }
+                }
             }
 
-            SettingsSectionLabel("بیشتر")
-            if (matches(SettingsRoute.TOOLS)) {
-                SettingsRow(Icons.Filled.Assessment, SettingsRoute.TOOLS) { onOpen(SettingsRoute.TOOLS) }
+            SettingsSectionLabel("برنامه")
+            SettingsGroup {
+                if (matches(SettingsRoute.REMINDERS)) {
+                    SettingsRow(
+                        Icons.Filled.Notifications,
+                        SettingsRoute.REMINDERS,
+                        tone = SettingsTone.ORANGE,
+                    ) { onOpen(SettingsRoute.REMINDERS) }
+                    SettingsDivider()
+                }
+                if (matches(SettingsRoute.APPEARANCE)) {
+                    SettingsRow(
+                        Icons.Filled.Palette,
+                        SettingsRoute.APPEARANCE,
+                        tone = SettingsTone.PURPLE,
+                    ) { onOpen(SettingsRoute.APPEARANCE) }
+                    SettingsDivider()
+                }
+                // تنها سوییچی که عمداً تو ریشه موند - یه گزینه‌ی تک‌حالته‌ست و زیرصفحه‌ی جدا
+                // براش یه تپِ اضافه می‌شد.
+                if (searchQuery.isBlank() || "ویبره".contains(searchQuery.trim()) || "هپتیک".contains(searchQuery.trim())) {
+                    SettingsRowItem(
+                        title = "ویبره‌ی لمسی",
+                        icon = Icons.Filled.Vibration,
+                        tone = SettingsTone.PURPLE,
+                        status = "موقعِ لمسِ دکمه‌ها یه لرزشِ کوتاه",
+                        checked = vibrationEnabled,
+                        onCheckedChange = { hapticsViewModel.setEnabled(it) },
+                    )
+                    SettingsDivider()
+                }
+                if (matches(SettingsRoute.SECURITY)) {
+                    SettingsRow(
+                        Icons.Filled.Lock,
+                        SettingsRoute.SECURITY,
+                        tone = SettingsTone.RED,
+                    ) { onOpen(SettingsRoute.SECURITY) }
+                    SettingsDivider()
+                }
+                if (matches(SettingsRoute.TOOLS)) {
+                    SettingsRow(
+                        Icons.Filled.Assessment,
+                        SettingsRoute.TOOLS,
+                    ) { onOpen(SettingsRoute.TOOLS) }
+                }
             }
-            if (matches(SettingsRoute.SECURITY)) {
-                SettingsRow(Icons.Filled.Lock, SettingsRoute.SECURITY) { onOpen(SettingsRoute.SECURITY) }
-            }
+
             if (matches(SettingsRoute.ABOUT)) {
-                SettingsRow(
-                    icon = Icons.Filled.Info,
-                    route = SettingsRoute.ABOUT,
-                    value = "نسخه ${toFa(BuildConfig.VERSION_NAME)}",
-                    onClick = { onOpen(SettingsRoute.ABOUT) },
-                )
+                SettingsGroup(modifier = Modifier.padding(top = AppSpacing.betweenCards)) {
+                    SettingsRow(
+                        icon = Icons.Filled.Info,
+                        route = SettingsRoute.ABOUT,
+                        value = "نسخه ${toFa(BuildConfig.VERSION_NAME)}",
+                        onClick = { onOpen(SettingsRoute.ABOUT) },
+                    )
+                }
             }
             Box(modifier = Modifier.padding(bottom = 16.dp))
         }
     }
 }
 
-/** ردیفِ استانداردِ تنظیمات: آیکون + عنوان (+ مقدارِ فعلی) + فلشِ ورود به زیرصفحه. طبقِ قاعده‌ی
- * پروژه هیچ کارتی دستی ساخته نمی‌شه - همیشه [AppCard]. */
+/**
+ * ردیفِ تنظیمات - حالا فقط پوسته‌ای رو [SettingsRowItem]ِ واژگانِ مشترکه (فریمِ `27d`، بخشِ ب).
+ * قبلاً هر ردیف کارتِ جدای خودش رو داشت؛ طرح ردیف‌ها رو **داخلِ یه کارتِ گروه** می‌خواد.
+ */
 @Composable
 private fun SettingsRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     route: SettingsRoute,
     value: String? = null,
+    tone: SettingsTone = SettingsTone.NEUTRAL,
+    status: String? = null,
+    statusTone: StatusTone = StatusTone.NEUTRAL,
     onClick: () -> Unit,
 ) {
-    AppCard(modifier = Modifier.padding(top = 8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.99f, onClick = onClick),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
-            Text(
-                route.title,
-                color = AppText,
-                fontSize = 14.sp,
-                modifier = Modifier.weight(1f).padding(start = 10.dp),
-            )
-            if (value != null) {
-                Text(value, color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(end = 6.dp))
-            }
-            // تو RTL فلشِ «برو تو» سمتِ چپِ ردیفه و رو به چپ - KeyboardArrowLeft خودش آینه نمی‌شه.
-            Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
-        }
-    }
+    SettingsRowItem(
+        title = route.title,
+        icon = icon,
+        tone = tone,
+        status = status ?: value,
+        statusTone = statusTone,
+        onClick = onClick,
+    )
 }
 
 @Composable
@@ -446,35 +521,24 @@ private fun SettingsSwitchRow(
     title: String,
     subtitle: String? = null,
     checked: Boolean,
+    tone: SettingsTone = SettingsTone.NEUTRAL,
     onCheckedChange: (Boolean) -> Unit,
 ) {
-    AppCard(modifier = Modifier.padding(top = 8.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
-            Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                Text(title, color = AppText, fontSize = 14.sp)
-                if (subtitle != null) {
-                    Text(subtitle, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
-                }
-            }
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-            )
-        }
+    // زیرصفحه‌ها هنوز سوییچ‌های تکی دارن که تو گروه نیستن - همون‌جا کارتِ خودشون رو نگه می‌دارن.
+    SettingsGroup(modifier = Modifier.padding(top = 8.dp)) {
+        SettingsRowItem(
+            title = title,
+            icon = icon,
+            tone = tone,
+            status = subtitle,
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+        )
     }
 }
 
 @Composable
-private fun SettingsSectionLabel(text: String) {
-    Text(
-        text,
-        color = AppMuted,
-        fontSize = 12.sp,
-        modifier = Modifier.padding(top = 16.dp, start = 4.dp),
-    )
-}
+private fun SettingsSectionLabel(text: String) = SettingsGroupLabel(text)
 
 /** سرآیندِ مشترکِ همه‌ی زیرصفحه‌های تنظیمات (عنوان وسط + ضربدرِ بستن) - هم‌شکلِ اپِ مرجع. */
 @Composable

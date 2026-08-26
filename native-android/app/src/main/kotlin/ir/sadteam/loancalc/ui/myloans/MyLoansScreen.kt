@@ -733,7 +733,7 @@ fun MyLoansScreen(
                                             }
                                         }
                                         when {
-                                            settled -> SettledMedal(height = 44.dp)
+                                            settled -> SettledMedal(diskSize = 34.dp)
                                             overdue && !isLocked -> LoanPayButton(
                                                 onClick = {
                                                     heroOrigin = cardBounds.heroOriginIn(listBounds)

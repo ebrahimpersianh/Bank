@@ -1,28 +1,38 @@
 package ir.sadteam.loancalc.ui.components
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.Text
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.ui.theme.AppElevation
+import ir.sadteam.loancalc.ui.theme.AppIsDark
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSpacing
-import androidx.compose.ui.geometry.Offset
 import ir.sadteam.loancalc.ui.theme.hardShadow
 
 /**
@@ -112,3 +122,77 @@ fun HeroSmallPill(text: String) {
         Text(text, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
     }
 }
+
+/**
+ * **ردیفِ برجسته‌ی گرادیانی** - کارتِ اشتراکِ فریمِ `27d`.
+ *
+ * عمداً [AppHeroCard] نیست: سایه‌اش ۴ه نه ۵ و پدینگش ۱۴ نه ۱۶ - یعنی «ردیفِ برجسته»ست،
+ * نه بلوکِ آماری. طراح صریحاً خواست دو تا جدا بمونن تا با هم قاطی نشن.
+ */
+@Composable
+fun AppHeroRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    actionLabel: String,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(AppRadius.card)
+    val gradient = Brush.linearGradient(
+        colors = listOf(AppPrimary, HeroRowEnd),
+        start = Offset.Zero,
+        end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+    )
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .hardShadow(if (AppIsDark) HeroRowShadowDark else HeroRowShadowLight, AppElevation.raised, AppRadius.card)
+            .clip(shape)
+            .background(gradient)
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(11.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(Color.White.copy(alpha = 0.22f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(17.dp))
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                Text(
+                    subtitle,
+                    color = Color.White.copy(alpha = 0.82f),
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+        Box(modifier = Modifier.height(44.dp), contentAlignment = Alignment.CenterStart) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color.White)
+                    .pressScaleClickable(onClick = onAction)
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
+            ) {
+                Text(actionLabel, color = AppPrimaryInk, fontSize = 10.sp, fontWeight = FontWeight.Black)
+            }
+        }
+    }
+}
+
+/** پایانِ گرادیانِ ردیفِ برجسته و سایه‌ی سختش - مقادیرِ صریحِ فریم. */
+private val HeroRowEnd = Color(0xFF0B8C57)
+private val HeroRowShadowLight = Color(0xFF096F45)
+private val HeroRowShadowDark = Color(0xFF07724A)
