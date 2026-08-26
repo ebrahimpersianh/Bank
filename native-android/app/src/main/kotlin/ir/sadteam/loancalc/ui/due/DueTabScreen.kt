@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.due
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -9,9 +10,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -47,7 +48,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.foundation.Canvas
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.fmt
@@ -59,9 +59,18 @@ import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
+import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppUrgentBorder
+import ir.sadteam.loancalc.ui.theme.AppUrgentShadow
+import ir.sadteam.loancalc.ui.theme.AppWarning
+import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import ir.sadteam.loancalc.ui.theme.hardShadow
 
 /**
@@ -606,18 +615,27 @@ private fun RowIcon(icon: ImageVector, tint: Color, bg: Color) {
 private fun overdueText(daysOverdue: Int): String =
     if (daysOverdue == 0) "امروز سررسید" else "${toFa(daysOverdue)} روز عقب"
 
-private val DueGreen = Color(0xFF0EA968)
+private val DueGreen: Color
+    @Composable get() = AppPrimary
 private val DueGreenDeep = Color(0xFF0B8C57)
 private val TabTrack = Color(0xFFEAF2EE)
-private val DangerSolid = Color(0xFFFF4B4B)
-private val WarnSolid = Color(0xFFFF9600)
-private val OverdueInk = Color(0xFFD93838)
-private val OverdueBorder = Color(0xFFFFC9C9)
-private val OverdueIconBg = Color(0xFFFFECEC)
-private val PlainBorder = Color(0xFFEEF3F0)
+private val DangerSolid: Color
+    @Composable get() = AppDanger
+private val WarnSolid: Color
+    @Composable get() = AppWarning
+private val OverdueInk: Color
+    @Composable get() = AppDangerInk
+private val OverdueBorder: Color
+    @Composable get() = AppUrgentBorder
+private val OverdueIconBg: Color
+    @Composable get() = AppUrgentShadow
+private val PlainBorder: Color
+    @Composable get() = AppLineRow
 private val GreenIconBg = Color(0xFFE6F8EE)
-private val CardBorder = Color(0xFFE3ECE7)
+private val CardBorder: Color
+    @Composable get() = AppLine
 private val DayCellBg = Color(0xFFF5F8F6)
 private val DayCellInk = Color(0xFF9AA8A1)
 private val OutlineBorder = Color(0xFFDCE7E1)
-private val WarnIconBg = Color(0xFFFFF1DC)
+private val WarnIconBg: Color
+    @Composable get() = AppWarningPill

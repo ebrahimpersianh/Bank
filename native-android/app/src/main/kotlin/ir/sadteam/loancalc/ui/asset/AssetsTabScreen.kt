@@ -48,24 +48,30 @@ import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AssetEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.account.AccountsScreen
-import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.CoinIcon
+import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
+import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppGoldBorder
+import ir.sadteam.loancalc.ui.theme.AppGoldFrom
+import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
-import ir.sadteam.loancalc.ui.theme.AppLineRow
-import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppWarningInk
+import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import ir.sadteam.loancalc.ui.theme.hardShadow
 
 /**
@@ -273,11 +279,13 @@ private fun HeaderSquareButton(
 }
 
 private val PrivacyOffBg = Color(0xFFF5F8F6)
-private val PrivacyOnBg = Color(0xFFFFF1DC)
+private val PrivacyOnBg: Color
+    @Composable get() = AppWarningPill
 private val PrivacyOnBorder = Color(0xFFF0CE9B)
-private val PrivacyOnInk = Color(0xFFB45F00)
-private val AppPrimaryBorderLine = Color(0xFF9FE0BC)
-
+private val PrivacyOnInk: Color
+    @Composable get() = AppWarningInk
+private val AppPrimaryBorderLine: Color
+    @Composable get() = AppPrimaryBorder
 // ═══ ۱ب · کارتِ خط‌چینِ «هنوز حسابی اضافه نکردی» (فریمِ `21a`) ══════════════════════
 /**
  * تصویرِ کارت: **دو کارتِ حسابِ واقعی که یکی‌شان خط‌چین است - یعنی «جای خالیِ تو»**
@@ -418,10 +426,14 @@ private fun StarterTile(
     }
 }
 
-private val CardShadowSoft = Color(0xFFEEF3F0)
-private val CardBorderLine = Color(0xFFE3ECE7)
-private val AddTileBg = Color(0xFFE9F7EF)
-private val AddTileBorder = Color(0xFF9FE0BC)
+private val CardShadowSoft: Color
+    @Composable get() = AppLineRow
+private val CardBorderLine: Color
+    @Composable get() = AppLine
+private val AddTileBg: Color
+    @Composable get() = AppPrimaryPill
+private val AddTileBorder: Color
+    @Composable get() = AppPrimaryBorder
 private val NeutralTileBg = Color(0xFFF5F8F6)
 
 // ═══ ۲ · هیرویِ داراییِ کل ══════════════════════════════════════════════════════
@@ -609,14 +621,17 @@ private fun GoldAndCurrencyCard(
     }
 }
 
-private val GoldPaperFrom = Color(0xFFFFFCF4)
+private val GoldPaperFrom: Color
+    @Composable get() = AppGoldFrom
 private val GoldPaperTo = Color(0xFFF5EBD6)
-private val GoldPaperBorder = Color(0xFFEBD9B4)
-private val GoldInkDeep = Color(0xFF5A3E12)
+private val GoldPaperBorder: Color
+    @Composable get() = AppGoldBorder
+private val GoldInkDeep: Color
+    @Composable get() = AppGoldInk
 private val GoldInkSoft = Color(0xFF8B6F3D)
 private val ProfitUp = Color(0xFF0B8C57)
-private val ProfitDown = Color(0xFFD93838)
-
+private val ProfitDown: Color
+    @Composable get() = AppDangerInk
 /** یه ردیف از کارتِ طلایی - سکه‌ی ۳۲، اسم ۱۱/۹۰۰، فراداده ۸٫۵، ارزش و سود سمتِ چپ. */
 @Composable
 private fun HoldingRow(holding: AssetHolding, privacyMode: Boolean, onOpen: (AssetEntity) -> Unit) {

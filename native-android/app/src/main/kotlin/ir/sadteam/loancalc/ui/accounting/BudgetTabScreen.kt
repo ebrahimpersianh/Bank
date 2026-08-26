@@ -46,10 +46,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianCalendar
+import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.CategoryEntry
-import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.asset.compact
 import ir.sadteam.loancalc.ui.category.CategoryViewModel
@@ -59,9 +59,19 @@ import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
+import ir.sadteam.loancalc.ui.theme.AppChipBg
+import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppWarning
+import ir.sadteam.loancalc.ui.theme.AppWarningInk
+import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import ir.sadteam.loancalc.ui.theme.hardShadow
 import kotlin.math.roundToLong
 
@@ -819,18 +829,28 @@ private fun BudgetToolCard(
     }
 }
 
-private val BudgetGreen = Color(0xFF0EA968)
+private val BudgetGreen: Color
+    @Composable get() = AppPrimary
 private val BudgetGreenDeep = Color(0xFF0B8C57)
 private val BudgetGreenLight = Color(0xFF3DDC96)
 private val BudgetGreenShadow = Color(0xFF096F45)
-private val AddTileBg = Color(0xFFE9F7EF)
-private val AddTileBorder = Color(0xFF9FE0BC)
-private val CardBorder = Color(0xFFE3ECE7)
-private val RailTrack = Color(0xFFEEF3F0)
-private val RailTrackSoft = Color(0xFFF1F5F2)
-private val OverInk = Color(0xFFFF4B4B)
-private val GoldBg = Color(0xFFFFF1DC)
+private val AddTileBg: Color
+    @Composable get() = AppPrimaryPill
+private val AddTileBorder: Color
+    @Composable get() = AppPrimaryBorder
+private val CardBorder: Color
+    @Composable get() = AppLine
+private val RailTrack: Color
+    @Composable get() = AppLineRow
+private val RailTrackSoft: Color
+    @Composable get() = AppChipBg
+private val OverInk: Color
+    @Composable get() = AppDanger
+private val GoldBg: Color
+    @Composable get() = AppWarningPill
 private val GoldBorder = Color(0xFFFFD79A)
-private val GoldInk = Color(0xFFB45F00)
+private val GoldInk: Color
+    @Composable get() = AppWarningInk
 private val GoldTextInk = Color(0xFF8B5A00)
-private val GoldButton = Color(0xFFFF9600)
+private val GoldButton: Color
+    @Composable get() = AppWarning

@@ -296,6 +296,11 @@ val AppDisabledFill: Color @Composable get() = LocalAppColors.current.disabledFi
 val AppDisabledText: Color @Composable get() = LocalAppColors.current.disabledText
 val AppShadowNeutral: Color @Composable get() = LocalAppColors.current.shadowNeutral
 
+// کارتِ «فوری» (سررسیدِ امروز/فردا) - قبلاً فقط فیلدِ پالت بود و صفحه‌ها عددش رو هاردکد می‌کردن.
+val AppUrgentBg: Color @Composable get() = LocalAppColors.current.urgentBg
+val AppUrgentBorder: Color @Composable get() = LocalAppColors.current.urgentBorder
+val AppUrgentShadow: Color @Composable get() = LocalAppColors.current.urgentShadow
+
 val AppIsDark: Boolean @Composable get() = LocalAppColors.current.isDark
 
 /**

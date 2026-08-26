@@ -17,10 +17,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -50,8 +50,8 @@ import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.asset.compact
 import ir.sadteam.loancalc.ui.components.CategoryDonut
-import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.DonutSlice
+import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
@@ -60,6 +60,7 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppDangerPill
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -72,6 +73,10 @@ import ir.sadteam.loancalc.ui.theme.AppPurple
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppUrgentBorder
+import ir.sadteam.loancalc.ui.theme.AppUrgentShadow
+import ir.sadteam.loancalc.ui.theme.AppWarningInk
+import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import ir.sadteam.loancalc.ui.theme.hardShadow
 
 /**
@@ -258,10 +263,11 @@ private fun ReportHeader(
 }
 
 private val PrivacyOffBg = Color(0xFFF5F8F6)
-private val PrivacyOnBg = Color(0xFFFFF1DC)
+private val PrivacyOnBg: Color
+    @Composable get() = AppWarningPill
 private val PrivacyOnBorder = Color(0xFFF0CE9B)
-private val PrivacyOnInk = Color(0xFFB45F00)
-
+private val PrivacyOnInk: Color
+    @Composable get() = AppWarningInk
 // ═══ ۱ب · کارتِ خط‌چینِ «نموداری برای کشیدن نیست» (فریمِ `21c`) ═════════════════════
 @Composable
 private fun NoChartCard(onAddTransaction: () -> Unit) {
@@ -414,13 +420,17 @@ private fun ComingSoonCard() {
     }
 }
 
-private val SkeletonBarBg = Color(0xFFEEF3F0)
-private val SkeletonBarFill = Color(0xFFE9F7EF)
+private val SkeletonBarBg: Color
+    @Composable get() = AppLineRow
+private val SkeletonBarFill: Color
+    @Composable get() = AppPrimaryPill
 private val SkeletonBaseline = Color(0xFFDCE7E1)
 private val PrimaryShadow = Color(0xFF0B8C57)
-private val GoldHintBg = Color(0xFFFFF1DC)
+private val GoldHintBg: Color
+    @Composable get() = AppWarningPill
 private val GoldHintBorder = Color(0xFFFFD79A)
-private val GoldHintIcon = Color(0xFFB45F00)
+private val GoldHintIcon: Color
+    @Composable get() = AppWarningInk
 private val GoldHintInk = Color(0xFF8B5A00)
 
 // ═══ ۲ · هیرویِ بنفش ════════════════════════════════════════════════════════════
@@ -695,15 +705,20 @@ private fun DiscoveryCard(
     }
 }
 
-private val DiscoverWarnBg = Color(0xFFFFF1DC)
+private val DiscoverWarnBg: Color
+    @Composable get() = AppWarningPill
 private val DiscoverWarnBorder = Color(0xFFFFD79A)
 private val DiscoverWarnPill = Color(0xFFFFE3B8)
 private val DiscoverWarnInk = Color(0xFF8B5A00)
 private val DiscoverWarnSubInk = Color(0xFF8B6F3D)
-private val DiscoverWarnIconInk = Color(0xFFB45F00)
-private val DiscoverDangerBg = Color(0xFFFFF5F5)
-private val DiscoverDangerBorder = Color(0xFFFFC9C9)
-private val DiscoverDangerPill = Color(0xFFFFECEC)
+private val DiscoverWarnIconInk: Color
+    @Composable get() = AppWarningInk
+private val DiscoverDangerBg: Color
+    @Composable get() = AppDangerPill
+private val DiscoverDangerBorder: Color
+    @Composable get() = AppUrgentBorder
+private val DiscoverDangerPill: Color
+    @Composable get() = AppUrgentShadow
 private val ChevronInk = Color(0xFFC7D2CC)
 
 // ═══ ۷ · خروجی ═════════════════════════════════════════════════════════════════
