@@ -4,30 +4,37 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.TransactionType
+import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.categoryIconChoices
 import ir.sadteam.loancalc.data.db.CustomCategoryEntity
 import ir.sadteam.loancalc.ui.components.AppCard
@@ -51,8 +59,10 @@ import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 
 private val categoryColorChoices = listOf(
@@ -74,12 +84,73 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
     var showAddForm by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<CustomCategoryEntity?>(null) }
 
+    // ⚠️ **خطرناک‌ترین کارِ این صفحه**: تراکنش‌های گذشته به دسته وصل‌ان. اگه دسته تراکنش
+    // داشته باشه، دیالوگ **دسته‌ی مقصد می‌پرسه**، نه فقط تایید (قاعده‌ی صریحِ طراح) -
+    // وگرنه اون تراکنش‌ها بی‌دسته می‌مونن و کاربر بعداً گمشون می‌کنه.
     pendingDelete?.let { entity ->
-        ConfirmDeleteDialog(
-            title = "حذفِ دسته‌بندی",
-            text = "«${entity.name}» حذف بشه؟ تراکنش‌های قبلی که این دسته رو دارن، دسته‌شون فقط از لیست خارج می‌شه.",
-            onConfirm = { viewModel.deleteCustomCategory(entity) },
-            onDismiss = { pendingDelete = null },
+        var count by remember(entity) { mutableStateOf<Int?>(null) }
+        var target by remember(entity) { mutableStateOf<String?>(null) }
+        LaunchedEffect(entity) { count = viewModel.transactionCount(entity.name) }
+        val siblings = remember(entity, expenseCategories, incomeCategories) {
+            val all = if (entity.type == TransactionType.WITHDRAWAL.name) expenseCategories else incomeCategories
+            all.map { it.name }.filter { it != entity.name }
+        }
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            confirmButton = {
+                TextButton(
+                    enabled = count != null && (count == 0 || target != null),
+                    onClick = {
+                        val chosen = target
+                        if (count == 0 || chosen == null) {
+                            viewModel.deleteCustomCategory(entity)
+                        } else {
+                            viewModel.reassignAndDelete(entity, chosen)
+                        }
+                        pendingDelete = null
+                    },
+                ) {
+                    Text("حذف", color = AppDanger)
+                }
+            },
+            dismissButton = { TextButton(onClick = { pendingDelete = null }) { Text("بی‌خیال") } },
+            title = { Text("حذفِ «${entity.name}»", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text(
+                        when (count) {
+                            null -> "دارم می‌شمرم..."
+                            0 -> "این دسته هیچ تراکنشی نداره، پس بی‌دردسر حذف می‌شه."
+                            else -> "${toFa(count ?: 0)} تراکنش این دسته رو دارن. اول باید بگی " +
+                                "به کدوم دسته منتقل بشن."
+                        },
+                        fontSize = 13.sp,
+                        lineHeight = 22.sp,
+                    )
+                    if ((count ?: 0) > 0) {
+                        Text(
+                            "منتقل شود به:",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 10.dp, bottom = 6.dp),
+                        )
+                        Column(modifier = Modifier.heightIn(max = 220.dp).verticalScroll(rememberScrollState())) {
+                            siblings.forEach { name ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .pressScaleClickable(scale = 0.99f) { target = name }
+                                        .padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    RadioButton(selected = target == name, onClick = { target = name })
+                                    Text(name, color = AppText, fontSize = 13.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+            },
         )
     }
 
@@ -171,6 +242,18 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                         }
                     }
                 }
+            }
+        }
+        item {
+            // قاعده‌ی صریحِ فریمِ `36b` که باید به کاربر گفته بشه، وگرنه دنبالِ عمقِ دوم می‌گرده.
+            AppCard(backgroundColor = AppSurface2, borderColor = AppLineRow, shadow = false) {
+                Text(
+                    "فقط یک پله عمق داریم - زیرمجموعه‌ی زیرمجموعه نمی‌شه ساخت. مبلغ‌های " +
+                        "کنارِ هر دسته مالِ ماهِ جاری‌ان.",
+                    color = AppMuted,
+                    fontSize = 10.5.sp,
+                    lineHeight = 20.sp,
+                )
             }
         }
     }

@@ -124,6 +124,11 @@ class AccountRepository(
         gamification?.awardDailyLog()
     }
 
+    /** به‌روزرسانیِ یه تراکنشِ موجود - برای انتقالِ دسته موقعِ حذفِ یه دسته‌بندی. */
+    suspend fun updateTransaction(transaction: AccountTransactionEntity) {
+        transactionDao.upsert(transaction)
+    }
+
     suspend fun deleteTransaction(transaction: AccountTransactionEntity) {
         transactionDao.delete(transaction)
     }

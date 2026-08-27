@@ -5,20 +5,23 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.TransactionType
+import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.CategoryEntry
 import ir.sadteam.loancalc.data.CategoryRepository
 import ir.sadteam.loancalc.data.db.CustomCategoryEntity
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /** لیستِ نهاییِ (ثابت + دلخواهِ کاربر، با ترتیبِ دلخواه) دسته‌بندی‌ها - رجوع کن به
  * [CategoryRepository]/CLAUDE.md، مدیریتِ کاملِ دسته‌بندی‌ها. */
 @HiltViewModel
 class CategoryViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository,
+    private val accountRepository: AccountRepository,
 ) : ViewModel() {
     val expenseCategories: StateFlow<List<CategoryEntry>> = categoryRepository.orderedCategories(TransactionType.WITHDRAWAL)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -44,6 +47,24 @@ class CategoryViewModel @Inject constructor(
 
     fun deleteCustomCategory(entity: CustomCategoryEntity) {
         viewModelScope.launch { categoryRepository.deleteCustomCategory(entity) }
+    }
+
+    /** چند تراکنشِ ثبت‌شده به این دسته وصل‌ان؟ - قبل از حذف باید به کاربر گفته بشه. */
+    suspend fun transactionCount(categoryName: String): Int =
+        accountRepository.observeTransactions().first().count { it.category == categoryName }
+
+    /**
+     * حذفِ دسته‌ی **باتراکنش**: اول همه‌ی تراکنش‌هاش به [target] منتقل می‌شن، بعد خودِ دسته
+     * حذف می‌شه. قاعده‌ی صریحِ طراح: «دیالوگ باید دسته‌ی مقصد بپرسه، نه فقط تایید» -
+     * وگرنه تراکنش‌های گذشته بی‌دسته می‌مونن.
+     */
+    fun reassignAndDelete(entity: CustomCategoryEntity, target: String) {
+        viewModelScope.launch {
+            accountRepository.observeTransactions().first()
+                .filter { it.category == entity.name }
+                .forEach { accountRepository.updateTransaction(it.copy(category = target)) }
+            categoryRepository.deleteCustomCategory(entity)
+        }
     }
 
     fun saveOrder(type: TransactionType, orderedNames: List<String>) {
