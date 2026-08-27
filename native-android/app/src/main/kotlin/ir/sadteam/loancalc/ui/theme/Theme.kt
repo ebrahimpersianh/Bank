@@ -71,6 +71,7 @@ enum class ThemeMode {
 @Composable
 fun LoanCalcTheme(
     themeMode: ThemeMode = ThemeMode.LIGHT,
+    colorTheme: ColorTheme = ColorTheme.GREEN,
     content: @Composable () -> Unit,
 ) {
     // حالتِ «سیستم» به تنظیماتِ خودِ گوشی نگاه می‌کنه؛ بقیه صریح‌ان.
@@ -79,7 +80,8 @@ fun LoanCalcTheme(
         ThemeMode.LIGHT -> false
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
-    val palette = if (dark) DarkAppColors else LightAppColors
+    // تمِ رنگیِ خریدنی فقط خانواده‌ی primary رو رو همین پالت می‌نشونه (رجوع کن به [ColorTheme]).
+    val palette = colorTheme.applyTo(if (dark) DarkAppColors else LightAppColors)
     val colorScheme = if (!dark) {
         lightColorScheme(
             background = palette.bg,

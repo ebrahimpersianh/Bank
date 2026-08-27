@@ -30,6 +30,13 @@ class GamificationViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /** رویدادهای یک‌باره‌ی جدولِ `20e` - از جایی که واقعاً اتفاق می‌افتن صدا زده می‌شن. */
+    /** خرجِ سکه - `refId` کلیدِ ضدِتکراره، پس دوبار زدنِ دکمه دوبار خرج نمی‌کنه. */
+    fun spendCoins(amount: Int, refId: String) {
+        viewModelScope.launch {
+            repository.spend(amount, refId, ir.sadteam.loancalc.data.GamificationRepository.Type.SPEND_THEME)
+        }
+    }
+
     fun awardOnce(type: String, amount: Int) {
         viewModelScope.launch { repository.awardOnce(type, amount) }
     }

@@ -127,4 +127,26 @@ for name, px in DENSITIES.items():
     round_icon.putalpha(circle)
     round_icon.save(out / "ic_launcher_round.png")
     print(f"  {name}: {px}×{px}")
+
+# ── آیکونِ تطبیقی (اندروید ۸ به بعد) ──────────────────────────────────────────
+# 🚨 **گزارشِ کاربر: «لوگو صفحه کامل نیست».** بی آیکونِ تطبیقی، لانچر همون PNGِ
+# قدیمی رو داخلِ یه کادرِ **سفیدِ** خودش کوچیک می‌کنه - برای همین کاشیِ سبز حاشیه‌ی
+# سفید می‌گرفت. آیکونِ تطبیقی دو لایه‌ست: پس‌زمینه (کاشیِ سبز، کلِ کادر رو پر می‌کنه)
+# و پیش‌زمینه (خودِ کیف). لانچر شکلِ گوشه‌ها رو خودش می‌بُرد.
+#
+# قاعده‌ی گوگل: بومِ ۱۰۸ واحد، ولی فقط **۷۲ واحدِ وسط** همیشه دیده می‌شه. پس کیف
+# حداکثر ۶۶٪ عرضِ بوم می‌شه، وگرنه لبه‌هاش رو گوشیِ گردگوشه بریده می‌شن.
+FOREGROUND = {"mdpi": 108, "hdpi": 162, "xhdpi": 216, "xxhdpi": 324, "xxxhdpi": 432}
+for name, px in FOREGROUND.items():
+    s_px = px * SS
+    img = Image.new("RGBA", (s_px, s_px), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img, "RGBA")
+    d._image = img
+    w = s_px * 0.62
+    h = w * 76 / 96
+    wallet(d, (s_px - w) / 2, (s_px - h) / 2, w)
+    out = RES / f"mipmap-{name}"
+    out.mkdir(parents=True, exist_ok=True)
+    img.resize((px, px), Image.LANCZOS).save(out / "ic_launcher_foreground.png")
+print("  آیکونِ تطبیقی: پیش‌زمینه در ۵ چگالی")
 print("✅ آیکونِ لانچر از رو فریمِ 24a ساخته شد")

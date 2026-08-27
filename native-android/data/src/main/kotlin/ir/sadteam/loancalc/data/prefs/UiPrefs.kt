@@ -41,6 +41,8 @@ class UiPrefs(private val context: Context) {
         val AVATAR_PHOTO = stringPreferencesKey("avatar_photo")
         val SHORTCUT_ORDER = stringPreferencesKey("shortcut_order")
         val REDUCED_MOTION = booleanPreferencesKey("reduced_motion")
+        val COLOR_THEME = stringPreferencesKey("color_theme")
+        val OWNED_THEMES = stringPreferencesKey("owned_themes")
     }
 
     // پیش‌فرض روشن/سفید (به‌درخواست کاربر «تم اصلی برنامه سفید باشه») - کاربری که قبلاً دستی
@@ -98,6 +100,28 @@ class UiPrefs(private val context: Context) {
      * «انیمیشنِ کم» - برای گوشی‌های کم‌قدرت. قاعده‌ی طراح: **هرچه فقط تزئینه می‌ره، هرچه
      * بازخوردِ لمسه می‌مونه** (جابه‌جاییِ دستگیره‌ی کلید، تغییرِ رنگ و نوارِ پیشرفت می‌مونن).
      */
+    /** شناسه‌ی تمِ رنگیِ فعال - رجوع کن به `ColorTheme`. */
+    val colorTheme: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.COLOR_THEME] }
+
+    suspend fun setColorTheme(id: String) {
+        context.uiPrefsDataStore.edit { it[Keys.COLOR_THEME] = id }
+    }
+
+    /**
+     * تم‌هایی که کاربر **خریده**. خرید یک‌باره‌ست و انتخاب بی‌نهایت - یعنی بعد از خرید
+     * هر وقت بخواد بینشون سوئیچ می‌کنه.
+     */
+    val ownedThemes: Flow<Set<String>> = context.uiPrefsDataStore.data.map { prefs ->
+        prefs[Keys.OWNED_THEMES]?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
+    }
+
+    suspend fun addOwnedTheme(id: String) {
+        context.uiPrefsDataStore.edit { prefs ->
+            val current = prefs[Keys.OWNED_THEMES]?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
+            prefs[Keys.OWNED_THEMES] = (current + id).joinToString(",")
+        }
+    }
+
     val reducedMotion: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.REDUCED_MOTION] ?: false }
 
     suspend fun setReducedMotion(value: Boolean) {

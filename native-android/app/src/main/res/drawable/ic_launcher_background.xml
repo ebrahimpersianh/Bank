@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- کاشیِ سبزِ فریمِ 24a: #1FD68C → #0EA968 → #087A4C، همون گرادیانِ مورب. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="315"
+        android:startColor="#1FD68C"
+        android:centerColor="#0EA968"
+        android:endColor="#087A4C"
+        android:type="linear" />
+</shape>

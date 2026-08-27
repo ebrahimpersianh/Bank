@@ -16,4 +16,10 @@ class DeepLinkViewModel @Inject constructor(
     fun consume() {
         deepLinkTarget.consume()
     }
+
+    val pendingShortcut: StateFlow<String?> = deepLinkTarget.pendingShortcut
+
+    fun consumeShortcut() {
+        deepLinkTarget.consumeShortcut()
+    }
 }

@@ -43,6 +43,12 @@ class GamificationRepository(
      * فقط مقدارِ تازه اضافه کن.
      */
     object Type {
+        /** خریدِ تمِ رنگی - `refId` شناسه‌ی همون تمه. */
+        const val SPEND_THEME = "spend_theme"
+
+        /** ترمیمِ استریک - ماهی یک‌بار، `refId` کلیدِ ماهِ شمسیه. */
+        const val STREAK_REPAIR = "streak_repair"
+
         const val NEW_PHONE_GIFT = "new_phone_gift"
         const val DAILY_LOG = "daily_log"
         const val WEEK_COMPLETE = "week_complete"
@@ -93,10 +99,16 @@ class GamificationRepository(
     suspend fun awardOnce(type: String, amount: Int): Boolean = award(type, amount, "")
 
     /** خرجِ سکه (تخفیفِ اشتراک). مقدار **منفی** ثبت می‌شه تا جمعِ دفتر همچنان موجودی بده. */
-    suspend fun spend(amount: Int, refId: String) {
+    /**
+     * خرجِ سکه با نوعِ دلخواه - `refId` کلیدِ ضدِتکراره، پس دوبار زدنِ یه دکمه دوبار خرج نمی‌کنه.
+     *
+     * ⚠️ نوع رو **جدا** نگه دار (خریدِ تم، ترمیمِ استریک، تخفیفِ اشتراک): اگه روزی لازم شد
+     * سکه‌ی روزانه بازحساب بشه، دستاوردِ کاربر نباید با اون قاطی شه.
+     */
+    suspend fun spend(amount: Int, refId: String, type: String = Type.SPEND_SUBSCRIPTION) {
         coinDao.award(
             CoinEventEntity(
-                type = Type.SPEND_SUBSCRIPTION,
+                type = type,
                 amount = -amount,
                 dateKey = refId,
                 createdAt = System.currentTimeMillis(),

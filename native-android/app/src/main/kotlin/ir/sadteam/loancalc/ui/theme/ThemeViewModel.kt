@@ -21,6 +21,27 @@ class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewMod
      * بین روشن ← تاریک ← خودکار می‌چرخه - چک اشتراکی‌بودنِ کاربر وظیفه‌ی UI (MainActivity) هست،
      * نه اینجا. («خودکار» یعنی از تنظیماتِ خودِ گوشی پیروی کن.)
      */
+    /** تمِ رنگیِ فعال - فقط خانواده‌ی primary رو عوض می‌کنه (رجوع کن به [ColorTheme]). */
+    val colorTheme: StateFlow<ColorTheme> = uiPrefs.colorTheme
+        .map { ColorTheme.fromId(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ColorTheme.GREEN)
+
+    /** تم‌هایی که خریده شدن. سبز همیشه هست چون رایگانه. */
+    val ownedThemes: StateFlow<Set<String>> = uiPrefs.ownedThemes
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    fun selectColorTheme(theme: ColorTheme) {
+        viewModelScope.launch { uiPrefs.setColorTheme(theme.id) }
+    }
+
+    /** بعد از خریدِ موفق: هم مالکیت ثبت می‌شه هم **فوراً روشن می‌شه** (رسیدِ خرید همون رنگه). */
+    fun ownAndSelect(theme: ColorTheme) {
+        viewModelScope.launch {
+            uiPrefs.addOwnedTheme(theme.id)
+            uiPrefs.setColorTheme(theme.id)
+        }
+    }
+
     val reducedMotion: StateFlow<Boolean> = uiPrefs.reducedMotion
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 

@@ -29,4 +29,25 @@ class DeepLinkTarget @Inject constructor() {
     fun consume() {
         _pendingLoanId.value = null
     }
+
+    /**
+     * میان‌برِ فشارِ طولانی رو آیکونِ اپ (مثلِ دولینگو) - خواسته‌ی صریحِ کاربر.
+     * مقدارش یکی از `SHORTCUT_*`ه و `MainActivity` بعد از خوندنش صفرش می‌کنه.
+     */
+    private val _pendingShortcut = MutableStateFlow<String?>(null)
+    val pendingShortcut: StateFlow<String?> = _pendingShortcut
+
+    fun setShortcut(action: String) {
+        _pendingShortcut.value = action
+    }
+
+    fun consumeShortcut() {
+        _pendingShortcut.value = null
+    }
+
+    companion object {
+        const val SHORTCUT_ADD_TRANSACTION = "add_transaction"
+        const val SHORTCUT_DUE = "due"
+        const val SHORTCUT_REPORT = "report"
+    }
 }

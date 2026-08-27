@@ -1,4 +1,10 @@
 <resources>
     <string name="app_name">جیبک</string>
     <string name="widget_description">نمایش قسط بعدی روی صفحه اصلی</string>
+    <string name="shortcut_add_short">تراکنش</string>
+    <string name="shortcut_add_long">ثبتِ تراکنشِ تازه</string>
+    <string name="shortcut_due_short">سررسید</string>
+    <string name="shortcut_due_long">قسط و چکِ نزدیک</string>
+    <string name="shortcut_report_short">گزارش</string>
+    <string name="shortcut_report_long">خرجِ این ماه</string>
 </resources>

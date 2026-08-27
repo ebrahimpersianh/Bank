@@ -19,7 +19,7 @@ BRAND = {
     "0XFF0B8C57": "AppPrimaryDim / AppPrimaryInk",
     "0XFFE9F7EF": "AppPrimaryPill",
     "0XFF9FE0BC": "AppPrimaryBorder",
-    "0XFF3DDC96": "AppPrimaryInk (تیره)",
+    "0XFF3DDC96": "AppPrimaryInk (تیره) / AppPrimaryInkLight",
 }
 # برند و لوگو عمداً سبزِ ثابت‌ان و با تم عوض نمی‌شن.
 SKIP = ("/theme/", "JibakLogo.kt", "SplashIntroScreen.kt", "BrandMarks.kt", "JibakMascot.kt", "AppHeroCard.kt", "Avatar.kt")

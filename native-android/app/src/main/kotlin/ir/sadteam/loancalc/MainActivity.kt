@@ -176,6 +176,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.ColorTheme
 import ir.sadteam.loancalc.ui.theme.LoanCalcTheme
 import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
 import ir.sadteam.loancalc.ui.theme.Motion
@@ -307,6 +308,8 @@ class MainActivity : FragmentActivity() {
     private fun handleDeepLinkIntent(intent: Intent?) {
         val loanId = intent?.getLongExtra(EXTRA_OPEN_LOAN_ID, -1L) ?: -1L
         if (loanId > 0) deepLinkTarget.setLoanId(loanId)
+        // میان‌برِ فشارِ طولانی رو آیکونِ اپ - رجوع کن به res/xml/shortcuts.xml
+        intent?.getStringExtra("jibak_shortcut")?.let { deepLinkTarget.setShortcut(it) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -320,11 +323,12 @@ class MainActivity : FragmentActivity() {
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val themeMode by themeViewModel.themeMode.collectAsState()
             val fontScale by themeViewModel.fontScale.collectAsState()
+            val colorTheme by themeViewModel.colorTheme.collectAsState()
             val baseDensity = LocalDensity.current
             // عمداً بیرونِ LoanCalcTheme: این state باید از تعویضِ خودِ تم جونِ سالم به‌در ببره،
             // چون دقیقاً وسطِ همون تعویض داره کار می‌کنه (رجوع کن به ThemeReveal.kt).
             val themeReveal = remember { ThemeRevealState() }
-            LoanCalcTheme(themeMode = themeMode) {
+            LoanCalcTheme(themeMode = themeMode, colorTheme = colorTheme) {
                 CompositionLocalProvider(
                     LocalLayoutDirection provides LayoutDirection.Rtl,
                     LocalSubscriptionManager provides subscriptionManager,
@@ -553,6 +557,20 @@ private fun LoanCalcApp(
             requestedLoanSubTab = LoanSubTab.MY_LOANS
             if (currentRoute != LOAN_ROUTE) navigateTo(LOAN_ROUTE)
         }
+    }
+
+    // میان‌برِ فشارِ طولانی رو آیکونِ اپ (مثلِ دولینگو) - رجوع کن به res/xml/shortcuts.xml.
+    // ⚠️ «تراکنشِ تازه» فعلاً فقط تبِ خانه رو باز می‌کنه (دکمه‌ی + همون‌جاست)؛ بازکردنِ
+    // مستقیمِ شیت یه پرچمِ سراسری لازم داره که هنوز نداریم.
+    val pendingShortcut by deepLinkViewModel.pendingShortcut.collectAsState()
+    LaunchedEffect(pendingShortcut) {
+        when (pendingShortcut) {
+            DeepLinkTarget.SHORTCUT_ADD_TRANSACTION -> navigateTo(BottomTab.HOME.route)
+            DeepLinkTarget.SHORTCUT_DUE -> navigateTo(BottomTab.DUE.route)
+            DeepLinkTarget.SHORTCUT_REPORT -> navigateTo(BottomTab.REPORT.route)
+            else -> return@LaunchedEffect
+        }
+        deepLinkViewModel.consumeShortcut()
     }
 
     // یادآوریِ دوره‌ایِ امتیازدادن تو استور (مورد ۲۵) - رجوع کن به RatePromptViewModel برای منطقِ
