@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import java.util.Locale
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.fmt
@@ -675,14 +676,26 @@ private fun CategoryBreakdownCard(
                 size = 74.dp,
                 strokeWidth = 13.dp,
             ) {
-                // برچسبِ «این ماه» از وسطِ دونات برداشته شد (خواستهٔ کاربر): با دو خط،
-                // عدد بالاتر از مرکزِ دایره می‌نشست. حالا تک‌خط و دقیقاً وسط.
-                PrivacyCrossfade(privacyMode) { masked ->
+                // عیناً مثلِ فریمِ 15a: عدد ۱۱sp/Black و زیرش «این ماه» ۷sp رنگِ کم‌رنگ،
+                // بدونِ فاصله‌ی اضافه. قبلاً ۸sp گذاشته بودم که درشت‌تر از طرح بود.
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(1.dp),
+                ) {
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            maskIfPrivate(masked, compactRial(total)),
+                            color = AppText,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
                     Text(
-                        maskIfPrivate(masked, compactRial(total)),
-                        color = AppText,
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.Black,
+                        "این ماه",
+                        color = AppLabel,
+                        fontSize = 7.sp,
+                        lineHeight = 8.sp,
+                        fontWeight = FontWeight.Bold,
                     )
                 }
             }
@@ -720,7 +733,11 @@ private fun CategoryBreakdownCard(
 
 /** «۹٫۲M» - فشرده‌ی وسطِ دونات. فریم واحد نمی‌ذاره، فقط حرفِ M. */
 private fun compactRial(value: Double): String = when {
-    value >= 1_000_000 -> toFa("%.1f".format(value / 1_000_000).trimEnd('0').trimEnd('.')) + "M"
+    // جداکننده‌ی اعشار باید «٫»ِ فارسی باشه نه نقطه‌ی لاتین (طرح: «۹٫۲M»). قالب‌بندی هم
+    // با Locale.US انجام می‌شه تا رو گوشیِ فارسی خودش رقمِ فارسی/کاما تولید نکنه.
+    value >= 1_000_000 ->
+        toFa(String.format(Locale.US, "%.1f", value / 1_000_000).trimEnd('0').trimEnd('.'))
+            .replace('.', '٫') + "M"
     value >= 1_000 -> toFa((value / 1_000).toInt()) + "K"
     else -> toFa(value.toInt())
 }
