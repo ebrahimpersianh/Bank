@@ -53,6 +53,7 @@ import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.History
@@ -62,6 +63,7 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Person
@@ -1112,53 +1114,119 @@ private fun ReminderToggles(
         }
     }
 
-    SettingsSwitchRow(
-        icon = Icons.Filled.Notifications,
-        title = "یادآوری سررسید",
-        subtitle = "برای اقساط و چک‌های نزدیک به سررسید نوتیف بده",
-        checked = notificationsEnabled,
-        onCheckedChange = { checked ->
-            if (!checked) {
-                notificationsViewModel.disable()
-            } else {
-                withNotificationPermission(
-                    onGranted = { notificationsViewModel.enable() },
-                    launcher = { permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) },
-                )
+    var permissionGranted by remember {
+        mutableStateOf(
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED,
+        )
+    }
+
+    // ── کارتِ اجازه - **بالای صفحه، نه پایین** ────────────────────────────────
+    // بی اجازه هیچ‌کدوم از این کلیدها کار نمی‌کنه، و کاربری که کلید رو روشن می‌کنه و
+    // خبری نمی‌شه به برنامه بی‌اعتماد می‌شه. وقتی اجازه هست، کارت **کلاً نیست** -
+    // نه کارتِ سبزِ «همه‌چیز خوبه».
+    //
+    // ⚠️ این اجازه‌ی **اعلانِ عادی**ه (`POST_NOTIFICATIONS`)، نه دسترسیِ خواندنِ
+    // اعلانِ بانک‌ها. دو چیزِ جدا با دو مسیرِ جدا - متن‌هاشون قاطی نشه.
+    if (!permissionGranted) {
+        AppCard(variant = AppCardVariant.URGENT, modifier = Modifier.padding(top = 8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(AppDanger),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.NotificationsOff,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(19.dp),
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("اجازه‌ی اعلان نیست", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+                    Text(
+                        "بی اجازه، هیچ یادآوری‌ای نمی‌رسه.",
+                        color = AppDangerInk,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
             }
-        },
-    )
-    AppCard(modifier = Modifier.padding(top = 8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.99f, onClick = onShowReminderSettings),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Filled.Schedule, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
-            Text(
-                "زمان‌بندی، صدا و ویبره",
-                color = AppText,
-                fontSize = 14.sp,
-                modifier = Modifier.weight(1f).padding(start = 10.dp),
-            )
-            Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
+            GradientButton(
+                onClick = { permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) },
+                modifier = Modifier.fillMaxWidth().padding(top = 11.dp),
+            ) {
+                Text("اجازه بده")
+            }
         }
     }
-    SettingsSwitchRow(
-        icon = Icons.Filled.Notifications,
-        title = "یادآوری روزانه‌ی دخل‌وخرج",
-        subtitle = "اگه یه روز چیزی ثبت نکردی، یادت بندازه",
-        checked = dailyExpenseReminderEnabled,
-        onCheckedChange = { checked ->
-            if (!checked) {
-                notificationsViewModel.disableDailyExpenseReminder()
-            } else {
-                withNotificationPermission(
-                    onGranted = { notificationsViewModel.enableDailyExpenseReminder() },
-                    launcher = { dailyPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) },
-                )
-            }
-        },
-    )
+
+    // ── گروهِ یادآورِ روزانه (عادت‌سازی) - خاموشِ پیش‌فرض ───────────────────────
+    SettingsGroupLabel("یادآورِ روزانه")
+    SettingsGroup {
+        SettingsRowItem(
+            title = "یادآورِ ثبتِ روزانه",
+            icon = Icons.Filled.Notifications,
+            tone = SettingsTone.ORANGE,
+            // یادآورِ هوشمند از قبل **همیشه روشنه**: اگه امروز چیزی ثبت کرده باشی
+            // اصلاً فرستاده نمی‌شه. کلیدِ جدا براش نذاشتم - کسی «اعلانِ بی‌معنی» نمی‌خواد.
+            status = if (dailyExpenseReminderEnabled) "فقط روزهایی که چیزی ثبت نکردی" else "خاموش",
+            statusTone = if (dailyExpenseReminderEnabled) StatusTone.HEALTHY else StatusTone.NEUTRAL,
+            checked = dailyExpenseReminderEnabled,
+            onCheckedChange = { checked ->
+                if (!checked) {
+                    notificationsViewModel.disableDailyExpenseReminder()
+                } else {
+                    withNotificationPermission(
+                        onGranted = { notificationsViewModel.enableDailyExpenseReminder() },
+                        launcher = { dailyPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) },
+                    )
+                }
+            },
+        )
+    }
+
+    // ── گروهِ سررسیدها (خطر) - روشنِ پیش‌فرض ───────────────────────────────────
+    SettingsGroupLabel("سررسیدها")
+    SettingsGroup {
+        SettingsRowItem(
+            title = "یادآوریِ سررسید",
+            icon = Icons.Filled.Event,
+            tone = SettingsTone.RED,
+            status = if (notificationsEnabled) "قسط، چک و پرداختِ تکرارشونده" else "خاموش",
+            statusTone = if (notificationsEnabled) StatusTone.HEALTHY else StatusTone.NEUTRAL,
+            checked = notificationsEnabled,
+            onCheckedChange = { checked ->
+                if (!checked) {
+                    notificationsViewModel.disable()
+                } else {
+                    withNotificationPermission(
+                        onGranted = { notificationsViewModel.enable() },
+                        launcher = { permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) },
+                    )
+                }
+            },
+        )
+        if (notificationsEnabled) {
+            SettingsDivider()
+            SettingsRowItem(
+                title = "زمان‌بندی، صدا و ویبره",
+                icon = Icons.Filled.Schedule,
+                tone = SettingsTone.NEUTRAL,
+                status = "چند روز قبل خبر بده، با چه صدایی",
+                onClick = onShowReminderSettings,
+            )
+        }
+    }
 }
 
 @Composable
