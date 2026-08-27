@@ -10,6 +10,7 @@ import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.AssetRepository
 import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.AuthRepository
+import ir.sadteam.loancalc.data.BadgeEvaluator
 import ir.sadteam.loancalc.data.CalculationHistoryRepository
 import ir.sadteam.loancalc.data.CategoryRepository
 import ir.sadteam.loancalc.data.ChequeRepository
@@ -196,6 +197,14 @@ object AppModule {
 
     @Provides
     fun provideCategoryDao(database: AppDatabase): CategoryDao = database.categoryDao()
+
+    @Provides
+    @Singleton
+    fun provideBadgeEvaluator(
+        gamification: GamificationRepository,
+        accountRepository: AccountRepository,
+        loanRepository: LoanRepository,
+    ): BadgeEvaluator = BadgeEvaluator(gamification, accountRepository, loanRepository)
 
     @Provides
     @Singleton

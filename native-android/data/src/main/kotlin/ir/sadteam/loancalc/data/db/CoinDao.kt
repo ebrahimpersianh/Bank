@@ -12,6 +12,10 @@ interface CoinDao {
     @Query("SELECT COALESCE(SUM(amount), 0) FROM coin_events")
     fun observeBalance(): Flow<Int>
 
+    /** همون موجودی، ولی یه‌بار - قبل از خرجِ سکه باید بدونیم کافی هست یا نه. */
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM coin_events")
+    suspend fun getBalance(): Int
+
     @Query("SELECT * FROM coin_events ORDER BY createdAt DESC")
     fun observeAll(): Flow<List<CoinEventEntity>>
 

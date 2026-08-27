@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.data
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.ActiveStreak
 import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.core.StreakRepair
 import ir.sadteam.loancalc.data.db.AchievementDao
 import ir.sadteam.loancalc.data.db.AchievementEntity
 import ir.sadteam.loancalc.data.db.CoinDao
@@ -36,6 +37,9 @@ class GamificationRepository(
         const val COMPLETE_PROFILE = 50
         const val FIRST_BUDGET = 25
         const val FIRST_BACKUP = 25
+
+        /** ترمیمِ زنجیرِ «فعال» - خرج، نه جایزه. */
+        const val STREAK_REPAIR = 100
     }
 
     /**
@@ -58,6 +62,9 @@ class GamificationRepository(
         const val FIRST_BUDGET = "first_budget"
         const val FIRST_BACKUP = "first_backup"
         const val BADGE = "badge"
+
+        /** نشانی که بابتِ **کارهای گذشته** باز شده - بی‌جشن، فقط تو شیتِ جمع‌بندی. */
+        const val BADGE_RETRO = "badge_retro"
         const val SPEND_SUBSCRIPTION = "spend_subscription"
     }
 
@@ -95,6 +102,33 @@ class GamificationRepository(
         return granted
     }
 
+    /**
+     * زنجیرِ پاره‌ی قابلِ ترمیم - `null` یعنی کارتِ ترمیم نباید دیده بشه (زنجیر سالمه، یا
+     * بیشتر از ۴۸ ساعت از پاره‌شدنش گذشته، یا همین ماه یک‌بار ترمیم شده).
+     */
+    suspend fun repairableStreak(today: PersianDate = JalaliCalendar.today()): StreakRepair? {
+        if (coinDao.getDateKeys(Type.STREAK_REPAIR).contains(monthKey(today))) return null
+        return ActiveStreak.repairable(coinDao.getDateKeys(Type.DAILY_LOG).toSet(), today)
+    }
+
+    /**
+     * ترمیمِ زنجیر: [Reward.STREAK_REPAIR] سکه خرج می‌شه و روزهای خالیِ وسط به‌عنوانِ
+     * روزِ فعال (بی‌سکه‌ی روزانه) پر می‌شن تا شمارش دوباره وصل بشه.
+     *
+     * ماهی **یک‌بار** - کلیدِ ماهِ شمسی روی ایندکسِ یکتای `(type, dateKey)` می‌شینه، پس
+     * دوبار زدنِ دکمه هم بی‌اثره.
+     */
+    suspend fun repairStreak(today: PersianDate = JalaliCalendar.today()): Boolean {
+        val repair = repairableStreak(today) ?: return false
+        if (balanceNow() < Reward.STREAK_REPAIR) return false
+        val marked = award(Type.STREAK_REPAIR, -Reward.STREAK_REPAIR, monthKey(today))
+        if (!marked) return false
+        repair.missingKeys.forEach { key -> award(Type.DAILY_LOG, 0, key) }
+        return true
+    }
+
+    private suspend fun balanceNow(): Int = coinDao.getBalance()
+
     /** رویدادِ **یک‌باره** - [dateKey] خالی می‌مونه تا یگانگی روی خودِ نوع بیفته. */
     suspend fun awardOnce(type: String, amount: Int): Boolean = award(type, amount, "")
 
@@ -117,9 +151,13 @@ class GamificationRepository(
         )
     }
 
-    suspend fun unlock(code: String, coins: Int) {
+    /**
+     * بازکردنِ نشان. [silent] یعنی **بازشدنِ گذشته** - نوعش `badge_retro` ثبت می‌شه تا
+     * از بازشدنِ زنده جدا بمونه و اپ بتونه جشن رو فقط برای زنده‌ها بذاره.
+     */
+    suspend fun unlock(code: String, coins: Int, silent: Boolean = false) {
         val inserted = achievementDao.unlock(AchievementEntity(code, System.currentTimeMillis()))
-        if (inserted != -1L) award(Type.BADGE, coins, code)
+        if (inserted != -1L) award(if (silent) Type.BADGE_RETRO else Type.BADGE, coins, code)
     }
 
     private suspend fun award(type: String, amount: Int, dateKey: String): Boolean =
@@ -135,6 +173,9 @@ class GamificationRepository(
     companion object {
         /** هر دو تابع به `:core` منتقل شدن تا `:core:test` رو JVM بتونه تستشون کنه. */
         fun dateKey(date: PersianDate): String = ActiveStreak.dateKey(date)
+
+        /** کلیدِ ماهِ شمسی - ضدِتکرارِ «ماهی یک ترمیم». */
+        fun monthKey(date: PersianDate): String = "%04d-%02d".format(date.y, date.m)
 
         fun countActiveDays(days: Set<String>, today: PersianDate): Int =
             ActiveStreak.countActiveDays(days, today)

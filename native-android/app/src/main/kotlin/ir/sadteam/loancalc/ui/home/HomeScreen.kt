@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +31,7 @@ import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -54,6 +57,7 @@ import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.accounting.NewTransactionSheet
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
+import ir.sadteam.loancalc.ui.components.ActiveChainMark
 import ir.sadteam.loancalc.ui.components.ActiveChip
 import ir.sadteam.loancalc.ui.components.AppButtonVariant
 import ir.sadteam.loancalc.ui.components.AppCard
@@ -62,6 +66,7 @@ import ir.sadteam.loancalc.ui.components.AppFab
 import ir.sadteam.loancalc.ui.components.AppHeroCard
 import ir.sadteam.loancalc.ui.components.AvatarView
 import ir.sadteam.loancalc.ui.components.CategoryDonut
+import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.CoinChip
 import ir.sadteam.loancalc.ui.components.DonutSlice
 import ir.sadteam.loancalc.ui.components.GradientButton
@@ -75,6 +80,7 @@ import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.profile.AvatarViewModel
+import ir.sadteam.loancalc.ui.profile.BadgeRetroSheet
 import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.theme.AppAssetBorder
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -148,6 +154,19 @@ fun HomeScreen(
     val privacyMode = LocalPrivacyMode.current
     val today = remember { JalaliCalendar.today() }
 
+    // سنجشِ نشان‌ها فقط از اینجا (تبِ خانه = اولین صفحه‌ی بعدِ ورود) صدا زده می‌شه تا
+    // بازشدنِ گذشته دقیقاً یه‌بار و صامت انجام بشه.
+    LaunchedEffect(Unit) {
+        gamificationViewModel.syncBadges()
+        gamificationViewModel.refreshRepairable()
+    }
+    val repairable by gamificationViewModel.repairable.collectAsState()
+    val retroBadges by gamificationViewModel.retroUnlocked.collectAsState()
+    if (retroBadges.isNotEmpty()) {
+        BadgeRetroSheet(retroBadges) { gamificationViewModel.consumeRetro() }
+        return
+    }
+
     var showNewTransaction by remember { mutableStateOf(false) }
     if (showNewTransaction) {
         NewTransactionSheet(onDismiss = { showNewTransaction = false })
@@ -189,6 +208,17 @@ fun HomeScreen(
                     coins = coins,
                     onOpenSettings = onOpenSettings,
                 )
+            }
+
+            // ── ترمیمِ زنجیرِ «فعال» - فقط تا ۴۸ ساعت بعد از پاره‌شدن و ماهی یک‌بار ─────────
+            repairable?.let { repair ->
+                item {
+                    StreakRepairCard(
+                        lostDays = repair.lostDays,
+                        canAfford = coins >= 100,
+                        onRepair = { gamificationViewModel.repairStreak() },
+                    )
+                }
             }
 
             // ── حالتِ خالی (فریمِ `15b`) - وقتی هنوز هیچ تراکنشی ثبت نشده ────────────────
@@ -954,5 +984,46 @@ private fun Modifier.dashedCardBorder(): Modifier {
                 pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(9f, 7f), 0f),
             ),
         )
+    }
+}
+
+/**
+ * کارتِ **ترمیمِ زنجیرِ «فعال»** - وقتی کاربر یکی دو روز جا انداخته و زنجیرش پاره شده.
+ *
+ * عمداً فقط تا ۴۸ ساعت دیده می‌شه: بعدش ترمیم دیگه «جبرانِ یه لغزش» نیست، خریدنِ گذشته‌ست.
+ */
+@Composable
+private fun StreakRepairCard(lostDays: Int, canAfford: Boolean, onRepair: () -> Unit) {
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            ActiveChainMark(filled = lostDays.coerceAtMost(7), brokenAt = 0, ringSize = 18.dp)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "زنجیرِ ${lostDays.toFa()} روزه‌ات پاره شد",
+                    color = AppText,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                )
+                Text(
+                    if (canAfford) "با ۱۰۰ سکه می‌تونی وصلش کنی - ماهی یک‌بار" else "برای ترمیم ۱۰۰ سکه لازمه",
+                    color = AppMuted,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+            GradientButton(
+                onClick = onRepair,
+                enabled = canAfford,
+                variant = AppButtonVariant.SECONDARY,
+            ) {
+                CoinIcon(size = 14.dp)
+                Spacer(modifier = Modifier.width(5.dp))
+                Text("ترمیم", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
+            }
+        }
     }
 }

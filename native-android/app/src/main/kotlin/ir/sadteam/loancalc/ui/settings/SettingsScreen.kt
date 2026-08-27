@@ -66,6 +66,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Person
@@ -172,6 +173,7 @@ import ir.sadteam.loancalc.ui.history.CalculationHistoryScreen
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.profile.AvatarViewModel
+import ir.sadteam.loancalc.ui.profile.BadgesScreen
 import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
 import ir.sadteam.loancalc.ui.profile.ThemeShopScreen
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
@@ -307,6 +309,7 @@ private enum class SettingsRoute(val title: String, val keywords: List<String>) 
     TOOLS("ابزارها", listOf("تقویم مالی", "آمار", "گزارش", "تاریخچه محاسبات")),
     SECURITY("امنیت", listOf("قفل", "PIN", "اثر انگشت")),
     COLOR_THEME("تمِ رنگی", listOf("تم", "رنگ", "پوسته", "سکه")),
+    BADGES("نشان‌ها", listOf("نشان", "دستاورد", "مدال", "سکه")),
     PARSING_RULES("قاعده‌های تشخیص", listOf("قاعده", "دسته‌بندی خودکار", "تشخیص")),
     ABOUT("درباره‌ی برنامه", listOf("درباره", "پشتیبانی", "حریم خصوصی", "نسخه")),
 }
@@ -500,6 +503,15 @@ private fun SettingsMainContent(
                     ) { onOpen(SettingsRoute.APPEARANCE) }
                     SettingsDivider()
                 }
+                if (matches(SettingsRoute.BADGES)) {
+                    SettingsRow(
+                        Icons.Filled.MilitaryTech,
+                        SettingsRoute.BADGES,
+                        tone = SettingsTone.ORANGE,
+                        status = "کارهایی که انجام داده‌ای و سکه‌ای که گرفته‌ای",
+                    ) { onOpen(SettingsRoute.BADGES) }
+                    SettingsDivider()
+                }
                 if (matches(SettingsRoute.COLOR_THEME)) {
                     SettingsRow(
                         Icons.Filled.ColorLens,
@@ -669,6 +681,7 @@ private fun SettingsSubPage(
                 SettingsRoute.SECURITY -> SecuritySettings(appLockViewModel)
                 SettingsRoute.PARSING_RULES -> ParsingRulesScreen()
                 SettingsRoute.COLOR_THEME -> ThemeShopScreen()
+                SettingsRoute.BADGES -> BadgesScreen()
                 SettingsRoute.ABOUT -> AboutSettings(banner)
                 SettingsRoute.MAIN -> Unit
             }

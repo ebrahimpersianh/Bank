@@ -41,6 +41,7 @@ class UiPrefs(private val context: Context) {
         val AVATAR_PHOTO = stringPreferencesKey("avatar_photo")
         val SHORTCUT_ORDER = stringPreferencesKey("shortcut_order")
         val REDUCED_MOTION = booleanPreferencesKey("reduced_motion")
+        val BADGES_RETRO_DONE = booleanPreferencesKey("badges_retro_done")
         val COLOR_THEME = stringPreferencesKey("color_theme")
         val OWNED_THEMES = stringPreferencesKey("owned_themes")
     }
@@ -120,6 +121,16 @@ class UiPrefs(private val context: Context) {
             val current = prefs[Keys.OWNED_THEMES]?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
             prefs[Keys.OWNED_THEMES] = (current + id).joinToString(",")
         }
+    }
+
+    /**
+     * اولین سنجشِ نشان‌ها (بازشدنِ **گذشته**) انجام شده؟ - فقط یک‌بار در عمرِ نصب.
+     * تا وقتی `false`ه، نشان‌های گذشته صامت باز می‌شن و یه شیتِ جمع‌بندی نشون داده می‌شه.
+     */
+    val badgesRetroDone: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.BADGES_RETRO_DONE] ?: false }
+
+    suspend fun setBadgesRetroDone() {
+        context.uiPrefsDataStore.edit { it[Keys.BADGES_RETRO_DONE] = true }
     }
 
     val reducedMotion: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.REDUCED_MOTION] ?: false }

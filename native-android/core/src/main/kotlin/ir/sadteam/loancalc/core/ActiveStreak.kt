@@ -30,4 +30,35 @@ object ActiveStreak {
         }
         return count
     }
+
+    /**
+     * زنجیرِ **پاره‌شده‌ی قابلِ ترمیم**.
+     *
+     * فقط تا **۴۸ ساعت** بعد از پاره‌شدن پیشنهاد می‌شه (یعنی آخرین روزِ فعال دو یا سه روز پیش
+     * بوده)؛ بعدش دیگه نه کارت نشون داده می‌شه نه ترمیم معنی داره.
+     *
+     * @return طولِ زنجیرِ ازدست‌رفته و روزهایی که باید پر بشن، یا `null` اگه چیزی برای ترمیم نیست.
+     */
+    fun repairable(days: Set<String>, today: PersianDate): StreakRepair? {
+        if (days.isEmpty()) return null
+        // زنجیر فقط وقتی «پاره» است که نه امروز نه دیروز فعال نبوده.
+        if (countActiveDays(days, today) > 0) return null
+        var cursor = PersianCalendar.addDays(today, -2)
+        var gap = 2
+        while (gap <= 3) {
+            if (days.contains(dateKey(cursor))) {
+                val missing = (1 until gap).map { back -> dateKey(PersianCalendar.addDays(today, -back)) }
+                return StreakRepair(
+                    lostDays = countActiveDays(days, cursor),
+                    missingKeys = missing,
+                )
+            }
+            cursor = PersianCalendar.addDays(cursor, -1)
+            gap++
+        }
+        return null
+    }
 }
+
+/** خروجیِ [ActiveStreak.repairable] - طولِ زنجیرِ ازدست‌رفته و روزهای خالیِ وسط. */
+data class StreakRepair(val lostDays: Int, val missingKeys: List<String>)

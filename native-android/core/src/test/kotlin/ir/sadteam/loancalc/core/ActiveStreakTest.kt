@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.core
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 /**
  * تستِ رگرسیونِ نشانِ «فعال».
@@ -47,5 +48,30 @@ class ActiveStreakTest {
         val firstOfMonth = PersianDate(1405, 6, 1)
         val days = (0..4).map { ActiveStreak.dateKey(PersianCalendar.addDays(firstOfMonth, -it)) }.toSet()
         assertEquals(5, ActiveStreak.countActiveDays(days, firstOfMonth))
+    }
+
+    @Test
+    fun `زنجیرِ سالم قابلِ ترمیم نیست`() {
+        assertNull(ActiveStreak.repairable(keys(0, 1, 2), today))
+    }
+
+    @Test
+    fun `یک روزِ جاافتاده - ترمیم با یک کلیدِ خالی`() {
+        // آخرین روزِ فعال دو روز پیش بوده → فقط دیروز باید پر بشه.
+        val repair = ActiveStreak.repairable(keys(2, 3, 4), today)!!
+        assertEquals(3, repair.lostDays)
+        assertEquals(listOf(ActiveStreak.dateKey(PersianCalendar.addDays(today, -1))), repair.missingKeys)
+    }
+
+    @Test
+    fun `دو روزِ جاافتاده هم هنوز داخلِ ۴۸ ساعته`() {
+        val repair = ActiveStreak.repairable(keys(3, 4), today)!!
+        assertEquals(2, repair.lostDays)
+        assertEquals(2, repair.missingKeys.size)
+    }
+
+    @Test
+    fun `بیشتر از ۴۸ ساعت دیگه ترمیم نمی‌شه`() {
+        assertNull(ActiveStreak.repairable(keys(4, 5, 6), today))
     }
 }
