@@ -146,6 +146,20 @@ object Db {
                 st.executeUpdate(
                     "CREATE INDEX IF NOT EXISTS idx_subscription_purchases_user ON subscription_purchases(user_id)"
                 )
+
+                // کشِ قیمتِ طلا/ارز/سکه (منبع: نوسان) - ردیفِ تکی (id=1) مثلِ app_version.
+                // چرا اینجا و نه هاردکد تو اپ: کلیدِ API رو گیت‌هاب Secret می‌مونه، لو نمی‌ره؛
+                // و سهمیه‌ی وب‌سرویس (۱۲۰ درخواست در ماه) با تازه‌سازیِ کم‌فاصله رعایت می‌شه -
+                // رجوع کن به PriceService.kt.
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS price_snapshot (
+                        id INTEGER PRIMARY KEY CHECK (id = 1),
+                        raw_json TEXT NOT NULL,
+                        fetched_at TEXT NOT NULL
+                    )
+                    """.trimIndent()
+                )
             }
             /* migration برای دیتابیس‌های قدیمی که از قبل جدول users رو بدون این ستون‌ها دارن */
             runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN subscribed INTEGER NOT NULL DEFAULT 0") } }
