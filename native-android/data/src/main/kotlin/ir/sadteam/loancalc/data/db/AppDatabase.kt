@@ -11,6 +11,7 @@ import net.sqlcipher.database.SupportFactory
 
 @Database(
     entities = [
+        ParsingRuleEntity::class,
         LoanEntity::class,
         LoanRowEntity::class,
         ChequeEntity::class,
@@ -31,7 +32,7 @@ import net.sqlcipher.database.SupportFactory
         CoinEventEntity::class,
         AchievementEntity::class,
     ],
-    version = 26,
+    version = 27,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -57,6 +58,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun debtDao(): DebtDao
     abstract fun noteDao(): NoteDao
     abstract fun categoryDao(): CategoryDao
+
+    abstract fun parsingRuleDao(): ParsingRuleDao
     abstract fun assetDao(): AssetDao
     abstract fun assetTradeDao(): AssetTradeDao
 
@@ -425,6 +428,22 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** جدولِ قاعده‌های تشخیصِ دسته‌بندی. ایندکسِ دستی اضافه نشد، پس `indices` هم لازم نیست. */
+        private val MIGRATION_26_27 = object : Migration(26, 27) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS parsing_rules (" +
+                        "id INTEGER NOT NULL PRIMARY KEY, " +
+                        "pattern TEXT NOT NULL, " +
+                        "category TEXT NOT NULL, " +
+                        "txType TEXT, " +
+                        "sortOrder INTEGER NOT NULL DEFAULT 0, " +
+                        "auto INTEGER NOT NULL DEFAULT 0, " +
+                        "matchCount INTEGER NOT NULL DEFAULT 0)",
+                )
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -468,6 +487,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_23_24,
                             MIGRATION_24_25,
                             MIGRATION_25_26,
+                            MIGRATION_26_27,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

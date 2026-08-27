@@ -66,6 +66,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.Rule
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Science
@@ -270,6 +271,7 @@ fun SettingsScreen(
                     onShowSubscription = { showSubscription = true },
                     onShowReminderSettings = { showReminderSettings = true },
                     onOpenTool = { tool = it },
+                    onOpenRules = { route = SettingsRoute.PARSING_RULES },
                 )
             }
             else -> SettingsMainContent(
@@ -294,6 +296,7 @@ private enum class SettingsRoute(val title: String, val keywords: List<String>) 
     SMS("پیامک‌های بانکی", listOf("پیامک", "بانک", "خواندن خودکار")),
     TOOLS("ابزارها", listOf("تقویم مالی", "آمار", "گزارش", "تاریخچه محاسبات")),
     SECURITY("امنیت", listOf("قفل", "PIN", "اثر انگشت")),
+    PARSING_RULES("قاعده‌های تشخیص", listOf("قاعده", "دسته‌بندی خودکار", "تشخیص")),
     ABOUT("درباره‌ی برنامه", listOf("درباره", "پشتیبانی", "حریم خصوصی", "نسخه")),
 }
 
@@ -630,6 +633,7 @@ private fun SettingsSubPage(
     onShowSubscription: () -> Unit,
     onShowReminderSettings: () -> Unit,
     onOpenTool: (String) -> Unit,
+    onOpenRules: () -> Unit,
 ) {
     val banner = rememberInAppBanner()
     Box(modifier = Modifier.fillMaxSize()) {
@@ -639,10 +643,11 @@ private fun SettingsSubPage(
                 SettingsRoute.APPEARANCE -> AppearanceSettings(themeViewModel)
                 SettingsRoute.REMINDERS -> ReminderToggles(notificationsViewModel, onShowReminderSettings)
                 SettingsRoute.DATA -> DataSettings(authViewModel, autoBackupViewModel, banner)
-                SettingsRoute.SMS -> SmsSettings(smsAutoImportViewModel)
+                SettingsRoute.SMS -> SmsSettings(smsAutoImportViewModel, onOpenRules = { onOpenRules() })
                 SettingsRoute.TOOLS -> ToolsSettings(onOpenTool)
                 // دیگه تو یه AppCardِ بیرونی پیچیده نمی‌شه - خودش گروه‌های خودشو داره.
                 SettingsRoute.SECURITY -> SecuritySettings(appLockViewModel)
+                SettingsRoute.PARSING_RULES -> ParsingRulesScreen()
                 SettingsRoute.ABOUT -> AboutSettings(banner)
                 SettingsRoute.MAIN -> Unit
             }
@@ -1246,6 +1251,7 @@ private fun DataSettings(
 @Composable
 private fun SmsSettings(
     smsAutoImportViewModel: SmsAutoImportViewModel,
+    onOpenRules: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -1337,6 +1343,14 @@ private fun SmsSettings(
             tone = SettingsTone.GREEN,
             status = "متنِ یک پیامک را امتحان کن",
             onClick = { showParseTest = true },
+        )
+        SettingsDivider()
+        SettingsRowItem(
+            title = "قاعده‌های تشخیص",
+            icon = Icons.Filled.Rule,
+            tone = SettingsTone.NEUTRAL,
+            status = "دسته‌بندیِ خودکار بر اساسِ متنِ پیامک",
+            onClick = { onOpenRules() },
         )
     }
 

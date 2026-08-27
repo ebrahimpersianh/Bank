@@ -6,10 +6,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import ir.sadteam.loancalc.data.AssetRepository
-import ir.sadteam.loancalc.data.db.AssetDao
-import ir.sadteam.loancalc.data.db.AssetTradeDao
 import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.AssetRepository
 import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.AuthRepository
 import ir.sadteam.loancalc.data.CalculationHistoryRepository
@@ -17,23 +15,30 @@ import ir.sadteam.loancalc.data.CategoryRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.CrashRepository
 import ir.sadteam.loancalc.data.DebtRepository
+import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.NoteRepository
+import ir.sadteam.loancalc.data.ParsingRuleRepository
 import ir.sadteam.loancalc.data.db.AccountDao
 import ir.sadteam.loancalc.data.db.AccountTransactionDao
+import ir.sadteam.loancalc.data.db.AchievementDao
 import ir.sadteam.loancalc.data.db.AppDatabase
+import ir.sadteam.loancalc.data.db.AssetDao
+import ir.sadteam.loancalc.data.db.AssetTradeDao
 import ir.sadteam.loancalc.data.db.BudgetDao
 import ir.sadteam.loancalc.data.db.CalculationHistoryDao
 import ir.sadteam.loancalc.data.db.CategoryDao
 import ir.sadteam.loancalc.data.db.ChequeBookDao
 import ir.sadteam.loancalc.data.db.ChequeDao
+import ir.sadteam.loancalc.data.db.CoinDao
 import ir.sadteam.loancalc.data.db.CounterpartyDao
 import ir.sadteam.loancalc.data.db.DebtDao
 import ir.sadteam.loancalc.data.db.IncomeDao
 import ir.sadteam.loancalc.data.db.LoanDao
 import ir.sadteam.loancalc.data.db.LoanRowDao
 import ir.sadteam.loancalc.data.db.NoteDao
+import ir.sadteam.loancalc.data.db.ParsingRuleDao
 import ir.sadteam.loancalc.data.db.RecurringPaymentDao
 import ir.sadteam.loancalc.data.network.ApiClient
 import ir.sadteam.loancalc.data.network.ApiService
@@ -41,9 +46,6 @@ import ir.sadteam.loancalc.data.prefs.AuthPrefs
 import ir.sadteam.loancalc.data.prefs.SecurityPrefs
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import javax.inject.Singleton
-import ir.sadteam.loancalc.data.db.CoinDao
-import ir.sadteam.loancalc.data.db.AchievementDao
-import ir.sadteam.loancalc.data.GamificationRepository
 
 /**
  * لایه‌ی داده (:data) عمداً از Hilt/هر فریم‌ورک DI بی‌خبره؛ سیم‌کشی وابستگی‌ها همینجا تو :app
@@ -194,6 +196,14 @@ object AppModule {
 
     @Provides
     fun provideCategoryDao(database: AppDatabase): CategoryDao = database.categoryDao()
+
+    @Provides
+    @Singleton
+    fun provideParsingRuleDao(database: AppDatabase): ParsingRuleDao = database.parsingRuleDao()
+
+    @Provides
+    @Singleton
+    fun provideParsingRuleRepository(dao: ParsingRuleDao): ParsingRuleRepository = ParsingRuleRepository(dao)
 
     @Provides
     @Singleton

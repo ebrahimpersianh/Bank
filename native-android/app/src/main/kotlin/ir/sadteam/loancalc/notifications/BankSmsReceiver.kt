@@ -7,15 +7,16 @@ import android.provider.Telephony
 import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.core.BankSmsParser
 import ir.sadteam.loancalc.core.JalaliCalendar
-import ir.sadteam.loancalc.core.smsSenderMatches
 import ir.sadteam.loancalc.core.TransactionType
+import ir.sadteam.loancalc.core.smsSenderMatches
 import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.ParsingRuleRepository
 import ir.sadteam.loancalc.data.prefs.UiPrefs
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * خوندنِ خودکارِ پیامکِ بانکی و ثبتِ خودکارِ تراکنش - رجوع کن به CLAUDE.md، «خوندنِ خودکارِ پیامکِ
@@ -28,6 +29,9 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class BankSmsReceiver : BroadcastReceiver() {
     @Inject lateinit var accountRepository: AccountRepository
+
+    @Inject
+    lateinit var parsingRuleRepository: ParsingRuleRepository
 
     @Inject lateinit var uiPrefs: UiPrefs
 
@@ -70,7 +74,11 @@ class BankSmsReceiver : BroadcastReceiver() {
                     year = today.y,
                     month = today.m,
                     day = today.d,
-                    category = if (parsed.type == TransactionType.WITHDRAWAL) "سایر هزینه" else "سایر درآمد",
+                    // قاعده‌های تشخیص: **مرتب، اولین تطبیق برنده**. اگه هیچ قاعده‌ای نخورد،
+                    // همون دسته‌ی کورِ قبلی می‌مونه (نه حدسِ الکی).
+                    category = parsingRuleRepository.firstMatch(body, parsed.type == TransactionType.WITHDRAWAL)
+                        ?.category
+                        ?: if (parsed.type == TransactionType.WITHDRAWAL) "سایر هزینه" else "سایر درآمد",
                 )
                 uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
                 // زمانِ آخرین پیامکِ **همین حساب** - زیرنویسِ صفحه‌ی تنظیماتِ پیامک از این ساخته می‌شه.
