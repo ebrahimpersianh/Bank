@@ -95,6 +95,12 @@ import ir.sadteam.loancalc.ui.theme.hardShadow
 fun DueTabScreen(
     onAddCheque: () -> Unit = {},
     onAddLoan: () -> Unit = {},
+    /**
+     * 🚨 **گزارشِ کاربر: «رو اینا می‌زنم جزئیاتِ وام نمیاد».** ردیف‌های این صفحه اصلاً
+     * کلیک‌پذیر نبودن - فقط دکمه‌ی «پرداخت کن» کار می‌کرد. حالا تپ رو خودِ ردیف همون
+     * وام رو تو صفحه‌ی «وام‌های من» باز می‌کنه.
+     */
+    onOpenLoan: (Long) -> Unit = {},
     viewModel: DueListViewModel = hiltViewModel(),
 ) {
     var tab by remember { mutableStateOf(DueTab.INSTALLMENTS) }
@@ -147,17 +153,26 @@ fun DueTabScreen(
         if (buckets.overdue.isNotEmpty()) {
             item { GroupLabel("عقب‌افتاده", OverdueInk) }
             items(buckets.overdue, key = { it.id }) { row ->
-                OverdueRow(row, privacyMode) { viewModel.markPaid(row) }
+                OverdueRow(
+                    row = row,
+                    privacyMode = privacyMode,
+                    onPay = { viewModel.markPaid(row) },
+                    onOpen = { row.loan?.let { onOpenLoan(it.id) } },
+                )
             }
         }
         if (buckets.thisWeek.isNotEmpty()) {
             item { GroupLabel("این هفته", AppMuted) }
-            items(buckets.thisWeek, key = { it.id }) { row -> PlainRow(row, privacyMode) }
+            items(buckets.thisWeek, key = { it.id }) { row ->
+                PlainRow(row, privacyMode, onOpen = { row.loan?.let { onOpenLoan(it.id) } })
+            }
         }
         if (buckets.paid.isNotEmpty()) {
             item { GroupLabel("پرداخت‌شده", AppMuted) }
             items(buckets.paid, key = { it.id }) { row ->
-                Box(modifier = Modifier.alpha(0.6f)) { PlainRow(row, privacyMode, paid = true) }
+                Box(modifier = Modifier.alpha(0.6f)) {
+                    PlainRow(row, privacyMode, paid = true, onOpen = { row.loan?.let { onOpenLoan(it.id) } })
+                }
             }
         }
     }
@@ -476,10 +491,12 @@ private fun OverdueRow(
     row: DueListViewModel.DueRow,
     privacyMode: Boolean,
     onPay: () -> Unit,
+    onOpen: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .pressScaleClickable(scale = 0.99f, onClick = onOpen)
             .hardShadow(OverdueBorder, 4.dp, 16.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(AppSurface)
@@ -538,10 +555,12 @@ private fun PlainRow(
     row: DueListViewModel.DueRow,
     privacyMode: Boolean,
     paid: Boolean = false,
+    onOpen: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .pressScaleClickable(scale = 0.99f, onClick = onOpen)
             .clip(RoundedCornerShape(16.dp))
             .background(AppSurface)
             .border(2.dp, PlainBorder, RoundedCornerShape(16.dp))

@@ -17,6 +17,11 @@ class DeepLinkViewModel @Inject constructor(
         deepLinkTarget.consume()
     }
 
+    /** بازکردنِ یه وامِ مشخص از هر جای اپ (ردیفِ سررسید، نوتیفیکیشن، ویجت). */
+    fun openLoan(id: Long) {
+        deepLinkTarget.setLoanId(id)
+    }
+
     val pendingShortcut: StateFlow<String?> = deepLinkTarget.pendingShortcut
 
     fun consumeShortcut() {

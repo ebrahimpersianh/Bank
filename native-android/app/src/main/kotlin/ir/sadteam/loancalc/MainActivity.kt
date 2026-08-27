@@ -863,6 +863,9 @@ private fun LoanCalcApp(
                         DueTabScreen(
                             onAddCheque = { navigateTo(CHEQUE_ROUTE) },
                             onAddLoan = { navigateTo(LOAN_ROUTE) },
+                            // تپ رو ردیفِ قسط → همون وام تو «وام‌های من» باز می‌شه. از همون
+                            // مسیرِ دیپ‌لینکِ نوتیفیکیشن استفاده می‌کنه تا منطق یکی بمونه.
+                            onOpenLoan = { loanId -> deepLinkViewModel.openLoan(loanId) },
                         )
                     }
                 }
