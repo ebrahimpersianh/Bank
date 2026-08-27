@@ -435,7 +435,8 @@ private val SkeletonBarFill: Color
     @Composable get() = AppPrimaryPill
 private val SkeletonBaseline: Color
     @Composable get() = AppChartGrid
-private val PrimaryShadow = Color(0xFF0B8C57)
+private val PrimaryShadow: Color
+    @Composable get() = AppPrimaryDim
 private val GoldHintBg: Color
     @Composable get() = AppWarningPill
 private val GoldHintBorder: Color

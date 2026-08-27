@@ -68,6 +68,8 @@ import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -833,8 +835,10 @@ private fun BudgetToolCard(
 
 private val BudgetGreen: Color
     @Composable get() = AppPrimary
-private val BudgetGreenDeep = Color(0xFF0B8C57)
-private val BudgetGreenLight = Color(0xFF3DDC96)
+private val BudgetGreenDeep: Color
+    @Composable get() = AppPrimaryDim
+private val BudgetGreenLight: Color
+    @Composable get() = AppPrimaryInkLight
 private val BudgetGreenShadow = Color(0xFF096F45)
 private val AddTileBg: Color
     @Composable get() = AppPrimaryPill

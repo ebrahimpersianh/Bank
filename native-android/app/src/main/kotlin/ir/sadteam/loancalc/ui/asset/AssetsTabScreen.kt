@@ -635,7 +635,8 @@ private val GoldInkDeep: Color
     @Composable get() = AppGoldInk
 private val GoldInkSoft: Color
     @Composable get() = AppAssetInk
-private val ProfitUp = Color(0xFF0B8C57)
+private val ProfitUp: Color
+    @Composable get() = AppPrimaryInk
 private val ProfitDown: Color
     @Composable get() = AppDangerInk
 /** یه ردیف از کارتِ طلایی - سکه‌ی ۳۲، اسم ۱۱/۹۰۰، فراداده ۸٫۵، ارزش و سود سمتِ چپ. */

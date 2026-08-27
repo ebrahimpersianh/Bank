@@ -67,6 +67,7 @@ import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppUrgentBorder
@@ -619,7 +620,8 @@ private fun overdueText(daysOverdue: Int): String =
 
 private val DueGreen: Color
     @Composable get() = AppPrimary
-private val DueGreenDeep = Color(0xFF0B8C57)
+private val DueGreenDeep: Color
+    @Composable get() = AppPrimaryDim
 private val TabTrack = Color(0xFFEAF2EE)
 private val DangerSolid: Color
     @Composable get() = AppDanger

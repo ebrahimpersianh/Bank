@@ -93,6 +93,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppPurple
 import ir.sadteam.loancalc.ui.theme.AppRadius
@@ -761,7 +762,8 @@ private fun WeekReviewCard(
 }
 
 /** انتهای گرادیانِ نوارِ سبزِ بودجه - مقدارِ محلیِ فریم، توکن نیست. */
-private val BarGradientEnd = Color(0xFF3DDC96)
+private val BarGradientEnd: Color
+    @Composable get() = AppPrimaryInkLight
 
 /** قابِ آیکونِ کارتِ فوری - مقدارِ محلیِ فریم. */
 private val UrgentIconBg: Color

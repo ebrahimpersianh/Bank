@@ -62,6 +62,11 @@ data class AppColorPalette(
      * «سبزِ دکمه عوض نمی‌شود؛ فقط سایه» ولی سبزِ متن/آیکون عوض می‌شود.
      */
     val primaryInk: Color,
+    /**
+     * **سایه‌ی روشنِ** خانواده‌ی primary - انتهای گرادیانِ نوارها و کارت‌ها.
+     * جزوِ همون پنج مقداریه که تمِ رنگیِ خریدنی عوضشون می‌کنه، پس نباید هیچ‌جا هاردکد بشه.
+     */
+    val primaryLight: Color,
     /** تهرنگِ قرصِ سبز (چیپِ وضعیتِ مثبت). */
     val primaryPill: Color,
     /** حاشیه‌ی قرصِ سبز - تو روشن شفافه، تو تیره دیده می‌شه. */
@@ -166,6 +171,7 @@ val LightAppColors = AppColorPalette(
     primary = Color(0xFF0EA968),
     primaryDim = Color(0xFF0B8C57),
     primaryInk = Color(0xFF0B8C57),
+    primaryLight = Color(0xFF3DDC96),
     primaryPill = Color(0xFFE9F7EF),
     primaryPillBorder = Color(0x00000000), // تو روشن قرصِ سبز حاشیه نداره
 
@@ -237,6 +243,7 @@ val DarkAppColors = AppColorPalette(
     primary = Color(0xFF0EA968),
     primaryDim = Color(0xFF07724A),
     primaryInk = Color(0xFF3DDC96),
+    primaryLight = Color(0xFF3DDC96),
     primaryPill = Color(0x243DDC96), // rgba(61,220,150,.14)
     primaryPillBorder = Color(0x593DDC96), // rgba(61,220,150,.35)
 
@@ -309,6 +316,7 @@ val AppPrimaryBorder: Color @Composable get() = LocalAppColors.current.primaryBo
 val AppPrimary: Color @Composable get() = LocalAppColors.current.primary
 val AppPrimaryDim: Color @Composable get() = LocalAppColors.current.primaryDim
 val AppPrimaryInk: Color @Composable get() = LocalAppColors.current.primaryInk
+val AppPrimaryInkLight: Color @Composable get() = LocalAppColors.current.primaryLight
 val AppPrimaryPill: Color @Composable get() = LocalAppColors.current.primaryPill
 val AppPrimaryPillBorder: Color @Composable get() = LocalAppColors.current.primaryPillBorder
 
