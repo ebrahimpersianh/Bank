@@ -27,6 +27,11 @@ NEEDS = {
     'LocalContentColor': 'androidx.compose.material3.LocalContentColor',
     'LocalTextStyle': 'androidx.compose.material3.LocalTextStyle',
     'CompositionLocalProvider': 'androidx.compose.runtime.CompositionLocalProvider',
+    # چیدمان‌های پایه - یه‌بار `Spacer` بی‌ایمپورت از این بررسی رد شد و بیلد رو شکست.
+    'Spacer': 'androidx.compose.foundation.layout.Spacer',
+    'Box': 'androidx.compose.foundation.layout.Box',
+    'Row': 'androidx.compose.foundation.layout.Row',
+    'Column': 'androidx.compose.foundation.layout.Column',
 }
 # Modifierهای زنجیره‌ای: `.name(` باید ایمپورتِ خودش رو داشته باشه
 MODIFIERS = {
