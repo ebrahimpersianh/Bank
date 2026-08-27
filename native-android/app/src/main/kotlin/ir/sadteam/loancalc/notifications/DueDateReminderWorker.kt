@@ -102,7 +102,9 @@ class DueDateReminderWorker @AssistedInject constructor(
             if (offsets.isEmpty()) return@forEach
             val due = nextOccurrence(today, payment.dayOfMonth)
             val daysLeft = JalaliCalendar.daysBetween(today, due)
-            if (daysLeft in offsets) notifyRecurringPayment(payment, daysLeft, channelId)
+            if (daysLeft in offsets) {
+                notifyRecurringPayment(payment, daysLeft, channelId, uiPrefs.privacyModeEnabled.first())
+            }
         }
 
         // یادآوریِ روزانه‌ی «دخل‌وخرج امروز یادت نره» (رجوع کن به CLAUDE.md، الهام از اپِ رفرنسِ
@@ -179,13 +181,29 @@ class DueDateReminderWorker @AssistedInject constructor(
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
     }
 
-    private fun notifyRecurringPayment(payment: RecurringPaymentEntity, daysLeft: Int, channelId: String) {
+    /**
+     * ⚠️ **حالتِ خصوصی رو اعلان‌ها هم اثر می‌ذاره** (تصمیمِ تاییدشده‌ی طراح): اعلانِ
+     * «۳۲۰٬۰۰۰ ریال» رو صفحه‌ی قفلِ گوشی دقیقاً همون چیزیه که این کلید می‌خواد جلوشو بگیره.
+     * پس وقتی روشنه مبلغ از متنِ اعلان حذف می‌شه - نه یه کلیدِ دومِ جدا.
+     */
+    private fun notifyRecurringPayment(
+        payment: RecurringPaymentEntity,
+        daysLeft: Int,
+        channelId: String,
+        privacyMode: Boolean,
+    ) {
         val whenLabel = dayLabel(daysLeft)
         val notification = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
             .setContentTitle("یادآوریِ پرداختِ تکراری")
-            .setContentText("«${payment.name}» (${fmt(payment.amount)} ریال) $whenLabel سررسید می‌شه")
+            .setContentText(
+                if (privacyMode) {
+                    "«${payment.name}» $whenLabel سررسید می‌شه"
+                } else {
+                    "«${payment.name}» (${fmt(payment.amount)} ریال) $whenLabel سررسید می‌شه"
+                },
+            )
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()

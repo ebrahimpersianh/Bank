@@ -173,6 +173,7 @@ import ir.sadteam.loancalc.ui.theme.AppDisabledText
 import ir.sadteam.loancalc.ui.theme.AppIsDark
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
@@ -1769,7 +1770,9 @@ private fun SecuritySettings(
     }
 
     // ── گروهِ قفل ─────────────────────────────────────────────────────────────
-    SettingsGroupLabel("قفل")
+    // قاعده‌ی صریحِ طراح: **قفل که خاموشه، ردیف‌های زیرش پنهان می‌شن، نه خاکستری.**
+    // «سه ردیفِ خاکستریِ بی‌کار بدتر از یه ردیفِ تنهاست.»
+    SettingsGroupLabel("قفلِ برنامه")
     SettingsGroup {
         SettingsRowItem(
             title = "قفل با رمزِ عددی",
@@ -1791,8 +1794,8 @@ private fun SecuritySettings(
                 onClick = { showPinDialog = true },
             )
         }
-        SettingsDivider()
-        SettingsRowItem(
+        if (pinHash != null) SettingsDivider()
+        if (pinHash != null) SettingsRowItem(
             title = "قفل با اثرِ انگشت",
             icon = Icons.Filled.Fingerprint,
             tone = SettingsTone.RED,
@@ -1842,9 +1845,32 @@ private fun SecuritySettings(
             title = "پنهان‌کردنِ مبلغ‌ها",
             icon = Icons.Filled.VisibilityOff,
             tone = SettingsTone.NEUTRAL,
-            status = if (privacyMode) "مبلغ‌ها پشتِ ••••• پنهان‌اند" else "مبلغ‌ها دیده می‌شوند",
+            status = if (privacyMode) {
+                "مبلغ‌ها پشتِ ••••• پنهان‌اند - متنِ اعلان‌ها هم بی‌مبلغ می‌شود"
+            } else {
+                "مبلغ‌ها دیده می‌شوند"
+            },
             checked = privacyMode,
             onCheckedChange = { privacyViewModel.toggle() },
+        )
+    }
+
+    // ── کارتِ توضیحِ ته صفحه ──────────────────────────────────────────────────
+    // جمله‌ی سوم مهم‌ترینه: بی اون، کاربرِ فراموش‌کار فکر می‌کنه داده‌ش رفته و اپ رو پاک می‌کنه.
+    AppCard(
+        backgroundColor = AppSurface2,
+        borderColor = AppLineRow,
+        shadow = false,
+        modifier = Modifier.padding(top = AppSpacing.betweenCards),
+    ) {
+        Text(
+            "قفلِ برنامه فقط جلوی بازشدنِ برنامه رو همین گوشی رو می‌گیره. داده‌هات رو سرور با " +
+                "حسابِ کاربریت محافظت می‌شه، نه با این رمز. اگه رمز رو فراموش کنی، با ورودِ " +
+                "دوباره به حساب بازش می‌کنی.",
+            color = AppMuted,
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Bold,
+            lineHeight = 20.sp,
         )
     }
 }
