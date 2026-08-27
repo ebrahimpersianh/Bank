@@ -21,12 +21,16 @@ MODS = r'(?:public |private |internal |abstract |sealed |open |data |enum |value
 # تابع نیستن، گیرنده‌ان - وگرنه `List` و `RowScope` به‌عنوانِ نمادِ پروژه ایندکس می‌شدن.
 DECL = re.compile(r'^\s*(?:@\w+\s+)*' + MODS + r'(?:fun\s+([A-Z]\w*)\s*\(|(?:class|object|interface)\s+([A-Z]\w*))', re.M)
 # ولی برای «تو همین فایل تعریف شده؟» هر دو شکل حساب می‌شن.
+# پراپرتیِ سطحِ بالا (`val AppPrimaryBorder: Color @Composable get() = ...`) - بیلدِ ۴۸۵ روی
+# همین شکست: توکنِ رنگ نه تابعه نه کلاس، پس تو DECL نمی‌افتاد و «ایمپورتِ گمشده» دیده نمی‌شد.
+PROP = re.compile(r'^(?:public |private |internal )?val ([A-Z]\w*)\s*[:=]', re.M)
 LOCAL = re.compile(r'^\s*(?:@\w+\s+)*' + MODS + r'(?:fun\s+(?:[\w.<>, ?]+\.)?([A-Z]\w*)\s*\(|(?:class|object|interface)\s+([A-Z]\w*))', re.M)
 # فلیورها/ویجت: پکیج‌بندیِ متفاوت یا نسخه‌ی جدا به‌ازای هر فلیور
 SKIP = ("/widget/", "/src/myket/", "/src/cafebazaar/")
 
 files = [p for d in SRC for p in d.rglob("*.kt") if not any(s in str(p) for s in SKIP)]
 index = collections.defaultdict(set)
+prop_names = set()
 own = {}
 for p in files:
     src = p.read_text(encoding="utf-8")
@@ -34,9 +38,12 @@ for p in files:
     pkg = pkg.group(1) if pkg else ""
     def pick(rx):
         return {a or b for a, b in rx.findall(src)} - {""}
-    own[p] = (pkg, pick(LOCAL), src)
-    for n in pick(DECL):
+    props = set(PROP.findall(src))
+    own[p] = (pkg, pick(LOCAL) | props, src)
+    for n in pick(DECL) | props:
         index[n].add(pkg)
+        if n in props:
+            prop_names.add(n)
 
 bad = []
 for p, (pkg, names, src) in own.items():
@@ -46,7 +53,10 @@ for p, (pkg, names, src) in own.items():
     body = re.sub(r'^import .*$', '', src, flags=re.M)
     body = re.sub(r'//.*', '', body)
     body = re.sub(r'/\*.*?\*/', '', body, flags=re.S)
-    for name in sorted(set(re.findall(r'(?<![\w.])([A-Z]\w*)\s*\(', body))):
+    used = set(re.findall(r'(?<![\w.])([A-Z]\w*)\s*\(', body))
+    # پراپرتی‌ها با پرانتز صدا زده نمی‌شن، پس جدا دنبالِ ارجاعِ لختشون می‌گردیم.
+    used |= {n for n in prop_names if re.search(r'(?<![\w.])' + n + r'(?![\w(])', body)}
+    for name in sorted(used):
         pkgs = index.get(name)
         if not pkgs or len(pkgs) != 1:
             continue                       # نامِ ناشناخته یا تکراری - قابلِ اتکا نیست

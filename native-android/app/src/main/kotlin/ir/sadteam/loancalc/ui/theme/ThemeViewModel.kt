@@ -21,6 +21,13 @@ class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewMod
      * بین روشن ← تاریک ← خودکار می‌چرخه - چک اشتراکی‌بودنِ کاربر وظیفه‌ی UI (MainActivity) هست،
      * نه اینجا. («خودکار» یعنی از تنظیماتِ خودِ گوشی پیروی کن.)
      */
+    val reducedMotion: StateFlow<Boolean> = uiPrefs.reducedMotion
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setReducedMotion(value: Boolean) {
+        viewModelScope.launch { uiPrefs.setReducedMotion(value) }
+    }
+
     fun cycleThemeMode() {
         val next = when (themeMode.value) {
             ThemeMode.LIGHT -> ThemeMode.DARK

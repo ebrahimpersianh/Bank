@@ -35,6 +35,12 @@ private const val STAGGER_MAX_STEPS = 4
  */
 @Composable
 fun StaggerIn(index: Int, content: @Composable () -> Unit) {
+    // «انیمیشنِ کم» (تنظیمات ← ظاهر و تم): ورودِ کارت‌ها جزوِ **تزئین**ه، پس اینجا حذف می‌شه.
+    // بازخوردِ لمس (فشرده‌شدنِ دکمه، جابه‌جاییِ دستگیره‌ی کلید) عمداً دست‌نخورده می‌مونه.
+    if (LocalReducedMotion.current) {
+        content()
+        return
+    }
     val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
     val delay = index.coerceIn(0, STAGGER_MAX_STEPS) * STAGGER_STEP_MS
     AnimatedVisibility(
@@ -45,3 +51,9 @@ fun StaggerIn(index: Int, content: @Composable () -> Unit) {
         content()
     }
 }
+
+/**
+ * «انیمیشنِ کم» - از `ThemeViewModel` تو `MainActivity` پر می‌شه و به کلِ درختِ UI می‌رسه.
+ * قاعده‌ی طراح: هرچه فقط تزئینه می‌ره، هرچه بازخوردِ لمسه می‌مونه.
+ */
+val LocalReducedMotion = androidx.compose.runtime.staticCompositionLocalOf { false }

@@ -39,15 +39,20 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Animation
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
@@ -157,10 +162,12 @@ import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDisabledText
+import ir.sadteam.loancalc.ui.theme.AppIsDark
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSpacing
@@ -844,39 +851,109 @@ private fun AccountSettings(
 private fun AppearanceSettings(themeViewModel: ThemeViewModel) {
     val themeMode by themeViewModel.themeMode.collectAsState()
     val fontScale by themeViewModel.fontScale.collectAsState()
-    // همون افکتِ دایره‌ایِ تعویضِ تم که از مرکزِ خودِ چیپِ زده‌شده باز می‌شه - رجوع کن به ThemeReveal.kt.
+    val reducedMotion by themeViewModel.reducedMotion.collectAsState()
+    val isDark = AppIsDark
+    // همون افکتِ دایره‌ایِ تعویضِ تم که از مرکزِ خودِ گزینه‌ی زده‌شده باز می‌شه (ThemeReveal.kt).
     val themeReveal = LocalThemeReveal.current
     val chipCenters = remember { mutableStateMapOf<ThemeMode, Offset>() }
     val themeToggleScope = rememberCoroutineScope()
 
-    AppCard(label = "تم", modifier = Modifier.padding(top = 8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+    // ── سه‌حالتیِ روشن · تیره · سیستم ─────────────────────────────────────────
+    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
             themeModeOptions.forEach { (mode, label) ->
-                AppChip(
-                    label = label,
-                    selected = themeMode == mode,
-                    onClick = {
-                        if (mode != themeMode && !themeReveal.inProgress) {
-                            val origin = chipCenters[mode] ?: Offset.Zero
-                            themeToggleScope.launch {
-                                themeReveal.startReveal(origin = origin, currentKey = themeMode)
+                val selected = themeMode == mode
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = AppSpacing.minTouchTarget)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (selected) AppSurface2 else Color.Transparent)
+                        .pressScaleClickable {
+                            if (mode != themeMode && !themeReveal.inProgress) {
+                                val origin = chipCenters[mode] ?: Offset.Zero
+                                themeToggleScope.launch {
+                                    themeReveal.startReveal(origin = origin, currentKey = themeMode)
+                                    themeViewModel.setThemeMode(mode)
+                                }
+                            } else {
                                 themeViewModel.setThemeMode(mode)
                             }
-                        } else {
-                            themeViewModel.setThemeMode(mode)
                         }
-                    },
-                    modifier = Modifier.onGloballyPositioned { chipCenters[mode] = it.boundsInRoot().center },
+                        .onGloballyPositioned { chipCenters[mode] = it.boundsInRoot().center },
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        when (mode) {
+                            ThemeMode.LIGHT -> Icons.Filled.LightMode
+                            ThemeMode.DARK -> Icons.Filled.DarkMode
+                            ThemeMode.SYSTEM -> Icons.Filled.BrightnessAuto
+                        },
+                        contentDescription = null,
+                        tint = if (selected) AppText else AppMuted,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Text(
+                        label,
+                        color = if (selected) AppText else AppMuted,
+                        fontSize = 11.sp,
+                        fontWeight = if (selected) FontWeight.Black else FontWeight.ExtraBold,
+                        modifier = Modifier.padding(start = 5.dp),
+                    )
+                }
+            }
+        }
+    }
+    // خطِ خبری - **فقط** تو حالتِ سیستم دیده می‌شه.
+    if (themeMode == ThemeMode.SYSTEM) {
+        Text(
+            if (isDark) "الان تیره است، چون گوشی‌ات تیره است." else "الان روشن است، چون گوشی‌ات روشن است.",
+            color = AppMuted,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 6.dp, end = 4.dp),
+        )
+    }
+
+    // ── گروهِ خواندن ──────────────────────────────────────────────────────────
+    SettingsGroupLabel("خواندن")
+    SettingsGroup {
+        SettingsRowItem(
+            title = "اندازه‌ی متن",
+            icon = Icons.Filled.FormatSize,
+            tone = SettingsTone.PURPLE,
+            status = fontSizeOptions.firstOrNull { it.first == fontScale }?.second ?: "معمولی",
+            onClick = null,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 13.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            fontSizeOptions.forEach { (scale, label) ->
+                AppChip(
+                    label = label,
+                    selected = fontScale == scale,
+                    onClick = { themeViewModel.setFontScale(scale) },
                 )
             }
         }
     }
-    AppCard(label = "اندازه فونت", modifier = Modifier.padding(top = 8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            fontSizeOptions.forEach { (scale, label) ->
-                AppChip(label = label, selected = fontScale == scale, onClick = { themeViewModel.setFontScale(scale) })
-            }
-        }
+
+    // ── گروهِ حرکت ────────────────────────────────────────────────────────────
+    SettingsGroupLabel("حرکت")
+    SettingsGroup {
+        SettingsRowItem(
+            title = "انیمیشنِ کم",
+            icon = Icons.Filled.Animation,
+            tone = SettingsTone.NEUTRAL,
+            status = "برای گوشی‌های کم‌قدرت",
+            checked = reducedMotion,
+            onCheckedChange = { themeViewModel.setReducedMotion(it) },
+        )
     }
 }
 

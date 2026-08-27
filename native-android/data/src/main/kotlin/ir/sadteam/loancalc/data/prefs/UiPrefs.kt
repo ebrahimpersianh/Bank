@@ -40,6 +40,7 @@ class UiPrefs(private val context: Context) {
         val AVATAR_COLOR = stringPreferencesKey("avatar_color")
         val AVATAR_PHOTO = stringPreferencesKey("avatar_photo")
         val SHORTCUT_ORDER = stringPreferencesKey("shortcut_order")
+        val REDUCED_MOTION = booleanPreferencesKey("reduced_motion")
     }
 
     // پیش‌فرض روشن/سفید (به‌درخواست کاربر «تم اصلی برنامه سفید باشه») - کاربری که قبلاً دستی
@@ -92,6 +93,16 @@ class UiPrefs(private val context: Context) {
 
     /** پورت .app.fs-small/fs-medium/fs-large (zoom:0.9/1/1.15) - پیش‌فرض «متوسط» (۱). */
     val fontScale: Flow<Float> = context.uiPrefsDataStore.data.map { it[Keys.FONT_SCALE] ?: 1f }
+
+    /**
+     * «انیمیشنِ کم» - برای گوشی‌های کم‌قدرت. قاعده‌ی طراح: **هرچه فقط تزئینه می‌ره، هرچه
+     * بازخوردِ لمسه می‌مونه** (جابه‌جاییِ دستگیره‌ی کلید، تغییرِ رنگ و نوارِ پیشرفت می‌مونن).
+     */
+    val reducedMotion: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.REDUCED_MOTION] ?: false }
+
+    suspend fun setReducedMotion(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.REDUCED_MOTION] = value }
+    }
 
     suspend fun setFontScale(value: Float) {
         context.uiPrefsDataStore.edit { it[Keys.FONT_SCALE] = value }
