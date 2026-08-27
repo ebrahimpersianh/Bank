@@ -1017,7 +1017,7 @@ private fun StreakRepairCard(lostDays: Int, canAfford: Boolean, onRepair: () -> 
             ActiveChainMark(filled = lostDays.coerceAtMost(7), brokenAt = 0, ringSize = 18.dp)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "زنجیرِ ${lostDays.toFa()} روزه‌ات پاره شد",
+                    "زنجیرِ ${toFa(lostDays)} روزه‌ات پاره شد",
                     color = AppText,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.ExtraBold,

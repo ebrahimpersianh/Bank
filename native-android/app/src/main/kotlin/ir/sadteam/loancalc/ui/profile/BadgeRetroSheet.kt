@@ -45,7 +45,7 @@ fun BadgeRetroSheet(badges: List<Badge>, onDismiss: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Text(
-            "${badges.size.toFa()} نشان از کارهایی که قبلاً کرده‌ای",
+            "${toFa(badges.size)} نشان از کارهایی که قبلاً کرده‌ای",
             color = AppText,
             fontSize = 20.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -57,7 +57,7 @@ fun BadgeRetroSheet(badges: List<Badge>, onDismiss: () -> Unit) {
         ) {
             CoinIcon(size = 20.dp)
             Text(
-                "${coins.toFa()} سکه هم به حسابت اضافه شد",
+                "${toFa(coins)} سکه هم به حسابت اضافه شد",
                 color = AppMuted,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
@@ -77,7 +77,7 @@ fun BadgeRetroSheet(badges: List<Badge>, onDismiss: () -> Unit) {
                     }
                     Box(contentAlignment = Alignment.Center) {
                         Text(
-                            "+${badge.coins.toFa()}",
+                            "+${toFa(badge.coins)}",
                             color = AppMuted,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.ExtraBold,
