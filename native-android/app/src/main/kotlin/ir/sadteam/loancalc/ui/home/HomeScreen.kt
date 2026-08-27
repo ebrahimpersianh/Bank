@@ -675,18 +675,15 @@ private fun CategoryBreakdownCard(
                 size = 74.dp,
                 strokeWidth = 13.dp,
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    PrivacyCrossfade(privacyMode) { masked ->
-                        Text(
-                            maskIfPrivate(masked, compactRial(total)),
-                            color = AppText,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Black,
-                        )
-                    }
-                    // فریم ۷sp داره ولی از حدِ خوانا کمتره؛ خودِ طراح گفت «اگه می‌خوای امن
-                    // باشه ۸ بذار، جا هست». امن رو انتخاب کردم.
-                    Text("این ماه", color = AppLabel, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                // برچسبِ «این ماه» از وسطِ دونات برداشته شد (خواستهٔ کاربر): با دو خط،
+                // عدد بالاتر از مرکزِ دایره می‌نشست. حالا تک‌خط و دقیقاً وسط.
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        maskIfPrivate(masked, compactRial(total)),
+                        color = AppText,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Black,
+                    )
                 }
             }
             Column(
