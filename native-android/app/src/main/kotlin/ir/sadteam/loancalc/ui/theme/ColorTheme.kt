@@ -33,6 +33,8 @@ enum class ColorTheme(
     private val darkLight: Long,
     private val darkPill: Long,
     private val darkBorder: Long,
+    /** سایه‌ی سختِ کارتِ قهرمانِ **سبز** - تیره‌ترِ همون خانواده. */
+    val heroShadow: Long,
 ) {
     /** سبزِ جیبک - پیش‌فرض، از `TOKENS.md`. دست نزن. */
     GREEN(
@@ -42,6 +44,7 @@ enum class ColorTheme(
         lightPrimary = 0xFF0EA968, lightDim = 0xFF0B8C57, lightInk = 0xFF0B8C57,
         lightLight = 0xFF3DDC96, lightPill = 0xFFE9F7EF, lightBorder = 0xFF9FE0BC,
         darkInk = 0xFF3DDC96, darkLight = 0xFF3DDC96, darkPill = 0x243DDC96, darkBorder = 0x593DDC96,
+        heroShadow = 0xFF096F45,
     ),
     BLUE(
         id = "blue",
@@ -50,6 +53,7 @@ enum class ColorTheme(
         lightPrimary = 0xFF1381B8, lightDim = 0xFF0F6892, lightInk = 0xFF1381B8,
         lightLight = 0xFF1CB0F6, lightPill = 0xFFE7F4FC, lightBorder = 0xFFA9D6F7,
         darkInk = 0xFF6FC8F2, darkLight = 0xFF1CB0F6, darkPill = 0x241CB0F6, darkBorder = 0x591CB0F6,
+        heroShadow = 0xFF0A6795,
     ),
     PURPLE(
         id = "purple",
@@ -58,6 +62,7 @@ enum class ColorTheme(
         lightPrimary = 0xFF7440C9, lightDim = 0xFF5C2FA8, lightInk = 0xFF7440C9,
         lightLight = 0xFFA56EFF, lightPill = 0xFFF2EDFC, lightBorder = 0xFFCDB6F2,
         darkInk = 0xFFBE97FF, darkLight = 0xFFA56EFF, darkPill = 0x24A56EFF, darkBorder = 0x59A56EFF,
+        heroShadow = 0xFF5C2FA8,
     ),
 
     /** با **نشانِ «ماهِ منظم»** باز می‌شه نه با سکه - قاعده‌ی خوبیه که سکه همه‌چیز رو نمی‌خره. */
@@ -71,8 +76,13 @@ enum class ColorTheme(
         // رنگ تقریباً یکی دیده می‌شدن. سبز جهشِ سه‌چهارپله‌ای داره، طلایی هم باید داشته باشه.
         lightLight = 0xFFE3B94F, lightPill = 0xFFFDF4E0, lightBorder = 0xFFEBD9B4,
         darkInk = 0xFFC99A2E, darkLight = 0xFFE3B94F, darkPill = 0x24C99A2E, darkBorder = 0x59C99A2E,
+        heroShadow = 0xFF6E4E0F,
     ),
     ;
+
+    /** گرادیانِ کارتِ قهرمانِ سبز، وقتی این تم فعاله. */
+    val heroFrom: Long get() = lightPrimary
+    val heroTo: Long get() = lightDim
 
     /** سه نوارِ پیش‌نمایش: پررنگ · روشن · تهرنگ. */
     val swatch: List<Color>
@@ -92,6 +102,7 @@ enum class ColorTheme(
             primaryLight = Color(darkLight),
             primaryPill = Color(darkPill),
             primaryBorder = Color(darkBorder),
+            heroShadow = Color(heroShadow),
         )
     } else {
         base.copy(
@@ -101,6 +112,7 @@ enum class ColorTheme(
             primaryLight = Color(lightLight),
             primaryPill = Color(lightPill),
             primaryBorder = Color(lightBorder),
+            heroShadow = Color(heroShadow),
         )
     }
 

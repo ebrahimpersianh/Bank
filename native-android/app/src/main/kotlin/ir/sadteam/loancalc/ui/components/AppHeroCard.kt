@@ -33,6 +33,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSpacing
+import ir.sadteam.loancalc.ui.theme.LocalAppColors
 import ir.sadteam.loancalc.ui.theme.hardShadow
 
 /**
@@ -76,18 +77,29 @@ fun AppHeroCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(AppRadius.card)
+    // 🎨 **تصمیمِ تاییدشده**: فقط لحنِ **سبز** به تمِ رنگیِ خریدنی گره می‌خوره؛ بنفش و آبی
+    // سرِ جاشون می‌مونن. دلیلش: سبز در واقع رنگِ **برند**ه، ولی بنفش معنی حمل می‌کنه
+    // («بنفش = گزارش و آمار» تو سیستمِ طراحی). اگه تم همه‌ی لحن‌ها رو عوض کنه اون معنی می‌پره.
+    //
+    // ⚠️ عارضه‌ی پذیرفته‌شده: با تمِ **بنفش**، کارتِ خانه و گزارش هم‌رنگ می‌شن. چون عنوان و
+    // محتوا و تبِ فعالشون فرق داره گیج‌کننده نیست - و جایگزینش (سبز موندنِ خانه وقتی کلِ اپ
+    // آبی شده) خیلی بدتره.
+    val colorTheme = LocalAppColors.current
+    val from = if (tone == HeroTone.GREEN) colorTheme.primary else Color(tone.from)
+    val to = if (tone == HeroTone.GREEN) colorTheme.primaryDim else Color(tone.to)
+    val shadow = if (tone == HeroTone.GREEN) colorTheme.heroShadow else Color(tone.shadow)
     // ⚠️ گرادیان **۱۶۰ درجه**ست نه عمودی (اصلاحیه‌ی طراح؛ دورِ قبل عمودی گفته بود و اشتباه
     // بود). نسخه‌ی بنفشِ فریمِ `26a` هم همینه، پس هر دو گونه یه جهت دارن. جهتش مهمه نه
     // عددِ دقیقش: از بالا-راست به پایین-چپ.
     val gradient = Brush.linearGradient(
-        colors = listOf(Color(tone.from), Color(tone.to)),
+        colors = listOf(from, to),
         start = Offset.Zero,
         end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .hardShadow(Color(tone.shadow), 5.dp, AppRadius.card)
+            .hardShadow(shadow, 5.dp, AppRadius.card)
             .clip(shape)
             .background(gradient)
             .padding(AppSpacing.cardPadding),

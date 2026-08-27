@@ -67,6 +67,11 @@ data class AppColorPalette(
      * جزوِ همون پنج مقداریه که تمِ رنگیِ خریدنی عوضشون می‌کنه، پس نباید هیچ‌جا هاردکد بشه.
      */
     val primaryLight: Color,
+    /**
+     * سایه‌ی سختِ کارتِ قهرمانِ سبز - تیره‌ترِ همون خانواده. با تمِ رنگیِ خریدنی عوض می‌شه،
+     * چون خودِ کارتِ قهرمانِ سبز هم عوض می‌شه.
+     */
+    val heroShadow: Color,
     /** تهرنگِ قرصِ سبز (چیپِ وضعیتِ مثبت). */
     val primaryPill: Color,
     /** حاشیه‌ی قرصِ سبز - تو روشن شفافه، تو تیره دیده می‌شه. */
@@ -172,6 +177,7 @@ val LightAppColors = AppColorPalette(
     primaryDim = Color(0xFF0B8C57),
     primaryInk = Color(0xFF0B8C57),
     primaryLight = Color(0xFF3DDC96),
+    heroShadow = Color(0xFF096F45),
     primaryPill = Color(0xFFE9F7EF),
     primaryPillBorder = Color(0x00000000), // تو روشن قرصِ سبز حاشیه نداره
 
@@ -244,6 +250,7 @@ val DarkAppColors = AppColorPalette(
     primaryDim = Color(0xFF07724A),
     primaryInk = Color(0xFF3DDC96),
     primaryLight = Color(0xFF3DDC96),
+    heroShadow = Color(0xFF096F45),
     primaryPill = Color(0x243DDC96), // rgba(61,220,150,.14)
     primaryPillBorder = Color(0x593DDC96), // rgba(61,220,150,.35)
 

@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
@@ -172,6 +173,7 @@ import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.profile.AvatarViewModel
 import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
+import ir.sadteam.loancalc.ui.profile.ThemeShopScreen
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
 import ir.sadteam.loancalc.ui.stats.StatsScreen
@@ -304,6 +306,7 @@ private enum class SettingsRoute(val title: String, val keywords: List<String>) 
     SMS("پیامک‌های بانکی", listOf("پیامک", "بانک", "خواندن خودکار")),
     TOOLS("ابزارها", listOf("تقویم مالی", "آمار", "گزارش", "تاریخچه محاسبات")),
     SECURITY("امنیت", listOf("قفل", "PIN", "اثر انگشت")),
+    COLOR_THEME("تمِ رنگی", listOf("تم", "رنگ", "پوسته", "سکه")),
     PARSING_RULES("قاعده‌های تشخیص", listOf("قاعده", "دسته‌بندی خودکار", "تشخیص")),
     ABOUT("درباره‌ی برنامه", listOf("درباره", "پشتیبانی", "حریم خصوصی", "نسخه")),
 }
@@ -497,6 +500,15 @@ private fun SettingsMainContent(
                     ) { onOpen(SettingsRoute.APPEARANCE) }
                     SettingsDivider()
                 }
+                if (matches(SettingsRoute.COLOR_THEME)) {
+                    SettingsRow(
+                        Icons.Filled.ColorLens,
+                        SettingsRoute.COLOR_THEME,
+                        tone = SettingsTone.PURPLE,
+                        status = "رنگِ اصلیِ برنامه را با سکه عوض کن",
+                    ) { onOpen(SettingsRoute.COLOR_THEME) }
+                    SettingsDivider()
+                }
                 // تنها سوییچی که عمداً تو ریشه موند - یه گزینه‌ی تک‌حالته‌ست و زیرصفحه‌ی جدا
                 // براش یه تپِ اضافه می‌شد.
                 if (searchQuery.isBlank() || "ویبره".contains(searchQuery.trim()) || "هپتیک".contains(searchQuery.trim())) {
@@ -656,6 +668,7 @@ private fun SettingsSubPage(
                 // دیگه تو یه AppCardِ بیرونی پیچیده نمی‌شه - خودش گروه‌های خودشو داره.
                 SettingsRoute.SECURITY -> SecuritySettings(appLockViewModel)
                 SettingsRoute.PARSING_RULES -> ParsingRulesScreen()
+                SettingsRoute.COLOR_THEME -> ThemeShopScreen()
                 SettingsRoute.ABOUT -> AboutSettings(banner)
                 SettingsRoute.MAIN -> Unit
             }
