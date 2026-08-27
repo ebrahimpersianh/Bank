@@ -1,0 +1,51 @@
+name: تنظیمِ خودکارِ کلیدِ APIِ قیمت رو VPS (فعال‌سازیِ قیمتِ طلا/ارز/سکه)
+
+# اجرای دستی (workflow_dispatch) - فقط وقتی لازمه (اولین بار یا عوض‌شدنِ کلیدِ نوسان) دستی
+# تریگر می‌شه. سکرتِ PRICE_API_KEY رو از گیت‌هاب می‌خونه و تو ~/VameMan/.env رو VPS
+# می‌نویسه/آپدیت می‌کنه - همون الگوی set-melipayamak-env.yml. جزئیاتِ استفاده‌ش تو
+# server/src/main/kotlin/.../PriceService.kt.
+on:
+  workflow_dispatch:
+
+jobs:
+  set-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: چک کردنِ وجودِ همه‌ی سکرت‌های لازم
+        id: check
+        run: |
+          missing=""
+          [ -z "${{ secrets.VPS_HOST }}" ] && missing="$missing VPS_HOST"
+          [ -z "${{ secrets.VPS_USER }}" ] && missing="$missing VPS_USER"
+          [ -z "${{ secrets.VPS_SSH_KEY }}" ] && missing="$missing VPS_SSH_KEY"
+          [ -z "${{ secrets.PRICE_API_KEY }}" ] && missing="$missing PRICE_API_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::این سکرت‌ها ست نشدن:$missing"
+            exit 1
+          fi
+
+      - name: نوشتنِ کلیدِ قیمت تو .env رو VPS + ری‌استارت
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: PRICE_API_KEY
+          script: |
+            set -e
+            cd ~/VameMan
+            touch .env
+            set_env_line() {
+              key="$1"; value="$2"
+              if grep -q "^${key}=" .env; then
+                sed -i "s|^${key}=.*|${key}=${value}|" .env
+              else
+                echo "${key}=${value}" >> .env
+              fi
+            }
+            set_env_line "PRICE_API_KEY" "$PRICE_API_KEY"
+            pm2 restart loan-calc-api
+            sleep 3
+            pm2 describe loan-calc-api | grep -q "online" && echo "OK: سرویس با کلیدِ قیمتِ جدید بالاست" || (echo "سرویس بالا نیومد!"; exit 1)
+        env:
+          PRICE_API_KEY: ${{ secrets.PRICE_API_KEY }}
