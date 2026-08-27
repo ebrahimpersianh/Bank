@@ -72,8 +72,10 @@ import androidx.compose.material.icons.filled.Rule
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -112,9 +114,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -154,6 +158,7 @@ import ir.sadteam.loancalc.ui.components.GoldSheenBox
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.InAppBannerState
+import ir.sadteam.loancalc.ui.components.JibakLogo
 import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.PulseGlowBox
@@ -1820,20 +1825,62 @@ private fun ToolRow(
 @Composable
 private fun AboutSettings(banner: InAppBannerState) {
     val context = LocalContext.current
-    AppCard(modifier = Modifier.padding(top = 8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Info, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
-            Column(modifier = Modifier.padding(start = 10.dp)) {
-                Text("جیبک", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                Text("نسخه ${toFa(BuildConfig.VERSION_NAME)}", color = AppMuted, fontSize = 12.sp)
-            }
+    val clipboard = LocalClipboardManager.current
+    var showContact by remember { mutableStateOf(false) }
+    var showPrivacy by remember { mutableStateOf(false) }
+
+    // ── بلوکِ نشان - **تنها جای تنظیمات که چیزی بی‌کارت رو بستر می‌شینه** ───────
+    // همین تفاوته که این صفحه رو «صفحه‌ی هویت» می‌کنه نه یه فهرستِ دیگه.
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        JibakLogo(width = 80.dp)
+        Text(
+            "جیبک",
+            color = AppText,
+            fontSize = 19.sp,
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.padding(top = 14.dp),
+        )
+        // ⚠️ **ضربه‌ی طولانی رو نسخه، اطلاعاتِ فنی رو کپی می‌کنه.** ارزون‌ترین کاری که
+        // می‌شه برای پشتیبانی کرد - بی این، هر گفت‌وگو با سه پرسشِ اضافه شروع می‌شه.
+        // ضربه‌ی معمولی عمداً هیچ کاری نمی‌کنه.
+        Ltr {
+            Text(
+                "${toFa(BuildConfig.VERSION_NAME)} (${toFa(BuildConfig.VERSION_CODE)})",
+                color = AppMuted,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .padding(top = 3.dp)
+                    .pressScaleClickable(scale = 0.98f) {
+                        clipboard.setText(AnnotatedString(diagnosticsText()))
+                        banner.show("اطلاعاتِ فنی کپی شد", isSuccess = true)
+                    },
+            )
         }
-        Text(aboutText, color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 10.dp))
     }
-    AppCard(label = "امتیازدهی", modifier = Modifier.padding(top = 8.dp)) {
-        OutlinedButton(
+
+    // ── گروهِ کمک ─────────────────────────────────────────────────────────────
+    // ⚠️ ردیفِ «راهنما» عمداً نیست: محتوای پرسش‌های پرتکرار هنوز نوشته نشده، و ردیفی
+    // که به صفحه‌ی خالی می‌ره بدتر از نبودنشه (همون قاعده‌ی ردیفِ ایمیل).
+    SettingsGroupLabel("کمک")
+    SettingsGroup(modifier = Modifier.padding(top = 28.dp)) {
+        SettingsRowItem(
+            title = "تماس با ما",
+            icon = Icons.Filled.SupportAgent,
+            tone = SettingsTone.GREEN,
+            onClick = { showContact = true },
+        )
+        SettingsDivider()
+        SettingsRowItem(
+            // مقصد از **فلیورِ نصب‌شده** میاد، نه یه لینکِ ثابت - ردیفی که به فروشگاهِ
+            // اشتباه بره بدتر از نبودنشه.
+            title = if (BuildConfig.FLAVOR == "myket") "امتیاز در مایکت" else "امتیاز در کافه‌بازار",
+            icon = Icons.Filled.Star,
+            tone = SettingsTone.ORANGE,
             onClick = {
-                // همون لینکِ فلیورِ فعلی که بنرِ آپدیت هم استفاده می‌کنه (MainActivity.kt).
                 val storeUrl = if (BuildConfig.FLAVOR == "myket") {
                     "https://myket.ir/app/ir.sadteam.loancalc"
                 } else {
@@ -1845,17 +1892,61 @@ private fun AboutSettings(banner: InAppBannerState) {
                     banner.show("اپِ فروشگاه رو گوشیت پیدا نشد")
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("به برنامه امتیاز بده")
-        }
+        )
     }
-    AppCard(label = "پشتیبانی", modifier = Modifier.padding(top = 8.dp)) {
-        SupportContacts(banner)
+
+    // ── گروهِ متن‌ها ──────────────────────────────────────────────────────────
+    SettingsGroupLabel("متن‌ها")
+    SettingsGroup {
+        SettingsRowItem(
+            title = "حریمِ خصوصی",
+            icon = Icons.Filled.Shield,
+            tone = SettingsTone.NEUTRAL,
+            onClick = { showPrivacy = true },
+        )
     }
-    AppCard(label = "حریم خصوصی", modifier = Modifier.padding(top = 8.dp)) {
-        Text(privacyText, color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp)
+
+    Text(
+        "ساخته‌شده در ایران · ۱۴۰۵",
+        color = AppLabel,
+        fontSize = 9.sp,
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 16.dp),
+    )
+
+    if (showContact) {
+        AlertDialog(
+            onDismissRequest = { showContact = false },
+            confirmButton = { TextButton(onClick = { showContact = false }) { Text("بستن") } },
+            title = { Text("تماس با ما", fontWeight = FontWeight.Black) },
+            text = { SupportContacts(banner) },
+        )
     }
+    if (showPrivacy) {
+        AlertDialog(
+            onDismissRequest = { showPrivacy = false },
+            confirmButton = { TextButton(onClick = { showPrivacy = false }) { Text("بستن") } },
+            title = { Text("حریمِ خصوصی", fontWeight = FontWeight.Black) },
+            text = {
+                Column(modifier = Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState())) {
+                    Text(privacyText, color = AppText, fontSize = 11.sp, lineHeight = 22.sp)
+                }
+            },
+        )
+    }
+}
+
+/**
+ * اطلاعاتِ فنی برای پشتیبانی - نسخه، بیلد، مدلِ گوشی، اندروید، و فلیور.
+ * عمداً **شناسه‌ی کاربر توش نیست**: شماره‌ی موبایل داده‌ی شخصیه و کپیِ ناخواسته‌ش
+ * می‌تونه جایی که نباید پیست بشه.
+ */
+private fun diagnosticsText(): String = buildString {
+    append("نسخه: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})\n")
+    append("فروشگاه: ${BuildConfig.FLAVOR}\n")
+    append("گوشی: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}\n")
+    append("اندروید: ${android.os.Build.VERSION.RELEASE} (SDK ${android.os.Build.VERSION.SDK_INT})")
 }
 
 /** پوششِ مشترکِ همه‌ی زیرصفحه‌های تنظیمات (ورود، تقویمِ مالی، آمار، تاریخچه، چک، حساب‌های بانکی،
@@ -2144,10 +2235,6 @@ private fun SupportRow(label: String, value: String, modifier: Modifier = Modifi
 
 // نسخه‌ی «۱» قبلاً هاردکد بود (همیشه ثابت، هیچ‌وقت آپدیت نمی‌شد) - خواسته‌ی کاربر: نسخه‌ی واقعیِ
 // نصب‌شده رو نشون بده. BuildConfig.VERSION_NAME همون versionNameِ CI (مثلاً "1.0.332") ئه.
-private val aboutText = "جیبک — نسخه ${BuildConfig.VERSION_NAME}\n" +
-    "این اپ برای محاسبه سریع و شفاف اقساط وام، سود سپرده و برنامه‌ریزی مالی طراحی شده.\n" +
-    "Powered By Sad Team"
-
 private const val privacyText = "چه اطلاعاتی ذخیره می‌شه؟\n" +
     "وام‌ها، تنظیمات و یادآوری‌هایی که تو اپ می‌سازی، فقط روی گوشی خودت ذخیره می‌شن. این اپ هیچ " +
     "تبلیغ، ابزار ردیابی (analytics) یا کد شخص ثالثی نداره و اطلاعاتت رو به‌جایی نمی‌فروشه.\n\n" +
@@ -2157,4 +2244,11 @@ private const val privacyText = "چه اطلاعاتی ذخیره می‌شه؟\
     "این اطلاعات جای دیگه‌ای فرستاده نمی‌شه و در اختیار شرکت یا سرویس ثالثی قرار نمی‌گیره.\n\n" +
     "اشتراک\n" +
     "بدون اشتراک فقط یک وام قابل ذخیره‌ست؛ برای ذخیره‌ی وام بیشتر اول باید وارد بشی و بعد اشتراک " +
-    "تهیه کنی."
+    "تهیه کنی.\n\n" +
+    // ⚠️ این بند **اجباریه**: اپ هم پیامک می‌خونه هم اعلان، و کاربری که مجوزِ عجیبی داده و
+    // توضیحش رو تو متن پیدا نمی‌کنه، اپ رو پاک می‌کنه. مسئله‌ی اعتماده، نه حقوقی.
+    "خواندنِ پیامک و اعلانِ بانکی\n" +
+    "اگه خودت این قابلیت رو روشن کنی (پیش‌فرض خاموشه)، اپ متنِ پیامک‌های بانکی و اعلان‌های " +
+    "بانک‌ها رو می‌خونه تا مبلغ و نوعِ تراکنش رو دربیاره و خودکار ثبتش کنه. این خوندن " +
+    "**کاملاً روی خودِ گوشیه**: هیچ پیامکی، هیچ اعلانی و هیچ تکه‌ای از متنشون به هیچ سروری " +
+    "— نه سرورِ ما، نه جای دیگه — فرستاده نمی‌شه. هر لحظه می‌تونی از تنظیمات خاموشش کنی."
