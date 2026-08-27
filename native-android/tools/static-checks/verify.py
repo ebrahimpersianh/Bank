@@ -30,6 +30,10 @@ NEEDS = {
 }
 # Modifierهای زنجیره‌ای: `.name(` باید ایمپورتِ خودش رو داشته باشه
 MODIFIERS = {
+    'heightIn': 'androidx.compose.foundation.layout.heightIn',
+    'widthIn': 'androidx.compose.foundation.layout.widthIn',
+    'sizeIn': 'androidx.compose.foundation.layout.sizeIn',
+    'defaultMinSize': 'androidx.compose.foundation.layout.defaultMinSize',
     'clip': 'androidx.compose.ui.draw.clip',
     'alpha': 'androidx.compose.ui.draw.alpha',
     'drawBehind': 'androidx.compose.ui.draw.drawBehind',
