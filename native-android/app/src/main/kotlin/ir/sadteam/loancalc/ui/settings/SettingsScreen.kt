@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -38,10 +39,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Animation
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -49,6 +52,7 @@ import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.History
@@ -169,6 +173,7 @@ import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppDangerPill
 import ir.sadteam.loancalc.ui.theme.AppDisabledText
 import ir.sadteam.loancalc.ui.theme.AppIsDark
 import ir.sadteam.loancalc.ui.theme.AppLabel
@@ -663,66 +668,128 @@ private fun AccountSettings(
     var showDeleteAccountConfirm by remember { mutableStateOf(false) }
     var deleteAccountInProgress by remember { mutableStateOf(false) }
 
+    var showAvatarSheet by remember { mutableStateOf(false) }
+    var showNameSheet by remember { mutableStateOf(false) }
+
     if (gateState == GateState.LOGGED_IN) {
-        // **آدمکِ پروفایل** - بخشِ ۳۲ فایلِ طراحی. سرِ پروفایل ۵۶px طبقِ کارتِ `32c`؛ انتخاب
-        // با حلقه‌ی دوجداره نه تیک (قاعده‌ی `32b`). هر تغییر بی‌درنگ ذخیره می‌شه، پس دکمه‌ی
-        // «ثبت»ِ جدا لازم نیست.
+        // ── کارتِ هویت (فریمِ حساب کاربری) ────────────────────────────────────
+        // دکمه‌ی تمام‌عرضِ «تغییرِ آدمک» عمداً حذف شد - مدادِ روی خودِ آدمک همون کاره و
+        // دکمه‌ی تمام‌عرض بالای صفحه وزنِ بی‌دلیل می‌گیره.
         val avatarViewModel: AvatarViewModel = hiltViewModel()
         val avatar by avatarViewModel.avatar.collectAsState()
-        AppCard(modifier = Modifier.padding(top = 8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                AvatarView(avatar, size = 56.dp)
-                Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
-                    Text("آدمکت را انتخاب کن", color = AppText, fontSize = 14.sp)
+        AppCard(modifier = Modifier.padding(top = 8.dp), contentPadding = 20.dp) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box {
+                    AvatarView(avatar, size = 72.dp)
+                    // ناحیه‌ی لمس ۴۴ه ولی خودِ مداد ۲۶ - قاعده‌ی «هدفِ لمسی بزرگ‌تر از نشانه».
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .size(AppSpacing.minTouchTarget)
+                            .pressScaleClickable { showAvatarSheet = true },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(26.dp)
+                                .clip(CircleShape)
+                                .background(AppSurface)
+                                .border(1.5.dp, AppLine, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Filled.Edit,
+                                contentDescription = "تغییرِ آدمک",
+                                tint = AppMuted,
+                                modifier = Modifier.size(12.dp),
+                            )
+                        }
+                    }
+                }
+                Text(
+                    if (savedName.isNullOrBlank()) "بی‌نام" else savedName!!,
+                    color = AppText,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
+                Ltr {
                     Text(
-                        if (savedName.isNullOrBlank()) "بدونِ چهره - فقط یه نشانِ شخصی" else savedName!!,
+                        toFa(phone ?: ""),
                         color = AppMuted,
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(top = 2.dp),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 3.dp),
                     )
                 }
             }
-            AvatarPicker(
-                avatar = avatar,
-                onChange = { avatarViewModel.save(it) },
-                modifier = Modifier.padding(top = 12.dp),
+        }
+
+        // ── گروهِ مشخصات ─────────────────────────────────────────────────────
+        // ⚠️ ردیفِ **ایمیل** پیاده نشد: نه اپ و نه سرور هیچ‌جا ایمیل نگه نمی‌دارن و بازیابی
+        // فقط با شماره‌ی موبایله. فیلدی که هیچ‌جا استفاده نمی‌شه بدتر از نبودنشه.
+        SettingsGroupLabel("مشخصات")
+        SettingsGroup {
+            SettingsRowItem(
+                title = "نام",
+                icon = Icons.Filled.Badge,
+                tone = SettingsTone.NEUTRAL,
+                status = if (savedName.isNullOrBlank()) "ثبت نشده" else savedName,
+                onClick = { showNameSheet = true },
+            )
+            SettingsDivider()
+            SettingsRowItem(
+                title = "شماره‌ی موبایل",
+                icon = Icons.Filled.Person,
+                tone = SettingsTone.GREEN,
+                status = toFa(phone ?: ""),
+                statusTone = StatusTone.HEALTHY,
+                value = "تأییدشده",
             )
         }
-        // نامِ اختیاریِ کاربر - خواسته‌ی صریحِ کاربر: «اجباری نباشه و بشه اسکیپ کرد، ولی اولِ
-        // برنامه نه، بعد از ورود و تو بخشِ حساب کاربری». خالی‌گذاشتنش کاملاً عادیه؛ با پاک‌کردنِ
-        // فیلد هم اسم حذف می‌شه. جای مصرفش سربرگِ خروجیِ PDF/اکسله - عمداً برای پیامِ خوش‌آمد
-        // استفاده نمی‌شه (قبلاً ساخته و به‌خواستِ صریحِ کاربر حذف شد).
-        var nameDraft by remember(savedName) { mutableStateOf(savedName ?: "") }
-        AppCard(modifier = Modifier.padding(top = 8.dp)) {
-            Text("نام (اختیاری)", color = AppMuted, fontSize = 11.sp)
-            OutlinedTextField(
-                value = nameDraft,
-                onValueChange = { nameDraft = it },
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                singleLine = true,
-                placeholder = { Text("مثلاً ابراهیم", color = AppMuted, fontSize = 13.sp) },
-            )
-            if (nameDraft.trim() != (savedName ?: "")) {
-                GradientButton(
-                    onClick = { authViewModel.updateName(nameDraft) },
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                ) { Text(if (nameDraft.isBlank()) "حذفِ نام" else "ذخیره‌ی نام") }
-            }
-            Text(
-                "روی سربرگِ خروجیِ PDF و اکسل نوشته می‌شه. خالی گذاشتنش هیچ مشکلی نداره.",
-                color = AppMuted,
-                fontSize = 10.5.sp,
-                modifier = Modifier.padding(top = 6.dp),
+
+        if (showAvatarSheet) {
+            AlertDialog(
+                onDismissRequest = { showAvatarSheet = false },
+                confirmButton = { TextButton(onClick = { showAvatarSheet = false }) { Text("تمام") } },
+                title = { Text("آدمکت را انتخاب کن", fontWeight = FontWeight.Black) },
+                text = { AvatarPicker(avatar = avatar, onChange = { avatarViewModel.save(it) }) },
             )
         }
-        AppCard(modifier = Modifier.padding(top = 8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Person, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
-                Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                    Text("شماره موبایل", color = AppMuted, fontSize = 11.sp)
-                    Ltr { Text(toFa(phone ?: ""), color = AppText, fontSize = 15.sp) }
-                }
-            }
+        if (showNameSheet) {
+            var nameDraft by remember(savedName) { mutableStateOf(savedName ?: "") }
+            AlertDialog(
+                onDismissRequest = { showNameSheet = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = { authViewModel.updateName(nameDraft); showNameSheet = false },
+                    ) {
+                        Text(if (nameDraft.isBlank()) "حذفِ نام" else "ذخیره")
+                    }
+                },
+                dismissButton = { TextButton(onClick = { showNameSheet = false }) { Text("بی‌خیال") } },
+                title = { Text("نام", fontWeight = FontWeight.Black) },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = nameDraft,
+                            onValueChange = { if (it.length <= 30) nameDraft = it },
+                            singleLine = true,
+                            placeholder = { Text("مثلاً ابراهیم") },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Text(
+                            "رو سربرگِ خروجیِ PDF و اکسل نوشته می‌شه. خالی گذاشتنش هیچ مشکلی نداره.",
+                            color = AppMuted,
+                            fontSize = 10.5.sp,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
+                },
+            )
         }
         AppCard(modifier = Modifier.padding(top = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -773,23 +840,69 @@ private fun AccountSettings(
                 Text(if (subscribed) "مدیریت اشتراک" else "مشاهده پلن‌ها")
             }
         }
-        AppCard(modifier = Modifier.padding(top = 8.dp)) {
-            Button(
-                onClick = { authViewModel.logout() },
-                colors = ButtonDefaults.buttonColors(containerColor = AppDanger),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("خروج از حساب")
-            }
-            // الزامِ استانداردِ فروشگاه‌ها: راهِ داخل‌برنامه‌ای برای حذفِ کاملِ حساب. عمداً
-            // OutlinedButton (نه پرشده مثلِ خروج) - شدتِ بصریِ کمتر برای یه عملِ جدی‌تر.
-            OutlinedButton(
-                onClick = { showDeleteAccountConfirm = true },
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            ) {
-                Text("حذف حساب کاربری")
-            }
+        // ── خروج ─────────────────────────────────────────────────────────────
+        // فاصله‌ی **دو برابرِ** فاصله‌ی معمولِ کارت‌ها - تنها جای برنامه که فاصله‌ی
+        // غیرِتوکن مجازه، چون دکمه‌ی مخرب نباید تو ریتمِ عادیِ صفحه بشینه.
+        var showLogoutConfirm by remember { mutableStateOf(false) }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = AppSpacing.betweenCards * 2)
+                .height(48.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(AppDangerPill)
+                .border(2.dp, AppDanger, RoundedCornerShape(999.dp))
+                .pressScaleClickable { showLogoutConfirm = true },
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.Logout,
+                contentDescription = null,
+                tint = AppDanger,
+                modifier = Modifier.size(15.dp),
+            )
+            Text(
+                "خروج از حساب",
+                color = AppDanger,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(start = 7.dp),
+            )
+        }
+        // الزامِ فروشگاه‌ها: راهِ داخل‌برنامه‌ای برای حذفِ کاملِ حساب. **ظاهرِ کم‌وزن،
+        // مسیرِ سخت** - برعکسِ خروج که ظاهرِ پروزن و مسیرِ آسون داره.
+        Text(
+            "حذفِ کاملِ حساب کاربری",
+            color = AppLabel,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.ExtraBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+                .pressScaleClickable { showDeleteAccountConfirm = true },
+        )
+        if (showLogoutConfirm) {
+            AlertDialog(
+                onDismissRequest = { showLogoutConfirm = false },
+                confirmButton = {
+                    TextButton(onClick = { showLogoutConfirm = false; authViewModel.logout() }) {
+                        Text("خروج", color = AppDanger)
+                    }
+                },
+                dismissButton = { TextButton(onClick = { showLogoutConfirm = false }) { Text("بمانم") } },
+                title = { Text("از حساب خارج می‌شوی؟", fontWeight = FontWeight.Black) },
+                // جمله‌ی دوم لازمه: کاربری که برای رفعِ یه اشکال خارج می‌شه باید بدونه تا
+                // ورودِ بعدی تراکنش‌هاش خودکار ثبت نمی‌شن.
+                text = {
+                    Text(
+                        "داده‌هات رو سرور می‌مونه و با ورودِ دوباره برمی‌گرده. ثبتِ خودکارِ " +
+                            "پیامک تا وقتی خارج باشی کار نمی‌کنه.",
+                        lineHeight = 21.sp,
+                    )
+                },
+            )
         }
     } else {
         AppCard(modifier = Modifier.padding(top = 8.dp)) {
