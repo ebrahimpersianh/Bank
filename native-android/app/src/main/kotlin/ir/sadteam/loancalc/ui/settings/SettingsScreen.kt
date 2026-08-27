@@ -45,9 +45,11 @@ import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
@@ -57,13 +59,17 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -149,6 +155,8 @@ import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.haptics.HapticsViewModel
 import ir.sadteam.loancalc.ui.history.CalculationHistoryScreen
+import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.profile.AvatarViewModel
 import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
@@ -627,7 +635,8 @@ private fun SettingsSubPage(
                 SettingsRoute.DATA -> DataSettings(authViewModel, autoBackupViewModel, banner)
                 SettingsRoute.SMS -> SmsSettings(smsAutoImportViewModel)
                 SettingsRoute.TOOLS -> ToolsSettings(onOpenTool)
-                SettingsRoute.SECURITY -> AppCard { SecuritySettings(appLockViewModel) }
+                // دیگه تو یه AppCardِ بیرونی پیچیده نمی‌شه - خودش گروه‌های خودشو داره.
+                SettingsRoute.SECURITY -> SecuritySettings(appLockViewModel)
                 SettingsRoute.ABOUT -> AboutSettings(banner)
                 SettingsRoute.MAIN -> Unit
             }
@@ -1044,13 +1053,6 @@ private fun DataSettings(
     val autoBackupEnabled by autoBackupViewModel.enabled.collectAsState()
     val lastAutoBackupAt by autoBackupViewModel.lastBackupAt.collectAsState()
 
-    SettingsSwitchRow(
-        icon = Icons.Filled.CloudUpload,
-        title = "پشتیبان‌گیری خودکار روزانه",
-        subtitle = "هر روز یه اسنپ‌شات از وام/چک/حساب ذخیره کن",
-        checked = autoBackupEnabled,
-        onCheckedChange = { checked -> if (checked) autoBackupViewModel.enable() else autoBackupViewModel.disable() },
-    )
     val lastBackupLabel = remember(lastAutoBackupAt) {
         lastAutoBackupAt?.let { iso ->
             runCatching {
@@ -1063,46 +1065,65 @@ private fun DataSettings(
             }.getOrNull()
         }
     }
+
+    // ── کارتِ وضعیتِ پشتیبان - «یک نگاه، جواب می‌گیرد» ────────────────────────
+    SettingsGroup(modifier = Modifier.padding(top = 8.dp)) {
+        SettingsRowItem(
+            title = "پشتیبان‌گیریِ خودکارِ روزانه",
+            icon = Icons.Filled.CloudUpload,
+            tone = SettingsTone.GREEN,
+            status = when {
+                !autoBackupEnabled -> "خاموش - هیچ نسخه‌ی پشتیبانی ساخته نمی‌شود"
+                lastBackupLabel != null -> "آخرین پشتیبان: $lastBackupLabel"
+                else -> "روشن - هنوز پشتیبانی ساخته نشده"
+            },
+            statusTone = when {
+                !autoBackupEnabled -> StatusTone.NEUTRAL
+                lastBackupLabel != null -> StatusTone.HEALTHY
+                else -> StatusTone.NEUTRAL
+            },
+            checked = autoBackupEnabled,
+            onCheckedChange = { checked ->
+                if (checked) autoBackupViewModel.enable() else autoBackupViewModel.disable()
+            },
+        )
+    }
+
+    // ── گروهِ بازیابی ─────────────────────────────────────────────────────────
     if (lastAutoBackupAt != null) {
-        AppCard(modifier = Modifier.padding(top = 8.dp)) {
-            if (lastBackupLabel != null) {
-                Text("آخرین پشتیبان: $lastBackupLabel", color = AppMuted, fontSize = 12.sp)
-            }
-            // دو دکمه‌ی بازیابی کنارِ هم (Row) به‌جای زیرِ هم، طبقِ طرحِ Liquid Glass.
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                OutlinedButton(
+        SettingsGroupLabel("بازیابی")
+        SettingsGroup {
+            SettingsRowItem(
+                title = "بازیابی از پشتیبانِ همین گوشی",
+                icon = Icons.Filled.Restore,
+                tone = SettingsTone.NEUTRAL,
+                status = lastBackupLabel?.let { "نسخه‌ی $it" },
+                onClick = {
+                    autoBackupViewModel.restoreFromAutoBackup { ok ->
+                        banner.show(
+                            if (ok) "بازیابی از پشتیبان خودکار انجام شد" else "پشتیبانی برای بازیابی پیدا نشد",
+                            isSuccess = ok,
+                        )
+                    }
+                },
+            )
+            // بازیابی از سرور فقط برای کاربرِ واردشده‌ی مشترکه - پوش به سرور هم فقط برای همونه.
+            if (gateState == GateState.LOGGED_IN && subscribed) {
+                SettingsDivider()
+                SettingsRowItem(
+                    title = "بازیابی از سرورِ ابری",
+                    icon = Icons.Filled.CloudDownload,
+                    tone = SettingsTone.GREEN,
+                    status = "برای وقتی گوشی عوض شده یا برنامه پاک شده",
                     onClick = {
-                        autoBackupViewModel.restoreFromAutoBackup { ok ->
+                        autoBackupViewModel.restoreFromCloud { ok ->
                             banner.show(
-                                if (ok) "بازیابی از پشتیبان خودکار انجام شد" else "پشتیبانی برای بازیابی پیدا نشد",
+                                if (ok) "بازیابی از سرور ابری انجام شد" else "پشتیبانی رو سرور ابری پیدا نشد",
                                 isSuccess = ok,
                             )
                         }
                     },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text("بازیابی از خودکار", fontSize = 12.sp)
-                }
-                // برخلافِ دکمه‌ی بالا (فقط همین گوشی)، این از سرور می‌گیره - برای وقتی گوشی عوض شده
-                // یا اپ پاک/نصب شده. فقط برای کاربرِ لاگین‌شده‌ی مشترک، چون پوش به سرور هم فقط برای همینه.
-                if (gateState == GateState.LOGGED_IN && subscribed) {
-                    OutlinedButton(
-                        onClick = {
-                            autoBackupViewModel.restoreFromCloud { ok ->
-                                banner.show(
-                                    if (ok) "بازیابی از سرور ابری انجام شد" else "پشتیبانی رو سرور ابری پیدا نشد",
-                                    isSuccess = ok,
-                                )
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text("بازیابی از سرور ابری", fontSize = 12.sp)
-                    }
-                }
+                )
             }
         }
     }
@@ -1725,12 +1746,17 @@ private fun SupportContacts(banner: InAppBannerState) {
  * ثبت‌شده داشته باشه ([biometricAvailable]) فعال می‌شه.
  */
 @Composable
-private fun SecuritySettings(appLockViewModel: AppLockViewModel) {
+private fun SecuritySettings(
+    appLockViewModel: AppLockViewModel,
+    privacyViewModel: PrivacyModeViewModel = hiltViewModel(),
+) {
     val context = LocalContext.current
     val pinHash by appLockViewModel.pinHash.collectAsState()
     val biometricEnabled by appLockViewModel.biometricEnabled.collectAsState()
     val autoLockTimeoutMinutes by appLockViewModel.autoLockTimeoutMinutes.collectAsState()
+    val privacyMode = LocalPrivacyMode.current
     var showPinDialog by remember { mutableStateOf(false) }
+    val hasLock = pinHash != null || biometricEnabled
 
     if (showPinDialog) {
         PinSetupDialog(
@@ -1742,76 +1768,58 @@ private fun SecuritySettings(appLockViewModel: AppLockViewModel) {
         )
     }
 
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "قفل با اثر انگشت",
-                color = AppText,
-                fontSize = 13.sp,
-                modifier = Modifier.weight(1f),
-            )
-            Switch(
-                checked = biometricEnabled,
-                enabled = biometricAvailable(context),
-                onCheckedChange = { appLockViewModel.setBiometricEnabled(it) },
-                colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-            )
-        }
-        if (!biometricAvailable(context)) {
-            Text(
-                "این گوشی سنسور یا اثر انگشت ثبت‌شده‌ای نداره",
-                color = AppMuted,
-                fontSize = 11.sp,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("قفل با PIN", color = AppText, fontSize = 13.sp)
-                Text(
-                    if (pinHash != null) "فعال است" else "غیرفعال",
-                    color = if (pinHash != null) AppPrimary else AppMuted,
-                    fontSize = 11.sp,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-            // روشن‌کردن دیالوگِ تنظیمِ PIN موجود رو باز می‌کنه؛ خاموش‌کردن معادلِ حذفِ قفلِ فعلیه -
-            // سوییچ جایگزینِ دکمه‌ی متنی+حذفِ جداگانه‌ی قبلی شد (طرحِ Liquid Glass).
-            Switch(
-                checked = pinHash != null,
-                onCheckedChange = { checked ->
-                    if (checked) showPinDialog = true else appLockViewModel.clearPin()
-                },
-                colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-            )
-        }
+    // ── گروهِ قفل ─────────────────────────────────────────────────────────────
+    SettingsGroupLabel("قفل")
+    SettingsGroup {
+        SettingsRowItem(
+            title = "قفل با رمزِ عددی",
+            icon = Icons.Filled.Lock,
+            tone = SettingsTone.RED,
+            status = if (pinHash != null) "فعال است" else "خاموش",
+            statusTone = if (pinHash != null) StatusTone.HEALTHY else StatusTone.NEUTRAL,
+            checked = pinHash != null,
+            onCheckedChange = { checked ->
+                if (checked) showPinDialog = true else appLockViewModel.clearPin()
+            },
+        )
         if (pinHash != null) {
-            TextButton(
+            SettingsDivider()
+            SettingsRowItem(
+                title = "تغییرِ رمزِ عددی",
+                icon = Icons.Filled.Password,
+                tone = SettingsTone.NEUTRAL,
                 onClick = { showPinDialog = true },
-                modifier = Modifier.padding(top = 4.dp),
-            ) {
-                Text("تغییرِ PIN")
-            }
+            )
         }
+        SettingsDivider()
+        SettingsRowItem(
+            title = "قفل با اثرِ انگشت",
+            icon = Icons.Filled.Fingerprint,
+            tone = SettingsTone.RED,
+            status = if (biometricAvailable(context)) null else "این گوشی اثرِ انگشتِ ثبت‌شده ندارد",
+            statusTone = StatusTone.BROKEN,
+            checked = if (biometricAvailable(context)) biometricEnabled else null,
+            onCheckedChange = if (biometricAvailable(context)) {
+                { appLockViewModel.setBiometricEnabled(it) }
+            } else {
+                null
+            },
+            onClick = if (biometricAvailable(context)) null else ({}),
+        )
+    }
 
-        if (pinHash != null || biometricEnabled) {
-            Text(
-                "قفل خودکار بعد از رفتن به پس‌زمینه",
-                color = AppText,
-                fontSize = 13.sp,
-                modifier = Modifier.padding(top = 14.dp),
+    // ردیفِ «قفل بعد از» فقط وقتی معنی داره که اصلاً قفلی هست.
+    if (hasLock) {
+        SettingsGroup(modifier = Modifier.padding(top = 8.dp)) {
+            SettingsRowItem(
+                title = "قفل بعد از",
+                icon = Icons.Filled.Timer,
+                tone = SettingsTone.NEUTRAL,
+                status = autoLockTimeoutOptions.firstOrNull { it.first == autoLockTimeoutMinutes }?.second,
+                onClick = null,
             )
             Row(
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 13.dp),
                 horizontalArrangement = Arrangement.spacedBy(7.dp),
             ) {
                 autoLockTimeoutOptions.forEach { (minutes, label) ->
@@ -1823,6 +1831,21 @@ private fun SecuritySettings(appLockViewModel: AppLockViewModel) {
                 }
             }
         }
+    }
+
+    // ── گروهِ حریمِ خصوصی ─────────────────────────────────────────────────────
+    // ⚠️ «پنهان در فهرستِ برنامه‌های اخیر» (`FLAG_SECURE`) عمداً پیاده **نشد** - قبلاً بود و
+    // به تصمیمِ صریحِ کاربر حذف شد (رجوع کن به CLAUDE.md). این ردیفِ طرح رو نادیده می‌گیریم.
+    SettingsGroupLabel("حریمِ خصوصی")
+    SettingsGroup {
+        SettingsRowItem(
+            title = "پنهان‌کردنِ مبلغ‌ها",
+            icon = Icons.Filled.VisibilityOff,
+            tone = SettingsTone.NEUTRAL,
+            status = if (privacyMode) "مبلغ‌ها پشتِ ••••• پنهان‌اند" else "مبلغ‌ها دیده می‌شوند",
+            checked = privacyMode,
+            onCheckedChange = { privacyViewModel.toggle() },
+        )
     }
 }
 
