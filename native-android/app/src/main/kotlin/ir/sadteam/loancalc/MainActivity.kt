@@ -131,6 +131,7 @@ import ir.sadteam.loancalc.subscription.SubscriptionManager
 import ir.sadteam.loancalc.ui.AffordScreen
 import ir.sadteam.loancalc.ui.BankLoanOutcome
 import ir.sadteam.loancalc.ui.BankLoanScreen
+import ir.sadteam.loancalc.ui.CalculatorHostScreen
 import ir.sadteam.loancalc.ui.DepositScreen
 import ir.sadteam.loancalc.ui.ResultScreen
 import ir.sadteam.loancalc.ui.accounting.AssetsScreen
@@ -242,16 +243,12 @@ private const val CHEQUE_ROUTE = "cheque"
 
 /** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
 private enum class LoanSubTab(val label: String) {
-    // ترتیب طبقِ فریمِ `27a`: «وام‌های من» اول و پیش‌فرض (چیزی که کاربر واقعاً هر روز باهاش
-    // کار داره)، بعد سپرده، بعد محاسبه‌گر.
+    // سه تب، طبقِ فریمِ `27a`. تبِ چهارمِ «بانکی» **حذف نشد، ادغام شد**: تصمیمِ کلاد دیزاین
+    // (۹ شهریور) این بود که با «محاسبه‌گر» یکی بشه و به‌جاش داخلِ همون تب یه سگمنتِ دوحالته
+    // بیاد - رجوع کن به [CalculatorHostScreen] و فریمِ `27e`.
     MY_LOANS("وام‌های من"),
     DEPOSIT("سپرده"),
-    AFFORD("محاسبه‌گر"),
-
-    // ⚠️ **تو فریمِ `27a` نیست** - فریم فقط سه تب داره. عمداً نگهش داشتم چون تنها راهِ رسیدن به
-    // محاسبه‌گرِ وامِ بانکی (نرخ‌های بانک‌ها) همینه و حذفش یه قابلیتِ موجود رو دفن می‌کرد.
-    // سوالِ بازِ طراح: این با «محاسبه‌گر» یکی بشه یا تبِ چهارم بمونه؟
-    BANK("بانکی"),
+    CALCULATOR("محاسبه‌گر"),
 }
 
 // ترتیب/محتوای کاملِ تورِ راهنمای اولین ورود (AppTourOverlay) - رجوع کن به همون کامپوننت پایین‌تر
@@ -1124,8 +1121,18 @@ private fun AppTourOverlay(
     }
 }
 
+/**
+ * میزبانِ تبِ «محاسبه‌گر» - همون [BankLoanTab]ِ قبلی، ولی حالا [CalculatorHostScreen] رو
+ * به‌جای [BankLoanScreen] تو حالتِ فرم می‌ذاره تا سگمنتِ دوحالته‌ی `27e` بالاش بشینه.
+ * منطقِ فرم↔نتیجه و حفظِ حالتِ فرم عیناً همون قبلیه.
+ */
 @Composable
-private fun BankLoanTab() {
+private fun CalculatorHostTab() {
+    BankLoanTab(useCalculatorHost = true)
+}
+
+@Composable
+private fun BankLoanTab(useCalculatorHost: Boolean = false) {
     var loanOutcome by remember { mutableStateOf<BankLoanOutcome?>(null) }
     // نگه‌دارنده‌ی حالتِ ذخیره‌پذیر (SaveableStateHolder): وقتی loanOutcome پر می‌شه، BankLoanScreen
     // کاملاً از کامپوزیشن بیرون می‌ره (جایگزینِ ResultScreen می‌شه) - remember/rememberSaveableِ
@@ -1152,7 +1159,11 @@ private fun BankLoanTab() {
     ) { outcome ->
         if (outcome == null) {
             formStateHolder.SaveableStateProvider("bankLoanForm") {
-                BankLoanScreen(onCalculated = { loanOutcome = it })
+                if (useCalculatorHost) {
+                    CalculatorHostScreen(onCalculated = { loanOutcome = it })
+                } else {
+                    BankLoanScreen(onCalculated = { loanOutcome = it })
+                }
             }
         } else {
             ResultScreen(
@@ -1266,8 +1277,7 @@ private fun LoanTab(
         }
         Box(modifier = Modifier.weight(1f)) {
             when (subTab) {
-                LoanSubTab.BANK -> BankLoanTab()
-                LoanSubTab.AFFORD -> AffordScreen()
+                LoanSubTab.CALCULATOR -> CalculatorHostTab()
                 LoanSubTab.DEPOSIT -> DepositScreen()
                 LoanSubTab.MY_LOANS -> MyLoansScreen(
                     onManualAddFabPositioned = onManualAddFabPositioned,

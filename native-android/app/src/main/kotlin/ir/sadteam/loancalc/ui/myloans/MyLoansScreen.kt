@@ -1309,21 +1309,55 @@ private fun DashboardStatCard(title: String, value: String, valueColor: Color) {
     }
 }
 
-/** تاگلِ «وام‌های تسویه‌شده» بالای لیستِ وام‌ها - هم‌الگو با دکمه‌ی بایگانیِ ChequeScreen. وقتی رو
- * لیستِ فعاله دکمه‌ی ورود به تسویه‌شده‌ها رو نشون می‌ده (با تعدادشون)؛ وقتی رو تسویه‌شده‌هاست، برعکس. */
+/**
+ * **فیلترِ دوتاییِ «فعال / تسویه‌شده» - فریمِ `27a`.**
+ *
+ * جایگزینِ دکمه‌ی متنیِ قبلی («وام‌های تسویه‌شده (۳)» / «بازگشت به وام‌های فعال»). طبقِ تصمیمِ
+ * کلاد دیزاین (۹ شهریور) این فیلتر **جای خالیِ هدر** رو پر می‌کنه - همون جایی که قبلاً قرار بود
+ * دکمه‌ی + بشینه ولی حذف شد تا الگوی «افزودن همیشه با FAB» نشکنه.
+ *
+ * پیش‌فرض «فعال»ه. تعدادِ تسویه‌شده‌ها رو خودِ چیپ نشون می‌ده تا اگه صفر بود کاربر بیخود
+ * روش نزنه.
+ */
 @Composable
 private fun SettledLoansToggle(showSettled: Boolean, settledCount: Int, onToggle: () -> Unit) {
-    TextButton(onClick = onToggle) {
-        Icon(
-            if (showSettled) Icons.Filled.ArrowForward else Icons.Filled.CheckCircle,
-            contentDescription = null,
-            tint = AppPrimary,
-            modifier = Modifier.padding(end = 4.dp),
-        )
+    val shape = RoundedCornerShape(999.dp)
+    Row(
+        modifier = Modifier
+            .clip(shape)
+            .background(AppSurface2)
+            .padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        FilterChipHalf(label = "فعال", selected = !showSettled) {
+            if (showSettled) onToggle()
+        }
+        FilterChipHalf(
+            label = if (settledCount > 0) "تسویه‌شده · ${toFa(settledCount)}" else "تسویه‌شده",
+            selected = showSettled,
+        ) {
+            if (!showSettled) onToggle()
+        }
+    }
+}
+
+/** یه نیمه‌ی فیلترِ دوتایی - انتخاب‌شده قرصِ سفیدِ سایه‌دار می‌گیره، بقیه فقط متنِ خاکستری. */
+@Composable
+private fun FilterChipHalf(label: String, selected: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(999.dp)
+    Box(
+        modifier = Modifier
+            .clip(shape)
+            .then(if (selected) Modifier.background(AppPrimary) else Modifier)
+            .pressScaleClickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
         Text(
-            if (showSettled) "بازگشت به وام‌های فعال" else "وام‌های تسویه‌شده (${toFa(settledCount)})",
-            color = AppPrimary,
-            fontSize = 13.sp,
+            label,
+            color = if (selected) Color.White else AppMuted,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.ExtraBold,
         )
     }
 }

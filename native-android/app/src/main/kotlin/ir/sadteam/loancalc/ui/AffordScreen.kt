@@ -61,9 +61,15 @@ private val affordMonthChipValues = listOf(12, 24, 36, 60, 120)
 
 /** پورت مو‌به‌موی تب «چقدر وام می‌تونم بگیرم؟» (view-afford تو www/index.html). */
 @Composable
-fun AffordScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel()) {
-    var payText by remember { mutableStateOf("100000000") }
-    var paySlider by remember { mutableStateOf(100_000_000f) }
+fun AffordScreen(
+    historyViewModel: CalculationHistoryViewModel = hiltViewModel(),
+    /** قسطی که از حالتِ «قسط از نرخِ بانک» اومده - فرم با همون از پیش پر می‌شه تا کاربر لازم
+     * نباشه عددی که همین الان محاسبه شد رو دستی دوباره بزنه (بندِ صریحِ فریمِ `27e`). */
+    initialInstallment: Double? = null,
+) {
+    val seed = initialInstallment?.takeIf { it > 0 }?.toLong()
+    var payText by remember { mutableStateOf(seed?.toString() ?: "100000000") }
+    var paySlider by remember { mutableStateOf((seed ?: 100_000_000L).toFloat()) }
 
     var rateText by remember { mutableStateOf("23") }
     var rateSlider by remember { mutableStateOf(23f) }

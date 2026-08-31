@@ -97,7 +97,13 @@ data class BankLoanOutcome(
 )
 
 @Composable
-fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel: CreditRatesViewModel = hiltViewModel()) {
+fun BankLoanScreen(
+    onCalculated: (BankLoanOutcome) -> Unit,
+    creditRatesViewModel: CreditRatesViewModel = hiltViewModel(),
+    /** خانه‌ی خالیِ **زیرِ** دکمه‌ی محاسبه - میزبانِ `27e` کارتِ «از عهده‌اش برمی‌آیم؟» رو
+     * اینجا می‌ذاره. پیش‌فرض خالیه، پس هر جای دیگه‌ای که این صفحه صدا زده بشه فرقی نمی‌کنه. */
+    footer: @Composable () -> Unit = {},
+) {
     val creditServices by creditRatesViewModel.rates.collectAsState()
     val creditRatesLoading by creditRatesViewModel.isLoading.collectAsState()
     // فیلدهای ورودیِ ساده (String/Int/Float/Boolean) با rememberSaveable - چرخشِ صفحه یا اومدنِ اپ به
@@ -557,6 +563,8 @@ fun BankLoanScreen(onCalculated: (BankLoanOutcome) -> Unit, creditRatesViewModel
             ) {
                 Text("محاسبه کن", fontWeight = FontWeight.Bold)
             }
+
+            footer()
         }
     }
 }
