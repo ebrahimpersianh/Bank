@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.accounting
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,16 +14,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notes
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -37,21 +42,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.PersianDate
-import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.CategoryEntry
+import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.expenseCategories
 import ir.sadteam.loancalc.data.incomeCategories
@@ -65,8 +74,10 @@ import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 
@@ -76,6 +87,14 @@ private val IncomeBlue = Color(0xFF4C7DF0)
 
 /** سه حالتِ شیتِ «تراکنش جدید». */
 enum class NewTxKind { EXPENSE, INCOME, TRANSFER }
+
+/** رنگِ هر نوعِ تراکنش - قرص‌های `17a` رنگِ **همه‌ی** نوع‌ها رو لازم دارن نه فقط فعال. */
+@Composable
+private fun accentOf(kind: NewTxKind): Color = when (kind) {
+    NewTxKind.EXPENSE -> AppDanger
+    NewTxKind.INCOME -> IncomeBlue
+    NewTxKind.TRANSFER -> AppPrimary
+}
 
 /**
  * شیتِ «تراکنش جدید» - نقطه‌ی واحدِ ثبتِ دخل/خرج/جابجایی تو کلِ اپ (خانه، گزارش، دارایی…).
@@ -111,11 +130,7 @@ fun NewTransactionSheet(
     var error by remember { mutableStateOf<String?>(null) }
 
     // عوض‌کردنِ تب دسته‌بندیِ انتخاب‌شده رو باطل می‌کنه - دسته‌ی خرج تو دخل بی‌معنیه.
-    val accent = when (kind) {
-        NewTxKind.EXPENSE -> AppDanger
-        NewTxKind.INCOME -> IncomeBlue
-        NewTxKind.TRANSFER -> AppPrimary
-    }
+    val accent = accentOf(kind)
     val categories: List<CategoryEntry> = if (kind == NewTxKind.INCOME) incomeCategories else expenseCategories
 
     if (showCalendar) {
@@ -159,57 +174,149 @@ fun NewTransactionSheet(
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onDismiss) {
-                Icon(Icons.Filled.Close, contentDescription = "بستن", tint = AppMuted)
+        // هدرِ فریمِ `17a`: قابِ ۳۲یِ بستن · عنوانِ **پویا** (خرجِ تازه / دخلِ تازه / جابجایی) ·
+        // قابِ ۳۲یِ هم‌رنگِ نوعِ تراکنش. عنوان دیگه ثابتِ «تراکنش جدید» نیست چون خودِ فریم
+        // نوعِ فعال رو تو عنوان می‌گه - یه تاییدِ بصریِ رایگان که چی داری ثبت می‌کنی.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(AppSurface)
+                    .border(1.5.dp, AppLine, RoundedCornerShape(10.dp))
+                    .pressScaleClickable(onClick = onDismiss),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Close, contentDescription = "بستن", tint = AppMuted, modifier = Modifier.size(17.dp))
             }
-            Spacer(modifier = Modifier.weight(1f))
-            Text("تراکنش جدید", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.weight(1f))
-            // فاصله‌گیرِ هم‌عرضِ دکمه‌ی بستن تا عنوان دقیقاً وسط بمونه.
-            Spacer(modifier = Modifier.width(48.dp))
-        }
-
-        AppCard {
-            // `selectedColor` با خودِ تبِ فعال عوض می‌شه - همون سه‌رنگیِ خواسته‌شده، بدونِ اینکه
-            // لازم باشه SegmentedToggle پارامترِ رنگِ جدا به‌ازای هر تب بگیره.
-            SegmentedToggle(
-                options = listOf("خرج", "دخل", "جابجایی"),
-                selectedIndex = kind.ordinal,
-                onSelect = {
-                    kind = NewTxKind.entries[it]
-                    category = null
+            Text(
+                when (kind) {
+                    NewTxKind.EXPENSE -> "خرجِ تازه"
+                    NewTxKind.INCOME -> "دخلِ تازه"
+                    NewTxKind.TRANSFER -> "جابجایی"
                 },
-                selectedColor = accent,
+                color = AppText,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.weight(1f),
             )
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(accent.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    when (kind) {
+                        NewTxKind.EXPENSE -> Icons.Filled.ArrowUpward
+                        NewTxKind.INCOME -> Icons.Filled.ArrowDownward
+                        NewTxKind.TRANSFER -> Icons.Filled.SwapHoriz
+                    },
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier.size(17.dp),
+                )
+            }
         }
 
-        // کارتِ مبلغ حاشیه‌ی رنگیِ خودِ accent می‌گیره - همون accentِ تبِ فعال (خرج/دخل/جابجایی)،
-        // طبقِ طرحِ Liquid Glass.
-        AppCard(label = "مبلغ", borderColor = accent.copy(alpha = 0.28f)) {
-            OutlinedTextField(
-                value = amountText,
-                onValueChange = { amountText = cleanNum(it) },
-                visualTransformation = ThousandsSeparatorTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+        // سه **قرصِ مستقل** به‌جای تاگلِ لغزنده - فریمِ `17a` هر سه رو هم‌عرض و جدا نشون می‌ده
+        // و فقط فعال زمینه/حاشیه‌ی رنگی می‌گیره. حاشیه‌ی رنگی همون‌جایی‌ست که تاگلِ لغزنده
+        // نمی‌تونست بده (اون فقط پس‌زمینه‌ی نشانگر رو رنگ می‌کرد).
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            NewTxKind.entries.forEach { entry ->
+                val entryAccent = accentOf(entry)
+                val selected = entry == kind
+                val shape = RoundedCornerShape(999.dp)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(shape)
+                        .background(if (selected) entryAccent.copy(alpha = 0.14f) else AppSurface2)
+                        .then(
+                            if (selected) Modifier.border(1.5.dp, entryAccent, shape) else Modifier,
+                        )
+                        .pressScaleClickable {
+                            kind = entry
+                            category = null
+                        }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        when (entry) {
+                            NewTxKind.EXPENSE -> "خرج"
+                            NewTxKind.INCOME -> "درآمد"
+                            NewTxKind.TRANSFER -> "انتقال"
+                        },
+                        color = if (selected) entryAccent else AppMuted,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                }
+            }
+        }
+
+        // ── کارتِ مبلغ - فریمِ `17a` ────────────────────────────────────────────────────
+        // فریم یه کارتِ **وسط‌چینِ بدونِ کادرِ ورودی** می‌خواد: برچسبِ ریزِ «مبلغ · ریال»، عددِ
+        // ۳۴یِ درشت، و زیرش حروفیِ همون عدد. کادرِ `OutlinedTextField` عمداً حذف شد (فریم
+        // هیچ کادری دورِ عدد نداره) ولی خودِ فیلد سرِ جاشه - فقط شفاف و وسط‌چین شده، پس
+        // تایپ/کرسر/صفحه‌کلیدِ عددی همون‌طور کار می‌کنن.
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                textStyle = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Black, color = accent),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = accent,
-                    unfocusedBorderColor = accent.copy(alpha = 0.35f),
-                    cursorColor = accent,
-                ),
-                suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
-            )
-            val rial = amountText.toLongOrNull() ?: 0L
-            if (rial > 0) {
-                Text(
-                    "${numberToWordsFa((rial / 10).toDouble())} تومان",
-                    color = AppMuted,
-                    fontSize = 11.sp,
-                    modifier = Modifier.padding(top = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("مبلغ · ریال", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                BasicTextField(
+                    value = amountText,
+                    onValueChange = { amountText = cleanNum(it) },
+                    visualTransformation = ThousandsSeparatorTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.Black,
+                        color = accent,
+                        letterSpacing = (-1).sp,
+                        textAlign = TextAlign.Center,
+                    ),
+                    cursorBrush = SolidColor(accent),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    decorationBox = { inner ->
+                        Box(contentAlignment = Alignment.Center) {
+                            if (amountText.isEmpty()) {
+                                Text(
+                                    "۰",
+                                    color = AppMuted.copy(alpha = 0.5f),
+                                    fontSize = 34.sp,
+                                    fontWeight = FontWeight.Black,
+                                )
+                            }
+                            inner()
+                        }
+                    },
                 )
+                val rial = amountText.toLongOrNull() ?: 0L
+                if (rial > 0) {
+                    Text(
+                        "${numberToWordsFa((rial / 10).toDouble())} تومان",
+                        color = AppMuted,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
         }
 
@@ -311,8 +418,16 @@ fun NewTransactionSheet(
             Text(error ?: "", color = AppDanger, fontSize = 12.sp)
         }
 
+        // ── دو دکمه‌ی پایین - فریمِ `17a` ───────────────────────────────────────────────
+        // «ثبت · ۱۰ سکه» جایزه‌ی سکه رو **روی خودِ دکمه** می‌گه (ابتکارِ خودِ فریم: پاداش رو
+        // قبل از عمل نشون بده نه بعدش)، و «+ باز» ثبت می‌کنه ولی شیت رو باز نگه می‌داره -
+        // برای وقتی چند تراکنشِ پشتِ‌هم وارد می‌کنی و هر بار بازکردنِ دوباره‌ی شیت اذیت‌کننده‌ست.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
         AccentPillButton(
-            text = "ثبت تراکنش",
+            text = "ثبت · ${toFa(GamificationRepository.Reward.DAILY_LOG)} سکه",
             accent = accent,
             onClick = {
                 val amount = amountText.toDoubleOrNull() ?: 0.0
@@ -343,8 +458,54 @@ fun NewTransactionSheet(
                     onDismiss()
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.weight(1f),
         )
+
+            // «+ باز» - ثبت می‌کنه و فرم رو برای واردکردنِ تراکنشِ بعدی خالی می‌کنه.
+            Box(
+                modifier = Modifier
+                    .width(56.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AppSurface)
+                    .border(1.5.dp, AppLine, RoundedCornerShape(999.dp))
+                    .pressScaleClickable {
+                        val amount = amountText.toDoubleOrNull() ?: 0.0
+                        error = validate(kind, amount, accountId, fromAccountId, toAccountId)
+                        if (error == null) {
+                            if (kind == NewTxKind.TRANSFER) {
+                                accountViewModel.addTransfer(
+                                    fromAccountId = fromAccountId!!,
+                                    toAccountId = toAccountId!!,
+                                    amount = amount,
+                                    description = description.trim(),
+                                    year = date.y,
+                                    month = date.m,
+                                    day = date.d,
+                                )
+                            } else {
+                                accountViewModel.addTransaction(
+                                    accountId = accountId!!,
+                                    type = if (kind == NewTxKind.INCOME) TransactionType.DEPOSIT else TransactionType.WITHDRAWAL,
+                                    amount = amount,
+                                    description = description.trim(),
+                                    year = date.y,
+                                    month = date.m,
+                                    day = date.d,
+                                    category = category,
+                                )
+                            }
+                            // فقط مبلغ و توضیح پاک می‌شن؛ حساب/تاریخ/دسته می‌مونن چون معمولاً
+                            // تراکنش‌های پشتِ‌هم همون حساب و همون روزن.
+                            amountText = ""
+                            description = ""
+                        }
+                    }
+                    .padding(vertical = 15.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("+ باز", color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold)
+            }
+        }
     }
 }
 

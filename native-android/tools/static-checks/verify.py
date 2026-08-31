@@ -28,6 +28,11 @@ NEEDS = {
     'LocalTextStyle': 'androidx.compose.material3.LocalTextStyle',
     'CompositionLocalProvider': 'androidx.compose.runtime.CompositionLocalProvider',
     # چیدمان‌های پایه - یه‌بار `Spacer` بی‌ایمپورت از این بررسی رد شد و بیلد رو شکست.
+    'BasicTextField': 'androidx.compose.foundation.text.BasicTextField',
+    'SolidColor': 'androidx.compose.ui.graphics.SolidColor',
+    'TextAlign': 'androidx.compose.ui.text.style.TextAlign',
+    'TextStyle': 'androidx.compose.ui.text.TextStyle',
+    'KeyboardOptions': 'androidx.compose.foundation.text.KeyboardOptions',
     'Spacer': 'androidx.compose.foundation.layout.Spacer',
     'Box': 'androidx.compose.foundation.layout.Box',
     'Row': 'androidx.compose.foundation.layout.Row',
