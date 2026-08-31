@@ -786,6 +786,24 @@ fun LoanDetailScreen(
             privacyMode = privacyMode,
         )
 
+        // کارتِ «مشخصات» - فریمِ `29p`. تا حالا هیچ‌جای صفحه نرخ/تعدادِ قسط/ضامن کنارِ هم نبود.
+        // تاریخِ پایان از سررسیدِ **آخرین ردیف** میاد، نه محاسبه‌ی دوباره - همون چیزی که خودِ
+        // جدولِ اقساط نشون می‌ده، پس نمی‌تونه با اون ناهماهنگ باشه.
+        val lastDue = rows.lastOrNull()?.get("dueDate") as? Map<*, *>
+        LoanSpecsCard(
+            bank = loan.bank,
+            amount = loan.amount,
+            ratePct = ratePct,
+            n = loan.n,
+            borrower = remember(loan) { viewModel.getLoanBorrower(loan) },
+            endLabel = lastDue?.let {
+                val y = (it["y"] as? Number)?.toInt()
+                val mo = (it["m"] as? Number)?.toInt()
+                if (y != null && mo != null) "${persianMonthName(mo)} ${toFa(y)}" else null
+            },
+            privacyMode = privacyMode,
+        )
+
         AppCard(label = loan.bank, modifier = Modifier.padding(horizontal = 14.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 // weight(1f) فقط رو ستونِ مبلغ - چون متنِ حروفیِ مبلغ (numberToWordsFa) طولش به
@@ -1245,6 +1263,67 @@ private fun installmentsFlingPassthrough(
 
 /** یه ردیفِ قسط - هر قسط یه باکس مینیمالِ گوشه‌گرد با حاشیه‌ی سبزه (خواسته‌ی کاربر). وضعیت پرداخت:
  * به‌موقع=سبز «پرداخت شد»، با تأخیر=قرمز «با تأخیر»، پرداخت‌نشده=مشکی «پرداخت نشده». */
+/**
+ * **کارتِ «مشخصات» - فریمِ `29p`.**
+ *
+ * پنج ردیفِ برچسب↔مقدار: بانک · مبلغِ وام · نرخ · تعدادِ قسط · ضامن؛ به‌علاوه‌ی «پایان» که
+ * فریم تو کارتِ وضعیت داره ولی اینجا منطقی‌تره (کنارِ بقیه‌ی مشخصاتِ ثابتِ وام).
+ *
+ * ردیفی که مقدارش نداریم اصلاً رندر نمی‌شه - «—»ی خالی به‌دردنخوره و کارت رو شلوغ می‌کنه.
+ */
+@Composable
+private fun LoanSpecsCard(
+    bank: String,
+    amount: Double,
+    ratePct: Double,
+    n: Int,
+    borrower: String,
+    endLabel: String?,
+    privacyMode: Boolean,
+) {
+    AppCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)) {
+        Text("مشخصات", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
+        Spacer(modifier = Modifier.height(11.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            if (bank.isNotBlank() && bank != "—") SpecRow("بانک", bank)
+            SpecRow("مبلغِ وام", null, amount, privacyMode)
+            if (ratePct > 0.0) SpecRow("نرخ", "${toFa(fmtRate(ratePct))}٪ سالانه")
+            SpecRow("تعدادِ قسط", "${toFa(n)} قسط")
+            if (endLabel != null) SpecRow("پایان", endLabel)
+            SpecRow("ضامن", if (borrower.isBlank() || borrower == "—") "ندارد" else borrower)
+        }
+    }
+}
+
+/** یه ردیفِ «برچسبِ راست ← مقدارِ چپ» تو کارتِ مشخصات. مبلغ با حالتِ خصوصی ماسک می‌شه. */
+@Composable
+private fun SpecRow(
+    label: String,
+    value: String?,
+    amount: Double? = null,
+    privacyMode: Boolean = false,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        if (value != null) {
+            Text(value, color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold)
+        } else {
+            PrivacyCrossfade(privacyMode) { masked ->
+                Text(
+                    maskIfPrivate(masked, fmt(amount ?: 0.0)),
+                    color = AppText,
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                )
+            }
+        }
+    }
+}
+
 /**
  * **کارتِ «تسویه‌ی زودتر» - فریمِ `27b`.**
  *
