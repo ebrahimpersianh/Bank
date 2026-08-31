@@ -15,6 +15,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,10 +35,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Info
@@ -129,11 +132,14 @@ import ir.sadteam.loancalc.ui.theme.AppElevation
 import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.theme.AppGoldInk2
 import ir.sadteam.loancalc.ui.theme.AppLabel
+import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppUrgentBorder
 import ir.sadteam.loancalc.ui.theme.Motion
@@ -505,28 +511,19 @@ fun MyLoansScreen(
                         }
                     }
 
+                    // ردیفِ «پشتیبان‌گیری و بازیابیِ وام‌ها» - فریمِ `27a`. قبلاً دو تا دکمه‌ی
+                    // OutlinedButtonِ کنارِ هم بود که نه به سبکِ بقیه‌ی اپ می‌خورد نه تو فریم بود؛
+                    // طرح یه **ردیفِ فهرست** می‌خواد (قابِ آیکونِ ۳۰ + عنوان + فلش).
                     item {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(
-                                onClick = { openDocumentLauncher.launch(arrayOf("application/json")) },
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
-                                modifier = Modifier.weight(1f),
-                            ) {
-                                Text("بازیابی", fontSize = 12.sp)
-                            }
-                            OutlinedButton(
-                                onClick = {
-                                    viewModel.exportBackup { json ->
-                                        pendingExportJson = json
-                                        createDocumentLauncher.launch("loans-backup.json")
-                                    }
-                                },
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
-                                modifier = Modifier.weight(1f),
-                            ) {
-                                Text("پشتیبان‌گیری", fontSize = 12.sp)
-                            }
-                        }
+                        BackupRestoreRow(
+                            onBackup = {
+                                viewModel.exportBackup { json ->
+                                    pendingExportJson = json
+                                    createDocumentLauncher.launch("loans-backup.json")
+                                }
+                            },
+                            onRestore = { openDocumentLauncher.launch(arrayOf("application/json")) },
+                        )
                     }
 
                     if (visibleLoans.isEmpty()) {
@@ -826,6 +823,78 @@ fun MyLoansScreen(
  *
  * @param showCoin سکه‌ی ۱۱dpیِ «نزدیک‌ترین قسط» رو گوشه‌ی بالا-راستِ حلقه (فقط حالتِ فوری).
  */
+/**
+ * **ردیفِ پشتیبان‌گیری و بازیابی - فریمِ `27a`.**
+ *
+ * یه ردیفِ فهرستِ ساده با قابِ آیکونِ ۳۰ی. تپ روش یه شیتِ دوگزینه‌ای باز می‌کنه، چون فریم
+ * **یک** ردیف داره ولی ما دو تا کار داریم (گرفتن و برگردوندن) - جاسازیِ دو دکمه تو یه ردیف
+ * هدفِ لمسی رو زیرِ ۴۴dp می‌برد که خلافِ بندِ ۸ سیستمِ طراحیه.
+ */
+@Composable
+private fun BackupRestoreRow(onBackup: () -> Unit, onRestore: () -> Unit) {
+    var showSheet by remember { mutableStateOf(false) }
+
+    if (showSheet) {
+        AlertDialog(
+            onDismissRequest = { showSheet = false },
+            title = { Text("پشتیبان‌گیری و بازیابیِ وام‌ها") },
+            text = { Text("یه فایلِ پشتیبان از همه‌ی وام‌هات بساز، یا یه فایلِ قبلی رو برگردون.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showSheet = false
+                    onBackup()
+                }) { Text("گرفتنِ پشتیبان", color = AppPrimary) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showSheet = false
+                    onRestore()
+                }) { Text("بازیابی از فایل", color = AppMuted) }
+            },
+        )
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(AppSurface)
+            .border(2.dp, AppLineRow, RoundedCornerShape(16.dp))
+            .pressScaleClickable { showSheet = true }
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(9.dp))
+                .background(AppSurface2),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.CloudUpload,
+                contentDescription = null,
+                tint = AppMuted,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+        Text(
+            "پشتیبان‌گیری و بازیابیِ وام‌ها",
+            color = AppText,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+            contentDescription = null,
+            tint = AppMuted,
+            modifier = Modifier.size(18.dp),
+        )
+    }
+}
+
 @Composable
 private fun LoanStateRing(
     progress: Float,

@@ -171,11 +171,13 @@ import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.hardShadow
 import ir.sadteam.loancalc.ui.theme.ColorTheme
 import ir.sadteam.loancalc.ui.theme.LoanCalcTheme
 import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
@@ -240,10 +242,16 @@ private const val CHEQUE_ROUTE = "cheque"
 
 /** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
 private enum class LoanSubTab(val label: String) {
-    BANK("بانکی"),
-    AFFORD("محاسبه‌گر"),
-    DEPOSIT("سپرده"),
+    // ترتیب طبقِ فریمِ `27a`: «وام‌های من» اول و پیش‌فرض (چیزی که کاربر واقعاً هر روز باهاش
+    // کار داره)، بعد سپرده، بعد محاسبه‌گر.
     MY_LOANS("وام‌های من"),
+    DEPOSIT("سپرده"),
+    AFFORD("محاسبه‌گر"),
+
+    // ⚠️ **تو فریمِ `27a` نیست** - فریم فقط سه تب داره. عمداً نگهش داشتم چون تنها راهِ رسیدن به
+    // محاسبه‌گرِ وامِ بانکی (نرخ‌های بانک‌ها) همینه و حذفش یه قابلیتِ موجود رو دفن می‌کرد.
+    // سوالِ بازِ طراح: این با «محاسبه‌گر» یکی بشه یا تبِ چهارم بمونه؟
+    BANK("بانکی"),
 }
 
 // ترتیب/محتوای کاملِ تورِ راهنمای اولین ورود (AppTourOverlay) - رجوع کن به همون کامپوننت پایین‌تر
@@ -1192,7 +1200,7 @@ private fun LoanTab(
     // برگشتن از یه زیرصفحه‌ی غیرِ«بانکی» به «بانکی» (زیرصفحه‌ی پیش‌فرض) - قبل از رسیدن به
     // BackHandlerِ بیرونیِ LoanCalcApp (که دیگه معنیش برگشتن به «خانه»ست). زیرصفحه‌های داخلیِ
     // خودِ هر اسکرین (مثلاً جزئیاتِ وام تو MyLoansScreen) اولویتِ بالاتری دارن چون دیرتر رجیستر می‌شن.
-    BackHandler(enabled = subTab != LoanSubTab.BANK) { subTab = LoanSubTab.BANK }
+    BackHandler(enabled = subTab != LoanSubTab.MY_LOANS) { subTab = LoanSubTab.MY_LOANS }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // «وام» دیگه تبِ نوارِ پایین نیست (رجوع کن به کامنتِ بالای BottomTab تو این فایل) - چون از
@@ -1206,7 +1214,14 @@ private fun LoanTab(
             IconButton(onClick = onBack) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
             }
-            Text("وام", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            // فریمِ `27a`: عنوانِ ۱۸ با وزنِ ۹۰۰، و دکمه‌ی افزودن سمتِ مقابل تو قابِ ۳۲ی سبز.
+            Text(
+                "وام",
+                color = AppText,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.weight(1f),
+            )
         }
         Row(
             modifier = Modifier
@@ -1214,27 +1229,37 @@ private fun LoanTab(
                 .padding(horizontal = 14.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+            // فریمِ `27a`: تبِ فعال یه **قرصِ سبزِ توپر با سایه‌ی سخت** و متنِ سفیده؛ بقیه فقط
+            // متنِ خاکستریِ بی‌زمینه‌ان. (نسخه‌ی قبلی هر چهارتا رو یه Surfaceِ کم‌آلفا می‌کرد.)
             LoanSubTab.entries.forEach { entry ->
                 val selected = entry == subTab
-                Surface(
-                    color = if (selected) AppPrimary.copy(alpha = 0.16f) else Color.Transparent,
-                    shape = RoundedCornerShape(10.dp),
+                val shape = RoundedCornerShape(999.dp)
+                Box(
                     modifier = Modifier
                         .weight(1f)
+                        .then(
+                            if (selected) {
+                                Modifier
+                                    .hardShadow(AppPrimaryDim, shape, offsetY = 3.dp)
+                                    .clip(shape)
+                                    .background(AppPrimary)
+                            } else {
+                                Modifier.clip(shape)
+                            },
+                        )
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
-                        ) { subTab = entry },
+                        ) { subTab = entry }
+                        .padding(vertical = 6.dp, horizontal = 4.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         entry.label,
-                        color = if (selected) AppPrimary else AppMuted,
-                        fontSize = 12.5.sp,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (selected) Color.White else AppMuted,
+                        fontSize = 10.sp,
+                        fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
                     )
                 }
             }
