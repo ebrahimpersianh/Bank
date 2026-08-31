@@ -1,30 +1,33 @@
 package ir.sadteam.loancalc.server
 
 /*
- * قیمتِ روزِ طلا/سکه/ارز/رمزارز - منبع: وب‌سرویسِ نوسان (navasan.tech).
+ * قیمتِ روزِ طلا/سکه/ارز/رمزارز - منبع: وب‌سرویسِ «قیمت آنلاین» (gheymat.online).
  *
- * ⚠️ سهمیه‌ی کلیدِ رایگان فقط **۱۲۰ درخواست در ماه**ه (حدودِ ۴ بار در روز). به همین خاطر تازه‌سازی
- * *زمان‌محور*ه نه *درخواست‌محور*: هر بار /api/prices صدا زده می‌شه، فقط اگه از آخرین تازه‌سازیِ
- * واقعی بیشتر از [REFRESH_INTERVAL_HOURS] ساعت گذشته باشه دوباره از نوسان می‌گیریم - وگرنه از
- * کشِ جدولِ price_snapshot جواب می‌دیم. با فاصله‌ی ۶ ساعته دقیقاً ۴ بار در روز = ۱۲۰ بار در ماه،
- * سرِ حدِ مجاز نه بیشتر - صرفِ نظر از اینکه چندتا کاربر چندبار endpoint رو صدا بزنن.
+ * مستنداتِ endpoint (اسکرین‌شاتِ کاربر، ۶ شهریور):
+ *   GET https://backend.gheymat.online/api/prices/all
+ *   Header:  x-api-token: <کلید>
+ *   Header:  X-Country-Code: IR   (اجباری طبقِ مستندات)
+ *   جوابِ موفق: {"data": [ {symbol, sell_price, buy_price, name:{fa,en,...}, ...}, ... ]}
  *
- * ⚠️ ساختارِ دقیقِ پاسخِ نوسان از رو مستنداتِ رسمی تایید نشده (سندباکس نمی‌تونه api.navasan.tech
- * یا لینکِ مستنداتشون رو fetch کنه - egress بسته‌ست). به همین خاطر پارسِ **عمومی**: هر کلید از
- * JSONِ ریشه رو - چه مقدارش عددِ خام باشه چه یه آبجکتِ `{"value": ...}` - به یه عددِ Double تبدیل
- * می‌کنیم و همون‌جوری تو جدول ذخیره می‌کنیم. یعنی هر اسمِ نمادی که نوسان برگردونه (usd_sell,
- * gol18, sekee, ...) خودکار تو خروجی میاد؛ کلاینت (اپِ اندروید) با اسمِ دقیقِ نمادها فیلتر می‌کنه.
- * بعدِ اولین فراخوانیِ واقعی، لاگِ سرور رو چک کن ببین اسمِ نمادها دقیقاً چیه.
+ * ⚠️ سهمیه‌ی کلیدِ رایگان **۲۵۰ درخواست در روز**ه، ولی چون یه درخواستِ `all` همه‌ی نمادها رو با
+ * هم می‌ده، نیازی به زیاد صدازدنش نیست. تازه‌سازی *زمان‌محور*ه: `/api/prices` هر بار صدا زده
+ * بشه، فقط اگه بیشتر از یک ساعت از آخرین fetch گذشته باشه دوباره از سرویس می‌گیریم (حداکثر
+ * ۲۴ بار در روز - خیلی زیرِ سقفِ ۲۵۰) - وگرنه از کشِ جدولِ price_snapshot جواب می‌دیم.
+ *
+ * پارس: از آرایه‌ی `data`، برای هر آیتم `symbol` (مثلاً `GOLD-TMN`, `USD-TMN`) و `sell_price`
+ * (رشته‌ی عددی) استخراج و به Double تبدیل می‌شه. `sell_price` انتخاب شد چون معنیِ «الان می‌تونی
+ * به این قیمت بفروشی»ه - همونی که برای نمایشِ ارزشِ داراییِ کاربر لازمه.
  */
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.time.Duration
@@ -32,13 +35,13 @@ import java.time.Instant
 
 object PriceService {
     private val PRICE_API_KEY = env("PRICE_API_KEY")
-    private const val NAVASAN_URL = "https://api.navasan.tech/latest/"
-    private val REFRESH_INTERVAL = Duration.ofHours(6)
+    private const val GHEYMAT_URL = "https://backend.gheymat.online/api/prices/all"
+    private val REFRESH_INTERVAL = Duration.ofHours(1)
 
     private val httpClient = HttpClient(CIO)
     private val json = Json { ignoreUnknownKeys = true }
 
-    /** جوابِ نهایی برای `/api/prices` - فقط اونی که تو کشه، هیچ‌وقت مستقیم بلاک نمی‌کنه رو نوسان. */
+    /** جوابِ نهایی برای `/api/prices` - فقط اونی که تو کشه، هیچ‌وقت مستقیم بلاک نمی‌کنه رو سرویسِ بیرونی. */
     suspend fun currentPrices(): Pair<String?, Map<String, Double>> {
         refreshIfStale()
         val (rawJson, fetchedAt) = Db.withConnection { conn ->
@@ -66,11 +69,12 @@ object PriceService {
         if (!stale) return
 
         runCatching {
-            val response = httpClient.get(NAVASAN_URL) {
-                url { parameters.append("api_key", PRICE_API_KEY) }
+            val response = httpClient.get(GHEYMAT_URL) {
+                header("x-api-token", PRICE_API_KEY)
+                header("X-Country-Code", "IR")
             }
             if (!response.status.isSuccess()) {
-                Log.info("price_fetch_failed", "دریافتِ قیمت از نوسان ناموفق بود", "status" to response.status.value)
+                Log.info("price_fetch_failed", "دریافتِ قیمت از gheymat.online ناموفق بود", "status" to response.status.value)
                 return
             }
             val body = response.bodyAsText()
@@ -88,22 +92,22 @@ object PriceService {
                     ps.executeUpdate()
                 }
             }
-            Log.info("price_fetch_ok", "قیمت‌های نوسان تازه‌سازی شد")
+            Log.info("price_fetch_ok", "قیمت‌های gheymat.online تازه‌سازی شد")
         }.onFailure { e ->
-            Log.info("price_fetch_error", "خطا در دریافتِ قیمت از نوسان", "error" to (e.message ?: "?"))
+            Log.info("price_fetch_error", "خطا در دریافتِ قیمت از gheymat.online", "error" to (e.message ?: "?"))
         }
     }
 
-    /** استخراجِ عمومیِ عدد از هر شکلِ مقدار - رجوع کن به هشدارِ بالای فایل. */
+    /** استخراجِ symbol → sell_price از آرایه‌ی `data` - رجوع کن به هشدارِ بالای فایل. */
     private fun parsePrices(rawJson: String): Map<String, Double> {
         val root = runCatching { json.parseToJsonElement(rawJson).jsonObject }.getOrNull() ?: return emptyMap()
+        val items: JsonArray = runCatching { root["data"]?.jsonArray }.getOrNull() ?: return emptyMap()
         val result = mutableMapOf<String, Double>()
-        for ((key, element) in root) {
-            val number = when {
-                element is JsonPrimitive -> element.content.toDoubleOrNull()
-                else -> runCatching { element.jsonObject["value"]?.jsonPrimitive?.content?.toDoubleOrNull() }.getOrNull()
-            }
-            if (number != null) result[key] = number
+        for (item in items) {
+            val obj = runCatching { item.jsonObject }.getOrNull() ?: continue
+            val symbol = obj["symbol"]?.jsonPrimitive?.content ?: continue
+            val price = obj["sell_price"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: continue
+            result[symbol] = price
         }
         return result
     }
