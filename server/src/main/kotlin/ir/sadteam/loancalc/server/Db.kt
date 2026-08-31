@@ -160,6 +160,20 @@ object Db {
                     )
                     """.trimIndent()
                 )
+
+                // تاریخچه‌ی روزانه‌ی قیمت - یه ردیف در روز برای هر نماد، از رو همون fetchهای
+                // ساعتی ساخته می‌شه (سهمیه‌ی اضافه نمی‌خواد). مبنای «نسبت به ماهِ قبل» تو تبِ
+                // دارایی. کلیدِ مرکب یعنی fetchهای بعدیِ همون روز به‌روزرسانی می‌کنن نه تکرار.
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS price_history (
+                        symbol TEXT NOT NULL,
+                        date TEXT NOT NULL,
+                        price REAL NOT NULL,
+                        PRIMARY KEY (symbol, date)
+                    )
+                    """.trimIndent()
+                )
             }
             /* migration برای دیتابیس‌های قدیمی که از قبل جدول users رو بدون این ستون‌ها دارن */
             runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN subscribed INTEGER NOT NULL DEFAULT 0") } }
