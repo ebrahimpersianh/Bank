@@ -146,8 +146,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAssetRepository(assetDao: AssetDao, assetTradeDao: AssetTradeDao): AssetRepository =
-        AssetRepository(assetDao, assetTradeDao)
+    fun provideAssetRepository(
+        assetDao: AssetDao,
+        assetTradeDao: AssetTradeDao,
+        apiService: ApiService,
+    ): AssetRepository = AssetRepository(assetDao, assetTradeDao, apiService)
 
     @Provides
     @Singleton

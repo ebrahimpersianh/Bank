@@ -11,6 +11,10 @@ interface AssetDao {
     @Query("SELECT * FROM assets ORDER BY createdAt ASC")
     fun observeAll(): Flow<List<AssetEntity>>
 
+    /** همون لیست ولی یه‌بار و suspend - برای نوشتنِ قیمتِ تازه رو همه‌ی دارایی‌ها. */
+    @Query("SELECT * FROM assets")
+    suspend fun getAll(): List<AssetEntity>
+
     @Query("SELECT * FROM assets WHERE symbol = :symbol LIMIT 1")
     suspend fun findBySymbol(symbol: String): AssetEntity?
 

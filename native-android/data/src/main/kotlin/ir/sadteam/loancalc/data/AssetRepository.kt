@@ -4,6 +4,7 @@ import ir.sadteam.loancalc.data.db.AssetDao
 import ir.sadteam.loancalc.data.db.AssetEntity
 import ir.sadteam.loancalc.data.db.AssetTradeDao
 import ir.sadteam.loancalc.data.db.AssetTradeEntity
+import ir.sadteam.loancalc.data.network.ApiService
 import kotlinx.coroutines.flow.Flow
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -20,6 +21,7 @@ import java.util.TimeZone
 class AssetRepository(
     private val assetDao: AssetDao,
     private val tradeDao: AssetTradeDao,
+    private val apiService: ApiService,
 ) {
     fun observeAssets(): Flow<List<AssetEntity>> = assetDao.observeAll()
     fun observeTrades(): Flow<List<AssetTradeEntity>> = tradeDao.observeAll()
@@ -107,13 +109,49 @@ class AssetRepository(
     }
 
     /**
-     * ⏳ **جای خالیِ عمدی**: وقتی کلیدِ APIِ سرویسِ قیمت رسید، اینجا قیمت‌ها گرفته و رو
-     * `assets.unitPriceRial` نوشته می‌شن. طبقِ تصمیمِ ثبت‌شده، قیمت باید از **سرورِ خودمون**
-     * (که کش می‌کنه، مثلِ `credit_rates`) گرفته بشه، نه مستقیم از سرویس - وگرنه کلید تو اپ لو می‌ره.
-     * تا اون موقع این تابع عمداً کاری نمی‌کنه و اپ همه‌جا «—» نشون می‌ده.
+     * گرفتنِ قیمتِ روز از **سرورِ خودمون** (نه مستقیم از سرویسِ بیرونی - وگرنه کلید تو اپ لو می‌ره)
+     * و نوشتنش رو `assets.unitPriceRial`.
+     *
+     * کلیدهای جوابِ سرور دقیقاً همون `symbol`ِ کاتالوگن (`BTC`, `GOLD_18`, ...) چون **نگاشتِ
+     * نمادها سمتِ سروره** - اگه اسمِ نمادی از سرویس عوض شد، با یه دیپلویِ سرور درست می‌شه و
+     * کاربر لازم نیست اپ رو آپدیت کنه.
+     *
+     * شکستِ شبکه عمداً بی‌صداست: قیمتِ قبلی سرِ جاش می‌مونه و دارایی‌هایی که هیچ‌وقت قیمت
+     * نگرفتن «—» نشون می‌دن. عمومیه و توکن نمی‌خواد.
      */
-    @Suppress("UNUSED_PARAMETER")
-    suspend fun refreshPrices(token: String?) = Unit
+    suspend fun refreshPrices() {
+        val prices = runCatching { apiService.getPrices().prices }.getOrNull() ?: return
+        if (prices.isEmpty()) return
+        val now = isoNow()
+        assetDao.getAll().forEach { asset ->
+            val price = prices[asset.symbol] ?: return@forEach
+            if (asset.unitPriceRial != price) {
+                assetDao.upsert(asset.copy(unitPriceRial = price, priceUpdatedAt = now))
+            }
+        }
+    }
+
+    /**
+     * تاریخچه‌ی روزانه‌ی یه نماد (قدیمی → جدید) برای نمودار و مقایسه‌ی «نسبت به ماهِ قبل».
+     * لیستِ خالی یعنی سرور هنوز برای این نماد تاریخچه‌ای جمع نکرده - UI باید «—» بذاره.
+     */
+    suspend fun priceHistory(symbol: String, days: Int = 30): List<Pair<String, Double>> =
+        runCatching {
+            apiService.getPriceHistory(symbol, days).points.map { it.date to it.price }
+        }.getOrDefault(emptyList())
+
+    /**
+     * درصدِ تغییرِ قیمت نسبت به قدیمی‌ترین نقطه‌ی بازه؛ `null` یعنی تاریخچه‌ی کافی نداریم.
+     * خواسته‌ی کاربر: هشدارِ گرون‌شدنِ ارزِ دیجیتال نسبت به ماهِ قبل.
+     */
+    suspend fun priceChangePercent(symbol: String, days: Int = 30): Double? {
+        val points = priceHistory(symbol, days)
+        if (points.size < 2) return null
+        val first = points.first().second
+        val last = points.last().second
+        if (first <= 0.0) return null
+        return (last - first) / first * 100.0
+    }
 
     private fun isoNow(): String {
         val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)

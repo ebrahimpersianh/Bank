@@ -6,6 +6,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Query
 import retrofit2.http.PUT
 
 /**
@@ -93,6 +94,19 @@ interface ApiService {
     // آپدیتِ خودکار - عمومی، بدون نیاز به ورود؛ رجوع کن به server/routes/AppVersionRoutes.kt.
     @GET("api/app-version")
     suspend fun getAppVersion(): AppVersionResponse
+
+    // قیمتِ روزِ طلا/ارز/رمزارز - عمومی. کلیدِ APIِ سرویسِ بیرونی فقط رو سرورِ خودمونه و اپ
+    // هیچ‌وقت مستقیم به اون سرویس وصل نمی‌شه. نگاشتِ نمادها هم سمتِ سروره، پس کلیدهای این
+    // نگاشت دقیقاً همون symbolِ کاتالوگِ اپ‌ان (BTC/GOLD_18/...) و مقدارها **ریال**ن.
+    @GET("api/prices")
+    suspend fun getPrices(): PricesResponse
+
+    // تاریخچه‌ی روزانه‌ی یه نماد - مبنای «نسبت به ماهِ قبل» تو تبِ دارایی.
+    @GET("api/prices/history")
+    suspend fun getPriceHistory(
+        @Query("symbol") symbol: String,
+        @Query("days") days: Int = 30,
+    ): PriceHistoryResponse
 }
 
 data class RequestOtpRequest(val phone: String)
@@ -168,6 +182,18 @@ data class CreditRateDto(
 )
 
 data class CreditRatesResponse(val rates: List<CreditRateDto>)
+
+data class PricesResponse(
+    val updatedAt: String? = null,
+    val prices: Map<String, Double> = emptyMap(),
+)
+
+data class PricePointDto(val date: String, val price: Double)
+
+data class PriceHistoryResponse(
+    val symbol: String,
+    val points: List<PricePointDto> = emptyList(),
+)
 
 data class CrashReportRequest(
     val message: String,

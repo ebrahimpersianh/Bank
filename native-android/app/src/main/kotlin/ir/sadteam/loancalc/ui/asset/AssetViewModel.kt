@@ -6,7 +6,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.data.AssetRepository
 import ir.sadteam.loancalc.data.db.AssetEntity
 import ir.sadteam.loancalc.data.db.AssetTradeEntity
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -21,6 +23,32 @@ class AssetViewModel @Inject constructor(
 
     val trades: StateFlow<List<AssetTradeEntity>> = assetRepository.observeTrades()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * درصدِ تغییرِ ۳۰ روزه‌ی هر نماد - کلید نمادِ کاتالوگه. خالی‌بودنش یعنی سرور هنوز تاریخچه
+     * جمع نکرده (تاریخچه از روزِ راه‌اندازیِ سرویس به بعد پر می‌شه) و UI باید «—» بذاره.
+     */
+    private val _monthChange = MutableStateFlow<Map<String, Double>>(emptyMap())
+    val monthChange: StateFlow<Map<String, Double>> = _monthChange
+
+    init {
+        refreshPrices()
+    }
+
+    /**
+     * قیمتِ روز از سرورِ خودمون. بی‌صدا شکست می‌خوره (آفلاین = قیمتِ قبلی می‌مونه) و چون سرور
+     * خودش ساعتی یک‌بار از سرویسِ بیرونی می‌گیره، صدازدنِ مکررش هزینه‌ای نداره.
+     */
+    fun refreshPrices() {
+        viewModelScope.launch {
+            assetRepository.refreshPrices()
+            val changes = mutableMapOf<String, Double>()
+            assetRepository.observeAssets().first().forEach { asset ->
+                assetRepository.priceChangePercent(asset.symbol)?.let { changes[asset.symbol] = it }
+            }
+            _monthChange.value = changes
+        }
+    }
 
     fun recordTrade(
         symbol: String,
