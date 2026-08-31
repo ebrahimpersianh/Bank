@@ -21,11 +21,13 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -97,6 +99,12 @@ import ir.sadteam.loancalc.ui.theme.hardShadow
  * کلیدِ خصوصی طبقِ `design/ANSWERS-section-37.md` بندِ ۳ اینجاست (و تو گزارش) - «همان دو
  * صفحه‌ای که کارشان نشان‌دادنِ موجودی است».
  */
+/** فقط `id` نگه داشته می‌شه نه خودِ Entity - بعدِ چرخشِ صفحه، ردیفِ تازه از لیستِ زنده خونده می‌شه. */
+private val assetIdSaver = androidx.compose.runtime.saveable.Saver<Long?, Long>(
+    save = { it ?: -1L },
+    restore = { if (it == -1L) null else it },
+)
+
 @Composable
 fun AssetsTabScreen(
     onOpenAsset: (AssetEntity) -> Unit = {},
@@ -112,6 +120,22 @@ fun AssetsTabScreen(
 
     var showAddAsset by remember { mutableStateOf(false) }
     var showAddAccount by remember { mutableStateOf(false) }
+
+    // صفحه‌ی جزئیاتِ دارایی همین‌جا باز می‌شه، نه از راهِ `onOpenAsset` - قبلاً پارامترِ
+    // `onOpenAsset` مقدارِ پیش‌فرضِ خالی داشت و MainActivity هم چیزی بهش نمی‌داد، پس تپ رو
+    // طلا/بیت‌کوین **هیچ کاری نمی‌کرد** (گزارشِ کاربر، ۸ شهریور).
+    var detailAsset by rememberSaveable(stateSaver = assetIdSaver) { mutableStateOf<Long?>(null) }
+    val openAsset = assets.firstOrNull { it.id == detailAsset }
+    BackHandler(enabled = openAsset != null) { detailAsset = null }
+    if (openAsset != null) {
+        AssetDetailScreen(
+            asset = openAsset,
+            onBack = { detailAsset = null },
+            viewModel = assetViewModel,
+        )
+        return
+    }
+
     if (showAddAccount) {
         AccountsScreen(
             onBack = { showAddAccount = false },
@@ -194,7 +218,10 @@ fun AssetsTabScreen(
                     GoldAndCurrencyCard(
                         holdings = holdings,
                         privacyMode = privacyMode,
-                        onOpen = onOpenAsset,
+                        onOpen = { asset ->
+                            detailAsset = asset.id
+                            onOpenAsset(asset)
+                        },
                     )
                 }
             } else {
