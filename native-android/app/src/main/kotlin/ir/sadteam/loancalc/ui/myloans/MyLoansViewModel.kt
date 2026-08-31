@@ -119,6 +119,9 @@ class MyLoansViewModel @Inject constructor(
     /** دوره‌ی تنفسِ وام (ماه) - رجوع کن به [LoanRepository.getGraceMonths]. */
     fun getLoanGraceMonths(loan: LoanEntity): Int = loanRepository.getGraceMonths(loan)
 
+    /** نرخِ سالانه (درصد) - برای ردیفِ «سود» تو خلاصه‌ی فریمِ `27b`. */
+    fun getLoanRatePct(loan: LoanEntity): Double = loanRepository.getRatePct(loan)
+
     /** سررسیدِ اولین قسطِ پرداخت‌نشده - برای مرتب‌سازیِ «نزدیک‌ترین سررسید»، رجوع کن به
      * [LoanRepository.getNextDueDate]. */
     fun getLoanNextDueDate(loan: LoanEntity): PersianDate? = loanRepository.getNextDueDate(loan)

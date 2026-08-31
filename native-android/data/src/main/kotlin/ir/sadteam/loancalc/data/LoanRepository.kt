@@ -140,6 +140,10 @@ class LoanRepository(
      * (addManualLoan همیشه graceMonths=0 ذخیره می‌کنه)، وامِ محاسبه‌شده هرچی موقعِ محاسبه بوده. */
     fun getGraceMonths(loan: LoanEntity): Int = (parseData(loan)["graceMonths"] as? Number)?.toInt() ?: 0
 
+    /** نرخِ سالانه‌ی وام (درصد) - فریمِ `27b` تو خلاصه‌ی بالای صفحه نشونش می‌ده. صفر یعنی
+     * بدونِ سود یا وامِ دستی‌ای که نرخ براش ثبت نشده؛ اون‌وقت UI ردیفِ «سود» رو نشون نمی‌ده. */
+    fun getRatePct(loan: LoanEntity): Double = (parseData(loan)["rate"] as? Number)?.toDouble() ?: 0.0
+
     /** یادداشتِ آزادِ کاربر رو این وام (مثلاً شماره حساب/کارت) - تو dataJson ذخیره می‌شه، نیازی به
      * تغییرِ schema نداره. پیش‌فرض رشته‌ی خالی، نه هیچ‌کدومِ وام‌های قدیمی‌تر این کلید رو ندارن. */
     fun getNotes(loan: LoanEntity): String = (parseData(loan)["notes"] as? String) ?: ""

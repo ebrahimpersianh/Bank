@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""آیکونِ متریال که استفاده شده ولی ایمپورت نشده.
+"""آیکونِ متریال و اکستنشنِ kotlin.math که استفاده شده ولی ایمپورت نشده.
 
 `Icons.Filled.Check` بدونِ `import androidx.compose.material.icons.filled.Check` کامپایل
 نمی‌شه، ولی هیچ‌کدوم از بررسی‌های قبلی این الگو رو نمی‌دیدن: `verify.py` فقط یه لیستِ ثابت از
@@ -18,6 +18,12 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 SRC = [ROOT / "app/src/main/kotlin", ROOT / "data/src/main/kotlin"]
 
 USE = re.compile(r'\bIcons\.(AutoMirrored\.Filled|AutoMirrored\.Outlined|Filled|Outlined|Rounded|Sharp|TwoTone)\.([A-Z]\w*)')
+
+# اکستنشن‌های kotlin.math که ایمپورتِ صریح می‌خوان - `roundToInt` بی‌ایمپورت همون کلاس
+# خطاییه که موقعِ فریمِ `27b` پیدا شد (کامپایلر نمی‌شناسدش ولی هیچ بررسیِ دیگه‌ای نمی‌گرفتش).
+# فقط اونایی که تو kotlin.math‌ان و ایمپورتِ صریح می‌خوان (coerceIn/coerceAtLeast تو
+# kotlin.ranges‌ان و خودکار ایمپورت می‌شن، پس اینجا نیستن).
+MATH_NEEDS_IMPORT = {"roundToInt": "kotlin.math.roundToInt", "roundToLong": "kotlin.math.roundToLong"}
 
 
 def package_for(group: str) -> str:
@@ -49,11 +55,15 @@ def main() -> int:
         for group, name in sorted(missing):
             problems.append((path.relative_to(ROOT), f"Icons.{group}.{name}", expected_import(group, name)))
 
+        for fn, imp in MATH_NEEDS_IMPORT.items():
+            if re.search(r'\.' + fn + r'\(', text) and f"import {imp}" not in text:
+                problems.append((path.relative_to(ROOT), f".{fn}()", f"import {imp}"))
+
     if not problems:
-        print(f"✅ همه‌ی آیکون‌های متریالِ استفاده‌شده ایمپورت شده‌ان ({len(targets)} فایل)")
+        print(f"✅ آیکون‌های متریال و اکستنشن‌های kotlin.math همه ایمپورت شده‌ان ({len(targets)} فایل)")
         return 0
 
-    print(f"❌ {len(problems)} آیکونِ بدونِ ایمپورت:")
+    print(f"❌ {len(problems)} نمادِ بدونِ ایمپورت:")
     for rel, used, imp in problems:
         print(f"  {rel}\n     {used} → {imp}")
     return 1

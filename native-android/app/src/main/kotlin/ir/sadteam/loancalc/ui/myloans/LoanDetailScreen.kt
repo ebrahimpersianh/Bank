@@ -141,6 +141,7 @@ import kotlinx.coroutines.withContext
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.settings.FullScreenDialog
 import ir.sadteam.loancalc.ui.theme.pillOverSurface
+import kotlin.math.roundToInt
 
 private val faMonthNamesDetail = listOf(
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
@@ -764,17 +765,21 @@ fun LoanDetailScreen(
         // فرق داره یعنی دیگه «همه‌ی اقساط» یکسان نیستن.
         val installmentsVary = nextUnpaidAmount != null && nextUnpaidAmount != loan.installment
 
-        // دایره‌ی شیک بالای وام (سبز = اصل، طلایی = سود) با قسط ماهانه تو مرکز - مثل نسخه‌ی وب.
-        val principalFrac = if (loan.totalPaid > 0) (loan.amount / loan.totalPaid).toFloat() else 1f
-        LoanDonut(
-            principalFraction = principalFrac,
-            centerTop = {
-                PrivacyCrossfade(privacyMode) { masked ->
-                    Text(maskIfPrivate(masked, fmt(displayInstallment)), color = AppText, fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                }
-            },
-            centerBottom = if (installmentsVary) "قسطِ بعدی (ریال)" else "قسط ماهانه (ریال)",
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        // ── خلاصه‌ی وام - فریمِ `27b` ────────────────────────────────────────────────────
+        // نسخه‌ی قبلی یه دوناتِ ۱۵۰ی تمام‌عرض بود که فقط مبلغِ قسط رو نشون می‌داد؛ فریم به‌جاش یه
+        // کارتِ فشرده می‌خواد: حلقه‌ی ۸۸ی با **درصدِ پرداخت‌شده** در وسط، و چهار عددِ کلیدی کنارش.
+        val paidFraction = if (loan.n > 0) (loan.paidCount.toFloat() / loan.n).coerceIn(0f, 1f) else 0f
+        val remaining = (loan.totalPaid - loan.paidCount * loan.installment).coerceAtLeast(0.0)
+        val ratePct = remember(loan) { viewModel.getLoanRatePct(loan) }
+        LoanSummaryCard(
+            paidFraction = paidFraction,
+            remaining = remaining,
+            installment = displayInstallment,
+            installmentLabel = if (installmentsVary) "قسطِ بعدی" else "قسط",
+            paidCount = loan.paidCount,
+            total = loan.n,
+            ratePct = ratePct,
+            privacyMode = privacyMode,
         )
 
         AppCard(label = loan.bank, modifier = Modifier.padding(horizontal = 14.dp)) {
@@ -1227,6 +1232,116 @@ private fun installmentsFlingPassthrough(
 
 /** یه ردیفِ قسط - هر قسط یه باکس مینیمالِ گوشه‌گرد با حاشیه‌ی سبزه (خواسته‌ی کاربر). وضعیت پرداخت:
  * به‌موقع=سبز «پرداخت شد»، با تأخیر=قرمز «با تأخیر»، پرداخت‌نشده=مشکی «پرداخت نشده». */
+/**
+ * **کارتِ خلاصه‌ی وام - فریمِ `27b`.**
+ *
+ * حلقه‌ی ۸۸ی با درصدِ پرداخت‌شده در وسط + چهار ردیفِ عدد (مانده / قسط / اقساط / سود).
+ * ردیفِ «سود» فقط وقتی میاد که نرخ ثبت شده باشه - وامِ دستی‌ای که نرخ نداره یه ردیفِ
+ * «۰٪»ی گمراه‌کننده نشون نمی‌ده.
+ */
+@Composable
+private fun LoanSummaryCard(
+    paidFraction: Float,
+    remaining: Double,
+    installment: Double,
+    installmentLabel: String,
+    paidCount: Int,
+    total: Int,
+    ratePct: Double,
+    privacyMode: Boolean,
+) {
+    AppCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(15.dp),
+        ) {
+            Box(modifier = Modifier.size(88.dp), contentAlignment = Alignment.Center) {
+                val ring = AppPrimary
+                val track = AppSurface2
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val stroke = size.minDimension * 0.11f
+                    val arcSize = Size(size.width - stroke, size.height - stroke)
+                    val topLeft = Offset(stroke / 2f, stroke / 2f)
+                    drawArc(
+                        color = track,
+                        startAngle = 0f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = arcSize,
+                        style = Stroke(width = stroke, cap = StrokeCap.Round),
+                    )
+                    if (paidFraction > 0f) {
+                        drawArc(
+                            color = ring,
+                            startAngle = -90f,
+                            sweepAngle = 360f * paidFraction,
+                            useCenter = false,
+                            topLeft = topLeft,
+                            size = arcSize,
+                            style = Stroke(width = stroke, cap = StrokeCap.Round),
+                        )
+                    }
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "${toFa((paidFraction * 100).roundToInt())}٪",
+                        color = AppText,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                    Text("پرداخت‌شده", color = AppMuted, fontSize = 7.5.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SummaryStatRow("مانده", remaining, privacyMode)
+                SummaryStatRow(installmentLabel, installment, privacyMode)
+                SummaryStatRow("اقساط", null, privacyMode, valueText = "${toFa(paidCount)} از ${toFa(total)}")
+                if (ratePct > 0.0) {
+                    SummaryStatRow("سود", null, privacyMode, valueText = "${toFa(fmtRate(ratePct))}٪")
+                }
+            }
+        }
+    }
+}
+
+/** یه ردیفِ «برچسبِ راست ← عددِ چپ» تو کارتِ خلاصه. مبلغ‌ها با حالتِ خصوصی ماسک می‌شن. */
+@Composable
+private fun SummaryStatRow(
+    label: String,
+    amount: Double?,
+    privacyMode: Boolean,
+    valueText: String? = null,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, color = AppMuted, fontSize = 10.sp)
+        if (valueText != null) {
+            Text(valueText, color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold)
+        } else {
+            PrivacyCrossfade(privacyMode) { masked ->
+                Text(
+                    maskIfPrivate(masked, fmt(amount ?: 0.0)),
+                    color = AppText,
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                )
+            }
+        }
+    }
+}
+
+/** نرخ بدونِ اعشارِ اضافه: ۱۸ نه ۱۸٫۰، ولی ۴٫۵ سرِ جاش می‌مونه. */
+private fun fmtRate(rate: Double): String =
+    if (rate % 1.0 == 0.0) rate.toInt().toString() else rate.toString()
+
 /**
  * **پیش‌نمایشِ جدولِ اقساط - فریمِ `27b`.**
  *
