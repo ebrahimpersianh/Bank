@@ -144,6 +144,45 @@ class LoanRepository(
      * بدونِ سود یا وامِ دستی‌ای که نرخ براش ثبت نشده؛ اون‌وقت UI ردیفِ «سود» رو نشون نمی‌ده. */
     fun getRatePct(loan: LoanEntity): Double = (parseData(loan)["rate"] as? Number)?.toDouble() ?: 0.0
 
+    /**
+     * **سودی که با تسویه‌ی یک‌جای همین حالا حذف می‌شه** - کارتِ «تسویه‌ی زودتر» تو فریمِ `27b`.
+     *
+     * = (جمعِ اقساطِ پرداخت‌نشده) − (اصلِ باقی‌مونده). اصلِ باقی‌مونده از `balance`ِ همون ردیفِ
+     * جدولِ محاسبه‌شده میاد، چون جدولِ ذخیره‌شده‌ی `loan_rows` فقط مبلغِ قسط رو نگه می‌داره نه
+     * تفکیکِ اصل/سود رو.
+     *
+     * `null` یعنی کارت اصلاً نشون داده نمی‌شه: وامِ بی‌سود (قرض‌الحسنه‌ی بدونِ کارمزد یا وامِ
+     * دستی)، وامِ تسویه‌شده، یا هر حالتی که عددِ معناداری در نمیاد.
+     *
+     * ⚠️ **تقریبی‌ست**: کاربر می‌تونه مبلغِ تکِ اقساط رو دستی ویرایش کنه، ولی `balance` از رو
+     * فرمولِ اولیه حساب می‌شه. برای همین UI باید با لحنِ تخمینی نشونش بده، نه یه رقمِ قطعی.
+     */
+    fun earlySettlementSaving(loan: LoanEntity, unpaidTotal: Double): Double? {
+        if (loan.n <= 0 || loan.paidCount >= loan.n) return null
+        val data = parseData(loan)
+        val ratePct = (data["rate"] as? Number)?.toDouble() ?: 0.0
+        if (ratePct <= 0.0) return null
+        val method = when (data["method"] as? String) {
+            "qarz" -> LoanMethod.QARZ
+            "flat" -> LoanMethod.FLAT
+            else -> LoanMethod.STANDARD
+        }
+        val graceMonths = (data["graceMonths"] as? Number)?.toInt() ?: 0
+        val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
+        val principal = (data["amount"] as? Number)?.toDouble() ?: loan.amount
+        val result = runCatching {
+            LoanCalculator.compute(principal, ratePct, loan.n, method, graceMonths, intervalDays)
+        }.getOrNull() ?: return null
+        // مانده‌ی اصل بعد از آخرین قسطِ پرداخت‌شده؛ قسطِ صفر یعنی هنوز کلِ اصل باقیه.
+        val outstanding = if (loan.paidCount == 0) {
+            result.originalPrincipal
+        } else {
+            result.rows.getOrNull(loan.paidCount - 1)?.balance ?: return null
+        }
+        val saving = unpaidTotal - outstanding
+        return if (saving > 0) saving else null
+    }
+
     /** یادداشتِ آزادِ کاربر رو این وام (مثلاً شماره حساب/کارت) - تو dataJson ذخیره می‌شه، نیازی به
      * تغییرِ schema نداره. پیش‌فرض رشته‌ی خالی، نه هیچ‌کدومِ وام‌های قدیمی‌تر این کلید رو ندارن. */
     fun getNotes(loan: LoanEntity): String = (parseData(loan)["notes"] as? String) ?: ""

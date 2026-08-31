@@ -122,6 +122,10 @@ class MyLoansViewModel @Inject constructor(
     /** نرخِ سالانه (درصد) - برای ردیفِ «سود» تو خلاصه‌ی فریمِ `27b`. */
     fun getLoanRatePct(loan: LoanEntity): Double = loanRepository.getRatePct(loan)
 
+    /** سودِ حذف‌شونده با تسویه‌ی یک‌جا - کارتِ «تسویه‌ی زودتر»ِ فریمِ `27b`. `null` = کارت نیاد. */
+    fun earlySettlementSaving(loan: LoanEntity, unpaidTotal: Double): Double? =
+        loanRepository.earlySettlementSaving(loan, unpaidTotal)
+
     /** سررسیدِ اولین قسطِ پرداخت‌نشده - برای مرتب‌سازیِ «نزدیک‌ترین سررسید»، رجوع کن به
      * [LoanRepository.getNextDueDate]. */
     fun getLoanNextDueDate(loan: LoanEntity): PersianDate? = loanRepository.getNextDueDate(loan)

@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PriorityHigh
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
@@ -121,6 +122,8 @@ import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
+import ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
@@ -134,6 +137,7 @@ import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -965,6 +969,15 @@ fun LoanDetailScreen(
                     onSeeAll = { showAllInstallments = true },
                 )
             }
+            // کارتِ «تسویه‌ی زودتر» - فریمِ `27b`. فقط وقتی عددِ معناداری در بیاد.
+            val unpaidTotal = rows.filter { it["paid"] != true }
+                .sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
+            val saving = remember(loan, unpaidTotal) {
+                viewModel.earlySettlementSaving(loan, unpaidTotal)
+            }
+            if (saving != null) {
+                item { EarlySettlementCard(saving = saving, privacyMode = privacyMode) }
+            }
         }
 
         if (showAllInstallments) {
@@ -1232,6 +1245,58 @@ private fun installmentsFlingPassthrough(
 
 /** یه ردیفِ قسط - هر قسط یه باکس مینیمالِ گوشه‌گرد با حاشیه‌ی سبزه (خواسته‌ی کاربر). وضعیت پرداخت:
  * به‌موقع=سبز «پرداخت شد»، با تأخیر=قرمز «با تأخیر»، پرداخت‌نشده=مشکی «پرداخت نشده». */
+/**
+ * **کارتِ «تسویه‌ی زودتر» - فریمِ `27b`.**
+ *
+ * زمینه‌ی کرم با حاشیه‌ی طلایی - **همون توکن‌های کارتِ پاداشِ خانه** (`AppWarningPill` /
+ * `AppGoldPillSoft` / `AppGoldInkSoft`)، نه رنگِ تازه؛ فریم برای هر دو یه پالت داده. عمداً **دکمه ندارد**: فقط
+ * اطلاع‌رسانیه، چون تسویه‌ی واقعی کاری‌ست که باید با بانک انجام بشه نه تو اپ.
+ *
+ * لحنِ متن عمداً تخمینیه («حدودِ …») - رجوع کن به هشدارِ [MyLoansViewModel.earlySettlementSaving]:
+ * مبلغِ تکِ اقساط قابلِ ویرایشِ دستیه ولی مانده‌ی اصل از فرمولِ اولیه میاد.
+ */
+@Composable
+private fun EarlySettlementCard(saving: Double, privacyMode: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(AppWarningPill)
+            .border(2.dp, AppGoldPillSoft, RoundedCornerShape(18.dp))
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(11.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .background(AppGoldPillSoft),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.Savings,
+                contentDescription = null,
+                tint = AppGoldInkSoft,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text("تسویه‌ی زودتر", color = AppGoldInkSoft, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
+            PrivacyCrossfade(privacyMode) { masked ->
+                Text(
+                    "اگه الان یک‌جا بدی، حدودِ ${maskIfPrivate(masked, fmt(saving))} ریال سود کم می‌شه",
+                    color = AppGoldInkSoft,
+                    fontSize = 9.5.sp,
+                    lineHeight = 16.sp,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+    }
+}
+
 /**
  * **کارتِ خلاصه‌ی وام - فریمِ `27b`.**
  *
