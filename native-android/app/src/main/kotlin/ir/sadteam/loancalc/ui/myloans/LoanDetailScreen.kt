@@ -987,6 +987,21 @@ fun LoanDetailScreen(
                     onSeeAll = { showAllInstallments = true },
                 )
             }
+            // کارتِ «قسطِ بعدی» - فریمِ `29p`. برخلافِ ردیف‌های ریزِ جدول، این یه هدفِ لمسیِ
+            // بزرگ و بدونِ ابهامه، پس تصمیمِ `36i` (پرداخت فقط از نمای کامل) رو نقض نمی‌کنه -
+            // اون بند درباره‌ی **ردیف‌های جدول**ه، نه یه کارتِ اختصاصیِ تک‌قسطی.
+            val nextRow = rows.firstOrNull { it["paid"] != true }
+            if (nextRow != null && overdueRow == null) {
+                item {
+                    NextInstallmentCard(
+                        row = nextRow,
+                        loan = loan,
+                        privacyMode = privacyMode,
+                        onPay = { payChoiceM = (nextRow["m"] as? Number)?.toInt() },
+                    )
+                }
+            }
+
             // کارتِ «تسویه‌ی زودتر» - فریمِ `27b`. فقط وقتی عددِ معناداری در بیاد.
             val unpaidTotal = rows.filter { it["paid"] != true }
                 .sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
@@ -1263,6 +1278,77 @@ private fun installmentsFlingPassthrough(
 
 /** یه ردیفِ قسط - هر قسط یه باکس مینیمالِ گوشه‌گرد با حاشیه‌ی سبزه (خواسته‌ی کاربر). وضعیت پرداخت:
  * به‌موقع=سبز «پرداخت شد»، با تأخیر=قرمز «با تأخیر»، پرداخت‌نشده=مشکی «پرداخت نشده». */
+/**
+ * **کارتِ «قسطِ بعدی» - فریمِ `29p`.**
+ *
+ * زمینه‌ی کرمِ `#FFF7E6` با حاشیه‌ی `#EBD9B4` و دکمه‌ی سبزِ «پرداخت شد». وقتی قسطِ **عقب‌افتاده**
+ * وجود داره این کارت جاش رو به نوارِ قرمزِ `27b` می‌ده - دو تا فراخوانِ هم‌زمان گیج‌کننده‌ست و
+ * اولویت با اونیه که دیرکرد داره.
+ */
+@Composable
+private fun NextInstallmentCard(
+    row: Map<String, Any?>,
+    loan: LoanEntity,
+    privacyMode: Boolean,
+    onPay: () -> Unit,
+) {
+    val m = (row["m"] as? Number)?.toInt() ?: 0
+    val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
+    val due = row["dueDate"] as? Map<*, *>
+    val dueLabel = due?.let {
+        val d = (it["d"] as? Number)?.toInt()
+        val mo = (it["m"] as? Number)?.toInt()
+        if (d != null && mo != null) "${toFa(d)} ${persianMonthName(mo)}" else null
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(AppWarningPill)
+            .border(1.5.dp, AppGoldPillSoft, RoundedCornerShape(22.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(AppSurface),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.CalendarMonth,
+                contentDescription = null,
+                tint = AppGoldInkSoft,
+                modifier = Modifier.size(19.dp),
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                if (dueLabel != null) "قسطِ ${toFa(m)} · $dueLabel" else "قسطِ ${toFa(m)}",
+                color = AppGoldInkSoft,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            PrivacyCrossfade(privacyMode) { masked ->
+                Text(
+                    maskIfPrivate(masked, fmt(installment)),
+                    color = AppGoldInkSoft,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+        GradientButton(onClick = onPay) {
+            Text("پرداخت شد", fontSize = 10.5.sp, fontWeight = FontWeight.Black)
+        }
+    }
+}
+
 /**
  * **کارتِ «مشخصات» - فریمِ `29p`.**
  *
