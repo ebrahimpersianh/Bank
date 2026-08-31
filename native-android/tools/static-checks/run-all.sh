@@ -52,6 +52,7 @@ run "کامنت و انوتیشن" "$DIR/comments.py"
 run "نمادِ پروژه بدونِ ایمپورت" "$DIR/ownsymbols.py"
 run "مقدارِ منفیِ غیرمجاز" "$DIR/negativedp.py"
 run "پراپرتیِ BoxWithConstraints" "$DIR/scopeprops.py"
+run "آیکونِ بدونِ ایمپورت" "$DIR/icons.py"
 run "نشتِ رنگِ برند" "$DIR/themeleak.py"
 
 printf '\n'

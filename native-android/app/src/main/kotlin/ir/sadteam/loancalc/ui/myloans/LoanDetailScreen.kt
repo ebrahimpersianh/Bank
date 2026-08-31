@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,11 +39,14 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PriorityHigh
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -71,6 +75,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.geometry.Offset
@@ -116,8 +121,13 @@ import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLineRow
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppDangerPill
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
@@ -669,6 +679,26 @@ fun LoanDetailScreen(
     // رفت‌وبرگشتی می‌شد (گزارشِ کاربر: «یهو بزرگ می‌شه... قاطی می‌کنه»). الان اقساط آیتم‌های خودِ
     // لیستِ اصلی‌ان: هرچی پایین‌تر بری طبیعتاً کلِ صفحه رو می‌گیرن، روون و بدونِ هیچ پرش/حالتِ خاصی.
     val detailListState = rememberLazyListState()
+
+    // ── فریمِ `27b` + تصمیمِ ساختاریِ `36i` ────────────────────────────────────────────────
+    // جزئیاتِ وام فقط یه **پیش‌نمایشِ سه‌ردیفه‌ی بی‌دکمه** از اقساط نشون می‌ده؛ ثبتِ پرداخت
+    // عمداً فقط تو نمای کاملِ اقساط (`29p`) ممکنه، چون تپِ اشتباه رو ردیف‌های ریزِ خلاصه راحت
+    // رخ می‌ده و پس‌گرفتنِ «پرداخت شد» سخته. استثنای صریحِ خودِ طرح: قسطِ عقب‌افتاده، که یه
+    // نوارِ قرمز بالای جدول میاره و **مستقیم به همون ردیف تو نمای کامل** می‌بره - نه اینکه
+    // خودش پرداخت رو ثبت کنه.
+    var showAllInstallments by rememberSaveable { mutableStateOf(false) }
+    val today = remember { JalaliCalendar.today() }
+    val overdueRow = remember(rows, today) {
+        rows.firstOrNull { row ->
+            if (row["paid"] == true) return@firstOrNull false
+            val due = row["dueDate"] as? Map<*, *> ?: return@firstOrNull false
+            val y = (due["y"] as? Number)?.toInt() ?: return@firstOrNull false
+            val mo = (due["m"] as? Number)?.toInt() ?: return@firstOrNull false
+            val d = (due["d"] as? Number)?.toInt() ?: return@firstOrNull false
+            y < today.y || (y == today.y && (mo < today.m || (mo == today.m && d < today.d)))
+        }
+    }
+
     LazyColumn(
         state = detailListState,
         modifier = Modifier
@@ -920,6 +950,19 @@ fun LoanDetailScreen(
         }
         }
 
+        if (!showAllInstallments) {
+            item {
+                InstallmentsPreviewCard(
+                    rows = rows,
+                    loan = loan,
+                    privacyMode = privacyMode,
+                    overdueRow = overdueRow,
+                    onSeeAll = { showAllInstallments = true },
+                )
+            }
+        }
+
+        if (showAllInstallments) {
         item {
             // جعبه‌ی اقساط - حالا «هوشمند»: کوچیک وقتی داری از کنارش رد می‌شی، ولی وقتی واقعاً بهش
             // رسیدی (لبه‌ی بالاش نزدیکِ بالای صفحه‌ست) به‌آرومی تا نزدیکِ تمام‌صفحه بزرگ می‌شه تا
@@ -1062,6 +1105,7 @@ fun LoanDetailScreen(
                 }
             }
         }
+        }
 
         item {
         Column(
@@ -1183,6 +1227,159 @@ private fun installmentsFlingPassthrough(
 
 /** یه ردیفِ قسط - هر قسط یه باکس مینیمالِ گوشه‌گرد با حاشیه‌ی سبزه (خواسته‌ی کاربر). وضعیت پرداخت:
  * به‌موقع=سبز «پرداخت شد»، با تأخیر=قرمز «با تأخیر»، پرداخت‌نشده=مشکی «پرداخت نشده». */
+/**
+ * **پیش‌نمایشِ جدولِ اقساط - فریمِ `27b`.**
+ *
+ * سه ردیف: آخرین قسطِ پرداخت‌شده، قسطِ بعدی (برجسته)، و قسطِ بعد از اون (کم‌رنگ). هیچ دکمه‌ی
+ * پرداختی نداره - تصمیمِ صریحِ `36i`. تنها راهِ رفتن به پرداخت، «دیدنِ همه‌ی N قسط»ه که طبقِ
+ * همون بند **همیشه** دیده می‌شه، حتی وقتی جدول خالیه.
+ */
+@Composable
+private fun InstallmentsPreviewCard(
+    rows: List<Map<String, Any?>>,
+    loan: LoanEntity,
+    privacyMode: Boolean,
+    overdueRow: Map<String, Any?>?,
+    onSeeAll: () -> Unit,
+) {
+    val muted = AppMuted
+    val text = AppText
+    val danger = AppDanger
+
+    // انتخابِ سه ردیف: آخرین پرداخت‌شده، اولین پرداخت‌نشده، و بعدیش.
+    val nextIndex = rows.indexOfFirst { it["paid"] != true }
+    val preview = remember(rows, nextIndex) {
+        when {
+            rows.isEmpty() -> emptyList()
+            nextIndex < 0 -> rows.takeLast(3)
+            else -> listOfNotNull(
+                rows.getOrNull(nextIndex - 1),
+                rows.getOrNull(nextIndex),
+                rows.getOrNull(nextIndex + 1),
+            )
+        }
+    }
+
+    Column(
+        modifier = Modifier.padding(horizontal = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp),
+    ) {
+        // نوارِ قرمزِ قسطِ عقب‌افتاده - استثنای بندِ ۳۶i.
+        if (overdueRow != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(AppDangerPill)
+                    .border(2.dp, AppDangerBorder, RoundedCornerShape(16.dp))
+                    .pressScaleClickable(onClick = onSeeAll)
+                    .padding(horizontal = 13.dp, vertical = 11.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Icon(Icons.Filled.PriorityHigh, contentDescription = null, tint = danger, modifier = Modifier.size(18.dp))
+                Text(
+                    "قسطِ ${toFa((overdueRow["m"] as? Number)?.toInt() ?: 0)} عقب افتاده",
+                    color = danger,
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.weight(1f),
+                )
+                Text("پرداختِ قسطِ عقب‌افتاده", color = danger, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+            }
+        }
+
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            Text("جدولِ اقساط", color = text, fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold)
+            Spacer(modifier = Modifier.height(10.dp))
+            preview.forEachIndexed { index, row ->
+                if (index > 0) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(AppLineRow),
+                    )
+                }
+                PreviewInstallmentRow(row, loan, privacyMode, isNext = row === rows.getOrNull(nextIndex))
+            }
+            Text(
+                if (rows.isEmpty()) "دیدنِ اقساط" else "دیدنِ همه‌ی ${toFa(rows.size)} قسط",
+                color = AppPrimaryInk,
+                fontSize = 9.5.sp,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pressScaleClickable(onClick = onSeeAll)
+                    .padding(top = 8.dp),
+            )
+        }
+    }
+}
+
+/** یه ردیفِ پیش‌نمایش - سه حالتِ فریم: پرداخت‌شده (تیکِ سبز) · بعدی (نقطه‌ی قرمز) · آینده (کم‌رنگ). */
+@Composable
+private fun PreviewInstallmentRow(
+    row: Map<String, Any?>,
+    loan: LoanEntity,
+    privacyMode: Boolean,
+    isNext: Boolean,
+) {
+    val paid = row["paid"] == true
+    val m = (row["m"] as? Number)?.toInt() ?: 0
+    val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
+    val due = row["dueDate"] as? Map<*, *>
+    val dueLabel = due?.let {
+        "${toFa(it["d"].toString())} ${persianMonthName((it["m"] as? Number)?.toInt() ?: 1)}"
+    } ?: ""
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(if (!paid && !isNext) 0.6f else 1f)
+            .padding(vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(26.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (paid) AppPrimaryPill else if (isNext) AppDangerPill else AppSurface2),
+            contentAlignment = Alignment.Center,
+        ) {
+            when {
+                paid -> Icon(Icons.Filled.Check, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(14.dp))
+                isNext -> Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(AppDanger))
+                else -> Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .border(1.5.dp, AppLine, CircleShape),
+                )
+            }
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text("قسطِ ${toFa(m)}", color = AppText, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+            Text(
+                dueLabel,
+                color = if (isNext) AppDanger else AppMuted,
+                fontSize = 8.5.sp,
+                fontWeight = if (isNext) FontWeight.Bold else FontWeight.Normal,
+            )
+        }
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text(
+                maskIfPrivate(masked, fmt(installment)),
+                color = if (paid) AppMuted else AppText,
+                fontSize = 10.5.sp,
+                fontWeight = if (isNext) FontWeight.ExtraBold else FontWeight.Bold,
+            )
+        }
+    }
+}
+
 @Composable
 private fun InstallmentRow(
     row: Map<String, Any?>,
