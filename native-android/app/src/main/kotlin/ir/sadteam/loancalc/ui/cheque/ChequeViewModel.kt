@@ -55,13 +55,14 @@ class ChequeViewModel @Inject constructor(
         nationalId: String?,
         previousBalance: Double?,
         depositAmount: Double?,
+        counterpartyId: Long? = null,
         onSaved: () -> Unit,
     ) {
         viewModelScope.launch {
             chequeRepository.addCheque(
                 type, amount, chequeNumber, sayadId, bankName, branchName, ownerName,
                 dueYear, dueMonth, dueDay, notes, chequeBookId,
-                photoPath, nationalId, previousBalance, depositAmount,
+                photoPath, nationalId, previousBalance, depositAmount, counterpartyId,
             )
             syncIfLoggedIn()
             onSaved()

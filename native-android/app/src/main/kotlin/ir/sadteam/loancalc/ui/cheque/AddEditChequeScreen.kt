@@ -28,6 +28,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.ChequeType
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.cleanNum
@@ -49,12 +51,14 @@ import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
+import ir.sadteam.loancalc.ui.components.CounterpartyPickerDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
 import ir.sadteam.loancalc.ui.components.SuccessCheckmarkOverlay
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
+import ir.sadteam.loancalc.ui.debt.DebtViewModel
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -74,6 +78,7 @@ fun AddEditChequeScreen(
     onSaved: () -> Unit,
     onCancel: () -> Unit,
     viewModel: ChequeViewModel,
+    debtViewModel: DebtViewModel = hiltViewModel(),
 ) {
     var type by remember { mutableStateOf(existing?.let { ChequeType.valueOf(it.type) } ?: ChequeType.RECEIVED) }
     var amountText by remember { mutableStateOf(existing?.amount?.toLong()?.toString() ?: "") }
@@ -96,6 +101,12 @@ fun AddEditChequeScreen(
     var depositAmountText by remember { mutableStateOf(existing?.depositAmount?.let { fmt(it) } ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
     var showCalendarPicker by remember { mutableStateOf(false) }
+
+    // طرفِ‌حسابِ لینک‌شده - جوابِ سوالِ ۶: انتخاب یا ساختِ طرفِ‌حساب موقعِ ثبتِ چکِ جدید اجباریه.
+    var counterpartyId by remember { mutableStateOf(existing?.counterpartyId) }
+    var showCounterpartyPicker by remember { mutableStateOf(false) }
+    val counterparties by debtViewModel.counterparties.collectAsState()
+    val selectedCounterparty = counterparties.firstOrNull { it.id == counterpartyId }
 
     if (showCalendarPicker) {
         CalendarPickerScreen(
@@ -358,6 +369,16 @@ fun AddEditChequeScreen(
             }
         }
         item {
+            AppCard(label = "طرف حساب") {
+                OutlinedButton(
+                    onClick = { showCounterpartyPicker = true },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(selectedCounterparty?.name ?: "انتخاب یا ساختِ طرفِ‌حساب")
+                }
+            }
+        }
+        item {
             // هم‌الگو با تاریخِ اینلاینِ چرخونه‌ای «وام بانکی» (InlineJalaliDateRow) - قبلاً این‌جا
             // سه تا دراپ‌داون بود که با تقویمِ بقیه‌ی اپ هم‌شکل نبود.
             AppCard(label = "تاریخ سررسید") {
@@ -394,6 +415,7 @@ fun AddEditChequeScreen(
                             chequeNumber.trim().isEmpty() -> "شماره چک رو وارد کن"
                             bankName.trim().isEmpty() -> "اسم بانک رو وارد کن"
                             ownerName.trim().isEmpty() -> "این فیلد رو وارد کن"
+                            counterpartyId == null -> "طرفِ‌حساب رو انتخاب کن"
                             else -> null
                         }
                         if (error == null) {
@@ -415,6 +437,7 @@ fun AddEditChequeScreen(
                                     nationalId = nationalId.trim(),
                                     previousBalance = cleanNumDecimal(previousBalanceText).toDoubleOrNull(),
                                     depositAmount = cleanNumDecimal(depositAmountText).toDoubleOrNull(),
+                                    counterpartyId = counterpartyId,
                                     onSaved = { savedOk = true },
                                 )
                             } else {
@@ -436,6 +459,7 @@ fun AddEditChequeScreen(
                                         nationalId = nationalId.trim().takeIf { it.isNotBlank() },
                                         previousBalance = cleanNumDecimal(previousBalanceText).toDoubleOrNull(),
                                         depositAmount = cleanNumDecimal(depositAmountText).toDoubleOrNull(),
+                                        counterpartyId = counterpartyId,
                                     ),
                                     onSaved = { savedOk = true },
                                 )
@@ -452,6 +476,22 @@ fun AddEditChequeScreen(
             }
         }
     }
+    }
+    if (showCounterpartyPicker) {
+        CounterpartyPickerDialog(
+            counterparties = counterparties,
+            onSelect = { counterparty ->
+                counterpartyId = counterparty.id
+                showCounterpartyPicker = false
+            },
+            onCreateNew = { name ->
+                debtViewModel.addCounterparty(name) { newId ->
+                    counterpartyId = newId
+                    showCounterpartyPicker = false
+                }
+            },
+            onDismiss = { showCounterpartyPicker = false },
+        )
     }
     SuccessCheckmarkOverlay(visible = savedOk, onFinished = onSaved)
 }

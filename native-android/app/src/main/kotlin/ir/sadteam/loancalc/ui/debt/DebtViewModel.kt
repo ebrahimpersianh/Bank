@@ -26,8 +26,8 @@ class DebtViewModel @Inject constructor(
     fun netBalance(counterpartyId: Long, allDebts: List<DebtEntity>): Double =
         debtRepository.netBalance(counterpartyId, allDebts)
 
-    fun addCounterparty(name: String) {
-        viewModelScope.launch { debtRepository.addCounterparty(name) }
+    fun addCounterparty(name: String, onResult: (Long) -> Unit = {}) {
+        viewModelScope.launch { onResult(debtRepository.addCounterparty(name)) }
     }
 
     fun deleteCounterparty(counterparty: CounterpartyEntity) {
