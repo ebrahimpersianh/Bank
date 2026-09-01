@@ -7,7 +7,10 @@ import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.core.BankSmsParser
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.TransactionType
+import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.InboxRepository
+import ir.sadteam.loancalc.data.db.InboxMessageEntity
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +47,8 @@ import javax.inject.Inject
 class BankNotificationListener : NotificationListenerService() {
 
     @Inject lateinit var accountRepository: AccountRepository
+
+    @Inject lateinit var inboxRepository: InboxRepository
 
     @Inject lateinit var uiPrefs: UiPrefs
 
@@ -82,7 +87,9 @@ class BankNotificationListener : NotificationListenerService() {
                 ?: return@launch
 
             val today = JalaliCalendar.today()
-            accountRepository.addTransaction(
+            // ⚠️ **تاییدنشده** ثبت می‌شه (تصمیمِ صریحِ کاربر): تا وقتی خودش تاییدش نکرده رو
+            // موجودی اثر نمی‌ذاره. کارتِ اقدام‌دارِ مرکزِ پیام‌ها ازش ساخته می‌شه.
+            val txId = accountRepository.addTransaction(
                 accountId = account.id,
                 type = parsed.type,
                 amount = parsed.amountRial,
@@ -91,6 +98,15 @@ class BankNotificationListener : NotificationListenerService() {
                 month = today.m,
                 day = today.d,
                 category = if (parsed.type == TransactionType.WITHDRAWAL) "سایر هزینه" else "سایر درآمد",
+                confirmed = false,
+            )
+            // منبعِ واحد: پیام اول اینجا ساخته می‌شه؛ اعلانِ گوشیِ خودمون (اگه بعداً اضافه بشه)
+            // باید از رو همین ردیف ساخته بشه، نه مستقل.
+            inboxRepository.post(
+                kind = InboxMessageEntity.Kind.DETECTED_TX,
+                title = if (parsed.type == TransactionType.WITHDRAWAL) "برداشتِ تازه" else "واریزِ تازه",
+                body = "${fmt(parsed.amountRial)} ریال از «${account.name}» - تایید می‌کنی؟",
+                refId = txId.toString(),
             )
             uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
         }

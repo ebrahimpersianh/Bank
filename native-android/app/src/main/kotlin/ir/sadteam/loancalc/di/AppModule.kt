@@ -24,6 +24,7 @@ import ir.sadteam.loancalc.data.ParsingRuleRepository
 import ir.sadteam.loancalc.data.db.AccountDao
 import ir.sadteam.loancalc.data.db.AccountTransactionDao
 import ir.sadteam.loancalc.data.db.AchievementDao
+import ir.sadteam.loancalc.data.db.InboxMessageDao
 import ir.sadteam.loancalc.data.db.AppDatabase
 import ir.sadteam.loancalc.data.db.AssetDao
 import ir.sadteam.loancalc.data.db.AssetTradeDao
@@ -190,6 +191,11 @@ object AppModule {
 
     @Provides
     fun provideAchievementDao(database: AppDatabase): AchievementDao = database.achievementDao()
+
+    // مرکزِ پیام‌ها (بخشِ ۴۰) - InboxRepository خودش @Singleton و @Inject constructor داره،
+    // پس فقط DAO لازمه.
+    @Provides
+    fun provideInboxDao(database: AppDatabase): InboxMessageDao = database.inboxDao()
 
     @Provides
     @Singleton

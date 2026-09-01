@@ -101,10 +101,14 @@ class AccountRepository(
          * DAO از `@Upsert` استفاده می‌کنه، تراکنش‌ها بی‌صدا رو هم نوشته می‌شن (باگِ ثبت‌شده تو
          * CLAUDE.md). برای ثبتِ تکیِ عادی خالی گذاشتنش امنه. */
         id: Long? = null,
-    ) {
+        /** `false` فقط برای ثبتِ **خودکار** از پیامک/اعلانِ بانکی - تا تاییدِ کاربر رو موجودی
+         * اثر نمی‌ذاره. ثبتِ دستیِ خودِ کاربر همیشه تاییدشده‌ست. */
+        confirmed: Boolean = true,
+    ): Long {
+        val txId = id ?: System.currentTimeMillis()
         transactionDao.upsert(
             AccountTransactionEntity(
-                id = id ?: System.currentTimeMillis(),
+                id = txId,
                 accountId = accountId,
                 type = type.name,
                 amount = amount,
@@ -116,13 +120,26 @@ class AccountRepository(
                 category = category,
                 sourceType = sourceType,
                 sourceId = sourceId,
+                confirmed = confirmed,
             ),
         )
         // «هر روزِ ثبتِ تراکنش ۱۰ سکه» (کارتِ `20e`). عمداً اینجاست نه تو ViewModel، تا ثبتِ
         // خودکار از پیامک/اعلانِ بانک هم حساب بشه - اونم فعالیتِ همون روزه. تکرارِ همون روز
         // خودبه‌خود نادیده گرفته می‌شه (ایندکسِ یکتای `(type, dateKey)`).
+        // تراکنشِ تاییدنشده هنوز «فعالیتِ کاربر» نیست - سکه‌ش موقعِ تایید داده می‌شه، نه الان.
+        if (confirmed) gamification?.awardDailyLog()
+        return txId
+    }
+
+    /** تاییدِ یه تراکنشِ خودکار - از همین لحظه رو موجودی و گزارش‌ها اثر می‌ذاره. */
+    suspend fun confirmTransaction(id: Long) {
+        transactionDao.confirm(id)
         gamification?.awardDailyLog()
     }
+
+    suspend fun transactionById(id: Long) = transactionDao.byId(id)
+
+    fun observePendingTransactions() = transactionDao.observePending()
 
     /** به‌روزرسانیِ یه تراکنشِ موجود - برای انتقالِ دسته موقعِ حذفِ یه دسته‌بندی. */
     suspend fun updateTransaction(transaction: AccountTransactionEntity) {

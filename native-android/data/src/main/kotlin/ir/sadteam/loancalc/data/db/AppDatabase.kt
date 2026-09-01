@@ -31,8 +31,9 @@ import net.sqlcipher.database.SupportFactory
         AssetTradeEntity::class,
         CoinEventEntity::class,
         AchievementEntity::class,
+        InboxMessageEntity::class,
     ],
-    version = 27,
+    version = 28,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -44,6 +45,7 @@ import net.sqlcipher.database.SupportFactory
 abstract class AppDatabase : RoomDatabase() {
     abstract fun coinDao(): CoinDao
     abstract fun achievementDao(): AchievementDao
+    abstract fun inboxDao(): InboxMessageDao
     abstract fun loanDao(): LoanDao
     abstract fun loanRowDao(): LoanRowDao
     abstract fun chequeDao(): ChequeDao
@@ -444,6 +446,31 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * ستونِ `confirmed` + جدولِ مرکزِ پیام‌ها (بخشِ ۴۰).
+         *
+         * ⚠️ `DEFAULT 1` حیاتیه: همه‌ی تراکنش‌های موجود **تاییدشده** حساب می‌شن، وگرنه موجودیِ
+         * هر کاربرِ فعلی یهو صفر می‌شد (چون محاسبه‌ی موجودی فقط تاییدشده‌ها رو جمع می‌زنه).
+         */
+        private val MIGRATION_27_28 = object : Migration(27, 28) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE account_transactions ADD COLUMN confirmed INTEGER NOT NULL DEFAULT 1",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS inbox_messages (" +
+                        "id INTEGER NOT NULL PRIMARY KEY, " +
+                        "kind TEXT NOT NULL, " +
+                        "title TEXT NOT NULL, " +
+                        "body TEXT NOT NULL, " +
+                        "createdAt INTEGER NOT NULL, " +
+                        "readAt INTEGER, " +
+                        "actionState TEXT NOT NULL DEFAULT 'NONE', " +
+                        "refId TEXT)",
+                )
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -488,6 +515,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_24_25,
                             MIGRATION_25_26,
                             MIGRATION_26_27,
+                            MIGRATION_27_28,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

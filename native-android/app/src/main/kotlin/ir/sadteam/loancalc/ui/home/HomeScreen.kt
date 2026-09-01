@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material3.Icon
@@ -107,6 +109,7 @@ import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSpacing
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.inbox.InboxViewModel
 import ir.sadteam.loancalc.ui.theme.AppUrgentShadow
 import ir.sadteam.loancalc.ui.theme.AppWarningInk
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
@@ -141,11 +144,15 @@ import ir.sadteam.loancalc.ui.theme.AppWarningPill
 fun HomeScreen(
     onNavigateToRoute: (String) -> Unit,
     onOpenSettings: () -> Unit = {},
+    onOpenInbox: () -> Unit = {},
     accountViewModel: AccountViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
     urgentDueViewModel: UrgentDueViewModel = hiltViewModel(),
     gamificationViewModel: GamificationViewModel = hiltViewModel(),
+    inboxViewModel: InboxViewModel = hiltViewModel(),
 ) {
+    val inboxCount by inboxViewModel.actionableCount.collectAsState()
+    val inboxUnreadNews by inboxViewModel.unreadNews.collectAsState()
     val userName by authViewModel.userName.collectAsState()
     val urgentDue by urgentDueViewModel.urgent.collectAsState()
     val transactions by accountViewModel.transactions.collectAsState()
@@ -395,6 +402,13 @@ private fun HomeHeader(
             // ⚠️ **گزارشِ کاربر: «دکمه‌ی تنظیمات اصلاً نیست».** حق داشت - نوارِ بالای تب‌ها
             // (که چرخ‌دنده توش بود) حذف شده بود و تنها درِ ورودی آدمک شده بود، که هیچ‌کس
             // به‌عنوانِ «تنظیمات» نمی‌شناستش. چرخ‌دنده‌ی صریح برگشت.
+            // زنگِ مرکزِ پیام‌ها (بخشِ ۴۰). **عدد فقط برای اقدام‌دارهای بازه**؛ خبرِ
+            // خوانده‌نشده فقط یه نقطه‌ی سبز می‌گیره، نه عدد (قاعده‌ی صریحِ طرح).
+            InboxBell(
+                count = inboxCount,
+                hasUnreadNews = inboxUnreadNews > 0,
+                onClick = onOpenInbox,
+            )
             PrivacyEyeButton(icon = Icons.Filled.Settings, active = false, onClick = onOpenSettings)
         }
     }
@@ -1038,6 +1052,50 @@ private fun StreakRepairCard(lostDays: Int, canAfford: Boolean, onRepair: () -> 
                 Spacer(modifier = Modifier.width(5.dp))
                 Text("ترمیم", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
             }
+        }
+    }
+}
+
+
+/**
+ * زنگِ مرکزِ پیام‌ها - فریمِ `40a`.
+ *
+ * ⚠️ **عدد و نقطه دو چیزِ متفاوتن** (قاعده‌ی صریحِ طرح): عددِ روی زنگ فقط شمارِ «اقدام‌دارهای
+ * باز»ه (تراکنشِ منتظرِ تایید، سررسیدِ وام)؛ خبرِ خوانده‌نشده هرگز عدد نمی‌گیره، فقط نقطه‌ی سبز.
+ * دلیلش اینه که عدد یعنی «کاری با توئه»، نه «چیزی برای خوندن هست».
+ */
+@Composable
+private fun InboxBell(count: Int, hasUnreadNews: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(AppSpacing.minTouchTarget)
+            .pressScaleClickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            Icons.Filled.NotificationsNone,
+            contentDescription = "پیام‌ها",
+            tint = AppText,
+            modifier = Modifier.size(20.dp),
+        )
+        if (count > 0) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AppDanger)
+                    .padding(horizontal = 5.dp, vertical = 1.dp),
+            ) {
+                Text(toFa(count), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
+            }
+        } else if (hasUnreadNews) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(7.dp)
+                    .clip(CircleShape)
+                    .background(AppPrimary),
+            )
         }
     }
 }

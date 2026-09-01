@@ -9,7 +9,10 @@ import ir.sadteam.loancalc.core.BankSmsParser
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.smsSenderMatches
+import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.InboxRepository
+import ir.sadteam.loancalc.data.db.InboxMessageEntity
 import ir.sadteam.loancalc.data.ParsingRuleRepository
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import javax.inject.Inject
@@ -29,6 +32,8 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class BankSmsReceiver : BroadcastReceiver() {
     @Inject lateinit var accountRepository: AccountRepository
+
+    @Inject lateinit var inboxRepository: InboxRepository
 
     @Inject
     lateinit var parsingRuleRepository: ParsingRuleRepository
@@ -66,7 +71,8 @@ class BankSmsReceiver : BroadcastReceiver() {
                     ?: return@launch
 
                 val today = JalaliCalendar.today()
-                accountRepository.addTransaction(
+                // ⚠️ **تاییدنشده** (تصمیمِ صریحِ کاربر) - تا تاییدِ خودش رو موجودی اثر نمی‌ذاره.
+                val txId = accountRepository.addTransaction(
                     accountId = account.id,
                     type = parsed.type,
                     amount = parsed.amountRial,
@@ -79,6 +85,13 @@ class BankSmsReceiver : BroadcastReceiver() {
                     category = parsingRuleRepository.firstMatch(body, parsed.type == TransactionType.WITHDRAWAL)
                         ?.category
                         ?: if (parsed.type == TransactionType.WITHDRAWAL) "سایر هزینه" else "سایر درآمد",
+                    confirmed = false,
+                )
+                inboxRepository.post(
+                    kind = InboxMessageEntity.Kind.DETECTED_TX,
+                    title = if (parsed.type == TransactionType.WITHDRAWAL) "برداشتِ تازه" else "واریزِ تازه",
+                    body = "${fmt(parsed.amountRial)} ریال از «${account.name}» - تایید می‌کنی؟",
+                    refId = txId.toString(),
                 )
                 uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
                 // زمانِ آخرین پیامکِ **همین حساب** - زیرنویسِ صفحه‌ی تنظیماتِ پیامک از این ساخته می‌شه.

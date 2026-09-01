@@ -166,6 +166,7 @@ import ir.sadteam.loancalc.ui.rating.RatePromptViewModel
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.LockScreen
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
+import ir.sadteam.loancalc.ui.inbox.InboxScreen
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDisabledText
 import ir.sadteam.loancalc.ui.theme.AppLabel
@@ -498,6 +499,7 @@ private fun LoanCalcApp(
     deepLinkViewModel: DeepLinkViewModel = hiltViewModel(),
 ) {
     var showSettings by remember { mutableStateOf(false) }
+    var showInbox by remember { mutableStateOf(false) }
     val updateUrl by appUpdateViewModel.updateUrl.collectAsState()
     // تورِ راهنمای اولین ورود (پایین‌تر) - رجوع کن به رفعِ تداخلِ بنرِ آپدیت/تور: بنر فقط بعدِ تمومِ
     // تور نشون داده می‌شه، وگرنه هم‌زمان با اسپاتلایتِ تور بالای صفحه شلوغ/رو هم می‌افتادن.
@@ -847,6 +849,7 @@ private fun LoanCalcApp(
                         HomeScreen(
                             onNavigateToRoute = ::navigateTo,
                             onOpenSettings = { showSettings = true },
+                            onOpenInbox = { showInbox = true },
                         )
                     }
                 }
@@ -920,6 +923,24 @@ private fun LoanCalcApp(
         ) {
             Surface(color = AppSurface, modifier = Modifier.fillMaxSize()) {
                 SettingsScreen(onBack = { showSettings = false })
+            }
+        }
+
+        // دکمه‌ی برگشتِ گوشی اول مرکزِ پیام‌ها رو می‌بنده، نه اینکه بره خونه. چون این
+        // BackHandler **دیرتر** از BackHandlerِ اصلیِ بالای همین تابع رجیستر می‌شه، اولویتش
+        // بالاتره - همون الگویی که زیرصفحه‌های تبِ وام هم ازش استفاده می‌کنن.
+        BackHandler(enabled = showInbox) { showInbox = false }
+
+        // مرکزِ پیام‌ها (بخشِ ۴۰) - برخلافِ تنظیمات که پنلِ ۸۵٪ه، این یه صفحه‌ی تمام‌صفحه‌ست
+        // چون فهرستِ بلند داره و کارت‌های اقدام‌دارش دکمه‌ی افقی دارن.
+        AnimatedVisibility(
+            visible = showInbox,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Surface(color = AppBg, modifier = Modifier.fillMaxSize()) {
+                InboxScreen(onBack = { showInbox = false })
             }
         }
 
