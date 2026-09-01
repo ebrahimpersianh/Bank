@@ -33,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.assetCategoryLabel
+import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_CRYPTO
 import ir.sadteam.loancalc.data.db.AssetEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.EmptyState
@@ -45,19 +46,21 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppWarningInk
+import ir.sadteam.loancalc.ui.theme.AppWarningPill
 
 /**
  * بخشِ «دارایی من» - دارایی‌های غیرنقدی (طلا، سکه، ارز، رمزارز، عنوانِ دلخواه).
  *
- * ⚠️ **قیمت‌ها فعلاً جای خالی‌ان.** طبقِ تصمیمِ صریحِ کاربر همه‌ی ساختار ساخته شده ولی تا وقتی
- * کلیدِ APIِ سرویسِ قیمت نرسیده، ارزشِ روز به‌جای عدد «—» نشون داده می‌شه. **مقدارِ** دارایی‌ها
- * (مثلاً «۱.۲ بیت کوین») و **هزینه‌ی خالصی** که براش داده شده از همین حالا کاملاً درست حساب می‌شن،
- * چون فقط به خرید/فروش‌های خودِ کاربر وابسته‌ن، نه به قیمتِ بازار.
+ * قیمتِ روز از سرورِ خودمون میاد ([AssetViewModel.refreshPrices])؛ دارایی‌ای که هنوز قیمت نگرفته
+ * (نمادش رو سرویسِ قیمت نیست) «—» نشون می‌ده به‌جای صفر. برای **رمزارز**، اگه نسبت به ماهِ قبل
+ * گران‌تر شده باشه یه بجِ کوچیکِ زرد کنارِ اسمش می‌شینه (خواسته‌ی صریحِ کاربر).
  */
 @Composable
 fun AssetSection(viewModel: AssetViewModel = hiltViewModel()) {
     val assets by viewModel.assets.collectAsState()
     val trades by viewModel.trades.collectAsState()
+    val monthChange by viewModel.monthChange.collectAsState()
     val privacyMode = LocalPrivacyMode.current
     var showTradeSheet by remember { mutableStateOf(false) }
     var detailAsset by remember { mutableStateOf<AssetEntity?>(null) }
@@ -128,6 +131,12 @@ fun AssetSection(viewModel: AssetViewModel = hiltViewModel()) {
                     asset = asset,
                     quantity = viewModel.quantityOf(asset.id, trades),
                     value = viewModel.currentValueOf(asset, trades),
+                    // خواسته‌ی کاربر: فقط رمزارز، فقط وقتی نسبت به ماهِ قبل گران‌تر شده.
+                    monthChangePercent = if (asset.category == ASSET_CATEGORY_CRYPTO) {
+                        monthChange[asset.symbol]?.takeIf { it > 0.0 }
+                    } else {
+                        null
+                    },
                     privacyMode = privacyMode,
                     onClick = { detailAsset = asset },
                 )
@@ -147,6 +156,7 @@ private fun AssetRow(
     asset: AssetEntity,
     quantity: Double,
     value: Double?,
+    monthChangePercent: Double?,
     privacyMode: Boolean,
     onClick: () -> Unit,
 ) {
@@ -159,12 +169,29 @@ private fun AssetRow(
                 Icon(Icons.Filled.TrendingUp, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
             }
             Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                Text(
-                    "${formatQuantity(quantity)} ${asset.name}",
-                    color = AppText,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "${formatQuantity(quantity)} ${asset.name}",
+                        color = AppText,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    if (monthChangePercent != null) {
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 6.dp)
+                                .background(AppWarningPill, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                "+${toFa(String.format("%.1f", monthChangePercent))}٪",
+                                color = AppWarningInk,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
+                }
                 Text(assetCategoryLabel(asset.category), color = AppMuted, fontSize = 11.sp)
             }
             PrivacyCrossfade(privacyMode) { masked ->
