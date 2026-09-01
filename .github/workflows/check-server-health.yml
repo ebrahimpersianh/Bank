@@ -53,6 +53,12 @@ jobs:
             # 🔻 قیمت‌ها عمداً **آخرین** بخشه تا همیشه ته لاگ باشه و با tail خونده بشه.
             echo "=== قیمت‌ها: آیا کلید ست شده؟ ==="
             grep -q '^PRICE_API_KEY=' ~/VameMan/.env && echo "PRICE_API_KEY هست" || echo "PRICE_API_KEY تو .env نیست"
+            # ⚠️ خودِ کلید هیچ‌وقت چاپ نمی‌شه - فقط طول و هش، تا خرابیِ نامرئیِ کپی/پیست
+            # (نیم‌فاصله/فاصله/newlineِ اضافه که تو کیبوردِ فارسی رایجه) رو بدونِ لو دادنِ
+            # کلید تشخیص بدیم. مقدارِ بعدِ = تا آخرِ خط، بدونِ trimِ اضافه از ما.
+            PKRAW=$(grep '^PRICE_API_KEY=' ~/VameMan/.env | cut -d= -f2-)
+            echo "طولِ کلید (بایت): ${#PKRAW}"
+            echo "هشِ کلید (فقط برای تطبیقِ دوباره، خودِ کلید نه): $(printf '%s' "$PKRAW" | sha256sum | cut -c1-16)"
             echo ""
             echo "=== قیمت‌ها: جوابِ خودمون (/api/prices) ==="
             curl -s --max-time 20 http://localhost:3000/api/prices | head -c 2500
