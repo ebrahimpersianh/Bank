@@ -100,6 +100,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -152,6 +153,7 @@ import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.calendar.FinancialCalendarScreen
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.AppHeroRow
@@ -206,6 +208,8 @@ import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.ThemeMode
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
 private val fontSizeOptions = listOf(0.9f to "کوچک", 1f to "متوسط", 1.15f to "بزرگ")
@@ -1775,6 +1779,117 @@ private fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
             lineHeight = 18.sp,
             modifier = Modifier.padding(top = 10.dp),
         )
+    }
+    // انتخابِ خودِ اپ‌ها - **بدونِ این، کلِ قابلیت بی‌اثره** (رجوع کن به notifPackages).
+    NotificationAppPicker(viewModel = viewModel, modifier = Modifier.padding(top = 8.dp))
+}
+
+/**
+ * انتخابِ اپ‌هایی که اعلانشون خونده می‌شه.
+ *
+ * 🚨 **این بخش قبلاً وجود نداشت و همین باگ بود**: `BankNotificationListener` فقط اعلانِ
+ * بسته‌نام‌های داخلِ [UiPrefs.notifAutoImportPackages] رو می‌خونه، ولی هیچ‌جای اپ اون لیست رو
+ * **نمی‌نوشت**. پس لیست همیشه خالی بود و هر اعلانی - از جمله بلوبانک - بی‌صدا دور انداخته
+ * می‌شد، حتی وقتی کاربر هم سوییچ رو روشن کرده بود هم مجوزِ اندروید رو داده بود.
+ *
+ * فهرست از خودِ گوشی خونده می‌شه (اپ‌های دارای آیکونِ لانچر) و **هیچ‌جا فرستاده نمی‌شه**.
+ */
+@Composable
+private fun NotificationAppPicker(viewModel: SmsAutoImportViewModel, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val selected by viewModel.notifPackages.collectAsState()
+    var query by remember { mutableStateOf("") }
+
+    // خوندنِ لیستِ اپ‌ها یه‌بار انجام می‌شه (رو گوشیِ پرِ اپ چند صد میلی‌ثانیه طول می‌کشه، پس
+    // نباید هر بار recomposition تکرار بشه).
+    val apps by produceState(initialValue = emptyList<Pair<String, String>>(), context) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                val pm = context.packageManager
+                pm.getInstalledApplications(0)
+                    .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+                    .filter { it.packageName != context.packageName }
+                    .map { it.packageName to pm.getApplicationLabel(it).toString() }
+                    .sortedBy { it.second.lowercase() }
+            }.getOrDefault(emptyList())
+        }
+    }
+
+    val shown = remember(apps, query, selected) {
+        val q = query.trim()
+        // انتخاب‌شده‌ها همیشه بالا می‌مونن تا کاربر ببینه چی روشنه، حتی وقتی داره جستجو می‌کنه.
+        val filtered = if (q.isEmpty()) apps else apps.filter { it.second.contains(q, ignoreCase = true) }
+        filtered.sortedByDescending { it.first in selected }
+    }
+
+    AppCard(modifier = modifier) {
+        Text(
+            "اعلانِ کدوم اپ‌ها خونده بشه؟",
+            color = AppText,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Black,
+        )
+        Text(
+            if (selected.isEmpty()) {
+                "هیچ اپی انتخاب نشده - تا وقتی حداقل یکی رو انتخاب نکنی، هیچ تراکنشی خودکار ثبت نمی‌شه."
+            } else {
+                "${toFa(selected.size)} اپ انتخاب شده."
+            },
+            color = if (selected.isEmpty()) AppDanger else AppMuted,
+            fontSize = 11.5.sp,
+            lineHeight = 19.sp,
+            modifier = Modifier.padding(top = 4.dp, bottom = 10.dp),
+        )
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            placeholder = { Text("جستجوی اسمِ اپ", color = AppMuted, fontSize = 12.sp) },
+            singleLine = true,
+            colors = appFieldColors(),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        // ارتفاعِ کرانه‌دار: این کارت خودش داخلِ یه صفحه‌ی اسکرول‌شونده‌ست، پس لیست نباید
+        // بی‌نهایت رشد کنه.
+        Column(modifier = Modifier.padding(top = 8.dp)) {
+            shown.take(40).forEach { (pkg, label) ->
+                val isOn = pkg in selected
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pressScaleClickable { viewModel.setNotifPackageSelected(pkg, !isOn) }
+                        .padding(vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        label,
+                        color = AppText,
+                        fontSize = 12.5.sp,
+                        fontWeight = if (isOn) FontWeight.Bold else FontWeight.Medium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = isOn,
+                        onCheckedChange = { viewModel.setNotifPackageSelected(pkg, it) },
+                        colors = SwitchDefaults.colors(checkedTrackColor = AppPrimary),
+                    )
+                }
+            }
+            if (shown.isEmpty()) {
+                Text(
+                    if (apps.isEmpty()) "در حالِ خواندنِ فهرستِ اپ‌ها…" else "اپی با این اسم پیدا نشد.",
+                    color = AppMuted,
+                    fontSize = 11.5.sp,
+                    modifier = Modifier.padding(vertical = 10.dp),
+                )
+            } else if (shown.size > 40) {
+                Text(
+                    "فقط ۴۰ اپِ اول نشون داده شده - برای بقیه از جستجو استفاده کن.",
+                    color = AppMuted,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+        }
     }
 }
 

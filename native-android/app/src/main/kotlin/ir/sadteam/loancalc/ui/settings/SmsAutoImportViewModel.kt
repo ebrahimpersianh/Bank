@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -49,6 +50,25 @@ class SmsAutoImportViewModel @Inject constructor(
      * خواستِ خودِ کاربره، نه وضعیتِ واقعیِ مجوز. */
     val notifEnabled: StateFlow<Boolean> = uiPrefs.notifAutoImportEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /**
+     * بسته‌نامِ اپ‌هایی که کاربر انتخاب کرده اعلانشون خونده بشه.
+     *
+     * ⚠️ **بدونِ حداقل یه اپ تو این لیست، قابلیت کاملاً بی‌اثره** - `BankNotificationListener`
+     * هر اعلانی که بسته‌نامش اینجا نباشه رو بی‌صدا دور می‌ندازه. تا قبل از این، هیچ نقطه‌ای تو
+     * اپ این لیست رو **نمی‌نوشت**، پس همیشه خالی می‌موند و خوندنِ اعلان هیچ‌وقت کار نمی‌کرد
+     * (گزارشِ کاربر: «نوتیفیکیشن رو از بلوبانک نمی‌خوند»).
+     */
+    val notifPackages: StateFlow<Set<String>> = uiPrefs.notifAutoImportPackages
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    fun setNotifPackageSelected(packageName: String, selected: Boolean) {
+        viewModelScope.launch {
+            val current = uiPrefs.notifAutoImportPackages.first()
+            val next = if (selected) current + packageName else current - packageName
+            uiPrefs.setNotifAutoImportPackages(next)
+        }
+    }
 
     fun setNotifEnabled(value: Boolean) {
         viewModelScope.launch {

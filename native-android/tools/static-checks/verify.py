@@ -41,6 +41,11 @@ NEEDS = {
     'rememberSaveable': 'androidx.compose.runtime.saveable.rememberSaveable',
     'AlertDialog': 'androidx.compose.material3.AlertDialog',
     'ModalBottomSheet': 'androidx.compose.material3.ModalBottomSheet',
+    # موقعِ ساختِ انتخابگرِ اپ (رفعِ باگِ خواندنِ اعلان) هر چهارتا بی‌ایمپورت مونده بودن.
+    'produceState': 'androidx.compose.runtime.produceState',
+    'collectAsState': 'androidx.compose.runtime.collectAsState',
+    'withContext': 'kotlinx.coroutines.withContext',
+    'Dispatchers': 'kotlinx.coroutines.Dispatchers',
 }
 # Modifierهای زنجیره‌ای: `.name(` باید ایمپورتِ خودش رو داشته باشه
 MODIFIERS = {
