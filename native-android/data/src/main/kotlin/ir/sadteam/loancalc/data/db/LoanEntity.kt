@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.data.db
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
@@ -16,7 +17,7 @@ import androidx.room.PrimaryKey
  * شدن ممکنه یه کلیدِ "rows" روبه‌زوال هم داخلش داشته باشن (migrationِ AppDatabase عمداً حذفش
  * نمی‌کنه، فقط دیگه هیچ‌جای کد ازش نمی‌خونه) - بی‌ضرره، فقط دیتای مرده.
  */
-@Entity(tableName = "loans")
+@Entity(tableName = "loans", indices = [Index("counterpartyId")])
 data class LoanEntity(
     @PrimaryKey val id: Long,
     val name: String,
@@ -40,4 +41,8 @@ data class LoanEntity(
      * لیستِ ثابت) بمونه - رجوع کن به توضیحِ مشابه رو [ir.sadteam.loancalc.data.db.ChequeEntity.sayadId]
      * درباره‌ی گسون/Unsafe موقعِ importِ بک‌آپ‌های قدیمی. */
     val reminderDayOffsets: String? = null,
+    /** لینک به [CounterpartyEntity] - هم‌الگو با [ChequeEntity.counterpartyId] (سوالِ ۶ی
+     * MESSAGE-round4). وامِ قدیمی معمولاً `borrower` رو فقط تو [dataJson] داره؛ حدسِ خودکار موقعِ
+     * مهاجرت با [ir.sadteam.loancalc.core.guessCounterparty] انجام می‌شه. */
+    val counterpartyId: Long? = null,
 )

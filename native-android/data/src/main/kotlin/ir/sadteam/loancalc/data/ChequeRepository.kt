@@ -2,8 +2,10 @@ package ir.sadteam.loancalc.data
 
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import ir.sadteam.loancalc.core.ChequeRiskScore
 import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.core.ChequeType
+import ir.sadteam.loancalc.core.computeChequeRiskScore
 import ir.sadteam.loancalc.data.db.ChequeBookDao
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
 import ir.sadteam.loancalc.data.db.ChequeDao
@@ -46,6 +48,7 @@ class ChequeRepository(
         nationalId: String? = null,
         previousBalance: Double? = null,
         depositAmount: Double? = null,
+        counterpartyId: Long? = null,
     ) {
         chequeDao.upsert(
             ChequeEntity(
@@ -69,12 +72,17 @@ class ChequeRepository(
                 nationalId = nationalId?.takeIf { it.isNotBlank() },
                 previousBalance = previousBalance,
                 depositAmount = depositAmount,
+                counterpartyId = counterpartyId,
             ),
         )
         if (chequeBookId != null) {
             bumpNextSerial(chequeBookId, chequeNumber)
         }
     }
+
+    /** چک‌هایی که هنوز به طرفِ‌حساب وصل نشدن (`counterpartyId == null`) - برای اجرای یه‌بارِ
+     * حدسِ خودکار رو دیتای قدیمی (سوالِ ۶). */
+    suspend fun chequesWithoutCounterparty(): List<ChequeEntity> = chequeDao.getAll().filter { it.counterpartyId == null }
 
     suspend fun updateCheque(cheque: ChequeEntity) {
         chequeDao.upsert(cheque)
@@ -94,13 +102,29 @@ class ChequeRepository(
 
     suspend fun getAllCheques(): List<ChequeEntity> = chequeDao.getAll()
 
+    /** امتیازِ ریسکِ برگشتِ یه صادرکننده - جوابِ سوالِ ۲: تاریخچه‌ی پاس/برگشتِ چک‌هایی که به همون
+     * طرفِ‌حساب لینک شدن. رجوع کن به [ir.sadteam.loancalc.core.computeChequeRiskScore]. */
+    suspend fun riskScoreFor(counterpartyId: Long): ChequeRiskScore {
+        val all = chequeDao.getAll().filter { it.counterpartyId == counterpartyId }
+        val passed = all.count { it.status == ChequeStatus.PASSED.name }
+        val bounced = all.count { it.status == ChequeStatus.BOUNCED.name }
+        return computeChequeRiskScore(passed, bounced)
+    }
+
     /** پورت پاک‌سازیِ لوکالِ بعد از خروج - رجوع کن به توضیح [ir.sadteam.loancalc.data.LoanRepository.clearLocal]. */
     suspend fun clearLocal() {
         chequeDao.clear()
         chequeBookDao.clear()
     }
 
-    suspend fun addChequeBook(ownerName: String, bankName: String, startSerial: Long, endSerial: Long) {
+    suspend fun addChequeBook(
+        ownerName: String,
+        bankName: String,
+        startSerial: Long,
+        endSerial: Long,
+        sayadId: String? = null,
+        last4: String? = null,
+    ) {
         chequeBookDao.upsert(
             ChequeBookEntity(
                 id = System.currentTimeMillis(),
@@ -110,12 +134,21 @@ class ChequeRepository(
                 endSerial = endSerial,
                 nextSerial = startSerial,
                 createdAt = isoNow(),
+                sayadId = sayadId?.takeIf { it.isNotBlank() },
+                last4 = last4?.takeIf { it.isNotBlank() },
             ),
         )
     }
 
     suspend fun deleteChequeBook(book: ChequeBookEntity) {
         chequeBookDao.delete(book)
+    }
+
+    /** بستنِ یه دسته‌چکِ تمام‌شده - `29k` («بسته‌شده در فلان‌ماه»). دوباره صداکردنش رو یه دسته‌چکِ
+     * بسته بی‌اثره (closedAt عوض نمی‌شه، همون تاریخِ اولِ بسته‌شدن می‌مونه). */
+    suspend fun closeChequeBook(book: ChequeBookEntity) {
+        if (book.closedAt != null) return
+        chequeBookDao.upsert(book.copy(closedAt = isoNow()))
     }
 
     /** بعد از ثبت یه چک با شماره‌ی عددی از یه دسته‌چک، اگه شماره برابر nextSerial فعلی بود، یکی

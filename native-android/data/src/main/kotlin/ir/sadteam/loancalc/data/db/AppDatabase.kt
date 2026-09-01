@@ -32,8 +32,12 @@ import net.sqlcipher.database.SupportFactory
         CoinEventEntity::class,
         AchievementEntity::class,
         InboxMessageEntity::class,
+        DangEventEntity::class,
+        DangParticipantEntity::class,
+        DangItemEntity::class,
+        DangItemShareEntity::class,
     ],
-    version = 28,
+    version = 29,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -64,6 +68,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun parsingRuleDao(): ParsingRuleDao
     abstract fun assetDao(): AssetDao
     abstract fun assetTradeDao(): AssetTradeDao
+    abstract fun dangEventDao(): DangEventDao
+    abstract fun dangParticipantDao(): DangParticipantDao
+    abstract fun dangItemDao(): DangItemDao
+    abstract fun dangItemShareDao(): DangItemShareDao
 
     companion object {
         private val MIGRATION_9_10 = object : Migration(9, 10) {
@@ -471,6 +479,96 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * فازِ اولِ چک + طلب‌وبدهی/دنگ (فریم‌های `7b`..`21g` و `22a`..`22d`، رجوع کن به
+         * design/ANSWERS-chequecounterpartydang.md). یه migrationِ بزرگ ولی همه‌ش add-column/
+         * create-table - هیچ داده‌ای پاک/جابه‌جا نمی‌شه.
+         *
+         * ⚠️ هر ۴ ایندکسِ دستیِ زیر (`counterpartyId` رو `cheques`/`loans`، `eventId`/
+         * `counterpartyId` رو `dang_participants`، ...) عیناً تو `indices = [...]`ِ همون
+         * @Entity هم اعلام شدن - قاعده‌ی صریحِ CLAUDE.md بعدِ کرشِ نسخه‌ی ۱.۰.۳۱۵.
+         */
+        private val MIGRATION_28_29 = object : Migration(28, 29) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // ChequeBookEntity - فریمِ 29k
+                db.execSQL("ALTER TABLE cheque_books ADD COLUMN sayadId TEXT")
+                db.execSQL("ALTER TABLE cheque_books ADD COLUMN last4 TEXT")
+                db.execSQL("ALTER TABLE cheque_books ADD COLUMN closedAt TEXT")
+
+                // CounterpartyEntity - فریمِ 22b
+                db.execSQL("ALTER TABLE counterparties ADD COLUMN phone TEXT")
+                db.execSQL(
+                    "ALTER TABLE counterparties ADD COLUMN avatarColor TEXT NOT NULL DEFAULT 'GREEN'",
+                )
+                db.execSQL(
+                    "ALTER TABLE counterparties ADD COLUMN avatarShape TEXT NOT NULL DEFAULT 'BOY'",
+                )
+
+                // لینکِ چک/وام به طرفِ‌حساب - سوالِ ۶
+                db.execSQL("ALTER TABLE cheques ADD COLUMN counterpartyId INTEGER")
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_cheques_counterpartyId ON cheques(counterpartyId)",
+                )
+                db.execSQL("ALTER TABLE loans ADD COLUMN counterpartyId INTEGER")
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_loans_counterpartyId ON loans(counterpartyId)",
+                )
+
+                // «دنگ» - فریمِ 22c، چهار جدولِ تازه
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS dang_events (" +
+                        "id INTEGER NOT NULL PRIMARY KEY, " +
+                        "title TEXT NOT NULL, " +
+                        "method TEXT NOT NULL, " +
+                        "totalAmount REAL NOT NULL, " +
+                        "year INTEGER NOT NULL, " +
+                        "month INTEGER NOT NULL, " +
+                        "day INTEGER NOT NULL, " +
+                        "isEventMode INTEGER NOT NULL DEFAULT 0, " +
+                        "settled INTEGER NOT NULL DEFAULT 0, " +
+                        "createdAt TEXT NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS dang_participants (" +
+                        "id INTEGER NOT NULL PRIMARY KEY, " +
+                        "eventId INTEGER NOT NULL, " +
+                        "counterpartyId INTEGER, " +
+                        "shareAmount REAL NOT NULL, " +
+                        "percentage REAL, " +
+                        "settled INTEGER NOT NULL DEFAULT 0)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_dang_participants_eventId ON dang_participants(eventId)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_dang_participants_counterpartyId ON dang_participants(counterpartyId)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS dang_items (" +
+                        "id INTEGER NOT NULL PRIMARY KEY, " +
+                        "eventId INTEGER NOT NULL, " +
+                        "description TEXT NOT NULL, " +
+                        "amount REAL NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_dang_items_eventId ON dang_items(eventId)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS dang_item_shares (" +
+                        "id INTEGER NOT NULL PRIMARY KEY, " +
+                        "itemId INTEGER NOT NULL, " +
+                        "participantId INTEGER NOT NULL, " +
+                        "shareAmount REAL NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_dang_item_shares_itemId ON dang_item_shares(itemId)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_dang_item_shares_participantId ON dang_item_shares(participantId)",
+                )
+            }
+        }
+
         @Volatile
         private var instance: AppDatabase? = null
 
@@ -516,6 +614,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_25_26,
                             MIGRATION_26_27,
                             MIGRATION_27_28,
+                            MIGRATION_28_29,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

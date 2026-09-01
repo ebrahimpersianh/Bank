@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.data
 
 import ir.sadteam.loancalc.core.DebtType
+import ir.sadteam.loancalc.core.guessCounterparty
 import ir.sadteam.loancalc.data.db.CounterpartyDao
 import ir.sadteam.loancalc.data.db.CounterpartyEntity
 import ir.sadteam.loancalc.data.db.DebtDao
@@ -10,6 +11,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.math.abs
 
 /** ماژولِ «طلب و بدهی» - هر [CounterpartyEntity] چندتا ردیفِ [DebtEntity] داره؛ مانده‌ی طلب/بدهیِ
  * هر طرف‌حساب همیشه از رو جمعِ ردیف‌های تسویه‌نشده‌ش محاسبه می‌شه (رجوع کن به [netBalance]), نه یه
@@ -18,13 +20,42 @@ class DebtRepository(
     private val counterpartyDao: CounterpartyDao,
     private val debtDao: DebtDao,
 ) {
+    /** پنج رنگِ چرخشیِ `AvatarColor` (تو `ui/components/Avatar.kt`) - `NEUTRAL` عمداً بیرونه چون
+     * حالتِ ویژه‌ی خودشه، نه یه رنگِ عادیِ قابلِ‌چرخش. */
+    private val avatarColorNames = listOf("GREEN", "PURPLE", "BLUE", "ORANGE", "RED")
+
     fun observeCounterparties(): Flow<List<CounterpartyEntity>> = counterpartyDao.observeAll()
     fun observeDebts(): Flow<List<DebtEntity>> = debtDao.observeAll()
     fun observeDebtsForCounterparty(counterpartyId: Long): Flow<List<DebtEntity>> =
         debtDao.observeForCounterparty(counterpartyId)
 
-    suspend fun addCounterparty(name: String) {
-        counterpartyDao.upsert(CounterpartyEntity(id = System.currentTimeMillis(), name = name, createdAt = isoNow()))
+    /**
+     * رنگِ آواتار **قطعی از رو نامه** تعیین می‌شه، نه تصادفی/دستی (جوابِ سوالِ ۱۱ی
+     * design/MESSAGE-round4-to-design.md) - همون نام همیشه همون رنگ رو می‌گیره.
+     */
+    suspend fun addCounterparty(name: String, phone: String? = null, id: Long = System.currentTimeMillis()): Long {
+        val color = avatarColorNames[abs(name.hashCode()) % avatarColorNames.size]
+        counterpartyDao.upsert(
+            CounterpartyEntity(id = id, name = name, createdAt = isoNow(), phone = phone, avatarColor = color),
+        )
+        return id
+    }
+
+    suspend fun updateCounterparty(counterparty: CounterpartyEntity) {
+        counterpartyDao.upsert(counterparty)
+    }
+
+    /**
+     * حدسِ خودکارِ طرفِ‌حساب از رو یه نامِ خام (چک/وامِ قدیمی که `counterpartyId` ندارن) - تطبیقِ
+     * قطعی به طرفِ‌حسابِ موجود وصل می‌شه؛ مبهم/بی‌نام یه طرفِ‌حسابِ موقتِ «نامشخص» می‌گیره (جوابِ
+     * سوالِ ۶). صدا زدنِ دوباره‌ش برای «نامشخص»های تکراری همون یکی رو برمی‌گردونه، ردیفِ جدید نمی‌سازه.
+     */
+    suspend fun guessOrCreateCounterparty(rawName: String?): Long {
+        val existing = counterpartyDao.getAll()
+        guessCounterparty(rawName, existing) { it.name }?.let { return it.id }
+        val unknown = existing.firstOrNull { it.name == UNKNOWN_COUNTERPARTY_NAME }
+        if (unknown != null) return unknown.id
+        return addCounterparty(UNKNOWN_COUNTERPARTY_NAME)
     }
 
     suspend fun deleteCounterparty(counterparty: CounterpartyEntity) {
@@ -80,5 +111,10 @@ class DebtRepository(
         val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
         fmt.timeZone = TimeZone.getTimeZone("UTC")
         return fmt.format(Date())
+    }
+
+    companion object {
+        /** طرفِ‌حسابِ موقتِ چک/وامِ قدیمیِ مبهم/بی‌نام - کاربر بعداً دستی اصلاحش می‌کنه (سوالِ ۶). */
+        const val UNKNOWN_COUNTERPARTY_NAME = "نامشخص"
     }
 }
