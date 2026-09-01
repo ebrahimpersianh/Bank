@@ -222,6 +222,9 @@ fun HomeScreen(
                     activeDays = activeDays,
                     coins = coins,
                     onOpenSettings = onOpenSettings,
+                    inboxCount = inboxCount,
+                    inboxUnreadNews = inboxUnreadNews,
+                    onOpenInbox = onOpenInbox,
                 )
             }
 
@@ -368,6 +371,9 @@ private fun HomeHeader(
     activeDays: Int,
     coins: Int,
     onOpenSettings: () -> Unit,
+    inboxCount: Int,
+    inboxUnreadNews: Int,
+    onOpenInbox: () -> Unit,
 ) {
     val avatarViewModel: AvatarViewModel = hiltViewModel()
     val avatar by avatarViewModel.avatar.collectAsState()

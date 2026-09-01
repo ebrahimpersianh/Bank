@@ -55,6 +55,7 @@ run "پراپرتیِ BoxWithConstraints" "$DIR/scopeprops.py"
 run "آیکونِ بدونِ ایمپورت" "$DIR/icons.py"
 run "نشتِ رنگِ برند" "$DIR/themeleak.py"
 run "@Composable تو لیستِ تنبل" "$DIR/lazyscope.py"
+run "smart-castِ پراپرتیِ ماژولِ دیگه" "$DIR/smartcast.py"
 
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

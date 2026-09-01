@@ -114,11 +114,15 @@ fun ChequeBooksScreen(
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 2.dp),
                             )
-                            if (book.last4 != null) {
-                                Text("۴ رقم آخرِ حساب: ${toFa(book.last4)}", color = AppMuted, fontSize = 11.sp)
+                            // smart-cast مستقیم رو یه property از یه ماژول دیگه (:data) مجاز نیست، برای
+                            // همین اول تو یه val محلی می‌ریزیمش (رجوع کن به همین کامنت تو ChequeDetailScreen.kt).
+                            val last4 = book.last4
+                            if (last4 != null) {
+                                Text("۴ رقم آخرِ حساب: ${toFa(last4)}", color = AppMuted, fontSize = 11.sp)
                             }
-                            if (book.sayadId != null) {
-                                Text("شناسه صیادی: ${toFa(book.sayadId)}", color = AppMuted, fontSize = 11.sp)
+                            val sayadId = book.sayadId
+                            if (sayadId != null) {
+                                Text("شناسه صیادی: ${toFa(sayadId)}", color = AppMuted, fontSize = 11.sp)
                             }
                             val closedDate = book.closedAt?.let { parseServerDate(it) }
                             if (closedDate != null) {
