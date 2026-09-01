@@ -268,29 +268,48 @@ fun AddEditChequeScreen(
                                 Text(fmt(remainingVal), color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             }
                         }
-                    }
-                }
-            }
-        }
-        if (chequeBooks.isNotEmpty()) {
-            item {
-                AppCard(label = "اطلاعات دسته چک") {
-                    Text(
-                        "از بین دسته‌چک‌های ثبت‌شده انتخاب کنید (اختیاری)",
-                        color = AppMuted,
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
-                    ChequeBookDropdown(
-                        chequeBooks = chequeBooks,
-                        selected = chequeBookId,
-                        onSelect = { book ->
-                            chequeBookId = book?.id
-                            if (chequeNumber.isBlank() && book != null) {
-                                chequeNumber = book.nextSerial.toString()
+                        // ⚠️ شناسه‌ی صیادی، دسته‌چک، و یادداشت عمداً اینجان نه رو صفحه‌ی اصلیِ فرم -
+                        // فریمِ ۷b فقط نوع/بانک/شماره‌چک/سررسید/مبلغ/عکس رو تو نمای پیش‌فرض می‌خواد.
+                        if (chequeBooks.isNotEmpty()) {
+                            AppCard(label = "اطلاعات دسته چک") {
+                                Text(
+                                    "از بین دسته‌چک‌های ثبت‌شده انتخاب کنید (اختیاری)",
+                                    color = AppMuted,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(bottom = 8.dp),
+                                )
+                                ChequeBookDropdown(
+                                    chequeBooks = chequeBooks,
+                                    selected = chequeBookId,
+                                    onSelect = { book ->
+                                        chequeBookId = book?.id
+                                        if (chequeNumber.isBlank() && book != null) {
+                                            chequeNumber = book.nextSerial.toString()
+                                        }
+                                    },
+                                )
                             }
-                        },
-                    )
+                        }
+                        AppCard(label = "شناسه ۱۶ رقمی صیادی (اختیاری)") {
+                            // Ltr: رجوع کن به کامنتِ Ltr.kt.
+                            Ltr {
+                                OutlinedTextField(
+                                    value = sayadId,
+                                    onValueChange = { sayadId = cleanNum(it).take(16) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                )
+                            }
+                        }
+                        AppCard(label = "بابت (اختیاری)") {
+                            OutlinedTextField(
+                                value = notes,
+                                onValueChange = { notes = it },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -301,20 +320,6 @@ fun AddEditChequeScreen(
                     OutlinedTextField(
                         value = chequeNumber,
                         onValueChange = { chequeNumber = cleanNum(it) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                    )
-                }
-            }
-        }
-        item {
-            AppCard(label = "شناسه ۱۶ رقمی صیادی (اختیاری)") {
-                // Ltr: رجوع کن به کامنتِ Ltr.kt.
-                Ltr {
-                    OutlinedTextField(
-                        value = sayadId,
-                        onValueChange = { sayadId = cleanNum(it).take(16) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
@@ -372,15 +377,6 @@ fun AddEditChequeScreen(
                         Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
                     }
                 }
-            }
-        }
-        item {
-            AppCard(label = "بابت (اختیاری)") {
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    modifier = Modifier.fillMaxWidth(),
-                )
             }
         }
         if (error != null) {
