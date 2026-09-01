@@ -58,11 +58,15 @@ jobs:
             touch .env
             set_env_line() {
               key="$1"; value="$2"
-              if grep -q "^${key}=" .env; then
-                sed -i "s|^${key}=.*|${key}=${value}|" .env
-              else
-                echo "${key}=${value}" >> .env
+              # ⚠️ عمداً بدونِ sed: مقدارِ کلید ممکنه `|`/`&`/`/` داشته باشه که جداکننده‌ی
+              # الگوی sed بود و کلِ دستور رو می‌شکست (کلیدِ gheymat دقیقاً همین رو داشت).
+              if [ -f .env ]; then
+                grep -v "^${key}=" .env > .env.tmp || true
+                mv .env.tmp .env
               fi
+              printf '%s=%s\n' "$key" "$value" >> .env
+              # .env سکرت داره: mv مجوزِ فایلِ موقت رو می‌آورد، پس صریح ۶۰۰ می‌شه.
+              chmod 600 .env
             }
             set_env_line "CAFEBAZAAR_CLIENT_ID" "$CAFEBAZAAR_CLIENT_ID"
             set_env_line "CAFEBAZAAR_CLIENT_SECRET" "$CAFEBAZAAR_CLIENT_SECRET"
