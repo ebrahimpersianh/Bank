@@ -57,6 +57,14 @@ class LoanRepository(
 
     suspend fun saveLoan(loan: LoanEntity) = loanDao.upsert(loan)
 
+    /** وام‌هایی که هنوز به طرفِ‌حساب وصل نشدن - برای حدسِ خودکارِ یه‌بارِ دیتای قدیمی (سوالِ ۶ی
+     * design/ANSWERS-chequecounterpartydang.md، هم‌الگو با [ir.sadteam.loancalc.data.ChequeRepository.chequesWithoutCounterparty]). */
+    suspend fun loansWithoutCounterparty(): List<LoanEntity> = loanDao.getAll().filter { it.counterpartyId == null }
+
+    suspend fun setLoanCounterparty(loan: LoanEntity, counterpartyId: Long) {
+        loanDao.upsert(loan.copy(counterpartyId = counterpartyId))
+    }
+
     suspend fun deleteLoan(id: Long) {
         loanDao.deleteById(id)
         loanRowDao.deleteForLoan(id)

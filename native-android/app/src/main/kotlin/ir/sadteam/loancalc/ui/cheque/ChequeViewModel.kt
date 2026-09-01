@@ -9,6 +9,7 @@ import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.core.ChequeType
 import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.ChequeRepository
+import ir.sadteam.loancalc.data.DebtRepository
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
 import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -24,7 +25,19 @@ class ChequeViewModel @Inject constructor(
     private val chequeRepository: ChequeRepository,
     private val attachmentStorage: AttachmentStorage,
     private val authPrefs: AuthPrefs,
+    private val debtRepository: DebtRepository,
 ) : ViewModel() {
+    init {
+        // حدسِ خودکارِ طرفِ‌حساب برای چک‌های قدیمی‌ای که قبل از فیچرِ طلب‌وبدهی ثبت شدن (سوالِ ۶ی
+        // design/ANSWERS-chequecounterpartydang.md) - نامِ صادرکننده/طرفِ چک با طرف‌حساب‌های موجود
+        // تطبیق داده می‌شه، مبهم/بی‌نام به «نامشخص» می‌ره. اجرای دوباره‌ش بی‌ضرره.
+        viewModelScope.launch {
+            chequeRepository.chequesWithoutCounterparty().forEach { cheque ->
+                val counterpartyId = debtRepository.guessOrCreateCounterparty(cheque.ownerName)
+                chequeRepository.updateCheque(cheque.copy(counterpartyId = counterpartyId))
+            }
+        }
+    }
     /** پورت syncIfLoggedIn تو MyLoansViewModel - چک‌ها/دسته‌چک‌ها قبلاً فقط با AutoBackupWorkerِ
      * روزانه سینک می‌شدن، نه بعد از هر تغییر؛ کاربر خواسته با کوچیک‌ترین تغییری هم بی‌صدا آنلاین
      * بکاپ بگیره، دقیقاً مثل وام‌ها. */

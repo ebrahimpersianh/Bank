@@ -9,6 +9,7 @@ import ir.sadteam.loancalc.core.LoanMethod
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.ui.BankLoanOutcome
 import ir.sadteam.loancalc.data.AttachmentStorage
+import ir.sadteam.loancalc.data.DebtRepository
 import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.db.IncomeEntity
@@ -32,6 +33,7 @@ class MyLoansViewModel @Inject constructor(
     private val authPrefs: AuthPrefs,
     private val incomeRepository: IncomeRepository,
     private val attachmentStorage: AttachmentStorage,
+    private val debtRepository: DebtRepository,
 ) : ViewModel() {
     init {
         // ترمیمِ یک‌بارِ وام‌هایی که پیشرفتشون قبلاً صفر شده بود (باگِ گزارش‌شده‌ی کاربر: بعد از
@@ -39,6 +41,17 @@ class MyLoansViewModel @Inject constructor(
         // عددِ خلاصه از رو خودشون بازسازی می‌شه - رجوع کن به LoanRepository.repairPaidCounts.
         // اجرای دوباره‌ش بی‌ضرره، پس نیازی به پرچمِ «یه‌بار انجام شد» نیست.
         viewModelScope.launch { loanRepository.repairPaidCounts() }
+
+        // حدسِ خودکارِ طرفِ‌حساب برای وام‌های قدیمی‌ای که قبل از فیچرِ طلب‌وبدهی ساخته شدن (سوالِ ۶).
+        // «—» یعنی وامِ دستی بدونِ اسمِ وام‌گیرنده‌ی واقعی، برای همون طرفِ‌حسابِ مشترکِ «نامشخص» می‌ره.
+        // اجرای دوباره‌ش بی‌ضرره (فقط وام‌هایی که هنوز counterpartyId ندارن رو برمی‌گردونه).
+        viewModelScope.launch {
+            loanRepository.loansWithoutCounterparty().forEach { loan ->
+                val borrower = loanRepository.getBorrower(loan).takeIf { it != "—" }
+                val counterpartyId = debtRepository.guessOrCreateCounterparty(borrower)
+                loanRepository.setLoanCounterparty(loan, counterpartyId)
+            }
+        }
     }
 
     val loans: StateFlow<List<LoanEntity>> = loanRepository.observeLoans()
