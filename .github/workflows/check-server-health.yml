@@ -46,16 +46,37 @@ jobs:
             curl -s --max-time 10 http://localhost:3000/api/prices | head -c 1500
             echo ""
             echo ""
-            echo "=== قیمت‌ها: پاسخِ خامِ خودِ gheymat.online (برای اصلاحِ SYMBOL_ALIASES) ==="
-            # ⚠️ فقط **اسمِ نمادها** چاپ می‌شه نه کلِ بدنه - کلیدِ API تو هدره و تو لاگ نمی‌ره.
+            # ⚠️ **کلیدِ API هیچ‌وقت چاپ نمی‌شه** - فقط تو هدر می‌ره. از بدنه هم فقط اسمِ
+            # نمادها/پیامِ خطا درمیاد، نه کلِ جواب.
             PK=$(grep '^PRICE_API_KEY=' ~/VameMan/.env | cut -d= -f2-)
+            echo "=== قیمت‌ها: کدِ وضعیت و پیامِ خطای gheymat.online ==="
+            # لاگِ سرور فقط «۴۰۱» رو می‌گفت؛ خودِ **بدنه‌ی جواب** معمولاً می‌گه چرا
+            # (کلیدِ اشتباه؟ اسمِ هدر فرق داره؟ اشتراک تموم شده؟).
             if [ -n "$PK" ]; then
-              curl -s --max-time 15 -H "x-api-token: $PK" -H "X-Country-Code: IR" \
-                https://backend.gheymat.online/api/prices/all \
-                | tr ',' '\n' | grep -o '"symbol":"[^"]*"' | sort -u | head -80
+              curl -s -w "\nHTTP: %{http_code}\n" --max-time 15 \
+                -H "x-api-token: $PK" -H "X-Country-Code: IR" \
+                https://backend.gheymat.online/api/prices/all | head -c 600
+              echo ""
+              echo "--- همون درخواست ولی با هدرِ Authorization: Bearer ---"
+              curl -s -o /dev/null -w "HTTP: %{http_code}\n" --max-time 15 \
+                -H "Authorization: Bearer $PK" -H "X-Country-Code: IR" \
+                https://backend.gheymat.online/api/prices/all
+              echo "--- بدونِ هیچ کلیدی (ببینیم اصلاً کلید لازمه یا نه) ---"
+              curl -s -o /dev/null -w "HTTP: %{http_code}\n" --max-time 15 \
+                -H "X-Country-Code: IR" https://backend.gheymat.online/api/prices/all
             else
               echo "کلید نیست، رد شد"
             fi
+            echo ""
+            echo "=== قیمت‌ها: مستنداتِ سرویس (سندباکس بهش دسترسی نداره، سرور داره) ==="
+            for U in \
+              https://backend.gheymat.online/docs/api.json \
+              https://backend.gheymat.online/openapi.json \
+              https://backend.gheymat.online/docs/openapi.json ; do
+              C=$(curl -s -o /tmp/apidoc -w "%{http_code}" --max-time 15 "$U")
+              echo "--- $U → $C ---"
+              if [ "$C" = "200" ]; then head -c 3000 /tmp/apidoc; echo; break; fi
+            done
             echo ""
             echo "=== ۱۰ خطِ آخرِ لاگ ==="
             pm2 logs loan-calc-api --lines 10 --nostream
