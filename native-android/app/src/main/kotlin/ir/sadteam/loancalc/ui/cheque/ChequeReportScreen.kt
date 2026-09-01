@@ -37,8 +37,9 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.HeroMuted
 import ir.sadteam.loancalc.ui.components.HeroTone
 import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.CategoryDonut
+import ir.sadteam.loancalc.ui.components.DonutSlice
 import ir.sadteam.loancalc.ui.components.EmptyState
-import ir.sadteam.loancalc.ui.components.ProgressRing
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppInfo
@@ -109,14 +110,19 @@ internal fun ChequeReportScreen(
         }
         item {
             // گزارشِ چک - هم‌خانواده‌ی «آمار»ه، پس **بنفش** (همون توکنِ «بنفش = بودجه و آمار»).
+            // جوابِ سوالِ ۵: به‌جای حلقه‌ی تک‌مقداریِ ProgressRing، همون CategoryDonutِ چندبخشیِ
+            // گزارشِ حسابداری (سهمِ پاس/برگشتی/وضع‌نشده به‌جای سهمِ دسته‌بندی).
             AppHeroCard(tone = HeroTone.PURPLE) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    ProgressRing(
-                        progress = (stats.passRatePercent / 100.0).toFloat(),
+                    CategoryDonut(
+                        slices = listOf(
+                            DonutSlice(stats.passed.toDouble(), Color.White),
+                            DonutSlice(stats.bounced.toDouble(), Color.White.copy(alpha = 0.45f)),
+                            DonutSlice(stats.pending.toDouble(), Color.White.copy(alpha = 0.2f)),
+                        ),
                         size = 100.dp,
                         strokeWidth = 13.dp,
-                        // رو زمینه‌ی بنفشِ مات، حلقه و متن‌ها سفیدن نه تم‌آگاه.
-                        colors = listOf(Color.White, Color.White),
+                        trackColor = Color.White.copy(alpha = 0.15f),
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("${toFa(stats.passRatePercent.toInt())}٪", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
