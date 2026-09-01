@@ -37,6 +37,10 @@ NEEDS = {
     'Box': 'androidx.compose.foundation.layout.Box',
     'Row': 'androidx.compose.foundation.layout.Row',
     'Column': 'androidx.compose.foundation.layout.Column',
+    # هر سه‌تای زیر تو بیلدِ ۴۹۳ بی‌ایمپورت مونده بودن.
+    'rememberSaveable': 'androidx.compose.runtime.saveable.rememberSaveable',
+    'AlertDialog': 'androidx.compose.material3.AlertDialog',
+    'ModalBottomSheet': 'androidx.compose.material3.ModalBottomSheet',
 }
 # Modifierهای زنجیره‌ای: `.name(` باید ایمپورتِ خودش رو داشته باشه
 MODIFIERS = {

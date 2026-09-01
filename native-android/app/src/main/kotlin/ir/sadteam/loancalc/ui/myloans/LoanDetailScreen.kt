@@ -70,6 +70,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -1617,7 +1618,7 @@ private fun InstallmentsPreviewCard(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .background(AppDangerPill)
-                    .border(2.dp, AppDangerBorder, RoundedCornerShape(16.dp))
+                    .border(2.dp, AppDanger, RoundedCornerShape(16.dp))
                     .pressScaleClickable(onClick = onSeeAll)
                     .padding(horizontal = 13.dp, vertical = 11.dp),
                 verticalAlignment = Alignment.CenterVertically,

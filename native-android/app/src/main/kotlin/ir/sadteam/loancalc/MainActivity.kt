@@ -1198,7 +1198,7 @@ private fun LoanTab(
     deepLinkLoanId: Long?,
     onDeepLinkConsumed: () -> Unit,
 ) {
-    var subTab by remember { mutableStateOf(LoanSubTab.BANK) }
+    var subTab by remember { mutableStateOf(LoanSubTab.MY_LOANS) }
     LaunchedEffect(requestedSubTab) {
         requestedSubTab?.let { subTab = it }
     }
@@ -1251,7 +1251,7 @@ private fun LoanTab(
                         .then(
                             if (selected) {
                                 Modifier
-                                    .hardShadow(AppPrimaryDim, shape, offsetY = 3.dp)
+                                    .hardShadow(AppPrimaryDim, offsetY = 3.dp, cornerRadius = 999.dp)
                                     .clip(shape)
                                     .background(AppPrimary)
                             } else {
