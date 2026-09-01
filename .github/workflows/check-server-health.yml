@@ -39,50 +39,21 @@ jobs:
             echo "=== جوابِ محلیِ API (پورت 3000) ==="
             curl -s -o /dev/null -w "HTTP status: %{http_code}\n" --max-time 5 http://localhost:3000/api/app-version || echo "جواب نداد"
             echo ""
-            echo "=== قیمت‌ها: آیا کلید ست شده؟ ==="
-            grep -q '^PRICE_API_KEY=' ~/VameMan/.env && echo "PRICE_API_KEY هست" || echo "PRICE_API_KEY تو .env نیست"
-            echo ""
-            echo "=== قیمت‌ها: جوابِ خودمون (/api/prices) ==="
-            curl -s --max-time 10 http://localhost:3000/api/prices | head -c 1500
-            echo ""
-            echo ""
-            # ⚠️ **کلیدِ API هیچ‌وقت چاپ نمی‌شه** - فقط تو هدر می‌ره. از بدنه هم فقط اسمِ
-            # نمادها/پیامِ خطا درمیاد، نه کلِ جواب.
-            PK=$(grep '^PRICE_API_KEY=' ~/VameMan/.env | cut -d= -f2-)
-            echo "=== قیمت‌ها: کدِ وضعیت و پیامِ خطای gheymat.online ==="
-            # لاگِ سرور فقط «۴۰۱» رو می‌گفت؛ خودِ **بدنه‌ی جواب** معمولاً می‌گه چرا
-            # (کلیدِ اشتباه؟ اسمِ هدر فرق داره؟ اشتراک تموم شده؟).
-            if [ -n "$PK" ]; then
-              curl -s -w "\nHTTP: %{http_code}\n" --max-time 15 \
-                -H "x-api-token: $PK" -H "X-Country-Code: IR" \
-                https://backend.gheymat.online/api/prices/all | head -c 600
-              echo ""
-              echo "--- همون درخواست ولی با هدرِ Authorization: Bearer ---"
-              curl -s -o /dev/null -w "HTTP: %{http_code}\n" --max-time 15 \
-                -H "Authorization: Bearer $PK" -H "X-Country-Code: IR" \
-                https://backend.gheymat.online/api/prices/all
-              echo "--- بدونِ هیچ کلیدی (ببینیم اصلاً کلید لازمه یا نه) ---"
-              curl -s -o /dev/null -w "HTTP: %{http_code}\n" --max-time 15 \
-                -H "X-Country-Code: IR" https://backend.gheymat.online/api/prices/all
-            else
-              echo "کلید نیست، رد شد"
-            fi
-            echo ""
-            echo "=== قیمت‌ها: مستنداتِ سرویس (سندباکس بهش دسترسی نداره، سرور داره) ==="
-            for U in \
-              https://backend.gheymat.online/docs/api.json \
-              https://backend.gheymat.online/openapi.json \
-              https://backend.gheymat.online/docs/openapi.json ; do
-              C=$(curl -s -o /tmp/apidoc -w "%{http_code}" --max-time 15 "$U")
-              echo "--- $U → $C ---"
-              if [ "$C" = "200" ]; then head -c 3000 /tmp/apidoc; echo; break; fi
-            done
+            echo "=== وضعیتِ اشتراکِ حساب‌های تست/دائمی ==="
+            sqlite3 ~/VameMan/data.sqlite "SELECT phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE phone IN ('09121111111','09366963867');" 2>&1 || echo "کوئری شکست خورد"
             echo ""
             echo "=== ۱۰ خطِ آخرِ لاگ ==="
             pm2 logs loan-calc-api --lines 10 --nostream
             echo ""
-            echo "=== ۵ گزارشِ کرشِ آخر ==="
-            sqlite3 ~/VameMan/data.sqlite "SELECT id, created_at, app_version, message, stack FROM crash_reports ORDER BY id DESC LIMIT 3;" 2>&1 || echo "sqlite3 نصب نیست یا جدول پیدا نشد"
+            # ⚠️ استکِ کرش عمداً به ۱۵۰ کاراکتر بریده می‌شه: استکِ کاملِ Compose صدها خطه و
+            # کلِ خروجیِ این ورک‌فلو رو می‌بلعید (بخشِ قیمت‌ها دیگه با tail خونده نمی‌شد).
+            echo "=== ۳ گزارشِ کرشِ آخر (استکِ بریده) ==="
+            sqlite3 ~/VameMan/data.sqlite "SELECT id, created_at, app_version, message, substr(replace(stack, char(10), ' '), 1, 150) FROM crash_reports ORDER BY id DESC LIMIT 3;" 2>&1 || echo "sqlite3 نصب نیست یا جدول پیدا نشد"
             echo ""
-            echo "=== وضعیتِ اشتراکِ حساب‌های تست/دائمی (چک کن آیا حسابِ تست بازارها دائمی‌مشترک مونده) ==="
-            sqlite3 ~/VameMan/data.sqlite "SELECT phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE phone IN ('09121111111','09366963867');" 2>&1 || echo "کوئری شکست خورد"
+            # 🔻 قیمت‌ها عمداً **آخرین** بخشه تا همیشه ته لاگ باشه و با tail خونده بشه.
+            echo "=== قیمت‌ها: آیا کلید ست شده؟ ==="
+            grep -q '^PRICE_API_KEY=' ~/VameMan/.env && echo "PRICE_API_KEY هست" || echo "PRICE_API_KEY تو .env نیست"
+            echo ""
+            echo "=== قیمت‌ها: جوابِ خودمون (/api/prices) ==="
+            curl -s --max-time 20 http://localhost:3000/api/prices | head -c 2500
+            echo ""
