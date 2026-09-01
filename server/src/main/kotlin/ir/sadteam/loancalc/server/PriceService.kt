@@ -1,35 +1,28 @@
 package ir.sadteam.loancalc.server
 
 /*
- * قیمتِ روزِ طلا/سکه/ارز/رمزارز - منبع: وب‌سرویسِ «قیمت آنلاین» (gheymat.online).
+ * قیمتِ روزِ طلا/سکه/ارز/رمزارز - منبع: وب‌سرویسِ «سرویکس» (servix.cc).
  *
- * مستنداتِ رسمی (OpenAPI 3.1، کاربر ۱۱ شهریور فرستاد - دیگه حدسی نیست):
- *   GET https://backend.gheymat.online/api/prices/all
- *   Header:  x-api-token: <کلید>        ← اسمِ هدر از `securitySchemes.apiKey` تاییده
- *   Header:  X-Country-Code: IR         (اجباری)
- *   جواب: {"data": [GlobalPriceResource, ...]}
+ * جایگزینِ سومِ این کارکرد - نوسان (۴۰۱، کلید رد شد) و gheymat.online (کار می‌کرد ولی
+ * نگاشت/تبدیلِ منبع پیچیده بود) قبلاً امتحان شدن. مستنداتِ رسمی: `servix.cc/docs/endpoints`.
  *
- * ⚠️ **سه چیزی که قبلاً غلط فرض شده بود و مستندات نشون داد:**
+ * GET https://servix.cc/api/v1/assets
+ * Header: X-API-Key: <کلید>
+ * جواب: آرایه‌ای از `{code, name, slug, labelEn, labelFa, quoteUnit, value, businessTime}`.
  *
- * ۱. `symbol` یه **بازار**ه نه یه ارز - نمونه‌ی خودِ مستندات: `GOLD-TMN`. یعنی جفتِ
- *    «چی به چی». پس تطبیق باید رو `base_currency.symbol` باشه (که از enumِ `Currency`
- *    میاد) و `quote_currency` هم باید ریال/تومن باشه، وگرنه قیمتِ بیت‌کوین به **دلار**
- *    هم قاطیِ نتیجه می‌شد.
+ * 🎯 **مزیتِ اصلی نسبت به سرویسِ قبلی**: خودِ سرویس جفت‌های `..._RLS` رو مستقیم به **ریال**
+ * می‌ده (نه تومن) - نیازی به انتخابِ منبع یا ضرب‌درِ ۱۰ نیست. یه درخواستِ `GET /api/v1/assets`
+ * همه‌ی نمادها رو با هم می‌ده و فقط **۱ واحد از سهمیه‌ی روزانه** کم می‌کنه.
  *
- * ۲. `prices/all` یعنی «هر قیمتی که داریم، از **همه‌ی منبع‌ها**» - برای یه بازار چند
- *    ردیف از چند منبع (نوبیتکس، تجارت‌نیوز، میانگین...) برمی‌گرده. پس باید یه منبع
- *    انتخاب بشه، وگرنه هر بار قیمتِ یه منبعِ تصادفی می‌نشست.
- *
- * ۳. اسمِ سکه‌ها هیچ‌کدوم اونی نبود که حدس زده بودم (`EMAMI`/`AZADI`/`NIM`...)؛ enumِ
- *    واقعی `SEKE`/`SEKB`/`SEKEN`/`SEKER`/`SEKG`ه.
- *
- * ⚠️ سهمیه: `all` همه‌ی نمادها رو با هم می‌ده. تازه‌سازی *زمان‌محور*ه نه *درخواست‌محور*:
- * فقط اگه بیشتر از یک ساعت از آخرین fetch گذشته باشه دوباره می‌گیریم.
+ * ⚠️ سهمیه: تازه‌سازی *زمان‌محور*ه نه *درخواست‌محور* - فقط اگه بیشتر از یک ساعت از آخرین
+ * fetch گذشته باشه دوباره می‌گیریم (۲۴ درخواست در روز، خیلی زیرِ سقفِ ۵۰).
  *
  * 🔑 **نگاشتِ نمادها عمداً اینجاست، نه تو اپ** - اصلاحش با یه دیپلویِ سرور می‌شه، ولی اگه
  * تو اپ بود هر اصلاح یه انتشارِ جدیدِ اپ می‌خواست. اپ فقط `prices["BTC"]` رو می‌خونه.
  *
- * 💱 **واحد: ریال.** `quote_currency` سرویس تومنه (`IRT`)، پس ×۱۰ می‌شه تا با کلِ اپ یکی باشه.
+ * مقصدهایی که تو کاتالوگِ اپ هستن ولی سرویس معادلِ ریالیِ مستقیم نداره: `SILVER_999`
+ * (فقط `SILVER_OUNCE_USD` داره، نه یه جفتِ `..._RLS`)، `TRX`, `SOL`, `DOGE`, `TON`.
+ * برای این‌ها قیمت نمیاد و اپ «—» نشون می‌ده - این درسته، نه باگ.
  */
 
 import io.ktor.client.HttpClient
@@ -39,7 +32,6 @@ import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -49,79 +41,42 @@ import java.time.LocalDate
 
 object PriceService {
     private val PRICE_API_KEY = env("PRICE_API_KEY")
-    private const val GHEYMAT_URL = "https://backend.gheymat.online/api/prices/all"
+    private const val SERVIX_URL = "https://servix.cc/api/v1/assets"
     private val REFRESH_INTERVAL = Duration.ofHours(1)
 
     private val httpClient = HttpClient(CIO)
     private val json = Json { ignoreUnknownKeys = true }
 
-    /**
-     * نمادِ کاتالوگِ اپ → `base_currency.symbol`ِ سرویس.
-     *
-     * مقادیرِ سمتِ راست همه از enumِ `Currency`ِ مستنداتِ رسمی‌ان (نه حدس). فهرستِ کاملِ enum:
-     * `IRT, SEKB, SEKE, SEKEN, SEKER, SEKEB86, SEKEB86N, SEKEB86R, SEKG, GOLD18M, GOLDO,
-     * GOLD18, GOLD24, SILVER999, USD, EUR, GBP, CHF, CAD, AUD, ..., USDT, BTC, ETH, BNB,
-     * XRP, BCH, LTC, EOS, XAUT, PAXG`
-     *
-     * ⚠️ **پنج سکه تنها جاییه که هنوز صددرصد قطعی نیست.** مستندات فقط اسمِ کوتاه رو داده و
-     * نگفته کدوم کدومه؛ نگاشتِ زیر از قراردادِ رایجِ سرویس‌های قیمتِ ایرانی اومده
-     * (SEK+E=امامی، SEK+B=بهار آزادی، N=نیم، R=ربع، G=گرمی). جوابِ سرویس **نامِ فارسیِ هر
-     * نماد** (`name.fa`) رو هم داره و [Snapshot.raw] چاپش می‌کنه - بعدِ اولین fetchِ موفق
-     * یه نگاه به همون کافیه تا تایید یا اصلاح بشه.
-     *
-     * مقصدهایی که تو کاتالوگِ اپ هستن ولی سرویس **اصلاً نداره**: `TRX`, `SOL`, `DOGE`, `TON`.
-     * برای این‌ها قیمت نمیاد و اپ «—» نشون می‌ده - این درسته، نه باگ.
-     */
-    private val CATALOG_TO_BASE: Map<String, String> = mapOf(
+    /** نمادِ کاتالوگِ اپ → کدِ نمادِ سرویکس. همه‌ی مقصدها مستقیم به ریال (`_RLS`) هستن. */
+    private val CATALOG_TO_CODE: Map<String, String> = mapOf(
         // رمزارز
-        "BTC" to "BTC",
-        "ETH" to "ETH",
-        "USDT" to "USDT",
-        "XAUT" to "XAUT",
-        "BNB" to "BNB",
-        "LTC" to "LTC",
-        "XRP" to "XRP",
+        "BTC" to "BTC_RLS",
+        "ETH" to "ETH_RLS",
+        "USDT" to "USDT_RLS",
+        "XAUT" to "XAUT_RLS",
+        "BNB" to "BNB_RLS",
+        "LTC" to "LTC_RLS",
+        "XRP" to "XRP_RLS",
         // ارز
-        "USD" to "USD",
-        "EUR" to "EUR",
-        "CAD" to "CAD",
-        "GBP" to "GBP",
-        "TRY" to "TRY",
-        "AED" to "AED",
-        // طلا و نقره
-        "GOLD_24" to "GOLD24",
-        "GOLD_18" to "GOLD18",
-        "SILVER_999" to "SILVER999",
-        // سکه - رجوع کن به هشدارِ بالا
-        "SEKKE_EMAMI" to "SEKE",
-        "SEKKE_AZADI" to "SEKB",
-        "NIM_SEKKE" to "SEKEN",
-        "ROB_SEKKE" to "SEKER",
-        "SEKKE_GERAMI" to "SEKG",
+        "USD" to "USD_RLS",
+        "EUR" to "EUR_RLS",
+        "CAD" to "CAD_RLS",
+        "GBP" to "GBP_RLS",
+        "TRY" to "TRY_RLS",
+        "AED" to "AED_RLS",
+        // طلا
+        "GOLD_24" to "GOLD_24_RLS",
+        "GOLD_18" to "GOLD_18_RLS",
+        // سکه
+        "SEKKE_EMAMI" to "SEKKEH_RLS",
+        "SEKKE_AZADI" to "BAHAR_RLS",
+        "NIM_SEKKE" to "NIM_SEKKEH_RLS",
+        "ROB_SEKKE" to "ROB_SEKKEH_RLS",
+        "SEKKE_GERAMI" to "GERAMI_SEKKEH_RLS",
     )
 
-    /**
-     * ترتیبِ اولویتِ منبعِ قیمت.
-     *
-     * `prices/all` یه بازار رو از چند منبع می‌ده؛ بدونِ ترتیبِ مشخص، قیمتِ نشون‌داده‌شده به
-     * ترتیبِ اتفاقیِ آرایه بستگی داشت و هر ساعت می‌پرید. اولویت با **میانگینِ منصفانه**ست،
-     * بعد منبعِ خودِ سرویس، بعد بازارهای واقعی. هر منبعی که اینجا نباشه آخرین انتخابه.
-     */
-    private val SOURCE_PRIORITY = listOf(
-        "FAIR_PRICE_AVERAGE", "GHEYMAT", "NAVASAN", "TGJU", "NOBITEX", "BONBAST",
-    )
-
-    /** واحدهایی که یعنی «قیمت به پولِ ایران». `IRT` تومنه پس ×۱۰ می‌شه. */
-    private val RIAL_QUOTES = setOf("IRT", "TMN", "IRR")
-
-    /** یه ردیفِ `GlobalPriceResource` بعد از پارس. */
-    internal data class Quote(
-        val base: String,
-        val quote: String,
-        val source: String,
-        val faName: String,
-        val sellPrice: Double,
-    )
+    /** یه ردیفِ جوابِ سرویکس بعد از پارس. */
+    internal data class Quote(val code: String, val faName: String, val value: Double)
 
     data class Snapshot(
         val updatedAt: String?,
@@ -175,9 +130,8 @@ object PriceService {
         if (!stale) return
 
         runCatching {
-            val response = httpClient.get(GHEYMAT_URL) {
-                header("x-api-token", PRICE_API_KEY)
-                header("X-Country-Code", "IR")
+            val response = httpClient.get(SERVIX_URL) {
+                header("X-API-Key", PRICE_API_KEY)
             }
             if (!response.status.isSuccess()) {
                 // ⚠️ **بدنه‌ی جواب هم لاگ می‌شه.** قبلاً فقط عددِ وضعیت لاگ می‌شد و یه
@@ -191,7 +145,7 @@ object PriceService {
                 return
             }
             val body = response.bodyAsText()
-            json.parseToJsonElement(body).jsonObject // اعتبارسنجی قبل از ذخیره
+            json.parseToJsonElement(body).jsonArray // اعتبارسنجی قبل از ذخیره
             Db.withConnection { conn ->
                 conn.prepareStatement(
                     """
@@ -238,60 +192,38 @@ object PriceService {
     }
 
     /**
-     * آرایه‌ی `data` → فهرستِ [Quote].
+     * آرایه‌ی ریشه → فهرستِ [Quote].
      *
-     * ردیفی که `sell_price`ِ عددی نداره یا `base`/`quote` نداره بی‌صدا رد می‌شه؛ یه ردیفِ
-     * خرابِ سرویس نباید کلِ تازه‌سازی رو بی‌نتیجه کنه.
+     * ردیفی که `value`ِ عددی نداره یا `code` نداره بی‌صدا رد می‌شه؛ یه ردیفِ خرابِ سرویس
+     * نباید کلِ تازه‌سازی رو بی‌نتیجه کنه.
      */
     internal fun parseQuotes(rawJson: String): List<Quote> {
-        val root = runCatching { json.parseToJsonElement(rawJson).jsonObject }.getOrNull() ?: return emptyList()
-        val items: JsonArray = runCatching { root["data"]?.jsonArray }.getOrNull() ?: return emptyList()
+        val items = runCatching { json.parseToJsonElement(rawJson).jsonArray }.getOrNull() ?: return emptyList()
         val out = mutableListOf<Quote>()
         for (item in items) {
             val obj = runCatching { item.jsonObject }.getOrNull() ?: continue
-            val base = obj["base_currency"]?.jsonObject?.get("symbol")?.jsonPrimitive?.content ?: continue
-            val quote = obj["quote_currency"]?.jsonObject?.get("symbol")?.jsonPrimitive?.content ?: continue
-            // `sell_price` تو مستندات **رشته**ست (`"7000"`) نه عدد.
-            val price = obj["sell_price"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: continue
-            val source = obj["price_source"]?.jsonObject?.get("symbol")?.jsonPrimitive?.content ?: ""
-            val faName = obj["name"]?.jsonObject?.get("fa")?.jsonPrimitive?.content ?: ""
-            out.add(Quote(base.uppercase(), quote.uppercase(), source.uppercase(), faName, price))
+            val code = obj["code"]?.jsonPrimitive?.content ?: continue
+            // `value` ممکنه رشته یا عدد باشه بسته به نسخه‌ی سرویس؛ هر دو رو می‌پذیریم.
+            val value = obj["value"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: continue
+            val faName = obj["labelFa"]?.jsonPrimitive?.content ?: ""
+            out.add(Quote(code.uppercase(), faName, value))
         }
         return out
     }
 
-    /**
-     * [Quote]ها → `نمادِ کاتالوگِ اپ ← قیمت به ریال`.
-     *
-     * سه مرحله: فقط بازارهای ریالی/تومنی می‌مونن · برای هر ارز **یک** منبع طبقِ
-     * [SOURCE_PRIORITY] انتخاب می‌شه · تومن به ریال تبدیل می‌شه.
-     */
+    /** [Quote]ها → `نمادِ کاتالوگِ اپ ← قیمت به ریال`. */
     internal fun mapToCatalog(quotes: List<Quote>): Map<String, Double> {
         if (quotes.isEmpty()) return emptyMap()
-        val rialOnly = quotes.filter { it.quote in RIAL_QUOTES }
-        val bestByBase = rialOnly
-            .groupBy { it.base }
-            .mapValues { (_, rows) ->
-                rows.minByOrNull { row ->
-                    val rank = SOURCE_PRIORITY.indexOf(row.source)
-                    if (rank >= 0) rank else SOURCE_PRIORITY.size
-                }!!
-            }
+        val byCode = quotes.associateBy { it.code }
         val out = mutableMapOf<String, Double>()
-        for ((catalogSymbol, baseSymbol) in CATALOG_TO_BASE) {
-            val row = bestByBase[baseSymbol] ?: continue
-            out[catalogSymbol] = if (row.quote == "IRR") row.sellPrice else row.sellPrice * 10
+        for ((catalogSymbol, code) in CATALOG_TO_CODE) {
+            val row = byCode[code] ?: continue
+            out[catalogSymbol] = row.value
         }
         return out
     }
 
-    /**
-     * چیزی که `GET /api/prices` تو فیلدِ `raw` برمی‌گردونه - **فقط برای دیباگ**.
-     *
-     * کلید `«ارز | منبع»` و نامِ فارسی هم توشه، چون تنها راهِ تاییدِ نگاشتِ سکه‌ها همینه:
-     * بعدِ اولین fetchِ موفق باید دید `SEKE` واقعاً «سکه امامی»ه یا نه.
-     */
+    /** چیزی که `GET /api/prices` تو فیلدِ `raw` برمی‌گردونه - **فقط برای دیباگ**. */
     private fun debugRaw(quotes: List<Quote>): Map<String, Double> =
-        quotes.filter { it.quote in RIAL_QUOTES }
-            .associate { "${it.base} | ${it.source} | ${it.faName}" to it.sellPrice }
+        quotes.associate { "${it.code} | ${it.faName}" to it.value }
 }
