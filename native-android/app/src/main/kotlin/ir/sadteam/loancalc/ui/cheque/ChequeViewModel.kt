@@ -128,9 +128,16 @@ class ChequeViewModel @Inject constructor(
         }
     }
 
-    fun addChequeBook(ownerName: String, bankName: String, startSerial: Long, endSerial: Long) {
+    fun addChequeBook(
+        ownerName: String,
+        bankName: String,
+        startSerial: Long,
+        endSerial: Long,
+        sayadId: String? = null,
+        last4: String? = null,
+    ) {
         viewModelScope.launch {
-            chequeRepository.addChequeBook(ownerName, bankName, startSerial, endSerial)
+            chequeRepository.addChequeBook(ownerName, bankName, startSerial, endSerial, sayadId, last4)
             syncIfLoggedIn()
         }
     }
@@ -138,6 +145,14 @@ class ChequeViewModel @Inject constructor(
     fun deleteChequeBook(book: ChequeBookEntity) {
         viewModelScope.launch {
             chequeRepository.deleteChequeBook(book)
+            syncIfLoggedIn()
+        }
+    }
+
+    /** بستنِ یه دسته‌چکِ تمام‌شده - فریمِ `29k`. */
+    fun closeChequeBook(book: ChequeBookEntity) {
+        viewModelScope.launch {
+            chequeRepository.closeChequeBook(book)
             syncIfLoggedIn()
         }
     }

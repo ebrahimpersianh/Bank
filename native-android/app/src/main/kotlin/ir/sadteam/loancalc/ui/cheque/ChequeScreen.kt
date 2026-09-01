@@ -288,8 +288,11 @@ fun ChequeScreen(
             "books" -> ChequeBooksScreen(
                 books = chequeBooks,
                 onBack = { showChequeBooks = false },
-                onAdd = { owner, bank, start, end -> viewModel.addChequeBook(owner, bank, start, end) },
+                onAdd = { owner, bank, start, end, sayadId, last4 ->
+                    viewModel.addChequeBook(owner, bank, start, end, sayadId, last4)
+                },
                 onDelete = { viewModel.deleteChequeBook(it) },
+                onClose = { viewModel.closeChequeBook(it) },
             )
             "add" -> AddEditChequeScreen(
                 existing = editingCheque,
