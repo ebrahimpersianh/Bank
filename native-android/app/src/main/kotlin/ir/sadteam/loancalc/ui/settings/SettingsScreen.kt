@@ -196,6 +196,7 @@ import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
@@ -1762,14 +1763,27 @@ private fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
             fontSize = 12.sp,
             lineHeight = 20.sp,
         )
-        // **راهنمای سه‌قدمیِ کارتِ `35c`** - صفحه‌ای که باز می‌شه مالِ اندروزیده نه جیبک، پس
-        // کاربر باید از قبل بدونه اونجا دنبالِ چی بگرده.
-        NotificationPermissionSteps(modifier = Modifier.padding(top = 12.dp))
-        GradientButton(
-            onClick = { openListenerSettings() },
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-        ) {
-            Text("بریم به تنظیماتِ گوشی")
+        // **قاعده‌ی صریحِ سندِ `35c`**: اگه مجوز از قبل روشنه، راهنما اصلاً نشون داده نشه و
+        // جاش حالتِ «فعال شد» (`35d`) بیاد. سه قدمِ راهنما برای کسی که کارش تمومه فقط نویزه.
+        if (listenerGranted) {
+            Text(
+                "اجازه‌ی خواندنِ اعلان از قبل داده شده - این بخش کارِ دیگه‌ای ازت نمی‌خواد.",
+                color = AppPrimaryDim,
+                fontSize = 12.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+        } else {
+            // **راهنمای سه‌قدمیِ کارتِ `35c`** - صفحه‌ای که باز می‌شه مالِ اندرویده نه جیبک، پس
+            // کاربر باید از قبل بدونه اونجا دنبالِ چی بگرده.
+            NotificationPermissionSteps(modifier = Modifier.padding(top = 12.dp))
+            GradientButton(
+                onClick = { openListenerSettings() },
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            ) {
+                Text("بازکردنِ تنظیمات")
+            }
         }
         Text(
             "فیلتر روی خودِ گوشیه، نه سرور: فقط اعلانِ همون بانکی که خودت انتخاب کردی خونده " +
@@ -1897,30 +1911,86 @@ private fun NotificationAppPicker(viewModel: SmsAutoImportViewModel, modifier: M
 private fun notificationListenerGranted(context: Context): Boolean =
     NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
 
-/** سه قدمِ کارتِ `35c` - همون‌طور که طرح می‌خواد: شماره‌دار، کوتاه، و با لحنِ «چی می‌بینی». */
+/**
+ * سه قدمِ کارتِ `35c` (نسخه‌ی نهایی، فریمِ `37e`).
+ *
+ * **دو چیز عمداً از طرح بیرون رفت** و برنگردونشون:
+ * - **عکسِ صفحه‌ی اندروید**: عنوان و زبانِ اون صفحه بینِ سازنده‌ها فرق داره (رو شیائومیِ کاربر
+ *   `Device & app notifications` بود و کلاً انگلیسی)، پس عکسِ یه گوشی برای بقیه گمراه‌کننده‌ست.
+ * - **متنِ مسیر** («تنظیمات ← برنامه‌ها ← …»): `ACTION_NOTIFICATION_LISTENER_SETTINGS` کاربر رو
+ *   **مستقیم رو صفحه‌ی مقصد** فرود میاره، پس اون مسیر چیزی رو توضیح می‌داد که کاربر هیچ‌وقت
+ *   نمی‌بینه. (تاییدِ عملیِ کاربر رو گوشیِ واقعی.)
+ *
+ * ⚠️ **قدمِ ۱ و ۲ عمداً جدان.** نسخه‌ی قبلیِ همین تابع می‌گفت «کلیدِ کنارِ اسمش رو روشن کن» که
+ * **غلط بود**: تو فهرست کلیدی نیست، باید رو اسم زد تا صفحه‌ی خودش باز بشه. طراح تاکید کرد
+ * بیشترِ کاربرها دقیقاً همین‌جا گیر می‌کنن.
+ *
+ * رشته‌های انگلیسی (`NOT ALLOWED`, `ALLOWED`, `Allow notification access`, `Allow`) **ترجمه
+ * نمی‌شن** و با [Ltr] می‌شینن - رابطِ تنظیمات حتی رو گوشیِ فارسی هم انگلیسیه.
+ */
 @Composable
 private fun NotificationPermissionSteps(modifier: Modifier = Modifier) {
-    val steps = listOf(
-        "تو لیستِ «دسترسی به اعلان‌ها» دنبالِ «جیبک» بگرد - لیست الفبایی نیست، تا پایین برو.",
-        "کلیدِ کنارِ اسمش رو روشن کن.",
-        "تو پنجره‌ی تاییدِ اندروید، «اجازه» رو بزن.",
+    // هر قدم: متنِ فارسی، و رشته‌ی انگلیسیِ لنگر (اگه داشته باشه) که عیناً دیده می‌شه.
+    val steps: List<Triple<String, String?, String>> = listOf(
+        Triple(
+            "تو فهرست دنبالِ «جیبک» بگرد",
+            "NOT ALLOWED",
+            "ممکنه زیرِ این سرگروه باشه. اگه از قبل زیرِ ALLOWED بود، کار تمومه.",
+        ),
+        Triple(
+            "روش بزن",
+            null,
+            "صفحه‌ی خودش باز می‌شه - کلید اونجاست، نه تو فهرست.",
+        ),
+        Triple(
+            "این کلید رو روشن کن",
+            "Allow notification access",
+            "بعدش اندروید یه پنجره‌ی تایید میاره؛ Allow رو بزن.",
+        ),
     )
     Column(modifier = modifier) {
-        steps.forEachIndexed { index, step ->
-            Row(modifier = Modifier.padding(bottom = 8.dp)) {
+        steps.forEachIndexed { index, (title, anchor, hint) ->
+            Row(modifier = Modifier.padding(bottom = 10.dp)) {
                 Text(
                     toFa(index + 1),
                     color = AppPrimary,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
                 )
-                Text(
-                    step,
-                    color = AppMuted,
-                    fontSize = 11.5.sp,
-                    lineHeight = 19.sp,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
+                Column(modifier = Modifier.padding(start = 8.dp)) {
+                    Text(
+                        title,
+                        color = AppText,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    if (anchor != null) {
+                        // کارتِ سفیدِ لنگر - عیناً همون رشته‌ای که کاربر رو صفحه‌ی اندروید می‌بینه.
+                        Ltr {
+                            Text(
+                                anchor,
+                                color = AppText,
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Black,
+                                textAlign = TextAlign.Start,
+                                modifier = Modifier
+                                    .padding(top = 5.dp)
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(AppSurface)
+                                    .border(1.5.dp, AppLine, RoundedCornerShape(10.dp))
+                                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                            )
+                        }
+                    }
+                    Text(
+                        hint,
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                        lineHeight = 18.sp,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
         }
     }
