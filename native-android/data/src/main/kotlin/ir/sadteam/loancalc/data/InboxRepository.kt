@@ -3,17 +3,18 @@ package ir.sadteam.loancalc.data
 import ir.sadteam.loancalc.data.db.InboxMessageDao
 import ir.sadteam.loancalc.data.db.InboxMessageEntity
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * مرکزِ پیام‌ها - بخشِ ۴۰ طراحی.
  *
  * **منبعِ واحد** (قاعده‌ی صریحِ طرح): هر پیامی که قراره کاربر ببینه **اول اینجا** ساخته می‌شه؛
  * اعلانِ گوشی از رو همین ردیف ساخته می‌شه، نه برعکس.
+ *
+ * ⚠️ **کلاسِ سادست، نه `@Inject constructor`** - `provideInboxRepository`ِ `AppModule` این رو
+ * می‌سازه (مثلِ بقیه‌ی ریپازیتوری‌های `:data`). `:data` هیچ وابستگیِ Dagger/Hiltی نداره؛
+ * constructor injectionِ قبلی باعثِ شکستِ `kaptDebugKotlin` با `error.NonExistentClass` می‌شد.
  */
-@Singleton
-class InboxRepository @Inject constructor(
+class InboxRepository(
     private val dao: InboxMessageDao,
 ) {
     fun observeAll(): Flow<List<InboxMessageEntity>> = dao.observeAll()

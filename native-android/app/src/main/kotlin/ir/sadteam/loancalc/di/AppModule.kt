@@ -24,6 +24,7 @@ import ir.sadteam.loancalc.data.ParsingRuleRepository
 import ir.sadteam.loancalc.data.db.AccountDao
 import ir.sadteam.loancalc.data.db.AccountTransactionDao
 import ir.sadteam.loancalc.data.db.AchievementDao
+import ir.sadteam.loancalc.data.InboxRepository
 import ir.sadteam.loancalc.data.db.InboxMessageDao
 import ir.sadteam.loancalc.data.db.AppDatabase
 import ir.sadteam.loancalc.data.db.AssetDao
@@ -192,10 +193,18 @@ object AppModule {
     @Provides
     fun provideAchievementDao(database: AppDatabase): AchievementDao = database.achievementDao()
 
-    // مرکزِ پیام‌ها (بخشِ ۴۰) - InboxRepository خودش @Singleton و @Inject constructor داره،
-    // پس فقط DAO لازمه.
+    // مرکزِ پیام‌ها (بخشِ ۴۰).
+    // ⚠️ InboxRepository قبلاً `@Inject constructor`/`@Singleton` داشت، ولی `:data` هیچ‌وقت
+    // وابستگیِ Dagger/Hilt نداره (فقط Room) - همون constructor injection باعثِ شکستِ
+    // `:data:kaptDebugKotlin` با `error.NonExistentClass` رو annotationها می‌شد، چون `javax.inject`
+    // درست رو classpathِ آنوتیشن‌پروسسینگِ اون ماژول نبود. مثلِ بقیه‌ی ریپازیتوری‌ها (که همه کلاسِ
+    // سادن و اینجا provide می‌شن) برگشت به الگوی معمولی.
     @Provides
     fun provideInboxDao(database: AppDatabase): InboxMessageDao = database.inboxDao()
+
+    @Provides
+    @Singleton
+    fun provideInboxRepository(dao: InboxMessageDao): InboxRepository = InboxRepository(dao)
 
     @Provides
     @Singleton
