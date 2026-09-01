@@ -1007,11 +1007,15 @@ fun LoanDetailScreen(
             // کارتِ «تسویه‌ی زودتر» - فریمِ `27b`. فقط وقتی عددِ معناداری در بیاد.
             val unpaidTotal = rows.filter { it["paid"] != true }
                 .sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
-            val saving = remember(loan, unpaidTotal) {
-                viewModel.earlySettlementSaving(loan, unpaidTotal)
-            }
-            if (saving != null) {
-                item { EarlySettlementCard(saving = saving, privacyMode = privacyMode) }
+            // ⚠️ `remember` اینجا **نمی‌شه** - این بلوک `LazyListScope`ه نه یه @Composable؛
+            // کشِ محاسبه باید داخلِ خودِ `item` بشینه.
+            item {
+                val saving = remember(loan, unpaidTotal) {
+                    viewModel.earlySettlementSaving(loan, unpaidTotal)
+                }
+                if (saving != null) {
+                    EarlySettlementCard(saving = saving, privacyMode = privacyMode)
+                }
             }
         }
 

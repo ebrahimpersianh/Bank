@@ -443,7 +443,7 @@ sqlite3 ~/VameMan/data.sqlite \
 
 **دارایی**: تپ رو طلا/رمزارز حالا `AssetDetailScreen` رو باز می‌کنه (`onOpenAsset` خالی مونده بود).
 
-**بررسیِ ایستا: الان ۱۱ بررسی.** سه خلأ تو همین نشست پیدا و بسته شد:
+**بررسیِ ایستا: الان ۱۲ بررسی.** سه خلأ تو همین نشست پیدا و بسته شد:
 1. `tools/static-checks/icons.py` **(تازه)** - `Icons.Filled.X` بدونِ ایمپورت + `roundToInt`.
 2. `verify.py`: `BasicTextField`/`SolidColor`/`TextAlign`/`TextStyle`/`KeyboardOptions` اضافه شدن -
    بلافاصله یه `TextAlign`ِ بی‌ایمپورتِ **واقعی** تو `LoanDetailScreen` گرفت که بیلد رو می‌شکست.
