@@ -39,6 +39,24 @@ jobs:
             echo "=== جوابِ محلیِ API (پورت 3000) ==="
             curl -s -o /dev/null -w "HTTP status: %{http_code}\n" --max-time 5 http://localhost:3000/api/app-version || echo "جواب نداد"
             echo ""
+            echo "=== قیمت‌ها: آیا کلید ست شده؟ ==="
+            grep -q '^PRICE_API_KEY=' ~/VameMan/.env && echo "PRICE_API_KEY هست" || echo "PRICE_API_KEY تو .env نیست"
+            echo ""
+            echo "=== قیمت‌ها: جوابِ خودمون (/api/prices) ==="
+            curl -s --max-time 10 http://localhost:3000/api/prices | head -c 1500
+            echo ""
+            echo ""
+            echo "=== قیمت‌ها: پاسخِ خامِ خودِ gheymat.online (برای اصلاحِ SYMBOL_ALIASES) ==="
+            # ⚠️ فقط **اسمِ نمادها** چاپ می‌شه نه کلِ بدنه - کلیدِ API تو هدره و تو لاگ نمی‌ره.
+            PK=$(grep '^PRICE_API_KEY=' ~/VameMan/.env | cut -d= -f2-)
+            if [ -n "$PK" ]; then
+              curl -s --max-time 15 -H "x-api-token: $PK" -H "X-Country-Code: IR" \
+                https://backend.gheymat.online/api/prices/all \
+                | tr ',' '\n' | grep -o '"symbol":"[^"]*"' | sort -u | head -80
+            else
+              echo "کلید نیست، رد شد"
+            fi
+            echo ""
             echo "=== ۱۰ خطِ آخرِ لاگ ==="
             pm2 logs loan-calc-api --lines 10 --nostream
             echo ""
