@@ -17,6 +17,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.core.ChequeRiskScore
 import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.TransactionType
@@ -38,14 +40,20 @@ import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.components.AccountPickerDialog
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.Avatar
+import ir.sadteam.loancalc.ui.components.AvatarColor
+import ir.sadteam.loancalc.ui.components.AvatarShape
+import ir.sadteam.loancalc.ui.components.AvatarView
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
 import ir.sadteam.loancalc.ui.components.ReminderOverrideCard
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
+import ir.sadteam.loancalc.ui.debt.DebtViewModel
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -61,10 +69,20 @@ fun ChequeDetailScreen(
     onSayadInquiry: () -> Unit,
     viewModel: ChequeViewModel,
     accountViewModel: AccountViewModel = hiltViewModel(),
+    debtViewModel: DebtViewModel = hiltViewModel(),
 ) {
     val typeLabel = if (cheque.type == "RECEIVED") "دریافتی" else "پرداختی"
     val banner = rememberInAppBanner()
     var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    // طرفِ‌حسابِ لینک‌شده + امتیازِ ریسکِ برگشت - جوابِ سوالِ ۲ و ۶، فریمِ `29l`.
+    val counterparties by debtViewModel.counterparties.collectAsState()
+    val counterparty = counterparties.firstOrNull { it.id == cheque.counterpartyId }
+    var riskScore by remember(cheque.id) { mutableStateOf<ChequeRiskScore?>(null) }
+    LaunchedEffect(cheque.counterpartyId) {
+        val cid = cheque.counterpartyId
+        if (cid != null) viewModel.riskScoreFor(cid) { riskScore = it } else riskScore = null
+    }
 
     // سینکِ خودکارِ پاس‌شدنِ چک ↔ حسابداری (تصمیمِ صریحِ کاربر، رجوع کن به CLAUDE.md، هم‌الگو با
     // LoanDetailScreen) - فقط موقعِ گذر *به* «پاس‌شده» (نه سایرِ وضعیت‌ها، نه وقتی از قبل پاس‌شده)
@@ -137,6 +155,45 @@ fun ChequeDetailScreen(
                         "${toFa(cheque.dueDay)}/${toFa(cheque.dueMonth)}/${toFa(cheque.dueYear)}",
                     )
                     if (cheque.notes.isNotBlank()) DetailRow("بابت", cheque.notes)
+                }
+            }
+        }
+
+        if (counterparty != null) {
+            item {
+                AppCard(label = "طرف حساب") {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AvatarView(
+                                avatar = Avatar(
+                                    shape = runCatching { AvatarShape.valueOf(counterparty.avatarShape) }.getOrDefault(AvatarShape.BOY),
+                                    color = runCatching { AvatarColor.valueOf(counterparty.avatarColor) }.getOrDefault(AvatarColor.NEUTRAL),
+                                ),
+                                size = 40.dp,
+                            )
+                            Column(modifier = Modifier.padding(start = 10.dp)) {
+                                Text(counterparty.name, color = AppText, fontSize = 14.sp)
+                                val phone = counterparty.phone
+                                if (!phone.isNullOrBlank()) {
+                                    Text(toFa(phone), color = AppMuted, fontSize = 11.sp)
+                                }
+                            }
+                        }
+                        val risk = riskScore
+                        if (risk != null && risk.hasHistory) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text("امتیازِ ریسکِ برگشت", color = AppMuted, fontSize = 12.sp)
+                                Text(
+                                    "${toFa(risk.score)} از ۱۰۰ (${toFa(risk.passedCount)} پاس، ${toFa(risk.bouncedCount)} برگشتی)",
+                                    color = if (risk.score >= 70) AppPrimary else AppDanger,
+                                    fontSize = 12.sp,
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

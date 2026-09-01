@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.core.ChequeRiskScore
 import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.core.ChequeType
 import ir.sadteam.loancalc.data.AttachmentStorage
@@ -165,6 +166,11 @@ class ChequeViewModel @Inject constructor(
             chequeRepository.updateCheque(cheque.copy(reminderDayOffsets = offsets))
             syncIfLoggedIn()
         }
+    }
+
+    /** امتیازِ ریسکِ برگشتِ صادرکننده - جوابِ سوالِ ۲، فریمِ `29l`. */
+    fun riskScoreFor(counterpartyId: Long, onResult: (ChequeRiskScore) -> Unit) {
+        viewModelScope.launch { onResult(chequeRepository.riskScoreFor(counterpartyId)) }
     }
 
     fun exportBackup(onResult: (String) -> Unit) {
