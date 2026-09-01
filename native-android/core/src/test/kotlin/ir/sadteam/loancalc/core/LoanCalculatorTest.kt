@@ -135,8 +135,8 @@ class LoanCalculatorTest {
 
     @Test
     fun fmtMatchesJsReference() {
-        assertTrue(fmt(9392433.0) == "۹,۳۹۲,۴۳۳")
-        assertTrue(fmt(112709199.0) == "۱۱۲,۷۰۹,۱۹۹")
+        assertTrue(fmt(9392433.0) == "۹٬۳۹۲٬۴۳۳")
+        assertTrue(fmt(112709199.0) == "۱۱۲٬۷۰۹٬۱۹۹")
     }
 
     @Test

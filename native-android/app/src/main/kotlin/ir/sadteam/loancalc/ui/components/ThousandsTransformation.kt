@@ -4,6 +4,8 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import ir.sadteam.loancalc.core.FA_THOUSANDS_SEPARATOR
+import ir.sadteam.loancalc.core.toFa
 
 /**
  * جداکننده‌ی هزارگان برای فیلدهای مبلغ، به‌صورت VisualTransformation - یعنی متنِ واقعیِ داخلِ
@@ -24,7 +26,10 @@ class ThousandsSeparatorTransformation : VisualTransformation {
         val formatted = if (digits.isEmpty()) {
             ""
         } else {
-            digits.reversed().chunked(3).joinToString(",").reversed()
+            // ارقام و جداکننده هر دو **فارسی** نمایش داده می‌شن؛ متنِ واقعیِ state همچنان
+            // رقمِ لاتینِ خامه (قراردادِ بالای همین کلاس). چون هر رقمِ فارسی و خودِ `٬` هم
+            // یه کاراکترن، OffsetMapping دست‌نخورده درست می‌مونه.
+            toFa(digits).reversed().chunked(3).joinToString(FA_THOUSANDS_SEPARATOR.toString()).reversed()
         }
         val mapping = object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int {
