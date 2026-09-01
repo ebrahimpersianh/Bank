@@ -6,10 +6,12 @@ import android.service.notification.StatusBarNotification
 import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.core.BankSmsParser
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.MerchantCategoryGuesser
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.InboxRepository
+import ir.sadteam.loancalc.data.ParsingRuleRepository
 import ir.sadteam.loancalc.data.db.InboxMessageEntity
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import kotlinx.coroutines.CoroutineScope
@@ -50,6 +52,8 @@ class BankNotificationListener : NotificationListenerService() {
 
     @Inject lateinit var inboxRepository: InboxRepository
 
+    @Inject lateinit var parsingRuleRepository: ParsingRuleRepository
+
     @Inject lateinit var uiPrefs: UiPrefs
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -87,6 +91,13 @@ class BankNotificationListener : NotificationListenerService() {
                 ?: return@launch
 
             val today = JalaliCalendar.today()
+            val isWithdrawal = parsed.type == TransactionType.WITHDRAWAL
+            // همون ترتیبِ BankSmsReceiver: قاعده‌ی دستیِ کاربر، بعد حدسِ کلیدواژه‌ای، بعد دسته‌ی
+            // کور - رجوع کن به کامنتِ BankSmsReceiver برای توضیحِ کامل.
+            val ruleCategory = parsingRuleRepository.firstMatch(body, isWithdrawal)?.category
+            val guessedCategory = ruleCategory ?: MerchantCategoryGuesser.guess(body, isWithdrawal)
+            val confident = guessedCategory != null
+            val category = guessedCategory ?: if (isWithdrawal) "سایر هزینه" else "سایر درآمد"
             // ⚠️ **تاییدنشده** ثبت می‌شه (تصمیمِ صریحِ کاربر): تا وقتی خودش تاییدش نکرده رو
             // موجودی اثر نمی‌ذاره. کارتِ اقدام‌دارِ مرکزِ پیام‌ها ازش ساخته می‌شه.
             val txId = accountRepository.addTransaction(
@@ -97,15 +108,19 @@ class BankNotificationListener : NotificationListenerService() {
                 year = today.y,
                 month = today.m,
                 day = today.d,
-                category = if (parsed.type == TransactionType.WITHDRAWAL) "سایر هزینه" else "سایر درآمد",
+                category = category,
                 confirmed = false,
             )
             // منبعِ واحد: پیام اول اینجا ساخته می‌شه؛ اعلانِ گوشیِ خودمون (اگه بعداً اضافه بشه)
             // باید از رو همین ردیف ساخته بشه، نه مستقل.
             inboxRepository.post(
                 kind = InboxMessageEntity.Kind.DETECTED_TX,
-                title = if (parsed.type == TransactionType.WITHDRAWAL) "برداشتِ تازه" else "واریزِ تازه",
-                body = "${fmt(parsed.amountRial)} ریال از «${account.name}» - تایید می‌کنی؟",
+                title = if (isWithdrawal) "برداشتِ تازه" else "واریزِ تازه",
+                body = if (confident) {
+                    "${fmt(parsed.amountRial)} ریال از «${account.name}» - دسته: $category. تایید می‌کنی؟"
+                } else {
+                    "${fmt(parsed.amountRial)} ریال از «${account.name}» - دسته‌بندیش نامشخصه، لمس کن و خودت انتخاب کن."
+                },
                 refId = txId.toString(),
             )
             uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")

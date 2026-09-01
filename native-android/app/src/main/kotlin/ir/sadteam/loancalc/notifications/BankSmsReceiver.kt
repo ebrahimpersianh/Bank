@@ -7,6 +7,7 @@ import android.provider.Telephony
 import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.core.BankSmsParser
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.MerchantCategoryGuesser
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.smsSenderMatches
 import ir.sadteam.loancalc.core.fmt
@@ -71,6 +72,14 @@ class BankSmsReceiver : BroadcastReceiver() {
                     ?: return@launch
 
                 val today = JalaliCalendar.today()
+                val isWithdrawal = parsed.type == TransactionType.WITHDRAWAL
+                // ترتیبِ دسته‌بندی: ۱) قاعده‌ی دستیِ خودِ کاربر (مرتب، اولین تطبیق برنده) ۲)
+                // حدسِ کلیدواژه‌ای از رو متنِ پیامک (بندِ ۲.۲) ۳) دسته‌ی کورِ قبلی، وقتی هیچ‌کدوم
+                // مطمئن نبودن - و تو این حالتِ آخر پیامِ اعلان صریح می‌گه کاربر باید خودش انتخاب کنه.
+                val ruleCategory = parsingRuleRepository.firstMatch(body, isWithdrawal)?.category
+                val guessedCategory = ruleCategory ?: MerchantCategoryGuesser.guess(body, isWithdrawal)
+                val confident = guessedCategory != null
+                val category = guessedCategory ?: if (isWithdrawal) "سایر هزینه" else "سایر درآمد"
                 // ⚠️ **تاییدنشده** (تصمیمِ صریحِ کاربر) - تا تاییدِ خودش رو موجودی اثر نمی‌ذاره.
                 val txId = accountRepository.addTransaction(
                     accountId = account.id,
@@ -80,17 +89,17 @@ class BankSmsReceiver : BroadcastReceiver() {
                     year = today.y,
                     month = today.m,
                     day = today.d,
-                    // قاعده‌های تشخیص: **مرتب، اولین تطبیق برنده**. اگه هیچ قاعده‌ای نخورد،
-                    // همون دسته‌ی کورِ قبلی می‌مونه (نه حدسِ الکی).
-                    category = parsingRuleRepository.firstMatch(body, parsed.type == TransactionType.WITHDRAWAL)
-                        ?.category
-                        ?: if (parsed.type == TransactionType.WITHDRAWAL) "سایر هزینه" else "سایر درآمد",
+                    category = category,
                     confirmed = false,
                 )
                 inboxRepository.post(
                     kind = InboxMessageEntity.Kind.DETECTED_TX,
-                    title = if (parsed.type == TransactionType.WITHDRAWAL) "برداشتِ تازه" else "واریزِ تازه",
-                    body = "${fmt(parsed.amountRial)} ریال از «${account.name}» - تایید می‌کنی؟",
+                    title = if (isWithdrawal) "برداشتِ تازه" else "واریزِ تازه",
+                    body = if (confident) {
+                        "${fmt(parsed.amountRial)} ریال از «${account.name}» - دسته: $category. تایید می‌کنی؟"
+                    } else {
+                        "${fmt(parsed.amountRial)} ریال از «${account.name}» - دسته‌بندیش نامشخصه، لمس کن و خودت انتخاب کن."
+                    },
                     refId = txId.toString(),
                 )
                 uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
