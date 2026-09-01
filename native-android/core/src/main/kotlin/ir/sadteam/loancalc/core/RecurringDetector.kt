@@ -55,6 +55,10 @@ object RecurringDetector {
         var s = normalizePersianName(raw)
         s = s.replace(Regex("[0-9۰-۹]+"), " ")
         NOISE_WORDS.forEach { s = s.replace(it, " ") }
+        // ⚠️ **علائم هم باید برن، نه فقط عدد و کلمه.** وگرنه «اسنپ -» و «اسنپ» دو گروهِ
+        // جدا می‌شن و هیچ‌کدوم به حدنصابِ سه ماه نمی‌رسن - یعنی اشتراکِ واقعی اصلاً کشف
+        // نمی‌شه. تستِ normalizeLabel_strips_digits_and_noise همین رو گرفت.
+        s = s.replace(Regex("[-–—_,،:;.·/\\\\()\\[\\]{}*#+]"), " ")
         return s.replace(Regex("\\s+"), " ").trim()
     }
 
