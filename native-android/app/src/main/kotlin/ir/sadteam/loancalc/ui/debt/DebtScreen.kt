@@ -14,17 +14,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -47,6 +52,10 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.CounterpartyEntity
 import ir.sadteam.loancalc.data.db.DebtEntity
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.Avatar
+import ir.sadteam.loancalc.ui.components.AvatarColor
+import ir.sadteam.loancalc.ui.components.AvatarShape
+import ir.sadteam.loancalc.ui.components.AvatarView
 import ir.sadteam.loancalc.ui.components.CoinCelebration
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
@@ -125,7 +134,7 @@ fun DebtScreen(
             "dang-create" -> DangCreateScreen(
                 counterparties = counterparties,
                 onCancel = { dangScreen = "list" },
-                onCreateCounterparty = { name, onCreated -> viewModel.addCounterparty(name, onCreated) },
+                onCreateCounterparty = { name, onCreated -> viewModel.addCounterparty(name, onResult = onCreated) },
                 onSave = { title, method, total, y, m, d, eventMode, participants, items ->
                     dangViewModel.createEvent(title, method, total, y, m, d, eventMode, participants, items) {
                         dangScreen = "list"
@@ -150,6 +159,7 @@ fun DebtScreen(
                     debts = debts.filter { it.counterpartyId == counterparty.id },
                     onBack = { openedCounterpartyId = null },
                     onDelete = { pendingDelete = counterparty },
+                    onUpdate = { viewModel.updateCounterparty(it) },
                     onAddDebt = { amount, type, description, y, m, d ->
                         viewModel.addDebt(counterparty.id, amount, type, description, y, m, d)
                     },
@@ -173,7 +183,7 @@ fun DebtScreen(
                 onOpen = { openedCounterpartyId = it.id },
                 showAddCounterparty = showAddCounterparty,
                 onShowAddCounterpartyChange = { showAddCounterparty = it },
-                onAddCounterparty = { viewModel.addCounterparty(it) },
+                onAddCounterparty = { name, phone -> viewModel.addCounterparty(name, phone) },
                 netBalance = { id -> viewModel.netBalance(id, debts) },
                 onOpenDang = { dangScreen = "list" },
             )
@@ -198,12 +208,13 @@ private fun DebtList(
     onOpen: (CounterpartyEntity) -> Unit,
     showAddCounterparty: Boolean,
     onShowAddCounterpartyChange: (Boolean) -> Unit,
-    onAddCounterparty: (String) -> Unit,
+    onAddCounterparty: (name: String, phone: String?) -> Unit,
     netBalance: (Long) -> Double,
     onOpenDang: () -> Unit,
 ) {
     val privacyMode = LocalPrivacyMode.current
     var newName by rememberSaveable { mutableStateOf("") }
+    var newPhone by rememberSaveable { mutableStateOf("") }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val visibleCounterparties = remember(counterparties, searchQuery) {
         val q = searchQuery.trim()
@@ -251,11 +262,22 @@ private fun DebtList(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                     )
+                    Ltr {
+                        OutlinedTextField(
+                            value = newPhone,
+                            onValueChange = { newPhone = cleanNum(it) },
+                            label = { Text("موبایل (اختیاری)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                            singleLine = true,
+                        )
+                    }
                     GradientButton(
                         onClick = {
                             if (newName.isNotBlank()) {
-                                onAddCounterparty(newName.trim())
+                                onAddCounterparty(newName.trim(), newPhone.trim().takeIf { it.isNotBlank() })
                                 newName = ""
+                                newPhone = ""
                                 onShowAddCounterpartyChange(false)
                             }
                         },
@@ -288,6 +310,7 @@ private fun DebtList(
                 val balance = netBalance(counterparty.id)
                 AppCard(modifier = Modifier.pressScaleClickable { onOpen(counterparty) }) {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        AvatarView(avatar = counterparty.toAvatar(), size = 38.dp, modifier = Modifier.padding(end = 10.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(counterparty.name, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             Text(
@@ -323,12 +346,14 @@ private fun CounterpartyDetail(
     debts: List<DebtEntity>,
     onBack: () -> Unit,
     onDelete: () -> Unit,
+    onUpdate: (CounterpartyEntity) -> Unit,
     onAddDebt: (amount: Double, type: DebtType, description: String, y: Int, m: Int, d: Int) -> Unit,
     onToggleSettled: (DebtEntity, Boolean) -> Unit,
     onDeleteDebt: (DebtEntity) -> Unit,
 ) {
     val privacyMode = LocalPrivacyMode.current
     var showAddDebt by rememberSaveable { mutableStateOf(false) }
+    var showEdit by rememberSaveable { mutableStateOf(false) }
     var amountText by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var type by rememberSaveable { mutableStateOf(DebtType.OWED_TO_ME) }
@@ -347,7 +372,17 @@ private fun CounterpartyDetail(
                 IconButton(onClick = onBack) {
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                 }
-                Text(counterparty.name, color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                AvatarView(avatar = counterparty.toAvatar(), size = 32.dp, modifier = Modifier.padding(end = 6.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(counterparty.name, color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    val phone = counterparty.phone
+                    if (!phone.isNullOrBlank()) {
+                        Text(toFa(phone), color = AppMuted, fontSize = 11.sp)
+                    }
+                }
+                IconButton(onClick = { showEdit = true }) {
+                    Icon(Icons.Filled.Edit, contentDescription = "ویرایشِ طرف‌حساب")
+                }
                 IconButton(onClick = onDelete) {
                     Icon(Icons.Filled.Delete, contentDescription = "حذفِ طرف‌حساب", tint = AppDanger)
                 }
@@ -467,7 +502,80 @@ private fun CounterpartyDetail(
             }
         }
     }
+    if (showEdit) {
+        EditCounterpartyDialog(
+            counterparty = counterparty,
+            onSave = { updated -> onUpdate(updated); showEdit = false },
+            onDismiss = { showEdit = false },
+        )
+    }
 }
+
+/** ویرایشِ اسم/موبایل/شکلِ آدمکِ یه طرف‌حساب - فریمِ `22d`. رنگِ آدمک عمداً اینجا قابلِ‌تغییر
+ * نیست (جوابِ سوالِ ۱۱: قطعی از رو اسمه، نه دستی). */
+@Composable
+private fun EditCounterpartyDialog(
+    counterparty: CounterpartyEntity,
+    onSave: (CounterpartyEntity) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf(counterparty.name) }
+    var phone by remember { mutableStateOf(counterparty.phone ?: "") }
+    var shape by remember { mutableStateOf(runCatching { AvatarShape.valueOf(counterparty.avatarShape) }.getOrDefault(AvatarShape.BOY)) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("ویرایشِ طرف‌حساب") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("اسم") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                Ltr {
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = { phone = cleanNum(it) },
+                        label = { Text("موبایل (اختیاری)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                        singleLine = true,
+                    )
+                }
+                Row(modifier = Modifier.padding(top = 12.dp)) {
+                    AvatarShape.entries.forEach { s ->
+                        TextButton(onClick = { shape = s }) {
+                            AvatarView(
+                                avatar = Avatar(shape = s, color = runCatching { AvatarColor.valueOf(counterparty.avatarColor) }.getOrDefault(AvatarColor.NEUTRAL)),
+                                size = if (shape == s) 44.dp else 38.dp,
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (name.isNotBlank()) {
+                        onSave(counterparty.copy(name = name.trim(), phone = phone.trim().takeIf { it.isNotBlank() }, avatarShape = shape.name))
+                    }
+                },
+            ) { Text("ذخیره") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("انصراف") }
+        },
+    )
+}
+
+private fun CounterpartyEntity.toAvatar(): Avatar = Avatar(
+    shape = runCatching { AvatarShape.valueOf(avatarShape) }.getOrDefault(AvatarShape.BOY),
+    color = runCatching { AvatarColor.valueOf(avatarColor) }.getOrDefault(AvatarColor.NEUTRAL),
+)
 
 @Composable
 private fun DebtTypeChip(label: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
