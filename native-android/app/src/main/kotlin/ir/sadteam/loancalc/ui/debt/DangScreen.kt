@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.debt
 
+import android.graphics.Bitmap
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Celebration
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,10 +32,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -66,6 +76,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
+import kotlinx.coroutines.launch
 
 private const val ME_NAME = "خودم"
 
@@ -162,6 +173,25 @@ fun DangDetailScreen(
     val privacyMode = LocalPrivacyMode.current
     var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
 
+    // صورت‌حسابِ عکسی - جوابِ سوالِ ۹: تکنیکِ استانداردِ پروژه (rememberGraphicsLayer، رجوع کن
+    // به ThemeReveal.kt) رو یه کارتِ ساده‌ی هم‌رنگِ اپ ضبط می‌کنه و با SAF (هم‌الگو با خروجیِ
+    // PDF/اکسلِ چک) ذخیره می‌شه - طرحِ دقیقِ ظاهری لازم نبود (تاییدِ صریحِ طراح).
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val receiptLayer = rememberGraphicsLayer()
+    var pendingReceiptBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    val saveReceiptLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { uri ->
+        val bitmap = pendingReceiptBitmap
+        if (uri != null && bitmap != null) {
+            runCatching {
+                context.contentResolver.openOutputStream(uri)?.use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                }
+            }
+        }
+        pendingReceiptBitmap = null
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 24.dp),
@@ -173,6 +203,16 @@ fun DangDetailScreen(
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                 }
                 Text(event.title, color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            pendingReceiptBitmap = receiptLayer.toImageBitmap().asAndroidBitmap()
+                            saveReceiptLauncher.launch("dang-${event.title}.png")
+                        }
+                    },
+                ) {
+                    Icon(Icons.Filled.Share, contentDescription = "ذخیره‌ی رسیدِ عکسی")
+                }
                 IconButton(onClick = { showDeleteConfirm = true }) {
                     Icon(Icons.Filled.Delete, contentDescription = "حذفِ دنگ", tint = AppDanger)
                 }
@@ -218,6 +258,17 @@ fun DangDetailScreen(
                 }
             }
         }
+        item {
+            DangReceiptCard(
+                event = event,
+                participants = participants,
+                counterpartyNameFor = counterpartyNameFor,
+                modifier = Modifier.drawWithContent {
+                    receiptLayer.record { this@drawWithContent.drawContent() }
+                    drawLayer(receiptLayer)
+                },
+            )
+        }
     }
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
@@ -226,6 +277,39 @@ fun DangDetailScreen(
             onConfirm = onDelete,
             onDismiss = { showDeleteConfirm = false },
         )
+    }
+}
+
+/** خودِ محتوایی که به‌عنوانِ صورت‌حسابِ عکسی ضبط می‌شه - سبک‌وساده و هم‌رنگِ اپ، طبقِ جوابِ سوالِ ۹
+ * («طرحِ دقیقِ ظاهری لازم نیست»). فقط تو صفحه نشون داده می‌شه، رمزِ خصوصی‌سازی روش اثر نداره
+ * (رسیدِ خروجی همیشه عددِ واقعی داره - همون چیزی که کاربر می‌خواد بفرسته). */
+@Composable
+private fun DangReceiptCard(
+    event: DangEventEntity,
+    participants: List<DangParticipantEntity>,
+    counterpartyNameFor: (Long?) -> String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(AppPrimaryPill, RoundedCornerShape(14.dp))
+            .padding(16.dp),
+    ) {
+        Text("جیبک", color = AppPrimary, fontSize = 13.sp, fontWeight = FontWeight.Black)
+        Text(event.title, color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
+        Text(
+            "${toFa(event.day)}/${toFa(event.month)}/${toFa(event.year)} · مبلغِ کل: ${fmt(event.totalAmount)} ریال",
+            color = AppMuted,
+            fontSize = 11.sp,
+            modifier = Modifier.padding(top = 2.dp, bottom = 10.dp),
+        )
+        participants.forEach { participant ->
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(counterpartyNameFor(participant.counterpartyId), color = AppText, fontSize = 12.5.sp)
+                Text("${fmt(participant.shareAmount)} ریال", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }
 
