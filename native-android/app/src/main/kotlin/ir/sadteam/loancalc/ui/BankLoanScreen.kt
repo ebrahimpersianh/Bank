@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -81,6 +83,8 @@ import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
+import ir.sadteam.loancalc.ui.theme.AppChipBg
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 
 private val monthChipValues = listOf(12, 18, 24, 36, 60, 84, 120, 180, 240)
@@ -100,7 +104,7 @@ data class BankLoanOutcome(
 fun BankLoanScreen(
     onCalculated: (BankLoanOutcome) -> Unit,
     creditRatesViewModel: CreditRatesViewModel = hiltViewModel(),
-    /** خانه‌ی خالیِ **زیرِ** دکمه‌ی محاسبه - میزبانِ `27e` کارتِ «از عهده‌اش برمی‌آیم؟» رو
+    /** خانه‌ی خالیِ **زیرِ** دکمه‌ی محاسبه - میزبانِ `27f` کارتِ «از عهده‌اش برمی‌آیم؟» رو
      * اینجا می‌ذاره. پیش‌فرض خالیه، پس هر جای دیگه‌ای که این صفحه صدا زده بشه فرقی نمی‌کنه. */
     footer: @Composable () -> Unit = {},
 ) {
@@ -119,6 +123,9 @@ fun BankLoanScreen(
         selectedBankName?.let { n -> banks.firstOrNull { it.name == n } ?: creditServices.firstOrNull { it.name == n } }
     }
     var selectedPresetKey by rememberSaveable { mutableStateOf<String?>(null) }
+    // «تصمیمِ ۱٫۵»: منبعِ نرخ. پیش‌فرض سرویسِ اعتباریه چون تنها حالتیه که نرخ واقعاً خودکار میاد.
+    var rateSource by rememberSaveable { mutableStateOf(RateSource.CREDIT_SERVICE) }
+    var selectedLoanType by rememberSaveable { mutableStateOf<String?>(null) }
 
     var startYear by rememberSaveable { mutableStateOf(1404) }
     var startMonth by rememberSaveable { mutableStateOf(1) }
@@ -242,7 +249,79 @@ fun BankLoanScreen(
                         animationSpec = infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart),
                         label = "shimmerPhase",
                     )
-                    Text("بانک‌ها", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
+                    // سگمنتِ منبعِ نرخ (`27f`) - ریلِ چیپ با قرصِ فعالِ سطحِ سفید.
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 10.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppChipBg)
+                            .padding(3.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        RateSource.entries.forEach { src ->
+                            val selected = src == rateSource
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(999.dp))
+                                    .then(if (selected) Modifier.background(AppSurface) else Modifier)
+                                    .pressScaleClickable { rateSource = src }
+                                    .heightIn(min = 44.dp)
+                                    .padding(vertical = 7.dp, horizontal = 6.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    src.label,
+                                    color = if (selected) AppText else AppMuted,
+                                    fontSize = 10.sp,
+                                    fontWeight = if (selected) FontWeight.Black else FontWeight.ExtraBold,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        }
+                    }
+
+                    if (rateSource == RateSource.BANK_LOAN) {
+                        // قرص‌های نوعِ وام - فقط فیلدِ نرخ رو پر می‌کنن، خودِ نرخ قابلِ ویرایش می‌مونه.
+                        Text(
+                            "نوعِ وام نرخ را می‌دهد",
+                            fontSize = 10.sp,
+                            color = AppMuted,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(bottom = 6.dp),
+                        )
+                        Row(
+                            modifier = Modifier
+                                .horizontalScroll(rememberScrollState())
+                                .padding(bottom = 10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        ) {
+                            loanTypePresets.forEach { (name, pct) ->
+                                AppChip(
+                                    label = if (pct != null) "$name · ${toFa(trimRate(pct))}٪" else name,
+                                    selected = selectedLoanType == name,
+                                    onClick = {
+                                        selectedLoanType = name
+                                        if (pct != null) {
+                                            rateText = trimRate(pct)
+                                            rateSlider = pct.toFloat()
+                                        }
+                                    },
+                                )
+                            }
+                        }
+                        // تو این حالت انتخابِ بانک **اختیاری**ه و فقط اسم/لوگو/رنگ می‌ده، هیچ نرخی نه.
+                        Text(
+                            "بانک (اختیاری — فقط برای اسم)",
+                            fontSize = 13.sp,
+                            color = AppMuted,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    } else {
+                        Text("خدمات اعتباری", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
+                    }
+                    if (rateSource == RateSource.BANK_LOAN) {
                     LazyRow(
                         state = banksScroll,
                         modifier = Modifier.padding(top = 4.dp),
@@ -264,8 +343,7 @@ fun BankLoanScreen(
                             .height(4.dp)
                             .lazyRowScrollbar(banksScroll, AppPrimary, shimmerPhase = shimmerPhase),
                     )
-                    Text("خدمات اعتباری", fontSize = 13.sp, color = AppMuted, fontWeight = FontWeight.Bold)
-                    if (creditRatesLoading) {
+                    } else if (creditRatesLoading) {
                         Row(
                             modifier = Modifier.padding(top = 4.dp),
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -300,13 +378,23 @@ fun BankLoanScreen(
                             }
                         }
                     }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 6.dp)
-                            .height(4.dp)
-                            .lazyRowScrollbar(creditScroll, AppPrimary, shimmerPhase = shimmerPhase),
-                    )
+                    if (rateSource == RateSource.CREDIT_SERVICE) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 6.dp)
+                                .height(4.dp)
+                                .lazyRowScrollbar(creditScroll, AppPrimary, shimmerPhase = shimmerPhase),
+                        )
+                        Text(
+                            "شش سرویسِ اعتباری نرخِ واحد دارند، پس خودکار می‌آید. برای وامِ بانکی " +
+                                "نرخ به نوعِ وام بستگی دارد نه به بانک.",
+                            fontSize = 9.5.sp,
+                            color = AppMuted,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
                 }
             }
         }
@@ -420,9 +508,15 @@ fun BankLoanScreen(
 
         item {
             StaggerIn(6) {
-                AppCard(label = "نرخ سود سالانه") {
+                // تو حالتِ سرویسِ اعتباری نرخ **خواندنی**ه (از سرور میاد)؛ تو وامِ بانکی دستیه و
+                // قرص‌های نوعِ وام فقط پرش می‌کنن - «تصمیمِ ۱٫۵».
+                val rateReadOnly = rateSource == RateSource.CREDIT_SERVICE
+                AppCard(
+                    label = if (rateReadOnly) "نرخ سود سالانه (از سرور)" else "نرخ سود سالانه (قابلِ تغییر)",
+                ) {
                     OutlinedTextField(
                         value = rateText,
+                        readOnly = rateReadOnly,
                         onValueChange = { raw ->
                             val filtered = cleanNumDecimal(raw)
                             rateText = filtered
@@ -439,7 +533,12 @@ fun BankLoanScreen(
                     )
                     SlimSlider(
                         value = rateSlider,
-                        onValueChange = { v -> rateSlider = v; rateText = trimRate(v.toDouble()) },
+                        onValueChange = { v ->
+                            if (!rateReadOnly) {
+                                rateSlider = v
+                                rateText = trimRate(v.toDouble())
+                            }
+                        },
                         valueRange = 0f..50f,
                         // پله‌ی ۰.۵ درصدی - رجوع کن به کامنتِ SlimSlider برای فرمولِ steps.
                         steps = 99,
@@ -568,6 +667,31 @@ fun BankLoanScreen(
         }
     }
 }
+
+/**
+ * منبعِ نرخ - «تصمیمِ ۱٫۵»ِ هندآفِ `27a`/`27f`.
+ *
+ * نرخِ خودکار **فقط** برای شش سرویسِ اعتباری معنی داره (نرخِ واحد دارن و از سرورِ خودمون میاد).
+ * نرخِ وامِ بانک‌های دولتی به **نوعِ وام** بستگی داره نه به بانک (ازدواج ۴٪، مسکن ۱۸٪،
+ * قرض‌الحسنه ۰٪)، پس «بانک ملی» یه نرخِ واحد نداره که خودکار پر بشه.
+ */
+private enum class RateSource(val label: String) {
+    CREDIT_SERVICE("سرویسِ اعتباری"),
+    BANK_LOAN("وامِ بانکی"),
+}
+
+/**
+ * قرص‌های نوعِ وام تو حالتِ «وامِ بانکی» - **فقط فیلدِ نرخ رو پر می‌کنن** و نرخ قابلِ ویرایش می‌مونه.
+ *
+ * عمداً **محلیه نه سرور** (تاکیدِ صریحِ هندآف): سالی یه‌بار عوض می‌شن و آفلاین هم باید کار کنه.
+ * `null` یعنی «سایر» - نرخ رو دست نمی‌زنه و به خودِ کاربر واگذار می‌کنه.
+ */
+private val loanTypePresets: List<Pair<String, Double?>> = listOf(
+    "ازدواج" to 4.0,
+    "مسکن" to 18.0,
+    "قرض‌الحسنه" to 0.0,
+    "سایر" to null,
+)
 
 private fun trimRate(v: Double): String {
     // نمایشِ حداکثر دو رقمِ اعشار (خواسته‌ی صریحِ کاربر، مورد ۱) - وگرنه v.toString() خامِ فلوتینگ-

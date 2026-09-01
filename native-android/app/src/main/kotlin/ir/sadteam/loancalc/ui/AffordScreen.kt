@@ -64,7 +64,7 @@ private val affordMonthChipValues = listOf(12, 24, 36, 60, 120)
 fun AffordScreen(
     historyViewModel: CalculationHistoryViewModel = hiltViewModel(),
     /** قسطی که از حالتِ «قسط از نرخِ بانک» اومده - فرم با همون از پیش پر می‌شه تا کاربر لازم
-     * نباشه عددی که همین الان محاسبه شد رو دستی دوباره بزنه (بندِ صریحِ فریمِ `27e`). */
+     * نباشه عددی که همین الان محاسبه شد رو دستی دوباره بزنه (بندِ صریحِ فریمِ `27f`). */
     initialInstallment: Double? = null,
 ) {
     val seed = initialInstallment?.takeIf { it > 0 }?.toLong()

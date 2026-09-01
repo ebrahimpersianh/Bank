@@ -245,7 +245,7 @@ private const val CHEQUE_ROUTE = "cheque"
 private enum class LoanSubTab(val label: String) {
     // سه تب، طبقِ فریمِ `27a`. تبِ چهارمِ «بانکی» **حذف نشد، ادغام شد**: تصمیمِ کلاد دیزاین
     // (۹ شهریور) این بود که با «محاسبه‌گر» یکی بشه و به‌جاش داخلِ همون تب یه سگمنتِ دوحالته
-    // بیاد - رجوع کن به [CalculatorHostScreen] و فریمِ `27e`.
+    // بیاد - رجوع کن به [CalculatorHostScreen] و فریمِ `27f`.
     MY_LOANS("وام‌های من"),
     DEPOSIT("سپرده"),
     CALCULATOR("محاسبه‌گر"),
@@ -1123,7 +1123,7 @@ private fun AppTourOverlay(
 
 /**
  * میزبانِ تبِ «محاسبه‌گر» - همون [BankLoanTab]ِ قبلی، ولی حالا [CalculatorHostScreen] رو
- * به‌جای [BankLoanScreen] تو حالتِ فرم می‌ذاره تا سگمنتِ دوحالته‌ی `27e` بالاش بشینه.
+ * به‌جای [BankLoanScreen] تو حالتِ فرم می‌ذاره تا سگمنتِ دوحالته‌ی `27f` بالاش بشینه.
  * منطقِ فرم↔نتیجه و حفظِ حالتِ فرم عیناً همون قبلیه.
  */
 @Composable
