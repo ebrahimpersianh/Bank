@@ -70,6 +70,17 @@ class SmsAutoImportViewModel @Inject constructor(
         }
     }
 
+    /** برچسبِ اشتراک‌هایی که کاربر تو «اشتراک‌یاب» نادیده گرفته - رجوع کن به
+     * [ir.sadteam.loancalc.ui.accounting.SubscriptionFinderScreen]. */
+    val ignoredSubscriptions: StateFlow<Set<String>> = uiPrefs.ignoredSubscriptions
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    fun ignoreSubscription(label: String) {
+        viewModelScope.launch {
+            uiPrefs.setIgnoredSubscriptions(uiPrefs.ignoredSubscriptions.first() + label)
+        }
+    }
+
     fun setNotifEnabled(value: Boolean) {
         viewModelScope.launch {
             uiPrefs.setNotifAutoImportEnabled(value)

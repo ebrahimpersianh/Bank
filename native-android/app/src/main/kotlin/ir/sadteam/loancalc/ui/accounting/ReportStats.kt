@@ -1,6 +1,9 @@
 package ir.sadteam.loancalc.ui.accounting
 
 import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.core.RecurringDetector
+import ir.sadteam.loancalc.core.RecurringExpense
+import ir.sadteam.loancalc.core.RecurringInput
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.data.db.RecurringPaymentEntity
 import ir.sadteam.loancalc.ui.components.persianMonthName
@@ -20,7 +23,16 @@ data class ReportStats(
     val recurringCount: Int,
     val recurringMonthly: Double,
     val overspentCategory: OverspentCategory?,
-)
+    /**
+     * **اشتراک‌یاب** - خرج‌های تکرارشونده‌ای که اپ خودش از رو تاریخچه کشف کرده و کاربر
+     * **اعلامشون نکرده**. با [recurringCount] فرق داره: اون پرداخت‌های تکراریِ دستیِ خودِ
+     * کاربره، این چیزیه که فراموش شده. رجوع کن به [RecurringDetector].
+     */
+    val detectedSubscriptions: List<RecurringExpense> = emptyList(),
+) {
+    /** جمعِ ماهانه‌ی اشتراک‌های کشف‌شده. */
+    val detectedMonthly: Double get() = detectedSubscriptions.sumOf { it.typicalAmountRial }
+}
 
 /** دسته‌ای که این ماه محسوس بیشتر از معمول خرج شده - کارتِ کشفِ دومِ `26a`. */
 data class OverspentCategory(val name: String, val percent: Int)
@@ -101,7 +113,33 @@ fun buildReportStats(
         recurringCount = recurringExpenses.size,
         recurringMonthly = recurringExpenses.sumOf { it.amount },
         overspentCategory = findOverspentCategory(expenses, today),
+        detectedSubscriptions = detectSubscriptions(expenses, recurringExpenses),
     )
+}
+
+/**
+ * اشتراک‌های کشف‌شده، منهای چیزهایی که کاربر **از قبل خودش** به‌عنوانِ پرداختِ تکراری ثبت
+ * کرده (وگرنه یه قلم دو بار به کاربر نشون داده می‌شه: یه‌بار «پرداختِ تکراری»، یه‌بار «کشف»).
+ * تطبیق با همون نرمال‌سازیِ [RecurringDetector.normalizeLabel] انجام می‌شه.
+ */
+private fun detectSubscriptions(
+    expenses: List<AccountTransactionEntity>,
+    declared: List<RecurringPaymentEntity>,
+): List<RecurringExpense> {
+    val found = RecurringDetector.detect(
+        expenses.map {
+            RecurringInput(
+                description = it.description,
+                amountRial = it.amount,
+                year = it.year,
+                month = it.month,
+                day = it.day,
+                category = it.category,
+            )
+        },
+    )
+    val declaredLabels = declared.map { RecurringDetector.normalizeLabel(it.name) }.toSet()
+    return found.filter { it.label !in declaredLabels }
 }
 
 /** ماهِ `back` تا قبل از [from] - به‌صورتِ (سال، ماه). */

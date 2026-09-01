@@ -36,6 +36,7 @@ class UiPrefs(private val context: Context) {
         val COME_BACK_REMINDER_ENABLED = booleanPreferencesKey("come_back_reminder_enabled")
         val LAST_COME_BACK_NOTIFIED_AT = stringPreferencesKey("last_come_back_notified_at")
         val NOTIF_AUTO_IMPORT_PACKAGES = stringPreferencesKey("notif_auto_import_packages")
+        val IGNORED_SUBSCRIPTIONS = stringPreferencesKey("ignored_subscriptions")
         val DAILY_EXPENSE_REMINDER_ENABLED = booleanPreferencesKey("daily_expense_reminder_enabled")
         val AVATAR_SHAPE = stringPreferencesKey("avatar_shape")
         val AVATAR_COLOR = stringPreferencesKey("avatar_color")
@@ -380,6 +381,22 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setNotifAutoImportPackages(value: Set<String>) {
         context.uiPrefsDataStore.edit { it[Keys.NOTIF_AUTO_IMPORT_PACKAGES] = value.joinToString(",") }
+    }
+
+    /** برچسبِ اشتراک‌هایی که کاربر تو «اشتراک‌یاب» گفته نادیده گرفته بشن (خرجِ تکراری‌ای که
+     * خودش می‌دونه چیه و نمی‌خواد هر ماه یادآوری بشه). با `,` جدا می‌شن - رجوع کن به
+     * [ir.sadteam.loancalc.core.RecurringDetector]. */
+    val ignoredSubscriptions: Flow<Set<String>> = context.uiPrefsDataStore.data.map { prefs ->
+        prefs[Keys.IGNORED_SUBSCRIPTIONS]
+            ?.split(',')
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?.toSet()
+            ?: emptySet()
+    }
+
+    suspend fun setIgnoredSubscriptions(value: Set<String>) {
+        context.uiPrefsDataStore.edit { it[Keys.IGNORED_SUBSCRIPTIONS] = value.joinToString(",") }
     }
 
     /** یادآوریِ روزانه‌ی «دخل‌وخرج امروز یادت نره» (رجوع کن به DueDateReminderWorker) - پیش‌فرض خاموش

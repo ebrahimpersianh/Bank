@@ -124,6 +124,15 @@ fun ReportTabScreen(
         NewTransactionSheet(onDismiss = { showNewTransaction = false })
         return
     }
+    // اشتراک‌یاب - هم‌الگو با شیتِ بالا، یه صفحه‌ی پوش‌شده‌ی داخلیِ همین تب.
+    var showSubscriptionFinder by remember { mutableStateOf(false) }
+    if (showSubscriptionFinder) {
+        SubscriptionFinderScreen(
+            subscriptions = stats.detectedSubscriptions,
+            onBack = { showSubscriptionFinder = false },
+        )
+        return
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -170,6 +179,25 @@ fun ReportTabScreen(
         }
         if (stats.byCategory.isNotEmpty()) {
             item { CategoryDonutCard(stats.byCategory, stats.periodSpend, privacyMode) }
+        }
+        // ⚠️ **اشتراک‌یاب** - این کارت با کارتِ زیریش فرق داره: اون پرداخت‌های تکراریِ
+        // **اعلام‌شده‌ی خودِ کاربره**، این چیزیه که اپ خودش از رو تاریخچه **کشف** کرده و
+        // کاربر خبر نداشته. تنها کارتِ کشفیه که با تپ یه صفحه باز می‌کنه.
+        if (stats.detectedSubscriptions.isNotEmpty()) {
+            item {
+                DiscoveryCard(
+                    icon = Icons.Filled.Autorenew,
+                    title = "${toFa(stats.detectedSubscriptions.size)} خرجِ تکرارشونده پیدا شد",
+                    subtitle = "ماهی ${compact(stats.detectedMonthly)} - لمس کن ببین چی‌ان",
+                    bg = DiscoverWarnBg,
+                    border = DiscoverWarnBorder,
+                    pill = DiscoverWarnPill,
+                    ink = DiscoverWarnInk,
+                    subInk = DiscoverWarnSubInk,
+                    iconInk = DiscoverWarnIconInk,
+                    onClick = { showSubscriptionFinder = true },
+                )
+            }
         }
         if (stats.recurringCount > 0) {
             item {
@@ -686,6 +714,9 @@ private fun DiscoveryCard(
     ink: Color,
     subInk: Color,
     iconInk: Color,
+    // فلشِ کارت از اول تو فریم بود ولی هیچ‌کاری نمی‌کرد؛ کارتِ اشتراک‌یاب اولین کارتیه که
+    // واقعاً یه صفحه باز می‌کنه، پس onClick اختیاری اضافه شد نه اجباری.
+    onClick: (() -> Unit)? = null,
 ) {
     val shape = RoundedCornerShape(AppRadius.card)
     Row(
@@ -696,6 +727,7 @@ private fun DiscoveryCard(
             .clip(shape)
             .background(bg)
             .border(2.dp, border, shape)
+            .then(if (onClick != null) Modifier.pressScaleClickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Box(

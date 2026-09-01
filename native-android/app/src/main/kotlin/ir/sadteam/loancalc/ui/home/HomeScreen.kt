@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.PriorityHigh
+import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.outlined.BarChart
@@ -53,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.util.Locale
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.MonthForecast
 import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
@@ -208,6 +210,18 @@ fun HomeScreen(
     val monthSpend = remember(monthSpendByCategory) { monthSpendByCategory.values.sum() }
     val monthCap = remember(budgets) { budgets.sumOf { it.monthlyCap } }
 
+    // پیش‌بینیِ «تا آخرِ ماه کم میاری» - رجوع کن به MonthForecast تو :core.
+    // موجودی = جمعِ موجودیِ همه‌ی حساب‌کتاب‌ها (همون تعریفی که تبِ دارایی نشون می‌ده).
+    val accounts by accountViewModel.accounts.collectAsState()
+    val monthForecast = remember(transactions, accounts, monthSpend) {
+        MonthForecast.compute(
+            spentSoFarRial = monthSpend,
+            dayOfMonth = today.d,
+            daysInMonth = JalaliCalendar.daysInMonth(today.y, today.m),
+            balanceRial = accounts.sumOf { accountViewModel.balanceOf(it, transactions) },
+        )
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -306,6 +320,21 @@ fun HomeScreen(
                         privacyMode = privacyMode,
                         onClick = { onNavigateToRoute("budget") },
                     )
+                }
+            }
+            // «تا آخرِ ماه کم میاری» - رجوع کن به MonthForecast. عمداً **بالای** کارت‌های
+            // تحلیلی و زیرِ بودجه می‌شینه: یه هشدارِ عملیه، نه یه آمار.
+            monthForecast?.let { forecast ->
+                if (forecast.willRunShort) {
+                    item {
+                        ShortfallForecastCard(
+                            shortfall = forecast.shortfallRial,
+                            daysLeft = forecast.daysLeft,
+                            projectedTotal = forecast.projectedTotalRial,
+                            privacyMode = privacyMode,
+                            onClick = { onNavigateToRoute("report") },
+                        )
+                    }
                 }
             }
             urgentDue?.let { due ->
@@ -686,6 +715,63 @@ private fun UrgentDueCard(
                 }
             }
             GradientButton(onClick = onPay, variant = AppButtonVariant.IN_ROW) { Text("پرداخت شد") }
+        }
+    }
+}
+
+/**
+ * **«تا آخرِ ماه کم میاری»** - هشدارِ پیش‌بینیِ کسری (رجوع کن به
+ * [ir.sadteam.loancalc.core.MonthForecast]).
+ *
+ * چرا این برگ‌برنده‌ست: بقیه‌ی اپ‌ها فقط گذشته رو گزارش می‌دن؛ این تنها چیزیه که **قبل از
+ * اتفاق** هشدار می‌ده. عمداً هم‌سبکِ [UrgentDueCard]ه (همون گونه‌ی «فوری») چون هم‌جنسِ اونه:
+ * یه چیزِ عملی که همین حالا باید بهش رسیدگی بشه، نه یه آمار.
+ */
+@Composable
+private fun ShortfallForecastCard(
+    shortfall: Double,
+    daysLeft: Int,
+    projectedTotal: Double,
+    privacyMode: Boolean,
+    onClick: () -> Unit,
+) {
+    AppCard(
+        variant = AppCardVariant.URGENT,
+        shadow = false,
+        modifier = Modifier.pressScaleClickable(onClick = onClick),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(AppRadius.icon))
+                    .background(UrgentIconBg),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.TrendingDown, contentDescription = null, tint = AppDanger, modifier = Modifier.size(17.dp))
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "با این سرعتِ خرج، تا آخرِ ماه کم میاری",
+                    color = AppText,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                )
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        "${toFa(daysLeft)} روزِ دیگه مونده — حدودِ ${maskIfPrivate(masked, fmt(shortfall))} ریال کسری" +
+                            " (کلِ ماه حدودِ ${maskIfPrivate(masked, fmt(projectedTotal))})",
+                        color = AppDangerInk,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
         }
     }
 }
