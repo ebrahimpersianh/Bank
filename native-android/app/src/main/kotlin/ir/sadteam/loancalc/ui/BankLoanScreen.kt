@@ -83,8 +83,8 @@ import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
-import ir.sadteam.loancalc.ui.theme.AppChipBg
-import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.AppSegmentPill
+import ir.sadteam.loancalc.ui.theme.AppSegmentRail
 import ir.sadteam.loancalc.ui.theme.AppText
 
 private val monthChipValues = listOf(12, 18, 24, 36, 60, 84, 120, 180, 240)
@@ -255,7 +255,7 @@ fun BankLoanScreen(
                             .fillMaxWidth()
                             .padding(bottom = 10.dp)
                             .clip(RoundedCornerShape(999.dp))
-                            .background(AppChipBg)
+                            .background(AppSegmentRail)
                             .padding(3.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
@@ -265,7 +265,7 @@ fun BankLoanScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .clip(RoundedCornerShape(999.dp))
-                                    .then(if (selected) Modifier.background(AppSurface) else Modifier)
+                                    .then(if (selected) Modifier.background(AppSegmentPill) else Modifier)
                                     .pressScaleClickable { rateSource = src }
                                     .heightIn(min = 44.dp)
                                     .padding(vertical = 7.dp, horizontal = 6.dp),

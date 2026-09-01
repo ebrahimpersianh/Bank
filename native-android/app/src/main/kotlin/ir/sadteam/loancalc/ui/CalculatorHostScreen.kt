@@ -30,13 +30,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
-import ir.sadteam.loancalc.ui.theme.AppLineRow
+import ir.sadteam.loancalc.ui.theme.AppSegmentPill
+import ir.sadteam.loancalc.ui.theme.AppSegmentRail
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
-import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.hardShadow
 
@@ -71,13 +71,14 @@ fun CalculatorHostScreen(onCalculated: (BankLoanOutcome) -> Unit) {
     var lastInstallment by remember { mutableStateOf<Double?>(null) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // سگمنتِ فریم: ریلِ AppLineRow با گوشه‌ی کامل و پدینگِ ۴؛ قرصِ فعال سطحِ سفید.
+        // سگمنتِ فریم: ریل و قرصِ فعال توکنِ اختصاصی دارن، چون نقششون بینِ دو تم جابه‌جا می‌شه
+        // (رجوع کن به segmentRail/segmentPill تو Color.kt).
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 8.dp)
                 .clip(RoundedCornerShape(999.dp))
-                .background(AppLineRow)
+                .background(AppSegmentRail)
                 .padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -87,7 +88,7 @@ fun CalculatorHostScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(999.dp))
-                        .then(if (selected) Modifier.background(AppSurface) else Modifier)
+                        .then(if (selected) Modifier.background(AppSegmentPill) else Modifier)
                         .pressScaleClickable { mode = entry }
                         // ارتفاعِ لمسیِ هر نیمه ≥۴۴dp - تاکیدِ صریحِ هندآف.
                         .heightIn(min = 44.dp)

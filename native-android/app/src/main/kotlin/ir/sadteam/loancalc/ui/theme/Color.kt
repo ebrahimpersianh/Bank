@@ -77,6 +77,20 @@ data class AppColorPalette(
     /** حاشیه‌ی قرصِ سبز - تو روشن شفافه، تو تیره دیده می‌شه. */
     val primaryPillBorder: Color,
 
+    /**
+     * ریلِ سگمنتِ دوحالته و قرصِ فعالش (فریمِ `27f`/`27fd`).
+     *
+     * ⚠️ **نقشِ توکن‌ها بینِ دو تم جابه‌جا می‌شه**، پس نمی‌شه با `lineRow`/`surface` ساختش:
+     * تو روشن ریل `#EEF3F0`ه و قرص سفید؛ تو تیره ریل خودِ `#1B2530`ه و قرص **روشن‌تر** از اون.
+     * قاعده‌ی ثابت: **قرصِ فعال همیشه روشن‌تر از ریله**. اگه از `surface` استفاده می‌شد، تو تیره
+     * قرص از ریل تیره‌تر درمی‌اومد و حالتِ فعال برعکس دیده می‌شد.
+     *
+     * دلیلِ تصمیمِ طراح: تو تمِ تیره سایه‌ی سخت رو بسترِ تیره دیده نمی‌شه، پس تفکیکِ حالتِ فعال
+     * فقط با **اختلافِ روشنایی** انجام می‌شه.
+     */
+    val segmentRail: Color,
+    val segmentPill: Color,
+
     // ── قرمزِ هزینه ──────────────────────────────────────────────────────────────
     /** قرمزِ پرکننده - دکمه‌ی حذف، نوارِ هشدار. */
     val danger: Color,
@@ -166,6 +180,8 @@ val LightAppColors = AppColorPalette(
     line = Color(0xFFE3ECE7),
     lineRow = Color(0xFFEEF3F0),
     chip = Color(0xFFF1F5F2),
+    segmentRail = Color(0xFFEEF3F0),
+    segmentPill = Color(0xFFFFFFFF),
     infoPill = Color(0xFFEAF1FE),
     purplePill = Color(0xFFF3EAFE),
     warningPill = Color(0xFFFFF1DC),
@@ -236,6 +252,8 @@ val DarkAppColors = AppColorPalette(
     line = Color(0xFF2A3640),
     lineRow = Color(0xFF2A3640),
     chip = Color(0xFF232E38),
+    segmentRail = Color(0xFF1B2530),
+    segmentPill = Color(0xFF2F3D4A),
     // معادل‌های تیره: همون رنگِ لهجه با آلفای کم روی سطحِ #1B2530، **مات** حساب‌شده
     // (قاعده‌ی «سطحِ کاملاً مات» - قابِ آیکون نباید نیمه‌شفاف باشه).
     infoPill = Color(0xFF1D2C3A),
@@ -313,6 +331,8 @@ val AppLabel: Color @Composable get() = LocalAppColors.current.label
 val AppLine: Color @Composable get() = LocalAppColors.current.line
 val AppLineRow: Color @Composable get() = LocalAppColors.current.lineRow
 val AppChipBg: Color @Composable get() = LocalAppColors.current.chip
+val AppSegmentRail: Color @Composable get() = LocalAppColors.current.segmentRail
+val AppSegmentPill: Color @Composable get() = LocalAppColors.current.segmentPill
 val AppInfoPill: Color @Composable get() = LocalAppColors.current.infoPill
 val AppPurplePill: Color @Composable get() = LocalAppColors.current.purplePill
 val AppWarningPill: Color @Composable get() = LocalAppColors.current.warningPill
