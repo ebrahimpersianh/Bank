@@ -145,6 +145,13 @@ fun HomeScreen(
     onNavigateToRoute: (String) -> Unit,
     onOpenSettings: () -> Unit = {},
     onOpenInbox: () -> Unit = {},
+    /**
+     * کارتِ پیشنهادِ نوارِ پایین (`41a`) - به‌صورتِ یه اسلاتِ آماده‌ی رندر پاس داده می‌شه، نه
+     * داده‌ی خام. دلیل: چیدمانِ نوار و `ViewModel`ش تو `MainActivity` زندگی می‌کنن (همون‌جا که
+     * ویرایشگر هم باز می‌شه)؛ اگه `HomeScreen` خودش `hiltViewModel()` می‌گرفت یه **نمونه‌ی
+     * دومِ** جدا می‌ساخت. `null` یعنی پیشنهادی در کار نیست.
+     */
+    navSuggestionSlot: (@Composable () -> Unit)? = null,
     accountViewModel: AccountViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
     urgentDueViewModel: UrgentDueViewModel = hiltViewModel(),
@@ -217,6 +224,10 @@ fun HomeScreen(
                     onOpenSettings = onOpenSettings,
                 )
             }
+
+            // ── پیشنهادِ خودکارِ نوارِ پایین (فریمِ `41a`) ────────────────────────────────
+            // «بالای صفحه‌ی خانه، **زیرِ هدر**. هرگز مودال نمی‌شود» - قاعده‌ی صریحِ `41c`.
+            navSuggestionSlot?.let { slot -> item { slot() } }
 
             // ── ترمیمِ زنجیرِ «فعال» - فقط تا ۴۸ ساعت بعد از پاره‌شدن و ماهی یک‌بار ─────────
             repairable?.let { repair ->

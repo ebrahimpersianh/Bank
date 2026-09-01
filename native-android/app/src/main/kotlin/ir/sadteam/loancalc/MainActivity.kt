@@ -24,7 +24,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -160,6 +162,10 @@ import ir.sadteam.loancalc.ui.onboarding.SplashIntroScreen
 import ir.sadteam.loancalc.ui.onboarding.permissionGateSatisfied
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
+import ir.sadteam.loancalc.ui.nav.NavDestination
+import ir.sadteam.loancalc.ui.nav.NavEditorSheet
+import ir.sadteam.loancalc.ui.nav.NavSlotsViewModel
+import ir.sadteam.loancalc.ui.nav.NavSuggestionCard
 import ir.sadteam.loancalc.ui.profile.ShortcutViewModel
 import ir.sadteam.loancalc.ui.rating.RatePromptDialog
 import ir.sadteam.loancalc.ui.rating.RatePromptViewModel
@@ -287,15 +293,17 @@ private fun TourTarget.asBottomTab(): BottomTab? = when (this) {
 /** مختصاتِ آیکونِ نوارِ پایینِ یه تب رو تویِ [tourBounds] برای قدمِ تورِ مربوط به همون تب ثبت
  * می‌کنه. */
 private fun registerTabTourBounds(
-    tab: BottomTab,
+    route: String,
     rect: Rect,
     tourBounds: MutableMap<TourTarget, Rect>,
 ) {
-    when (tab) {
-        BottomTab.ASSETS -> tourBounds[TourTarget.ASSETS] = rect
-        BottomTab.REPORT -> tourBounds[TourTarget.REPORT] = rect
-        BottomTab.BUDGET -> tourBounds[TourTarget.BUDGET] = rect
-        BottomTab.HOME, BottomTab.DUE -> {}
+    // ⚠️ از **route** کلید می‌گیره نه از `BottomTab`، چون بعدِ بخشِ ۴۱ نوار دیگه لزوماً همون پنج
+    // تبِ ثابت نیست؛ تبی که کاربر برداشته باشه اصلاً رندر نمی‌شه و مختصاتش ثبت نمی‌شه (تور هم
+    // برای همون قدم به‌درستی چیزی اسپاتلایت نمی‌کنه، به‌جای اینکه یه مستطیلِ کهنه نشون بده).
+    when (route) {
+        BottomTab.ASSETS.route -> tourBounds[TourTarget.ASSETS] = rect
+        BottomTab.REPORT.route -> tourBounds[TourTarget.REPORT] = rect
+        BottomTab.BUDGET.route -> tourBounds[TourTarget.BUDGET] = rect
     }
 }
 
@@ -526,11 +534,24 @@ private fun LoanCalcApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: BottomTab.HOME.route
 
+    // **شخصی‌سازیِ نوارِ پایین** (بخشِ ۴۱). عمداً از کشوی میان‌بُرِ بالا **جداست**: «یک فهرست،
+    // دو نمایش» - مخزنِ مقصدها مشترکه ولی ترتیبِ ذخیره‌شده نه، پس تغییرِ نوار کشو رو دست نمی‌زنه.
+    val navSlotsViewModel: NavSlotsViewModel = hiltViewModel()
+    val navSlots by navSlotsViewModel.slots.collectAsState()
+    val navCustomized by navSlotsViewModel.customized.collectAsState()
+    val navSuggestion by navSlotsViewModel.suggestion.collectAsState()
+    var navEditorOpen by remember { mutableStateOf(false) }
+
     // ناوبریِ مشترک - همون الگویی که قبلاً تو ۴+ جا تکرار شده بود (تبِ پایین، دیپ‌لینک، تور،
     // برگشتن از «وام»/«چک»...) یه جا جمع شد. popUpTo+saveState+restoreState یعنی هر مقصد مثلِ یه
     // «تبِ هم‌سطح» رفتار می‌کنه - حتی «وام»/«چک» که دیگه عضوِ BottomTab نیستن (رجوع کن به کامنتِ
     // بالای BottomTab).
     fun navigateTo(route: String) {
+        // **بخشِ ۴۱** - قاعده‌ی `41c`: «**رویدادِ ورودِ صفحه** شمرده می‌شود، نه بازگشتِ دکمه‌ی
+        // back». شمارش عمداً اینجاست و نه تو `onClick`ِ نوار: مقصدی که نامزدِ **آمدن** به نواره
+        // اصلاً از نوار باز نمی‌شه (از کشوی میان‌بُر و کاشی‌ها باز می‌شه)، پس شمارشِ نوارمحور
+        // هیچ‌وقت هیچ پیشنهادی نمی‌ساخت. `navigateTo` تنها قیفِ ناوبریِ **رو به جلو**ی اپه.
+        NavDestination.byRoute(route)?.let(navSlotsViewModel::recordOpen)
         navController.navigate(route) {
             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
@@ -792,16 +813,20 @@ private fun LoanCalcApp(
                                 .padding(start = 6.dp, end = 6.dp, bottom = 11.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                        BottomTab.entries.forEach { tab ->
+                        // **بخشِ ۴۱**: دیگه `BottomTab.entries` نیست - چیدمان از [NavSlotsViewModel]
+                        // میاد. اسلاتِ ۰ همیشه «خانه»ست (قفلِ `41c`، تو `NavDestination.sanitize`).
+                        navSlots.forEach { dest ->
                             BottomNavItem(
-                                tab = tab,
-                                selected = currentRoute == tab.route,
-                                onPositioned = { rect -> registerTabTourBounds(tab, rect, tourBounds) },
+                                dest = dest,
+                                selected = currentRoute == dest.route,
+                                onPositioned = { rect -> registerTabTourBounds(dest.route, rect, tourBounds) },
+                                onLongClick = { navEditorOpen = true },
                                 onClick = {
-                                    if (tab.route == currentRoute) {
-                                        tabResetKeys[tab] = (tabResetKeys[tab] ?: 0) + 1
+                                    val tab = BottomTab.entries.firstOrNull { it.route == dest.route }
+                                    if (dest.route == currentRoute) {
+                                        if (tab != null) tabResetKeys[tab] = (tabResetKeys[tab] ?: 0) + 1
                                     } else {
-                                        navigateTo(tab.route)
+                                        navigateTo(dest.route)
                                     }
                                 },
                             )
@@ -811,12 +836,15 @@ private fun LoanCalcApp(
                 }
             },
         ) { padding ->
+            // ⚠️ **بخشِ ۴۱**: محتوا تو یه `Box` پیچیده شد تا ویرایشگرِ نوار بتونه **داخلِ همین
+            // ناحیه** (بالای نوارِ پایین) بشینه. قاعده‌ی مرکزیِ `41b` اینه که «نوارِ واقعی
+            // پایینِ صفحه می‌مانَد و همان لحظه عوض می‌شود» - یه دیالوگِ تمام‌صفحه همون نوار رو
+            // می‌پوشوند و کلِ ایده رو خراب می‌کرد.
+            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             NavHost(
                 navController = navController,
                 startDestination = BottomTab.HOME.route,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 // پورت کاملِ اسلاید جهت‌دار بین ۴ تب اصلی وب (switchTab: slide-l/slide-r): جهت از
                 // رو فاصله‌ی ایندکس تب قبلی/جدید تو ترتیب تب‌ها حساب می‌شه و صفحه‌ی جدید با یه
                 // اسلاید فنری از همون سمتِ حرکت میاد تو - حس «پریمیوم»تر از fade+scale قبلی.
@@ -850,6 +878,22 @@ private fun LoanCalcApp(
                             onNavigateToRoute = ::navigateTo,
                             onOpenSettings = { showSettings = true },
                             onOpenInbox = { showInbox = true },
+                            // نوعِ صریح عمدیه: بدونش `let` لامبدا رو `() -> Unit`ِ ساده حساب
+                            // می‌کنه و به `@Composable () -> Unit` نمی‌خوره.
+                            navSuggestionSlot = navSuggestion?.let { suggestion ->
+                                @Composable {
+                                    NavSuggestionCard(
+                                        suggestion = suggestion,
+                                        currentSlots = navSlots,
+                                        onApply = { navSlotsViewModel.applySuggestion(suggestion) },
+                                        onEdit = {
+                                            navSlotsViewModel.snoozeSuggestion()
+                                            navEditorOpen = true
+                                        },
+                                        onDismiss = { navSlotsViewModel.dismissSuggestion(suggestion) },
+                                    )
+                                }
+                            },
                         )
                     }
                 }
@@ -893,6 +937,16 @@ private fun LoanCalcApp(
                 composable(CHEQUE_ROUTE) {
                     ChequeScreen(onBack = { navigateTo(BottomTab.HOME.route) }, standalone = false)
                 }
+            }
+            if (navEditorOpen) {
+                NavEditorSheet(
+                    slots = navSlots,
+                    customized = navCustomized,
+                    onSlotsChange = navSlotsViewModel::setSlots,
+                    onReset = navSlotsViewModel::resetToDefault,
+                    onClose = { navEditorOpen = false },
+                )
+            }
             }
         }
     
@@ -1312,10 +1366,12 @@ private fun LoanTab(
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun RowScope.BottomNavItem(
-    tab: BottomTab,
+    dest: NavDestination,
     selected: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit = {},
     onPositioned: (Rect) -> Unit = {},
 ) {
     // **بازطراحیِ سبکِ «جیبک»** - مقادیر مو‌به‌مو از کارتِ `15a`ی فایلِ طراحی (نه از حدس):
@@ -1336,7 +1392,14 @@ private fun RowScope.BottomNavItem(
     Column(
         modifier = Modifier
             .weight(1f)
-            .clickable(onClick = { buzz(); onClick() })
+            // **بخشِ ۴۱**: فشارِ طولانی رو هر خانه‌ی نوار، ویرایشگرِ چیدمان رو باز می‌کنه.
+            // ⚠️ این تو سندِ طراح **نیست** - طرح فقط دکمه‌ی «خودم می‌چینم»ِ کارتِ `41a` رو
+            // به‌عنوانِ درِ ورودی داره، ولی اون کارت تا ۲۱ روز داده جمع نشه اصلاً نمیاد. بدونِ
+            // این، قابلیت تو سه هفته‌ی اولِ نصب هیچ راهِ دسترسی‌ای نداشت.
+            .combinedClickable(
+                onClick = { buzz(); onClick() },
+                onLongClick = { buzz(); onLongClick() },
+            )
             .padding(vertical = 2.dp)
             // مختصاتِ ریشه‌ی خودِ تب رو گزارش می‌ده - برای AppTourOverlay که دقیقاً همین محدوده رو
             // نورانی می‌کنه، نه یه مختصاتِ حدسی/هاردکد.
@@ -1350,17 +1413,29 @@ private fun RowScope.BottomNavItem(
                 .background(if (selected) AppPrimaryPill else Color.Transparent),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                if (selected) tab.selectedIcon else tab.icon,
-                contentDescription = tab.label,
-                tint = ink,
-                modifier = Modifier
-                    .size(18.dp)
-                    .graphicsLayer { scaleX = iconScale; scaleY = iconScale },
-            )
+            // **بخشِ ۴۱**: وقتی کاربر مقصدِ این خانه رو عوض می‌کنه، آیکون با «۱۸۰ms محو +
+            // scale .9→1» جا عوض می‌کنه - **نه جابه‌جاییِ افقی** و نه لرزشِ کلِ نوار (`41c`).
+            // برچسبِ متن عمداً بی‌انیمیشنه، پس بیرونِ این بلوکه.
+            AnimatedContent(
+                targetState = dest,
+                transitionSpec = {
+                    (fadeIn(tween(180)) + scaleIn(tween(180), initialScale = 0.9f))
+                        .togetherWith(fadeOut(tween(180)))
+                },
+                label = "navIconSwap",
+            ) { current ->
+                Icon(
+                    if (selected) current.selectedIcon else current.icon,
+                    contentDescription = current.label,
+                    tint = ink,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .graphicsLayer { scaleX = iconScale; scaleY = iconScale },
+                )
+            }
         }
         Text(
-            tab.label,
+            dest.label,
             color = ink,
             fontSize = 9.5.sp,
             fontWeight = if (selected) FontWeight.Black else FontWeight.Bold,

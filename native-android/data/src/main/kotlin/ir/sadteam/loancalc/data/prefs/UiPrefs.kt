@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -44,6 +45,11 @@ class UiPrefs(private val context: Context) {
         val BADGES_RETRO_DONE = booleanPreferencesKey("badges_retro_done")
         val COLOR_THEME = stringPreferencesKey("color_theme")
         val OWNED_THEMES = stringPreferencesKey("owned_themes")
+        val NAV_SLOTS = stringPreferencesKey("nav_slots")
+        val NAV_USAGE = stringPreferencesKey("nav_usage")
+        val NAV_USAGE_STARTED_AT = longPreferencesKey("nav_usage_started_at")
+        val NAV_SUGGEST_LAST_AT = longPreferencesKey("nav_suggest_last_at")
+        val NAV_SUGGEST_DISMISSED = stringPreferencesKey("nav_suggest_dismissed")
     }
 
     // پیش‌فرض روشن/سفید (به‌درخواست کاربر «تم اصلی برنامه سفید باشه») - کاربری که قبلاً دستی
@@ -92,6 +98,91 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setShortcutOrder(ids: List<String>) {
         context.uiPrefsDataStore.edit { it[Keys.SHORTCUT_ORDER] = ids.joinToString(",") }
+    }
+
+    /* --------------------------------------------------------------------------------------
+     * شخصی‌سازیِ **نوارِ پایین** - بخشِ ۴۱ فایلِ طراحی.
+     *
+     * ⚠️ این‌ها عمداً از [shortcutOrder] **جدان**: طرح صریح می‌گه نوار و کشو «یک فهرست، دو
+     * نمایش»ن و تغییرِ یکی نباید اون یکی رو عوض کنه. مخزنِ مقصدها مشترکه، ترتیبِ ذخیره‌شده نه.
+     *
+     * همه‌چیز **محلیه و به سرور نمی‌ره** (قاعده‌ی صریحِ `41c` درباره‌ی شمارشِ استفاده).
+     * -------------------------------------------------------------------------------------- */
+
+    /** پنج جایگاهِ نوار، با `,` جدا. `null` یعنی هنوز دست نخورده → نوارِ پیش‌فرض. */
+    val navSlots: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.NAV_SLOTS] }
+
+    suspend fun setNavSlots(ids: List<String>) {
+        context.uiPrefsDataStore.edit { it[Keys.NAV_SLOTS] = ids.joinToString(",") }
+    }
+
+    /** برگشت به نوارِ پیش‌فرض - کلید کاملاً پاک می‌شه، نه اینکه مقدارِ پیش‌فرض نوشته بشه. */
+    suspend fun clearNavSlots() {
+        context.uiPrefsDataStore.edit { it.remove(Keys.NAV_SLOTS) }
+    }
+
+    /**
+     * شمارشِ بازشدنِ صفحه‌ها: `destId:weekKey=count` که با `;` جدا شدن.
+     *
+     * ⚠️ رشته‌ی تخت (نه جدولِ Room) عمدیه: حجمش ناچیزه (۷ مقصد × ۳ هفته)، هیچ‌وقت کوئریِ
+     * پیچیده نمی‌خواد، و **یه مهاجرتِ دیتابیسِ دیگه** برای یه شمارنده‌ی موقت ارزشش رو نداره.
+     */
+    val navUsage: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.NAV_USAGE] }
+
+    /** لحظه‌ی شروعِ شمارش - شرطِ «≥۲۱ روز داده»ی `41c` از رو همین حساب می‌شه. */
+    val navUsageStartedAt: Flow<Long> =
+        context.uiPrefsDataStore.data.map { it[Keys.NAV_USAGE_STARTED_AT] ?: 0L }
+
+    /**
+     * یه بازشدنِ صفحه رو ثبت می‌کنه و هم‌زمان هفته‌های خارج از پنجره رو دور می‌ندازه.
+     *
+     * پاک‌سازی همین‌جا انجام می‌شه (نه یه کارِ زمان‌بندی‌شده‌ی جدا) تا رشته هیچ‌وقت رشد نکنه.
+     */
+    suspend fun recordNavOpen(destId: String, weekKey: Int, keepWeeks: Set<Int>, nowMillis: Long) {
+        context.uiPrefsDataStore.edit { prefs ->
+            if ((prefs[Keys.NAV_USAGE_STARTED_AT] ?: 0L) == 0L) {
+                prefs[Keys.NAV_USAGE_STARTED_AT] = nowMillis
+            }
+            val counts = parseNavUsage(prefs[Keys.NAV_USAGE])
+                .filterKeys { it.second in keepWeeks }
+                .toMutableMap()
+            val key = destId to weekKey
+            counts[key] = (counts[key] ?: 0) + 1
+            prefs[Keys.NAV_USAGE] = counts.entries
+                .joinToString(";") { (k, v) -> "${k.first}:${k.second}=$v" }
+        }
+    }
+
+    /** زمانِ آخرین پیشنهادِ نشون‌داده‌شده - برای فاصله‌ی ۶۰ روزه. */
+    val navSuggestLastAt: Flow<Long> =
+        context.uiPrefsDataStore.data.map { it[Keys.NAV_SUGGEST_LAST_AT] ?: 0L }
+
+    suspend fun setNavSuggestLastAt(millis: Long) {
+        context.uiPrefsDataStore.edit { it[Keys.NAV_SUGGEST_LAST_AT] = millis }
+    }
+
+    /** جفت‌هایی که کاربر «نه» گفته (`promote>demote`)، با `,` جدا. */
+    val navSuggestDismissed: Flow<String?> =
+        context.uiPrefsDataStore.data.map { it[Keys.NAV_SUGGEST_DISMISSED] }
+
+    suspend fun addNavSuggestDismissed(pairKey: String) {
+        context.uiPrefsDataStore.edit { prefs ->
+            val existing = prefs[Keys.NAV_SUGGEST_DISMISSED]
+                ?.split(',')?.filter { it.isNotBlank() }.orEmpty()
+            prefs[Keys.NAV_SUGGEST_DISMISSED] = (existing + pairKey).distinct().joinToString(",")
+        }
+    }
+
+    companion object {
+        /** `destId:weekKey=count;…` → نگاشت. ردیفِ خراب بی‌صدا نادیده گرفته می‌شه. */
+        fun parseNavUsage(raw: String?): Map<Pair<String, Int>, Int> =
+            raw?.split(';').orEmpty().mapNotNull { entry ->
+                val (left, count) = entry.split('=').takeIf { it.size == 2 } ?: return@mapNotNull null
+                val (dest, week) = left.split(':').takeIf { it.size == 2 } ?: return@mapNotNull null
+                val w = week.toIntOrNull() ?: return@mapNotNull null
+                val c = count.toIntOrNull() ?: return@mapNotNull null
+                (dest to w) to c
+            }.toMap()
     }
 
     /** پورت .app.fs-small/fs-medium/fs-large (zoom:0.9/1/1.15) - پیش‌فرض «متوسط» (۱). */
