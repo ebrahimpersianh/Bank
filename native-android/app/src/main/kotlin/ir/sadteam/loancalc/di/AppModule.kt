@@ -15,6 +15,7 @@ import ir.sadteam.loancalc.data.CalculationHistoryRepository
 import ir.sadteam.loancalc.data.CategoryRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.CrashRepository
+import ir.sadteam.loancalc.data.DangRepository
 import ir.sadteam.loancalc.data.DebtRepository
 import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.IncomeRepository
@@ -36,6 +37,10 @@ import ir.sadteam.loancalc.data.db.ChequeBookDao
 import ir.sadteam.loancalc.data.db.ChequeDao
 import ir.sadteam.loancalc.data.db.CoinDao
 import ir.sadteam.loancalc.data.db.CounterpartyDao
+import ir.sadteam.loancalc.data.db.DangEventDao
+import ir.sadteam.loancalc.data.db.DangItemDao
+import ir.sadteam.loancalc.data.db.DangItemShareDao
+import ir.sadteam.loancalc.data.db.DangParticipantDao
 import ir.sadteam.loancalc.data.db.DebtDao
 import ir.sadteam.loancalc.data.db.IncomeDao
 import ir.sadteam.loancalc.data.db.LoanDao
@@ -178,6 +183,27 @@ object AppModule {
     @Singleton
     fun provideDebtRepository(counterpartyDao: CounterpartyDao, debtDao: DebtDao): DebtRepository =
         DebtRepository(counterpartyDao, debtDao)
+
+    @Provides
+    fun provideDangEventDao(database: AppDatabase): DangEventDao = database.dangEventDao()
+
+    @Provides
+    fun provideDangParticipantDao(database: AppDatabase): DangParticipantDao = database.dangParticipantDao()
+
+    @Provides
+    fun provideDangItemDao(database: AppDatabase): DangItemDao = database.dangItemDao()
+
+    @Provides
+    fun provideDangItemShareDao(database: AppDatabase): DangItemShareDao = database.dangItemShareDao()
+
+    @Provides
+    @Singleton
+    fun provideDangRepository(
+        eventDao: DangEventDao,
+        participantDao: DangParticipantDao,
+        itemDao: DangItemDao,
+        itemShareDao: DangItemShareDao,
+    ): DangRepository = DangRepository(eventDao, participantDao, itemDao, itemShareDao)
 
     @Provides
     fun provideNoteDao(database: AppDatabase): NoteDao = database.noteDao()

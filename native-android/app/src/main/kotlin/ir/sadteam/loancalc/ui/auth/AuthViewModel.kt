@@ -8,6 +8,7 @@ import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.AuthRepository
 import ir.sadteam.loancalc.data.AuthResult
 import ir.sadteam.loancalc.data.ChequeRepository
+import ir.sadteam.loancalc.data.DangRepository
 import ir.sadteam.loancalc.data.DebtRepository
 import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
@@ -39,6 +40,7 @@ class AuthViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val incomeRepository: IncomeRepository,
     private val debtRepository: DebtRepository,
+    private val dangRepository: DangRepository,
     private val noteRepository: NoteRepository,
     private val gamification: GamificationRepository,
 ) : ViewModel() {
@@ -175,6 +177,7 @@ class AuthViewModel @Inject constructor(
             accountRepository.clearLocal()
             incomeRepository.clearLocal()
             debtRepository.clearLocal()
+            dangRepository.clearLocal()
             noteRepository.clearLocal()
         }
     }
