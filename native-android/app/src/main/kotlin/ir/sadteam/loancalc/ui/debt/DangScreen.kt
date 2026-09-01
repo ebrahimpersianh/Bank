@@ -66,6 +66,7 @@ import ir.sadteam.loancalc.ui.components.CounterpartyPickerDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
+import ir.sadteam.loancalc.ui.components.JibakLogo
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -296,8 +297,19 @@ private fun DangReceiptCard(
             .background(AppPrimaryPill, RoundedCornerShape(14.dp))
             .padding(16.dp),
     ) {
-        Text("جیبک", color = AppPrimary, fontSize = 13.sp, fontWeight = FontWeight.Black)
-        Text(event.title, color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
+        // ⚠️ لوگوی واقعی، نه فقط اسم: این تصویر قراره تو گروهِ دوستان فرستاده بشه، پس تنها
+        // جاییه که برندِ اپ خودش رو به آدم‌هایی نشون می‌ده که هنوز کاربرِ جیبک نیستن.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            JibakLogo(width = 26.dp)
+            Text(
+                "جیبک",
+                color = AppPrimary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(start = 6.dp),
+            )
+        }
+        Text(event.title, color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
         Text(
             "${toFa(event.day)}/${toFa(event.month)}/${toFa(event.year)} · مبلغِ کل: ${fmt(event.totalAmount)} ریال",
             color = AppMuted,
