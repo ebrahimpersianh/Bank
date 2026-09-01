@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,12 +69,23 @@ import ir.sadteam.loancalc.ui.theme.Motion
  * بقیه‌ی اکوسیستم.
  */
 @Composable
-fun DebtScreen(onBack: () -> Unit, viewModel: DebtViewModel = hiltViewModel()) {
+fun DebtScreen(
+    onBack: () -> Unit,
+    viewModel: DebtViewModel = hiltViewModel(),
+    dangViewModel: DangViewModel = hiltViewModel(),
+) {
     val counterparties by viewModel.counterparties.collectAsState()
     val debts by viewModel.debts.collectAsState()
     var openedCounterpartyId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showAddCounterparty by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<CounterpartyEntity?>(null) }
+
+    // «دنگ» - فریمِ `22c`، ناوبریِ داخلیِ خودش (لیست/فرمِ ساخت/جزئیات) کنارِ همون
+    // سه‌حالتِ قبلیِ این صفحه.
+    val dangEvents by dangViewModel.events.collectAsState()
+    var dangScreen by rememberSaveable { mutableStateOf("none") } // none | list | create | detail
+    var openedDangEventId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val openedDangEvent = openedDangEventId?.let { id -> dangEvents.firstOrNull { it.id == id } }
     // جشنِ کوچیکِ «تسویه شد» (بستهٔ ارتقاهای گرافیکی، خواسته‌ی صریحِ کاربر). عمداً فقط وقتی
     // **آخرین** ردیفِ بازِ یه طرف‌حساب تسویه می‌شه اجرا می‌شه، نه هر تسویه‌ی تکی - یه اتفاقِ نادر و
     // واقعاً «رسیدن به هدف»ه، پس تکراری/آزاردهنده نمی‌شه. (هم‌الگو با جشنِ تسویه‌ی کاملِ وام تو
@@ -82,9 +94,11 @@ fun DebtScreen(onBack: () -> Unit, viewModel: DebtViewModel = hiltViewModel()) {
 
     val opened = openedCounterpartyId?.let { id -> counterparties.firstOrNull { it.id == id } }
     val screenKey = when {
+        dangScreen != "none" -> "dang-$dangScreen"
         opened != null -> "detail"
         else -> "list"
     }
+    fun counterpartyNameFor(id: Long?): String = counterparties.firstOrNull { it.id == id }?.name ?: "خودم"
 
     pendingDelete?.let { counterparty ->
         ConfirmDeleteDialog(
@@ -102,6 +116,34 @@ fun DebtScreen(onBack: () -> Unit, viewModel: DebtViewModel = hiltViewModel()) {
         label = "debtScreen",
     ) { key ->
         when (key) {
+            "dang-list" -> DangListScreen(
+                events = dangEvents,
+                onBack = { dangScreen = "none" },
+                onOpen = { openedDangEventId = it.id; dangScreen = "detail" },
+                onAddNew = { dangScreen = "create" },
+            )
+            "dang-create" -> DangCreateScreen(
+                counterparties = counterparties,
+                onCancel = { dangScreen = "list" },
+                onCreateCounterparty = { name, onCreated -> viewModel.addCounterparty(name, onCreated) },
+                onSave = { title, method, total, y, m, d, eventMode, participants, items ->
+                    dangViewModel.createEvent(title, method, total, y, m, d, eventMode, participants, items) {
+                        dangScreen = "list"
+                    }
+                },
+            )
+            "dang-detail" -> openedDangEvent?.let { event ->
+                val participants by dangViewModel.participants(event.id).collectAsState(initial = emptyList())
+                DangDetailScreen(
+                    event = event,
+                    participants = participants,
+                    counterpartyNameFor = ::counterpartyNameFor,
+                    onBack = { dangScreen = "list"; openedDangEventId = null },
+                    onDelete = { dangViewModel.deleteEvent(event); dangScreen = "list"; openedDangEventId = null },
+                    onToggleEventSettled = { dangViewModel.setEventSettled(event, it) },
+                    onToggleParticipantSettled = { participant, settled -> dangViewModel.setParticipantSettled(participant, settled) },
+                )
+            }
             "detail" -> opened?.let { counterparty ->
                 CounterpartyDetail(
                     counterparty = counterparty,
@@ -133,6 +175,7 @@ fun DebtScreen(onBack: () -> Unit, viewModel: DebtViewModel = hiltViewModel()) {
                 onShowAddCounterpartyChange = { showAddCounterparty = it },
                 onAddCounterparty = { viewModel.addCounterparty(it) },
                 netBalance = { id -> viewModel.netBalance(id, debts) },
+                onOpenDang = { dangScreen = "list" },
             )
         }
     }
@@ -157,6 +200,7 @@ private fun DebtList(
     onShowAddCounterpartyChange: (Boolean) -> Unit,
     onAddCounterparty: (String) -> Unit,
     netBalance: (Long) -> Double,
+    onOpenDang: () -> Unit,
 ) {
     val privacyMode = LocalPrivacyMode.current
     var newName by rememberSaveable { mutableStateOf("") }
@@ -177,6 +221,12 @@ private fun DebtList(
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                 }
                 Text("طلب و بدهی", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        item {
+            // «دنگ» - فریمِ `22c`، درِ ورودی از همینجا (تقسیمِ یه هزینه بینِ چند طرف‌حساب).
+            OutlinedButton(onClick = onOpenDang, modifier = Modifier.fillMaxWidth()) {
+                Text("دنگ‌ها (تقسیمِ هزینه بینِ چند نفر)")
             }
         }
         if (counterparties.isNotEmpty()) {
