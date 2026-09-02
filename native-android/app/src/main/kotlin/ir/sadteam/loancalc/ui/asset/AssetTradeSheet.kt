@@ -143,6 +143,10 @@ fun AssetTradeSheet(
         unitPriceRial
     }
 
+    // تقویم بازگشتِ سیستمی می‌گیرد، وگرنه دکمه‌ی back کلِ فرمِ نیمه‌پرشده را می‌بست.
+    // انتخابگر BackHandlerِ خودش را دارد و چون بعد از این ثبت می‌شود، اولویت با اوست.
+    BackHandler(enabled = showCalendar) { showCalendar = false }
+
     // تقویم و انتخابگر **روی** فرم می‌نشینند، نه به‌جایش (رجوع کن به باگِ `return`).
     Box(modifier = Modifier.fillMaxSize()) {
         Column(

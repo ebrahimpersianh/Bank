@@ -1,6 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
-import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import java.io.OutputStream
 import java.util.zip.ZipEntry
@@ -16,22 +16,30 @@ object AccountingXlsxExporter {
         transactions: List<AccountTransactionEntity>,
         out: OutputStream,
     ) {
+        // ستونِ مبلغ **تومان** می‌شود، مثلِ همه‌جای برنامه. عددِ ریالِ خام در فایلِ
+        // اکسل، عددی ده‌برابر بود که کاربر بی هیچ برچسبی جمعش می‌زد.
+        val toman = { rial: Double -> rialToToman(rial.toLong()) }
+
         val rows = buildList<List<Any>> {
-            add(listOf("جمعِ درآمد", income))
-            add(listOf("جمعِ هزینه", expense))
-            add(listOf("مانده", income - expense))
+            add(listOf("جمعِ درآمد (تومان)", toman(income)))
+            add(listOf("جمعِ هزینه (تومان)", toman(expense)))
+            add(listOf("مانده (تومان)", toman(income - expense)))
             add(emptyList())
-            add(listOf("دسته‌بندی", "مبلغ"))
-            categoryBreakdown.forEach { (name, amount) -> add(listOf(name, amount)) }
+            add(listOf("دسته‌بندی", "مبلغ (تومان)"))
+            categoryBreakdown.forEach { (name, amount) -> add(listOf(name, toman(amount))) }
             add(emptyList())
-            add(listOf("تاریخ", "نوع", "دسته‌بندی", "مبلغ", "توضیح"))
+            add(listOf("تاریخ", "نوع", "دسته‌بندی", "مبلغ (تومان)", "توضیح"))
             transactions.forEach { tx ->
                 add(
                     listOf(
-                        "${toFa(tx.year)}/${toFa(tx.month)}/${toFa(tx.day)}",
+                        // ⚠️ **رقمِ لاتین، عمداً** - هشتمین استثنای `Numerals-global-handoff.md`.
+                        // این فایل را ماشین می‌خواند نه آدم: تاریخِ فارسی ستون را متنی می‌کند،
+                        // پس مرتب‌سازی و فرمولِ اکسل روی آن کار نمی‌کند. صفرِ پیشوند هم لازم
+                        // است تا مرتب‌سازیِ الفبایی همان مرتب‌سازیِ زمانی باشد.
+                        "%04d/%02d/%02d".format(java.util.Locale.US, tx.year, tx.month, tx.day),
                         if (tx.type == "DEPOSIT") "درآمد" else "هزینه",
                         tx.category ?: "—",
-                        tx.amount,
+                        toman(tx.amount),
                         tx.description,
                     ),
                 )

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material3.Icon
@@ -27,8 +28,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.RecurringExpense
 import ir.sadteam.loancalc.core.TransactionType
-import ir.sadteam.loancalc.core.fmt
-import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppHeroCard
@@ -38,6 +37,10 @@ import ir.sadteam.loancalc.ui.components.HeroMuted
 import ir.sadteam.loancalc.ui.components.HeroTone
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.toFa
+import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.settings.SmsAutoImportViewModel
@@ -68,6 +71,10 @@ fun SubscriptionFinderScreen(
     val ignored by prefsViewModel.ignoredSubscriptions.collectAsState()
     val declared by accountViewModel.recurringPayments.collectAsState()
     val banner = rememberInAppBanner()
+
+    // بازگشتِ سیستمی هم باید صفحه را ببندد، نه کلِ تب را. `onBack` همان کاری را می‌کند که
+    // دکمه‌ی فلش می‌کند.
+    BackHandler(onBack = onBack)
 
     val visible = subscriptions.filter { it.label !in ignored }
     val monthlyTotal = visible.sumOf { it.typicalAmountRial }
@@ -102,16 +109,21 @@ fun SubscriptionFinderScreen(
                     AppHeroCard(tone = HeroTone.PURPLE) {
                         Text("ماهانه بابتِ اشتراک‌ها", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                         Text(
-                            maskIfPrivate(privacyMode, fmt(monthlyTotal)),
+                            // fmt() عددِ ریال با جداکننده‌ی لاتین می‌داد.
+                            maskIfPrivate(privacyMode, rialToToman(monthlyTotal.toLong()).toFaMoney()),
                             color = Color.White,
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(top = 2.dp),
                         )
                         Text(
-                            "ریال — ${toFa(visible.size)} موردِ تکرارشونده · سالانه حدودِ ${fmt(monthlyTotal * 12)} ریال",
+                            // عددِ سالانه فشرده می‌آید: کاملش کنارِ عددِ ماهانه دو عددِ
+                            // دوازده‌رقمیِ پشتِ‌هم می‌شد و هیچ‌کدام خوانده نمی‌شد.
+                            "تومان — ${toFa(visible.size)} موردِ تکرارشونده · سالانه حدودِ " +
+                                (monthlyTotal * 12).rialToFaCompact() + " تومان",
                             color = HeroMuted,
                             fontSize = 10.sp,
+                            lineHeight = 18.sp,
                             modifier = Modifier.padding(top = 4.dp),
                         )
                     }
@@ -133,7 +145,8 @@ fun SubscriptionFinderScreen(
                                     )
                                 }
                                 Text(
-                                    maskIfPrivate(privacyMode, "${fmt(sub.typicalAmountRial)} ریال"),
+                                    // واحد در ردیف نمی‌آید (قاعده‌ی عدد) - یک‌بار در هیرو آمد.
+                                    maskIfPrivate(privacyMode, sub.typicalAmountRial.rialToFaCompact()),
                                     color = AppText,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Black,

@@ -18,7 +18,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.Autorenew
+import androidx.compose.material.icons.filled.EventRepeat
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Download
@@ -44,11 +46,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
-import ir.sadteam.loancalc.core.fmt
-import ir.sadteam.loancalc.core.toFa
-import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompactParts
+import ir.sadteam.loancalc.ui.jibak.toFa
 import ir.sadteam.loancalc.ui.components.CategoryDonut
 import ir.sadteam.loancalc.ui.components.DonutSlice
 import ir.sadteam.loancalc.ui.components.dashedBorder
@@ -120,20 +121,16 @@ fun ReportTabScreen(
         buildReportStats(transactions, recurring, today, period)
     }
     var showNewTransaction by remember { mutableStateOf(false) }
-    if (showNewTransaction) {
-        NewTransactionSheet(onDismiss = { showNewTransaction = false })
-        return
-    }
-    // اشتراک‌یاب - هم‌الگو با شیتِ بالا، یه صفحه‌ی پوش‌شده‌ی داخلیِ همین تب.
     var showSubscriptionFinder by remember { mutableStateOf(false) }
-    if (showSubscriptionFinder) {
-        SubscriptionFinderScreen(
-            subscriptions = stats.detectedSubscriptions,
-            onBack = { showSubscriptionFinder = false },
-        )
-        return
+
+    // ⚠️ زیرصفحه‌ها **روی** تب می‌نشینند، نه به‌جایش. قبلاً با `return` صدا زده می‌شدند و
+    // کلِ LazyColumn از کامپوزیشن بیرون می‌رفت: پشتِ شیت سفیدِ خالی بود و اسکرولِ گزارش با
+    // هر بستنِ اشتراک‌یاب صفر می‌شد. همان باگی که در خانه و تبِ دارایی رفع شد.
+    BackHandler(enabled = showNewTransaction || showSubscriptionFinder) {
+        if (showNewTransaction) showNewTransaction = false else showSubscriptionFinder = false
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 110.dp),
@@ -178,7 +175,14 @@ fun ReportTabScreen(
             }
         }
         if (stats.byCategory.isNotEmpty()) {
-            item { CategoryDonutCard(stats.byCategory, stats.periodSpend, privacyMode) }
+            item {
+                CategoryDonutCard(
+                    byCategory = stats.byCategory,
+                    total = stats.periodSpend,
+                    periodLabel = stats.periodLabel,
+                    privacyMode = privacyMode,
+                )
+            }
         }
         // ⚠️ **اشتراک‌یاب** - این کارت با کارتِ زیریش فرق داره: اون پرداخت‌های تکراریِ
         // **اعلام‌شده‌ی خودِ کاربره**، این چیزیه که اپ خودش از رو تاریخچه **کشف** کرده و
@@ -188,7 +192,7 @@ fun ReportTabScreen(
                 DiscoveryCard(
                     icon = Icons.Filled.Autorenew,
                     title = "${toFa(stats.detectedSubscriptions.size)} خرجِ تکرارشونده پیدا شد",
-                    subtitle = "ماهی ${(stats.detectedMonthly).rialToFaCompact()} - لمس کن ببین چی‌ان",
+                    subtitle = "ماهی ${(stats.detectedMonthly).rialToFaCompact()} تومان — لمس کن ببین چی‌ان",
                     bg = DiscoverWarnBg,
                     border = DiscoverWarnBorder,
                     pill = DiscoverWarnPill,
@@ -201,16 +205,19 @@ fun ReportTabScreen(
         }
         if (stats.recurringCount > 0) {
             item {
+                // ⚠️ این کارت و کارتِ کشفِ بالایی قبلاً **هم‌رنگ، هم‌آیکون و هم‌جمله** بودند
+                // و پشتِ‌هم می‌نشستند. این یکی اعلامِ خودِ کاربر است نه کشفِ برنامه، پس
+                // سطحِ خنثی می‌گیرد و آیکونش هم عوض شد.
                 DiscoveryCard(
-                    icon = Icons.Filled.Autorenew,
-                    title = "${toFa(stats.recurringCount)} اشتراکِ تکراری",
-                    subtitle = "ماهی ${(stats.recurringMonthly).rialToFaCompact()}",
-                    bg = DiscoverWarnBg,
-                    border = DiscoverWarnBorder,
-                    pill = DiscoverWarnPill,
-                    ink = DiscoverWarnInk,
-                    subInk = DiscoverWarnSubInk,
-                    iconInk = DiscoverWarnIconInk,
+                    icon = Icons.Filled.EventRepeat,
+                    title = "${toFa(stats.recurringCount)} پرداختِ تکراریِ ثبت‌شده",
+                    subtitle = "ماهی ${(stats.recurringMonthly).rialToFaCompact()} تومان",
+                    bg = AppSurface,
+                    border = AppLineRow,
+                    pill = AppIconFrame,
+                    ink = AppText,
+                    subInk = AppMuted,
+                    iconInk = AppMuted,
                 )
             }
         }
@@ -230,6 +237,19 @@ fun ReportTabScreen(
             }
         }
         item { ExportRow(onClick = onOpenExport) }
+    }
+
+        if (showSubscriptionFinder) {
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                SubscriptionFinderScreen(
+                    subscriptions = stats.detectedSubscriptions,
+                    onBack = { showSubscriptionFinder = false },
+                )
+            }
+        }
+        if (showNewTransaction) {
+            NewTransactionSheet(onDismiss = { showNewTransaction = false })
+        }
     }
 }
 
@@ -506,23 +526,39 @@ private fun PeriodSpendHero(
                 )
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        maskIfPrivate(masked, fmt(spend)),
+                        // fmt() جداکننده‌ی لاتین می‌داد و عدد ریال بود: خرجِ ۱۰۲ میلیون
+                        // تومان «1,026,600,000» چاپ می‌شد.
+                        maskIfPrivate(masked, spend.rialToFaCompact()),
                         color = Color.White,
                         fontSize = 27.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(top = 3.dp),
                     )
                 }
+                // واحد یک‌بار زیرِ عدد می‌آید، طبقِ قاعده‌ی عددِ سیستمِ طراحی.
+                Text(
+                    "تومان",
+                    color = Color.White.copy(alpha = 0.8f),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
             }
             if (deltaPercent != null) {
                 Text(
-                    (if (deltaPercent > 0) "▲ " else "▼ ") + "${toFa(kotlin.math.abs(deltaPercent))}٪ قدرتِ خرید",
+                    // ⚠️ برچسبِ قبلی «قدرتِ خرید» بود و غلط: این عدد نسبتِ خرجِ این دوره به
+                    // دوره‌ی قبل است، نه تورم و نه قدرتِ خرید. کاربری که خرجش ۲۰٪ بیشتر
+                    // شده «۲۰٪ قدرتِ خرید» می‌دید و معنایش را برعکس می‌فهمید.
+                    (if (deltaPercent > 0) "▲ " else "▼ ") +
+                        "${toFa(kotlin.math.abs(deltaPercent))}٪ از دوره‌ی قبل",
                     color = Color.White,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Black,
                     modifier = Modifier
                         .clip(RoundedCornerShape(999.dp))
-                        .background(Color.White.copy(alpha = 0.2f))
+                        // خرجِ بیشتر پُررنگ‌تر. قرمز روی هیرویِ بنفش نمی‌نشیند، پس شدتِ
+                        // همان سفید جهت را می‌رساند - کنارِ مثلثِ ▲/▼ که مستقل از رنگ است.
+                        .background(Color.White.copy(alpha = if (deltaPercent > 0) 0.28f else 0.16f))
                         .padding(horizontal = 10.dp, vertical = 5.dp),
                 )
             }
@@ -626,8 +662,9 @@ private fun FixedVsFreeCard(
         }
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                "اجاره، اقساط و قبض ${maskIfPrivate(masked, (fixedAmount).rialToFaCompact())} از درآمدت را برده — " +
-                    "${maskIfPrivate(masked, (freeAmount).rialToFaCompact())} برای خرجِ آزاد مانده.",
+                "اجاره، اقساط و قبض ${maskIfPrivate(masked, (fixedAmount).rialToFaCompact())} تومان از " +
+                    "درآمدت را برده — ${maskIfPrivate(masked, (freeAmount).rialToFaCompact())} تومان " +
+                    "برای خرجِ آزاد مانده.",
                 color = AppMuted,
                 fontSize = 10.sp,
                 lineHeight = 18.sp,
@@ -640,12 +677,18 @@ private val StripeDark = Color(0xFFE23F3F)
 
 // ═══ ۴ · دونات ════════════════════════════════════════════════════════════════
 @Composable
-private fun CategoryDonutCard(byCategory: Map<String, Double>, total: Double, privacyMode: Boolean) {
+private fun CategoryDonutCard(
+    byCategory: Map<String, Double>,
+    total: Double,
+    periodLabel: String,
+    privacyMode: Boolean,
+) {
     val top = remember(byCategory) { byCategory.entries.sortedByDescending { it.value }.take(3) }
     val colors = listOf(AppDanger, AppPurple, AppInfo)
+    val (centerNumber, centerUnit) = total.rialToFaCompactParts()
     val shape = RoundedCornerShape(AppRadius.card)
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Column(
+        verticalArrangement = Arrangement.spacedBy(11.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
@@ -653,21 +696,36 @@ private fun CategoryDonutCard(byCategory: Map<String, Double>, total: Double, pr
             .border(2.dp, AppLine, shape)
             .padding(14.dp),
     ) {
+    // برچسبِ دوره از داخلِ دایره بیرون آمد. «این ماه»ِ ثابت هم غلط بود: با تاگلِ فصل/سال
+    // عوض نمی‌شد، پس روی دوره‌ی سالانه هم «این ماه» می‌نوشت.
+    Text("خرجِ $periodLabel", color = AppLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         CategoryDonut(
             slices = top.mapIndexed { i, e -> DonutSlice(e.value, colors[i % colors.size]) },
             size = 74.dp,
             strokeWidth = 13.dp,
         ) {
+            // قطرِ داخلیِ دونات ۷۴ − ۲×۱۳ = ۴۸dp است. یک خطِ «۱۰۲٫۶ میلیون» در ۱۱sp
+            // حدودِ ۵۲dp عرض می‌گیرد و به لبه‌ی رینگ می‌چسبد. عدد و واحد دو خطِ کوتاه شدند.
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        maskIfPrivate(masked, (total).rialToFaCompact()),
+                        maskIfPrivate(masked, centerNumber),
                         color = AppText,
-                        fontSize = 11.sp,
+                        fontSize = 13.sp,
+                        lineHeight = 15.sp,
                         fontWeight = FontWeight.Black,
+                        maxLines = 1,
                     )
                 }
-                Text("این ماه", color = AppLabel, fontSize = 7.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    centerUnit,
+                    color = AppLabel,
+                    fontSize = 7.5.sp,
+                    lineHeight = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                )
             }
         }
         Column(
@@ -690,7 +748,8 @@ private fun CategoryDonutCard(byCategory: Map<String, Double>, total: Double, pr
                         modifier = Modifier.weight(1f).padding(start = 7.dp),
                     )
                     Text(
-                        "${toFa((entry.value / total * 100).toInt())}٪",
+                        // total صفر → NaN٪. کارت با جمعِ صفر نمی‌آید، ولی نگهبانش یک خط است.
+                        if (total <= 0.0) "—" else "${toFa((entry.value / total * 100).toInt())}٪",
                         color = AppMuted,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
@@ -698,6 +757,7 @@ private fun CategoryDonutCard(byCategory: Map<String, Double>, total: Double, pr
                 }
             }
         }
+    }
     }
 }
 
@@ -740,12 +800,16 @@ private fun DiscoveryCard(
             Text(title, color = ink, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
             Text(subtitle, color = subInk, fontSize = 9.5.sp, modifier = Modifier.padding(top = 2.dp))
         }
-        Icon(
-            Icons.Filled.ChevronLeft,
-            contentDescription = null,
-            tint = ChevronInk,
-            modifier = Modifier.size(13.dp),
-        )
+        // فلش فقط وقتی می‌آید که جایی برود. سه کارت فلش داشتند و دو تایشان با تپ کاری
+        // نمی‌کردند.
+        if (onClick != null) {
+            Icon(
+                Icons.Filled.ChevronLeft,
+                contentDescription = null,
+                tint = ChevronInk,
+                modifier = Modifier.size(13.dp),
+            )
+        }
     }
 }
 

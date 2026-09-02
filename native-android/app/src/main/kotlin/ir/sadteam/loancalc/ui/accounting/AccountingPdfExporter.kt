@@ -6,8 +6,9 @@ import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextDirectionHeuristics
 import android.text.TextPaint
-import ir.sadteam.loancalc.core.fmt
-import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.toFaDateNumeric
+import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import java.io.OutputStream
 
@@ -18,6 +19,18 @@ object AccountingPdfExporter {
     private const val PAGE_WIDTH = 595
     private const val PAGE_HEIGHT = 842
     private const val MARGIN = 40f
+
+    /**
+     * مبلغِ ریالیِ دیتابیس → تومانِ گروه‌بندی‌شده‌ی فارسی.
+     *
+     * `fmt()`ِ قبلی هم جداکننده‌ی لاتین می‌داد هم عددِ ریال چاپ می‌کرد با برچسبِ «ریال» -
+     * یعنی خروجیِ PDF تنها جای برنامه بود که واحدش با صفحه‌ها فرق داشت. کسی که گزارش را
+     * برای حسابدارش می‌فرستد باید همان عددی را ببیند که در برنامه دیده.
+     *
+     * فرمِ فشرده (`rialToFaCompact`) اینجا **به کار نمی‌آید**: سندِ رسمی عددِ گِرد نمی‌خواهد،
+     * مبلغِ دقیق می‌خواهد.
+     */
+    private fun money(rial: Double): String = "${rialToToman(rial.toLong()).toFaMoney()} تومان"
 
     private fun drawRtlLine(canvas: Canvas, text: String, paint: TextPaint, y: Float): Float {
         val width = (PAGE_WIDTH - MARGIN * 2).toInt()
@@ -67,9 +80,9 @@ object AccountingPdfExporter {
         y += drawRtlLine(canvas, "بازه: $rangeLabel — حساب: $accountLabel", labelPaint, y) + 16f
 
         val summaryLines = listOf(
-            "جمعِ درآمد: ${fmt(income)} ریال",
-            "جمعِ هزینه: ${fmt(expense)} ریال",
-            "مانده: ${fmt(income - expense)} ریال",
+            "جمعِ درآمد: ${money(income)}",
+            "جمعِ هزینه: ${money(expense)}",
+            "مانده: ${money(income - expense)}",
         )
         for (line in summaryLines) {
             y = newPageIfNeeded(30f, y)
@@ -82,7 +95,7 @@ object AccountingPdfExporter {
             y += drawRtlLine(canvas, "تفکیکِ دسته‌بندی:", subTitlePaint, y) + 10f
             for ((name, amount) in categoryBreakdown) {
                 y = newPageIfNeeded(24f, y)
-                y += drawRtlLine(canvas, "$name: ${fmt(amount)} ریال", labelPaint, y) + 6f
+                y += drawRtlLine(canvas, "$name: ${money(amount)}", labelPaint, y) + 6f
             }
         }
 
@@ -92,9 +105,11 @@ object AccountingPdfExporter {
 
         for (tx in transactions) {
             y = newPageIfNeeded(24f, y)
-            val sign = if (tx.type == "DEPOSIT") "+" else "-"
-            val line = "${toFa(tx.year)}/${toFa(tx.month)}/${toFa(tx.day)} — " +
-                "${tx.category ?: "—"} — $sign${fmt(tx.amount)} ریال" +
+            // «−» و «+»ِ فارسی، نه hyphen. و تاریخ دو رقمی، وگرنه «۱۴۰۵/۶/۹» کنارِ
+            // «۱۴۰۵/۱۲/۲۹» ستون نمی‌چیند و سندِ چندصفحه‌ای خوانده نمی‌شود.
+            val sign = if (tx.type == "DEPOSIT") "+" else "−"
+            val line = toFaDateNumeric(tx.year, tx.month, tx.day) + " — " +
+                "${tx.category ?: "—"} — $sign${money(tx.amount)}" +
                 if (tx.description.isNotBlank()) " (${tx.description})" else ""
             y += drawRtlLine(canvas, line, labelPaint, y) + 6f
         }

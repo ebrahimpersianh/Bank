@@ -41,7 +41,6 @@ import ir.sadteam.loancalc.data.assetCatalogGroups
 import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_CUSTOM
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
-import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
@@ -95,7 +94,7 @@ fun AssetPickerSheet(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
+    Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 28.dp),

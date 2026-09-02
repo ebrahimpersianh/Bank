@@ -168,6 +168,40 @@ fun Double.rialToFaSignedCompact(): String {
     return if (t >= 0) "+" + kotlin.math.abs(t).toFaCompact() else t.toFaCompact()
 }
 
+/**
+ * مقدارِ ریالی → جفتِ (عدد، واحد) — «۱۰۲٫۶» و «میلیون تومان».
+ *
+ * برای وسطِ نمودارِ دایره‌ای، جایی که یک خطِ کامل جا نمی‌شود: قطرِ داخلیِ دوناتِ ۷۴dp با
+ * رینگِ ۱۳dp فقط **۴۸dp** است و «۱۰۲٫۶ میلیون تومان» در ۱۱sp حدودِ ۵۲dp عرض می‌گیرد، پس
+ * به لبه‌ی رینگ می‌چسبد. دو خطِ کوتاه جا می‌شود، و عددِ درشت‌تر از واحد سلسله‌مراتبِ
+ * درستی هم هست.
+ *
+ * زیرِ یک میلیون واحد «هزار تومان» می‌شود و زیرِ هزار «تومان» — پس خطِ دوم هیچ‌وقت خالی
+ * نمی‌ماند و ارتفاعِ کارت با تغییرِ مبلغ نمی‌پرد.
+ *
+ * ⚠️ اینجا و نه در دو صفحه‌ی جدا: صفحه‌ی اول و تبِ گزارش هر دو همین دونات را دارند، و
+ * نسخه‌ی محلی یعنی کپیِ سوم — همان الگویی که سه بار در `compact` تکرار شد.
+ */
+fun Double.rialToFaCompactParts(): Pair<String, String> {
+    val toman = rialToToman(toLong())
+    val v = kotlin.math.abs(toman)
+    val (number, unit) = when {
+        v >= 1_000_000_000L -> faOneDecimal(v / 1_000_000_000.0) to "میلیارد تومان"
+        v >= 1_000_000L -> faOneDecimal(v / 1_000_000.0) to "میلیون تومان"
+        v >= 1_000L -> faOneDecimal(v / 1_000.0) to "هزار تومان"
+        else -> v.toFa() to "تومان"
+    }
+    return (if (toman < 0L) "$FA_MINUS$number" else number) to unit
+}
+
+/** یک رقمِ اعشار، بی صفرِ آخر، با ممیزِ فارسی. `Locale.US` اجباری است. */
+private fun faOneDecimal(v: Double): String {
+    val s = String.format(Locale.US, "%.1f", v).trimEnd('0').trimEnd('.')
+    return buildString {
+        s.forEach { append(if (it.isDigit()) faDigits[it - '0'] else FA_DECIMAL_SEPARATOR) }
+    }
+}
+
 /** حالتِ حریمِ خصوصی: همیشه پنج نقطه، مستقل از تعدادِ رقم. */
 const val MASKED_AMOUNT = "•••••"
 
