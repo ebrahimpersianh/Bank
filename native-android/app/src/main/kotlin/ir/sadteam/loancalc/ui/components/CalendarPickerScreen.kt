@@ -1,6 +1,8 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,7 +24,6 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,20 +36,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.jibak.faMonthName
+import ir.sadteam.loancalc.ui.components.AppButtonVariant
+import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 
-private val faMonthNamesCalendar = listOf(
-    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
-)
+// ⚠️ فهرستِ محلیِ نامِ ماه‌ها حذف شد - چهارمین کپی در برنامه بود (کنارِ `persianMonthName`،
+// `faMonthNamesAccount` و `JibakFormat.faMonths`). `faMonthName(m)` همان را می‌دهد و اگر
+// روزی نامی عوض شود یک جا عوض می‌شود.
 private val faWeekDayShort = listOf("ش", "ی", "د", "س", "چ", "پ", "ج")
 
 /** بازه‌ی سال‌های قابل‌انتخاب تو گرید سال (نزولی نشون داده می‌شه: ۱۴۱۰ بالا، ۱۳۵۰ پایین). */
@@ -76,6 +78,13 @@ fun CalendarPickerScreen(
     var selected by remember { mutableStateOf<PersianDate?>(initialDate) }
     var mode by remember { mutableStateOf(CalendarMode.DAYS) }
     val today = remember { JalaliCalendar.today() }
+
+    // ⚠️ دکمه‌ی فلشِ سرصفحه از گریدِ ماه/سال به گریدِ روز برمی‌گشت، ولی بازگشتِ سیستمی از این
+    // پشته بی‌خبر بود: کاربر گریدِ سال را باز می‌کرد، back می‌زد، و کلِ تقویم بسته می‌شد -
+    // بی انتخابِ تاریخ، و در فرمی که نیمه‌پر بود.
+    BackHandler {
+        if (mode == CalendarMode.DAYS) onBack() else mode = CalendarMode.DAYS
+    }
 
     fun stepMonth(delta: Int) {
         var m = viewMonth + delta
@@ -115,7 +124,7 @@ fun CalendarPickerScreen(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 HeaderChip(
-                    label = faMonthNamesCalendar[viewMonth - 1],
+                    label = faMonthName(viewMonth),
                     active = mode == CalendarMode.MONTHS,
                     onClick = { mode = if (mode == CalendarMode.MONTHS) CalendarMode.DAYS else CalendarMode.MONTHS },
                 )
@@ -164,7 +173,14 @@ fun CalendarPickerScreen(
                     selected = today
                 }) { Text("امروز") }
 
-                OutlinedButton(onClick = { selected?.let(onDateSelected) }) {
+                // ⚠️ «تایید» کارِ اصلیِ صفحه است و `OutlinedButton`ِ کم‌تاکید بود، هم‌وزنِ
+                // «امروز» که فقط یک میان‌بر است. `GradientButton`ِ سیستمِ طراحی، و وقتی
+                // چیزی انتخاب نشده غیرفعال - نه دکمه‌ای که با تپ هیچ نمی‌کند.
+                GradientButton(
+                    onClick = { selected?.let(onDateSelected) },
+                    enabled = selected != null,
+                    variant = AppButtonVariant.IN_ROW,
+                ) {
                     Text("تایید")
                 }
             }
@@ -235,6 +251,16 @@ private fun DayGrid(
                                         if (isSelected) AppPrimary else AppBg,
                                         CircleShape,
                                     )
+                                    // امروز حلقه می‌گیرد، نه فقط رنگِ رقم: رقمِ سبز روی
+                                    // زمینه‌ی هم‌رنگِ صفحه کم‌پیدا بود، و اگر همان روز
+                                    // انتخاب هم می‌شد هیچ تفاوتی با بقیه نداشت.
+                                    .then(
+                                        if (isToday && !isSelected) {
+                                            Modifier.border(1.5.dp, AppPrimary, CircleShape)
+                                        } else {
+                                            Modifier
+                                        },
+                                    )
                                     .pressScaleClickable(scale = 0.9f) { onSelect(thisDate) },
                                 contentAlignment = Alignment.Center,
                             ) {
@@ -257,8 +283,10 @@ private fun DayGrid(
 private fun YearGrid(current: Int, onSelect: (Int) -> Unit) {
     // نزولی: جدیدترین سال بالا (۱۴۱۰)، قدیمی‌ترین پایین (۱۳۵۰) - مطابق خواسته‌ی کاربر.
     val years = remember { calendarYearRange.reversed().toList() }
+    // یک ردیف بالاتر شروع می‌شود تا سالِ فعلی به لبه‌ی بالای گرید نچسبد و سال‌های بعدش هم
+    // دیده شوند - با `indexOf`ِ خالی، ۱۴۰۶ تا ۱۴۱۰ بیرونِ کادر می‌افتادند.
     val gridState = rememberLazyGridState(
-        initialFirstVisibleItemIndex = years.indexOf(current).coerceAtLeast(0),
+        initialFirstVisibleItemIndex = (years.indexOf(current) - 4).coerceAtLeast(0),
     )
     LazyVerticalGrid(
         columns = GridCells.Fixed(4),
@@ -289,7 +317,7 @@ private fun MonthGrid(current: Int, onSelect: (Int) -> Unit) {
                     val monthNumber = monthIndex + 1
                     Box(modifier = Modifier.weight(1f)) {
                         GridCell(
-                            label = faMonthNamesCalendar[monthIndex],
+                            label = faMonthName(monthIndex + 1),
                             selected = monthNumber == current,
                             onClick = { onSelect(monthNumber) },
                         )

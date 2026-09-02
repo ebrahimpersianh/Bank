@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
@@ -71,6 +74,7 @@ import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.persianMonthName
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -133,13 +137,15 @@ fun NewTransactionSheet(
     val accent = accentOf(kind)
     val categories: List<CategoryEntry> = if (kind == NewTxKind.INCOME) incomeCategories else expenseCategories
 
-    if (showCalendar) {
-        CalendarPickerScreen(
-            initialDate = date,
-            onDateSelected = { date = it; showCalendar = false },
-            onBack = { showCalendar = false },
-        )
-        return
+    // ⚠️ سه لایه‌ی داخلی، و بازگشتِ سیستمی به هیچ‌کدام وصل نبود: دکمه‌ی back کلِ شیتِ
+    // نیمه‌پرشده را می‌بست. ترتیب از بازترین لایه.
+    BackHandler {
+        when {
+            showCalendar -> showCalendar = false
+            picking != null -> picking = null
+            showCategoryPicker -> showCategoryPicker = false
+            else -> onDismiss()
+        }
     }
 
     if (picking != null) {
@@ -167,6 +173,10 @@ fun NewTransactionSheet(
         )
     }
 
+    // ⚠️ تقویم قبلاً با `return` صدا زده می‌شد و کلِ Column (به‌همراهِ rememberScrollStateِ
+    // داخلِ مدیفایرش) از کامپوزیشن بیرون می‌رفت: کاربر مبلغ و حساب و توضیح را پر می‌کرد،
+    // تاریخ را انتخاب می‌کرد، و فرم از سرِ صفحه برمی‌گشت. ششمین جای این الگو در برنامه.
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -274,10 +284,16 @@ fun NewTransactionSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("مبلغ · ریال", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                // ⚠️ برچسب «ریال» بود و کپشنِ زیرش «تومان» - یعنی کاربر در یک کارت دو واحد
+                // می‌دید و باید حدس می‌زد عددی که تایپ می‌کند کدام است. این تنها جای
+                // باقی‌مانده‌ی برنامه بود که ورودی ریالی می‌گرفت. ستونِ دیتابیس ریال می‌ماند؛
+                // `tomanToRial` در لبه‌ی ثبت تبدیل می‌کند.
+                Text("مبلغ · تومان", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                 BasicTextField(
                     value = amountText,
-                    onValueChange = { amountText = cleanNum(it) },
+                    // خطا با اولین اصلاح پاک می‌شود، نه با ثبتِ بعدی: پیامِ «مبلغ رو وارد کن»
+                    // زیرِ فیلدی که دارد پر می‌شود، نویز است.
+                    onValueChange = { amountText = cleanNum(it); error = null },
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                     singleLine = true,
@@ -306,10 +322,11 @@ fun NewTransactionSheet(
                         }
                     },
                 )
-                val rial = amountText.toLongOrNull() ?: 0L
-                if (rial > 0) {
+                val toman = amountText.toLongOrNull() ?: 0L
+                if (toman > 0) {
                     Text(
-                        "${numberToWordsFa((rial / 10).toDouble())} تومان",
+                        // دیگر تقسیم بر ده لازم نیست - خودِ فیلد تومان است.
+                        "${numberToWordsFa(toman.toDouble())} تومان",
                         color = AppMuted,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -347,7 +364,9 @@ fun NewTransactionSheet(
         } else {
             AppCard {
                 SheetRow(
-                    icon = Icons.Filled.Category,
+                    // ⚠️ `Category` آیکونِ **دسته‌بندی** است و ردیفِ حساب هم همان را داشت،
+                    // پس دو ردیفِ متفاوتِ همین شیت آیکونِ یکسان می‌گرفتند.
+                    icon = Icons.Filled.AccountBalanceWallet,
                     text = accounts.firstOrNull { it.id == accountId }?.name ?: "حساب‌کتاب",
                     filled = accountId != null,
                     onClick = { picking = AccountSlot.MAIN },
@@ -426,38 +445,52 @@ fun NewTransactionSheet(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+        // ⚠️ منطقِ ثبت قبلاً **دو بار** نوشته شده بود، یک‌بار در هر دکمه (سی خطِ یکسان).
+        // یک اصلاح در یکی به دیگری نمی‌رسید. حالا یک تابعِ محلی، و هر دکمه فقط می‌گوید بعدش
+        // چه کند.
+        val submit: (andClose: Boolean) -> Unit = { andClose ->
+            // فیلد تومان است، ستونِ دیتابیس ریال - تبدیل فقط همین‌جا، در لبه.
+            val toman = amountText.toLongOrNull() ?: 0L
+            val amount = tomanToRial(toman).toDouble()
+            error = validate(kind, amount, accountId, fromAccountId, toAccountId)
+            if (error == null) {
+                if (kind == NewTxKind.TRANSFER) {
+                    accountViewModel.addTransfer(
+                        fromAccountId = fromAccountId!!,
+                        toAccountId = toAccountId!!,
+                        amount = amount,
+                        description = description.trim(),
+                        year = date.y,
+                        month = date.m,
+                        day = date.d,
+                    )
+                } else {
+                    accountViewModel.addTransaction(
+                        accountId = accountId!!,
+                        type = if (kind == NewTxKind.INCOME) TransactionType.DEPOSIT else TransactionType.WITHDRAWAL,
+                        amount = amount,
+                        description = description.trim(),
+                        year = date.y,
+                        month = date.m,
+                        day = date.d,
+                        category = category,
+                    )
+                }
+                if (andClose) {
+                    onDismiss()
+                } else {
+                    // فقط مبلغ و توضیح پاک می‌شوند؛ حساب/تاریخ/دسته می‌مانند چون معمولاً
+                    // تراکنش‌های پشتِ‌هم همان حساب و همان روزند.
+                    amountText = ""
+                    description = ""
+                }
+            }
+        }
+
         AccentPillButton(
             text = "ثبت · ${toFa(GamificationRepository.Reward.DAILY_LOG)} سکه",
             accent = accent,
-            onClick = {
-                val amount = amountText.toDoubleOrNull() ?: 0.0
-                error = validate(kind, amount, accountId, fromAccountId, toAccountId)
-                if (error == null) {
-                    if (kind == NewTxKind.TRANSFER) {
-                        accountViewModel.addTransfer(
-                            fromAccountId = fromAccountId!!,
-                            toAccountId = toAccountId!!,
-                            amount = amount,
-                            description = description.trim(),
-                            year = date.y,
-                            month = date.m,
-                            day = date.d,
-                        )
-                    } else {
-                        accountViewModel.addTransaction(
-                            accountId = accountId!!,
-                            type = if (kind == NewTxKind.INCOME) TransactionType.DEPOSIT else TransactionType.WITHDRAWAL,
-                            amount = amount,
-                            description = description.trim(),
-                            year = date.y,
-                            month = date.m,
-                            day = date.d,
-                            category = category,
-                        )
-                    }
-                    onDismiss()
-                }
-            },
+            onClick = { submit(true) },
             modifier = Modifier.weight(1f),
         )
 
@@ -468,42 +501,24 @@ fun NewTransactionSheet(
                     .clip(RoundedCornerShape(999.dp))
                     .background(AppSurface)
                     .border(1.5.dp, AppLine, RoundedCornerShape(999.dp))
-                    .pressScaleClickable {
-                        val amount = amountText.toDoubleOrNull() ?: 0.0
-                        error = validate(kind, amount, accountId, fromAccountId, toAccountId)
-                        if (error == null) {
-                            if (kind == NewTxKind.TRANSFER) {
-                                accountViewModel.addTransfer(
-                                    fromAccountId = fromAccountId!!,
-                                    toAccountId = toAccountId!!,
-                                    amount = amount,
-                                    description = description.trim(),
-                                    year = date.y,
-                                    month = date.m,
-                                    day = date.d,
-                                )
-                            } else {
-                                accountViewModel.addTransaction(
-                                    accountId = accountId!!,
-                                    type = if (kind == NewTxKind.INCOME) TransactionType.DEPOSIT else TransactionType.WITHDRAWAL,
-                                    amount = amount,
-                                    description = description.trim(),
-                                    year = date.y,
-                                    month = date.m,
-                                    day = date.d,
-                                    category = category,
-                                )
-                            }
-                            // فقط مبلغ و توضیح پاک می‌شن؛ حساب/تاریخ/دسته می‌مونن چون معمولاً
-                            // تراکنش‌های پشتِ‌هم همون حساب و همون روزن.
-                            amountText = ""
-                            description = ""
-                        }
-                    }
+                    .pressScaleClickable { submit(false) }
                     .padding(vertical = 15.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text("+ باز", color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold)
+            }
+        }
+    }
+
+        if (showCalendar) {
+            // زمینه اجباری است - CalendarPickerScreen خودش زمینه ندارد و بی این، فرمِ زیرش
+            // از لابه‌لایش دیده می‌شود.
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                CalendarPickerScreen(
+                    initialDate = date,
+                    onDateSelected = { date = it; showCalendar = false },
+                    onBack = { showCalendar = false },
+                )
             }
         }
     }

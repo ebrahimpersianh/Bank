@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.profile
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +35,12 @@ import ir.sadteam.loancalc.ui.theme.AppText
  */
 @Composable
 fun BadgeRetroSheet(badges: List<Badge>, onDismiss: () -> Unit) {
+    // ⚠️ هیچ BackHandlerی نبود، پس دکمه‌ی back به HomeScreen می‌رسید و از آنجا **برنامه را
+    // می‌بست** - و چون `consumeRetro` صدا نشده بود، اجرای بعدی همین شیت دوباره می‌آمد.
+    // یک back هم دیدنِ پیام است، پس همان `onDismiss`. عمداً بی‌اثر نگذاشتم: قفل‌کردنِ back
+    // روی یک صفحه‌ی خبری خشن است.
+    BackHandler(onBack = onDismiss)
+
     val coins = badges.sumOf { it.coins }
     Column(
         modifier = Modifier
@@ -75,13 +82,19 @@ fun BadgeRetroSheet(badges: List<Badge>, onDismiss: () -> Unit) {
                         Text(badge.label, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
                         Text(badge.hint, color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                     }
-                    Box(contentAlignment = Alignment.Center) {
+                    // Boxِ دورِ یک Text بی‌اثر بود. و سکه علامتِ خودش را می‌گیرد، وگرنه
+                    // «+۱۰»ِ خاکستریِ تنها می‌توانست هر چیزی باشد.
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    ) {
                         Text(
                             "+${toFa(badge.coins)}",
                             color = AppMuted,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.ExtraBold,
                         )
+                        CoinIcon(size = 12.dp)
                     }
                 }
             }
