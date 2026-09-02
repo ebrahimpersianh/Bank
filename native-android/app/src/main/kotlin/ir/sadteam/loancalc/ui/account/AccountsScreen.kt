@@ -217,7 +217,7 @@ private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accoun
                         fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(top = 3.dp),
                     )
-                    Text("تومان · ${toFa(accounts.size)} حساب", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                    Text("تومان · ${accounts.size.toFa()} حساب", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                 }
                 Box(
                     modifier = Modifier
@@ -295,7 +295,7 @@ private fun AccountCard(
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(account.bankName.ifBlank { "منبعِ نقدی" }, color = AppMuted, fontSize = 11.sp)
-                    Text("٪${toFa((share * 100).toInt())} از دارایی", color = AppMuted, fontSize = 10.sp)
+                    Text("٪${(share * 100).toInt().toFa()} از دارایی", color = AppMuted, fontSize = 10.sp)
                 }
                 Box(
                     modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(999.dp)).background(AppPrimaryPill),
