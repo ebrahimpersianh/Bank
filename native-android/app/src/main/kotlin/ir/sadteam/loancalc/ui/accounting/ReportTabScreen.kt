@@ -191,7 +191,7 @@ fun ReportTabScreen(
             item {
                 DiscoveryCard(
                     icon = Icons.Filled.Autorenew,
-                    title = "${toFa(stats.detectedSubscriptions.size)} خرجِ تکرارشونده پیدا شد",
+                    title = "${(stats.detectedSubscriptions.size).toFa()} خرجِ تکرارشونده پیدا شد",
                     subtitle = "ماهی ${(stats.detectedMonthly).rialToFaCompact()} تومان — لمس کن ببین چی‌ان",
                     bg = DiscoverWarnBg,
                     border = DiscoverWarnBorder,
@@ -210,7 +210,7 @@ fun ReportTabScreen(
                 // سطحِ خنثی می‌گیرد و آیکونش هم عوض شد.
                 DiscoveryCard(
                     icon = Icons.Filled.EventRepeat,
-                    title = "${toFa(stats.recurringCount)} پرداختِ تکراریِ ثبت‌شده",
+                    title = "${(stats.recurringCount).toFa()} پرداختِ تکراریِ ثبت‌شده",
                     subtitle = "ماهی ${(stats.recurringMonthly).rialToFaCompact()} تومان",
                     bg = AppSurface,
                     border = AppLineRow,
@@ -225,7 +225,7 @@ fun ReportTabScreen(
             item {
                 DiscoveryCard(
                     icon = Icons.Filled.BarChart,
-                    title = "${over.name} ${toFa(over.percent)}٪ بیشتر از معمول",
+                    title = "${over.name} ${(over.percent).toFa()}٪ بیشتر از معمول",
                     subtitle = "نسبت به میانگینِ سه ماه",
                     bg = DiscoverDangerBg,
                     border = DiscoverDangerBorder,
@@ -550,7 +550,7 @@ private fun PeriodSpendHero(
                     // دوره‌ی قبل است، نه تورم و نه قدرتِ خرید. کاربری که خرجش ۲۰٪ بیشتر
                     // شده «۲۰٪ قدرتِ خرید» می‌دید و معنایش را برعکس می‌فهمید.
                     (if (deltaPercent > 0) "▲ " else "▼ ") +
-                        "${toFa(kotlin.math.abs(deltaPercent))}٪ از دوره‌ی قبل",
+                        "${(kotlin.math.abs(deltaPercent)).toFa()}٪ از دوره‌ی قبل",
                     color = Color.White,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Black,
@@ -629,7 +629,7 @@ private fun FixedVsFreeCard(
             verticalAlignment = Alignment.Bottom,
         ) {
             Text("ثابت و متغیر", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
-            Text("${toFa(fixedShare)}٪", color = AppDangerInk, fontSize = 16.sp, fontWeight = FontWeight.Black)
+            Text("${(fixedShare).toFa()}٪", color = AppDangerInk, fontSize = 16.sp, fontWeight = FontWeight.Black)
         }
         Row(
             modifier = Modifier.fillMaxWidth().height(24.dp).clip(RoundedCornerShape(9.dp)),
@@ -749,7 +749,7 @@ private fun CategoryDonutCard(
                     )
                     Text(
                         // total صفر → NaN٪. کارت با جمعِ صفر نمی‌آید، ولی نگهبانش یک خط است.
-                        if (total <= 0.0) "—" else "${toFa((entry.value / total * 100).toInt())}٪",
+                        if (total <= 0.0) "—" else "${((entry.value / total * 100).toInt()).toFa()}٪",
                         color = AppMuted,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,

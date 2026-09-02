@@ -119,7 +119,7 @@ fun SubscriptionFinderScreen(
                         Text(
                             // عددِ سالانه فشرده می‌آید: کاملش کنارِ عددِ ماهانه دو عددِ
                             // دوازده‌رقمیِ پشتِ‌هم می‌شد و هیچ‌کدام خوانده نمی‌شد.
-                            "تومان — ${toFa(visible.size)} موردِ تکرارشونده · سالانه حدودِ " +
+                            "تومان — ${(visible.size).toFa()} موردِ تکرارشونده · سالانه حدودِ " +
                                 (monthlyTotal * 12).rialToFaCompact() + " تومان",
                             color = HeroMuted,
                             fontSize = 10.sp,
@@ -137,7 +137,7 @@ fun SubscriptionFinderScreen(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(sub.label, color = AppText, fontSize = 14.5.sp, fontWeight = FontWeight.Bold)
                                     Text(
-                                        "${toFa(sub.monthsSeen)} ماهِ پیاپی · حدودِ روزِ ${toFa(sub.dayOfMonth)} هر ماه" +
+                                        "${(sub.monthsSeen).toFa()} ماهِ پیاپی · حدودِ روزِ ${(sub.dayOfMonth).toFa()} هر ماه" +
                                             (sub.category?.let { " · $it" } ?: ""),
                                         color = AppMuted,
                                         fontSize = 11.sp,

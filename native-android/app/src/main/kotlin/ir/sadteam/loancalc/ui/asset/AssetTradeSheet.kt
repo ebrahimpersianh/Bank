@@ -251,7 +251,7 @@ fun AssetTradeSheet(
                         modifier = Modifier.size(18.dp),
                     )
                     Text(
-                        "${toFa(date.d)} ${persianMonthName(date.m)} ${toFa(date.y)}",
+                        "${(date.d).toFa()} ${persianMonthName(date.m)} ${(date.y).toFa()}",
                         color = AppText,
                         fontSize = 13.sp,
                         modifier = Modifier

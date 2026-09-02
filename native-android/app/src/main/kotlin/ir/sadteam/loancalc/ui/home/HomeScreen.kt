@@ -56,6 +56,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.MonthForecast
 import ir.sadteam.loancalc.core.PersianCalendar
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompactParts
 import ir.sadteam.loancalc.ui.jibak.toFa
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
@@ -416,7 +418,7 @@ private fun HomeHeader(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                "${toFa(today.d)} ${persianMonthName(today.m)}",
+                "${(today.d).toFa()} ${persianMonthName(today.m)}",
                 color = AppMuted,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
@@ -556,7 +558,7 @@ private fun TodaySpendHero(
                         modifier = Modifier.size(10.dp),
                     )
                     Text(
-                        (if (deltaPercent < 0) "${toFa(-deltaPercent)}٪ کمتر" else "${toFa(deltaPercent)}٪ بیشتر") +
+                        (if (deltaPercent < 0) "${(-deltaPercent).toFa()}٪ کمتر" else "${(deltaPercent).toFa()}٪ بیشتر") +
                             " از دیروز",
                         color = Color.White,
                         fontSize = 9.5.sp,
@@ -601,7 +603,7 @@ private fun MonthBudgetCard(
         ) {
             Text("بودجهٔ $monthLabel", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
             Text(
-                "${toFa(percent)}٪",
+                "${(percent).toFa()}٪",
                 color = if (ratio >= 1f) AppDangerInk else AppPrimaryInk,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Black,
@@ -709,7 +711,7 @@ private fun UrgentDueCard(
                 Text(title, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        (if (daysOverdue == 0) "امروز سررسید" else "${toFa(daysOverdue)} روز عقب") +
+                        (if (daysOverdue == 0) "امروز سررسید" else "${(daysOverdue).toFa()} روز عقب") +
                             " — " + maskIfPrivate(masked, amount.rialToFaCompact()),
                         color = AppDangerInk,
                         fontSize = 10.5.sp,
@@ -767,7 +769,7 @@ private fun ShortfallForecastCard(
                 )
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        "${toFa(daysLeft)} روزِ دیگه مونده — حدودِ " +
+                        "${(daysLeft).toFa()} روزِ دیگه مونده — حدودِ " +
                             "${maskIfPrivate(masked, shortfall.rialToFaCompact())} تومان کسری" +
                             " (کلِ ماه حدودِ ${maskIfPrivate(masked, projectedTotal.rialToFaCompact())})",
                         color = AppDangerInk,
@@ -853,7 +855,7 @@ private fun CategoryBreakdownCard(
                         Text(
                             // total صفر → NaN٪. کارت با جمعِ صفر نمی‌آید، ولی نگهبانش یک خط است.
                             if (total <= 0.0) "—"
-                            else "${toFa((entry.value / total * 100).toInt())}٪",
+                            else "${((entry.value / total * 100).toInt()).toFa()}٪",
                             color = AppMuted,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.ExtraBold,
@@ -915,7 +917,7 @@ private fun WeekReviewCard(
                 // خالی می‌شه (تذکرِ صریحِ طراح). آیکونِ ۹ پیکسلی جاشه.
                 WeekCell(
                     label = "تغییر",
-                    value = if (delta == null) "—" else "${toFa(kotlin.math.abs(delta))}٪",
+                    value = if (delta == null) "—" else "${(kotlin.math.abs(delta)).toFa()}٪",
                     ink = when {
                         delta == null -> AppMuted
                         delta > 0 -> AppDangerInk
@@ -1141,7 +1143,7 @@ private fun StreakRepairCard(lostDays: Int, canAfford: Boolean, onRepair: () -> 
             ActiveChainMark(filled = lostDays.coerceAtMost(7), brokenAt = 0, ringSize = 18.dp)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "زنجیرِ ${toFa(lostDays)} روزه‌ات پاره شد",
+                    "زنجیرِ ${(lostDays).toFa()} روزه‌ات پاره شد",
                     color = AppText,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -1196,7 +1198,7 @@ private fun InboxBell(count: Int, hasUnreadNews: Boolean, onClick: () -> Unit) {
                     .background(AppDanger)
                     .padding(horizontal = 5.dp, vertical = 1.dp),
             ) {
-                Text(toFa(count), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                Text((count).toFa(), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
             }
         } else if (hasUnreadNews) {
             Box(
