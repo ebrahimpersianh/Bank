@@ -58,6 +58,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import java.util.Locale
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.MonthForecast
 import ir.sadteam.loancalc.core.PersianCalendar
@@ -691,9 +693,9 @@ private fun MonthBudgetCard(
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
                     if (leftover >= 0) {
-                        "با این روند، ${maskIfPrivate(masked, fmt(leftover))} ریال تا آخرِ ماه می‌مونه"
+                        "با این روند، ${maskIfPrivate(masked, leftover.rialToFaCompact())} تومان تا آخرِ ماه می‌مونه"
                     } else {
-                        "با این روند، ${maskIfPrivate(masked, fmt(-leftover))} ریال کم میاری"
+                        "با این روند، ${maskIfPrivate(masked, (-leftover).rialToFaCompact())} تومان کم میاری"
                     },
                     color = AppWarningInk,
                     fontSize = 10.sp,
@@ -860,61 +862,74 @@ private fun CategoryBreakdownCard(
 ) {
     val top = remember(byCategory) { byCategory.entries.sortedByDescending { it.value }.take(3) }
     val colors = listOf(AppDanger, AppPurple, AppInfo)
+    val (centerNumber, centerUnit) = donutCenterParts(total)
+
     AppCard(contentPadding = 14.dp, modifier = Modifier.pressScaleClickable(onClick = onClick)) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            CategoryDonut(
-                slices = top.mapIndexed { i, e -> DonutSlice(e.value, colors[i % colors.size]) },
-                size = 74.dp,
-                strokeWidth = 13.dp,
-            ) {
-                // عیناً مثلِ فریمِ 15a: عدد ۱۱sp/Black و زیرش «این ماه» ۷sp رنگِ کم‌رنگ،
-                // بدونِ فاصله‌ی اضافه. قبلاً ۸sp گذاشته بودم که درشت‌تر از طرح بود.
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(1.dp),
+        Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
+            // «این ماه» از داخلِ دایره بیرون اومد: تو ۷sp تقریباً خونده نمی‌شد و جای واحد رو
+            // می‌گرفت. اینجا برچسبِ کارته، همون‌جایی که برچسبِ کارت باید باشه.
+            Text("این ماه", color = AppLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                CategoryDonut(
+                    slices = top.mapIndexed { i, e -> DonutSlice(e.value, colors[i % colors.size]) },
+                    size = 74.dp,
+                    strokeWidth = 13.dp,
                 ) {
-                    PrivacyCrossfade(privacyMode) { masked ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(0.dp),
+                    ) {
+                        PrivacyCrossfade(privacyMode) { masked ->
+                            Text(
+                                maskIfPrivate(masked, centerNumber),
+                                color = AppText,
+                                // ۱۳sp چون خط کوتاه شد؛ عددِ اصلیِ کارته و ۱۱sp تو دایره‌ی
+                                // ۴۸dp کوچیک‌تر از لازم به‌نظر می‌اومد.
+                                fontSize = 13.sp,
+                                lineHeight = 15.sp,
+                                fontWeight = FontWeight.Black,
+                                maxLines = 1,
+                            )
+                        }
                         Text(
-                            maskIfPrivate(masked, compactRial(total)),
-                            color = AppText,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Black,
+                            centerUnit,
+                            color = AppLabel,
+                            fontSize = 7.5.sp,
+                            lineHeight = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
                         )
                     }
-                    Text(
-                        "این ماه",
-                        color = AppLabel,
-                        fontSize = 7.sp,
-                        lineHeight = 8.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
                 }
-            }
-            Column(
-                modifier = Modifier.weight(1f).padding(start = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                top.forEachIndexed { i, entry ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(RoundedCornerShape(999.dp))
-                                .background(colors[i % colors.size]),
-                        )
-                        Text(
-                            entry.key,
-                            color = AppText,
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f).padding(start = 7.dp),
-                        )
-                        Text(
-                            "${toFa((entry.value / total * 100).toInt())}٪",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                        )
+                Column(
+                    modifier = Modifier.weight(1f).padding(start = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    top.forEachIndexed { i, entry ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(RoundedCornerShape(999.dp))
+                                    .background(colors[i % colors.size]),
+                            )
+                            Text(
+                                entry.key,
+                                color = AppText,
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f).padding(start = 7.dp),
+                            )
+                            Text(
+                                // totalِ صفر → تقسیم بر صفر → «NaN٪». کارت با مبلغِ صفر اصلاً
+                                // نمیاد، ولی نگهبانش یه خطه.
+                                if (total <= 0.0) "—"
+                                else "${toFa((entry.value / total * 100).toInt())}٪",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                            )
+                        }
                     }
                 }
             }
@@ -922,16 +937,31 @@ private fun CategoryBreakdownCard(
     }
 }
 
-/** «۹٫۲M» - فشرده‌ی وسطِ دونات. فریم واحد نمی‌ذاره، فقط حرفِ M. */
-private fun compactRial(value: Double): String = when {
-    // جداکننده‌ی اعشار باید «٫»ِ فارسی باشه نه نقطه‌ی لاتین (طرح: «۹٫۲M»). قالب‌بندی هم
-    // با Locale.US انجام می‌شه تا رو گوشیِ فارسی خودش رقمِ فارسی/کاما تولید نکنه.
-    value >= 1_000_000 ->
-        toFa(String.format(Locale.US, "%.1f", value / 1_000_000).trimEnd('0').trimEnd('.'))
-            .replace('.', '٫') + "M"
-    value >= 1_000 -> toFa((value / 1_000).toInt()) + "K"
-    else -> toFa(value.toInt())
+/**
+ * عددِ ریالی → جفتِ (عدد، واحد) برای وسطِ دونات - «۱۰۲٫۶» و «میلیون تومان».
+ *
+ * چرا جدا و نه `rialToFaCompact`: قطرِ داخلیِ دونات ۴۸dpه (۷۴ − ۲×۱۳) و یه خطِ
+ * «۱۰۲٫۶ میلیون تومان» توش جا نمی‌شه. دو خطِ کوتاه جا می‌شه، و عدد هم درشت‌تر از واحد
+ * می‌شینه که سلسله‌مراتبِ درستیه.
+ *
+ * زیرِ یک میلیون تومان واحد «هزار تومان» می‌شه و زیرِ هزار «تومان» - پس خطِ دوم هیچ‌وقت
+ * خالی نمی‌مونه و ارتفاعِ کارت با تغییرِ مبلغ نمی‌پره.
+ */
+private fun donutCenterParts(rial: Double): Pair<String, String> {
+    val toman = rialToToman(rial.toLong())
+    val abs = kotlin.math.abs(toman)
+    return when {
+        abs >= 1_000_000_000L -> faOneDecimal(abs / 1_000_000_000.0) to "میلیارد تومان"
+        abs >= 1_000_000L -> faOneDecimal(abs / 1_000_000.0) to "میلیون تومان"
+        abs >= 1_000L -> faOneDecimal(abs / 1_000.0) to "هزار تومان"
+        else -> toFa(abs.toInt()) to "تومان"
+    }
 }
+
+/** یه رقمِ اعشار، بی صفرِ آخر، با ممیزِ فارسی. `Locale.US` اجباریه. */
+private fun faOneDecimal(v: Double): String =
+    toFa(String.format(Locale.US, "%.1f", v).trimEnd('0').trimEnd('.'))
+        .replace('.', '٫')
 
 // ═══ ۶ · مرورِ هفته ════════════════════════════════════════════════════════════
 /**
@@ -976,8 +1006,8 @@ private fun WeekReviewCard(
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                WeekCell("جمعِ هفته", fmt(weekTotal), AppText, privacyMode)
-                WeekCell("هفته‌ی قبل", fmt(prevWeekTotal), AppText, privacyMode)
+                WeekCell("جمعِ هفته", weekTotal.rialToFaCompact(), AppText, privacyMode)
+                WeekCell("هفته‌ی قبل", prevWeekTotal.rialToFaCompact(), AppText, privacyMode)
                 // ⚠️ مثلثِ ▲/▼ رو **با کاراکتر ننویس** - Vazirmatn رندرش نمی‌کنه و مربعِ
                 // خالی می‌شه (تذکرِ صریحِ طراح). آیکونِ ۹ پیکسلی جاشه.
                 WeekCell(
