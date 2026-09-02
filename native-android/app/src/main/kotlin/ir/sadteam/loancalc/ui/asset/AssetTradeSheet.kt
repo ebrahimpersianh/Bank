@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.cleanNum
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.AssetCatalogEntry
@@ -160,12 +161,12 @@ fun AssetTradeSheet(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
             )
-            val rial = totalText.toLongOrNull() ?: 0L
-            if (rial > 0) {
+            val toman = totalText.toLongOrNull() ?: 0L
+            if (toman > 0) {
                 Text(
-                    "${numberToWordsFa((rial / 10).toDouble())} تومان",
+                    "${numberToWordsFa(toman.toDouble())} تومان",
                     color = AppMuted,
                     fontSize = 11.sp,
                     modifier = Modifier.padding(top = 4.dp),
@@ -229,11 +230,11 @@ fun AssetTradeSheet(
 
         GradientButton(
             onClick = {
-                val total = totalText.toDoubleOrNull() ?: 0.0
+                val toman = totalText.toLongOrNull() ?: 0L
                 val qty = qtyText.toDoubleOrNull() ?: 0.0
                 val entry = picked
                 error = when {
-                    total <= 0.0 -> "مبلغ رو وارد کن"
+                    toman <= 0L -> "مبلغ رو وارد کن"
                     entry == null -> "نوعِ دارایی رو انتخاب کن"
                     qty <= 0.0 -> "مقدار رو وارد کن"
                     else -> null
@@ -245,7 +246,7 @@ fun AssetTradeSheet(
                         category = entry.category,
                         isBuy = isBuy,
                         quantity = qty,
-                        totalRial = total,
+                        totalRial = tomanToRial(toman).toDouble(),
                         year = date.y,
                         month = date.m,
                         day = date.d,

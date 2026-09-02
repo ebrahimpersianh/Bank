@@ -32,6 +32,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import ir.sadteam.loancalc.core.cleanNum
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.DEFAULT_ACCOUNT_ICON_KEY
@@ -68,7 +70,9 @@ fun AddEditAccountScreen(
     var bankName by remember { mutableStateOf(existing?.bankName ?: "") }
     var cardNumberText by remember { mutableStateOf(existing?.cardNumber ?: "") }
     var smsSenderText by remember { mutableStateOf(existing?.smsSender ?: "") }
-    var initialBalanceText by remember { mutableStateOf(existing?.initialBalance?.toLong()?.toString() ?: "") }
+    var initialBalanceText by remember {
+        mutableStateOf(existing?.initialBalance?.toLong()?.let { rialToToman(it) }?.toString() ?: "")
+    }
     var error by remember { mutableStateOf<String?>(null) }
     var showSmsSenderPicker by remember { mutableStateOf(false) }
 
@@ -234,15 +238,28 @@ fun AddEditAccountScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                 )
-                val balanceRial = initialBalanceText.toLongOrNull() ?: 0L
-                if (balanceRial > 0) {
+                val balanceToman = initialBalanceText.toLongOrNull() ?: 0L
+                if (balanceToman > 0) {
                     Text(
-                        "${numberToWordsFa((balanceRial / 10).toDouble())} تومان",
+                        "${numberToWordsFa(balanceToman.toDouble())} تومان",
                         color = AppMuted,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+                // موجودیِ اولیه رقمِ شروع است، نه رقمِ امروز - موجودیِ فعلی از این رقم به‌علاوه‌ی
+                // تراکنش‌ها حساب می‌شه، پس عوض‌کردنش کلِ تاریخچه رو جابه‌جا می‌کنه. برای «رقمِ
+                // امروزم غلطه» راهِ درست یه تراکنشِ تنظیمیه، نه دست‌زدن به رقمِ شروع.
+                if (existing != null) {
+                    Text(
+                        "این رقمِ شروعِ حساب است. موجودیِ امروز از این رقم به‌علاوه‌ی تراکنش‌ها " +
+                            "حساب می‌شود، پس عوض‌کردنش کلِ تاریخچه را جابه‌جا می‌کند.",
+                        color = AppMuted,
+                        fontSize = 10.5.sp,
+                        lineHeight = 18.sp,
+                        modifier = Modifier.padding(top = 6.dp),
                     )
                 }
             }
@@ -256,7 +273,7 @@ fun AddEditAccountScreen(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 GradientButton(
                     onClick = {
-                        val initialBalance = initialBalanceText.toDoubleOrNull() ?: 0.0
+                        val initialBalance = tomanToRial(initialBalanceText.toLongOrNull() ?: 0L).toDouble()
                         val isBank = accountType == ACCOUNT_TYPE_BANK
                         error = when {
                             name.trim().isEmpty() -> if (isBank) "اسم حساب‌کتاب رو وارد کن" else "اسم منبع رو وارد کن"

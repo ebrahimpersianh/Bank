@@ -53,6 +53,7 @@ import ir.sadteam.loancalc.ui.jibak.toFaDate
 import ir.sadteam.loancalc.ui.jibak.toFaDateNumeric
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.jibak.toFaSignedMoney
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -180,12 +181,12 @@ fun AccountDetailScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                         )
-                        val amountRial = amountText.toLongOrNull() ?: 0L
-                        if (amountRial > 0) {
+                        val amountToman = amountText.toLongOrNull() ?: 0L
+                        if (amountToman > 0) {
                             Text(
-                                "${numberToWordsFa((amountRial / 10).toDouble())} تومان",
+                                "${numberToWordsFa(amountToman.toDouble())} تومان",
                                 color = AppMuted,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 4.dp),
@@ -220,13 +221,13 @@ fun AccountDetailScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         GradientButton(
                             onClick = {
-                                val amount = amountText.toDoubleOrNull() ?: 0.0
-                                error = if (amount <= 0) "مبلغ رو وارد کن" else null
+                                val toman = amountText.toLongOrNull() ?: 0L
+                                error = if (toman <= 0L) "مبلغ رو وارد کن" else null
                                 if (error == null) {
                                     viewModel.addTransaction(
                                         accountId = account.id,
                                         type = txType,
-                                        amount = amount,
+                                        amount = tomanToRial(toman).toDouble(),
                                         description = description.trim(),
                                         year = txDate.y,
                                         month = txDate.m,
