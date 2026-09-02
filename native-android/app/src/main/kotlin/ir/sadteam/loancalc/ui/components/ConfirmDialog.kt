@@ -8,6 +8,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import ir.sadteam.loancalc.ui.sound.rememberDeleteSound
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 
 /**
  * دیالوگِ تاییدِ حذفِ عمومی - برای وام/چک/دسته‌چک/حساب/درآمد که قبلاً بدونِ هیچ تاییدی حذف می‌شدن
@@ -38,6 +39,38 @@ fun ConfirmDeleteDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = AppDanger),
             ) {
                 Text("حذف")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("انصراف")
+            }
+        },
+    )
+}
+
+/**
+ * دیالوگِ تاییدِ پرداخت - برای دکمه‌های «پرداخت شد»/«پرداخت کن» که قبلاً بدونِ هیچ سوالی
+ * قسط رو یک‌راست علامت می‌زدن (خواسته‌ی صریحِ کاربر: هرجا حذف یا پرداخت هست، اول بپرسه).
+ * خودِ عملیاتِ واقعی تو [onConfirm] صدا زده می‌شه، این کامپوننت فقط UIه.
+ */
+@Composable
+fun ConfirmPayDialog(
+    title: String,
+    text: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(text) },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(); onDismiss() },
+                colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
+            ) {
+                Text("بله، پرداخت شد")
             }
         },
         dismissButton = {

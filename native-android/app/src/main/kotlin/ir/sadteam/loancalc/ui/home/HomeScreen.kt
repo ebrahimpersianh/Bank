@@ -76,6 +76,7 @@ import ir.sadteam.loancalc.ui.components.AppFab
 import ir.sadteam.loancalc.ui.components.AppHeroCard
 import ir.sadteam.loancalc.ui.components.CategoryDonut
 import ir.sadteam.loancalc.ui.components.CoinIcon
+import ir.sadteam.loancalc.ui.components.ConfirmPayDialog
 import ir.sadteam.loancalc.ui.components.DonutSlice
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.HeroMuted
@@ -192,6 +193,7 @@ fun HomeScreen(
     val retroBadges by gamificationViewModel.retroUnlocked.collectAsState()
 
     var showNewTransaction by remember { mutableStateOf(false) }
+    var confirmPayOverdue by remember { mutableStateOf<UrgentDueViewModel.UrgentRow?>(null) }
 
     // خرجِ ۷ روزِ گذشته (قدیمی‌ترین → امروز) برای نمودارِ میله‌ایِ کارتِ قهرمان.
     val weekSpend = remember(transactions) {
@@ -338,7 +340,7 @@ fun HomeScreen(
                             amount = overdue.amount,
                             daysOverdue = overdue.daysOverdue,
                             privacyMode = privacyMode,
-                            onPay = { urgentDueViewModel.markPaid(overdue) },
+                            onPay = { confirmPayOverdue = overdue },
                             onOpen = { onNavigateToRoute("loan") },
                         )
                     }
@@ -390,6 +392,14 @@ fun HomeScreen(
         }
         if (retroBadges.isNotEmpty()) {
             BadgeRetroSheet(retroBadges) { gamificationViewModel.consumeRetro() }
+        }
+        confirmPayOverdue?.let { overdue ->
+            ConfirmPayDialog(
+                title = "ثبتِ پرداختِ قسط",
+                text = "قسطِ ${overdue.loan.name} پرداخت‌شده علامت بخوره؟",
+                onConfirm = { urgentDueViewModel.markPaid(overdue) },
+                onDismiss = { confirmPayOverdue = null },
+            )
         }
     }
 }

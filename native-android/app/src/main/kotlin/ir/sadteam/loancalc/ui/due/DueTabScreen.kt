@@ -53,6 +53,7 @@ import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.CoinIcon
+import ir.sadteam.loancalc.ui.components.ConfirmPayDialog
 import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -104,6 +105,7 @@ fun DueTabScreen(
     viewModel: DueListViewModel = hiltViewModel(),
 ) {
     var tab by remember { mutableStateOf(DueTab.INSTALLMENTS) }
+    var confirmPayRow by remember { mutableStateOf<DueListViewModel.DueRow?>(null) }
     val installments by viewModel.installments.collectAsState()
     val cheques by viewModel.cheques.collectAsState()
     val debts by viewModel.debts.collectAsState()
@@ -156,7 +158,7 @@ fun DueTabScreen(
                 OverdueRow(
                     row = row,
                     privacyMode = privacyMode,
-                    onPay = { viewModel.markPaid(row) },
+                    onPay = { confirmPayRow = row },
                     onOpen = { row.loan?.let { onOpenLoan(it.id) } },
                 )
             }
@@ -175,6 +177,14 @@ fun DueTabScreen(
                 }
             }
         }
+    }
+    confirmPayRow?.let { row ->
+        ConfirmPayDialog(
+            title = "ثبتِ پرداخت",
+            text = "«${row.title}» پرداخت‌شده علامت بخوره؟",
+            onConfirm = { viewModel.markPaid(row) },
+            onDismiss = { confirmPayRow = null },
+        )
     }
 }
 

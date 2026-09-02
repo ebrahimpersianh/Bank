@@ -58,6 +58,7 @@ import ir.sadteam.loancalc.ui.components.AvatarShape
 import ir.sadteam.loancalc.ui.components.AvatarView
 import ir.sadteam.loancalc.ui.components.CoinCelebration
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
+import ir.sadteam.loancalc.ui.components.ConfirmPayDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
@@ -354,6 +355,8 @@ private fun CounterpartyDetail(
     val privacyMode = LocalPrivacyMode.current
     var showAddDebt by rememberSaveable { mutableStateOf(false) }
     var showEdit by rememberSaveable { mutableStateOf(false) }
+    var confirmSettleDebt by remember { mutableStateOf<DebtEntity?>(null) }
+    var confirmDeleteDebt by remember { mutableStateOf<DebtEntity?>(null) }
     var amountText by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var type by rememberSaveable { mutableStateOf(DebtType.OWED_TO_ME) }
@@ -489,10 +492,14 @@ private fun CounterpartyDetail(
                                     fontSize = 11.sp,
                                 )
                             }
-                            IconButton(onClick = { onToggleSettled(debt, !debt.settled) }) {
+                            IconButton(
+                                onClick = {
+                                    if (debt.settled) onToggleSettled(debt, false) else confirmSettleDebt = debt
+                                },
+                            ) {
                                 Text(if (debt.settled) "↺" else "✓", color = if (debt.settled) AppMuted else AppPrimary)
                             }
-                            IconButton(onClick = { onDeleteDebt(debt) }) {
+                            IconButton(onClick = { confirmDeleteDebt = debt }) {
                                 Icon(Icons.Filled.Delete, contentDescription = "حذف", tint = AppDanger)
                             }
                         }
@@ -507,6 +514,22 @@ private fun CounterpartyDetail(
             counterparty = counterparty,
             onSave = { updated -> onUpdate(updated); showEdit = false },
             onDismiss = { showEdit = false },
+        )
+    }
+    confirmSettleDebt?.let { debt ->
+        ConfirmPayDialog(
+            title = "ثبتِ تسویه",
+            text = "«${fmt(debt.amount)} ریال» تسویه‌شده علامت بخوره؟",
+            onConfirm = { onToggleSettled(debt, true) },
+            onDismiss = { confirmSettleDebt = null },
+        )
+    }
+    confirmDeleteDebt?.let { debt ->
+        ConfirmDeleteDialog(
+            title = "حذفِ ردیف",
+            text = "این ردیفِ «${fmt(debt.amount)} ریال» حذف بشه؟",
+            onConfirm = { onDeleteDebt(debt) },
+            onDismiss = { confirmDeleteDebt = null },
         )
     }
 }
