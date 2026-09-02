@@ -26,7 +26,7 @@ import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.PriorityHigh
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.NotificationsNone
@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -47,15 +48,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import java.util.Locale
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.MonthForecast
 import ir.sadteam.loancalc.core.PersianCalendar
+import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
@@ -63,16 +69,13 @@ import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.accounting.NewTransactionSheet
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.components.ActiveChainMark
-import ir.sadteam.loancalc.ui.components.ActiveChip
 import ir.sadteam.loancalc.ui.components.AppButtonVariant
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.AppFab
 import ir.sadteam.loancalc.ui.components.AppHeroCard
-import ir.sadteam.loancalc.ui.components.AvatarView
 import ir.sadteam.loancalc.ui.components.CategoryDonut
 import ir.sadteam.loancalc.ui.components.CoinIcon
-import ir.sadteam.loancalc.ui.components.CoinChip
 import ir.sadteam.loancalc.ui.components.DonutSlice
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.HeroMuted
@@ -84,7 +87,6 @@ import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
-import ir.sadteam.loancalc.ui.profile.AvatarViewModel
 import ir.sadteam.loancalc.ui.profile.BadgeRetroSheet
 import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.theme.AppAssetBorder
@@ -102,7 +104,6 @@ import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMarkOff
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
@@ -169,7 +170,17 @@ fun HomeScreen(
     val activeDays by gamificationViewModel.activeDays.collectAsState()
     val coins by gamificationViewModel.coins.collectAsState()
     val privacyMode = LocalPrivacyMode.current
-    val today = remember { JalaliCalendar.today() }
+    // `remember` تنها یک‌بار حساب می‌شد؛ اگر برنامه از نیمه‌شب رد بشه «خرجِ امروز» عددِ
+    // دیروز می‌مونه. با هر برگشت به RESUMED دوباره محاسبه می‌شه.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var today by remember { mutableStateOf(JalaliCalendar.today()) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) today = JalaliCalendar.today()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     // سنجشِ نشان‌ها فقط از اینجا (تبِ خانه = اولین صفحه‌ی بعدِ ورود) صدا زده می‌شه تا
     // بازشدنِ گذشته دقیقاً یه‌بار و صامت انجام بشه.
@@ -179,16 +190,8 @@ fun HomeScreen(
     }
     val repairable by gamificationViewModel.repairable.collectAsState()
     val retroBadges by gamificationViewModel.retroUnlocked.collectAsState()
-    if (retroBadges.isNotEmpty()) {
-        BadgeRetroSheet(retroBadges) { gamificationViewModel.consumeRetro() }
-        return
-    }
 
     var showNewTransaction by remember { mutableStateOf(false) }
-    if (showNewTransaction) {
-        NewTransactionSheet(onDismiss = { showNewTransaction = false })
-        return
-    }
 
     // خرجِ ۷ روزِ گذشته (قدیمی‌ترین → امروز) برای نمودارِ میله‌ایِ کارتِ قهرمان.
     val weekSpend = remember(transactions) {
@@ -322,11 +325,24 @@ fun HomeScreen(
                     )
                 }
             }
-            // «تا آخرِ ماه کم میاری» - رجوع کن به MonthForecast. عمداً **بالای** کارت‌های
-            // تحلیلی و زیرِ بودجه می‌شینه: یه هشدارِ عملیه، نه یه آمار.
-            monthForecast?.let { forecast ->
-                if (forecast.willRunShort) {
-                    item {
+            // ── فوریِ واحد ────────────────────────────────────────────────────────
+            // «تا آخرِ ماه کم میاری» و «قسط عقب افتاده» هر دو یک نوع فوریت‌اند و هم‌شکل؛
+            // با هم اثرِ هم را خنثی می‌کنند. قسط مقدم است: اتفاقِ افتاده بر پیش‌بینی.
+            run {
+                val overdue = urgentDue
+                val forecast = monthForecast?.takeIf { it.willRunShort }
+                when {
+                    overdue != null -> item {
+                        UrgentDueCard(
+                            title = "قسطِ ${overdue.loan.name}",
+                            amount = overdue.amount,
+                            daysOverdue = overdue.daysOverdue,
+                            privacyMode = privacyMode,
+                            onPay = { urgentDueViewModel.markPaid(overdue) },
+                            onOpen = { onNavigateToRoute("loan") },
+                        )
+                    }
+                    forecast != null -> item {
                         ShortfallForecastCard(
                             shortfall = forecast.shortfallRial,
                             daysLeft = forecast.daysLeft,
@@ -335,18 +351,6 @@ fun HomeScreen(
                             onClick = { onNavigateToRoute("report") },
                         )
                     }
-                }
-            }
-            urgentDue?.let { due ->
-                item {
-                    UrgentDueCard(
-                        title = "قسطِ ${due.loan.name}",
-                        amount = due.amount,
-                        daysOverdue = due.daysOverdue,
-                        privacyMode = privacyMode,
-                        onPay = { urgentDueViewModel.markPaid(due) },
-                        onOpen = { onNavigateToRoute("loan") },
-                    )
                 }
             }
             if (monthSpend > 0.0) {
@@ -375,9 +379,18 @@ fun HomeScreen(
             onClick = { showNewTransaction = true },
             contentDescription = "ثبتِ تراکنش",
             modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 16.dp, bottom = 16.dp),
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 16.dp),
         )
+
+        // شیت‌ها **روی** صفحه می‌نشینند. با `return` صفحه‌ی زیرین رندر نمی‌شد و پشتِ
+        // شیت سفیدِ خالی می‌افتاد؛ اسکرولِ LazyColumn هم با بستنِ شیت صفر می‌شد.
+        if (showNewTransaction) {
+            NewTransactionSheet(onDismiss = { showNewTransaction = false })
+        }
+        if (retroBadges.isNotEmpty()) {
+            BadgeRetroSheet(retroBadges) { gamificationViewModel.consumeRetro() }
+        }
     }
 }
 
@@ -387,11 +400,10 @@ private fun AccountTransactionEntity.isExpenseOn(y: Int, m: Int, d: Int): Boolea
 
 // ═══ ۱ · هدر ═══════════════════════════════════════════════════════════════════
 /**
- * تاریخ + سلام + دو نشانه.
+ * تاریخ + سلام + قرصِ فعال/سکه + زنگ + تنظیمات.
  *
- * ⚠️ **آدمکِ پروفایل تو این فریم نیست** و برداشته شد - کارتِ `32c` گفته بود «نوارِ بالای خانه
- * ۳۲px»، ولی خودِ فریمِ `15a` نشونش نمی‌ده و **تصویر بر متن مقدمه**. آدمک سرِ جاش تو
- * «حساب کاربری» می‌مونه.
+ * ⚠️ **آدمکِ پروفایل تو این فریم نیست** و برداشته شد - خودِ فریمِ `15a` نشونش نمی‌ده و
+ * **تصویر بر متن مقدمه**. آدمک سرِ جاش تو «حساب کاربری» می‌مونه.
  */
 @Composable
 private fun HomeHeader(
@@ -404,8 +416,6 @@ private fun HomeHeader(
     inboxUnreadNews: Int,
     onOpenInbox: () -> Unit,
 ) {
-    val avatarViewModel: AvatarViewModel = hiltViewModel()
-    val avatar by avatarViewModel.avatar.collectAsState()
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -413,66 +423,120 @@ private fun HomeHeader(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                "${toFa(today.d)} ${persianMonthName(today.m)}",
+                "${persianWeekdayName(today)}، ${toFa(today.d)} ${persianMonthName(today.m)}",
                 color = AppMuted,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
+                maxLines = 1,
             )
             Text(
                 if (userName.isNullOrBlank()) "خوش آمدی" else "سلامْ $userName",
                 color = AppText,
                 fontSize = 19.sp,
                 fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(top = 2.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 2.dp, end = 8.dp),
             )
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            if (activeDays > 0) ActiveChip(days = activeDays)
-            if (coins > 0) CoinChip(coins = coins)
-            // ⚠️ **درِ ورودیِ تنظیمات.** فریم‌های تب‌ها هیچ دکمه‌ای برای تنظیمات ندارن و طرح
-            // نگفته کاربر از کجا بره؛ کارتِ `32c` ولی صریحاً می‌گه آدمک تو «نوارِ بالای خانه»
-            // با اندازه‌ی ۳۲ می‌شینه. همون آدمک اینجا هم تناقضِ طرح رو حل می‌کنه هم جای خالیِ
-            // ناوبری رو - تمِ روشن/تیره و حالتِ خصوصی رفتن داخلِ خودِ تنظیمات (ردیفِ «ظاهر و
-            // تم»ِ فریمِ `27d`).
-            // ⚠️ آدمک ۳۲ پیکسله ولی **هدفِ لمسی باید ۴۴ باشه** (`AppSpacing.minTouchTarget`).
-            // پس یه جعبه‌ی ۴۴ دورش می‌شینه و کلیک رو اون می‌افته - نه اینکه خودِ آدمک
-            // بزرگ‌تر بشه (تذکرِ صریحِ طراح).
-            Box(
-                modifier = Modifier
-                    .size(AppSpacing.minTouchTarget)
-                    .pressScaleClickable(onClick = onOpenSettings),
-                contentAlignment = Alignment.Center,
-            ) {
-                AvatarView(avatar = avatar, size = 32.dp)
-            }
-            // ⚠️ **گزارشِ کاربر: «دکمه‌ی تنظیمات اصلاً نیست».** حق داشت - نوارِ بالای تب‌ها
-            // (که چرخ‌دنده توش بود) حذف شده بود و تنها درِ ورودی آدمک شده بود، که هیچ‌کس
-            // به‌عنوانِ «تنظیمات» نمی‌شناستش. چرخ‌دنده‌ی صریح برگشت.
-            // زنگِ مرکزِ پیام‌ها (بخشِ ۴۰). **عدد فقط برای اقدام‌دارهای بازه**؛ خبرِ
-            // خوانده‌نشده فقط یه نقطه‌ی سبز می‌گیره، نه عدد (قاعده‌ی صریحِ طرح).
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            HomeStatsPill(activeDays = activeDays, coins = coins)
             InboxBell(
                 count = inboxCount,
                 hasUnreadNews = inboxUnreadNews > 0,
                 onClick = onOpenInbox,
             )
-            PrivacyEyeButton(icon = Icons.Filled.Settings, active = false, onClick = onOpenSettings)
+            HeaderIconButton(
+                icon = Icons.Filled.Settings,
+                contentDescription = "تنظیمات",
+                onClick = onOpenSettings,
+            )
         }
     }
 }
 
+/**
+ * قرصِ واحدِ «فعال + سکه» - جایگزینِ `ActiveChip` و `CoinChip`ِ جدا در هدرِ خانه.
+ *
+ * چرا یکی شد: پنج عنصر در ردیفِ راستِ هدر (۲۵۶px) از عرضِ محتوا (۳۰۴px) بیشتر بود و
+ * اسمِ کاربر برش می‌خورد. دو شمارنده یک جنس‌اند - روزِ فعال و سکه - پس یک قابْ بس است.
+ *
+ * ⚠️ `ActiveChip` و `CoinChip` **حذف نمی‌شوند**؛ سرِ جایشان در «حساب کاربری» و فروشگاهِ
+ * تم می‌مانند. این فقط گونه‌ی هدرِ خانه است.
+ */
+@Composable
+private fun HomeStatsPill(activeDays: Int, coins: Int) {
+    if (activeDays <= 0 && coins <= 0) return
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(AppWarningPill)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+    ) {
+        if (activeDays > 0) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.LocalFireDepartment,
+                    contentDescription = "روزهای فعال",
+                    tint = AppWarningInk,
+                    modifier = Modifier.size(12.dp),
+                )
+                Text(
+                    toFa(activeDays),
+                    color = AppGoldInkSoft,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
+            }
+        }
+        if (activeDays > 0 && coins > 0) {
+            Box(
+                modifier = Modifier
+                    .size(width = 1.dp, height = 11.dp)
+                    .background(AppGoldPillSoft),
+            )
+        }
+        if (coins > 0) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    toFa(coins),
+                    color = AppGoldInkSoft,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(end = 4.dp),
+                )
+                CoinIcon(size = 15.dp)
+            }
+        }
+    }
+}
+
+private val persianWeekdays = arrayOf(
+    "شنبه", "یک‌شنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه",
+)
+
+/** نامِ روزِ هفته برای هدرِ خانه - اندیسِ صفر شنبه‌ست. */
+private fun persianWeekdayName(date: ir.sadteam.loancalc.core.PersianDate): String =
+    persianWeekdays[JalaliCalendar.dayOfWeekSaturdayFirst(date).coerceIn(0, 6)]
 
 /**
- * دکمه‌ی ۳۲×۳۲ی هدر - فریمِ `37b`. برای حالتِ خصوصی و چرخ‌دنده‌ی تنظیمات یه شکلِ واحد.
+ * دکمه‌ی ۳۲×۳۲ی هدر - فریمِ `37b`. جعبه‌ی ۴۴ دورش برای هدفِ لمسی.
  *
  * خاموش: زمینه‌ی `AppIconFrame`، حاشیه‌ی ۱٫۵ `AppLine`، جوهرِ `AppMuted`.
  * روشن: زمینه‌ی `AppWarningPill`، حاشیه‌ی ۱٫۵ `AppAssetBorder`، جوهرِ `AppWarningInk`.
  */
 @Composable
-fun PrivacyEyeButton(
+fun HeaderIconButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    active: Boolean,
+    contentDescription: String,
     onClick: () -> Unit,
-    contentDescription: String? = null,
+    active: Boolean = false,
 ) {
     Box(
         modifier = Modifier.size(AppSpacing.minTouchTarget).pressScaleClickable(onClick = onClick),
@@ -663,7 +727,7 @@ private fun BudgetBarWithCoin(ratio: Float, modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth(ratio.coerceIn(0.06f, 0.94f)),
             contentAlignment = Alignment.CenterEnd,
         ) {
-            ir.sadteam.loancalc.ui.components.CoinIcon(size = 17.dp)
+            CoinIcon(size = 17.dp)
         }
     }
 }
@@ -699,7 +763,7 @@ private fun UrgentDueCard(
                     .background(UrgentIconBg),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.PriorityHigh, contentDescription = null, tint = AppDanger, modifier = Modifier.size(17.dp))
+                Icon(Icons.Outlined.CreditCard, contentDescription = null, tint = AppDanger, modifier = Modifier.size(17.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(title, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
