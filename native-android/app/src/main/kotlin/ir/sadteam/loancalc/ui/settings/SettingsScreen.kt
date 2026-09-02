@@ -138,6 +138,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import ir.sadteam.loancalc.BuildConfig
+import ir.sadteam.loancalc.core.BankAppMatcher
 import ir.sadteam.loancalc.core.BankSmsParser
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.ParsedBankSms
@@ -1829,10 +1830,25 @@ private fun NotificationAppPicker(viewModel: SmsAutoImportViewModel, modifier: M
         }
     }
 
-    val shown = remember(apps, query, selected) {
+    // 🚨 **گزارشِ صریحِ کاربر**: «اپ‌هایی که باید اعلانشون خونده بشه خیلی کم‌ان» - ولی این
+    // لیست همه‌ی اپ‌های گوشی رو الفبایی می‌ریخت (دوربین، قطب‌نما، رادیو، سیم‌کارت…) و اپِ
+    // بانکیِ واقعی لای ده‌ها اپِ بی‌ربط گم می‌شد. حالا اپ‌های بانکی/پرداختی جدا و **اول**
+    // می‌آن؛ بقیه پشتِ یه دکمه‌ی «نمایشِ همه‌ی اپ‌ها» می‌مونن - حذف نمی‌شن، فقط جلوی چشم نیستن.
+    var showAllApps by remember { mutableStateOf(false) }
+    val (bankApps, otherApps) = remember(apps) { BankAppMatcher.split(apps) }
+
+    val shown = remember(apps, bankApps, otherApps, query, selected, showAllApps) {
         val q = query.trim()
+        // موقعِ جستجو کلِ اپ‌ها گشته می‌شن (کاربر داره دنبالِ یه اسمِ مشخص می‌گرده).
+        val pool = when {
+            q.isNotEmpty() -> apps
+            showAllApps -> bankApps + otherApps
+            // ⚠️ اپِ انتخاب‌شده همیشه دیده می‌شه، حتی اگه تشخیص داده نشده باشه - وگرنه
+            // کاربر سوییچی رو که خودش روشن کرده گم می‌کنه.
+            else -> bankApps + otherApps.filter { it.first in selected }
+        }
+        val filtered = if (q.isEmpty()) pool else pool.filter { it.second.contains(q, ignoreCase = true) }
         // انتخاب‌شده‌ها همیشه بالا می‌مونن تا کاربر ببینه چی روشنه، حتی وقتی داره جستجو می‌کنه.
-        val filtered = if (q.isEmpty()) apps else apps.filter { it.second.contains(q, ignoreCase = true) }
         filtered.sortedByDescending { it.first in selected }
     }
 
@@ -1890,7 +1906,12 @@ private fun NotificationAppPicker(viewModel: SmsAutoImportViewModel, modifier: M
             }
             if (shown.isEmpty()) {
                 Text(
-                    if (apps.isEmpty()) "در حالِ خواندنِ فهرستِ اپ‌ها…" else "اپی با این اسم پیدا نشد.",
+                    when {
+                        apps.isEmpty() -> "در حالِ خواندنِ فهرستِ اپ‌ها…"
+                        query.isNotBlank() -> "اپی با این اسم پیدا نشد."
+                        // هیچ اپِ بانکی‌ای شناخته نشد - نباید بن‌بست بشه.
+                        else -> "اپِ بانکی‌ای شناخته نشد. «نمایشِ همه‌ی اپ‌ها» رو بزن یا اسمش رو جستجو کن."
+                    },
                     color = AppMuted,
                     fontSize = 11.5.sp,
                     modifier = Modifier.padding(vertical = 10.dp),
@@ -1902,6 +1923,15 @@ private fun NotificationAppPicker(viewModel: SmsAutoImportViewModel, modifier: M
                     fontSize = 11.sp,
                     modifier = Modifier.padding(top = 8.dp),
                 )
+            }
+            // درِ خروجیِ لیستِ کوتاه: اگه بانکِ کاربر تو تشخیص نیومده، از اینجا پیداش می‌کنه.
+            if (query.isBlank() && !showAllApps && otherApps.isNotEmpty()) {
+                OutlinedButton(
+                    onClick = { showAllApps = true },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) {
+                    Text("نمایشِ همه‌ی اپ‌ها (${toFa(otherApps.size)} تای دیگه)", fontSize = 12.sp)
+                }
             }
         }
     }
