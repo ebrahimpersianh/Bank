@@ -1,10 +1,13 @@
 package ir.sadteam.loancalc.ui.asset
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,11 +20,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,44 +35,45 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import ir.sadteam.loancalc.core.fmt
-import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.data.accountIconForKey
+import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_CRYPTO
+import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_CUSTOM
 import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_FIAT
 import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_GOLD
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AssetEntity
+import ir.sadteam.loancalc.ui.account.AccountDetailScreen
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.account.AccountsScreen
+import ir.sadteam.loancalc.ui.account.AddEditAccountScreen
+import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.CoinIcon
+import ir.sadteam.loancalc.ui.components.HeroMuted
 import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.jibak.toFaCompact
+import ir.sadteam.loancalc.ui.jibak.toFaSignedCompact
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppAssetBorder
-import ir.sadteam.loancalc.ui.theme.AppAssetInk
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
-import ir.sadteam.loancalc.ui.theme.AppGoldBorder
-import ir.sadteam.loancalc.ui.theme.AppGoldFrom
-import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
-import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
@@ -80,34 +84,28 @@ import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import ir.sadteam.loancalc.ui.theme.hardShadow
 
 /**
- * تبِ **دارایی** - بازسازیِ کاملِ فریمِ `26b`.
- *
- * ⚠️ **از نو نوشته شده.** نسخه‌ی قبلی دو نمای جدا با یه تاگل بود («حساب‌کتاب‌ها» / «دارایی‌ها»)؛
- * فریم **یک صفحه‌ی پیوسته**ست:
+ * تبِ **دارایی** - فریمِ `26b` / `26bd`، با چهار دسته‌ی جدا (نقد از حساب‌ها، طلا/ارز/رمزارز/سایر
+ * از `assetGroupOrder`).
  *
  * ```
  * ۱ عنوان + کلیدِ خصوصی + دکمه‌ی +
- * ۲ هیرویِ سبز: داراییِ کل + سه قرصِ نقد/طلا/ارز
- * ۳ «حساب‌های بانکی» + ردیفِ هر حساب
- * ۴ «طلا و ارز» - کارتِ گروهیِ طلایی با سودِ کل
- * ۵ هدف‌های پس‌انداز
+ * ۲ هیرویِ سبز: داراییِ کل + قرص‌های نقد/طلا/ارز/رمزارز/سایر (فقط آن‌هایی که صفر نیستند)
+ * ۳ «حساب‌های بانکی» + ردیفِ هر حساب - کلیک‌پذیر
+ * ۴ هر دسته‌ی دارایی، جدا: سرگروه (جمع+سود) + کارتِ گروه
  * ```
  *
- * لیستِ کارت‌ها:
- * `design-frames.py "design/Duolingo Redesign.dc.html" 26b`
- *
- * کلیدِ خصوصی طبقِ `design/ANSWERS-section-37.md` بندِ ۳ اینجاست (و تو گزارش) - «همان دو
- * صفحه‌ای که کارشان نشان‌دادنِ موجودی است».
+ * زیرصفحه‌ها **روی** تب می‌نشینند نه به‌جایش - قبلاً با `return` صدا زده می‌شدن و صفحه‌ی زیرین
+ * اصلاً رندر نمی‌شد (پشتِ شیت سفیدِ خالی بود و اسکرولِ LazyColumn با بستنش صفر می‌شد).
+ * `BackHandler` هر چهار لایه رو با ترتیبِ درست می‌گیره (فرمِ ویرایش روی جزئیاتِ حساب می‌شینه،
+ * پس اول بسته می‌شه).
  */
-/** فقط `id` نگه داشته می‌شه نه خودِ Entity - بعدِ چرخشِ صفحه، ردیفِ تازه از لیستِ زنده خونده می‌شه. */
-private val assetIdSaver = androidx.compose.runtime.saveable.Saver<Long?, Long>(
+private val idSaver = androidx.compose.runtime.saveable.Saver<Long?, Long>(
     save = { it ?: -1L },
     restore = { if (it == -1L) null else it },
 )
 
 @Composable
 fun AssetsTabScreen(
-    onOpenAsset: (AssetEntity) -> Unit = {},
     accountViewModel: AccountViewModel = hiltViewModel(),
     assetViewModel: AssetViewModel = hiltViewModel(),
     privacyViewModel: PrivacyModeViewModel = hiltViewModel(),
@@ -120,33 +118,25 @@ fun AssetsTabScreen(
 
     var showAddAsset by remember { mutableStateOf(false) }
     var showAddAccount by remember { mutableStateOf(false) }
+    var detailAsset by rememberSaveable(stateSaver = idSaver) { mutableStateOf<Long?>(null) }
+    var detailAccount by rememberSaveable(stateSaver = idSaver) { mutableStateOf<Long?>(null) }
+    var editAccount by rememberSaveable(stateSaver = idSaver) { mutableStateOf<Long?>(null) }
 
-    // صفحه‌ی جزئیاتِ دارایی همین‌جا باز می‌شه، نه از راهِ `onOpenAsset` - قبلاً پارامترِ
-    // `onOpenAsset` مقدارِ پیش‌فرضِ خالی داشت و MainActivity هم چیزی بهش نمی‌داد، پس تپ رو
-    // طلا/بیت‌کوین **هیچ کاری نمی‌کرد** (گزارشِ کاربر، ۸ شهریور).
-    var detailAsset by rememberSaveable(stateSaver = assetIdSaver) { mutableStateOf<Long?>(null) }
     val openAsset = assets.firstOrNull { it.id == detailAsset }
-    BackHandler(enabled = openAsset != null) { detailAsset = null }
-    if (openAsset != null) {
-        AssetDetailScreen(
-            asset = openAsset,
-            onBack = { detailAsset = null },
-            viewModel = assetViewModel,
-        )
-        return
-    }
+    val openAccount = accounts.firstOrNull { it.id == detailAccount }
+    val openEditAccount = accounts.firstOrNull { it.id == editAccount }
 
-    if (showAddAccount) {
-        AccountsScreen(
-            onBack = { showAddAccount = false },
-            startInAddMode = true,
-            viewModel = accountViewModel,
-        )
-        return
-    }
-    if (showAddAsset) {
-        AssetTradeSheet(onDismiss = { showAddAsset = false }, viewModel = assetViewModel)
-        return
+    BackHandler(
+        enabled = openAsset != null || openAccount != null || openEditAccount != null ||
+            showAddAsset || showAddAccount,
+    ) {
+        when {
+            showAddAsset -> showAddAsset = false
+            showAddAccount -> showAddAccount = false
+            openEditAccount != null -> editAccount = null
+            openAccount != null -> detailAccount = null
+            else -> detailAsset = null
+        }
     }
 
     val cashTotal = remember(accounts, transactions) {
@@ -161,14 +151,13 @@ fun AssetsTabScreen(
             AssetHolding(asset, qty, spent, asset.unitPriceRial?.let { it * qty })
         }.filter { it.quantity > 0.0 }
     }
-    val goldTotal = holdings.filter { it.asset.category == ASSET_CATEGORY_GOLD }.sumOf { it.value ?: 0.0 }
-    val fxTotal = holdings.filter {
-        it.asset.category == ASSET_CATEGORY_FIAT || it.asset.category == ASSET_CATEGORY_CRYPTO
-    }.sumOf { it.value ?: 0.0 }
-    val grandTotal = cashTotal + goldTotal + fxTotal
-
-    // نه حسابی، نه دارایی‌ای → **فریمِ `21a`**: فقط عنوان، کارتِ خط‌چین و سه کاشیِ شروع.
-    // کارتِ قهرمانِ صفر عمداً نشون داده نمی‌شه (فریمِ خالی اصلاً هیرو نداره).
+    val byCategory = remember(holdings) { holdings.groupBy { it.asset.category } }
+    val totalOf: (String) -> Double = { cat -> byCategory[cat]?.sumOf { it.value ?: 0.0 } ?: 0.0 }
+    val goldTotal = totalOf(ASSET_CATEGORY_GOLD)
+    val fiatTotal = totalOf(ASSET_CATEGORY_FIAT)
+    val cryptoTotal = totalOf(ASSET_CATEGORY_CRYPTO)
+    val otherTotal = totalOf(ASSET_CATEGORY_CUSTOM)
+    val grandTotal = cashTotal + goldTotal + fiatTotal + cryptoTotal + otherTotal
     val nothingYet = accounts.isEmpty() && holdings.isEmpty()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -195,7 +184,9 @@ fun AssetsTabScreen(
                     total = grandTotal,
                     cash = cashTotal,
                     gold = goldTotal,
-                    fx = fxTotal,
+                    fiat = fiatTotal,
+                    crypto = cryptoTotal,
+                    other = otherTotal,
                     privacyMode = privacyMode,
                 )
             }
@@ -208,24 +199,81 @@ fun AssetsTabScreen(
                         account = account,
                         balance = accountViewModel.balanceOf(account, transactions),
                         privacyMode = privacyMode,
+                        onClick = { detailAccount = account.id },
                     )
                 }
             }
 
-            if (holdings.isNotEmpty()) {
-                item { SectionLabel("طلا و ارز") }
-                item {
-                    GoldAndCurrencyCard(
-                        holdings = holdings,
+            assetGroupOrder.forEach { (category, title) ->
+                val rows = byCategory[category].orEmpty()
+                if (rows.isEmpty()) return@forEach
+                item(key = "h_$category") {
+                    GroupHeader(
+                        title = title,
+                        total = rows.sumOf { it.value ?: 0.0 },
+                        profit = rows.mapNotNull { it.profit }.takeIf { it.isNotEmpty() }?.sum(),
                         privacyMode = privacyMode,
-                        onOpen = { asset ->
-                            detailAsset = asset.id
-                            onOpenAsset(asset)
-                        },
                     )
                 }
-            } else {
+                item(key = "g_$category") {
+                    AssetGroup(
+                        category = category,
+                        rows = rows,
+                        privacyMode = privacyMode,
+                        onOpen = { asset -> detailAsset = asset.id },
+                    )
+                }
+            }
+            if (holdings.isEmpty()) {
                 item { StarterAssetTiles(onPick = { showAddAsset = true }) }
+            }
+        }
+
+        // زیرصفحه‌ها **روی** تب می‌نشینند، نه به‌جایش.
+        if (openAsset != null) {
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                AssetDetailScreen(
+                    asset = openAsset,
+                    onBack = { detailAsset = null },
+                    viewModel = assetViewModel,
+                )
+            }
+        }
+        if (openAccount != null) {
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                AccountDetailScreen(
+                    account = openAccount,
+                    onBack = { detailAccount = null },
+                    // ویرایش هست، حذف نیست: کاربر همین‌جا می‌بینه اسم/فرستنده‌ی پیامک غلطه و
+                    // باید بتونه درستش کنه، ولی حذف از مسیرِ تماشا جای درستی نیست.
+                    onEdit = { editAccount = openAccount.id },
+                    onDelete = null,
+                    viewModel = accountViewModel,
+                )
+            }
+        }
+        if (openEditAccount != null) {
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                AddEditAccountScreen(
+                    existing = openEditAccount,
+                    onSaved = { editAccount = null },
+                    onCancel = { editAccount = null },
+                    viewModel = accountViewModel,
+                )
+            }
+        }
+        if (showAddAccount) {
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                AccountsScreen(
+                    onBack = { showAddAccount = false },
+                    startInAddMode = true,
+                    viewModel = accountViewModel,
+                )
+            }
+        }
+        if (showAddAsset) {
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                AssetTradeSheet(onDismiss = { showAddAsset = false }, viewModel = assetViewModel)
             }
         }
     }
@@ -238,17 +286,10 @@ data class AssetHolding(
     val spentRial: Double,
     val value: Double?,
 ) {
-    /** سود/زیان - تا وقتی قیمتِ روز نیومده `null`ه. */
     val profit: Double? get() = value?.let { it - spentRial }
 }
 
 // ═══ ۱ · هدر ═══════════════════════════════════════════════════════════════════
-/**
- * عنوانِ ۱۸/۹۰۰ سمتِ راست، و سمتِ چپ **کلیدِ خصوصی** و **دکمه‌ی +** - هر دو ۳۲×۳۲ با گوشه‌ی ۱۰.
- *
- * رنگ‌های کلیدِ خصوصی از `ANSWERS-section-37.md` بندِ ۳:
- * خاموش `#F5F8F6`/حاشیه `#E3ECE7`/خط `#5b6a63` · روشن `#FFF1DC`/حاشیه `#F0CE9B`/خط `#B45F00`.
- */
 @Composable
 private fun AssetsHeader(
     privacyMode: Boolean,
@@ -262,24 +303,22 @@ private fun AssetsHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text("دارایی", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
-        // تو حالتِ خالی چیزی برای پنهان‌کردن یا افزودن از این دو دکمه نیست - فریمِ `21a` هم
-        // هدرش لخته و همه‌ی کار با دکمه‌ی «افزودنِ حساب»ِ خودِ کارت انجام می‌شه.
         if (!showActions) return@Row
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             HeaderSquareButton(
                 icon = if (privacyMode) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                 description = "پنهان‌کردنِ مبلغ‌ها",
-                fill = if (privacyMode) PrivacyOnBg else PrivacyOffBg,
-                border = if (privacyMode) PrivacyOnBorder else AppLine,
-                ink = if (privacyMode) PrivacyOnInk else AppMuted,
+                fill = if (privacyMode) AppWarningPill else AppIconFrame,
+                border = if (privacyMode) AppAssetBorder else AppLine,
+                ink = if (privacyMode) AppWarningInk else AppMuted,
                 onClick = onTogglePrivacy,
             )
             HeaderSquareButton(
                 icon = Icons.Filled.Add,
                 description = "افزودنِ دارایی",
                 fill = AppPrimaryPill,
-                border = AppPrimaryBorderLine,
-                ink = AppPrimaryDim,
+                border = AppPrimaryBorder,
+                ink = AppPrimaryInk,
                 onClick = onAdd,
             )
         }
@@ -298,9 +337,9 @@ private fun HeaderSquareButton(
     Box(
         modifier = Modifier
             .size(32.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(AppRadius.icon))
             .background(fill)
-            .border(1.5.dp, border, RoundedCornerShape(10.dp))
+            .border(1.5.dp, border, RoundedCornerShape(AppRadius.icon))
             .pressScaleClickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -308,29 +347,15 @@ private fun HeaderSquareButton(
     }
 }
 
-private val PrivacyOffBg: Color
-    @Composable get() = AppIconFrame
-private val PrivacyOnBg: Color
-    @Composable get() = AppWarningPill
-private val PrivacyOnBorder: Color
-    @Composable get() = AppAssetBorder
-private val PrivacyOnInk: Color
-    @Composable get() = AppWarningInk
-private val AppPrimaryBorderLine: Color
-    @Composable get() = AppPrimaryBorder
-// ═══ ۱ب · کارتِ خط‌چینِ «هنوز حسابی اضافه نکردی» (فریمِ `21a`) ══════════════════════
-/**
- * تصویرِ کارت: **دو کارتِ حسابِ واقعی که یکی‌شان خط‌چین است - یعنی «جای خالیِ تو»**
- * (یادداشتِ خودِ فریم)، به‌علاوه‌ی یه سکه‌ی طلایی بالای سرشون.
- */
+// ═══ ۱ب · حالتِ خالی (فریمِ `21a`) ═══════════════════════════════════════════════
 @Composable
 private fun NoAccountCard(onAddAccount: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(AppRadius.card))
             .background(AppSurface)
-            .dashedBorder(20.dp)
+            .dashedBorder(AppRadius.card)
             .padding(horizontal = 16.dp, vertical = 22.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -341,10 +366,10 @@ private fun NoAccountCard(onAddAccount: () -> Unit) {
                     .align(Alignment.BottomEnd)
                     .padding(end = 7.dp)
                     .size(width = 74.dp, height = 46.dp)
-                    .hardShadow(CardShadowSoft, 3.dp, 10.dp)
+                    .hardShadow(AppLineRow, 3.dp, 10.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(AppSurface)
-                    .border(2.dp, CardBorderLine, RoundedCornerShape(10.dp)),
+                    .border(2.dp, AppLine, RoundedCornerShape(10.dp)),
             )
             Box(
                 modifier = Modifier
@@ -352,8 +377,8 @@ private fun NoAccountCard(onAddAccount: () -> Unit) {
                     .padding(start = 9.dp, bottom = 9.dp)
                     .size(width = 74.dp, height = 46.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(AddTileBg)
-                    .dashedBorder(10.dp, AddTileBorder)
+                    .background(AppPrimaryPill)
+                    .dashedBorder(10.dp, AppPrimaryBorder)
                     .pressScaleClickable(onClick = onAddAccount),
                 contentAlignment = Alignment.Center,
             ) {
@@ -366,9 +391,6 @@ private fun NoAccountCard(onAddAccount: () -> Unit) {
             }
             CoinIcon(26.dp, Modifier.align(Alignment.TopEnd).padding(end = 25.dp))
         }
-        // ⚠️ عنوان و توضیح **یه بلوکِ واحد**ن با فاصله‌ی ۶ (مثلِ `margin-top`ی فریم)، نه دو
-        // آیتمِ جدا با فاصله‌ی منفی - `Modifier.padding` عددِ منفی رو قبول نمی‌کنه و همون
-        // لحظه‌ی رسم کرش می‌ده (کرشِ نسخه‌ی ۱.۰.۴۷۷: «Padding must be non-negative»).
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -396,8 +418,8 @@ private fun NoAccountCard(onAddAccount: () -> Unit) {
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
-                .hardShadow(HeroShadow, 4.dp, 999.dp)
-                .clip(RoundedCornerShape(999.dp))
+                .hardShadow(ir.sadteam.loancalc.ui.theme.AppPrimaryDim, 4.dp, AppRadius.button)
+                .clip(RoundedCornerShape(AppRadius.button))
                 .background(AppPrimary)
                 .pressScaleClickable(onClick = onAddAccount)
                 .padding(vertical = 15.dp),
@@ -405,7 +427,8 @@ private fun NoAccountCard(onAddAccount: () -> Unit) {
     }
 }
 
-/** «یا اینها را ثبت کن» - سه کاشیِ طلا / ارز / نقد. */
+/** «یا اینها را ثبت کن» - سه کاشیِ طلا / ارز / رمز ارز. «نقد» رفت: کارتِ «افزودنِ حساب» بالایش
+ * همون کار رو می‌کنه - دو راهِ هم‌معنی تو یه صفحه لازم نبود. */
 @Composable
 private fun StarterAssetTiles(onPick: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -414,16 +437,11 @@ private fun StarterAssetTiles(onPick: () -> Unit) {
             StarterTile("طلا", AppWarningPill, modifier = Modifier.weight(1f), onClick = onPick) {
                 CoinIcon(17.dp)
             }
-            StarterTile("ارز", AppPrimaryPill, modifier = Modifier.weight(1f), onClick = onPick) {
-                Text("$", color = AppPrimaryInk, fontSize = 14.sp, fontWeight = FontWeight.Black)
+            StarterTile("ارز", AppIconFrame, modifier = Modifier.weight(1f), onClick = onPick) {
+                AssetBadge("USD", ASSET_CATEGORY_FIAT, 19.dp)
             }
-            StarterTile("نقد", NeutralTileBg, modifier = Modifier.weight(1f), onClick = onPick) {
-                Icon(
-                    Icons.Filled.AccountBalanceWallet,
-                    contentDescription = null,
-                    tint = AppMuted,
-                    modifier = Modifier.size(16.dp),
-                )
+            StarterTile("رمز ارز", AppIconFrame, modifier = Modifier.weight(1f), onClick = onPick) {
+                AssetBadge("BTC", ASSET_CATEGORY_CRYPTO, 19.dp)
             }
         }
     }
@@ -448,107 +466,75 @@ private fun StarterTile(
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         Box(
-            modifier = Modifier
-                .size(30.dp)
-                .clip(RoundedCornerShape(9.dp))
-                .background(iconBg),
+            modifier = Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(iconBg),
             contentAlignment = Alignment.Center,
         ) { icon() }
         Text(label, color = AppText, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold)
     }
 }
 
-private val CardShadowSoft: Color
-    @Composable get() = AppLineRow
-private val CardBorderLine: Color
-    @Composable get() = AppLine
-private val AddTileBg: Color
-    @Composable get() = AppPrimaryPill
-private val AddTileBorder: Color
-    @Composable get() = AppPrimaryBorder
-private val NeutralTileBg: Color
-    @Composable get() = AppIconFrame
 // ═══ ۲ · هیرویِ داراییِ کل ══════════════════════════════════════════════════════
-/**
- * کارتِ سبز با **هاله‌ی نرمِ گوشه‌ی بالا-چپ** و سه قرصِ نیمه‌شفاف.
- *
- * مقادیرِ فریم: گوشه ۲۰ · پدینگ ۱۶ · گرادیانِ `160deg #0EA968→#0B8C57` · سایه‌ی `0 5px 0 #096F45`
- * · هاله‌ی ۹۲ در `-22,-22` · برچسبِ ۱۰/۷۰۰ با سفیدِ ۸۰٪ · عددِ **۲۷** با وزنِ ۹۰۰ · قرص‌ها ۹/۹۰۰.
- */
+/** گرادیان/سایه/گوشه/هاله همه داخلِ `AppHeroCard`ن - همون‌جا با توکنِ تیره درست می‌چرخن. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TotalWealthHero(
     total: Double,
     cash: Double,
     gold: Double,
-    fx: Double,
+    fiat: Double,
+    crypto: Double,
+    other: Double,
     privacyMode: Boolean,
 ) {
-    val glow = Color.White.copy(alpha = 0.16f)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .hardShadow(HeroShadow, 5.dp, AppRadius.card)
-            .clip(RoundedCornerShape(AppRadius.card))
-            .background(Brush.linearGradient(listOf(AppPrimary, AppPrimaryDim)))
-            .drawBehind {
-                // هاله‌ی نرمِ گوشه - تنها گرادیانِ شعاعیِ مجازِ این کارت، عیناً از فریم.
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(glow, Color.Transparent),
-                        center = Offset(-22.dp.toPx() + 46.dp.toPx(), -22.dp.toPx() + 46.dp.toPx()),
-                        radius = 46.dp.toPx(),
-                    ),
-                    radius = 46.dp.toPx(),
-                    center = Offset(24.dp.toPx(), 24.dp.toPx()),
+    AppHeroCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text("داراییِ کل", color = HeroMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            PrivacyCrossfade(privacyMode) { masked ->
+                Text(
+                    maskIfPrivate(masked, total.toLong().toFaCompact()),
+                    color = Color.White,
+                    fontSize = 27.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(top = 3.dp),
                 )
             }
-            .padding(16.dp),
-    ) {
-        Text("داراییِ کل", color = Color.White.copy(alpha = 0.8f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-        PrivacyCrossfade(privacyMode) { masked ->
-            Text(
-                maskIfPrivate(masked, fmt(total)),
-                color = Color.White,
-                fontSize = 27.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(top = 3.dp),
-            )
-        }
-        Row(
-            modifier = Modifier.padding(top = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            HeroPill("نقد", cash, privacyMode)
-            HeroPill("طلا", gold, privacyMode)
-            HeroPill("ارز", fx, privacyMode)
+            // پنج قرص تو یه ردیفِ عادی جا نمی‌شن؛ FlowRow خطِ دوم می‌سازه.
+            FlowRow(
+                modifier = Modifier.padding(top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (cash > 0) HeroPill("نقد", cash, privacyMode)
+                if (gold > 0) HeroPill("طلا", gold, privacyMode)
+                if (fiat > 0) HeroPill("ارز", fiat, privacyMode)
+                if (crypto > 0) HeroPill("رمز ارز", crypto, privacyMode)
+                if (other > 0) HeroPill("سایر", other, privacyMode)
+            }
         }
     }
 }
 
-private val HeroShadow = Color(0xFF096F45)
-
-/** قرصِ `rgba(255,255,255,.2)` با متنِ ۹/۹۰۰ - مقدارِ فشرده، نه کاملِ ریال. */
 @Composable
 private fun HeroPill(label: String, value: Double, privacyMode: Boolean) {
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
+            .clip(RoundedCornerShape(AppRadius.button))
             .background(Color.White.copy(alpha = 0.2f))
             .padding(horizontal = 10.dp, vertical = 5.dp),
     ) {
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                "$label ${maskIfPrivate(masked, compact(value))}",
+                "$label ${maskIfPrivate(masked, value.toLong().toFaCompact())}",
                 color = Color.White,
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Black,
+                maxLines = 1,
             )
         }
     }
 }
 
 // ═══ ۳ · حساب‌های بانکی ═════════════════════════════════════════════════════════
-/** برچسبِ بخش - ۱۱٫۵/۹۰۰ با رنگِ متنِ دوم. */
 @Composable
 private fun SectionLabel(text: String) {
     Text(
@@ -561,11 +547,19 @@ private fun SectionLabel(text: String) {
 }
 
 /**
- * ردیفِ حساب - گوشه ۱۸ · پدینگ ۱۳×۱۴ · حاشیه‌ی ۲ `#E3ECE7` · فاصله ۱۱ ·
- * بجِ دایره‌ای ۳۸ با حاشیه‌ی ۱٫۵ سبز و متنِ ۱۰/۹۰۰.
+ * ردیفِ حساب - کلیک‌پذیر.
+ *
+ * ⚠️ `bankName` **رشته‌ی خالی** است نه `null` (فرم برای منبعِ غیربانکی `""`
+ * می‌نویسد)، پس `?:` هیچ‌وقت آتش نمی‌کرد و حسابِ نقدی بجِ خالی می‌گرفت. حالا رو
+ * `type` تصمیم می‌گیریم و `iconKey`ی که کاربر انتخاب کرده استفاده می‌شه.
  */
 @Composable
-private fun AccountRow(account: AccountEntity, balance: Double, privacyMode: Boolean) {
+private fun AccountRow(
+    account: AccountEntity,
+    balance: Double,
+    privacyMode: Boolean,
+    onClick: () -> Unit,
+) {
     val shape = RoundedCornerShape(18.dp)
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -575,139 +569,174 @@ private fun AccountRow(account: AccountEntity, balance: Double, privacyMode: Boo
             .clip(shape)
             .background(AppSurface)
             .border(2.dp, AppLine, shape)
+            .pressScaleClickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 13.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .background(AppPrimaryPill)
-                .border(1.5.dp, AppPrimary, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                account.bankName?.take(3) ?: "نقد",
-                color = AppPrimaryDim,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Black,
-            )
+        if (account.type == ACCOUNT_TYPE_BANK) {
+            BankBadge(bankName = account.bankName, size = 38.dp)
+        } else {
+            Box(
+                modifier = Modifier.size(38.dp).clip(CircleShape).background(AppIconFrame),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    accountIconForKey(account.iconKey),
+                    contentDescription = null,
+                    tint = AppMuted,
+                    modifier = Modifier.size(17.dp),
+                )
+            }
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(account.name, color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
-            val meta = account.smsSender?.let { "پیامک $it" } ?: account.bankName ?: "منبعِ نقدی"
+            Text(
+                account.name,
+                color = AppText,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            val meta = account.smsSender?.takeIf { it.isNotBlank() }?.let { "پیامک $it" }
+                ?: account.bankName.ifBlank { null }
+                ?: "منبعِ نقدی"
             Text(meta, color = AppMuted, fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp))
         }
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                maskIfPrivate(masked, compact(balance)),
-                color = AppText,
+                maskIfPrivate(masked, balance.toLong().toFaCompact()),
+                // موجودیِ منفیِ کارتِ اعتباری وضعِ عادیه نه خطا: فقط عدد قرمز می‌شه.
+                color = if (balance < 0) AppDangerInk else AppText,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Black,
             )
         }
+        Icon(
+            Icons.Filled.ChevronLeft,
+            contentDescription = null,
+            tint = AppLine,
+            modifier = Modifier.size(14.dp),
+        )
     }
 }
 
-// ═══ ۴ · طلا و ارز ═════════════════════════════════════════════════════════════
-/**
- * کارتِ **گروهیِ طلایی**: همه‌ی دارایی‌های غیرنقدی زیرِ یه کارت، با «سودِ کل» بالای اون.
- *
- * مقادیرِ فریم: گوشه ۲۰ · پدینگ ۱۴ · گرادیانِ `165deg #FFFCF4→#F5EBD6` · حاشیه‌ی ۱٫۵ `#EBD9B4`
- * · فاصله ۱۱ · متنِ تیره‌ی `#5A3E12`.
- */
+// ═══ ۴ · دسته‌های دارایی ═══════════════════════════════════════════════════════
+/** سرگروه: عنوان + جمعِ همون دسته + سودِ همون دسته (طلا و ارز دیگه با هم جمع نمی‌شن). */
 @Composable
-private fun GoldAndCurrencyCard(
-    holdings: List<AssetHolding>,
-    privacyMode: Boolean,
-    onOpen: (AssetEntity) -> Unit,
-) {
-    val shape = RoundedCornerShape(AppRadius.card)
-    val totalProfit = holdings.mapNotNull { it.profit }.takeIf { it.isNotEmpty() }?.sum()
-    Column(
-        verticalArrangement = Arrangement.spacedBy(11.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(Brush.linearGradient(listOf(GoldPaperFrom, GoldPaperTo)))
-            .border(1.5.dp, GoldPaperBorder, shape)
-            .padding(14.dp),
+private fun GroupHeader(title: String, total: Double, profit: Double?, privacyMode: Boolean) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            Text("سودِ کل", color = GoldInkDeep, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+        Text(title, color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+        PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                if (totalProfit == null) "—" else {
-                    (if (totalProfit >= 0) "+" else "−") + compact(kotlin.math.abs(totalProfit))
-                },
-                color = if (totalProfit != null && totalProfit < 0) ProfitDown else ProfitUp,
+                maskIfPrivate(masked, total.toLong().toFaCompact()),
+                color = AppText,
                 fontSize = 11.5.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        if (profit != null) {
+            Text(
+                profit.toLong().toFaSignedCompact(),
+                color = if (profit < 0) AppDangerInk else AppPrimaryInk,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Black,
             )
         }
-        holdings.forEach { holding ->
-            HoldingRow(holding, privacyMode, onOpen)
-        }
     }
 }
 
-private val GoldPaperFrom: Color
-    @Composable get() = AppGoldFrom
-private val GoldPaperTo = Color(0xFFF5EBD6)
-private val GoldPaperBorder: Color
-    @Composable get() = AppGoldBorder
-private val GoldInkDeep: Color
-    @Composable get() = AppGoldInk
-private val GoldInkSoft: Color
-    @Composable get() = AppAssetInk
-private val ProfitUp: Color
-    @Composable get() = AppPrimaryInk
-private val ProfitDown: Color
-    @Composable get() = AppDangerInk
-/** یه ردیف از کارتِ طلایی - سکه‌ی ۳۲، اسم ۱۱/۹۰۰، فراداده ۸٫۵، ارزش و سود سمتِ چپ. */
+/** طلا داخلِ کاغذِ طلایی؛ بقیه ردیفِ ساده روی صفحه. `groupPalette` تصمیم می‌گیره. */
 @Composable
-private fun HoldingRow(holding: AssetHolding, privacyMode: Boolean, onOpen: (AssetEntity) -> Unit) {
-    val shape = RoundedCornerShape(14.dp)
+private fun AssetGroup(
+    category: String,
+    rows: List<AssetHolding>,
+    privacyMode: Boolean,
+    onOpen: (AssetEntity) -> Unit,
+) {
+    val p = groupPalette(category)
+    val body: @Composable () -> Unit = {
+        Column(verticalArrangement = Arrangement.spacedBy(if (p.paper != null) 9.dp else 8.dp)) {
+            rows.forEach { HoldingRow(it, p, privacyMode, onOpen) }
+        }
+    }
+    if (p.paper == null) {
+        body()
+    } else {
+        val shape = RoundedCornerShape(AppRadius.card)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .background(p.paper)
+                .border(1.5.dp, p.rowBorder, shape)
+                .padding(12.dp),
+        ) { body() }
+    }
+}
+
+/**
+ * ردیفِ موجودی. سه ستون: نشان · اسم و **قیمتِ روزِ واحد** · ارزشِ کل و سود.
+ *
+ * ⚠️ قیمتِ واحد ماسکِ خصوصی نمی‌گیره - قیمتِ اونسِ طلا داراییِ کاربر نیست، نرخِ
+ * بازاره. ارزشِ کل و سود ماسک می‌گیرن، مثلِ قبل.
+ */
+@Composable
+private fun HoldingRow(
+    holding: AssetHolding,
+    p: GroupPalette,
+    privacyMode: Boolean,
+    onOpen: (AssetEntity) -> Unit,
+) {
+    val shape = RoundedCornerShape(AppRadius.row)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Color.White.copy(alpha = 0.55f))
+            .background(p.rowSurface)
+            .border(if (p.paper != null) 1.dp else 2.dp, p.rowBorder, shape)
             .pressScaleClickable { onOpen(holding.asset) }
             .padding(horizontal = 12.dp, vertical = 11.dp),
     ) {
-        CoinIcon(size = 32.dp)
+        AssetBadge(holding.asset.symbol, holding.asset.category, 32.dp)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 "${formatQuantity(holding.quantity)} ${holding.asset.name}",
-                color = GoldInkDeep,
+                color = p.ink,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
-                if (holding.quantity > 0) "خرید ${compact(holding.spentRial / holding.quantity)} هر واحد" else "",
-                color = GoldInkSoft,
-                fontSize = 8.5.sp,
+                holding.asset.unitPriceRial
+                    ?.let { "قیمتِ روز ${it.toLong().toFaCompact()}" }
+                    ?: "قیمتِ روز —",
+                color = p.subInk,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
         Column(horizontalAlignment = Alignment.Start) {
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    maskIfPrivate(masked, holding.value?.let { compact(it) } ?: "—"),
-                    color = GoldInkDeep,
+                    maskIfPrivate(masked, holding.value?.toLong()?.toFaCompact() ?: "—"),
+                    color = p.ink,
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Black,
                 )
             }
-            holding.profit?.let { p ->
+            holding.profit?.let { profit ->
                 Text(
-                    (if (p >= 0) "+" else "−") + compact(kotlin.math.abs(p)),
-                    color = if (p >= 0) ProfitUp else ProfitDown,
+                    profit.toLong().toFaSignedCompact(),
+                    color = if (profit >= 0) AppPrimaryInk else AppDangerInk,
                     fontSize = 8.5.sp,
                     fontWeight = FontWeight.Black,
                 )
@@ -716,9 +745,5 @@ private fun HoldingRow(holding: AssetHolding, privacyMode: Boolean, onOpen: (Ass
     }
 }
 
-/** «۹۳٫۹M» - فرمِ فشرده‌ای که فریم همه‌جای این صفحه استفاده می‌کنه. */
-internal fun compact(value: Double): String = when {
-    value >= 1_000_000 -> toFa("%.1f".format(value / 1_000_000).trimEnd('0').trimEnd('.')) + "M"
-    value >= 1_000 -> toFa((value / 1_000).toInt()) + "K"
-    else -> toFa(value.toInt())
-}
+/** پوششِ سازگاری برای صدازننده‌های قدیمی («۹٫۲M») - خودِ فرمول تو `toFaCompact` یکی شده. */
+internal fun compact(value: Double): String = value.toLong().toFaCompact()

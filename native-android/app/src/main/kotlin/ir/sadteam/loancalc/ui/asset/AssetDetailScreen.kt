@@ -1,19 +1,27 @@
 package ir.sadteam.loancalc.ui.asset
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -23,31 +31,54 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ir.sadteam.loancalc.core.fmt
-import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.assetCategoryLabel
 import ir.sadteam.loancalc.data.db.AssetEntity
-import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.data.db.AssetTradeEntity
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
-import ir.sadteam.loancalc.ui.components.GradientButton
-import ir.sadteam.loancalc.ui.components.persianMonthName
-import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.jibak.faMonthName
+import ir.sadteam.loancalc.ui.jibak.toFa
+import ir.sadteam.loancalc.ui.jibak.toFaCompact
+import ir.sadteam.loancalc.ui.jibak.toFaDate
+import ir.sadteam.loancalc.ui.jibak.toFaPercent
+import ir.sadteam.loancalc.ui.jibak.toFaSignedCompact
+import ir.sadteam.loancalc.ui.theme.AppDangerBorder
+import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppDangerPill
+import ir.sadteam.loancalc.ui.theme.AppIconFrame
+import ir.sadteam.loancalc.ui.theme.AppLabel
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
-import ir.sadteam.loancalc.ui.components.EmptyState
-import androidx.compose.material.icons.outlined.SwapHoriz
+import ir.sadteam.loancalc.ui.theme.hardShadow
 
 /**
- * جزئیاتِ یه دارایی - مقدارِ فعلی، ارزشِ روز (اگه قیمت داشته باشیم)، هزینه‌ی خالص، و تاریخچه‌ی
- * کاملِ خرید/فروش.
+ * جزئیاتِ یه دارایی - فریمِ `42a`، جای `29g`.
  *
- * ⏳ **نمودارِ قیمت هنوز نیست**: نمودار به تاریخچه‌ی قیمتِ بازار نیاز داره که با همون سرویسِ
- * قیمتِ لحظه‌ای میاد. تا اون موقع به‌جاش تاریخچه‌ی معاملاتِ خودِ کاربر نشون داده می‌شه که داده‌ی
- * واقعی و مفیدیه، نه یه نمودارِ خالیِ الکی.
+ * ⚠️ کارتِ خلاصه **پالتِ دسته‌اش** رو می‌گیره (`groupPalette`)، نه همیشه کاغذِ طلایی -
+ * قبلاً هر دارایی (حتی دلار/بیت‌کوین) کاغذِ طلایی با سکه می‌گرفت.
+ * «فروش» دکمه‌ی خطیه نه پرِ قرمز - فروش کارِ مخربی نیست، قرمزِ پُر برای عملِ مخربه.
+ * واحد: کارتِ خلاصه «تومان»، ردیف‌های تاریخچه بی‌واحد.
  */
 @Composable
 fun AssetDetailScreen(
@@ -56,10 +87,20 @@ fun AssetDetailScreen(
     viewModel: AssetViewModel,
 ) {
     val allTrades by viewModel.trades.collectAsState()
-    val trades = remember(allTrades, asset.id) { allTrades.filter { it.assetId == asset.id } }
+    val monthChange by viewModel.monthChange.collectAsState()
+    val history by viewModel.historyOf(asset.symbol).collectAsState(initial = emptyList())
+
+    val trades = remember(allTrades, asset.id) {
+        allTrades.filter { it.assetId == asset.id }.sortedWith(
+            compareByDescending<AssetTradeEntity> { it.year }
+                .thenByDescending { it.month }.thenByDescending { it.day },
+        )
+    }
     val quantity = viewModel.quantityOf(asset.id, allTrades)
     val netCost = viewModel.netCostOf(asset.id, allTrades)
     val value = viewModel.currentValueOf(asset, allTrades)
+    val change = monthChange[asset.symbol]
+
     var showDelete by remember { mutableStateOf(false) }
     var showTrade by remember { mutableStateOf(false) }
     var sellMode by remember { mutableStateOf(false) }
@@ -75,11 +116,10 @@ fun AssetDetailScreen(
         )
         return
     }
-
     if (showDelete) {
         ConfirmDeleteDialog(
             title = "حذفِ دارایی",
-            text = "«${asset.name}» و همه‌ی خرید/فروش‌هاش حذف بشن؟",
+            text = "«${asset.name}» و همه‌ی خرید/فروش‌هایش حذف بشن؟",
             onConfirm = { viewModel.deleteAsset(asset); onBack() },
             onDismiss = { showDelete = false },
         )
@@ -87,78 +127,93 @@ fun AssetDetailScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
-                }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                SquareIconButton(
+                    icon = Icons.Filled.ArrowForward,
+                    description = "بازگشت",
+                    fill = AppIconFrame,
+                    border = AppLine,
+                    ink = AppMuted,
+                    onClick = onBack,
+                )
                 Text(
                     asset.name,
                     color = AppText,
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = { showDelete = true }) {
-                    Icon(Icons.Filled.Delete, contentDescription = "حذف", tint = AppDanger)
-                }
+                SquareIconButton(
+                    icon = Icons.Filled.Delete,
+                    description = "حذف",
+                    fill = AppDangerPill,
+                    border = AppDangerBorder,
+                    ink = AppDangerInk,
+                    onClick = { showDelete = true },
+                )
             }
         }
 
+        item { AssetSummaryCard(asset, quantity, netCost, value, change) }
+
+        item { AssetSparkline(points = history) }
+
         item {
-            AppCard {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Text(
-                    "${formatQuantity(quantity)} ${asset.name}",
-                    color = AppText,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(assetCategoryLabel(asset.category), color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
-                Text(
-                    if (value == null) "ارزشِ روز: —" else "ارزشِ روز: ${fmt(value)} ریال",
-                    color = if (value == null) AppMuted else AppPrimary,
+                    "خرید",
+                    color = Color.White,
                     fontSize = 13.sp,
-                    modifier = Modifier.padding(top = 10.dp),
+                    fontWeight = FontWeight.Black,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .hardShadow(AppPrimaryDim, 4.dp, AppRadius.button)
+                        .clip(RoundedCornerShape(AppRadius.button))
+                        .background(AppPrimary)
+                        .pressScaleClickable { sellMode = false; showTrade = true }
+                        .padding(vertical = 13.dp),
                 )
                 Text(
-                    if (netCost >= 0) "خالصِ پرداختی: ${fmt(netCost)} ریال" else "خالصِ دریافتی: ${fmt(-netCost)} ریال",
-                    color = AppMuted,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(top = 4.dp),
+                    "فروش",
+                    color = AppDangerInk,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Black,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(AppRadius.button))
+                        .background(AppSurface)
+                        .border(2.dp, AppDangerBorder, RoundedCornerShape(AppRadius.button))
+                        .pressScaleClickable { sellMode = true; showTrade = true }
+                        .padding(vertical = 13.dp),
                 )
-                if (value != null) {
-                    val profit = value - netCost
-                    Text(
-                        if (profit >= 0) "سود: ${fmt(profit)} ریال" else "زیان: ${fmt(-profit)} ریال",
-                        color = if (profit >= 0) AppPrimary else AppDanger,
-                        fontSize = 12.5.sp,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                }
             }
         }
 
         item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GradientButton(
-                    onClick = { sellMode = false; showTrade = true },
-                    modifier = Modifier.weight(1f),
-                ) { Text("خرید") }
-                GradientButton(
-                    onClick = { sellMode = true; showTrade = true },
-                    modifier = Modifier.weight(1f),
-                ) { Text("فروش") }
-            }
+            Text(
+                "تاریخچه",
+                color = AppMuted,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(top = 2.dp),
+            )
         }
 
-        item {
-            Text("تاریخچه", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
-        }
-
-        // بخشِ ۳۳ فایلِ طراحی (جدولِ `33d`، ردیفِ «جزئیاتِ دارایی»).
         if (trades.isEmpty()) {
             item {
                 EmptyState(
@@ -172,24 +227,325 @@ fun AssetDetailScreen(
         }
 
         items(trades, key = { it.id }) { trade ->
-            AppCard {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "${if (trade.isBuy) "خرید" else "فروش"} ${formatQuantity(trade.quantity)} ${asset.name}",
-                            color = if (trade.isBuy) AppPrimary else AppDanger,
-                            fontSize = 13.sp,
-                        )
-                        Text(
-                            "${toFa(trade.day)} ${persianMonthName(trade.month)} ${toFa(trade.year)}",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                    Text("${fmt(trade.totalRial)} ریال", color = AppText, fontSize = 12.sp)
+            TradeRow(trade = trade, assetName = asset.name)
+        }
+    }
+}
+
+@Composable
+private fun SquareIconButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    description: String,
+    fill: Color,
+    border: Color,
+    ink: Color,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(RoundedCornerShape(AppRadius.icon))
+            .background(fill)
+            .border(1.5.dp, border, RoundedCornerShape(AppRadius.icon))
+            .pressScaleClickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = description, tint = ink, modifier = Modifier.size(15.dp))
+    }
+}
+
+/** کارتِ خلاصه - مقدار، بجِ درصد، ارزشِ روز، قیمتِ هر واحد و سود. پالتِ دسته‌اش رو می‌گیره. */
+@Composable
+private fun AssetSummaryCard(
+    asset: AssetEntity,
+    quantity: Double,
+    netCost: Double,
+    value: Double?,
+    changePercent: Double?,
+) {
+    val p = groupPalette(asset.category)
+    val shape = RoundedCornerShape(AppRadius.card)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(13.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .then(if (p.paper != null) Modifier.background(p.paper) else Modifier.background(AppSurface))
+            .border(if (p.paper != null) 1.5.dp else 2.dp, p.rowBorder, shape)
+            .padding(15.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            AssetBadge(asset.symbol, asset.category, 38.dp)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    formatQuantity(quantity),
+                    color = p.ink,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Black,
+                )
+                Text(
+                    if (quantity > 0 && netCost > 0) {
+                        "میانگینِ خرید ${(netCost / quantity).toLong().toFaCompact()} هر واحد"
+                    } else {
+                        assetCategoryLabel(asset.category)
+                    },
+                    color = p.subInk,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            // بجِ درصد. خالی‌بودنِ کلید یعنی سرور هنوز تاریخچه نداره - بج **نمی‌آد**، نه صفر.
+            if (changePercent != null) ChangeBadge(changePercent)
+        }
+        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(p.rowBorder))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Column {
+                Text(
+                    "ارزشِ روز",
+                    color = p.subInk,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    value?.toLong()?.toFaCompact() ?: "—",
+                    color = p.ink,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(top = 1.dp),
+                )
+                Text(
+                    "تومان",
+                    color = p.subInk,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+                asset.unitPriceRial?.let { unit ->
+                    Text(
+                        "قیمتِ هر واحد ${unit.toLong().toFaCompact()}",
+                        color = p.subInk,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
+            }
+            if (value != null) {
+                val profit = value - netCost
+                Column(horizontalAlignment = Alignment.Start) {
+                    Text(
+                        if (profit >= 0) "سود" else "زیان",
+                        color = p.subInk,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        profit.toLong().toFaSignedCompact(),
+                        color = if (profit >= 0) AppPrimaryInk else AppDangerInk,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ChangeBadge(percent: Double) {
+    val up = percent >= 0
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = Modifier
+            .clip(RoundedCornerShape(AppRadius.button))
+            .background(if (up) AppPrimaryPill else AppDangerPill)
+            .border(
+                1.dp,
+                if (up) AppPrimary.copy(alpha = 0.35f) else AppDangerBorder,
+                RoundedCornerShape(AppRadius.button),
+            )
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+    ) {
+        Icon(
+            if (up) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            contentDescription = null,
+            tint = if (up) AppPrimaryInk else AppDangerInk,
+            modifier = Modifier.size(11.dp),
+        )
+        Text(
+            kotlin.math.abs(percent).toFaPercent(),
+            color = if (up) AppPrimaryInk else AppDangerInk,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Black,
+        )
+    }
+}
+
+/** یک نقطه‌ی تاریخچه‌ی قیمت. `day/month` فقط برای برچسبِ دو سرِ محورِ افقی. */
+data class PricePoint(val year: Int, val month: Int, val day: Int, val priceRial: Double)
+
+/**
+ * نمودارِ خطیِ ۳۰روزه - سه حالتِ دیتا:
+ *
+ * - **≥۲ نقطه** نمودار کشیده می‌شه. محورِ عمودی از کم‌ترین تا بیش‌ترینِ همون بازه، نه از صفر.
+ * - **۱ نقطه** کارت می‌مونه، محتواش یه خطِ متن می‌شه.
+ * - **صفر نقطه** کارت اصلاً نمیاد.
+ */
+@Composable
+private fun AssetSparkline(points: List<PricePoint>) {
+    if (points.isEmpty()) return
+
+    val shape = RoundedCornerShape(AppRadius.card)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(AppSurface)
+            .border(2.dp, AppLineRow, shape)
+            .padding(14.dp),
+    ) {
+        Text("۳۰ روزِ گذشته", color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+
+        if (points.size == 1) {
+            Text(
+                "قیمت از امروز ثبت می‌شود. نمودار از فردا شکل می‌گیرد.",
+                color = AppLabel,
+                fontSize = 11.sp,
+                lineHeight = 20.sp,
+            )
+            return@Column
+        }
+
+        val min = points.minOf { it.priceRial }
+        val max = points.maxOf { it.priceRial }
+        val span = (max - min).takeIf { it > 0.0 }
+        val line = AppPrimary
+        val fill = AppPrimaryPill
+
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Canvas(modifier = Modifier.fillMaxWidth().height(78.dp)) {
+                val w = size.width
+                val h = size.height
+                val stepX = if (points.size > 1) w / (points.size - 1) else w
+                fun yOf(pt: PricePoint): Float =
+                    if (span == null) h / 2f
+                    else (h - 6f) - ((pt.priceRial - min) / span).toFloat() * (h - 12f) + 6f
+
+                val path = Path()
+                val area = Path()
+                points.forEachIndexed { i, pt ->
+                    val x = i * stepX
+                    val y = yOf(pt)
+                    if (i == 0) { path.moveTo(x, y); area.moveTo(x, y) } else { path.lineTo(x, y); area.lineTo(x, y) }
+                }
+                area.lineTo(w, h)
+                area.lineTo(0f, h)
+                area.close()
+                drawPath(area, color = fill)
+                drawPath(
+                    path,
+                    color = line,
+                    style = Stroke(width = 2.6.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+                )
+                val last = points.last()
+                drawCircle(Color.White, radius = 4.5.dp.toPx(), center = Offset(w, yOf(last)))
+                drawCircle(line, radius = 3.dp.toPx(), center = Offset(w, yOf(last)))
+            }
+            Text(
+                max.toLong().toFaCompact(),
+                color = AppLabel,
+                fontSize = 8.5.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.TopStart),
+            )
+            Text(
+                min.toLong().toFaCompact(),
+                color = AppLabel,
+                fontSize = 8.5.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.BottomStart),
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            val first = points.first()
+            val last = points.last()
+            Text(
+                "${first.day.toFa()} ${faMonthName(first.month)}",
+                color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Bold,
+            )
+            Text(
+                "${last.day.toFa()} ${faMonthName(last.month)}",
+                color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Bold,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TradeRow(trade: AssetTradeEntity, assetName: String) {
+    val shape = RoundedCornerShape(AppRadius.row)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(AppSurface)
+            .border(1.5.dp, AppLine, shape)
+            .padding(horizontal = 13.dp, vertical = 11.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(RoundedCornerShape(9.dp))
+                .background(if (trade.isBuy) AppPrimaryPill else AppDangerPill),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                if (trade.isBuy) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                contentDescription = null,
+                tint = if (trade.isBuy) AppPrimaryInk else AppDangerInk,
+                modifier = Modifier.size(13.dp),
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                "${if (trade.isBuy) "خرید" else "فروش"} ${formatQuantity(trade.quantity)} $assetName",
+                color = AppText,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                toFaDate(trade.year, trade.month, trade.day),
+                color = AppLabel,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        // ردیفِ فهرست بی‌واحده - قاعده‌ی عددِ TOKENS.md.
+        Text(
+            trade.totalRial.toLong().toFaCompact(),
+            color = AppText,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
+        )
     }
 }

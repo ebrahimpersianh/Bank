@@ -350,6 +350,8 @@ val AppPrimaryPillBorder: Color @Composable get() = LocalAppColors.current.prima
 val AppDanger: Color @Composable get() = LocalAppColors.current.danger
 val AppDangerInk: Color @Composable get() = LocalAppColors.current.dangerInk
 val AppDangerPill: Color @Composable get() = LocalAppColors.current.dangerPill
+/** حاشیه‌ی قرمز - قرینه‌ی AppPrimaryBorder برای دکمه/کارتِ قرمز. مشتق از AppDanger، نه هگزِ ثابت. */
+val AppDangerBorder: Color @Composable get() = AppDanger.copy(alpha = 0.35f)
 
 val AppInfo: Color @Composable get() = LocalAppColors.current.info
 val AppPurple: Color @Composable get() = LocalAppColors.current.purple

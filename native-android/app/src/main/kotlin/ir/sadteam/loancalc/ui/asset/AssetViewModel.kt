@@ -3,14 +3,20 @@ package ir.sadteam.loancalc.ui.asset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.data.AssetRepository
 import ir.sadteam.loancalc.data.db.AssetEntity
 import ir.sadteam.loancalc.data.db.AssetTradeEntity
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,6 +37,9 @@ class AssetViewModel @Inject constructor(
     private val _monthChange = MutableStateFlow<Map<String, Double>>(emptyMap())
     val monthChange: StateFlow<Map<String, Double>> = _monthChange
 
+    /** کشِ تاریخچه‌ی قیمت برای نمودارِ `42a` - هر نماد یک‌بار خونده می‌شه و اینجا می‌مونه. */
+    private val _history = MutableStateFlow<Map<String, List<PricePoint>>>(emptyMap())
+
     init {
         refreshPrices()
     }
@@ -38,16 +47,38 @@ class AssetViewModel @Inject constructor(
     /**
      * قیمتِ روز از سرورِ خودمون. بی‌صدا شکست می‌خوره (آفلاین = قیمتِ قبلی می‌مونه) و چون سرور
      * خودش ساعتی یک‌بار از سرویسِ بیرونی می‌گیره، صدازدنِ مکررش هزینه‌ای نداره.
+     *
+     * درصدِ تغییرِ هر نماد **موازی** حساب می‌شه - قبلاً حلقه‌ی ترتیبی با ده دارایی ده
+     * رفت‌وبرگشتِ پشتِ‌هم بود.
      */
     fun refreshPrices() {
         viewModelScope.launch {
             assetRepository.refreshPrices()
-            val changes = mutableMapOf<String, Double>()
-            assetRepository.observeAssets().first().forEach { asset ->
-                assetRepository.priceChangePercent(asset.symbol)?.let { changes[asset.symbol] = it }
-            }
-            _monthChange.value = changes
+            // ifEmpty چون تو فراخوانیِ init هنوز StateFlowِ assets پر نشده.
+            val current = assets.value.ifEmpty { assetRepository.observeAssets().first() }
+            _monthChange.value = current
+                .map { asset -> async { asset.symbol to assetRepository.priceChangePercent(asset.symbol) } }
+                .awaitAll()
+                .mapNotNull { (symbol, pct) -> pct?.let { symbol to it } }
+                .toMap()
         }
+    }
+
+    /**
+     * تاریخچه‌ی قیمت برای نمودارِ `42a`. هر نماد یک‌بار خونده می‌شه و تو `StateFlow` می‌مونه.
+     * فهرستِ خالی یا کوتاه حالتِ عادیه (سرور فقط از روزِ راه‌اندازیِ سرویس تاریخچه داره) نه
+     * خطا - `AssetSparkline` هر سه حالت رو خودش می‌گیره.
+     */
+    fun historyOf(symbol: String, days: Int = 30): Flow<List<PricePoint>> {
+        if (_history.value[symbol] == null) {
+            viewModelScope.launch {
+                val points = runCatching { assetRepository.priceHistory(symbol, days) }
+                    .getOrDefault(emptyList())
+                    .mapNotNull { (date, price) -> date.toPricePoint(price) }
+                _history.update { it + (symbol to points) }
+            }
+        }
+        return _history.map { it[symbol].orEmpty() }
     }
 
     fun recordTrade(
@@ -90,4 +121,18 @@ class AssetViewModel @Inject constructor(
         val values = allAssets.mapNotNull { assetRepository.currentValueOf(it, allTrades) }
         return if (values.isEmpty()) null else values.sum()
     }
+}
+
+/**
+ * «۱۴۰۴-۰۶-۱۰» یا «۲۰۲۶-۰۸-۳۱» (میلادیِ سرور) → [PricePoint]ِ جلالی. تاریخِ نامعتبر
+ * `null` برمی‌گردونه و همون نقطه بی‌صدا از نمودار حذف می‌شه.
+ */
+private fun String.toPricePoint(priceRial: Double): PricePoint? {
+    val parts = take(10).split("-")
+    if (parts.size != 3) return null
+    val gy = parts[0].toIntOrNull() ?: return null
+    val gm = parts[1].toIntOrNull() ?: return null
+    val gd = parts[2].toIntOrNull() ?: return null
+    val jalali = runCatching { JalaliCalendar.fromGregorian(gy, gm, gd) }.getOrNull() ?: return null
+    return PricePoint(jalali.y, jalali.m, jalali.d, priceRial)
 }
