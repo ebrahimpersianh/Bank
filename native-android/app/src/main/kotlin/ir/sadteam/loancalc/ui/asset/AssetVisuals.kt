@@ -34,6 +34,8 @@ import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.toFa
 
 /**
  * نشانِ یک دارایی.
@@ -72,13 +74,15 @@ private val assetVisuals: Map<String, AssetVisual> = mapOf(
     "ETH" to AssetVisual("E", Color(0xFF5A6FC0)),
     "USDT" to AssetVisual("U", Color(0xFF1F8F6B)),
     "XAUT" to AssetVisual("X", Color(0xFFD9A825)),
-    "BNB" to AssetVisual("B", Color(0xFFC79A16)),
+    "BNB" to AssetVisual("Bn", Color(0xFFC79A16)),
     "TRX" to AssetVisual("T", Color(0xFFC23631)),
     "LTC" to AssetVisual("L", Color(0xFF345D9D)),
     "SOL" to AssetVisual("S", Color(0xFF9945FF)),
-    "XRP" to AssetVisual("X", Color(0xFF23292F)),
+    // #23292F تقریباً مشکیه و رو AppSurfaceِ تیره دیسکِ نامرئی می‌شه؛ روشن‌ترِ همون برند.
+    // استثناست نه قاعده - بقیه‌ی هگزها کنتراستِ کافی دارن.
+    "XRP" to AssetVisual("Xr", Color(0xFF3A4550)),
     "DOGE" to AssetVisual("D", Color(0xFFB89A3E)),
-    "TON" to AssetVisual("T", Color(0xFF0098EA)),
+    "TON" to AssetVisual("Tn", Color(0xFF0098EA)),
 )
 
 fun assetVisualOf(symbol: String, category: String): AssetVisual =
@@ -160,3 +164,20 @@ val assetGroupOrder: List<Pair<String, String>> = listOf(
     ASSET_CATEGORY_CRYPTO to "رمز ارز",
     ASSET_CATEGORY_CUSTOM to "سایر",
 )
+
+/**
+ * مقدارِ دارایی معمولاً کسری است (۱٫۲ بیت‌کوین) ولی سکه و ارز اغلب صحیح - عددِ
+ * صحیح بی «٫۰».
+ *
+ * ⚠️ `Locale.US` اجباری است: بی آن، روی گوشیِ فارسی خودِ `format` رقمِ فارسی و
+ * ممیزِ «٫» برمی‌گرداند و `trimEnd('0')`/`trimEnd('.')` هیچ‌چیزی پیدا نمی‌کنند،
+ * پس «۱٫۲ بیت‌کوین» می‌شد «۱٫۲۰۰۰ بیت‌کوین».
+ */
+internal fun formatQuantity(q: Double): String =
+    if (q == q.toLong().toDouble()) {
+        q.toLong().toFa()
+    } else {
+        String.format(java.util.Locale.US, "%.4f", q)
+            .trimEnd('0').trimEnd('.')
+            .faDigits()
+    }

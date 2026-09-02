@@ -39,6 +39,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Diamond
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EventRepeat
 import androidx.compose.material.icons.filled.Handshake
@@ -101,7 +102,6 @@ import ir.sadteam.loancalc.ui.category.CategoryManagementScreen
 import ir.sadteam.loancalc.ui.category.CategoryViewModel
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.saveable.rememberSaveable
-import ir.sadteam.loancalc.ui.asset.AssetSection
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppFab
 import ir.sadteam.loancalc.ui.components.HeroPillBg
@@ -166,25 +166,44 @@ private val faWeekDayNamesAccounting = listOf("شنبه", "یک‌شنبه", "د
  */
 @Composable
 fun AssetsScreen(
+    onOpenAssetTab: () -> Unit = {},
     viewModel: AccountViewModel = hiltViewModel(),
     categoryViewModel: CategoryViewModel = hiltViewModel(),
+    assetViewModel: ir.sadteam.loancalc.ui.asset.AssetViewModel = hiltViewModel(),
 ) {
-    // تبِ «دارایی» دو نما داره: حساب‌کتاب‌ها (نقدی/بانکی) و دارایی‌های غیرنقدی (طلا/ارز/رمزارز).
-    // خواسته‌ی صریحِ کاربر: بخشِ دارایی‌های غیرنقدی به اپ اضافه بشه - رجوع کن به ui/asset/.
-    var showNonCash by rememberSaveable { mutableStateOf(false) }
-    BackHandler(enabled = showNonCash) { showNonCash = false }
-
+    // «دارایی‌های غیرنقدی» (طلا/ارز/رمزارز) دیگه اینجا نیست - تبِ مستقلِ «دارایی» خودِ
+    // ir.sadteam.loancalc.ui.asset.AssetsTabScreen همون کار رو دقیق‌تر انجام می‌ده (مبلغ‌ها
+    // تو هیرویِ خودِ اون تبن)؛ نگه‌داشتنِ دو لیستِ هم‌معنی یعنی هر تغییرِ آینده دوبار اعمال بشه.
+    // جاش یه میان‌برِ کوچیک: فقط شمارشِ دارایی، نه مبلغ.
+    val assets by assetViewModel.assets.collectAsState()
     Column(modifier = Modifier.fillMaxSize()) {
-        SegmentedToggle(
-            options = listOf("حساب‌کتاب‌ها", "دارایی‌ها"),
-            selectedIndex = if (showNonCash) 1 else 0,
-            onSelect = { showNonCash = it == 1 },
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-        )
-        if (showNonCash) {
-            AssetSection()
-        } else {
-            MainSection(viewModel = viewModel, categoryViewModel = categoryViewModel)
+        Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
+            AssetTabShortcutCard(assetCount = assets.size, onClick = onOpenAssetTab)
+        }
+        MainSection(viewModel = viewModel, categoryViewModel = categoryViewModel)
+    }
+}
+
+/** میان‌برِ کوچیک به تبِ دارایی - فقط شمارشِ دارایی، بدونِ مبلغ (مبلغ تو هیرویِ خودِ اون تبه). */
+@Composable
+private fun AssetTabShortcutCard(assetCount: Int, onClick: () -> Unit) {
+    AppCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(36.dp).background(AppPrimaryPill, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Diamond, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
+            }
+            Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                Text("دارایی من", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    if (assetCount == 0) "هنوز دارایی ثبت نکردی" else "${toFa(assetCount)} دارایی",
+                    color = AppMuted,
+                    fontSize = 11.sp,
+                )
+            }
+            Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
         }
     }
 }
