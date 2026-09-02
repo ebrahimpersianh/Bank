@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.account
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +29,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import ir.sadteam.loancalc.core.cleanNum
@@ -50,6 +54,7 @@ import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 
@@ -65,7 +70,11 @@ fun AddEditAccountScreen(
     // نوعِ حساب‌کتاب (خواسته‌ی صریحِ کاربر طبقِ اپِ مرجع): «کارت بانکی» یا «منبع دیگر» (نقدی،
     // کیفِ پول، کارتِ اعتباری…). حساب‌های قدیمی همه bank ـن، پس فرمشون دقیقاً مثلِ قبل باز می‌شه.
     var accountType by remember { mutableStateOf(existing?.type ?: ACCOUNT_TYPE_BANK) }
-    var iconKey by remember { mutableStateOf(existing?.iconKey ?: DEFAULT_ACCOUNT_ICON_KEY) }
+    // `iconKey`ِ خالی (نه null) هم داریم: حساب‌هایی که پیش از افزودنِ انتخابِ آیکون ساخته
+    // شده‌اند رشته‌ی خالی دارند و `accountIconForKey("")` آیکونی برنمی‌گرداند.
+    var iconKey by remember {
+        mutableStateOf(existing?.iconKey?.takeIf { it.isNotBlank() } ?: DEFAULT_ACCOUNT_ICON_KEY)
+    }
     var name by remember { mutableStateOf(existing?.name ?: "") }
     var bankName by remember { mutableStateOf(existing?.bankName ?: "") }
     var cardNumberText by remember { mutableStateOf(existing?.cardNumber ?: "") }
@@ -75,6 +84,13 @@ fun AddEditAccountScreen(
     }
     var error by remember { mutableStateOf<String?>(null) }
     var showSmsSenderPicker by remember { mutableStateOf(false) }
+
+    // ⚠️ فرم هیچ راهِ خروجی در دسترس نداشت: «انصراف» تهِ یک فرمِ هفت‌کارتی بود و بازگشتِ
+    // سیستمی هم به آن وصل نبود، پس کاربر برای انصراف باید تا آخر اسکرول می‌کرد. دیالوگِ
+    // سرشماره اول بسته می‌شود.
+    BackHandler {
+        if (showSmsSenderPicker) showSmsSenderPicker = false else onCancel()
+    }
 
     if (showSmsSenderPicker) {
         SmsSenderPickerDialog(
@@ -105,7 +121,20 @@ fun AddEditAccountScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            Text(if (existing == null) "افزودن حساب‌کتاب" else "ویرایش حساب‌کتاب", fontSize = 16.sp)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onCancel) {
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "انصراف")
+                }
+                Text(
+                    if (existing == null) "افزودن حساب‌کتاب" else "ویرایش حساب‌کتاب",
+                    color = AppText,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
+            }
         }
         item {
             AppCard(label = "نوع حساب‌کتاب") {
@@ -240,6 +269,10 @@ fun AddEditAccountScreen(
                     singleLine = true,
                     suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                 )
+                // ⚠️ `cleanNum` علامتِ منفی را حذف می‌کند، پس کارتِ اعتباری با موجودیِ منفی
+                // اصلاً قابلِ ثبت نیست - فیلد فقط عددِ مثبت می‌گیرد. تا وقتی cleanNum عوض
+                // نشود، راهِ کاربر یک تراکنشِ برداشت است. اگر لازم شد، بگویید تا فیلد را
+                // با یک تاگلِ +/− طرح کنم.
                 val balanceToman = initialBalanceText.toLongOrNull() ?: 0L
                 if (balanceToman > 0) {
                     Text(

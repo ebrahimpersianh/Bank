@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.account
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -51,6 +52,8 @@ import ir.sadteam.loancalc.ui.components.HeroPillBg
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.toFa
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
@@ -101,6 +104,21 @@ fun AccountsScreen(
         showAddForm -> "add"
         openedAccount != null -> "detail"
         else -> "list"
+    }
+
+    // ⚠️ AnimatedContent پشته‌ی خودش را دارد ولی بازگشتِ سیستمی از آن بی‌خبر بود: کاربر از
+    // فرمِ افزودن دکمه‌ی back می‌زد و کلِ صفحه بسته می‌شد، با فرمِ نیمه‌پرشده. ترتیب همان
+    // ترتیبِ screenKey است - بازترین لایه اول.
+    BackHandler(enabled = screenKey != "list") {
+        when {
+            showAddForm -> {
+                // `startInAddMode` یعنی این صفحه فقط پوسته‌ی فرم است، پس تا آخر برمی‌گردد -
+                // همان قاعده‌ی onSaved/onCancel.
+                if (startInAddMode && editingAccount == null) onBack()
+                else { showAddForm = false; editingAccountId = null }
+            }
+            else -> openedAccountId = null
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -211,7 +229,9 @@ private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accoun
                 Column {
                     Text("جمعِ موجودی", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                     Text(
-                        "${total.toLong().toFaMoney()}",
+                        // ⚠️ `total` **ریال** است و زیرش «تومان» نوشته می‌شد: عدد ده برابر
+                        // بزرگ چاپ می‌شد. `rialToToman` پیش از فرمت.
+                        rialToToman(total.toLong()).toFaMoney(),
                         color = Color.White,
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Black,
@@ -240,15 +260,24 @@ private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accoun
                 modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(AppRadius.button)),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                val alphas = listOf(0.92f, 0.55f, 0.30f)
+                // ⚠️ فهرستِ سه‌تایی بود و حسابِ چهارم به بعد همه ۰٫۳۰ می‌گرفتند - سه تکه‌ی
+                // یک‌رنگِ چسبیده که از هم تفکیک نمی‌شدند. حالا از ۰٫۹۲ تا ۰٫۲۲ پخش می‌شود،
+                // هر چند حساب که باشد.
+                val step = if (accounts.size > 1) 0.70f / (accounts.size - 1) else 0f
                 accounts.forEachIndexed { index, account ->
                     val balance = balances[account.id] ?: account.initialBalance
-                    val weight = if (total > 0) (balance / total).toFloat().coerceAtLeast(0.02f) else 1f / accounts.size
+                    // حسابِ منفی وزنِ منفی می‌داد؛ coerceAtLeast تکه را نگه می‌داشت ولی جمعِ
+                    // وزن‌ها را به‌هم می‌ریخت. قدرِ مطلق درست‌تر است: سهمِ **حجمی**.
+                    val weight = if (total > 0) {
+                        (kotlin.math.abs(balance) / total).toFloat().coerceIn(0.02f, 1f)
+                    } else {
+                        1f / accounts.size
+                    }
                     Box(
                         modifier = Modifier
                             .weight(weight)
                             .fillMaxSize()
-                            .background(Color.White.copy(alpha = alphas.getOrElse(index) { 0.30f })),
+                            .background(Color.White.copy(alpha = 0.92f - step * index)),
                     )
                 }
             }
@@ -287,7 +316,10 @@ private fun AccountCard(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text(account.name, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Text(
-                        "${balance.toLong().toFaMoney()} تومان",
+                        // ریال → تومان، مثلِ هیرو. فرمِ کامل نه فشرده: این ستون عرض دارد و
+                        // فهرستِ حساب جای عددِ دقیق است.
+                        "${rialToToman(balance.toLong()).toFaMoney()} تومان",
+                        // موجودیِ منفیِ کارتِ اعتباری وضعِ عادی است نه خطا: فقط عدد قرمز.
                         color = if (balance < 0) AppDangerInk else AppText,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Black,
@@ -295,7 +327,14 @@ private fun AccountCard(
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(account.bankName.ifBlank { "منبعِ نقدی" }, color = AppMuted, fontSize = 11.sp)
-                    Text("٪${(share * 100).toInt().toFa()} از دارایی", color = AppMuted, fontSize = 10.sp)
+                    // «٪» **بعد** از عدد می‌آید نه قبلش (قاعده‌ی toFaPercent). و حسابِ منفی
+                    // سهم ندارد: «٪−۱۲ از دارایی» بی‌معنا بود.
+                    Text(
+                        if (share <= 0f) "بی‌سهم از دارایی"
+                        else "${(share * 100).toInt().toFa()}٪ از دارایی",
+                        color = AppMuted,
+                        fontSize = 10.sp,
+                    )
                 }
                 Box(
                     modifier = Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(999.dp)).background(AppPrimaryPill),
