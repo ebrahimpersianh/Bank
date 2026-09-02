@@ -1,14 +1,25 @@
 package ir.sadteam.loancalc.ui.account
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -58,6 +69,7 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -96,15 +108,9 @@ fun AccountDetailScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deletingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
 
-    if (showCalendar) {
-        CalendarPickerScreen(
-            initialDate = txDate,
-            onDateSelected = { txDate = it; showCalendar = false },
-            onBack = { showCalendar = false },
-        )
-        return
-    }
-
+    // تقویم **روی** صفحه می‌نشیند، نه به‌جایش. با `return` کلِ LazyColumn از کامپوزیشن بیرون
+    // می‌رفت و اسکرولِ دفترچه‌ی تراکنش‌ها با هر انتخابِ تاریخ صفر می‌شد.
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 100.dp),
@@ -273,21 +279,36 @@ fun AccountDetailScreen(
             }
         }
     }
-    if (showDeleteConfirm) {
-        ConfirmDeleteDialog(
-            title = "حذف حساب",
-            text = "حسابِ «${account.name} - ${account.bankName}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
-            onConfirm = { onDelete?.invoke() },
-            onDismiss = { showDeleteConfirm = false },
-        )
-    }
-    deletingTx?.let { tx ->
-        ConfirmDeleteDialog(
-            title = "حذفِ تراکنش",
-            text = "این تراکنش حذف بشه؟ این کار قابلِ‌برگشت نیست.",
-            onConfirm = { viewModel.deleteTransaction(tx); deletingTx = null },
-            onDismiss = { deletingTx = null },
-        )
+        if (showCalendar) {
+            // زمینه اجباری است - CalendarPickerScreen خودش زمینه ندارد و بی این، صفحه‌ی زیرش
+            // از لابه‌لایش دیده می‌شود.
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                CalendarPickerScreen(
+                    initialDate = txDate,
+                    onDateSelected = { txDate = it; showCalendar = false },
+                    onBack = { showCalendar = false },
+                )
+            }
+        }
+
+        if (showDeleteConfirm) {
+            ConfirmDeleteDialog(
+                title = "حذف حساب",
+                text = "حسابِ «${account.name} - ${account.bankName}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+                // پرچم را خودش پایین می‌آورد - وابسته‌بودن به این‌که onDelete صفحه را ببندد
+                // یک وابستگیِ نامرئی بود.
+                onConfirm = { showDeleteConfirm = false; onDelete?.invoke() },
+                onDismiss = { showDeleteConfirm = false },
+            )
+        }
+        deletingTx?.let { tx ->
+            ConfirmDeleteDialog(
+                title = "حذفِ تراکنش",
+                text = "این تراکنش حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+                onConfirm = { viewModel.deleteTransaction(tx); deletingTx = null },
+                onDismiss = { deletingTx = null },
+            )
+        }
     }
 }
 

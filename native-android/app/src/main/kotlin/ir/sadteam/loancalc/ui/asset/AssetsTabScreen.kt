@@ -15,12 +15,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
@@ -30,6 +31,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -60,8 +62,8 @@ import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.HeroMuted
 import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
-import ir.sadteam.loancalc.ui.jibak.toFaCompact
-import ir.sadteam.loancalc.ui.jibak.toFaSignedCompact
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
+import ir.sadteam.loancalc.ui.jibak.rialToFaSignedCompact
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
@@ -82,22 +84,23 @@ import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppWarningInk
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import ir.sadteam.loancalc.ui.theme.hardShadow
+import kotlinx.coroutines.launch
 
 /**
- * تبِ **دارایی** - فریمِ `26b` / `26bd`، با چهار دسته‌ی جدا (نقد از حساب‌ها، طلا/ارز/رمزارز/سایر
+ * تبِ **دارایی** - فریمِ `26b` / `26bd`، با چهار دسته‌ی جدا (نقد از حساب‌ها، طلا/ارز/رمز ارز/سایر
  * از `assetGroupOrder`).
  *
  * ```
- * ۱ عنوان + کلیدِ خصوصی + دکمه‌ی +
- * ۲ هیرویِ سبز: داراییِ کل + قرص‌های نقد/طلا/ارز/رمزارز/سایر (فقط آن‌هایی که صفر نیستند)
+ * ۱ عنوان + کلیدِ خصوصی + قیمتِ روز + دکمه‌ی +
+ * ۲ هیرویِ سبز: داراییِ کل + واحد + قرص‌های کلیک‌پذیرِ نقد/طلا/ارز/رمز ارز/سایر
  * ۳ «حساب‌های بانکی» + ردیفِ هر حساب - کلیک‌پذیر
  * ۴ هر دسته‌ی دارایی، جدا: سرگروه (جمع+سود) + کارتِ گروه
  * ```
  *
  * زیرصفحه‌ها **روی** تب می‌نشینند نه به‌جایش - قبلاً با `return` صدا زده می‌شدن و صفحه‌ی زیرین
  * اصلاً رندر نمی‌شد (پشتِ شیت سفیدِ خالی بود و اسکرولِ LazyColumn با بستنش صفر می‌شد).
- * `BackHandler` هر چهار لایه رو با ترتیبِ درست می‌گیره (فرمِ ویرایش روی جزئیاتِ حساب می‌شینه،
- * پس اول بسته می‌شه).
+ * `BackHandler` هر شش لایه رو با ترتیبِ درست می‌گیره: بازترین لایه اول بسته می‌شه و
+ * `showPrices` (که خودش سه لایه‌ی تودرتو داره) **آخر**.
  */
 private val idSaver = androidx.compose.runtime.saveable.Saver<Long?, Long>(
     save = { it ?: -1L },
@@ -117,7 +120,11 @@ fun AssetsTabScreen(
     val privacyMode = LocalPrivacyMode.current
 
     var showAddAsset by remember { mutableStateOf(false) }
+    // دو پرچمِ جدا و عمدی: `showAddAccount` فرمِ **بازِ** افزودنه، `showAccountList` لیستِ
+    // انتخاب. یکی‌کردنشون یعنی کاربرِ چندحسابی که رو قرصِ «نقد» زده به فرمِ افزودن پرت بشه.
     var showAddAccount by remember { mutableStateOf(false) }
+    var showAccountList by remember { mutableStateOf(false) }
+    var showPrices by remember { mutableStateOf(false) }
     var detailAsset by rememberSaveable(stateSaver = idSaver) { mutableStateOf<Long?>(null) }
     var detailAccount by rememberSaveable(stateSaver = idSaver) { mutableStateOf<Long?>(null) }
     var editAccount by rememberSaveable(stateSaver = idSaver) { mutableStateOf<Long?>(null) }
@@ -128,27 +135,33 @@ fun AssetsTabScreen(
 
     BackHandler(
         enabled = openAsset != null || openAccount != null || openEditAccount != null ||
-            showAddAsset || showAddAccount,
+            showAddAsset || showAddAccount || showAccountList || showPrices,
     ) {
         when {
             showAddAsset -> showAddAsset = false
             showAddAccount -> showAddAccount = false
+            showAccountList -> showAccountList = false
             openEditAccount != null -> editAccount = null
             openAccount != null -> detailAccount = null
-            else -> detailAsset = null
+            openAsset != null -> detailAsset = null
+            // آخر، چون خودش سه لایه‌ی داخلی داره که BackHandlerِ خودش می‌بنده.
+            else -> showPrices = false
         }
     }
 
     val cashTotal = remember(accounts, transactions) {
         accounts.sumOf { acc -> accountViewModel.balanceOf(acc, transactions) }
     }
-    val holdings = remember(assets, trades) {
+    val marketPrices by assetViewModel.marketPrices.collectAsState()
+    // marketPrices کلیدِ remember است: بی آن، داراییِ تازه‌ثبت‌شده تا رفتن و برگشتن به تب
+    // «—» می‌ماند - همان چیزی که کاربر دید.
+    val holdings = remember(assets, trades, marketPrices) {
         assets.map { asset ->
             val qty = trades.filter { it.assetId == asset.id }
                 .sumOf { if (it.isBuy) it.quantity else -it.quantity }
             val spent = trades.filter { it.assetId == asset.id }
                 .sumOf { if (it.isBuy) it.totalRial else -it.totalRial }
-            AssetHolding(asset, qty, spent, asset.unitPriceRial?.let { it * qty })
+            AssetHolding(asset, qty, spent, assetViewModel.priceOf(asset)?.let { it * qty })
         }.filter { it.quantity > 0.0 }
     }
     val byCategory = remember(holdings) { holdings.groupBy { it.asset.category } }
@@ -160,8 +173,16 @@ fun AssetsTabScreen(
     val grandTotal = cashTotal + goldTotal + fiatTotal + cryptoTotal + otherTotal
     val nothingYet = accounts.isEmpty() && holdings.isEmpty()
 
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    // کلیدِ گروه‌هایی که واقعاً تو لیست هستن، به ترتیبِ نمایش - مبنای اسکرولِ قرص‌ها.
+    val groupKeys = remember(byCategory) {
+        assetGroupOrder.mapNotNull { (cat, _) -> if (byCategory[cat].isNullOrEmpty()) null else cat }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 110.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp),
@@ -170,6 +191,7 @@ fun AssetsTabScreen(
                 AssetsHeader(
                     privacyMode = privacyMode,
                     onTogglePrivacy = { privacyViewModel.toggle() },
+                    onPrices = { showPrices = true },
                     onAdd = { showAddAsset = true },
                     showActions = !nothingYet,
                 )
@@ -188,6 +210,29 @@ fun AssetsTabScreen(
                     crypto = cryptoTotal,
                     other = otherTotal,
                     privacyMode = privacyMode,
+                    onPill = { key ->
+                        if (key == PILL_CASH) {
+                            // پولِ نقد از حساب‌ها میاد، پس «اصلاحِ رقم» یعنی رفتن به حسابِ نقدی.
+                            val cashAccounts = accounts.filter { it.type != ACCOUNT_TYPE_BANK }
+                            when (cashAccounts.size) {
+                                1 -> editAccount = cashAccounts.first().id  // مستقیم فرمِ ویرایش
+                                0 -> showAddAccount = true                  // چیزی نیست، بساز
+                                else -> showAccountList = true              // انتخاب لازمه
+                            }
+                        } else {
+                            val index = groupKeys.indexOf(key)
+                            if (index >= 0) scope.launch {
+                                listState.animateScrollToItem(
+                                    // دو آیتمِ ثابتِ بالا (سرصفحه، هیرو) + برچسبِ حساب‌ها و ردیف‌هاش
+                                    // + دو آیتم به‌ازای هر گروهِ قبلی. مستقیم از ساختارِ همین لیست
+                                    // شمرده شده؛ اگه آیتمی بالا اضافه شد، اینجا هم عوض بشه.
+                                    index = 2 +
+                                        (if (accounts.isEmpty()) 0 else 1 + accounts.size) +
+                                        index * 2,
+                                )
+                            }
+                        }
+                    },
                 )
             }
 
@@ -210,7 +255,9 @@ fun AssetsTabScreen(
                 item(key = "h_$category") {
                     GroupHeader(
                         title = title,
-                        total = rows.sumOf { it.value ?: 0.0 },
+                        // null یعنی هیچ‌کدام قیمت ندارند - «۰» غلط بود و کاربر «ارز ۰» می‌دید
+                        // در حالی که یک دلار داشت.
+                        total = rows.mapNotNull { it.value }.takeIf { it.isNotEmpty() }?.sum(),
                         profit = rows.mapNotNull { it.profit }.takeIf { it.isNotEmpty() }?.sum(),
                         privacyMode = privacyMode,
                     )
@@ -262,6 +309,15 @@ fun AssetsTabScreen(
                 )
             }
         }
+        if (showAccountList) {
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                AccountsScreen(
+                    onBack = { showAccountList = false },
+                    startInAddMode = false,
+                    viewModel = accountViewModel,
+                )
+            }
+        }
         if (showAddAccount) {
             Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
                 AccountsScreen(
@@ -276,8 +332,16 @@ fun AssetsTabScreen(
                 AssetTradeSheet(onDismiss = { showAddAsset = false }, viewModel = assetViewModel)
             }
         }
+        if (showPrices) {
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                MarketPricesScreen(onBack = { showPrices = false }, viewModel = assetViewModel)
+            }
+        }
     }
 }
+
+/** کلیدِ قرصِ نقد. بقیه‌ی قرص‌ها کلیدشون نامِ دسته‌ست. */
+private const val PILL_CASH = "cash"
 
 /** یه دارایی به‌همراهِ مقدار و ارزشِ محاسبه‌شده‌ش. */
 data class AssetHolding(
@@ -294,6 +358,7 @@ data class AssetHolding(
 private fun AssetsHeader(
     privacyMode: Boolean,
     onTogglePrivacy: () -> Unit,
+    onPrices: () -> Unit,
     onAdd: () -> Unit,
     showActions: Boolean = true,
 ) {
@@ -314,6 +379,14 @@ private fun AssetsHeader(
                 onClick = onTogglePrivacy,
             )
             HeaderSquareButton(
+                icon = Icons.Filled.TrendingUp,
+                description = "قیمتِ روز",
+                fill = AppIconFrame,
+                border = AppLine,
+                ink = AppMuted,
+                onClick = onPrices,
+            )
+            HeaderSquareButton(
                 icon = Icons.Filled.Add,
                 description = "افزودنِ دارایی",
                 fill = AppPrimaryPill,
@@ -325,8 +398,9 @@ private fun AssetsHeader(
     }
 }
 
+/** `internal` چون `MarketPricesScreen` هم سرصفحه‌ی هم‌شکل می‌خواد. */
 @Composable
-private fun HeaderSquareButton(
+internal fun HeaderSquareButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     description: String,
     fill: Color,
@@ -485,46 +559,65 @@ private fun TotalWealthHero(
     crypto: Double,
     other: Double,
     privacyMode: Boolean,
+    onPill: (String) -> Unit,
 ) {
     AppHeroCard {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text("داراییِ کل", color = HeroMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    maskIfPrivate(masked, total.toLong().toFaCompact()),
+                    maskIfPrivate(masked, total.rialToFaCompact()),
                     color = Color.White,
                     fontSize = 27.sp,
                     fontWeight = FontWeight.Black,
                     modifier = Modifier.padding(top = 3.dp),
                 )
             }
+            // واحد تو کارتِ خلاصه میاد - قاعده‌ی عددِ TOKENS.md، مثلِ AccountsTotalHero.
+            Text(
+                "تومان",
+                color = HeroMuted,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 2.dp),
+            )
             // پنج قرص تو یه ردیفِ عادی جا نمی‌شن؛ FlowRow خطِ دوم می‌سازه.
             FlowRow(
                 modifier = Modifier.padding(top = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                if (cash > 0) HeroPill("نقد", cash, privacyMode)
-                if (gold > 0) HeroPill("طلا", gold, privacyMode)
-                if (fiat > 0) HeroPill("ارز", fiat, privacyMode)
-                if (crypto > 0) HeroPill("رمز ارز", crypto, privacyMode)
-                if (other > 0) HeroPill("سایر", other, privacyMode)
+                if (cash > 0) HeroPill("نقد", cash, privacyMode) { onPill(PILL_CASH) }
+                if (gold > 0) HeroPill("طلا", gold, privacyMode) { onPill(ASSET_CATEGORY_GOLD) }
+                if (fiat > 0) HeroPill("ارز", fiat, privacyMode) { onPill(ASSET_CATEGORY_FIAT) }
+                if (crypto > 0) HeroPill("رمز ارز", crypto, privacyMode) { onPill(ASSET_CATEGORY_CRYPTO) }
+                if (other > 0) HeroPill("سایر", other, privacyMode) { onPill(ASSET_CATEGORY_CUSTOM) }
             }
         }
     }
 }
 
+/**
+ * قرصِ تفکیک. «نقد» می‌بره به فرمی که رقمش اونجا عوض می‌شه؛ بقیه به سرگروهِ خودشون اسکرول می‌کنن.
+ * `onClick`ِ null یعنی بازخوردِ لمس هم نداره - قرصِ بی‌مقصد نباید کلیک‌پذیر به‌نظر بیاد.
+ */
 @Composable
-private fun HeroPill(label: String, value: Double, privacyMode: Boolean) {
+private fun HeroPill(
+    label: String,
+    value: Double,
+    privacyMode: Boolean,
+    onClick: (() -> Unit)? = null,
+) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(AppRadius.button))
             .background(Color.White.copy(alpha = 0.2f))
+            .then(if (onClick != null) Modifier.pressScaleClickable(onClick = onClick) else Modifier)
             .padding(horizontal = 10.dp, vertical = 5.dp),
     ) {
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                "$label ${maskIfPrivate(masked, value.toLong().toFaCompact())}",
+                "$label ${maskIfPrivate(masked, value.rialToFaCompact())}",
                 color = Color.White,
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Black,
@@ -603,7 +696,7 @@ private fun AccountRow(
         }
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                maskIfPrivate(masked, balance.toLong().toFaCompact()),
+                maskIfPrivate(masked, balance.rialToFaCompact()),
                 // موجودیِ منفیِ کارتِ اعتباری وضعِ عادیه نه خطا: فقط عدد قرمز می‌شه.
                 color = if (balance < 0) AppDangerInk else AppText,
                 fontSize = 12.sp,
@@ -622,7 +715,7 @@ private fun AccountRow(
 // ═══ ۴ · دسته‌های دارایی ═══════════════════════════════════════════════════════
 /** سرگروه: عنوان + جمعِ همون دسته + سودِ همون دسته (طلا و ارز دیگه با هم جمع نمی‌شن). */
 @Composable
-private fun GroupHeader(title: String, total: Double, profit: Double?, privacyMode: Boolean) {
+private fun GroupHeader(title: String, total: Double?, profit: Double?, privacyMode: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -631,8 +724,8 @@ private fun GroupHeader(title: String, total: Double, profit: Double?, privacyMo
         Text(title, color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                maskIfPrivate(masked, total.toLong().toFaCompact()),
-                color = AppText,
+                maskIfPrivate(masked, total?.rialToFaCompact() ?: "—"),
+                color = if (total == null) AppMuted else AppText,
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.weight(1f),
@@ -640,7 +733,7 @@ private fun GroupHeader(title: String, total: Double, profit: Double?, privacyMo
         }
         if (profit != null) {
             Text(
-                profit.toLong().toFaSignedCompact(),
+                profit.rialToFaSignedCompact(),
                 color = if (profit < 0) AppDangerInk else AppPrimaryInk,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Black,
@@ -691,6 +784,9 @@ private fun HoldingRow(
     privacyMode: Boolean,
     onOpen: (AssetEntity) -> Unit,
 ) {
+    // ارزشِ ردیف از قبل با همان جانشین حساب شده، پس قیمتِ واحد را از آن برمی‌گردانیم
+    // و به یک منبعِ دوم نیاز نیست.
+    val unitPrice = holding.value?.takeIf { holding.quantity > 0.0 }?.div(holding.quantity)
     val shape = RoundedCornerShape(AppRadius.row)
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -714,9 +810,8 @@ private fun HoldingRow(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                holding.asset.unitPriceRial
-                    ?.let { "قیمتِ روز ${it.toLong().toFaCompact()}" }
-                    ?: "قیمتِ روز —",
+                // قیمتِ روز از همان جانشینِ ViewModel می‌آید، پس ردیفِ تازه هم عدد دارد.
+                unitPrice?.let { "قیمتِ روز ${it.rialToFaCompact()} تومان" } ?: "قیمتِ روز —",
                 color = p.subInk,
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
@@ -727,7 +822,7 @@ private fun HoldingRow(
         Column(horizontalAlignment = Alignment.Start) {
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    maskIfPrivate(masked, holding.value?.toLong()?.toFaCompact() ?: "—"),
+                    maskIfPrivate(masked, holding.value?.rialToFaCompact() ?: "—"),
                     color = p.ink,
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Black,
@@ -735,7 +830,7 @@ private fun HoldingRow(
             }
             holding.profit?.let { profit ->
                 Text(
-                    profit.toLong().toFaSignedCompact(),
+                    profit.rialToFaSignedCompact(),
                     color = if (profit >= 0) AppPrimaryInk else AppDangerInk,
                     fontSize = 8.5.sp,
                     fontWeight = FontWeight.Black,
@@ -744,6 +839,3 @@ private fun HoldingRow(
         }
     }
 }
-
-/** پوششِ سازگاری برای صدازننده‌های قدیمی («۹٫۲M») - خودِ فرمول تو `toFaCompact` یکی شده. */
-internal fun compact(value: Double): String = value.toLong().toFaCompact()

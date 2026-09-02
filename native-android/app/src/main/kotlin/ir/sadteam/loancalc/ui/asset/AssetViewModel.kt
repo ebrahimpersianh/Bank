@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -40,9 +42,58 @@ class AssetViewModel @Inject constructor(
     /** کشِ تاریخچه‌ی قیمت برای نمودارِ `42a` - هر نماد یک‌بار خونده می‌شه و اینجا می‌مونه. */
     private val _history = MutableStateFlow<Map<String, List<PricePoint>>>(emptyMap())
 
+    /**
+     * قیمتِ روزِ **همه‌ی** نمادهای کاتالوگ برای فریمِ `43a` - نه فقط دارایی‌های کاربر.
+     * `unitPriceRial`ِ `AssetEntity` فقط روی دارایی‌های ثبت‌شده می‌نشینه، پس این جدا لازمه.
+     * یک درخواسته، پس صفحه‌ی قیمت هر بار باز شدن تازه‌ش می‌کنه.
+     */
+    private val _marketPrices = MutableStateFlow<Map<String, Double>>(emptyMap())
+    val marketPrices: StateFlow<Map<String, Double>> = _marketPrices
+
+    /** لحظه‌ی آخرین به‌روزرسانیِ موفق. null یعنی هنوز یک‌بار هم نگرفته‌ایم. */
+    private val _pricesUpdatedAt = MutableStateFlow<Long?>(null)
+
+    /**
+     * فاصله‌ی دقیقه‌ای از آخرین به‌روزرسانی، برای زیرنویسِ سرصفحه‌ی `43a`.
+     *
+     * ⚠️ **خودش تیک نمی‌زنه** - تا `refreshPrices` صدا نشه عوض نمی‌شه، پس «۲ دقیقه پیش»
+     * می‌تونه کهنه بمونه. برای این صفحه کافیه چون هر بار باز شدن تازه می‌کنه.
+     */
+    val pricesUpdatedMinutesAgo: StateFlow<Long?> = _pricesUpdatedAt
+        .map { at -> at?.let { (System.currentTimeMillis() - it) / 60_000L } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     init {
         refreshPrices()
+        startPriceAutoRefresh()
     }
+
+    /**
+     * سرور هر نیم‌ساعت قیمت‌ها را از سرویسِ بیرونی می‌گیرد، پس برنامه هم هر نیم‌ساعت
+     * یک‌بار می‌پرسد. تندتر پرسیدن جوابِ تازه‌تری نمی‌دهد.
+     *
+     * ⚠️ حلقه به عمرِ ViewModel بسته است، پس با بسته‌شدنِ تب هم ادامه دارد و کاربر با
+     * برگشتن قیمتِ تازه می‌بیند. بارِ شبکه‌اش یک درخواستِ نیم‌ساعتی است.
+     */
+    private fun startPriceAutoRefresh() {
+        viewModelScope.launch {
+            while (isActive) {
+                delay(30 * 60 * 1000L)
+                refreshPrices()
+            }
+        }
+    }
+
+    /**
+     * قیمتِ روزِ یک نماد — **اول** ستونِ خودِ دارایی، بعد جدولِ بازار.
+     *
+     * این جانشین همان چیزی است که باعث می‌شد عددِ داراییِ تازه‌ثبت‌شده درجا نیاید:
+     * `unitPriceRial` روی سطرِ دیتابیس فقط بعد از یک دورِ `refreshPrices` پر می‌شود، پس
+     * کاربر ثبت می‌کرد، «—» می‌دید، از تب بیرون می‌رفت و برمی‌گشت تا عدد بیاید.
+     * جدولِ بازار همان لحظه قیمت را دارد.
+     */
+    fun priceOf(asset: AssetEntity): Double? =
+        asset.unitPriceRial ?: _marketPrices.value[asset.symbol]
 
     /**
      * قیمتِ روز از سرورِ خودمون. بی‌صدا شکست می‌خوره (آفلاین = قیمتِ قبلی می‌مونه) و چون سرور
@@ -54,6 +105,11 @@ class AssetViewModel @Inject constructor(
     fun refreshPrices() {
         viewModelScope.launch {
             assetRepository.refreshPrices()
+            // قیمتِ کلِ بازار **یک درخواسته**، پس حلقه روی نمادها لازم نیست.
+            // شکستِ شبکه = قیمتِ قبلی می‌مونه، نه فهرستِ خالی.
+            _marketPrices.value = runCatching { assetRepository.marketPrices() }
+                .getOrDefault(_marketPrices.value)
+            _pricesUpdatedAt.value = System.currentTimeMillis()
             // ifEmpty چون تو فراخوانیِ init هنوز StateFlowِ assets پر نشده.
             val current = assets.value.ifEmpty { assetRepository.observeAssets().first() }
             _monthChange.value = current
@@ -99,6 +155,9 @@ class AssetViewModel @Inject constructor(
                 symbol, name, category, isBuy, quantity, totalRial,
                 year, month, day, description, unitPriceRial,
             )
+            // ستونِ unitPriceRial این دارایی را همین حالا پر می‌کند تا ردیفش با عدد
+            // بیاید، نه با «—» تا دورِ بعدیِ نیم‌ساعته.
+            refreshPrices()
         }
     }
 

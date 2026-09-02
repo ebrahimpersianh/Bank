@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -51,9 +52,8 @@ import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.jibak.faMonthName
 import ir.sadteam.loancalc.ui.jibak.toFa
-import ir.sadteam.loancalc.ui.jibak.toFaCompact
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.jibak.toFaDate
-import ir.sadteam.loancalc.ui.jibak.toFaPercent
 import ir.sadteam.loancalc.ui.jibak.toFaSignedCompact
 import ir.sadteam.loancalc.ui.theme.AppDangerBorder
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
@@ -64,6 +64,7 @@ import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
@@ -88,7 +89,10 @@ fun AssetDetailScreen(
 ) {
     val allTrades by viewModel.trades.collectAsState()
     val monthChange by viewModel.monthChange.collectAsState()
-    val history by viewModel.historyOf(asset.symbol).collectAsState(initial = emptyList())
+    // historyOf هر بار یه Flowِ تازه از _history.map{} می‌سازه؛ بی remember هر ری‌کامپوز
+    // اشتراکِ قبلی رو لغو و یکی تازه باز می‌کنه و نمودار یه فریم به خالی می‌پره.
+    val historyFlow = remember(asset.symbol) { viewModel.historyOf(asset.symbol) }
+    val history by historyFlow.collectAsState(initial = emptyList())
 
     val trades = remember(allTrades, asset.id) {
         allTrades.filter { it.assetId == asset.id }.sortedWith(
@@ -105,17 +109,6 @@ fun AssetDetailScreen(
     var showTrade by remember { mutableStateOf(false) }
     var sellMode by remember { mutableStateOf(false) }
 
-    if (showTrade) {
-        AssetTradeSheet(
-            onDismiss = { showTrade = false },
-            viewModel = viewModel,
-            presetSymbol = asset.symbol,
-            presetName = asset.name,
-            presetCategory = asset.category,
-            startWithSell = sellMode,
-        )
-        return
-    }
     if (showDelete) {
         ConfirmDeleteDialog(
             title = "حذفِ دارایی",
@@ -125,8 +118,12 @@ fun AssetDetailScreen(
         )
     }
 
+    // شیتِ خرید/فروش **روی** صفحه می‌شینه نه به‌جایش. قبلاً با return صدا زده می‌شد و
+    // صفحه‌ی زیرین اصلاً رندر نمی‌شد: پشتِ شیت سفیدِ خالی بود و اسکرولِ LazyColumn با
+    // بستنش صفر می‌شد. همون باگی که تو تبِ دارایی و خانه رفع شد.
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -230,6 +227,20 @@ fun AssetDetailScreen(
             TradeRow(trade = trade, assetName = asset.name)
         }
     }
+
+        if (showTrade) {
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                AssetTradeSheet(
+                    onDismiss = { showTrade = false },
+                    viewModel = viewModel,
+                    presetSymbol = asset.symbol,
+                    presetName = asset.name,
+                    presetCategory = asset.category,
+                    startWithSell = sellMode,
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -289,7 +300,7 @@ private fun AssetSummaryCard(
                 )
                 Text(
                     if (quantity > 0 && netCost > 0) {
-                        "میانگینِ خرید ${(netCost / quantity).toLong().toFaCompact()} هر واحد"
+                        "میانگینِ خرید ${(netCost / quantity).rialToFaCompact()} هر واحد"
                     } else {
                         assetCategoryLabel(asset.category)
                     },
@@ -300,7 +311,7 @@ private fun AssetSummaryCard(
                 )
             }
             // بجِ درصد. خالی‌بودنِ کلید یعنی سرور هنوز تاریخچه نداره - بج **نمی‌آد**، نه صفر.
-            if (changePercent != null) ChangeBadge(changePercent)
+            if (changePercent != null) PriceChangeBadge(changePercent)
         }
         Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(p.rowBorder))
         Row(
@@ -316,7 +327,7 @@ private fun AssetSummaryCard(
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    value?.toLong()?.toFaCompact() ?: "—",
+                    value?.rialToFaCompact() ?: "—",
                     color = p.ink,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Black,
@@ -331,7 +342,7 @@ private fun AssetSummaryCard(
                 )
                 asset.unitPriceRial?.let { unit ->
                     Text(
-                        "قیمتِ هر واحد ${unit.toLong().toFaCompact()}",
+                        "قیمتِ هر واحد ${unit.rialToFaCompact()}",
                         color = p.subInk,
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Bold,
@@ -361,36 +372,6 @@ private fun AssetSummaryCard(
     }
 }
 
-@Composable
-private fun ChangeBadge(percent: Double) {
-    val up = percent >= 0
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
-        modifier = Modifier
-            .clip(RoundedCornerShape(AppRadius.button))
-            .background(if (up) AppPrimaryPill else AppDangerPill)
-            .border(
-                1.dp,
-                if (up) AppPrimary.copy(alpha = 0.35f) else AppDangerBorder,
-                RoundedCornerShape(AppRadius.button),
-            )
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-    ) {
-        Icon(
-            if (up) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-            contentDescription = null,
-            tint = if (up) AppPrimaryInk else AppDangerInk,
-            modifier = Modifier.size(11.dp),
-        )
-        Text(
-            kotlin.math.abs(percent).toFaPercent(),
-            color = if (up) AppPrimaryInk else AppDangerInk,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Black,
-        )
-    }
-}
 
 /** یک نقطه‌ی تاریخچه‌ی قیمت. `day/month` فقط برای برچسبِ دو سرِ محورِ افقی. */
 data class PricePoint(val year: Int, val month: Int, val day: Int, val priceRial: Double)
@@ -439,9 +420,11 @@ private fun AssetSparkline(points: List<PricePoint>) {
                 val w = size.width
                 val h = size.height
                 val stepX = if (points.size > 1) w / (points.size - 1) else w
+                // بازه‌ی [6, h-6]. «+ 6f»ِ آخر «- 6f»ِ اول رو خنثی می‌کرد، پس کم‌ترین
+                // نقطه روی y = h می‌افتاد و نصفِ خطِ ۲٫۶dp بیرونِ کانوس بریده می‌شد.
                 fun yOf(pt: PricePoint): Float =
                     if (span == null) h / 2f
-                    else (h - 6f) - ((pt.priceRial - min) / span).toFloat() * (h - 12f) + 6f
+                    else (h - 6f) - ((pt.priceRial - min) / span).toFloat() * (h - 12f)
 
                 val path = Path()
                 val area = Path()
@@ -464,14 +447,14 @@ private fun AssetSparkline(points: List<PricePoint>) {
                 drawCircle(line, radius = 3.dp.toPx(), center = Offset(w, yOf(last)))
             }
             Text(
-                max.toLong().toFaCompact(),
+                max.rialToFaCompact(),
                 color = AppLabel,
                 fontSize = 8.5.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.TopStart),
             )
             Text(
-                min.toLong().toFaCompact(),
+                min.rialToFaCompact(),
                 color = AppLabel,
                 fontSize = 8.5.sp,
                 fontWeight = FontWeight.Bold,
@@ -542,7 +525,7 @@ private fun TradeRow(trade: AssetTradeEntity, assetName: String) {
         }
         // ردیفِ فهرست بی‌واحده - قاعده‌ی عددِ TOKENS.md.
         Text(
-            trade.totalRial.toLong().toFaCompact(),
+            trade.totalRial.rialToFaCompact(),
             color = AppText,
             fontSize = 12.sp,
             fontWeight = FontWeight.Black,

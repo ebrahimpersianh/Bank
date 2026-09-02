@@ -51,7 +51,7 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.CategoryEntry
 import ir.sadteam.loancalc.ui.account.AccountViewModel
-import ir.sadteam.loancalc.ui.asset.compact
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.category.CategoryViewModel
 import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.dashedBorder
@@ -213,7 +213,7 @@ fun BudgetTabScreen(
             transfer?.let { t ->
                 item {
                     TransferSuggestionCard(
-                        text = "بودجه‌ی ${t.to.category.name} را ${compact(t.amount)} از ${t.from.category.name} قرض بدهم تا ماه تراز شود؟",
+                        text = "بودجه‌ی ${t.to.category.name} را ${(t.amount).rialToFaCompact()} از ${t.from.category.name} قرض بدهم تا ماه تراز شود؟",
                         onAccept = {
                             viewModel.setBudget(
                                 t.to.category.name,
@@ -456,7 +456,7 @@ private fun StarterSuggestions(
                     )
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            "ماهِ قبل ${maskIfPrivate(masked, compact(starter.lastMonth))}",
+                            "ماهِ قبل ${maskIfPrivate(masked, (starter.lastMonth).rialToFaCompact())}",
                             color = AppMuted,
                             fontSize = 10.5.sp,
                             modifier = Modifier.padding(top = 1.dp),
@@ -465,7 +465,7 @@ private fun StarterSuggestions(
                 }
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        maskIfPrivate(masked, compact(starter.cap)),
+                        maskIfPrivate(masked, (starter.cap).rialToFaCompact()),
                         color = BudgetGreenDeep,
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Black,
@@ -561,7 +561,7 @@ private fun DailyAllowanceHero(
                 )
                 if (saved > 0) {
                     Text(
-                        "+${compact(saved)} ذخیره",
+                        "+${(saved).rialToFaCompact()} ذخیره",
                         color = Color.White,
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Black,

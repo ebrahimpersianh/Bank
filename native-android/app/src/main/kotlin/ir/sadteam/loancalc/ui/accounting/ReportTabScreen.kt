@@ -48,7 +48,7 @@ import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
-import ir.sadteam.loancalc.ui.asset.compact
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.components.CategoryDonut
 import ir.sadteam.loancalc.ui.components.DonutSlice
 import ir.sadteam.loancalc.ui.components.dashedBorder
@@ -188,7 +188,7 @@ fun ReportTabScreen(
                 DiscoveryCard(
                     icon = Icons.Filled.Autorenew,
                     title = "${toFa(stats.detectedSubscriptions.size)} خرجِ تکرارشونده پیدا شد",
-                    subtitle = "ماهی ${compact(stats.detectedMonthly)} - لمس کن ببین چی‌ان",
+                    subtitle = "ماهی ${(stats.detectedMonthly).rialToFaCompact()} - لمس کن ببین چی‌ان",
                     bg = DiscoverWarnBg,
                     border = DiscoverWarnBorder,
                     pill = DiscoverWarnPill,
@@ -204,7 +204,7 @@ fun ReportTabScreen(
                 DiscoveryCard(
                     icon = Icons.Filled.Autorenew,
                     title = "${toFa(stats.recurringCount)} اشتراکِ تکراری",
-                    subtitle = "ماهی ${compact(stats.recurringMonthly)}",
+                    subtitle = "ماهی ${(stats.recurringMonthly).rialToFaCompact()}",
                     bg = DiscoverWarnBg,
                     border = DiscoverWarnBorder,
                     pill = DiscoverWarnPill,
@@ -626,8 +626,8 @@ private fun FixedVsFreeCard(
         }
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                "اجاره، اقساط و قبض ${maskIfPrivate(masked, compact(fixedAmount))} از درآمدت را برده — " +
-                    "${maskIfPrivate(masked, compact(freeAmount))} برای خرجِ آزاد مانده.",
+                "اجاره، اقساط و قبض ${maskIfPrivate(masked, (fixedAmount).rialToFaCompact())} از درآمدت را برده — " +
+                    "${maskIfPrivate(masked, (freeAmount).rialToFaCompact())} برای خرجِ آزاد مانده.",
                 color = AppMuted,
                 fontSize = 10.sp,
                 lineHeight = 18.sp,
@@ -661,7 +661,7 @@ private fun CategoryDonutCard(byCategory: Map<String, Double>, total: Double, pr
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        maskIfPrivate(masked, compact(total)),
+                        maskIfPrivate(masked, (total).rialToFaCompact()),
                         color = AppText,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Black,

@@ -3,9 +3,17 @@ package ir.sadteam.loancalc.ui.asset
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,6 +31,7 @@ import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_CUSTOM
 import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_FIAT
 import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_GOLD
 import ir.sadteam.loancalc.ui.components.CoinIcon
+import ir.sadteam.loancalc.ui.jibak.toFaPercent
 import ir.sadteam.loancalc.ui.theme.AppAssetBorder
 import ir.sadteam.loancalc.ui.theme.AppAssetInk
 import ir.sadteam.loancalc.ui.theme.AppGoldBorder
@@ -32,6 +41,13 @@ import ir.sadteam.loancalc.ui.theme.AppGoldTo
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppDangerBorder
+import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppDangerPill
+import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.jibak.faDigits
@@ -181,3 +197,55 @@ internal fun formatQuantity(q: Double): String =
             .trimEnd('0').trimEnd('.')
             .faDigits()
     }
+
+/**
+ * بجِ تغییرِ قیمت — **فلشِ** بالا/پایین به‌همراهِ درصد، در قرصِ سبز یا قرمز.
+ *
+ * فلش لازم است نه تزئینی: عددِ «۲٫۴٪» تنها با رنگ جهت را می‌گفت، و رنگ به‌تنهایی
+ * برای کاربرِ کوررنگ هیچ اطلاعی ندارد. فلش کارِ رنگ را دوباره و مستقل انجام می‌دهد.
+ *
+ * صفر جهت ندارد، پس بی‌فلش و خنثی می‌آید — «۰٪ ↑» غلط است.
+ */
+@Composable
+fun PriceChangeBadge(percent: Double, modifier: Modifier = Modifier) {
+    val up = percent > 0.0
+    val flat = percent == 0.0
+    val fill = when {
+        flat -> AppSurface
+        up -> AppPrimaryPill
+        else -> AppDangerPill
+    }
+    val border = when {
+        flat -> AppLine
+        up -> AppPrimaryBorder
+        else -> AppDangerBorder
+    }
+    val ink = when {
+        flat -> AppMuted
+        up -> AppPrimaryInk
+        else -> AppDangerInk
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .clip(RoundedCornerShape(AppRadius.icon))
+            .background(fill)
+            .border(1.dp, border, RoundedCornerShape(AppRadius.icon))
+            .padding(start = 5.dp, end = 2.dp, top = 1.dp, bottom = 1.dp),
+    ) {
+        Text(
+            kotlin.math.abs(percent).toFaPercent(),
+            color = ink,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Black,
+        )
+        if (!flat) {
+            Icon(
+                if (up) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                contentDescription = if (up) "افزایش" else "کاهش",
+                tint = ink,
+                modifier = Modifier.size(14.dp),
+            )
+        }
+    }
+}

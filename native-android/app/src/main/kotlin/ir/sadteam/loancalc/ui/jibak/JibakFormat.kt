@@ -45,7 +45,7 @@ fun String.faDigits(): String = buildString(length) {
         append(
             when {
                 c in '0'..'9' -> faDigits[c - '0']
-                c in '٠'..'٩' -> faDigits[c - '٠'] // ارقامِ عربی
+                c in '\u0660'..'\u0669' -> faDigits[c - '\u0660'] // ارقامِ عربی
                 c == ',' -> FA_GROUP_SEPARATOR
                 c == '-' -> FA_MINUS
                 else -> c
@@ -60,7 +60,7 @@ fun String.latinDigits(): String = buildString(length) {
         append(
             when {
                 c in '۰'..'۹' -> '0' + (c - '۰')
-                c in '٠'..'٩' -> '0' + (c - '٠')
+                c in '\u0660'..'\u0669' -> '0' + (c - '\u0660')
                 c == FA_GROUP_SEPARATOR || c == ',' -> return@forEach
                 c == FA_DECIMAL_SEPARATOR -> '.'
                 c == FA_MINUS -> '-'
@@ -118,31 +118,54 @@ fun Double.toFaPercent(): String {
 }
 
 /**
- * فرمِ فشرده — «۹٫۲M» / «۸۴۰K» / «۹۲۰». جایی که ستون تنگ است: مرکزِ حلقه، قرصِ
- * هیرو، سرگروهِ تبِ دارایی، خطِ قیمتِ روز.
+ * فرمِ فشرده‌ی **فارسی** — «۲۲۰ هزار» / «۶۷۶٫۶ میلیون» / «۹٫۱ میلیارد» / «۹۲۰».
+ * جایی که ستون تنگ است: ردیفِ دارایی، سرگروه، قرصِ هیرو، خطِ قیمتِ روز.
  *
- * سه بازه دارد و این عمدی است: نسخه‌ی قبلی هر عددی را تقسیم بر یک‌میلیون
- * می‌کرد، پس ۸۴۰٬۰۰۰ می‌شد «۰٫۸M» و ۹۲۰ می‌شد «۰٫۰M». زیرِ هزار عددِ کامل
- * می‌آید چون سه رقم همیشه جا می‌شود.
+ * ⚠️ ورودی **تومان** است، نه ریال. برای مقدارِ ریالیِ دیتابیس `rialToFaCompact`
+ * را صدا بزنید — نسخه‌ی قبلی همین اشتباه را می‌کرد و «۲۲۰ هزار تومانِ» یک دلار را
+ * «۲٫۲M» نشان می‌داد.
+ *
+ * ⚠️ حرفِ «M»/«K» لاتین حذف شد: در صفحه‌ای که همه‌ی ارقامش فارسی است یک M لاتین
+ * وسطِ عدد می‌نشیند و خوانده نمی‌شود؛ واحدِ فارسی هم گویاتر است.
+ *
+ * چهار بازه، و زیرِ هزار عددِ کامل چون سه رقم همیشه جا می‌شود.
  */
 fun Long.toFaCompact(): String {
     val negative = this < 0
     val v = kotlin.math.abs(this)
     val body = when {
-        v >= 1_000_000 -> {
-            // trimEnd تا «۹٫۰M» نشود «۹M». Locale.US مثلِ toFaPercent اجباری است.
-            val s = String.format(Locale.US, "%.1f", v / 1_000_000.0)
-                .trimEnd('0').trimEnd('.')
-            buildString {
-                s.forEach {
-                    append(if (it.isDigit()) faDigits[it - '0'] else FA_DECIMAL_SEPARATOR)
-                }
-            } + "M"
-        }
-        v >= 1_000 -> (v / 1_000).toFa() + "K"
+        v >= 1_000_000_000L -> faScaled(v, 1_000_000_000.0, "میلیارد")
+        v >= 1_000_000L -> faScaled(v, 1_000_000.0, "میلیون")
+        v >= 1_000L -> faScaled(v, 1_000.0, "هزار")
         else -> v.toFa()
     }
     return if (negative) "$FA_MINUS$body" else body
+}
+
+/**
+ * یک رقمِ اعشار، بی صفرِ آخر، با واحدِ فارسی. `Locale.US` اجباری است (رجوع کن به
+ * `toFaPercent`).
+ */
+private fun faScaled(v: Long, unit: Double, word: String): String {
+    val s = String.format(Locale.US, "%.1f", v / unit).trimEnd('0').trimEnd('.')
+    val digits = buildString {
+        s.forEach { append(if (it.isDigit()) faDigits[it - '0'] else FA_DECIMAL_SEPARATOR) }
+    }
+    return "$digits $word"
+}
+
+/**
+ * مقدارِ **ریالیِ** دیتابیس → فرمِ فشرده‌ی تومانی. تنها راهِ درستِ نمایشِ ستونِ مبلغ.
+ *
+ * هر جا در UI `.toLong().toFaCompact()` روی عددی از دیتابیس دیدید، باگ است:
+ * عدد ریال است و ده برابر بزرگ نشان داده می‌شود.
+ */
+fun Double.rialToFaCompact(): String = rialToToman(toLong()).toFaCompact()
+
+/** همان، با علامت — برای سود و زیان. */
+fun Double.rialToFaSignedCompact(): String {
+    val t = rialToToman(toLong())
+    return if (t >= 0) "+" + kotlin.math.abs(t).toFaCompact() else t.toFaCompact()
 }
 
 /** حالتِ حریمِ خصوصی: همیشه پنج نقطه، مستقل از تعدادِ رقم. */
@@ -222,7 +245,7 @@ fun faCardTail(last4: String): String = "•••• ${last4.faDigits()}"
  *
  * ستونِ مبلغ در دیتابیس **ریال** است ولی همه‌ی برنامه تومان نشان می‌دهد، پس
  * تبدیل فقط در دو لبه اتفاق می‌افتد: اینجا (پیشِ ذخیره) و `rialToToman`
- * (پرکردنِ فیلد). هیچ محاسبه‌ی وسطی تبدیل نمی‌کند - نه جمعِ دسته، نه سود، نه
+ * (پرکردنِ فیلد). هیچ محاسبه‌ی وسطی تبدیل نمی‌کند — نه جمعِ دسته، نه سود، نه
  * قیمتِ واحد. اگر جایی وسطِ زنجیره ضربِ ده دیدید، باگ است.
  *
  * سه فیلدِ ورودی: خرید/فروشِ دارایی، موجودیِ اولیه‌ی حساب، مبلغِ تراکنش.
