@@ -18,6 +18,10 @@ MONEY = re.compile(
 
 problems = []
 for path in glob.glob(os.path.join(ROOT, '**/*.kt'), recursive=True):
+    # سکه پول نیست: شمارنده‌ی صحیحه و ستونِ دیتابیسش هم Int ـه (`CoinEventEntity.amount`).
+    # قاعده‌ی «هر مبلغ Double» فقط برای ریاله.
+    if '/data/coin/' in path.replace(os.sep, '/'):
+        continue
     if '/build/' in path:
         continue
     src = open(path, encoding='utf-8').read()
