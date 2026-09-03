@@ -2,6 +2,8 @@ package ir.sadteam.loancalc.ui.accounting
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -76,6 +78,7 @@ import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -176,7 +179,19 @@ fun NewTransactionSheet(
     // ⚠️ تقویم قبلاً با `return` صدا زده می‌شد و کلِ Column (به‌همراهِ rememberScrollStateِ
     // داخلِ مدیفایرش) از کامپوزیشن بیرون می‌رفت: کاربر مبلغ و حساب و توضیح را پر می‌کرد،
     // تاریخ را انتخاب می‌کرد، و فرم از سرِ صفحه برمی‌گشت. ششمین جای این الگو در برنامه.
-    Box(modifier = Modifier.fillMaxSize()) {
+    // 🚨 پس‌زمینه‌ی **مات** لازم است: بی این، صفحه‌ی زیرین از پشتِ فرم پیدا بود و متن‌ها
+    // روی هم می‌افتادند (کاربر با اسکرین‌شات گزارش کرد - «ثبتِ اولین خرج» و «خوش آمدی»
+    // روی فرم دیده می‌شدند). `clickable`ِ بی‌جلوه هم تپ‌های عبوری به صفحه‌ی زیر را می‌گیرد.
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppBg)
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = {},
+            )
+    ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()

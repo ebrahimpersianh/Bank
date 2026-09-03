@@ -62,6 +62,7 @@ import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.jibak.toFaDate
 import ir.sadteam.loancalc.ui.jibak.toFaDateNumeric
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.jibak.toFaSignedMoney
 import ir.sadteam.loancalc.ui.jibak.tomanToRial
@@ -134,7 +135,7 @@ fun AccountDetailScreen(
         item {
             AppCard(label = "موجودی فعلی") {
                 Text(
-                    "${balance.toLong().toFaMoney()} تومان",
+                    "${rialToToman(balance.toLong()).toFaMoney()} تومان",
                     color = if (balance < 0) AppDangerInk else AppPrimaryInk,
                     fontSize = 22.sp,
                 )
@@ -340,9 +341,13 @@ private fun TransactionRow(tx: AccountTransactionEntity, onDelete: () -> Unit, m
                         modifier = Modifier.padding(top = 2.dp),
                     )
                 }
+                // واحد روی خودِ ردیف لازم است: بی آن «۳۵۰٬۰۰۰٬۰۰+» بی‌معناست و کاربر
+                // نمی‌داند ریال است یا تومان (گزارشِ کاربر با اسکرین‌شات). ستونِ `amount`
+                // ریال است، پس تبدیل همین‌جا و یک‌بار.
                 Text(
-                    tx.amount.toLong().let { if (tx.type == TransactionType.DEPOSIT.name) it else -it }
-                        .toFaSignedMoney(),
+                    rialToToman(tx.amount.toLong())
+                        .let { if (tx.type == TransactionType.DEPOSIT.name) it else -it }
+                        .toFaSignedMoney() + " تومان",
                     color = if (tx.type == TransactionType.DEPOSIT.name) AppPrimaryInk else AppDangerInk,
                     fontSize = 13.sp,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
