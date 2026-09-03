@@ -58,6 +58,7 @@ run "@Composable تو لیستِ تنبل" "$DIR/lazyscope.py"
 run "smart-castِ پراپرتیِ ماژولِ دیگه" "$DIR/smartcast.py"
 run "سبکِ صداکردنِ اکستنشن" "$DIR/callstyle.py"
 run "گیرنده‌ی اعلان‌نشده" "$DIR/receivers.py"
+run "اعلانِ تکراری" "$DIR/redeclare.py"
 
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

@@ -86,19 +86,22 @@ fun ConfirmDialog(
     val icon: ImageVector
     val pill: Color
     val ink: Color
-    val actionBg: Color
+    // ⚠️ `GradientButton` پارامترِ `background` ندارد و رنگش را از `variant` می‌گیرد -
+    // قاعده‌ی پروژه: رنگِ دکمه از توکن می‌آید نه از فراخوان. پس لحن به گونه نگاشت می‌شود،
+    // نه به یک رنگِ دستی.
+    val actionVariant: AppButtonVariant
     when (tone) {
         ConfirmTone.DESTRUCTIVE -> {
             icon = Icons.Filled.DeleteOutline; pill = AppDangerPill
-            ink = AppDangerInk; actionBg = AppDangerInk
+            ink = AppDangerInk; actionVariant = AppButtonVariant.DESTRUCTIVE
         }
         ConfirmTone.PAYMENT -> {
             icon = Icons.Filled.Check; pill = AppPrimaryPill
-            ink = AppPrimaryInk; actionBg = AppPrimary
+            ink = AppPrimaryInk; actionVariant = AppButtonVariant.PRIMARY
         }
         ConfirmTone.HEAVY_CHANGE -> {
             icon = Icons.Filled.ErrorOutline; pill = AppLine
-            ink = AppMuted; actionBg = AppText
+            ink = AppMuted; actionVariant = AppButtonVariant.NEUTRAL
         }
     }
 
@@ -136,7 +139,7 @@ fun ConfirmDialog(
                     onClick = onConfirm,
                     enabled = confirmEnabled,
                     modifier = Modifier.weight(1f),
-                    background = actionBg,
+                    variant = actionVariant,
                 ) {
                     Text(actionLabel, fontSize = 12.sp, fontWeight = FontWeight.Black)
                 }
