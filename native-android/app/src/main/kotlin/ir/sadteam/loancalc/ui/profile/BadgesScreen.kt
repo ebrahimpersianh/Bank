@@ -1,7 +1,6 @@
 package ir.sadteam.loancalc.ui.profile
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,10 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
@@ -30,11 +24,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.data.Badge
 import ir.sadteam.loancalc.data.BadgeProgress
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.SettledMedal
-import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -124,24 +118,13 @@ private fun BadgeRow(item: BadgeProgress) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             when {
-                // باز شده → مدالِ روبان‌دارِ کامل.
-                item.unlocked -> SettledMedal(diskSize = 34.dp)
-                // قفل → مدالِ خاکستریِ بی‌روبان (قاعده‌ی `18a`).
-                progress <= 0f -> Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(AppChipBg),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        Icons.Filled.Lock,
-                        contentDescription = null,
-                        tint = AppLabel,
-                        modifier = Modifier.size(15.dp),
-                    )
-                }
-                // در جریان → حلقه‌ی درصد.
+                // وامِ بسته مدالِ روبان‌دارِ خودش را نگه می‌دارد - کاربر همان را در مرکزِ وام دیده.
+                item.unlocked && badge == Badge.LOAN_CLOSED -> SettledMedal(diskSize = 34.dp)
+                // باز شده یا قفل → مدالِ مشترک؛ تمایز از نمادِ داخل می‌آید نه از رنگ.
+                // `BadgeMedal` خودش دیسکِ طلاییِ باز، چیپِ قفل، و حالتِ «به‌زودی» را می‌گیرد.
+                item.unlocked || progress <= 0f -> BadgeMedal(badge, item.unlocked, size = 34.dp)
+                // در جریان → حلقه‌ی درصد. مدال نمی‌گیرد: درصد خبرِ تازه است و نمادِ نشان
+                // در همین ردیف تکرارِ برچسبِ کنارش می‌شد.
                 else -> Box(modifier = Modifier.size(34.dp), contentAlignment = Alignment.Center) {
                     val track = AppSurface2
                     val arc = AppPrimary

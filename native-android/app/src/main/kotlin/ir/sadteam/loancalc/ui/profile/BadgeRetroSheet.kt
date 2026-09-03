@@ -77,7 +77,9 @@ fun BadgeRetroSheet(badges: List<Badge>, onDismiss: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    SettledMedal()
+                    // وامِ بسته مدالِ خودش، بقیه مدالِ مشترک با نمادِ خودشان.
+                    if (badge == Badge.LOAN_CLOSED) SettledMedal()
+                    else BadgeMedal(badge, unlocked = true, size = 34.dp)
                     Column(modifier = Modifier.weight(1f)) {
                         Text(badge.label, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
                         Text(badge.hint, color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium)
