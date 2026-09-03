@@ -42,7 +42,7 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 
-    /** مرحله‌ی چهارم: اولین «حساب‌کتاب». [bankName] خالی یعنی منبعِ غیربانکی (نقدی، کیفِ پول…). */
+    /** مرحله‌ی **پنجم** (نه چهارم - مرحله‌ی مجوزهای بانکیِ `35a` بینشان اضافه شد): اولین «حساب‌کتاب». [bankName] خالی یعنی منبعِ غیربانکی (نقدی، کیفِ پول…). */
     fun addFirstAccount(name: String, bankName: String, initialBalanceRial: Double, iconKey: String?) {
         viewModelScope.launch {
             val isBank = bankName.isNotBlank()

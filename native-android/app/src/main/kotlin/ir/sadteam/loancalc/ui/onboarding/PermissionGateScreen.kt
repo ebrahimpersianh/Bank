@@ -21,7 +21,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
@@ -43,7 +50,10 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.JibakBrandMark
 import ir.sadteam.loancalc.ui.theme.AppBg
+import ir.sadteam.loancalc.ui.theme.AppGoldFrom
+import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -53,6 +63,21 @@ import ir.sadteam.loancalc.ui.theme.AppText
 private fun notificationsGranted(context: Context): Boolean =
     Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+
+/**
+ * سازنده‌هایی که علاوه بر معافیتِ باتریِ استاندارد، یه **کشندهِ‌ی پس‌زمینه‌ی اختصاصی** هم دارند -
+ * قاعده‌ی `35e`ی فایلِ طراحی («بی این‌ها سرویس روی شیائومی و سامسونگ بی‌صدا می‌میرد»).
+ *
+ * این مورد **شرطِ گیت نیست و نمی‌تواند باشد**: «اجرای خودکار» (Autostart) هیچ API عمومی برای
+ * خواندن ندارد، پس اگر شرطش می‌کردیم کاربر برای همیشه در گیت حبس می‌شد. پس فقط یه ردیفِ
+ * راهنماست، و فقط روی همین سازنده‌ها نشان داده می‌شود تا برای کاربرِ پیکسل/نوکیا شلوغی نکند.
+ */
+private val AGGRESSIVE_OEMS = setOf(
+    "xiaomi", "redmi", "poco", "samsung", "huawei", "honor", "oppo", "vivo", "realme", "meizu",
+)
+
+private fun hasAggressiveBackgroundKiller(): Boolean =
+    Build.MANUFACTURER.lowercase() in AGGRESSIVE_OEMS || Build.BRAND.lowercase() in AGGRESSIVE_OEMS
 
 private fun batteryUnrestricted(context: Context): Boolean {
     val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -117,6 +142,10 @@ fun PermissionGateScreen(onAllGranted: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(40.dp))
+        // نشانِ برند: این گیت **هر بار** باز شدنِ اپ ارزیابی می‌شود، پس صفحه‌ای است که کاربر
+        // زیاد می‌بیند - و تا الان تنها صفحه‌ی مسیرِ ورود بود که شبیهِ دیالوگِ سیستمی بود.
+        JibakBrandMark(width = 48.dp)
+        Spacer(Modifier.height(24.dp))
         Text(
             "برای کارکرد درست یادآوری‌ها",
             color = AppText,
@@ -139,9 +168,11 @@ fun PermissionGateScreen(onAllGranted: () -> Unit) {
                 .border(1.dp, AppLine, RoundedCornerShape(14.dp)),
         ) {
             PermissionRow(
-                title = "اجازه نوتیفیکیشن",
+                title = "اجازه‌ی اعلان",
                 granted = notifOk,
-                actionLabel = "Allow",
+                // ⚠️ قبلاً "Allow" بود - انگلیسیِ خام در برنامه‌ای که سراسر فارسی است، و کاربرِ
+                // هدفِ ما (فارسی‌زبانِ ایرانی) لازم نیست بداند دکمه‌ی سیستمی چه اسمی دارد.
+                actionLabel = "اجازه می‌دهم",
                 onClick = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -150,9 +181,11 @@ fun PermissionGateScreen(onAllGranted: () -> Unit) {
             )
             HorizontalDivider(color = AppLine)
             PermissionRow(
-                title = "باتری: نامحدود / بدون بهینه‌سازی",
+                title = "باتری بدونِ محدودیت",
                 granted = batteryOk,
-                actionLabel = "Open",
+                // ⚠️ قبلاً "Open" بود. عنوان هم از «باتری: نامحدود / بدون بهینه‌سازی» ساده شد -
+                // دو اصطلاحِ فنیِ هم‌معنی با یه اسلش بینشان.
+                actionLabel = "تنظیمات",
                 onClick = {
                     val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                         data = Uri.parse("package:${context.packageName}")
@@ -163,12 +196,58 @@ fun PermissionGateScreen(onAllGranted: () -> Unit) {
         }
 
         Text(
-            "تا وقتی هر دو مورد ✅ نشن، ورود به برنامه انجام نمی‌شه.",
+            "تا وقتی هر دو مورد فعال نشن، ورود به برنامه انجام نمی‌شه.",
             color = AppMuted,
             fontSize = 12.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 20.dp),
         )
+
+        // ── تله‌ی دومِ قاعده‌ی `35e` ──
+        // اختیاری و بی‌گیت (بالا توضیح داده شد چرا نمی‌تواند شرط باشد). عمداً `ACTION_APPLICATION`
+        // `_DETAILS_SETTINGS`ِ استاندارد را باز می‌کند و نه Intentِ اختصاصیِ برند (`miui.intent`,
+        // `com.samsung...`): آن‌ها روی نسخه‌های مختلفِ همان سازنده هم ثابت نیستند و
+        // `ActivityNotFoundException` می‌دهند. صفحه‌ی استاندارد همه‌جا هست و «باتری» و «اجرای
+        // خودکار» هر دو یک تپ داخلش‌اند.
+        if (hasAggressiveBackgroundKiller()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+                    .background(AppGoldFrom, RoundedCornerShape(14.dp))
+                    .padding(14.dp),
+            ) {
+                Text(
+                    "یک قدمِ اختیاری",
+                    color = AppAccent,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    "گوشیِ تو علاوه بر بهینه‌سازیِ باتری، یک «اجرای خودکار» جدا هم دارد. اگر خاموش " +
+                        "باشد یادآوری‌ها می‌رسند ولی خواندنِ خودکارِ پیامک و اعلانِ بانک بعد از چند " +
+                        "ساعت قطع می‌شود. از صفحه‌ی تنظیماتِ برنامه روشنش کن.",
+                    color = AppText,
+                    fontSize = 12.sp,
+                    lineHeight = 20.sp,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+                OutlinedButton(
+                    onClick = {
+                        runCatching {
+                            context.startActivity(
+                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.parse("package:${context.packageName}")
+                                },
+                            )
+                        }
+                    },
+                    modifier = Modifier.padding(top = 10.dp),
+                ) {
+                    Text("تنظیماتِ برنامه")
+                }
+            }
+        }
 
         OutlinedButton(
             onClick = {
@@ -194,13 +273,30 @@ private fun PermissionRow(title: String, granted: Boolean, actionLabel: String, 
         Column {
             Text(title, color = AppText, fontSize = 14.sp)
             Text(
-                if (granted) "فعال است ✅" else "باید فعال شود",
+                // ⚠️ قبلاً «فعال است ✅» بود - ایموجی به‌جای وضعیت. حالا تیکِ واقعی سمتِ دیگرِ
+                // ردیف می‌نشیند (جای دکمه)، پس چشم یک ستونِ وضعیت می‌بیند نه دو نشانه‌ی پراکنده.
+                if (granted) "فعال است" else "باید فعال شود",
                 color = if (granted) AppPrimary else AppMuted,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
-        if (!granted) {
+        if (granted) {
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(AppPrimary),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = AppBg,
+                    modifier = Modifier.size(15.dp),
+                )
+            }
+        } else {
             GradientButton(onClick = onClick) {
                 Text(actionLabel)
             }

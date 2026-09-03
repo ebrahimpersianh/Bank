@@ -1,6 +1,8 @@
 package ir.sadteam.loancalc.ui.onboarding
 
 import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,11 +36,13 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -50,17 +54,24 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.numberToWordsFa
+import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.DEFAULT_ACCOUNT_ICON_KEY
 import ir.sadteam.loancalc.data.accountIconChoices
 import ir.sadteam.loancalc.data.accountIconForKey
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.JibakBrandMark
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppGoldFrom
@@ -81,13 +92,20 @@ import android.content.Intent
 /**
  * مسیرِ اولین ورود، عیناً به سبکِ اپِ مرجعِ کاربر (پولکی) - خواسته‌ی صریحِ تسکِ #28.
  *
- * چهار مرحله‌ی داخلِ خودِ این فایل، و مرحله‌ی پنجم (**ورود با شماره‌موبایل**) همون گیتِ موجودِ
- * `LoginScreen` تو `AppRoot`ه که بلافاصله بعدِ [onFinished] میاد - عمداً اینجا تکرار نشده.
+ * ⚠️ **شمارشِ مرحله‌ها اصلاح شد.** این کامنت (و کامنتِ `AppRoot` و `OnboardingViewModel`) می‌گفت
+ * «مسیرِ ۴ مرحله‌ای» و «مرحله‌ی چهارم: اولین حساب‌کتاب»، ولی از وقتی مرحله‌ی مجوزهای بانکی
+ * (`35a`) اضافه شد داخلِ همین فایل **پنج** مرحله هست و `lastStep = 4` هم همین را می‌گوید -
+ * پس `StepDots` پنج نقطه می‌کشید در حالی که هر سه کامنت چهار مرحله را شرح می‌دادند.
+ *
+ * پنج مرحله‌ی داخلِ خودِ این فایل، و مرحله‌ی ششم (**ورود با شماره‌موبایل**) همون گیتِ موجودِ
+ * `LoginScreen` تو `AppRoot`ه که بلافاصله بعدِ [onFinished] میاد - عمداً اینجا تکرار نشده و
+ * نقطه‌ای هم در `StepDots` نمی‌گیرد (چون گیتِ جدایی است، نه مرحله‌ای که بشود ازش رد شد).
  *
  * 1. خوش‌آمد
  * 2. انتخابِ تم (روشن/تاریک)
  * 3. یادآورِ روزانه + مجوزِ اعلان
- * 4. ساختِ اولین «حساب‌کتاب» (پیش‌فرض: **نقدی**)
+ * 4. مجوزِ خواندنِ پیامک و اعلانِ بانک (کارتِ `35a`)
+ * 5. ساختِ اولین «حساب‌کتاب» (پیش‌فرض: **نقدی**)
  *
  * ⚠️ **`BenefitsScreen` (صفحه‌ی امکاناتِ رایگان/اشتراکی) کاملاً حذف شد** - خواسته‌ی صریحِ کاربر
  * («دیگه نمی‌خوام اون صفحه امکانات بیان»). محتوای مشابهش حالا فقط تو صفحه‌ی اشتراک زندگی می‌کنه.
@@ -192,6 +210,13 @@ private fun StepHeader(title: String, subtitle: String) {
 @Composable
 private fun WelcomeStep(onNext: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
+        // نشانِ برند: این **همان صفحه‌ی معرفیِ اولیه** است که فقط یک‌بار در عمرِ نصب دیده می‌شود،
+        // و تا الان جمله‌ی «به جیبک خوش اومدی» را می‌نوشت بی این‌که جیبک را نشان بدهد.
+        // `BenefitsScreen` حذف شده، پس این تنها جایی است که برند معرفی می‌شود.
+        Spacer(Modifier.height(34.dp))
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            JibakBrandMark(width = 64.dp)
+        }
         StepHeader(
             title = "به جیبک خوش اومدی",
             subtitle = "دخل و خرجت رو ساده ثبت کن، وام و چک و بودجه‌ت رو یک‌جا داشته باش.",
@@ -303,6 +328,15 @@ private fun ThemeChoiceCard(
 
 @Composable
 private fun ReminderStep(onChoose: (Boolean) -> Unit, onNext: () -> Unit) {
+    val context = LocalContext.current
+    // ⚠️ **باگِ ترتیبِ گیت‌ها.** `PermissionGateScreen` **قبل از** این مسیر اجرا می‌شود و
+    // `POST_NOTIFICATIONS` را اجباری می‌گیرد - یعنی وقتی کاربر به این مرحله می‌رسد مجوز از قبل
+    // داده شده. `launch()`ِ بی‌شرطِ قبلی روی مجوزِ داده‌شده دیالوگی نشان نمی‌دهد ولی همان مسیرِ
+    // رفت‌وبرگشتِ Activity Result را طی می‌کند، پس دکمه یک لحظه بی‌جواب می‌ماند و بعد می‌پرد.
+    // حالا فقط وقتی واقعاً لازم است پرسیده می‌شود.
+    val notifAlreadyGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+        PackageManager.PERMISSION_GRANTED
     val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         // نتیجه‌ی مجوز عمداً مسیر رو قفل نمی‌کنه: اگه کاربر رد کنه هم می‌ره مرحله‌ی بعد و بعداً
         // می‌تونه از تنظیمات روشنش کنه. گیتِ اجباریِ مجوز جای دیگه‌ایه (PermissionGateScreen).
@@ -340,10 +374,10 @@ private fun ReminderStep(onChoose: (Boolean) -> Unit, onNext: () -> Unit) {
         GradientButton(
             onClick = {
                 onChoose(true)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                } else {
+                if (notifAlreadyGranted) {
                     onNext()
+                } else {
+                    notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             },
             modifier = Modifier.fillMaxWidth(),
@@ -361,24 +395,82 @@ private fun ReminderStep(onChoose: (Boolean) -> Unit, onNext: () -> Unit) {
 }
 
 /**
- * **مرحله‌ی مجوزهای خواندنِ خودکار** - کارتِ `35a` فایلِ طراحی.
+ * تشخیصِ زنده‌ی دو مجوز - هر دو **بی رندر** خوانده می‌شوند، چون هر بار برگشتن به این مرحله
+ * باید وضعیتِ واقعیِ همان لحظه را نشان بدهد.
+ */
+private fun smsReadingGranted(context: Context): Boolean =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.RECEIVE_SMS) ==
+        PackageManager.PERMISSION_GRANTED
+
+/**
+ * `NotificationListener` روشن است؟ - مجوزِ Runtime نیست، پس `checkSelfPermission` جواب نمی‌دهد.
+ * `NotificationManagerCompat` همان رشته‌ی `Settings.Secure.enabled_notification_listeners` را
+ * می‌خواند ولی امضای پایدارِ androidx را دارد.
+ */
+private fun notificationListenerEnabled(context: Context): Boolean =
+    NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+
+/**
+ * **مرحله‌ی مجوزهای خواندنِ خودکار** - کارتِ `35a` فایلِ طراحی، به‌همراهِ راهنمای `35c` و
+ * حالتِ بازگشتِ `35d`.
  *
  * دو اجازه‌ی کاملاً متفاوت، تو **یک** صفحه:
  * - **پیامکِ بانک** - مجوزِ Runtimeِ عادی (`RECEIVE_SMS`)، پس همون‌جا دیالوگ می‌ده.
  * - **اعلانِ گوشی** - مجوزِ `NotificationListener`ه که دیالوگِ Runtime **نداره**؛ تنها راهش
- *   صفحه‌ی خودِ اندرویده. برای همین متنِ دکمه صریحاً می‌گه کاربر از برنامه بیرون می‌ره
- *   (قاعده‌ی `35b`).
+ *   صفحه‌ی خودِ اندرویده، و کاربر باید **خودش** برنامه را از یک لیست پیدا و روشن کند.
+ *
+ * ⚠️ **باگِ اصلیِ رفع‌شده - هر سه اشکال از یک `onClick` می‌آمدند.** نسخه‌ی قبلی در یک تپ:
+ * `smsLauncher.launch()` می‌زد، **بلافاصله** `startActivity(NOTIFICATION_LISTENER_SETTINGS)` را
+ * روی آن سوار می‌کرد، و بعد `onNext()`. نتیجه:
+ *
+ * 1. دیالوگِ پیامک زیرِ صفحه‌ی تنظیماتِ اندروید دفن می‌شد - کاربر هیچ‌وقت نمی‌دیدش، و اندروید
+ *    درخواستِ دیده‌نشده را «رد» حساب می‌کند. یعنی مجوزِ پیامک عملاً هیچ‌وقت گرفته نمی‌شد.
+ * 2. مرحله قبل از برگشتنِ کاربر رد می‌شد، پس `35d` («فعال شد» / «برگشتی ولی روشن نشد») هیچ
+ *    جایی برای دیده شدن نداشت.
+ * 3. کاربر بی هیچ راهنمایی وسطِ یک لیستِ بلندِ برنامه‌ها رها می‌شد - همان چیزی که `35c` برایش
+ *    نوشته شده بود.
+ *
+ * رفع: **زنجیره‌ای، نه هم‌زمان.** هر ردیف دکمه و وضعیتِ خودش را دارد؛ پیامک اول (چون دیالوگش
+ * درجا جواب می‌دهد)، و رفتن به تنظیماتِ اعلان فقط بعدِ نمایشِ راهنمای سه‌قدمی. وضعیت با
+ * `ON_RESUME` دوباره خوانده می‌شود، چون اندروید از آن صفحه نتیجه‌ای برنمی‌گرداند.
  *
  * ⚠️ هیچ‌کدوم اجباری نیستن - «بعداً» هم‌عرضِ دکمه‌ی اصلیه، دقیقاً مثلِ طرح.
  */
 @Composable
 private fun BankReadingPermissionsStep(onNext: () -> Unit) {
     val context = LocalContext.current
+    var smsOk by remember { mutableStateOf(smsReadingGranted(context)) }
+    var listenerOk by remember { mutableStateOf(notificationListenerEnabled(context)) }
+    // راهنمای `35c` تا وقتی کاربر روی ردیفِ اعلان نزده نمایش داده نمی‌شود - وگرنه سه قدمِ
+    // بی‌ربط بالای صفحه می‌نشست.
+    var guideOpen by remember { mutableStateOf(false) }
+    // `35d`: «رفتی و برگشتی ولی روشن نشد». فقط بعدِ یک رفتنِ واقعی معنی دارد.
+    var returnedFromSettings by remember { mutableStateOf(false) }
+
     val smsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
-    ) { /* نتیجه مسیر رو قفل نمی‌کنه - کاربر بعداً هم می‌تونه از تنظیمات روشنش کنه. */ }
+    ) { smsOk = smsReadingGranted(context) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    // اندروید از صفحه‌ی «دسترسی به اعلان‌ها» **نتیجه‌ای برنمی‌گرداند** (قاعده‌ی `35d`)، پس تنها
+    // راهِ فهمیدنش این است که موقعِ برگشتِ کاربر به برنامه خودمان دوباره بخوانیم.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                smsOk = smsReadingGranted(context)
+                listenerOk = notificationListenerEnabled(context)
+                if (guideOpen) returnedFromSettings = true
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+    ) {
         StepHeader(
             title = "دو اجازه لازم دارم",
             subtitle = "تا خرج‌ها را خودم ثبت کنم و تو مجبور نباشی دستی وارد کنی.",
@@ -388,13 +480,98 @@ private fun BankReadingPermissionsStep(onNext: () -> Unit) {
             icon = Icons.Default.Sms,
             title = "پیامکِ بانک",
             description = "مبلغ و نامِ فروشنده از پیامکِ خرید خوانده می‌شود",
+            granted = smsOk,
+            actionLabel = "اجازه می‌دهم",
+            onClick = {
+                smsLauncher.launch(
+                    arrayOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS),
+                )
+            },
         )
         Spacer(Modifier.height(10.dp))
         PermissionExplainCard(
             icon = Icons.Default.Notifications,
             title = "اعلانِ گوشی",
             description = "بانک‌هایی مثلِ بلوبانک پیامک نمی‌دهند، فقط اعلان",
+            granted = listenerOk,
+            // متنِ دکمه صریحاً می‌گوید کاربر از برنامه بیرون می‌رود (قاعده‌ی `35b`).
+            actionLabel = "راهنما",
+            onClick = { guideOpen = true },
         )
+
+        // ── راهنمای سه‌قدمیِ `35c` ──
+        // ⚠️ **جایِ عکس خالی است.** طرح سه عکسِ واقعیِ صفحه‌ی «دسترسی به اعلان‌ها» می‌خواهد؛ تا
+        // آمدنشان همین سه خطِ متنی می‌نشیند. عکس که آمد، هر قدم یک `Image` بالای متنش می‌گیرد.
+        if (guideOpen && !listenerOk) {
+            Spacer(Modifier.height(14.dp))
+            AppCard(modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    Text(
+                        "الان می‌بری‌ت به صفحه‌ی اندروید",
+                        color = AppText,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        "اینجا برنامه نمی‌تواند خودش روشنش کند - سه قدمِ کوتاه با خودت است:",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                        lineHeight = 20.sp,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+                    )
+                    GuideStep(1, "توی لیستِ برنامه‌ها «جیبک» را پیدا کن")
+                    GuideStep(2, "کلیدِ کنارش را روشن کن")
+                    GuideStep(3, "پیامِ تاییدِ اندروید را قبول کن و برگرد")
+                    GradientButton(
+                        onClick = {
+                            runCatching {
+                                context.startActivity(
+                                    Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 14.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.OpenInNew,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text("رفتن به تنظیماتِ اندروید", modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+            }
+        }
+
+        // ── `35d`، حالتِ دوم: رفت و برگشت ولی روشن نشد ──
+        if (returnedFromSettings && !listenerOk) {
+            Spacer(Modifier.height(12.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AppGoldFrom, RoundedCornerShape(14.dp))
+                    .padding(14.dp),
+            ) {
+                Text(
+                    "هنوز روشن نشده",
+                    color = AppAccent,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    "اگر کلید را زدی ولی پیامِ تاییدِ اندروید را رد کردی، خاموش می‌ماند. یک‌بارِ " +
+                        "دیگر امتحان کن - یا بعداً از تنظیماتِ جیبک روشنش کن.",
+                    color = AppText,
+                    fontSize = 12.sp,
+                    lineHeight = 20.sp,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+        }
+
         Spacer(Modifier.height(12.dp))
         Text(
             "فقط پیامک و اعلانِ بانک‌های پشتیبانی‌شده خوانده می‌شود. باقیِ پیام‌ها نه خوانده و نه ذخیره می‌شوند.",
@@ -402,36 +579,59 @@ private fun BankReadingPermissionsStep(onNext: () -> Unit) {
             fontSize = 11.sp,
             lineHeight = 19.sp,
         )
-        Spacer(Modifier.weight(1f))
-        GradientButton(
-            onClick = {
-                smsLauncher.launch(
-                    arrayOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS),
-                )
-                runCatching {
-                    context.startActivity(
-                        Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                    )
-                }
-                onNext()
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("اجازه می‌دهم")
+        Spacer(Modifier.height(20.dp))
+        GradientButton(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
+            Text(if (smsOk && listenerOk) "بریم" else "ادامه")
         }
-        TextButton(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
-            Text("بعداً", color = AppMuted, fontSize = 13.sp)
+        // «بعداً» فقط وقتی معنی دارد که چیزی مانده باشد - وگرنه دو دکمه‌ی هم‌کار زیرِ هم.
+        if (!smsOk || !listenerOk) {
+            TextButton(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
+                Text("بعداً", color = AppMuted, fontSize = 13.sp)
+            }
         }
         Spacer(Modifier.height(16.dp))
     }
 }
 
+/** یک قدمِ راهنمای `35c` - شماره‌ی گردِ کوچک + متن. */
+@Composable
+private fun GuideStep(number: Int, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(bottom = 8.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(22.dp)
+                .clip(CircleShape)
+                .background(AppPrimaryPill),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                toFa(number),
+                color = AppPrimaryInk,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        Text(text, color = AppText, fontSize = 12.5.sp, modifier = Modifier.padding(start = 10.dp))
+    }
+}
+
+/**
+ * ردیفِ یک مجوز - آیکون، عنوان، توضیح، و **وضعیت یا دکمه‌ی خودش**.
+ *
+ * قبلاً فقط توضیح‌دهنده بود و کارِ گرفتنِ مجوز به یک دکمه‌ی مشترکِ پایینِ صفحه سپرده شده بود؛
+ * از آنجا که آن دکمه هر دو مجوز را هم‌زمان می‌زد (باگِ بالا)، دکمه به خودِ ردیف آمد.
+ */
 @Composable
 private fun PermissionExplainCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     description: String,
+    granted: Boolean,
+    actionLabel: String,
+    onClick: () -> Unit,
 ) {
     AppCard(modifier = Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -439,27 +639,40 @@ private fun PermissionExplainCard(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(AppPrimaryPill),
+                    .background(if (granted) AppPrimary else AppPrimaryPill),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = AppPrimaryInk)
+                Icon(
+                    if (granted) Icons.Default.Check else icon,
+                    contentDescription = null,
+                    tint = if (granted) AppBg else AppPrimaryInk,
+                )
             }
-            Column(modifier = Modifier.padding(start = 12.dp)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp),
+            ) {
                 Text(title, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    description,
-                    color = AppMuted,
+                    if (granted) "فعال است" else description,
+                    color = if (granted) AppPrimary else AppMuted,
                     fontSize = 12.sp,
                     lineHeight = 19.sp,
                     modifier = Modifier.padding(top = 2.dp),
                 )
+            }
+            if (!granted) {
+                TextButton(onClick = onClick) {
+                    Text(actionLabel, color = AppPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
 }
 
 /**
- * مرحله‌ی پنجم: اولین حساب‌کتاب. عمداً فقط «منبعِ غیربانکی» (نقدی/کیفِ پول…) ساخته می‌شه، نه
+ * مرحله‌ی پنجمِ همین فایل: اولین حساب‌کتاب. عمداً فقط «منبعِ غیربانکی» (نقدی/کیفِ پول…) ساخته می‌شه، نه
  * کارتِ بانکی - تو اپِ مرجع هم قدمِ اول همون «نقدی»ه؛ کارتِ بانکی با جزئیاتِ کاملش بعداً از
  * تبِ دارایی اضافه می‌شه.
  */
@@ -510,6 +723,15 @@ private fun FirstAccountStep(
                 modifier = Modifier.padding(top = 6.dp),
             )
         }
+        // هشدارِ ثبت‌شده در قرص‌های هیروِ تبِ دارایی، همان‌جا که «موجودی اولیه» پرسیده می‌شود:
+        // این عدد **نقطه‌ی شروع** است، نه موجودیِ همیشگی؛ بعدش با تراکنش‌ها جابه‌جا می‌شود.
+        Text(
+            "این عدد فقط رقمِ شروع است - بعد از آن با دخل و خرج‌هایی که ثبت می‌کنی جابه‌جا می‌شود.",
+            color = AppMuted,
+            fontSize = 11.sp,
+            lineHeight = 19.sp,
+            modifier = Modifier.padding(top = 8.dp),
+        )
 
         Text(
             "آیکون",

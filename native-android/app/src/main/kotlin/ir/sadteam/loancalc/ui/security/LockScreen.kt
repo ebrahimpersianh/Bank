@@ -32,7 +32,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
 import ir.sadteam.loancalc.core.cleanNum
+import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.JibakBrandMark
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -56,7 +58,9 @@ fun LockScreen(
     var pin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var lockedOutUntil by remember { mutableLongStateOf(0L) }
-    var secondsLeft by remember { mutableStateOf(0L) }
+    // ⚠️ قبلاً `mutableStateOf(0L)` بود - جعبه‌کردنِ Long در هر تیکِ ثانیه، در حالی که
+    // `mutableLongStateOf` همین بالا برای `lockedOutUntil` استفاده شده بود.
+    var secondsLeft by remember { mutableLongStateOf(0L) }
 
     LaunchedEffect(lockedOutUntil) {
         while (lockedOutUntil > System.currentTimeMillis()) {
@@ -86,7 +90,11 @@ fun LockScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(80.dp))
+        Spacer(Modifier.height(64.dp))
+        // نشانِ برند: این اولین صفحه‌ی بعدِ اسپلش است و صفحه‌ی PIN بدونِ لوگو شبیهِ صفحه‌ی
+        // قفلِ خودِ اندروید می‌شد، نه صفحه‌ی جیبک.
+        JibakBrandMark(width = 52.dp)
+        Spacer(Modifier.height(26.dp))
         Text(
             "قفل امنیتی",
             color = AppText,
@@ -132,7 +140,10 @@ fun LockScreen(
                             onUnlock()
                         }
                         is PinAttemptResult.WrongPin -> {
-                            error = "PIN اشتباهه (${result.attemptsLeft} تلاش دیگه مونده)"
+                            // ⚠️ رقمِ لاتین بود - لایه‌ی ارقامِ فارسی (JibakFormat) می‌گوید
+                            // هر عددی که کاربر می‌خواند فارسی است؛ PIN خودش استثناست (فیلدِ
+                            // ورودی)، ولی شمارشِ تلاش‌ها متنِ خواندنی است.
+                            error = "PIN اشتباهه (${toFa(result.attemptsLeft)} تلاش دیگه مونده)"
                         }
                         is PinAttemptResult.LockedOut -> {
                             error = "به دلیل تلاش‌های ناموفق زیاد، موقتاً قفل شدی"
@@ -145,7 +156,8 @@ fun LockScreen(
                     .fillMaxWidth()
                     .padding(top = 12.dp),
             ) {
-                Text(if (lockedOut) "امتحان دوباره بعد از ${secondsLeft} ثانیه" else "ورود")
+                // ⚠️ رقمِ لاتین بود. `secondsLeft` هم Long است، پس `toInt()` تا امضای toFa جور بشود.
+                Text(if (lockedOut) "امتحان دوباره بعد از ${toFa(secondsLeft.toInt())} ثانیه" else "ورود")
             }
         }
 

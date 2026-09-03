@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -46,6 +48,8 @@ import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.JibakBrandMark
+import ir.sadteam.loancalc.ui.components.JibakLogo
 import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.theme.AppDanger
@@ -197,6 +201,10 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             if (step == LoginStep.PHONE) {
+                // نشانِ برند بالای فرم: صفحه‌ی ورود جایی است که کاربر شماره‌ی موبایلش را
+                // می‌دهد؛ بدونِ لوگو یه فرمِ بی‌صاحب بود.
+                JibakBrandMark(width = 56.dp)
+                Spacer(Modifier.height(22.dp))
                 // سربرگِ دومرحله‌ای طبقِ اپِ مرجع (پولکی): یه عنوانِ درشتِ خوش‌آمد + یه خطِ توضیحِ
                 // کم‌رنگ - به‌جای تک‌جمله‌ی خاکستریِ قبلی که حسِ «فرمِ خالی» می‌داد.
                 Text(
@@ -311,6 +319,11 @@ fun LoginScreen(
                         verify()
                     },
                 )
+
+                // در مرحله‌ی کد فقط خودِ لوگو (بی واژه‌نشان) - جای عمودی کم است و پنج باکسِ کد
+                // نباید به لبه‌ی کیبرد بچسبد.
+                JibakLogo(width = 40.dp)
+                Spacer(Modifier.height(18.dp))
 
                 // شماره‌ی واردشده + آیکونِ مداد برای برگشتن و ویرایشش - جایگزینِ یه دکمه‌ی برگشتِ
                 // جدا (دقیقاً حسِ رفرنس). تو RTL اولین چیزِ توی Row سمتِ راست میاد؛ برای این‌که
