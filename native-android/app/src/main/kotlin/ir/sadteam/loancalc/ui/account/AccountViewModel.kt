@@ -157,7 +157,7 @@ class AccountViewModel @Inject constructor(
      */
     fun updateTransaction(transaction: AccountTransactionEntity, amountRial: Double, description: String) {
         viewModelScope.launch {
-            repository.updateTransaction(
+            accountRepository.updateTransaction(
                 transaction.copy(amount = amountRial, description = description.trim()),
             )
         }

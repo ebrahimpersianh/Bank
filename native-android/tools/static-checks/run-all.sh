@@ -57,6 +57,7 @@ run "نشتِ رنگِ برند" "$DIR/themeleak.py"
 run "@Composable تو لیستِ تنبل" "$DIR/lazyscope.py"
 run "smart-castِ پراپرتیِ ماژولِ دیگه" "$DIR/smartcast.py"
 run "سبکِ صداکردنِ اکستنشن" "$DIR/callstyle.py"
+run "گیرنده‌ی اعلان‌نشده" "$DIR/receivers.py"
 
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
