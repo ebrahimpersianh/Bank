@@ -7,6 +7,7 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.data.AssetRepository
 import ir.sadteam.loancalc.data.db.AssetEntity
 import ir.sadteam.loancalc.data.db.AssetTradeEntity
+import ir.sadteam.loancalc.ui.jibak.toFaTime
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
@@ -54,13 +55,19 @@ class AssetViewModel @Inject constructor(
     private val _pricesUpdatedAt = MutableStateFlow<Long?>(null)
 
     /**
-     * فاصله‌ی دقیقه‌ای از آخرین به‌روزرسانی، برای زیرنویسِ سرصفحه‌ی `43a`.
+     * **ساعتِ** آخرین به‌روزرسانی («۱۲:۳۰»)، برای زیرنویسِ سرصفحه‌ی `43a`.
      *
-     * ⚠️ **خودش تیک نمی‌زنه** - تا `refreshPrices` صدا نشه عوض نمی‌شه، پس «۲ دقیقه پیش»
-     * می‌تونه کهنه بمونه. برای این صفحه کافیه چون هر بار باز شدن تازه می‌کنه.
+     * خواسته‌ی صریحِ کاربر: «به‌روزرسانی تایمِ واقعی بشه، مثلاً ۱۲:۳۰ به‌روز شد» - نه
+     * «۶ دقیقه پیش». فاصله‌ی نسبی مزیتی نداشت و بدترش این‌که **خودش تیک نمی‌زد**، پس اگر
+     * صفحه باز می‌ماند عدد سرِ جایش خشک می‌شد و دروغ می‌گفت. ساعتِ ثابت این مشکل را ندارد.
      */
-    val pricesUpdatedMinutesAgo: StateFlow<Long?> = _pricesUpdatedAt
-        .map { at -> at?.let { (System.currentTimeMillis() - it) / 60_000L } }
+    val pricesUpdatedClock: StateFlow<String?> = _pricesUpdatedAt
+        .map { at ->
+            at?.let {
+                val c = java.util.Calendar.getInstance().apply { timeInMillis = it }
+                toFaTime(c.get(java.util.Calendar.HOUR_OF_DAY), c.get(java.util.Calendar.MINUTE))
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     init {

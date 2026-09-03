@@ -74,7 +74,7 @@ fun MarketPricesScreen(
 ) {
     val prices by viewModel.marketPrices.collectAsState()
     val changes by viewModel.monthChange.collectAsState()
-    val updatedMinutesAgo by viewModel.pricesUpdatedMinutesAgo.collectAsState()
+    val updatedClock by viewModel.pricesUpdatedClock.collectAsState()
     val owned by viewModel.assets.collectAsState()
 
     // قیمتِ بازار **یک درخواسته**، پس هر بار باز شدن تازه می‌کنه. قیمتِ کهنه بی‌فایده‌ست.
@@ -89,7 +89,11 @@ fun MarketPricesScreen(
         if (buySymbol != null) buySymbol = null else openAsset = null
     }
 
-    val entries = remember { assetCatalogGroups.flatMap { it.second } }
+    // نمادی که سرویسِ قیمت اصلاً نداردش اینجا نمی‌آید - یک ستونِ پُر از «—» این صفحه را
+    // بی‌فایده می‌کند. کاربر همچنان می‌تواند ثبتش کند و قیمتِ واحد را دستی بزند.
+    val entries = remember {
+        assetCatalogGroups.flatMap { it.second }.filter { it.hasLivePrice }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -117,7 +121,7 @@ fun MarketPricesScreen(
                             // null یعنی هنوز یک‌بار هم گرفته نشده، نه «همین الان».
                             // واحد یک‌بار در سرصفحه می‌آید، نه کنارِ هر سطر - وگرنه «تومان»
                             // سی بار تکرار می‌شود و ستون را می‌شکند.
-                            (updatedMinutesAgo?.let { faRelativeMinutes(it) } ?: "هنوز به‌روز نشده") +
+                            (updatedClock?.let { "$it به‌روز شد" } ?: "هنوز به‌روز نشده") +
                                 " · تومان",
                             color = AppMuted,
                             fontSize = 9.5.sp,
@@ -252,10 +256,3 @@ private fun PriceRow(
     }
 }
 
-/** «۳ دقیقه پیش» / «۲ ساعت پیش» / «همین الان». زیرِ یک دقیقه عدد نشون نمی‌ده. */
-private fun faRelativeMinutes(minutes: Long): String = when {
-    minutes < 1L -> "همین الان به‌روز شد"
-    minutes < 60L -> "به‌روزرسانی ${minutes.toFa()} دقیقه پیش"
-    minutes < 1440L -> "به‌روزرسانی ${(minutes / 60L).toFa()} ساعت پیش"
-    else -> "به‌روزرسانی ${(minutes / 1440L).toFa()} روز پیش"
-}
