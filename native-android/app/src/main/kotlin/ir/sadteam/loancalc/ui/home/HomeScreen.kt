@@ -74,6 +74,7 @@ import ir.sadteam.loancalc.ui.components.AvatarView
 import ir.sadteam.loancalc.ui.components.CategoryDonut
 import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.CoinChip
+import ir.sadteam.loancalc.ui.components.ConfirmPayDialog
 import ir.sadteam.loancalc.ui.components.DonutSlice
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.HeroMuted
@@ -86,6 +87,7 @@ import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.profile.AvatarViewModel
+import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
 import ir.sadteam.loancalc.ui.profile.BadgeRetroSheet
 import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.theme.AppAssetBorder
@@ -180,6 +182,11 @@ fun HomeScreen(
     val repairable by gamificationViewModel.repairable.collectAsState()
     val retroBadges by gamificationViewModel.retroUnlocked.collectAsState()
     var showNewTransaction by remember { mutableStateOf(false) }
+    var showCoinWallet by remember { mutableStateOf(false) }
+    // «پرداخت شد» بازگشت‌ناپذیر است و روی کارتِ قهرمانِ خانه یک تپِ اشتباه راحت رخ می‌دهد.
+    // ⚠️ این تایید یک‌بار اضافه شده بود و بسته‌ی بازطراحیِ خانه رویش را نوشت - اگر دوباره
+    // فایل را از طراح گرفتید، همین‌جا را چک کنید.
+    var confirmPayDue by remember { mutableStateOf<UrgentDueViewModel.UrgentRow?>(null) }
 
     // ⚠️ هر دو شیت قبلاً با `return` صدا زده می‌شدند و کلِ Box از کامپوزیشن بیرون می‌رفت:
     // پشتِ شیت سفیدِ خالی بود و اسکرولِ صفحه‌ی اول با بستنش صفر می‌شد. حالا **روی** صفحه
@@ -230,6 +237,7 @@ fun HomeScreen(
                     today = today,
                     userName = userName,
                     activeDays = activeDays,
+                    onOpenCoins = { showCoinWallet = true },
                     coins = coins,
                     onOpenSettings = onOpenSettings,
                     inboxCount = inboxCount,
@@ -340,7 +348,7 @@ fun HomeScreen(
                         amount = due.amount,
                         daysOverdue = due.daysOverdue,
                         privacyMode = privacyMode,
-                        onPay = { urgentDueViewModel.markPaid(due) },
+                        onPay = { confirmPayDue = due },
                         onOpen = { onNavigateToRoute("loan") },
                     )
                 }
@@ -383,6 +391,21 @@ fun HomeScreen(
         if (retroBadges.isNotEmpty()) {
             BadgeRetroSheet(retroBadges) { gamificationViewModel.consumeRetro() }
         }
+        // تپ روی قرصِ سکه کیفِ سکه را باز می‌کند (خواسته‌ی صریحِ کاربر). به‌صورتِ روکش
+        // رندر می‌شود نه با `return` - همان باگی که شش جای دیگر صفحه را سفید می‌کرد.
+        // تا وقتی سکه مقصدِ `NavHost` نشده، این کوتاه‌ترین راهِ درست است؛ روکش پس‌زمینه‌ی
+        // مات دارد پس صفحه‌ی زیرش دیده نمی‌شود.
+        if (showCoinWallet) {
+            CoinWalletScreen(onBack = { showCoinWallet = false })
+        }
+        confirmPayDue?.let { due ->
+            ConfirmPayDialog(
+                title = "تاییدِ پرداخت",
+                text = "این قسط پرداخت‌شده علامت بخوره؟",
+                onConfirm = { urgentDueViewModel.markPaid(due); confirmPayDue = null },
+                onDismiss = { confirmPayDue = null },
+            )
+        }
     }
 }
 
@@ -408,6 +431,7 @@ private fun HomeHeader(
     inboxCount: Int,
     inboxUnreadNews: Int,
     onOpenInbox: () -> Unit,
+    onOpenCoins: () -> Unit,
 ) {
     val avatarViewModel: AvatarViewModel = hiltViewModel()
     val avatar by avatarViewModel.avatar.collectAsState()
@@ -433,7 +457,7 @@ private fun HomeHeader(
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             if (activeDays > 0) ActiveChip(days = activeDays)
-            if (coins > 0) CoinChip(coins = coins)
+            if (coins > 0) CoinChip(coins = coins, onClick = onOpenCoins)
             // ⚠️ **درِ ورودیِ تنظیمات.** فریم‌های تب‌ها هیچ دکمه‌ای برای تنظیمات ندارن و طرح
             // نگفته کاربر از کجا بره؛ کارتِ `32c` ولی صریحاً می‌گه آدمک تو «نوارِ بالای خانه»
             // با اندازه‌ی ۳۲ می‌شینه. همون آدمک اینجا هم تناقضِ طرح رو حل می‌کنه هم جای خالیِ

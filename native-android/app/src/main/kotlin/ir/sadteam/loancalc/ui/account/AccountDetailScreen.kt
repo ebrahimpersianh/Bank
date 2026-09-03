@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.account
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
@@ -31,6 +32,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -108,6 +112,7 @@ fun AccountDetailScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deletingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
+    var editingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
 
     // تقویم **روی** صفحه می‌نشیند، نه به‌جایش. با `return` کلِ LazyColumn از کامپوزیشن بیرون
     // می‌رفت و اسکرولِ دفترچه‌ی تراکنش‌ها با هر انتخابِ تاریخ صفر می‌شد.
@@ -275,6 +280,7 @@ fun AccountDetailScreen(
                 TransactionRow(
                     tx = tx,
                     onDelete = { deletingTx = tx },
+                    onEdit = { editingTx = tx },
                     modifier = Modifier.animateItem(),
                 )
             }
@@ -302,6 +308,17 @@ fun AccountDetailScreen(
                 onDismiss = { showDeleteConfirm = false },
             )
         }
+        editingTx?.let { tx ->
+            EditTransactionDialog(
+                tx = tx,
+                onSave = { amountRial, description ->
+                    viewModel.updateTransaction(tx, amountRial, description)
+                    editingTx = null
+                },
+                onDismiss = { editingTx = null },
+            )
+        }
+
         deletingTx?.let { tx ->
             ConfirmDeleteDialog(
                 title = "حذفِ تراکنش",
@@ -316,9 +333,16 @@ fun AccountDetailScreen(
 /** دو ستون: نوع+توضیح+تاریخ و مبلغِ باعلامت. دکمه‌ی «حذف»ِ دائمی برداشته شد - `SwipeToDeleteRow`
  * از قبل همون کار رو می‌کرد، دو راهِ حذف روی یه ردیف زیادی بود. */
 @Composable
-private fun TransactionRow(tx: AccountTransactionEntity, onDelete: () -> Unit, modifier: Modifier = Modifier) {
+private fun TransactionRow(
+    tx: AccountTransactionEntity,
+    onDelete: () -> Unit,
+    onEdit: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     SwipeToDeleteRow(onDelete = onDelete, confirmDismiss = false, modifier = modifier) {
-        AppCard {
+        // تپ روی ردیف ویرایش را باز می‌کند. کاربر گزارش کرد گاهی تراکنش اشتباه ثبت
+        // می‌شود و راهی برای اصلاحش نبود؛ فقط کشیدن برای حذف بود، آن هم بی هیچ نشانه.
+        AppCard(modifier = Modifier.clickable(onClick = onEdit)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -340,6 +364,14 @@ private fun TransactionRow(tx: AccountTransactionEntity, onDelete: () -> Unit, m
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 2.dp),
                     )
+                    // نشانه‌ی کشف‌پذیری: بی این، حذف یک قابلیتِ پنهان بود و ویرایش هم
+                    // معلوم نبود اصلاً وجود دارد (هر دو گزارشِ کاربر).
+                    Text(
+                        "برای ویرایش بزن · برای حذف بکش",
+                        color = AppMuted.copy(alpha = 0.7f),
+                        fontSize = 9.5.sp,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
                 }
                 // واحد روی خودِ ردیف لازم است: بی آن «۳۵۰٬۰۰۰٬۰۰+» بی‌معناست و کاربر
                 // نمی‌داند ریال است یا تومان (گزارشِ کاربر با اسکرین‌شات). ستونِ `amount`
@@ -355,4 +387,66 @@ private fun TransactionRow(tx: AccountTransactionEntity, onDelete: () -> Unit, m
             }
         }
     }
+}
+
+/**
+ * اصلاحِ مبلغ و توضیحِ یک تراکنشِ ثبت‌شده - خواسته‌ی کاربر: «گاهی اشتباه چیزی اضافه می‌شود».
+ *
+ * **نوع، حساب و تاریخ عمداً اینجا نیستند.** عوض‌کردنشان یعنی یک تراکنشِ دیگر، و در آن
+ * حالت حذف‌وثبتِ دوباره هم صادقانه‌تر است هم تاریخچه را درست نگه می‌دارد.
+ *
+ * الگوی استانداردِ فیلدِ مبلغِ پروژه: state فقط رقمِ خام (`cleanNum`)، جداکننده فقط بصری
+ * با [ThousandsSeparatorTransformation]، و کپشنِ حروفی زیرش. ورودی **تومان** است و
+ * تبدیل به ریال دقیقاً یک بار، لحظه‌ی ذخیره.
+ */
+@Composable
+private fun EditTransactionDialog(
+    tx: AccountTransactionEntity,
+    onSave: (amountRial: Double, description: String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var amountText by remember { mutableStateOf(rialToToman(tx.amount.toLong()).toString()) }
+    var description by remember { mutableStateOf(tx.description) }
+    val toman = amountText.toLongOrNull() ?: 0L
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = AppSurface,
+        title = { Text("ویرایشِ تراکنش", color = AppText, fontWeight = FontWeight.Black) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = amountText,
+                    onValueChange = { amountText = cleanNum(it) },
+                    label = { Text("مبلغ") },
+                    suffix = { Text("تومان") },
+                    visualTransformation = ThousandsSeparatorTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (toman > 0) {
+                    Text(
+                        numberToWordsFa(toman.toDouble()) + " تومان",
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                    )
+                }
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("توضیحات") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(tomanToRial(toman).toDouble(), description) },
+                enabled = toman > 0,
+            ) { Text("ذخیره", color = if (toman > 0) AppPrimaryInk else AppMuted) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("انصراف", color = AppMuted) } },
+    )
 }

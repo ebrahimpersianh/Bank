@@ -146,6 +146,23 @@ class AccountViewModel @Inject constructor(
         }
     }
 
+    /**
+     * اصلاحِ مبلغ و توضیحِ یک تراکنشِ ثبت‌شده. کاربر گزارش کرد گاهی اشتباه ثبت می‌شود و
+     * تنها راهِ موجود حذفِ کامل بود.
+     *
+     * ⚠️ [amountRial] **ریال** است، مثلِ ستونِ دیتابیس - تبدیل در لایه‌ی UI انجام می‌شود
+     * نه اینجا، تا مثلِ بقیه‌ی برنامه یک نقطه‌ی تبدیل بیشتر نداشته باشیم.
+     * نوع (واریز/برداشت)، حساب و تاریخ عمداً دست‌نخورده می‌مانند: عوض‌کردنشان یعنی
+     * تراکنشِ دیگری، و حذف‌وثبتِ دوباره صادقانه‌تر است.
+     */
+    fun updateTransaction(transaction: AccountTransactionEntity, amountRial: Double, description: String) {
+        viewModelScope.launch {
+            repository.updateTransaction(
+                transaction.copy(amount = amountRial, description = description.trim()),
+            )
+        }
+    }
+
     fun deleteTransaction(transaction: AccountTransactionEntity) {
         viewModelScope.launch {
             accountRepository.deleteTransaction(transaction)

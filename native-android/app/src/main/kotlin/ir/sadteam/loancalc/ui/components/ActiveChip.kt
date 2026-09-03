@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -77,9 +78,17 @@ fun ActiveChip(days: Int, modifier: Modifier = Modifier) {
 
 /** شمارنده‌ی سکه - همون قرص، ولی طلایی، چون طلایی نشانه‌ی پاداش/پرمیومه. */
 @Composable
-fun CoinChip(coins: Int, modifier: Modifier = Modifier) {
+fun CoinChip(coins: Int, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
     // ⚠️ فریمِ `15a` برای سکه **قرص نداره** - فقط عدد و بعدش خودِ سکه.
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+    // `onClick` اختیاری است: هدفِ لمسی فقط وقتی ساخته می‌شود که مقصدی باشد، وگرنه یک
+    // دکمه‌ی بی‌کار روی نوارِ بالا می‌نشیند و تپ‌های اطرافش را می‌خورد.
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .then(if (onClick != null) Modifier.clip(RoundedCornerShape(10.dp)) else Modifier)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(if (onClick != null) Modifier.padding(horizontal = 6.dp, vertical = 4.dp) else Modifier),
+    ) {
         Text(
             toFa(coins),
             color = AppText,

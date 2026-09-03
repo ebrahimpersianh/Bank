@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -33,6 +35,7 @@ import ir.sadteam.loancalc.data.db.CoinEventEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
@@ -58,8 +61,12 @@ fun CoinWalletScreen(
     val coins by viewModel.coins.collectAsState()
     val events by viewModel.events.collectAsState()
 
+    // این صفحه هم از تنظیمات باز می‌شود هم به‌صورتِ روکش از قرصِ سکه‌ی تبِ خانه، پس
+    // خودش هم پس‌زمینه‌ی مات لازم دارد هم بازگشتِ سیستمی - وگرنه در حالتِ روکش
+    // صفحه‌ی زیرش پیدا می‌شود و back کلِ برنامه را می‌بندد.
+    BackHandler(onBack = onBack)
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().background(AppBg),
         contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 40.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
