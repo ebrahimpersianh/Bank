@@ -45,6 +45,15 @@ class CategoryViewModel @Inject constructor(
         viewModelScope.launch { categoryRepository.addCustomCategory(name, color, iconKey, type, parentName) }
     }
 
+    /** چند زیرمجموعه به این دسته وصل‌اند - متنِ دیالوگِ تایید باید بگوید. */
+    suspend fun childCountOf(entity: CustomCategoryEntity): Int =
+        categoryRepository.childCountOf(entity)
+
+    /** تغییرِ نام؛ زیرمجموعه‌ها هم‌قدم به‌روز می‌شوند (رجوع کن به مخزن). */
+    fun renameCustomCategory(entity: CustomCategoryEntity, newName: String) {
+        viewModelScope.launch { categoryRepository.renameCustomCategory(entity, newName) }
+    }
+
     fun deleteCustomCategory(entity: CustomCategoryEntity) {
         viewModelScope.launch { categoryRepository.deleteCustomCategory(entity) }
     }

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,6 +62,8 @@ import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -83,10 +86,22 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
     val custom by viewModel.customCategories.collectAsState()
     var showAddForm by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<CustomCategoryEntity?>(null) }
+    var renaming by remember { mutableStateOf<CustomCategoryEntity?>(null) }
 
     // ⚠️ **خطرناک‌ترین کارِ این صفحه**: تراکنش‌های گذشته به دسته وصل‌ان. اگه دسته تراکنش
     // داشته باشه، دیالوگ **دسته‌ی مقصد می‌پرسه**، نه فقط تایید (قاعده‌ی صریحِ طراح) -
     // وگرنه اون تراکنش‌ها بی‌دسته می‌مونن و کاربر بعداً گمشون می‌کنه.
+    renaming?.let { entity ->
+        var childCount by remember(entity.name) { mutableStateOf(0) }
+        LaunchedEffect(entity.name) { childCount = viewModel.childCountOf(entity) }
+        RenameCategoryDialog(
+            entity = entity,
+            childCount = childCount,
+            onRename = { newName -> viewModel.renameCustomCategory(entity, newName); renaming = null },
+            onDismiss = { renaming = null },
+        )
+    }
+
     pendingDelete?.let { entity ->
         var count by remember(entity) { mutableStateOf<Int?>(null) }
         var target by remember(entity) { mutableStateOf<String?>(null) }
@@ -237,6 +252,11 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                         )
                     }
                     if (isCustom) {
+                        // تغییرِ نام تا حالا اصلاً راهی نداشت: تنها راهِ اصلاحِ یک غلطِ املایی
+                        // حذف و ساختِ دوباره بود، که ترتیب و زیرمجموعه‌ها را هم می‌برد.
+                        IconButton(onClick = { renaming = row }) {
+                            Icon(Icons.Filled.Edit, contentDescription = "تغییرِ نام", tint = AppMuted)
+                        }
                         IconButton(onClick = { pendingDelete = custom.first { it.name == cat.name && it.type == type.name } }) {
                             Icon(Icons.Filled.Delete, contentDescription = "حذف", tint = AppDanger)
                         }
@@ -334,4 +354,48 @@ private fun AddCategoryForm(
             OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("انصراف") }
         }
     }
+}
+
+/**
+ * تغییرِ نامِ دسته. زیرمجموعه‌ها را خودِ مخزن هم‌قدم به‌روز می‌کند، پس اینجا فقط نامِ تازه
+ * گرفته می‌شود؛ ولی به کاربر گفته می‌شود که این کار زیرمجموعه‌ها را هم لمس می‌کند، وگرنه
+ * تغییرِ بی‌صدای چند ردیفِ دیگر غافلگیرکننده است.
+ */
+@Composable
+private fun RenameCategoryDialog(
+    entity: CustomCategoryEntity,
+    childCount: Int,
+    onRename: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf(entity.name) }
+    val valid = name.isNotBlank() && name.trim() != entity.name
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = AppSurface,
+        title = { Text("تغییرِ نامِ دسته", color = AppText, fontWeight = FontWeight.Black) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (childCount > 0) {
+                    Text(
+                        "${toFa(childCount)} زیرمجموعه هم به نامِ تازه وصل می‌شن.",
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onRename(name.trim()) }, enabled = valid) {
+                Text("ذخیره", color = if (valid) AppPrimaryInk else AppMuted)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("انصراف", color = AppMuted) } },
+    )
 }

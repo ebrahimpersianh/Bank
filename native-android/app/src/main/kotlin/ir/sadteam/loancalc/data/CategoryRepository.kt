@@ -55,7 +55,28 @@ class CategoryRepository(private val categoryDao: CategoryDao) {
         )
     }
 
+    /** چند زیرمجموعه به این دسته وصل‌اند - برای متنِ دیالوگِ تایید. */
+    suspend fun childCountOf(entity: CustomCategoryEntity): Int =
+        categoryDao.childCountOf(entity.type, entity.name)
+
+    /**
+     * تغییرِ نامِ یک دسته. **زیرمجموعه‌ها هم‌قدم به‌روز می‌شوند** چون `parentName` نام است
+     * نه id؛ بی این، بچه‌ها به نامی وصل می‌مانند که دیگر وجود ندارد و نامرئی می‌شوند.
+     *
+     * ترتیب مهم است: اول بچه‌ها، بعد خودِ ردیف. اگر برعکس باشد و کارِ دوم شکست بخورد،
+     * بچه‌ها به نامِ تازه‌ای اشاره می‌کنند که هنوز ثبت نشده.
+     */
+    suspend fun renameCustomCategory(entity: CustomCategoryEntity, newName: String) {
+        val trimmed = newName.trim()
+        if (trimmed.isBlank() || trimmed == entity.name) return
+        categoryDao.renameParentOfChildren(entity.type, entity.name, trimmed)
+        categoryDao.updateCustom(entity.copy(name = trimmed))
+        categoryDao.deleteOrder(entity.type, entity.name)
+    }
+
+    /** حذف: زیرمجموعه‌ها اول **ترفیع** می‌گیرند تا یتیمِ نامرئی نشوند. */
     suspend fun deleteCustomCategory(entity: CustomCategoryEntity) {
+        categoryDao.promoteChildrenOf(entity.type, entity.name)
         categoryDao.deleteCustom(entity)
         categoryDao.deleteOrder(entity.type, entity.name)
     }
