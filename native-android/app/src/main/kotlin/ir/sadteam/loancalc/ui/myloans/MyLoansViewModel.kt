@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.IncomeType
+import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.LoanMethod
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.ui.BankLoanOutcome
@@ -302,6 +303,36 @@ class MyLoansViewModel @Inject constructor(
             syncIfLoggedIn()
         }
     }
+
+    /** تاریخِ شمسیِ امروز - تنها مرجعِ «امروز» برای UI، تا هر صفحه خودش Calendar نسازه. */
+    fun todayJalali(): PersianDate = JalaliCalendar.today()
+
+    /** فاصله‌ی روزِ واقعی از امروز تا [date]: مثبت یعنی آینده (۰ = امروز، ۱ = فردا)، منفی یعنی
+     * گذشته. برای حالتِ «سررسیدِ نزدیک»ِ فریمِ 27a. */
+    fun daysUntilToday(date: PersianDate): Int = JalaliCalendar.daysBetween(JalaliCalendar.today(), date)
+
+    /** تاریخِ تسویه‌ی هر وام = تاریخِ پرداختِ آخرین قسط. ستونِ `settledAt` عمداً اضافه نشد (تاییدِ
+     * صریحِ طراح). چون تاریخِ واقعیِ پرداخت فقط برای پرداختِ **با تاخیر** ذخیره می‌شه، برای پرداختِ
+     * به‌موقع سررسیدِ همون قسط استفاده می‌شه - که برای پرداختِ به‌موقع دقیقاً همون روزه. */
+    suspend fun lastPaidDates(loans: List<LoanEntity>): Map<Long, PersianDate> =
+        loans.mapNotNull { loan ->
+            val last = getRows(loan).lastOrNull { it["paid"] == true } ?: return@mapNotNull null
+            val paid = last["paidDate"] as? Map<*, *>
+            val y = (paid?.get("y") as? Number)?.toInt()
+            val m = (paid?.get("m") as? Number)?.toInt()
+            val d = (paid?.get("d") as? Number)?.toInt()
+            val date = if (y != null && m != null && d != null) {
+                PersianDate(y, m, d)
+            } else {
+                val due = last["dueDate"] as? Map<*, *> ?: return@mapNotNull null
+                PersianDate(
+                    (due["y"] as? Number)?.toInt() ?: return@mapNotNull null,
+                    (due["m"] as? Number)?.toInt() ?: return@mapNotNull null,
+                    (due["d"] as? Number)?.toInt() ?: return@mapNotNull null,
+                )
+            }
+            loan.id to date
+        }.toMap()
 
     /** پورت rows[].paid تو www/index.html - وضعیت پرداخت هر قسط مستقله، نه یه آستانه‌ی ترتیبی. */
     suspend fun getRows(loan: LoanEntity): List<Map<String, Any?>> = loanRepository.getRows(loan)

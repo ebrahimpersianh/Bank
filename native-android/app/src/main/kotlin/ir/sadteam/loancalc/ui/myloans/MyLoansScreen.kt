@@ -93,6 +93,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.IncomeType
+import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
@@ -121,6 +122,9 @@ import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.components.rememberIsScrollingUp
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
@@ -183,6 +187,31 @@ private fun List<LoanEntity>.sortedByOption(option: LoanSortOption, viewModel: M
  * رو paidCount/n مشتق می‌شه (نه یه ستونِ جداگانه تو دیتابیس)؛ همون منطقی که سکه‌بارونِ
  * LoanDetailScreen (wasFullyPaid) هم استفاده می‌کنه. */
 private fun isLoanSettled(loan: LoanEntity) = loan.n > 0 && loan.paidCount >= loan.n
+
+/** ذخیره ریال است و نمایش تومان (بندِ ۲ی README) - تبدیل فقط همین‌جا، لبه‌ی UI. */
+private fun amountToman(rial: Double): String = fmt(rialToToman(rial)).faDigits()
+
+private val jalaliMonthNames = listOf(
+    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
+    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
+)
+
+/** «۲۸ شهریور» - سطرِ دومِ ردیفِ وامِ باز، طبقِ فریمِ `27a`. */
+private fun jalaliShortOf(date: PersianDate): String =
+    "${toFa(date.d)} ${jalaliMonthNames.getOrElse(date.m - 1) { "" }}"
+
+/** «تیر ۱۴۰۵» - سطرِ دومِ وامِ تسویه‌شده. */
+private fun jalaliMonthYearOf(date: PersianDate): String =
+    "${jalaliMonthNames.getOrElse(date.m - 1) { "" }} ${toFa(date.y)}"
+
+private fun isSameJalaliMonth(a: PersianDate, b: PersianDate) = a.y == b.y && a.m == b.m
+
+/** «امروز» / «فردا» / «۳ روزِ دیگر» - حالتِ سررسیدِ نزدیکِ فریم. */
+private fun dueSoonLabel(days: Int): String = when (days) {
+    0 -> "امروز سررسید"
+    1 -> "فردا سررسید"
+    else -> "${toFa(days)} روزِ دیگر"
+}
 
 /**
  * مرکزِ یه کارت رو به [TransformOrigin] (کسرِ ۰..۱ از کلِ ظرف) تبدیل می‌کنه - ورودیِ لازمِ
@@ -256,11 +285,29 @@ fun MyLoansScreen(
     // نمایشیِ پایینِ صفحه (visibleLoans).
     var showSettled by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    val visibleLoans = remember(loans, showSettled, searchQuery) {
+    // تاریخِ تسویه = تاریخِ پرداختِ آخرین قسط (ستونِ تازه لازم نیست - همون استدلالی که
+    // settledAt رو منتفی کرد). دو کاربرد: سطرِ دومِ ردیفِ تسویه‌شده، و شرطِ «همین ماه».
+    var settledDates by remember { mutableStateOf(emptyMap<Long, PersianDate>()) }
+    LaunchedEffect(loans) {
+        settledDates = viewModel.lastPaidDates(loans.filter { isLoanSettled(it) })
+    }
+    val today = remember { viewModel.todayJalali() }
+    // وامی که همین ماهِ جاری تسویه شده، تو حالتِ «فعال» هم دیده می‌شه (با مدالِ روبان‌دار) -
+    // تصمیمِ ۲ی تحویلِ 27a. لحظه‌ی پرداختِ آخرین قسط لحظه‌ی دستاورده؛ بدترین وقت برای
+    // غیب‌شدنِ کارت. از ماهِ بعد فقط زیرِ فیلترِ دوم.
+    val visibleLoans = remember(loans, showSettled, searchQuery, settledDates, today) {
         val q = searchQuery.trim()
-        loans.filter {
-            isLoanSettled(it) == showSettled &&
-                (q.isBlank() || it.name.contains(q, ignoreCase = true) || it.bank.contains(q, ignoreCase = true))
+        loans.filter { loan ->
+            val settled = isLoanSettled(loan)
+            val keep = if (showSettled) {
+                settled
+            } else {
+                !settled || settledDates[loan.id]?.let { isSameJalaliMonth(it, today) } == true
+            }
+            keep && (
+                q.isBlank() || loan.name.contains(q, ignoreCase = true) ||
+                    loan.bank.contains(q, ignoreCase = true)
+                )
         }
     }
     val settledCount = remember(loans) { loans.count { isLoanSettled(it) } }
@@ -559,7 +606,6 @@ fun MyLoansScreen(
                             // مثل یه چکِ فیزیکی می‌چرخونه و خلاصه‌ی پرداخت رو پشتش نشون می‌ده؛ ضربه‌ی اصلیِ
                             // کارت هنوز باز کردنِ جزئیاتِ وامه، این فقط یه لایه‌ی جدا و مستقله.
                             var flipped by remember { mutableStateOf(false) }
-                            var showDeleteConfirm by remember { mutableStateOf(false) }
                             val density = LocalDensity.current
                             val rotation by animateFloatAsState(
                                 targetValue = if (flipped) 180f else 0f,
@@ -572,14 +618,21 @@ fun MyLoansScreen(
                             // بازپرداختِ عقب‌افتاده: سررسیدِ اولین قسطِ پرداخت‌نشده از امروز گذشته -
                             // خودِ کارت حاشیه‌ی قرمز می‌گیره + یه بجِ «!» کنارِ اسمِ وام.
                             val overdue = remember(loan) { viewModel.isLoanOverdue(loan) }
+                            // فریمِ 27a سه حالتِ ردیف داره و کارتِ **فوری** مالِ «سررسیدِ نزدیک»ه
+                            // (تو خودِ فریم: وامی که فردا قسط داره)، نه فقط عقب‌افتاده. آستانه‌ی
+                            // «نزدیک» سه روزه، همون آستانه‌ی یادآورِ اپ.
+                            val nextDue = remember(loan) { viewModel.getLoanNextDueDate(loan) }
+                            val daysToDue = remember(nextDue) { nextDue?.let { viewModel.daysUntilToday(it) } }
+                            val dueSoon = daysToDue != null && daysToDue in 0..3
                             val isLocked = isLoanLocked(loan)
+                            val attention = (overdue || dueSoon) && !isLocked
                             // وامِ عقب‌افتاده گونه‌ی **فوریِ** کارت رو می‌گیره (زمینه‌ی صورتیِ کم‌رنگ
                             // + حاشیه و سایه‌ی قرمز)، نه فقط یه حاشیه‌ی قرمز رو کارتِ سفید -
                             // طبقِ گونه‌ی «فوری»ِ بخشِ ۵ سیستمِ طراحی.
                             AppCard(
                                 variant = when {
                                     isLoanSettled(loan) -> AppCardVariant.DONE
-                                    overdue && !isLocked -> AppCardVariant.URGENT
+                                    attention -> AppCardVariant.URGENT
                                     else -> AppCardVariant.DEFAULT
                                 },
                                 // مدالِ تسویه نباید با بقیه‌ی محتوا محو بشه.
@@ -670,8 +723,9 @@ fun MyLoansScreen(
                                             dim = settled,
                                             progress = if (settled) 1f else paidPct,
                                             settled = settled,
-                                            urgent = overdue && !isLocked,
-                                            showCoin = overdue && !isLocked,
+                                            urgent = attention,
+                                            // سکه‌ی ریزِ روی حلقه نشانِ **قسطِ نزدیک** است (فریم).
+                                            showCoin = attention,
                                         )
                                         Column(
                                             modifier = Modifier
@@ -695,24 +749,36 @@ fun MyLoansScreen(
                                                     )
                                                 }
                                             }
-                                            // سطرِ دوم: «<وضعیت> · <مبلغِ قسط>»
+                                            // سطرِ دوم طبقِ فریم: **تاریخِ سررسید** + مبلغِ قسط
+                                            // («۲۸ شهریور · ۹۵۰٬۰۰۰»)، و برای تسویه‌شده تاریخِ
+                                            // تسویه («تسویه شد · تیر ۱۴۰۵»). کلمه‌ی «در جریان»
+                                            // اطلاعِ صفر داشت - همه‌ی ردیف‌های لیستِ فعال در جریان‌اند.
                                             PrivacyCrossfade(LocalPrivacyMode.current) { masked ->
                                                 Text(
                                                     buildString {
-                                                        append(
-                                                            when {
-                                                                settled -> "تسویه شد"
-                                                                overdue -> "عقب‌افتاده"
-                                                                else -> "در جریان"
-                                                            },
-                                                        )
-                                                        append(" · ")
-                                                        append(maskIfPrivate(masked, fmt(loan.installment)))
-                                                        append(" ریال")
+                                                        if (settled) {
+                                                            append("تسویه شد · ")
+                                                            append(
+                                                                settledDates[loan.id]
+                                                                    ?.let { jalaliMonthYearOf(it) } ?: "—",
+                                                            )
+                                                        } else {
+                                                            append(
+                                                                when {
+                                                                    overdue -> "عقب‌افتاده"
+                                                                    dueSoon -> dueSoonLabel(daysToDue!!)
+                                                                    else -> nextDue?.let { jalaliShortOf(it) } ?: "—"
+                                                                },
+                                                            )
+                                                            append(" · ")
+                                                            append(maskIfPrivate(masked, amountToman(loan.installment)))
+                                                            append(" تومان")
+                                                        }
                                                     },
                                                     color = when {
                                                         settled -> AppPrimaryInk
                                                         overdue -> AppDangerInk
+                                                        dueSoon -> AppDangerInk
                                                         else -> AppMuted
                                                     },
                                                     fontSize = 9.5.sp,
@@ -732,7 +798,7 @@ fun MyLoansScreen(
                                         }
                                         when {
                                             settled -> SettledMedal(diskSize = 34.dp)
-                                            overdue && !isLocked -> LoanPayButton(
+                                            attention -> LoanPayButton(
                                                 onClick = {
                                                     heroOrigin = cardBounds.heroOriginIn(listBounds)
                                                     openedLoanId = loan.id
@@ -764,7 +830,7 @@ fun MyLoansScreen(
                                         }
                                         PrivacyCrossfade(LocalPrivacyMode.current) { masked ->
                                             Text(
-                                                "باقی‌مانده: ${maskIfPrivate(masked, fmt(loan.installment * (loan.n - loan.paidCount)))} ریال",
+                                                "باقی‌مانده: ${maskIfPrivate(masked, amountToman(loan.installment * (loan.n - loan.paidCount)))} تومان",
                                                 color = AppPrimary,
                                                 fontSize = 13.sp,
                                                 modifier = Modifier.padding(top = 6.dp),
@@ -794,7 +860,8 @@ fun MyLoansScreen(
             exit = scaleOut(tween(120)) + fadeOut(tween(120)),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(20.dp),
+                // ۱۶dp از لبه، مثلِ FABِ خانه/گزارش/دارایی.
+                .padding(16.dp),
         ) {
             AppFab(
                 onClick = { onAddLoanClick() },
@@ -1043,7 +1110,7 @@ private fun DashboardSummary(
             PrivacyCrossfade(privacyMode) { masked ->
                 LoanSummaryRow(
                     label = "مانده‌ی کلِ بدهی",
-                    value = maskIfPrivate(masked, fmt(animatedDebt)),
+                    value = maskIfPrivate(masked, amountToman(animatedDebt)),
                     valueColor = AppGoldInk,
                     big = true,
                 )
@@ -1052,7 +1119,7 @@ private fun DashboardSummary(
             PrivacyCrossfade(privacyMode) { masked ->
                 LoanSummaryRow(
                     label = "قسطِ ماهانه",
-                    value = maskIfPrivate(masked, fmt(animatedMonthly)),
+                    value = maskIfPrivate(masked, amountToman(animatedMonthly)),
                     valueColor = AppPrimaryInk,
                 )
             }
@@ -1068,7 +1135,7 @@ private fun DashboardSummary(
                         fontWeight = FontWeight.ExtraBold,
                     )
                     Text(
-                        "${toFa(monthsLeft)} قسط",
+                        "${toFa(monthsLeft)} ماه",
                         color = AppGoldInk,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Black,
@@ -1084,7 +1151,7 @@ private fun DashboardSummary(
                 PrivacyCrossfade(privacyMode) { masked ->
                     LoanSummaryRow(
                         label = "اقساطِ معوق",
-                        value = maskIfPrivate(masked, fmt(animatedOverdue)),
+                        value = maskIfPrivate(masked, amountToman(animatedOverdue)),
                         valueColor = AppDangerInk,
                     )
                 }
@@ -1116,7 +1183,7 @@ private fun DashboardSummary(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 PrivacyCrossfade(privacyMode) { masked ->
                                     Text(
-                                        "${maskIfPrivate(masked, fmt(income.amount))} ریال",
+                                        "${maskIfPrivate(masked, amountToman(income.amount))} تومان",
                                         color = AppMuted,
                                         fontSize = 12.sp,
                                         modifier = Modifier.padding(end = 6.dp),
@@ -1138,7 +1205,7 @@ private fun DashboardSummary(
                     }
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            "جمع درآمد: ${maskIfPrivate(masked, fmt(totalIncome))} ریال",
+                            "جمع درآمد: ${maskIfPrivate(masked, amountToman(totalIncome))} تومان",
                             color = AppText,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -1162,15 +1229,17 @@ private fun DashboardSummary(
                         value = amountText,
                         onValueChange = { amountText = cleanNum(it) },
                         visualTransformation = ThousandsSeparatorTransformation(),
-                        label = { Text("مبلغ ماهانه (ریال)") },
+                        label = { Text("مبلغ ماهانه (تومان)") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    val incomeRial = amountText.toLongOrNull() ?: 0L
-                    if (incomeRial > 0) {
+                    // ورودی تومان است، پس معادلِ حروفی هم مستقیم از همین عدد - تقسیمِ دستیِ
+                    // «/ ۱۰» رفت؛ تنها مرجعِ تبدیل tomanToRial/rialToToman است.
+                    val incomeToman = amountText.toLongOrNull() ?: 0L
+                    if (incomeToman > 0) {
                         AutoShrinkText(
-                            text = "${numberToWordsFa((incomeRial / 10).toDouble())} تومان",
+                            text = "${numberToWordsFa(incomeToman.toDouble())} تومان",
                             color = AppMuted,
                             maxFontSize = 11.sp,
                         )
@@ -1184,7 +1253,8 @@ private fun DashboardSummary(
                             onClick = {
                                 val amount = amountText.toDoubleOrNull() ?: 0.0
                                 if (label.trim().isNotEmpty() && amount > 0) {
-                                    onAddIncome(label.trim(), amount, type)
+                                    // ذخیره ریال است، ورودی تومان.
+                                    onAddIncome(label.trim(), tomanToRial(amount), type)
                                     label = ""
                                     amountText = ""
                                     showAddIncome = false
@@ -1265,7 +1335,7 @@ private fun LoanSummaryRow(label: String, value: String, valueColor: Color, big:
                 fontWeight = FontWeight.Black,
             )
             Text(
-                " ریال",
+                " تومان",
                 color = AppGoldInk2,
                 fontSize = if (big) 10.sp else 9.sp,
                 fontWeight = FontWeight.Bold,
@@ -1301,13 +1371,6 @@ private fun LoanSummaryDivider() {
                 )
             },
     )
-}
-
-@Composable
-private fun DashboardStatCard(title: String, value: String, valueColor: Color) {
-    AppCard(label = title) {
-        Text(value, color = valueColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-    }
 }
 
 /**
