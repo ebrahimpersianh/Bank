@@ -189,7 +189,7 @@ private fun List<LoanEntity>.sortedByOption(option: LoanSortOption, viewModel: M
 private fun isLoanSettled(loan: LoanEntity) = loan.n > 0 && loan.paidCount >= loan.n
 
 /** ذخیره ریال است و نمایش تومان (بندِ ۲ی README) - تبدیل فقط همین‌جا، لبه‌ی UI. */
-private fun amountToman(rial: Double): String = fmt(rialToToman(rial)).faDigits()
+private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
 
 private val jalaliMonthNames = listOf(
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
@@ -1254,7 +1254,7 @@ private fun DashboardSummary(
                                 val amount = amountText.toDoubleOrNull() ?: 0.0
                                 if (label.trim().isNotEmpty() && amount > 0) {
                                     // ذخیره ریال است، ورودی تومان.
-                                    onAddIncome(label.trim(), tomanToRial(amount), type)
+                                    onAddIncome(label.trim(), tomanToRial(amount.toLong()).toDouble(), type)
                                     label = ""
                                     amountText = ""
                                     showAddIncome = false

@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -100,7 +99,6 @@ import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.fmt
-import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.banks
 import ir.sadteam.loancalc.data.db.AccountEntity
@@ -111,7 +109,8 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.BankTile
 import ir.sadteam.loancalc.ui.components.CoinCelebration
-import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
+import ir.sadteam.loancalc.ui.components.ConfirmDialog
+import ir.sadteam.loancalc.ui.components.ConfirmTone
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
@@ -121,6 +120,8 @@ import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
@@ -149,10 +150,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private val faMonthNamesDetail = listOf(
-    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
-)
+// نامِ ماه از `persianMonthName`ِ مشترک میاد - این لیستِ محلی کپیِ سومش بود.
+// ذخیره ریال است و نمایش تومان (بندِ ۲ی README): تنها نقطه‌ی تبدیلِ این فایل.
+private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
 
 /** یه عملِ «پرداخت‌شده کردن»ِ درحالِ‌انتظار - قبل از اجرای واقعیش، اگه حسابی وجود داشته باشه اول
  * باید حساب/کارتِ پرداخت‌کننده انتخاب بشه (رجوع کن به AccountPickerDialog تو LoanDetailScreen).
@@ -250,7 +250,7 @@ fun LoanDetailScreen(
             // نه نمایشش؛ نتیجه برای کاربر دقیقاً «هیچ اتفاقی نمی‌افته» بود (نه پیام موفقیت، نه خطا).
             val result = runCatching {
                 DeviceCalendarExporter.insertInstallmentEvents(context, items) { m ->
-                    "[وام] قسط ${toFa(m)} ${loan.name} (${fmt(amountByM[m] ?: loan.installment)} ریال)"
+                    "[وام] قسط ${toFa(m)} ${loan.name} (${amountToman(amountByM[m] ?: loan.installment)} تومان)"
                 }
             }
             withContext(Dispatchers.Main) {
@@ -552,7 +552,7 @@ fun LoanDetailScreen(
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                 )
             },
             confirmButton = {
@@ -654,7 +654,7 @@ fun LoanDetailScreen(
                         modifier = Modifier.weight(1f),
                     )
                     DetailDateDropdown(
-                        options = faMonthNamesDetail.mapIndexed { idx, name -> (idx + 1) to name },
+                        options = (1..12).map { it to persianMonthName(it) },
                         selected = lateMonth,
                         onSelect = { lateMonth = it },
                         modifier = Modifier.weight(1f),
@@ -775,7 +775,18 @@ fun LoanDetailScreen(
         // نسخه‌ی قبلی یه دوناتِ ۱۵۰ی تمام‌عرض بود که فقط مبلغِ قسط رو نشون می‌داد؛ فریم به‌جاش یه
         // کارتِ فشرده می‌خواد: حلقه‌ی ۸۸ی با **درصدِ پرداخت‌شده** در وسط، و چهار عددِ کلیدی کنارش.
         val paidFraction = if (loan.n > 0) (loan.paidCount.toFloat() / loan.n).coerceIn(0f, 1f) else 0f
-        val remaining = (loan.totalPaid - loan.paidCount * loan.installment).coerceAtLeast(0.0)
+        // «مانده» = جمعِ مبلغِ **ردیف‌های پرداخت‌نشده**. فرمولِ قبلی
+        // (totalPaid − paidCount × loan.installment) روی فیلدِ کهنه‌ی loan.installment حساب
+        // می‌کرد - همون فیلدی که خودِ این فایل چند خط بالاتر عمداً دورش می‌زنه، چون مبلغِ هر
+        // قسط دستی ویرایش‌شدنی‌ست. با یه قسطِ ویرایش‌شده، عددِ هیرو با جمعِ جدول جور نمی‌شد.
+        val remaining = remember(rows, loan) {
+            if (rows.isEmpty()) {
+                (loan.totalPaid - loan.paidCount * loan.installment).coerceAtLeast(0.0)
+            } else {
+                rows.filter { it["paid"] != true }
+                    .sumOf { (it["installment"] as? Number)?.toDouble() ?: loan.installment }
+            }
+        }
         val ratePct = remember(loan) { viewModel.getLoanRatePct(loan) }
         LoanSummaryCard(
             paidFraction = paidFraction,
@@ -785,6 +796,7 @@ fun LoanDetailScreen(
             paidCount = loan.paidCount,
             total = loan.n,
             ratePct = ratePct,
+            installmentNote = if (installmentsVary) "چون اقساطِ این وام باهم فرق دارن" else null,
             privacyMode = privacyMode,
         )
 
@@ -806,42 +818,10 @@ fun LoanDetailScreen(
             privacyMode = privacyMode,
         )
 
-        AppCard(label = loan.bank, modifier = Modifier.padding(horizontal = 14.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                // weight(1f) فقط رو ستونِ مبلغ - چون متنِ حروفیِ مبلغ (numberToWordsFa) طولش به
-                // اندازه‌ی خودِ عدد فرق می‌کنه، بدونِ weight یه Row معمولی هر دو ستون رو مستقل و با
-                // عرضِ کاملِ Row اندازه می‌گرفت؛ وقتی این متن برای یه مبلغِ بزرگ خیلی بلند می‌شد، جای
-                // کافی برای ستونِ «پرداخت‌شده» نمی‌موند و اون یکی کلمه‌به‌کلمه (حتی حرف‌به‌حرف) می‌شکست
-                // (گزارشِ کاربر با اسکرین‌شات، بعدِ ویرایشِ مبلغ). با weight رو این ستون، Row اول
-                // عرضِ ثابتِ ستونِ «پرداخت‌شده» رو تضمین می‌کنه، بعد باقیِ فضا رو به این ستون می‌ده.
-                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                    Text(if (installmentsVary) "قسطِ بعدی" else "مبلغ هر قسط", fontSize = 13.sp, color = AppMuted)
-                    PrivacyCrossfade(privacyMode) { masked ->
-                        Text("${maskIfPrivate(masked, fmt(displayInstallment))} ریال", fontSize = 15.sp, color = AppText, fontWeight = FontWeight.Bold)
-                    }
-                    if (!privacyMode) {
-                        Text(
-                            "${numberToWordsFa(displayInstallment / 10)} تومان",
-                            fontSize = 11.sp,
-                            color = AppMuted,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                    if (installmentsVary) {
-                        Text(
-                            "چون اقساطِ این وام باهم فرق دارن",
-                            fontSize = 10.sp,
-                            color = AppMuted,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                }
-                Column {
-                    Text("پرداخت‌شده", fontSize = 13.sp, color = AppMuted)
-                    Text("${toFa(loan.paidCount)} از ${toFa(loan.n)}", fontSize = 15.sp, color = AppPrimary, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
+        // کارتِ سومِ «مبلغ هر قسط / پرداخت‌شده» حذف شد: هر سه عددش از قبل تو
+        // LoanSummaryCard (قسط + «۱۲ از ۳۶») و LoanSpecsCard (اسمِ بانک) هست، و فریمِ
+        // `27b` بالای صفحه فقط **دو** کارت دارد. توضیحِ «چون اقساطِ این وام باهم فرق دارن»
+        // به‌جاش زیرِ همون ردیفِ کارتِ خلاصه نشسته.
 
         // دو دکمه‌ی فشرده‌ی هم‌اندازه («عکس رسید»/«یادداشت»، نصف‌نصف) به‌جای دو باکسِ همیشه‌بازِ
         // قبلی که کلی جای صفحه رو می‌گرفتن - هرکدوم بزنیم محتواش دقیقاً همون‌جا زیرِ ردیف باز
@@ -1213,10 +1193,14 @@ fun LoanDetailScreen(
                 Text("حذف وام")
             }
             if (showDeleteConfirm) {
-                ConfirmDeleteDialog(
+                // قالبِ واحدِ بخشِ ۴۶: حذفِ وام بازگشت‌پذیر نیست، پس دیالوگ می‌گیره
+                // (نه واگردِ نواری) و لحنش DESTRUCTIVE ئه.
+                ConfirmDialog(
+                    tone = ConfirmTone.DESTRUCTIVE,
                     title = "حذف وام",
-                    text = "وامِ «${loan.name}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
-                    onConfirm = onDelete,
+                    consequence = "وامِ «${loan.name}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+                    actionLabel = "حذف وام",
+                    onConfirm = { showDeleteConfirm = false; onDelete() },
                     onDismiss = { showDeleteConfirm = false },
                 )
             }
@@ -1341,7 +1325,7 @@ private fun NextInstallmentCard(
             )
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    maskIfPrivate(masked, fmt(installment)),
+                    maskIfPrivate(masked, amountToman(installment)) + " تومان",
                     color = AppGoldInkSoft,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Black,
@@ -1406,7 +1390,7 @@ private fun SpecRow(
         } else {
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    maskIfPrivate(masked, fmt(amount ?: 0.0)),
+                    maskIfPrivate(masked, amountToman(amount ?: 0.0)),
                     color = AppText,
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -1457,7 +1441,7 @@ private fun EarlySettlementCard(saving: Double, privacyMode: Boolean) {
             Text("تسویه‌ی زودتر", color = AppGoldInkSoft, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    "اگه الان یک‌جا بدی، حدودِ ${maskIfPrivate(masked, fmt(saving))} ریال سود کم می‌شه",
+                    "اگه الان یک‌جا بدی، حدودِ ${maskIfPrivate(masked, amountToman(saving))} تومان سود کم می‌شه",
                     color = AppGoldInkSoft,
                     fontSize = 9.5.sp,
                     lineHeight = 16.sp,
@@ -1484,6 +1468,7 @@ private fun LoanSummaryCard(
     paidCount: Int,
     total: Int,
     ratePct: Double,
+    installmentNote: String?,
     privacyMode: Boolean,
 ) {
     AppCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)) {
@@ -1536,6 +1521,9 @@ private fun LoanSummaryCard(
             ) {
                 SummaryStatRow("مانده", remaining, privacyMode)
                 SummaryStatRow(installmentLabel, installment, privacyMode)
+                if (installmentNote != null) {
+                    Text(installmentNote, color = AppMuted, fontSize = 8.sp, lineHeight = 12.sp)
+                }
                 SummaryStatRow("اقساط", null, privacyMode, valueText = "${toFa(paidCount)} از ${toFa(total)}")
                 if (ratePct > 0.0) {
                     SummaryStatRow("سود", null, privacyMode, valueText = "${toFa(fmtRate(ratePct))}٪")
@@ -1564,7 +1552,7 @@ private fun SummaryStatRow(
         } else {
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    maskIfPrivate(masked, fmt(amount ?: 0.0)),
+                    maskIfPrivate(masked, amountToman(amount ?: 0.0)),
                     color = AppText,
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -1722,7 +1710,7 @@ private fun PreviewInstallmentRow(
         }
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                maskIfPrivate(masked, fmt(installment)),
+                maskIfPrivate(masked, amountToman(installment)),
                 color = if (paid) AppMuted else AppText,
                 fontSize = 10.5.sp,
                 fontWeight = if (isNext) FontWeight.ExtraBold else FontWeight.Bold,
@@ -1791,7 +1779,7 @@ private fun InstallmentRow(
             Text(dueLabel, color = AppMuted, fontSize = 12.sp)
         }
         PrivacyCrossfade(privacyMode) { masked ->
-            Text("${maskIfPrivate(masked, fmt(installment))} ریال", color = AppText, fontSize = 13.sp)
+            Text("${maskIfPrivate(masked, amountToman(installment))} تومان", color = AppText, fontSize = 13.sp)
         }
         // وضعیت پرداخت تو یه باکس رنگیِ گوشه‌گرد (بج) - تا از بقیه‌ی متن جدا و واضح دیده بشه
         // (خواسته‌ی کاربر). رنگ پس‌زمینه نسخه‌ی کم‌رنگِ رنگ وضعیته.
@@ -1840,85 +1828,8 @@ private fun InstallmentRow(
     }
 }
 
-/** دایره‌ی وام (سبز = اصل، طلایی = سود) با قسط ماهانه تو مرکز - پورت حس دونات نتیجه‌ی وب. */
-/** دکمه‌ی فشرده‌ی toggle برای «عکس رسید»/«یادداشت» - نقطه‌ی کوچیکِ [filled] یعنی محتوا از قبل داره. */
-@Composable
-private fun AttachmentToggleButton(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    filled: Boolean,
-    expanded: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val shape = RoundedCornerShape(12.dp)
-    val borderColor = if (expanded) AppPrimary else AppMuted.copy(alpha = 0.35f)
-    val bg = if (expanded) AppPrimary.pillOverSurface(0.10f) else AppSurface2
-    Row(
-        modifier = modifier
-            .pressScaleClickable(goldBorderShape = shape, onClick = onClick)
-            .background(bg, shape)
-            .border(1.dp, borderColor, shape)
-            .padding(horizontal = 8.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = if (expanded) AppPrimary else AppMuted,
-            modifier = Modifier.size(18.dp),
-        )
-        Text(
-            label,
-            color = if (expanded) AppPrimary else AppText,
-            fontSize = 13.sp,
-            modifier = Modifier.padding(start = 6.dp),
-        )
-        if (filled) {
-            Box(
-                modifier = Modifier
-                    .padding(start = 6.dp)
-                    .size(6.dp)
-                    .background(AppPrimary, androidx.compose.foundation.shape.CircleShape),
-            )
-        }
-    }
-}
-
-@Composable
-private fun LoanDonut(
-    principalFraction: Float,
-    centerTop: @Composable () -> Unit,
-    centerBottom: String,
-    modifier: Modifier = Modifier,
-) {
-    val track = AppSurface2
-    val primary = AppPrimary
-    val accent = AppAccent
-    Box(contentAlignment = Alignment.Center, modifier = modifier) {
-        Canvas(modifier = Modifier.size(150.dp).aspectRatio(1f)) {
-            val stroke = size.minDimension * 0.1f
-            val arcSize = Size(size.width - stroke, size.height - stroke)
-            val tl = Offset(stroke / 2, stroke / 2)
-            drawArc(track, -90f, 360f, false, tl, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
-            drawArc(primary, -90f, 360f * principalFraction, false, tl, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
-            drawArc(
-                accent,
-                -90f + 360f * principalFraction,
-                360f * (1f - principalFraction),
-                false,
-                tl,
-                arcSize,
-                style = Stroke(stroke, cap = StrokeCap.Round),
-            )
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            centerTop()
-            Text(centerBottom, color = AppMuted, fontSize = 11.sp)
-        }
-    }
-}
+// `LoanDonut` حذف شد - از وقتی `LoanSummaryCard` (حلقه‌ی ۸۸ی فریمِ `27b`) جاش رو
+// گرفت، هیچ‌جا صدا زده نمی‌شد؛ توکنِ `AppAccent` هم فقط همین‌جا استفاده می‌شد.
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

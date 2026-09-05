@@ -59,6 +59,7 @@ run "smart-castِ پراپرتیِ ماژولِ دیگه" "$DIR/smartcast.py"
 run "سبکِ صداکردنِ اکستنشن" "$DIR/callstyle.py"
 run "گیرنده‌ی اعلان‌نشده" "$DIR/receivers.py"
 run "اعلانِ تکراری" "$DIR/redeclare.py"
+run "کمک‌تابعِ Long-only" "$DIR/longhelpers.py"
 
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
