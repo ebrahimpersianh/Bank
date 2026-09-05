@@ -67,4 +67,23 @@ class BankAppMatcherTest {
         // هیچ اپی گم نمی‌شه - کاربر باید بتونه هرچی خواست انتخاب کنه.
         assertEquals(apps.size, suggested.size + rest.size)
     }
+
+    /** بانک‌هایی که «بانک» تو اسمِ نمایشیِ اپشون نیست - گزارشِ واقعیِ کاربر: «اسمِ هیچ برنامه‌ی
+     * بانکی‌ای نیست». */
+    @Test
+    fun bank_names_without_the_word_bank_are_detected() {
+        assertTrue(BankAppMatcher.looksLikeBankApp("همراه من", "ir.mci.example"))
+        assertTrue(BankAppMatcher.looksLikeBankApp("مهر ایران", "ir.qmb.mobile"))
+        assertTrue(BankAppMatcher.looksLikeBankApp("پاسارگاد من", "com.pmb.mobile"))
+        assertTrue(BankAppMatcher.looksLikeBankApp("دیجی پی", "ir.digipay.app"))
+    }
+
+    /** کلیدواژه‌های تازه نباید اپِ بی‌ربط رو بانکی اعلام کنن. */
+    @Test
+    fun new_keywords_do_not_flag_unrelated_apps() {
+        assertFalse(BankAppMatcher.looksLikeBankApp("آپارات", "com.aparat"))
+        assertFalse(BankAppMatcher.looksLikeBankApp("ویدیو", "com.miui.video"))
+        assertFalse(BankAppMatcher.looksLikeBankApp("دیوار", "ir.divar"))
+        assertFalse(BankAppMatcher.looksLikeBankApp("Stopwatch", "com.example.stopwatch"))
+    }
 }

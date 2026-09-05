@@ -1378,9 +1378,18 @@ private fun SmsSettings(
     }
     var showParseTest by remember { mutableStateOf(false) }
 
+    // ⚠️ **این‌جا `return` نذار.** نسخه‌ی قبلی صفحه‌ی آزمایش رو همین‌جا (به‌جای بقیه‌ی محتوا)
+    // رندر می‌کرد، ولی `SmsSettings` خودش داخلِ `SettingsSubPageScaffold` (یه
+    // `Column(verticalScroll)`) رندر می‌شه و `SmsParseTestScreen` هم اسکافولدِ اسکرول‌دارِ
+    // خودش رو می‌سازه - اسکرولِ عمودیِ تودرتو با ارتفاعِ بی‌نهایت اندازه‌گیری می‌شه و اپ کرش
+    // می‌کنه (گزارشِ واقعیِ کاربر: «رو تست می‌زنم، از برنامه می‌پره بیرون»). دیالوگِ
+    // تمام‌صفحه ویندوی جداگانه دارد، پس اسکرولش تو اسکرولِ والد نمی‌افته.
     if (showParseTest) {
-        SmsParseTestScreen(onBack = { showParseTest = false })
-        return
+        FullScreenDialog(onDismissRequest = { showParseTest = false }) {
+            Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
+                SmsParseTestScreen(onBack = { showParseTest = false })
+            }
+        }
     }
 
     // ── کارتِ وضعیت - تنها کارتِ برجسته‌ی صفحه، سه حالت ──────────────────────

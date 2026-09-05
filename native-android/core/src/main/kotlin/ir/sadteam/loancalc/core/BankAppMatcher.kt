@@ -24,8 +24,19 @@ object BankAppMatcher {
      */
     private val LABEL_CONTAINS = listOf(
         "بانک", "bank", "بلوبانک", "نئوبانک", "neobank",
-        "پرداخت", "payment", "کیف پول", "wallet",
+        "پرداخت", "payment", "کیف پول", "wallet", "همراه",
         "زرین", "zarin", "شاپرک", "shaparak", "سداد", "sadad", "fintech",
+        // نامِ خودِ بانک‌ها - اپِ خیلی‌هاشون کلمه‌ی «بانک» رو تو اسمِ نمایشی نداره
+        // («همراه من»، «مهر ایرانیان»، «آینده‌نگر»…) و بدونِ این‌ها اصلاً تشخیص داده نمی‌شدن.
+        "ملی", "ملت", "صادرات", "تجارت", "سپه", "مسکن", "کشاورزی", "رفاه", "پست",
+        "پارسیان", "پاسارگاد", "سامان", "شهر", "سینا", "آینده", "اقتصاد", "نوین",
+        "رسالت", "گردشگری", "کارآفرین", "ایران زمین", "خاورمیانه", "قوامین",
+        "مهر ایران", "توسعه", "صنعت و معدن", "قرض الحسنه",
+        // کیفِ پول/پرداختِ رایجِ ایرانی
+        // ⚠️ «آپ»/«تاپ»/«بلو»/«دی» عمداً این‌جا نیستن و تو LABEL_EXACT موندن - با contains
+        // «آپارات»، «لپ‌تاپ» و «ویدیو» هم بانکی اعلام می‌شدن (رجوع کن به توضیحِ LABEL_EXACT).
+        "دیجی پی", "digipay", "اسنپ پی", "snapp pay", "ایوا",
+        "جیبیت", "jibit", "زیبال", "zibal", "ترب پی", "torob pay",
     )
 
     /**
@@ -49,6 +60,9 @@ object BankAppMatcher {
         "refah", "postbank", "parsian", "pasargad", "saman", "shahr", "sina",
         "ayandeh", "eghtesad", "novin", "resalat", "gardeshgari", "karafarin",
         "blubank", "asanpardakht", "digipay", "snapppay", "zarinpal",
+        "hamrahbank", "mobilebank", "internetbank", "ebank", "baman", "bpm",
+        "iranzamin", "khavarmiane", "ghavamin", "mehreqtesad", "day", "ansarbank",
+        "jibit", "zibal", "torobpay", "azkivam",
     )
 
     /**

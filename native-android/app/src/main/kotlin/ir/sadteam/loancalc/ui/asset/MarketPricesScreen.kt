@@ -91,9 +91,17 @@ fun MarketPricesScreen(
 
     // نمادی که سرویسِ قیمت اصلاً نداردش اینجا نمی‌آید - یک ستونِ پُر از «—» این صفحه را
     // بی‌فایده می‌کند. کاربر همچنان می‌تواند ثبتش کند و قیمتِ واحد را دستی بزند.
-    val entries = remember {
+    // دو لایه‌ی فیلتر، چون پرچمِ `hasLivePrice` دستیه و همیشه با واقعیتِ سرویس جور نیست:
+    // کاربر رو گوشیِ واقعی ~۲۰ ردیفِ «—» دید (ADA، DOT، SHIB، استیبل‌کوین‌ها و…) که پرچمشون
+    // true بود ولی سرویس قیمتشون رو نمی‌ده. حالا **نبودِ قیمت در همین لحظه** هم ردیف رو حذف
+    // می‌کنه، پس این صفحه هیچ‌وقت ستونِ خالی نشون نمی‌ده. کاربر همچنان می‌تونه از فرمِ خرید
+    // ثبتش کنه و قیمتِ واحد رو دستی بزنه.
+    val allEntries = remember {
         assetCatalogGroups.flatMap { it.second }.filter { it.hasLivePrice }
     }
+    // تا اولین fetch، `prices` خالیه - اون‌موقع فهرستِ کامل نشون داده می‌شه (نه صفحه‌ی خالی)
+    // و به‌محضِ رسیدنِ قیمت‌ها به ردیف‌های واقعاً قیمت‌دار جمع می‌شه.
+    val entries = if (prices.isEmpty()) allEntries else allEntries.filter { prices[it.symbol] != null }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
