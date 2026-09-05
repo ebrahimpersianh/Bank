@@ -48,13 +48,23 @@ import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.ui.components.AppButtonVariant
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.ConfirmDialog
+import ir.sadteam.loancalc.ui.components.ConfirmTone
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.core.cleanNum
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppText
 import java.io.File
+
+// ذخیره ریال است و نمایش تومان (بندِ ۲ی README): تنها نقطه‌ی تبدیلِ این فایل.
+private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
+
+/** سقفِ انتخابِ یک‌بارِ گالری. رسیدِ یک قسط عملاً یکی‌دوتاست؛ ده تا سخاوتمندانه است. */
+private const val MAX_RECEIPT_PHOTOS = 10
 
 /**
  * **جزئیاتِ هر قسط** - کارتِ `36d` فایلِ طراحی (بخشِ ۳۶، «کنترل‌های گم‌شده»).
@@ -85,9 +95,13 @@ internal fun InstallmentDetailScreen(
     var trackingDraft by remember(trackingNumber) { mutableStateOf(trackingNumber ?: "") }
     val dirty = noteDraft.trim() != (note ?: "") || trackingDraft.trim() != (trackingNumber ?: "")
 
+    // طرحِ 36d می‌گه عکس **چندتایی**ه. `PickVisualMedia` تک‌عکسیه، پس کاربر برای سه
+    // رسید سه بار باید گالری رو باز کنه.
     val picker = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia(),
-    ) { uri -> if (uri != null) onPickPhoto(uri) }
+        ActivityResultContracts.PickMultipleVisualMedia(MAX_RECEIPT_PHOTOS),
+    ) { uris -> uris.forEach(onPickPhoto) }
+    // حذفِ عکس فایل رو از دیسک می‌بره و برنمی‌گرده، پس طبقِ ۴۶c دیالوگ می‌گیره.
+    var pendingPhotoDelete by remember { mutableStateOf<String?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -106,6 +120,7 @@ internal fun InstallmentDetailScreen(
                     "قسط ${toFa(m)} · ${loan.name}",
                     color = AppText,
                     fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.padding(start = 4.dp),
                 )
             }
@@ -115,7 +130,7 @@ internal fun InstallmentDetailScreen(
             AppCard {
                 Text("مبلغِ قسط", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    "${fmt(amount)} ریال",
+                    "${amountToman(amount)} تومان",
                     color = AppText,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Black,
@@ -143,6 +158,8 @@ internal fun InstallmentDetailScreen(
                     placeholder = {
                         Text("مثلاً: از حسابِ ملی پرداخت شد", color = AppMuted, fontSize = 12.sp)
                     },
+                    minLines = 2,
+                    maxLines = 4,
                 )
             }
         }
@@ -170,7 +187,7 @@ internal fun InstallmentDetailScreen(
                                     .clip(RoundedCornerShape(AppRadius.row)),
                             )
                             IconButton(
-                                onClick = { onRemovePhoto(path) },
+                                onClick = { pendingPhotoDelete = path },
                                 modifier = Modifier.align(Alignment.TopEnd),
                             ) {
                                 Icon(Icons.Filled.Close, contentDescription = "حذفِ عکس")
@@ -203,7 +220,9 @@ internal fun InstallmentDetailScreen(
                             modifier = Modifier.weight(1f),
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            placeholder = { Text("۸۴۹۲۰۳۷۷۱۵", color = AppMuted, fontSize = 12.sp) },
+                            // شماره‌ی پیگیری استثنای دومِ لایه‌ی ارقامه: رقمْ لاتین می‌مونه،
+                            // چون کاربر کپی‌ش می‌کنه و جایی می‌چسبونه که ماشین می‌خونه.
+                            placeholder = { Text("8492037715", color = AppMuted, fontSize = 12.sp) },
                         )
                     }
                     if (trackingDraft.isNotBlank()) {
@@ -222,5 +241,16 @@ internal fun InstallmentDetailScreen(
                 ) { Text("ذخیره") }
             }
         }
+    }
+
+    pendingPhotoDelete?.let { path ->
+        ConfirmDialog(
+            tone = ConfirmTone.DESTRUCTIVE,
+            title = "حذفِ عکسِ رسید",
+            consequence = "این عکس از گوشی پاک می‌شه و برنمی‌گرده.",
+            actionLabel = "حذفِ عکس",
+            onConfirm = { pendingPhotoDelete = null; onRemovePhoto(path) },
+            onDismiss = { pendingPhotoDelete = null },
+        )
     }
 }
