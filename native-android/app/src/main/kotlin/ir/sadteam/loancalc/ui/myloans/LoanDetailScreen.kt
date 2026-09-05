@@ -1857,3 +1857,48 @@ private fun DetailDateDropdown(
         }
     }
 }
+
+/** دکمه‌ی فشرده‌ی toggle برای «عکس رسید»/«یادداشت» - نقطه‌ی کوچیکِ [filled] یعنی محتوا از قبل داره. */
+@Composable
+private fun AttachmentToggleButton(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    filled: Boolean,
+    expanded: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    val borderColor = if (expanded) AppPrimary else AppMuted.copy(alpha = 0.35f)
+    val bg = if (expanded) AppPrimary.pillOverSurface(0.10f) else AppSurface2
+    Row(
+        modifier = modifier
+            .pressScaleClickable(goldBorderShape = shape, onClick = onClick)
+            .background(bg, shape)
+            .border(1.dp, borderColor, shape)
+            .padding(horizontal = 8.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = if (expanded) AppPrimary else AppMuted,
+            modifier = Modifier.size(18.dp),
+        )
+        Text(
+            label,
+            color = if (expanded) AppPrimary else AppText,
+            fontSize = 13.sp,
+            modifier = Modifier.padding(start = 6.dp),
+        )
+        if (filled) {
+            Box(
+                modifier = Modifier
+                    .padding(start = 6.dp)
+                    .size(6.dp)
+                    .background(AppPrimary, androidx.compose.foundation.shape.CircleShape),
+            )
+        }
+    }
+}

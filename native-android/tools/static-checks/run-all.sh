@@ -60,6 +60,7 @@ run "سبکِ صداکردنِ اکستنشن" "$DIR/callstyle.py"
 run "گیرنده‌ی اعلان‌نشده" "$DIR/receivers.py"
 run "اعلانِ تکراری" "$DIR/redeclare.py"
 run "کمک‌تابعِ Long-only" "$DIR/longhelpers.py"
+run "نمادِ فراخوانی‌شده‌ی ناموجود" "$DIR/localcalls.py"
 
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
