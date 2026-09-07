@@ -22,7 +22,7 @@ BUILTIN = {
     'Error', 'Int', 'Long', 'Double', 'Float', 'Boolean', 'Char', 'Byte', 'Short', 'Any',
     'Unit', 'Nothing', 'List', 'Map', 'Set', 'MutableList', 'MutableMap', 'MutableSet',
     'ReplaceWith', 'Deprecated', 'Suppress', 'JvmStatic', 'JvmOverloads', 'Volatile',
-    'Comparator', 'Thread', 'Runnable',
+    'Comparator', 'Thread', 'Runnable', 'Math', 'Charsets', 'System', 'Locale',
     # عضوِ اسکوپِ کامپوزیبل - بدونِ ایمپورتِ جدا در دسترسه
     'ExposedDropdownMenu',
 }
@@ -64,7 +64,12 @@ for path in KT:
     # سازنده‌ی superclass تو اعلانِ کلاس (`: Application()`) نه فراخوانیِ معمولی
 
     local = set(re.findall(r'\b(?:fun|class|object|interface|val|var)\s+([A-Z]\w*)', src))
-    for m in re.finditer(r'(?<![\w.@])([A-Z]\w{2,})\s*\(', src):
+    # دو الگو: فراخوانیِ تابع/سازنده (`Name(`) و دسترسیِ عضوِ نوع (`Type.MEMBER`).
+    # الگوی دوم را نداشتیم و بیلدِ ۵۱۸ با `AppButtonVariant.SECONDARY`ِ بی‌ایمپورت شکست -
+    # enum و objectِ پروژه معمولاً همین‌طور مصرف می‌شوند، نه با پرانتز.
+    hits = list(re.finditer(r'(?<![\w.@])([A-Z]\w{2,})\s*\(', src))
+    hits += list(re.finditer(r'(?<![\w.@"])([A-Z]\w{2,})\.[A-Z_]\w*', src))
+    for m in hits:
         name = m.group(1)
         # نامِ تمام‌بزرگ = عضوِ enum یا ثابت، نه کامپوزیبل. الگوی خطایی که این بررسی
         # دنبالشه CamelCase ـه.

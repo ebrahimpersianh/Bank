@@ -54,6 +54,9 @@ for p, (pkg, names, src) in own.items():
     body = re.sub(r'//.*', '', body)
     body = re.sub(r'/\*.*?\*/', '', body, flags=re.S)
     used = set(re.findall(r'(?<![\w.])([A-Z]\w*)\s*\(', body))
+    # عضوِ enum/object هم پرانتز نداره: `AppButtonVariant.SECONDARY`. بیلدِ ۵۱۸ دقیقاً
+    # همین‌جا شکست - نوعِ پروژه ایمپورت نشده بود ولی چون با `(` صدا زده نمی‌شد دیده نمی‌شد.
+    used |= set(re.findall(r'(?<![\w.])([A-Z]\w*)\.[A-Z_]\w*', body))
     # پراپرتی‌ها با پرانتز صدا زده نمی‌شن، پس جدا دنبالِ ارجاعِ لختشون می‌گردیم.
     used |= {n for n in prop_names if re.search(r'(?<![\w.])' + n + r'(?![\w(])', body)}
     for name in sorted(used):
