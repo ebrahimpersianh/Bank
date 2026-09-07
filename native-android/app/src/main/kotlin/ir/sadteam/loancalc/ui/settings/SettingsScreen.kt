@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.BatterySaver
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.DarkMode
@@ -312,6 +313,10 @@ private enum class SettingsRoute(val title: String, val keywords: List<String>) 
     REMINDERS("یادآورها", listOf("یادآوری سررسید", "یادآوری روزانه", "نوتیف")),
     DATA("مدیریت داده‌های من", listOf("پشتیبان", "بکاپ", "بازیابی")),
     SMS("پیامک‌های بانکی", listOf("پیامک", "بانک", "خواندن خودکار")),
+    BACKGROUND(
+        "اجرا در پس‌زمینه",
+        listOf("پس زمینه", "همیشه روشن", "اجرای خودکار", "autostart", "باتری", "ری استارت", "بسته شدن"),
+    ),
     TOOLS("ابزارها", listOf("تقویم مالی", "آمار", "گزارش", "تاریخچه محاسبات")),
     SECURITY("امنیت", listOf("قفل", "PIN", "اثر انگشت")),
     COLOR_THEME("تمِ رنگی", listOf("تم", "رنگ", "پوسته", "سکه")),
@@ -480,6 +485,14 @@ private fun SettingsMainContent(
                         SettingsRoute.SMS,
                         tone = SettingsTone.GREEN,
                     ) { onOpen(SettingsRoute.SMS) }
+                    SettingsDivider()
+                }
+                if (matches(SettingsRoute.BACKGROUND)) {
+                    SettingsRow(
+                        Icons.Filled.BatterySaver,
+                        SettingsRoute.BACKGROUND,
+                        tone = SettingsTone.GREEN,
+                    ) { onOpen(SettingsRoute.BACKGROUND) }
                     SettingsDivider()
                 }
                 if (matches(SettingsRoute.DATA)) {
@@ -682,6 +695,7 @@ private fun SettingsSubPage(
                 SettingsRoute.REMINDERS -> ReminderToggles(notificationsViewModel, onShowReminderSettings)
                 SettingsRoute.DATA -> DataSettings(authViewModel, autoBackupViewModel, banner)
                 SettingsRoute.SMS -> SmsSettings(smsAutoImportViewModel, onOpenRules = { onOpenRules() })
+                SettingsRoute.BACKGROUND -> BackgroundRunSettings()
                 SettingsRoute.TOOLS -> ToolsSettings(onOpenTool)
                 // دیگه تو یه AppCardِ بیرونی پیچیده نمی‌شه - خودش گروه‌های خودشو داره.
                 SettingsRoute.SECURITY -> SecuritySettings(appLockViewModel)
@@ -1677,6 +1691,113 @@ private fun SmsParseTestScreen(onBack: () -> Unit) {
 }
 
 /** یه ردیفِ کلید-مقدارِ نتیجه‌ی آزمایش. مقدارِ درنیامده «—»ی کم‌رنگ می‌شه، نه خالی. */
+
+/**
+ * **اجرا در پس‌زمینه** - جوابِ خواسته‌ی «برنامه همیشه باز باشه و بعدِ ری‌استارت خودش بیاد».
+ *
+ * ⚠️ عمداً چیزی را که شدنی نیست وعده نمی‌دهد: اندروید اجازه‌ی «همیشه باز ماندن» به هیچ اپی
+ * نمی‌دهد. این صفحه دقیقاً همان سه شرطی را نشان می‌دهد که پس‌زمینه را زنده نگه می‌دارند و هر
+ * کدام را با یک دکمه به صفحه‌ی مربوطه‌ی خودِ گوشی می‌برد - رجوع کن به [BackgroundRunHelp].
+ */
+@Composable
+private fun BackgroundRunSettings() {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    // وضعیت باید بعدِ برگشتن از تنظیماتِ گوشی تازه بشه، وگرنه کاربر اجازه را می‌دهد و اینجا
+    // هنوز «داده نشده» می‌بیند - همان قاعده‌ی «سوئیچ دروغ نمی‌گوید».
+    var batteryOk by remember { mutableStateOf(BackgroundRunHelp.batteryUnrestricted(context)) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                batteryOk = BackgroundRunHelp.batteryUnrestricted(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    AppCard {
+        Text(
+            "بستنِ برنامه داده‌ها را متوقف نمی‌کند",
+            color = AppText,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Black,
+        )
+        Text(
+            "خواندنِ پیامک و اعلانِ بانکی و یادآورِ سررسید، جدا از باز بودنِ برنامه کار می‌کنند - " +
+                "لازم نیست جیبک روی صفحه بماند و اندروید هم به هیچ برنامه‌ای اجازه‌ی همیشه‌باز‌ماندن " +
+                "نمی‌دهد. فقط سه اجازه‌ی زیر باید برقرار باشد، وگرنه گوشی برنامه را در پس‌زمینه " +
+                "می‌خواباند.",
+            color = AppMuted,
+            fontSize = 11.5.sp,
+            lineHeight = 20.sp,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+    }
+
+    AppCard(modifier = Modifier.padding(top = 10.dp)) {
+        Text(
+            if (batteryOk) "۱ · باتری: انجام شده" else "۱ · معافیت از بهینه‌سازیِ باتری",
+            color = if (batteryOk) AppPrimaryInk else AppText,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.Black,
+        )
+        Text(
+            "بدونِ این، گوشی بعد از چند دقیقه کارهای پس‌زمینه‌ی برنامه را متوقف می‌کند و " +
+                "یادآورِ سررسید دیر می‌رسد یا اصلاً نمی‌رسد.",
+            color = AppMuted,
+            fontSize = 11.sp,
+            lineHeight = 19.sp,
+            modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
+        )
+        if (!batteryOk) {
+            GradientButton(
+                onClick = { runCatching { context.startActivity(BackgroundRunHelp.batteryIntent(context)) } },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("اجازه می‌دهم") }
+        }
+    }
+
+    if (BackgroundRunHelp.needsAutostartSetting()) {
+        AppCard(modifier = Modifier.padding(top = 10.dp)) {
+            Text("۲ · اجرای خودکار بعد از روشن‌شدنِ گوشی", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+            Text(
+                "سازنده‌ی این گوشی «اجرای خودکار» را پیش‌فرض خاموش می‌گذارد. تا وقتی روشن نشود، " +
+                    "بعد از خاموش‌وروشن‌کردنِ گوشی هیچ پیامکِ بانکی خودکار ثبت نمی‌شود تا وقتی " +
+                    "خودت یک‌بار برنامه را باز کنی.\n\n" + BackgroundRunHelp.autostartHint(),
+                color = AppMuted,
+                fontSize = 11.sp,
+                lineHeight = 19.sp,
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
+            )
+            GradientButton(
+                onClick = {
+                    // اگر صفحه‌ی مخصوصِ سازنده پیدا نشد، صفحه‌ی اطلاعاتِ خودِ برنامه باز می‌شود -
+                    // بن‌بست بهتر از کرشِ ActivityNotFound.
+                    val intent = BackgroundRunHelp.autostartIntent(context)
+                        ?: BackgroundRunHelp.appDetailsIntent(context)
+                    runCatching { context.startActivity(intent) }
+                },
+                variant = AppButtonVariant.SECONDARY,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("باز کردنِ تنظیماتِ گوشی") }
+        }
+    }
+
+    AppCard(modifier = Modifier.padding(top = 10.dp, bottom = 8.dp)) {
+        Text("۳ · قفل‌کردن در فهرستِ برنامه‌های اخیر", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+        Text(
+            "این یکی دکمه ندارد چون از داخلِ برنامه شدنی نیست: کلیدِ مربع (برنامه‌های اخیر) را " +
+                "بزن، روی کارتِ جیبک نگه دار و گزینه‌ی قفل را بزن. بعد از آن، بستنِ همه‌ی " +
+                "برنامه‌ها دیگر جیبک را نمی‌بندد.",
+            color = AppMuted,
+            fontSize = 11.sp,
+            lineHeight = 19.sp,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
+}
+
 @Composable
 private fun ParseResultRow(label: String, value: String?, valueColor: Color = AppText) {
     Row(

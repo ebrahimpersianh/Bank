@@ -10,6 +10,11 @@
          ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS اجرا نمی‌شه. لازمه چون WorkManager (یادآوری
          سررسید) رو خیلی گوشی‌ها بدون معافیت از بهینه‌سازی باتری پس‌زمینه‌ش کشته می‌شه. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- برای چیدنِ دوباره‌ی یادآورها بلافاصله بعد از روشن‌شدنِ گوشی (notifications/BootReceiver.kt).
+         WorkManager خودش هم این مجوز را اعلام می‌کند، ولی صریح نوشتنش اینجا وابستگی را روشن نگه
+         می‌دارد. ⚠️ روی شیائومی/هواوی/اوپو/ویوو تا «اجرای خودکار» اپ دستی روشن نشود این
+         Broadcast اصلاً به اپ نمی‌رسد - محدودیتِ سازنده، نه باگِ ما. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- برای «افزودن سررسید اقساط به تقویم گوشی» (calendar/DeviceCalendarExporter) - runtime تو
          LoanDetailScreen درخواست می‌شن؛ READ لازمه چون قبل از درج باید تقویمِ قابل‌نوشتن پیدا بشه. -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
@@ -78,6 +83,20 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/loan_widget_info" />
+        </receiver>
+
+        <!-- چیدنِ دوباره‌ی کارهای زمان‌بندی‌شده بعد از ری‌استارتِ گوشی یا آپدیتِ خودِ اپ. -->
+        <receiver
+            android:name=".notifications.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
         </receiver>
 
         <!-- خوندنِ خودکارِ پیامکِ بانکی - رجوع کن به notifications/BankSmsReceiver.kt. exported=true

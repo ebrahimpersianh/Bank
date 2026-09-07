@@ -19,6 +19,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.numberToWordsFa
+import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
@@ -41,6 +43,8 @@ import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.components.SuccessCheckmarkOverlay
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.appFieldColors
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -65,12 +69,18 @@ fun AddManualLoanScreen(
     }
     var name by remember(editingLoan) { mutableStateOf(editingLoan?.name ?: "") }
     var bank by remember(editingLoan) { mutableStateOf(editingLoan?.bank ?: "") }
-    var installmentText by remember(editingLoan) { mutableStateOf(editingLoan?.installment?.toLong()?.toString() ?: "") }
+    // فیلد **تومان**ه (بندِ ۲ی README): ذخیره ریال، نمایش و ورودی تومان. پس مقدارِ
+    // پیش‌پرکرده‌ی حالتِ ویرایش هم باید از ریالِ دیتابیس به تومان برگرده.
+    var installmentText by remember(editingLoan) {
+        mutableStateOf(
+            editingLoan?.installment?.let { rialToToman(it.toLong()).toString() } ?: "",
+        )
+    }
     var totalCountText by remember(editingLoan) { mutableStateOf(editingLoan?.n?.toString() ?: "") }
     var paidCountText by remember { mutableStateOf("") }
-    var startYear by remember(editingLoan) { mutableStateOf(initialStartDate.y) }
-    var startMonth by remember(editingLoan) { mutableStateOf(initialStartDate.m) }
-    var startDay by remember(editingLoan) { mutableStateOf(initialStartDate.d) }
+    var startYear by remember(editingLoan) { mutableIntStateOf(initialStartDate.y) }
+    var startMonth by remember(editingLoan) { mutableIntStateOf(initialStartDate.m) }
+    var startDay by remember(editingLoan) { mutableIntStateOf(initialStartDate.d) }
     var error by remember { mutableStateOf<String?>(null) }
     var showCalendarPicker by remember { mutableStateOf(false) }
     // موقعِ ذخیره (خصوصاً وقتی لاگین باشیم و پوشِ شبکه‌ای به سرور طول بکشه) دکمه هیچ نشونه‌ای نداشت -
@@ -102,7 +112,7 @@ fun AddManualLoanScreen(
                 if (editingLoan != null) "ویرایش وام" else "افزودن وام دستی",
                 color = AppText,
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.ExtraBold,
             )
         }
         item {
@@ -167,12 +177,14 @@ fun AddManualLoanScreen(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = appFieldColors(),
-                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                 )
-                val instRial = cleanNum(installmentText).toLongOrNull() ?: 0L
-                if (instRial > 0) {
+                // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد - تقسیمِ
+                // دستیِ «/ ۱۰» رفت؛ تنها مرجعِ تبدیل tomanToRial/rialToToman ئه.
+                val instToman = cleanNum(installmentText).toLongOrNull() ?: 0L
+                if (instToman > 0) {
                     Text(
-                        "${numberToWordsFa((instRial / 10).toDouble())} تومان",
+                        "${numberToWordsFa(instToman.toDouble())} تومان",
                         color = AppMuted,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 4.dp),
@@ -220,7 +232,9 @@ fun AddManualLoanScreen(
                         // بود، دکمه بی‌حرکت به‌نظر برسه، کاربر چندبار بزنه، و هر تپ یه وامِ کاملاً
                         // جدید بسازه (باگِ گزارش‌شده: ۶-۷ تا وامِ تکراری از یه ذخیره).
                         if (saving) return@GradientButton
-                        val installment = cleanNum(installmentText).toDoubleOrNull() ?: 0.0
+                        // ورودی تومانه و ذخیره ریال - تبدیل فقط همین یک نقطه.
+                        val installmentToman = cleanNum(installmentText).toLongOrNull() ?: 0L
+                        val installment = tomanToRial(installmentToman).toDouble()
                         val n = totalCountText.toIntOrNull() ?: 0
                         val paidCount = paidCountText.toIntOrNull() ?: 0
 
@@ -235,7 +249,7 @@ fun AddManualLoanScreen(
                             // اقساطِ ازقبل‌پرداخت‌شده بذاره، که تشخیصِ «تسویه‌شده»/داشبورد رو خراب
                             // می‌کرد.
                             editingLoan != null && n < editingLoan.paidCount ->
-                                "تعداد کل اقساط نمی‌تونه از تعدادِ اقساطِ ازقبل‌پرداخت‌شده (${editingLoan.paidCount}) کمتر باشه"
+                                "تعداد کل اقساط نمی‌تونه از تعدادِ اقساطِ ازقبل‌پرداخت‌شده (${toFa(editingLoan.paidCount)}) کمتر باشه"
                             else -> null
                         }
                         if (error == null) {

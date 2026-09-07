@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.theme.AppSegmentPill
 import ir.sadteam.loancalc.ui.theme.AppSegmentRail
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -106,13 +108,19 @@ fun CalculatorHostScreen(onCalculated: (BankLoanOutcome) -> Unit) {
             }
         }
 
-        Box(modifier = Modifier.fillMaxSize()) {
+        // `weight(1f)` نه `fillMaxSize()`: داخلِ همین Column، ارتفاعِ کاملِ والد رو خواستن
+        // یعنی ارتفاعِ سگمنت هم روش حساب می‌شه، پس تهِ محتوا به اندازه‌ی نوارِ بالا از کادر
+        // بیرون می‌زد (دکمه‌ی «محاسبه» تهِ فرمِ بانکی).
+        Box(modifier = Modifier.weight(1f)) {
             when (mode) {
                 CalcMode.INSTALLMENT -> BankLoanScreen(
                     onCalculated = { outcome ->
                         lastInstallment = outcome.result.installment
                         onCalculated(outcome)
                     },
+                    // ورودی که عوض شد، نتیجه‌ی قبلی باطله - وگرنه کارتِ سبز عددِ کهنه رو با
+                    // خودش به حالتِ دوم می‌بره و کاربر نمی‌فهمه از کجا اومده.
+                    onInputChanged = { lastInstallment = null },
                     // کارتِ سبزِ «از عهده‌اش برمی‌آیم؟» زیرِ نتیجه - تنها چیزی که این ادغام رو از
                     // دو تبِ جدا **بهتر** می‌کنه، نه فقط جمع‌وجورتر (تاکیدِ صریحِ طرح: حذفش نکن).
                     footer = {
@@ -159,15 +167,17 @@ private fun AffordabilityBridgeCard(installment: Double, onClick: () -> Unit) {
                 fontWeight = FontWeight.Black,
             )
             Text(
-                "با قسطِ ${fmt(installment)} ریال به حالتِ توانِ بازپرداخت برو",
+                "با قسطِ ${fmt(rialToToman(installment.toLong()).toDouble()).faDigits()} تومان به حالتِ توانِ بازپرداخت برو",
                 color = AppPrimaryInk,
                 fontSize = 9.5.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 3.dp),
             )
         }
+        // `ArrowForwardIos`ِ خودچرخان: تو RTL چپ رو نشون می‌ده، یعنی «برو جلو». نسخه‌ی
+        // `ArrowBackIos` تو RTL راست‌گرد می‌شد و «برگرد» معنی می‌داد.
         Icon(
-            Icons.AutoMirrored.Filled.ArrowBackIos,
+            Icons.AutoMirrored.Filled.ArrowForwardIos,
             contentDescription = null,
             tint = AppPrimaryInk,
             modifier = Modifier.size(15.dp),

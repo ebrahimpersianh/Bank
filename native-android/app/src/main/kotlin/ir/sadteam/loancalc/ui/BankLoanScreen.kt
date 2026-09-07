@@ -35,6 +35,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -107,6 +108,9 @@ fun BankLoanScreen(
     /** خانه‌ی خالیِ **زیرِ** دکمه‌ی محاسبه - میزبانِ `27f` کارتِ «از عهده‌اش برمی‌آیم؟» رو
      * اینجا می‌ذاره. پیش‌فرض خالیه، پس هر جای دیگه‌ای که این صفحه صدا زده بشه فرقی نمی‌کنه. */
     footer: @Composable () -> Unit = {},
+    /** هر تغییرِ ورودی‌های محاسبه را خبر می‌دهد. میزبانِ `27f` با این نتیجه‌ی قبلی را باطل
+     * می‌کند، وگرنه کارتِ پلِ سبز عددِ کهنه را با خودش به حالتِ دوم می‌برد. */
+    onInputChanged: () -> Unit = {},
 ) {
     val creditServices by creditRatesViewModel.rates.collectAsState()
     val creditRatesLoading by creditRatesViewModel.isLoading.collectAsState()
@@ -146,6 +150,21 @@ fun BankLoanScreen(
 
     var graceOn by rememberSaveable { mutableStateOf(false) }
     var graceMonths by rememberSaveable { mutableStateOf(6f) }
+
+    // یک نقطه‌ی اعلام به‌جای وصل‌کردن به تک‌تکِ onValueChangeها - جا افتادنِ یکی از فیلدها
+    // یعنی همان باگِ عددِ کهنه، فقط کمیاب‌تر و سخت‌یاب‌تر.
+    val inputSignature = listOf(
+        amountText, rateText, selectedMonths, customMonthsText, intervalDays,
+        graceOn, graceMonths, startYear, startMonth, startDay,
+    )
+    var lastSignature by remember { mutableStateOf(inputSignature) }
+    LaunchedEffect(inputSignature) {
+        // اولین ترکیب تغییر نیست؛ بدونِ این چک، نتیجه همان لحظه‌ی ورود به صفحه باطل می‌شد.
+        if (inputSignature != lastSignature) {
+            lastSignature = inputSignature
+            onInputChanged()
+        }
+    }
 
     var showCalendarPicker by rememberSaveable { mutableStateOf(false) }
     var showCheque by rememberSaveable { mutableStateOf(false) }
