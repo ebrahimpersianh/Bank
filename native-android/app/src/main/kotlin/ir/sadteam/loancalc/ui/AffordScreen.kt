@@ -22,6 +22,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,6 +51,9 @@ import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -60,6 +64,22 @@ import java.util.Locale
 
 private val affordMonthChipValues = listOf(12, 24, 36, 60, 120)
 
+// همه‌ی فیلدهای این صفحه **تومان**ن (بندِ ۲ی README)؛ موتورهای محاسبه ریال می‌گیرن، پس تبدیل
+// فقط تو لبه‌ی هر `onClick` می‌شینه. بازه‌های اسلایدر هم ÷۱۰ شدن.
+private const val PAY_MIN_TOMAN = 1_000_000f
+private const val PAY_MAX_TOMAN = 50_000_000f
+private const val LOAN_MIN_TOMAN = 10_000_000f
+private const val LOAN_MAX_TOMAN = 1_000_000_000f
+private const val INST_MIN_TOMAN = 100_000f
+private const val INST_MAX_TOMAN = 20_000_000f
+
+private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
+
+/** نمایشِ حداکثر دو رقمِ اعشار. `Locale.US` اجباریه - خروجی تو فیلدِ نرخ می‌شینه که بعد
+ * `toDoubleOrNull()` می‌شه؛ رقمِ فارسی یعنی نرخِ بی‌صدا صفر. */
+private fun trimRateAfford(v: Float): String =
+    if (v == v.toLong().toFloat()) v.toLong().toString() else String.format(Locale.US, "%.2f", v)
+
 /** پورت مو‌به‌موی تب «چقدر وام می‌تونم بگیرم؟» (view-afford تو www/index.html). */
 @Composable
 fun AffordScreen(
@@ -68,12 +88,13 @@ fun AffordScreen(
      * نباشه عددی که همین الان محاسبه شد رو دستی دوباره بزنه (بندِ صریحِ فریمِ `27f`). */
     initialInstallment: Double? = null,
 ) {
-    val seed = initialInstallment?.takeIf { it > 0 }?.toLong()
-    var payText by remember { mutableStateOf(seed?.toString() ?: "100000000") }
-    var paySlider by remember { mutableStateOf((seed ?: 100_000_000L).toFloat()) }
+    // `initialInstallment` از موتور میاد پس ریاله؛ فیلد تومانه.
+    val seed = initialInstallment?.takeIf { it > 0 }?.let { rialToToman(it.toLong()) }
+    var payText by remember { mutableStateOf(seed?.toString() ?: "10000000") }
+    var paySlider by remember { mutableFloatStateOf((seed ?: 10_000_000L).toFloat()) }
 
     var rateText by remember { mutableStateOf("23") }
-    var rateSlider by remember { mutableStateOf(23f) }
+    var rateSlider by remember { mutableFloatStateOf(23f) }
 
     var monthsText by remember { mutableStateOf("36") }
 
@@ -98,19 +119,20 @@ fun AffordScreen(
                             val digits = cleanNum(raw)
                             val n = digits.toLongOrNull() ?: 0L
                             payText = digits
-                            if (n in 10_000_000L..500_000_000L) paySlider = n.toFloat()
+                            if (n in PAY_MIN_TOMAN.toLong()..PAY_MAX_TOMAN.toLong()) paySlider = n.toFloat()
                         },
                         visualTransformation = ThousandsSeparatorTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                     )
-                    val rialVal = cleanNum(payText).toLongOrNull() ?: 0L
-                    if (rialVal > 0) {
+                    // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد.
+                    val tomanVal = cleanNum(payText).toLongOrNull() ?: 0L
+                    if (tomanVal > 0) {
                         Text(
-                            text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
+                            text = "${numberToWordsFa(tomanVal.toDouble())} تومان",
                             color = AppMuted,
                             fontSize = 11.5.sp,
                             modifier = Modifier.padding(top = 4.dp),
@@ -122,10 +144,10 @@ fun AffordScreen(
                             paySlider = v
                             payText = v.toLong().toString()
                         },
-                        valueRange = 10_000_000f..500_000_000f,
+                        valueRange = PAY_MIN_TOMAN..PAY_MAX_TOMAN,
                         // پله‌بندی به گامِ نیم‌میلیون‌تومانی (رنجِ این فیلد کوچیک‌تر از مبلغِ وامه،
                         // برای همین گامِ ریزتر - رجوع کن به amountSliderSteps).
-                        steps = amountSliderSteps(10_000_000f..500_000_000f, chunk = 5_000_000f),
+                        steps = amountSliderSteps(PAY_MIN_TOMAN..PAY_MAX_TOMAN, chunk = 500_000f),
                     )
                 }
             }
@@ -154,8 +176,7 @@ fun AffordScreen(
                         value = rateSlider,
                         onValueChange = { v ->
                             rateSlider = v
-                            // نمایشِ حداکثر دو رقمِ اعشار - رجوع کن به BankLoanScreen.trimRate.
-                            rateText = if (v == v.toLong().toFloat()) v.toLong().toString() else String.format(Locale.US, "%.2f", v)
+                            rateText = trimRateAfford(v)
                         },
                         valueRange = 0f..50f,
                         steps = 99,
@@ -196,18 +217,20 @@ fun AffordScreen(
 
         item {
             StaggerIn(3) {
-                val pay = cleanNum(payText).toLongOrNull() ?: 0L
+                val payToman = cleanNum(payText).toLongOrNull() ?: 0L
                 val rate = rateText.toDoubleOrNull() ?: 0.0
                 val n = monthsText.toIntOrNull() ?: 36
                 GradientButton(
                     onClick = {
-                        if (pay > 0) {
-                            val maxPrincipal = AffordabilityCalculator.computeMaxPrincipal(pay.toDouble(), rate, n)
+                        if (payToman > 0) {
+                            // ورودی تومانه و موتور ریال می‌خواد - تبدیل فقط همین یک نقطه.
+                            val payRial = tomanToRial(payToman).toDouble()
+                            val maxPrincipal = AffordabilityCalculator.computeMaxPrincipal(payRial, rate, n)
                             result = maxPrincipal
                             historyViewModel.log(
                                 kind = "AFFORD",
                                 title = "محاسبه‌گر سقف وام",
-                                summary = "قسط ${fmt(pay.toDouble())} ریال × ${toFa(n)} ماه، نرخ ${toFa(rate)}٪",
+                                summary = "قسط ${amountToman(payRial)} تومان × ${toFa(n)} ماه، نرخ ${toFa(rate)}٪",
                                 amount = maxPrincipal,
                             )
                         }
@@ -225,9 +248,9 @@ fun AffordScreen(
                 // ثابته (شمردنِ کلمه‌به‌کلمه بی‌معنی/گیج‌کننده می‌شد).
                 val animatedMax = countUpDouble(p)
                 AppCard(label = "حداکثر مبلغ وامی که می‌تونی بگیری") {
-                    Text(text = "${fmt(animatedMax)} ریال", fontSize = 20.sp, color = AppPrimary)
+                    Text(text = "${amountToman(animatedMax)} تومان", fontSize = 20.sp, color = AppPrimary)
                     Text(
-                        text = "${numberToWordsFa(p / 10)} تومان",
+                        text = "${numberToWordsFa(rialToToman(p.toLong()).toDouble())} تومان",
                         color = AppMuted,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(top = 4.dp),
@@ -245,9 +268,9 @@ fun AffordScreen(
 @Composable
 private fun RateFinderCard() {
     var amountText by remember { mutableStateOf("") }
-    var amountSlider by remember { mutableStateOf(100_000_000f) }
+    var amountSlider by remember { mutableFloatStateOf(LOAN_MIN_TOMAN) }
     var installmentText by remember { mutableStateOf("") }
-    var installmentSlider by remember { mutableStateOf(1_000_000f) }
+    var installmentSlider by remember { mutableFloatStateOf(INST_MIN_TOMAN) }
     var monthsText by remember { mutableStateOf("36") }
     var result by remember { mutableStateOf<Double?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -273,24 +296,29 @@ private fun RateFinderCard() {
                     val digits = cleanNum(raw)
                     val n = digits.toLongOrNull() ?: 0L
                     amountText = digits
-                    if (n in 100_000_000L..10_000_000_000L) amountSlider = n.toFloat()
+                    if (n in LOAN_MIN_TOMAN.toLong()..LOAN_MAX_TOMAN.toLong()) amountSlider = n.toFloat()
                 },
                 visualTransformation = ThousandsSeparatorTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("مبلغ وام (ریال)", color = AppMuted, fontSize = 13.sp) },
+                suffix = { Text("مبلغ وام (تومان)", color = AppMuted, fontSize = 13.sp) },
             )
-            (cleanNum(amountText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { r ->
-                Text("${numberToWordsFa((r / 10).toDouble())} تومان", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+            (cleanNum(amountText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
+                Text(
+                    "${numberToWordsFa(t.toDouble())} تومان",
+                    color = AppMuted,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
             SlimSlider(
                 value = amountSlider,
                 onValueChange = { v -> amountSlider = v; amountText = v.toLong().toString() },
-                valueRange = 100_000_000f..10_000_000_000f,
+                valueRange = LOAN_MIN_TOMAN..LOAN_MAX_TOMAN,
                 modifier = Modifier.padding(top = 6.dp),
-                steps = amountSliderSteps(100_000_000f..10_000_000_000f),
+                steps = amountSliderSteps(LOAN_MIN_TOMAN..LOAN_MAX_TOMAN),
             )
             OutlinedTextField(
                 value = installmentText,
@@ -298,7 +326,7 @@ private fun RateFinderCard() {
                     val digits = cleanNum(raw)
                     val n = digits.toLongOrNull() ?: 0L
                     installmentText = digits
-                    if (n in 1_000_000L..200_000_000L) installmentSlider = n.toFloat()
+                    if (n in INST_MIN_TOMAN.toLong()..INST_MAX_TOMAN.toLong()) installmentSlider = n.toFloat()
                 },
                 visualTransformation = ThousandsSeparatorTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -307,17 +335,22 @@ private fun RateFinderCard() {
                     .padding(top = 8.dp),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("مبلغ هر قسط (ریال)", color = AppMuted, fontSize = 13.sp) },
+                suffix = { Text("مبلغ هر قسط (تومان)", color = AppMuted, fontSize = 13.sp) },
             )
-            (cleanNum(installmentText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { r ->
-                Text("${numberToWordsFa((r / 10).toDouble())} تومان", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+            (cleanNum(installmentText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
+                Text(
+                    "${numberToWordsFa(t.toDouble())} تومان",
+                    color = AppMuted,
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
             SlimSlider(
                 value = installmentSlider,
                 onValueChange = { v -> installmentSlider = v; installmentText = v.toLong().toString() },
-                valueRange = 1_000_000f..200_000_000f,
+                valueRange = INST_MIN_TOMAN..INST_MAX_TOMAN,
                 modifier = Modifier.padding(top = 6.dp),
-                steps = amountSliderSteps(1_000_000f..200_000_000f, chunk = 1_000_000f),
+                steps = amountSliderSteps(INST_MIN_TOMAN..INST_MAX_TOMAN, chunk = 100_000f),
             )
             OutlinedTextField(
                 value = monthsText,
@@ -335,8 +368,9 @@ private fun RateFinderCard() {
             }
             OutlinedButton(
                 onClick = {
-                    val principal = cleanNum(amountText).toLongOrNull() ?: 0L
-                    val installment = cleanNum(installmentText).toLongOrNull() ?: 0L
+                    // هر دو فیلد تومانن؛ نسبتشون تو نرخ اثر نداره ولی موتور ریال می‌گیره.
+                    val principal = tomanToRial(cleanNum(amountText).toLongOrNull() ?: 0L)
+                    val installment = tomanToRial(cleanNum(installmentText).toLongOrNull() ?: 0L)
                     val months = monthsText.toIntOrNull() ?: 0
                     val found = RateFinderCalculator.findRate(principal.toDouble(), installment.toDouble(), months)
                     if (found == null) {
@@ -361,7 +395,7 @@ private fun RateFinderCard() {
             }
             result?.let { r ->
                 Text(
-                    text = "نرخ سود سالانه تقریبی: ${toFa(String.format("%.1f", r))}٪",
+                    text = "نرخ سود سالانه تقریبی: ${toFa(String.format(Locale.US, "%.1f", r))}٪",
                     color = AppPrimary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,

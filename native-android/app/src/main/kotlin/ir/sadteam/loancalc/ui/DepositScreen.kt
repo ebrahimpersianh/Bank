@@ -15,6 +15,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,22 +43,36 @@ import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.countUpDouble
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import java.util.Locale
 
 private val depositMonthOptions = listOf(1 to "۱ ماهه", 3 to "۳ ماهه", 6 to "۶ ماهه", 12 to "۱ ساله", 24 to "۲ ساله")
 
+// فیلدِ مبلغ **تومان**ه (بندِ ۲ی README)؛ `DepositCalculator` ریال می‌گیره، پس تبدیل فقط تو
+// لبه‌ی دکمه‌ی محاسبه. بازه‌ی اسلایدر هم ÷۱۰ شد.
+private const val DEPOSIT_MIN_TOMAN = 10_000_000f
+private const val DEPOSIT_MAX_TOMAN = 1_000_000_000f
+
+private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
+
+/** `Locale.US` اجباریه - خروجی تو فیلدِ نرخ می‌شینه که بعد `toDoubleOrNull()` می‌شه. */
+private fun trimRateDeposit(v: Float): String =
+    if (v == v.toLong().toFloat()) v.toLong().toString() else String.format(Locale.US, "%.2f", v)
+
 /** پورت مو‌به‌موی تب «سود سپرده» (view-deposit تو www/index.html، calculateDeposit). */
 @Composable
 fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel()) {
-    var amountText by remember { mutableStateOf("2500000000") }
-    var amountSlider by remember { mutableStateOf(2_500_000_000f) }
+    var amountText by remember { mutableStateOf("250000000") }
+    var amountSlider by remember { mutableFloatStateOf(250_000_000f) }
 
     var rateText by remember { mutableStateOf("18") }
-    var rateSlider by remember { mutableStateOf(18f) }
+    var rateSlider by remember { mutableFloatStateOf(18f) }
 
-    var selectedMonths by remember { mutableStateOf(12) }
+    var selectedMonths by remember { mutableIntStateOf(12) }
 
     var result by remember { mutableStateOf<DepositResult?>(null) }
 
@@ -81,19 +97,22 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                             val digits = cleanNum(raw)
                             val n = digits.toLongOrNull() ?: 0L
                             amountText = digits
-                            if (n in 100_000_000L..10_000_000_000L) amountSlider = n.toFloat()
+                            if (n in DEPOSIT_MIN_TOMAN.toLong()..DEPOSIT_MAX_TOMAN.toLong()) {
+                                amountSlider = n.toFloat()
+                            }
                         },
                         visualTransformation = ThousandsSeparatorTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                     )
-                    val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
-                    if (rialVal > 0) {
+                    // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد.
+                    val tomanVal = cleanNum(amountText).toLongOrNull() ?: 0L
+                    if (tomanVal > 0) {
                         Text(
-                            text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
+                            text = "${numberToWordsFa(tomanVal.toDouble())} تومان",
                             color = AppMuted,
                             fontSize = 11.5.sp,
                             modifier = Modifier.padding(top = 4.dp),
@@ -105,9 +124,9 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                             amountSlider = v
                             amountText = v.toLong().toString()
                         },
-                        valueRange = 100_000_000f..10_000_000_000f,
+                        valueRange = DEPOSIT_MIN_TOMAN..DEPOSIT_MAX_TOMAN,
                         // پله‌بندی به گامِ ۱۰میلیون‌تومانی - رجوع کن به amountSliderSteps.
-                        steps = amountSliderSteps(100_000_000f..10_000_000_000f),
+                        steps = amountSliderSteps(DEPOSIT_MIN_TOMAN..DEPOSIT_MAX_TOMAN),
                     )
                 }
             }
@@ -136,8 +155,7 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                         value = rateSlider,
                         onValueChange = { v ->
                             rateSlider = v
-                            // نمایشِ حداکثر دو رقمِ اعشار - رجوع کن به BankLoanScreen.trimRate.
-                            rateText = if (v == v.toLong().toFloat()) v.toLong().toString() else String.format(Locale.US, "%.2f", v)
+                            rateText = trimRateDeposit(v)
                         },
                         valueRange = 0f..50f,
                         steps = 99,
@@ -165,14 +183,16 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
             StaggerIn(3) {
                 GradientButton(
                     onClick = {
-                        val principal = cleanNum(amountText).toLongOrNull() ?: 0L
-                        if (principal > 0) {
-                            val computed = DepositCalculator.compute(principal.toDouble(), rateText.toDoubleOrNull() ?: 0.0, selectedMonths)
+                        val principalToman = cleanNum(amountText).toLongOrNull() ?: 0L
+                        if (principalToman > 0) {
+                            // ورودی تومانه و موتور ریال می‌خواد - تبدیل فقط همین یک نقطه.
+                            val principal = tomanToRial(principalToman).toDouble()
+                            val computed = DepositCalculator.compute(principal, rateText.toDoubleOrNull() ?: 0.0, selectedMonths)
                             result = computed
                             historyViewModel.log(
                                 kind = "DEPOSIT",
                                 title = "سود سپرده",
-                                summary = "مبلغ ${fmt(principal.toDouble())} ریال × ${toFa(selectedMonths)} ماه",
+                                summary = "مبلغ ${amountToman(principal)} تومان × ${toFa(selectedMonths)} ماه",
                                 amount = computed.finalAmount,
                             )
                         }
@@ -194,8 +214,8 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                 val animatedFinal = countUpDouble(r.finalAmount)
                 AppCard {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        DepositStat(label = "سود روزانه (ریال)", value = fmt(animatedDaily), modifier = Modifier.weight(1f))
-                        DepositStat(label = "سود ماهانه (ریال)", value = fmt(animatedMonthly), modifier = Modifier.weight(1f))
+                        DepositStat(label = "سود روزانه (تومان)", value = amountToman(animatedDaily), modifier = Modifier.weight(1f))
+                        DepositStat(label = "سود ماهانه (تومان)", value = amountToman(animatedMonthly), modifier = Modifier.weight(1f))
                     }
                     Row(
                         modifier = Modifier
@@ -203,8 +223,8 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                             .padding(top = 10.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        DepositStat(label = "کل سود دوره (ریال)", value = fmt(animatedTotal), modifier = Modifier.weight(1f))
-                        DepositStat(label = "مبلغ نهایی (ریال)", value = fmt(animatedFinal), modifier = Modifier.weight(1f))
+                        DepositStat(label = "کل سود دوره (تومان)", value = amountToman(animatedTotal), modifier = Modifier.weight(1f))
+                        DepositStat(label = "مبلغ نهایی (تومان)", value = amountToman(animatedFinal), modifier = Modifier.weight(1f))
                     }
                 }
             }

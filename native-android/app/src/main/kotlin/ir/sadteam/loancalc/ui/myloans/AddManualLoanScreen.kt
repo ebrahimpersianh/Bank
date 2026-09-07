@@ -65,7 +65,9 @@ fun AddManualLoanScreen(
     viewModel: MyLoansViewModel = hiltViewModel(),
 ) {
     val initialStartDate = remember(editingLoan) {
-        editingLoan?.let { viewModel.getLoanStartDate(it) } ?: PersianDate(1404, 1, 1)
+        // پیش‌فرضِ وامِ تازه **امروز**ه. عددِ ثابتِ ۱۴۰۴/۱/۱ با گذشتِ سال کهنه می‌شد و چون
+        // مبنای جدولِ اقساط است، وامِ تازه سررسیدهای گذشته می‌گرفت.
+        editingLoan?.let { viewModel.getLoanStartDate(it) } ?: viewModel.todayJalali()
     }
     var name by remember(editingLoan) { mutableStateOf(editingLoan?.name ?: "") }
     var bank by remember(editingLoan) { mutableStateOf(editingLoan?.bank ?: "") }

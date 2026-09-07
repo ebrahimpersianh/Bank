@@ -311,28 +311,31 @@ class MyLoansViewModel @Inject constructor(
      * گذشته. برای حالتِ «سررسیدِ نزدیک»ِ فریمِ 27a. */
     fun daysUntilToday(date: PersianDate): Int = JalaliCalendar.daysBetween(JalaliCalendar.today(), date)
 
-    /** تاریخِ تسویه‌ی هر وام = تاریخِ پرداختِ آخرین قسط. ستونِ `settledAt` عمداً اضافه نشد (تاییدِ
-     * صریحِ طراح). چون تاریخِ واقعیِ پرداخت فقط برای پرداختِ **با تاخیر** ذخیره می‌شه، برای پرداختِ
-     * به‌موقع سررسیدِ همون قسط استفاده می‌شه - که برای پرداختِ به‌موقع دقیقاً همون روزه. */
-    suspend fun lastPaidDates(loans: List<LoanEntity>): Map<Long, PersianDate> =
-        loans.mapNotNull { loan ->
-            val last = getRows(loan).lastOrNull { it["paid"] == true } ?: return@mapNotNull null
-            val paid = last["paidDate"] as? Map<*, *>
-            val y = (paid?.get("y") as? Number)?.toInt()
-            val m = (paid?.get("m") as? Number)?.toInt()
-            val d = (paid?.get("d") as? Number)?.toInt()
-            val date = if (y != null && m != null && d != null) {
-                PersianDate(y, m, d)
-            } else {
-                val due = last["dueDate"] as? Map<*, *> ?: return@mapNotNull null
-                PersianDate(
-                    (due["y"] as? Number)?.toInt() ?: return@mapNotNull null,
-                    (due["m"] as? Number)?.toInt() ?: return@mapNotNull null,
-                    (due["d"] as? Number)?.toInt() ?: return@mapNotNull null,
-                )
-            }
-            loan.id to date
+    /**
+     * تاریخِ **تسویه**ی هر وام = تاریخِ پرداختِ آخرین قسطی که پرداخت شده.
+     *
+     * ستونِ `settledAt` عمداً اضافه نشد (تاییدِ صریحِ طراح) - خودِ ردیف‌ها تاریخ دارند. چون
+     * تاریخِ واقعیِ پرداخت فقط برای پرداختِ **با تاخیر** ذخیره می‌شود، برای پرداختِ به‌موقع
+     * سررسیدِ همان قسط جایش می‌نشیند که همان روز است.
+     *
+     * **بزرگ‌ترین تاریخ** برداشته می‌شود نه آخرین شماره‌قسط: اگر کاربر قسطِ سومش را خیلی دیر
+     * (بعد از سررسیدِ قسطِ آخر) پرداخت کرده باشد، تاریخِ واقعیِ تسویه همان است.
+     */
+    suspend fun lastPaidDates(loans: List<LoanEntity>): Map<Long, PersianDate> {
+        val today = JalaliCalendar.today()
+        return loans.mapNotNull { loan ->
+            val last = getRows(loan)
+                .filter { it["paid"] == true }
+                .mapNotNull { row ->
+                    dateOfRowField(row["paidDate"]) ?: dateOfRowField(row["dueDate"])
+                }
+                // ⚠️ مقایسه با `daysBetween`ِ خودِ JalaliCalendar (الگوریتمِ دقیقِ Borkowski با
+                // تستِ رگرسیون)، نه یک شمارنده‌ی روزِ دست‌ساز - قاعده‌ی «منطقِ تاریخ فقط یک‌جا».
+                .maxByOrNull { JalaliCalendar.daysBetween(today, it) }
+                ?: return@mapNotNull null
+            loan.id to last
         }.toMap()
+    }
 
     /** پورت rows[].paid تو www/index.html - وضعیت پرداخت هر قسط مستقله، نه یه آستانه‌ی ترتیبی. */
     suspend fun getRows(loan: LoanEntity): List<Map<String, Any?>> = loanRepository.getRows(loan)
@@ -473,4 +476,13 @@ class MyLoansViewModel @Inject constructor(
         val token = authPrefs.authToken.first()
         if (!token.isNullOrEmpty()) loanRepository.pushToServer(token)
     }
+}
+
+/** نقشه‌ی `{y,m,d}`ی ردیف‌های قسط به [PersianDate]؛ ناقص/نبود یعنی `null`. */
+private fun dateOfRowField(value: Any?): PersianDate? {
+    val map = value as? Map<*, *> ?: return null
+    val y = (map["y"] as? Number)?.toInt() ?: return null
+    val m = (map["m"] as? Number)?.toInt() ?: return null
+    val d = (map["d"] as? Number)?.toInt() ?: return null
+    return PersianDate(y, m, d)
 }

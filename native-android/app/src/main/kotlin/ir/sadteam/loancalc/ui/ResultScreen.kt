@@ -45,7 +45,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -85,8 +87,12 @@ import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.amountSliderSteps
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
+import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
 import ir.sadteam.loancalc.ui.myloans.MyLoansViewModel
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
@@ -103,13 +109,16 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToLong
 import kotlin.math.sin
-import kotlinx.coroutines.delay
 import java.util.Locale
+import kotlinx.coroutines.delay
 
-private val faMonthNamesResult = listOf(
-    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
-)
+// نامِ ماه از `persianMonthName`ِ مشترک میاد - این لیستِ محلی یه کپیِ دیگه‌ش بود.
+// ذخیره/محاسبه ریال است و نمایش تومان (بندِ ۲ی README): تنها نقطه‌ی تبدیلِ نمایشِ این فایل.
+private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
+
+/** بازه‌ی اسلایدرِ مبلغ، **تومان**. قبلاً ریال بود و ÷۱۰ شد، وگرنه اسلایدر تا ده میلیارد تومان می‌رفت. */
+private const val AMOUNT_MIN_TOMAN = 10_000_000f
+private const val AMOUNT_MAX_TOMAN = 1_000_000_000f
 
 @Composable
 fun ResultScreen(
@@ -130,7 +139,7 @@ fun ResultScreen(
         historyViewModel.log(
             kind = "LOAN",
             title = if (outcome.borrower != "—") "وام ${outcome.borrower} (${outcome.bankName})" else outcome.bankName,
-            summary = "قسط ${fmt(outcome.result.installment)} ریال × ${toFa(outcome.n)} ماه، نرخ ${toFa(outcome.ratePct)}٪",
+            summary = "قسط ${amountToman(outcome.result.installment)} تومان × ${toFa(outcome.n)} ماه، نرخ ${toFa(outcome.ratePct)}٪",
             amount = outcome.result.principal,
         )
     }
@@ -141,19 +150,25 @@ fun ResultScreen(
     // outcome*ِ ورودی* دوباره مقداردهی می‌شن - یعنی هر بار یه محاسبه‌ی *جدید* از فرم میاد (outcome
     // عوض می‌شه)، ویرایشِ قبلی خودکار پاک/بازنشانی می‌شه.
     var editMode by remember { mutableStateOf(false) }
-    var editAmountText by remember(outcome) { mutableStateOf(outcome.result.originalPrincipal.toLong().toString()) }
+    // فیلدِ مبلغ و اسلایدرش **تومان**ن (بندِ ۲ی README)؛ تبدیل به ریال فقط تو liveOutcome.
+    var editAmountText by remember(outcome) {
+        mutableStateOf(rialToToman(outcome.result.originalPrincipal.toLong()).toString())
+    }
     var editAmountSlider by remember(outcome) {
-        mutableStateOf(outcome.result.originalPrincipal.toFloat().coerceIn(100_000_000f, 10_000_000_000f))
+        mutableFloatStateOf(
+            rialToToman(outcome.result.originalPrincipal.toLong()).toFloat()
+                .coerceIn(AMOUNT_MIN_TOMAN, AMOUNT_MAX_TOMAN),
+        )
     }
     var editRateText by remember(outcome) { mutableStateOf(trimRateResult(outcome.ratePct)) }
-    var editRateSlider by remember(outcome) { mutableStateOf(outcome.ratePct.toFloat().coerceIn(0f, 50f)) }
+    var editRateSlider by remember(outcome) { mutableFloatStateOf(outcome.ratePct.toFloat().coerceIn(0f, 50f)) }
     var editNText by remember(outcome) { mutableStateOf(outcome.n.toString()) }
-    var editStartYear by remember(outcome) { mutableStateOf(outcome.startDate.y) }
-    var editStartMonth by remember(outcome) { mutableStateOf(outcome.startDate.m) }
-    var editStartDay by remember(outcome) { mutableStateOf(outcome.startDate.d) }
+    var editStartYear by remember(outcome) { mutableIntStateOf(outcome.startDate.y) }
+    var editStartMonth by remember(outcome) { mutableIntStateOf(outcome.startDate.m) }
+    var editStartDay by remember(outcome) { mutableIntStateOf(outcome.startDate.d) }
     var editGraceOn by remember(outcome) { mutableStateOf(outcome.result.graceMonths > 0) }
     var editGraceMonths by remember(outcome) {
-        mutableStateOf(if (outcome.result.graceMonths > 0) outcome.result.graceMonths.toFloat() else 6f)
+        mutableFloatStateOf(if (outcome.result.graceMonths > 0) outcome.result.graceMonths.toFloat() else 6f)
     }
     var editBankName by remember(outcome) { mutableStateOf(outcome.bankName) }
     var editBorrower by remember(outcome) { mutableStateOf(outcome.borrower) }
@@ -166,7 +181,9 @@ fun ResultScreen(
         editStartYear, editStartMonth, editStartDay,
         editGraceOn, editGraceMonths, editBankName, editBorrower,
     ) {
-        val amount = cleanNum(editAmountText).toDoubleOrNull()?.takeIf { it > 0 } ?: outcome.result.originalPrincipal
+        // ورودی تومانه و موتورِ محاسبه ریال می‌خواد - تبدیل فقط همین یک نقطه.
+        val amount = cleanNum(editAmountText).toLongOrNull()?.takeIf { it > 0 }
+            ?.let { tomanToRial(it).toDouble() } ?: outcome.result.originalPrincipal
         val rate = editRateText.toDoubleOrNull() ?: outcome.ratePct
         val n = editNText.toIntOrNull()?.coerceAtLeast(1) ?: outcome.n
         val method = if (rate <= 4.0) LoanMethod.QARZ else LoanMethod.STANDARD
@@ -215,11 +232,11 @@ fun ResultScreen(
 
     // شمارش صعودی اعداد (پورت animateNumber وب) - رو Double تا برای مبالغ میلیاردی خطای گردکردن
     // Float (که تا چند صد ریال می‌رسید) پیش نیاد.
-    var animatedInstallment by remember { mutableStateOf(0.0) }
+    var animatedInstallment by remember { mutableDoubleStateOf(0.0) }
     LaunchedEffect(result.installment) {
         animateValue(0.0, result.installment) { animatedInstallment = it }
     }
-    var animatedTotal by remember { mutableStateOf(0.0) }
+    var animatedTotal by remember { mutableDoubleStateOf(0.0) }
     LaunchedEffect(result.totalPaid) {
         animateValue(0.0, result.totalPaid) { animatedTotal = it }
     }
@@ -308,18 +325,21 @@ fun ResultScreen(
                                 val digits = cleanNum(raw)
                                 editAmountText = digits
                                 val n = digits.toLongOrNull() ?: 0L
-                                if (n in 100_000_000L..10_000_000_000L) editAmountSlider = n.toFloat()
+                                if (n in AMOUNT_MIN_TOMAN.toLong()..AMOUNT_MAX_TOMAN.toLong()) {
+                                    editAmountSlider = n.toFloat()
+                                }
                             },
                             visualTransformation = ThousandsSeparatorTransformation(),
-                            suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             colors = appFieldColors(),
                         )
-                        (editAmountText.toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { r ->
+                        // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد.
+                        (cleanNum(editAmountText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
                             Text(
-                                "${numberToWordsFa((r / 10).toDouble())} تومان",
+                                "${numberToWordsFa(t.toDouble())} تومان",
                                 color = AppMuted,
                                 fontSize = 11.5.sp,
                                 modifier = Modifier.padding(top = 4.dp),
@@ -331,8 +351,8 @@ fun ResultScreen(
                                 editAmountSlider = v
                                 editAmountText = v.toLong().toString()
                             },
-                            valueRange = 100_000_000f..10_000_000_000f,
-                            steps = amountSliderSteps(100_000_000f..10_000_000_000f),
+                            valueRange = AMOUNT_MIN_TOMAN..AMOUNT_MAX_TOMAN,
+                            steps = amountSliderSteps(AMOUNT_MIN_TOMAN..AMOUNT_MAX_TOMAN),
                         )
                     }
                     AppCard(label = "نرخ سود سالانه") {
@@ -463,9 +483,14 @@ fun ResultScreen(
                     MoneyParticleBurst(trigger = result, modifier = Modifier.size(220.dp))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         PrivacyCrossfade(privacyMode) { masked ->
-                            Text(maskIfPrivate(masked, fmt(animatedInstallment)), color = AppText, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text(
+                                maskIfPrivate(masked, amountToman(animatedInstallment)),
+                                color = AppText,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                            )
                         }
-                        Text("قسط ماهانه (ریال)", fontSize = 12.5.sp, color = AppMuted)
+                        Text("قسط ماهانه (تومان)", fontSize = 12.5.sp, color = AppMuted)
                     }
                 }
             }
@@ -474,7 +499,7 @@ fun ResultScreen(
         item {
             StaggerIn(1) {
                 Text(
-                    text = "${numberToWordsFa(result.installment / 10)} تومان",
+                    text = "${numberToWordsFa(rialToToman(result.installment.toLong()).toDouble())} تومان",
                     color = AppMuted,
                     fontSize = 13.5.sp,
                     textAlign = TextAlign.Center,
@@ -562,7 +587,7 @@ fun ResultScreen(
             StaggerIn(2) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     PrivacyCrossfade(privacyMode, modifier = Modifier.weight(1.3f)) { masked ->
-                        StatBox("کل بازپرداخت (ریال)", maskIfPrivate(masked, fmt(animatedTotal)))
+                        StatBox("کل بازپرداخت (تومان)", maskIfPrivate(masked, amountToman(animatedTotal)))
                     }
                     StatBox("سررسید هر ماه", ordinalFa(outcome.startDate.d), Modifier.weight(1f))
                     StatBox("مدت وام", "${toFa(outcome.n)} ماه", Modifier.weight(1f))
@@ -574,14 +599,14 @@ fun ResultScreen(
             StaggerIn(3) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     val pctText = if (interestPct < 10) {
-                        toFa(String.format("%.1f", interestPct))
+                        toFa(String.format(Locale.US, "%.1f", interestPct))
                     } else {
                         toFa(interestPct.roundToLong().toString())
                     }
                     StatBox("سود نسبت به اصل وام", "$pctText٪", Modifier.weight(1f))
                     StatBox(
                         "تاریخ پایان وام",
-                        "${toFa(endDate.d)} ${faMonthNamesResult[endDate.m - 1]} ${toFa(endDate.y)}",
+                        "${toFa(endDate.d)} ${persianMonthName(endDate.m)} ${toFa(endDate.y)}",
                         Modifier.weight(1f),
                     )
                 }
@@ -590,15 +615,13 @@ fun ResultScreen(
 
         if (feeAmount > 0) {
             item {
-                val rateLabel = if (outcome.ratePct == outcome.ratePct.toLong().toDouble()) {
-                    outcome.ratePct.toLong().toString()
-                } else {
-                    outcome.ratePct.toString()
-                }
+                // `toString()`ِ خام می‌تونست «۴٫۰۰۰۰۰۰۰۰۱» بده - همون تابعی که فیلدِ نرخ ازش
+                // استفاده می‌کنه، اینجا هم.
+                val rateLabel = trimRateResult(outcome.ratePct)
                 PrivacyCrossfade(privacyMode, modifier = Modifier.fillMaxWidth()) { masked ->
                     StatBox(
                         "کارمزد سالانه (قرض‌الحسنه)",
-                        "${maskIfPrivate(masked, fmt(feeAmount))} ریال (${toFa(rateLabel)}٪ سالانه)",
+                        "${maskIfPrivate(masked, amountToman(feeAmount))} تومان (${toFa(rateLabel)}٪ سالانه)",
                     )
                 }
             }
@@ -626,9 +649,9 @@ fun ResultScreen(
                     itemsIndexed(result.rows, key = { _, row -> row.month }) { idx, row ->
                         val due = dueDates[idx]
                         val dateLabel = if (interval >= 28) {
-                            "${faMonthNamesResult[due.m - 1]} ${toFa(due.y)}"
+                            "${persianMonthName(due.m)} ${toFa(due.y)}"
                         } else {
-                            "${toFa(due.d)} ${faMonthNamesResult[due.m - 1]}"
+                            "${toFa(due.d)} ${persianMonthName(due.m)}"
                         }
                         Column(Modifier.fillMaxWidth().height(rowH)) {
                             Row(
@@ -639,7 +662,11 @@ fun ResultScreen(
                                 Text("قسط ${toFa(row.month)}", fontSize = 12.sp)
                                 Text(dateLabel, fontSize = 12.sp)
                                 PrivacyCrossfade(privacyMode) { masked ->
-                                    Text("${maskIfPrivate(masked, fmt(row.installment))} ریال", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        "${maskIfPrivate(masked, amountToman(row.installment))} تومان",
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
                                 }
                             }
                             if (idx != result.rows.lastIndex) HorizontalDivider(color = AppLine)
@@ -743,7 +770,13 @@ private fun LoanRing(principal: Double, interest: Double, progress: Float, modif
 /** نمایشِ حداکثر دو رقمِ اعشار - هم‌الگو با trimRate تو BankLoanScreen.kt (خصوصیِ همون فایله، برای
  * همین نسخه‌ی جداگانه‌ی خودِ این فایل). */
 private fun trimRateResult(v: Double): String {
-    return if (v == v.toLong().toDouble()) v.toLong().toString() else String.format(Locale.US, "%.2f", v)
+    // `Locale.US` اجباریه: خروجی مستقیم تو `editRateText` می‌شینه که بعد `toDoubleOrNull()`
+    // می‌شه؛ روی گوشیِ فارسی رقمِ فارسی می‌داد و نرخ بی‌صدا صفر می‌شد (یعنی QARZ و محاسبه‌ی غلط).
+    return if (v == v.toLong().toDouble()) {
+        v.toLong().toString()
+    } else {
+        String.format(Locale.US, "%.2f", v)
+    }
 }
 
 private suspend fun animateValue(from: Double, to: Double, durationMs: Long = 500, onUpdate: (Double) -> Unit) {
