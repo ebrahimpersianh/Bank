@@ -26,7 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,9 +35,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.LoanCalculator
 import ir.sadteam.loancalc.core.LoanMethod
 import ir.sadteam.loancalc.core.LoanResult
@@ -76,19 +78,36 @@ import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.PresetCard
 import ir.sadteam.loancalc.ui.components.SlimSlider
-import ir.sadteam.loancalc.ui.components.amountSliderSteps
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyRowScrollbar
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppSegmentPill
 import ir.sadteam.loancalc.ui.theme.AppSegmentRail
+import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppText
 
 private val monthChipValues = listOf(12, 18, 24, 36, 60, 84, 120, 180, 240)
+
+/**
+ * فیلدِ مبلغ و اسلایدرش **تومان**ند (بندِ ۲ی README: ذخیره ریال، نمایش تومان). هر عددی که
+ * از پریست/سرویسِ اعتباری میاد ریاله، پس در `applyAmount` به تومان برمی‌گرده و سرِ
+ * `محاسبه کن` با `tomanToRial` به ریال.
+ */
+private const val AMOUNT_STEP_TOMAN = 10_000_000f
+private val defaultAmountRangeToman = 10_000_000f..1_000_000_000f
+
+/**
+ * گامِ گردِ ۱۰میلیون‌تومانی. `amountSliderSteps` عمداً صدا زده نمی‌شه چون گامش رو **ریالی**
+ * حساب می‌کرد؛ روی بازه‌ی تومانی گامِ ۱۰برابر درشت می‌داد.
+ */
+private fun tomanSliderSteps(range: ClosedFloatingPointRange<Float>): Int =
+    ((range.endInclusive - range.start) / AMOUNT_STEP_TOMAN).toInt().minus(1).coerceAtLeast(0)
 private val intervalChipOptions = listOf(7 to "هفتگی", 14 to "دوهفته‌ای", 30 to "ماهانه", 60 to "دوماهه", 90 to "سه‌ماهه")
 
 data class BankLoanOutcome(
@@ -104,13 +123,13 @@ data class BankLoanOutcome(
 @Composable
 fun BankLoanScreen(
     onCalculated: (BankLoanOutcome) -> Unit,
+    /** هر دستکاریِ ورودی، نتیجه‌ی قبلی رو باطل می‌کنه - کارتِ پلِ سبزِ `27f` وگرنه عددِ
+     * کهنه رو با خودش به حالتِ توانِ بازپرداخت می‌بره. */
+    onInputChanged: () -> Unit = {},
     creditRatesViewModel: CreditRatesViewModel = hiltViewModel(),
     /** خانه‌ی خالیِ **زیرِ** دکمه‌ی محاسبه - میزبانِ `27f` کارتِ «از عهده‌اش برمی‌آیم؟» رو
      * اینجا می‌ذاره. پیش‌فرض خالیه، پس هر جای دیگه‌ای که این صفحه صدا زده بشه فرقی نمی‌کنه. */
     footer: @Composable () -> Unit = {},
-    /** هر تغییرِ ورودی‌های محاسبه را خبر می‌دهد. میزبانِ `27f` با این نتیجه‌ی قبلی را باطل
-     * می‌کند، وگرنه کارتِ پلِ سبز عددِ کهنه را با خودش به حالتِ دوم می‌برد. */
-    onInputChanged: () -> Unit = {},
 ) {
     val creditServices by creditRatesViewModel.rates.collectAsState()
     val creditRatesLoading by creditRatesViewModel.isLoading.collectAsState()
@@ -131,47 +150,39 @@ fun BankLoanScreen(
     var rateSource by rememberSaveable { mutableStateOf(RateSource.CREDIT_SERVICE) }
     var selectedLoanType by rememberSaveable { mutableStateOf<String?>(null) }
 
-    var startYear by rememberSaveable { mutableStateOf(1404) }
-    var startMonth by rememberSaveable { mutableStateOf(1) }
-    var startDay by rememberSaveable { mutableStateOf(1) }
+    // پیش‌فرض **امروز**ه. عددِ ثابتِ ۱۴۰۴/۱/۱ با گذشتِ سال کهنه می‌شد و کاربر تاریخی رو
+    // می‌دید که هیچ ربطی به حالا نداشت.
+    val today = remember { JalaliCalendar.today() }
+    var startYear by rememberSaveable { mutableIntStateOf(today.y) }
+    var startMonth by rememberSaveable { mutableIntStateOf(today.m) }
+    var startDay by rememberSaveable { mutableIntStateOf(today.d) }
 
     // state فقط رقم نگه می‌داره؛ کاما نمایشیه (ThousandsSeparatorTransformation) - رجوع کن به کامنتِ فیلد.
-    var amountText by rememberSaveable { mutableStateOf("2500000000") }
-    var amountSliderRange by remember { mutableStateOf(100_000_000f..10_000_000_000f) }
-    var amountSlider by rememberSaveable { mutableStateOf(2_500_000_000f) }
+    var amountText by rememberSaveable { mutableStateOf("250000000") }
+    var amountSliderRange by remember { mutableStateOf(defaultAmountRangeToman) }
+    var amountSlider by rememberSaveable { mutableFloatStateOf(250_000_000f) }
 
     var rateText by rememberSaveable { mutableStateOf("23") }
-    var rateSlider by rememberSaveable { mutableStateOf(23f) }
+    var rateSlider by rememberSaveable { mutableFloatStateOf(23f) }
 
-    var selectedMonths by rememberSaveable { mutableStateOf(36) }
+    var selectedMonths by rememberSaveable { mutableIntStateOf(36) }
     var customMonthsText by rememberSaveable { mutableStateOf("") }
 
-    var intervalDays by rememberSaveable { mutableStateOf(30) }
+    var intervalDays by rememberSaveable { mutableIntStateOf(30) }
 
     var graceOn by rememberSaveable { mutableStateOf(false) }
-    var graceMonths by rememberSaveable { mutableStateOf(6f) }
-
-    // یک نقطه‌ی اعلام به‌جای وصل‌کردن به تک‌تکِ onValueChangeها - جا افتادنِ یکی از فیلدها
-    // یعنی همان باگِ عددِ کهنه، فقط کمیاب‌تر و سخت‌یاب‌تر.
-    val inputSignature = listOf(
-        amountText, rateText, selectedMonths, customMonthsText, intervalDays,
-        graceOn, graceMonths, startYear, startMonth, startDay,
-    )
-    var lastSignature by remember { mutableStateOf(inputSignature) }
-    LaunchedEffect(inputSignature) {
-        // اولین ترکیب تغییر نیست؛ بدونِ این چک، نتیجه همان لحظه‌ی ورود به صفحه باطل می‌شد.
-        if (inputSignature != lastSignature) {
-            lastSignature = inputSignature
-            onInputChanged()
-        }
-    }
+    var graceMonths by rememberSaveable { mutableFloatStateOf(6f) }
+    // تپِ «محاسبه کن» با فیلدِ خالی قبلاً بی‌صدا هیچ‌کاری نمی‌کرد.
+    var formError by remember { mutableStateOf<String?>(null) }
 
     var showCalendarPicker by rememberSaveable { mutableStateOf(false) }
     var showCheque by rememberSaveable { mutableStateOf(false) }
 
+    // پریست‌ها و سرویس‌های اعتباری ریال می‌دن؛ فیلد تومانه.
     fun applyAmount(rial: Long) {
-        amountText = rial.toString()
-        if (rial <= amountSliderRange.endInclusive.toLong()) amountSlider = rial.toFloat()
+        val toman = rialToToman(rial)
+        amountText = toman.toString()
+        if (toman <= amountSliderRange.endInclusive.toLong()) amountSlider = toman.toFloat()
     }
 
     if (showCalendarPicker) {
@@ -220,9 +231,10 @@ fun BankLoanScreen(
                                 sub = p.sub,
                                 selected = selectedPresetKey == p.key,
                                 onClick = {
+                                    onInputChanged()
                                     selectedPresetKey = p.key
                                     applyAmount(p.amount)
-                                    amountSliderRange = 100_000_000f..10_000_000_000f
+                                    amountSliderRange = defaultAmountRangeToman
                                     rateText = trimRate(p.ratePct)
                                     rateSlider = p.ratePct.toFloat()
                                     selectedMonths = p.months
@@ -321,6 +333,7 @@ fun BankLoanScreen(
                                     label = if (pct != null) "$name · ${toFa(trimRate(pct))}٪" else name,
                                     selected = selectedLoanType == name,
                                     onClick = {
+                                        onInputChanged()
                                         selectedLoanType = name
                                         if (pct != null) {
                                             rateText = trimRate(pct)
@@ -350,7 +363,7 @@ fun BankLoanScreen(
                             BankTile(
                                 bank = b,
                                 selected = selectedBankName == b.name,
-                                onClick = { selectedBankName = b.name },
+                                onClick = { onInputChanged(); selectedBankName = b.name },
                             )
                         }
                     }
@@ -383,6 +396,7 @@ fun BankLoanScreen(
                                     bank = b,
                                     selected = selectedBankName == b.name,
                                     onClick = {
+                                        onInputChanged()
                                         selectedBankName = b.name
                                         rateText = trimRate(b.ratePct)
                                         rateSlider = b.ratePct.toFloat()
@@ -390,7 +404,8 @@ fun BankLoanScreen(
                                         customMonthsText = ""
                                         val mid = (b.minAmount + b.maxAmount) / 2
                                         applyAmount(mid)
-                                        amountSliderRange = b.minAmount.toFloat()..b.maxAmount.toFloat()
+                                        amountSliderRange = rialToToman(b.minAmount).toFloat()..
+                                            rialToToman(b.maxAmount).toFloat()
                                         selectedPresetKey = null
                                     },
                                 )
@@ -437,7 +452,13 @@ fun BankLoanScreen(
                                 modifier = Modifier.padding(top = 2.dp),
                             )
                         }
-                        Icon(Icons.Filled.ArrowBack, contentDescription = null, tint = AppMuted)
+                        // `ArrowForwardIos`ِ خودچرخان: تو RTL چپ رو نشون می‌ده، یعنی «برو».
+                        // `Icons.Filled.ArrowBack`ِ قبلی نه خودچرخان بود و نه معنیِ درستی داشت.
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForwardIos,
+                            contentDescription = null,
+                            tint = AppMuted,
+                        )
                     }
                 }
             }
@@ -485,6 +506,8 @@ fun BankLoanScreen(
                         onValueChange = { raw ->
                             // فقط رقم تو state می‌مونه؛ فرمتِ هزارگان نمایشیه (ThousandsSeparatorTransformation) -
                             // فرمت‌کردن تو onValueChange مکان‌نما رو می‌پروند و رقم وسطِ عدد درج می‌شد.
+                            onInputChanged()
+                            formError = null
                             val digits = cleanNum(raw)
                             val n = digits.toLongOrNull() ?: 0L
                             amountText = digits
@@ -497,13 +520,15 @@ fun BankLoanScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                     )
-                    val rialVal = cleanNum(amountText).toLongOrNull() ?: 0L
-                    if (rialVal > 0) {
+                    // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد - تقسیمِ
+                    // دستیِ «/ ۱۰» رفت؛ تنها مرجعِ تبدیل tomanToRial/rialToToman ئه.
+                    val tomanVal = cleanNum(amountText).toLongOrNull() ?: 0L
+                    if (tomanVal > 0) {
                         // همیشه تک‌خطی - اگه جا نشه فونت کوچیک می‌شه، نه این‌که به خط دوم بشکنه.
                         AutoShrinkText(
-                            text = "${numberToWordsFa((rialVal / 10).toDouble())} تومان",
+                            text = "${numberToWordsFa(tomanVal.toDouble())} تومان",
                             color = AppMuted,
                             maxFontSize = 11.5.sp,
                             modifier = Modifier.padding(top = 4.dp),
@@ -512,14 +537,16 @@ fun BankLoanScreen(
                     SlimSlider(
                         value = amountSlider,
                         onValueChange = { v ->
+                            onInputChanged()
+                            formError = null
                             amountSlider = v
                             amountText = v.toLong().toString()
                         },
                         valueRange = amountSliderRange,
-                        // پله‌بندی به گام‌های ۱۰میلیون‌تومانی (۱۰۰,۰۰۰,۰۰۰ ریال) - خواسته‌ی صریحِ
-                        // کاربر: کشیدنِ اسلایدر باید عددِ گرد بده (۲۰۰ بعد ۲۱۰ میلیون تومان...)، نه
-                        // مقادیرِ پیوسته/نامرتب. رجوع کن به amountSliderSteps پایینِ فایل.
-                        steps = amountSliderSteps(amountSliderRange),
+                        // پله‌بندی به گام‌های ۱۰میلیون‌تومانی - خواسته‌ی صریحِ کاربر: کشیدنِ
+                        // اسلایدر باید عددِ گرد بده (۲۰۰ بعد ۲۱۰ میلیون تومان...)، نه مقادیرِ
+                        // پیوسته/نامرتب. رجوع کن به tomanSliderSteps بالای فایل.
+                        steps = tomanSliderSteps(amountSliderRange),
                     )
                 }
             }
@@ -537,6 +564,7 @@ fun BankLoanScreen(
                         value = rateText,
                         readOnly = rateReadOnly,
                         onValueChange = { raw ->
+                            onInputChanged()
                             val filtered = cleanNumDecimal(raw)
                             rateText = filtered
                             // اسلایدر فقط تا ۵۰ می‌ره، ولی خودِ فیلد بالاتر از ۵۰ رو هم دستی قبول
@@ -554,6 +582,7 @@ fun BankLoanScreen(
                         value = rateSlider,
                         onValueChange = { v ->
                             if (!rateReadOnly) {
+                                onInputChanged()
                                 rateSlider = v
                                 rateText = trimRate(v.toDouble())
                             }
@@ -576,13 +605,13 @@ fun BankLoanScreen(
                         AppChip(
                             label = toFa(v),
                             selected = customMonthsText.isEmpty() && selectedMonths == v,
-                            onClick = { selectedMonths = v; customMonthsText = "" },
+                            onClick = { onInputChanged(); selectedMonths = v; customMonthsText = "" },
                         )
                     }
                 }
                 OutlinedTextField(
                     value = customMonthsText,
-                    onValueChange = { customMonthsText = cleanNum(it) },
+                    onValueChange = { onInputChanged(); formError = null; customMonthsText = cleanNum(it) },
                     placeholder = { Text("تعداد دلخواه") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier
@@ -602,7 +631,11 @@ fun BankLoanScreen(
                     horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
                     intervalChipOptions.forEach { (v, label) ->
-                        AppChip(label = label, selected = intervalDays == v, onClick = { intervalDays = v })
+                        AppChip(
+                            label = label,
+                            selected = intervalDays == v,
+                            onClick = { onInputChanged(); intervalDays = v },
+                        )
                     }
                 }
             }
@@ -620,7 +653,7 @@ fun BankLoanScreen(
                     }
                     Switch(
                         checked = graceOn,
-                        onCheckedChange = { graceOn = it },
+                        onCheckedChange = { onInputChanged(); graceOn = it },
                         colors = SwitchDefaults.colors(checkedTrackColor = AppPrimaryDim, checkedThumbColor = AppPrimary),
                     )
                 }
@@ -628,7 +661,7 @@ fun BankLoanScreen(
                     Text("مدت تنفس (ماه)", fontSize = 13.5.sp, color = AppMuted, modifier = Modifier.padding(top = 12.dp))
                     SlimSlider(
                         value = graceMonths,
-                        onValueChange = { graceMonths = it },
+                        onValueChange = { onInputChanged(); graceMonths = it },
                         valueRange = 1f..24f,
                         steps = 22,
                     )
@@ -650,20 +683,42 @@ fun BankLoanScreen(
                     fontSize = 13.5.sp,
                     color = AppMuted,
                     modifier = Modifier.fillMaxWidth(),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    textAlign = TextAlign.Center,
                 )
             }
         }
 
         item {
-            val rialAmount = cleanNum(amountText).toLongOrNull() ?: 0L
+            val tomanAmount = cleanNum(amountText).toLongOrNull() ?: 0L
             val n = customMonthsText.toIntOrNull() ?: selectedMonths
             val rate = rateText.toDoubleOrNull() ?: 0.0
+            formError?.let {
+                Text(
+                    it,
+                    color = AppDanger,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                    textAlign = TextAlign.Center,
+                )
+            }
             GradientButton(
                 onClick = {
-                    if (rialAmount <= 0 || n <= 0) return@GradientButton
+                    // قبلاً `return@GradientButton`ِ خالی بود: تپ روی فیلدِ خالی بی هیچ نشونه‌ای
+                    // هیچ‌کاری نمی‌کرد و کاربر فکر می‌کرد دکمه خرابه.
+                    if (tomanAmount <= 0) {
+                        formError = "مبلغِ وام رو وارد کن"
+                        return@GradientButton
+                    }
+                    if (n <= 0) {
+                        formError = "تعدادِ اقساط باید بیشتر از صفر باشه"
+                        return@GradientButton
+                    }
+                    formError = null
                     val method = if (rate <= 4.0) LoanMethod.QARZ else LoanMethod.STANDARD
                     val grace = if (graceOn) graceMonths.toInt() else 0
+                    // ورودی تومانه و موتورِ محاسبه ریال - تبدیل فقط همین یک نقطه.
+                    val rialAmount = tomanToRial(tomanAmount)
                     val result = LoanCalculator.compute(rialAmount.toDouble(), rate, n, method, grace, intervalDays)
                     onCalculated(
                         BankLoanOutcome(

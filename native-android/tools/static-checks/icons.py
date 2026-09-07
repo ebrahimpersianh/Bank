@@ -12,6 +12,13 @@
 """
 import pathlib
 import re
+
+def strip_noise(src):
+    """کامنت و رشته خالی می‌شود - ارجاعِ داخلِ توضیح (مثلِ «Icons.Filled.ArrowBackِ قبلی»)
+    کدِ اجراشدنی نیست و نباید هشدار بدهد."""
+    src = re.sub(r'/\*.*?\*/', lambda m: '\n' * m.group(0).count('\n'), src, flags=re.S)
+    src = re.sub(r'//[^\n]*', '', src)
+    return src
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -45,7 +52,7 @@ def main() -> int:
     targets = [p for root in SRC for p in root.rglob("*.kt")]
     problems = []
     for path in targets:
-        text = path.read_text(encoding="utf-8")
+        text = strip_noise(path.read_text(encoding="utf-8"))
         imports = set(re.findall(r'^import (androidx\.compose\.material\.icons\.[\w.]+)$', text, re.M))
         missing = set()
         for group, name in USE.findall(text):

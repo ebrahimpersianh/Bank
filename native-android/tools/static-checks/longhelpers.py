@@ -21,12 +21,30 @@ LONG_ONLY = ('rialToToman', 'tomanToRial')
 SAFE = re.compile(r'(\.toLong\(\)|\.toLongOrNull\(\)|^\d+L?$|Long\b)')
 IDENT = re.compile(r'^\w+$')
 
+# **پراپرتی**‌های Longِ کلِ پروژه (`val minAmount: Long`) - اینها با `obj.minAmount` از هر
+# فایلی خوانده می‌شوند، پس باید سراسری باشند.
+#
+# ⚠️ پارامترِ تابع عمداً سراسری **نیست**: خودِ `fun rialToToman(rial: Long)` نامِ «rial» را وارد
+# مجموعه می‌کرد و بعد `rialToToman(rial)` روی یک `rial: Double` در فایلی دیگر بی‌صدا سالم
+# شمرده می‌شد - یعنی همان باگی که این بررسی برایش نوشته شد از دستش در می‌رفت. پارامترها
+# فقط در محدوده‌ی فایلِ خودشان معتبرند (پایین‌تر).
+LONG_PROPS = set()
+for path in glob.glob(os.path.join(ROOT, '**/*.kt'), recursive=True):
+    if '/build/' in path.replace(os.sep, '/'):
+        continue
+    src_all = open(path, encoding='utf-8').read()
+    for name in re.findall(r'\b(?:val|var)\s+(\w+)\s*:\s*Long\b', src_all):
+        LONG_PROPS.add(name)
+
 problems = []
 for path in glob.glob(os.path.join(ROOT, '**/*.kt'), recursive=True):
     if '/build/' in path.replace(os.sep, '/'):
         continue
     src = open(path, encoding='utf-8').read()
     rel = os.path.relpath(path, ROOT)
+    # نام‌های Longِ محلیِ همین فایل: پارامترِ تابع، متغیرِ محلی.
+    local_longs = set(re.findall(r'\b(\w+)\s*:\s*Long\b', src))
+    local_longs |= set(re.findall(r'\b(?:val|var)\s+(\w+)\s*=\s*[^\n]*\.toLong\(\)', src))
     for fn in LONG_ONLY:
         # امضای خودِ تابع رو نگیر
         for m in re.finditer(r'(?<![\w.])' + fn + r'\(', src):
@@ -43,6 +61,10 @@ for path in glob.glob(os.path.join(ROOT, '**/*.kt'), recursive=True):
                 i += 1
             arg = src[m.end():i - 1].strip()
             if SAFE.search(arg):
+                continue
+            # `x` یا `obj.x` که جایی به‌عنوانِ Long اعلان شده
+            tail = arg.rsplit('.', 1)[-1]
+            if tail in LONG_PROPS or tail in local_longs:
                 continue
             # `it` داخلِ یه زنجیره‌ی `...toLong()?.let { ... }` خودش Longه.
             if arg == 'it' and 'toLong' in src[max(0, m.start() - 80):m.start()]:
