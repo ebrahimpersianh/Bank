@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.core
 
+import java.util.Locale
+
 /**
  * منطقِ خالصِ نشانِ **«فعال»** - روزهای پشتِ‌سرهمی که کاربر تراکنش ثبت کرده.
  *
@@ -11,7 +13,7 @@ package ir.sadteam.loancalc.core
  */
 object ActiveStreak {
     /** کلیدِ روز به شکلِ `YYYY-MM-DD` شمسی؛ مرتب‌سازیِ متنی هم درست کار می‌کنه. */
-    fun dateKey(date: PersianDate): String = "%04d-%02d-%02d".format(date.y, date.m, date.d)
+    fun dateKey(date: PersianDate): String = String.format(Locale.US, "%04d-%02d-%02d", date.y, date.m, date.d)
 
     /**
      * شمارِ روزهای پشتِ‌سرهمِ فعال، از امروز به عقب.

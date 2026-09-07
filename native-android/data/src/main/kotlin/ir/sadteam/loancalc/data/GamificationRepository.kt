@@ -10,6 +10,7 @@ import ir.sadteam.loancalc.data.db.CoinDao
 import ir.sadteam.loancalc.data.db.CoinEventEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.util.Locale
 
 /**
  * **اقتصادِ سکه و نشانِ «فعال»** - کارتِ `20e` فایلِ طراحی.
@@ -175,7 +176,7 @@ class GamificationRepository(
         fun dateKey(date: PersianDate): String = ActiveStreak.dateKey(date)
 
         /** کلیدِ ماهِ شمسی - ضدِتکرارِ «ماهی یک ترمیم». */
-        fun monthKey(date: PersianDate): String = "%04d-%02d".format(date.y, date.m)
+        fun monthKey(date: PersianDate): String = String.format(Locale.US, "%04d-%02d", date.y, date.m)
 
         fun countActiveDays(days: Set<String>, today: PersianDate): Int =
             ActiveStreak.countActiveDays(days, today)

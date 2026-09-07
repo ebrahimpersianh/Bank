@@ -56,6 +56,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import java.util.Locale
 
 private val affordMonthChipValues = listOf(12, 24, 36, 60, 120)
 
@@ -154,7 +155,7 @@ fun AffordScreen(
                         onValueChange = { v ->
                             rateSlider = v
                             // نمایشِ حداکثر دو رقمِ اعشار - رجوع کن به BankLoanScreen.trimRate.
-                            rateText = if (v == v.toLong().toFloat()) v.toLong().toString() else "%.2f".format(v)
+                            rateText = if (v == v.toLong().toFloat()) v.toLong().toString() else String.format(Locale.US, "%.2f", v)
                         },
                         valueRange = 0f..50f,
                         steps = 99,

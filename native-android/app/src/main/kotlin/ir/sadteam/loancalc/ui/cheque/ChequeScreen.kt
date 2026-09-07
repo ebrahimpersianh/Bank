@@ -100,6 +100,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 internal data class ChequeStats(
     val total: Int,
@@ -647,9 +648,9 @@ private fun LiveDateTimeHeader() {
         JalaliCalendar.fromGregorian(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
     }
     val weekDay = faWeekDayNames[JalaliCalendar.dayOfWeekSaturdayFirst(jalali)]
-    val dateText = "${toFa(jalali.y)}/${toFa("%02d".format(jalali.m))}/${toFa("%02d".format(jalali.d))}"
+    val dateText = "${toFa(jalali.y)}/${toFa(String.format(Locale.US, "%02d", jalali.m))}/${toFa(String.format(Locale.US, "%02d", jalali.d))}"
     val timeText = toFa(
-        "%02d:%02d:%02d".format(
+        String.format(Locale.US, "%02d:%02d:%02d", 
             cal.get(Calendar.HOUR_OF_DAY),
             cal.get(Calendar.MINUTE),
             cal.get(Calendar.SECOND),

@@ -43,6 +43,7 @@ import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import java.util.Locale
 
 private val depositMonthOptions = listOf(1 to "۱ ماهه", 3 to "۳ ماهه", 6 to "۶ ماهه", 12 to "۱ ساله", 24 to "۲ ساله")
 
@@ -136,7 +137,7 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                         onValueChange = { v ->
                             rateSlider = v
                             // نمایشِ حداکثر دو رقمِ اعشار - رجوع کن به BankLoanScreen.trimRate.
-                            rateText = if (v == v.toLong().toFloat()) v.toLong().toString() else "%.2f".format(v)
+                            rateText = if (v == v.toLong().toFloat()) v.toLong().toString() else String.format(Locale.US, "%.2f", v)
                         },
                         valueRange = 0f..50f,
                         steps = 99,

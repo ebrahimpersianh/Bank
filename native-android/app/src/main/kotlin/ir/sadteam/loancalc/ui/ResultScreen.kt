@@ -104,6 +104,7 @@ import kotlin.math.cos
 import kotlin.math.roundToLong
 import kotlin.math.sin
 import kotlinx.coroutines.delay
+import java.util.Locale
 
 private val faMonthNamesResult = listOf(
     "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
@@ -742,7 +743,7 @@ private fun LoanRing(principal: Double, interest: Double, progress: Float, modif
 /** نمایشِ حداکثر دو رقمِ اعشار - هم‌الگو با trimRate تو BankLoanScreen.kt (خصوصیِ همون فایله، برای
  * همین نسخه‌ی جداگانه‌ی خودِ این فایل). */
 private fun trimRateResult(v: Double): String {
-    return if (v == v.toLong().toDouble()) v.toLong().toString() else "%.2f".format(v)
+    return if (v == v.toLong().toDouble()) v.toLong().toString() else String.format(Locale.US, "%.2f", v)
 }
 
 private suspend fun animateValue(from: Double, to: Double, durationMs: Long = 500, onUpdate: (Double) -> Unit) {

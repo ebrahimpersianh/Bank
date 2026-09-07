@@ -5,6 +5,7 @@ import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import java.io.OutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import java.util.Locale
 
 /** خروجی اکسل (.xlsx) گزارشِ حسابداری - هم‌الگو با `ui/stats/StatsXlsxExporter.kt` (بدونِ هیچ
  * کتابخونه‌ی جدید، فقط `java.util.zip` خودِ جاوا برای ساختنِ OOXMLِ حداقلی). */
@@ -36,7 +37,7 @@ object AccountingXlsxExporter {
                         // این فایل را ماشین می‌خواند نه آدم: تاریخِ فارسی ستون را متنی می‌کند،
                         // پس مرتب‌سازی و فرمولِ اکسل روی آن کار نمی‌کند. صفرِ پیشوند هم لازم
                         // است تا مرتب‌سازیِ الفبایی همان مرتب‌سازیِ زمانی باشد.
-                        "%04d/%02d/%02d".format(java.util.Locale.US, tx.year, tx.month, tx.day),
+                        String.format(Locale.US, "%04d/%02d/%02d", java.util.Locale.US, tx.year, tx.month, tx.day),
                         if (tx.type == "DEPOSIT") "درآمد" else "هزینه",
                         tx.category ?: "—",
                         toman(tx.amount),

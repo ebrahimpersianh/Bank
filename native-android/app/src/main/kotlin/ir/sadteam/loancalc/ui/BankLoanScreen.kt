@@ -91,6 +91,7 @@ import ir.sadteam.loancalc.ui.theme.AppSegmentPill
 import ir.sadteam.loancalc.ui.theme.AppSegmentRail
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppText
+import java.util.Locale
 
 private val monthChipValues = listOf(12, 18, 24, 36, 60, 84, 120, 180, 240)
 
@@ -770,5 +771,5 @@ private val loanTypePresets: List<Pair<String, Double?>> = listOf(
 private fun trimRate(v: Double): String {
     // نمایشِ حداکثر دو رقمِ اعشار (خواسته‌ی صریحِ کاربر، مورد ۱) - وگرنه v.toString() خامِ فلوتینگ-
     // پوینت می‌تونست چیزی مثلِ «23.500000001» نشون بده.
-    return if (v == v.toLong().toDouble()) v.toLong().toString() else "%.2f".format(v)
+    return if (v == v.toLong().toDouble()) v.toLong().toString() else String.format(Locale.US, "%.2f", v)
 }

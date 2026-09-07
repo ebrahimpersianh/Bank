@@ -61,6 +61,7 @@ run "گیرنده‌ی اعلان‌نشده" "$DIR/receivers.py"
 run "اعلانِ تکراری" "$DIR/redeclare.py"
 run "کمک‌تابعِ Long-only" "$DIR/longhelpers.py"
 run "نمادِ فراخوانی‌شده‌ی ناموجود" "$DIR/localcalls.py"
+run "فرمتِ عددی بدونِ Locale" "$DIR/localeformat.py"
 
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
