@@ -177,6 +177,9 @@ class UiPrefs(private val context: Context) {
     }
 
     companion object {
+        /** ساعتِ پیش‌فرضِ یادآور - صبح، وقتی کاربر هنوز فرصتِ کاری کردن دارد. */
+        const val DEFAULT_REMINDER_HOUR = 9
+
         /** `destId:weekKey=count;…` → نگاشت. ردیفِ خراب بی‌صدا نادیده گرفته می‌شه. */
         fun parseNavUsage(raw: String?): Map<Pair<String, Int>, Int> =
             raw?.split(';').orEmpty().mapNotNull { entry ->
@@ -444,10 +447,5 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setDailyExpenseReminderEnabled(value: Boolean) {
         context.uiPrefsDataStore.edit { it[Keys.DAILY_EXPENSE_REMINDER_ENABLED] = value }
-    }
-
-    companion object {
-        /** ساعتِ پیش‌فرضِ یادآور - صبح، وقتی کاربر هنوز فرصتِ کاری کردن دارد. */
-        const val DEFAULT_REMINDER_HOUR = 9
     }
 }
