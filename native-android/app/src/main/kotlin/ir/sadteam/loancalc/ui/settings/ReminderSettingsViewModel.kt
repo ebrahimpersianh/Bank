@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.formatReminderOffsets
 import ir.sadteam.loancalc.core.parseReminderOffsets
 import ir.sadteam.loancalc.data.prefs.UiPrefs
+import ir.sadteam.loancalc.notifications.ReminderScheduler
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -19,7 +20,34 @@ import javax.inject.Inject
 @HiltViewModel
 class ReminderSettingsViewModel @Inject constructor(
     private val uiPrefs: UiPrefs,
+    private val reminderScheduler: ReminderScheduler,
 ) : ViewModel() {
+    /** ساعتِ یادآوری - طبقِ فریمِ `50a` **یکی** برای هر سه کانال است، نه سه‌تا. */
+    val reminderHour: StateFlow<Int> = uiPrefs.reminderHour
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UiPrefs.DEFAULT_REMINDER_HOUR)
+
+    val autoTxEnabled: StateFlow<Boolean> = uiPrefs.autoTxNotifyEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val comeBackEnabled: StateFlow<Boolean> = uiPrefs.comeBackReminderEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    /** ⚠️ بعدِ عوض‌کردنِ ساعت باید دوباره زمان‌بندی شود، وگرنه تا اجرای بعدی ساعتِ قدیمی می‌ماند. */
+    fun setReminderHour(hour: Int) {
+        viewModelScope.launch {
+            uiPrefs.setReminderHour(hour)
+            reminderScheduler.schedule()
+        }
+    }
+
+    fun setAutoTxEnabled(value: Boolean) {
+        viewModelScope.launch { uiPrefs.setAutoTxNotifyEnabled(value) }
+    }
+
+    fun setComeBackEnabled(value: Boolean) {
+        viewModelScope.launch { uiPrefs.setComeBackReminderEnabled(value) }
+    }
+
     val dayOffsets: StateFlow<Set<Int>> = uiPrefs.reminderDayOffsets
         .map { parseReminderOffsets(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), setOf(1))

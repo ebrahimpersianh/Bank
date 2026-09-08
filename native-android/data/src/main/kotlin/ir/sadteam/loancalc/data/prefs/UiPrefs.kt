@@ -39,6 +39,7 @@ class UiPrefs(private val context: Context) {
         val IGNORED_SUBSCRIPTIONS = stringPreferencesKey("ignored_subscriptions")
         val SNOOZED_REMINDERS = stringPreferencesKey("snoozed_reminders")
         val REMINDER_HOUR = intPreferencesKey("reminder_hour")
+        val AUTO_TX_NOTIFY_ENABLED = booleanPreferencesKey("auto_tx_notify_enabled")
         val DAILY_EXPENSE_REMINDER_ENABLED = booleanPreferencesKey("daily_expense_reminder_enabled")
         val AVATAR_SHAPE = stringPreferencesKey("avatar_shape")
         val AVATAR_COLOR = stringPreferencesKey("avatar_color")
@@ -438,6 +439,16 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setReminderHour(hour: Int) {
         context.uiPrefsDataStore.edit { it[Keys.REMINDER_HOUR] = hour.coerceIn(0, 23) }
+    }
+
+    /** اعلانِ «تراکنشِ خودکار ثبت شد» (کانالِ [ReminderChannels.CHANNEL_AUTO_TX], فریمِ `50b`).
+     * پیش‌فرض **روشن**: کاربری که خواندنِ پیامک/اعلانِ بانک را خودش روشن کرده، منتظرِ خبر است -
+     * و تراکنش تا تاییدش روی موجودی اثر ندارد، پس بی‌خبری یعنی کارِ نیمه‌تمامِ نادیده. */
+    val autoTxNotifyEnabled: Flow<Boolean> =
+        context.uiPrefsDataStore.data.map { it[Keys.AUTO_TX_NOTIFY_ENABLED] ?: true }
+
+    suspend fun setAutoTxNotifyEnabled(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.AUTO_TX_NOTIFY_ENABLED] = value }
     }
 
     /** یادآوریِ روزانه‌ی «دخل‌وخرج امروز یادت نره» (رجوع کن به DueDateReminderWorker) - پیش‌فرض خاموش

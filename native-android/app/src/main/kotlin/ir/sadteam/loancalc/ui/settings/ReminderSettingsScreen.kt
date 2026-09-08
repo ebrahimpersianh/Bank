@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -30,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationCompat
@@ -38,6 +41,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.R
 import ir.sadteam.loancalc.core.REMINDER_OFFSET_OPTIONS
+import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.core.reminderOffsetLabel
 import ir.sadteam.loancalc.notifications.ReminderChannels
 import ir.sadteam.loancalc.ui.components.AppCard
@@ -60,6 +64,9 @@ fun ReminderSettingsScreen(
 ) {
     val enabled by notificationsViewModel.enabled.collectAsState()
     val dayOffsets by viewModel.dayOffsets.collectAsState()
+    val reminderHour by viewModel.reminderHour.collectAsState()
+    val autoTxEnabled by viewModel.autoTxEnabled.collectAsState()
+    val comeBackEnabled by viewModel.comeBackEnabled.collectAsState()
     val context = LocalContext.current
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -128,6 +135,76 @@ fun ReminderSettingsScreen(
                                 permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                             }
                         },
+                        colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
+                    )
+                }
+            }
+        }
+
+        item {
+            // فریمِ `50a`: ساعت **یکی** است برای هر سه کانال، نه سه انتخابگر - تفاوتی که
+            // کاربر نمی‌خواهد، در برابرِ صفحه‌ای که سه برابر می‌شود.
+            AppCard(label = "ساعتِ یادآوری") {
+                Column {
+                    Text(
+                        "همه‌ی یادآورها این ساعت می‌آیند.",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        IconButton(onClick = { viewModel.setReminderHour((reminderHour + 23) % 24) }) {
+                            Icon(Icons.Filled.Remove, contentDescription = "یک ساعت زودتر", tint = AppPrimary)
+                        }
+                        Text(
+                            "${toFa(reminderHour)}:۰۰",
+                            color = AppText,
+                            fontSize = 20.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(onClick = { viewModel.setReminderHour((reminderHour + 1) % 24) }) {
+                            Icon(Icons.Filled.Add, contentDescription = "یک ساعت دیرتر", tint = AppPrimary)
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            AppCard(label = "تراکنشِ خودکار") {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "وقتی تراکنشی از پیامک یا اعلانِ بانک ثبت شد خبر بده",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = autoTxEnabled,
+                        onCheckedChange = { viewModel.setAutoTxEnabled(it) },
+                        colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
+                    )
+                }
+            }
+        }
+
+        item {
+            // ⚠️ استثنای عمدی: این یکی شب اجرا می‌شود نه سرِ ساعتِ بالا، چون شرطش «تا حالا
+            // چیزی ثبت نشده» است و صبح همیشه درست است.
+            AppCard(label = "یادآورِ روزانه") {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "اگر تا شب چیزی ثبت نکردی یادم بینداز",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = comeBackEnabled,
+                        onCheckedChange = { viewModel.setComeBackEnabled(it) },
                         colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
                     )
                 }

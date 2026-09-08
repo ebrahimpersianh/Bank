@@ -129,7 +129,10 @@ import ir.sadteam.loancalc.notifications.DeepLinkTarget
 import ir.sadteam.loancalc.notifications.DeepLinkViewModel
 import ir.sadteam.loancalc.notifications.EXTRA_OPEN_CHEQUE_ID
 import ir.sadteam.loancalc.notifications.EXTRA_OPEN_LOAN_ID
+import ir.sadteam.loancalc.notifications.EXTRA_OPEN_TX_ID
+import ir.sadteam.loancalc.notifications.EXTRA_PICK_CATEGORY
 import ir.sadteam.loancalc.notifications.PendingChequeDeepLink
+import ir.sadteam.loancalc.notifications.PendingTxDeepLink
 import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.SubscriptionManager
 import ir.sadteam.loancalc.ui.AffordScreen
@@ -324,6 +327,9 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var pendingChequeDeepLink: PendingChequeDeepLink
 
+    @Inject
+    lateinit var pendingTxDeepLink: PendingTxDeepLink
+
     private fun handleDeepLinkIntent(intent: Intent?) {
         val loanId = intent?.getLongExtra(EXTRA_OPEN_LOAN_ID, -1L) ?: -1L
         if (loanId > 0) deepLinkTarget.setLoanId(loanId)
@@ -332,6 +338,11 @@ class MainActivity : FragmentActivity() {
         // هم‌زمان یکی از هر کدام داشته باشد.
         val chequeId = intent?.getLongExtra(EXTRA_OPEN_CHEQUE_ID, -1L) ?: -1L
         if (chequeId > 0) pendingChequeDeepLink.setChequeId(chequeId)
+        // اعلانِ تراکنشِ خودکار (فریمِ `50b`) - هم تپ روی بدنه، هم دکمه‌ی دسته.
+        val txId = intent?.getLongExtra(EXTRA_OPEN_TX_ID, -1L) ?: -1L
+        if (txId > 0) {
+            pendingTxDeepLink.set(txId, intent?.getBooleanExtra(EXTRA_PICK_CATEGORY, false) == true)
+        }
         // میان‌برِ فشارِ طولانی رو آیکونِ اپ - رجوع کن به res/xml/shortcuts.xml
         intent?.getStringExtra("jibak_shortcut")?.let { deepLinkTarget.setShortcut(it) }
     }
@@ -594,6 +605,17 @@ private fun LoanCalcApp(
         if (deepLinkLoanId != null) {
             requestedLoanSubTab = LoanSubTab.MY_LOANS
             if (currentRoute != LOAN_ROUTE) navigateTo(LOAN_ROUTE)
+        }
+    }
+
+    // تپ روی اعلانِ تراکنشِ خودکار (فریمِ `50b`) - مرکزِ پیام‌ها باز می‌شود، چون کارتِ اقدامِ
+    // همان تراکنش (تایید / انتخابِ دسته) همان‌جاست. دکمه‌ی «دسته» هم به همین‌جا می‌رسد؛
+    // ⏳ نشستنِ مستقیم روی شیتِ دسته هنوز نیست و کاربر یک تپِ اضافه می‌زند.
+    val pendingTx by deepLinkViewModel.pendingTx.collectAsState()
+    LaunchedEffect(pendingTx) {
+        if (pendingTx != null) {
+            showInbox = true
+            deepLinkViewModel.consumeTx()
         }
     }
 

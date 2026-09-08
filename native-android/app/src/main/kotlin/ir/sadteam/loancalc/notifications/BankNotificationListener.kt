@@ -132,7 +132,7 @@ class BankNotificationListener : NotificationListenerService() {
             // تا باز کردنِ برنامه خبردار نمی‌شد. فریمِ 50b و AutoTxNotifier همین را می‌بندند.
             // تصمیمِ ثبت‌شده: **همیشه** اعلان بدهد، چون دومین کارش گفتنِ «سیستم کار می‌کند»
             // است - کسی که خبری نمی‌گیرد فرض می‌کند خراب است.
-            AutoTxNotifier.notify(
+            if (uiPrefs.autoTxNotifyEnabled.first()) AutoTxNotifier.notify(
                 context = applicationContext,
                 txId = txId,
                 amountRial = parsed.amountRial,

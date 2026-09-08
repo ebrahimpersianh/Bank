@@ -11,6 +11,8 @@ import ir.sadteam.loancalc.core.MerchantCategoryGuesser
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.smsSenderMatches
 import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.InboxRepository
 import ir.sadteam.loancalc.data.db.InboxMessageEntity
@@ -92,15 +94,29 @@ class BankSmsReceiver : BroadcastReceiver() {
                     category = category,
                     confirmed = false,
                 )
+                // واحد **تومان** و رقمِ فارسی - قبلاً «ریال»ِ لاتین بود (بندِ ۹ی تحویلِ اعلان‌ها).
+                val amountToman = fmt(rialToToman(parsed.amountRial.toLong()).toDouble()).faDigits()
                 inboxRepository.post(
                     kind = InboxMessageEntity.Kind.DETECTED_TX,
                     title = if (isWithdrawal) "برداشتِ تازه" else "واریزِ تازه",
                     body = if (confident) {
-                        "${fmt(parsed.amountRial)} ریال از «${account.name}» - دسته: $category. تایید می‌کنی؟"
+                        "$amountToman تومان از «${account.name}» - دسته: $category. تایید می‌کنی؟"
                     } else {
-                        "${fmt(parsed.amountRial)} ریال از «${account.name}» - دسته‌بندیش نامشخصه، لمس کن و خودت انتخاب کن."
+                        "$amountToman تومان از «${account.name}» - دسته‌بندیش نامشخصه، لمس کن و خودت انتخاب کن."
                     },
                     refId = txId.toString(),
+                )
+                // 🚨 بندِ ۷ی تحویل: مسیرِ پیامک هم مثلِ مسیرِ اعلانِ بانکی باید اعلان بدهد،
+                // وگرنه تراکنشِ پیامکی بی‌خبر و تاییدنشده می‌ماند.
+                if (uiPrefs.autoTxNotifyEnabled.first()) AutoTxNotifier.notify(
+                    context = context.applicationContext,
+                    txId = txId,
+                    amountRial = parsed.amountRial,
+                    accountName = account.name,
+                    category = category,
+                    isWithdrawal = isWithdrawal,
+                    confident = confident,
+                    privacyMode = uiPrefs.privacyModeEnabled.first(),
                 )
                 uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
                 // زمانِ آخرین پیامکِ **همین حساب** - زیرنویسِ صفحه‌ی تنظیماتِ پیامک از این ساخته می‌شه.

@@ -10,6 +10,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DeepLinkViewModel @Inject constructor(
     private val deepLinkTarget: DeepLinkTarget,
+    private val pendingTxDeepLink: PendingTxDeepLink,
 ) : ViewModel() {
     val pendingLoanId: StateFlow<Long?> = deepLinkTarget.pendingLoanId
 
@@ -20,6 +21,13 @@ class DeepLinkViewModel @Inject constructor(
     /** بازکردنِ یه وامِ مشخص از هر جای اپ (ردیفِ سررسید، نوتیفیکیشن، ویجت). */
     fun openLoan(id: Long) {
         deepLinkTarget.setLoanId(id)
+    }
+
+    /** تپ روی اعلانِ تراکنشِ خودکار - `(txId, pickCategory)`. رجوع کن به [PendingTxDeepLink]. */
+    val pendingTx: StateFlow<Pair<Long, Boolean>?> = pendingTxDeepLink.pending
+
+    fun consumeTx() {
+        pendingTxDeepLink.consume()
     }
 
     val pendingShortcut: StateFlow<String?> = deepLinkTarget.pendingShortcut

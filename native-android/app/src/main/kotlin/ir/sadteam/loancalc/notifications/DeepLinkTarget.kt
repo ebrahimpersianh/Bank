@@ -77,3 +77,24 @@ class PendingChequeDeepLink @Inject constructor() {
     }
 
 }
+
+/**
+ * مقصدِ تپ روی **اعلانِ تراکنشِ خودکار** (فریمِ `50b`). جدا از وام و چک، به همان دلیلِ
+ * نوشته‌شده بالای [PendingChequeDeepLink]: سه اعلانِ مستقل می‌توانند هم‌زمان روی نوار باشند.
+ *
+ * [pickCategory] یعنی کاربر دکمه‌ی «دسته‌اش این نیست/این است» را زده، نه خودِ بدنه‌ی اعلان را -
+ * پس باید مستقیم روی انتخابِ دسته بنشیند، نه فقط کارتِ تراکنش.
+ */
+@Singleton
+class PendingTxDeepLink @Inject constructor() {
+    private val _pending = MutableStateFlow<Pair<Long, Boolean>?>(null)
+    val pending: StateFlow<Pair<Long, Boolean>?> = _pending
+
+    fun set(txId: Long, pickCategory: Boolean) {
+        _pending.value = txId to pickCategory
+    }
+
+    fun consume() {
+        _pending.value = null
+    }
+}
