@@ -28,10 +28,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,6 +53,8 @@ import ir.sadteam.loancalc.core.reminderOffsetLabel
 import ir.sadteam.loancalc.notifications.ReminderChannels
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.onboarding.notificationListenerEnabled
+import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -170,6 +179,54 @@ fun ReminderSettingsScreen(
                         )
                         IconButton(onClick = { viewModel.setReminderHour(if (reminderHour >= 23) 6 else reminderHour + 1) }) {
                             Icon(Icons.Filled.Add, contentDescription = "یک ساعت دیرتر", tint = AppPrimary)
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            // فریمِ `50a`: کلیدِ «تراکنشِ خودکار» بی این مجوز بی‌اثر است - کاربر روشنش می‌کند و
+            // هیچ اعلانی نمی‌گیرد، چون بانکِ دیجیتالش پیامک نمی‌دهد و شنونده‌ی اعلان قطع است.
+            // پس وضعیتِ مجوز باید کنارِ همان کلید دیده شود، نه در صفحه‌ای دیگر.
+            // ⚠️ خواندنِ دوباره در `ON_RESUME` اجباری است: کاربر از تنظیماتِ اندروید برمی‌گردد و
+            // اندروید هیچ نتیجه‌ای برنمی‌گرداند.
+            val lifecycleOwner = LocalLifecycleOwner.current
+            var listenerOn by remember { mutableStateOf(notificationListenerEnabled(context)) }
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        listenerOn = notificationListenerEnabled(context)
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            }
+
+            // فقط حالتِ **قطع** ردیف می‌گیرد: کسی که مجوز را داده کارِ دیگری با این ردیف ندارد.
+            if (!listenerOn) {
+                AppCard(label = "خواندنِ اعلانِ بانک") {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("از تنظیماتِ گوشی قطع شده", color = AppDanger, fontSize = 12.sp)
+                            Text(
+                                "بانک‌هایی که پیامک نمی‌دهند (مثلِ بلوبانک) بی این اجازه خوانده نمی‌شوند.",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                lineHeight = 18.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                context.startActivity(
+                                    Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
+                                        .apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK },
+                                )
+                            },
+                            modifier = Modifier.padding(start = 8.dp),
+                        ) {
+                            Text("وصل کن")
                         }
                     }
                 }
