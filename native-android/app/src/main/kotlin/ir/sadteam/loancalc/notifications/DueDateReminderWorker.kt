@@ -386,6 +386,9 @@ class DueDateReminderWorker @AssistedInject constructor(
         /** کلیدِ گروهِ سررسیدها. همه‌ی بچه‌ها و سرِ گروه باید همین را داشته باشند. */
         const val GROUP_DUE_DATES = "ir.sadteam.loancalc.group.DUE_DATES"
         const val GROUP_SUMMARY_NOTIFICATION_ID = 990012
+
+        /** پنجره‌ی تحملِ دیرکردِ اجرا - رجوع کن به isStaleCatchUpRun. */
+        const val STALE_RUN_HOURS = 6
     }
 
     /**
@@ -399,9 +402,5 @@ class DueDateReminderWorker @AssistedInject constructor(
         val now = java.util.Calendar.getInstance()
         val hoursSinceTarget = now.get(java.util.Calendar.HOUR_OF_DAY) - reminderHour
         return hoursSinceTarget > STALE_RUN_HOURS
-    }
-
-    private companion object {
-        const val STALE_RUN_HOURS = 6
     }
 }

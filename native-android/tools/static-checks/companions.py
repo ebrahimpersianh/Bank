@@ -37,7 +37,10 @@ for path in glob.glob(os.path.join(ROOT, '**/*.kt'), recursive=True):
             if m:
                 owner = m.group(1)
                 seen.setdefault(owner, 0)
-        if stripped.startswith('companion object') and owner and depth == 1:
+        # مودیفایر هم می‌آید: `private companion object`. نسخه‌ی اولِ این بررسی فقط
+        # startswith داشت و دقیقاً به همین دلیل companionِ دومِ DueDateReminderWorker را
+        # نگرفت و بیلدِ ۵۲۱ شکست.
+        if re.match(r'(?:\w+\s+)*companion\s+object\b', stripped) and owner and depth == 1:
             seen[owner] = seen.get(owner, 0) + 1
         depth = max(0, depth + line.count('{') - line.count('}'))
     for name, count in seen.items():

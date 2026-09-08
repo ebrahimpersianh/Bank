@@ -35,25 +35,6 @@ class DeepLinkTarget @Inject constructor() {
     fun consume() {
         _pendingLoanId.value = null
     }
-}
-
-/**
- * هم‌الگوی [PendingLoanDeepLink] برای چک. جدا نگه داشته شد نه ادغام، چون دو مقصدِ مستقل‌اند
- * و اعلانِ گروه‌شده می‌تواند هم‌زمان یکی از هر کدام داشته باشد - با یک فیلدِ مشترک، دومی
- * اولی را پاک می‌کرد.
- */
-@Singleton
-class PendingChequeDeepLink @Inject constructor() {
-    private val _pendingChequeId = MutableStateFlow<Long?>(null)
-    val pendingChequeId: StateFlow<Long?> = _pendingChequeId
-
-    fun setChequeId(id: Long) {
-        _pendingChequeId.value = id
-    }
-
-    fun consume() {
-        _pendingChequeId.value = null
-    }
 
     /**
      * میان‌برِ فشارِ طولانی رو آیکونِ اپ (مثلِ دولینگو) - خواسته‌ی صریحِ کاربر.
@@ -75,4 +56,24 @@ class PendingChequeDeepLink @Inject constructor() {
         const val SHORTCUT_DUE = "due"
         const val SHORTCUT_REPORT = "report"
     }
+}
+
+/**
+ * هم‌الگوی [PendingLoanDeepLink] برای چک. جدا نگه داشته شد نه ادغام، چون دو مقصدِ مستقل‌اند
+ * و اعلانِ گروه‌شده می‌تواند هم‌زمان یکی از هر کدام داشته باشد - با یک فیلدِ مشترک، دومی
+ * اولی را پاک می‌کرد.
+ */
+@Singleton
+class PendingChequeDeepLink @Inject constructor() {
+    private val _pendingChequeId = MutableStateFlow<Long?>(null)
+    val pendingChequeId: StateFlow<Long?> = _pendingChequeId
+
+    fun setChequeId(id: Long) {
+        _pendingChequeId.value = id
+    }
+
+    fun consume() {
+        _pendingChequeId.value = null
+    }
+
 }
