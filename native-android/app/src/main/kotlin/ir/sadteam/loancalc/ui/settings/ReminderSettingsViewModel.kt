@@ -44,19 +44,25 @@ class ReminderSettingsViewModel @Inject constructor(
         viewModelScope.launch { uiPrefs.setAutoTxNotifyEnabled(value) }
     }
 
+    /**
+     * کلیدِ «یادآورِ روزانه» **هر دو** یادآورِ روزانه را با هم می‌برد: پیامِ بازگشتِ کاربرِ غایب
+     * ([UiPrefs.comeBackReminderEnabled]) و «امروز چیزی ثبت نکردی»
+     * ([UiPrefs.dailyExpenseReminderEnabled]).
+     *
+     * ⚠️ قبلاً فقط اولی را ست می‌کرد، پس کاربری که این کلید را خاموش می‌کرد همچنان یادآورِ
+     * روزانه می‌گرفت - یعنی کلید کاری را که متنش وعده می‌داد انجام نمی‌داد. دومی هیچ کنترلِ
+     * دیگری در برنامه ندارد، پس همین‌جا با هم می‌روند.
+     */
     fun setComeBackEnabled(value: Boolean) {
-        viewModelScope.launch { uiPrefs.setComeBackReminderEnabled(value) }
+        viewModelScope.launch {
+            uiPrefs.setComeBackReminderEnabled(value)
+            uiPrefs.setDailyExpenseReminderEnabled(value)
+        }
     }
 
     val dayOffsets: StateFlow<Set<Int>> = uiPrefs.reminderDayOffsets
         .map { parseReminderOffsets(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), setOf(1))
-
-    val soundUri: StateFlow<String?> = uiPrefs.reminderSoundUri
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    val vibrate: StateFlow<Boolean> = uiPrefs.reminderVibrate
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     fun toggleOffset(offset: Int) {
         viewModelScope.launch {
@@ -66,11 +72,5 @@ class ReminderSettingsViewModel @Inject constructor(
         }
     }
 
-    fun setSoundUri(uri: String?) {
-        viewModelScope.launch { uiPrefs.setReminderSoundUri(uri) }
-    }
 
-    fun setVibrate(value: Boolean) {
-        viewModelScope.launch { uiPrefs.setReminderVibrate(value) }
-    }
 }

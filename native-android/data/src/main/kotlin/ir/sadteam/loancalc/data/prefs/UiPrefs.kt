@@ -432,6 +432,8 @@ class UiPrefs(private val context: Context) {
                 .split(',').map { it.trim() }.filter { it.isNotEmpty() }
                 // تعویقِ قبلیِ همین مورد جایگزین می‌شود، نه اینکه روی هم انباشته شود.
                 .filterNot { it.substringBefore('@') == key }
+                // تعویقِ روزهای گذشته هیچ‌وقت خوانده نمی‌شود و فقط فهرست را باد می‌کند.
+                .filter { it.substringAfter('@', "") == todayKey }
             prefs[Keys.SNOOZED_REMINDERS] = (current + "$key@$todayKey").joinToString(",")
         }
     }

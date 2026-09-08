@@ -407,7 +407,7 @@ private fun smsReadingGranted(context: Context): Boolean =
  * `NotificationManagerCompat` همان رشته‌ی `Settings.Secure.enabled_notification_listeners` را
  * می‌خواند ولی امضای پایدارِ androidx را دارد.
  */
-private fun notificationListenerEnabled(context: Context): Boolean =
+internal fun notificationListenerEnabled(context: Context): Boolean =
     NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
 
 /**

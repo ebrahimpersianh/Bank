@@ -155,17 +155,20 @@ fun ReminderSettingsScreen(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        IconButton(onClick = { viewModel.setReminderHour((reminderHour + 23) % 24) }) {
+                        // بازه‌ی ۶ تا ۲۳ عمدی است: کانالِ سررسید `IMPORTANCE_HIGH` است و ویبره
+                        // می‌زند؛ کسی یادآورِ پول را سه بامداد نمی‌خواهد و آن را خرابی می‌بیند.
+                        IconButton(onClick = { viewModel.setReminderHour(if (reminderHour <= 6) 23 else reminderHour - 1) }) {
                             Icon(Icons.Filled.Remove, contentDescription = "یک ساعت زودتر", tint = AppPrimary)
                         }
+                        // بی برچسب، «۳:۰۰» یعنی سه بامداد یا سه بعدازظهر - معلوم نیست.
                         Text(
-                            "${toFa(reminderHour)}:۰۰",
+                            "${toFa(if (reminderHour % 12 == 0) 12 else reminderHour % 12)}:۰۰ ${dayPartLabel(reminderHour)}",
                             color = AppText,
                             fontSize = 20.sp,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.weight(1f),
                         )
-                        IconButton(onClick = { viewModel.setReminderHour((reminderHour + 1) % 24) }) {
+                        IconButton(onClick = { viewModel.setReminderHour(if (reminderHour >= 23) 6 else reminderHour + 1) }) {
                             Icon(Icons.Filled.Add, contentDescription = "یک ساعت دیرتر", tint = AppPrimary)
                         }
                     }
@@ -216,7 +219,8 @@ fun ReminderSettingsScreen(
                 Column {
                     Text(
                         "بدونِ نیاز به صبرکردن (چک‌کردنِ روزانه تا ۲۴ ساعت طول می‌کشه)، همین الان یه " +
-                            "نوتیفِ نمونه با همین صدا/ویبره‌ی تنظیم‌شده بفرست تا مطمئن بشی درست کار می‌کنه.",
+                            "نوتیفِ نمونه بفرست تا مطمئن بشی درست کار می‌کنه. صدا و ویبره‌اش همان چیزی " +
+                            "است که در تنظیماتِ اعلانِ گوشی برای این کانال انتخاب شده.",
                         color = AppMuted,
                         fontSize = 12.sp,
                     )
@@ -280,6 +284,13 @@ fun ReminderSettingsScreen(
             }
         }
     }
+}
+
+/** برچسبِ بخشِ روز کنارِ ساعت - فریمِ `50a` «۹:۰۰ صبح» را نشان می‌دهد، نه «۹:۰۰»ِ مبهم. */
+private fun dayPartLabel(hour: Int): String = when (hour) {
+    in 0..11 -> "صبح"
+    in 12..17 -> "بعدازظهر"
+    else -> "شب"
 }
 
 /** دقیقاً هم‌الگو با notifyLoan/notifyCheque تو DueDateReminderWorker.kt - همون کانال، همون سبک؛

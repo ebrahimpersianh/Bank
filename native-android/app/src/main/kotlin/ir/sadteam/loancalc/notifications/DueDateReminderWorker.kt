@@ -46,6 +46,7 @@ class DueDateReminderWorker @AssistedInject constructor(
     private val chequeRepository: ChequeRepository,
     private val accountRepository: AccountRepository,
     private val uiPrefs: UiPrefs,
+    private val reminderScheduler: ReminderScheduler,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -56,19 +57,27 @@ class DueDateReminderWorker @AssistedInject constructor(
             return Result.success()
         }
 
-        // اگه امروز اعلانِ «برگشت» زده شده، یادآورِ عادی ساکت می‌مونه - وگرنه کاربرِ غایب یه روز
-        // دو تا اعلان می‌گرفت که آزاردهنده‌ست (رجوع کن به ComeBackWorker).
+        // 🚨 این‌جا قبلاً کلِ اجرا را برمی‌گرداند: اگر امروز اعلانِ «برگشت» زده شده بود، کاربر
+        // **هیچ‌کدام** از یادآورهای قسط و چک و پرداختِ تکراریِ آن روز را نمی‌گرفت - یعنی یک
+        // اعلانِ انگیزشیِ کم‌اهمیت، اعلان‌های پول را خاموش می‌کرد، آن هم دقیقاً برای کاربرِ
+        // غایب که محتمل‌ترین کسی است که سررسیدش را فراموش کرده. استدلالِ «یک روز دو اعلان
+        // آزاردهنده است» درست بود ولی جای اعمالش غلط: حالا فقط جلوی **یادآورِ روزانه** را
+        // می‌گیرد، پایین‌تر، کنارِ خودش.
         val today0 = JalaliCalendar.today()
-        if (uiPrefs.lastComeBackNotifiedAt.first() == "${today0.y}-${today0.m}-${today0.d}") {
-            return Result.success()
-        }
+        val comeBackSentToday =
+            uiPrefs.lastComeBackNotifiedAt.first() == "${today0.y}-${today0.m}-${today0.d}"
 
         // 🚨 **اجرای دیررسیده ساکت می‌ماند** - گزارشِ واقعیِ کاربر: «به‌محضِ باز کردنِ برنامه
         // همه با هم می‌آیند». روی گوشی‌هایی که پس‌زمینه را می‌کشند، اجرای موعدرسیده تا لحظه‌ی
         // بالا آمدنِ پروسه عقب می‌افتد - یعنی وسطِ کار کردنِ کاربر، نه سرِ ساعتِ یادآور. اگر
         // بیش از [STALE_RUN_HOURS] از ساعتِ مقرر گذشته باشد چیزی فرستاده نمی‌شود و کار به
         // اجرای فردا موکول می‌شود؛ سررسیدها روزهای بعد هم هنوز سررسیدند، پس چیزی گم نمی‌شود.
-        if (isStaleCatchUpRun(uiPrefs.reminderHour.first())) return Result.success()
+        val staleRun = isStaleCatchUpRun(uiPrefs.reminderHour.first())
+        // 🚨 اجرای دیررسیده لنگر را هم می‌لغزاند: دوره‌ی بعدی ۲۴ ساعت بعد از **همین** اجراست،
+        // نه بعد از ساعتِ مقرر. بی این خط، یک دیرکردِ هفت‌ساعته هر روز تکرار می‌شد و یادآورها
+        // برای همیشه ساکت می‌ماندند. `ExistingPeriodicWorkPolicy.UPDATE` اجازه‌ی بازچینش را
+        // می‌دهد، پس هر اجرا پنجره را به ساعتِ مقرر برمی‌گرداند.
+        if (staleRun) reminderScheduler.schedule()
 
         val defaultOffsets = parseReminderOffsets(uiPrefs.reminderDayOffsets.first())
         // موردهایی که کاربر دیروز «فردا یادم بیاور» زده بود دوباره می‌آیند؛ آن‌هایی که
@@ -102,7 +111,9 @@ class DueDateReminderWorker @AssistedInject constructor(
                 val mo = (due["m"] as? Number)?.toInt() ?: return@forEach
                 val d = (due["d"] as? Number)?.toInt() ?: return@forEach
                 val daysLeft = JalaliCalendar.daysBetween(today, PersianDate(y, mo, d))
-                if (daysLeft !in offsets) return@forEach
+                // در اجرای دیررسیده فقط سررسیدِ **همین امروز** می‌آید: تنها فرصتش همین امروز
+                // است، در حالی که ۱ و ۳ و ۷ روز مانده فردا هم فرصت دارند.
+                if (daysLeft !in offsets || (staleRun && daysLeft != 0)) return@forEach
                 val m = (row["m"] as? Number)?.toInt() ?: return@forEach
                 // کلید دقیقاً همانی است که دکمه‌ی «فردا یادم بیاور» می‌فرستد.
                 if ("loan_${loan.id}_$m" in snoozedToday) return@forEach
@@ -119,7 +130,9 @@ class DueDateReminderWorker @AssistedInject constructor(
                 val offsets = cheque.reminderDayOffsets?.let { parseReminderOffsets(it) } ?: defaultOffsets
                 if (offsets.isEmpty()) return@forEach
                 val daysLeft = JalaliCalendar.daysBetween(today, PersianDate(cheque.dueYear, cheque.dueMonth, cheque.dueDay))
-                if (daysLeft in offsets && "cheque_${cheque.id}" !in snoozedToday) {
+                if (daysLeft in offsets && (!staleRun || daysLeft == 0) &&
+                    "cheque_${cheque.id}" !in snoozedToday
+                ) {
                     notifyCheque(cheque, daysLeft, privacyMode)
                     dueCount++
                 }
@@ -133,7 +146,9 @@ class DueDateReminderWorker @AssistedInject constructor(
             if (offsets.isEmpty()) return@forEach
             val due = nextOccurrence(today, payment.dayOfMonth)
             val daysLeft = JalaliCalendar.daysBetween(today, due)
-            if (daysLeft in offsets && "recurring_${payment.id}" !in snoozedToday) {
+            if (daysLeft in offsets && (!staleRun || daysLeft == 0) &&
+                "recurring_${payment.id}" !in snoozedToday
+            ) {
                 notifyRecurringPayment(payment, daysLeft, privacyMode)
                 dueCount++
             }
@@ -143,7 +158,15 @@ class DueDateReminderWorker @AssistedInject constructor(
         // Poolaki) - این workerِ هر۲۴ساعته بدونِ زمانِ ثابتِ روزانه اجرا می‌شه (رجوع کن به
         // ReminderScheduler)، پس این یادآوری هم best-effort یه‌بار در روزه، نه دقیقاً عصر/شب. اگه
         // امروز هیچ تراکنشی (چه دخل چه خرج) تو هیچ حسابی ثبت نشده باشه، یه نوتیفِ ساده یادآوری می‌ده.
-        if (uiPrefs.dailyExpenseReminderEnabled.first()) {
+        // ⚠️ شرطِ «تا حالا چیزی ثبت نشده» صبح تقریباً همیشه درست است، پس این یادآور روی
+        // ساعتِ یادآورِ سررسید (پیش‌فرض ۹ صبح) هر روز و بی‌معنا می‌آمد. حالا فقط از
+        // [DAILY_NUDGE_FROM_HOUR] به بعد فرستاده می‌شود - «تا شب چیزی ثبت نکردی» یعنی شب.
+        // و اگر امروز اعلانِ «برگشت» رفته، این یکی ساکت می‌ماند (نه برعکس).
+        val hourNow = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        if (uiPrefs.dailyExpenseReminderEnabled.first() &&
+            !comeBackSentToday &&
+            hourNow >= DAILY_NUDGE_FROM_HOUR
+        ) {
             val todayHasTransaction = accountRepository.observeTransactions().first()
                 .any { it.year == today.y && it.month == today.m && it.day == today.d }
             if (!todayHasTransaction) {
@@ -169,6 +192,7 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("${toFa(count.toString())} سررسیدِ نزدیک")
             .setContentText("برای دیدنِ همه باز کن")
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
             .setGroup(GROUP_DUE_DATES)
             .setGroupSummary(true)
             .setContentIntent(openAppIntent(GROUP_SUMMARY_NOTIFICATION_ID))
@@ -380,6 +404,9 @@ class DueDateReminderWorker @AssistedInject constructor(
     }
 
     private companion object {
+        /** یادآورِ روزانه از این ساعت به بعد - «تا شب چیزی ثبت نکردی» یعنی شب، نه صبح. */
+        const val DAILY_NUDGE_FROM_HOUR = 20
+
         const val DAILY_EXPENSE_REMINDER_REQUEST_CODE = 990011
         const val DAILY_EXPENSE_REMINDER_NOTIFICATION_ID = 990011
 
