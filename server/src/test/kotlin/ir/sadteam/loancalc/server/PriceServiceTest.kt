@@ -53,8 +53,16 @@ class PriceServiceTest {
         assertEquals(900_000.0, prices["USD"])
     }
 
+    /**
+     * فقط دو سکه‌ای که خودِ سرویس دارد نگاشت می‌شوند.
+     *
+     * ⚠️ این تست قبلاً هر پنج سکه را انتظار داشت، ولی نیم‌سکه/ربع‌سکه/سکه‌ی گرمی به کدهای
+     * **ناموجود** نگاشته شده بودند و بی‌صدا «—» می‌دادند؛ در به‌روزرسانیِ ۵۶ نماد عمداً از
+     * نگاشت برداشته شدند - رجوع کن به کامنتِ بالای [PriceService]. پس انتظارِ تست غلط بود،
+     * نه کد.
+     */
     @Test
-    fun `هر پنج سکه نگاشت دارند`() {
+    fun `فقط سکه‌هایی که سرویس دارد نگاشت می‌شوند`() {
         val prices = PriceService.mapToCatalog(
             PriceService.parseQuotes(
                 body(
@@ -66,10 +74,7 @@ class PriceServiceTest {
                 ),
             ),
         )
-        assertEquals(
-            listOf("SEKKE_EMAMI", "SEKKE_AZADI", "NIM_SEKKE", "ROB_SEKKE", "SEKKE_GERAMI").sorted(),
-            prices.keys.sorted(),
-        )
+        assertEquals(listOf("SEKKE_AZADI", "SEKKE_EMAMI"), prices.keys.sorted())
     }
 
     @Test

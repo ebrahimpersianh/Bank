@@ -13,6 +13,7 @@ import ir.sadteam.loancalc.server.Db
 import ir.sadteam.loancalc.server.MyketException
 import ir.sadteam.loancalc.server.cafebazaarConfigured
 import ir.sadteam.loancalc.server.execute
+import ir.sadteam.loancalc.server.executeCounting
 import ir.sadteam.loancalc.server.myketConfigured
 import ir.sadteam.loancalc.server.queryOne
 import ir.sadteam.loancalc.server.requireAuth
@@ -146,7 +147,9 @@ fun Route.subscriptionRoutes() {
                     if (claimed == 0) {
                         // این رسید قبلاً پردازش شده - هیچ تمدیدی، فقط وضعیتِ فعلی.
                         conn.commit()
-                        return@withConnection currentSubscribedUntil
+                        // `users.subscribed_until` فقط در حالتِ نادرِ داده‌ی ناقص خالی است؛
+                        // پاسخ رشته‌ی غیرنال می‌خواهد، پس همان‌جا رشته‌ی خالی برمی‌گردد.
+                        return@withConnection currentSubscribedUntil.orEmpty()
                     }
                     /* اگه اشتراکِ قبلی هنوز فعاله، از رو همون تاریخِ انقضا جلو می‌ریم (نه از
                        الان) تا خریدِ زودتر از موعد، مدتِ باقی‌مونده رو از دست ندی. */
