@@ -124,6 +124,9 @@ fun Route.authRoutes() {
             val code = if (testAccount) TEST_ACCOUNT_CODE else (10000 + secureRandom.nextInt(90000)).toString() // ۵ رقمی
             val expiresAt = System.currentTimeMillis() + OTP_TTL_MS
             Db.withConnection { conn ->
+                // کدهای منقضی هیچ‌وقت پاک نمی‌شدند، پس جدول به یک آرشیوِ دائمی از هر شماره‌ای
+                // که تا حالا کد گرفته تبدیل می‌شد - داده‌ی شخصی که هیچ کاربردی ندارد.
+                conn.execute("DELETE FROM otps WHERE expires_at < ?", System.currentTimeMillis())
                 conn.execute(
                     "INSERT INTO otps (phone, code_hash, expires_at) VALUES (?, ?, ?)",
                     phone, hashCode(code), expiresAt
@@ -175,7 +178,9 @@ fun Route.authRoutes() {
             }
 
             Db.withConnection { conn -> conn.execute("UPDATE otps SET attempts = attempts + 1 WHERE id = ?", otp.id) }
-            if (hashCode(code) != otp.codeHash) {
+            // مقایسه‌ی ثابت‌زمان: `!=`ِ رشته‌ای به‌محضِ اولین کاراکترِ متفاوت برمی‌گردد و از
+            // اختلافِ زمانش می‌شود کد را حرف‌به‌حرف حدس زد.
+            if (!MessageDigest.isEqual(hashCode(code).toByteArray(), otp.codeHash.toByteArray())) {
                 Log.warn("login_wrong_code", "کدِ اشتباه", "phone" to maskPhone(phone), "attempt" to (otp.attempts + 1))
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to "wrong_code"))
                 return@post

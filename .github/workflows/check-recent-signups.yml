@@ -31,11 +31,11 @@ jobs:
             DB=~/VameMan/data.sqlite
             echo "=== ۵۰ درخواستِ اخیرِ کدِ تایید (شماره + زمان) ==="
             sqlite3 -header -column "$DB" \
-              "SELECT phone, created_at FROM otps ORDER BY created_at DESC LIMIT 50;"
+              "SELECT substr(phone,1,4) || '***' || substr(phone,-2), created_at FROM otps ORDER BY created_at DESC LIMIT 50;"
             echo ""
             echo "=== از این ۵۰ تا، کدوم‌ها واقعاً وارد شدن (تو جدولِ users هستن) ==="
             sqlite3 -header -column "$DB" \
-              "SELECT DISTINCT o.phone, u.created_at AS registered_at
+              "SELECT DISTINCT substr(o.phone,1,4) || '***' || substr(o.phone,-2), u.created_at AS registered_at
                FROM (SELECT phone FROM otps ORDER BY created_at DESC LIMIT 50) o
                JOIN users u ON u.phone = o.phone
                ORDER BY u.created_at DESC;"

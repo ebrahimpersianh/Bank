@@ -20,12 +20,17 @@ jobs:
           fi
 
       - name: وضعیتِ سرویس + دیسک + جوابِ واقعیِ API
+        env:
+          OWNER_PHONE: ${{ secrets.OWNER_PHONE }}
         if: steps.check.outputs.ready == 'true'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          # شماره‌ی شخصیِ مالک از سکرت می‌آید، نه هاردکد در فایل. اگر سکرت ست نشده باشد
+          # فقط ردیفِ حسابِ تست برمی‌گردد و کوئری نمی‌شکند.
+          envs: OWNER_PHONE
           script: |
             echo "=== pm2 status ==="
             pm2 describe loan-calc-api | grep -E "status|uptime|restarts" || pm2 list
@@ -40,7 +45,7 @@ jobs:
             curl -s -o /dev/null -w "HTTP status: %{http_code}\n" --max-time 5 http://localhost:3000/api/app-version || echo "جواب نداد"
             echo ""
             echo "=== وضعیتِ اشتراکِ حساب‌های تست/دائمی ==="
-            sqlite3 ~/VameMan/data.sqlite "SELECT phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE phone IN ('09121111111','09366963867');" 2>&1 || echo "کوئری شکست خورد"
+            sqlite3 ~/VameMan/data.sqlite "SELECT substr(phone,1,4) || '***' || substr(phone,-2), subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE phone IN ('09121111111', '$OWNER_PHONE');" 2>&1 || echo "کوئری شکست خورد"
             echo ""
             echo "=== ۱۰ خطِ آخرِ لاگ ==="
             pm2 logs loan-calc-api --lines 10 --nostream

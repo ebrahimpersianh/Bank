@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.data.network
 
 import com.google.gson.Gson
 import okhttp3.OkHttpClient
+import ir.sadteam.loancalc.data.BuildConfig
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -16,14 +17,17 @@ private const val BASE_URL =
 
 object ApiClient {
     fun create(baseUrl: String = BASE_URL): ApiService {
-        val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BASIC
-        }
-        val client = OkHttpClient.Builder()
+        // 🚨 لاگِ شبکه فقط در بیلدِ دیباگ. قبلاً همیشه نصب می‌شد، یعنی در نسخه‌ی منتشرشده هم
+        // آدرسِ هر درخواست و کدِ پاسخش در logcat می‌رفت - روی گوشیِ کاربر و قابلِ خواندن.
+        val builder = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
-            .addInterceptor(logging)
-            .build()
+        if (BuildConfig.DEBUG) {
+            builder.addInterceptor(
+                HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC },
+            )
+        }
+        val client = builder.build()
 
         return Retrofit.Builder()
             .baseUrl(baseUrl)

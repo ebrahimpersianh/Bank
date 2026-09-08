@@ -372,8 +372,13 @@ class MainActivity : FragmentActivity() {
                     LocalThemeReveal provides themeReveal,
                     // پورت .app.fs-small/fs-medium/fs-large (CSS zoom) تو www/index.html - هم
                     // فونت هم فاصله‌ها (dp) با هم مقیاس می‌شن، دقیقاً مثل زوم کل کانتینر .app.
+                    // 🚨 فقط `fontScale` ضرب می‌شود، نه `density`. قبلاً هر دو ضرب می‌شدند،
+                    // یعنی dpها هم بزرگ می‌شدند و این با فونت‌اسکیلِ خودِ اندروید هم جمع
+                    // می‌شد: کاربری که در گوشی ۱٫۳ گذاشته و در اپ «بزرگ» را انتخاب کند به
+                    // بزرگ‌نماییِ کل صفحه می‌رسید و چیدمان‌های شلوغ (کارتِ خانه، جدولِ اقساط)
+                    // می‌شکستند.
                     LocalDensity provides Density(
-                        density = baseDensity.density * fontScale,
+                        density = baseDensity.density,
                         fontScale = baseDensity.fontScale * fontScale,
                     ),
                 ) {
