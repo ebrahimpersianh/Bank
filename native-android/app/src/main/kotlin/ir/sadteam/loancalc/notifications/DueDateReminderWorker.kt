@@ -21,6 +21,8 @@ import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.parseReminderOffsets
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.LoanRepository
@@ -61,10 +63,33 @@ class DueDateReminderWorker @AssistedInject constructor(
             return Result.success()
         }
 
+        // 🚨 **اجرای دیررسیده ساکت می‌ماند** - گزارشِ واقعیِ کاربر: «به‌محضِ باز کردنِ برنامه
+        // همه با هم می‌آیند». روی گوشی‌هایی که پس‌زمینه را می‌کشند، اجرای موعدرسیده تا لحظه‌ی
+        // بالا آمدنِ پروسه عقب می‌افتد - یعنی وسطِ کار کردنِ کاربر، نه سرِ ساعتِ یادآور. اگر
+        // بیش از [STALE_RUN_HOURS] از ساعتِ مقرر گذشته باشد چیزی فرستاده نمی‌شود و کار به
+        // اجرای فردا موکول می‌شود؛ سررسیدها روزهای بعد هم هنوز سررسیدند، پس چیزی گم نمی‌شود.
+        if (isStaleCatchUpRun(uiPrefs.reminderHour.first())) return Result.success()
+
         val defaultOffsets = parseReminderOffsets(uiPrefs.reminderDayOffsets.first())
-        val soundUri = uiPrefs.reminderSoundUri.first()
-        val vibrate = uiPrefs.reminderVibrate.first()
-        val channelId = ReminderChannels.ensure(applicationContext, soundUri, vibrate)
+        // موردهایی که کاربر دیروز «فردا یادم بیاور» زده بود دوباره می‌آیند؛ آن‌هایی که
+        // **امروز** تعویق خورده‌اند رد می‌شوند.
+        val todayKey = "${today0.y}-${today0.m}-${today0.d}"
+        val snoozedToday = uiPrefs.snoozedReminders.first()
+            .filter { it.substringAfter('@', "") == todayKey }
+            .map { it.substringBefore('@') }
+            .toSet()
+        // سه کانالِ ثابت جای کانالِ پویا - رجوع کن به کامنتِ ReminderChannels. صدا و ویبره
+        // دیگر از این‌جا نمی‌آیند؛ کانال خودش داردشان.
+        ReminderChannels.ensureAll(applicationContext)
+
+        // حالتِ خصوصی **یک‌بار** خوانده می‌شود و به همه‌ی اعلان‌ها می‌رود. قبلاً فقط
+        // notifyRecurringPayment می‌گرفتش، پس شماره‌ی چک و نامِ وام روی صفحه‌ی قفل می‌آمدند -
+        // دقیقاً همان چیزی که این کلید جلوش را می‌گیرد.
+        val privacyMode = uiPrefs.privacyModeEnabled.first()
+
+        // برای گروه‌بندی: هر اعلان جدا می‌ماند ولی زیرِ یک سرِ مشترک جمع می‌شود، پس باید
+        // بدانیم چند تا شد.
+        var dueCount = 0
 
         val today = JalaliCalendar.today()
         loanRepository.getLoans().forEach { loan ->
@@ -79,7 +104,10 @@ class DueDateReminderWorker @AssistedInject constructor(
                 val daysLeft = JalaliCalendar.daysBetween(today, PersianDate(y, mo, d))
                 if (daysLeft !in offsets) return@forEach
                 val m = (row["m"] as? Number)?.toInt() ?: return@forEach
-                notifyLoan(loan, m, daysLeft, channelId)
+                // کلید دقیقاً همانی است که دکمه‌ی «فردا یادم بیاور» می‌فرستد.
+                if ("loan_${loan.id}_$m" in snoozedToday) return@forEach
+                notifyLoan(loan, m, daysLeft, privacyMode)
+                dueCount++
             }
         }
 
@@ -91,7 +119,10 @@ class DueDateReminderWorker @AssistedInject constructor(
                 val offsets = cheque.reminderDayOffsets?.let { parseReminderOffsets(it) } ?: defaultOffsets
                 if (offsets.isEmpty()) return@forEach
                 val daysLeft = JalaliCalendar.daysBetween(today, PersianDate(cheque.dueYear, cheque.dueMonth, cheque.dueDay))
-                if (daysLeft in offsets) notifyCheque(cheque, daysLeft, channelId)
+                if (daysLeft in offsets && "cheque_${cheque.id}" !in snoozedToday) {
+                    notifyCheque(cheque, daysLeft, privacyMode)
+                    dueCount++
+                }
             }
 
         // یادآوریِ پرداخت‌های تکراریِ ماژولِ حسابداری (مثلِ اجاره) - رجوع کن به CLAUDE.md، بخشِ
@@ -102,8 +133,9 @@ class DueDateReminderWorker @AssistedInject constructor(
             if (offsets.isEmpty()) return@forEach
             val due = nextOccurrence(today, payment.dayOfMonth)
             val daysLeft = JalaliCalendar.daysBetween(today, due)
-            if (daysLeft in offsets) {
-                notifyRecurringPayment(payment, daysLeft, channelId, uiPrefs.privacyModeEnabled.first())
+            if (daysLeft in offsets && "recurring_${payment.id}" !in snoozedToday) {
+                notifyRecurringPayment(payment, daysLeft, privacyMode)
+                dueCount++
             }
         }
 
@@ -115,10 +147,88 @@ class DueDateReminderWorker @AssistedInject constructor(
             val todayHasTransaction = accountRepository.observeTransactions().first()
                 .any { it.year == today.y && it.month == today.m && it.day == today.d }
             if (!todayHasTransaction) {
-                notifyDailyExpenseReminder(channelId)
+                notifyDailyExpenseReminder()
             }
         }
+
+        // سرِ گروه فقط از دو مورد به بالا. با یک اعلان، سرِ گروه روی اندروید ۷ یک ردیفِ
+        // تکراریِ اضافه می‌سازد و چیزی هم جمع نمی‌کند.
+        if (dueCount >= 2) notifyGroupSummary(dueCount)
         return Result.success()
+    }
+
+    /**
+     * سرِ مشترکِ گروه. سه قسطِ یک روز حالا زیرِ یک ردیفِ جمع‌شونده می‌نشینند، ولی هر کدام
+     * اعلانِ خودش را دارد - پس کنشِ «پرداخت شد» برای هر مورد جدا می‌ماند.
+     *
+     * `setGroupSummary(true)` و `setGroup`ِ یکسان با بچه‌ها اجباری‌اند؛ بی سرِ گروه،
+     * اندروید ۷+ خودش بعدِ چهار اعلان یک سرِ بی‌متن می‌سازد.
+     */
+    private fun notifyGroupSummary(count: Int) {
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("${toFa(count.toString())} سررسیدِ نزدیک")
+            .setContentText("برای دیدنِ همه باز کن")
+            .setGroup(GROUP_DUE_DATES)
+            .setGroupSummary(true)
+            .setContentIntent(openAppIntent(GROUP_SUMMARY_NOTIFICATION_ID))
+            .setAutoCancel(true)
+            .build()
+        NotificationManagerCompat.from(applicationContext).notify(GROUP_SUMMARY_NOTIFICATION_ID, notification)
+    }
+
+    /** بازکردنِ خودِ برنامه، بی مقصدِ خاص. */
+    private fun openAppIntent(requestCode: Int): PendingIntent {
+        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        return PendingIntent.getActivity(
+            applicationContext,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
+
+    /** دکمه‌ی «فردا یادم بیاور» - روی هر یادآورِ سررسید. */
+    private fun snoozeAction(notificationId: Int, snoozeKey: String): NotificationCompat.Action {
+        val intent = Intent(applicationContext, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_SNOOZE
+            putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+            putExtra(NotificationActionReceiver.EXTRA_SNOOZE_KEY, snoozeKey)
+        }
+        // requestCode یکتا اجباریه: با کدِ تکراری، extras یه PendingIntentِ قدیمی‌تر رو
+        // بازنویسی نمی‌کنن و دکمه روی موردِ اشتباه عمل می‌کنه.
+        val pending = PendingIntent.getBroadcast(
+            applicationContext,
+            "snooze_$snoozeKey".hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        return NotificationCompat.Action.Builder(0, "فردا یادم بیاور", pending).build()
+    }
+
+    /** دکمه‌ی «پرداخت شد» - قسطِ وام یا چک. */
+    private fun markPaidAction(
+        notificationId: Int,
+        loanId: Long? = null,
+        installmentNumber: Int? = null,
+        chequeId: Long? = null,
+    ): NotificationCompat.Action {
+        val intent = Intent(applicationContext, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_MARK_PAID
+            putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+            loanId?.let { putExtra(NotificationActionReceiver.EXTRA_LOAN_ID, it) }
+            installmentNumber?.let { putExtra(NotificationActionReceiver.EXTRA_INSTALLMENT, it) }
+            chequeId?.let { putExtra(NotificationActionReceiver.EXTRA_CHEQUE_ID, it) }
+        }
+        val pending = PendingIntent.getBroadcast(
+            applicationContext,
+            "paid_$notificationId".hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        return NotificationCompat.Action.Builder(0, "پرداخت شد", pending).build()
     }
 
     /** نزدیک‌ترین تاریخی که [dayOfMonth] رخ می‌ده (امروز یا بعدش) - اگه امسال/همین‌ماه گذشته باشه
@@ -139,7 +249,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         else -> "${toFa(daysLeft.toString())} روز دیگه"
     }
 
-    private fun notifyLoan(loan: LoanEntity, m: Int, daysLeft: Int, channelId: String) {
+    private fun notifyLoan(loan: LoanEntity, m: Int, daysLeft: Int, privacyMode: Boolean) {
         val whenLabel = dayLabel(daysLeft)
         val notificationId = "${loan.id}_$m".hashCode()
         // زدنِ نوتیفیکیشن باید مستقیم همون وام رو باز کنه (مورد ۵ تو CLAUDE.md) - رجوع کن به
@@ -155,29 +265,65 @@ class DueDateReminderWorker @AssistedInject constructor(
             contentIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val notification = NotificationCompat.Builder(applicationContext, channelId)
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
-            .setContentTitle("یادآوری قسط ${loan.name}")
-            .setContentText("قسط شماره ${toFa(m)} وام «${loan.name}» $whenLabel سررسید می‌شه")
+            // در حالتِ خصوصی نامِ وام هم نمی‌آید؛ «وامِ مسکنِ ۱۲ میلیونی» روی صفحه‌ی قفل
+            // همان‌قدر افشاست که مبلغ.
+            .setContentTitle(if (privacyMode) "یادآوریِ قسط" else "یادآوری قسط ${loan.name}")
+            .setContentText(
+                if (privacyMode) {
+                    "قسط شماره ${toFa(m)} $whenLabel سررسید می‌شه"
+                } else {
+                    "قسط شماره ${toFa(m)} وام «${loan.name}» $whenLabel سررسید می‌شه"
+                },
+            )
             .setContentIntent(pendingIntent)
+            .addAction(markPaidAction(notificationId, loanId = loan.id, installmentNumber = m))
+            .addAction(snoozeAction(notificationId, "loan_${loan.id}_$m"))
+            .setGroup(GROUP_DUE_DATES)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
     }
 
-    private fun notifyCheque(cheque: ChequeEntity, daysLeft: Int, channelId: String) {
+    private fun notifyCheque(cheque: ChequeEntity, daysLeft: Int, privacyMode: Boolean) {
         val whenLabel = dayLabel(daysLeft)
-        val notification = NotificationCompat.Builder(applicationContext, channelId)
+        val notificationId = "cheque_${cheque.id}".hashCode()
+        // 🚨 این اعلان `setContentIntent` **نداشت**، پس تپ روش هیچ کاری نمی‌کرد - نه برنامه
+        // را باز می‌کرد و نه بسته می‌شد (`setAutoCancel` بی contentIntent بی‌اثر است).
+        // دیپ‌لینک فقط برای وام نوشته شده بود.
+        val contentIntent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(EXTRA_OPEN_CHEQUE_ID, cheque.id)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            notificationId,
+            contentIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
             .setContentTitle("یادآوری سررسید چک")
-            .setContentText("چک شماره ${toFa(cheque.chequeNumber)} (${cheque.bankName}) $whenLabel سررسید می‌شه")
+            // شماره‌ی چک و نامِ بانک در حالتِ خصوصی نمی‌آیند. شماره‌ی چک استثنای ارقام است
+            // (لاتین می‌ماند) ولی این‌جا اصلاً نشان داده نمی‌شود.
+            .setContentText(
+                if (privacyMode) {
+                    "یک چک $whenLabel سررسید می‌شه"
+                } else {
+                    "چک شماره ${cheque.chequeNumber} (${cheque.bankName}) $whenLabel سررسید می‌شه"
+                },
+            )
+            .setContentIntent(pendingIntent)
+            .addAction(markPaidAction(notificationId, chequeId = cheque.id))
+            .addAction(snoozeAction(notificationId, "cheque_${cheque.id}"))
+            .setGroup(GROUP_DUE_DATES)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
-        val notificationId = "cheque_${cheque.id}".hashCode()
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
     }
 
@@ -189,11 +335,12 @@ class DueDateReminderWorker @AssistedInject constructor(
     private fun notifyRecurringPayment(
         payment: RecurringPaymentEntity,
         daysLeft: Int,
-        channelId: String,
         privacyMode: Boolean,
     ) {
         val whenLabel = dayLabel(daysLeft)
-        val notification = NotificationCompat.Builder(applicationContext, channelId)
+        val notificationId = "recurring_${payment.id}".hashCode()
+        // این هم `setContentIntent` نداشت - همان باگِ اعلانِ چک.
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
             .setContentTitle("یادآوریِ پرداختِ تکراری")
@@ -201,34 +348,33 @@ class DueDateReminderWorker @AssistedInject constructor(
                 if (privacyMode) {
                     "«${payment.name}» $whenLabel سررسید می‌شه"
                 } else {
-                    "«${payment.name}» (${fmt(payment.amount)} ریال) $whenLabel سررسید می‌شه"
+                    // واحد **تومان** و رقمِ فارسی (بندِ ۲ی README + لایه‌ی ارقام). ستون ریال
+                    // است پس تبدیل همین لبه.
+                    "«${payment.name}» (${fmt(rialToToman(payment.amount.toLong()).toDouble()).faDigits()} تومان) " +
+                        "$whenLabel سررسید می‌شه"
                 },
             )
+            .setContentIntent(openAppIntent(notificationId))
+            .addAction(snoozeAction(notificationId, "recurring_${payment.id}"))
+            .setGroup(GROUP_DUE_DATES)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
-        val notificationId = "recurring_${payment.id}".hashCode()
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
     }
 
-    private fun notifyDailyExpenseReminder(channelId: String) {
-        val contentIntent = Intent(applicationContext, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            applicationContext,
-            DAILY_EXPENSE_REMINDER_REQUEST_CODE,
-            contentIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        val notification = NotificationCompat.Builder(applicationContext, channelId)
+    private fun notifyDailyExpenseReminder() {
+        val pendingIntent = openAppIntent(DAILY_EXPENSE_REMINDER_REQUEST_CODE)
+        // کانالِ انگیزشیِ کم‌اهمیت، نه کانالِ سررسید - این یکی نباید صدا کند و کاربر باید
+        // بتواند جدا خاموشش کند بی این‌که یادآورِ قسط را از دست بدهد.
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_NUDGES)
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
             .setContentTitle("دخل‌وخرج امروز یادت نره")
             .setContentText("امروز هنوز هیچ تراکنشی ثبت نکردی - یه سر بزن به «جیبک»")
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
         NotificationManagerCompat.from(applicationContext).notify(DAILY_EXPENSE_REMINDER_NOTIFICATION_ID, notification)
     }
@@ -236,5 +382,26 @@ class DueDateReminderWorker @AssistedInject constructor(
     private companion object {
         const val DAILY_EXPENSE_REMINDER_REQUEST_CODE = 990011
         const val DAILY_EXPENSE_REMINDER_NOTIFICATION_ID = 990011
+
+        /** کلیدِ گروهِ سررسیدها. همه‌ی بچه‌ها و سرِ گروه باید همین را داشته باشند. */
+        const val GROUP_DUE_DATES = "ir.sadteam.loancalc.group.DUE_DATES"
+        const val GROUP_SUMMARY_NOTIFICATION_ID = 990012
+    }
+
+    /**
+     * آیا این اجرا خیلی دیرتر از ساعتِ مقررِ یادآور است؟
+     *
+     * پنجره‌ی [STALE_RUN_HOURS]ساعته عمدی است: اجرایی که چند دقیقه/یکی‌دو ساعت دیر شده هنوز
+     * «صبح» است و باید بفرستد؛ اجرایی که شش ساعت دیر شده یعنی گوشی جلویش را گرفته بود و
+     * حالا دارد سرِ فرصت خالی می‌شود.
+     */
+    private fun isStaleCatchUpRun(reminderHour: Int): Boolean {
+        val now = java.util.Calendar.getInstance()
+        val hoursSinceTarget = now.get(java.util.Calendar.HOUR_OF_DAY) - reminderHour
+        return hoursSinceTarget > STALE_RUN_HOURS
+    }
+
+    private companion object {
+        const val STALE_RUN_HOURS = 6
     }
 }

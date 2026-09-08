@@ -85,6 +85,13 @@
                 android:resource="@xml/loan_widget_info" />
         </receiver>
 
+        <!-- کنش‌های داخلِ اعلان («پرداخت شد» / «فردا یادم بیاور») - رجوع کن به
+             notifications/NotificationActionReceiver.kt. exported=false چون فقط
+             PendingIntentهای خودِ اپ صداش می‌زنن. -->
+        <receiver
+            android:name=".notifications.NotificationActionReceiver"
+            android:exported="false" />
+
         <!-- چیدنِ دوباره‌ی کارهای زمان‌بندی‌شده بعد از ری‌استارتِ گوشی یا آپدیتِ خودِ اپ. -->
         <receiver
             android:name=".notifications.BootReceiver"

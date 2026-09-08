@@ -37,6 +37,8 @@ class UiPrefs(private val context: Context) {
         val LAST_COME_BACK_NOTIFIED_AT = stringPreferencesKey("last_come_back_notified_at")
         val NOTIF_AUTO_IMPORT_PACKAGES = stringPreferencesKey("notif_auto_import_packages")
         val IGNORED_SUBSCRIPTIONS = stringPreferencesKey("ignored_subscriptions")
+        val SNOOZED_REMINDERS = stringPreferencesKey("snoozed_reminders")
+        val REMINDER_HOUR = intPreferencesKey("reminder_hour")
         val DAILY_EXPENSE_REMINDER_ENABLED = booleanPreferencesKey("daily_expense_reminder_enabled")
         val AVATAR_SHAPE = stringPreferencesKey("avatar_shape")
         val AVATAR_COLOR = stringPreferencesKey("avatar_color")
@@ -399,6 +401,42 @@ class UiPrefs(private val context: Context) {
         context.uiPrefsDataStore.edit { it[Keys.IGNORED_SUBSCRIPTIONS] = value.joinToString(",") }
     }
 
+    /**
+     * موردهایی که کاربر از داخلِ اعلان «فردا یادم بیاور» زده - هر عضو `کلید@تاریخِ تعویق`.
+     *
+     * تاریخ همراهِ کلید ذخیره می‌شود تا اجرای فردا بفهمد تعویق **مالِ دیروز** بوده و دوباره
+     * بفرستد؛ بدونِ تاریخ، تعویقِ یک‌روزه بی‌صدا دائمی می‌شد و کاربر دیگر هیچ‌وقت یادآورِ آن قسط
+     * را نمی‌گرفت.
+     */
+    val snoozedReminders: Flow<Set<String>> = context.uiPrefsDataStore.data.map { prefs ->
+        prefs[Keys.SNOOZED_REMINDERS]
+            ?.split(',')
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?.toSet()
+            ?: emptySet()
+    }
+
+    /** کلیدِ مورد را با تاریخِ **امروز** ثبت می‌کند؛ ورودی به شکلِ `y-m-d` است. */
+    suspend fun setSnoozedUntilTomorrow(key: String, todayKey: String) {
+        context.uiPrefsDataStore.edit { prefs ->
+            val current = prefs[Keys.SNOOZED_REMINDERS].orEmpty()
+                .split(',').map { it.trim() }.filter { it.isNotEmpty() }
+                // تعویقِ قبلیِ همین مورد جایگزین می‌شود، نه اینکه روی هم انباشته شود.
+                .filterNot { it.substringBefore('@') == key }
+            prefs[Keys.SNOOZED_REMINDERS] = (current + "$key@$todayKey").joinToString(",")
+        }
+    }
+
+    /** ساعتِ روزانه‌ی یادآور (۰ تا ۲۳). پیش‌فرض ۹ صبح. */
+    val reminderHour: Flow<Int> = context.uiPrefsDataStore.data.map { prefs ->
+        (prefs[Keys.REMINDER_HOUR] ?: DEFAULT_REMINDER_HOUR).coerceIn(0, 23)
+    }
+
+    suspend fun setReminderHour(hour: Int) {
+        context.uiPrefsDataStore.edit { it[Keys.REMINDER_HOUR] = hour.coerceIn(0, 23) }
+    }
+
     /** یادآوریِ روزانه‌ی «دخل‌وخرج امروز یادت نره» (رجوع کن به DueDateReminderWorker) - پیش‌فرض خاموش
      * مثلِ بقیه‌ی یادآوری‌های اپ، فقط با سوییچِ صریحِ کاربر تو تنظیمات روشن می‌شه. */
     val dailyExpenseReminderEnabled: Flow<Boolean> =
@@ -406,5 +444,10 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setDailyExpenseReminderEnabled(value: Boolean) {
         context.uiPrefsDataStore.edit { it[Keys.DAILY_EXPENSE_REMINDER_ENABLED] = value }
+    }
+
+    companion object {
+        /** ساعتِ پیش‌فرضِ یادآور - صبح، وقتی کاربر هنوز فرصتِ کاری کردن دارد. */
+        const val DEFAULT_REMINDER_HOUR = 9
     }
 }

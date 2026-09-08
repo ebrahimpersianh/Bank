@@ -71,7 +71,10 @@ class ComeBackWorker @AssistedInject constructor(
     }
 
     private fun notifyComeBack(days: Int) {
-        val channelId = ReminderChannels.ensure(applicationContext, null, vibrate = true)
+        // اعلانِ انگیزشی کانالِ کم‌اهمیتِ خودش را دارد، جدا از یادآورِ سررسید - پس کاربر
+        // می‌تواند این یکی را خاموش کند و یادآورِ قسط را نگه دارد.
+        ReminderChannels.ensureAll(applicationContext)
+        val channelId = ReminderChannels.CHANNEL_NUDGES
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra(EXTRA_OPEN_NEW_TRANSACTION, true)

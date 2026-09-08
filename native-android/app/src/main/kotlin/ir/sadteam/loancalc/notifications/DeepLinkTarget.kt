@@ -10,6 +10,12 @@ import javax.inject.Singleton
 const val EXTRA_OPEN_LOAN_ID = "open_loan_id"
 
 /**
+ * کلیدِ extra-یِ اعلانِ سررسیدِ **چک**. تازه است: اعلانِ چک تا حالا هیچ `contentIntent`ی
+ * نداشت، پس تپ روش هیچ کاری نمی‌کرد و مقصدی هم لازم نبود. حالا که دارد، مقصد می‌خواهد.
+ */
+const val EXTRA_OPEN_CHEQUE_ID = "open_cheque_id"
+
+/**
  * پلِ سبک بینِ Intentِ زدنِ نوتیفیکیشنِ یادآوری (که تو MainActivity.onCreate/onNewIntent می‌رسه) و
  * خودِ کامپوزیبل‌ها - رجوع کن به مورد ۵ تو CLAUDE.md. چون کامپوزیبلِ واقعیِ لیستِ وام‌ها
  * (MyLoansScreen) پشتِ چندتا گیتِ دیگه‌ست (قفلِ PIN، مجوزها، ورود، خوش‌آمد - رجوع کن به AppRoot تو
@@ -28,6 +34,25 @@ class DeepLinkTarget @Inject constructor() {
 
     fun consume() {
         _pendingLoanId.value = null
+    }
+}
+
+/**
+ * هم‌الگوی [PendingLoanDeepLink] برای چک. جدا نگه داشته شد نه ادغام، چون دو مقصدِ مستقل‌اند
+ * و اعلانِ گروه‌شده می‌تواند هم‌زمان یکی از هر کدام داشته باشد - با یک فیلدِ مشترک، دومی
+ * اولی را پاک می‌کرد.
+ */
+@Singleton
+class PendingChequeDeepLink @Inject constructor() {
+    private val _pendingChequeId = MutableStateFlow<Long?>(null)
+    val pendingChequeId: StateFlow<Long?> = _pendingChequeId
+
+    fun setChequeId(id: Long) {
+        _pendingChequeId.value = id
+    }
+
+    fun consume() {
+        _pendingChequeId.value = null
     }
 
     /**

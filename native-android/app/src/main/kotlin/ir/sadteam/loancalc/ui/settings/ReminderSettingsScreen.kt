@@ -3,7 +3,6 @@ package ir.sadteam.loancalc.ui.settings
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -61,8 +60,6 @@ fun ReminderSettingsScreen(
 ) {
     val enabled by notificationsViewModel.enabled.collectAsState()
     val dayOffsets by viewModel.dayOffsets.collectAsState()
-    val soundUri by viewModel.soundUri.collectAsState()
-    val vibrate by viewModel.vibrate.collectAsState()
     val context = LocalContext.current
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -75,7 +72,7 @@ fun ReminderSettingsScreen(
     // نشون‌دهنده‌ی نوتیفِ واقعیه، نه یه نمونه‌ی جداگانه با تنظیماتِ متفاوت.
     val testPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { granted -> if (granted) sendTestReminderNotification(context, soundUri, vibrate) }
+    ) { granted -> if (granted) sendTestReminderNotification(context) }
 
     fun fireTestNotification() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -84,25 +81,7 @@ fun ReminderSettingsScreen(
         ) {
             testPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
-            sendTestReminderNotification(context, soundUri, vibrate)
-        }
-    }
-
-    val soundPickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        @Suppress("DEPRECATION")
-        val uri = result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI) as? Uri
-        viewModel.setSoundUri(uri?.toString())
-    }
-
-    val soundName = remember(soundUri) {
-        val uriString = soundUri
-        if (uriString == null) {
-            "پیش‌فرض سیستم"
-        } else {
-            runCatching { RingtoneManager.getRingtone(context, Uri.parse(uriString))?.getTitle(context) }
-                .getOrNull() ?: "صدای انتخابی"
+            sendTestReminderNotification(context)
         }
     }
 
@@ -200,45 +179,26 @@ fun ReminderSettingsScreen(
         }
 
         item {
-            AppCard(label = "صدای اعلان") {
+            // 🚨 انتخابگرِ صدا و کلیدِ ویبره از این‌جا **برداشته شدند**، نه چون اضافه بودند:
+            // با سه کانالِ ثابت (رجوع کن به ReminderChannels)، اندروید صدا/ویبره را فقط
+            // لحظه‌ی ساختِ اولِ کانال می‌خواند و تغییرِ بعدی هیچ اثری ندارد. کنترلی که
+            // می‌چرخد و کاری نمی‌کند از نبودنش بدتر است - حالا همان تنظیم، در جای واقعی‌اش
+            // یعنی تنظیماتِ خودِ اندروید، باز می‌شود.
+            AppCard(label = "صدا و ویبره") {
                 Column {
-                    Text(soundName, color = AppText, fontSize = 13.sp)
-                    OutlinedButton(
-                        onClick = {
-                            val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                                putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
-                                putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                                putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
-                                putExtra(
-                                    RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
-                                    soundUri?.let { Uri.parse(it) }
-                                        ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
-                                )
-                            }
-                            soundPickerLauncher.launch(intent)
-                        },
-                        modifier = Modifier.padding(top = 8.dp),
-                    ) {
-                        Text("تغییر صدا")
-                    }
-                }
-            }
-        }
-
-        item {
-            AppCard(label = "ویبره") {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "موقعِ نوتیفِ یادآوری ویبره هم بره",
+                        "صدا و ویبره‌ی یادآورها را اندروید نگه می‌دارد، نه برنامه - از آن‌جا " +
+                            "می‌توانی برای هر نوع اعلان جدا تنظیمش کنی.",
                         color = AppMuted,
                         fontSize = 12.sp,
-                        modifier = Modifier.weight(1f),
+                        lineHeight = 20.sp,
                     )
-                    Switch(
-                        checked = vibrate,
-                        onCheckedChange = viewModel::setVibrate,
-                        colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-                    )
+                    OutlinedButton(
+                        onClick = { ReminderChannels.openChannelSettings(context) },
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) {
+                        Text("تنظیماتِ صدا و ویبره")
+                    }
                 }
             }
         }
@@ -247,8 +207,10 @@ fun ReminderSettingsScreen(
 
 /** دقیقاً هم‌الگو با notifyLoan/notifyCheque تو DueDateReminderWorker.kt - همون کانال، همون سبک؛
  * فقط عنوان/متن مشخص می‌کنه که این یه تستِ دستیه، نه یه یادآوریِ واقعی. */
-private fun sendTestReminderNotification(context: android.content.Context, soundUri: String?, vibrate: Boolean) {
-    val channelId = ReminderChannels.ensure(context, soundUri, vibrate)
+private fun sendTestReminderNotification(context: android.content.Context) {
+    // کانالِ ثابتِ سررسید؛ صدا/ویبره دیگر از این‌جا نمی‌آید (رجوع کن به کارتِ «صدا و ویبره»).
+    ReminderChannels.ensureAll(context)
+    val channelId = ReminderChannels.CHANNEL_DUE_DATES
     val notification = NotificationCompat.Builder(context, channelId)
         .setSmallIcon(R.drawable.ic_notification)
         .setLargeIcon(ReminderChannels.largeIcon(context))

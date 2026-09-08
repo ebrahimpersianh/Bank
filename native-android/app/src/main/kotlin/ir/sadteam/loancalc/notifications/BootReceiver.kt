@@ -34,7 +34,12 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action !in BOOT_ACTIONS) return
         // هر سه `KEEP`ـن، پس اگه از قبل زمان‌بندی سالم مانده باشد دست‌نخورده می‌ماند و این
         // فراخوانی بی‌اثر است - دوباره‌چیدن هیچ‌وقت زمان‌بندیِ موجود را ریست نمی‌کند.
-        runCatching { reminderScheduler.schedule() }
+        // ⚠️ نسخه‌ی suspend نیست: گیرنده‌ی Broadcast کوروتین‌اسکوپ ندارد و ساعتِ دلخواهِ
+        // کاربر هم اینجا لازم نیست - اولین باری که برنامه باز شود با ساعتِ واقعی دوباره
+        // چیده می‌شود (UPDATE است، نه KEEP).
+        runCatching { reminderScheduler.scheduleWithDefaultHour() }
+        // کانال‌ها هم همین‌جا ساخته می‌شوند تا اولین اعلانِ بعد از ری‌استارت جا نیفتد.
+        runCatching { ReminderChannels.ensureAll(context) }
         runCatching { autoBackupScheduler.schedule() }
         runCatching { comeBackScheduler.schedule() }
     }

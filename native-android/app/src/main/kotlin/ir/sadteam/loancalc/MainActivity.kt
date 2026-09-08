@@ -127,7 +127,9 @@ import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.notifications.DeepLinkTarget
 import ir.sadteam.loancalc.notifications.DeepLinkViewModel
+import ir.sadteam.loancalc.notifications.EXTRA_OPEN_CHEQUE_ID
 import ir.sadteam.loancalc.notifications.EXTRA_OPEN_LOAN_ID
+import ir.sadteam.loancalc.notifications.PendingChequeDeepLink
 import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.SubscriptionManager
 import ir.sadteam.loancalc.ui.AffordScreen
@@ -319,9 +321,17 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var deepLinkTarget: DeepLinkTarget
 
+    @Inject
+    lateinit var pendingChequeDeepLink: PendingChequeDeepLink
+
     private fun handleDeepLinkIntent(intent: Intent?) {
         val loanId = intent?.getLongExtra(EXTRA_OPEN_LOAN_ID, -1L) ?: -1L
         if (loanId > 0) deepLinkTarget.setLoanId(loanId)
+        // اعلانِ چک تا امروز هیچ مقصدی نداشت (نه باز می‌شد نه بسته) - رجوع کن به
+        // PendingChequeDeepLink. جدا از وام نگه داشته شده چون اعلانِ گروه‌شده می‌تواند
+        // هم‌زمان یکی از هر کدام داشته باشد.
+        val chequeId = intent?.getLongExtra(EXTRA_OPEN_CHEQUE_ID, -1L) ?: -1L
+        if (chequeId > 0) pendingChequeDeepLink.setChequeId(chequeId)
         // میان‌برِ فشارِ طولانی رو آیکونِ اپ - رجوع کن به res/xml/shortcuts.xml
         intent?.getStringExtra("jibak_shortcut")?.let { deepLinkTarget.setShortcut(it) }
     }
