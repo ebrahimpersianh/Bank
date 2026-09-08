@@ -1,0 +1,60 @@
+name: ثبتِ اسکیمای دیتابیس (دستی)
+
+# 🚨 چرا لازم شد: `exportSchema = true` هست و مسیرش هم تنظیم شده، ولی فایلِ JSON فقط موقعِ
+# **بیلد** ساخته می‌شود و سندباکسِ توسعه نمی‌تواند `native-android` را بیلد کند
+# (`dl.google.com` مسدود است). نتیجه: `data/schemas/` سالها فقط `12.json` داشت در حالی که
+# دیتابیس به نسخه‌ی ۲۹ رسیده - یعنی هیچ‌کدام از migrationهای ۱۳ تا ۲۹ حالتِ «قبل» نداشتند و
+# `MigrationTest` نمی‌توانست تستشان کند. دقیقاً همان بخشی که یک بار نسخه‌ی ۱.۰.۳۱۵ را برای هر
+# کسی که آپدیت کرد کرش کرد.
+#
+# این ورک‌فلو ماژولِ `:data` را در CI کامپایل می‌کند تا Room اسکیمای نسخه‌ی فعلی را بنویسد، و
+# نتیجه را به‌عنوانِ کامیت برمی‌گرداند. از این به بعد هر بار که `version` عوض شد یک‌بار دستی
+# اجرایش کن تا اسکیمای نسخه‌ی تازه هم کنارِ کد ثبت شود.
+#
+# ⚠️ اسکیماهای ۱۳ تا ۲۸ برنمی‌گردند - آن نسخه‌ها گذشته‌اند و Room فقط نسخه‌ی فعلی را می‌نویسد.
+# سودش رو به جلوست: از نسخه‌ی ۲۹ به بعد هر migration قابلِ تست است.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/export-db-schema.yml"
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: native-android
+    steps:
+      - name: دریافت کد پروژه
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: آماده‌سازی Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: کش Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # کامپایلِ خودِ ماژولِ داده کافی است؛ نیازی به بیلدِ کاملِ اپ (و پانزده دقیقه سهمیه) نیست.
+      - name: کامپایلِ ماژولِ داده تا Room اسکیما را بنویسد
+        run: ./gradlew :data:assembleDebug --console=plain
+
+      - name: کامیت/پوشِ اسکیمای تازه
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add native-android/data/schemas
+          if git diff --cached --quiet; then
+            echo "اسکیمای تازه‌ای نبود - یعنی نسخه‌ی فعلی از قبل ثبت شده."
+          else
+            git commit -m "chore(data): record the Room schema for the current database version"
+            git push
+          fi
