@@ -41,6 +41,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -872,7 +874,16 @@ private fun LoanCalcApp(
             // ناحیه** (بالای نوارِ پایین) بشینه. قاعده‌ی مرکزیِ `41b` اینه که «نوارِ واقعی
             // پایینِ صفحه می‌مانَد و همان لحظه عوض می‌شود» - یه دیالوگِ تمام‌صفحه همون نوار رو
             // می‌پوشوند و کلِ ایده رو خراب می‌کرد.
-            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // بازشدنِ کیبورد قبلاً محتوا را بالا نمی‌برد و فیلدِ فعال زیرِ کیبورد گم می‌شد
+            // (`adjustResize` در مانیفست + `imePadding` این‌جا، با هم). `consumeWindowInsets`
+            // لازم است وگرنه پدینگِ Scaffold دو بار حساب می‌شود.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .consumeWindowInsets(padding)
+                    .imePadding(),
+            ) {
             NavHost(
                 navController = navController,
                 startDestination = BottomTab.HOME.route,
