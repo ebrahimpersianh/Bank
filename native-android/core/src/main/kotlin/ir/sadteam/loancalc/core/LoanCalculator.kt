@@ -76,6 +76,18 @@ private object QarzFormula : LoanFormula {
         // اقساط (غیرکارمزدی) مساوی تقسیم می‌شه.
         val feeInstallments = Math.ceil(n / 12.0).toInt()
         val principalInstallments = n - feeInstallments
+        // 🚨 با n = 1 هیچ قسطی برای اصلِ وام نمی‌مانَد و `divide` تقسیم بر صفر می‌کرد (کرش، نه
+        // عددِ غلط). فرمِ ورودی این حالت را رد می‌کند، ولی موتور نباید به اعتمادِ فراخواننده
+        // بترکد: تنها معنیِ مالیِ ممکن، یک پرداختِ واحدِ «اصل + کارمزدِ سال» است.
+        if (principalInstallments <= 0) {
+            val fee = principal * (annualRatePct / 100.0)
+            return FormulaOutput(
+                installment = principal + fee,
+                totalInterest = fee,
+                totalPaid = principal + fee,
+                rows = listOf(LoanRow(1, principal + fee, fee, principal, 0.0)),
+            )
+        }
         val principalPart = principal.toBd().divide(BigDecimal(principalInstallments), FINANCIAL_MC).toDouble()
         val rows = mutableListOf<LoanRow>()
         var balance = principal

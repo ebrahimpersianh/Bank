@@ -186,7 +186,8 @@ fun ResultScreen(
             ?.let { tomanToRial(it).toDouble() } ?: outcome.result.originalPrincipal
         val rate = editRateText.toDoubleOrNull() ?: outcome.ratePct
         val n = editNText.toIntOrNull()?.coerceAtLeast(1) ?: outcome.n
-        val method = if (rate <= 4.0) LoanMethod.QARZ else LoanMethod.STANDARD
+        // نرخِ صفر یعنی خریدِ اقساطیِ بی‌سود، نه قرض‌الحسنه - هم‌الگو با BankLoanScreen.
+        val method = if (rate > 0.0 && rate <= 4.0) LoanMethod.QARZ else LoanMethod.STANDARD
         val grace = if (editGraceOn) editGraceMonths.toInt() else 0
         val startDate = PersianDate(editStartYear, editStartMonth, editStartDay)
         val result = LoanCalculator.compute(amount, rate, n, method, grace, outcome.result.intervalDays)

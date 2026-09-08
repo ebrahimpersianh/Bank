@@ -715,8 +715,17 @@ fun BankLoanScreen(
                         formError = "تعدادِ اقساط باید بیشتر از صفر باشه"
                         return@GradientButton
                     }
+                    // 🚨 روشِ قرض‌الحسنه قسطِ اولِ هر سال را کاملاً کارمزدی می‌گیرد، پس با یک قسط
+                    // هیچ قسطی برای اصلِ وام نمی‌مانَد و محاسبه تقسیم بر صفر می‌شد (کرش).
+                    // ⚠️ نرخِ **صفر** هم عمداً از این مسیر بیرون رفت: خریدِ اقساطیِ بدونِ سود
+                    // (مثلِ پیش‌تنظیمِ چهارقسطی) باید اصل را بینِ همه‌ی اقساط مساوی تقسیم کند،
+                    // نه اینکه قسطِ اولش صفر شود - و مسیرِ STANDARD در نرخِ صفر دقیقاً همین است.
+                    if (rate in 0.0..4.0 && rate > 0.0 && n == 1) {
+                        formError = "وامِ قرض‌الحسنه با یک قسط قابلِ محاسبه نیست"
+                        return@GradientButton
+                    }
                     formError = null
-                    val method = if (rate <= 4.0) LoanMethod.QARZ else LoanMethod.STANDARD
+                    val method = if (rate > 0.0 && rate <= 4.0) LoanMethod.QARZ else LoanMethod.STANDARD
                     val grace = if (graceOn) graceMonths.toInt() else 0
                     // ورودی تومانه و موتورِ محاسبه ریال - تبدیل فقط همین یک نقطه.
                     val rialAmount = tomanToRial(tomanAmount)

@@ -14,6 +14,10 @@ object PersianCalendar {
     // این تابع مستقیم `repeat(days)` صدا می‌زد، یعنی addDays(date, -1) بی‌اثر بود (همون تاریخ رو
     // برمی‌گردوند). این باگِ واقعی بود: فلشِ «روزِ قبل» تو گزارش/خانه/سررسید و نمودارِ ۷روزه‌ی گزارش
     // (که با addDays منفی می‌سازتشون) خراب بودن. رجوع کن به CLAUDE.md.
+    // 🚨 طولِ ماه این‌جا از [JalaliCalendar.daysInMonth] گرفته می‌شود، نه از [monthLength] که
+    // اسفند را همیشه ۲۹ روزه فرض می‌کند - وگرنه در سالِ کبیسه، «یک روز بعدِ ۲۹ اسفند» به‌جای
+    // ۳۰ اسفند می‌شد اولِ فروردین و کلِ نمودارِ روزانه و سررسیدهای روزشمار یک روز می‌لغزید.
+    // (همان اصلاحی که addMonths از قبل داشت و این یکی جا مانده بود.)
     fun addDays(date: PersianDate, days: Int): PersianDate {
         var y = date.y
         var m = date.m
@@ -21,7 +25,7 @@ object PersianCalendar {
         if (days >= 0) {
             repeat(days) {
                 d++
-                if (d > monthLength(m)) {
+                if (d > JalaliCalendar.daysInMonth(y, m)) {
                     d = 1
                     m++
                     if (m > 12) {
@@ -39,7 +43,7 @@ object PersianCalendar {
                         m = 12
                         y--
                     }
-                    d = monthLength(m)
+                    d = JalaliCalendar.daysInMonth(y, m)
                 }
             }
         }

@@ -458,11 +458,37 @@ class LoanRepository(
         val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
         val graceMonths = (data["graceMonths"] as? Number)?.toInt() ?: 0
         val base = if (graceMonths > 0) PersianCalendar.addMonths(startDate, graceMonths) else startDate
+        // ⚠️ شماره‌ی قسطِ بعدی از `paidCount + 1` گرفته می‌شود، یعنی فرض بر پرداختِ **ترتیبی**
+        // است. در این اپ کاربر می‌تواند هر قسطی را جدا پرداخت کند، پس اگر فقط قسطِ دوم پرداخت
+        // شده باشد این تابع سررسیدِ قسطِ دوم را برمی‌گرداند و عقب‌افتادگیِ قسطِ اول را نمی‌بیند.
+        // اصلاحِ درست، خواندنِ اولین ردیفِ واقعاً پرداخت‌نشده از `loan_rows` است -
+        // رجوع کن به [nextUnpaidDueDate] که همین کار را می‌کند؛ این نسخه‌ی همگام برای جاهایی
+        // مانده که داخلِ محاسبه‌ی Compose صدا زده می‌شوند و suspend نیستند.
         val m = loan.paidCount + 1
         return if (intervalDays % 30 == 0) {
             PersianCalendar.addMonths(base, (m - 1) * (intervalDays / 30))
         } else {
             PersianCalendar.addDays(base, (m - 1) * intervalDays)
+        }
+    }
+
+    /**
+     * سررسیدِ **اولین قسطِ واقعاً پرداخت‌نشده** - برخلافِ [getNextDueDate] به `paidCount` تکیه
+     * نمی‌کند، پس با پرداختِ غیرترتیبی هم درست است (فقط قسطِ دوم پرداخت شده → همچنان قسطِ اول).
+     */
+    suspend fun nextUnpaidDueDate(loan: LoanEntity): PersianDate? {
+        if (loan.n <= 0) return null
+        val firstUnpaid = getOrMigrateRows(loan).sortedBy { it.m }.firstOrNull { !it.paid } ?: return null
+        val data = parseData(loan)
+        val startDate = parseStartDate(data)
+        val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
+        val graceMonths = (data["graceMonths"] as? Number)?.toInt() ?: 0
+        val base = if (graceMonths > 0) PersianCalendar.addMonths(startDate, graceMonths) else startDate
+        val step = firstUnpaid.m - 1
+        return if (intervalDays % 30 == 0) {
+            PersianCalendar.addMonths(base, step * (intervalDays / 30))
+        } else {
+            PersianCalendar.addDays(base, step * intervalDays)
         }
     }
 
@@ -801,6 +827,11 @@ class LoanRepository(
         } catch (e: Exception) {
             return false
         }
+        // 🚨 قبلاً فقط «آرایه‌ی JSON بودن» بررسی می‌شد و ردیف‌های نامعتبر در [fromWebMap] بی‌صدا
+        // با `mapNotNull` می‌افتادند - یعنی فایلِ خرابی مثلِ `[{}]` هیچ وامی نمی‌ساخت ولی
+        // **همه‌ی وام‌های موجود را پاک می‌کرد** و `true` هم برمی‌گرداند. حالا اول همه‌چیز
+        // اعتبارسنجی می‌شود و یک ردیفِ نامعتبر کلِ بازیابی را بی‌اثر رد می‌کند.
+        if (imported.any { fromWebMap(it) == null }) return false
         replaceAllWithServerData(imported)
         return true
     }

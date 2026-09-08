@@ -58,7 +58,13 @@ fun buildReportStats(
     today: PersianDate,
     period: ReportPeriod,
 ): ReportStats {
-    val expenses = transactions.filter { it.type == EXPENSE }
+    // 🚨 جابه‌جایی بینِ دو حسابِ خودِ کاربر **خرج نیست**: هر انتقال دو ردیف می‌سازد (برداشت از
+    // مبدأ، واریز به مقصد) با `sourceType = "transfer"` و یک `sourceId`ِ مشترک. تا امروز این
+    // علامت این‌جا خوانده نمی‌شد، پس جابه‌جاییِ دو میلیونی، هم‌زمان دو میلیون «خرج» و دو میلیون
+    // «درآمد» شمرده می‌شد و کلِ گزارش و میانگینِ ماهانه را باد می‌کرد. در محاسبه‌ی **موجودیِ
+    // حساب‌ها** این ردیف‌ها لازم‌اند و دست‌نخورده می‌مانند - فقط از تحلیلِ خرج بیرون می‌روند.
+    val realTransactions = transactions.filter { it.sourceType != "transfer" }
+    val expenses = realTransactions.filter { it.type == EXPENSE }
 
     // ماه‌های پنجره‌ی فعلی (۱ / ۳ / ۱۲ ماه، شاملِ همین ماه)
     val windowMonths = (0 until period.months).map { back -> monthBack(today, back) }
@@ -86,7 +92,7 @@ fun buildReportStats(
     // «آزاد» یعنی درآمدِ همین پنجره منهای همون.
     val recurringExpenses = recurring.filter { it.type == EXPENSE }
     val fixedAmount = recurringExpenses.sumOf { it.amount } * period.months
-    val income = transactions
+    val income = realTransactions
         .filter { it.type == DEPOSIT && windowMonths.any { w -> w.first == it.year && w.second == it.month } }
         .sumOf { it.amount }
     val fixedShare = if (income > 0.0 && fixedAmount > 0.0) {
