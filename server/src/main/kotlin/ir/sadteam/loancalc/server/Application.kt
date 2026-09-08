@@ -1,15 +1,15 @@
 package ir.sadteam.loancalc.server
 
 import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCallPipeline
 import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
@@ -33,18 +33,24 @@ fun main() {
 }
 
 fun Application.module() {
+    // 🚨 سقفِ حجمِ بدنه. بدونِ این، یک حسابِ واردشده می‌توانست با چند `PUT /api/loans`ِ
+    // چندصدمگابایتی دیسکِ VPS را پر کند - مسیرهای بکاپ هیچ کرانی نداشتند. دو مگابایت برای
+    // بزرگ‌ترین پشتیبانِ واقعی هم فراوان است.
+    intercept(ApplicationCallPipeline.Plugins) {
+        val declared = call.request.headers[HttpHeaders.ContentLength]?.toLongOrNull()
+        if (declared != null && declared > MAX_BODY_BYTES) {
+            call.respond(HttpStatusCode.PayloadTooLarge, mapOf("error" to "body_too_large"))
+            finish()
+        }
+    }
+
     install(ContentNegotiation) {
         json(Json { encodeDefaults = true; ignoreUnknownKeys = true })
     }
-    install(CORS) {
-        anyHost()
-        allowHeader(HttpHeaders.ContentType)
-        allowHeader(HttpHeaders.Authorization)
-        allowMethod(HttpMethod.Get)
-        allowMethod(HttpMethod.Post)
-        allowMethod(HttpMethod.Put)
-        allowMethod(HttpMethod.Delete)
-    }
+    // 🚨 CORS برداشته شد. تنها کلاینتِ این API یک اپِ اندروید است و اپِ اندروید اصلاً CORS
+    // نمی‌بیند - این بلوک فقط به هر سایتی در هر دامنه‌ای اجازه می‌داد از مرورگرِ کاربر و با
+    // هدرِ Authorization به API بزند. وقتی وب‌اپ ساخته شد، به‌جای `anyHost()` همان یک دامنه
+    // اجازه بگیرد.
 
     routing {
         get("/health") { call.respond(mapOf("ok" to true)) }
@@ -59,3 +65,6 @@ fun Application.module() {
         pricesRoutes()
     }
 }
+
+/** سقفِ بدنه‌ی درخواست - دو مگابایت. */
+private const val MAX_BODY_BYTES = 2L * 1024 * 1024

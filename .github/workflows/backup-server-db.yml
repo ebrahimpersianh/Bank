@@ -1,0 +1,58 @@
+name: بکاپِ روزانه‌ی دیتابیسِ سرور
+
+# دیتابیس یک فایلِ SQLite روی یک VPS بدونِ snapshot است؛ تا امروز تنها «بکاپ» یک جمله در
+# README بود که بگوید دستی کپی کنید. این ورک‌فلو هر شب یک کپیِ سالم (با `.backup` که
+# قفل‌های WAL را درست می‌بندد، نه `cp` که می‌تواند نیمه‌کاره بگیرد) می‌گیرد، هفت نسخه‌ی آخر را
+# روی خودِ VPS نگه می‌دارد، و همان را به‌عنوانِ artifact بیرون می‌آورد تا اگر کلِ VPS از دست
+# رفت باز هم چیزی داشته باشیم.
+on:
+  schedule:
+    - cron: '0 22 * * *' # ۱:۳۰ بامدادِ تهران
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: چکِ وجودِ سکرت‌های VPS
+        run: |
+          if [ -z "${{ secrets.VPS_HOST }}" ]; then
+            echo "::warning::سکرت‌های VPS ست نشده‌اند - بکاپ رد شد."
+            exit 1
+          fi
+
+      - name: گرفتنِ بکاپ روی خودِ VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            mkdir -p ~/VameMan/backups
+            STAMP=$(date -u +%Y%m%d-%H%M%S)
+            # `.backup` نسخه‌ی سازگار می‌گیرد حتی وقتی سرور در حالِ نوشتن است.
+            sqlite3 ~/VameMan/data.sqlite ".backup '$HOME/VameMan/backups/data-$STAMP.sqlite'"
+            gzip -f ~/VameMan/backups/data-$STAMP.sqlite
+            # سالم بودنِ خروجی تایید شود، وگرنه بکاپِ خراب حسِ کاذبِ امنیت می‌دهد.
+            gzip -t ~/VameMan/backups/data-$STAMP.sqlite.gz
+            ls -1t ~/VameMan/backups/*.sqlite.gz | tail -n +8 | xargs -r rm --
+            ls -lh ~/VameMan/backups/data-$STAMP.sqlite.gz
+
+      - name: آوردنِ آخرین بکاپ به رانر
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "VameMan/backups/*.sqlite.gz"
+          target: "downloaded"
+          strip_components: 2
+
+      - name: نگه‌داشتنِ نسخه‌ی بیرونی
+        uses: actions/upload-artifact@v4
+        with:
+          name: jibak-db-backup
+          path: downloaded/
+          retention-days: 30
+          if-no-files-found: error

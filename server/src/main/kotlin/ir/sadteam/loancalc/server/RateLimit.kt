@@ -52,10 +52,19 @@ object RateLimit {
     fun reset() = buckets.clear()
 }
 
-/** IP واقعیِ کلاینت. چون nginx جلوی سرور نشسته (رجوع کن به CLAUDE.md)، `X-Forwarded-For` اولویت
- * داره وگرنه همه‌ی درخواست‌ها یه IPِ واحد (خودِ localhost) دیده می‌شن و محدودیت بی‌معنی می‌شه. */
+/**
+ * IP واقعیِ کلاینت. چون nginx جلوی سرور نشسته، بی این تابع همه‌ی درخواست‌ها یک IPِ واحد
+ * (خودِ localhost) دیده می‌شدند و محدودیت بی‌معنی می‌شد.
+ *
+ * 🚨 **فقط `X-Real-IP` خوانده می‌شود، نه `X-Forwarded-For`.** نسخه‌ی قبلی اولین عضوِ
+ * `X-Forwarded-For` را برمی‌داشت، ولی کانفیگِ nginxِ ما آن هدر را اصلاً ست نمی‌کند - یعنی
+ * دستِ خودِ فرستنده بود. با یک `X-Forwarded-For: <عددِ تصادفی>` روی هر درخواست، هر سه سقفِ
+ * OTP و سقفِ گزارشِ کرش بی‌اثر می‌شدند؛ دقیقاً همان چیزی که این فایل برای بستنش نوشته شد
+ * (سوزاندنِ اعتبارِ پیامک و پرکردنِ دیسک). `X-Real-IP` را خودِ nginx می‌نویسد و هرچه کلاینت
+ * بفرستد بازنویسی می‌شود، پس جعل‌شدنی نیست.
+ */
 fun ApplicationCall.clientIp(): String =
-    request.headers["X-Forwarded-For"]?.split(",")?.firstOrNull()?.trim()?.takeIf { it.isNotEmpty() }
+    request.headers["X-Real-IP"]?.trim()?.takeIf { it.isNotEmpty() }
         ?: request.origin.remoteHost
 
 /**
