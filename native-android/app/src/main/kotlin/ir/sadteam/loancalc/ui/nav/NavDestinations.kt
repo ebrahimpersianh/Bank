@@ -46,8 +46,17 @@ enum class NavDestination(
     CHEQUE("cheque", "cheque", "چک", Icons.Outlined.Description, Icons.Filled.Description);
 
     companion object {
-        /** نوارِ پیش‌فرض - همون پنج تبِ همیشگی. اسلاتِ ۰ (راست‌ترین تو RTL) خانه‌ست. */
-        val DEFAULT_SLOTS = listOf(HOME.id, ASSETS.id, REPORT.id, BUDGET.id, DUE.id)
+        /**
+         * نوارِ پیش‌فرض. اسلاتِ ۰ (راست‌ترین در RTL) خانه است.
+         *
+         * خانه‌ی آخر **وام** است، نه سررسید (خواسته‌ی صریحِ کاربر). سررسید از کشوی میان‌بُر و
+         * میان‌برِ فشارِ طولانی رو آیکونِ اپ در دسترس می‌مانَد، پس قاعده‌ی `41c` («هیچ مقصدی
+         * نباید تنها راهش نوار باشد») نقض نمی‌شود.
+         *
+         * ⚠️ فقط برای کسی که نوارش را دستی نچیده: `navSlots` تا اولین ویرایشِ کاربر خالی است و
+         * همین فهرست استفاده می‌شود؛ کسی که خودش چیده، چیدمانِ خودش سرِ جایش می‌مانَد.
+         */
+        val DEFAULT_SLOTS = listOf(HOME.id, ASSETS.id, REPORT.id, BUDGET.id, LOAN.id)
 
         const val SLOT_COUNT = 5
 
