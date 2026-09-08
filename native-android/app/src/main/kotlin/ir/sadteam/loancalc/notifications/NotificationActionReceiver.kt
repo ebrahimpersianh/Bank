@@ -7,6 +7,7 @@ import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.prefs.UiPrefs
@@ -34,6 +35,8 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
     @Inject lateinit var chequeRepository: ChequeRepository
 
+    @Inject lateinit var accountRepository: AccountRepository
+
     @Inject lateinit var uiPrefs: UiPrefs
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -48,6 +51,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 when (intent.action) {
                     ACTION_MARK_PAID -> markPaid(intent)
                     ACTION_SNOOZE -> snooze(intent)
+                    ACTION_CONFIRM_TX -> confirmTransaction(intent)
                 }
             } finally {
                 pending.finish()
@@ -97,11 +101,25 @@ class NotificationActionReceiver : BroadcastReceiver() {
         // یعنی همان اجرای بعدی. فراخوانیِ دوباره‌ی زمان‌بند فقط لنگرِ ساعتش را جابه‌جا می‌کرد.
     }
 
+    /**
+     * دکمه‌ی «تایید» روی اعلانِ تراکنشِ خودکار - تراکنش را `confirmed = true` می‌کند. تا قبلِ
+     * تایید روی موجودی اثر ندارد، پس این دکمه کارِ واقعی می‌کند نه فقط بستنِ اعلان.
+     *
+     * ✅ امضایی که طراح علامت زده بود اصلاح شد: `confirmTransaction(id)` - یک آرگومان،
+     * چون تابعِ ریپازیتوری فقط تایید می‌کند و برگرداندن ندارد.
+     */
+    private suspend fun confirmTransaction(intent: Intent) {
+        val txId = intent.getLongExtra(EXTRA_TX_ID, -1L)
+        if (txId > 0) accountRepository.confirmTransaction(txId)
+    }
+
     companion object {
         const val ACTION_MARK_PAID = "ir.sadteam.loancalc.action.MARK_PAID"
         const val ACTION_SNOOZE = "ir.sadteam.loancalc.action.SNOOZE"
+        const val ACTION_CONFIRM_TX = "ir.sadteam.loancalc.action.CONFIRM_TX"
 
         const val EXTRA_NOTIFICATION_ID = "notification_id"
+        const val EXTRA_TX_ID = "tx_id"
         const val EXTRA_LOAN_ID = "loan_id"
         const val EXTRA_INSTALLMENT = "installment_m"
         const val EXTRA_CHEQUE_ID = "cheque_id"

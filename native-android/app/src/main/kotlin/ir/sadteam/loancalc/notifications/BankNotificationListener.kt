@@ -8,7 +8,9 @@ import ir.sadteam.loancalc.core.BankSmsParser
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.MerchantCategoryGuesser
 import ir.sadteam.loancalc.core.TransactionType
+import ir.sadteam.loancalc.ui.jibak.faDigits
 import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.InboxRepository
 import ir.sadteam.loancalc.data.ParsingRuleRepository
@@ -111,17 +113,34 @@ class BankNotificationListener : NotificationListenerService() {
                 category = category,
                 confirmed = false,
             )
-            // منبعِ واحد: پیام اول اینجا ساخته می‌شه؛ اعلانِ گوشیِ خودمون (اگه بعداً اضافه بشه)
-            // باید از رو همین ردیف ساخته بشه، نه مستقل.
+            // منبعِ واحد: پیام اول اینجا ساخته می‌شه؛ اعلانِ گوشی از رو همین ردیف ساخته
+            // می‌شه، نه مستقل.
+            // واحد **تومان** و رقمِ فارسی (بندِ ۲ی README + لایه‌ی ارقام) - قبلاً «ریال»ِ
+            // لاتین بود، هم این‌جا هم تو BankSmsReceiver.
+            val amountToman = fmt(rialToToman(parsed.amountRial.toLong()).toDouble()).faDigits()
             inboxRepository.post(
                 kind = InboxMessageEntity.Kind.DETECTED_TX,
                 title = if (isWithdrawal) "برداشتِ تازه" else "واریزِ تازه",
                 body = if (confident) {
-                    "${fmt(parsed.amountRial)} ریال از «${account.name}» - دسته: $category. تایید می‌کنی؟"
+                    "$amountToman تومان از «${account.name}» - دسته: $category. تایید می‌کنی؟"
                 } else {
-                    "${fmt(parsed.amountRial)} ریال از «${account.name}» - دسته‌بندیش نامشخصه، لمس کن و خودت انتخاب کن."
+                    "$amountToman تومان از «${account.name}» - دسته‌بندیش نامشخصه، لمس کن و خودت انتخاب کن."
                 },
                 refId = txId.toString(),
+            )
+            // 🚨 این تکه **نبود**: تراکنشی که خودکار ثبت می‌شد هیچ اعلانی نمی‌داد و کاربر
+            // تا باز کردنِ برنامه خبردار نمی‌شد. فریمِ 50b و AutoTxNotifier همین را می‌بندند.
+            // تصمیمِ ثبت‌شده: **همیشه** اعلان بدهد، چون دومین کارش گفتنِ «سیستم کار می‌کند»
+            // است - کسی که خبری نمی‌گیرد فرض می‌کند خراب است.
+            AutoTxNotifier.notify(
+                context = applicationContext,
+                txId = txId,
+                amountRial = parsed.amountRial,
+                accountName = account.name,
+                category = category,
+                isWithdrawal = isWithdrawal,
+                confident = confident,
+                privacyMode = uiPrefs.privacyModeEnabled.first(),
             )
             uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
         }
