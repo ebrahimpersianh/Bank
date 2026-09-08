@@ -141,13 +141,40 @@ class AccountRepository(
 
     fun observePendingTransactions() = transactionDao.observePending()
 
-    /** به‌روزرسانیِ یه تراکنشِ موجود - برای انتقالِ دسته موقعِ حذفِ یه دسته‌بندی. */
+    /**
+     * به‌روزرسانیِ یه تراکنشِ موجود - برای انتقالِ دسته موقعِ حذفِ یه دسته‌بندی و ویرایشِ دستی.
+     *
+     * 🚨 **جابه‌جایی دو ردیفِ به‌هم‌بسته است، نه دو تراکنشِ مستقل.** تا امروز ویرایشِ یک سمتش
+     * سمتِ دیگر را دست‌نخورده می‌گذاشت، یعنی بدونِ هیچ خرجِ واقعی جمعِ موجودیِ کاربر کم/زیاد
+     * می‌شد. حالا مبلغ و توضیحِ **هر دو** با هم می‌روند. حساب و نوعِ هر سمت عمداً دست‌نخورده
+     * می‌مانَد: عوض‌کردنشان یعنی جابه‌جاییِ دیگری.
+     */
     suspend fun updateTransaction(transaction: AccountTransactionEntity) {
-        transactionDao.upsert(transaction)
+        val legs = transferLegsOf(transaction)
+        if (legs.size < 2) {
+            transactionDao.upsert(transaction)
+            return
+        }
+        transactionDao.upsertAll(
+            legs.map { it.copy(amount = transaction.amount, description = transaction.description) },
+        )
     }
 
+    /** حذفِ جابه‌جایی **هر دو سمتش** را با هم می‌برد - وگرنه یک سمتِ یتیم می‌مانْد و موجودیِ کل
+     * به‌اندازه‌ی همان مبلغ غلط می‌شد. */
     suspend fun deleteTransaction(transaction: AccountTransactionEntity) {
-        transactionDao.delete(transaction)
+        val legs = transferLegsOf(transaction)
+        if (legs.size < 2) {
+            transactionDao.delete(transaction)
+            return
+        }
+        transactionDao.deleteAll(legs)
+    }
+
+    private suspend fun transferLegsOf(transaction: AccountTransactionEntity): List<AccountTransactionEntity> {
+        if (transaction.sourceType != "transfer") return emptyList()
+        val sourceId = transaction.sourceId ?: return emptyList()
+        return transactionDao.transferLegs(sourceId)
     }
 
     /** موجودی فعلی = موجودی اولیه + جمع واریزها - جمع برداشت‌ها. */

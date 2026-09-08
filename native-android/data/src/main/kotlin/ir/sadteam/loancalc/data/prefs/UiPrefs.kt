@@ -40,6 +40,7 @@ class UiPrefs(private val context: Context) {
         val SNOOZED_REMINDERS = stringPreferencesKey("snoozed_reminders")
         val REMINDER_HOUR = intPreferencesKey("reminder_hour")
         val AUTO_TX_NOTIFY_ENABLED = booleanPreferencesKey("auto_tx_notify_enabled")
+        val RECENT_AUTO_IMPORT_KEYS = stringPreferencesKey("recent_auto_import_keys")
         val DAILY_EXPENSE_REMINDER_ENABLED = booleanPreferencesKey("daily_expense_reminder_enabled")
         val AVATAR_SHAPE = stringPreferencesKey("avatar_shape")
         val AVATAR_COLOR = stringPreferencesKey("avatar_color")
@@ -180,6 +181,9 @@ class UiPrefs(private val context: Context) {
     companion object {
         /** ساعتِ پیش‌فرضِ یادآور - صبح، وقتی کاربر هنوز فرصتِ کاری کردن دارد. */
         const val DEFAULT_REMINDER_HOUR = 9
+
+        /** پنجره‌ی تشخیصِ ثبتِ تکراریِ خودکار - شش ساعت. */
+        const val IMPORT_DEDUPE_WINDOW_MS = 6L * 60 * 60 * 1000
 
         /** `destId:weekKey=count;…` → نگاشت. ردیفِ خراب بی‌صدا نادیده گرفته می‌شه. */
         fun parseNavUsage(raw: String?): Map<Pair<String, Int>, Int> =
@@ -439,6 +443,36 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setReminderHour(hour: Int) {
         context.uiPrefsDataStore.edit { it[Keys.REMINDER_HOUR] = hour.coerceIn(0, 23) }
+    }
+
+    /**
+     * کلیدِ تراکنش‌هایی که همین اواخر خودکار وارد شده‌اند، برای جلوگیری از **ثبتِ تکراری**.
+     *
+     * 🚨 چرا لازم شد: اپ‌های بانکی یک اعلان را دوباره منتشر یا به‌روزرسانی می‌کنند و
+     * `onNotificationPosted` هر بار اجرا می‌شود. هیچ کنترلی نبود، پس یک واریز می‌توانست دو
+     * تراکنشِ منتظرِ تایید بسازد و با تاییدِ هر دو، موجودی دو برابر جابه‌جا می‌شد.
+     *
+     * هر مقدار `<کلید>@<زمانِ میلی‌ثانیه‌ای>` است و پنجره‌ی [IMPORT_DEDUPE_WINDOW_MS] ساعتی
+     * نگه داشته می‌شود - نه بیشتر، چون خریدِ واقعاً تکراری با همان مبلغ در روزِ بعد باید ثبت شود.
+     */
+    val recentAutoImportKeys: Flow<List<String>> = context.uiPrefsDataStore.data.map { prefs ->
+        prefs[Keys.RECENT_AUTO_IMPORT_KEYS].orEmpty().split(',').filter { it.isNotBlank() }
+    }
+
+    /** `true` یعنی این تراکنش تازه است و ثبت شد؛ `false` یعنی تکراری بود و باید نادیده گرفته شود. */
+    suspend fun claimAutoImportKey(key: String): Boolean {
+        val now = System.currentTimeMillis()
+        var fresh = true
+        context.uiPrefsDataStore.edit { prefs ->
+            val kept = prefs[Keys.RECENT_AUTO_IMPORT_KEYS].orEmpty()
+                .split(',')
+                .filter { it.isNotBlank() }
+                .filter { now - (it.substringAfterLast('@').toLongOrNull() ?: 0L) < IMPORT_DEDUPE_WINDOW_MS }
+            fresh = kept.none { it.substringBeforeLast('@') == key }
+            if (fresh) prefs[Keys.RECENT_AUTO_IMPORT_KEYS] = (kept + "$key@$now").takeLast(60).joinToString(",")
+            else prefs[Keys.RECENT_AUTO_IMPORT_KEYS] = kept.joinToString(",")
+        }
+        return fresh
     }
 
     /** اعلانِ «تراکنشِ خودکار ثبت شد» (کانالِ [ReminderChannels.CHANNEL_AUTO_TX], فریمِ `50b`).

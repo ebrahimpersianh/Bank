@@ -19,6 +19,7 @@ import ir.sadteam.loancalc.data.prefs.AuthPrefs
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -140,13 +141,32 @@ class MyLoansViewModel @Inject constructor(
     fun earlySettlementSaving(loan: LoanEntity, unpaidTotal: Double): Double? =
         loanRepository.earlySettlementSaving(loan, unpaidTotal)
 
-    /** سررسیدِ اولین قسطِ پرداخت‌نشده - برای مرتب‌سازیِ «نزدیک‌ترین سررسید»، رجوع کن به
-     * [LoanRepository.getNextDueDate]. */
-    fun getLoanNextDueDate(loan: LoanEntity): PersianDate? = loanRepository.getNextDueDate(loan)
+    /**
+     * سررسیدِ **اولین قسطِ واقعاً پرداخت‌نشده**، از روی خودِ ردیف‌های `loan_rows`.
+     *
+     * 🚨 چرا نقشه و نه محاسبه‌ی درجا: خواندنِ ردیف‌ها `suspend` است و داخلِ رندرِ Compose صدا
+     * زده نمی‌شود. [LoanRepository.getNextDueDate]ِ همگام به‌جایش از `paidCount + 1` استفاده
+     * می‌کرد، یعنی فرضِ پرداختِ ترتیبی - و در این اپ کاربر هر قسطی را جدا می‌تواند پرداخت کند.
+     * نتیجه: با پرداختِ فقط قسطِ دوم، قسطِ اولِ عقب‌افتاده دیگر «عقب‌افتاده» دیده نمی‌شد.
+     */
+    val nextDueDates: StateFlow<Map<Long, PersianDate>> = loans
+        .map { list ->
+            list.mapNotNull { loan -> loanRepository.nextUnpaidDueDate(loan)?.let { loan.id to it } }.toMap()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    /** سررسیدِ اولین قسطِ پرداخت‌نشده - برای مرتب‌سازیِ «نزدیک‌ترین سررسید». تا پرشدنِ
+     * [nextDueDates] به نسخه‌ی همگام برمی‌گردد تا لیست لحظه‌ی اول خالی/بی‌ترتیب نباشد. */
+    fun getLoanNextDueDate(loan: LoanEntity): PersianDate? =
+        nextDueDates.value[loan.id] ?: loanRepository.getNextDueDate(loan)
 
     /** آیا بازپرداختِ این وام عقب‌افتاده (سررسیدِ اولین قسطِ پرداخت‌نشده گذشته)؟ - برای بجِ هشدارِ
      * قرمز رو کارتِ وام، رجوع کن به [LoanRepository.isOverdue]. */
-    fun isLoanOverdue(loan: LoanEntity): Boolean = loanRepository.isOverdue(loan)
+    fun isLoanOverdue(loan: LoanEntity): Boolean {
+        val next = getLoanNextDueDate(loan) ?: return false
+        val today = JalaliCalendar.today()
+        return next.y * 10000 + next.m * 100 + next.d < today.y * 10000 + today.m * 100 + today.d
+    }
 
     /** جمعِ کلِ اقساطِ معوقِ همه‌ی وام‌ها - برای مورد ۱۹ (خلاصه‌ی داشبورد)، رجوع کن به
      * [LoanRepository.overdueInstallmentsTotal]. */

@@ -43,6 +43,16 @@ interface AccountTransactionDao {
     @Delete
     suspend fun delete(transaction: AccountTransactionEntity)
 
+    /** هر دو ردیفِ یک جابه‌جایی (برداشتِ مبدأ و واریزِ مقصد) - `sourceId` بینشان مشترک است. */
+    @Query("SELECT * FROM account_transactions WHERE sourceType = 'transfer' AND sourceId = :sourceId")
+    suspend fun transferLegs(sourceId: String): List<AccountTransactionEntity>
+
+    @Delete
+    suspend fun deleteAll(transactions: List<AccountTransactionEntity>)
+
+    @Upsert
+    suspend fun upsertAll(transactions: List<AccountTransactionEntity>)
+
     @Query("DELETE FROM account_transactions WHERE accountId = :accountId")
     suspend fun deleteForAccount(accountId: Long)
 

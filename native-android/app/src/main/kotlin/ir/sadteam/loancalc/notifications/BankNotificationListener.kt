@@ -84,8 +84,21 @@ class BankNotificationListener : NotificationListenerService() {
             if (packageName !in allowed) return@launch
 
             val parsed = BankSmsParser.parse(body) ?: return@launch
+            // 🚨 اپ‌های بانکی همان اعلان را دوباره منتشر/به‌روزرسانی می‌کنند و این تابع هر بار
+            // اجرا می‌شود؛ بی این کنترل، یک واریز دو تراکنشِ منتظرِ تایید می‌ساخت و با تاییدِ
+            // هر دو، موجودی دو برابر جابه‌جا می‌شد.
+            val importKey = "notif|$packageName|${parsed.type}|${parsed.amountRial}|${parsed.cardSuffix.orEmpty()}"
+            if (!uiPrefs.claimAutoImportKey(importKey)) return@launch
             val accounts = accountRepository.observeAccounts().first()
-            val account = accounts.firstOrNull { it.smsSender?.trim() == packageName }
+            // ⚠️ بستهٔ فرستنده اول **مجموعه‌ی نامزدها** را محدود می‌کند و بعد شماره‌ی کارت بینِ
+            // همان‌ها تصمیم می‌گیرد - با دو حسابِ یک بانک، «اولین تطبیق» می‌توانست حسابِ اشتباه
+            // را بردارد در حالی که چهار رقمِ آخرِ کارت صریحاً در متن آمده بود.
+            val sameSender = accounts.filter { it.smsSender?.trim() == packageName }
+            val account = sameSender.firstOrNull { acc ->
+                parsed.cardSuffix != null && acc.cardNumber?.takeLast(4) == parsed.cardSuffix
+            }
+                ?: sameSender.singleOrNull()
+                ?: sameSender.firstOrNull()
                 ?: accounts.firstOrNull { acc ->
                     parsed.cardSuffix != null && acc.cardNumber?.takeLast(4) == parsed.cardSuffix
                 }

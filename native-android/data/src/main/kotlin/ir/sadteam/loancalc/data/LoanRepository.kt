@@ -634,11 +634,30 @@ class LoanRepository(
         saveRows(loan, rows, installment = newAmount)
     }
 
+    /**
+     * ذخیره‌ی ردیف‌ها + هم‌قدم‌کردنِ خلاصه‌ها.
+     *
+     * 🚨 دو اصلاح نسبت به نسخه‌ی قبلی:
+     * - `amount` (اصلِ وام) دیگر با جمعِ بازپرداخت جایگزین **نمی‌شود**. این دو مفهومِ متفاوت‌اند
+     *   و یکی‌کردنشان یعنی هر ویرایشِ مبلغِ قسط، اصلِ وامِ ثبت‌شده را هم عوض می‌کرد. برای وامِ
+     *   دستی که کاربر خودش جمعِ کل را وارد کرده، همان مقدار سرِ جایش می‌ماند.
+     * - `installment`/`totalPaid` علاوه بر ستون، در کپیِ `dataJson` هم نوشته می‌شوند - همان
+     *   قاعده‌ی «یک عدد، یک نقطه‌ی نوشتن» که برای `paidCount` در [withPaidCount] رعایت شده بود.
+     *   بی این، پشتیبان و سرور خلاصه‌ی کهنه می‌گرفتند و بازیابی مبلغ‌های قدیمی را برمی‌گرداند.
+     */
     private suspend fun saveRows(loan: LoanEntity, rows: List<LoanRowEntity>, installment: Double? = null) {
         loanRowDao.upsertAll(rows)
         val newTotal = rows.sumOf { it.installment }
-        val updated = loan.copy(amount = newTotal, totalPaid = newTotal)
-        loanDao.upsert(if (installment != null) updated.copy(installment = installment) else updated)
+        val data = parseDataMutable(loan)
+        data["totalPaid"] = newTotal
+        if (installment != null) data["installment"] = installment
+        loanDao.upsert(
+            loan.copy(
+                totalPaid = newTotal,
+                installment = installment ?: loan.installment,
+                dataJson = gson.toJson(data),
+            ),
+        )
     }
 
     /** ردیف‌های این وام رو از `loan_rows` می‌خونه؛ اگه خالی بود (لبه‌ی نادرِ مهاجرت یا وامِ خیلی
@@ -839,16 +858,35 @@ class LoanRepository(
     /** مقایسه‌ی «فرق دارن یا نه» - نه یه‌به‌یه مثل JSON.stringify تو وب (چون Gson اعداد رو موقع
      * رفت‌وبرگشت به Double تبدیل می‌کنه و ترتیب کلیدها تضمین‌شده نیست)، بلکه بر اساس شناسه‌ها و
      * تعداد قسط پرداخت‌شده‌ی هر وام - برای تشخیص «واقعاً فرق دارن» به همون اندازه قابل‌اعتماده. */
-    private fun sameLoans(local: List<LoanEntity>, server: List<Map<String, Any?>>): Boolean {
+    private suspend fun sameLoans(local: List<LoanEntity>, server: List<Map<String, Any?>>): Boolean {
         if (local.size != server.size) return false
-        val localSig = local.map { it.id to it.paidCount }.toSet()
+        // 🚨 قبلاً فقط شناسه و **تعدادِ** اقساطِ پرداخت‌شده مقایسه می‌شد. دو نسخه‌ای که هر دو یک
+        // قسط پرداخت‌شده داشتند - در یکی قسطِ اول، در دیگری قسطِ دوم - «یکسان» دیده می‌شدند و
+        // نسخه‌ی محلی بی‌سؤال روی سرور می‌رفت، یعنی تغییرِ گوشیِ دیگر بی‌صدا پاک می‌شد. حالا
+        // مبلغِ قسط و **کدام ردیف‌ها** پرداخت شده‌اند هم وارد مقایسه می‌شوند، پس اختلافِ واقعی
+        // به همان مسیرِ «انتخابِ نسخه» می‌رود که برای همین ساخته شده.
+        val localSig = local.map { loan ->
+            val paidRows = getOrMigrateRows(loan).filter { it.paid }.map { it.m }.sorted()
+            LoanSignature(loan.id, loan.installment.roundToCents(), paidRows)
+        }.toSet()
         val serverSig = server.mapNotNull { m ->
             val id = (m["id"] as? Number)?.toLong() ?: return@mapNotNull null
-            val paidCount = (m["paidCount"] as? Number)?.toInt() ?: 0
-            id to paidCount
+            val installment = (m["installment"] as? Number)?.toDouble() ?: 0.0
+            @Suppress("UNCHECKED_CAST")
+            val rows = m["rows"] as? List<Map<String, Any?>>
+            val paidRows = rows.orEmpty()
+                .filter { it["paid"] == true }
+                .mapNotNull { (it["m"] as? Number)?.toInt() }
+                .sorted()
+            LoanSignature(id, installment.roundToCents(), paidRows)
         }.toSet()
         return localSig == serverSig
     }
+
+    /** ارقامِ اعشاریِ رفت‌وبرگشتِ JSON نباید دو نسخه‌ی یکسان را «متفاوت» نشان دهند. */
+    private fun Double.roundToCents(): Long = Math.round(this * 100)
+
+    private data class LoanSignature(val id: Long, val installment: Long, val paidRows: List<Int>)
 
     /** شکلِ کاملِ وب (meta + rows) - ردیف‌ها همیشه تازه از رو `loan_rows` بازسازی می‌شن (نه از رو
      * کپیِ احتمالاً روبه‌زوالِ dataJson) تا سرور/بک‌آپ همیشه آخرین وضعیتِ واقعیِ پرداخت رو بگیره. */

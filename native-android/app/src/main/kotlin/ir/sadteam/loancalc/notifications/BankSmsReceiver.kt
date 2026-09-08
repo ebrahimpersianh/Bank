@@ -66,12 +66,25 @@ class BankSmsReceiver : BroadcastReceiver() {
                 //    وگرنه پیامکِ بانکِ B بی‌سروصدا رو حسابِ بانکِ A ثبت می‌شد.
                 // کلیدِ هر بانک: حسابی که کاربر خاموشش کرده اصلاً نامزدِ تطبیق نیست.
                 val candidates = accounts.filter { it.smsEnabled }
-                val account = candidates.firstOrNull { acc -> smsSenderMatches(acc.smsSender, sender) }
+                // ⚠️ سرشماره اول **مجموعه‌ی نامزدها** را محدود می‌کند، بعد شماره‌ی کارت بینِ
+                // همان‌ها تصمیم می‌گیرد. قبلاً اولین تطبیقِ سرشماره فوراً برنده می‌شد، پس با دو
+                // حساب در یک بانک، پیامکی که صریحاً چهار رقمِ آخرِ کارتِ دوم را داشت روی حسابِ
+                // اول می‌نشست.
+                val sameSender = candidates.filter { acc -> smsSenderMatches(acc.smsSender, sender) }
+                val account = sameSender.firstOrNull { acc ->
+                    parsed.cardSuffix != null && acc.cardNumber?.takeLast(4) == parsed.cardSuffix
+                }
+                    ?: sameSender.firstOrNull()
                     ?: candidates.firstOrNull { acc ->
                         parsed.cardSuffix != null && acc.cardNumber?.takeLast(4) == parsed.cardSuffix
                     }
                     ?: candidates.takeIf { list -> list.none { !it.smsSender.isNullOrBlank() } }?.firstOrNull()
                     ?: return@launch
+
+                // هم‌الگو با BankNotificationListener: یک پیامک که دو بار تحویل شود (تکرارِ
+                // شبکه یا اجرای دوباره‌ی receiver) نباید دو تراکنش بسازد.
+                val importKey = "sms|$sender|${parsed.type}|${parsed.amountRial}|${parsed.cardSuffix.orEmpty()}"
+                if (!uiPrefs.claimAutoImportKey(importKey)) return@launch
 
                 val today = JalaliCalendar.today()
                 val isWithdrawal = parsed.type == TransactionType.WITHDRAWAL
