@@ -27,6 +27,15 @@ fun Connection.execute(sql: String, vararg params: Any?) {
     }
 }
 
+/** مثلِ [execute] ولی تعدادِ ردیفِ تغییرکرده را برمی‌گرداند - برای `INSERT ... ON CONFLICT DO
+ * NOTHING` که با صفر یعنی «کسِ دیگری زودتر همین کلید را ثبت کرده». */
+fun Connection.executeCounting(sql: String, vararg params: Any?): Int {
+    prepareStatement(sql).use { ps ->
+        bindParams(ps, params)
+        return ps.executeUpdate()
+    }
+}
+
 fun Connection.insertReturningId(sql: String, vararg params: Any?): Long {
     prepareStatement(sql, Statement.RETURN_GENERATED_KEYS).use { ps ->
         bindParams(ps, params)

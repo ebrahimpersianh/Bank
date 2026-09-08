@@ -13,6 +13,7 @@ import ir.sadteam.loancalc.server.Db
 import ir.sadteam.loancalc.server.MyketException
 import ir.sadteam.loancalc.server.cafebazaarConfigured
 import ir.sadteam.loancalc.server.execute
+import ir.sadteam.loancalc.server.executeCounting
 import ir.sadteam.loancalc.server.myketConfigured
 import ir.sadteam.loancalc.server.queryOne
 import ir.sadteam.loancalc.server.requireAuth
@@ -117,54 +118,64 @@ fun Route.subscriptionRoutes() {
                حالا اگه این توکن قبلاً پردازش شده، بدونِ هیچ تمدیدی همون وضعیتِ فعلی برگردونده
                می‌شه - عمداً خطا نمی‌ده، چون `restorePurchases()` سمتِ کلاینت به‌طورِ عادی و مکرر
                همین رسیدها رو دوباره می‌فرسته و نباید خطا ببینه. */
-            val alreadyProcessed = Db.withConnection { conn ->
-                conn.queryOne(
-                    "SELECT subscribed_until FROM subscription_purchases WHERE purchase_token = ?",
-                    purchaseToken,
-                ) { rs -> rs.getString("subscribed_until") }
-            }
-            if (alreadyProcessed != null) {
-                val until = Db.withConnection { conn ->
-                    conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", authed.uid) { rs ->
-                        rs.getString("subscribed_until")
+            /* 🚨 هر سه کار - دیدنِ رسیدِ تکراری، خواندنِ انقضای فعلی و تمدید - باید در **یک
+               تراکنشِ واحد** باشند. قبلاً سه فراخوانیِ جدا بودند و دو درخواستِ هم‌زمان با یک
+               رسید می‌توانستند هر دو رسید را «پردازش‌نشده» ببینند: درجِ دومی با
+               `ON CONFLICT DO NOTHING` کنار می‌رفت، ولی **تمدیدِ دومی می‌مانْد** و کاربر دو
+               برابر اشتراک می‌گرفت.
+               حالا اول رسید ثبت می‌شود و فقط برنده‌ی همان درج (تعدادِ ردیفِ ۱) اجازه‌ی تمدید
+               دارد؛ بازنده وضعیتِ فعلی را برمی‌گرداند، بدونِ خطا - چون `restorePurchases()`
+               سمتِ کلاینت همین رسیدها را به‌طورِ عادی و مکرر می‌فرستد. */
+            val tierCode = PRODUCT_TIER_CODE[productId]
+            val resultExpiry = Db.withConnection { conn ->
+                // خودِ `autoCommit = false` تراکنش را شروع می‌کند؛ `BEGIN`ِ صریح روی JDBC-SQLite
+                // خطای «تراکنش داخلِ تراکنش» می‌دهد.
+                conn.autoCommit = false
+                try {
+                    val claimed = conn.executeCounting(
+                        """
+                        INSERT INTO subscription_purchases
+                            (user_id, product_id, tier, store, purchase_token, duration_days, subscribed_until)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(purchase_token) DO NOTHING
+                        """.trimIndent(),
+                        authed.uid, productId, tierCode, store, purchaseToken, durationDays, "",
+                    )
+                    val currentSubscribedUntil = conn.queryOne(
+                        "SELECT subscribed_until FROM users WHERE id = ?", authed.uid,
+                    ) { rs -> rs.getString("subscribed_until") }
+                    if (claimed == 0) {
+                        // این رسید قبلاً پردازش شده - هیچ تمدیدی، فقط وضعیتِ فعلی.
+                        conn.commit()
+                        // `users.subscribed_until` فقط در حالتِ نادرِ داده‌ی ناقص خالی است؛
+                        // پاسخ رشته‌ی غیرنال می‌خواهد، پس همان‌جا رشته‌ی خالی برمی‌گردد.
+                        return@withConnection currentSubscribedUntil.orEmpty()
                     }
-                } ?: alreadyProcessed
-                call.respond(VerifyResponse(subscribedUntil = until))
-                return@post
-            }
-
-            /* اگه اشتراک قبلی هنوز فعاله، از رو همون تاریخ انقضا جلو می‌ریم (نه از الان) تا خرید
-               زودتر از موعد، مدت باقی‌مونده رو از دست ندی. */
-            val currentSubscribedUntil = Db.withConnection { conn ->
-                conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", authed.uid) { rs ->
-                    rs.getString("subscribed_until")
+                    /* اگه اشتراکِ قبلی هنوز فعاله، از رو همون تاریخِ انقضا جلو می‌ریم (نه از
+                       الان) تا خریدِ زودتر از موعد، مدتِ باقی‌مونده رو از دست ندی. */
+                    val now = System.currentTimeMillis()
+                    val currentExpiry = currentSubscribedUntil
+                        ?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0
+                    val base = if (currentExpiry > now) currentExpiry else now
+                    val expiry = Instant.ofEpochMilli(base + durationDays * 24L * 60 * 60 * 1000).toString()
+                    conn.execute(
+                        "UPDATE users SET subscribed_until = ?, subscription_tier = ? WHERE id = ?",
+                        expiry, tierCode, authed.uid,
+                    )
+                    conn.execute(
+                        "UPDATE subscription_purchases SET subscribed_until = ? WHERE purchase_token = ?",
+                        expiry, purchaseToken,
+                    )
+                    conn.commit()
+                    expiry
+                } catch (e: Exception) {
+                    runCatching { conn.rollback() }
+                    throw e
+                } finally {
+                    runCatching { conn.autoCommit = true }
                 }
             }
-            val now = System.currentTimeMillis()
-            val currentExpiry = currentSubscribedUntil
-                ?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0
-            val base = if (currentExpiry > now) currentExpiry else now
-            val newExpiry = Instant.ofEpochMilli(base + durationDays * 24L * 60 * 60 * 1000).toString()
-            val tierCode = PRODUCT_TIER_CODE[productId]
-
-            Db.withConnection { conn ->
-                conn.execute(
-                    "UPDATE users SET subscribed_until = ?, subscription_tier = ? WHERE id = ?",
-                    newExpiry, tierCode, authed.uid,
-                )
-                /* ثبتِ خرید تو تاریخچه - purchase_token یکتاست، پس اگه همین خرید دوباره فرستاده بشه
-                   (مثلاً restorePurchases بعدِ گم‌شدنِ callback) ردیفِ تکراری ساخته نمی‌شه. */
-                conn.execute(
-                    """
-                    INSERT INTO subscription_purchases
-                        (user_id, product_id, tier, store, purchase_token, duration_days, subscribed_until)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(purchase_token) DO NOTHING
-                    """.trimIndent(),
-                    authed.uid, productId, tierCode, store, purchaseToken, durationDays, newExpiry,
-                )
-            }
-            call.respond(VerifyResponse(subscribedUntil = newExpiry))
+            call.respond(VerifyResponse(subscribedUntil = resultExpiry))
         }
 
         /* تاریخچه‌ی خریدهای همین کاربر - صفحه‌ی «اشتراک» تو اپ ازش برای لیستِ «اشتراک‌های خریداری‌شده»
