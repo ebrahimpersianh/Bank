@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -55,6 +56,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.onboarding.notificationListenerEnabled
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -119,38 +121,6 @@ fun ReminderSettingsScreen(
         }
 
         item {
-            AppCard(label = "یادآوری سررسید") {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "برای اقساط و چک‌های نزدیک به سررسید یه نوتیف بده",
-                        color = AppMuted,
-                        fontSize = 12.sp,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Switch(
-                        checked = enabled,
-                        onCheckedChange = { checked ->
-                            if (!checked) {
-                                notificationsViewModel.disable()
-                            } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                                notificationsViewModel.enable()
-                            } else if (ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.POST_NOTIFICATIONS,
-                                ) == PackageManager.PERMISSION_GRANTED
-                            ) {
-                                notificationsViewModel.enable()
-                            } else {
-                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            }
-                        },
-                        colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-                    )
-                }
-            }
-        }
-
-        item {
             // فریمِ `50a`: ساعت **یکی** است برای هر سه کانال، نه سه انتخابگر - تفاوتی که
             // کاربر نمی‌خواهد، در برابرِ صفحه‌ای که سه برابر می‌شود.
             AppCard(label = "ساعتِ یادآوری") {
@@ -181,6 +151,52 @@ fun ReminderSettingsScreen(
                             Icon(Icons.Filled.Add, contentDescription = "یک ساعت دیرتر", tint = AppPrimary)
                         }
                     }
+                }
+            }
+        }
+
+        item {
+            // فریمِ `50a`: سه کلید **یک تصمیم**‌اند («چه چیزی خبر بدهد») پس در یک کارت با
+            // جداکننده می‌نشینند؛ ساعت تصمیمِ دیگری است («کِی») و کارتِ خودش را دارد. قبلاً
+            // ساعت وسطِ کلیدها افتاده بود و کاربر باید تصمیمِ اول را رها می‌کرد و برمی‌گشت.
+            AppCard(label = "چه چیزی خبر بدهد") {
+                Column {
+                    ReminderToggleRow(
+                        title = "یادآوری سررسید",
+                        subtitle = "برای اقساط و چک‌های نزدیک به سررسید یه نوتیف بده",
+                        checked = enabled,
+                        onCheckedChange = { checked ->
+                            if (!checked) {
+                                notificationsViewModel.disable()
+                            } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                                notificationsViewModel.enable()
+                            } else if (ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.POST_NOTIFICATIONS,
+                                ) == PackageManager.PERMISSION_GRANTED
+                            ) {
+                                notificationsViewModel.enable()
+                            } else {
+                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        },
+                    )
+                    HorizontalDivider(color = AppLine, modifier = Modifier.padding(vertical = 4.dp))
+                    ReminderToggleRow(
+                        title = "تراکنشِ خودکار",
+                        subtitle = "وقتی تراکنشی از پیامک یا اعلانِ بانک ثبت شد خبر بده",
+                        checked = autoTxEnabled,
+                        onCheckedChange = { viewModel.setAutoTxEnabled(it) },
+                    )
+                    HorizontalDivider(color = AppLine, modifier = Modifier.padding(vertical = 4.dp))
+                    // ⚠️ استثنای عمدی: این یکی شب اجرا می‌شود نه سرِ ساعتِ کارتِ بالا، چون
+                    // شرطش «تا حالا چیزی ثبت نشده» است و صبح همیشه درست است.
+                    ReminderToggleRow(
+                        title = "یادآورِ روزانه",
+                        subtitle = "اگر تا شب چیزی ثبت نکردی یادم بینداز",
+                        checked = comeBackEnabled,
+                        onCheckedChange = { viewModel.setComeBackEnabled(it) },
+                    )
                 }
             }
         }
@@ -228,64 +244,6 @@ fun ReminderSettingsScreen(
                         ) {
                             Text("وصل کن")
                         }
-                    }
-                }
-            }
-        }
-
-        item {
-            AppCard(label = "تراکنشِ خودکار") {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "وقتی تراکنشی از پیامک یا اعلانِ بانک ثبت شد خبر بده",
-                        color = AppMuted,
-                        fontSize = 12.sp,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Switch(
-                        checked = autoTxEnabled,
-                        onCheckedChange = { viewModel.setAutoTxEnabled(it) },
-                        colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-                    )
-                }
-            }
-        }
-
-        item {
-            // ⚠️ استثنای عمدی: این یکی شب اجرا می‌شود نه سرِ ساعتِ بالا، چون شرطش «تا حالا
-            // چیزی ثبت نشده» است و صبح همیشه درست است.
-            AppCard(label = "یادآورِ روزانه") {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "اگر تا شب چیزی ثبت نکردی یادم بینداز",
-                        color = AppMuted,
-                        fontSize = 12.sp,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Switch(
-                        checked = comeBackEnabled,
-                        onCheckedChange = { viewModel.setComeBackEnabled(it) },
-                        colors = SwitchDefaults.colors(checkedThumbColor = AppPrimary, checkedTrackColor = AppPrimary.copy(alpha = 0.5f)),
-                    )
-                }
-            }
-        }
-
-        item {
-            AppCard(label = "تستِ نوتیفیکیشن") {
-                Column {
-                    Text(
-                        "بدونِ نیاز به صبرکردن (چک‌کردنِ روزانه تا ۲۴ ساعت طول می‌کشه)، همین الان یه " +
-                            "نوتیفِ نمونه بفرست تا مطمئن بشی درست کار می‌کنه. صدا و ویبره‌اش همان چیزی " +
-                            "است که در تنظیماتِ اعلانِ گوشی برای این کانال انتخاب شده.",
-                        color = AppMuted,
-                        fontSize = 12.sp,
-                    )
-                    OutlinedButton(
-                        onClick = { fireTestNotification() },
-                        modifier = Modifier.padding(top = 8.dp),
-                    ) {
-                        Text("ارسالِ نوتیفِ آزمایشی")
                     }
                 }
             }
@@ -340,6 +298,27 @@ fun ReminderSettingsScreen(
                 }
             }
         }
+
+        item {
+            AppCard(label = "تستِ نوتیفیکیشن") {
+                Column {
+                    Text(
+                        "بدونِ نیاز به صبرکردن (چک‌کردنِ روزانه تا ۲۴ ساعت طول می‌کشه)، همین الان یه " +
+                            "نوتیفِ نمونه بفرست تا مطمئن بشی درست کار می‌کنه. صدا و ویبره‌اش همان چیزی " +
+                            "است که در تنظیماتِ اعلانِ گوشی برای این کانال انتخاب شده.",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                    )
+                    OutlinedButton(
+                        onClick = { fireTestNotification() },
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) {
+                        Text("ارسالِ نوتیفِ آزمایشی")
+                    }
+                }
+            }
+        }
+
     }
 }
 
@@ -368,3 +347,36 @@ private fun sendTestReminderNotification(context: android.content.Context) {
 }
 
 private const val TEST_NOTIFICATION_ID = 999999
+
+/** سه ردیفِ کلید کدِ یکسان با متنِ متفاوت داشتند - فریمِ `50a` هر سه را در یک کارت می‌گذارد. */
+@Composable
+private fun ReminderToggleRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = AppText, fontSize = 13.sp)
+            Text(
+                subtitle,
+                color = AppMuted,
+                fontSize = 12.sp,
+                lineHeight = 19.sp,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = AppPrimary,
+                checkedTrackColor = AppPrimary.copy(alpha = 0.5f),
+            ),
+        )
+    }
+}
