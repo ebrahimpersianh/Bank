@@ -63,6 +63,7 @@ import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.accounting.NewTransactionSheet
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
+import ir.sadteam.loancalc.ui.components.SkeletonRowList
 import ir.sadteam.loancalc.ui.components.ActiveChainMark
 import ir.sadteam.loancalc.ui.components.ActiveChip
 import ir.sadteam.loancalc.ui.components.AppButtonVariant
@@ -167,6 +168,7 @@ fun HomeScreen(
     val userName by authViewModel.userName.collectAsState()
     val urgentDue by urgentDueViewModel.urgent.collectAsState()
     val transactions by accountViewModel.transactions.collectAsState()
+    val transactionsLoaded by accountViewModel.transactionsLoaded.collectAsState()
     val budgets by accountViewModel.budgets.collectAsState()
     val activeDays by gamificationViewModel.activeDays.collectAsState()
     val coins by gamificationViewModel.coins.collectAsState()
@@ -261,8 +263,16 @@ fun HomeScreen(
                 }
             }
 
+            // ── اسکلتِ لودینگ ────────────────────────────────────────────────────────────
+            // 🚨 تا اولین خواندنِ دیتابیس برنگشته، «خالی» نشان داده نمی‌شود: دیتابیس رمزنگاری‌شده
+            // است و چند فریم طول می‌کشد، و در آن فاصله حالتِ خالی (کارتِ خط‌چینِ بلند) رندر
+            // می‌شد و کاربر باید از رویش رد می‌شد تا محتوای واقعی را ببیند.
+            if (!transactionsLoaded) {
+                item { SkeletonRowList(rows = 4) }
+            }
+
             // ── حالتِ خالی (فریمِ `15b`) - وقتی هنوز هیچ تراکنشی ثبت نشده ────────────────
-            if (transactions.isEmpty()) {
+            if (transactionsLoaded && transactions.isEmpty()) {
                 item {
                     HomeEmptyHero(onAddFirst = { showNewTransaction = true })
                 }

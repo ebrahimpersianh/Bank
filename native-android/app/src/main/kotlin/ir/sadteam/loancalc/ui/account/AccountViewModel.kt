@@ -15,6 +15,7 @@ import ir.sadteam.loancalc.data.prefs.AuthPrefs
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,6 +31,19 @@ class AccountViewModel @Inject constructor(
 
     val transactions: StateFlow<List<AccountTransactionEntity>> = accountRepository.observeTransactions()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * 🚨 آیا اولین خواندنِ دیتابیس برگشته؟
+     *
+     * [transactions] با `emptyList()` شروع می‌شود و دیتابیس رمزنگاری‌شده است، پس بازشدنش چند
+     * فریم طول می‌کشد. در آن فاصله «هنوز نمی‌دانم» از «هیچ تراکنشی نیست» قابلِ تشخیص نبود و
+     * صفحه‌ی خانه **حالتِ خالی** را رندر می‌کرد: یک کارتِ خط‌چینِ بلند که کاربر باید از رویش
+     * رد می‌شد تا محتوای واقعی را ببیند - همان چیزی که کاربر «انگار سه صفحه شده» گزارش کرد.
+     * تپ روی «ترمیم» فقط اتفاقی هم‌زمان شد؛ علتش نبود.
+     */
+    val transactionsLoaded: StateFlow<Boolean> = accountRepository.observeTransactions()
+        .map { true }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val budgets: StateFlow<List<BudgetEntity>> = accountRepository.observeBudgets()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

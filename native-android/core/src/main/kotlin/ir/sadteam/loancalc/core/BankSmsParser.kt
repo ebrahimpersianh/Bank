@@ -21,8 +21,13 @@ object BankSmsParser {
     // بی‌ربط (مثلاً شماره‌ی پیگیری).
     private val amountRegex = Regex("([\\d,٬۰-۹]{4,})\\s*(ریال|ريال|تومان)")
     private val cardSuffixRegex = Regex("(?:\\*+|منتهی به|کارت)\\D{0,6}(\\d{4})(?!\\d)")
-    private val depositKeywords = listOf("واریز", "بستانکار", "افزایش موجودی")
-    private val withdrawalKeywords = listOf("برداشت", "خرید", "بدهکار", "کاهش موجودی", "انتقال وجه", "پرداخت")
+    // ⚠️ بانک‌های دیجیتال (بلوبانک و مانندش) متنِ اعلانشان با پیامکِ بانکِ سنتی فرق دارد و
+    // فعل‌های دیگری به کار می‌برند. با فهرستِ قبلی، اعلان پارس نمی‌شد و بی‌صدا رد می‌شد -
+    // گزارشِ واقعیِ کاربر: «اعلانِ بلوبانک آمد ولی هیچ کاری نشد».
+    private val depositKeywords = listOf("واریز", "بستانکار", "افزایش موجودی", "دریافت", "واریزی")
+    private val withdrawalKeywords = listOf(
+        "برداشت", "خرید", "بدهکار", "کاهش موجودی", "انتقال وجه", "پرداخت", "کسر", "انتقال به",
+    )
 
     fun parse(body: String): ParsedBankSms? {
         val amountMatch = amountRegex.find(body) ?: return null

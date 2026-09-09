@@ -42,4 +42,21 @@ class BankSmsParserTest {
         assertFalse(smsSenderMatches(null, "100011111"))
         assertFalse(smsSenderMatches("100011111", ""))
     }
+
+    /**
+     * متنِ اعلانِ بانک‌های دیجیتال فعل‌های دیگری دارد؛ با فهرستِ کلیدواژه‌ی قبلی هیچ‌کدام پارس
+     * نمی‌شدند و اعلان بی‌صدا رد می‌شد - گزارشِ واقعیِ کاربر درباره‌ی بلوبانک.
+     */
+    @Test
+    fun parsesDigitalBankWordingForBothDirections() {
+        val received = BankSmsParser.parse("۲۵۰,۰۰۰ تومان دریافت کردید. موجودی: ۱,۲۰۰,۰۰۰ تومان")
+        assertEquals(TransactionType.DEPOSIT, received?.type)
+        assertEquals(2_500_000.0, received?.amountRial)
+
+        val sent = BankSmsParser.parse("انتقال به سعید · ۳۲۰,۰۰۰ تومان")
+        assertEquals(TransactionType.WITHDRAWAL, sent?.type)
+        assertEquals(3_200_000.0, sent?.amountRial)
+
+        assertEquals(TransactionType.WITHDRAWAL, BankSmsParser.parse("مبلغ ۹۹,۰۰۰ تومان کسر شد")?.type)
+    }
 }
