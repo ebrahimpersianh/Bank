@@ -477,8 +477,16 @@ private fun AppRoot(
     // مقدارِ اولیه **هم‌زمان** خونده می‌شه، نه `false` - وگرنه هر بار باز شدنِ اپ یه فریم از
     // صفحه‌ی مجوز فلش می‌زنه حتی وقتی کاربر قبلاً هر دو مجوز رو داده.
     var permissionsOk by remember { mutableStateOf(permissionGateSatisfied(permissionContext)) }
-    if (!permissionsOk) {
-        PermissionGateScreen(onAllGranted = { permissionsOk = true })
+    // 🚨 هر دو مجوز اختیاری‌اند، ولی تا امروز راهی برای ردشدن نبود و این گیت **بن‌بست** بود:
+    // اندروید بعد از دو بار ردکردنِ اعلان دیالوگ را برای همیشه خاموش می‌کند و از آن لحظه
+    // کاربر اصلاً نمی‌توانست وارد برنامه‌ی خودش شود. ردکردن ذخیره می‌شود، وگرنه چون گیت هر
+    // بار باز شدنِ اپ ارزیابی می‌شود دوباره سرِ راه می‌آمد.
+    val permissionGateSkipped by authViewModel.permissionGateSkipped.collectAsState()
+    if (!permissionsOk && !permissionGateSkipped) {
+        PermissionGateScreen(
+            onAllGranted = { permissionsOk = true },
+            onSkip = { authViewModel.skipPermissionGate() },
+        )
         return
     }
 

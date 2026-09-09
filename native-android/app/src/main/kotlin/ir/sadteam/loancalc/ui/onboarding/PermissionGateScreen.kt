@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -30,6 +32,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -52,8 +55,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.JibakBrandMark
 import ir.sadteam.loancalc.ui.theme.AppBg
-import ir.sadteam.loancalc.ui.theme.AppGoldFrom
-import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -104,7 +105,26 @@ fun permissionGateSatisfied(context: Context): Boolean =
  * دستی خاموش کنه.
  */
 @Composable
-fun PermissionGateScreen(onAllGranted: () -> Unit) {
+fun PermissionGateScreen(
+    onAllGranted: () -> Unit,
+    /**
+     * 🚨 **بزرگ‌ترین موردِ این فایل.** README می‌گوید «همه اختیاری‌اند و رد کردنشان نباید
+     * بن‌بست بسازد» - ولی کد هیچ راهِ ردکردن نداشت. تنها خروجی‌اش
+     * `if (notifOk && batteryOk) onAllGranted()` بود و متنِ صفحه هم صریح می‌گفت «تا
+     * وقتی هر دو مورد فعال نشن، ورود انجام نمی‌شه».
+     *
+     * یعنی کاربری که «اجازه نمی‌دهم» را دو بار زده (اندروید بعدِ دو رد، دیالوگ را
+     * برای همیشه خاموش می‌کند) **قابلِ ورود به برنامه نیست** - نه با تپ، نه با
+     * بازگشت. تنها راهش پاک‌کردن و نصبِ دوباره است.
+     *
+     * و این گیت `هر بار` باز شدنِ اپ ارزیابی می‌شود، پس کاربری که ماه‌ها استفاده کرده و
+     * بعد از تنظیماتِ گوشی اعلان را خاموش کرده هم از داده‌ی خودش بیرون می‌مانَد.
+     *
+     * پس `onSkip` اجباری است. اگر جای فراخوان راهی برای ردشدن ندارد، **بگویید** تا
+     * راهش را بنویسم؛ خالی نگذارید.
+     */
+    onSkip: () -> Unit,
+) {
     val context = LocalContext.current
     var notifOk by remember { mutableStateOf(notificationsGranted(context)) }
     var batteryOk by remember { mutableStateOf(batteryUnrestricted(context)) }
@@ -138,6 +158,10 @@ fun PermissionGateScreen(onAllGranted: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(AppBg)
+            // ⚠️ روی شیائومی/سامسونگ کارتِ «یک قدمِ اختیاری» هم رندر می‌شود و صفحه از
+            // گوشیِ کوتاه بیرون می‌زد: دکمه‌ی «بررسی دوباره» و «بعداً» زیرِ لبه می‌ماندند،
+            // یعنی همان کاربری که این کارت را می‌بیند راهِ خروج را نمی‌دید.
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -196,7 +220,10 @@ fun PermissionGateScreen(onAllGranted: () -> Unit) {
         }
 
         Text(
-            "تا وقتی هر دو مورد فعال نشن، ورود به برنامه انجام نمی‌شه.",
+            // ⚠️ متنِ قبلی («تا وقتی هر دو مورد فعال نشن، ورود انجام نمی‌شه») هم تهدید بود
+            // و هم توصیفِ باگ. حالا می‌گوید چه چیزی از دست می‌رود، که تنها چیزِ درستی است
+            // که می‌شود گفت: مجوزها اختیاری‌اند و پیامد دارند، نه شرطِ ورود.
+            "بی این دسترسی‌ها یادآوریِ سررسید نمی‌رسد. بقیه‌ی برنامه کار می‌کند.",
             color = AppMuted,
             fontSize = 12.sp,
             textAlign = TextAlign.Center,
@@ -214,12 +241,16 @@ fun PermissionGateScreen(onAllGranted: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 16.dp)
-                    .background(AppGoldFrom, RoundedCornerShape(14.dp))
+                    // ⚠️ `AppGoldFrom` بود. قاعده‌ی ۸ی README: «طلایی فقط نشانه‌ی
+                    // اشتراک/پرمیوم است». راهنمای اجرای خودکار نه پرمیوم است و نه
+                    // فروشی - کارتِ خنثی با حاشیه.
+                    .background(AppSurface, RoundedCornerShape(14.dp))
+                    .border(1.dp, AppLine, RoundedCornerShape(14.dp))
                     .padding(14.dp),
             ) {
                 Text(
                     "یک قدمِ اختیاری",
-                    color = AppAccent,
+                    color = AppText,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                 )
@@ -249,15 +280,28 @@ fun PermissionGateScreen(onAllGranted: () -> Unit) {
             }
         }
 
-        OutlinedButton(
-            onClick = {
-                notifOk = notificationsGranted(context)
-                batteryOk = batteryUnrestricted(context)
-            },
-            modifier = Modifier.padding(top = 16.dp),
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("بررسی دوباره")
+            OutlinedButton(
+                onClick = {
+                    notifOk = notificationsGranted(context)
+                    batteryOk = batteryUnrestricted(context)
+                },
+                modifier = Modifier.weight(1f),
+            ) {
+                Text("بررسی دوباره")
+            }
+            // «بعداً» - راهِ خروج. `TextButton` است نه دکمه‌ی هم‌وزنِ اصلی، همان الگویی که
+            // فریمِ `35b` برای «بعداً»ِ مجوزِ اعلان دارد: پیدا، ولی نه تشویق‌کننده.
+            TextButton(onClick = onSkip, modifier = Modifier.weight(1f)) {
+                Text("بعداً")
+            }
         }
+
+        Spacer(Modifier.height(24.dp))
     }
 }
 

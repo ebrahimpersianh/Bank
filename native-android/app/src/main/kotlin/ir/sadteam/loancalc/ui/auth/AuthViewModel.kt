@@ -126,6 +126,14 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch { authPrefs.setBenefitsSeen(true) }
     }
 
+    /** صفحه‌ی مجوزها رد شده - هر دو مجوز اختیاری‌اند و بی این، گیت بن‌بست بود. */
+    val permissionGateSkipped: StateFlow<Boolean> = authPrefs.permissionGateSkipped
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun skipPermissionGate() {
+        viewModelScope.launch { authPrefs.setPermissionGateSkipped(true) }
+    }
+
     /** true یعنی این شماره از قبل تو سرور بوده و ۱۵ روزِ هدیه‌ی اضافه گرفته - متنِ شیتِ هدیه
      * ([ir.sadteam.loancalc.ui.onboarding.PostLoginSheets]) بر اساسِ همین عوض می‌شه. */
     val legacyGift: StateFlow<Boolean> = authPrefs.legacyGift

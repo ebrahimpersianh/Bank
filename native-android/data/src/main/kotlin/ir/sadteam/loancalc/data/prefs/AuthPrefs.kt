@@ -29,6 +29,7 @@ class AuthPrefs(private val context: Context) {
         val TOUR_SEEN = booleanPreferencesKey("tour_seen")
         val LEGACY_GIFT = booleanPreferencesKey("legacy_gift")
         val POST_LOGIN_SHEETS_SEEN = booleanPreferencesKey("post_login_sheets_seen")
+        val PERMISSION_GATE_SKIPPED = booleanPreferencesKey("permission_gate_skipped")
     }
 
     val authToken: Flow<String?> = context.authDataStore.data.map { it[Keys.TOKEN] }
@@ -83,6 +84,22 @@ class AuthPrefs(private val context: Context) {
     /** تورِ راهنمای اولین ورود - یه اورلیِ spotlight داخلِ خودِ صفحه‌ی اصلی (رجوع کن به
      * TabTourOverlay تو MainActivity.kt)، نه یه صفحه‌ی جدا. فقط یه‌بار تو کل عمر نصب. */
     val tourSeen: Flow<Boolean> = context.authDataStore.data.map { it[Keys.TOUR_SEEN] ?: false }
+
+    /**
+     * 🚨 کاربر صفحه‌ی مجوزها را رد کرده.
+     *
+     * بی این، گیت **بن‌بست** بود: هر دو مجوز اختیاری‌اند ولی صفحه هیچ راهِ ردکردنی نداشت، و
+     * اندروید بعد از دو بار ردکردنِ `POST_NOTIFICATIONS` دیالوگ را برای همیشه خاموش می‌کند -
+     * از آن لحظه کاربر اصلاً نمی‌توانست وارد برنامه‌ی خودش شود. چون گیت هر بار باز شدنِ اپ
+     * ارزیابی می‌شود، همین برای کسی که ماه‌ها استفاده کرده و بعد اعلان را خاموش کرده هم
+     * پیش می‌آمد. ذخیره‌شدنش لازم است، وگرنه هر بار دوباره می‌پرسد.
+     */
+    val permissionGateSkipped: Flow<Boolean> =
+        context.authDataStore.data.map { it[Keys.PERMISSION_GATE_SKIPPED] ?: false }
+
+    suspend fun setPermissionGateSkipped(value: Boolean) {
+        context.authDataStore.edit { it[Keys.PERMISSION_GATE_SKIPPED] = value }
+    }
 
     suspend fun setTourSeen(value: Boolean) {
         context.authDataStore.edit { it[Keys.TOUR_SEEN] = value }

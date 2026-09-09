@@ -24,12 +24,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.jibak.faMonthName
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
@@ -58,10 +61,13 @@ import ir.sadteam.loancalc.ui.theme.AppText
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private val wheelMonthNames = listOf(
-    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
-)
+// ⚠️ کپیِ محلیِ نامِ ماه حذف شد. سه نمای انتخابِ تاریخ باید **یک زبان** داشته باشند
+// (خواسته‌ی صریحِ README) و اولین شرطش این است که نامِ ماه از یک جا بیاید:
+// `CalendarPickerScreen` از `faMonthName` می‌خورد، این و `InlineJalaliDateRow` هر کدام
+// لیستِ خودشان را داشتند - سه نما، سه منبع.
+
+/** بازه‌ی سالِ مشترکِ هر سه نما - قبلاً سه جا مستقل تکرار شده بود. */
+internal val JalaliYearRange = 1350..1410
 
 /**
  * انتخابگر تاریخ شمسی به‌صورت چرخونه‌ی اسکرولی (spinner) - تپ روی تاریخ این صفحه رو باز می‌کنه،
@@ -73,7 +79,7 @@ fun WheelDatePickerScreen(
     initial: PersianDate,
     onConfirm: (PersianDate) -> Unit,
     onBack: () -> Unit,
-    yearRange: IntRange = 1350..1410,
+    yearRange: IntRange = JalaliYearRange,
 ) {
     val years = remember(yearRange) { yearRange.toList() }
     var year by remember { mutableIntStateOf(initial.y.coerceIn(yearRange.first, yearRange.last)) }
@@ -81,8 +87,13 @@ fun WheelDatePickerScreen(
     var day by remember { mutableIntStateOf(initial.d.coerceAtLeast(1)) }
 
     val maxDay = JalaliCalendar.daysInMonth(year, month)
-    if (day > maxDay) day = maxDay
+    // 🚨 قبلاً `if (day > maxDay) day = maxDay` بود - **نوشتنِ state در میانه‌ی composition**.
+    // همان دسته‌ای که `historyOf`ِ تبِ دارایی داشت: Compose تضمین نمی‌کند این شاخه چند بار
+    // اجرا شود، و نوشتنِ بی‌`LaunchedEffect` می‌تواند حلقه‌ی recomposition بسازد. سناریوی
+    // واقعی‌اش: ۳۱ اسفند انتخاب است، کاربر ماه را به اسفند می‌چرخاند (۲۹ روز).
+    LaunchedEffect(maxDay) { if (day > maxDay) day = maxDay }
     val days = remember(maxDay) { (1..maxDay).toList() }
+    val today = remember { JalaliCalendar.today() }
 
     Surface(color = AppBg, modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -101,8 +112,10 @@ fun WheelDatePickerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(WheelItemHeight)
-                        .background(AppPrimaryPill, RoundedCornerShape(14.dp))
-                        .border(1.dp, AppPrimary.copy(alpha = 0.45f), RoundedCornerShape(14.dp)),
+                        // شعاعِ ۱۰ - همان `GridCell`ِ تقویم و همان نوارِ نسخه‌ی اینلاین.
+                        // قبلاً ۱۴ بود و اینلاین ۱۰: یک نوار با دو شعاع.
+                        .background(AppPrimaryPill, RoundedCornerShape(10.dp))
+                        .border(1.dp, AppPrimary.copy(alpha = 0.45f), RoundedCornerShape(10.dp)),
                 )
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     WheelColumn(
@@ -112,7 +125,7 @@ fun WheelDatePickerScreen(
                         modifier = Modifier.weight(1f),
                     )
                     WheelColumn(
-                        items = wheelMonthNames,
+                        items = remember { (1..12).map { faMonthName(it) } },
                         selectedIndex = month - 1,
                         onCentered = { month = it + 1 },
                         modifier = Modifier.weight(1.4f),
@@ -128,6 +141,16 @@ fun WheelDatePickerScreen(
 
             Spacer(Modifier.weight(1f))
 
+            // «امروز» فقط در `CalendarPickerScreen` بود. دو نمای یک کار، یکی میان‌برِ
+            // امروز دارد و یکی نه - و چرخونه بدترین جای نداشتنش است، چون رسیدن به امروز
+            // از سالِ ۱۳۵۰ سه اسکرولِ بلند است.
+            TextButton(
+                onClick = { year = today.y; month = today.m; day = today.d },
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            ) {
+                Text("امروز")
+            }
+
             GradientButton(
                 onClick = {
                     val safeDay = day.coerceAtMost(JalaliCalendar.daysInMonth(year, month))
@@ -135,7 +158,9 @@ fun WheelDatePickerScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("تأیید", fontWeight = FontWeight.Bold)
+                // ⚠️ «تأیید» با همزه بود و `CalendarPickerScreen` «تایید» بی همزه - یک
+                // واژه با دو نوشتار در دو نمای همان کار.
+                Text("تایید", fontWeight = FontWeight.Bold)
             }
         }
     }

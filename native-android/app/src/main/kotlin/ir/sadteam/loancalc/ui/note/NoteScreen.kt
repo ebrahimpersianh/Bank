@@ -16,11 +16,13 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -33,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.jibak.faMonthName
 import ir.sadteam.loancalc.data.db.NoteEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
@@ -40,6 +43,7 @@ import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
 
@@ -50,9 +54,9 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
     var showAdd by rememberSaveable { mutableStateOf(false) }
     var text by rememberSaveable { mutableStateOf("") }
     val today = remember { JalaliCalendar.today() }
-    var year by rememberSaveable { mutableStateOf(today.y) }
-    var month by rememberSaveable { mutableStateOf(today.m) }
-    var day by rememberSaveable { mutableStateOf(today.d) }
+    var year by rememberSaveable { mutableIntStateOf(today.y) }
+    var month by rememberSaveable { mutableIntStateOf(today.m) }
+    var day by rememberSaveable { mutableIntStateOf(today.d) }
     var pendingDelete by remember { mutableStateOf<NoteEntity?>(null) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val visibleNotes = remember(notes, searchQuery) {
@@ -82,12 +86,14 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                 Text("یادداشت‌ها", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
-        if (notes.isNotEmpty()) {
+        // فیلدِ جست‌وجو از سه یادداشت به بالا می‌آید. با یک یادداشت، فیلد از خودِ لیست
+        // بلندتر است.
+        if (notes.size >= 3) {
             item {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("جستجو تو یادداشت‌ها...") },
+                    placeholder = { Text("جست‌وجو در یادداشت‌ها") },
                     leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -110,16 +116,30 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                         onDateChange = { y, m, d -> year = y; month = m; day = d },
                         modifier = Modifier.padding(top = 10.dp),
                     )
-                    GradientButton(
-                        onClick = {
-                            if (text.isNotBlank()) {
-                                viewModel.addNote(text.trim(), year, month, day, null)
-                                text = ""
-                                showAdd = false
-                            }
-                        },
+                    Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                    ) { Text("ثبت") }
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        // ⚠️ کارتِ «یادداشتِ جدید» راهِ بستن نداشت: کاربری که اشتباهی بازش
+                        // می‌کرد، تنها راهش خروج از صفحه بود (بازگشتِ سیستمی هم کلِ صفحه را
+                        // می‌بست، نه کارت را).
+                        OutlinedButton(
+                            onClick = { text = ""; showAdd = false },
+                            modifier = Modifier.weight(1f),
+                        ) { Text("بی‌خیال") }
+                        GradientButton(
+                            onClick = {
+                                if (text.isNotBlank()) {
+                                    viewModel.addNote(text.trim(), year, month, day, null)
+                                    text = ""
+                                    showAdd = false
+                                }
+                            },
+                            // دکمه‌ی ثبت با متنِ خالی کاری نمی‌کرد - حالا خودش خاموش است.
+                            enabled = text.isNotBlank(),
+                            modifier = Modifier.weight(1f),
+                        ) { Text("ثبت") }
+                    }
                 }
             } else {
                 GradientButton(onClick = { showAdd = true }, modifier = Modifier.fillMaxWidth()) {
@@ -135,15 +155,33 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                     description = "پرداخت‌های مهم مثلِ اجاره و قسط رو یادداشت کن تا سرِ موعد یادآوری کنیم.",
                 )
             }
+        } else if (visibleNotes.isEmpty()) {
+            // 🚨 حالتِ «جست‌وجو نتیجه نداشت» **وجود نداشت**، چون شرطِ بالا `notes.isEmpty()`
+            // است نه `visibleNotes`. کاربری که واژه‌ای می‌نوشت که هیچ یادداشتی نداشت،
+            // لیستِ کاملِ یادداشت‌ها را می‌دید - یعنی فکر می‌کرد جست‌وجو کار نمی‌کند (و
+            // درست فکر می‌کرد، رجوع کن به بندِ بعدی).
+            item {
+                EmptyState(
+                    icon = Icons.Filled.Search,
+                    title = "چیزی پیدا نشد",
+                    description = "یادداشتی با «${searchQuery.trim()}» نبود.",
+                )
+            }
         } else {
-            items(notes, key = { it.id }) { note ->
+            // 🚨 **باگِ اصلیِ این صفحه**: این‌جا `notes` بود نه `visibleNotes`.
+            // `visibleNotes` محاسبه می‌شد و **هیچ‌جا استفاده نمی‌شد**، پس فیلدِ جست‌وجو
+            // متن می‌گرفت، فیلتر واقعاً حساب می‌شد، و لیست همان لیستِ کامل می‌ماند.
+            items(visibleNotes, key = { it.id }) { note ->
                 AppCard {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(note.text, color = AppText, fontSize = 14.sp)
+                            // ⚠️ قبلاً `۱۴۰۵/۷/۹` بود: قالبِ پنجم، بی صفرِ ابتدایی و
+                            // بیرونِ چهار قالبِ مصوب. `۹ مهر ۱۴۰۵` همان قالبی است که
+                            // ردیفِ سررسید و تقویمِ مالی هم می‌نویسند.
                             Text(
-                                "${toFa(note.year)}/${toFa(note.month)}/${toFa(note.day)}",
-                                color = AppMuted,
+                                "${toFa(note.day)} ${faMonthName(note.month)} ${toFa(note.year)}",
+                                color = AppLabel,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 2.dp),
                             )

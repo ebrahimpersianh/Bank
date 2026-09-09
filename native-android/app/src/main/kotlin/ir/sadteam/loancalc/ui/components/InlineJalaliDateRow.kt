@@ -15,14 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.jibak.faMonthName
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 
-private val inlineMonthNames = listOf(
-    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
-)
-
+// ⚠️ سومین کپیِ نامِ ماه حذف شد - `faMonthName`. (بندِ «یک زبانِ بصری»ِ README.)
 private val InlineWheelItemHeight = 34.dp
 
 /**
@@ -39,7 +36,7 @@ fun InlineJalaliDateRow(
     day: Int,
     onDateChange: (year: Int, month: Int, day: Int) -> Unit,
     modifier: Modifier = Modifier,
-    yearRange: IntRange = 1350..1410,
+    yearRange: IntRange = JalaliYearRange,
 ) {
     val years = remember(yearRange) { yearRange.toList() }
     val maxDay = JalaliCalendar.daysInMonth(year, month)
@@ -65,7 +62,7 @@ fun InlineJalaliDateRow(
                 visibleRows = 3,
             )
             WheelColumn(
-                items = inlineMonthNames,
+                items = remember { (1..12).map { faMonthName(it) } },
                 selectedIndex = month - 1,
                 onCentered = { idx ->
                     val newMax = JalaliCalendar.daysInMonth(year, idx + 1)

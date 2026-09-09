@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,17 +42,25 @@ import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.faMonthName
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
+import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
 
-private val faMonthNames = listOf(
-    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
-)
+// ⚠️ فهرستِ محلیِ نامِ ماه حذف شد - پنجمین کپی در برنامه بود. `faMonthName(m)`ِ
+// `ui.jibak` همان است و `CalendarPickerScreen` از قبل از همان می‌خورد.
 private val faWeekDayShort = listOf("ش", "ی", "د", "س", "چ", "پ", "ج")
+
+/** ذخیره و محاسبه ریال، نمایش تومان - قاعده‌ی ۵ی README. */
+private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
 
 /**
  * پورت مفهومی «تقویم مالی» اپ رقیب (VAMMAN) - گرید تقویم شمسی که روزهای دارای سررسید قسط رو با یه
@@ -71,9 +80,10 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
     }
     val today = remember { JalaliCalendar.today() }
 
-    var viewYear by remember { mutableStateOf(today.y) }
-    var viewMonth by remember { mutableStateOf(today.m) }
+    var viewYear by remember { mutableIntStateOf(today.y) }
+    var viewMonth by remember { mutableIntStateOf(today.m) }
     var selectedDate by remember { mutableStateOf<PersianDate?>(today) }
+    val privacyMode = LocalPrivacyMode.current
 
     fun stepMonth(delta: Int) {
         var m = viewMonth + delta
@@ -98,7 +108,13 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
             IconButton(onClick = onBack) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
             }
-            Text("تقویم مالی", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+            Text(
+                "تقویم مالی",
+                color = AppText,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 4.dp),
+            )
         }
 
         Row(
@@ -112,7 +128,7 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
                 Icon(Icons.Filled.ChevronRight, contentDescription = "ماه قبل")
             }
             Text(
-                "${faMonthNames[viewMonth - 1]} ${toFa(viewYear)}",
+                "${faMonthName(viewMonth)} ${toFa(viewYear)}",
                 color = AppText,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -144,7 +160,12 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
                             modifier = Modifier
                                 .weight(1f)
                                 .aspectRatio(1f)
-                                .padding(2.dp),
+                                // ⚠️ `.padding()` **بیرونِ** `pressScaleClickable`ِ داخلی
+                                // می‌مانَد (قاعده‌ی ترتیبِ مودیفایرِ README)، پس هدفِ لمسی به
+                                // اندازه‌ی همین پدینگ کوچک می‌شود. در گریدِ ۷ستونه‌ی عرضِ ۳۶۰
+                                // هر خانه ~۴۷dp است؛ ۲dp از هر طرف آن را به ~۴۳ می‌رساند،
+                                // یعنی دقیقاً زیرِ حداقلِ ۴۴. به ۱ کم شد.
+                                .padding(1.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             if (day in 1..daysInMonth) {
@@ -170,6 +191,9 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
                                             fontSize = 13.sp,
                                             fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
                                         )
+                                        // نقطه‌ی وضعیت. رنگ از **پرداخت‌شدن** می‌آید نه از نوعِ
+                                        // تعهد - همان قاعده‌ی فریمِ `51a` (تمایزِ نوع از آیکون
+                                        // می‌آید، نه رنگ). راهنمای زیرِ گرید می‌گوید کدام کدام است.
                                         if (items != null) {
                                             val allPaid = items.all { it.paid }
                                             Box(
@@ -191,14 +215,26 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
             }
         }
 
+        // راهنمای رنگِ نقطه‌ها. بی این، دو نقطه‌ی قرمز و سبز بی‌معنا بودند - کاربر باید
+        // روی روز بزند تا بفهمد نقطه چه می‌گفت.
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            DotLegend(color = AppDanger, label = "پرداخت‌نشده")
+            Spacer(Modifier.size(14.dp))
+            DotLegend(color = AppPrimary, label = "پرداخت‌شده")
+        }
+
         val selectedItems = selectedDate?.let { dueMap[it] } ?: emptyList()
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
             AppCard(
-                label = selectedDate?.let { "اقساط سررسید ${toFa(it.d)} ${faMonthNames[it.m - 1]} ${toFa(it.y)}" }
+                label = selectedDate?.let { "سررسیدهای ${toFa(it.d)} ${faMonthName(it.m)} ${toFa(it.y)}" }
                     ?: "یه روز رو از تقویم انتخاب کن",
             ) {
                 if (selectedItems.isEmpty()) {
-                    Text("قسطی تو این روز سررسید نداره", color = AppMuted, fontSize = 12.sp)
+                    Text("این روز سررسیدی ندارد", color = AppMuted, fontSize = 12.sp)
                 } else {
                     Column {
                         selectedItems.forEachIndexed { index, item ->
@@ -210,12 +246,22 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Column {
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(item.loanName, color = AppText, fontSize = 13.sp)
-                                    Text(item.bank, color = AppMuted, fontSize = 11.sp)
+                                    // نامِ بانک می‌تواند خالی باشد (حسابِ نقدی) - همان موردی
+                                    // که در تبِ دارایی بجِ خالی می‌ساخت.
+                                    if (item.bank.isNotBlank()) {
+                                        Text(item.bank, color = AppMuted, fontSize = 11.sp)
+                                    }
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
-                                    Text("${fmt(item.installment)} ریال", color = AppText, fontSize = 13.sp)
+                                    PrivacyCrossfade(privacyMode) { masked ->
+                                        Text(
+                                            "${maskIfPrivate(masked, amountToman(item.installment))} تومان",
+                                            color = AppText,
+                                            fontSize = 13.sp,
+                                        )
+                                    }
                                     Text(
                                         if (item.paid) "پرداخت‌شده" else "پرداخت‌نشده",
                                         color = if (item.paid) AppPrimary else AppDanger,
@@ -228,5 +274,18 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DotLegend(color: androidx.compose.ui.graphics.Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.size(6.dp).background(color, CircleShape))
+        Text(
+            label,
+            color = AppLabel,
+            fontSize = 10.5.sp,
+            modifier = Modifier.padding(start = 4.dp),
+        )
     }
 }
