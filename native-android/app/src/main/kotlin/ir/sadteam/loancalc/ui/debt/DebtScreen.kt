@@ -81,12 +81,15 @@ import ir.sadteam.loancalc.ui.theme.Motion
 @Composable
 fun DebtScreen(
     onBack: () -> Unit,
+    /** تپ روی ردیفِ طلب‌وبدهی در تبِ سررسید مستقیم همان طرفِ‌حساب را باز می‌کند - رسیدن به
+     * فهرستِ کامل و گشتن دنبالِ همان نام، همان نیم‌کنشی است که سرِ چک بسته شد. */
+    initialCounterpartyId: Long? = null,
     viewModel: DebtViewModel = hiltViewModel(),
     dangViewModel: DangViewModel = hiltViewModel(),
 ) {
     val counterparties by viewModel.counterparties.collectAsState()
     val debts by viewModel.debts.collectAsState()
-    var openedCounterpartyId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var openedCounterpartyId by rememberSaveable { mutableStateOf(initialCounterpartyId) }
     var showAddCounterparty by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<CounterpartyEntity?>(null) }
 

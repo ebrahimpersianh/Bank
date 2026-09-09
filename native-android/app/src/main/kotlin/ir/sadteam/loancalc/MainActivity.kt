@@ -972,7 +972,10 @@ private fun LoanCalcApp(
                                 deepLinkViewModel.openCheque(id)
                                 navigateTo(CHEQUE_ROUTE)
                             },
-                            onOpenDebt = { navigateTo(DEBT_ROUTE) },
+                            onOpenDebt = { id ->
+                                deepLinkViewModel.openDebt(id)
+                                navigateTo(DEBT_ROUTE)
+                            },
                             // تپ رو ردیفِ قسط → همون وام تو «وام‌های من» باز می‌شه. از همون
                             // مسیرِ دیپ‌لینکِ نوتیفیکیشن استفاده می‌کنه تا منطق یکی بمونه.
                             onOpenLoan = { loanId -> deepLinkViewModel.openLoan(loanId) },
@@ -1004,7 +1007,14 @@ private fun LoanCalcApp(
                     )
                 }
                 composable(DEBT_ROUTE) {
-                    DebtScreen(onBack = { navigateTo(BottomTab.DUE.route) })
+                    val openCounterparty = deepLinkViewModel.pendingCounterpartyId.collectAsState().value
+                    LaunchedEffect(openCounterparty) {
+                        if (openCounterparty != null) deepLinkViewModel.consumeDebt()
+                    }
+                    DebtScreen(
+                        onBack = { navigateTo(BottomTab.DUE.route) },
+                        initialCounterpartyId = openCounterparty,
+                    )
                 }
             }
             if (navEditorOpen) {

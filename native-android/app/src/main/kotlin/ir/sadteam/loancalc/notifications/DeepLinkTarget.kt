@@ -98,3 +98,19 @@ class PendingTxDeepLink @Inject constructor() {
         _pending.value = null
     }
 }
+
+/** هم‌الگوی [PendingChequeDeepLink] برای طلب‌وبدهی: تپ روی ردیفِ تبِ سررسید باید همان
+ * طرفِ‌حساب را باز کند، نه فهرستِ همه را. */
+@Singleton
+class PendingDebtDeepLink @Inject constructor() {
+    private val _pendingCounterpartyId = MutableStateFlow<Long?>(null)
+    val pendingCounterpartyId: StateFlow<Long?> = _pendingCounterpartyId
+
+    fun setCounterpartyId(id: Long) {
+        _pendingCounterpartyId.value = id
+    }
+
+    fun consume() {
+        _pendingCounterpartyId.value = null
+    }
+}
