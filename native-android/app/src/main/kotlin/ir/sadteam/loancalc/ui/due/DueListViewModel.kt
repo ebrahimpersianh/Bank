@@ -39,15 +39,26 @@ class DueListViewModel @Inject constructor(
         val daysOverdue: Int,
         val date: PersianDate,
         val paid: Boolean,
-        /** فقط برای قسط - برای دکمه‌ی «پرداخت کن». */
+        /** فقط برای قسط. */
         val loan: LoanEntity? = null,
         val installmentNumber: Int = 0,
+        /** فقط برای چک - تپِ ردیف باید جزئیاتِ همین چک رو باز کنه (تصمیمِ ۱ی README). */
+        val chequeId: Long? = null,
+        /** فقط برای طلب‌وبدهی. */
+        val debtId: Long? = null,
     )
 
     data class DueBuckets(
         val overdue: List<DueRow> = emptyList(),
         val thisWeek: List<DueRow> = emptyList(),
         val paid: List<DueRow> = emptyList(),
+        /**
+         * شمارشِ **کلِ** ردیف‌های پرداخت‌شده، بی سقفِ نمایش.
+         *
+         * `paid` عمداً `take(10)` داره تا لیست بی‌انتها نشه، ولی حلقه‌ی پیشرفتِ هیرو
+         * باید از عددِ واقعی حساب بشه - وگرنه کاربرِ ۴۰ قسطِ تمام‌شده ۸۳٪ می‌بینه نه ۹۵٪.
+         */
+        val paidTotalCount: Int = 0,
     ) {
         val pendingCount: Int get() = overdue.size + thisWeek.size
         val pendingAmount: Double get() = (overdue + thisWeek).sumOf { it.amount }
@@ -75,14 +86,9 @@ class DueListViewModel @Inject constructor(
         }
     }
 
-    /** پرداختِ یه قسط از همین صفحه - دکمه‌ی «پرداخت کن»ِ ردیفِ عقب‌افتاده. */
-    fun markPaid(row: DueRow) {
-        val loan = row.loan ?: return
-        viewModelScope.launch {
-            loanRepository.setRowPaidOnTime(loan, row.installmentNumber)
-            refresh()
-        }
-    }
+    // 🚨 `markPaid` حذف شد. تنها مصرف‌کننده‌اش دکمه‌ی «پرداخت کن»ِ ردیفِ عقب‌افتاده بود که
+    // تصمیمِ ۲ی README و فریمِ `36i` را نقض می‌کرد. پرداخت از جزئیاتِ قسط و از اعلان
+    // انجام می‌شه، هر دو با تاریخِ قابلِ اصلاح.
 
     private suspend fun loadInstallments(today: PersianDate): List<DueRow> = buildList {
         for (loan in loanRepository.getLoans()) {
@@ -118,7 +124,12 @@ class DueListViewModel @Inject constructor(
                 amount = cheque.amount,
                 daysOverdue = JalaliCalendar.daysBetween(date, today),
                 date = date,
+                // ⚠️ `status` رشته فرض شده. در دورِ اعلان‌ها امضای واقعی
+                // `setStatus(cheque, ChequeStatus.PASSED)` بود، یعنی **enum**. اگه enum
+                // باشه این مقایسه یا کامپایل نمی‌شه یا همیشه درسته و **همه‌ی چک‌ها
+                // پرداخت‌نشده حساب می‌شن**. دست نزدم چون `:data` این‌جا نیست - تایید کنید.
                 paid = cheque.status != "PENDING",
+                chequeId = cheque.id,
             )
         }
 
@@ -132,6 +143,7 @@ class DueListViewModel @Inject constructor(
                 daysOverdue = JalaliCalendar.daysBetween(date, today),
                 date = date,
                 paid = debt.settled,
+                debtId = debt.id,
             )
         }
 
@@ -141,9 +153,13 @@ class DueListViewModel @Inject constructor(
      * «این هفته» یعنی سررسیدش **جلوتره ولی تا هفت روزِ دیگه**. سررسیدهای دورتر عمداً نمیان -
      * فریم فقط همین سه گروه رو داره و لیستِ بی‌انتها به‌درد نمی‌خوره.
      */
-    private fun bucket(rows: List<DueRow>) = DueBuckets(
-        overdue = rows.filter { !it.paid && it.daysOverdue >= 0 }.sortedByDescending { it.daysOverdue },
-        thisWeek = rows.filter { !it.paid && it.daysOverdue in -7 until 0 }.sortedByDescending { it.daysOverdue },
-        paid = rows.filter { it.paid }.sortedByDescending { it.daysOverdue }.take(10),
-    )
+    private fun bucket(rows: List<DueRow>): DueBuckets {
+        val paidRows = rows.filter { it.paid }.sortedByDescending { it.daysOverdue }
+        return DueBuckets(
+            overdue = rows.filter { !it.paid && it.daysOverdue >= 0 }.sortedByDescending { it.daysOverdue },
+            thisWeek = rows.filter { !it.paid && it.daysOverdue in -7 until 0 }.sortedByDescending { it.daysOverdue },
+            paid = paidRows.take(10),
+            paidTotalCount = paidRows.size,
+        )
+    }
 }

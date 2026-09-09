@@ -158,11 +158,14 @@ fun ChequeScreen(
     // برگشتِ ردیفِ بالای لیست مخفی می‌شه. زیرصفحه‌های داخلی (افزودن/جزئیات/گزارش/...) دست‌نخورده
     // می‌مونن، چون اون‌ها همیشه با همون منطقِ داخلیِ خودشون به لیست برمی‌گردن، نه به بیرونِ ChequeScreen.
     standalone: Boolean = false,
+    /** تپ روی ردیفِ چک در تبِ سررسید (و اعلانِ سررسیدِ چک) مستقیم همین چک را باز می‌کند -
+     * تا امروز هیچ راهی برای رسیدن به یک چکِ مشخص از بیرونِ این صفحه نبود. */
+    initialChequeId: Long? = null,
     viewModel: ChequeViewModel = hiltViewModel(),
 ) {
     var showAddForm by remember { mutableStateOf(false) }
     var editingChequeId by remember { mutableStateOf<Long?>(null) }
-    var openedChequeId by remember { mutableStateOf<Long?>(null) }
+    var openedChequeId by remember { mutableStateOf(initialChequeId) }
     var showChequeBooks by remember { mutableStateOf(false) }
     var typeFilter by remember { mutableStateOf<ChequeType?>(null) }
     var menuExpanded by remember { mutableStateOf(false) }

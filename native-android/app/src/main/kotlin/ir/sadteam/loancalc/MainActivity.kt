@@ -157,6 +157,7 @@ import ir.sadteam.loancalc.ui.components.LocalReducedMotion
 import ir.sadteam.loancalc.ui.components.Shortcut
 import ir.sadteam.loancalc.ui.components.ShortcutDrawer
 import ir.sadteam.loancalc.ui.components.ShortcutDrawerHandle
+import ir.sadteam.loancalc.ui.debt.DebtScreen
 import ir.sadteam.loancalc.ui.due.DueTabScreen
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.home.HomeScreen
@@ -254,6 +255,7 @@ private val defaultShortcuts = listOf(
 
 private const val LOAN_ROUTE = "loan"
 private const val CHEQUE_ROUTE = "cheque"
+private const val DEBT_ROUTE = "debt"
 
 /** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
 private enum class LoanSubTab(val label: String) {
@@ -963,6 +965,14 @@ private fun LoanCalcApp(
                         DueTabScreen(
                             onAddCheque = { navigateTo(CHEQUE_ROUTE) },
                             onAddLoan = { navigateTo(LOAN_ROUTE) },
+                            // تپ روی ردیفِ چک همان چک را باز می‌کند. تپ روی ردیفِ
+                            // طلب‌وبدهی فعلاً خودِ صفحه را باز می‌کند، نه آن طرفِ‌حسابِ
+                            // مشخص - `DebtScreen` هیچ ورودیِ شناسه‌ای ندارد.
+                            onOpenCheque = { id ->
+                                deepLinkViewModel.openCheque(id)
+                                navigateTo(CHEQUE_ROUTE)
+                            },
+                            onOpenDebt = { navigateTo(DEBT_ROUTE) },
                             // تپ رو ردیفِ قسط → همون وام تو «وام‌های من» باز می‌شه. از همون
                             // مسیرِ دیپ‌لینکِ نوتیفیکیشن استفاده می‌کنه تا منطق یکی بمونه.
                             onOpenLoan = { loanId -> deepLinkViewModel.openLoan(loanId) },
@@ -983,7 +993,18 @@ private fun LoanCalcApp(
                     )
                 }
                 composable(CHEQUE_ROUTE) {
-                    ChequeScreen(onBack = { navigateTo(BottomTab.HOME.route) }, standalone = false)
+                    // شناسه از `PendingChequeDeepLink` می‌آید - هم تپِ ردیفِ سررسید و هم
+                    // اعلانِ سررسیدِ چک از همین‌جا می‌گذرند، پس منطق یکی می‌ماند.
+                    val openId = deepLinkViewModel.pendingChequeId.collectAsState().value
+                    LaunchedEffect(openId) { if (openId != null) deepLinkViewModel.consumeCheque() }
+                    ChequeScreen(
+                        onBack = { navigateTo(BottomTab.HOME.route) },
+                        standalone = false,
+                        initialChequeId = openId,
+                    )
+                }
+                composable(DEBT_ROUTE) {
+                    DebtScreen(onBack = { navigateTo(BottomTab.DUE.route) })
                 }
             }
             if (navEditorOpen) {

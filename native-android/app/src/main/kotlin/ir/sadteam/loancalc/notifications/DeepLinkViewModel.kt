@@ -11,7 +11,19 @@ import javax.inject.Inject
 class DeepLinkViewModel @Inject constructor(
     private val deepLinkTarget: DeepLinkTarget,
     private val pendingTxDeepLink: PendingTxDeepLink,
+    private val pendingChequeDeepLink: PendingChequeDeepLink,
 ) : ViewModel() {
+    /** چکی که باید باز شود - هم از اعلانِ سررسیدِ چک، هم از تپ روی ردیفِ تبِ سررسید. */
+    val pendingChequeId: StateFlow<Long?> = pendingChequeDeepLink.pendingChequeId
+
+    fun openCheque(id: Long) {
+        pendingChequeDeepLink.setChequeId(id)
+    }
+
+    fun consumeCheque() {
+        pendingChequeDeepLink.consume()
+    }
+
     val pendingLoanId: StateFlow<Long?> = deepLinkTarget.pendingLoanId
 
     fun consume() {

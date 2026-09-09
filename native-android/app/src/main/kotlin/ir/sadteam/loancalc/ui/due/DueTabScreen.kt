@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.EventAvailable
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -36,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,23 +53,29 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
-import ir.sadteam.loancalc.ui.components.CoinIcon
-import ir.sadteam.loancalc.ui.components.ConfirmPayDialog
+import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.HeroMuted
+import ir.sadteam.loancalc.ui.components.HeroPillBg
 import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppChartGrid
+import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppIconFrame
+import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppUrgentBorder
@@ -102,10 +109,20 @@ fun DueTabScreen(
      * وام رو تو صفحه‌ی «وام‌های من» باز می‌کنه.
      */
     onOpenLoan: (Long) -> Unit = {},
+    /**
+     * ⚠️ همون باگ برای **چک** و **طلب‌وبدهی** هم زنده بود: `row.loan` فقط برای قسط پر
+     * می‌شه، پس `onOpen` این دو تب هیچ کاری نمی‌کرد - ولی ردیف `pressScaleClickable`
+     * داشت، یعنی فشرده می‌شد و برمی‌گشت و هیچ اتفاقی نمی‌افتاد. این از ردیفِ
+     * کلیک‌ناپذیر **بدتر**ه، چون بازخوردِ لمسی می‌گه کاری شد.
+     *
+     * اگه مقصدی برای تپِ چک/بدهی ندارید، این دو رو **خالی نگذارید** - بگید تا ردیف رو
+     * کلیک‌ناپذیر کنم.
+     */
+    onOpenCheque: (Long) -> Unit = {},
+    onOpenDebt: (Long) -> Unit = {},
     viewModel: DueListViewModel = hiltViewModel(),
 ) {
     var tab by remember { mutableStateOf(DueTab.INSTALLMENTS) }
-    var confirmPayRow by remember { mutableStateOf<DueListViewModel.DueRow?>(null) }
     val installments by viewModel.installments.collectAsState()
     val cheques by viewModel.cheques.collectAsState()
     val debts by viewModel.debts.collectAsState()
@@ -137,7 +154,14 @@ fun DueTabScreen(
             DueTabBar(
                 selected = tab,
                 onSelect = { tab = it },
-                chequeBadge = cheques.overdue.size,
+                // فریم بجِ قرمز رو برای «سررسیدِ توجه‌خواه» گذاشته، نه مخصوصِ چک. قبلاً فقط
+                // تبِ چک بج می‌گرفت، پس کاربری که سه قسطِ عقب‌افتاده و صفر چک داشت هیچ
+                // نشانه‌ای روی تاگل نمی‌دید.
+                badges = mapOf(
+                    DueTab.INSTALLMENTS to installments.overdue.size,
+                    DueTab.CHEQUES to cheques.overdue.size,
+                    DueTab.DEBTS to debts.overdue.size,
+                ),
             )
         }
         item {
@@ -158,47 +182,66 @@ fun DueTabScreen(
                 OverdueRow(
                     row = row,
                     privacyMode = privacyMode,
-                    onPay = { confirmPayRow = row },
-                    onOpen = { row.loan?.let { onOpenLoan(it.id) } },
+                    onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt) },
                 )
             }
         }
         if (buckets.thisWeek.isNotEmpty()) {
             item { GroupLabel("این هفته", AppMuted) }
             items(buckets.thisWeek, key = { it.id }) { row ->
-                PlainRow(row, privacyMode, onOpen = { row.loan?.let { onOpenLoan(it.id) } })
+                PlainRow(row, privacyMode, onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt) })
             }
         }
         if (buckets.paid.isNotEmpty()) {
             item { GroupLabel("پرداخت‌شده", AppMuted) }
             items(buckets.paid, key = { it.id }) { row ->
                 Box(modifier = Modifier.alpha(0.6f)) {
-                    PlainRow(row, privacyMode, paid = true, onOpen = { row.loan?.let { onOpenLoan(it.id) } })
+                    PlainRow(row, privacyMode, paid = true, onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt) })
                 }
             }
         }
     }
-    confirmPayRow?.let { row ->
-        ConfirmPayDialog(
-            title = "ثبتِ پرداخت",
-            text = "«${row.title}» پرداخت‌شده علامت بخوره؟",
-            onConfirm = { viewModel.markPaid(row) },
-            onDismiss = { confirmPayRow = null },
-        )
-    }
 }
+
+/**
+ * تپ روی ردیف → جزئیاتِ **همون** تعهد (تصمیمِ ۱ی README).
+ *
+ * قبلاً فقط `row.loan` چک می‌شد که برای چک و بدهی `null`ه، پس دو تب از سه تب بی‌کنش
+ * بودن. حالا هر سه شناسه‌ی خودشون رو دارن.
+ */
+private fun DueListViewModel.DueRow.open(
+    onOpenLoan: (Long) -> Unit,
+    onOpenCheque: (Long) -> Unit,
+    onOpenDebt: (Long) -> Unit,
+) {
+    loan?.let { onOpenLoan(it.id); return }
+    chequeId?.let { onOpenCheque(it); return }
+    debtId?.let { onOpenDebt(it) }
+}
+
+/**
+ * ذخیره و محاسبه **ریال**ه و نمایش **تومان** (قاعده‌ی واحدِ README).
+ *
+ * قبلاً `fmt()`ِ خام با پسوندِ «ریال» و رقمِ لاتین در پنج جای این فایل بود.
+ */
+private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
 
 enum class DueTab(val label: String) {
     INSTALLMENTS("اقساط"),
     CHEQUES("چک"),
-    DEBTS("طلب‌وبدهی"),
+    // کاشیِ `DueScreen` «طلب و بدهی» (با فاصله) می‌نویسد و این enum «طلب‌وبدهی» - یک چیز
+    // با دو نوشتار. کاشی ملاک شد.
+    DEBTS("طلب و بدهی"),
 }
 
 /** سهمِ پرداخت‌شده از کلِ ردیف‌ها - عددِ داخلِ حلقه‌ی هیرو. */
 private val DueListViewModel.DueBuckets.paidShare: Float
     get() {
-        val total = overdue.size + thisWeek.size + paid.size
-        return if (total == 0) 0f else paid.size.toFloat() / total
+        // ⚠️ `paid` تو ViewModel `take(10)` داره (سقفِ **نمایش**). قبلاً همون لیستِ
+        // بریده تو ریاضیِ درصد می‌نشست، پس کاربرِ ۴۰ قسطِ پرداخت‌شده و ۲ معلق ۸۳٪
+        // می‌دید نه ۹۵٪. `paidTotalCount` بی‌سقفه.
+        val total = overdue.size + thisWeek.size + paidTotalCount
+        return if (total == 0) 0f else paidTotalCount.toFloat() / total
     }
 
 // ═══ ۱ب · تقویمِ ماه (فقط حالتِ خالی، فریمِ `21e`) ═══════════════════════════════
@@ -364,7 +407,7 @@ private fun NothingDueCard(onAddCheque: () -> Unit, onAddLoan: () -> Unit) {
 
 // ═══ ۲ · تاگلِ سه‌تایی ═══════════════════════════════════════════════════════════
 @Composable
-private fun DueTabBar(selected: DueTab, onSelect: (DueTab) -> Unit, chequeBadge: Int) {
+private fun DueTabBar(selected: DueTab, onSelect: (DueTab) -> Unit, badges: Map<DueTab, Int>) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -381,7 +424,8 @@ private fun DueTabBar(selected: DueTab, onSelect: (DueTab) -> Unit, chequeBadge:
                     .clip(RoundedCornerShape(11.dp))
                     .background(if (active) DueGreen else Color.Transparent)
                     .pressScaleClickable { onSelect(entry) }
-                    .padding(vertical = 8.dp),
+                    // ۸dp + متنِ ۱۱٫۵sp ≈ ۳۶dp بود، زیرِ حداقلِ ۴۴ِ خودِ README. ۱۳ می‌شه ~۴۶.
+                    .padding(vertical = 13.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -390,8 +434,8 @@ private fun DueTabBar(selected: DueTab, onSelect: (DueTab) -> Unit, chequeBadge:
                     fontSize = 11.5.sp,
                     fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Bold,
                 )
-                // بجِ قرمزِ عددی - فریم فقط رو تبِ «چک» گذاشتتش، بالا-چپ.
-                if (entry == DueTab.CHEQUES && chequeBadge > 0) {
+                val badge = badges[entry] ?: 0
+                if (badge > 0) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -402,7 +446,7 @@ private fun DueTabBar(selected: DueTab, onSelect: (DueTab) -> Unit, chequeBadge:
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            toFa(chequeBadge),
+                            toFa(badge),
                             color = Color.White,
                             fontSize = 7.5.sp,
                             fontWeight = FontWeight.Bold,
@@ -415,20 +459,28 @@ private fun DueTabBar(selected: DueTab, onSelect: (DueTab) -> Unit, chequeBadge:
 }
 
 // ═══ ۳ · هیرویِ سبز ═════════════════════════════════════════════════════════════
+/**
+ * هیرویِ سبز - حلقه‌ی پیشرفت + مجموعِ معلق.
+ *
+ * ⚠️ گرادیان **دستی ساخته نمی‌شه**: `AppHeroCard` همون کارتیه که `DueScreen` و
+ * `AccountsTotalHero` استفاده می‌کنن؛ دو پیاده‌سازیِ موازیِ یک کارت همون موردی بود که
+ * در تبِ دارایی هم گفتم (`TotalWealthHero`).
+ *
+ * ⚠️ **سپرِ گوشه از دست رفت**: `drawShieldWatermark` با `Modifier.drawBehind` روی
+ * همون `Row`ِ گرادیانی سوار بود. اگه `AppHeroCard` پارامترِ `modifier` می‌گیره،
+ * `.drawBehind { drawShieldWatermark() }` رو روش بگذارید؛ تابعش رو نگه داشتم و صداش
+ * نزدم، پس کامپایل نمی‌شکنه.
+ */
 @Composable
 private fun PendingHero(count: Int, total: Double, progress: Float, privacyMode: Boolean) {
+    AppHeroCard {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(Brush.linearGradient(listOf(DueGreen, DueGreenDeep)))
-            .drawBehind { drawShieldWatermark() }
-            .padding(14.dp),
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(modifier = Modifier.size(46.dp), contentAlignment = Alignment.Center) {
-            val track = Color.White.copy(alpha = 0.25f)
+            val track = HeroPillBg
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val stroke = size.minDimension * 4f / 40f
                 val inset = stroke / 2f + size.minDimension * 2f / 40f
@@ -457,8 +509,9 @@ private fun PendingHero(count: Int, total: Double, progress: Float, privacyMode:
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 "مجموعِ سررسیدهای معلق",
-                color = Color.White.copy(alpha = 0.9f),
+                color = HeroMuted,
                 fontSize = 10.5.sp,
+                fontWeight = FontWeight.Bold,
             )
             PrivacyCrossfade(privacyMode) { masked ->
                 Row(
@@ -466,20 +519,22 @@ private fun PendingHero(count: Int, total: Double, progress: Float, privacyMode:
                     modifier = Modifier.padding(top = 2.dp),
                 ) {
                     Text(
-                        maskIfPrivate(masked, fmt(total)),
+                        maskIfPrivate(masked, amountToman(total)),
                         color = Color.White,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Black,
                     )
                     Text(
-                        " ریال",
-                        color = Color.White,
+                        " تومان",
+                        color = HeroMuted,
                         fontSize = 10.sp,
-                        fontWeight = FontWeight.Normal,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 3.dp, bottom = 1.dp),
                     )
                 }
             }
         }
+    }
     }
 }
 
@@ -500,7 +555,6 @@ private fun GroupLabel(text: String, color: Color) {
 private fun OverdueRow(
     row: DueListViewModel.DueRow,
     privacyMode: Boolean,
-    onPay: () -> Unit,
     onOpen: () -> Unit = {},
 ) {
     Box(
@@ -512,10 +566,9 @@ private fun OverdueRow(
             .background(AppSurface)
             .border(2.dp, OverdueBorder, RoundedCornerShape(16.dp)),
     ) {
-        // دو سکه‌ی کوچیکِ گوشه - «ریبونِ رسید»ِ امضای بصریِ بخشِ ۳۴. فاصله با padding گرفته
-        // شده نه offset، چون تو RTL علامتِ offset برعکس می‌شه.
-        CoinIcon(6.dp, Modifier.align(Alignment.TopEnd).padding(top = 5.dp, end = 10.dp))
-        CoinIcon(6.dp, Modifier.align(Alignment.TopStart).padding(top = 5.dp, start = 10.dp))
+        // ⚠️ دو `CoinIcon`ِ گوشه برداشته شد. سکه در این برنامه واحدِ **پاداش**ه (بخشِ ۴۵)؛
+        // گذاشتنش روی قرمزترین ردیفِ صفحه دو معنا رو قاطی می‌کنه. اگه «ریبونِ رسید» رو
+        // عمداً می‌خواید، برگردونید - ولی نه با آیکونِ سکه.
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -531,30 +584,24 @@ private fun OverdueRow(
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            Column(horizontalAlignment = Alignment.End) {
-                PrivacyCrossfade(privacyMode) { masked ->
-                    Text(
-                        maskIfPrivate(masked, fmt(row.amount)),
-                        color = AppText,
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                    )
-                }
-                if (row.loan != null) {
-                    Text(
-                        "پرداخت کن",
-                        color = Color.White,
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier
-                            .padding(top = 5.dp)
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(DangerSolid)
-                            .pressScaleClickable(onClick = onPay)
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
-                    )
-                }
+            PrivacyCrossfade(privacyMode) { masked ->
+                Text(
+                    maskIfPrivate(masked, amountToman(row.amount)),
+                    color = AppText,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                )
             }
+            // 🚨 دکمه‌ی «پرداخت کن» **حذف شد** - تصمیمِ ۲ی README و فریمِ `36i`.
+            // ارتفاعِ لمسی‌اش ~۲۰dp بود (`vertical = 2.dp`)، نصفِ حداقلِ ۴۴ِ خودتون، و
+            // پس‌گرفتنِ «پرداخت شد» کارِ سختیه. پرداخت جایش در جزئیاتِ قسط و در اعلانه.
+            // شِوران می‌گه ردیف مقصد داره، وگرنه بی‌کنش به‌نظر می‌رسه.
+            Icon(
+                Icons.Filled.KeyboardArrowLeft,
+                contentDescription = null,
+                tint = AppLabel,
+                modifier = Modifier.size(18.dp),
+            )
         }
     }
 }
@@ -597,10 +644,11 @@ private fun PlainRow(
         }
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                maskIfPrivate(masked, fmt(row.amount)),
+                maskIfPrivate(masked, amountToman(row.amount)),
                 color = AppText,
                 fontSize = 12.5.sp,
                 fontWeight = FontWeight.ExtraBold,
+                textDecoration = if (paid) TextDecoration.LineThrough else null,
             )
         }
     }
@@ -610,6 +658,7 @@ private fun PlainRow(
  * سپرِ کم‌رنگِ گوشه‌ی هیرو - `<svg width=60 ... opacity:.15 left:-10 bottom:-12>`ی فریم.
  * نقشه‌ی مسیر: `M12 2l7 4v6c0 5-3 8-7 10-4-2-7-5-7-10V6z` رو ویوباکسِ ۲۴.
  */
+@Suppress("unused")
 private fun DrawScope.drawShieldWatermark() {
     val box = 60.dp.toPx()
     val k = box / 24f
@@ -651,7 +700,8 @@ private val DueGreen: Color
     @Composable get() = AppPrimary
 private val DueGreenDeep: Color
     @Composable get() = AppPrimaryDim
-private val TabTrack = Color(0xFFEAF2EE)
+private val TabTrack: Color
+    @Composable get() = AppChipBg
 private val DangerSolid: Color
     @Composable get() = AppDanger
 private val WarnSolid: Color
@@ -664,12 +714,14 @@ private val OverdueIconBg: Color
     @Composable get() = AppUrgentShadow
 private val PlainBorder: Color
     @Composable get() = AppLineRow
-private val GreenIconBg = Color(0xFFE6F8EE)
+private val GreenIconBg: Color
+    @Composable get() = AppPrimaryPill
 private val CardBorder: Color
     @Composable get() = AppLine
 private val DayCellBg: Color
     @Composable get() = AppIconFrame
-private val DayCellInk = Color(0xFF9AA8A1)
+private val DayCellInk: Color
+    @Composable get() = AppLabel
 private val OutlineBorder: Color
     @Composable get() = AppChartGrid
 private val WarnIconBg: Color
