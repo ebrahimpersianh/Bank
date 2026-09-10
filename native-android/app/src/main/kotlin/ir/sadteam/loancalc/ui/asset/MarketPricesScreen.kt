@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,8 +37,8 @@ import ir.sadteam.loancalc.data.AssetCatalogEntry
 import ir.sadteam.loancalc.data.assetCatalogGroups
 import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_CUSTOM
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
-import ir.sadteam.loancalc.ui.jibak.toFa
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
+import ir.sadteam.loancalc.ui.jibak.toFa
 import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
@@ -45,6 +46,8 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppPurple
+import ir.sadteam.loancalc.ui.theme.AppPurplePill
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -89,19 +92,22 @@ fun MarketPricesScreen(
         if (buySymbol != null) buySymbol = null else openAsset = null
     }
 
-    // نمادی که سرویسِ قیمت اصلاً نداردش اینجا نمی‌آید - یک ستونِ پُر از «—» این صفحه را
-    // بی‌فایده می‌کند. کاربر همچنان می‌تواند ثبتش کند و قیمتِ واحد را دستی بزند.
-    // دو لایه‌ی فیلتر، چون پرچمِ `hasLivePrice` دستیه و همیشه با واقعیتِ سرویس جور نیست:
-    // کاربر رو گوشیِ واقعی ~۲۰ ردیفِ «—» دید (ADA، DOT، SHIB، استیبل‌کوین‌ها و…) که پرچمشون
-    // true بود ولی سرویس قیمتشون رو نمی‌ده. حالا **نبودِ قیمت در همین لحظه** هم ردیف رو حذف
-    // می‌کنه، پس این صفحه هیچ‌وقت ستونِ خالی نشون نمی‌ده. کاربر همچنان می‌تونه از فرمِ خرید
-    // ثبتش کنه و قیمتِ واحد رو دستی بزنه.
-    val allEntries = remember {
-        assetCatalogGroups.flatMap { it.second }.filter { it.hasLivePrice }
-    }
+    // 🚨 **تصمیمِ عوض‌شده (بخشِ ۵۴)**: هشت نمادِ بی‌سرویس دیگر از این صفحه بیرون گذاشته
+    // **نمی‌شوند**. کاربری که نیم‌سکه دارد، در صفحه‌ای به نامِ «قیمتِ روز» پنجاه‌وشش نماد
+    // می‌بیند و مالِ خودش را نه؛ به‌جای حذف، بجِ «دستی» می‌گیرند.
+    //
+    // ولی فیلترِ دومِ قبلی می‌ماند: نمادی که پرچمش `hasLivePrice = true` است و سرویس در
+    // این لحظه قیمتش را نمی‌دهد (ADA، DOT، SHIB و…) همچنان حذف می‌شود - کاربر یک‌بار
+    // ~۲۰ ردیفِ «—» دید و درست هم بود که شکایت کرد. آن ستونِ خالی یک نقصِ موقت است، این
+    // یکی یک وضعیتِ دائمی و اعلام‌شده.
+    val allEntries = remember { assetCatalogGroups.flatMap { it.second } }
     // تا اولین fetch، `prices` خالیه - اون‌موقع فهرستِ کامل نشون داده می‌شه (نه صفحه‌ی خالی)
     // و به‌محضِ رسیدنِ قیمت‌ها به ردیف‌های واقعاً قیمت‌دار جمع می‌شه.
-    val entries = if (prices.isEmpty()) allEntries else allEntries.filter { prices[it.symbol] != null }
+    val entries = if (prices.isEmpty()) {
+        allEntries
+    } else {
+        allEntries.filter { !it.hasLivePrice || prices[it.symbol] != null }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -166,7 +172,10 @@ fun MarketPricesScreen(
                 items(rows, key = { "p_${it.symbol}" }) { entry ->
                     PriceRow(
                         entry = entry,
-                        price = prices[entry.symbol],
+                        // نمادِ بی‌سرویس قیمتِ خودش را از داراییِ ثبت‌شده‌ی کاربر می‌گیرد -
+                        // همان عددی که خودش وارد کرده، نه «—».
+                        price = prices[entry.symbol]
+                            ?: owned.firstOrNull { it.symbol == entry.symbol }?.unitPriceRial,
                         changePercent = changes[entry.symbol],
                         onClick = {
                             // داره → جزئیاتِ داراییِ خودش (نمودار، تاریخچه، سود).
@@ -256,11 +265,59 @@ private fun PriceRow(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Black,
             )
-            // فلشِ سبز/قرمزِ جهت. جای متنِ «+۲٫۴٪» که جهت را فقط با رنگ می‌گفت.
-            if (changePercent != null) {
-                PriceChangeBadge(changePercent, modifier = Modifier.padding(top = 3.dp))
+            // ستونِ چپ **چهار** حالت دارد نه پنج (فریمِ `54b`): فلشِ بالا، فلشِ پایین،
+            // «تازه»ی بنفش (قیمت هست، تاریخچه‌اش هنوز جمع نشده - **موقت**) و «دستی»ی
+            // خاکستری (سرویس این نماد را ندارد - **دائمی**). هم‌شکل‌بودنشان یعنی کاربرِ
+            // ۳۱ نمادِ بنفش فکر کند اپ خراب است، و کاربرِ هشت نمادِ خاکستری منتظر بماند
+            // تا درست شوند.
+            when {
+                changePercent != null ->
+                    PriceChangeBadge(changePercent, modifier = Modifier.padding(top = 3.dp))
+                !entry.hasLivePrice ->
+                    PriceStateBadge(
+                        label = "دستی",
+                        fill = AppIconFrame,
+                        border = AppLine,
+                        ink = AppMuted,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                price != null ->
+                    PriceStateBadge(
+                        label = "تازه",
+                        fill = AppPurplePill,
+                        border = AppPurplePill,
+                        ink = AppPurple,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
             }
         }
     }
 }
 
+/**
+ * بجِ حالتِ قیمت - جای فلشِ تغییر وقتی تغییری برای نشان‌دادن نیست (فریمِ `54b`).
+ *
+ * «تازه» یعنی قیمت هست ولی تاریخچه‌اش هنوز روی سرور جمع نشده (موقت)؛ «دستی» یعنی سرویس
+ * این نماد را اصلاً ندارد و عدد را خودِ کاربر زده (دائمی).
+ */
+@Composable
+private fun PriceStateBadge(
+    label: String,
+    fill: Color,
+    border: Color,
+    ink: Color,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(AppRadius.icon)
+    Text(
+        label,
+        color = ink,
+        fontSize = 8.5.sp,
+        fontWeight = FontWeight.Black,
+        modifier = modifier
+            .clip(shape)
+            .background(fill)
+            .border(1.dp, border, shape)
+            .padding(horizontal = 6.dp, vertical = 1.dp),
+    )
+}
