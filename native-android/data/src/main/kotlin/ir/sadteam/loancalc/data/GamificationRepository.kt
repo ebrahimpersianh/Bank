@@ -109,7 +109,14 @@ class GamificationRepository(
      */
     suspend fun repairableStreak(today: PersianDate = JalaliCalendar.today()): StreakRepair? {
         if (coinDao.getDateKeys(Type.STREAK_REPAIR).contains(monthKey(today))) return null
-        return ActiveStreak.repairable(coinDao.getDateKeys(Type.DAILY_LOG).toSet(), today)
+        val repair = ActiveStreak.repairable(coinDao.getDateKeys(Type.DAILY_LOG).toSet(), today)
+            ?: return null
+        // مهلت از پایانِ آخرین روزِ فعال شمرده می‌شه: هر روزِ خالیِ کامل ۲۴ ساعت، به‌علاوه‌ی
+        // ساعت‌هایی که از امروز گذشته. کارتِ ترمیم عددِ نزولی نشون می‌ده نه «۴۸ ساعت»ِ ثابت -
+        // عددِ ثابت هر بار همونه و کاربر عجله نمی‌کنه.
+        val elapsed = (repair.missingKeys.size - 1).coerceAtLeast(0) * 24 +
+            java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        return repair.copy(hoursLeft = (REPAIR_WINDOW_HOURS - elapsed).coerceAtLeast(0))
     }
 
     /**
@@ -129,6 +136,9 @@ class GamificationRepository(
     }
 
     private suspend fun balanceNow(): Int = coinDao.getBalance()
+
+    /** پنجره‌ی ترمیم - تصمیمِ ثبت‌شده: فقط تا ۴۸ ساعت، تا «جبرانِ یه لغزش» بمونه نه «خریدنِ گذشته». */
+    private val REPAIR_WINDOW_HOURS = 48
 
     /** رویدادِ **یک‌باره** - [dateKey] خالی می‌مونه تا یگانگی روی خودِ نوع بیفته. */
     suspend fun awardOnce(type: String, amount: Int): Boolean = award(type, amount, "")

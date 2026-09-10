@@ -150,6 +150,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
@@ -230,7 +231,9 @@ fun SettingsScreen(
     autoBackupViewModel: AutoBackupViewModel = hiltViewModel(),
     hapticsViewModel: HapticsViewModel = hiltViewModel(),
     smsAutoImportViewModel: SmsAutoImportViewModel = hiltViewModel(),
+    gamificationViewModel: GamificationViewModel = hiltViewModel(),
 ) {
+    val coinTodayLogged by gamificationViewModel.todayLogged.collectAsState()
     var route by remember { mutableStateOf(SettingsRoute.MAIN) }
     // زیرصفحه‌های «فیچری» (تقویم/آمار/تاریخچه) از رو خودِ صفحه‌ی «ابزارها» باز می‌شن، پس یه استیتِ
     // جدا لازم دارن تا با برگشت، به «ابزارها» برگردن نه به ریشه‌ی تنظیمات.
@@ -273,7 +276,12 @@ fun SettingsScreen(
                 when (tool) {
                     "calendar" -> FinancialCalendarScreen(onBack = { tool = null })
                     "stats" -> StatsScreen(onBack = { tool = null })
-                    "coins" -> CoinWalletScreen(onBack = { tool = null })
+                    // همان شرطِ هدرِ خانه: امروز تراکنشی ثبت شده یا نه. این‌جا از رویدادهای
+                    // سکه خوانده می‌شود چون `DAILY_LOG` دقیقاً به همان ثبت جایزه می‌دهد.
+                    "coins" -> CoinWalletScreen(
+                        onBack = { tool = null },
+                        todayHasEntry = coinTodayLogged,
+                    )
                     else -> CalculationHistoryScreen(onBack = { tool = null })
                 }
             }

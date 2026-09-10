@@ -414,7 +414,7 @@ fun HomeScreen(
         // تا وقتی سکه مقصدِ `NavHost` نشده، این کوتاه‌ترین راهِ درست است؛ روکش پس‌زمینه‌ی
         // مات دارد پس صفحه‌ی زیرش دیده نمی‌شود.
         if (showCoinWallet) {
-            CoinWalletScreen(onBack = { showCoinWallet = false })
+            CoinWalletScreen(onBack = { showCoinWallet = false }, todayHasEntry = todayHasEntry)
         }
         confirmPayDue?.let { due ->
             ConfirmPayDialog(

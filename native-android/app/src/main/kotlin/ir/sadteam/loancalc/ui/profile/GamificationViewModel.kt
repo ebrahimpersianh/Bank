@@ -13,7 +13,10 @@ import ir.sadteam.loancalc.data.db.CoinEventEntity
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import ir.sadteam.loancalc.core.ActiveStreak
+import ir.sadteam.loancalc.core.JalaliCalendar
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
@@ -34,6 +37,21 @@ class GamificationViewModel @Inject constructor(
 
     val events: StateFlow<List<CoinEventEntity>> = repository.events
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * امروز چیزی ثبت شده یا نه - شرطِ ردیفِ «فعال» (`55a`/`56a`).
+     *
+     * از رویدادهای سکه خوانده می‌شه نه از تراکنش‌ها، چون `DAILY_LOG` دقیقاً به همون ثبت
+     * جایزه می‌ده؛ یه تعریف، دو مصرف‌کننده (هدرِ خانه و کیفِ سکه).
+     */
+    val todayLogged: StateFlow<Boolean> = repository.events
+        .map { list ->
+            // کلید حتماً از خودِ `ActiveStreak.dateKey` بیاد - قالبش «۱۴۰۵-۰۵-۰۹»ه با صفرِ
+            // پیشوند، پس ساختنِ دستیِ رشته بی‌صدا هیچ‌وقت جور درنمیاد.
+            val key = ActiveStreak.dateKey(JalaliCalendar.today())
+            list.any { it.dateKey == key }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val achievements: StateFlow<List<AchievementEntity>> = repository.achievements
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

@@ -1,9 +1,14 @@
 package ir.sadteam.loancalc.ui.profile
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,34 +16,55 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
-import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.data.coin.CoinReason
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.db.CoinEventEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CoinIcon
+import ir.sadteam.loancalc.ui.components.ConfirmDialog
+import ir.sadteam.loancalc.ui.components.ConfirmTone
 import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
+import ir.sadteam.loancalc.ui.theme.AppIconFrame
+import ir.sadteam.loancalc.ui.theme.AppLabel
+import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppText
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -56,10 +82,25 @@ import java.util.Locale
 @Composable
 fun CoinWalletScreen(
     onBack: () -> Unit,
+    /**
+     * امروز تراکنشی ثبت شده یا نه - همان ورودیِ `HomeScreen` (بخشِ ۵۵).
+     *
+     * ردیفِ «فعال» بی این نمی‌داند رشته **زنده** است یا **امشب می‌میرد**، و همان دو حالت
+     * تنها تفاوتِ معنادارِ آن ردیف‌اند.
+     */
+    todayHasEntry: Boolean,
     viewModel: GamificationViewModel = hiltViewModel(),
 ) {
     val coins by viewModel.coins.collectAsState()
     val events by viewModel.events.collectAsState()
+    val activeDays by viewModel.activeDays.collectAsState()
+    val repairable by viewModel.repairable.collectAsState()
+    var confirmRepair by remember { mutableStateOf(false) }
+
+    // ⚠️ `repairable` تا وقتی `refreshRepairable()` صدا زده نشود **همیشه null** است، پس
+    // کارتِ ترمیم هیچ‌وقت دیده نمی‌شد. کامنتِ خودِ ViewModel می‌گفت «کارتِ خانه فقط وقتی
+    // این پر باشه دیده می‌شه» - ولی چنین کارتی در خانه نبود و هیچ‌کس صدایش نمی‌زد.
+    LaunchedEffect(Unit) { viewModel.refreshRepairable() }
 
     // این صفحه هم از تنظیمات باز می‌شود هم به‌صورتِ روکش از قرصِ سکه‌ی تبِ خانه، پس
     // خودش هم پس‌زمینه‌ی مات لازم دارد هم بازگشتِ سیستمی - وگرنه در حالتِ روکش
@@ -97,13 +138,39 @@ fun CoinWalletScreen(
                     )
                     Text("سکه", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Text(
-                        "معادلِ ${fmt(coinsToRial(coins))} ریال تخفیف",
+                        // ⚠️ `fmt()` جداکننده‌ی **لاتین** می‌دهد و عددش **ریال** بود:
+                        // ۱٬۲۴۰ سکه «124,000 ریال» چاپ می‌کرد. همان باگی که در هیرویِ
+                        // بودجه و گزارش رفع شد.
+                        "معادلِ ${rialToToman(coinsToRial(coins).toLong()).toString().faDigits()} تومان تخفیف",
                         color = AppMuted,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 8.dp),
                     )
                 }
             }
+        }
+        // کارتِ ترمیم **بالای** ردیفِ «فعال» می‌نشیند: خبرِ فوری‌تری است و مهلت دارد.
+        repairable?.let { repair ->
+            item {
+                StreakRepairCard(
+                    days = repair.lostDays,
+                    hoursLeft = repair.hoursLeft,
+                    price = STREAK_REPAIR_PRICE,
+                    balance = coins,
+                    onRepair = { confirmRepair = true },
+                )
+            }
+        }
+        item {
+            // ردیفِ «فعال» - فریمِ `56a`. از هدرِ خانه به این‌جا آمد (بخشِ ۵۵): آن‌جا
+            // کنش نبود و مقصد نداشت، این‌جا کنارِ بقیه‌ی بازی‌سازی معنی دارد.
+            StreakRow(
+                days = activeDays,
+                todayHasEntry = todayHasEntry,
+                // رشته‌ی پاره هنوز مالِ کاربر است تا وقتی ترمیم ممکن است، پس عددِ
+                // `repairable` جای صفر می‌نشیند.
+                brokenDays = repairable?.lostDays,
+            )
         }
         item {
             Text("تاریخچه", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
@@ -119,6 +186,214 @@ fun CoinWalletScreen(
         }
         items(events, key = { it.id }) { event ->
             CoinEventRow(event)
+        }
+    }
+
+    // ترمیم **دیالوگِ تایید می‌گیرد** (`46a`): صد سکه از دفتر کم می‌شود و واگرد ندارد.
+    // لحنِ خنثی، نه خطر - کارِ بدی نیست، فقط برگشت‌ناپذیر است.
+    if (confirmRepair) {
+        ConfirmDialog(
+            title = "رشته را ترمیم کنم؟",
+            consequence = "${toFa(STREAK_REPAIR_PRICE)} سکه کم می‌شود و برگشت ندارد. این ماه دوباره نمی‌شود.",
+            actionLabel = "ترمیم کن",
+            tone = ConfirmTone.NEUTRAL,
+            onConfirm = {
+                confirmRepair = false
+                viewModel.repairStreak()
+            },
+            onDismiss = { confirmRepair = false },
+        )
+    }
+}
+
+/**
+ * قیمتِ ترمیمِ زنجیر.
+ *
+ * ⚠️ در `CoinSpend` ردیفی برای ترمیم نیست و اضافه‌اش نکردم، چون آن enum فروشگاه است و
+ * ترمیم قلمِ فروشگاهی نیست (دسته ندارد، `timeGated` نیست، مالکیت نمی‌آورد). ولی عدد باید
+ * **یک‌جا** باشد - اگر ترجیح می‌دهید در `CoinEconomy.kt` بنشیند، ببریدش و این را حذف کنید.
+ */
+private const val STREAK_REPAIR_PRICE = 100
+
+/** جوهرِ رشته. */
+private val StreakInk: Color @Composable get() = AppDangerInk
+
+/**
+ * ردیفِ «فعال» - فریمِ `56a`.
+ *
+ * عددِ تنها همان چیزی بود که حذفش را از هدر توجیه کرد؛ اگر این‌جا هم فقط عدد باشد، فقط
+ * جایش عوض شده. پس نوارِ هفته و پاداشِ `WEEK_COMPLETE` هم می‌آیند: رشته وقتی معنی دارد
+ * که بگوید چه چیزی روی میز است.
+ */
+@Composable
+private fun StreakRow(days: Int, todayHasEntry: Boolean, brokenDays: Int?) {
+    val shown = brokenDays ?: days
+    if (shown <= 0) {
+        AppCard {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                StreakIcon(tint = AppMuted, bg = AppIconFrame)
+                Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                    Text("هنوز رشته‌ای نداری", color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                    Text(
+                        "دو روزِ پشتِ‌هم شروعش می‌کند",
+                        color = AppLabel,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+        }
+        return
+    }
+
+    // نوارِ هفته از `WEEK_COMPLETE` می‌آید نه از رشته‌ی کل: رشته‌ی ۱۲روزه یعنی هفته‌ی
+    // اول تمام شده و پنج روز از هفته‌ی دوم مانده.
+    val inWeek = shown % 7
+    val toBonus = if (inWeek == 0) 7 else 7 - inWeek
+    val atRisk = !todayHasEntry && brokenDays == null
+
+    AppCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StreakIcon(tint = StreakInk, bg = AppGoldPillSoft)
+                Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                    Text(
+                        "${toFa(shown)} روزِ پیاپی",
+                        color = AppText,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                    Text(
+                        when {
+                            brokenDays != null -> "پاره شده - هنوز قابلِ برگشت"
+                            atRisk -> "امروز هنوز چیزی ثبت نکرده‌ای"
+                            else -> "امروز ثبت کرده‌ای"
+                        },
+                        color = if (atRisk || brokenDays != null) StreakInk else AppLabel,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+                // پاداشِ بعدی فقط وقتی می‌آید که رشته زنده باشد - وعده به کسی که رشته‌اش
+                // پاره شده، طعنه است.
+                if (brokenDays == null) {
+                    Text(
+                        "${toFa(toBonus)} روز تا ${toFa(CoinReason.WEEK_COMPLETE.amount)} سکه",
+                        color = AppPrimaryInk,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppPrimaryPill)
+                            .padding(horizontal = 9.dp, vertical = 4.dp),
+                    )
+                }
+            }
+            if (brokenDays == null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                ) {
+                    repeat(7) { i ->
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(7.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(if (i < inWeek) AppPrimary else AppLineRow),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StreakIcon(tint: Color, bg: Color) {
+    Box(
+        modifier = Modifier.size(34.dp).clip(RoundedCornerShape(AppRadius.row)).background(bg),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            Icons.Filled.LocalFireDepartment,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(17.dp),
+        )
+    }
+}
+
+/**
+ * کارتِ ترمیمِ زنجیر - فریمِ `56b`.
+ *
+ * منطقش از قبل در `GamificationViewModel` بود (`repairable` / `repairStreak()`) و فقط
+ * جایی برای دیده‌شدن نداشت.
+ */
+@Composable
+private fun StreakRepairCard(days: Int, hoursLeft: Int, price: Int, balance: Int, onRepair: () -> Unit) {
+    val affordable = balance >= price
+    AppCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.Top) {
+                Box(
+                    modifier = Modifier.size(34.dp).clip(RoundedCornerShape(AppRadius.row)).background(AppGoldPillSoft),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.Link,
+                        contentDescription = null,
+                        tint = StreakInk,
+                        modifier = Modifier.size(17.dp),
+                    )
+                }
+                Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                    Text(
+                        "رشته‌ی ${toFa(days)}روزه‌ات پاره شد",
+                        color = AppText,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                    Text(
+                        "با ${toFa(price)} سکه برمی‌گردد، سرِ همان عدد.",
+                        color = AppMuted,
+                        fontSize = 10.sp,
+                        lineHeight = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().padding(top = 11.dp),
+            ) {
+                GradientButton(
+                    text = "${toFa(price)} سکه · ترمیم کن",
+                    onClick = onRepair,
+                    enabled = affordable,
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    // مهلت **به ساعت**، نه «۴۸ ساعت»: عددِ ثابت هر بار همان است و کاربر
+                    // عجله نمی‌کند؛ عددی که پایین می‌آید می‌گوید فرصت دارد تمام می‌شود.
+                    Text(
+                        "${toFa(hoursLeft)} ساعت مانده",
+                        color = AppLabel,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        if (affordable) "این ماه یک‌بار" else "${toFa(price - balance)} سکه کم داری",
+                        color = if (affordable) AppLabel else AppDangerInk,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
         }
     }
 }

@@ -62,5 +62,15 @@ object ActiveStreak {
     }
 }
 
-/** خروجیِ [ActiveStreak.repairable] - طولِ زنجیرِ ازدست‌رفته و روزهای خالیِ وسط. */
-data class StreakRepair(val lostDays: Int, val missingKeys: List<String>)
+/**
+ * خروجیِ [ActiveStreak.repairable] - طولِ زنجیرِ ازدست‌رفته و روزهای خالیِ وسط.
+ *
+ * [hoursLeft] از مهلتِ ۴۸ ساعته چقدر مانده. [ActiveStreak] ساعت ندارد (تابعِ خالص است)،
+ * پس صفر برمی‌گردد و `GamificationRepository` پُرش می‌کند - محاسبه‌ی مهلت کارِ ریپازیتوری
+ * است نه UI.
+ */
+data class StreakRepair(
+    val lostDays: Int,
+    val missingKeys: List<String>,
+    val hoursLeft: Int = 0,
+)
