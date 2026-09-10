@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -49,6 +50,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -174,6 +176,11 @@ fun HomeScreen(
     val coins by gamificationViewModel.coins.collectAsState()
     val privacyMode = LocalPrivacyMode.current
     val today = remember { JalaliCalendar.today() }
+    // شرطِ برگشتنِ قرصِ «فعال» به هدر (`55a`). همان تعریفی که یادآورِ روزانه استفاده می‌کند:
+    // امروز تراکنشی ثبت شده یا نه.
+    val todayHasEntry = remember(transactions, today) {
+        transactions.any { it.year == today.y && it.month == today.m && it.day == today.d }
+    }
 
     // سنجشِ نشان‌ها فقط از اینجا (تبِ خانه = اولین صفحه‌ی بعدِ ورود) صدا زده می‌شه تا
     // بازشدنِ گذشته دقیقاً یه‌بار و صامت انجام بشه.
@@ -245,6 +252,7 @@ fun HomeScreen(
                     inboxCount = inboxCount,
                     inboxUnreadNews = inboxUnreadNews,
                     onOpenInbox = onOpenInbox,
+                    todayHasEntry = todayHasEntry,
                 )
             }
 
@@ -431,6 +439,9 @@ private fun AccountTransactionEntity.isExpenseOn(y: Int, m: Int, d: Int): Boolea
  * ۳۲px»، ولی خودِ فریمِ `15a` نشونش نمی‌ده و **تصویر بر متن مقدمه**. آدمک سرِ جاش تو
  * «حساب کاربری» می‌مونه.
  */
+/** زیرِ این عرض هدر تنگ حساب می‌شود - گوشیِ ۳۶۰ منهای حاشیه‌ی ۱۶ی دو طرف. */
+private val NARROW_HEADER_WIDTH = 330.dp
+
 @Composable
 private fun HomeHeader(
     today: ir.sadteam.loancalc.core.PersianDate,
@@ -442,51 +453,78 @@ private fun HomeHeader(
     inboxUnreadNews: Int,
     onOpenInbox: () -> Unit,
     onOpenCoins: () -> Unit,
+    /** امروز تراکنشی ثبت شده یا نه - شرطِ برگشتنِ قرصِ «فعال» به هدر (فریمِ `55a`). */
+    todayHasEntry: Boolean,
 ) {
     val avatarViewModel: AvatarViewModel = hiltViewModel()
     val avatar by avatarViewModel.avatar.collectAsState()
+    // آستانه‌ی حالتِ باریک که طراح نگذاشته بود چون عددش دستِ ماست: زیرِ این عرض، عددِ
+    // سکه برداشته می‌شود و فقط خودِ سکه می‌مانَد (ترتیبِ `55b`: عددِ سکه ← تاریخ ← نام).
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+    val compactChips = maxWidth < NARROW_HEADER_WIDTH
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        // ⚠️ **آدمک اینجاست، و کلیک‌پذیر نیست** - فریمِ `55a`.
+        //
+        // تا امروز آدمک و چرخ‌دنده **هر دو** `onOpenSettings` را صدا می‌زدند: دو در به یک
+        // اتاق. علتش این بود که آدمک را *به‌جای* درِ تنظیمات گذاشته بودیم نه در کنارش، و
+        // گزارشِ «دکمه‌ی تنظیمات اصلاً نیست» هم دقیقاً از همین آمد - کسی آدمکِ گوشه را
+        // تنظیمات نمی‌شناسد.
+        //
+        // پس آدمک می‌مانَد (شخصی‌سازی است و پالتش به تمِ خریدنی وصل می‌شود) ولی **مقصد
+        // ندارد**: کنارِ «سلام» می‌نشیند، جایی که همان جمله را تصویر می‌کند. چرخ‌دنده تنها
+        // درِ تنظیمات است.
+        //
+        // ⚠️ **تنها استثنای قاعده‌ی ۴۴ در هدر، و عمدی**: جعبه‌ی ۴۴ نمی‌گیرد چون کنش نیست.
+        // هدفِ لمسی برای چیزی که هیچ کاری نمی‌کند، تپ‌های اطرافش را می‌خورد. اندازه ۳۰ شد
+        // نه ۳۲، تا کنارِ متن بنشیند و ارتفاعِ ردیف را بالا نبرد.
+        AvatarView(avatar = avatar, size = 30.dp)
+        Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
+            // تاریخ **دومین چیزی است که در تنگنا می‌رود** (بعدِ عددِ سکه، قبلِ نام).
+            // `Row`ِ بیرونی `SpaceBetween` است و ستون `weight(1f)` دارد، پس خودِ Compose
+            // نام را کوتاه می‌کند؛ `maxLines`/`Ellipsis` اجباری است وگرنه نامِ بلند قرص‌ها
+            // را از صفحه بیرون می‌راند.
             Text(
                 "${(today.d).toFa()} ${persianMonthName(today.m)}",
                 color = AppMuted,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 if (userName.isNullOrBlank()) "خوش آمدی" else "سلامْ $userName",
                 color = AppText,
                 fontSize = 19.sp,
                 fontWeight = FontWeight.Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            if (activeDays > 0) ActiveChip(days = activeDays)
-            if (coins > 0) CoinChip(coins = coins, onClick = onOpenCoins)
-            // ⚠️ **درِ ورودیِ تنظیمات.** فریم‌های تب‌ها هیچ دکمه‌ای برای تنظیمات ندارن و طرح
-            // نگفته کاربر از کجا بره؛ کارتِ `32c` ولی صریحاً می‌گه آدمک تو «نوارِ بالای خانه»
-            // با اندازه‌ی ۳۲ می‌شینه. همون آدمک اینجا هم تناقضِ طرح رو حل می‌کنه هم جای خالیِ
-            // ناوبری رو - تمِ روشن/تیره و حالتِ خصوصی رفتن داخلِ خودِ تنظیمات (ردیفِ «ظاهر و
-            // تم»ِ فریمِ `27d`).
-            // ⚠️ آدمک ۳۲ پیکسله ولی **هدفِ لمسی باید ۴۴ باشه** (`AppSpacing.minTouchTarget`).
-            // پس یه جعبه‌ی ۴۴ دورش می‌شینه و کلیک رو اون می‌افته - نه اینکه خودِ آدمک
-            // بزرگ‌تر بشه (تذکرِ صریحِ طراح).
-            Box(
-                modifier = Modifier
-                    .size(AppSpacing.minTouchTarget)
-                    .pressScaleClickable(onClick = onOpenSettings),
-                contentAlignment = Alignment.Center,
-            ) {
-                AvatarView(avatar = avatar, size = 32.dp)
+            // ⚠️ **قرصِ «فعال» از هدر رفت** - فریمِ `55a`.
+            //
+            // شمارنده‌ی روزهای پیاپی است: کنش نیست، مقصد ندارد، و هر روز همان عدد
+            // به‌علاوه‌ی یک را تکرار می‌کند. جایش صفحه‌ی سکه است (`45a`) کنارِ بقیه‌ی
+            // بازی‌سازی، و درش همین قرصِ سکه‌ی کناری است.
+            //
+            // **تنها حالتی که برمی‌گردد**: رشته در خطرِ پاره‌شدن باشد - یعنی رشته‌ی هفت‌روزه
+            // یا بیشتر روی میز است و امروز هنوز چیزی ثبت نشده. آن‌وقت خبر است، نه زینت.
+            // و **جای** قرصِ سکه می‌نشیند نه کنارش، وگرنه همان ردیفِ شلوغ برمی‌گردد.
+            //
+            // ⚠️ `todayHasEntry` را باید فراخوان بدهد. در `HomeScreen` از همان داده‌ای
+            // می‌آید که `notifyDailyExpenseReminder` استفاده می‌کند: «امروز تراکنشی ثبت
+            // شده یا نه». امضایش را حدس نزدم.
+            val streakAtRisk = activeDays >= 7 && !todayHasEntry
+            if (streakAtRisk) {
+                ActiveChip(days = activeDays)
+            } else if (coins > 0) {
+                CoinChip(coins = coins, onClick = onOpenCoins, compact = compactChips)
             }
-            // ⚠️ **گزارشِ کاربر: «دکمه‌ی تنظیمات اصلاً نیست».** حق داشت - نوارِ بالای تب‌ها
-            // (که چرخ‌دنده توش بود) حذف شده بود و تنها درِ ورودی آدمک شده بود، که هیچ‌کس
-            // به‌عنوانِ «تنظیمات» نمی‌شناستش. چرخ‌دنده‌ی صریح برگشت.
             // زنگِ مرکزِ پیام‌ها (بخشِ ۴۰). **عدد فقط برای اقدام‌دارهای بازه**؛ خبرِ
             // خوانده‌نشده فقط یه نقطه‌ی سبز می‌گیره، نه عدد (قاعده‌ی صریحِ طرح).
             InboxBell(
@@ -494,8 +532,10 @@ private fun HomeHeader(
                 hasUnreadNews = inboxUnreadNews > 0,
                 onClick = onOpenInbox,
             )
+            // ⚠️ **تنها درِ تنظیمات.** آدمک دیگر این کار را نمی‌کند.
             PrivacyEyeButton(icon = Icons.Filled.Settings, active = false, onClick = onOpenSettings)
         }
+    }
     }
 }
 

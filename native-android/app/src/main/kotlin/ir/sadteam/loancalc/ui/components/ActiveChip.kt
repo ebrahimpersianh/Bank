@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -29,6 +30,7 @@ import kotlin.math.sin
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import ir.sadteam.loancalc.ui.theme.AppWarningInk
 import ir.sadteam.loancalc.ui.theme.AppWarning
+import ir.sadteam.loancalc.ui.theme.AppSpacing
 import ir.sadteam.loancalc.ui.theme.AppText
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.LocalFireDepartment
@@ -76,26 +78,61 @@ fun ActiveChip(days: Int, modifier: Modifier = Modifier) {
     }
 }
 
-/** شمارنده‌ی سکه - همون قرص، ولی طلایی، چون طلایی نشانه‌ی پاداش/پرمیومه. */
+/**
+ * شمارنده‌ی سکه - همون قرص، ولی طلایی، چون طلایی نشانه‌ی پاداش/پرمیومه.
+ *
+ * @param compact عددِ سکه را برمی‌دارد و فقط خودِ سکه می‌مانَد. **اولین چیزی است که در
+ * تنگنا کوتاه می‌شود** (فریمِ `55b`: عددِ سکه ← تاریخ ← نام). نام آخر است چون تنها چیزِ
+ * شخصیِ آن ردیف است.
+ */
 @Composable
-fun CoinChip(coins: Int, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+fun CoinChip(
+    coins: Int,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    compact: Boolean = false,
+) {
     // ⚠️ فریمِ `15a` برای سکه **قرص نداره** - فقط عدد و بعدش خودِ سکه.
     // `onClick` اختیاری است: هدفِ لمسی فقط وقتی ساخته می‌شود که مقصدی باشد، وگرنه یک
     // دکمه‌ی بی‌کار روی نوارِ بالا می‌نشیند و تپ‌های اطرافش را می‌خورد.
+    //
+    // ⚠️ `.padding()` **بعد از** `.clickable()` است و این باگ بود (قاعده‌ی ۴): پدینگِ
+    // بعدِ کلیک‌پذیری هدفِ لمسی را **کوچک** می‌کند. حالا پدینگ اول می‌آید، و در حالتِ
+    // `compact` که فقط یک سکه‌ی ۱۵ پیکسلی می‌مانَد، جعبه‌ی ۴۴ اجباری است وگرنه هدف به
+    // نصفِ حداقل می‌رسد.
     Row(
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
         modifier = modifier
+            .then(
+                if (onClick != null && compact) {
+                    Modifier.size(AppSpacing.minTouchTarget)
+                } else {
+                    Modifier
+                },
+            )
             .then(if (onClick != null) Modifier.clip(RoundedCornerShape(10.dp)) else Modifier)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .then(if (onClick != null) Modifier.padding(horizontal = 6.dp, vertical = 4.dp) else Modifier),
+            .then(
+                if (onClick != null && !compact) {
+                    Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                } else {
+                    Modifier
+                },
+            )
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
     ) {
-        Text(
-            toFa(coins),
-            color = AppText,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Black,
+        if (!compact) {
+            Text(
+                toFa(coins),
+                color = AppText,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
+            )
+        }
+        CoinIcon(
+            size = if (compact) 17.dp else 15.dp,
+            modifier = if (compact) Modifier else Modifier.padding(start = 4.dp),
         )
-        CoinIcon(size = 15.dp, modifier = Modifier.padding(start = 4.dp))
     }
 }
 
