@@ -19,6 +19,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -246,18 +249,34 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
+                                // تفکیکِ نوع با **آیکون** می‌آید نه با رنگ - قاعده‌ی فریمِ `51a`.
+                                Icon(
+                                    when (item.kind) {
+                                        DueKind.INSTALLMENT -> Icons.Filled.AccountBalance
+                                        DueKind.CHEQUE -> Icons.Filled.ReceiptLong
+                                        DueKind.RECURRING -> Icons.Filled.Repeat
+                                    },
+                                    contentDescription = when (item.kind) {
+                                        DueKind.INSTALLMENT -> "قسط"
+                                        DueKind.CHEQUE -> "چک"
+                                        DueKind.RECURRING -> "پرداخت تکراری"
+                                    },
+                                    tint = AppMuted,
+                                    modifier = Modifier.size(16.dp).padding(end = 0.dp),
+                                )
+                                Spacer(Modifier.size(8.dp))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(item.loanName, color = AppText, fontSize = 13.sp)
-                                    // نامِ بانک می‌تواند خالی باشد (حسابِ نقدی) - همان موردی
-                                    // که در تبِ دارایی بجِ خالی می‌ساخت.
-                                    if (item.bank.isNotBlank()) {
-                                        Text(item.bank, color = AppMuted, fontSize = 11.sp)
+                                    Text(item.title, color = AppText, fontSize = 13.sp)
+                                    // زیرعنوان می‌تواند خالی باشد (وامِ بی‌بانک، پرداختِ تکراریِ
+                                    // بی‌دسته) - همان موردی که در تبِ دارایی بجِ خالی می‌ساخت.
+                                    if (item.subtitle.isNotBlank()) {
+                                        Text(item.subtitle, color = AppMuted, fontSize = 11.sp)
                                     }
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
                                     PrivacyCrossfade(privacyMode) { masked ->
                                         Text(
-                                            "${maskIfPrivate(masked, amountToman(item.installment))} تومان",
+                                            "${maskIfPrivate(masked, amountToman(item.amount))} تومان",
                                             color = AppText,
                                             fontSize = 13.sp,
                                         )
