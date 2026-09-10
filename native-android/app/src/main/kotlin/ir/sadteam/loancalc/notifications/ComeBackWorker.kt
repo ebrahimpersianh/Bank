@@ -56,6 +56,14 @@ class ComeBackWorker @AssistedInject constructor(
         // هیچ تراکنشی نداره = کاربرِ تازه‌وارد، نه کاربرِ غایب. سرزنشش نکن.
         if (transactions.isEmpty()) return Result.success()
 
+        // 🚨 ساعتِ اجرا. `PeriodicWorkRequest` ساعتِ ثابت ندارد - هر وقت اولین‌بار
+        // زمان‌بندی شود، هر ۲۴ ساعت همان ساعت تکرار می‌شود. یک‌بار همین باعث شد اعلانِ
+        // «۱ روزه رفتی» ساعتِ ۱:۳۰ بامداد برسد. زمان‌بند حالا به [NUDGE_HOUR] لنگر
+        // می‌اندازد، و این نگهبان اجرای بدموقع (بوت، تعویضِ ساعت، جبرانِ عقب‌افتاده) را
+        // ساکت رد می‌کند - اعلانِ انگیزشی نیمه‌شب بدتر از نفرستادنش است.
+        val hourNow = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        if (hourNow < NUDGE_HOUR || hourNow > NUDGE_HOUR_LATEST) return Result.success()
+
         val today = JalaliCalendar.today()
         val last = transactions.maxByOrNull { it.year * 10000 + it.month * 100 + it.day } ?: return Result.success()
         val daysAway = daysBetween(PersianDate(last.year, last.month, last.day), today)
@@ -106,8 +114,14 @@ class ComeBackWorker @AssistedInject constructor(
     private fun daysBetween(from: PersianDate, to: PersianDate): Int =
         runCatching { JalaliCalendar.daysBetween(from, to) }.getOrDefault(0)
 
-    private companion object {
-        const val NOTIFICATION_ID = 918_273
+    companion object {
+        private const val NOTIFICATION_ID = 918_273
+
+        /** ساعتِ ارسالِ اعلانِ برگشت (عصر - همان منطقِ `DAILY_NUDGE_FROM_HOUR`ی یادآورِ روزانه). */
+        const val NUDGE_HOUR = 20
+
+        /** بعد از این ساعت دیگر فرستاده نمی‌شود - نیمه‌شب کسی را بیدار نمی‌کنیم. */
+        const val NUDGE_HOUR_LATEST = 22
     }
 }
 
@@ -115,9 +129,26 @@ class ComeBackWorker @AssistedInject constructor(
 @Singleton
 class ComeBackScheduler @Inject constructor(@ApplicationContext private val context: Context) {
     fun schedule() {
-        val request = PeriodicWorkRequestBuilder<ComeBackWorker>(24, TimeUnit.HOURS).build()
+        val request = PeriodicWorkRequestBuilder<ComeBackWorker>(24, TimeUnit.HOURS)
+            .setInitialDelay(minutesUntilNextNudgeHour(), TimeUnit.MINUTES)
+            .build()
+        // ⚠️ `UPDATE` نه `KEEP`: کاربرانی که کارِ بی‌لنگرِ قبلی رویشان نشسته (و اعلان را
+        // مثلاً ۱:۳۰ بامداد می‌گرفتند) وگرنه تا نصبِ دوباره همان ساعت می‌ماندند.
         WorkManager.getInstance(context)
-            .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
+            .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
+    }
+
+    /** دقیقه تا نزدیک‌ترین [ComeBackWorker.NUDGE_HOUR]ی بعدی. */
+    private fun minutesUntilNextNudgeHour(): Long {
+        val now = java.util.Calendar.getInstance()
+        val target = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, ComeBackWorker.NUDGE_HOUR)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+            if (before(now)) add(java.util.Calendar.DAY_OF_YEAR, 1)
+        }
+        return (target.timeInMillis - now.timeInMillis) / 60_000L
     }
 
     fun cancel() {
