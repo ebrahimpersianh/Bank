@@ -46,6 +46,8 @@ class UiPrefs(private val context: Context) {
         val AVATAR_COLOR = stringPreferencesKey("avatar_color")
         val AVATAR_PHOTO = stringPreferencesKey("avatar_photo")
         val SHORTCUT_ORDER = stringPreferencesKey("shortcut_order")
+        val SHORTCUT_SELECTION = stringPreferencesKey("shortcut_selection")
+        val DISMISSED_DISCOVERIES = stringPreferencesKey("dismissed_discoveries")
         val REDUCED_MOTION = booleanPreferencesKey("reduced_motion")
         val BADGES_RETRO_DONE = booleanPreferencesKey("badges_retro_done")
         val COLOR_THEME = stringPreferencesKey("color_theme")
@@ -103,6 +105,28 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setShortcutOrder(ids: List<String>) {
         context.uiPrefsDataStore.edit { it[Keys.SHORTCUT_ORDER] = ids.joinToString(",") }
+    }
+
+    /**
+     * **انتخابِ** میان‌برهای کشو (هشت از چهاردهِ مخزن) - عمداً از [shortcutOrder] جداست:
+     * یکی «کدام‌ها» را می‌گوید و دیگری «به چه ترتیب». `null`/خالی یعنی کاربر هنوز انتخاب
+     * نکرده، پس جای فراخوان باید هشت‌تای پیش‌فرض را بگذارد، نه کشوی خالی.
+     */
+    val shortcutSelection: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.SHORTCUT_SELECTION] }
+
+    suspend fun setShortcutSelection(ids: List<String>) {
+        context.uiPrefsDataStore.edit { it[Keys.SHORTCUT_SELECTION] = ids.joinToString(",") }
+    }
+
+    /**
+     * کارت‌های کشفِ نادیده‌گرفته‌شده‌ی تبِ گزارش، با `,` جدا. کلیدِ هر مورد `(نوع، ماهِ شمسی)`ست،
+     * پس نادیده‌گرفتن **ماهانه** است نه دائمی - کشفی که برای همیشه خاموش می‌شود یعنی خبری که
+     * هیچ‌وقت به کاربر نمی‌رسد.
+     */
+    val dismissedDiscoveries: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.DISMISSED_DISCOVERIES] }
+
+    suspend fun setDismissedDiscoveries(keys: List<String>) {
+        context.uiPrefsDataStore.edit { it[Keys.DISMISSED_DISCOVERIES] = keys.joinToString(",") }
     }
 
     /* --------------------------------------------------------------------------------------

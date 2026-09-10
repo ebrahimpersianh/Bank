@@ -22,7 +22,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.EventRepeat
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -110,6 +112,7 @@ fun ReportTabScreen(
     onOpenExport: () -> Unit = {},
     accountViewModel: AccountViewModel = hiltViewModel(),
     privacyViewModel: PrivacyModeViewModel = hiltViewModel(),
+    discoveryDismissViewModel: DiscoveryDismissViewModel = hiltViewModel(),
 ) {
     val transactions by accountViewModel.transactions.collectAsState()
     val recurring by accountViewModel.recurringPayments.collectAsState()
@@ -120,8 +123,25 @@ fun ReportTabScreen(
     val stats = remember(transactions, recurring, period) {
         buildReportStats(transactions, recurring, today, period)
     }
+    // دو عددِ حالتِ «هیچ کشفی نیست». همان فیلترِ `buildReportStats`: انتقالِ بینِ حساب‌ها
+    // خرج نیست.
+    val realExpenses = remember(transactions) {
+        transactions.filter { it.sourceType != "transfer" && it.type == "WITHDRAWAL" }
+    }
+    val checkedTxCount = remember(realExpenses, today) {
+        realExpenses.count { it.year == today.y && it.month == today.m }
+    }
+    val monthsOfHistory = remember(realExpenses) {
+        realExpenses.map { it.year to it.month }.distinct().size
+    }
     var showNewTransaction by remember { mutableStateOf(false) }
     var showSubscriptionFinder by remember { mutableStateOf(false) }
+
+    // کلیدِ نادیده‌گرفتن = «نوع + ماهِ شمسی». **خاموشیِ دائمی نه**: کشفی که برای همیشه
+    // خاموش می‌شود یعنی باگی که هیچ‌وقت گزارش نمی‌شود. ماهِ بعد دوباره می‌آید.
+    // ماندگاری از `UiPrefs.dismissedDiscoveries` می‌آید - رجوع کن به [DiscoveryDismissViewModel].
+    val dismissed by discoveryDismissViewModel.dismissed.collectAsState()
+    val monthKey = "${today.y}-${today.m}"
 
     // ⚠️ زیرصفحه‌ها **روی** تب می‌نشینند، نه به‌جایش. قبلاً با `return` صدا زده می‌شدند و
     // کلِ LazyColumn از کامپوزیشن بیرون می‌رفت: پشتِ شیت سفیدِ خالی بود و اسکرولِ گزارش با
@@ -184,57 +204,83 @@ fun ReportTabScreen(
                 )
             }
         }
-        // ⚠️ **اشتراک‌یاب** - این کارت با کارتِ زیریش فرق داره: اون پرداخت‌های تکراریِ
-        // **اعلام‌شده‌ی خودِ کاربره**، این چیزیه که اپ خودش از رو تاریخچه **کشف** کرده و
-        // کاربر خبر نداشته. تنها کارتِ کشفیه که با تپ یه صفحه باز می‌کنه.
-        if (stats.detectedSubscriptions.isNotEmpty()) {
-            item {
-                DiscoveryCard(
-                    icon = Icons.Filled.Autorenew,
-                    title = "${(stats.detectedSubscriptions.size).toFa()} خرجِ تکرارشونده پیدا شد",
-                    subtitle = "ماهی ${(stats.detectedMonthly).rialToFaCompact()} تومان — لمس کن ببین چی‌ان",
-                    bg = DiscoverWarnBg,
-                    border = DiscoverWarnBorder,
-                    pill = DiscoverWarnPill,
-                    ink = DiscoverWarnInk,
-                    subInk = DiscoverWarnSubInk,
-                    iconInk = DiscoverWarnIconInk,
-                    onClick = { showSubscriptionFinder = true },
+        // ── کارت‌های کشف ────────────────────────────────────────────────────
+        // ترتیب **بر پایه‌ی فوریت**، نه ترتیبِ نوشته‌شدن در فایل: کسری اول، پرداختِ دوباره
+        // دوم، اطلاعاتی سوم. قبلاً اشتراک‌یاب همیشه بالای «۳۰٪ بیشتر از معمول» می‌نشست.
+        val discoveries = buildList {
+            stats.overspentCategory?.let { over ->
+                add(
+                    Discovery("overspent", 1) {
+                        DiscoveryCard(
+                            icon = Icons.Filled.BarChart,
+                            title = "${over.name} ${(over.percent).toFa()}٪ بیشتر از معمول",
+                            subtitle = "نسبت به میانگینِ سه ماه",
+                            bg = DiscoverDangerBg,
+                            border = DiscoverDangerBorder,
+                            pill = DiscoverDangerPill,
+                            ink = AppText,
+                            subInk = AppMuted,
+                            iconInk = AppDanger,
+                            onDismiss = { discoveryDismissViewModel.dismiss("overspent@$monthKey", monthKey) },
+                        )
+                    },
+                )
+            }
+            // ⚠️ **اشتراک‌یاب** با کارتِ بعدی فرق دارد: آن پرداخت‌های تکراریِ **اعلام‌شده‌ی
+            // خودِ کاربر** است، این چیزی است که اپ از روی تاریخچه **کشف** کرده و کاربر خبر
+            // نداشته. تنها کارتِ کشفی که با تپ صفحه باز می‌کند.
+            if (stats.detectedSubscriptions.isNotEmpty()) {
+                add(
+                    Discovery("subscriptions", 2) {
+                        DiscoveryCard(
+                            icon = Icons.Filled.Autorenew,
+                            title = "${(stats.detectedSubscriptions.size).toFa()} خرجِ تکرارشونده پیدا شد",
+                            subtitle = "ماهی ${(stats.detectedMonthly).rialToFaCompact()} تومان — لمس کن ببین چی‌ان",
+                            bg = DiscoverWarnBg,
+                            border = DiscoverWarnBorder,
+                            pill = DiscoverWarnPill,
+                            ink = DiscoverWarnInk,
+                            subInk = DiscoverWarnSubInk,
+                            iconInk = DiscoverWarnIconInk,
+                            onClick = { showSubscriptionFinder = true },
+                            onDismiss = { discoveryDismissViewModel.dismiss("subscriptions@$monthKey", monthKey) },
+                        )
+                    },
+                )
+            }
+            if (stats.recurringCount > 0) {
+                add(
+                    // این کارت و اشتراک‌یاب قبلاً هم‌رنگ، هم‌آیکون و هم‌جمله بودند و
+                    // پشتِ‌هم می‌نشستند. این یکی اعلامِ خودِ کاربر است نه کشفِ برنامه، پس
+                    // سطحِ خنثی می‌گیرد و آخرین اولویت را دارد - خبر نیست، یادآوری است.
+                    Discovery("recurring", 3) {
+                        DiscoveryCard(
+                            icon = Icons.Filled.EventRepeat,
+                            title = "${(stats.recurringCount).toFa()} پرداختِ تکراریِ ثبت‌شده",
+                            subtitle = "ماهی ${(stats.recurringMonthly).rialToFaCompact()} تومان",
+                            bg = AppSurface,
+                            border = AppLineRow,
+                            pill = AppIconFrame,
+                            ink = AppText,
+                            subInk = AppMuted,
+                            iconInk = AppMuted,
+                            onDismiss = { discoveryDismissViewModel.dismiss("recurring@$monthKey", monthKey) },
+                        )
+                    },
                 )
             }
         }
-        if (stats.recurringCount > 0) {
-            item {
-                // ⚠️ این کارت و کارتِ کشفِ بالایی قبلاً **هم‌رنگ، هم‌آیکون و هم‌جمله** بودند
-                // و پشتِ‌هم می‌نشستند. این یکی اعلامِ خودِ کاربر است نه کشفِ برنامه، پس
-                // سطحِ خنثی می‌گیرد و آیکونش هم عوض شد.
-                DiscoveryCard(
-                    icon = Icons.Filled.EventRepeat,
-                    title = "${(stats.recurringCount).toFa()} پرداختِ تکراریِ ثبت‌شده",
-                    subtitle = "ماهی ${(stats.recurringMonthly).rialToFaCompact()} تومان",
-                    bg = AppSurface,
-                    border = AppLineRow,
-                    pill = AppIconFrame,
-                    ink = AppText,
-                    subInk = AppMuted,
-                    iconInk = AppMuted,
-                )
-            }
-        }
-        stats.overspentCategory?.let { over ->
-            item {
-                DiscoveryCard(
-                    icon = Icons.Filled.BarChart,
-                    title = "${over.name} ${(over.percent).toFa()}٪ بیشتر از معمول",
-                    subtitle = "نسبت به میانگینِ سه ماه",
-                    bg = DiscoverDangerBg,
-                    border = DiscoverDangerBorder,
-                    pill = DiscoverDangerPill,
-                    ink = AppText,
-                    subInk = AppMuted,
-                    iconInk = AppDanger,
-                )
-            }
+        val visibleDiscoveries = discoveries
+            .filterNot { "${it.kind}@$monthKey" in dismissed }
+            .sortedBy { it.priority }
+            .take(DISCOVERY_LIMIT)
+
+        if (visibleDiscoveries.isEmpty()) {
+            // «هیچ کشفی نیست» با **دو عددِ واقعی**، نه جمله‌ی تشویقی: بی عدد، کاربر فکر
+            // می‌کند بخشِ کشف خراب است. عددها می‌گویند چه چیزی بررسی شد و چه چیزی کم است.
+            item { NoDiscoveryCard(checkedCount = checkedTxCount, monthsOfHistory = monthsOfHistory) }
+        } else {
+            visibleDiscoveries.forEach { d -> item(key = d.kind) { d.render() } }
         }
         item { ExportRow(onClick = onOpenExport) }
     }
@@ -252,6 +298,24 @@ fun ReportTabScreen(
         }
     }
 }
+
+/**
+ * یک کارتِ کشف، پیش از تصمیمِ نمایش.
+ *
+ * فریمِ `52a`: کارت‌های کشف **جمع می‌شوند** - سه شرطِ مستقل بودند و هر سه می‌توانستند
+ * هم‌زمان درست باشند، پس ماهِ شلوغ سه کارتِ پشتِ‌هم می‌داد و بخشِ کشف به دیوارِ هشدار
+ * تبدیل می‌شد. حالا همه ساخته می‌شوند، مرتب می‌شوند، و **دوتای اول** نشان داده می‌شوند.
+ */
+private data class Discovery(
+    /** کلیدِ پایدارِ نوع - نیمه‌ی اولِ کلیدِ نادیده‌گرفتن. */
+    val kind: String,
+    /** کوچک‌تر = فوری‌تر. */
+    val priority: Int,
+    val render: @Composable () -> Unit,
+)
+
+/** سقفِ کارتِ کشف در یک صفحه (فریمِ `52a`). */
+private const val DISCOVERY_LIMIT = 2
 
 enum class ReportPeriod(val label: String, val months: Int) {
     MONTH("ماه", 1),
@@ -777,6 +841,7 @@ private fun DiscoveryCard(
     // فلشِ کارت از اول تو فریم بود ولی هیچ‌کاری نمی‌کرد؛ کارتِ اشتراک‌یاب اولین کارتیه که
     // واقعاً یه صفحه باز می‌کنه، پس onClick اختیاری اضافه شد نه اجباری.
     onClick: (() -> Unit)? = null,
+    onDismiss: (() -> Unit)? = null,
 ) {
     val shape = RoundedCornerShape(AppRadius.card)
     Row(
@@ -808,6 +873,70 @@ private fun DiscoveryCard(
                 contentDescription = null,
                 tint = ChevronInk,
                 modifier = Modifier.size(13.dp),
+            )
+        }
+        if (onDismiss != null) {
+            // هدفِ لمسیِ ۴۴ با `.size()` **قبل از** `pressScaleClickable` ساخته می‌شود و
+            // آیکون داخلش ۱۳ می‌مانَد - پدینگ بعدِ کلیک‌پذیری هدف را کوچک می‌کرد (قاعده‌ی ۵).
+            Box(
+                modifier = Modifier.size(44.dp).pressScaleClickable(onClick = onDismiss),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = "نادیده بگیر",
+                    tint = ChevronInk,
+                    modifier = Modifier.size(13.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * حالتِ «این ماه چیزی پیدا نشد» - فریمِ `52a`.
+ *
+ * بی این کارت، ماهی که هیچ شرطی برقرار نبود بخشِ کشف را **کاملاً غیب** می‌کرد و کاربر
+ * فرق «بررسی شد، چیزی نبود» با «کار نمی‌کند» را نمی‌فهمید.
+ */
+@Composable
+private fun NoDiscoveryCard(checkedCount: Int, monthsOfHistory: Int) {
+    val shape = RoundedCornerShape(AppRadius.card)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(11.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(AppSurface)
+            .border(2.dp, AppLineRow, shape)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        Box(
+            modifier = Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(AppPrimaryPill),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.CheckCircle,
+                contentDescription = null,
+                tint = AppPrimary,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text("چیزِ غیرعادی‌ای پیدا نشد", color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+            Text(
+                if (monthsOfHistory < 4) {
+                    // مقایسه‌ی سه‌ماهه به سه ماهِ کاملِ گذشته نیاز دارد (`detectOverspend`).
+                    "${(checkedCount).toFa()} تراکنشِ این ماه بررسی شد · " +
+                        "مقایسه‌ی سه‌ماهه با ${(4 - monthsOfHistory).toFa()} ماهِ دیگر داده فعال می‌شود"
+                } else {
+                    "${(checkedCount).toFa()} تراکنشِ این ماه با میانگینِ سه ماهِ گذشته سنجیده شد"
+                },
+                color = AppMuted,
+                fontSize = 9.5.sp,
+                lineHeight = 17.sp,
+                modifier = Modifier.padding(top = 2.dp),
             )
         }
     }

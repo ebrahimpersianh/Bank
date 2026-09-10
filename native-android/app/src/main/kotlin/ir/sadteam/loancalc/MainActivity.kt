@@ -243,7 +243,7 @@ private enum class BottomTab(
  * ترتیبِ اینجا فقط پیش‌فرضه؛ ترتیبِ واقعی از [ShortcutViewModel] میاد.
  */
 private val defaultShortcuts = listOf(
-    Shortcut("expense", "ثبتِ خرج", Icons.Outlined.Payments, "home"),
+    Shortcut("expense", "ثبتِ خرج", Icons.Outlined.Payments, "home", locked = true),
     Shortcut("transfer", "انتقال", Icons.Outlined.SwapHoriz, "assets"),
     Shortcut("report", "گزارشِ ماه", Icons.Outlined.BarChart, "report"),
     Shortcut("cheque", "چک‌ها", Icons.Outlined.Description, "cheque"),
@@ -251,6 +251,20 @@ private val defaultShortcuts = listOf(
     Shortcut("budget", "بودجه", Icons.Outlined.Savings, "budget"),
     Shortcut("due", "سررسید", Icons.Outlined.EventNote, "due"),
     Shortcut("debt", "دنگ", Icons.Outlined.Groups, "due"),
+)
+
+/**
+ * **مخزنِ مقصدهای کشو** - ورودیِ حالتِ ویرایشِ فریمِ `53a`. هشتِ بالا انتخابِ پیش‌فرض‌اند،
+ * این فهرست همه‌ی چیزهایی است که کاربر می‌تواند بینشان عوض کند.
+ *
+ * ⚠️ **فاصله‌ی آگاهانه با طرح**، عیناً همان دلیلِ [NavDestination]: فریم از «۱۴ مقصد» حرف
+ * می‌زند و «پیام‌ها»/«هدفِ پس‌انداز»/«تقویم»/«سکه‌ها» را هم می‌شمرد؛ آن‌ها در `NavHost`ِ
+ * فعلی مقصدِ ناوبری **نیستند**. با اضافه‌شدنِ هر route، فقط یک ردیف این‌جا اضافه می‌شود.
+ */
+private val allShortcutPool = defaultShortcuts + listOf(
+    Shortcut("loan", "وام", Icons.Outlined.Payments, LOAN_ROUTE),
+    Shortcut("home", "خانه", Icons.Outlined.Home, "home"),
+    Shortcut("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, "assets"),
 )
 
 private const val LOAN_ROUTE = "loan"
@@ -601,12 +615,16 @@ private fun LoanCalcApp(
     // **جابه‌جاشون** کنه، نه حذف («غیرقابلِ حذف در نسخه‌ی اول» - قاعده‌ی `31c`).
     val shortcutViewModel: ShortcutViewModel = hiltViewModel()
     val savedShortcutOrder by shortcutViewModel.order.collectAsState()
+    // **انتخاب** جدا از **ترتیب** ذخیره می‌شه (فریمِ `53a`) - خالی یعنی کاربر هنوز چیزی
+    // انتخاب نکرده، پس همون هشتِ پیش‌فرض می‌مونه، نه کشوی خالی.
+    val savedShortcutSelection by shortcutViewModel.selection.collectAsState()
     var shortcutDrawerOpen by remember { mutableStateOf(false) }
-    val shortcuts = remember(savedShortcutOrder) {
+    val shortcuts = remember(savedShortcutOrder, savedShortcutSelection) {
+        val byId = allShortcutPool.associateBy { it.id }
+        val selected = savedShortcutSelection.mapNotNull { byId[it] }.ifEmpty { defaultShortcuts }
         // ترتیبِ ذخیره‌شده اول میاد؛ شناسه‌ی ناشناخته نادیده و میان‌برِ تازه ته لیست اضافه می‌شه.
-        val byId = defaultShortcuts.associateBy { it.id }
-        val ordered = savedShortcutOrder.mapNotNull { byId[it] }
-        ordered + defaultShortcuts.filterNot { it.id in savedShortcutOrder }
+        val ordered = savedShortcutOrder.mapNotNull { id -> selected.firstOrNull { it.id == id } }
+        ordered + selected.filterNot { it.id in savedShortcutOrder }
     }
 
     // «وام‌های من» دیگه تبِ جداگانه‌ی خودش نیست، یه زیرصفحه‌ی داخلِ تبِ «وام»ه (رجوع کن به
@@ -1093,6 +1111,9 @@ private fun LoanCalcApp(
             onDismiss = { shortcutDrawerOpen = false },
             onOpenRoute = { route -> navigateTo(route) },
             onOrderChanged = { ids -> shortcutViewModel.save(ids) },
+            allShortcuts = allShortcutPool,
+            onSelectionChanged = { ids -> shortcutViewModel.saveSelection(ids) },
+            inBottomBarIds = navSlots.map { it.id }.toSet(),
         )
 
         // باگِ رفع‌شده: پنلِ تنظیمات فقط ۸۵٪ عرض می‌گیره؛ چون خودِ پنل (Surface رنگِ AppSurface) و

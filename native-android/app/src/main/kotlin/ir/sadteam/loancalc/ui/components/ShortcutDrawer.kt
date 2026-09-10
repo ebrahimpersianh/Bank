@@ -25,6 +25,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,6 +54,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.ui.theme.AppChipBg
+import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -80,32 +85,61 @@ data class Shortcut(
     val label: String,
     val icon: ImageVector,
     val route: String,
+    /**
+     * میان‌بری که از کشو **حذف نمی‌شود**. فقط «ثبتِ خرج»: مقصد نیست، شیت باز می‌کند، و
+     * تنها راهِ ثبتِ دستی است - کاربری که برش دارد راهِ ثبت را گم می‌کند.
+     */
+    val locked: Boolean = false,
 )
 
 private const val AUTO_CLOSE_MS = 10_000L
 private const val COLUMNS = 4
 
+/** سقفِ میان‌برهای کشو (فریمِ `53a`) - دو ردیفِ چهارتایی. */
+const val SHORTCUT_SLOTS = 8
+
 @Composable
 fun ShortcutDrawer(
+    /** هشت میان‌برِ انتخاب‌شده، به ترتیبِ ذخیره‌شده. */
     shortcuts: List<Shortcut>,
     visible: Boolean,
     onDismiss: () -> Unit,
     onOpenRoute: (String) -> Unit,
     onOrderChanged: (List<String>) -> Unit,
+    /**
+     * **همه‌ی** مقصدهای ممکن (مخزنِ ۱۴تایی) - ورودیِ حالتِ ویرایشِ فریمِ `53a`.
+     *
+     * قبلاً کشو فقط جابه‌جایی داشت و **انتخاب نداشت**: هشت میان‌بر در کد ثابت بودند و
+     * شش مقصدِ دیگر هیچ راهی به کشو نداشتند.
+     */
+    allShortcuts: List<Shortcut> = shortcuts,
+    /** ذخیره‌ی انتخاب. **کلیدِ جدا از ترتیب** - نوار پنج جا دارد و کشو هشت. */
+    onSelectionChanged: (List<String>) -> Unit = {},
+    /**
+     * شناسه‌ی مقصدهایی که همین حالا در نوارِ پایین‌اند - فقط برای بجِ خبری.
+     *
+     * مقصدی که در نوار است از کشو **حذف نمی‌شود**: کشو از هر صفحه‌ای باز می‌شود ولی نوار
+     * در صفحه‌های عمیق پنهان است، پس حذفِ خودکار مقصد را در نیمی از اپ بی‌راه می‌گذارد.
+     */
+    inBottomBarIds: Set<String> = emptySet(),
     modifier: Modifier = Modifier,
 ) {
     if (!visible) return
 
     var reorderMode by remember { mutableStateOf(false) }
+    var editMode by remember { mutableStateOf(false) }
     var order by remember(shortcuts) { mutableStateOf(shortcuts) }
+    var selectedIds by remember(shortcuts) { mutableStateOf(shortcuts.map { it.id }) }
     // هر لمسی داخلِ کشو تایمر رو از صفر شروع می‌کنه (قاعده‌ی `31c`).
     var timerKey by remember { mutableIntStateOf(0) }
     var remaining by remember { mutableFloatStateOf(1f) }
 
     // ⏱ **ده ثانیه**: خطِ ۳ پیکسلی بالای کشو از راست به چپ خالی می‌شه. تو حالتِ جابه‌جایی
     // «تایمر کاملاً متوقف است» - قاعده‌ی صریحِ طرح.
-    LaunchedEffect(timerKey, reorderMode) {
-        if (reorderMode) return@LaunchedEffect
+    LaunchedEffect(timerKey, reorderMode, editMode) {
+        // حالتِ ویرایش هم مثلِ جابه‌جایی تایمر را **کاملاً** متوقف می‌کند: انتخابِ هشت از
+        // چهارده بیش از ده ثانیه طول می‌کشد و بسته‌شدنِ وسطِ کار انتخاب را دور می‌ریخت.
+        if (reorderMode || editMode) return@LaunchedEffect
         val startedAt = System.currentTimeMillis()
         while (true) {
             val elapsed = System.currentTimeMillis() - startedAt
@@ -127,7 +161,7 @@ fun ShortcutDrawer(
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                ) { if (!reorderMode) onDismiss() },
+                ) { if (!reorderMode && !editMode) onDismiss() },
         )
         Column(
             modifier = Modifier
@@ -157,7 +191,7 @@ fun ShortcutDrawer(
                     modifier = Modifier
                         .fillMaxWidth(remaining.coerceIn(0f, 1f))
                         .height(3.dp)
-                        .background(if (reorderMode) AppMuted else AppPrimary),
+                        .background(if (reorderMode || editMode) AppMuted else AppPrimary),
                 )
             }
             Row(
@@ -167,40 +201,92 @@ fun ShortcutDrawer(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    if (reorderMode) "جای‌شان را عوض کن" else "میان‌بُرها",
+                    when {
+                        editMode -> "کدام‌ها در کشو باشند"
+                        reorderMode -> "جای‌شان را عوض کن"
+                        else -> "میان‌بُرها"
+                    },
                     color = AppText,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Black,
                     modifier = Modifier.weight(1f),
                 )
+                if (editMode) {
+                    // شمارنده‌ی «۶ از ۸» - بی آن کاربر نمی‌فهمد چرا نهمی انتخاب نمی‌شود.
+                    Text(
+                        "${selectedIds.size} از $SHORTCUT_SLOTS",
+                        color = AppLabel,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(end = 12.dp),
+                    )
+                } else if (!reorderMode && allShortcuts.size > shortcuts.size) {
+                    // «ویرایش» فقط وقتی می‌آید که مقصدی بیرونِ کشو مانده باشد.
+                    Text(
+                        "ویرایش",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier
+                            .clickable { editMode = true; timerKey++ }
+                            .padding(end = 14.dp),
+                    )
+                }
                 Text(
-                    if (reorderMode) "تمام" else "بستن",
+                    if (reorderMode || editMode) "تمام" else "بستن",
                     color = AppPrimaryInk,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.clickable {
-                        if (reorderMode) {
-                            reorderMode = false
-                            onOrderChanged(order.map { it.id })
-                            timerKey++
-                        } else {
-                            onDismiss()
+                        when {
+                            editMode -> {
+                                editMode = false
+                                onSelectionChanged(selectedIds)
+                                timerKey++
+                            }
+                            reorderMode -> {
+                                reorderMode = false
+                                onOrderChanged(order.map { it.id })
+                                timerKey++
+                            }
+                            else -> onDismiss()
                         }
                     },
                 )
             }
-            ShortcutGrid(
-                shortcuts = order,
-                reorderMode = reorderMode,
-                onEnterReorder = { reorderMode = true },
-                onMove = { from, to ->
-                    order = order.toMutableList().apply { add(to, removeAt(from)) }
-                },
-                onOpen = { route ->
-                    onDismiss()
-                    onOpenRoute(route)
-                },
-            )
+            if (editMode) {
+                SelectionGrid(
+                    all = allShortcuts,
+                    selectedIds = selectedIds,
+                    inBottomBarIds = inBottomBarIds,
+                    onToggle = { id ->
+                        selectedIds = when {
+                            id in selectedIds -> selectedIds - id
+                            selectedIds.size < SHORTCUT_SLOTS -> selectedIds + id
+                            else -> selectedIds
+                        }
+                    },
+                )
+            } else {
+                ShortcutGrid(
+                    shortcuts = order,
+                    reorderMode = reorderMode,
+                    onEnterReorder = { reorderMode = true },
+                    onMove = { from, to ->
+                        order = order.toMutableList().apply { add(to, removeAt(from)) }
+                    },
+                    onOpen = { route ->
+                        // ⚠️ ترتیبِ جابه‌جاشده فقط با دکمه‌ی «تمام» ذخیره می‌شد. کاربری که
+                        // بعدِ جابه‌جایی روی یک میان‌بر می‌زد (یا پرده را لمس می‌کرد) کارش را
+                        // از دست می‌داد. حالا هر خروجی ذخیره می‌کند.
+                        if (order.map { it.id } != shortcuts.map { it.id }) {
+                            onOrderChanged(order.map { it.id })
+                        }
+                        onDismiss()
+                        onOpenRoute(route)
+                    },
+                )
+            }
         }
     }
 }
@@ -320,9 +406,12 @@ private fun ShortcutTile(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
-            .padding(vertical = 8.dp, horizontal = 4.dp)
+            // ⚠️ `.padding()` **قبل از** `.clickable()` بود و هدفِ لمسی را کوچک می‌کرد
+            // (قاعده‌ی ۵). خانه‌ی ۵۲ + برچسب ~۷۲dp است؛ پدینگِ بیرونی آن را به ~۵۶ می‌رساند
+            // ولی نوارِ بالا و پایینِ آن هم باید لمس‌پذیر باشد.
             .rotate(if (wiggling) angle else 0f)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp, horizontal = 4.dp),
     ) {
         Box(
             modifier = Modifier
@@ -380,5 +469,123 @@ fun ShortcutDrawerHandle(onOpen: () -> Unit, modifier: Modifier = Modifier) {
                 .clip(RoundedCornerShape(999.dp))
                 .background(AppLineRow),
         )
+    }
+}
+
+/**
+ * شبکه‌ی حالتِ ویرایش - **همه‌ی** چهارده مقصد، انتخاب‌شده‌ها پررنگ.
+ *
+ * چرا لیستِ تخت نیست: انتخاب یک کارِ بصری است («کدام آیکون‌ها کنارِ هم باشند») و ردیفِ
+ * متنی همان آیکون‌ها را از چیدمانی که قرار است بسازند جدا می‌کند.
+ */
+@Composable
+private fun SelectionGrid(
+    all: List<Shortcut>,
+    selectedIds: List<String>,
+    inBottomBarIds: Set<String>,
+    onToggle: (String) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
+        all.chunked(COLUMNS).forEach { rowItems ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                rowItems.forEach { item ->
+                    val selected = item.id in selectedIds
+                    val atLimit = !selected && selectedIds.size >= SHORTCUT_SLOTS
+                    Box(modifier = Modifier.weight(1f)) {
+                        SelectionTile(
+                            shortcut = item,
+                            selected = selected,
+                            // میان‌برِ قفل و مقصدِ سقف‌خورده هر دو خاموش‌اند، ولی به دو دلیل:
+                            // قفل «نمی‌شود برداشت»، سقف «اول یکی را بردار».
+                            disabled = item.locked || atLimit,
+                            inBottomBar = item.id in inBottomBarIds,
+                            onClick = { if (!item.locked && !atLimit) onToggle(item.id) },
+                        )
+                    }
+                }
+                repeat(COLUMNS - rowItems.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+        Text(
+            "مقصدی که در نوارِ پایین است از کشو برداشته نمی‌شود - نوار در صفحه‌های عمیق پنهان می‌شود.",
+            color = AppLabel,
+            fontSize = 9.5.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+        )
+    }
+}
+
+@Composable
+private fun SelectionTile(
+    shortcut: Shortcut,
+    selected: Boolean,
+    disabled: Boolean,
+    inBottomBar: Boolean,
+    onClick: () -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp, horizontal = 4.dp)
+            .alpha(if (disabled && !selected) 0.38f else 1f),
+    ) {
+        Box(modifier = Modifier.size(52.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(AppRadius.row))
+                    .background(if (selected) AppPrimaryPill else AppChipBg),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    shortcut.icon,
+                    contentDescription = shortcut.label,
+                    tint = if (selected) AppPrimaryInk else AppMuted,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            // نشانِ گوشه: تیک برای انتخاب‌شده، قفل برای «ثبتِ خرج».
+            if (selected || shortcut.locked) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(18.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (shortcut.locked) AppMuted else AppPrimary),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        if (shortcut.locked) Icons.Filled.Lock else Icons.Filled.Check,
+                        contentDescription = null,
+                        tint = AppSurface,
+                        modifier = Modifier.size(11.dp),
+                    )
+                }
+            }
+        }
+        Text(
+            shortcut.label,
+            color = if (selected) AppText else AppMuted,
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        if (inBottomBar) {
+            // بجِ **خبری**، نه محدودیت. مقصد همچنان می‌تواند در کشو بماند.
+            Text(
+                "در نوارِ پایین",
+                color = AppLabel,
+                fontSize = 8.5.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
     }
 }

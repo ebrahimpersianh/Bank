@@ -24,7 +24,29 @@ class ShortcutViewModel @Inject constructor(private val uiPrefs: UiPrefs) : View
         .map { raw -> raw?.split(',')?.filter { it.isNotBlank() } ?: emptyList() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /**
+     * **انتخابِ** میان‌برهای کشو - کلیدِ جدا از ترتیب.
+     *
+     * چرا دو کلید و نه یکی: نوارِ پایین پنج جا دارد و کشو هشت، و هر دو از همان مخزنِ
+     * چهارده‌تایی می‌خورند. یک کلیدِ مشترک یعنی تغییرِ کشو نوار را هم عوض کند.
+     *
+     * لیستِ خالی = «کاربر هنوز انتخاب نکرده»، پس جای فراخوان باید هشت‌تای پیش‌فرض را
+     * بگذارد؛ نه این‌که کشوی خالی نشان دهد.
+     *
+     * ⚠️ این دو عضو باید به `UiPrefs` اضافه شوند، **عیناً هم‌الگو با `shortcutOrder`**:
+     *     val shortcutSelection: Flow<String?>
+     *     suspend fun setShortcutSelection(ids: List<String>)
+     * امضا را حدس نزدم - همان دو خطی است که `shortcutOrder` دارد، با کلیدِ متفاوت.
+     */
+    val selection: StateFlow<List<String>> = uiPrefs.shortcutSelection
+        .map { raw -> raw?.split(',')?.filter { it.isNotBlank() } ?: emptyList() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun save(ids: List<String>) {
         viewModelScope.launch { uiPrefs.setShortcutOrder(ids) }
+    }
+
+    fun saveSelection(ids: List<String>) {
+        viewModelScope.launch { uiPrefs.setShortcutSelection(ids) }
     }
 }

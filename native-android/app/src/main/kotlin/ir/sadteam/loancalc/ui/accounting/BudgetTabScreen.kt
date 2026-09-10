@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,13 +48,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.TransactionType
-import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.CategoryEntry
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.category.CategoryViewModel
 import ir.sadteam.loancalc.ui.components.CoinIcon
+import ir.sadteam.loancalc.ui.components.UndoBar
 import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
@@ -152,6 +153,8 @@ fun BudgetTabScreen(
         0.0
     }
     val transfer = remember(rows) { suggestTransfer(rows) }
+    // مقادیرِ قبل از «قرض‌دادنِ بودجه»، برای نوارِ واگرد. `null` یعنی چیزی برای برگرداندن نیست.
+    var undoTransfer by remember { mutableStateOf<UndoableTransfer?>(null) }
 
     // پیشنهادِ حالتِ خالی (فریمِ `21d`): دو دسته‌ی پرخرجِ **ماهِ قبل**. اگه تاریخچه‌ای نباشه،
     // خودِ فریم می‌گه این بخش اصلاً نشون داده نمی‌شه.
@@ -213,7 +216,10 @@ fun BudgetTabScreen(
             transfer?.let { t ->
                 item {
                     TransferSuggestionCard(
-                        text = "بودجه‌ی ${t.to.category.name} را ${(t.amount).rialToFaCompact()} از ${t.from.category.name} قرض بدهم تا ماه تراز شود؟",
+                        text = "بودجه‌ی ${t.to.category.name} را ${(t.amount).rialToFaCompact()} تومان از " +
+                            "${t.from.category.name} قرض بدهم تا ماه تراز شود؟",
+                        // کنشِ بازگشت‌پذیر دیالوگ نمی‌گیرد، `UndoBar` می‌گیرد - قاعده‌ی `46b`.
+                        // این تپ دو بودجه را هم‌زمان عوض می‌کند، پس بی راهِ برگشت نمی‌ماند.
                         onAccept = {
                             viewModel.setBudget(
                                 t.to.category.name,
@@ -224,6 +230,12 @@ fun BudgetTabScreen(
                                 t.from.category.name,
                                 t.from.cap - t.amount,
                                 budgets.first { it.categoryName == t.from.category.name }.id,
+                            )
+                            undoTransfer = UndoableTransfer(
+                                toName = t.to.category.name,
+                                toCap = t.to.cap,
+                                fromName = t.from.category.name,
+                                fromCap = t.from.cap,
                             )
                         },
                     )
@@ -248,6 +260,33 @@ fun BudgetTabScreen(
                 }
             }
         }
+
+        undoTransfer?.let { undo ->
+            UndoBar(
+                message = "بودجه‌ها جابه‌جا شد",
+                onUndo = {
+                    viewModel.setBudget(
+                        undo.toName,
+                        undo.toCap,
+                        budgets.firstOrNull { it.categoryName == undo.toName }?.id,
+                    )
+                    viewModel.setBudget(
+                        undo.fromName,
+                        undo.fromCap,
+                        budgets.firstOrNull { it.categoryName == undo.fromName }?.id,
+                    )
+                    undoTransfer = null
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 16.dp, vertical = 96.dp),
+            )
+            // نوار خودش بعد از چند ثانیه می‌رود - همان عمرِ نوارِ واگردِ بقیه‌ی اپ.
+            LaunchedEffect(undo) {
+                kotlinx.coroutines.delay(6_000)
+                undoTransfer = null
+            }
+        }
     }
 
     if (showAddBudget || suggestionCategory != null) {
@@ -264,6 +303,14 @@ fun BudgetTabScreen(
         )
     }
 }
+
+/** مقادیرِ پیش از پذیرفتنِ پیشنهادِ جابه‌جاییِ بودجه - ورودیِ نوارِ واگرد. */
+private data class UndoableTransfer(
+    val toName: String,
+    val toCap: Double,
+    val fromName: String,
+    val fromCap: Double,
+)
 
 data class BudgetRowData(val category: CategoryEntry, val cap: Double, val spent: Double) {
     val fraction: Float get() = if (cap > 0) (spent / cap).toFloat() else 0f
@@ -456,7 +503,7 @@ private fun StarterSuggestions(
                     )
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            "ماهِ قبل ${maskIfPrivate(masked, (starter.lastMonth).rialToFaCompact())}",
+                            "ماهِ قبل ${maskIfPrivate(masked, (starter.lastMonth).rialToFaCompact())} تومان",
                             color = AppMuted,
                             fontSize = 10.5.sp,
                             modifier = Modifier.padding(top = 1.dp),
@@ -527,13 +574,24 @@ private fun DailyAllowanceHero(
         )
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                maskIfPrivate(masked, fmt(allowance)),
+                // ⚠️ `fmt()` جداکننده‌ی **لاتین** می‌دهد و عددش **ریال** است: سهمِ روزانه‌ی
+                // ۲۴۰ هزار تومان «2,400,000» چاپ می‌شد. همان باگی که در هیرویِ بنفشِ گزارش
+                // رفع شد و این‌جا در چهار جا باقی مانده بود.
+                maskIfPrivate(masked, allowance.rialToFaCompact()),
                 color = Color.White,
                 fontSize = 29.sp,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.padding(top = 3.dp),
             )
         }
+        // واحد یک‌بار زیرِ عدد - همان قاعده‌ی هیرویِ گزارش. هیرویِ بودجه واحد نداشت.
+        Text(
+            "تومان",
+            color = Color.White.copy(alpha = 0.8f),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 2.dp),
+        )
         if (week.isNotEmpty()) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 13.dp),
@@ -594,7 +652,15 @@ private fun MonthTotalCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("کلِ ماه", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
-            Text("${toFa(percent)}٪", color = BudgetGreen, fontSize = 12.sp, fontWeight = FontWeight.Black)
+            // ⚠️ رنگ ثابت سبز بود: ماهی که ۱۳۰٪ِ بودجه خرج شده «۱۳۰٪» را **سبز** نشان
+            // می‌داد. ردیفِ تکیِ دسته از قبل `OverInk` می‌گرفت، پس کارتِ جمع تنها جایی بود
+            // که ردکردن را با رنگِ خوب می‌گفت.
+            Text(
+                "${toFa(percent)}٪",
+                color = if (percent > 100) OverInk else BudgetGreen,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
+            )
         }
         // نوارِ ۱۴ پیکسلی با سکه‌ی ۱۷ پیکسلیِ سرِ نوار. سکه رو یه Boxِ هم‌عرض می‌شینه و با
         // نسبتِ پیشرفت جابه‌جا می‌شه؛ تو RTL هم چون از راست پر می‌شه درست درمیاد.
@@ -640,7 +706,7 @@ private fun MonthTotalCard(
             )
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    "با این روند ${maskIfPrivate(masked, fmt(projectedLeft))} تا آخرِ ماه می‌مونه",
+                    "با این روند ${maskIfPrivate(masked, projectedLeft.rialToFaCompact())} تومان تا آخرِ ماه می‌مونه",
                     color = GoldInk,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
@@ -686,7 +752,8 @@ private fun CategoryBudgetRow(row: BudgetRowData, privacyMode: Boolean) {
                 Text(row.category.name, color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        "${maskIfPrivate(masked, fmt(row.spent))} از ${maskIfPrivate(masked, fmt(row.cap))}",
+                        "${maskIfPrivate(masked, row.spent.rialToFaCompact())} از " +
+                            "${maskIfPrivate(masked, row.cap.rialToFaCompact())} تومان",
                         color = AppMuted,
                         fontSize = 9.sp,
                         modifier = Modifier.padding(top = 2.dp),
