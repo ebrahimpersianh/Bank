@@ -86,14 +86,24 @@ private fun WidgetContent(next: NextInstallment?) {
             .fillMaxSize()
             .background(Color(0xFF000000))
             .padding(12.dp)
-            .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
+            // 🚨 **باگِ «تپ رو ویجت اپ رو باز نمی‌کنه»**: کانتکستِ ویجت اکتیویتی نیست، پس
+            // بدونِ `FLAG_ACTIVITY_NEW_TASK` اندروید اصلاً اکتیویتی رو بالا نمی‌آره.
+            // `CLEAR_TOP` هم اضافه شد تا نمونه‌ی بازِ اپ دوباره ساخته نشه.
+            .clickable(
+                actionStartActivity(
+                    Intent(context, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    },
+                ),
+            ),
     ) {
         Text("جیبک", style = textStyle)
         if (next == null) {
             Text("قسطِ پرداخت‌نشده‌ای ثبت نشده", style = textStyle)
         } else {
             Text("قسط بعدی: ${next.loanName}", style = textStyle)
-            Text("${fmt(next.amount)} ریال", style = textStyle)
+            // دیتابیس ریال، نمایش تومان - همون قاعده‌ی سراسری. ویجت جا مونده بود.
+            Text("${fmt(next.amount / 10)} تومان", style = textStyle)
             Text("سررسید: ${toFa(next.due.d)}/${toFa(next.due.m)}/${toFa(next.due.y)}", style = textStyle)
         }
     }
