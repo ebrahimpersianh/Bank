@@ -196,7 +196,7 @@ fun CoinWalletScreen(
             title = "رشته را ترمیم کنم؟",
             consequence = "${toFa(STREAK_REPAIR_PRICE)} سکه کم می‌شود و برگشت ندارد. این ماه دوباره نمی‌شود.",
             actionLabel = "ترمیم کن",
-            tone = ConfirmTone.NEUTRAL,
+            tone = ConfirmTone.HEAVY_CHANGE,
             onConfirm = {
                 confirmRepair = false
                 viewModel.repairStreak()
@@ -280,7 +280,7 @@ private fun StreakRow(days: Int, todayHasEntry: Boolean, brokenDays: Int?) {
                 // پاره شده، طعنه است.
                 if (brokenDays == null) {
                     Text(
-                        "${toFa(toBonus)} روز تا ${toFa(CoinReason.WEEK_COMPLETE.amount)} سکه",
+                        "${toFa(toBonus)} روز تا ${toFa(CoinReason.FULL_WEEK.amount)} سکه",
                         color = AppPrimaryInk,
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Black,
@@ -370,11 +370,15 @@ private fun StreakRepairCard(days: Int, hoursLeft: Int, price: Int, balance: Int
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().padding(top = 11.dp),
             ) {
-                GradientButton(
-                    text = "${toFa(price)} سکه · ترمیم کن",
-                    onClick = onRepair,
-                    enabled = affordable,
-                )
+                // `GradientButton` پارامترِ `text` ندارد؛ محتوا را به‌صورتِ بلوک می‌گیرد.
+                GradientButton(onClick = onRepair, enabled = affordable) {
+                    Text(
+                        "${toFa(price)} سکه · ترمیم کن",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                }
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     // مهلت **به ساعت**، نه «۴۸ ساعت»: عددِ ثابت هر بار همان است و کاربر
