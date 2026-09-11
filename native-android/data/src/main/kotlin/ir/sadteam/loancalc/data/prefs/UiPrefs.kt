@@ -52,6 +52,7 @@ class UiPrefs(private val context: Context) {
         val BADGES_RETRO_DONE = booleanPreferencesKey("badges_retro_done")
         val COLOR_THEME = stringPreferencesKey("color_theme")
         val OWNED_THEMES = stringPreferencesKey("owned_themes")
+        val OWNED_ITEMS = stringPreferencesKey("owned_items")
         val NAV_SLOTS = stringPreferencesKey("nav_slots")
         val NAV_USAGE = stringPreferencesKey("nav_usage")
         val NAV_USAGE_STARTED_AT = longPreferencesKey("nav_usage_started_at")
@@ -246,6 +247,30 @@ class UiPrefs(private val context: Context) {
         context.uiPrefsDataStore.edit { prefs ->
             val current = prefs[Keys.OWNED_THEMES]?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
             prefs[Keys.OWNED_THEMES] = (current + id).joinToString(",")
+        }
+    }
+
+    /**
+     * **مالکیتِ قلم‌های فروشگاه** - کلید *شناسه‌ی گونه* است نه نامِ `CoinSpend`:
+     * `theme:lapis`، `icon:piggy`، `coinskin:ancient`.
+     *
+     * 🚨 چرا: `CoinSpend.THEME_PALETTE` **یک ردیفِ قیمت** است، پس اگر مالکیت با نامِ enum
+     * کلید بخورد، خریدِ «لاجورد» پنج تمِ دیگر را هم باز می‌کند (تشخیصِ طراح، بخشِ ۵۹).
+     *
+     * تم‌های خریده‌شده‌ی قدیمی که با شناسه‌ی خام (`blue`) ذخیره شده بودند همین‌جا خوانده و
+     * به `theme:blue` ترجمه می‌شوند - کسی مالکیتش را از دست نمی‌دهد.
+     */
+    val ownedItems: Flow<Set<String>> = context.uiPrefsDataStore.data.map { prefs ->
+        val items = prefs[Keys.OWNED_ITEMS]?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
+        val legacy = prefs[Keys.OWNED_THEMES]?.split(",")?.filter { it.isNotBlank() }
+            ?.map { "theme:$it" }?.toSet() ?: emptySet()
+        items + legacy
+    }
+
+    suspend fun addOwnedItem(key: String) {
+        context.uiPrefsDataStore.edit { prefs ->
+            val current = prefs[Keys.OWNED_ITEMS]?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
+            prefs[Keys.OWNED_ITEMS] = (current + key).joinToString(",")
         }
     }
 

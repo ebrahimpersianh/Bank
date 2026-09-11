@@ -3,6 +3,8 @@ package ir.sadteam.loancalc.ui.theme
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.data.coin.ThemePalette
+import ir.sadteam.loancalc.data.coin.themeById
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +31,14 @@ class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewMod
     /** تم‌هایی که خریده شدن. سبز همیشه هست چون رایگانه. */
     val ownedThemes: StateFlow<Set<String>> = uiPrefs.ownedThemes
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    /**
+     * تمِ کاتالوگِ فروشگاه، اگر شناسه‌ی ذخیره‌شده مالِ آن‌ها باشد؛ وگرنه `null` و
+     * [colorTheme]ِ بالا تصمیم می‌گیرد.
+     */
+    val catalogTheme: StateFlow<ThemePalette?> = uiPrefs.colorTheme
+        .map { themeById(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun selectColorTheme(theme: ColorTheme) {
         viewModelScope.launch { uiPrefs.setColorTheme(theme.id) }

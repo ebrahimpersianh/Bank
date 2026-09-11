@@ -10,6 +10,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import ir.sadteam.loancalc.data.coin.ThemePalette
 import androidx.compose.ui.unit.dp
 
 // فونتِ سراسریِ اپ Vazirmatn شد (به‌جای پیش‌فرضِ سیستم/اندروید که تا الان هیچ‌جا override نمی‌شد) -
@@ -72,6 +73,11 @@ enum class ThemeMode {
 fun LoanCalcTheme(
     themeMode: ThemeMode = ThemeMode.LIGHT,
     colorTheme: ColorTheme = ColorTheme.GREEN,
+    /**
+     * تمِ خریدنیِ کاتالوگِ فروشگاه (بخشِ ۵۹). اگر پر باشد **جای** [colorTheme] می‌نشیند -
+     * دو تم هم‌زمان بی‌معنی است و شناسه‌ی ذخیره‌شده همیشه یکی از این دو خانواده است.
+     */
+    catalogTheme: ThemePalette? = null,
     content: @Composable () -> Unit,
 ) {
     // حالتِ «سیستم» به تنظیماتِ خودِ گوشی نگاه می‌کنه؛ بقیه صریح‌ان.
@@ -81,7 +87,8 @@ fun LoanCalcTheme(
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
     // تمِ رنگیِ خریدنی فقط خانواده‌ی primary رو رو همین پالت می‌نشونه (رجوع کن به [ColorTheme]).
-    val palette = colorTheme.applyTo(if (dark) DarkAppColors else LightAppColors)
+    val base = if (dark) DarkAppColors else LightAppColors
+    val palette = catalogTheme?.applyTo(base) ?: colorTheme.applyTo(base)
     val colorScheme = if (!dark) {
         lightColorScheme(
             background = palette.bg,

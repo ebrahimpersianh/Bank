@@ -384,11 +384,12 @@ class MainActivity : FragmentActivity() {
             val themeMode by themeViewModel.themeMode.collectAsState()
             val fontScale by themeViewModel.fontScale.collectAsState()
             val colorTheme by themeViewModel.colorTheme.collectAsState()
+            val catalogTheme by themeViewModel.catalogTheme.collectAsState()
             val baseDensity = LocalDensity.current
             // عمداً بیرونِ LoanCalcTheme: این state باید از تعویضِ خودِ تم جونِ سالم به‌در ببره،
             // چون دقیقاً وسطِ همون تعویض داره کار می‌کنه (رجوع کن به ThemeReveal.kt).
             val themeReveal = remember { ThemeRevealState() }
-            LoanCalcTheme(themeMode = themeMode, colorTheme = colorTheme) {
+            LoanCalcTheme(themeMode = themeMode, colorTheme = colorTheme, catalogTheme = catalogTheme) {
                 CompositionLocalProvider(
                     LocalLayoutDirection provides LayoutDirection.Rtl,
                     LocalSubscriptionManager provides subscriptionManager,
