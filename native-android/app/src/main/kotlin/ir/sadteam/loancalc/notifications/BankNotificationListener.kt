@@ -156,6 +156,7 @@ class BankNotificationListener : NotificationListenerService() {
                 isWithdrawal = isWithdrawal,
                 confident = confident,
                 privacyMode = uiPrefs.privacyModeEnabled.first(),
+                sourceLabel = "اعلانِ ${appLabelOf(packageName)}",
             )
             uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
         }

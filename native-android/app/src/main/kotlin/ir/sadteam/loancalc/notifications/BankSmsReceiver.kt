@@ -134,6 +134,7 @@ class BankSmsReceiver : BroadcastReceiver() {
                     isWithdrawal = isWithdrawal,
                     confident = confident,
                     privacyMode = uiPrefs.privacyModeEnabled.first(),
+                    sourceLabel = "پیامک از $sender",
                 )
                 uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
                 // زمانِ آخرین پیامکِ **همین حساب** - زیرنویسِ صفحه‌ی تنظیماتِ پیامک از این ساخته می‌شه.

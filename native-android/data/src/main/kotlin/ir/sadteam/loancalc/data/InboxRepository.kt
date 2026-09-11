@@ -68,6 +68,13 @@ class InboxRepository(
         now = System.currentTimeMillis(),
     )
 
+    /** همان [resolve] ولی از روی شناسه‌ی تراکنش - مسیرِ دکمه‌های خودِ اعلانِ گوشی. */
+    suspend fun resolveByRefId(refId: String, done: Boolean) = dao.setActionStateByRefId(
+        refId = refId,
+        state = if (done) InboxMessageEntity.ActionState.DONE else InboxMessageEntity.ActionState.DISMISSED,
+        now = System.currentTimeMillis(),
+    )
+
     suspend fun byId(id: Long) = dao.byId(id)
 
     suspend fun delete(id: Long) = dao.delete(id)

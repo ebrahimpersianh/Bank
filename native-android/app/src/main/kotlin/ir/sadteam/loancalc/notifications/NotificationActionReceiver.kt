@@ -9,6 +9,7 @@ import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.ChequeRepository
+import ir.sadteam.loancalc.data.InboxRepository
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import javax.inject.Inject
@@ -39,6 +40,8 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
     @Inject lateinit var uiPrefs: UiPrefs
 
+    @Inject lateinit var inboxRepository: InboxRepository
+
     override fun onReceive(context: Context, intent: Intent) {
         val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0)
         // اعلان **فوری** بسته می‌شود، قبلِ کارِ دیتابیس - وگرنه کاربر نیم‌ثانیه دکمه‌ی بی‌اثر
@@ -51,7 +54,8 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 when (intent.action) {
                     ACTION_MARK_PAID -> markPaid(intent)
                     ACTION_SNOOZE -> snooze(intent)
-                    ACTION_CONFIRM_TX -> confirmTransaction(intent)
+                    ACTION_CONFIRM_TX -> confirmTransaction(context, intent)
+                    ACTION_REJECT_TX -> rejectTransaction(intent)
                 }
             } finally {
                 pending.finish()
@@ -108,15 +112,32 @@ class NotificationActionReceiver : BroadcastReceiver() {
      * ✅ امضایی که طراح علامت زده بود اصلاح شد: `confirmTransaction(id)` - یک آرگومان،
      * چون تابعِ ریپازیتوری فقط تایید می‌کند و برگرداندن ندارد.
      */
-    private suspend fun confirmTransaction(intent: Intent) {
+    private suspend fun confirmTransaction(context: Context, intent: Intent) {
         val txId = intent.getLongExtra(EXTRA_TX_ID, -1L)
-        if (txId > 0) accountRepository.confirmTransaction(txId)
+        if (txId <= 0) return
+        accountRepository.confirmTransaction(txId)
+        inboxRepository.resolveByRefId(txId.toString(), done = true)
+        // سوالِ دوم فقط حالا و فقط اگر دسته نامشخص بوده - یک سوال در هر لحظه.
+        if (!intent.getBooleanExtra(EXTRA_CATEGORY_KNOWN, true)) AutoTxNotifier.askCategory(context, txId)
+    }
+
+    /**
+     * دکمه‌ی «نه» - تراکنشِ تاییدنشده **پاک** می‌شود و پیامِ صندوق هم بسته. تشخیصِ غلط نباید
+     * برای همیشه معلق بماند (گزارشِ واقعیِ کاربر: یک واریزِ بیمه که اصلاً رخ نداده بود).
+     */
+    private suspend fun rejectTransaction(intent: Intent) {
+        val txId = intent.getLongExtra(EXTRA_TX_ID, -1L)
+        if (txId <= 0) return
+        accountRepository.transactionById(txId)?.let { accountRepository.deleteTransaction(it) }
+        inboxRepository.resolveByRefId(txId.toString(), done = false)
     }
 
     companion object {
         const val ACTION_MARK_PAID = "ir.sadteam.loancalc.action.MARK_PAID"
         const val ACTION_SNOOZE = "ir.sadteam.loancalc.action.SNOOZE"
         const val ACTION_CONFIRM_TX = "ir.sadteam.loancalc.action.CONFIRM_TX"
+        const val ACTION_REJECT_TX = "ir.sadteam.loancalc.action.REJECT_TX"
+        const val EXTRA_CATEGORY_KNOWN = "category_known"
 
         const val EXTRA_NOTIFICATION_ID = "notification_id"
         const val EXTRA_TX_ID = "tx_id"

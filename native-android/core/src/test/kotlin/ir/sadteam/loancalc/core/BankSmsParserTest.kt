@@ -75,4 +75,25 @@ class BankSmsParserTest {
         val real = BankSmsParser.parse("پرداخت قبض ۵۱۱,۵۰۰ ریال - مانده: ۲,۰۰۰,۰۰۰ ریال")
         assertEquals(TransactionType.WITHDRAWAL, real?.type)
     }
+
+    /**
+     * رگرسیونِ گزارشِ واقعیِ دوم: پیامکِ بیمه‌ی تکمیلی («… واریز خواهد شد») یک واریزِ
+     * انجام‌نشده ساخته بود. فعلِ آینده = هنوز پولی جابه‌جا نشده.
+     */
+    @Test
+    fun ignoresFutureTenseNotices() {
+        assertNull(
+            BankSmsParser.parse(
+                "بیمه شده محترم، اسناد تایید شده و مبلغ 2,244,150 ریال قابل پرداخت بوده " +
+                    "که به حساب شما واریز خواهد شد.",
+            ),
+        )
+        assertNull(BankSmsParser.parse("مبلغ ۵۰۰,۰۰۰ ریال به زودی به حساب شما واریز می‌شود"))
+
+        // گزارشِ واقعیِ بانک (گذشته + مانده) باید بماند.
+        assertEquals(
+            TransactionType.DEPOSIT,
+            BankSmsParser.parse("واریز ۲,۲۴۴,۱۵۰ ریال - مانده: ۵,۰۰۰,۰۰۰ ریال")?.type,
+        )
+    }
 }

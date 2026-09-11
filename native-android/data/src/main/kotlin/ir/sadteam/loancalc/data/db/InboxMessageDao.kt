@@ -43,6 +43,16 @@ interface InboxMessageDao {
     @Query("UPDATE inbox_messages SET actionState = :state, readAt = :now WHERE id = :id")
     suspend fun setActionState(id: Long, state: String, now: Long)
 
+    /**
+     * بستنِ پیام از روی **چیزی که به آن اشاره می‌کند** نه شناسه‌ی خودش - وقتی کاربر از
+     * خودِ اعلانِ گوشی تایید/رد می‌کند، فقط شناسه‌ی تراکنش را داریم.
+     */
+    @Query(
+        "UPDATE inbox_messages SET actionState = :state, readAt = :now " +
+            "WHERE refId = :refId AND actionState = 'OPEN'",
+    )
+    suspend fun setActionStateByRefId(refId: String, state: String, now: Long)
+
     @Query("DELETE FROM inbox_messages WHERE id = :id")
     suspend fun delete(id: Long)
 
