@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -1208,9 +1210,21 @@ private fun Modifier.dashedCardBorder(): Modifier {
  */
 @Composable
 private fun StreakRepairCard(lostDays: Int, canAfford: Boolean, onRepair: () -> Unit) {
-    AppCard(modifier = Modifier.fillMaxWidth()) {
+    // 🚨 **گزارشِ واقعیِ کاربر (۲۱ شهریور، چهار اسکرین‌شات)**: این کارت به بلندیِ کلِ صفحه
+    // کشیده می‌شد و محتوایش وسطش شناور می‌ماند، پس اولین چیزی که بعدِ یک‌دو روز غیبت دیده
+    // می‌شد یک صفحه‌ی سفید بود و باید دو بار اسکرول می‌کرد تا به خانه برسد.
+    //
+    // دو بندِ ایمنی با هم: `wrapContentHeight` جلوی هر کمینه‌ی ارتفاعِ تحمیلی از بیرون را
+    // می‌گیرد، و `heightIn(max = …)` سقفِ سخت است - ارتفاعِ طبیعیِ این کارت ~۷۰dp است، پس
+    // ۱۳۰ هیچ محتوایی را نمی‌بُرد ولی «صفحه‌خواری» را غیرممکن می‌کند.
+    AppCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .heightIn(max = 130.dp),
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().wrapContentHeight(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {

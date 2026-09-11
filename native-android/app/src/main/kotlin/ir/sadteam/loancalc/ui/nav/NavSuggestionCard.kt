@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -61,7 +62,9 @@ fun NavSuggestionCard(
     val demote = NavDestination.byId(suggestion.demote) ?: return
     val after = NavDestination.sanitize(NavSuggestion.apply(currentSlots.map { it.id }, suggestion))
 
-    AppCard(modifier = modifier.fillMaxWidth()) {
+    // هم‌بندِ ایمنیِ کارتِ ترمیم (`HomeScreen`): این هم آیتمِ بالای همان فهرست است و نباید
+    // بتواند ارتفاعِ صفحه را بگیرد.
+    AppCard(modifier = modifier.fillMaxWidth().wrapContentHeight()) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
