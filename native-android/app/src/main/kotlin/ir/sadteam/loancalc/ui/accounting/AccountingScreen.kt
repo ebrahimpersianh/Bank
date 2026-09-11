@@ -111,7 +111,7 @@ import ir.sadteam.loancalc.ui.components.HeroTone
 import ir.sadteam.loancalc.ui.components.AppHeroCard
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.AppProgressBar
-import ir.sadteam.loancalc.ui.components.BankBadge
+import ir.sadteam.loancalc.ui.components.AccountBadge
 import ir.sadteam.loancalc.ui.components.CategoryDonut
 import ir.sadteam.loancalc.ui.components.DonutSlice
 import ir.sadteam.loancalc.ui.components.countUpAmount
@@ -452,7 +452,11 @@ private fun MainSection(
                                 .height(accountCardHeight)
                                 .pressScaleClickable(onClick = { showAccountsScreen = true }),
                         ) {
-                            BankBadge(bankName = acc.bankName, size = 32.dp)
+                            // ⚠️ `BankBadge` مستقیم صدا زده می‌شد و `bankName`ِ حسابِ نقدی
+                            // **رشته‌ی خالی** است نه null، پس فال‌بکِ «حرفِ اول» یک بجِ خالی
+                            // می‌ساخت و `iconKey`ی که کاربر انتخاب کرده دور ریخته می‌شد.
+                            // `AccountBadge` همین را درست می‌کند و همه‌جا باید همان باشد.
+                            AccountBadge(account = acc, size = 32.dp)
                             Text(
                                 acc.name,
                                 color = AppText,
