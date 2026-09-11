@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.core
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class BankSmsParserTest {
@@ -58,5 +59,20 @@ class BankSmsParserTest {
         assertEquals(3_200_000.0, sent?.amountRial)
 
         assertEquals(TransactionType.WITHDRAWAL, BankSmsParser.parse("مبلغ ۹۹,۰۰۰ تومان کسر شد")?.type)
+    }
+
+    /**
+     * 🚨 رگرسیونِ گزارشِ واقعی: «برداشتِ ۵۱۱٬۵۰۰ تومان - دسته: قبض» ساخته شده بود در حالی که
+     * هیچ برداشتی رخ نداده بود. پیامکِ قبض هم مبلغ دارد هم فعلِ «پرداخت».
+     */
+    @Test
+    fun ignoresBillNoticesAndAds() {
+        assertNull(BankSmsParser.parse("قبض برق شما ۵۱۱,۵۰۰ تومان - مهلت پرداخت ۱۵ مهر"))
+        assertNull(BankSmsParser.parse("مبلغ قابل پرداخت ۲۳۰,۰۰۰ تومان، شناسه قبض ۱۲۳۴"))
+        assertNull(BankSmsParser.parse("جشنواره! با خرید ۵۰۰,۰۰۰ تومان برنده شوید"))
+
+        // ولی گزارشِ واقعیِ بانک که مانده را هم می‌گوید باید بماند، حتی با کلمه‌ی «پرداخت».
+        val real = BankSmsParser.parse("پرداخت قبض ۵۱۱,۵۰۰ ریال - مانده: ۲,۰۰۰,۰۰۰ ریال")
+        assertEquals(TransactionType.WITHDRAWAL, real?.type)
     }
 }

@@ -29,6 +29,25 @@ object BankSmsParser {
         "برداشت", "خرید", "بدهکار", "کاهش موجودی", "انتقال وجه", "پرداخت", "کسر", "انتقال به",
     )
 
+    /**
+     * 🚨 **پیامکی که «دعوت به پرداخت» است، نه گزارشِ پرداخت.**
+     *
+     * قبضِ برق/تلفن، یادآوریِ بدهی و پیامکِ تبلیغاتی همگی هم مبلغ دارند هم فعلِ «پرداخت»،
+     * پس با فهرستِ کلیدواژه‌ها برداشتِ واقعی خوانده می‌شدند. کاربر یک «برداشتِ ۵۱۱٬۵۰۰ تومان -
+     * دسته: قبض» دید که اصلاً رخ نداده بود.
+     *
+     * قاعده: اگر یکی از این نشانه‌ها در متن باشد، پیامک **تراکنش نیست** - مگر این‌که
+     * [balanceKeywords] هم بیاید، چون گزارشِ واقعیِ بانک تقریباً همیشه مانده را هم می‌گوید.
+     */
+    private val notATransactionKeywords = listOf(
+        "قابل پرداخت", "قابل‌پرداخت", "مهلت", "شناسه قبض", "شناسه پرداخت", "قبض شما",
+        "بدهی شما", "سررسید", "جهت پرداخت", "برای پرداخت", "پرداخت کنید", "تخفیف",
+        "جشنواره", "برنده", "تمدید", "اقساط معوق",
+    )
+
+    /** نشانه‌ی گزارشِ واقعیِ بانک - مانده/موجودی بعد از تراکنش. */
+    private val balanceKeywords = listOf("مانده", "موجودی")
+
     fun parse(body: String): ParsedBankSms? {
         val amountMatch = amountRegex.find(body) ?: return null
         val digitsOnly = toEnDigits(amountMatch.groupValues[1]).replace(",", "").replace("٬", "")
@@ -40,6 +59,13 @@ object BankSmsParser {
             depositKeywords.any { body.contains(it) } -> TransactionType.DEPOSIT
             withdrawalKeywords.any { body.contains(it) } -> TransactionType.WITHDRAWAL
             else -> return null
+        }
+
+        // دعوت‌نامه‌ی پرداخت را تراکنش حساب نکن (توضیحِ کاملش بالای notATransactionKeywords).
+        if (notATransactionKeywords.any { body.contains(it) } &&
+            balanceKeywords.none { body.contains(it) }
+        ) {
+            return null
         }
 
         val cardSuffix = cardSuffixRegex.find(body)?.groupValues?.get(1)?.let { toEnDigits(it) }

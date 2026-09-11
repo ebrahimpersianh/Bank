@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import ir.sadteam.loancalc.core.BankSmsParser
+import ir.sadteam.loancalc.core.ParsedBankSms
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -183,3 +184,51 @@ fun SmsSenderPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
         },
     )
 }
+
+/** یک پیامکِ صندوقِ ورودی - برای صفحه‌ی «افزودن از پیامک‌ها». */
+data class SmsInboxMessage(
+    val id: Long,
+    val address: String,
+    val body: String,
+    val dateMs: Long,
+    /** اگر با [BankSmsParser] خوانده شد، همان نتیجه؛ وگرنه `null`. */
+    val parsed: ParsedBankSms?,
+)
+
+/**
+ * آخرین [limit] پیامکِ صندوقِ ورودی، جدیدترین اول.
+ *
+ * برخلافِ [readSmsSenders] که فقط فرستنده‌های یکتا را می‌دهد، این‌جا **خودِ پیامک‌ها** لازم‌اند:
+ * کاربر می‌خواهد پیامکی را که خودکار خوانده نشده دستی انتخاب و ثبت کند. همه‌چیز روی گوشی
+ * می‌ماند و هیچ‌جا فرستاده نمی‌شود.
+ */
+suspend fun readSmsInbox(context: Context, limit: Int = 200): List<SmsInboxMessage> =
+    withContext(Dispatchers.IO) {
+        val result = mutableListOf<SmsInboxMessage>()
+        runCatching {
+            context.contentResolver.query(
+                Telephony.Sms.Inbox.CONTENT_URI,
+                arrayOf(Telephony.Sms._ID, Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE),
+                null,
+                null,
+                "${Telephony.Sms.DATE} DESC LIMIT $limit",
+            )?.use { cursor ->
+                val idIndex = cursor.getColumnIndexOrThrow(Telephony.Sms._ID)
+                val addressIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)
+                val bodyIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.BODY)
+                val dateIndex = cursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
+                while (cursor.moveToNext()) {
+                    val body = cursor.getString(bodyIndex)?.trim().orEmpty()
+                    if (body.isEmpty()) continue
+                    result += SmsInboxMessage(
+                        id = cursor.getLong(idIndex),
+                        address = cursor.getString(addressIndex)?.trim().orEmpty(),
+                        body = body,
+                        dateMs = cursor.getLong(dateIndex),
+                        parsed = BankSmsParser.parse(body),
+                    )
+                }
+            }
+        }
+        result
+    }

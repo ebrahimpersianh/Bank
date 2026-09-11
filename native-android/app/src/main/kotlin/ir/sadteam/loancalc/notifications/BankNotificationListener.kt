@@ -140,6 +140,8 @@ class BankNotificationListener : NotificationListenerService() {
                     "$amountToman تومان از «${account.name}» - دسته‌بندیش نامشخصه، لمس کن و خودت انتخاب کن."
                 },
                 refId = txId.toString(),
+                sourceLabel = "اعلانِ ${appLabelOf(packageName)}",
+                sourceText = body,
             )
             // 🚨 این تکه **نبود**: تراکنشی که خودکار ثبت می‌شد هیچ اعلانی نمی‌داد و کاربر
             // تا باز کردنِ برنامه خبردار نمی‌شد. فریمِ 50b و AutoTxNotifier همین را می‌بندند.
@@ -158,4 +160,10 @@ class BankNotificationListener : NotificationListenerService() {
             uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
         }
     }
+
+    /** نامِ فارسی/نمایشیِ اپِ فرستنده؛ اگر پیدا نشد خودِ نامِ بسته. */
+    private fun appLabelOf(packageName: String): String = runCatching {
+        val pm = applicationContext.packageManager
+        pm.getApplicationLabel(pm.getApplicationInfo(packageName, 0)).toString()
+    }.getOrDefault(packageName)
 }

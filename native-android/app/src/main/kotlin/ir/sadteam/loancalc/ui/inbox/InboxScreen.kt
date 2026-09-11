@@ -26,6 +26,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.InboxMessageEntity
+import ir.sadteam.loancalc.ui.account.AccountDetailScreen
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -44,6 +49,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -55,6 +61,9 @@ import ir.sadteam.loancalc.ui.theme.AppText
 @Composable
 fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel()) {
     val messages by viewModel.messages.collectAsState()
+    val sourceAccount by viewModel.sourceAccount.collectAsState()
+    // پیامی که کاربر «منبعش» را لمس کرده - متنِ خامِ همان پیامک/اعلان را نشان می‌دهیم.
+    var sourceOf by remember { mutableStateOf<InboxMessageEntity?>(null) }
     val actionable = messages.filter {
         InboxMessageEntity.Kind.isActionable(it.kind) &&
             it.actionState == InboxMessageEntity.ActionState.OPEN
@@ -115,13 +124,96 @@ fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel())
                         message = message,
                         onConfirm = { viewModel.confirmTransaction(message) },
                         onReject = { viewModel.rejectTransaction(message) },
+                        onShowSource = { sourceOf = message },
                     )
                 }
             }
             if (news.isNotEmpty()) {
                 item { SectionLabel("خبرها") }
                 items(news, key = { it.id }) { message ->
-                    NewsCard(message = message, onClick = { viewModel.markRead(message.id) })
+                    NewsCard(
+                        message = message,
+                        onClick = {
+                            viewModel.markRead(message.id)
+                            if (message.sourceText != null) sourceOf = message
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    sourceOf?.let { message ->
+        SourceDialog(
+            message = message,
+            onDismiss = { sourceOf = null },
+            onOpenAccount = {
+                viewModel.openSourceAccount(message)
+                sourceOf = null
+            },
+        )
+    }
+
+    // «رفتن به منبع» - همان حساب‌کتابی که تراکنش رویش نشسته؛ خودِ تراکنش در فهرستش هست و
+    // با لمس قابلِ ویرایش است.
+    sourceAccount?.let { account ->
+        Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+            AccountDetailScreen(account = account, onBack = { viewModel.closeSourceAccount() })
+        }
+    }
+}
+
+/**
+ * **متنِ خامِ منبع.** تنها راهی که کاربر می‌تواند تشخیصِ غلط را ردیابی کند: عیناً همان
+ * پیامک/اعلانی که به این تراکنش تعبیر شده، بی هیچ خلاصه‌سازی.
+ */
+@Composable
+private fun SourceDialog(
+    message: InboxMessageEntity,
+    onDismiss: () -> Unit,
+    onOpenAccount: () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                message.sourceLabel ?: "منبعِ نامشخص",
+                color = AppText,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Black,
+            )
+            Text(
+                message.sourceText ?: "متنِ اصلیِ این پیام ذخیره نشده - پیام‌های قدیمی متنِ خام ندارند.",
+                color = AppMuted,
+                fontSize = 11.sp,
+                lineHeight = 20.sp,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (message.refId != null) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppPrimary)
+                            .pressScaleClickable(onClick = onOpenAccount)
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("رفتن به حساب‌کتاب", color = AppBg, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .border(1.5.dp, AppLine, RoundedCornerShape(999.dp))
+                        .pressScaleClickable(onClick = onDismiss)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("بستن", color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -145,6 +237,7 @@ private fun ActionableCard(
     message: InboxMessageEntity,
     onConfirm: () -> Unit,
     onReject: () -> Unit,
+    onShowSource: () -> Unit,
 ) {
     val shape = RoundedCornerShape(18.dp)
     Column(
@@ -163,6 +256,19 @@ private fun ActionableCard(
             lineHeight = 19.sp,
             modifier = Modifier.padding(top = 4.dp),
         )
+        // خطِ منبع - «این از کجا آمد؟». لمسش متنِ خامِ همان پیامک/اعلان را باز می‌کند.
+        message.sourceLabel?.let { label ->
+            Text(
+                "$label · دیدنِ متن",
+                color = AppPrimaryDim,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .pressScaleClickable(onClick = onShowSource)
+                    .padding(vertical = 4.dp),
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -217,6 +323,15 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
                     lineHeight = 18.sp,
                     modifier = Modifier.padding(top = 3.dp),
                 )
+                message.sourceLabel?.let { label ->
+                    Text(
+                        label,
+                        color = AppPrimaryDim,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
         }
     }

@@ -37,7 +37,7 @@ import net.sqlcipher.database.SupportFactory
         DangItemEntity::class,
         DangItemShareEntity::class,
     ],
-    version = 29,
+    version = 30,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -488,6 +488,19 @@ abstract class AppDatabase : RoomDatabase() {
          * `counterpartyId` رو `dang_participants`، ...) عیناً تو `indices = [...]`ِ همون
          * @Entity هم اعلام شدن - قاعده‌ی صریحِ CLAUDE.md بعدِ کرشِ نسخه‌ی ۱.۰.۳۱۵.
          */
+        /**
+         * منبعِ پیامِ مرکزِ پیام‌ها: دو ستونِ nullable روی `inbox_messages`.
+         *
+         * `sourceLabel` خطِ «از کجا آمده» و `sourceText` متنِ خامِ همان پیامک/اعلان است.
+         * پیام‌های قدیمی `NULL` می‌مانند و کارتشان مثلِ قبل بی منبع نشان داده می‌شود.
+         */
+        private val MIGRATION_29_30 = object : Migration(29, 30) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE inbox_messages ADD COLUMN sourceLabel TEXT")
+                db.execSQL("ALTER TABLE inbox_messages ADD COLUMN sourceText TEXT")
+            }
+        }
+
         private val MIGRATION_28_29 = object : Migration(28, 29) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // ChequeBookEntity - فریمِ 29k
@@ -615,6 +628,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_26_27,
                             MIGRATION_27_28,
                             MIGRATION_28_29,
+                            MIGRATION_29_30,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

@@ -31,6 +31,8 @@ class InboxRepository(
         body: String,
         refId: String? = null,
         id: Long? = null,
+        sourceLabel: String? = null,
+        sourceText: String? = null,
     ): Long {
         val messageId = id ?: System.currentTimeMillis()
         dao.upsert(
@@ -47,6 +49,8 @@ class InboxRepository(
                     InboxMessageEntity.ActionState.NONE
                 },
                 refId = refId,
+                sourceLabel = sourceLabel,
+                sourceText = sourceText,
             ),
         )
         enforceLimits()

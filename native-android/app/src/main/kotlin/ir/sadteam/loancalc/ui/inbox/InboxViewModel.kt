@@ -5,7 +5,11 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.InboxRepository
+import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.InboxMessageEntity
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -28,6 +32,23 @@ class InboxViewModel @Inject constructor(
     /** نقطه‌ی سبز - خبرِ خوانده‌نشده. */
     val unreadNews: StateFlow<Int> = inbox.observeUnreadNewsCount()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    /**
+     * حسابی که پیامِ لمس‌شده به آن می‌رسد - «رفتن به منبع».
+     *
+     * از `refId` (شناسه‌ی تراکنشِ تاییدنشده) به حسابش می‌رسیم؛ اگر تراکنش پاک شده باشد
+     * `null` می‌ماند و کارت فقط متنِ خام را نشان می‌دهد.
+     */
+    private val _sourceAccount = MutableStateFlow<AccountEntity?>(null)
+    val sourceAccount: StateFlow<AccountEntity?> = _sourceAccount.asStateFlow()
+
+    fun openSourceAccount(message: InboxMessageEntity) = viewModelScope.launch {
+        val txId = message.refId?.toLongOrNull() ?: return@launch
+        val accountId = accounts.transactionById(txId)?.accountId ?: return@launch
+        _sourceAccount.value = accounts.observeAccounts().first().firstOrNull { it.id == accountId }
+    }
+
+    fun closeSourceAccount() { _sourceAccount.value = null }
 
     fun markRead(id: Long) = viewModelScope.launch { inbox.markRead(id) }
 

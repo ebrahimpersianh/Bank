@@ -150,6 +150,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.account.SmsImportScreen
 import ir.sadteam.loancalc.ui.account.SmsSenderPickerDialog
 import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
@@ -1399,6 +1400,7 @@ private fun SmsSettings(
         if (granted) smsAutoImportViewModel.enable()
     }
     var showParseTest by remember { mutableStateOf(false) }
+    var showSmsImport by remember { mutableStateOf(false) }
 
     // ⚠️ **این‌جا `return` نذار.** نسخه‌ی قبلی صفحه‌ی آزمایش رو همین‌جا (به‌جای بقیه‌ی محتوا)
     // رندر می‌کرد، ولی `SmsSettings` خودش داخلِ `SettingsSubPageScaffold` (یه
@@ -1410,6 +1412,18 @@ private fun SmsSettings(
         FullScreenDialog(onDismissRequest = { showParseTest = false }) {
             Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
                 SmsParseTestScreen(onBack = { showParseTest = false })
+            }
+        }
+    }
+
+    // همان قاعده‌ی بالا: فهرستِ پیامک‌ها اسکرولِ خودش را دارد، پس داخلِ اسکرولِ تنظیمات
+    // رندر نمی‌شود بلکه دیالوگِ تمام‌صفحه می‌گیرد.
+    if (showSmsImport) {
+        FullScreenDialog(onDismissRequest = { showSmsImport = false }) {
+            Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
+                SettingsSubPageScaffold(title = "افزودن از پیامک‌ها", onBack = { showSmsImport = false }) {
+                    SmsImportScreen(onBack = { showSmsImport = false })
+                }
             }
         }
     }
@@ -1479,6 +1493,14 @@ private fun SmsSettings(
     // ── گروهِ ابزارها ────────────────────────────────────────────────────────
     SettingsGroupLabel("ابزارها")
     SettingsGroup {
+        SettingsRowItem(
+            title = "افزودن از پیامک‌ها",
+            icon = Icons.Filled.Sms,
+            tone = SettingsTone.GREEN,
+            status = "پیامکی که خودکار خوانده نشده را دستی ثبت کن",
+            onClick = { showSmsImport = true },
+        )
+        SettingsDivider()
         SettingsRowItem(
             title = "آزمایشِ تشخیص",
             icon = Icons.Filled.Science,
