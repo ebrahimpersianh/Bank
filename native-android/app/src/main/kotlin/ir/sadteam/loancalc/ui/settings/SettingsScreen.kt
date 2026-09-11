@@ -150,6 +150,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.account.SmsSenderPickerDialog
 import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
@@ -1418,6 +1419,7 @@ private fun SmsSettings(
     // ── کارتِ وضعیت - تنها کارتِ برجسته‌ی صفحه، سه حالت ──────────────────────
     // تصمیمِ تاییدشده‌ی طراح: اگه اجازه قطع شده، **کلید حالتِ چهارم نمی‌گیره** - همین کارت
     // به حالتِ خطا می‌ره و دکمه‌ی «اجازه بده» می‌گیره.
+    var senderPickerFor by remember { mutableStateOf<AccountEntity?>(null) }
     val listed = accounts.filter { it.type == ACCOUNT_TYPE_BANK }
     val activeCount = listed.count { it.smsEnabled && !it.smsSender.isNullOrBlank() }
     SmsStatusCard(
@@ -1465,7 +1467,11 @@ private fun SmsSettings(
                     } else {
                         null
                     },
-                    onClick = if (hasSender) null else ({}),
+                    // 🚨 بی این، ردیفِ بانکِ بی‌سرشماره شِورون داشت ولی تپش **هیچ کاری
+                    // نمی‌کرد** - و تنها راهِ ثبتِ سرشماره تهِ فرمِ حسابِ بانکی بود، جایی که
+                    // کاربر دنبالش نمی‌گردد (گزارشِ ۶.۱ی بازخوردِ دوم: «خواندنِ پیامک از رو
+                    // گوشی اصلاً تو تنظیمات نیست»). حالا همین‌جا انتخابگر باز می‌شود.
+                    onClick = if (hasSender) null else ({ senderPickerFor = account }),
                 )
                 if (index != ordered.lastIndex) SettingsDivider()
             }
@@ -1493,6 +1499,20 @@ private fun SmsSettings(
     }
 
     NotificationImportSettings(smsAutoImportViewModel)
+
+    senderPickerFor?.let { account ->
+        SmsSenderPickerDialog(
+            onDismiss = { senderPickerFor = null },
+            onPick = { sender ->
+                scope.launch {
+                    // سرشماره که ثبت شد، خواندن هم همان لحظه روشن می‌شود - وگرنه کاربر
+                    // سرشماره را می‌دهد و هیچ اتفاقی نمی‌افتد تا کلیدِ دومی را پیدا کند.
+                    accountViewModel.updateAccount(account.copy(smsSender = sender, smsEnabled = true))
+                }
+                senderPickerFor = null
+            },
+        )
+    }
 }
 
 /**
