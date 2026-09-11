@@ -130,6 +130,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.notifications.DeepLinkTarget
 import ir.sadteam.loancalc.notifications.DeepLinkViewModel
 import ir.sadteam.loancalc.notifications.EXTRA_OPEN_CHEQUE_ID
+import ir.sadteam.loancalc.ui.widget.EXTRA_OPEN_DUE_TAB
 import ir.sadteam.loancalc.notifications.EXTRA_OPEN_LOAN_ID
 import ir.sadteam.loancalc.notifications.EXTRA_OPEN_TX_ID
 import ir.sadteam.loancalc.notifications.EXTRA_PICK_CATEGORY
@@ -360,6 +361,12 @@ class MainActivity : FragmentActivity() {
         val txId = intent?.getLongExtra(EXTRA_OPEN_TX_ID, -1L) ?: -1L
         if (txId > 0) {
             pendingTxDeepLink.set(txId, intent?.getBooleanExtra(EXTRA_PICK_CATEGORY, false) == true)
+        }
+        // تپ روی ویجت → تبِ سررسید (قاعده‌ی ۳ی فریمِ `57c`: ویجت درباره‌ی سررسید حرف
+        // می‌زند، پس بردنِ کاربر به خانه یک قدم عقب است). پلِ تازه لازم نبود - همان
+        // میان‌برِ «سررسید» دقیقاً همین کار را می‌کند.
+        if (intent?.getBooleanExtra(EXTRA_OPEN_DUE_TAB, false) == true) {
+            deepLinkTarget.setShortcut(DeepLinkTarget.SHORTCUT_DUE)
         }
         // میان‌برِ فشارِ طولانی رو آیکونِ اپ - رجوع کن به res/xml/shortcuts.xml
         intent?.getStringExtra("jibak_shortcut")?.let { deepLinkTarget.setShortcut(it) }

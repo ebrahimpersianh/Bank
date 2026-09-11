@@ -599,6 +599,9 @@ class LoanRepository(
         loanRowDao.upsertAll(listOf(transform(current)))
         val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
         loanDao.upsert(loan.withPaidCount(newPaidCount))
+        // ویجت هر شش ساعت یک‌بار خودش تازه می‌شود؛ بی این خط، کاربر قسط را پرداخت‌شده
+        // علامت می‌زند و ویجت تا شش ساعت همان قسط را نشان می‌دهد.
+        LoanDataChange.notifyChanged()
     }
 
     /** هم‌الگو با [updateRowPayment] ولی رو چندتا قسط باهم - یه upsertAll/یه محاسبه‌ی paidCount
@@ -613,6 +616,7 @@ class LoanRepository(
         loanRowDao.upsertAll(updated)
         val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
         loanDao.upsert(loan.withPaidCount(newPaidCount))
+        LoanDataChange.notifyChanged()
     }
 
     /** ویرایش دستی مبلغ یه قسط (کارمزد/جریمه‌ی بانکی که نمی‌تونیم حدس بزنیم) - پورت

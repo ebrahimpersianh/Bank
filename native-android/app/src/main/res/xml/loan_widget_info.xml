@@ -1,12 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="180dp"
-    android:minHeight="90dp"
-    android:targetCellWidth="3"
-    android:targetCellHeight="1"
+    android:minWidth="140dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
     android:updatePeriodMillis="21600000"
     android:initialLayout="@layout/loan_widget_loading"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:previewImage="@mipmap/ic_launcher"
     android:description="@string/widget_description" />
+
+<!--
+  دو تغییر:
+
+  ۱. `minHeight` ۹۰dp بود ولی `targetCellHeight` یک - یک ردیفِ لانچر حدودِ ۵۰..۶۰dp است،
+     پس آن دو با هم نمی‌خواندند و اندروید `minHeight` را می‌گرفت. حالا ۲×۲ است، همان
+     کوچکی که فریمِ `57b` می‌کشد.
+
+  ۲. `minWidth` از ۱۸۰ به ۱۴۰ آمد تا اندازه‌ی کوچکِ `SizeMode.Responsive` واقعاً
+     قابلِ رسیدن باشد؛ با ۱۸۰ کاربر هیچ‌وقت نمای کوچک را نمی‌دید.
+
+  ⚠️ `previewImage` همچنان آیکونِ لانچر است، یعنی کاربر در فهرستِ ویجت‌ها یک آیکونِ اپ
+  می‌بیند نه پیش‌نمایشِ ویجت. اندروید ۱۲+ `previewLayout` دارد که خودِ لایه را نشان
+  می‌دهد - `@layout/loan_widget_loading` گزینه‌ی ارزانش است، ولی بهترش یک لایه‌ی نمونه با
+  عددِ واقعی است. تصمیمش با شما؛ من چیزی اضافه نکردم تا فایل روی اندرویدهای قدیمی‌تر
+  همان رفتار را داشته باشد.
+-->

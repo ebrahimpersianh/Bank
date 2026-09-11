@@ -155,7 +155,7 @@ fun CoinWalletScreen(
                 StreakRepairCard(
                     days = repair.lostDays,
                     hoursLeft = repair.hoursLeft,
-                    price = STREAK_REPAIR_PRICE,
+                    price = GamificationRepository.Reward.STREAK_REPAIR,
                     balance = coins,
                     onRepair = { confirmRepair = true },
                 )
@@ -194,7 +194,7 @@ fun CoinWalletScreen(
     if (confirmRepair) {
         ConfirmDialog(
             title = "رشته را ترمیم کنم؟",
-            consequence = "${toFa(STREAK_REPAIR_PRICE)} سکه کم می‌شود و برگشت ندارد. این ماه دوباره نمی‌شود.",
+            consequence = "${toFa(GamificationRepository.Reward.STREAK_REPAIR)} سکه کم می‌شود و برگشت ندارد. این ماه دوباره نمی‌شود.",
             actionLabel = "ترمیم کن",
             tone = ConfirmTone.HEAVY_CHANGE,
             onConfirm = {
@@ -213,7 +213,6 @@ fun CoinWalletScreen(
  * ترمیم قلمِ فروشگاهی نیست (دسته ندارد، `timeGated` نیست، مالکیت نمی‌آورد). ولی عدد باید
  * **یک‌جا** باشد - اگر ترجیح می‌دهید در `CoinEconomy.kt` بنشیند، ببریدش و این را حذف کنید.
  */
-private const val STREAK_REPAIR_PRICE = 100
 
 /** جوهرِ رشته. */
 private val StreakInk: Color @Composable get() = AppDangerInk

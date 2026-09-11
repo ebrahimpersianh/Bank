@@ -9,10 +9,15 @@ import coil.ImageLoaderFactory
 import coil.request.ImageRequest
 import dagger.hilt.android.HiltAndroidApp
 import ir.sadteam.loancalc.crash.CrashReporter
+import ir.sadteam.loancalc.data.LoanDataChange
 import ir.sadteam.loancalc.data.banks
 import ir.sadteam.loancalc.data.creditServices
 import ir.sadteam.loancalc.notifications.ComeBackScheduler
 import ir.sadteam.loancalc.ui.auth.SmsRetrieverHash
+import ir.sadteam.loancalc.ui.widget.LoanWidget
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -37,6 +42,12 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         // تنظیمات) چون نباید به بازکردنِ اون صفحه وابسته باشه. خودِ Worker قبل از هر اعلان
         // پرچمِ comeBackReminderEnabled رو چک می‌کنه، پس زمان‌بندیِ بی‌قیدش بی‌ضرره.
         comeBackScheduler.schedule()
+        // قلابِ «داده‌ی وام عوض شد» → تازه‌کردنِ ویجت. `:data` خودِ ویجت را نمی‌بیند، پس
+        // این‌جا پُر می‌شود - رجوع کن به [LoanDataChange]. بی این، ویجت تا شش ساعت عددِ
+        // کهنه نشان می‌دهد.
+        LoanDataChange.onChanged = {
+            CoroutineScope(Dispatchers.Main).launch { LoanWidget.updateAll(this@LoanCalcApplication) }
+        }
     }
 
     // خواسته‌ی کاربر: لوگوهای بانک/خدمات اعتباری (assets/banks, assets/services - فایل‌های چندکیلوبایتی)
