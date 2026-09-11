@@ -22,7 +22,10 @@ BRAND = {
     "0XFF3DDC96": "AppPrimaryInk (تیره) / AppPrimaryInkLight",
 }
 # برند و لوگو عمداً سبزِ ثابت‌ان و با تم عوض نمی‌شن.
-SKIP = ("/theme/", "JibakLogo.kt", "SplashIntroScreen.kt", "BrandMarks.kt", "JibakMascot.kt", "AppHeroCard.kt", "Avatar.kt")
+SKIP = ("/theme/", "JibakLogo.kt", "SplashIntroScreen.kt", "BrandMarks.kt", "JibakMascot.kt", "AppHeroCard.kt", "Avatar.kt",
+        # ویجت Glance است نه Compose: `LocalAppColors` را نمی‌بیند، پس رنگش ناچار خام است
+        # (قاعده‌ی ۴ی فریمِ `57c` - تمِ خریدنی روی ویجت نمی‌آید).
+        "/ui/widget/")
 
 found = []
 for root in ("app/src", "data/src", "core/src"):

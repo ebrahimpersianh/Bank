@@ -9,11 +9,16 @@ import coil.ImageLoaderFactory
 import coil.request.ImageRequest
 import dagger.hilt.android.HiltAndroidApp
 import ir.sadteam.loancalc.crash.CrashReporter
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
+import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.LoanDataChange
 import ir.sadteam.loancalc.data.banks
 import ir.sadteam.loancalc.data.creditServices
 import ir.sadteam.loancalc.notifications.ComeBackScheduler
 import ir.sadteam.loancalc.ui.auth.SmsRetrieverHash
+import ir.sadteam.loancalc.ui.widget.IconWither
 import ir.sadteam.loancalc.ui.widget.LoanWidget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +36,12 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
     @Inject
     lateinit var comeBackScheduler: ComeBackScheduler
 
+    @Inject
+    lateinit var iconWither: IconWither
+
+    @Inject
+    lateinit var gamificationRepository: GamificationRepository
+
     override fun onCreate() {
         super.onCreate()
         crashReporter.install()
@@ -45,6 +56,23 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         // قلابِ «داده‌ی وام عوض شد» → تازه‌کردنِ ویجت. `:data` خودِ ویجت را نمی‌بیند، پس
         // این‌جا پُر می‌شود - رجوع کن به [LoanDataChange]. بی این، ویجت تا شش ساعت عددِ
         // کهنه نشان می‌دهد.
+        // **پژمردگیِ آیکون** (`49b`) - لحظه‌ی اعمالش **رفتنِ اپ به پس‌زمینه** است نه باز
+        // شدنش: کاربر موقعِ باز کردن دقیقاً به آیکون نگاه می‌کند و پرشِ آیکون زیرِ انگشتش
+        // دیده می‌شود (قاعده‌ی صریحِ `49`).
+        ProcessLifecycleOwner.get().lifecycle.addObserver(
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_STOP) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        runCatching {
+                            iconWither.applyFromDateKeys(
+                                this@LoanCalcApplication,
+                                gamificationRepository.activeDayKeys(),
+                            )
+                        }
+                    }
+                }
+            },
+        )
         LoanDataChange.onChanged = {
             CoroutineScope(Dispatchers.Main).launch { LoanWidget.updateAll(this@LoanCalcApplication) }
         }

@@ -73,6 +73,9 @@ class GamificationRepository(
 
     val events: Flow<List<CoinEventEntity>> = coinDao.observeAll()
 
+    /** روزهایی که کاربر در آن‌ها چیزی ثبت کرده - ورودیِ پله‌ی پژمردگیِ آیکون (`49b`). */
+    suspend fun activeDayKeys(): List<String> = coinDao.getDateKeys(Type.DAILY_LOG)
+
     val achievements: Flow<List<AchievementEntity>> = achievementDao.observeAll()
 
     /**
