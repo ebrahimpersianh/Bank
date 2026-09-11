@@ -1,7 +1,11 @@
 package ir.sadteam.loancalc
 
 import android.app.Application
+import androidx.glance.appwidget.updateAll
 import androidx.hilt.work.HiltWorkerFactory
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
 import coil.Coil
 import coil.ImageLoader
@@ -9,9 +13,6 @@ import coil.ImageLoaderFactory
 import coil.request.ImageRequest
 import dagger.hilt.android.HiltAndroidApp
 import ir.sadteam.loancalc.crash.CrashReporter
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.ProcessLifecycleOwner
 import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.LoanDataChange
 import ir.sadteam.loancalc.data.banks
@@ -20,10 +21,10 @@ import ir.sadteam.loancalc.notifications.ComeBackScheduler
 import ir.sadteam.loancalc.ui.auth.SmsRetrieverHash
 import ir.sadteam.loancalc.ui.widget.IconWither
 import ir.sadteam.loancalc.ui.widget.LoanWidget
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltAndroidApp
 class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFactory {
