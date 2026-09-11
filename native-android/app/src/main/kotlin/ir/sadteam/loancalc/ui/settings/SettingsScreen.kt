@@ -185,7 +185,6 @@ import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
 import ir.sadteam.loancalc.ui.profile.ThemeShopScreen
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
-import ir.sadteam.loancalc.ui.stats.StatsScreen
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
 import ir.sadteam.loancalc.ui.subscription.parseSubscribedUntil
 import ir.sadteam.loancalc.ui.theme.AppAccent
@@ -276,7 +275,6 @@ fun SettingsScreen(
             "tool" -> FullScreenDialog(onDismissRequest = { tool = null }) {
                 when (tool) {
                     "calendar" -> FinancialCalendarScreen(onBack = { tool = null })
-                    "stats" -> StatsScreen(onBack = { tool = null })
                     // همان شرطِ هدرِ خانه: امروز تراکنشی ثبت شده یا نه. این‌جا از رویدادهای
                     // سکه خوانده می‌شود چون `DAILY_LOG` دقیقاً به همان ثبت جایزه می‌دهد.
                     "coins" -> CoinWalletScreen(
@@ -2192,9 +2190,10 @@ private fun ToolsSettings(onOpenTool: (String) -> Unit) {
     AppCard(modifier = Modifier.padding(top = 8.dp)) {
         ToolRow(Icons.Filled.DateRange, "تقویم مالی", "سررسیدِ اقساطِ همه‌ی وام‌هات رو رو تقویم ببین") { onOpenTool("calendar") }
     }
-    AppCard(modifier = Modifier.padding(top = 8.dp)) {
-        ToolRow(Icons.Filled.Assessment, "آمار و گزارشات", "آمارِ کلیِ وام‌هات + خروجی PDF") { onOpenTool("stats") }
-    }
+    // ⚠️ ردیفِ «آمار و گزارشات» از این‌جا **حذف** شد (گزارشِ ۶.۵ی کاربر: «پرتی هست»).
+    // محتوایش کاملاً دربارهٔ وام است، پس رفت کنارِ خودِ وام‌ها در تبِ وام. عمداً این‌جا
+    // یک ردیفِ لینک‌دهنده نماند: ردیفی که فقط کاربر را جای دیگری می‌فرستد یک پرش است، و
+    // دو مسیر برای یک صفحه همان دوگانگی‌ای است که یک‌بار دو عددِ متفاوتِ «داراییِ کل» ساخت.
     AppCard(modifier = Modifier.padding(top = 8.dp)) {
         ToolRow(Icons.Filled.History, "تاریخچه‌ی محاسبات", "مرورِ محاسبه‌های قبلیِ وام/سقف وام/سود سپرده") { onOpenTool("history") }
         // کیفِ سکه (کارتِ `20d`) - طرح می‌گه «تبِ جدید در نوارِ پایین اضافه نشد؛ پنج تب سقفِ

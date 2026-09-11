@@ -187,6 +187,8 @@ fun MarketPricesScreen(
                     )
                 }
             }
+            // اسنادِ منبع، پای همان فهرستی که عددهایش از سرویس آمده.
+            item { PriceSourceNote(modifier = Modifier.padding(top = 10.dp)) }
         }
 
         if (openAssetEntity != null) {

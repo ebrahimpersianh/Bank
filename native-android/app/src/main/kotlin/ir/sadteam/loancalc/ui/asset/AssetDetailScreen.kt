@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.data.assetCategoryLabel
+import ir.sadteam.loancalc.data.assetCatalogGroups
 import ir.sadteam.loancalc.data.db.AssetEntity
 import ir.sadteam.loancalc.data.db.AssetTradeEntity
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
@@ -160,7 +161,12 @@ fun AssetDetailScreen(
             }
         }
 
-        item { AssetSummaryCard(asset, quantity, netCost, value, change) }
+        item {
+            // نمادی که در کاتالوگ نیست (داراییِ دلخواهِ کاربر) قیمتِ زنده ندارد.
+            val live = assetCatalogGroups.flatMap { it.second }
+                .firstOrNull { it.symbol == asset.symbol }?.hasLivePrice == true
+            AssetSummaryCard(asset, quantity, netCost, value, change, hasLivePrice = live)
+        }
 
         item { AssetSparkline(points = history) }
 
@@ -272,6 +278,8 @@ private fun AssetSummaryCard(
     netCost: Double,
     value: Double?,
     changePercent: Double?,
+    /** آیا قیمتِ این نماد از سرویس می‌آید - شرطِ نمایشِ اسنادِ منبع. */
+    hasLivePrice: Boolean,
 ) {
     val p = groupPalette(asset.category)
     val shape = RoundedCornerShape(AppRadius.card)
@@ -347,6 +355,11 @@ private fun AssetSummaryCard(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 3.dp),
                     )
+                    // اسنادِ منبع فقط وقتی عدد **از سرویس** آمده. داراییِ بی‌قیمتِ زنده را
+                    // خودِ کاربر وارد کرده؛ نسبت‌دادنش به Servix غلط است.
+                    if (hasLivePrice) {
+                        PriceSourceNote(modifier = Modifier.padding(top = 2.dp))
+                    }
                 }
             }
             if (value != null) {

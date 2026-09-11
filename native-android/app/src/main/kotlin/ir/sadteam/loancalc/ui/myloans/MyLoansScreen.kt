@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
@@ -100,6 +101,7 @@ import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.IncomeEntity
 import ir.sadteam.loancalc.data.db.LoanEntity
+import ir.sadteam.loancalc.ui.stats.StatsScreen
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
@@ -263,6 +265,7 @@ fun MyLoansScreen(
     // نه لیست.
     var editingLoanId by remember { mutableStateOf<Long?>(null) }
     var showLoginPrompt by remember { mutableStateOf(false) }
+    var showStats by remember { mutableStateOf(false) }
     // «کشیدن به پایین برای همگام‌سازی» - رجوع کن به MyLoansViewModel.syncNow برای اینکه
     // چرا این ژست عمداً فقط پوش می‌کنه و داده‌ی محلی رو با سرور جایگزین نمی‌کنه.
     var syncing by remember { mutableStateOf(false) }
@@ -410,6 +413,7 @@ fun MyLoansScreen(
     // با یه return زودهنگام یهو جایگزین بقیه می‌شد؛ حالا با AnimatedContent (fade ظریف) عوض می‌شه.
     val screenKey = when {
         showLoginPrompt -> "login"
+        showStats -> "stats"
         showSubscriptionScreen -> "subscription"
         showAddForm -> "add"
         editingLoan != null -> "edit"
@@ -424,6 +428,7 @@ fun MyLoansScreen(
     BackHandler(enabled = screenKey != "list") {
         when (screenKey) {
             "login" -> showLoginPrompt = false
+            "stats" -> showStats = false
             "subscription" -> showSubscriptionScreen = false
             "add" -> showAddForm = false
             "edit" -> editingLoanId = null
@@ -470,6 +475,7 @@ fun MyLoansScreen(
                 onSubscribed = { showSubscriptionScreen = false },
                 onNeedsLogin = { showLoginPrompt = true },
             )
+            "stats" -> StatsScreen(onBack = { showStats = false })
             "add" -> AddManualLoanScreen(
                 onSaved = { showAddForm = false },
                 onCancel = { showAddForm = false },
@@ -572,6 +578,21 @@ fun MyLoansScreen(
                             },
                             onRestore = { openDocumentLauncher.launch(arrayOf("application/json")) },
                         )
+                    }
+
+                    // **آمارِ وام‌ها از تنظیمات آمد این‌جا** (فریمِ `29b`): محتوایش کاملاً
+                    // دربارهٔ وام است - پیشرفتِ پرداخت، سود، تاریخچه‌ی اقساط - پس جایش
+                    // کنارِ خودِ وام‌هاست، نه زیرِ «ابزارها»ی تنظیمات که کاربر گفت «پرتی هست».
+                    // ردیفِ تنظیمات **حذف** شد، نه اینکه به این‌جا لینک بدهد: ردیفی که فقط
+                    // کاربر را جای دیگری می‌فرستد یک پرش است.
+                    if (loans.isNotEmpty()) {
+                        item {
+                            LoanListActionRow(
+                                icon = Icons.Filled.Assessment,
+                                label = "آمارِ وام‌ها و خروجیِ PDF",
+                                onClick = { showStats = true },
+                            )
+                        }
                     }
 
                     if (visibleLoans.isEmpty()) {
@@ -898,6 +919,52 @@ fun MyLoansScreen(
  * **یک** ردیف داره ولی ما دو تا کار داریم (گرفتن و برگردوندن) - جاسازیِ دو دکمه تو یه ردیف
  * هدفِ لمسی رو زیرِ ۴۴dp می‌برد که خلافِ بندِ ۸ سیستمِ طراحیه.
  */
+/**
+ * ردیفِ فهرستِ سبکِ `27a` - قابِ آیکونِ ۳۰ + عنوان + فلش. دو مصرف دارد (پشتیبان‌گیری و
+ * آمار)، پس یک‌بار نوشته شد نه دوبار.
+ */
+@Composable
+private fun LoanListActionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(AppSurface)
+            .border(2.dp, AppLineRow, RoundedCornerShape(16.dp))
+            .pressScaleClickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(9.dp))
+                .background(AppSurface2),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = AppMuted, modifier = Modifier.size(16.dp))
+        }
+        Text(
+            label,
+            color = AppText,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+            contentDescription = null,
+            tint = AppMuted,
+            modifier = Modifier.size(18.dp),
+        )
+    }
+}
+
 @Composable
 private fun BackupRestoreRow(onBackup: () -> Unit, onRestore: () -> Unit) {
     var showSheet by remember { mutableStateOf(false) }
@@ -922,45 +989,11 @@ private fun BackupRestoreRow(onBackup: () -> Unit, onRestore: () -> Unit) {
         )
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(AppSurface)
-            .border(2.dp, AppLineRow, RoundedCornerShape(16.dp))
-            .pressScaleClickable { showSheet = true }
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(30.dp)
-                .clip(RoundedCornerShape(9.dp))
-                .background(AppSurface2),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Filled.CloudUpload,
-                contentDescription = null,
-                tint = AppMuted,
-                modifier = Modifier.size(16.dp),
-            )
-        }
-        Text(
-            "پشتیبان‌گیری و بازیابیِ وام‌ها",
-            color = AppText,
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(1f),
-        )
-        Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-            contentDescription = null,
-            tint = AppMuted,
-            modifier = Modifier.size(18.dp),
-        )
-    }
+    LoanListActionRow(
+        icon = Icons.Filled.CloudUpload,
+        label = "پشتیبان‌گیری و بازیابیِ وام‌ها",
+        onClick = { showSheet = true },
+    )
 }
 
 @Composable
