@@ -7,12 +7,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -83,7 +88,24 @@ fun SmsImportScreen(
         if (granted) messages = readSmsInbox(context)
     }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    // ⚠️ این صفحه **هدر و اسکرولِ خودش** را دارد و نباید داخلِ اسکافولدِ اسکرول‌دارِ تنظیمات
+    // رندر شود (رجوع کن به کامنتِ محلِ فراخوانی در `SettingsScreen`).
+    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
+            }
+            Text(
+                "افزودن از پیامک‌ها",
+                color = AppText,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(start = 4.dp),
+            )
+        }
         Text(
             "هر پیامکی که مبلغ داشته باشد این‌جا می‌آید. آن‌که می‌خواهی را انتخاب کن تا ثبت شود.",
             color = AppMuted,

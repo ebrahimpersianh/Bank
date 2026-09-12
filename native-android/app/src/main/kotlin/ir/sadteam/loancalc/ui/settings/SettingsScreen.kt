@@ -1420,10 +1420,13 @@ private fun SmsSettings(
     // رندر نمی‌شود بلکه دیالوگِ تمام‌صفحه می‌گیرد.
     if (showSmsImport) {
         FullScreenDialog(onDismissRequest = { showSmsImport = false }) {
+            // 🚨 **عمداً بدونِ `SettingsSubPageScaffold`**: آن اسکافولد یک
+            // `Column(verticalScroll)` است و `SmsImportScreen` خودش فهرستِ تنبل دارد -
+            // اسکرولِ عمودیِ تودرتو با ارتفاعِ بی‌نهایت اندازه‌گیری می‌شود و اپ **کرش می‌کند**
+            // (گزارشِ واقعیِ کاربر: «روی افزودن پیامک می‌زنم، برنامه یهو بسته می‌شود» - دقیقاً
+            // همان باگی که یک‌بار برای «آزمایشِ تشخیص» رخ داد). هدرِ خودش را دارد.
             Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
-                SettingsSubPageScaffold(title = "افزودن از پیامک‌ها", onBack = { showSmsImport = false }) {
-                    SmsImportScreen(onBack = { showSmsImport = false })
-                }
+                SmsImportScreen(onBack = { showSmsImport = false })
             }
         }
     }
