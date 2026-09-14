@@ -336,11 +336,7 @@ private fun PickerRow(
             if (changePercent != null) {
                 PriceChangeBadge(changePercent, modifier = Modifier.padding(top = 3.dp))
             }
-            // اسنادِ منبع زیرِ **خودِ نرخ** می‌نشیند، نه پای شیت: کاربری که عدد را می‌بیند
-            // پای فهرست را نمی‌خواند. نمادِ بی‌قیمتِ زنده نمی‌گیردش - عددش مالِ خودِ کاربر است.
-            if (entry.hasLivePrice && priceRial != null) {
-                PriceSourceNote(modifier = Modifier.padding(top = 2.dp), fontSize = 7.5.sp)
-            }
+            // ⚠️ اسنادِ منبع عمداً این‌جا هم نیست - رجوع کن به کامنتِ `AssetDetailScreen`.
         }
         if (selected) {
             Icon(

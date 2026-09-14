@@ -355,11 +355,9 @@ private fun AssetSummaryCard(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 3.dp),
                     )
-                    // اسنادِ منبع فقط وقتی عدد **از سرویس** آمده. داراییِ بی‌قیمتِ زنده را
-                    // خودِ کاربر وارد کرده؛ نسبت‌دادنش به Servix غلط است.
-                    if (hasLivePrice) {
-                        PriceSourceNote(modifier = Modifier.padding(top = 2.dp))
-                    }
+                    // ⚠️ اسنادِ منبع (`PriceSourceNote`) عمداً این‌جا **نیست** - خواسته‌ی صریحِ
+                    // کاربر (۲۳ شهریور): روی صفحه‌ی خودِ دارایی شلوغی می‌کند. شرطِ
+                    // `attributionRequired`ِ servix با همان یک خط پای «قیمتِ روز» برآورده می‌شود.
                 }
             }
             if (value != null) {

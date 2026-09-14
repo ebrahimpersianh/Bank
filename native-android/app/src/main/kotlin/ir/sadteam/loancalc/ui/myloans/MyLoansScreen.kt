@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -1075,7 +1076,13 @@ private fun LoanStateRing(
 /** دکمه‌ی «پرداخت»ِ ردیفِ سررسیدِ نزدیک - فریمِ `27a`. */
 @Composable
 private fun LoanPayButton(onClick: () -> Unit) {
-    Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+    // 🚨 قابِ بیرونی **هیچ‌وقت `size` ثابت نگیرد.** قبلاً `Modifier.size(44.dp)` بود و
+    // چون خودِ کپسول پهن‌تر از ۴۴ است، متن بریده می‌شد و روی گوشیِ کاربر «پردا» دیده
+    // می‌شد. ارتفاعِ هدفِ لمسی با `defaultMinSize` تامین می‌شود، نه با بریدنِ عرض.
+    Box(
+        modifier = Modifier.defaultMinSize(minHeight = 44.dp),
+        contentAlignment = Alignment.Center,
+    ) {
         Box(
             modifier = Modifier
                 .hardShadow(AppPrimaryDim, AppElevation.inRow, 999.dp)
@@ -1084,7 +1091,14 @@ private fun LoanPayButton(onClick: () -> Unit) {
                 .pressScaleClickable(onClick = onClick)
                 .padding(horizontal = 13.dp, vertical = 9.dp),
         ) {
-            Text("پرداخت", color = Color.White, fontSize = 10.5.sp, fontWeight = FontWeight.Black)
+            Text(
+                "پرداخت",
+                color = Color.White,
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                softWrap = false,
+            )
         }
     }
 }
