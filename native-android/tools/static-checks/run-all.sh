@@ -64,6 +64,7 @@ run "کمک‌تابعِ Long-only" "$DIR/longhelpers.py"
 run "نمادِ فراخوانی‌شده‌ی ناموجود" "$DIR/localcalls.py"
 run "فرمتِ عددی بدونِ Locale" "$DIR/localeformat.py"
 run "امضای تابع و ثابتِ enum" "$DIR/apisurface.py"
+run "لامبدای انتهایی" "$DIR/trailinglambda.py"
 
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

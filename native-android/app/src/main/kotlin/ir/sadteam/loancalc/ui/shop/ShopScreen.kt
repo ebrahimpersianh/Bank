@@ -159,7 +159,9 @@ fun ShopScreen(onBack: () -> Unit, viewModel: ShopViewModel = hiltViewModel()) {
             // (`49d`) - وگرنه کاربر فکر می‌کند جنسِ خراب می‌خرد. پس این‌جا هیچ‌جا
             // `witherStage` خوانده نمی‌شود؛ اگر روزی اضافه‌اش کردید، همین را می‌شکنید.
             val shopItem = icons[index]
-            ShopRow(shopItem, stateOf(shopItem), balance, viewModel::activate) { confirming = it }
+            // 🚨 لامبدای انتهایی به **آخرین** پارامتر می‌چسبد و آخرینِ `ShopRow` همان
+            // `leading` است، نه `onConfirm` - پس نامش صریح نوشته می‌شود (بیلدِ ۵۴۱).
+            ShopRow(shopItem, stateOf(shopItem), balance, viewModel::activate, onConfirm = { confirming = it })
         }
         // بندِ ۵ی `60d`: بی این ردیف، آیکونِ پیش‌فرض بی‌راهِ‌بازگشت است - «کیفِ پول» در
         // کاتالوگ نیست چون فروشی نیست، پس ردیفی هم ندارد که فعالش کند.
@@ -172,7 +174,9 @@ fun ShopScreen(onBack: () -> Unit, viewModel: ShopViewModel = hiltViewModel()) {
         item { GroupHeader("نماد و جایزه", "به‌زودی") }
         items(rest.size) { index ->
             val shopItem = rest[index]
-            ShopRow(shopItem, stateOf(shopItem), balance, viewModel::activate) { confirming = it }
+            // 🚨 لامبدای انتهایی به **آخرین** پارامتر می‌چسبد و آخرینِ `ShopRow` همان
+            // `leading` است، نه `onConfirm` - پس نامش صریح نوشته می‌شود (بیلدِ ۵۴۱).
+            ShopRow(shopItem, stateOf(shopItem), balance, viewModel::activate, onConfirm = { confirming = it })
         }
     }
     }

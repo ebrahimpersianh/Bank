@@ -722,6 +722,8 @@ private fun SettingsSubPage(
                 SettingsRoute.PARSING_RULES -> ParsingRulesScreen()
                 SettingsRoute.BADGES -> BadgesScreen()
                 SettingsRoute.ABOUT -> AboutSettings(banner)
+                // بالاتر زودتر return شده - این شاخه فقط برای کاملِ‌بودنِ `when` است.
+                SettingsRoute.COLOR_THEME -> Unit
                 SettingsRoute.MAIN -> Unit
             }
         }
