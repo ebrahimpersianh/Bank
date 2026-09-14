@@ -38,16 +38,27 @@ class IconWither @Inject constructor() {
         return (away - 1).coerceIn(0, STEPS)
     }
 
-    /** پله‌ی متناظر با آخرین روزِ ثبت‌شده در دفترِ سکه (`DAILY_LOG`) را اعمال می‌کند. */
-    fun applyFromDateKeys(context: Context, dateKeys: Collection<String>) {
-        apply(context, stepFor(lastDay(dateKeys)))
+    /**
+     * پله‌ی متناظر با آخرین روزِ ثبت‌شده در دفترِ سکه (`DAILY_LOG`) را اعمال می‌کند.
+     *
+     * [activeIcon] آیکونِ خریداری‌شده‌ی فعال (`icon:piggy`…) یا `null` برای پیش‌فرض.
+     */
+    fun applyFromDateKeys(context: Context, dateKeys: Collection<String>, activeIcon: String? = null) {
+        apply(context, stepFor(lastDay(dateKeys)), activeIcon)
     }
 
-    fun apply(context: Context, step: Int) {
-        val target = step.coerceIn(0, STEPS)
+    /**
+     * دقیقاً **یک** الیاس روشن می‌ماند.
+     *
+     * ⚠️ آیکونِ خریداری‌شده پله‌ی پژمردگی **ندارد** - هشت فایلِ پژمرده فقط برای طرحِ
+     * پیش‌فرض ساخته شده‌اند. پس وقتی [activeIcon] پر است، پله نادیده گرفته می‌شود.
+     */
+    fun apply(context: Context, step: Int, activeIcon: String? = null) {
+        val bought = ICON_ALIAS[activeIcon]
+        val target = bought ?: step.coerceIn(0, STEPS)
         val pm = context.packageManager
         enable(pm, context, target)
-        for (n in 0..STEPS) {
+        for (n in 0..LAST_ALIAS) {
             if (n != target) disable(pm, context, n)
         }
     }
@@ -85,5 +96,13 @@ class IconWither @Inject constructor() {
     companion object {
         /** هشت پله - تصحیحِ صریحِ کاربر، نه دو حالت. */
         const val STEPS = 8
+
+        /**
+         * آیکونِ خریدنی → شماره‌ی الیاس. شناسه‌ها همان `ShopItem.id`ِ کاتالوگ‌اند.
+         * «کیفِ پول» این‌جا نیست چون پیش‌فرض است و الیاسِ صفر تا هشت مالِ اوست.
+         */
+        val ICON_ALIAS = mapOf("icon:coin" to 9, "icon:letter" to 10, "icon:piggy" to 11)
+
+        private val LAST_ALIAS = ICON_ALIAS.values.max()
     }
 }

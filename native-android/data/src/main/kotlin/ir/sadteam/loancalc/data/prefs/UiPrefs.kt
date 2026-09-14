@@ -53,6 +53,7 @@ class UiPrefs(private val context: Context) {
         val COLOR_THEME = stringPreferencesKey("color_theme")
         val OWNED_THEMES = stringPreferencesKey("owned_themes")
         val OWNED_ITEMS = stringPreferencesKey("owned_items")
+        val ACTIVE_ICON = stringPreferencesKey("active_icon")
         val NAV_SLOTS = stringPreferencesKey("nav_slots")
         val NAV_USAGE = stringPreferencesKey("nav_usage")
         val NAV_USAGE_STARTED_AT = longPreferencesKey("nav_usage_started_at")
@@ -265,6 +266,20 @@ class UiPrefs(private val context: Context) {
         val legacy = prefs[Keys.OWNED_THEMES]?.split(",")?.filter { it.isNotBlank() }
             ?.map { "theme:$it" }?.toSet() ?: emptySet()
         items + legacy
+    }
+
+    /**
+     * آیکونِ لانچرِ فعال (`icon:piggy`…). `null` یعنی «کیفِ پول»ِ پیش‌فرض - همان که در
+     * کاتالوگ نیست چون فروشی نیست.
+     *
+     * ⚠️ فقط آیکونِ پیش‌فرض پله‌های پژمردگی دارد؛ آیکونِ خریداری‌شده همیشه پله‌ی صفر است.
+     */
+    val activeIcon: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.ACTIVE_ICON] }
+
+    suspend fun setActiveIcon(key: String?) {
+        context.uiPrefsDataStore.edit { prefs ->
+            if (key == null) prefs.remove(Keys.ACTIVE_ICON) else prefs[Keys.ACTIVE_ICON] = key
+        }
     }
 
     suspend fun addOwnedItem(key: String) {

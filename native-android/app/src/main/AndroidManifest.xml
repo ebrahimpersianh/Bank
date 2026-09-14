@@ -79,6 +79,65 @@
              فعال می‌کند بعد بقیه را خاموش، تا هیچ لحظه‌ای بی‌آیکون نمانیم.
              ⚠️ `targetActivity` همه‌شان همان MainActivity است، پس تپ روی هر پله‌ای همان اپ
              را باز می‌کند. -->
+        <!--
+          🚨 آیکونِ **خریدنی** (`60b`) - سه الیاسِ زیر، نه سی‌ودو تا.
+          قاعده‌ی طراح: الیاسِ بی‌مقصد فعال نشود. هر طرح فقط **یک** الیاس دارد چون
+          پله‌های پژمردگی تنها برای طرحِ پیش‌فرض («کیفِ پول») ساخته شده‌اند؛ آیکونِ
+          خریداری‌شده همیشه پله‌ی صفر است.
+          همیشه دقیقاً یکی از کلِ الیاس‌ها روشن است (رجوع کن به `IconWither.apply`)،
+          وگرنه برنامه چندبار در فهرستِ گوشی دیده می‌شود.
+        -->
+        <activity-alias
+            android:name=".LauncherAlias9"
+            android:targetActivity=".MainActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_coin"
+            android:roundIcon="@mipmap/ic_launcher_coin"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherAlias10"
+            android:targetActivity=".MainActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_letter"
+            android:roundIcon="@mipmap/ic_launcher_letter"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherAlias11"
+            android:targetActivity=".MainActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_piggy"
+            android:roundIcon="@mipmap/ic_launcher_piggy"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+
         <activity-alias
             android:name=".LauncherAlias0"
             android:targetActivity=".MainActivity"

@@ -21,7 +21,8 @@ for path in glob.glob(os.path.join(ROOT, '**/*.kt'), recursive=True):
     # سکه پول نیست: شمارنده‌ی صحیحه و ستونِ دیتابیسش هم Int ـه (`CoinEventEntity.amount`).
     # قاعده‌ی «هر مبلغ Double» فقط برای ریاله.
     norm = path.replace(os.sep, '/')
-    if '/data/coin/' in norm or '/ui/profile/Coin' in norm:
+    # `/ui/shop/` هم همین‌طور: کلِ فروشگاه با سکه کار می‌کند، نه ریال.
+    if '/data/coin/' in norm or '/ui/profile/Coin' in norm or '/ui/shop/' in norm:
         continue
     if '/build/' in path:
         continue

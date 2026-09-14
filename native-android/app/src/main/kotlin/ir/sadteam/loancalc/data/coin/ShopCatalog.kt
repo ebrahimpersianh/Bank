@@ -32,9 +32,26 @@ data class ShopItem(
      * نمی‌خرد (`BuyResult.BadgeLocked`).
      */
     val unlockBadge: String? = null,
+    /**
+     * تمِ چهارگانه‌ی اولِ برنامه. این‌ها پیش از اقتصادِ سکه ساخته شدند و مالکیتشان در
+     * `UiPrefs.owned_themes` نشسته، پس سرگروهِ جدا می‌گیرند (`60a`).
+     */
+    val base: Boolean = false,
+    /**
+     * 🚨 **قلمی که هنوز مقصد ندارد.** «نمادهای گرد»، «سکه‌ی کهن» و اشتراکِ جایزه‌ای در
+     * برنامه هیچ‌جا خوانده نمی‌شوند - خریدنشان یعنی کاربر سکه بدهد و هیچ اتفاقی نیفتد.
+     * پس ردیف می‌آید (هدف دیده شود) ولی خریدنی نیست تا کدِ واقعی‌اش ساخته شود.
+     */
+    val comingSoon: Boolean = false,
 ) {
     val price: Int get() = if (unlockBadge != null) 0 else kind.price
 }
+
+/**
+ * چهار تمِ پایه - مرزِ دو سرگروهِ `60a`. شناسه‌ها از `ColorTheme.id` می‌آیند، و مبنای
+ * ترجمه‌ی مالکیتِ قدیمی هم همین‌هاست (`owned_themes` از اول همین رشته‌ها را نگه می‌داشت).
+ */
+val BASE_THEME_IDS = setOf("green", "blue", "purple", "gold")
 
 /**
  * پالتِ تم - **سه رنگ و نه بیشتر**.
@@ -92,7 +109,23 @@ fun themeById(id: String?): ThemePalette? = THEME_CATALOG.firstOrNull { it.id ==
  */
 val SHOP_CATALOG: List<ShopItem> = buildList {
 
-    // ═══ تم ═══
+    // ═══ تمِ پایه (`60a`) ═══
+    // «سبز» پیش‌فرض است و همیشه مالِ کاربر؛ «طلایی» با نشان باز می‌شود نه با سکه.
+    add(ShopItem("theme:green", CoinSpend.THEME_PALETTE, "تمِ سبزِ جیبک", "تمِ پیش‌فرضِ برنامه", base = true))
+    add(ShopItem("theme:blue", CoinSpend.THEME_PALETTE, "تمِ آبی", "رنگِ اصلیِ برنامه را عوض می‌کند", base = true))
+    add(ShopItem("theme:purple", CoinSpend.THEME_PALETTE, "تمِ بنفش", "رنگِ اصلیِ برنامه را عوض می‌کند", base = true))
+    add(
+        ShopItem(
+            id = "theme:gold",
+            kind = CoinSpend.THEME_PALETTE,
+            label = "تمِ طلایی",
+            blurb = "با نشانِ «ماهِ منظم» باز می‌شود",
+            unlockBadge = "steady_month",
+            base = true,
+        ),
+    )
+
+    // ═══ تمِ رنگی ═══
     // نامِ متغیر عمداً `palette` نیست: بررسیِ ایستای `palette.py` هر `palette.X` را دسترسی
     // به فیلدِ `AppColorPalette` می‌خواند و این‌جا مثبتِ کاذب می‌داد.
     THEME_CATALOG.forEach { theme ->
@@ -119,8 +152,8 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     add(ShopItem("icon:piggy", CoinSpend.APP_ICON, "آیکونِ قلک", "هم‌خانواده‌ی نمادِ بودجه"))
 
     // ═══ نمادها ═══
-    add(ShopItem("symbolset:rounded", CoinSpend.CATEGORY_ICON_SET, "نمادهای گرد", "نمادِ همه‌ی دسته‌ها یک‌دست می‌شود"))
-    add(ShopItem("coinskin:ancient", CoinSpend.COIN_SKIN, "سکه‌ی کهن", "شکلِ سکه در همه‌ی برنامه"))
+    add(ShopItem("symbolset:rounded", CoinSpend.CATEGORY_ICON_SET, "نمادهای گرد", "نمادِ همه‌ی دسته‌ها یک‌دست می‌شود", comingSoon = true))
+    add(ShopItem("coinskin:ancient", CoinSpend.COIN_SKIN, "سکه‌ی کهن", "شکلِ سکه در همه‌ی برنامه", comingSoon = true))
     add(
         ShopItem(
             id = "coinskin:aged_gold",
@@ -128,6 +161,7 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
             label = "سکه‌ی طلای کهنه",
             blurb = "با نشانِ «سالِ کامل» باز می‌شود",
             unlockBadge = "YEAR_COMPLETE",
+            comingSoon = true,
         ),
     )
 
@@ -135,8 +169,8 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     // ترمیمِ زنجیره در فروشگاه **نمی‌آید**: دسته ندارد، مالکیت نمی‌آورد، و جایش کارتِ
     // `56b` است که فقط وقتی رشته پاره شده دیده می‌شود. قلمی که همیشه در ویترین باشد
     // ولی فقط دو روز در ماه قابلِ خرید، ردیفِ خاموشِ دائمی است.
-    add(ShopItem("sub:3d", CoinSpend.SUBSCRIPTION_3D, "اشتراکِ ۳ روزه", "همه‌ی امکاناتِ اشتراکی، سه روز"))
-    add(ShopItem("sub:7d", CoinSpend.SUBSCRIPTION_7D, "اشتراکِ ۷ روزه", "همه‌ی امکاناتِ اشتراکی، یک هفته"))
+    add(ShopItem("sub:3d", CoinSpend.SUBSCRIPTION_3D, "اشتراکِ ۳ روزه", "همه‌ی امکاناتِ اشتراکی، سه روز", comingSoon = true))
+    add(ShopItem("sub:7d", CoinSpend.SUBSCRIPTION_7D, "اشتراکِ ۷ روزه", "همه‌ی امکاناتِ اشتراکی، یک هفته", comingSoon = true))
 }
 
 /** ردیف‌های یک دسته، به ترتیبِ کاتالوگ. */

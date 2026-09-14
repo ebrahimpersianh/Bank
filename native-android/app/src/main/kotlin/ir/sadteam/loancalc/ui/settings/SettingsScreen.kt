@@ -151,6 +151,7 @@ import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.account.SmsImportScreen
+import ir.sadteam.loancalc.ui.shop.ShopScreen
 import ir.sadteam.loancalc.ui.account.SmsSenderPickerDialog
 import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
@@ -183,7 +184,6 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.profile.AvatarViewModel
 import ir.sadteam.loancalc.ui.profile.BadgesScreen
 import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
-import ir.sadteam.loancalc.ui.profile.ThemeShopScreen
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
@@ -328,7 +328,7 @@ private enum class SettingsRoute(val title: String, val keywords: List<String>) 
     ),
     TOOLS("ابزارها", listOf("تقویم مالی", "آمار", "گزارش", "تاریخچه محاسبات")),
     SECURITY("امنیت", listOf("قفل", "PIN", "اثر انگشت")),
-    COLOR_THEME("تمِ رنگی", listOf("تم", "رنگ", "پوسته", "سکه")),
+    COLOR_THEME("فروشگاهِ سکه", listOf("تم", "رنگ", "پوسته", "سکه", "فروشگاه", "آیکون")),
     BADGES("نشان‌ها", listOf("نشان", "دستاورد", "مدال", "سکه")),
     PARSING_RULES("قاعده‌های تشخیص", listOf("قاعده", "دسته‌بندی خودکار", "تشخیص")),
     ABOUT("درباره‌ی برنامه", listOf("درباره", "پشتیبانی", "حریم خصوصی", "نسخه")),
@@ -545,7 +545,7 @@ private fun SettingsMainContent(
                         Icons.Filled.ColorLens,
                         SettingsRoute.COLOR_THEME,
                         tone = SettingsTone.PURPLE,
-                        status = "رنگِ اصلیِ برنامه را با سکه عوض کن",
+                        status = "تم و آیکونِ برنامه را با سکه بخر",
                     ) { onOpen(SettingsRoute.COLOR_THEME) }
                     SettingsDivider()
                 }
@@ -696,6 +696,17 @@ private fun SettingsSubPage(
     onOpenRules: () -> Unit,
 ) {
     val banner = rememberInAppBanner()
+
+    // 🚨 **عمداً بیرونِ `SettingsSubPageScaffold`**: آن اسکافولد یک `Column(verticalScroll)`
+    // است و فروشگاه خودش فهرستِ تنبل دارد - اسکرولِ تودرتو با ارتفاعِ بی‌نهایت اپ را
+    // می‌کشد (همان کرشِ «افزودن از پیامک‌ها»). هدرِ خودش را دارد.
+    if (route == SettingsRoute.COLOR_THEME) {
+        Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
+            ShopScreen(onBack = onBack)
+        }
+        return
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         SettingsSubPageScaffold(title = route.title, onBack = onBack) {
             when (route) {
@@ -709,7 +720,6 @@ private fun SettingsSubPage(
                 // دیگه تو یه AppCardِ بیرونی پیچیده نمی‌شه - خودش گروه‌های خودشو داره.
                 SettingsRoute.SECURITY -> SecuritySettings(appLockViewModel)
                 SettingsRoute.PARSING_RULES -> ParsingRulesScreen()
-                SettingsRoute.COLOR_THEME -> ThemeShopScreen()
                 SettingsRoute.BADGES -> BadgesScreen()
                 SettingsRoute.ABOUT -> AboutSettings(banner)
                 SettingsRoute.MAIN -> Unit

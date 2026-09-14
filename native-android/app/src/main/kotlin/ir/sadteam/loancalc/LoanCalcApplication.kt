@@ -17,6 +17,7 @@ import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.LoanDataChange
 import ir.sadteam.loancalc.data.banks
 import ir.sadteam.loancalc.data.creditServices
+import ir.sadteam.loancalc.data.prefs.UiPrefs
 import ir.sadteam.loancalc.notifications.ComeBackScheduler
 import ir.sadteam.loancalc.ui.auth.SmsRetrieverHash
 import ir.sadteam.loancalc.ui.widget.IconWither
@@ -24,6 +25,7 @@ import ir.sadteam.loancalc.ui.widget.LoanWidget
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @HiltAndroidApp
@@ -42,6 +44,9 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
 
     @Inject
     lateinit var gamificationRepository: GamificationRepository
+
+    @Inject
+    lateinit var uiPrefs: UiPrefs
 
     override fun onCreate() {
         super.onCreate()
@@ -68,6 +73,7 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
                             iconWither.applyFromDateKeys(
                                 this@LoanCalcApplication,
                                 gamificationRepository.activeDayKeys(),
+                                uiPrefs.activeIcon.first(),
                             )
                         }
                     }
