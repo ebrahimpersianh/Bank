@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.ui.account
 
 import android.Manifest
 import android.content.pm.PackageManager
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -42,20 +43,23 @@ import ir.sadteam.loancalc.ui.components.AccountPickerDialog
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.jibak.faDigits
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
- * **افزودن از پیامک‌ها** - خواسته‌ی صریحِ کاربر: «بروی توی پیام‌ها، آن پیام را انتخاب کنی و
- * اضافه کنی».
+ * **افزودن از پیامک‌ها** - خواسته‌ی صریحِ کاربر: «بروی توی صفحه‌ی پیامک‌ها و خودت آن پیام را
+ * انتخاب کنی».
  *
- * تشخیصِ خودکار فقط پیامکِ حساب‌های ثبت‌شده را می‌گیرد و گاهی هم اشتباه می‌کند؛ این صفحه راهِ
- * دستی است: صندوقِ ورودیِ گوشی خوانده می‌شود و هر پیامکی که مبلغِ قابلِ‌خواندن دارد یک دکمه‌ی
- * «افزودن» می‌گیرد.
+ * پس صفحه **دو طبقه** است، دقیقاً مثلِ برنامه‌ی پیامکِ خودِ گوشی:
+ * ۱. فهرستِ فرستنده‌ها (آن‌هایی که پیامکشان شبیهِ بانکی است اول می‌آیند)،
+ * ۲. با زدنِ هر فرستنده، **همه‌ی** پیامک‌های همان فرستنده - نه فقط آن‌هایی که مبلغ دارند،
+ *    چون کاربر باید خودِ پیام را ببیند و بشناسد. پیامکِ بدونِ مبلغ فقط دکمه‌ی «افزودن» ندارد.
  *
  * ⚠️ مجوزِ `READ_SMS` **فقط** لحظه‌ی باز شدنِ همین صفحه گرفته می‌شود، هیچ متنی ذخیره یا
  * فرستاده نمی‌شود، و تراکنشِ ساخته‌شده **تاییدشده** است چون خودِ کاربر انتخابش کرده.
@@ -74,6 +78,7 @@ fun SmsImportScreen(
         )
     }
     var messages by remember { mutableStateOf<List<SmsInboxMessage>>(emptyList()) }
+    var openSender by remember { mutableStateOf<String?>(null) }
     var pending by remember { mutableStateOf<SmsInboxMessage?>(null) }
     var addedIds by remember { mutableStateOf(setOf<Long>()) }
 
@@ -85,21 +90,25 @@ fun SmsImportScreen(
         if (!granted) permissionLauncher.launch(Manifest.permission.READ_SMS)
     }
     LaunchedEffect(granted) {
-        if (granted) messages = readSmsInbox(context)
+        if (granted) messages = readSmsInbox(context, limit = 500)
     }
+
+    // دکمه‌ی برگشتِ گوشی: اول از طبقه‌ی دوم به فهرستِ فرستنده‌ها، بعد بیرون.
+    BackHandler(enabled = openSender != null) { openSender = null }
 
     // ⚠️ این صفحه **هدر و اسکرولِ خودش** را دارد و نباید داخلِ اسکافولدِ اسکرول‌دارِ تنظیمات
     // رندر شود (رجوع کن به کامنتِ محلِ فراخوانی در `SettingsScreen`).
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
+        val sender = openSender
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) {
+            IconButton(onClick = { if (sender != null) openSender = null else onBack() }) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
             }
             Text(
-                "افزودن از پیامک‌ها",
+                sender ?: "افزودن از پیامک‌ها",
                 color = AppText,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Black,
@@ -107,7 +116,11 @@ fun SmsImportScreen(
             )
         }
         Text(
-            "هر پیامکی که مبلغ داشته باشد این‌جا می‌آید. آن‌که می‌خواهی را انتخاب کن تا ثبت شود.",
+            if (sender == null) {
+                "فرستنده را انتخاب کن تا پیامک‌هایش را ببینی."
+            } else {
+                "پیامی را که می‌خواهی ثبت شود انتخاب کن."
+            },
             color = AppMuted,
             fontSize = 11.sp,
             lineHeight = 19.sp,
@@ -126,25 +139,41 @@ fun SmsImportScreen(
             return@Column
         }
 
-        // پیامکی که پارس نمی‌شود اصلاً مبلغ ندارد، پس افزودنی هم نیست - نشان دادنش فقط
-        // فهرست را شلوغ می‌کند.
-        val usable = messages.filter { it.parsed != null }
-        if (usable.isEmpty()) {
+        if (messages.isEmpty()) {
             EmptyState(
                 icon = Icons.Filled.Sms,
-                title = "پیامکِ مبلغ‌داری پیدا نشد",
-                description = "در دویست پیامکِ آخر چیزی که شبیهِ تراکنش باشد نبود.",
+                title = "پیامکی پیدا نشد",
+                description = "صندوقِ ورودیِ گوشی خالی است.",
             )
             return@Column
         }
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(usable, key = { it.id }) { sms ->
-                SmsRow(
-                    sms = sms,
-                    added = sms.id in addedIds,
-                    onAdd = { pending = sms },
-                )
+        if (sender == null) {
+            // فرستنده‌ها به‌ترتیبِ تازگی (چون خودِ فهرست جدیدترین-اول است)، ولی آن‌هایی که
+            // پیامکِ مبلغ‌دار دارند بالا می‌آیند تا بینِ ده‌ها سرشماره‌ی تبلیغاتی گم نشوند.
+            val groups = messages.groupBy { it.address }.entries
+                .sortedByDescending { entry -> entry.value.any { it.parsed != null } }
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(groups.toList(), key = { it.key }) { entry ->
+                    SenderRow(
+                        address = entry.key,
+                        sample = entry.value.first().body,
+                        count = entry.value.size,
+                        banky = entry.value.any { it.parsed != null },
+                        onClick = { openSender = entry.key },
+                    )
+                }
+            }
+        } else {
+            val ofSender = messages.filter { it.address == sender }
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(ofSender, key = { it.id }) { sms ->
+                    SmsRow(
+                        sms = sms,
+                        added = sms.id in addedIds,
+                        onAdd = { pending = sms },
+                    )
+                }
             }
         }
     }
@@ -199,42 +228,84 @@ fun SmsImportScreen(
     }
 }
 
+/** طبقه‌ی اول: یک فرستنده با نمونه‌ی آخرین پیامش. */
 @Composable
-private fun SmsRow(sms: SmsInboxMessage, added: Boolean, onAdd: () -> Unit) {
-    val parsed = sms.parsed ?: return
-    val isWithdrawal = parsed.type == TransactionType.WITHDRAWAL
+private fun SenderRow(
+    address: String,
+    sample: String,
+    count: Int,
+    banky: Boolean,
+    onClick: () -> Unit,
+) {
     AppCard(modifier = Modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.99f, onClick = onClick)) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Ltr {
+                    Text(address, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                }
+                if (banky) {
+                    Text(
+                        "بانکی",
+                        color = AppPrimary,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
                 Text(
-                    "${if (isWithdrawal) "برداشت" else "واریز"} " +
-                        "${fmt(rialToToman(parsed.amountRial.toLong()).toDouble()).faDigits()} تومان",
-                    color = AppText,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Black,
-                )
-                Text(
-                    sms.body.replace('\n', ' ').take(110),
+                    "${count.toString().faDigits()} پیام",
                     color = AppMuted,
-                    fontSize = 10.5.sp,
-                    lineHeight = 18.sp,
-                    modifier = Modifier.padding(top = 3.dp),
-                )
-                Text(
-                    sms.address,
-                    color = AppPrimaryDim,
                     fontSize = 9.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier.padding(start = 8.dp),
                 )
             }
             Text(
-                if (added) "ثبت شد" else "افزودن",
-                color = if (added) AppMuted else AppPrimaryDim,
+                sample.replace('\n', ' ').take(90),
+                color = AppMuted,
+                fontSize = 10.5.sp,
+                lineHeight = 18.sp,
+                modifier = Modifier.padding(top = 3.dp),
+            )
+        }
+    }
+}
+
+/** طبقه‌ی دوم: یک پیامکِ همان فرستنده. بدونِ مبلغِ قابلِ‌خواندن، دکمه‌ی افزودن ندارد. */
+@Composable
+private fun SmsRow(sms: SmsInboxMessage, added: Boolean, onAdd: () -> Unit) {
+    val parsed = sms.parsed
+    val isWithdrawal = parsed?.type == TransactionType.WITHDRAWAL
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(modifier = Modifier.weight(1f)) {
+                if (parsed != null) {
+                    Text(
+                        "${if (isWithdrawal) "برداشت" else "واریز"} " +
+                            "${fmt(rialToToman(parsed.amountRial.toLong()).toDouble()).faDigits()} تومان",
+                        color = AppText,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                }
+                Text(
+                    sms.body.replace('\n', ' ').take(160),
+                    color = if (parsed != null) AppMuted else AppText,
+                    fontSize = 10.5.sp,
+                    lineHeight = 18.sp,
+                    modifier = Modifier.padding(top = if (parsed != null) 3.dp else 0.dp),
+                )
+            }
+            Text(
+                when {
+                    parsed == null -> "بدونِ مبلغ"
+                    added -> "ثبت شد"
+                    else -> "افزودن"
+                },
+                color = if (parsed == null || added) AppMuted else AppPrimaryDim,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier
-                    .then(if (added) Modifier else Modifier.pressScaleClickable(onClick = onAdd))
+                    .then(if (parsed == null || added) Modifier else Modifier.pressScaleClickable(onClick = onAdd))
                     .padding(horizontal = 8.dp, vertical = 10.dp),
             )
         }
