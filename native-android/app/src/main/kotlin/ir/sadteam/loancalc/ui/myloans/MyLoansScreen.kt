@@ -38,12 +38,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
@@ -136,6 +137,7 @@ import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppDangerPill
 import ir.sadteam.loancalc.ui.theme.AppElevation
 import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.theme.AppGoldInk2
@@ -146,6 +148,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -315,6 +318,12 @@ fun MyLoansScreen(
         }
     }
     val settledCount = remember(loans) { loans.count { isLoanSettled(it) } }
+
+    // شمارشِ وام‌های عقب‌افتاده‌ی همین نما. روی `visibleLoans` حساب می‌شود نه `loans`، تا
+    // وقتی کاربر جستجو کرده عدد با چیزی که جلوی چشمش است بخواند.
+    val overdueCount = remember(visibleLoans, showSettled, today) {
+        if (showSettled) 0 else visibleLoans.count { viewModel.isLoanOverdue(it) }
+    }
 
     // جابه‌جاییِ دستیِ کارت‌های وام (نگه‌داشتنِ چندثانیه‌ای + کشیدن بالا/پایین) - orderedLoans یه
     // کپیِ محلیِ visibleLoans ئه که حینِ کشیدن زنده جابه‌جا می‌شه؛ وقتی کشیدن تمومه (draggingLoanId
@@ -594,6 +603,16 @@ fun MyLoansScreen(
                                 onClick = { showStats = true },
                             )
                         }
+                    }
+
+                    // 🚨 **چندتا وام عقب‌افتاده است** - خواسته‌ی صریحِ کاربر (۲۴ شهریور).
+                    // کارتِ تک‌تکِ وام‌ها از قبل «عقب‌افتاده» را می‌گفت، ولی کاربر باید تا ته
+                    // فهرست اسکرول می‌کرد تا بفهمد چندتاست. این یک خطِ جمع‌بندیِ بالای فهرست
+                    // است، نه تکرارِ همان اطلاعات.
+                    //
+                    // فقط در نمای «فعال» می‌آید: وامِ تسویه‌شده تعریفاً عقب‌افتاده نیست.
+                    if (!showSettled && overdueCount > 0) {
+                        item { OverdueSummaryRow(count = overdueCount) }
                     }
 
                     if (visibleLoans.isEmpty()) {
@@ -1070,6 +1089,38 @@ private fun LoanStateRing(
                 modifier = Modifier.align(Alignment.TopEnd).offset(x = 1.dp, y = (-1).dp),
             )
         }
+    }
+}
+
+/**
+ * خطِ «N وام عقب‌افتاده» بالای فهرست.
+ *
+ * عمداً **کارتِ کامل نیست و دکمه ندارد**: کاری برای انجام‌دادن پیشنهاد نمی‌کند، فقط عدد را
+ * می‌گوید. خودِ کارتِ هر وام دکمه‌ی پرداختش را دارد.
+ */
+@Composable
+private fun OverdueSummaryRow(count: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(AppRadius.row))
+            .background(AppDangerPill)
+            .padding(horizontal = 13.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            Icons.Filled.ErrorOutline,
+            contentDescription = null,
+            tint = AppDangerInk,
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            "${toFa(count)} وام عقب‌افتاده",
+            color = AppDangerInk,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.padding(start = 8.dp),
+        )
     }
 }
 
