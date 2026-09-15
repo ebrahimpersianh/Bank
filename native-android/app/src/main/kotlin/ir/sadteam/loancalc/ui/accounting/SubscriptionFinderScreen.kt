@@ -107,7 +107,14 @@ fun SubscriptionFinderScreen(
                 item {
                     // عددِ قهرمان: چیزی که کاربر تا حالا هیچ‌جا یکجا ندیده.
                     AppHeroCard(tone = HeroTone.PURPLE) {
-                        Text("ماهانه بابتِ اشتراک‌ها", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                        // لحنِ قاطع (فریمِ `63a`): اشتراک‌یاب **واقعیتِ گذشته** است، نه حدس -
+                        // پس می‌تواند عددِ کشف‌شده را مستقیم اعلام کند.
+                        Text(
+                            "${(visible.size).toFa()} خرجِ تکراری پیدا شد",
+                            color = HeroMuted,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
                         Text(
                             // fmt() عددِ ریال با جداکننده‌ی لاتین می‌داد.
                             maskIfPrivate(privacyMode, rialToToman(monthlyTotal.toLong()).toFaMoney()),
@@ -119,7 +126,9 @@ fun SubscriptionFinderScreen(
                         Text(
                             // عددِ سالانه فشرده می‌آید: کاملش کنارِ عددِ ماهانه دو عددِ
                             // دوازده‌رقمیِ پشتِ‌هم می‌شد و هیچ‌کدام خوانده نمی‌شد.
-                            "تومان — ${(visible.size).toFa()} موردِ تکرارشونده · سالانه حدودِ " +
+                            // ⚠️ عددِ سالانه = ماهانه × ۱۲، **نه جمعِ گذشته**: سوال این است
+                            // «اگر ادامه بدهم چه؟»، نه «تا حالا چه دادم؟».
+                            "تومان در ماه · با همین روند، سالی حدودِ " +
                                 (monthlyTotal * 12).rialToFaCompact() + " تومان",
                             color = HeroMuted,
                             fontSize = 10.sp,
@@ -136,21 +145,33 @@ fun SubscriptionFinderScreen(
                             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(sub.label, color = AppText, fontSize = 14.5.sp, fontWeight = FontWeight.Bold)
+                                    // طولِ عادت مهم است، نه روزِ اولش - به همین دلیل
+                                    // «N ماهِ پیاپی» جای تاریخِ شروع نشسته (فریمِ `63a`).
                                     Text(
-                                        "${(sub.monthsSeen).toFa()} ماهِ پیاپی · حدودِ روزِ ${(sub.dayOfMonth).toFa()} هر ماه" +
+                                        "${(sub.monthsSeen).toFa()} ماهِ پیاپی" +
                                             (sub.category?.let { " · $it" } ?: ""),
                                         color = AppMuted,
                                         fontSize = 11.sp,
                                         modifier = Modifier.padding(top = 2.dp),
                                     )
                                 }
-                                Text(
-                                    // واحد در ردیف نمی‌آید (قاعده‌ی عدد) - یک‌بار در هیرو آمد.
-                                    maskIfPrivate(privacyMode, sub.typicalAmountRial.rialToFaCompact()),
-                                    color = AppText,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Black,
-                                )
+                                Column(horizontalAlignment = Alignment.Start) {
+                                    Text(
+                                        // ستونِ چپ **مبلغِ ماهانه** است نه جمعِ پرداختی -
+                                        // عددی که کاربر برای تصمیمِ «قطع کنم یا نه» لازم دارد.
+                                        // واحد در ردیف نمی‌آید (قاعده‌ی عدد) - یک‌بار در هیرو آمد.
+                                        maskIfPrivate(privacyMode, sub.typicalAmountRial.rialToFaCompact()),
+                                        color = AppText,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Black,
+                                    )
+                                    Text(
+                                        "ماهانه",
+                                        color = AppMuted,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
                             }
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
@@ -179,7 +200,10 @@ fun SubscriptionFinderScreen(
                                     onClick = { prefsViewModel.ignoreSubscription(sub.label) },
                                     modifier = Modifier.weight(1f),
                                 ) {
-                                    Text("نادیده بگیر", fontSize = 12.sp)
+                                    // ⚠️ کنشِ رد **دائمی** است، نه ماهانه مثلِ کارت‌های کشف:
+                                    // شرطِ ±۱۵٪ اجاره و قسط را هم می‌گیرد و «اجاره اشتراک
+                                    // نیست» حقیقتی است که ماهِ بعد عوض نمی‌شود.
+                                    Text("این اشتراک نیست", fontSize = 12.sp)
                                 }
                             }
                         }

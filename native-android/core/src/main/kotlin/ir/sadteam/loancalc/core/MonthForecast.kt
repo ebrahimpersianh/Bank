@@ -27,6 +27,27 @@ data class MonthForecast(
     /** آیا باید هشدار داد؟ */
     val willRunShort: Boolean get() = shortfallRial > 0
 
+    /** سرعتِ خرجِ روزانه‌ی همین ماه - عددی که کاربر با آن مقایسه می‌کند. */
+    val perDayRial: Double get() = if (daysLeft > 0) projectedRemainingRial / daysLeft else 0.0
+
+    /**
+     * راهِ‌حلِ کارت (فریمِ `63c`): روزی چقدر خرج کنی تا موجودی به آخرِ ماه برسد.
+     * هشدارِ بی راهِ‌حل فقط اضطراب است.
+     */
+    val safePerDayRial: Double
+        get() = if (daysLeft > 0) (balanceRial / daysLeft).coerceAtLeast(0.0) else 0.0
+
+    /**
+     * چند روز **قبل** از آخرِ ماه پول تمام می‌شود. با سرعتِ فعلی، موجودی
+     * `balance / perDay` روز دوام می‌آورد؛ باقیِ روزهای ماه بی‌پول است.
+     */
+    val runsOutOnDay: Int
+        get() {
+            if (perDayRial <= 0.0) return 0
+            val lasts = (balanceRial / perDayRial).toInt()
+            return (daysLeft - lasts).coerceAtLeast(1)
+        }
+
     companion object {
         /** زیرِ این تعدادِ روزِ گذشته از ماه، سرعتِ روزانه قابلِ‌اتکا نیست. */
         const val MIN_DAYS_FOR_FORECAST = 7

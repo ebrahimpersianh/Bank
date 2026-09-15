@@ -99,6 +99,7 @@ import ir.sadteam.loancalc.ui.theme.AppAssetBorder
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
+import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
 import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
 import ir.sadteam.loancalc.ui.theme.AppIconFrame
@@ -349,14 +350,25 @@ fun HomeScreen(
             // «تا آخرِ ماه کم میاری» - رجوع کن به MonthForecast. عمداً **بالای** کارت‌های
             // تحلیلی و زیرِ بودجه می‌شینه: یه هشدارِ عملیه، نه یه آمار.
             monthForecast?.let { forecast ->
-                if (forecast.willRunShort) {
-                    item {
+                item {
+                    if (forecast.willRunShort) {
                         ShortfallForecastCard(
-                            shortfall = forecast.shortfallRial,
+                            runsOutOnDay = forecast.runsOutOnDay,
                             daysLeft = forecast.daysLeft,
-                            projectedTotal = forecast.projectedTotalRial,
+                            perDaySpend = forecast.perDayRial,
+                            balance = forecast.balanceRial,
+                            safePerDay = forecast.safePerDayRial,
                             privacyMode = privacyMode,
                             onClick = { onNavigateToRoute("report") },
+                        )
+                    } else {
+                        // حالتِ سالم **کارت نمی‌گیرد** (فریمِ `63b`) - یک خطِ آرام بس است؛
+                        // کارتِ «همه‌چیز خوب است» فضای کارتِ هشدار را می‌گیرد و بی‌اثر است.
+                        Text(
+                            "با این سرعت تا آخرِ ماه می‌رسی",
+                            color = AppMuted,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                 }
@@ -806,19 +818,27 @@ private fun UrgentDueCard(
  * [ir.sadteam.loancalc.core.MonthForecast]).
  *
  * چرا این برگ‌برنده‌ست: بقیه‌ی اپ‌ها فقط گذشته رو گزارش می‌دن؛ این تنها چیزیه که **قبل از
- * اتفاق** هشدار می‌ده. عمداً هم‌سبکِ [UrgentDueCard]ه (همون گونه‌ی «فوری») چون هم‌جنسِ اونه:
- * یه چیزِ عملی که همین حالا باید بهش رسیدگی بشه، نه یه آمار.
+ * اتفاق** هشدار می‌ده.
+ *
+ * 🚨 **طلایی است، نه قرمز** (فریمِ `63c`). قرمز در این برنامه معنیِ ثبت‌شده دارد: پولی که
+ * **واقعاً** دیر شده - قسطِ عقب‌افتاده، چکِ برگشتی. پیش‌بینی واقعیت نیست و قرمزکردنش
+ * قرمزهای واقعی را ارزان می‌کند. طلایی از قبل زبانِ «در خطر» است.
+ *
+ * 🚨 **عددِ دوم اجباری است**: «روزی فلان‌قدر تا آخرِ ماه می‌رسانَد». هشدارِ بی راهِ‌حل فقط
+ * اضطراب است - کاربر نمی‌داند چقدر باید کم کند.
  */
 @Composable
 private fun ShortfallForecastCard(
-    shortfall: Double,
+    runsOutOnDay: Int,
     daysLeft: Int,
-    projectedTotal: Double,
+    perDaySpend: Double,
+    balance: Double,
+    safePerDay: Double,
     privacyMode: Boolean,
     onClick: () -> Unit,
 ) {
     AppCard(
-        variant = AppCardVariant.URGENT,
+        variant = AppCardVariant.GOLD,
         shadow = false,
         modifier = Modifier.pressScaleClickable(onClick = onClick),
     ) {
@@ -831,28 +851,36 @@ private fun ShortfallForecastCard(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(RoundedCornerShape(AppRadius.icon))
-                    .background(UrgentIconBg),
+                    .background(AppGoldPillSoft),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.TrendingDown, contentDescription = null, tint = AppDanger, modifier = Modifier.size(17.dp))
+                Icon(Icons.Filled.TrendingDown, contentDescription = null, tint = AppGoldInk, modifier = Modifier.size(17.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "با این سرعتِ خرج، تا آخرِ ماه کم میاری",
+                    "با این سرعت، ${runsOutOnDay.toFa()} روز قبلِ آخرِ ماه تمام می‌شود",
                     color = AppText,
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.ExtraBold,
                 )
                 PrivacyCrossfade(privacyMode) { masked ->
-                    Text(
-                        "${(daysLeft).toFa()} روزِ دیگه مونده — حدودِ " +
-                            "${maskIfPrivate(masked, shortfall.rialToFaCompact())} تومان کسری" +
-                            " (کلِ ماه حدودِ ${maskIfPrivate(masked, projectedTotal.rialToFaCompact())})",
-                        color = AppDangerInk,
-                        fontSize = 10.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
+                    Column {
+                        Text(
+                            "روزی ${maskIfPrivate(masked, perDaySpend.rialToFaCompact())} خرج کرده‌ای و " +
+                                "${maskIfPrivate(masked, balance.rialToFaCompact())} مانده برای ${daysLeft.toFa()} روز.",
+                            color = AppGoldInk,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                        Text(
+                            "روزی ${maskIfPrivate(masked, safePerDay.rialToFaCompact())} تا آخرِ ماه می‌رسانَد.",
+                            color = AppText,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.padding(top = 3.dp),
+                        )
+                    }
                 }
             }
         }

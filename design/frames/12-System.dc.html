@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@500;700;800;900&display=swap" rel="stylesheet">
+<meta name="design_doc_mode" content="canvas">
+<style>
+body{margin:0;background:#EDF2F6}
+a{color:#0EA968}a:hover{color:#0B8C57}
+@keyframes jibakPopIn{0%{transform:scale(.4) rotate(-10deg);opacity:0}60%{transform:scale(1.1) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0deg)}}
+@keyframes jibakFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes jibakCoinWiggle{0%,100%{transform:rotate(-8deg) translateY(0)}50%{transform:rotate(8deg) translateY(-2px)}}
+@keyframes jibakGlow{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:.6;transform:scale(1.15)}}
+@keyframes jibakDot{0%,80%,100%{transform:scale(.7);opacity:.35}40%{transform:scale(1.25);opacity:1}}
+@keyframes jibakFadeUp{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes jibakShine{0%,100%{opacity:.25}50%{opacity:.65}}
+@keyframes jibakCoinFeed{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-7px) rotate(4deg)}}
+@keyframes jibakSlotGleam{0%,100%{opacity:.15}50%{opacity:.5}}
+@keyframes jibakShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes jibakSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes jbJig{0%{transform:rotate(-1.6deg)}100%{transform:rotate(1.6deg)}}
+@keyframes jbPick{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes spBag{0%{transform:scale(.62);opacity:0}26%{transform:scale(1.06);opacity:1}38%{transform:scale(.97)}46%{transform:scale(1)}100%{transform:scale(1)}}
+@keyframes spCoin{0%{transform:translateY(26px) scale(.5);opacity:0}22%{opacity:0}44%{transform:translateY(-9px) scale(1.05);opacity:1}56%{transform:translateY(0) scale(1)}100%{transform:translateY(0) scale(1)}}
+@keyframes spCoin2{0%{transform:translateY(26px) scale(.5);opacity:0}30%{opacity:0}52%{transform:translateY(-9px) scale(1.05);opacity:1}64%{transform:translateY(0) scale(1)}100%{transform:translateY(0) scale(1)}}
+@keyframes spWord{0%{transform:translateY(14px);opacity:0}48%{transform:translateY(14px);opacity:0}70%{transform:translateY(0);opacity:1}100%{transform:translateY(0);opacity:1}}
+@keyframes spBar{0%{width:0}70%{width:0}100%{width:64px}}
+</style>
+</helmet>
+<section style="display:flex;flex-direction:column;gap:26px;padding:44px;direction:rtl;color:#16221C;font-family:Vazirmatn,sans-serif;background:#FFFFFF">
+  <div style="display:flex;flex-direction:column;gap:7px;max-width:960px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="background:#16221C;color:#F4F0EA;font-weight:900;font-size:12px;padding:5px 13px;border-radius:999px">بخشِ ۵۷</div>
+      <div style="font-size:12.5px;font-weight:800;color:#5b6a63">ویجتِ صفحه‌ی گوشی</div>
+    </div>
+    <div style="font-size:27px;font-weight:900">یک عدد و یک مهلت</div>
+    <div style="font-size:13.5px;color:#5b6a63;line-height:1.9;text-wrap:pretty">ویجت جای خلاصه‌ی اپ نیست؛ جای <b style="color:#16221C">یک جمله</b> است که کاربر بی باز کردنِ اپ بخواندش. Glance گرادیان و سایه و شکلِ دلخواه ندارد و فونتِ اپ هم رویش نمی‌نشیند — پس طرح روی سه چیز می‌ایستد که واقعاً دارد: <b style="color:#16221C">وزن، رنگ، و فاصله</b>. نمونه‌های زیر عمداً با فونتِ سیستم کشیده شده‌اند، همان‌طور که روی گوشی دیده می‌شوند.</div>
+  </div>
+
+  <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start">
+
+    <div id="57a" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">57a</div>
+        <div style="font-size:13px;font-weight:800">متوسط (۴×۲) — چهار حالت</div>
+      </div>
+      <div style="background:linear-gradient(160deg,#4A5A6B 0%,#2E3A45 100%);border-radius:26px;padding:22px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div style="font-size:9.5px;font-weight:900;color:#CBD5DD">قسطِ بعدی</div>
+          <div style="width:296px;height:148px;background:#FFFFFF;border-radius:20px;padding:14px 15px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;font-family:system-ui,'Segoe UI',Roboto,sans-serif">
+    <div style="display:flex;align-items:center;gap:7px">
+      <svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><path fill="#0EA968" fill-rule="evenodd" d="M6.5,9 L7.48,9 A4.8,4.8 0 0 0 16.52,9 L17.5,9 A3.5,3.5 0 0 1 21,12.5 L21,18.5 A3.5,3.5 0 0 1 17.5,22 L6.5,22 A3.5,3.5 0 0 1 3,18.5 L3,12.5 A3.5,3.5 0 0 1 6.5,9 Z"/></svg>
+      <div style="font-size:11px;font-weight:700;color:#6B7A73;flex:1">قسطِ بعدی</div>
+      <div style="background:#E9F7F0;color:#0B8C57;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700;flex:none;font-family:system-ui,'Segoe UI',Roboto,sans-serif">۵ روز مانده</div>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:5px">
+      <div style="font-size:30px;font-weight:800;color:#16221C;letter-spacing:-0.5px">۴٬۲۰۰٬۰۰۰</div>
+      <div style="font-size:12px;font-weight:700;color:#6B7A73">تومان</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;border-top:1px solid #EEF3F0;padding-top:9px">
+      <div style="font-size:11.5px;font-weight:700;color:#16221C;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">وامِ مسکن · بانکِ مسکن</div>
+      <div style="font-size:11px;font-weight:700;color:#6B7A73;flex:none">۲۰ مهر</div>
+    </div>
+  </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div style="font-size:9.5px;font-weight:900;color:#CBD5DD">عقب‌افتاده — تنها حالتی که رنگ عوض می‌شود</div>
+          <div style="width:296px;height:148px;background:#FFFFFF;border-radius:20px;padding:14px 15px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;font-family:system-ui,'Segoe UI',Roboto,sans-serif">
+    <div style="display:flex;align-items:center;gap:7px">
+      <svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><path fill="#C4342F" fill-rule="evenodd" d="M6.5,9 L7.48,9 A4.8,4.8 0 0 0 16.52,9 L17.5,9 A3.5,3.5 0 0 1 21,12.5 L21,18.5 A3.5,3.5 0 0 1 17.5,22 L6.5,22 A3.5,3.5 0 0 1 3,18.5 L3,12.5 A3.5,3.5 0 0 1 6.5,9 Z"/></svg>
+      <div style="font-size:11px;font-weight:700;color:#6B7A73;flex:1">عقب‌افتاده</div>
+      <div style="background:#FBE9E8;color:#C4342F;border-radius:8px;padding:3px 8px;font-size:10px;font-weight:700;flex:none;font-family:system-ui,'Segoe UI',Roboto,sans-serif">۳ روز گذشته</div>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:5px">
+      <div style="font-size:30px;font-weight:800;color:#C4342F;letter-spacing:-0.5px">۴٬۲۰۰٬۰۰۰</div>
+      <div style="font-size:12px;font-weight:700;color:#6B7A73">تومان</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;border-top:1px solid #EEF3F0;padding-top:9px">
+      <div style="font-size:11.5px;font-weight:700;color:#16221C;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">وامِ مسکن · بانکِ مسکن</div>
+      <div style="font-size:11px;font-weight:700;color:#6B7A73;flex:none">۱۲ مهر</div>
+    </div>
+  </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div style="font-size:9.5px;font-weight:900;color:#CBD5DD">قسطی نیست</div>
+          <div style="width:296px;height:148px;background:#FFFFFF;border-radius:20px;padding:14px 15px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;font-family:system-ui,'Segoe UI',Roboto,sans-serif">
+    <div style="display:flex;align-items:center;gap:7px">
+      <svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><path fill="#0EA968" fill-rule="evenodd" d="M6.5,9 L7.48,9 A4.8,4.8 0 0 0 16.52,9 L17.5,9 A3.5,3.5 0 0 1 21,12.5 L21,18.5 A3.5,3.5 0 0 1 17.5,22 L6.5,22 A3.5,3.5 0 0 1 3,18.5 L3,12.5 A3.5,3.5 0 0 1 6.5,9 Z"/></svg>
+      <div style="font-size:11px;font-weight:700;color:#6B7A73;flex:1">جیبک</div>
+      
+    </div>
+    <div style="font-size:14px;font-weight:700;color:#6B7A73;line-height:1.7">قسطِ پرداخت‌نشده‌ای نداری</div>
+    <div style="height:1px"></div>
+  </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div style="font-size:9.5px;font-weight:900;color:#CBD5DD">هنوز بارگذاری نشده — <span style="direction:ltr;display:inline-block">loan_widget_loading.xml</span></div>
+          <div style="width:296px;height:148px;background:#FFFFFF;border-radius:20px;padding:14px 15px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;font-family:system-ui,'Segoe UI',Roboto,sans-serif">
+    <div style="display:flex;align-items:center;gap:7px">
+      <svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><path fill="#0EA968" fill-rule="evenodd" d="M6.5,9 L7.48,9 A4.8,4.8 0 0 0 16.52,9 L17.5,9 A3.5,3.5 0 0 1 21,12.5 L21,18.5 A3.5,3.5 0 0 1 17.5,22 L6.5,22 A3.5,3.5 0 0 1 3,18.5 L3,12.5 A3.5,3.5 0 0 1 6.5,9 Z"/></svg>
+      <div style="font-size:11px;font-weight:700;color:#6B7A73;flex:1">جیبک</div>
+      
+    </div>
+    <div style="font-size:14px;font-weight:700;color:#6B7A73;line-height:1.7">…</div>
+    <div style="height:1px"></div>
+  </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="57b" style="display:flex;flex-direction:column;gap:12px;width:392px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">57b</div>
+        <div style="font-size:13px;font-weight:800">کوچک (۲×۲) و تمِ تیره</div>
+      </div>
+
+      <div style="background:linear-gradient(160deg,#4A5A6B 0%,#2E3A45 100%);border-radius:26px;padding:22px;display:flex;gap:14px;flex-wrap:wrap">
+        <div style="width:140px;height:140px;background:#FFFFFF;border-radius:20px;padding:13px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;font-family:system-ui,'Segoe UI',Roboto,sans-serif">
+    <div style="display:flex;align-items:center;gap:6px"><svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><path fill="#0EA968" fill-rule="evenodd" d="M6.5,9 L7.48,9 A4.8,4.8 0 0 0 16.52,9 L17.5,9 A3.5,3.5 0 0 1 21,12.5 L21,18.5 A3.5,3.5 0 0 1 17.5,22 L6.5,22 A3.5,3.5 0 0 1 3,18.5 L3,12.5 A3.5,3.5 0 0 1 6.5,9 Z"/></svg><div style="font-size:10px;font-weight:700;color:#6B7A73">قسطِ بعدی</div></div>
+    <div>
+      <div style="font-size:21px;font-weight:800;color:#16221C;letter-spacing:-0.4px">۴٬۲۰۰٬۰۰۰</div>
+      <div style="font-size:10px;font-weight:700;color:#6B7A73;margin-top:1px">تومان</div>
+    </div>
+    <div style="font-size:11px;font-weight:800;color:#0B8C57">۵ روز مانده</div>
+  </div>
+        <div style="width:140px;height:140px;background:#FFFFFF;border-radius:20px;padding:13px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;font-family:system-ui,'Segoe UI',Roboto,sans-serif">
+    <div style="display:flex;align-items:center;gap:6px"><svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><path fill="#C4342F" fill-rule="evenodd" d="M6.5,9 L7.48,9 A4.8,4.8 0 0 0 16.52,9 L17.5,9 A3.5,3.5 0 0 1 21,12.5 L21,18.5 A3.5,3.5 0 0 1 17.5,22 L6.5,22 A3.5,3.5 0 0 1 3,18.5 L3,12.5 A3.5,3.5 0 0 1 6.5,9 Z"/></svg><div style="font-size:10px;font-weight:700;color:#6B7A73">عقب‌افتاده</div></div>
+    <div>
+      <div style="font-size:21px;font-weight:800;color:#C4342F;letter-spacing:-0.4px">۴٬۲۰۰٬۰۰۰</div>
+      <div style="font-size:10px;font-weight:700;color:#6B7A73;margin-top:1px">تومان</div>
+    </div>
+    <div style="font-size:11px;font-weight:800;color:#C4342F">۳ روز گذشته</div>
+  </div>
+        <div style="width:140px;height:140px;background:#FFFFFF;border-radius:20px;padding:13px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;font-family:system-ui,'Segoe UI',Roboto,sans-serif">
+    <div style="display:flex;align-items:center;gap:6px"><svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><path fill="#0EA968" fill-rule="evenodd" d="M6.5,9 L7.48,9 A4.8,4.8 0 0 0 16.52,9 L17.5,9 A3.5,3.5 0 0 1 21,12.5 L21,18.5 A3.5,3.5 0 0 1 17.5,22 L6.5,22 A3.5,3.5 0 0 1 3,18.5 L3,12.5 A3.5,3.5 0 0 1 6.5,9 Z"/></svg><div style="font-size:10px;font-weight:700;color:#6B7A73">جیبک</div></div>
+    <div style="font-size:12px;font-weight:700;color:#6B7A73;line-height:1.65">قسطِ پرداخت‌نشده‌ای نداری</div><div style="height:1px"></div>
+  </div>
+      </div>
+
+      <div style="background:#F7FAF8;border:2px solid #E3ECE7;border-radius:20px;padding:15px;display:flex;flex-direction:column;gap:9px">
+        <div style="font-size:12px;font-weight:900">در کوچک چه چیزی می‌مانَد</div>
+        <div style="font-size:10.5px;color:#5b6a63;line-height:2;text-wrap:pretty"><b style="color:#16221C">می‌مانَد:</b> مبلغ، مهلت، و نشان. <b style="color:#16221C">می‌رود:</b> نامِ وام و تاریخِ کامل — نامِ «وامِ مسکن · بانکِ مسکن» در ۱۴۰dp به سه حرف و سه‌نقطه می‌رسد، که از نبودنش بدتر است. تاریخ هم حرفِ دومِ مهلت است: کسی که «۵ روز مانده» را خوانده، «۲۰ مهر» را لازم ندارد.</div>
+      </div>
+
+      <div style="background:linear-gradient(160deg,#1A2028 0%,#0E1319 100%);border-radius:26px;padding:22px;display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
+        <div style="width:140px;height:140px;background:#16221C;border-radius:20px;padding:13px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;font-family:system-ui,'Segoe UI',Roboto,sans-serif">
+    <div style="display:flex;align-items:center;gap:6px"><svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><path fill="#0EA968" fill-rule="evenodd" d="M6.5,9 L7.48,9 A4.8,4.8 0 0 0 16.52,9 L17.5,9 A3.5,3.5 0 0 1 21,12.5 L21,18.5 A3.5,3.5 0 0 1 17.5,22 L6.5,22 A3.5,3.5 0 0 1 3,18.5 L3,12.5 A3.5,3.5 0 0 1 6.5,9 Z"/></svg><div style="font-size:10px;font-weight:700;color:#8B9A94">قسطِ بعدی</div></div>
+    <div>
+      <div style="font-size:21px;font-weight:800;color:#F3F7F5;letter-spacing:-0.4px">۴٬۲۰۰٬۰۰۰</div>
+      <div style="font-size:10px;font-weight:700;color:#8B9A94;margin-top:1px">تومان</div>
+    </div>
+    <div style="font-size:11px;font-weight:800;color:#4FD49A">۵ روز مانده</div>
+  </div>
+        <div style="width:140px;height:140px;background:#16221C;border-radius:20px;padding:13px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;font-family:system-ui,'Segoe UI',Roboto,sans-serif">
+    <div style="display:flex;align-items:center;gap:6px"><svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><path fill="#FF8E8E" fill-rule="evenodd" d="M6.5,9 L7.48,9 A4.8,4.8 0 0 0 16.52,9 L17.5,9 A3.5,3.5 0 0 1 21,12.5 L21,18.5 A3.5,3.5 0 0 1 17.5,22 L6.5,22 A3.5,3.5 0 0 1 3,18.5 L3,12.5 A3.5,3.5 0 0 1 6.5,9 Z"/></svg><div style="font-size:10px;font-weight:700;color:#8B9A94">عقب‌افتاده</div></div>
+    <div>
+      <div style="font-size:21px;font-weight:800;color:#FF8E8E;letter-spacing:-0.4px">۴٬۲۰۰٬۰۰۰</div>
+      <div style="font-size:10px;font-weight:700;color:#8B9A94;margin-top:1px">تومان</div>
+    </div>
+    <div style="font-size:11px;font-weight:800;color:#FF8E8E">۳ روز گذشته</div>
+  </div>
+      </div>
+      <div style="font-size:10.5px;color:#8B9A94;line-height:1.9;text-wrap:pretty">تمِ تیره <b style="color:#16221C">#۱۶۲۲۱C</b> است نه سیاه — همان <span style="direction:ltr;display:inline-block">AppSurface</span>ِ اپ. سیاهِ مطلق روی هر تصویرِ زمینه‌ای یک سوراخ است، و همین چیزی بود که کاربر «ویجت کلاً سیاهه» گزارشش کرد.</div>
+    </div>
+
+    <div id="57c" style="display:flex;flex-direction:column;gap:12px;width:392px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">57c</div>
+        <div style="font-size:13px;font-weight:800">قاعده‌ها</div>
+      </div>
+
+      <div style="background:#FFFFFF;border:2px solid #E3ECE7;border-radius:20px;padding:15px;display:flex;flex-direction:column;gap:9px">
+        <div style="font-size:10.5px;color:#5b6a63;line-height:2;text-wrap:pretty"><b style="color:#16221C">۱. یک رنگ عوض می‌شود، نه کلِ ویجت.</b> حالتِ عقب‌افتاده فقط جوهرِ مبلغ و نشان و قرص را قرمز می‌کند؛ پس‌زمینه همان می‌ماند. ویجتِ تمام‌قرمز روی صفحه‌ی گوشی هشدارِ سیستمی خوانده می‌شود، نه یادآورِ قسط.</div>
+        <div style="height:1px;background:#EEF3F0"></div>
+        <div style="font-size:10.5px;color:#5b6a63;line-height:2;text-wrap:pretty"><b style="color:#16221C">۲. دکمه‌ی «پرداخت شد» نمی‌گذاریم.</b> صفحه‌ی گوشی جای تپِ اتفاقی است و ویجت <b style="color:#16221C">نوارِ واگرد ندارد</b> — همان استدلالِ <a href="#46b">46b</a>، ولی این‌جا بدتر: نه دیالوگ می‌شود گذاشت نه واگرد. کلِ سطح اپ را باز می‌کند.</div>
+        <div style="height:1px;background:#EEF3F0"></div>
+        <div style="font-size:10.5px;color:#5b6a63;line-height:2;text-wrap:pretty"><b style="color:#16221C">۳. مقصدِ تپ تبِ سررسید است</b> (<a href="#51a">51a</a>)، نه خانه. ویجت درباره‌ی سررسید حرف می‌زند؛ تپی که به خانه برود کاربر را یک قدم عقب می‌اندازد. همان پلِ <span style="direction:ltr;display:inline-block">DeepLinkTarget</span>ِ اعلان‌ها.</div>
+        <div style="height:1px;background:#EEF3F0"></div>
+        <div style="font-size:10.5px;color:#5b6a63;line-height:2;text-wrap:pretty"><b style="color:#16221C">۴. تمِ خریدنیِ <a href="#18b">18b</a> روی ویجت نمی‌آید.</b> پالتِ فعال در <span style="direction:ltr;display:inline-block">LocalPalette</span> زندگی می‌کند و Glance آن را نمی‌بیند؛ خواندنش از <span style="direction:ltr;display:inline-block">UiPrefs</span> یعنی هر تمِ تازه باید ویجت را هم بدهد. ویجت سبزِ برند می‌ماند — و همین یک‌دستی‌اش را تضمین می‌کند.</div>
+        <div style="height:1px;background:#EEF3F0"></div>
+        <div style="font-size:10.5px;color:#5b6a63;line-height:2;text-wrap:pretty"><b style="color:#16221C">۵. حالتِ بارگذاری هم‌رنگِ ویجت است.</b> امروز <span style="direction:ltr;display:inline-block">#000000</span> با یک چرخنده است، پس اولین چیزی که کاربر می‌بیند یک مستطیلِ سیاه است. سطحِ سفید/تیره با همان نشان و سه‌نقطه، بی چرخنده: نیم‌ثانیه است و چرخنده خودش پرش می‌سازد.</div>
+        <div style="height:1px;background:#EEF3F0"></div>
+        <div style="font-size:10.5px;color:#5b6a63;line-height:2;text-wrap:pretty"><b style="color:#16221C">۶. گوشه‌ی گرد drawable لازم دارد.</b> بله، بسازید — یک <span style="direction:ltr;display:inline-block">shape</span>ِ ۲۰dp، دو نسخه برای روشن و تیره. روی اندروید ۱۱ و پایین‌تر گوشه تیز می‌شود و طرح نمی‌شکند، ولی با drawable همه‌جا یکی است.</div>
+      </div>
+
+      <div style="background:#FFF9E8;border:2px solid #F0DFA8;border-radius:20px;padding:15px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:11.5px;font-weight:900;color:#7A5C0A">🚨 دو باگی که در کد ماند</div>
+        <div style="font-size:10.5px;color:#7A5C0A;line-height:2;text-wrap:pretty"><b>ارقامِ لاتین.</b> <span style="direction:ltr;display:inline-block">fmt(next.amount / 10)</span> جداکننده‌ی لاتین می‌دهد، پس ویجت «4,200,000 تومان» می‌نویسد در حالی که تاریخِ خطِ بعدش با <span style="direction:ltr;display:inline-block">toFa</span> فارسی است. یک خط، دو الفبا.</div>
+        <div style="font-size:10.5px;color:#7A5C0A;line-height:2;text-wrap:pretty"><b>ویجت تازه نمی‌شود.</b> بازه‌ی به‌روزرسانی شش ساعت است و هیچ‌جای اپ <span style="direction:ltr;display:inline-block">updateAll()</span> صدا زده نمی‌شود. کاربر قسط را پرداخت‌شده علامت می‌زند و ویجت تا شش ساعت همان قسط را نشان می‌دهد — یعنی دقیقاً وقتی که کاربر می‌خواهد نتیجه‌ی کارش را ببیند، ویجت دروغ می‌گوید.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:26px;padding:40px;direction:rtl;color:#F3F7F5;font-family:Vazirmatn,sans-serif;background:#0C1319">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:1000px">
+    <div style="display:flex;align-items:center;gap:10px"><div style="background:#3DDC96;color:#0C1319;font-weight:900;font-size:12px;padding:5px 13px;border-radius:999px">۳۰</div><div style="font-size:13px;font-weight:800;color:#8B9A94">نسخه‌ی تیره‌ی همه‌ی صفحات</div></div>
+    <div style="font-size:27px;font-weight:900">60 فریمِ تیره — یک‌به‌یکِ صفحاتِ روشن</div>
+    <div style="font-size:13.5px;color:#8B9A94;line-height:1.9">نقشه‌ی توکن: بستر #10181F · سطح #1B2530 · سطحِ دوم #202B36 · چیپ #232E38 · خط #2A3640 · متنِ اصلی #F3F7F5 · متنِ دوم #8B9A94 · متنِ سوم #7A8A84 · سبزِ متن و آیکون #3DDC96 · سبزِ پرشده #0EA968 با سایه‌ی #07724A · قرصِ سبز rgba(61,220,150,.14) · قرمز #FF6B6B روی rgba(255,107,107,.12) · طلایی #F0D9A8 روی #2A2317. اندازه‌ها، فاصله‌ها و گوشه‌ها عیناً مثلِ نسخه‌ی روشن.</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<div id="29id" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">29id</div><div style="font-size:17px;font-weight:700">انتخابِ تاریخِ شمسی — تیره</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#2A3640"><div style="border-radius:32px;background:#10181F;overflow:hidden;height:700px;display:flex;flex-direction:column;position:relative"><div style="padding:15px 16px;display:flex;flex-direction:column;gap:10px;opacity:.4"><div style="font-size:16px;font-weight:900">&nbsp;</div><div style="border-radius:20px;background:#1B2530;border:2px solid #2A3640;height:70px"></div><div style="border-radius:16px;background:#1B2530;border:2px solid #232E38;height:44px"></div><div style="border-radius:16px;background:#1B2530;border:2px solid #232E38;height:44px"></div></div><div style="position:absolute;inset:0;background:rgba(0,0,0,.6)"></div><div style="position:absolute;left:0;right:0;bottom:0;border-radius:28px 28px 32px 32px;background:#1B2530;padding:16px 16px 20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -8px 24px rgba(0,0,0,.5)"><div style="width:44px;height:5px;border-radius:999px;background:#2A3640;align-self:center"></div><div style="display:flex;align-items:center;gap:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><div style="flex:1;text-align:center;font-size:14px;font-weight:900">مرداد ۱۴۰۵</div><div style="transform:scaleX(-1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></div></div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8B9A94;padding-bottom:4px">ش</div><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8B9A94;padding-bottom:4px">ی</div><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8B9A94;padding-bottom:4px">د</div><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8B9A94;padding-bottom:4px">س</div><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8B9A94;padding-bottom:4px">چ</div><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8B9A94;padding-bottom:4px">پ</div><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8B9A94;padding-bottom:4px">ج</div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:500;color:#4A5A54"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:500;color:#4A5A54"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:500;color:#4A5A54"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۱</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۲</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۳</div><div style="width:4px;height:4px;border-radius:50%;background:#0EA968"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۴</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۵</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۶</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۷</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۸</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۹</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۱۰</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۱۱</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۱۲</div><div style="width:4px;height:4px;border-radius:50%;background:#0EA968"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۱۳</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۱۴</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۱۵</div><div style="width:4px;height:4px;border-radius:50%;background:#0EA968"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۱۶</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۱۷</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۱۸</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۱۹</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۲۰</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۲۱</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۲۲</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۲۳</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۲۴</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۲۵</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۲۶</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۲۷</div><div style="width:4px;height:4px;border-radius:50%;background:#0EA968"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۲۸</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:#0EA968;box-shadow:0 3px 0 #07724A"><div style="font-size:12px;font-weight:900;color:#FFFFFF">۲۹</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۳۰</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#F3F7F5">۳۱</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:500;color:#4A5A54"></div></div></div><div style="display:flex;gap:6px"><div style="font-size:10.5px;font-weight:800;color:#FFFFFF;padding:7px 13px;background:#0EA968;border-radius:999px;box-shadow:0 3px 0 #07724A">امروز</div><div style="font-size:10.5px;font-weight:800;color:#8B9A94;padding:7px 12px;background:#1B2530;border:1.5px solid #2A3640;border-radius:999px">دیروز</div><div style="font-size:10.5px;font-weight:800;color:#8B9A94;padding:7px 12px;background:#1B2530;border:1.5px solid #2A3640;border-radius:999px">اولِ ماه</div><div style="font-size:10.5px;font-weight:800;color:#8B9A94;padding:7px 12px;background:#1B2530;border:1.5px solid #2A3640;border-radius:999px">پایانِ ماه</div></div><div style="display:flex;gap:9px"><div style="flex:1;border-radius:999px;padding:14px;background:#0EA968;box-shadow:0 4px 0 #07724A;color:#FFFFFF;font-size:13px;font-weight:900;text-align:center">تاییدِ ۲۹ مرداد ۱۴۰۵</div><div style="width:52px;border-radius:999px;background:#1B2530;border:2px solid #2A3640;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div></div></div></div></div>
+      <div style="font-size:11px;color:#8B9A94;line-height:1.9">همان چیدمانِ <b style="font-weight:900">29i</b> با نقشه‌ی تیره: بستر #10181F، سطح #1B2530، خط #2A3640، متن #F3F7F5، سبزِ متن و آیکون #3DDC96، سایه #07724A.</div>
+    </div>
+<div id="28dd" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#7440C9;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">28dd</div><div style="font-size:16px;font-weight:700">جست‌وجوی جهانی</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#2A3640">
+        <div style="border-radius:32px;background:#10181F;overflow:hidden;height:760px;display:flex;flex-direction:column">
+          <div style="padding:16px 16px 12px;display:flex;flex-direction:column;gap:12px;flex:none;background:#1B2530;border-bottom:2px solid #232E38">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="flex:1;border-radius:16px;padding:12px 13px;background:#10181F;border:2px solid #0EA968;display:flex;align-items:center;gap:9px">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3DDC96" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+                <div style="font-size:13px;font-weight:800">قسط</div>
+                <div style="width:2px;height:15px;background:#0EA968;border-radius:2px"></div>
+                <div style="flex:1"></div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.6" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </div>
+              <div style="font-size:12px;font-weight:800;color:#8B9A94">لغو</div>
+            </div>
+            <div style="display:flex;gap:5px">
+              <div style="background:#0EA968;color:#FFF;font-size:10px;font-weight:800;padding:6px 11px;border-radius:999px;box-shadow:0 3px 0 #07724A">همه · ۱۴</div>
+              <div style="color:#8B9A94;font-size:10px;font-weight:700;padding:6px 10px;background:#232E38;border-radius:999px">تراکنش ۹</div>
+              <div style="color:#8B9A94;font-size:10px;font-weight:700;padding:6px 10px;background:#232E38;border-radius:999px">چک ۳</div>
+              <div style="color:#8B9A94;font-size:10px;font-weight:700;padding:6px 10px;background:#232E38;border-radius:999px">وام ۲</div>
+            </div>
+          </div>
+          <div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div style="font-size:10px;font-weight:900;color:#8B9A94">وام و قسط</div>
+              <div style="border-radius:18px;padding:13px;background:rgba(255,107,107,.12);border:2px solid rgba(255,107,107,.34);display:flex;align-items:center;gap:11px">
+                <div style="width:36px;height:36px;border-radius:11px;background:#1B2530;display:flex;align-items:center;justify-content:center;flex:none;font-size:14px;font-weight:900;color:#FF6B6B">۳۳٪</div>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:900">قسطِ وامِ خودرو</div><div style="font-size:9.5px;color:#FF6B6B;font-weight:700;margin-top:2px">فردا سررسید · ۳٬۵۰۰٬۰۰۰</div></div>
+                <div style="border-radius:999px;padding:8px 12px;background:#0EA968;box-shadow:0 3px 0 #07724A;color:#FFF;font-size:10px;font-weight:900;flex:none">پرداخت</div>
+              </div>
+              <div style="border-radius:18px;padding:13px;background:#1B2530;border:2px solid #2A3640;display:flex;align-items:center;gap:11px">
+                <div style="width:36px;height:36px;border-radius:11px;background:#232E38;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3DDC96" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16v11H4zM4 11h16"/></svg></div>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:900">قسطِ وامِ ازدواج</div><div style="font-size:9.5px;color:#8B9A94;margin-top:2px">۲۸ شهریور · ۹۵۰٬۰۰۰</div></div>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c7d2cc" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="font-size:10px;font-weight:900;color:#8B9A94">تراکنش‌ها</div>
+                <div style="font-size:10px;font-weight:800;color:#3DDC96">۹ مورد · ۱۲٬۴۰۰٬۰۰۰</div>
+              </div>
+              <div style="border-radius:16px;padding:12px 13px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:11px">
+                <div style="width:32px;height:32px;border-radius:10px;background:#FFF1DC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B45F00" stroke-width="2.3" stroke-linecap="round"><path d="M3 10h18M6 10V6h12v4M5 10v10h14V10"/></svg></div>
+                <div style="flex:1"><div style="font-size:12px;font-weight:800">قسطِ خودرو — شهریور</div><div style="font-size:9.5px;color:#8B9A94;margin-top:2px">۵ شهریور · بانکِ ملی</div></div>
+                <div style="font-size:11.5px;font-weight:900;color:#FF6B6B;flex:none">−۳٬۵۰۰٬۰۰۰</div>
+              </div>
+              <div style="border-radius:16px;padding:12px 13px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:11px">
+                <div style="width:32px;height:32px;border-radius:10px;background:#FFF1DC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B45F00" stroke-width="2.3" stroke-linecap="round"><path d="M3 10h18M6 10V6h12v4M5 10v10h14V10"/></svg></div>
+                <div style="flex:1"><div style="font-size:12px;font-weight:800">قسطِ خودرو — مرداد</div><div style="font-size:9.5px;color:#8B9A94;margin-top:2px">۵ مرداد · بانکِ ملی</div></div>
+                <div style="font-size:11.5px;font-weight:900;color:#FF6B6B;flex:none">−۳٬۵۰۰٬۰۰۰</div>
+              </div>
+              <div style="border-radius:16px;padding:11px;background:#232E38;display:flex;align-items:center;justify-content:center;gap:7px"><div style="font-size:11px;font-weight:800;color:#3DDC96">دیدنِ ۷ تراکنشِ دیگر</div><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3DDC96" stroke-width="2.6" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div style="font-size:10px;font-weight:900;color:#8B9A94">جست‌وجوهای اخیر</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <div style="font-size:10.5px;font-weight:700;color:#8B9A94;padding:7px 11px;background:#1B2530;border:1.5px solid #2A3640;border-radius:999px">بیمه</div>
+                <div style="font-size:10.5px;font-weight:700;color:#8B9A94;padding:7px 11px;background:#1B2530;border:1.5px solid #2A3640;border-radius:999px">اجاره</div>
+                <div style="font-size:10.5px;font-weight:700;color:#8B9A94;padding:7px 11px;background:#1B2530;border:1.5px solid #2A3640;border-radius:999px">چکِ صیاد</div>
+                <div style="font-size:10.5px;font-weight:700;color:#8B9A94;padding:7px 11px;background:#1B2530;border:1.5px solid #2A3640;border-radius:999px">حقوق</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#8B9A94;line-height:1.9">همان چیدمانِ <b style="font-weight:900">28d</b> با نقشه‌ی تیره: بستر #10181F، سطح #1B2530، خط #2A3640، متن #F3F7F5، سبزِ متن و آیکون #3DDC96، سایه #07724A.</div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:26px;padding:40px;direction:rtl;color:#16221C;font-family:Vazirmatn,sans-serif;background:#EAF3EE">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:1000px">
+    <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:12px;padding:5px 13px;border-radius:999px">۲۹</div><div style="font-size:13px;font-weight:800;color:#5b6a63">صفحه‌هایی که هیچ طرحی نداشتند</div></div>
+    <div style="font-size:27px;font-weight:900">شانزده فریمِ تازه — تکمیلِ پوشش</div>
+    <div style="font-size:13.5px;color:#5b6a63;line-height:1.9">گزارشِ چک، آمارِ وام، خرید و فروشِ دارایی، نتیجه‌ی محاسبه، تاریخچه‌ی محاسبات، جزئیاتِ حساب‌کتاب و دارایی، گیتِ مجوزها، تقویمِ شمسی، سقفِ وام، دسته‌چک‌ها، جزئیات و یادآورِ چک، سپرده، یادداشت و وامِ بانکی.</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<div id="29i" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">29i</div><div style="font-size:17px;font-weight:700">انتخابِ تاریخِ شمسی</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#dbe6e0"><div style="border-radius:32px;background:#F5FBFF;overflow:hidden;height:700px;display:flex;flex-direction:column;position:relative"><div style="padding:15px 16px;display:flex;flex-direction:column;gap:10px;opacity:.4"><div style="font-size:16px;font-weight:900">&nbsp;</div><div style="border-radius:20px;background:#FFFFFF;border:2px solid #E3ECE7;height:70px"></div><div style="border-radius:16px;background:#FFFFFF;border:2px solid #EEF3F0;height:44px"></div><div style="border-radius:16px;background:#FFFFFF;border:2px solid #EEF3F0;height:44px"></div></div><div style="position:absolute;inset:0;background:rgba(22,34,28,.42)"></div><div style="position:absolute;left:0;right:0;bottom:0;border-radius:28px 28px 32px 32px;background:#FFFFFF;padding:16px 16px 20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -8px 24px rgba(22,34,28,.18)"><div style="width:44px;height:5px;border-radius:999px;background:#E3ECE7;align-self:center"></div><div style="display:flex;align-items:center;gap:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5b6a63" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><div style="flex:1;text-align:center;font-size:14px;font-weight:900">مرداد ۱۴۰۵</div><div style="transform:scaleX(-1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5b6a63" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></div></div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8b9a93;padding-bottom:4px">ش</div><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8b9a93;padding-bottom:4px">ی</div><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8b9a93;padding-bottom:4px">د</div><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8b9a93;padding-bottom:4px">س</div><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8b9a93;padding-bottom:4px">چ</div><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8b9a93;padding-bottom:4px">پ</div><div style="text-align:center;font-size:9.5px;font-weight:900;color:#8b9a93;padding-bottom:4px">ج</div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:500;color:#C9D6CF"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:500;color:#C9D6CF"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:500;color:#C9D6CF"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۱</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۲</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۳</div><div style="width:4px;height:4px;border-radius:50%;background:#0EA968"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۴</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۵</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۶</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۷</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۸</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۹</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۱۰</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۱۱</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۱۲</div><div style="width:4px;height:4px;border-radius:50%;background:#0EA968"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۱۳</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۱۴</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۱۵</div><div style="width:4px;height:4px;border-radius:50%;background:#0EA968"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۱۶</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۱۷</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۱۸</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۱۹</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۲۰</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۲۱</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۲۲</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۲۳</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۲۴</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۲۵</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۲۶</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۲۷</div><div style="width:4px;height:4px;border-radius:50%;background:#0EA968"></div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۲۸</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:#0EA968;box-shadow:0 3px 0 #0B8C57"><div style="font-size:12px;font-weight:900;color:#FFFFFF">۲۹</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۳۰</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:800;color:#16221C">۳۱</div></div><div style="height:38px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;"><div style="font-size:12px;font-weight:500;color:#C9D6CF"></div></div></div><div style="display:flex;gap:6px"><div style="font-size:10.5px;font-weight:800;color:#FFFFFF;padding:7px 13px;background:#0EA968;border-radius:999px;box-shadow:0 3px 0 #0B8C57">امروز</div><div style="font-size:10.5px;font-weight:800;color:#5b6a63;padding:7px 12px;background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px">دیروز</div><div style="font-size:10.5px;font-weight:800;color:#5b6a63;padding:7px 12px;background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px">اولِ ماه</div><div style="font-size:10.5px;font-weight:800;color:#5b6a63;padding:7px 12px;background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px">پایانِ ماه</div></div><div style="display:flex;gap:9px"><div style="flex:1;border-radius:999px;padding:14px;background:#0EA968;box-shadow:0 4px 0 #0B8C57;color:#FFFFFF;font-size:13px;font-weight:900;text-align:center">تاییدِ ۲۹ مرداد ۱۴۰۵</div><div style="width:52px;border-radius:999px;background:#FFFFFF;border:2px solid #E3ECE7;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5b6a63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div></div></div></div></div>
+      <div style="font-size:11px;color:#5b6a63;line-height:1.9">شبکه‌ی ۷ ستونه با gap ۲px، خانه ۳۸px گوشه‌ی ۱۲px. روزِ انتخابی پرِ سبز با سایه‌ی ۳px؛ نقطه‌ی ۴px = روزی که تراکنش دارد.</div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:26px;padding:40px;direction:rtl;color:#16221C;font-family:Vazirmatn,sans-serif;background:#EAF3EE">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:1000px">
+    <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:12px;padding:5px 13px;border-radius:999px">نوبتِ ۲۸ — ورود، آنبوردینگ، جست‌وجو، اعلان‌ها</div></div>
+    <div style="font-size:27px;font-weight:900">صفحه‌هایی که هنوز طراحی نشده بودند</div>
+    <div style="font-size:14px;color:#5b6a63;line-height:1.9">دو گامِ آنبوردینگ، ورود با شماره‌ی موبایل و کدِ تأیید، قفلِ اپ، جست‌وجوی جهانی و مرکزِ اعلان‌ها. همان واژگانِ بصری: دکمه‌های سایه‌دار، حلقه‌ی درصد، کارتِ سفید با حاشیه‌ی ۲ پیکسل.</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<div id="28d" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#7440C9;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">28d</div><div style="font-size:16px;font-weight:700">جست‌وجوی جهانی</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#dbe6e0">
+        <div style="border-radius:32px;background:#F5FBFF;overflow:hidden;height:760px;display:flex;flex-direction:column">
+          <div style="padding:16px 16px 12px;display:flex;flex-direction:column;gap:12px;flex:none;background:#FFFFFF;border-bottom:2px solid #EEF3F0">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="flex:1;border-radius:16px;padding:12px 13px;background:#F5FBFF;border:2px solid #0EA968;display:flex;align-items:center;gap:9px">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0EA968" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+                <div style="font-size:13px;font-weight:800">قسط</div>
+                <div style="width:2px;height:15px;background:#0EA968;border-radius:2px"></div>
+                <div style="flex:1"></div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b9a93" stroke-width="2.6" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </div>
+              <div style="font-size:12px;font-weight:800;color:#5b6a63">لغو</div>
+            </div>
+            <div style="display:flex;gap:5px">
+              <div style="background:#0EA968;color:#FFF;font-size:10px;font-weight:800;padding:6px 11px;border-radius:999px;box-shadow:0 3px 0 #0B8C57">همه · ۱۴</div>
+              <div style="color:#5b6a63;font-size:10px;font-weight:700;padding:6px 10px;background:#F1F5F2;border-radius:999px">تراکنش ۹</div>
+              <div style="color:#5b6a63;font-size:10px;font-weight:700;padding:6px 10px;background:#F1F5F2;border-radius:999px">چک ۳</div>
+              <div style="color:#5b6a63;font-size:10px;font-weight:700;padding:6px 10px;background:#F1F5F2;border-radius:999px">وام ۲</div>
+            </div>
+          </div>
+          <div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div style="font-size:10px;font-weight:900;color:#8b9a93">وام و قسط</div>
+              <div style="border-radius:18px;padding:13px;background:#FFF5F5;border:2px solid #FFC9C9;display:flex;align-items:center;gap:11px">
+                <div style="width:36px;height:36px;border-radius:11px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;flex:none;font-size:14px;font-weight:900;color:#D93838">۳۳٪</div>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:900">قسطِ وامِ خودرو</div><div style="font-size:9.5px;color:#D93838;font-weight:700;margin-top:2px">فردا سررسید · ۳٬۵۰۰٬۰۰۰</div></div>
+                <div style="border-radius:999px;padding:8px 12px;background:#0EA968;box-shadow:0 3px 0 #0B8C57;color:#FFF;font-size:10px;font-weight:900;flex:none">پرداخت</div>
+              </div>
+              <div style="border-radius:18px;padding:13px;background:#FFFFFF;border:2px solid #E3ECE7;display:flex;align-items:center;gap:11px">
+                <div style="width:36px;height:36px;border-radius:11px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0EA968" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16v11H4zM4 11h16"/></svg></div>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:900">قسطِ وامِ ازدواج</div><div style="font-size:9.5px;color:#5b6a63;margin-top:2px">۲۸ شهریور · ۹۵۰٬۰۰۰</div></div>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c7d2cc" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="font-size:10px;font-weight:900;color:#8b9a93">تراکنش‌ها</div>
+                <div style="font-size:10px;font-weight:800;color:#0B8C57">۹ مورد · ۱۲٬۴۰۰٬۰۰۰</div>
+              </div>
+              <div style="border-radius:16px;padding:12px 13px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:11px">
+                <div style="width:32px;height:32px;border-radius:10px;background:#FFF1DC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B45F00" stroke-width="2.3" stroke-linecap="round"><path d="M3 10h18M6 10V6h12v4M5 10v10h14V10"/></svg></div>
+                <div style="flex:1"><div style="font-size:12px;font-weight:800">قسطِ خودرو — شهریور</div><div style="font-size:9.5px;color:#5b6a63;margin-top:2px">۵ شهریور · بانکِ ملی</div></div>
+                <div style="font-size:11.5px;font-weight:900;color:#D93838;flex:none">−۳٬۵۰۰٬۰۰۰</div>
+              </div>
+              <div style="border-radius:16px;padding:12px 13px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:11px">
+                <div style="width:32px;height:32px;border-radius:10px;background:#FFF1DC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B45F00" stroke-width="2.3" stroke-linecap="round"><path d="M3 10h18M6 10V6h12v4M5 10v10h14V10"/></svg></div>
+                <div style="flex:1"><div style="font-size:12px;font-weight:800">قسطِ خودرو — مرداد</div><div style="font-size:9.5px;color:#5b6a63;margin-top:2px">۵ مرداد · بانکِ ملی</div></div>
+                <div style="font-size:11.5px;font-weight:900;color:#D93838;flex:none">−۳٬۵۰۰٬۰۰۰</div>
+              </div>
+              <div style="border-radius:16px;padding:11px;background:#F1F5F2;display:flex;align-items:center;justify-content:center;gap:7px"><div style="font-size:11px;font-weight:800;color:#0B8C57">دیدنِ ۷ تراکنشِ دیگر</div><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B8C57" stroke-width="2.6" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div style="font-size:10px;font-weight:900;color:#8b9a93">جست‌وجوهای اخیر</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                <div style="font-size:10.5px;font-weight:700;color:#5b6a63;padding:7px 11px;background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px">بیمه</div>
+                <div style="font-size:10.5px;font-weight:700;color:#5b6a63;padding:7px 11px;background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px">اجاره</div>
+                <div style="font-size:10.5px;font-weight:700;color:#5b6a63;padding:7px 11px;background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px">چکِ صیاد</div>
+                <div style="font-size:10.5px;font-weight:700;color:#5b6a63;padding:7px 11px;background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px">حقوق</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#5b6a63;line-height:1.9">نتایج گروه‌بندی می‌شوند نه یک فهرستِ درهم: هر گروه سرجمعِ خودش را دارد. عملِ اصلیِ هر ردیف (پرداخت) در همان نتیجه است.</div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:26px;padding:10px 40px 40px;direction:rtl;color:#16221C;font-family:Vazirmatn,sans-serif;background:#16221C">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:1000px">
+    <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:12px;padding:5px 13px;border-radius:999px">نوبتِ ۲۵ — سندِ پیاده‌سازی</div></div>
+    <div style="font-size:27px;font-weight:900;color:#FFFFFF">راهنمای Claude Code</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.72);line-height:1.9">فهرستِ کاملِ چیزهایی که در این طرح هست و در نسخه‌ی فعلیِ برنامه نیست، به‌ترتیبِ وابستگی. هر مورد: مدلِ داده، اندپوینت، و کارتِ مرجع در همین فایل. رنگ‌ها و اندازه‌ها از دفترِ توکن‌های ۱۴c می‌آید — هیچ عددِ تازه‌ای اختراع نکن.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px;max-width:1450px">
+
+    <div style="border-radius:22px;padding:20px;background:#1B2530;border:1.5px solid #2A3640;display:flex;flex-direction:column;gap:13px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:9px;background:#0EA968;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#FFF">۱</div><div style="font-size:15px;font-weight:900;color:#FFFFFF">لایه‌ی پایه — اول این‌ها</div></div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#3DDC96">احراز هویت با شماره موبایل</b> — <span style="direction:ltr;display:inline-block">POST /auth/request-otp</span>, <span style="direction:ltr;display:inline-block">POST /auth/verify → {accessToken, refreshToken, isNewUser}</span>. مدل: <span style="direction:ltr;display:inline-block">User(id, phone, createdAt)</span>. کارت: ۲۸c. کدِ پنج‌رقمی، اعتبار ۲ دقیقه، سقفِ ۵ تلاش در ساعت، پرشدنِ خودکار با <span style="direction:ltr;display:inline-block">SMS Retriever</span>.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#3DDC96">همگام‌سازیِ سرور</b> — <span style="direction:ltr;display:inline-block">Room</span> منبعِ حقیقتِ محلی، صفِ همگام در پس‌زمینه، حلِ تعارض با <span style="direction:ltr;display:inline-block">updatedAt</span> (جدیدتر برنده). هر جدول <span style="direction:ltr;display:inline-block">updatedAt</span> و <span style="direction:ltr;display:inline-block">syncState</span> می‌گیرد. کارت: ۱۶c. برنامه بدونِ اینترنت کاملاً کار می‌کند.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#3DDC96">اشتراک</b> — <span style="direction:ltr;display:inline-block">Subscription(plan: TRIAL|M1|M3|M6|M12, startedAt, expiresAt, autoRenew, coinsApplied)</span>. شماره‌ی تازه ۳۰ روز <span style="direction:ltr;display:inline-block">TRIAL</span>؛ قیدِ یگانگی روی سرور، پس حذفِ برنامه تریالِ دوباره نمی‌دهد. پایانِ اشتراک = حالتِ فقط‌خواندن، نه حذفِ داده. کارت‌ها: ۲۰c، ۲۰e.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#3DDC96">سکه</b> — <span style="direction:ltr;display:inline-block">CoinEvent(id, type, amount, createdAt, refId?)</span> + <span style="direction:ltr;display:inline-block">unique(type, dateKey)</span>. موجودی همیشه از جمعِ دفتر بازسازی می‌شود، هرگز ذخیره نمی‌شود. نرخ: ۱۰ سکه = ۱٬۰۰۰ ریال، سقفِ ۳۰٪ هر خرید. کارت‌ها: ۲۰d، ۲۰e، ۱۸c.</div>
+    </div>
+
+    <div style="border-radius:22px;padding:20px;background:#1B2530;border:1.5px solid #2A3640;display:flex;flex-direction:column;gap:13px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:9px;background:#1CB0F6;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#FFF">۲</div><div style="font-size:15px;font-weight:900;color:#FFFFFF">ثبتِ خودکار — قابلیتِ متمایزکننده‌ی اصلی</div></div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#5CC9F9">خواندنِ پیامکِ بانکی</b> — <span style="direction:ltr;display:inline-block">SMS_RECEIVED</span> + فیلترِ فرستنده روی فهرستِ شماره‌های بانکی. الگوی <span style="direction:ltr;display:inline-block">regex</span> هر بانک از سرور به‌روز می‌شود (<span style="direction:ltr;display:inline-block">GET /patterns</span>)، پس بانکِ تازه نسخه‌ی جدید لازم ندارد. استخراج: مبلغ، نوع، چهار رقمِ آخر، ماندهٔ حساب.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#5CC9F9">خواندنِ اعلانِ بانک</b> — <span style="direction:ltr;display:inline-block">NotificationListenerService</span> + فیلترِ <span style="direction:ltr;display:inline-block">packageName</span>. فقط برای بانک‌هایی که پیامک نمی‌فرستند، تا ثبتِ دوباره نشود.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#5CC9F9">جلوگیری از تکرار</b> — کلیدِ یگانگی <span style="direction:ltr;display:inline-block">hash(bankId + amount + last4 + timestamp±۹۰s)</span>.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#5CC9F9">صندوقِ تایید</b> — <span style="direction:ltr;display:inline-block">PendingEntry(id, source: SMS|NOTIFICATION, rawText, parsed?, suggestedCategoryId, status)</span>. هیچ تراکنشی بی‌اجازه نهایی نمی‌شود. الگوی ناشناخته با متنِ خام می‌آید؛ بعد از دو تصحیحِ دستیِ یک فرستنده، الگو محلی ذخیره و به سرور پیشنهاد می‌شود. کارت‌ها: ۱۶a، ۱۶b، ۱۶c.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#5CC9F9">حریمِ خصوصی</b> — فیلترِ فرستنده پیش از هر خواندنی. متنِ پیامکِ غیربانکی هرگز پارس یا ارسال نمی‌شود؛ به سرور فقط فیلدهای استخراج‌شده می‌رود، نه متنِ خام. کلیدِ «فقط محلی» در تنظیمات همگام‌سازی را کاملاً خاموش می‌کند.</div>
+    </div>
+
+    <div style="border-radius:22px;padding:20px;background:#1B2530;border:1.5px solid #2A3640;display:flex;flex-direction:column;gap:13px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:9px;background:#A56EFF;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#FFF">۳</div><div style="font-size:15px;font-weight:900;color:#FFFFFF">طرفِ حساب و دنگ</div></div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#C29BFF">مدل</b> — <span style="direction:ltr;display:inline-block">Counterparty(id, name, phone?, avatarColor, createdAt)</span>. هر رکوردِ دیگر یک <span style="direction:ltr;display:inline-block">counterpartyId?</span> اختیاری می‌گیرد: <span style="direction:ltr;display:inline-block">Cheque</span>, <span style="direction:ltr;display:inline-block">Loan</span>, <span style="direction:ltr;display:inline-block">PersonalDebt(amount, direction, dueDate?)</span>, <span style="direction:ltr;display:inline-block">SplitShare</span>. هیچ جدولِ مانده‌ای ذخیره نمی‌شود.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#C29BFF">مانده</b> — <span style="direction:ltr;display:inline-block">Σ(چکِ دریافتیِ باز) − Σ(چکِ پرداختیِ باز) + Σ(قرضِ داده) − Σ(قرضِ گرفته) + Σ(دنگِ طلب) − Σ(دنگِ بدهی)</span>. همیشه محاسبه، هرگز ذخیره. کارت‌ها: ۲۲a، ۲۲b، ۲۲d.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#C29BFF">دنگ</b> — <span style="direction:ltr;display:inline-block">SplitBill(id, title, total, payerId, method: EQUAL|PERCENT|CUSTOM|ITEMIZED, isEnvelope)</span> + <span style="direction:ltr;display:inline-block">SplitShare(billId, counterpartyId, amount, isPaid)</span>. سهمِ پرداخت‌نشده خودکار در مانده‌ی طرفِ حساب دیده می‌شود. <span style="direction:ltr;display:inline-block">isEnvelope</span> = حالتِ مهمانی: تا بسته‌نشدن در میانگینِ ماهانه شمرده نمی‌شود. کارت: ۲۲c.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#C29BFF">مچ‌شدن</b> — <span style="direction:ltr;display:inline-block">autocomplete</span> روی نام در هر فرم. نرمال‌سازیِ فاصله، «ی»/«ك» عربی، نیم‌فاصله؛ نامِ شبیه پیشنهادِ ادغام می‌گیرد. تسویه: قدیمی‌ترین قلمِ باز اول بسته می‌شود.</div>
+    </div>
+
+    <div style="border-radius:22px;padding:20px;background:#1B2530;border:1.5px solid #2A3640;display:flex;flex-direction:column;gap:13px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:9px;background:#FF9600;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#FFF">۴</div><div style="font-size:15px;font-weight:900;color:#FFFFFF">گیمیفیکیشن</div></div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#FFB74D">روزهای فعال</b> — <span style="direction:ltr;display:inline-block">currentStreak, longestStreak, lastEntryDate</span>. اگر <span style="direction:ltr;display:inline-block">lastEntryDate == today−1</span> و امروز ثبت شد ‎+۱؛ فاصله ≥۲ روز صفر. کارت: ۱۴e‑۱.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#FFB74D">نشان‌ها</b> — <span style="direction:ltr;display:inline-block">badges: Map&lt;BadgeId, UnlockedAt?&gt;</span>. نه نشان با شرطِ دقیق و جایزه‌ی سکه در جدولِ ۱۴f. ارزیابی بعد از هر تراکنش/پرداخت، جز «زیرِ بودجه» (روزِ اولِ ماه) و «ماهِ منظم» (تغییرِ روزهای فعال). نشانِ بازشده هرگز پس گرفته نمی‌شود. صفحه: ۱۸a.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#FFB74D">آیکونِ تدریجی</b> — هشت <span style="direction:ltr;display:inline-block">activity-alias</span> (<span style="direction:ltr;display:inline-block">IconDay0..IconDay7</span>) + <span style="direction:ltr;display:inline-block">WorkManager</span> روزانه ساعتِ ۰۳:۰۰. کارت: ۲۴c.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#FFB74D">پیام‌های پله‌ای</b> — هفت متنِ متفاوت برای هفت روزِ بی‌فعالیت، بعد یک متنِ ثابت هر سه روز، قطعِ کامل بعد از ۳۰ روز. اندیس = <span style="direction:ltr;display:inline-block">min(daysIdle, 7)</span>. پیامِ ۶ و ۷ فقط اگر روزهای فعالِ قبلی ≥۳ بوده. کارت: ۱۴b‑۲.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#FFB74D">فروشگاهِ ظاهر</b> — <span style="direction:ltr;display:inline-block">ownedCosmetics: Set&lt;String&gt;, activeTheme: String</span>. تم ۱۵۰، آیکونِ دسته ۱۰۰، نشانِ نام ۷۵ سکه. تمِ چهارم فقط با نشان باز می‌شود، نه با سکه. صفحه: ۱۸b.</div>
+    </div>
+
+    <div style="border-radius:22px;padding:20px;background:#1B2530;border:1.5px solid #2A3640;display:flex;flex-direction:column;gap:13px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:9px;background:#5CC9F9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#16221C">۵</div><div style="font-size:15px;font-weight:900;color:#FFFFFF">لایه‌ی هوشمند — همه بدونِ فیلدِ تازه</div></div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px">
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">سهمِ روزانه</b> — <span style="direction:ltr;display:inline-block">(budget − spent) / daysLeft</span>، شبانه. کارت ۲۳a.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">روزِ خالی‌شدن</b> — موجودی − اقساطِ پیشِ‌رو ÷ میانگینِ ۳۰ روز. کارت ۲۳b.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">قدرتِ خرید</b> — جدولِ قیمتِ کالای مرجع، ماهانه از سرور. کارت ۲۳c.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">ساعتِ کار</b> — <span style="direction:ltr;display:inline-block">income / (workDays × hours)</span>، سه عدد در پروفایل. کارت ۲۳d.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">ثابت/متغیر</b> — هم‌مبلغ ±۵٪ و هم‌فروشنده در ≥۳ ماه. کارت ۲۳e.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">اشتراکِ فراموش‌شده</b> — ≥۳ پرداختِ ±۲٪ با فاصله‌ی ۲۸–۳۲ روز. کارت ۲۳f.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">ماهِ سخت</b> — ۳۰ روز قبل، اگر همان ماهِ پارسال ≥۲۵٪ بالای میانگین. کارت ۲۳g.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">یادآوریِ حقوق</b> — روزِ حقوق از الگوی واریزِ ثابت. کارت ۲۳g.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">تصمیمِ ۷۲ ساعته</b> — <span style="direction:ltr;display:inline-block">WishlistItem(title, amount, createdAt, decision)</span>. کارت ۲۳h.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">نقدِ جیب</b> — برداشتِ خودپرداز به حسابِ نقدی منتقل، نه خرج. کارت ۲۳i.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">قفلِ دسته</b> — <span style="direction:ltr;display:inline-block">Category.isLocked</span> + شمارنده‌ی روزِ پاک. کارت ۲۳j.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">کجا زیاد دادی</b> — مقایسه‌ی میانگینِ فروشنده بینِ دو ماه، ≥۳ خرید. کارت ۲۳j.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">دفترچه‌ی طلا</b> — <span style="direction:ltr;display:inline-block">Holding(type, amount, buyRate, buyDate)</span>. کارت ۲۳k.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">آرشیوِ سالانه</b> — کارتِ PNG + اظهارنامه‌ی PDF. کارت ۲۳l.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">ورودِ عقب‌افتاده</b> — روز‌به‌روز، با گزینه‌ی «چیزی نخریدم». کارت ۲۳l.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7);line-height:1.9"><b style="color:#3DDC96">نرخِ بازار</b> — <span style="direction:ltr;display:inline-block">MarketRate(symbol, category, priceRial, priceUsd?, change24h, change7d)</span>، هر ۵ دقیقه. کارت ۱۴h.</div>
+      </div>
+      <div style="border-radius:14px;padding:12px 14px;background:rgba(255,150,0,.14);border:1px solid rgba(255,150,0,.3);font-size:11.5px;color:#FFB74D;line-height:1.9">قاعده‌ی ضدِشلوغی: خانه هیچ‌وقت بیش از دو کارتِ هوشمند هم‌زمان نشان نمی‌دهد. اولویت: روزِ خالی‌شدن &gt; ورودِ عقب‌افتاده &gt; یادآوریِ حقوق &gt; ماهِ سخت &gt; مرورِ هفته.</div>
+    </div>
+
+    <div style="border-radius:22px;padding:20px;background:#1B2530;border:1.5px solid #2A3640;display:flex;flex-direction:column;gap:13px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="width:28px;height:28px;border-radius:9px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#16221C">۶</div><div style="font-size:15px;font-weight:900;color:#FFFFFF">قواعدِ عمومیِ رابط</div></div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#FFFFFF">توکن‌ها</b> — همه‌ی رنگ، اندازه‌ی متن، شعاعِ گوشه و فاصله از کارتِ ۱۴c. هیچ عددِ خارج از آن جدول استفاده نشود. سایه فقط دو حالت: <span style="direction:ltr;display:inline-block">0 4px 0 &lt;تیره‌ترِ هم‌رنگ&gt;</span> برای فشاری، بدونِ سایه برای اطلاعاتی.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#FFFFFF">حالتِ خالی</b> — حاشیه‌ی <span style="direction:ltr;display:inline-block">2px dashed #C9D6CF</span>، تصویر از اجزای واقعیِ همان صفحه، وعده‌ی نتیجه (نه توضیحِ عمل)، یک دکمه‌ی اصلی. اسکلتِ بارگذاری جداست: <span style="direction:ltr;display:inline-block">#F1F5F2</span> با موجِ درخشان تا وقتی <span style="direction:ltr;display:inline-block">isLoading</span>. کارت‌های ۲۱a تا ۲۱g.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#FFFFFF">نوارِ پایین</b> — پنج تب: خانه، دارایی، گزارش، بودجه، سررسید. تبِ فعال قرصِ <span style="direction:ltr;display:inline-block">44×30</span> با <span style="direction:ltr;display:inline-block">#E9F7EF</span>. دکمه‌ی + گوشه‌ی پایین‌چپ، نه وسطِ نوار. هیچ تبِ ششمی اضافه نشود. کارت ۱۴d.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#FFFFFF">انیمیشن</b> — ورودِ کارت <span style="direction:ltr;display:inline-block">200ms ease-out</span> با <span style="direction:ltr;display:inline-block">translateY 12px</span>؛ فشارِ دکمه <span style="direction:ltr;display:inline-block">100ms</span> با <span style="direction:ltr;display:inline-block">translateY 3px</span> و حذفِ سایه؛ پرشِ جایزه <span style="direction:ltr;display:inline-block">cubic-bezier(.34,1.56,.64,1)</span>؛ سکه چهار مرحله در ۱٫۱ ثانیه (۲۰e). هیچ انیمیشنی ورودیِ کاربر را قطع نمی‌کند و با <span style="direction:ltr;display:inline-block">Reduce motion</span> به فیدِ ساده تبدیل می‌شود.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#FFFFFF">تمِ تیره</b> — تنها کارتِ تیره‌ی برنامه کارتِ رمزارز است (استثنای عمدی). تمِ شبِ کاملِ اختیاری در کارت‌های نوبتِ ۹ هست، ولی پیش‌فرض روشن است.</div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,.72);line-height:2"><b style="color:#FFFFFF">لوگو</b> — نسخه‌ی v4 (کارتِ ۲۴a) مرجعِ نهایی است: بدنه‌ی روشن، درِ سبزِ میانی، سکه‌ی مرکزیِ نیمه‌پنهان. در ۲۸px زبانه و شیار حذف می‌شود.</div>
+    </div>
+
+  </div>
+</section>
+
+
+<section style="display:flex;flex-direction:column;gap:26px;padding:10px 40px 40px;direction:rtl;color:#16221C;font-family:Vazirmatn,sans-serif;background:#F7FAF8">
+  <div style="font-size:20px;font-weight:900">۱۴c — دفترِ توکن‌ها (مرجعِ واحدِ همه‌ی صفحات)</div>
+  <div style="font-size:13px;color:#5b6a63;line-height:1.9;max-width:1000px">هر عددی که در نوبت‌های ۱ تا ۱۳ استفاده شده از همین جدول می‌آید. اگر جایی عددی دیدی که اینجا نیست، اشتباه است و باید به نزدیک‌ترین مقدارِ این جدول گرد شود.</div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+    <div id="14c1" style="border-radius:24px;padding:20px;background:#FFFFFF;border:2px solid #E3ECE7;width:466px;display:flex;flex-direction:column;gap:14px">
+      <div style="font-size:14px;font-weight:900">رنگ</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:34px;height:34px;border-radius:11px;background:#0EA968;flex:none"></div><div><div style="font-size:11px;font-weight:800">سبزِ اصلی</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">#0EA968</div></div></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:34px;height:34px;border-radius:11px;background:#0B8C57;flex:none"></div><div><div style="font-size:11px;font-weight:800">سبزِ سایه</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">#0B8C57</div></div></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:34px;height:34px;border-radius:11px;background:#E9F7EF;border:1px solid #DCE7E1;flex:none"></div><div><div style="font-size:11px;font-weight:800">سبزِ روشن</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">#E9F7EF</div></div></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:34px;height:34px;border-radius:11px;background:#FF9600;flex:none"></div><div><div style="font-size:11px;font-weight:800">نارنجی (روزهای فعال)</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">#FF9600</div></div></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:34px;height:34px;border-radius:11px;background:#FF4B4B;flex:none"></div><div><div style="font-size:11px;font-weight:800">قرمز (هشدار)</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">#FF4B4B</div></div></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:34px;height:34px;border-radius:11px;background:#1CB0F6;flex:none"></div><div><div style="font-size:11px;font-weight:800">آبی (رفت‌وآمد)</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">#1CB0F6</div></div></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:34px;height:34px;border-radius:11px;background:#A56EFF;flex:none"></div><div><div style="font-size:11px;font-weight:800">بنفش (خانه)</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">#A56EFF</div></div></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:34px;height:34px;border-radius:11px;background:linear-gradient(165deg,#F7D68C,#D9A32C);flex:none"></div><div><div style="font-size:11px;font-weight:800">طلاییِ سکه</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">#F7BB35</div></div></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:34px;height:34px;border-radius:11px;background:#F5FBFF;border:1px solid #E3ECE7;flex:none"></div><div><div style="font-size:11px;font-weight:800">پس‌زمینه‌ی صفحه</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">#F5FBFF</div></div></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:34px;height:34px;border-radius:11px;background:#FFFFFF;border:1px solid #E3ECE7;flex:none"></div><div><div style="font-size:11px;font-weight:800">سطحِ کارت</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">#FFFFFF</div></div></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:34px;height:34px;border-radius:11px;background:#16221C;flex:none"></div><div><div style="font-size:11px;font-weight:800">متنِ اصلی</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">#16221C</div></div></div>
+        <div style="display:flex;align-items:center;gap:9px"><div style="width:34px;height:34px;border-radius:11px;background:#5b6a63;flex:none"></div><div><div style="font-size:11px;font-weight:800">متنِ کم‌رنگ</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">#5b6a63</div></div></div>
+      </div>
+      <div style="font-size:11px;color:#5b6a63;line-height:1.9">حاشیه‌ها فقط دو مقدار: <span style="direction:ltr;display:inline-block">#E3ECE7</span> برای کارتِ سطحِ اول، <span style="direction:ltr;display:inline-block">#EEF3F0</span> برای کارتِ داخلِ کارت. هر رنگِ دسته یک پس‌زمینه‌ی ۱۲٪ دارد: خوراک <span style="direction:ltr;display:inline-block">#FFECEC</span>، رفت‌وآمد <span style="direction:ltr;display:inline-block">#EAF1FE</span>، خانه <span style="direction:ltr;display:inline-block">#F3EAFE</span>، درآمد <span style="direction:ltr;display:inline-block">#FFF1DC</span>.</div>
+    </div>
+
+    <div id="14c2" style="border-radius:24px;padding:20px;background:#FFFFFF;border:2px solid #E3ECE7;width:466px;display:flex;flex-direction:column;gap:16px">
+      <div style="font-size:14px;font-weight:900">مقیاسِ متن، گوشه، فاصله</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;align-items:baseline;gap:10px"><div style="font-size:22px;font-weight:900">عنوانِ صفحه</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">22 / 900</div></div>
+        <div style="display:flex;align-items:baseline;gap:10px"><div style="font-size:15px;font-weight:900">عنوانِ بخش</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">15 / 900</div></div>
+        <div style="display:flex;align-items:baseline;gap:10px"><div style="font-size:12.5px;font-weight:800">عنوانِ کارت</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">12.5 / 800</div></div>
+        <div style="display:flex;align-items:baseline;gap:10px"><div style="font-size:11.5px;font-weight:700">متنِ بدنه</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">11.5 / 700</div></div>
+        <div style="display:flex;align-items:baseline;gap:10px"><div style="font-size:10.5px;color:#5b6a63">توضیحِ کمکی</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">10.5 / 400</div></div>
+        <div style="display:flex;align-items:baseline;gap:10px"><div style="font-size:8.5px;font-weight:800;background:#FFF1DC;color:#B45F00;padding:2px 7px;border-radius:999px">برچسب</div><div style="font-size:10px;color:#9aa8a1;direction:ltr">8.5 / 800</div></div>
+      </div>
+      <div style="height:1px;background:#EEF3F0"></div>
+      <div style="display:flex;align-items:flex-end;gap:14px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:54px;height:44px;border-radius:999px;background:#E9F7EF;border:1.5px solid #9FE0BC"></div><div style="font-size:9.5px;color:#9aa8a1;font-weight:700">999 دکمه</div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:54px;height:44px;border-radius:20px;background:#E9F7EF;border:1.5px solid #9FE0BC"></div><div style="font-size:9.5px;color:#9aa8a1;font-weight:700">20 کارت</div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:54px;height:44px;border-radius:16px;background:#E9F7EF;border:1.5px solid #9FE0BC"></div><div style="font-size:9.5px;color:#9aa8a1;font-weight:700">16 ردیف</div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:54px;height:44px;border-radius:11px;background:#E9F7EF;border:1.5px solid #9FE0BC"></div><div style="font-size:9.5px;color:#9aa8a1;font-weight:700">11 آیکون</div></div>
+      </div>
+      <div style="height:1px;background:#EEF3F0"></div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <div style="display:flex;align-items:center;gap:10px"><div style="width:170px;height:16px;border-radius:5px;background:#0EA968"></div><div style="font-size:11px;color:#5b6a63">دکمه‌ی اصلی — <span style="direction:ltr;display:inline-block">padding 15/0, shadow 0 4px 0 #0B8C57</span></div></div>
+        <div style="display:flex;align-items:center;gap:10px"><div style="width:170px;height:16px;border-radius:5px;background:#FFFFFF;border:1.5px solid #DCE7E1"></div><div style="font-size:11px;color:#5b6a63">دکمه‌ی ثانویه — بدونِ سایه، متنِ <span style="direction:ltr;display:inline-block">#5b6a63</span></div></div>
+        <div style="display:flex;align-items:center;gap:10px"><div style="width:170px;height:16px;border-radius:5px;background:#FF9600"></div><div style="font-size:11px;color:#5b6a63">دکمه‌ی جایزه — <span style="direction:ltr;display:inline-block">shadow 0 4px 0 #C97500</span></div></div>
+      </div>
+      <div style="font-size:11px;color:#5b6a63;line-height:2">پدینگِ صفحه ۱۶px، فاصله‌ی بینِ کارت‌ها ۱۲px، فاصله‌ی داخلِ کارت ۱۰px، پدینگِ کارت ۱۴–۱۶px. ارتفاعِ هدفِ لمس هیچ‌جا کمتر از ۴۴px نیست. سایه‌ی همه‌ی سطوح فقط دو حالت: <span style="direction:ltr;display:inline-block">0 4px 0 &lt;تیره‌ترِ هم‌رنگ&gt;</span> برای دکمه و کارتِ فشاری، و بدونِ سایه برای کارتِ اطلاعاتی.</div>
+    </div>
+
+    <div id="14c3" style="border-radius:24px;padding:20px;background:#FFFFFF;border:2px solid #E3ECE7;width:466px;display:flex;flex-direction:column;gap:14px">
+      <div style="font-size:14px;font-weight:900">۱۴d — نوارِ پایین، پنج تب</div>
+      <div style="border-radius:22px;background:#FFFFFF;border:2px solid #EEF3F0;padding:9px 6px;display:flex;justify-content:space-around;align-items:center">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px"><div style="width:44px;height:30px;border-radius:11px;background:#E9F7EF;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0EA968" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9h14v-9"/></svg></div><div style="font-size:9.5px;font-weight:900;color:#0EA968">خانه</div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px"><div style="width:44px;height:30px;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#9aa8a1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></div><div style="font-size:9.5px;font-weight:700;color:#9aa8a1">دارایی</div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px"><div style="width:44px;height:30px;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#9aa8a1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M12 19V5M20 19v-6"/></svg></div><div style="font-size:9.5px;font-weight:700;color:#9aa8a1">گزارش</div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px"><div style="width:44px;height:30px;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#9aa8a1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div style="font-size:9.5px;font-weight:700;color:#9aa8a1">بودجه</div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px"><div style="width:44px;height:30px;display:flex;align-items:center;justify-content:center;position:relative"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#9aa8a1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M4 10h16M8 3v4M16 3v4"/></svg><div style="position:absolute;top:-2px;left:8px;width:15px;height:15px;border-radius:50%;background:#FF4B4B;color:#FFFFFF;font-size:8px;font-weight:900;display:flex;align-items:center;justify-content:center">۲</div></div><div style="font-size:9.5px;font-weight:700;color:#9aa8a1">سررسید</div></div>
+      </div>
+      <div style="font-size:11px;color:#5b6a63;line-height:2">تبِ فعال: قرصِ <span style="direction:ltr;display:inline-block">44×30</span> با گوشه ۱۱px و پس‌زمینه‌ی <span style="direction:ltr;display:inline-block">#E9F7EF</span>، آیکون و متن <span style="direction:ltr;display:inline-block">#0EA968</span> با وزنِ ۹۰۰. تبِ غیرفعال بدونِ قرص، رنگ <span style="direction:ltr;display:inline-block">#9aa8a1</span>، وزنِ ۷۰۰. ضخامتِ خطِ همه‌ی آیکون‌ها ۲٫۴ و انتهای گرد؛ هیچ آیکونی پرشده نیست. نقطه‌ی قرمزِ اعلان ۸px با حاشیه‌ی سفیدِ ۱٫۵px، فقط روی سررسید و پروفایل. هیچ دکمه‌ی شناورِ وسط اضافه نشده — دکمه‌ی + گوشه‌ی پایین‌چپ می‌نشیند تا با پنج‌تبِ فعلی تداخل نکند.</div>
+    </div>
+  </div>
+</section>
+
+
+<section style="display:flex;flex-direction:column;gap:22px;padding:40px;direction:rtl;color:#16221C;font-family:Vazirmatn,sans-serif">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:1000px">
+    <div style="font-size:26px;font-weight:900">جیبک — سبکِ جدید (فلت/شاد، بدونِ شخصیتِ کارتونی)</div>
+    <div style="font-size:14px;color:#5b6a63;line-height:1.9">سه صفحه‌ی اول برای دیدنِ سبک: خانه، گزارش، دارایی. پس‌زمینه‌ی روشن، رنگ‌های پررنگِ solid (نه شیشه‌ای)، کارت‌های تخت با حاشیه‌ی هم‌رنگ و سایه‌ی افقیِ ضخیم (حسِ دکمه‌های فیزیکی)، بج/روزهای فعال/نوارِ پیشرفت برای گیمیفیکیشن. نوارِ پایین دقیقاً همون ۵ تبِ فعلی، بدونِ دکمه‌ی وسط.</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+
+    <!-- HOME -->
+    
+
+    <!-- REPORT -->
+    
+
+    <!-- ASSETS -->
+    
+
+    <!-- PALETTE / SPEC -->
+    <div id="1d" style="width:720px;display:flex;flex-direction:column;gap:14px">
+      <div style="border-radius:20px;padding:18px;background:#FFFFFF;border:2px solid #E3ECE7">
+        <div style="font-weight:800;margin-bottom:10px;font-size:13.5px">پالتِ رنگیِ جدید</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#0EA968"></div><div style="font-size:10.5px;margin-top:5px;font-weight:700">اصلی/دخل<br>#0EA968</div></div>
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#FF4B4B"></div><div style="font-size:10.5px;margin-top:5px;font-weight:700">خرج<br>#FF4B4B</div></div>
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#1CB0F6"></div><div style="font-size:10.5px;margin-top:5px;font-weight:700">اطلاعاتی<br>#1CB0F6</div></div>
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#FF9600"></div><div style="font-size:10.5px;margin-top:5px;font-weight:700">روزهای فعال/بج<br>#FF9600</div></div>
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#A56EFF"></div><div style="font-size:10.5px;margin-top:5px;font-weight:700">دسته‌یِ سوم<br>#A56EFF</div></div>
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#F5FBFF;border:1px solid #dbe6e0"></div><div style="font-size:10.5px;margin-top:5px;font-weight:700">پس‌زمینه (روشن)<br>#F5FBFF</div></div>
+        </div>
+        <div style="font-weight:800;margin:14px 0 10px;font-size:13.5px">پالتِ تیره (همون هیوها، پایه‌ی تاریک)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#10181F;border:1px solid #2A3640"></div><div style="font-size:10.5px;margin-top:5px;font-weight:700">پس‌زمینه (تیره)<br>#10181F</div></div>
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#1B2530;border:1px solid #2A3640"></div><div style="font-size:10.5px;margin-top:5px;font-weight:700">کارتِ تیره<br>#1B2530</div></div>
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#0EA968"></div><div style="font-size:10.5px;margin-top:5px;font-weight:700">اصلی (بی‌تغییر)<br>#0EA968</div></div>
+          <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#F3F7F5"></div><div style="font-size:10.5px;margin-top:5px;font-weight:700">متنِ تیره<br>#F3F7F5</div></div>
+        </div>
+      </div>
+      <div style="border-radius:20px;padding:18px;background:#FFFFFF;border:2px solid #E3ECE7;font-size:13px;line-height:2">
+        <div style="font-weight:800;margin-bottom:6px">مشخصاتِ پیاده‌سازی — تغییرِ زبانِ بصری</div>
+        <div style="color:#5b6a63"><b style="color:#16221C">توکن‌ها:</b> این پالت با <span style="color:#16221C">AppColorPalette</span>ِ فعلی در <span style="color:#16221C">Color.kt</span> ناهم‌خواست (اون شیشه‌ای/تاریک‌محوره) — نیازِ یه ست کاملاً جدیدِ توکن (یا اورراید کاملِ Light/Dark فعلی). پیشنهاد: به‌جایِ overrideِ درجا، یه پالتِ جدید تعریف و پرچمِ فیچر برای سوییچ بین دو زبانِ بصری تا وقتی کاربر قطعی تصمیم بگیره.</div>
+        <div style="color:#5b6a63"><b style="color:#16221C">AppCard:</b> مسیرِ شیشه‌ای (`glassBase`+gradient+highlight) باید یه مسیرِ موازیِ «تخت» بگیره: پسِ‌زمینه‌ی سفیدِ solid + حاشیه‌ی ۲dp هم‌رنگِ دسته + سایه‌ی افقیِ رنگی (`Modifier.drawBehind` یه مستطیلِ هم‌شکل ۴dp پایین‌تر، چون Compose سایه‌ی افستِ رنگیِ native نداره) — کامپوننتِ جدید نه بازنویسیِ AppCard، تا مسیرِ فعلی خراب نشه.</div>
+        <div style="color:#5b6a63"><b style="color:#16221C">روزهای فعال/گیمیفیکیشن (کاملاً جدید):</b> نیازِ شمارشِ روزهایِ متوالیِ ثبتِ تراکنش (کوئری روی تاریخ‌های Room)، ذخیره‌ی رکورد، و منطقِ دستاورد (آستانه‌های ثابت: ۷/۳۰/۹۰ روز، «بودجه رعایت شد» = هیچ دسته‌ای از سقفِ بودجه رد نشده تو ماه). هیچ‌کدوم در کدِ فعلی وجود ندارن.</div>
+        <div style="color:#5b6a63"><b style="color:#16221C">دکمه‌ها:</b> پیلِ solid با همون سایه‌ی افقیِ ۴dp (نه گرادیان) — `GradientButton` فعلی باید یه واریانتِ `FlatButton` جدید بگیره یا پارامترِ سبک اضافه کنه.</div>
+        <div style="color:#5b6a63">۵ تبِ نوارِ پایین و همه‌ی منطق/داده‌ها بدونِ تغییر — فقط پوسته‌ی بصری عوض شد.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+</x-dc>
+</body>
+</html>
