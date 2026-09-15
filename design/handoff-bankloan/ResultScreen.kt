@@ -23,8 +23,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -84,6 +87,8 @@ import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.components.SlimSlider
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import ir.sadteam.loancalc.ui.components.amountSliderSteps
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
@@ -99,9 +104,12 @@ import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -123,6 +131,17 @@ private const val AMOUNT_MAX_TOMAN = 1_000_000_000f
 @Composable
 fun ResultScreen(
     outcome: BankLoanOutcome,
+    /**
+     * کدام محاسبه‌گر به این نتیجه رسیده - فریمِ `68b` بندِ ۴.
+     *
+     * سه ورودیِ متفاوت (سرویسِ اعتباری، وامِ بانکی، توانِ بازپرداخت) به همین یک صفحه
+     * می‌رسند و صفحه نمی‌گفت کدام؛ کاربری که «توانِ بازپرداخت» زده و سرصفحه‌ی «نتیجه
+     * محاسبه» می‌بیند فکر می‌کند اشتباه شده.
+     *
+     * ⚠️ مقدارش را **میزبان** می‌دهد (`CalculatorHostScreen` / مسیرِ ناوبری) - حدس نزدم.
+     * `null` یعنی قرص نمی‌آید، پس فراخوان‌های فعلی بی تغییر کار می‌کنند.
+     */
+    sourceLabel: String? = null,
     // بعدِ ذخیره‌ی موفقِ وام، «ویرایش» دیگه معنی نداره (وام از قبل با همین اطلاعات ذخیره شده) -
     // این callback به‌جاش صدا زده می‌شه و باید فرم رو کاملاً خالی/ریست کنه (نه فقط نگه‌داشتنِ
     // مقادیرِ قبلی) تا کاربر بتونه بدونِ باقی‌موندنِ اعداد/بانکِ وامِ قبلی، وامِ بعدی رو وارد کنه -
@@ -277,6 +296,19 @@ fun ResultScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (sourceLabel != null) {
+                    Text(
+                        sourceLabel,
+                        color = AppPrimaryInk,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppPrimaryPill)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    )
+                }
                 Text(
                     text = if (outcome.borrower != "—") "وام ${outcome.borrower}" else "نتیجه محاسبه",
                     color = AppText,
@@ -497,6 +529,29 @@ fun ResultScreen(
             }
         }
 
+        // فریمِ `68b` بندِ ۲: افسانه‌ی حلقه.
+        //
+        // `LoanRing` از قبل دورنگ است (اصل/سود) ولی هیچ‌جا نمی‌گفت کدام رنگ چیست - و
+        // نسبتِ سود تنها چیزی است که کاربر برای **مقایسه‌ی دو وام** لازم دارد. پیش از
+        // این همان عدد در جعبه‌ی «سود نسبت به اصل وام» بود و در فهرستِ اعداد گم می‌شد.
+        item {
+            StaggerIn(0) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                ) {
+                    val interestShare = if (result.principal + result.totalInterest > 0) {
+                        result.totalInterest / (result.principal + result.totalInterest) * 100
+                    } else {
+                        0.0
+                    }
+                    RingLegend(AppPrimary, "اصل", 100.0 - interestShare)
+                    RingLegend(AppAccent, "سود", interestShare)
+                }
+            }
+        }
+
         item {
             StaggerIn(1) {
                 Text(
@@ -584,53 +639,89 @@ fun ResultScreen(
             }
         }
 
+        // 🚨 فریمِ `68b` بندِ ۱: هفت جعبه‌ی هم‌اندازه → یک فهرستِ برچسب/مقدار.
+        //
+        // `StatBox`های هم‌عرض «کلِ بازپرداخت» را هم‌وزنِ «سررسید هر ماه» نشان می‌دادند، و
+        // جعبه‌ی هم‌اندازه یعنی اهمیتِ هم‌اندازه. فهرست سلسله‌مراتب دارد: ردیفِ اول درشت‌تر
+        // است و بقیه خطِ عادی.
+        //
+        // کارمزدِ قرض‌الحسنه هم ردیف شد نه جعبه‌ی تمام‌عرضِ شرطی - آن جعبه وقتی نبود یک
+        // حفره در چیدمان می‌گذاشت (بندِ ۵).
         item {
             StaggerIn(2) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    PrivacyCrossfade(privacyMode, modifier = Modifier.weight(1.3f)) { masked ->
-                        StatBox("کل بازپرداخت (تومان)", maskIfPrivate(masked, amountToman(animatedTotal)))
+                AppCard {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        PrivacyCrossfade(privacyMode, modifier = Modifier.fillMaxWidth()) { masked ->
+                            SummaryRow(
+                                label = "کلِ بازپرداخت",
+                                value = "${maskIfPrivate(masked, amountToman(animatedTotal))} تومان",
+                                emphasis = true,
+                            )
+                        }
+                        HorizontalDivider(color = AppLine)
+                        val pctText = if (interestPct < 10) {
+                            toFa(String.format(Locale.US, "%.1f", interestPct))
+                        } else {
+                            toFa(interestPct.roundToLong().toString())
+                        }
+                        SummaryRow("سود نسبت به اصلِ وام", "$pctText٪")
+                        HorizontalDivider(color = AppLine)
+                        SummaryRow("سررسیدِ هر ماه", ordinalFa(outcome.startDate.d))
+                        HorizontalDivider(color = AppLine)
+                        SummaryRow("مدتِ وام", "${toFa(outcome.n)} ماه")
+                        HorizontalDivider(color = AppLine)
+                        SummaryRow(
+                            "پایانِ وام",
+                            "${toFa(endDate.d)} ${persianMonthName(endDate.m)} ${toFa(endDate.y)}",
+                        )
+                        if (feeAmount > 0) {
+                            HorizontalDivider(color = AppLine)
+                            // `toString()`ِ خام می‌تونست «۴٫۰۰۰۰۰۰۰۰۱» بده - همون تابعی که
+                            // فیلدِ نرخ ازش استفاده می‌کنه، اینجا هم.
+                            val rateLabel = trimRateResult(outcome.ratePct)
+                            PrivacyCrossfade(privacyMode, modifier = Modifier.fillMaxWidth()) { masked ->
+                                SummaryRow(
+                                    "کارمزدِ سالانه (قرض‌الحسنه)",
+                                    "${maskIfPrivate(masked, amountToman(feeAmount))} تومان · ${toFa(rateLabel)}٪",
+                                )
+                            }
+                        }
                     }
-                    StatBox("سررسید هر ماه", ordinalFa(outcome.startDate.d), Modifier.weight(1f))
-                    StatBox("مدت وام", "${toFa(outcome.n)} ماه", Modifier.weight(1f))
-                }
-            }
-        }
-
-        item {
-            StaggerIn(3) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val pctText = if (interestPct < 10) {
-                        toFa(String.format(Locale.US, "%.1f", interestPct))
-                    } else {
-                        toFa(interestPct.roundToLong().toString())
-                    }
-                    StatBox("سود نسبت به اصل وام", "$pctText٪", Modifier.weight(1f))
-                    StatBox(
-                        "تاریخ پایان وام",
-                        "${toFa(endDate.d)} ${persianMonthName(endDate.m)} ${toFa(endDate.y)}",
-                        Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-
-        if (feeAmount > 0) {
-            item {
-                // `toString()`ِ خام می‌تونست «۴٫۰۰۰۰۰۰۰۰۱» بده - همون تابعی که فیلدِ نرخ ازش
-                // استفاده می‌کنه، اینجا هم.
-                val rateLabel = trimRateResult(outcome.ratePct)
-                PrivacyCrossfade(privacyMode, modifier = Modifier.fillMaxWidth()) { masked ->
-                    StatBox(
-                        "کارمزد سالانه (قرض‌الحسنه)",
-                        "${maskIfPrivate(masked, amountToman(feeAmount))} تومان (${toFa(rateLabel)}٪ سالانه)",
-                    )
                 }
             }
         }
 
         item {
             StaggerIn(4) {
-            AppCard(label = "جدول کامل اقساط") {
+            AppCard {
+                // فریمِ `68b` بندِ ۳: جدول **خلاصه** می‌گیرد - همان گپی که در فرمِ افزودن
+                // هم بود. کاربر جدولِ دوازده‌ردیفی را اسکرول می‌کرد تا جمع و تاریخِ پایان
+                // را پیدا کند، و هیچ‌کدام در جدول نبودند.
+                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+                    Text("جدولِ کاملِ اقساط", color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            "${toFa(outcome.n)} قسط · جمعِ ${maskIfPrivate(masked, amountToman(result.totalPaid))} تومان · تا ${toFa(endDate.d)} ${persianMonthName(endDate.m)} ${toFa(endDate.y)}",
+                            color = AppMuted,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                }
+
+                // و **سرستون** می‌گیرد: سه ستونِ بی‌برچسب یعنی کاربر باید حدس بزند عددِ
+                // سمتِ چپ مبلغِ قسط است یا ماندهٔ بدهی.
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(start = 10.dp, bottom = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text("شماره", color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Black)
+                    Text("سررسید", color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Black)
+                    Text("مبلغِ قسط", color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Black)
+                }
+                HorizontalDivider(color = AppLine)
+
                 // حداکثر ۵ قسط تو صفحه جا می‌شه، بقیه با اسکرول - کنارش یه اسکرول‌بار سبز نشون می‌ده
                 // چقدر پایین رفتیم (خواسته‌ی کاربر).
                 val tableState = rememberLazyListState()
@@ -789,5 +880,47 @@ private suspend fun animateValue(from: Double, to: Double, durationMs: Long = 50
         onUpdate(from + (to - from) * eased)
         if (p >= 1.0) break
         delay(16)
+    }
+}
+
+/**
+ * ردیفِ برچسب/مقدارِ کارتِ خلاصه - فریمِ `68a`.
+ *
+ * جای `StatBox` آمد: جعبه‌های هم‌عرض سلسله‌مراتب نداشتند و «کلِ بازپرداخت» هم‌وزنِ
+ * «سررسید هر ماه» دیده می‌شد. [emphasis] فقط برای ردیفِ اول.
+ */
+@Composable
+private fun SummaryRow(label: String, value: String, emphasis: Boolean = false) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            color = AppMuted,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            value,
+            color = AppText,
+            fontSize = if (emphasis) 12.5.sp else 11.sp,
+            fontWeight = FontWeight.Black,
+        )
+    }
+}
+
+/** یک قلمِ افسانه‌ی حلقه - نقطه‌ی هم‌رنگِ کمان + برچسب + درصد. */
+@Composable
+private fun RingLegend(color: Color, label: String, percent: Double) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(color))
+        Text(
+            "$label ${toFa(percent.roundToLong().toString())}٪",
+            color = AppMuted,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Black,
+        )
     }
 }
