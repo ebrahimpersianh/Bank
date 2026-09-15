@@ -37,6 +37,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -139,9 +140,17 @@ data class BankLoanOutcome(
 @Composable
 fun BankLoanScreen(
     onCalculated: (BankLoanOutcome) -> Unit,
-    /** هر دستکاریِ ورودی، نتیجه‌ی قبلی رو باطل می‌کنه - کارتِ پلِ سبزِ `27f` وگرنه عددِ
-     * کهنه رو با خودش به حالتِ توانِ بازپرداخت می‌بره. */
-    onInputChanged: () -> Unit = {},
+    /**
+     * قسطِ **زنده**ی هیرو - فریمِ `70a`. `null` یعنی ورودی ناقص است یا ترکیب نامعتبر
+     * (قرض‌الحسنه با یک قسط) و هیرو ساخته نشده.
+     *
+     * جای `onInputChanged` آمد: آن کال‌بک وظیفه‌اش باطل‌کردنِ نتیجه‌ی کهنه بود، و کارتِ پل
+     * عددش را از `onCalculated` می‌گرفت - یعنی **فقط با تپِ دکمه**. با هیروِ زنده و دکمه‌ای
+     * که حالا فقط به جدول می‌رود، کاربری که فقط قسط را می‌خواست دکمه را نمی‌زند و کارتِ پل
+     * هیچ‌وقت ظاهر نمی‌شد. حالا مقدار خودش با ورودی عوض می‌شود، پس **یک** منبعِ حقیقت است
+     * نه دو تا.
+     */
+    onLiveInstallment: (Double?) -> Unit = {},
     creditRatesViewModel: CreditRatesViewModel = hiltViewModel(),
     /** خانه‌ی خالیِ **زیرِ** دکمه‌ی محاسبه - میزبانِ `27f` کارتِ «از عهده‌اش برمی‌آیم؟» رو
      * اینجا می‌ذاره. پیش‌فرض خالیه، پس هر جای دیگه‌ای که این صفحه صدا زده بشه فرقی نمی‌کنه. */
@@ -252,6 +261,9 @@ fun BankLoanScreen(
                     }.getOrNull()
                 }
             }
+            // فریمِ `70a`: میزبان قسطِ زنده را از همین‌جا می‌گیرد، نه از تپِ دکمه.
+            // `LaunchedEffect` روی خودِ مقدار: فقط وقتی عوض شد خبر می‌رود، نه هر recomposition.
+            LaunchedEffect(heroResult?.installment) { onLiveInstallment(heroResult?.installment) }
             if (heroResult != null) {
                 StaggerIn(0) {
                     AppHeroCard(modifier = Modifier.fillMaxWidth()) {
@@ -309,7 +321,6 @@ fun BankLoanScreen(
                                 sub = p.sub,
                                 selected = selectedPresetKey == p.key,
                                 onClick = {
-                                    onInputChanged()
                                     selectedPresetKey = p.key
                                     applyAmount(p.amount)
                                     amountSliderRange = defaultAmountRangeToman
@@ -411,7 +422,6 @@ fun BankLoanScreen(
                                     label = if (pct != null) "$name · ${toFa(trimRate(pct))}٪" else name,
                                     selected = selectedLoanType == name,
                                     onClick = {
-                                        onInputChanged()
                                         selectedLoanType = name
                                         if (pct != null) {
                                             rateText = trimRate(pct)
@@ -441,7 +451,7 @@ fun BankLoanScreen(
                             BankTile(
                                 bank = b,
                                 selected = selectedBankName == b.name,
-                                onClick = { onInputChanged(); selectedBankName = b.name },
+                                onClick = { selectedBankName = b.name },
                             )
                         }
                     }
@@ -474,7 +484,6 @@ fun BankLoanScreen(
                                     bank = b,
                                     selected = selectedBankName == b.name,
                                     onClick = {
-                                        onInputChanged()
                                         selectedBankName = b.name
                                         rateText = trimRate(b.ratePct)
                                         rateSlider = b.ratePct.toFloat()
@@ -553,7 +562,6 @@ fun BankLoanScreen(
                         onValueChange = { raw ->
                             // فقط رقم تو state می‌مونه؛ فرمتِ هزارگان نمایشیه (ThousandsSeparatorTransformation) -
                             // فرمت‌کردن تو onValueChange مکان‌نما رو می‌پروند و رقم وسطِ عدد درج می‌شد.
-                            onInputChanged()
                             formError = null
                             val digits = cleanNum(raw)
                             val n = digits.toLongOrNull() ?: 0L
@@ -584,7 +592,6 @@ fun BankLoanScreen(
                     SlimSlider(
                         value = amountSlider,
                         onValueChange = { v ->
-                            onInputChanged()
                             formError = null
                             amountSlider = v
                             amountText = v.toLong().toString()
@@ -611,7 +618,6 @@ fun BankLoanScreen(
                         value = rateText,
                         readOnly = rateReadOnly,
                         onValueChange = { raw ->
-                            onInputChanged()
                             val filtered = cleanNumDecimal(raw)
                             rateText = filtered
                             // اسلایدر فقط تا ۵۰ می‌ره، ولی خودِ فیلد بالاتر از ۵۰ رو هم دستی قبول
@@ -633,7 +639,6 @@ fun BankLoanScreen(
                         SlimSlider(
                             value = rateSlider,
                             onValueChange = { v ->
-                                onInputChanged()
                                 rateSlider = v
                                 rateText = trimRate(v.toDouble())
                             },
@@ -656,13 +661,13 @@ fun BankLoanScreen(
                         AppChip(
                             label = toFa(v),
                             selected = customMonthsText.isEmpty() && selectedMonths == v,
-                            onClick = { onInputChanged(); selectedMonths = v; customMonthsText = "" },
+                            onClick = { selectedMonths = v; customMonthsText = "" },
                         )
                     }
                 }
                 OutlinedTextField(
                     value = customMonthsText,
-                    onValueChange = { onInputChanged(); formError = null; customMonthsText = cleanNum(it) },
+                    onValueChange = { formError = null; customMonthsText = cleanNum(it) },
                     placeholder = { Text("تعداد دلخواه") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier
@@ -701,7 +706,7 @@ fun BankLoanScreen(
                         AppChip(
                             label = label,
                             selected = intervalDays == v,
-                            onClick = { onInputChanged(); intervalDays = v },
+                            onClick = { intervalDays = v },
                         )
                     }
                 }
@@ -716,7 +721,7 @@ fun BankLoanScreen(
                     }
                     Switch(
                         checked = graceOn,
-                        onCheckedChange = { onInputChanged(); graceOn = it },
+                        onCheckedChange = { graceOn = it },
                         colors = SwitchDefaults.colors(checkedTrackColor = AppPrimaryDim, checkedThumbColor = AppPrimary),
                     )
                 }
@@ -724,7 +729,7 @@ fun BankLoanScreen(
                     Text("مدت تنفس (ماه)", fontSize = 13.5.sp, color = AppMuted, modifier = Modifier.padding(top = 12.dp))
                     SlimSlider(
                         value = graceMonths,
-                        onValueChange = { onInputChanged(); graceMonths = it },
+                        onValueChange = { graceMonths = it },
                         valueRange = 1f..24f,
                         steps = 22,
                     )

@@ -69,8 +69,18 @@ private enum class CalcMode(val label: String) {
 @Composable
 fun CalculatorHostScreen(onCalculated: (BankLoanOutcome) -> Unit) {
     var mode by remember { mutableStateOf(CalcMode.INSTALLMENT) }
-    // قسطِ محاسبه‌شده‌ی حالتِ اول، تا کارتِ سبز بتونه با همون عدد به حالتِ دوم بپره.
-    var lastInstallment by remember { mutableStateOf<Double?>(null) }
+
+    // 🚨 فریمِ `70a`: این قبلاً از `onCalculated` پر می‌شد، یعنی **فقط با تپِ دکمه**.
+    //
+    // تا بخشِ ۶۸ درست بود: دکمه تنها راهِ دیدنِ قسط بود، پس هر کسی که نتیجه می‌خواست
+    // می‌زدش. ولی بخشِ ۶۹ هیروِ زنده آورد و متنِ دکمه «جدولِ اقساط را ببین» شد - کاربری
+    // که فقط قسط را می‌خواست دیگر دکمه را نمی‌زند، و کارتِ پل **هیچ‌وقت ظاهر نمی‌شد**.
+    // فیچر بی این‌که کسی کدش را دست بزند غیب شده بود.
+    //
+    // حالا به **محاسبه‌ی زنده** گره خورده: هیرو هر بار که عوض می‌شود خبر می‌دهد. و چون
+    // مقدار خودش با ورودی عوض می‌شود، `onInputChanged` دیگر لازم نیست - یک منبعِ حقیقت
+    // جای دو تا.
+    var liveInstallment by remember { mutableStateOf<Double?>(null) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // سگمنتِ فریم: ریل و قرصِ فعال توکنِ اختصاصی دارن، چون نقششون بینِ دو تم جابه‌جا می‌شه
@@ -114,17 +124,14 @@ fun CalculatorHostScreen(onCalculated: (BankLoanOutcome) -> Unit) {
         Box(modifier = Modifier.weight(1f)) {
             when (mode) {
                 CalcMode.INSTALLMENT -> BankLoanScreen(
-                    onCalculated = { outcome ->
-                        lastInstallment = outcome.result.installment
-                        onCalculated(outcome)
-                    },
-                    // ورودی که عوض شد، نتیجه‌ی قبلی باطله - وگرنه کارتِ سبز عددِ کهنه رو با
-                    // خودش به حالتِ دوم می‌بره و کاربر نمی‌فهمه از کجا اومده.
-                    onInputChanged = { lastInstallment = null },
+                    onCalculated = onCalculated,
+                    // هیروِ زنده هر بار که عددش عوض می‌شود این را صدا می‌زند؛ `null` یعنی
+                    // ورودی ناقص یا ترکیبِ نامعتبر است و هیرو ساخته نشده.
+                    onLiveInstallment = { liveInstallment = it },
                     // کارتِ سبزِ «از عهده‌اش برمی‌آیم؟» زیرِ نتیجه - تنها چیزی که این ادغام رو از
                     // دو تبِ جدا **بهتر** می‌کنه، نه فقط جمع‌وجورتر (تاکیدِ صریحِ طرح: حذفش نکن).
                     footer = {
-                        val installment = lastInstallment
+                        val installment = liveInstallment
                         if (installment != null && installment > 0) {
                             AffordabilityBridgeCard(
                                 installment = installment,
@@ -133,7 +140,7 @@ fun CalculatorHostScreen(onCalculated: (BankLoanOutcome) -> Unit) {
                         }
                     },
                 )
-                CalcMode.AFFORDABILITY -> AffordScreen(initialInstallment = lastInstallment)
+                CalcMode.AFFORDABILITY -> AffordScreen(initialInstallment = liveInstallment)
             }
         }
     }

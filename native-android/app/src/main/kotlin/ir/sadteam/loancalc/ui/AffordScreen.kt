@@ -25,8 +25,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -42,6 +45,8 @@ import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.StaggerIn
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.HeroMuted
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
@@ -54,6 +59,9 @@ import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
 import ir.sadteam.loancalc.ui.jibak.faDigits
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.tomanToRial
+import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
+import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -88,17 +96,40 @@ fun AffordScreen(
      * نباشه عددی که همین الان محاسبه شد رو دستی دوباره بزنه (بندِ صریحِ فریمِ `27f`). */
     initialInstallment: Double? = null,
 ) {
+    // هر جا مبلغ نمایش داده می‌شود باید از حالتِ خصوصی عبور کند (بندِ ۳ی README).
+    // ⚠️ این صفحه تا امروز **هیچ** ماسکی نداشت و سه مبلغ نشان می‌دهد.
+    val privacyMode = LocalPrivacyMode.current
+
     // `initialInstallment` از موتور میاد پس ریاله؛ فیلد تومانه.
+    //
+    // ⚠️ `remember(initialInstallment)` نه `remember`ِ خالی: قسطِ زنده‌ی کارتِ پل با هر
+    // دستکاریِ فرمِ قبلی عوض می‌شود، و بی این کلید صفحه عددِ **اولِ** ورود را نگه می‌داشت.
     val seed = initialInstallment?.takeIf { it > 0 }?.let { rialToToman(it.toLong()) }
-    var payText by remember { mutableStateOf(seed?.toString() ?: "10000000") }
-    var paySlider by remember { mutableFloatStateOf((seed ?: 10_000_000L).toFloat()) }
+    var payText by rememberSaveable(initialInstallment) { mutableStateOf(seed?.toString() ?: "10000000") }
+    var paySlider by rememberSaveable(initialInstallment) {
+        mutableFloatStateOf((seed ?: 10_000_000L).toFloat().coerceIn(PAY_MIN_TOMAN, PAY_MAX_TOMAN))
+    }
 
-    var rateText by remember { mutableStateOf("23") }
-    var rateSlider by remember { mutableFloatStateOf(23f) }
+    // `rememberSaveable` جای `remember`: چرخشِ گوشی کلِ فرم را پاک می‌کرد.
+    var rateText by rememberSaveable { mutableStateOf("23") }
+    var rateSlider by rememberSaveable { mutableFloatStateOf(23f) }
 
-    var monthsText by remember { mutableStateOf("36") }
+    var monthsText by rememberSaveable { mutableStateOf("36") }
 
-    var result by remember { mutableStateOf<Double?>(null) }
+    // فریمِ `70b`: نتیجه **زنده** است، نه گره‌خورده به دکمه. `computeMaxPrincipal` یک
+    // فرمولِ بسته است و هر recomposition ارزان اجرا می‌شود.
+    val payToman = cleanNum(payText).toLongOrNull() ?: 0L
+    val rate = rateText.toDoubleOrNull() ?: 0.0
+    val months = monthsText.toIntOrNull() ?: 0
+    val liveMax = remember(payToman, rate, months) {
+        if (payToman <= 0 || months <= 0) {
+            null
+        } else {
+            runCatching {
+                AffordabilityCalculator.computeMaxPrincipal(tomanToRial(payToman).toDouble(), rate, months)
+            }.getOrNull()?.takeIf { it > 0 }
+        }
+    }
 
     val listState = rememberLazyListState()
     val scrollbarColor = AppPrimary
@@ -110,6 +141,67 @@ fun AffordScreen(
         contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        // فریمِ `70b`: هیروِ زنده - همان الگوی `69a`.
+        if (liveMax != null) {
+            item {
+                StaggerIn(0) {
+                    AppHeroCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                "حداکثر وامی که می‌توانی بگیری",
+                                color = HeroMuted,
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Black,
+                            )
+                            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 3.dp)) {
+                                PrivacyCrossfade(privacyMode) { masked ->
+                                    Text(
+                                        maskIfPrivate(masked, amountToman(countUpDouble(liveMax))),
+                                        color = Color.White,
+                                        fontSize = 25.sp,
+                                        fontWeight = FontWeight.Black,
+                                    )
+                                }
+                                Text(
+                                    "تومان",
+                                    color = HeroMuted,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(start = 5.dp, bottom = 2.dp),
+                                )
+                            }
+                            PrivacyCrossfade(privacyMode) { masked ->
+                                Text(
+                                    "با قسطِ ${maskIfPrivate(masked, fmt(payToman.toDouble()).faDigits())} · ${toFa(months)} ماه · ${toFa(trimRateAfford(rate.toFloat()))}٪",
+                                    color = HeroMuted,
+                                    fontSize = 9.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            item {
+                // معادلِ حروفی **زیرِ** هیرو، نه داخلش: در هیرو با عددِ درشت رقابت می‌کند.
+                AppCard {
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            maskIfPrivate(
+                                masked,
+                                "${numberToWordsFa(rialToToman(liveMax.toLong()).toDouble())} تومان",
+                            ),
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = 19.sp,
+                        )
+                    }
+                }
+            }
+        }
+
         item {
             StaggerIn(0) {
                 AppCard(label = "مبلغی که می‌تونم ماهانه قسط بدم") {
@@ -217,44 +309,24 @@ fun AffordScreen(
 
         item {
             StaggerIn(3) {
-                val payToman = cleanNum(payText).toLongOrNull() ?: 0L
-                val rate = rateText.toDoubleOrNull() ?: 0.0
-                val n = monthsText.toIntOrNull() ?: 36
+                // دکمه **می‌ماند** ولی کارش عوض شد: نتیجه از قبل در هیرو دیده می‌شود، پس
+                // تنها چیزی که این تپ اضافه می‌کند **ثبت در تاریخچه** است - و آن یک کنشِ
+                // عمدی است، نه محاسبه. متنِ «محاسبه حداکثر وام» دیگر کارِ واقعی‌اش را
+                // نمی‌گفت.
                 GradientButton(
                     onClick = {
-                        if (payToman > 0) {
-                            // ورودی تومانه و موتور ریال می‌خواد - تبدیل فقط همین یک نقطه.
-                            val payRial = tomanToRial(payToman).toDouble()
-                            val maxPrincipal = AffordabilityCalculator.computeMaxPrincipal(payRial, rate, n)
-                            result = maxPrincipal
-                            historyViewModel.log(
-                                kind = "AFFORD",
-                                title = "محاسبه‌گر سقف وام",
-                                summary = "قسط ${amountToman(payRial)} تومان × ${toFa(n)} ماه، نرخ ${toFa(rate)}٪",
-                                amount = maxPrincipal,
-                            )
-                        }
+                        val max = liveMax ?: return@GradientButton
+                        historyViewModel.log(
+                            kind = "AFFORD",
+                            title = "محاسبه‌گر سقف وام",
+                            summary = "قسط ${fmt(payToman.toDouble()).faDigits()} تومان × ${toFa(months)} ماه، نرخ ${toFa(rate)}٪",
+                            amount = max,
+                        )
                     },
+                    enabled = liveMax != null,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("محاسبه حداکثر وام")
-                }
-            }
-        }
-
-        result?.let { p ->
-            item {
-                // شمارشِ صعودیِ نرمِ عددِ اصلیِ نتیجه (الگوی countUpDouble) - معادلِ حروفی عمداً
-                // ثابته (شمردنِ کلمه‌به‌کلمه بی‌معنی/گیج‌کننده می‌شد).
-                val animatedMax = countUpDouble(p)
-                AppCard(label = "حداکثر مبلغ وامی که می‌تونی بگیری") {
-                    Text(text = "${amountToman(animatedMax)} تومان", fontSize = 20.sp, color = AppPrimary)
-                    Text(
-                        text = "${numberToWordsFa(rialToToman(p.toLong()).toDouble())} تومان",
-                        color = AppMuted,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
+                    Text("ثبت در تاریخچه")
                 }
             }
         }

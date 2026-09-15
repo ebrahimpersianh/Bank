@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,8 +20,12 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,6 +39,8 @@ import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.StaggerIn
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.HeroMuted
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SlimSlider
@@ -46,8 +53,13 @@ import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
 import ir.sadteam.loancalc.ui.jibak.faDigits
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.tomanToRial
+import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
+import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
+import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppText
 import java.util.Locale
 
 private val depositMonthOptions = listOf(1 to "۱ ماهه", 3 to "۳ ماهه", 6 to "۶ ماهه", 12 to "۱ ساله", 24 to "۲ ساله")
@@ -66,15 +78,32 @@ private fun trimRateDeposit(v: Float): String =
 /** پورت مو‌به‌موی تب «سود سپرده» (view-deposit تو www/index.html، calculateDeposit). */
 @Composable
 fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel()) {
-    var amountText by remember { mutableStateOf("250000000") }
-    var amountSlider by remember { mutableFloatStateOf(250_000_000f) }
+    // هر جا مبلغ نمایش داده می‌شود باید از حالتِ خصوصی عبور کند (بندِ ۳ی README).
+    // ⚠️ این صفحه تا امروز **هیچ** ماسکی نداشت و چهار مبلغ نشان می‌دهد.
+    val privacyMode = LocalPrivacyMode.current
 
-    var rateText by remember { mutableStateOf("18") }
-    var rateSlider by remember { mutableFloatStateOf(18f) }
+    // `rememberSaveable` جای `remember`: چرخشِ گوشی کلِ فرم را پاک می‌کرد.
+    var amountText by rememberSaveable { mutableStateOf("250000000") }
+    var amountSlider by rememberSaveable { mutableFloatStateOf(250_000_000f) }
 
-    var selectedMonths by remember { mutableIntStateOf(12) }
+    var rateText by rememberSaveable { mutableStateOf("18") }
+    var rateSlider by rememberSaveable { mutableFloatStateOf(18f) }
 
-    var result by remember { mutableStateOf<DepositResult?>(null) }
+    var selectedMonths by rememberSaveable { mutableIntStateOf(12) }
+
+    // فریمِ `70c`: نتیجه **زنده** است، نه گره‌خورده به دکمه. `DepositCalculator.compute`
+    // یک فرمولِ بسته است و هر recomposition ارزان اجرا می‌شود.
+    val principalToman = cleanNum(amountText).toLongOrNull() ?: 0L
+    val rate = rateText.toDoubleOrNull() ?: 0.0
+    val live: DepositResult? = remember(principalToman, rate, selectedMonths) {
+        if (principalToman <= 0) {
+            null
+        } else {
+            runCatching {
+                DepositCalculator.compute(tomanToRial(principalToman).toDouble(), rate, selectedMonths)
+            }.getOrNull()
+        }
+    }
 
     val listState = rememberLazyListState()
     val scrollbarColor = AppPrimary
@@ -86,6 +115,67 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
         contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        // فریمِ `70c`: **سودِ ماهانه** هیرو شد، نه «مبلغِ نهایی».
+        //
+        // کسی که سپرده حساب می‌کند می‌خواهد بداند ماهی چقدر می‌گیرد؛ مبلغِ نهایی همان اصل
+        // به‌علاوه‌ی سود است و خبرِ تازه‌ای ندارد.
+        if (live != null) {
+            item {
+                StaggerIn(0) {
+                    AppHeroCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                "سودِ ماهانه",
+                                color = HeroMuted,
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Black,
+                            )
+                            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 3.dp)) {
+                                PrivacyCrossfade(privacyMode) { masked ->
+                                    Text(
+                                        maskIfPrivate(masked, amountToman(countUpDouble(live.monthlyInterest))),
+                                        color = Color.White,
+                                        fontSize = 25.sp,
+                                        fontWeight = FontWeight.Black,
+                                    )
+                                }
+                                Text(
+                                    "تومان",
+                                    color = HeroMuted,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(start = 5.dp, bottom = 2.dp),
+                                )
+                            }
+                            PrivacyCrossfade(privacyMode) { masked ->
+                                Text(
+                                    "${maskIfPrivate(masked, fmt(principalToman.toDouble()).faDigits())} تومان · ${depositMonthLabel(selectedMonths)} · ${toFa(trimRateDeposit(rate.toFloat()))}٪",
+                                    color = HeroMuted,
+                                    fontSize = 9.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            item {
+                // سه عددِ دیگر **ردیفِ برچسب/مقدار** شدند نه جعبه - همان تصمیمِ `68a`:
+                // چهار جعبه‌ی هم‌اندازه یعنی چهار عددِ هم‌اهمیت، در حالی که سودِ ماهانه
+                // جوابِ اصلی است و بقیه پشتوانه‌اش.
+                AppCard {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        DepositRow("سودِ روزانه", live.dailyInterest, privacyMode)
+                        HorizontalDivider(color = AppLine)
+                        DepositRow("کلِ سودِ دوره", live.totalInterest, privacyMode)
+                        HorizontalDivider(color = AppLine)
+                        DepositRow("مبلغِ نهایی", live.finalAmount, privacyMode)
+                    }
+                }
+            }
+        }
+
         item {
             StaggerIn(0) {
                 AppCard(label = "مبلغ سپرده") {
@@ -181,62 +271,53 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
 
         item {
             StaggerIn(3) {
+                // دکمه **می‌ماند** ولی کارش عوض شد: نتیجه از قبل در هیرو دیده می‌شود، پس
+                // تنها چیزی که این تپ اضافه می‌کند **ثبت در تاریخچه** است.
                 GradientButton(
                     onClick = {
-                        val principalToman = cleanNum(amountText).toLongOrNull() ?: 0L
-                        if (principalToman > 0) {
-                            // ورودی تومانه و موتور ریال می‌خواد - تبدیل فقط همین یک نقطه.
-                            val principal = tomanToRial(principalToman).toDouble()
-                            val computed = DepositCalculator.compute(principal, rateText.toDoubleOrNull() ?: 0.0, selectedMonths)
-                            result = computed
-                            historyViewModel.log(
-                                kind = "DEPOSIT",
-                                title = "سود سپرده",
-                                summary = "مبلغ ${amountToman(principal)} تومان × ${toFa(selectedMonths)} ماه",
-                                amount = computed.finalAmount,
-                            )
-                        }
+                        val computed = live ?: return@GradientButton
+                        historyViewModel.log(
+                            kind = "DEPOSIT",
+                            title = "سود سپرده",
+                            summary = "مبلغ ${fmt(principalToman.toDouble()).faDigits()} تومان × ${toFa(selectedMonths)} ماه",
+                            amount = computed.finalAmount,
+                        )
                     },
+                    enabled = live != null,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("محاسبه سود سپرده")
-                }
-            }
-        }
-
-        result?.let { r ->
-            item {
-                // شمارشِ صعودیِ نرمِ هر ۴ عدد (همون الگوی countUpDouble داشبوردِ وام‌های من) -
-                // به‌جای پرشِ یهوییِ نتیجه، اعداد «جون می‌گیرن».
-                val animatedDaily = countUpDouble(r.dailyInterest)
-                val animatedMonthly = countUpDouble(r.monthlyInterest)
-                val animatedTotal = countUpDouble(r.totalInterest)
-                val animatedFinal = countUpDouble(r.finalAmount)
-                AppCard {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        DepositStat(label = "سود روزانه (تومان)", value = amountToman(animatedDaily), modifier = Modifier.weight(1f))
-                        DepositStat(label = "سود ماهانه (تومان)", value = amountToman(animatedMonthly), modifier = Modifier.weight(1f))
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        DepositStat(label = "کل سود دوره (تومان)", value = amountToman(animatedTotal), modifier = Modifier.weight(1f))
-                        DepositStat(label = "مبلغ نهایی (تومان)", value = amountToman(animatedFinal), modifier = Modifier.weight(1f))
-                    }
+                    Text("ثبت در تاریخچه")
                 }
             }
         }
     }
 }
 
+/** ردیفِ برچسب/مقدارِ کارتِ پشتوانه - جای `DepositStat`ِ جعبه‌ای. */
 @Composable
-private fun DepositStat(label: String, value: String, modifier: Modifier = Modifier) {
-    // به‌درخواست کاربر اول عنوان (به حروف) بالا، بعد عددش پایین.
-    Column(modifier = modifier) {
-        Text(text = label, fontSize = 12.sp, color = AppMuted)
-        Text(text = value, fontSize = 14.sp, color = AppPrimary, modifier = Modifier.padding(top = 2.dp))
+private fun DepositRow(label: String, rial: Double, privacyMode: Boolean) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            color = AppMuted,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f),
+        )
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text(
+                maskIfPrivate(masked, amountToman(countUpDouble(rial))),
+                color = AppText,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Black,
+            )
+        }
     }
 }
+
+/** برچسبِ مدت - همان متنِ قرص‌ها، تا هیرو و انتخابگر یک زبان داشته باشند. */
+private fun depositMonthLabel(months: Int): String =
+    depositMonthOptions.firstOrNull { it.first == months }?.second ?: "${toFa(months)} ماه"
