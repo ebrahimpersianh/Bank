@@ -1,6 +1,5 @@
 package ir.sadteam.loancalc.ui.due
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -11,18 +10,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.EventAvailable
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -34,17 +31,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,6 +45,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppHeroCard
 import ir.sadteam.loancalc.ui.components.HeroMuted
 import ir.sadteam.loancalc.ui.components.HeroPillBg
+import ir.sadteam.loancalc.ui.components.HeroTone
 import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -66,8 +56,8 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppChartGrid
 import ir.sadteam.loancalc.ui.theme.AppChipBg
-import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppDangerPill
 import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -79,7 +69,6 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppUrgentBorder
-import ir.sadteam.loancalc.ui.theme.AppUrgentShadow
 import ir.sadteam.loancalc.ui.theme.AppWarning
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import ir.sadteam.loancalc.ui.theme.hardShadow
@@ -122,83 +111,245 @@ fun DueTabScreen(
     onOpenDebt: (Long) -> Unit = {},
     viewModel: DueListViewModel = hiltViewModel(),
 ) {
-    var tab by remember { mutableStateOf(DueTab.INSTALLMENTS) }
-    val installments by viewModel.installments.collectAsState()
-    val cheques by viewModel.cheques.collectAsState()
-    val debts by viewModel.debts.collectAsState()
+    // 🚨 **بخشِ ۵۱**: تاگلِ سه‌تاییِ «اقساط/چک/طلب‌وبدهی» جایش را به یک فهرستِ یکپارچه داد.
+    // سه منبعِ بدهی تا حالا هرکدام صفحه‌ی خودشان را داشتند، ولی کاربر اولِ ماه یک سوال دارد
+    // نه سه: چه چیزی، چه وقت. پس گروه‌بندی روی **فوریت** است نه روی نوعِ بدهی، و قرص‌های
+    // بالا فقط **فیلتر**ند - کسی که فقط چک می‌خواهد یک تپ فاصله دارد.
+    var filter by remember { mutableStateOf<DueListViewModel.DueSource?>(null) }
+    val all by viewModel.all.collectAsState()
     val privacyMode = LocalPrivacyMode.current
+    val today = remember { JalaliCalendar.today() }
 
-    val buckets = when (tab) {
-        DueTab.INSTALLMENTS -> installments
-        DueTab.CHEQUES -> cheques
-        DueTab.DEBTS -> debts
-    }
+    fun List<DueListViewModel.DueRow>.filtered() = filter { row -> filter == null || row.kind == filter }
 
-    // هیچ ردیفی تو هیچ‌کدوم از سه تب نیست → **فریمِ `21e`**: تقویمِ ماه + کارتِ خط‌چین.
-    // نه تاگل، نه کارتِ قهرمانِ صفر - عیناً همون چیزی که فریمِ خالی نشون می‌ده.
-    val everythingEmpty = listOf(installments, cheques, debts)
-        .all { it.overdue.isEmpty() && it.thisWeek.isEmpty() && it.paid.isEmpty() }
+    val overdue = all.overdue.filtered()
+    val thisWeek = all.thisWeek.filtered()
+    val later = all.later.filtered()
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 110.dp),
-        verticalArrangement = Arrangement.spacedBy(if (everythingEmpty) 13.dp else 9.dp),
+        verticalArrangement = Arrangement.spacedBy(if (all.isEmpty) 13.dp else 9.dp),
     ) {
-        item { Text("سررسید", color = AppText, fontSize = if (everythingEmpty) 18.sp else 17.sp, fontWeight = FontWeight.Black) }
-        if (everythingEmpty) {
+        item { Text("سررسید", color = AppText, fontSize = if (all.isEmpty) 18.sp else 17.sp, fontWeight = FontWeight.Black) }
+        if (all.isEmpty) {
+            // کاربرِ تازه یا کسی که همه را پرداخت کرده - فریمِ `21e`/`51b`.
             item { MonthStripCard(dueDays = emptySet()) }
             item { NothingDueCard(onAddCheque = onAddCheque, onAddLoan = onAddLoan) }
             return@LazyColumn
         }
         item {
-            DueTabBar(
-                selected = tab,
-                onSelect = { tab = it },
-                // فریم بجِ قرمز رو برای «سررسیدِ توجه‌خواه» گذاشته، نه مخصوصِ چک. قبلاً فقط
-                // تبِ چک بج می‌گرفت، پس کاربری که سه قسطِ عقب‌افتاده و صفر چک داشت هیچ
-                // نشانه‌ای روی تاگل نمی‌دید.
-                badges = mapOf(
-                    DueTab.INSTALLMENTS to installments.overdue.size,
-                    DueTab.CHEQUES to cheques.overdue.size,
-                    DueTab.DEBTS to debts.overdue.size,
-                ),
-            )
-        }
-        item {
-            PendingHero(
-                count = buckets.pendingCount,
-                total = buckets.pendingAmount,
-                progress = buckets.paidShare,
+            DueHero(
+                total = all.monthTotal(today),
+                overdueCount = all.overdue.size,
+                upcomingCount = all.upcomingCount,
                 privacyMode = privacyMode,
             )
         }
-        // این تب خالیه ولی تبِ دیگه‌ای داده داره - کارتِ خالیِ کوچیک، نه کلِ صفحه‌ی `21e`.
-        if (buckets.overdue.isEmpty() && buckets.thisWeek.isEmpty() && buckets.paid.isEmpty()) {
-            item { NothingDueCard(onAddCheque = onAddCheque, onAddLoan = onAddLoan) }
+        item {
+            DueFilterRow(selected = filter, onSelect = { filter = it })
         }
-        if (buckets.overdue.isNotEmpty()) {
-            item { GroupLabel("عقب‌افتاده", OverdueInk) }
-            items(buckets.overdue, key = { it.id }) { row ->
-                OverdueRow(
-                    row = row,
-                    privacyMode = privacyMode,
-                    onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt) },
+        if (overdue.isEmpty() && thisWeek.isEmpty() && later.isEmpty()) {
+            item {
+                Text(
+                    "در این دسته چیزی نداری.",
+                    color = AppMuted,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 6.dp),
                 )
             }
         }
-        if (buckets.thisWeek.isNotEmpty()) {
-            item { GroupLabel("این هفته", AppMuted) }
-            items(buckets.thisWeek, key = { it.id }) { row ->
-                PlainRow(row, privacyMode, onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt) })
+        // هر سه سرگروه **همیشه به همین ترتیب**اند و گروهِ خالی حذف می‌شود، نه اینکه خالی
+        // نشان داده شود.
+        if (overdue.isNotEmpty()) {
+            item { GroupLabel("عقب‌افتاده", OverdueInk) }
+            items(overdue, key = { it.id }) { row ->
+                DueRowCard(row, privacyMode, onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt) })
             }
         }
-        if (buckets.paid.isNotEmpty()) {
-            item { GroupLabel("پرداخت‌شده", AppMuted) }
-            items(buckets.paid, key = { it.id }) { row ->
-                Box(modifier = Modifier.alpha(0.6f)) {
-                    PlainRow(row, privacyMode, paid = true, onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt) })
-                }
+        if (thisWeek.isNotEmpty()) {
+            item { GroupLabel("همین هفته", AppMuted) }
+            items(thisWeek, key = { it.id }) { row ->
+                DueRowCard(row, privacyMode, onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt) })
             }
+        }
+        if (later.isNotEmpty()) {
+            item { GroupLabel("بعد از این", AppMuted) }
+            items(later, key = { it.id }) { row ->
+                DueRowCard(row, privacyMode, onOpen = { row.open(onOpenLoan, onOpenCheque, onOpenDebt) })
+            }
+        }
+    }
+}
+
+/**
+ * هیرویِ `51a`. **قرمز فقط وقتی موردِ عقب‌افتاده هست** - اگر قرمز بماند، کاربری که همه‌چیز را
+ * پرداخت کرده هم حسِ بدهی می‌گیرد.
+ */
+@Composable
+private fun DueHero(
+    total: Double,
+    overdueCount: Int,
+    upcomingCount: Int,
+    privacyMode: Boolean,
+) {
+    AppHeroCard(tone = if (overdueCount > 0) HeroTone.RED else HeroTone.GREEN) {
+        Text("تا آخرِ ماه باید بدهی", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text(
+                maskIfPrivate(masked, amountToman(total)),
+                color = Color.White,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        Text("تومان", color = HeroMuted, fontSize = 10.sp, modifier = Modifier.padding(top = 1.dp))
+        Row(
+            modifier = Modifier.padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            // قرص‌ها فقط شمارش‌اند و کلیک‌پذیر نیستند (قاعده‌ی `51c`).
+            if (overdueCount > 0) HeroCountPill("${toFa(overdueCount)} عقب‌افتاده")
+            HeroCountPill("${toFa(upcomingCount)} پیشِ‌رو")
+        }
+    }
+}
+
+@Composable
+private fun HeroCountPill(label: String) {
+    Text(
+        label,
+        color = Color.White,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(HeroPillBg)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+    )
+}
+
+/** قرص‌های فیلترِ `51a` - «همه» یعنی `null`. */
+@Composable
+private fun DueFilterRow(
+    selected: DueListViewModel.DueSource?,
+    onSelect: (DueListViewModel.DueSource?) -> Unit,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        DueFilterChip("همه", selected == null) { onSelect(null) }
+        DueListViewModel.DueSource.entries.forEach { kind ->
+            DueFilterChip(kind.label, selected == kind) { onSelect(kind) }
+        }
+    }
+}
+
+@Composable
+private fun DueFilterChip(label: String, active: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(999.dp)
+    Text(
+        label,
+        color = if (active) AppPrimary else AppMuted,
+        fontSize = 10.5.sp,
+        fontWeight = FontWeight.Black,
+        modifier = Modifier
+            .clip(shape)
+            .background(if (active) AppPrimaryPill else AppChipBg)
+            .border(2.dp, if (active) AppPrimary else AppLine, shape)
+            .pressScaleClickable(onClick = onClick)
+            .padding(horizontal = 11.dp, vertical = 6.dp),
+    )
+}
+
+/**
+ * یک ردیفِ سررسید - `51a`.
+ *
+ * 🚨 **رنگ حاملِ جهت است**: «۹ روز» در گروهِ عقب‌افتاده یعنی نه روز **گذشته** و همان عدد در
+ * گروهِ پیشِ‌رو یعنی نه روز **مانده**. بی این قاعده یک عدد دو معنی می‌دهد.
+ *
+ * ⚠️ این تب **صفحه‌ی کنش نیست، صفحه‌ی دیدن است** - دکمه‌ی «پرداخت شد» ندارد. پرداخت در
+ * مقصد ثبت می‌شود تا عکسِ رسید و تاریخِ واقعی هم بگیرد.
+ */
+@Composable
+private fun DueRowCard(
+    row: DueListViewModel.DueRow,
+    privacyMode: Boolean,
+    onOpen: () -> Unit,
+) {
+    val overdue = row.daysOverdue > 0
+    val shape = RoundedCornerShape(16.dp)
+    val icon = when (row.kind) {
+        DueListViewModel.DueSource.LOAN -> Icons.Filled.CreditCard
+        DueListViewModel.DueSource.CHEQUE -> Icons.Filled.Receipt
+        DueListViewModel.DueSource.RECURRING -> Icons.Filled.Autorenew
+        DueListViewModel.DueSource.DEBT -> Icons.Filled.Schedule
+    }
+    val dayLabel = when {
+        overdue -> "${toFa(row.daysOverdue)} روز"
+        row.daysOverdue == 0 -> "امروز"
+        row.daysOverdue == -1 -> "فردا"
+        else -> "${toFa(-row.daysOverdue)} روز"
+    }
+    val dayInk = if (overdue || row.daysOverdue == 0) AppDangerInk else AppWarning
+    val dayBg = if (overdue || row.daysOverdue == 0) AppDangerPill else AppWarningPill
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(AppSurface)
+            .border(if (overdue) 2.dp else 2.dp, if (overdue) AppUrgentBorder else AppLineRow, shape)
+            .pressScaleClickable(onClick = onOpen)
+            .padding(horizontal = 12.dp, vertical = 11.dp),
+    ) {
+        // تفاوتِ نوعِ تعهد از **آیکون** می‌آید نه از رنگ - همان تصمیمِ نشان‌ها.
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .background(AppIconFrame),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = AppMuted, modifier = Modifier.size(16.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    row.title,
+                    color = AppText,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1,
+                )
+                Text(
+                    dayLabel,
+                    color = dayInk,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(dayBg)
+                        .padding(horizontal = 7.dp, vertical = 2.dp),
+                )
+            }
+            Text(
+                "سررسید ${toFa(row.date.d)} ${persianMonthName(row.date.m)} · ${row.subtitle}",
+                color = AppMuted,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                modifier = Modifier.padding(top = 3.dp),
+            )
+        }
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text(
+                maskIfPrivate(masked, amountToman(row.amount)),
+                color = AppText,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Black,
+            )
         }
     }
 }
@@ -225,24 +376,6 @@ private fun DueListViewModel.DueRow.open(
  * قبلاً `fmt()`ِ خام با پسوندِ «ریال» و رقمِ لاتین در پنج جای این فایل بود.
  */
 private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
-
-enum class DueTab(val label: String) {
-    INSTALLMENTS("اقساط"),
-    CHEQUES("چک"),
-    // کاشیِ `DueScreen` «طلب و بدهی» (با فاصله) می‌نویسد و این enum «طلب‌وبدهی» - یک چیز
-    // با دو نوشتار. کاشی ملاک شد.
-    DEBTS("طلب و بدهی"),
-}
-
-/** سهمِ پرداخت‌شده از کلِ ردیف‌ها - عددِ داخلِ حلقه‌ی هیرو. */
-private val DueListViewModel.DueBuckets.paidShare: Float
-    get() {
-        // ⚠️ `paid` تو ViewModel `take(10)` داره (سقفِ **نمایش**). قبلاً همون لیستِ
-        // بریده تو ریاضیِ درصد می‌نشست، پس کاربرِ ۴۰ قسطِ پرداخت‌شده و ۲ معلق ۸۳٪
-        // می‌دید نه ۹۵٪. `paidTotalCount` بی‌سقفه.
-        val total = overdue.size + thisWeek.size + paidTotalCount
-        return if (total == 0) 0f else paidTotalCount.toFloat() / total
-    }
 
 // ═══ ۱ب · تقویمِ ماه (فقط حالتِ خالی، فریمِ `21e`) ═══════════════════════════════
 /**
@@ -405,139 +538,6 @@ private fun NothingDueCard(onAddCheque: () -> Unit, onAddLoan: () -> Unit) {
     }
 }
 
-// ═══ ۲ · تاگلِ سه‌تایی ═══════════════════════════════════════════════════════════
-@Composable
-private fun DueTabBar(selected: DueTab, onSelect: (DueTab) -> Unit, badges: Map<DueTab, Int>) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(TabTrack)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        DueTab.entries.forEach { entry ->
-            val active = entry == selected
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(11.dp))
-                    .background(if (active) DueGreen else Color.Transparent)
-                    .pressScaleClickable { onSelect(entry) }
-                    // ۸dp + متنِ ۱۱٫۵sp ≈ ۳۶dp بود، زیرِ حداقلِ ۴۴ِ خودِ README. ۱۳ می‌شه ~۴۶.
-                    .padding(vertical = 13.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    entry.label,
-                    color = if (active) Color.White else AppMuted,
-                    fontSize = 11.5.sp,
-                    fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Bold,
-                )
-                val badge = badges[entry] ?: 0
-                if (badge > 0) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(top = 2.dp, end = 14.dp)
-                            .size(13.dp)
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(DangerSolid),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            toFa(badge),
-                            color = Color.White,
-                            fontSize = 7.5.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ═══ ۳ · هیرویِ سبز ═════════════════════════════════════════════════════════════
-/**
- * هیرویِ سبز - حلقه‌ی پیشرفت + مجموعِ معلق.
- *
- * ⚠️ گرادیان **دستی ساخته نمی‌شه**: `AppHeroCard` همون کارتیه که `DueScreen` و
- * `AccountsTotalHero` استفاده می‌کنن؛ دو پیاده‌سازیِ موازیِ یک کارت همون موردی بود که
- * در تبِ دارایی هم گفتم (`TotalWealthHero`).
- *
- * ⚠️ **سپرِ گوشه از دست رفت**: `drawShieldWatermark` با `Modifier.drawBehind` روی
- * همون `Row`ِ گرادیانی سوار بود. اگه `AppHeroCard` پارامترِ `modifier` می‌گیره،
- * `.drawBehind { drawShieldWatermark() }` رو روش بگذارید؛ تابعش رو نگه داشتم و صداش
- * نزدم، پس کامپایل نمی‌شکنه.
- */
-@Composable
-private fun PendingHero(count: Int, total: Double, progress: Float, privacyMode: Boolean) {
-    AppHeroCard {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(modifier = Modifier.size(46.dp), contentAlignment = Alignment.Center) {
-            val track = HeroPillBg
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val stroke = size.minDimension * 4f / 40f
-                val inset = stroke / 2f + size.minDimension * 2f / 40f
-                val diameter = size.minDimension - inset * 2f
-                drawArc(
-                    color = track,
-                    startAngle = 0f,
-                    sweepAngle = 360f,
-                    useCenter = false,
-                    topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
-                    size = androidx.compose.ui.geometry.Size(diameter, diameter),
-                    style = Stroke(width = stroke),
-                )
-                drawArc(
-                    color = Color.White,
-                    startAngle = -90f,
-                    sweepAngle = 360f * progress.coerceIn(0f, 1f),
-                    useCenter = false,
-                    topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
-                    size = androidx.compose.ui.geometry.Size(diameter, diameter),
-                    style = Stroke(width = stroke, cap = StrokeCap.Round),
-                )
-            }
-            Text(toFa(count), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                "مجموعِ سررسیدهای معلق",
-                color = HeroMuted,
-                fontSize = 10.5.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            PrivacyCrossfade(privacyMode) { masked ->
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    modifier = Modifier.padding(top = 2.dp),
-                ) {
-                    Text(
-                        maskIfPrivate(masked, amountToman(total)),
-                        color = Color.White,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Black,
-                    )
-                    Text(
-                        " تومان",
-                        color = HeroMuted,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(start = 3.dp, bottom = 1.dp),
-                    )
-                }
-            }
-        }
-    }
-    }
-}
-
 // ═══ ۴ · برچسبِ گروه ════════════════════════════════════════════════════════════
 @Composable
 private fun GroupLabel(text: String, color: Color) {
@@ -550,170 +550,12 @@ private fun GroupLabel(text: String, color: Color) {
     )
 }
 
-// ═══ ۵ · ردیفِ عقب‌افتاده ════════════════════════════════════════════════════════
-@Composable
-private fun OverdueRow(
-    row: DueListViewModel.DueRow,
-    privacyMode: Boolean,
-    onOpen: () -> Unit = {},
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pressScaleClickable(scale = 0.99f, onClick = onOpen)
-            .hardShadow(OverdueBorder, 4.dp, 16.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(AppSurface)
-            .border(2.dp, OverdueBorder, RoundedCornerShape(16.dp)),
-    ) {
-        // ⚠️ دو `CoinIcon`ِ گوشه برداشته شد. سکه در این برنامه واحدِ **پاداش**ه (بخشِ ۴۵)؛
-        // گذاشتنش روی قرمزترین ردیفِ صفحه دو معنا رو قاطی می‌کنه. اگه «ریبونِ رسید» رو
-        // عمداً می‌خواید، برگردونید - ولی نه با آیکونِ سکه.
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            RowIcon(Icons.Filled.CreditCard, DangerSolid, OverdueIconBg)
-            Column(modifier = Modifier.weight(1f)) {
-                Text(row.title, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
-                Text(
-                    overdueText(row.daysOverdue),
-                    color = OverdueInk,
-                    fontSize = 10.5.sp,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-            PrivacyCrossfade(privacyMode) { masked ->
-                Text(
-                    maskIfPrivate(masked, amountToman(row.amount)),
-                    color = AppText,
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                )
-            }
-            // 🚨 دکمه‌ی «پرداخت کن» **حذف شد** - تصمیمِ ۲ی README و فریمِ `36i`.
-            // ارتفاعِ لمسی‌اش ~۲۰dp بود (`vertical = 2.dp`)، نصفِ حداقلِ ۴۴ِ خودتون، و
-            // پس‌گرفتنِ «پرداخت شد» کارِ سختیه. پرداخت جایش در جزئیاتِ قسط و در اعلانه.
-            // شِوران می‌گه ردیف مقصد داره، وگرنه بی‌کنش به‌نظر می‌رسه.
-            Icon(
-                Icons.Filled.KeyboardArrowLeft,
-                contentDescription = null,
-                tint = AppLabel,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-    }
-}
-
-// ═══ ۶ · ردیفِ ساده (این هفته / پرداخت‌شده) ═══════════════════════════════════════
-@Composable
-private fun PlainRow(
-    row: DueListViewModel.DueRow,
-    privacyMode: Boolean,
-    paid: Boolean = false,
-    onOpen: () -> Unit = {},
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pressScaleClickable(scale = 0.99f, onClick = onOpen)
-            .clip(RoundedCornerShape(16.dp))
-            .background(AppSurface)
-            .border(2.dp, PlainBorder, RoundedCornerShape(16.dp))
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        if (paid) {
-            RowIcon(Icons.Filled.Check, DueGreen, GreenIconBg)
-        } else if (row.daysOverdue >= -3) {
-            RowIcon(Icons.Filled.Schedule, WarnSolid, WarnIconBg)
-        } else {
-            RowIcon(Icons.Filled.CalendarMonth, DueGreen, GreenIconBg)
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(row.title, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
-            Text(
-                if (paid) "پرداخت‌شده" else
-                    "${toFa(row.date.d)} ${persianMonthName(row.date.m)} — ${toFa(-row.daysOverdue)} روز مانده",
-                color = AppMuted,
-                fontSize = 10.5.sp,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
-        PrivacyCrossfade(privacyMode) { masked ->
-            Text(
-                maskIfPrivate(masked, amountToman(row.amount)),
-                color = AppText,
-                fontSize = 12.5.sp,
-                fontWeight = FontWeight.ExtraBold,
-                textDecoration = if (paid) TextDecoration.LineThrough else null,
-            )
-        }
-    }
-}
-
-/**
- * سپرِ کم‌رنگِ گوشه‌ی هیرو - `<svg width=60 ... opacity:.15 left:-10 bottom:-12>`ی فریم.
- * نقشه‌ی مسیر: `M12 2l7 4v6c0 5-3 8-7 10-4-2-7-5-7-10V6z` رو ویوباکسِ ۲۴.
- */
-@Suppress("unused")
-private fun DrawScope.drawShieldWatermark() {
-    val box = 60.dp.toPx()
-    val k = box / 24f
-    // ۱۰ و ۱۲ پیکسلِ بیرونِ لبه‌ی چپ-پایین، مثلِ فریم.
-    val left = -10.dp.toPx()
-    val top = size.height - box + 12.dp.toPx()
-    fun x(v: Float) = left + v * k
-    fun y(v: Float) = top + v * k
-    val path = Path().apply {
-        moveTo(x(12f), y(2f))
-        lineTo(x(19f), y(6f))
-        lineTo(x(19f), y(12f))
-        cubicTo(x(19f), y(17f), x(16f), y(20f), x(12f), y(22f))
-        cubicTo(x(8f), y(20f), x(5f), y(17f), x(5f), y(12f))
-        lineTo(x(5f), y(6f))
-        close()
-    }
-    drawPath(path, Color.White.copy(alpha = 0.15f))
-}
-
-@Composable
-private fun RowIcon(icon: ImageVector, tint: Color, bg: Color) {
-    Box(
-        modifier = Modifier
-            .size(32.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(bg),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(15.dp))
-    }
-}
-
-/** «امروز سررسید» یا «X روز عقب» - عیناً جمله‌بندیِ فریم. */
-private fun overdueText(daysOverdue: Int): String =
-    if (daysOverdue == 0) "امروز سررسید" else "${toFa(daysOverdue)} روز عقب"
-
 private val DueGreen: Color
     @Composable get() = AppPrimary
 private val DueGreenDeep: Color
     @Composable get() = AppPrimaryDim
-private val TabTrack: Color
-    @Composable get() = AppChipBg
-private val DangerSolid: Color
-    @Composable get() = AppDanger
-private val WarnSolid: Color
-    @Composable get() = AppWarning
 private val OverdueInk: Color
     @Composable get() = AppDangerInk
-private val OverdueBorder: Color
-    @Composable get() = AppUrgentBorder
-private val OverdueIconBg: Color
-    @Composable get() = AppUrgentShadow
-private val PlainBorder: Color
-    @Composable get() = AppLineRow
 private val GreenIconBg: Color
     @Composable get() = AppPrimaryPill
 private val CardBorder: Color

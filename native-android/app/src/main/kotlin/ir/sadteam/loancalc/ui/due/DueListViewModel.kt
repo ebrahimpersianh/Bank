@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.DebtRepository
 import ir.sadteam.loancalc.data.LoanRepository
@@ -28,7 +29,19 @@ class DueListViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
     private val chequeRepository: ChequeRepository,
     private val debtRepository: DebtRepository,
+    private val accountRepository: AccountRepository,
 ) : ViewModel() {
+
+    /**
+     * نوعِ تعهد. **رنگِ ردیف از اینجا نمی‌آید** - قاعده‌ی `51c`: رنگ از فوریت می‌آید و
+     * تفاوتِ نوع از آیکون و بجِ سطرِ دوم.
+     */
+    enum class DueSource(val label: String) {
+        LOAN("قسط"),
+        CHEQUE("چک"),
+        RECURRING("تکراری"),
+        DEBT("قرض"),
+    }
 
     /** یه ردیفِ سررسید، مستقل از اینکه قسطه یا چک یا بدهی. */
     data class DueRow(
@@ -46,6 +59,9 @@ class DueListViewModel @Inject constructor(
         val chequeId: Long? = null,
         /** فقط برای طلب‌وبدهی. */
         val debtId: Long? = null,
+        val kind: DueSource = DueSource.LOAN,
+        /** سطرِ دومِ ردیف - «قسطِ ۷ از ۶۰» / «بانکِ ملت» / «پرداختِ تکراری». */
+        val subtitle: String = "",
     )
 
     data class DueBuckets(
@@ -73,6 +89,34 @@ class DueListViewModel @Inject constructor(
     private val _debts = MutableStateFlow(DueBuckets())
     val debts: StateFlow<DueBuckets> = _debts.asStateFlow()
 
+    /**
+     * **فهرستِ یکپارچه‌ی بخشِ ۵۱** - سه منبعِ بدهی در یک لیست، گروه‌بندی روی **فوریت** نه
+     * روی نوعِ تعهد: کاربر اولِ ماه یک سوال دارد نه سه.
+     *
+     * ⚠️ فقط **بدهی**: چکِ دریافتی و طلبِ کاربر از دیگران نمی‌آیند، وگرنه هیرویِ
+     * «باید بدهی» غلط می‌شود.
+     */
+    private val _all = MutableStateFlow(DueList())
+    val all: StateFlow<DueList> = _all.asStateFlow()
+
+    data class DueList(
+        val overdue: List<DueRow> = emptyList(),
+        val thisWeek: List<DueRow> = emptyList(),
+        val later: List<DueRow> = emptyList(),
+    ) {
+        val isEmpty: Boolean get() = overdue.isEmpty() && thisWeek.isEmpty() && later.isEmpty()
+        val upcomingCount: Int get() = thisWeek.size + later.size
+
+        /**
+         * عددِ هیرو: جمعِ **تا آخرِ ماهِ جاری**. عقب‌افتاده در این جمع می‌آید چون هنوز
+         * پرداخت‌نشده و همین ماه باید داده شود.
+         */
+        fun monthTotal(today: PersianDate): Double =
+            (overdue + thisWeek + later)
+                .filter { it.date.y < today.y || (it.date.y == today.y && it.date.m <= today.m) }
+                .sumOf { it.amount }
+    }
+
     init {
         refresh()
     }
@@ -82,7 +126,20 @@ class DueListViewModel @Inject constructor(
             val today = JalaliCalendar.today()
             _installments.value = bucket(loadInstallments(today))
             _cheques.value = bucket(loadCheques(today))
-            _debts.value = bucket(loadDebts(today))
+            val debtRows = loadDebts(today)
+            _debts.value = bucket(debtRows)
+            // فقط چیزی که کاربر **باید بدهد**: قسط، چکِ پرداختنی، پرداختِ تکراری، و قرضی
+            // که خودش گرفته.
+            val owed = debtRows.filter { it.title.isNotBlank() }
+            val unified = (loadInstallments(today) + loadCheques(today) + loadRecurring(today) + owed)
+                .filter { !it.paid }
+            _all.value = DueList(
+                // مرزها روزِ شمسی‌اند نه ۲۴ ساعت: «امروز» یعنی `daysOverdue == 0` و در
+                // گروهِ «همین هفته» می‌نشیند، نه در عقب‌افتاده.
+                overdue = unified.filter { it.daysOverdue > 0 }.sortedByDescending { it.daysOverdue },
+                thisWeek = unified.filter { it.daysOverdue in -7..0 }.sortedByDescending { it.daysOverdue },
+                later = unified.filter { it.daysOverdue < -7 }.sortedByDescending { it.daysOverdue },
+            )
         }
     }
 
@@ -92,7 +149,9 @@ class DueListViewModel @Inject constructor(
 
     private suspend fun loadInstallments(today: PersianDate): List<DueRow> = buildList {
         for (loan in loanRepository.getLoans()) {
-            for (row in loanRepository.getRows(loan)) {
+            // ⚠️ یک‌بار خوانده می‌شود، نه داخلِ حلقه - `getRows` می‌رود سراغِ دیتابیس.
+            val loanRows = loanRepository.getRows(loan)
+            for (row in loanRows) {
                 @Suppress("UNCHECKED_CAST")
                 val due = row["dueDate"] as? Map<String, Int> ?: continue
                 val y = due["y"] ?: continue
@@ -109,6 +168,8 @@ class DueListViewModel @Inject constructor(
                         paid = row["paid"] == true,
                         loan = loan,
                         installmentNumber = number,
+                        kind = DueSource.LOAN,
+                        subtitle = "قسطِ ${number} از ${loanRows.size}",
                     ),
                 )
             }
@@ -130,6 +191,8 @@ class DueListViewModel @Inject constructor(
                 // پرداخت‌نشده حساب می‌شن**. دست نزدم چون `:data` این‌جا نیست - تایید کنید.
                 paid = cheque.status != "PENDING",
                 chequeId = cheque.id,
+                kind = DueSource.CHEQUE,
+                subtitle = cheque.bankName,
             )
         }
 
@@ -144,8 +207,43 @@ class DueListViewModel @Inject constructor(
                 date = date,
                 paid = debt.settled,
                 debtId = debt.id,
+                kind = DueSource.DEBT,
+                subtitle = "قرض",
             )
         }
+
+    /**
+     * پرداختِ تکراری سررسیدِ ذخیره‌شده ندارد، فقط **روزِ ماه**. سررسیدِ پیشِ‌رو همان روز در
+     * ماهِ جاری است، و اگر گذشته باشد ماهِ بعد - پس این ردیف هیچ‌وقت «عقب‌افتاده» نمی‌شود
+     * (نمی‌دانیم پرداخت شده یا نه، و قرمزکردنش قرمزهای واقعی را ارزان می‌کند).
+     */
+    private suspend fun loadRecurring(today: PersianDate): List<DueRow> =
+        accountRepository.observeRecurringPayments().first()
+            .filter { it.type == "WITHDRAWAL" }
+            .map { payment ->
+                val day = payment.dayOfMonth.coerceIn(1, JalaliCalendar.daysInMonth(today.y, today.m))
+                val thisMonth = PersianDate(today.y, today.m, day)
+                val date = if (day >= today.d) {
+                    thisMonth
+                } else {
+                    val nextMonth = if (today.m == 12) PersianDate(today.y + 1, 1, 1) else PersianDate(today.y, today.m + 1, 1)
+                    PersianDate(
+                        nextMonth.y,
+                        nextMonth.m,
+                        payment.dayOfMonth.coerceIn(1, JalaliCalendar.daysInMonth(nextMonth.y, nextMonth.m)),
+                    )
+                }
+                DueRow(
+                    id = "recurring-${payment.id}",
+                    title = payment.name,
+                    amount = payment.amount,
+                    daysOverdue = JalaliCalendar.daysBetween(date, today),
+                    date = date,
+                    paid = false,
+                    kind = DueSource.RECURRING,
+                    subtitle = "پرداختِ تکراری",
+                )
+            }
 
     /**
      * تقسیم به سه گروهِ فریم.
