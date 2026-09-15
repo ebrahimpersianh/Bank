@@ -1359,6 +1359,10 @@ private fun BankLoanTab(useCalculatorHost: Boolean = false) {
         } else {
             ResultScreen(
                 outcome = outcome,
+                // قرصِ منبعِ `68`: تنها حالتی که به نتیجه می‌رسد «قسط و سود» است
+                // (`AffordScreen` خروجیِ `BankLoanOutcome` نمی‌دهد). تفکیکِ «سرویسِ اعتباری» از
+                // «وامِ بانکی» داخلِ خودِ `BankLoanScreen` است و هنوز به بیرون نمی‌آید.
+                sourceLabel = "قسط و سود",
                 // ویرایش دیگه اینجا (BankLoanTab) مدیریت نمی‌شه - مورد ۴، ResultScreen خودش با
                 // یه پنلِ اینلاین ویرایش می‌کنه، دیگه نیازی به onEdit/برگشتن به فرم نیست.
                 // بعدِ ذخیره‌ی موفقِ وام، حالتِ ذخیره‌شده‌ی فرم (مبلغ/بانک/...) صریحاً پاک می‌شه -
