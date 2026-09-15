@@ -42,20 +42,15 @@ class IconWither @Inject constructor() {
      * پله‌ی متناظر با آخرین روزِ ثبت‌شده در دفترِ سکه (`DAILY_LOG`) را اعمال می‌کند.
      *
      * [activeIcon] آیکونِ خریداری‌شده‌ی فعال (`icon:piggy`…) یا `null` برای پیش‌فرض.
+     * هر چهار طرح هشت پله دارند (بخشِ ۶۱)، پس پژمردگی روی آیکونِ خریدنی هم اجرا می‌شود.
      */
     fun applyFromDateKeys(context: Context, dateKeys: Collection<String>, activeIcon: String? = null) {
         apply(context, stepFor(lastDay(dateKeys)), activeIcon)
     }
 
-    /**
-     * دقیقاً **یک** الیاس روشن می‌ماند.
-     *
-     * ⚠️ آیکونِ خریداری‌شده پله‌ی پژمردگی **ندارد** - هشت فایلِ پژمرده فقط برای طرحِ
-     * پیش‌فرض ساخته شده‌اند. پس وقتی [activeIcon] پر است، پله نادیده گرفته می‌شود.
-     */
+    /** دقیقاً **یک** الیاس از ۳۶ تا روشن می‌ماند. */
     fun apply(context: Context, step: Int, activeIcon: String? = null) {
-        val bought = ICON_ALIAS[activeIcon]
-        val target = bought ?: step.coerceIn(0, STEPS)
+        val target = aliasFor(activeIcon, step)
         val pm = context.packageManager
         enable(pm, context, target)
         for (n in 0..LAST_ALIAS) {
@@ -98,11 +93,28 @@ class IconWither @Inject constructor() {
         const val STEPS = 8
 
         /**
-         * آیکونِ خریدنی → شماره‌ی الیاس. شناسه‌ها همان `ShopItem.id`ِ کاتالوگ‌اند.
-         * «کیفِ پول» این‌جا نیست چون پیش‌فرض است و الیاسِ صفر تا هشت مالِ اوست.
+         * آیکونِ خریدنی → شماره‌ی الیاسِ **پله‌ی صفر**ش. شناسه‌ها همان `ShopItem.id`ِ
+         * کاتالوگ‌اند. «کیفِ پول» این‌جا نیست چون پیش‌فرض است و الیاسِ ۰..۸ مالِ اوست.
          */
         val ICON_ALIAS = mapOf("icon:coin" to 9, "icon:letter" to 10, "icon:piggy" to 11)
 
-        private val LAST_ALIAS = ICON_ALIAS.values.max()
+        /** پله‌ی ۱..۸ِ هر طرحِ خریدنی (بخشِ ۶۱) - ۳۲ پله‌ی ساخته‌شده‌ی `generate-wither.py`. */
+        private val WITHER_BASE = mapOf("icon:coin" to 12, "icon:letter" to 20, "icon:piggy" to 28)
+
+        private const val LAST_ALIAS = 35
+
+        /**
+         * کدام الیاس روشن شود.
+         *
+         * پله‌ی صفرِ هر طرح الیاسِ جدا دارد (۰ و ۹ و ۱۰ و ۱۱) چون فایلِ «تازه»ی طرح است، و
+         * پله‌های ۱..۸ پشتِ‌هم می‌آیند. پس نگاشت **دو تکه** است، نه یک جمعِ ساده.
+         */
+        fun aliasFor(activeIcon: String?, step: Int): Int {
+            val safe = step.coerceIn(0, STEPS)
+            val zero = ICON_ALIAS[activeIcon] ?: return safe
+            if (safe == 0) return zero
+            val base = WITHER_BASE[activeIcon] ?: return zero
+            return base + safe - 1
+        }
     }
 }

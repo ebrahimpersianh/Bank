@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  آیکونِ تطبیقی، طرحِ «ب — سکه‌ی تنها» · پیش‌زمینه · فریمِ 58a
+
+  حرفِ «ج» از Vazirmatn **۹۰۰** (`vazirmatn_black.ttf`) به مسیر تبدیل شده - نه `<text>`،
+  چون فونتِ اپ روی آیکونِ لانچر وجود ندارد (قاعده‌ی `58c` بندِ ۴). مسیر با
+  `tools/icons/jim-path.py` ساخته می‌شود؛ دستی ویرایشش نکن.
+
+  بلندیِ حرف ۵۰ واحد، مرکزِ بصری روی (۵۴، ۵۴)، و کلِ نقش داخلِ دایره‌ی امنِ ۶۶ می‌مانَد.
+
+  ⚠️ **نقطه مسیرِ جداست** (شرطِ ۲ی طراح): ادغامش در یک pathData با `evenOdd` می‌تواند
+  سوراخش کند.
+
+  🚨 **دو اصلاح نسبت به نسخه‌ی قبل:**
+
+  ۱. حلقه از `immune` به `body` رفت. قبلاً هر دو جزء داخلِ `immune` بودند، پس این طرح
+     **هیچ بدنه‌ای نداشت** - یعنی دقیقاً همان چیزی که در طرحِ «پ» گرفته شد و با قاب حل
+     شد، این‌جا ناگرفته ماند. «سکه‌ی طلایی نقشِ بدنه را بازی می‌کند» درست نیست: سکه
+     پس‌زمینه است و پژمردگی فقط روی پیش‌زمینه اعمال می‌شود (`58c` بندِ ۲)، پس ب در پله‌ی
+     ۳۰ هم دست‌نخورده می‌مانْد.
+
+  ۲. شعاعِ حلقه ۳۳ → ۳۰. با ۳۳ و ضخامتِ ۳٫۵، لبه‌ی بیرونی به ۳۴٫۷۵ می‌رسید - بیرونِ
+     دایره‌ی امنِ ۶۶ (شعاعِ ۳۳). روی هر لانچری که ماسکِ دایره‌ای می‌زند حلقه بریده
+     می‌شد. حالا لبه‌ی بیرونی ۳۱٫۷۵ است.
+
+  ناحیه‌ی مصون حالا **فقط حرف** است - هم‌قاعده با الف (فقط سکه) و پ (فقط حرف).
+-->
+<!-- ساختهٔ generate-wither.py - پلهٔ 8. دستی ویرایشش نکن. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group android:name="body">
+        <path
+            android:strokeColor="#0B3A2A"
+            android:strokeWidth="3.5"
+            android:fillColor="#00000000"
+            android:pathData="M24,54 A30,30 0 0 1 84,54 A30,30 0 0 1 24,54 Z" />
+    </group>
+
+    <group android:name="immune">
+        <path
+            android:fillColor="#18362C"
+            android:pathData="M72.65 36.79 72.62 44.99Q69.12 45.29 65.12 46.09Q61.12 46.90 57.28 48.23Q53.45 49.57 50.30 51.49Q47.15 53.41 45.28 55.90Q43.40 58.40 43.40 61.55Q43.40 64.32 45.11 66.22Q46.82 68.12 49.67 69.09Q52.53 70.05 55.95 70.05Q60.29 70.05 64.15 69.23Q68.02 68.42 71.02 67.29L73.63 75.91Q69.47 77.54 65.06 78.27Q60.64 79.00 56.42 79.00Q52.08 79.00 48.28 78.05Q44.47 77.10 41.57 75.03Q38.68 72.97 37.03 69.68Q35.38 66.40 35.38 61.73Q35.38 57.33 37.03 53.82Q38.68 50.31 41.47 47.67Q44.26 45.02 47.73 43.18Q51.19 41.34 54.82 40.24Q52.20 39.11 50.51 38.50Q48.81 37.89 48.04 37.89Q46.46 37.89 45.19 38.88Q43.91 39.88 43.13 40.89L41.41 43.06L34.37 39.61L35.85 37.17Q37.96 33.70 40.99 31.35Q44.03 29.00 48.07 29.00Q49.76 29.00 51.99 29.77Q54.22 30.55 56.81 31.71Q59.40 32.86 62.13 34.02Q64.87 35.18 67.54 35.97Q70.22 36.76 72.65 36.79Z" />
+
+        <path
+            android:fillColor="#18362C"
+            android:pathData="M58.47 52.96 64.03 58.52 58.47 64.05 52.94 58.52Z" />
+    </group>
+
+    <group android:name="dust">
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.230" android:pathData="M14,22 A2.1,2.1 0 1 0 18.2,22 A2.1,2.1 0 1 0 14,22 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.170" android:pathData="M31,13 A1.4,1.4 0 1 0 33.8,13 A1.4,1.4 0 1 0 31,13 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.270" android:pathData="M77,19 A2.6,2.6 0 1 0 82.2,19 A2.6,2.6 0 1 0 77,19 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.140" android:pathData="M94,34 A1.7,1.7 0 1 0 97.4,34 A1.7,1.7 0 1 0 94,34 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.220" android:pathData="M20,58 A1.9,1.9 0 1 0 23.8,58 A1.9,1.9 0 1 0 20,58 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.160" android:pathData="M47,31 A1.3,1.3 0 1 0 49.6,31 A1.3,1.3 0 1 0 47,31 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.250" android:pathData="M66,47 A2.2,2.2 0 1 0 70.4,47 A2.2,2.2 0 1 0 66,47 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.190" android:pathData="M37,72 A1.8,1.8 0 1 0 40.6,72 A1.8,1.8 0 1 0 37,72 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.230" android:pathData="M88,68 A2.4,2.4 0 1 0 92.8,68 A2.4,2.4 0 1 0 88,68 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.120" android:pathData="M58,88 A1.5,1.5 0 1 0 61,88 A1.5,1.5 0 1 0 58,88 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.200" android:pathData="M25,93 A2,2 0 1 0 29,93 A2,2 0 1 0 25,93 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.160" android:pathData="M79,96 A1.6,1.6 0 1 0 82.2,96 A1.6,1.6 0 1 0 79,96 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.110" android:pathData="M53,60 A1.2,1.2 0 1 0 55.4,60 A1.2,1.2 0 1 0 53,60 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.170" android:pathData="M12,76 A1.7,1.7 0 1 0 15.4,76 A1.7,1.7 0 1 0 12,76 Z" />
+    </group>
+    <group android:name="web">
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.170" android:pathData="M0,0h108v108h-108z" />
+    </group>
+    <group android:name="spider">
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.5" android:pathData="M0,0 L54,54" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.5" android:pathData="M0,0 L0,62" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.5" android:pathData="M0,0 L62,0" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.5" android:pathData="M0,0 L26,58" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.5" android:pathData="M0,0 L58,26" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.35" android:strokeWidth="1.3" android:pathData="M0,26 Q14,14 26,0" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.35" android:strokeWidth="1.3" android:pathData="M0,44 Q23,23 44,0" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.35" android:strokeWidth="1.3" android:pathData="M0,62 Q33,33 62,0" />
+    </group>
+    <group android:name="crack">
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.55" android:strokeWidth="1.9" android:strokeLineCap="round" android:pathData="M84,11 L72,31 L79,40 L61,57 L66,68 L49,79 L52,92 L38,101" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.4" android:strokeLineCap="round" android:pathData="M79,40 L94,46" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.4" android:strokeLineCap="round" android:pathData="M61,57 L44,54" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.35" android:strokeWidth="1.2" android:strokeLineCap="round" android:pathData="M49,79 L33,84" />
+    </group>
+</vector>

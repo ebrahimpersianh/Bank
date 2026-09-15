@@ -107,8 +107,11 @@ class ShopViewModel @Inject constructor(
                 ShopCategory.THEME -> uiPrefs.setColorTheme(item.id.removePrefix("theme:"))
                 ShopCategory.ICON -> {
                     uiPrefs.setActiveIcon(item.id)
-                    // آیکونِ خریداری‌شده همیشه پله‌ی صفر است، پس پله بی‌اثر پاس می‌شود.
-                    runCatching { iconWither.apply(context, step = 0, activeIcon = item.id) }
+                    // هر چهار طرح هشت پله دارند (بخشِ ۶۱)، پس پله‌ی **واقعیِ** کاربر اعمال
+                    // می‌شود نه صفر - وگرنه عوض‌کردنِ آیکون پژمردگی را پاک می‌کرد.
+                    runCatching {
+                        iconWither.applyFromDateKeys(context, repository.activeDayKeys(), item.id)
+                    }
                 }
                 else -> Unit
             }
