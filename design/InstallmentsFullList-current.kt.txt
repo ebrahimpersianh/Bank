@@ -1,0 +1,394 @@
+// منبع: native-android/app/src/main/kotlin/ir/sadteam/loancalc/ui/myloans/LoanDetailScreen.kt
+// خطوطِ ۱۰۰۲..۱۲۷۸ (فهرستِ کاملِ اقساط) و ۱۷۲۳..۱۸۳۴ (ردیفِ InstallmentRow)
+
+        if (showAllInstallments) {
+        item {
+            // جعبه‌ی اقساط - حالا «هوشمند»: کوچیک وقتی داری از کنارش رد می‌شی، ولی وقتی واقعاً بهش
+            // رسیدی (لبه‌ی بالاش نزدیکِ بالای صفحه‌ست) به‌آرومی تا نزدیکِ تمام‌صفحه بزرگ می‌شه تا
+            // چندتا ردیفِ بیشتر (به‌جای ۵ تا) هم‌زمان دیده بشن، و وقتی ازش دور می‌شی دوباره کوچیک
+            // می‌شه - خواسته‌ی کاربر: «میام روی اقساط، بزرگ تمام صفحه رو بگیره، گوشه‌ها کوچیک‌تر بشه».
+            //
+            // فرقِ کلیدی با نسخه‌ی باگ‌دارِ خیلی قبل (که برگردونده شده بود به حالتِ ساده‌ی ثابت):
+            // اونجا یه آستانه‌ی تکی داشت (بالاتر/پایین‌تر از یه نقطه = عوضِ حالت) که دقیقاً رو مرز
+            // می‌لرزید (رفت‌وبرگشتی) و چون خودِ اسکرول با انیمیشن هم‌زمان بود، محتوا زیرِ انگشت
+            // می‌پرید. اینجا: (۱) هیسترزیس بر اساسِ درصدِ دیده‌شدنِ خودِ جعبه (نه موقعیتِ مطلقش رو
+            // صفحه) - آستانه‌ی ورود ۴۵٪، خروج ۲۰٪، پس هم رو مرز نمی‌لرزه هم نیازی به رد کردنِ کاملِ
+            // هدر نیست، (۲) عوضِ حالت با [snapshotFlow] فقط رو مقدارِ واقعیِ اسکرول واکنش نشون می‌ده
+            // (نه یه انیمیشنِ مستقلِ رقیب)، (۳) وقتی جعبه بزرگه، اسکرولِ سریعِ «رد شو» غیرفعاله (چون
+            // دیگه معنی نداره - کاربر دقیقاً اومده تو همین جعبه).
+            val innerListState = rememberLazyListState()
+            var expanded by remember { mutableStateOf(false) }
+            // باگِ رفع‌شده: نسخه‌ی قبلی با آستانه‌ی «offset ≤ 40px از بالای صفحه» فعال می‌شد - یعنی
+            // کاربر باید کلِ هدر (دکمه‌ی بازگشت + دونات + کارتِ بانک + کارتِ عکس، معمولاً ۵۰۰-۷۰۰dp)
+            // رو کامل از رو صفحه رد می‌کرد تا لبه‌ی جعبه دقیقاً به بالای صفحه برسه - این خیلی بیشتر از
+            // یه اسکرولِ معمولیه، برای همین کاربر گزارش داد اصلاً فول‌اسکرین نمی‌شه. الان به‌جای
+            // موقعیتِ مطلق، بر اساسِ چند درصد از خودِ جعبه رو صفحه دیده می‌شه تصمیم می‌گیره - با یه
+            // اسکرولِ معمولی (نه یه اسکرولِ خیلی طولانی) هم قابلِ رسیدنه.
+            LaunchedEffect(detailListState) {
+                snapshotFlow {
+                    val info = detailListState.layoutInfo
+                    val itemInfo = info.visibleItemsInfo.firstOrNull { it.index == 1 }
+                    if (itemInfo == null || itemInfo.size <= 0) {
+                        0f
+                    } else {
+                        val viewportHeight = info.viewportEndOffset - info.viewportStartOffset
+                        val visibleTop = itemInfo.offset.coerceAtLeast(0)
+                        val visibleBottom = (itemInfo.offset + itemInfo.size).coerceAtMost(viewportHeight)
+                        (visibleBottom - visibleTop).coerceAtLeast(0).toFloat() / itemInfo.size
+                    }
+                }.collect { visibleFraction ->
+                    expanded = when {
+                        !expanded && visibleFraction >= 0.45f -> true
+                        expanded && visibleFraction <= 0.2f -> false
+                        else -> expanded
+                    }
+                }
+            }
+            // اولین بار که وامی رو باز می‌کنی، به‌جای شروع از قسطِ ۱، مستقیم می‌ره رو مرزِ آخرین
+            // قسطِ پرداخت‌شده (خواسته‌ی کاربر: «اگه ده تا رفتم، از اول نیاد، بیاد از رو ده») - با
+            // یکی قبلش هم دیده بشه که معلوم باشه آخری چی پرداخت شد.
+            // **باگِ رفع‌شده**: قبلاً کلیدِ این افکت خودِ `rows` بود - چون `rows` با هر تغییرِ
+            // وضعیتِ پرداختِ یه قسط (حتی همینجا، وسطِ کارِ کاربر) یه لیستِ *جدید* می‌شه، هر بار که
+            // کاربر رو همین صفحه یه قسط رو «پرداخت» می‌زد، این افکت دوباره اجرا و صفحه به‌زورِ
+            // اسکرول به مرزِ بعدی می‌پرید - دقیقاً همون چیزی که کاربر نمی‌خواستش.
+            // چون `rows` الان از رو Room (loan_rows) به‌صورتِ async لود می‌شه (رجوع کن به
+            // CLAUDE.md)، اولین مقدارش همیشه یه لیستِ خالیه - کلیدِ ثابتِ `Unit` باعث می‌شد این
+            // افکت دقیقاً همون لحظه‌ی خالی‌بودن اجرا بشه و اسکرول هیچ‌وقت کار نکنه. الان کلید دوباره
+            // `rows`ه، ولی با یه پرچمِ «یه‌بار مصرف» (`hasAutoScrolled`) محافظت شده - همون‌قدر
+            // «فقط یه‌بار، موقعِ اولین باردیدنِ دادهٔ واقعی» هست، فقط دیگه رو دادهٔ خالیِ لحظه‌ی اول
+            // گیر نمی‌کنه.
+            var hasAutoScrolled by remember { mutableStateOf(false) }
+            LaunchedEffect(rows) {
+                if (hasAutoScrolled || rows.isEmpty()) return@LaunchedEffect
+                hasAutoScrolled = true
+                val firstUnpaid = rows.indexOfFirst { it["paid"] != true }
+                val target = (firstUnpaid - 1).coerceAtLeast(0)
+                if (firstUnpaid > 0) innerListState.scrollToItem(target)
+            }
+            val flingConnection = remember(detailListState) {
+                installmentsFlingPassthrough(
+                    outerListState = detailListState,
+                    scope = scope,
+                    beforeBoxIndex = 0,
+                    afterBoxIndex = 2,
+                    isExpanded = { expanded },
+                )
+            }
+            val density = LocalDensity.current
+            val compactHeight = installmentRowHeight * 5 + 8.dp * 4
+            val viewportHeightPx = detailListState.layoutInfo.viewportEndOffset - detailListState.layoutInfo.viewportStartOffset
+            val expandedHeight = with(density) { (viewportHeightPx * 0.92f).toDp() }
+            val boxHeight by animateDpAsState(
+                targetValue = if (expanded) expandedHeight else compactHeight,
+                animationSpec = tween(280, easing = FastOutSlowInEasing),
+                label = "installmentsBoxHeight",
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .height(boxHeight)
+                    .nestedScroll(flingConnection),
+            ) {
+                // contentPadding(start): بدونش ردیف‌ها دقیقاً تا لبه‌ی همین Box کشیده می‌شدن - همون
+                // لبه‌ای که lazyColumnScrollbar خطش رو روش رسم می‌کنه (چون drawWithContent مستقیم
+                // از رو size.width رسم می‌کنه، همیشه لبه‌ی فیزیکیِ راستِ همون Box، صرف‌نظر از
+                // جهت)، پس خط دقیقاً رو حاشیه‌ی باکسِ هر ردیف می‌افتاد (گزارشِ کاربر: «اسکرول رفته
+                // تو شکمِ باکس‌ها»).
+                // **باگِ رفع‌شده (اشتباهِ RTL)**: نسخه‌ی قبلی این‌جا `end = 10.dp` بود - ولی چون کلِ
+                // اپ RTL ئه، `end` تو PaddingValues یعنی سمتِ چپِ فیزیکی (نه راست)! یعنی اون فاصله
+                // اصلاً رو سمتِ درستی (راست، جایی که خط واقعاً رسم می‌شه) اضافه نمی‌شد - برای همین
+                // با اینکه کد قبلاً هم همین‌جوری بود، باگ همچنان دیده می‌شد. تو RTL، `start` سمتِ
+                // راستِ فیزیکیه - این همون سمتیه که لازم داریم.
+                LazyColumn(
+                    state = innerListState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .lazyColumnScrollbar(innerListState, AppPrimary),
+                    contentPadding = PaddingValues(start = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
+                        val m = (row["m"] as? Number)?.toInt() ?: 0
+                        InstallmentRow(
+                            // وقتی تعدادِ اقساطِ یه وام ویرایش می‌شه، ردیف‌های اضافه/کم‌شده
+                            // به‌جای پرشِ ناگهانی نرم میان و می‌رن.
+                            modifier = Modifier.animateItem(),
+                            row = row,
+                            loan = loan,
+                            privacyMode = privacyMode,
+                            bulkPayMode = bulkPayMode,
+                            selected = m in selectedBulkMs,
+                            onTogglePaid = { rowM, paid ->
+                                if (bulkPayMode) {
+                                    if (row["paid"] != true) {
+                                        selectedBulkMs = if (rowM in selectedBulkMs) {
+                                            selectedBulkMs - rowM
+                                        } else {
+                                            selectedBulkMs + rowM
+                                        }
+                                    }
+                                } else if (paid) {
+                                    viewModel.setRowUnpaid(loan, rowM)
+                                } else {
+                                    payChoiceM = rowM
+                                }
+                            },
+                            onOpenPhoto = { rowM -> photoRowM = rowM },
+                            onEditAmount = { rowM, installment ->
+                                editingRowM = rowM
+                                editAmountText = installment.toLong().toString()
+                            },
+                        )
+                    }
+                }
+            }
+        }
+        }
+
+        item {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ReminderOverrideCard(
+                currentOffsets = loan.reminderDayOffsets,
+                onChange = { viewModel.setLoanReminderOffsets(loan, it) },
+            )
+            OutlinedButton(
+                enabled = !isExportingCalendar,
+                onClick = {
+                    if (loan.calendarExported) {
+                        // دیگه دوباره درج نمی‌کنیم (جلوگیری از رویدادهای تکراری تو تقویم گوشی با
+                        // هر بار کلیک) - فقط یادآوری می‌کنیم قبلاً اضافه شده.
+                        calendarMessage = "سررسیدهای این وام قبلاً به تقویم گوشی اضافه شده‌اند"
+                        return@OutlinedButton
+                    }
+                    isExportingCalendar = true
+                    val perms = arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)
+                    val allGranted = perms.all {
+                        ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+                    }
+                    if (allGranted) runCalendarExport() else calendarPermissionLauncher.launch(perms)
+                },
+                colors = if (loan.calendarExported) {
+                    ButtonDefaults.outlinedButtonColors(contentColor = AppMuted)
+                } else {
+                    ButtonDefaults.outlinedButtonColors()
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    Icons.Filled.CalendarMonth,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 6.dp),
+                )
+                Text(if (isExportingCalendar) "در حال افزودن..." else "افزودن سررسیدها به تقویم گوشی")
+            }
+            OutlinedButton(
+                onClick = { showDeleteConfirm = true },
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+            ) {
+                Text("حذف وام")
+            }
+            if (showDeleteConfirm) {
+                // قالبِ واحدِ بخشِ ۴۶: حذفِ وام بازگشت‌پذیر نیست، پس دیالوگ می‌گیره
+                // (نه واگردِ نواری) و لحنش DESTRUCTIVE ئه.
+                ConfirmDialog(
+                    tone = ConfirmTone.DESTRUCTIVE,
+                    title = "حذف وام",
+                    consequence = "وامِ «${loan.name}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+                    actionLabel = "حذف وام",
+                    onConfirm = { showDeleteConfirm = false; onDelete() },
+                    onDismiss = { showDeleteConfirm = false },
+                )
+            }
+        }
+        }
+    }
+
+        AnimatedVisibility(
+            visible = calendarMessage != null,
+            enter = fadeIn(tween(Motion.FADE_IN_MS)) + slideInVertically(Motion.offset()) { it / 2 },
+            exit = fadeOut(tween(Motion.FADE_OUT_MS)) + slideOutVertically(Motion.offset()) { it / 2 },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(AppText.copy(alpha = 0.92f), RoundedCornerShape(AppRadius.button))
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+            ) {
+                Text(calendarMessage ?: "", color = AppSurface, fontSize = 13.sp)
+            }
+        }
+
+        // رو همه‌چیزِ صفحه (آخرین بچه‌ی Box) - لمس رو مصرف نمی‌کنه، فقط ~۳ ثانیه سکه می‌باره.
+        if (celebrate) {
+            CoinCelebration(
+                modifier = Modifier.fillMaxSize(),
+                onFinished = { celebrate = false },
+            )
+        }
+    }
+}
+
+private val installmentRowHeight = 56.dp
+
+/** آستانه‌ی سرعتِ فلینگ (px/s) که پایین‌ترش «درگِ آهسته/هدفمند» حساب می‌شه (بمون تو اقساط، فقط
+ * اسکرولِ داخلی)، بالاترش «سواپِ سریع» (رد شو از کل جعبه) - رجوع کن به [installmentsFlingPassthrough]. */
+private const val INSTALLMENTS_FLING_SKIP_VELOCITY = 3500f
+
+/**
+ * وقتی کاربر رو جعبه‌ی اقساط یه فلینگِ *سریع* بزنه (نه یه درگِ آهسته‌ی هدفمند برای دیدنِ اقساط)،
+ * به‌جای اینکه لیستِ داخلیِ اقساط خودش فلینگ کنه (که با ۱۲۰ ردیف ممکنه چندین‌بار لازم باشه)، مستقیم
+ * لیستِ بیرونیِ صفحه رو به آیتمِ قبل/بعدِ جعبه می‌بره - یعنی حسِ «از جعبه رد شو» بدونِ نیاز به رسیدنِ
+ * دستی به لبه‌ی بالا/پایینِ لیستِ داخلی. درگِ آهسته (سرعتِ فلینگِ پایین) دست‌نخورده می‌مونه و طبقِ
+ * رفتارِ پیش‌فرضِ nested-scrollِ Compose فقط لیستِ داخلی رو اسکرول می‌کنه.
+ */
+private fun installmentsFlingPassthrough(
+    outerListState: LazyListState,
+    scope: CoroutineScope,
+    beforeBoxIndex: Int,
+    afterBoxIndex: Int,
+    isExpanded: () -> Boolean,
+): NestedScrollConnection = object : NestedScrollConnection {
+    override suspend fun onPreFling(available: Velocity): Velocity {
+        // وقتی جعبه تمام‌صفحه‌ست، «رد شو»یِ سریع دیگه معنی نداره - کاربر دقیقاً همین‌جا می‌خواد
+        // بمونه و لیست رو مرور کنه؛ فلینگِ سریع باید عادی خودِ لیستِ داخلی رو اسکرول کنه.
+        if (isExpanded()) return Velocity.Zero
+        if (kotlin.math.abs(available.y) < INSTALLMENTS_FLING_SKIP_VELOCITY) return Velocity.Zero
+        val targetIndex = if (available.y < 0) afterBoxIndex else beforeBoxIndex
+        scope.launch { outerListState.animateScrollToItem(targetIndex) }
+        return available
+    }
+}
+
+/** یه ردیفِ قسط - هر قسط یه باکس مینیمالِ گوشه‌گرد با حاشیه‌ی سبزه (خواسته‌ی کاربر). وضعیت پرداخت:
+ * به‌موقع=سبز «پرداخت شد»، با تأخیر=قرمز «با تأخیر»، پرداخت‌نشده=مشکی «پرداخت نشده». */
+/**
+ * **کارتِ «قسطِ بعدی» - فریمِ `29p`.**
+ *
+ * زمینه‌ی کرمِ `#FFF7E6` با حاشیه‌ی `#EBD9B4` و دکمه‌ی سبزِ «پرداخت شد». وقتی قسطِ **عقب‌افتاده**
+ * وجود داره این کارت جاش رو به نوارِ قرمزِ `27b` می‌ده - دو تا فراخوانِ هم‌زمان گیج‌کننده‌ست و
+ * اولویت با اونیه که دیرکرد داره.
+ */
+@Composable
+
+// ─────────── InstallmentRow ───────────
+private fun InstallmentRow(
+    row: Map<String, Any?>,
+    loan: LoanEntity,
+    privacyMode: Boolean,
+    onTogglePaid: (m: Int, paid: Boolean) -> Unit,
+    onOpenPhoto: (m: Int) -> Unit,
+    onEditAmount: (m: Int, installment: Double) -> Unit,
+    modifier: Modifier = Modifier,
+    bulkPayMode: Boolean = false,
+    selected: Boolean = false,
+) {
+    val m = (row["m"] as? Number)?.toInt() ?: 0
+    val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
+    val paid = row["paid"] == true
+    val paidLate = paid && row["paidLate"] == true
+    val due = row["dueDate"] as? Map<*, *>
+    val dueLabel = due?.let {
+        "${toFa(it["y"].toString())}/${toFa(it["m"].toString())}/${toFa(it["d"].toString())}"
+    } ?: ""
+    val statusLabel = when {
+        paidLate -> "با تأخیر"
+        paid -> "پرداخت شد"
+        else -> "پرداخت نشده"
+    }
+    // مورد ۱۰: بجِ «پرداخت نشده» رنگش همون خاکستریِ قبلی (AppText) می‌مونه - کاربر صریح خواستِ رنگ
+    // عوض نشه، فقط پالسِ ظریفِ زیرش (پایین‌تر) قابلِ‌تپه‌بودنش رو نشون بده.
+    val statusColor = when {
+        paidLate -> AppDanger
+        paid -> AppPrimary
+        else -> AppText
+    }
+    val rowShape = RoundedCornerShape(14.dp)
+    // موقعِ پرداختِ گروهی، اقساطِ ازقبل‌پرداخت‌شده اصلاً قابلِ‌انتخاب نیستن (کم‌رنگ‌تر نشون داده
+    // می‌شن)؛ فقط اقساطِ پرداخت‌نشده با تپ انتخاب/لغوِ انتخاب می‌شن.
+    val bulkSelectable = bulkPayMode && !paid
+    val borderColor = if (selected) AppPrimary else AppPrimary.copy(alpha = 0.4f)
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(installmentRowHeight)
+            .alpha(if (bulkPayMode && paid) 0.5f else 1f)
+            .background(if (selected) AppPrimary.pillOverSurface(0.10f) else AppSurface, rowShape)
+            .border(if (selected) 1.5.dp else 1.dp, borderColor, rowShape)
+            // پرتپ‌ترین المانِ کلِ اپ (علامت‌زدنِ پرداختِ هر قسط) ولی تا الان هیچ واکنشِ لمسی
+            // نداشت - حالا مثلِ بقیه‌ی کارت‌ها فشرده می‌شه و یه tick هپتیک می‌ده.
+            .pressScaleClickable(scale = 0.975f) { onTogglePaid(m, paid) }
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (bulkPayMode) {
+            Checkbox(checked = selected, onCheckedChange = null, enabled = bulkSelectable)
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text("قسط شماره ${toFa(m)}", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(dueLabel, color = AppMuted, fontSize = 12.sp)
+        }
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text("${maskIfPrivate(masked, amountToman(installment))} تومان", color = AppText, fontSize = 13.sp)
+        }
+        // وضعیت پرداخت تو یه باکس رنگیِ گوشه‌گرد (بج) - تا از بقیه‌ی متن جدا و واضح دیده بشه
+        // (خواسته‌ی کاربر). رنگ پس‌زمینه نسخه‌ی کم‌رنگِ رنگ وضعیته.
+        // مورد ۱۰: فقط موقعِ «پرداخت نشده» یه پالسِ خیلی ظریفِ بزرگ/کوچیک‌شدن اضافه شده - تا کاربر
+        // بفهمه این بج (و کلِ ردیف زیرش) واقعاً قابلِ‌لمسه، نه فقط یه لیبلِ خاموش.
+        val unpaidPulse = rememberInfiniteTransition(label = "unpaidBadgePulse")
+        val pulseScale by if (!paid) {
+            unpaidPulse.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.08f,
+                animationSpec = infiniteRepeatable(tween(700, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+                label = "pulseScale",
+            )
+        } else {
+            remember { mutableStateOf(1f) }
+        }
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 6.dp)
+                .scale(pulseScale)
+                .background(statusColor.pillOverSurface(), RoundedCornerShape(8.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+        ) {
+            Text(
+                statusLabel,
+                color = statusColor,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        if (!bulkPayMode) {
+            if (paid) {
+                IconButton(onClick = { onOpenPhoto(m) }) {
+                    val hasPhoto = (row["photoPath"] as? String) != null
+                    Icon(
+                        Icons.Filled.PhotoCamera,
+                        contentDescription = "رسید قسط",
+                        tint = if (hasPhoto) AppPrimary else AppMuted,
+                    )
+                }
+            }
+            IconButton(onClick = { onEditAmount(m, installment) }) {
+                Icon(Icons.Filled.Edit, contentDescription = "ویرایش مبلغ", tint = AppMuted)
+            }
+        }
+    }
+}
+
+// `LoanDonut` حذف شد - از وقتی `LoanSummaryCard` (حلقه‌ی ۸۸ی فریمِ `27b`) جاش رو
+// گرفت، هیچ‌جا صدا زده نمی‌شد؛ توکنِ `AppAccent` هم فقط همین‌جا استفاده می‌شد.
+
+@OptIn(ExperimentalMaterial3Api::class)
