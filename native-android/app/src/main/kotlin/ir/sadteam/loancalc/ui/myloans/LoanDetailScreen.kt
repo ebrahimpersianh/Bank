@@ -78,6 +78,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
@@ -131,12 +133,16 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.settings.FullScreenDialog
 import ir.sadteam.loancalc.ui.theme.AppAccent
+import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppDangerBorder
+import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
 import ir.sadteam.loancalc.ui.theme.AppGoldBorder
 import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
 import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
+import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -292,6 +298,9 @@ fun LoanDetailScreen(
     var editAmountText by remember { mutableStateOf("") }
     var applyAllPromptAmount by remember { mutableStateOf<Double?>(null) }
     var payChoiceM by remember { mutableStateOf<Int?>(null) }
+    // فریمِ `66c`: برداشتنِ پرداخت **همیشه** دیالوگ می‌گیرد - چه از تپ چه از منو. قبلاً تپ
+    // روی ردیفِ پرداخت‌شده بی‌صدا پاکش می‌کرد و کاربر اصلاً خبر نداشت این کار ممکن است.
+    var confirmUnmarkM by remember { mutableStateOf<Int?>(null) }
     var lateDateM by remember { mutableStateOf<Int?>(null) }
     var lateYear by remember { mutableStateOf(1404) }
     var lateMonth by remember { mutableStateOf(1) }
@@ -1147,15 +1156,15 @@ fun LoanDetailScreen(
                                             selectedBulkMs + rowM
                                         }
                                     }
-                                } else if (!paid) {
-                                    // 🚨 تپ **فقط می‌زند، برنمی‌دارد** (فریمِ `64c`): در فهرستِ
-                                    // متراکمِ دوازده‌ردیفی یک تپِ اشتباه یعنی یک قسطِ پرداخت‌شده‌ی
-                                    // ازدست‌رفته، و برداشتن هیچ تاییدی نداشت. برداشتن به منویِ
-                                    // سه‌نقطه رفت - تفکیکِ `46c`: کنشِ سازنده تپ، ویرانگر نه.
+                                } else if (paid) {
+                                    confirmUnmarkM = rowM
+                                } else {
+                                    // تپ روی ردیفِ پرداخت‌نشده مستقیم می‌زند (کنشِ سازنده).
+                                    // ردیفِ پرداخت‌شده بالاتر به دیالوگِ تایید می‌رود - `66c`.
                                     payChoiceM = rowM
                                 }
                             },
-                            onUnmark = { rowM -> viewModel.setRowUnpaid(loan, rowM) },
+                            onUnmark = { rowM -> confirmUnmarkM = rowM },
                             onOpenPhoto = { rowM -> photoRowM = rowM },
                             onEditAmount = { rowM, installment ->
                                 editingRowM = rowM
@@ -1250,6 +1259,16 @@ fun LoanDetailScreen(
                     .padding(bottom = 24.dp),
             ) {
                 Text("حذف وام")
+            }
+            confirmUnmarkM?.let { unmarkM ->
+                ConfirmDialog(
+                    tone = ConfirmTone.DESTRUCTIVE,
+                    title = "پرداختِ قسط ${toFa(unmarkM)} برداشته شود؟",
+                    consequence = "این ردیف به حالتِ پرداخت‌نشده برمی‌گردد.",
+                    actionLabel = "بردار",
+                    onConfirm = { confirmUnmarkM = null; viewModel.setRowUnpaid(loan, unmarkM) },
+                    onDismiss = { confirmUnmarkM = null },
+                )
             }
             if (showDeleteConfirm) {
                 // قالبِ واحدِ بخشِ ۴۶: حذفِ وام بازگشت‌پذیر نیست، پس دیالوگ می‌گیره
@@ -1822,12 +1841,32 @@ private fun InstallmentRow(
     // (`inkColor`) وگرنه فهرستِ بیشتر-پرداخت‌شده یک دیوارِ سبز می‌شود.
     // «با تأخیر» عمداً سبز **نمی‌شود** - پرداخت شده ولی سرِ وقت نه، و همین تفاوت تنها
     // چیزی است که آن دو حالت را از هم جدا می‌کند.
-    val statusColor = when {
-        paidLate -> AppDanger
+    // 🚨 فریمِ `66a`: بجِ وضعیت **قرص** شد. `64a` متنِ لخت گذاشته بود و استدلالش این بود
+    // که در فهرستِ یک‌ستونه قرص فقط شلوغی است - ولی چهار وضعیتِ متفاوت در یک ستون بی قاب
+    // از هم جدا نمی‌شوند، و «پرداخت شد»ِ لخت هم‌سطحِ نبودِ برچسب دیده می‌شد.
+    //
+    // ⚠️ هر سه مقدار **توکن** است نه هگز: جدولِ شبِ `65b` همین‌ها را می‌چرخاند. هگزِ هاردکد
+    // این‌جا همان دامی است که در تبِ دارایی چهار رنگِ نچرخنده ساخت.
+    val statusInk = when {
+        paidLate -> AppDangerInk
         paid -> AppPrimaryInk
-        overdue || dueInDays == 0 -> AppDanger
+        overdue || dueInDays == 0 -> AppDangerInk
         isNext || (dueInDays != null && dueInDays in 1..7) -> AppGoldInk
-        else -> AppMuted
+        else -> AppLabel
+    }
+    val statusBg = when {
+        paidLate -> AppDangerPill
+        paid -> AppPrimaryPill
+        overdue || dueInDays == 0 -> AppDangerPill
+        isNext || (dueInDays != null && dueInDays in 1..7) -> AppGoldPillSoft
+        else -> AppChipBg
+    }
+    // حاشیه‌ی قرص **فقط** برای دو حالتِ فوری. `AppGoldBorder` از قبل در این فایل استفاده
+    // شده؛ اگر `AppDangerBorder` تعریف نشده، `AppDanger.copy(alpha = 0.35f)` بگذارید.
+    val statusBorder = when {
+        overdue || dueInDays == 0 -> AppDangerBorder
+        !paid && isNext -> AppGoldBorder
+        else -> Color.Transparent
     }
     val rowShape = RoundedCornerShape(14.dp)
     // 🚨 حاشیه‌ی سبزِ همه‌ی ردیف‌ها رفت (فریمِ `64a`): وقتی هر ردیف حاشیه‌ی سبز دارد، حاشیه
@@ -1846,12 +1885,30 @@ private fun InstallmentRow(
     val inkColor = if (paid) AppMuted else AppText
     var menuOpen by remember { mutableStateOf(false) }
 
+    // 🚨 فریمِ `66b`: کشفِ لمس‌پذیری. `64a` پالس را برداشت و استدلالش («ده ردیفِ هم‌زمان
+    // نفس‌کشنده نویز است») هنوز درست است - ولی فشردگیِ تنها کافی نبود، چون **قبل از تپ**
+    // دیده نمی‌شود.
+    //
+    // راهِ سوم انتخاب شد: ردیف **شکلِ دکمه** می‌گیرد، همان زبانِ `GradientButton` - یک
+    // سایه‌ی ۱dp که لبه‌ی پایین را جدا می‌کند. ساکن است، پس نویزِ حرکت ندارد، و روی
+    // **همه‌ی** ردیف‌های لمس‌پذیر هست نه فقط یکی.
+    //
+    // ردیفِ پرداخت‌شده سایه **نمی‌گیرد** و تو-رفته می‌مانَد (`AppChipBg`): تپش کاری می‌کند
+    // ولی کارِ برگشتی است نه پیش‌رونده، و ظاهرِ متفاوت همان را می‌گوید.
+    val rowElevation = if (paid) 0.dp else 1.dp
+    val rowBg = when {
+        selected -> AppPrimary.pillOverSurface(0.10f)
+        paid -> AppChipBg
+        else -> AppSurface
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(installmentRowHeight)
             .alpha(if (bulkPayMode && paid) 0.5f else 1f)
-            .background(if (selected) AppPrimary.pillOverSurface(0.10f) else AppSurface, rowShape)
+            .shadow(rowElevation, rowShape, clip = false)
+            .background(rowBg, rowShape)
             .border(if (selected || overdue) 1.5.dp else 1.dp, borderColor, rowShape)
             // پرتپ‌ترین المانِ کلِ اپ - فشرده می‌شه و یه tick هپتیک می‌ده. کشفِ لمس‌پذیری کارِ
             // همین فشردگیه، نه پالسِ بج (که طبقِ `64a` برداشته شد: ده ردیفِ هم‌زمان
@@ -1886,10 +1943,16 @@ private fun InstallmentRow(
         if (statusLabel != null) {
             Text(
                 statusLabel,
-                color = statusColor,
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 8.dp),
+                color = statusInk,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(statusBg)
+                    .border(1.dp, statusBorder, RoundedCornerShape(999.dp))
+                    .padding(horizontal = 9.dp, vertical = 4.dp),
             )
         }
         if (!bulkPayMode) {
@@ -1909,7 +1972,14 @@ private fun InstallmentRow(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                     )
+                    // «برداشتنِ پرداخت» **اولِ منو** آمد: کاربر گزارش داد پیدایش نکرده، و در
+                    // منوی سه‌آیتمی آخرین ردیف کمترین شانس را دارد. حالا دو راه به یک کار
+                    // می‌رسد (تپ و منو) و هر دو دیالوگِ تایید می‌گیرند.
                     if (paid) {
+                        DropdownMenuItem(
+                            text = { Text("برداشتنِ پرداخت", color = AppDangerInk, fontSize = 13.sp) },
+                            onClick = { menuOpen = false; onUnmark(m) },
+                        )
                         DropdownMenuItem(
                             text = { Text("پیوستِ عکسِ رسید", fontSize = 13.sp) },
                             onClick = { menuOpen = false; onOpenPhoto(m) },
@@ -1919,12 +1989,6 @@ private fun InstallmentRow(
                         text = { Text("ویرایشِ مبلغِ این قسط", fontSize = 13.sp) },
                         onClick = { menuOpen = false; onEditAmount(m, installment) },
                     )
-                    if (paid) {
-                        DropdownMenuItem(
-                            text = { Text("برداشتنِ پرداخت", color = AppDanger, fontSize = 13.sp) },
-                            onClick = { menuOpen = false; onUnmark(m) },
-                        )
-                    }
                 }
             }
         }
