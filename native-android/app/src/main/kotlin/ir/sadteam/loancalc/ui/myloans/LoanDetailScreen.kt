@@ -1816,9 +1816,15 @@ private fun InstallmentRow(
         isNext -> "بعدی"
         else -> null
     }
+    // «پرداخت شد» **سبز** است (خواسته‌ی کاربر، ۲۵ شهریور) - تنها خبرِ خوبِ این ستون، و
+    // خاکستری‌بودنش آن را هم‌سطحِ «هیچ» نشان می‌داد.
+    // ⚠️ فقط **همین برچسب** سبز می‌شود؛ مبلغ و تاریخِ ردیفِ پرداخت‌شده خاکستری می‌مانند
+    // (`inkColor`) وگرنه فهرستِ بیشتر-پرداخت‌شده یک دیوارِ سبز می‌شود.
+    // «با تأخیر» عمداً سبز **نمی‌شود** - پرداخت شده ولی سرِ وقت نه، و همین تفاوت تنها
+    // چیزی است که آن دو حالت را از هم جدا می‌کند.
     val statusColor = when {
         paidLate -> AppDanger
-        paid -> AppMuted
+        paid -> AppPrimaryInk
         overdue || dueInDays == 0 -> AppDanger
         isNext || (dueInDays != null && dueInDays in 1..7) -> AppGoldInk
         else -> AppMuted
