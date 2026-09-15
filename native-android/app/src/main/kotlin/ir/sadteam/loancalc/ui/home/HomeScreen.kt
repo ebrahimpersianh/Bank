@@ -12,12 +12,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -68,7 +66,6 @@ import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.accounting.NewTransactionSheet
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.components.SkeletonRowList
-import ir.sadteam.loancalc.ui.components.ActiveChainMark
 import ir.sadteam.loancalc.ui.components.ActiveChip
 import ir.sadteam.loancalc.ui.components.AppButtonVariant
 import ir.sadteam.loancalc.ui.components.AppCard
@@ -189,9 +186,7 @@ fun HomeScreen(
     // بازشدنِ گذشته دقیقاً یه‌بار و صامت انجام بشه.
     LaunchedEffect(Unit) {
         gamificationViewModel.syncBadges()
-        gamificationViewModel.refreshRepairable()
     }
-    val repairable by gamificationViewModel.repairable.collectAsState()
     val retroBadges by gamificationViewModel.retroUnlocked.collectAsState()
     var showNewTransaction by remember { mutableStateOf(false) }
     var showCoinWallet by remember { mutableStateOf(false) }
@@ -263,16 +258,17 @@ fun HomeScreen(
             // «بالای صفحه‌ی خانه، **زیرِ هدر**. هرگز مودال نمی‌شود» - قاعده‌ی صریحِ `41c`.
             navSuggestionSlot?.let { slot -> item { slot() } }
 
-            // ── ترمیمِ زنجیرِ «فعال» - فقط تا ۴۸ ساعت بعد از پاره‌شدن و ماهی یک‌بار ─────────
-            repairable?.let { repair ->
-                item {
-                    StreakRepairCard(
-                        lostDays = repair.lostDays,
-                        canAfford = coins >= 100,
-                        onRepair = { gamificationViewModel.repairStreak() },
-                    )
-                }
-            }
+            // ── ترمیمِ زنجیر: **از خانه برداشته شد** (تصمیمِ طراح، فریمِ `56b`) ─────────────
+            // کارتش دو جا بود - این‌جا و کیفِ سکه. سندِ طراح صریح است که جایش کیفِ سکه
+            // است: «آنچه نیست فقط صفحه‌ای برای دیده‌شدنشان است» و آن صفحه ساخته شد.
+            //
+            // 🚨 و همین کارت بود که کاربر با چهار اسکرین‌شات گزارشش کرد: بعدِ یک‌دو روز
+            // غیبت، یک کارتِ سفید به بلندیِ کلِ صفحه بالای کارتِ قهرمان می‌نشست و اولین
+            // چیزی که از اپ دیده می‌شد همان بود. علتش هیچ‌وقت پیدا نشد (فقط با
+            // `heightIn` مهار شده بود)؛ با برداشتنش هم باگ می‌رود هم دوگانگی.
+            //
+            // درِ ورودی: قرصِ سکه‌ی هدرِ خانه → کیفِ سکه، که کارتِ ترمیم **بالای** ردیفِ
+            // «فعال» در همان صفحه می‌نشیند.
 
             // ── اسکلتِ لودینگ ────────────────────────────────────────────────────────────
             // 🚨 تا اولین خواندنِ دیتابیس برنگشته، «خالی» نشان داده نمی‌شود: دیتابیس رمزنگاری‌شده
@@ -1230,60 +1226,6 @@ private fun Modifier.dashedCardBorder(): Modifier {
         )
     }
 }
-
-/**
- * کارتِ **ترمیمِ زنجیرِ «فعال»** - وقتی کاربر یکی دو روز جا انداخته و زنجیرش پاره شده.
- *
- * عمداً فقط تا ۴۸ ساعت دیده می‌شه: بعدش ترمیم دیگه «جبرانِ یه لغزش» نیست، خریدنِ گذشته‌ست.
- */
-@Composable
-private fun StreakRepairCard(lostDays: Int, canAfford: Boolean, onRepair: () -> Unit) {
-    // 🚨 **گزارشِ واقعیِ کاربر (۲۱ شهریور، چهار اسکرین‌شات)**: این کارت به بلندیِ کلِ صفحه
-    // کشیده می‌شد و محتوایش وسطش شناور می‌ماند، پس اولین چیزی که بعدِ یک‌دو روز غیبت دیده
-    // می‌شد یک صفحه‌ی سفید بود و باید دو بار اسکرول می‌کرد تا به خانه برسد.
-    //
-    // دو بندِ ایمنی با هم: `wrapContentHeight` جلوی هر کمینه‌ی ارتفاعِ تحمیلی از بیرون را
-    // می‌گیرد، و `heightIn(max = …)` سقفِ سخت است - ارتفاعِ طبیعیِ این کارت ~۷۰dp است، پس
-    // ۱۳۰ هیچ محتوایی را نمی‌بُرد ولی «صفحه‌خواری» را غیرممکن می‌کند.
-    AppCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .heightIn(max = 130.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().wrapContentHeight(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            ActiveChainMark(filled = lostDays.coerceAtMost(7), brokenAt = 0, ringSize = 18.dp)
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "زنجیرِ ${(lostDays).toFa()} روزه‌ات پاره شد",
-                    color = AppText,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                )
-                Text(
-                    if (canAfford) "با ۱۰۰ سکه می‌تونی وصلش کنی - ماهی یک‌بار" else "برای ترمیم ۱۰۰ سکه لازمه",
-                    color = AppMuted,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-            GradientButton(
-                onClick = onRepair,
-                enabled = canAfford,
-                variant = AppButtonVariant.SECONDARY,
-            ) {
-                CoinIcon(size = 14.dp)
-                Spacer(modifier = Modifier.width(5.dp))
-                Text("ترمیم", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
-            }
-        }
-    }
-}
-
 
 /**
  * زنگِ مرکزِ پیام‌ها - فریمِ `40a`.
