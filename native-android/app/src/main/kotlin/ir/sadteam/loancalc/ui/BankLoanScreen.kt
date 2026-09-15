@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -68,6 +69,8 @@ import ir.sadteam.loancalc.data.loanPresets
 import ir.sadteam.loancalc.ui.cheque.ChequeScreen
 import ir.sadteam.loancalc.ui.components.StaggerIn
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.HeroMuted
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.BankTile
@@ -84,6 +87,7 @@ import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.tomanToRial
+import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
@@ -92,6 +96,14 @@ import ir.sadteam.loancalc.ui.theme.AppSegmentRail
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppText
 import java.util.Locale
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.graphics.Color
+import ir.sadteam.loancalc.ui.theme.AppBg
+import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
+import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
+import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.ui.jibak.faDigits
 
 private val monthChipValues = listOf(12, 18, 24, 36, 60, 84, 120, 180, 240)
 
@@ -119,6 +131,9 @@ data class BankLoanOutcome(
     val method: LoanMethod,
     val borrower: String,
     val bankName: String,
+    /** `69b`: «سرویسِ اعتباری» یا «وامِ بانکی» - یعنی نرخ از سرور آمده یا کاربر خودش زده.
+     * روی قرصِ منبعِ `ResultScreen` (`68`) دیده می‌شود، وگرنه ماه‌ها بعد معلوم نیست. */
+    val rateSourceLabel: String = RateSource.BANK_LOAN.label,
 )
 
 @Composable
@@ -158,6 +173,10 @@ fun BankLoanScreen(
     var startMonth by rememberSaveable { mutableIntStateOf(today.m) }
     var startDay by rememberSaveable { mutableIntStateOf(today.d) }
 
+    // هر جا مبلغ نمایش داده می‌شود باید از حالتِ خصوصی عبور کند (بندِ ۳ی README) - هیروِ
+    // زنده سه مبلغ نشان می‌دهد و تا امروز این صفحه هیچ مبلغِ **محاسبه‌شده**ای نداشت.
+    val privacyMode = LocalPrivacyMode.current
+
     // state فقط رقم نگه می‌داره؛ کاما نمایشیه (ThousandsSeparatorTransformation) - رجوع کن به کامنتِ فیلد.
     var amountText by rememberSaveable { mutableStateOf("250000000") }
     var amountSliderRange by remember { mutableStateOf(defaultAmountRangeToman) }
@@ -186,29 +205,17 @@ fun BankLoanScreen(
         if (toman <= amountSliderRange.endInclusive.toLong()) amountSlider = toman.toFloat()
     }
 
-    if (showCalendarPicker) {
-        CalendarPickerScreen(
-            initialDate = PersianDate(startYear, startMonth, startDay),
-            onDateSelected = { date ->
-                startYear = date.y
-                startMonth = date.m
-                startDay = date.d
-                showCalendarPicker = false
-            },
-            onBack = { showCalendarPicker = false },
-        )
-        return
-    }
-
-    // «امور چک» رو کاربر می‌خواست مستقیم زیرِ بانک‌ها/خدمات اعتباری تو همین تبِ «وام بانکی» هم در
-    // دسترس باشه، نه فقط از تنظیمات - رجوع کن به کارتِ «امور چک» تو ادامه‌ی همین LazyColumn.
-    if (showCheque) {
-        ChequeScreen(onBack = { showCheque = false })
-        return
-    }
-
     val listState = rememberLazyListState()
     val scrollbarColor = AppPrimary
+
+    // 🚨 پنجمین و ششمین موردِ باگِ `return`: تقویم و «امور چک» هر دو با `return` کلِ
+    // `LazyColumn` را از composition بیرون می‌کردند، پس موقعِ بازگشت اسکرول **صفر** می‌شد.
+    // فیلدها `rememberSaveable`ند و داده نمی‌رفت، ولی کاربرِ وسطِ یک فرمِ یازده‌فیلدی
+    // می‌پرید سرِ بالای فرم و فکر می‌کرد پاک شده.
+    //
+    // حالا هر دو **پوششِ تمام‌صفحه** روی همان `LazyColumn`ند: فهرست composed می‌ماند و
+    // `listState` سرِ جایش.
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         state = listState,
         modifier = Modifier
@@ -217,6 +224,76 @@ fun BankLoanScreen(
         contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        // فریمِ `69a`: هیروِ زنده - همان الگوی `67a`.
+        //
+        // کاربر یازده فیلد را پر می‌کرد و برای دیدنِ قسط باید به صفحه‌ی دیگری می‌رفت؛ اگر
+        // عدد غلط بود برمی‌گشت و دوباره. محاسبه از قبل بی‌هزینه در دست است، فقط دیده
+        // نمی‌شد.
+        item {
+            val heroToman = cleanNum(amountText).toLongOrNull() ?: 0L
+            val heroN = customMonthsText.toIntOrNull() ?: selectedMonths
+            val heroRate = rateText.toDoubleOrNull() ?: 0.0
+            // `compute` روی ترکیبِ نامعتبر (قرض‌الحسنه با یک قسط) تقسیم بر صفر می‌کرد، و
+            // این‌جا برخلافِ دکمه راهی برای نشان‌دادنِ خطا نیست - پس هیرو در آن حالت
+            // فقط ساخته نمی‌شود.
+            val heroResult = remember(heroToman, heroN, heroRate, graceOn, graceMonths, intervalDays) {
+                if (heroToman <= 0 || heroN <= 0) {
+                    null
+                } else {
+                    runCatching {
+                        LoanCalculator.compute(
+                            tomanToRial(heroToman).toDouble(),
+                            heroRate,
+                            heroN,
+                            if (heroRate > 0.0 && heroRate <= 4.0) LoanMethod.QARZ else LoanMethod.STANDARD,
+                            if (graceOn) graceMonths.toInt() else 0,
+                            intervalDays,
+                        )
+                    }.getOrNull()
+                }
+            }
+            if (heroResult != null) {
+                StaggerIn(0) {
+                    AppHeroCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                "قسطِ ماهانه",
+                                color = HeroMuted,
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Black,
+                            )
+                            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 3.dp)) {
+                                PrivacyCrossfade(privacyMode) { masked ->
+                                    AutoShrinkText(
+                                        text = maskIfPrivate(masked, amountToman(heroResult.installment)),
+                                        color = Color.White,
+                                        maxFontSize = 25.sp,
+                                        fontWeight = FontWeight.Black,
+                                    )
+                                }
+                                Text(
+                                    "تومان",
+                                    color = HeroMuted,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(start = 5.dp, bottom = 2.dp),
+                                )
+                            }
+                            PrivacyCrossfade(privacyMode) { masked ->
+                                Text(
+                                    "${toFa(heroN)} قسط · کلِ بازپرداخت ${maskIfPrivate(masked, amountToman(heroResult.totalPaid))}",
+                                    color = HeroMuted,
+                                    fontSize = 9.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         item {
             StaggerIn(0) {
                 // این کارت قبلاً یه حاشیه‌ی مشکی مخصوص خودش داشت؛ کاربر بعداً همون تصمیمِ «بدون خط دور»ی
@@ -435,37 +512,6 @@ fun BankLoanScreen(
         }
 
         item {
-            StaggerIn(3) {
-                // «امور چک» مستقیم زیرِ بانک‌ها/خدمات اعتباری (خواسته‌ی کاربر) - قبلاً فقط از تنظیمات
-                // در دسترس بود.
-                AppCard {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().pressScaleClickable { showCheque = true },
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column {
-                            Text("امور چک", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Text(
-                                "چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن",
-                                color = AppMuted,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
-                        // `ArrowForwardIos`ِ خودچرخان: تو RTL چپ رو نشون می‌ده، یعنی «برو».
-                        // `Icons.Filled.ArrowBack`ِ قبلی نه خودچرخان بود و نه معنیِ درستی داشت.
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowForwardIos,
-                            contentDescription = null,
-                            tint = AppMuted,
-                        )
-                    }
-                }
-            }
-        }
-
-        item {
             StaggerIn(4) {
                 // برچسب + توضیحِ دینامیک قبلاً دو تیکه‌ی جدا بودن (لیبلِ کارت + یه خطِ راهنمای زیرش) -
                 // خواسته‌ی صریحِ کاربر (مورد ۳) یکی‌شدنشون تو یه جمله‌ی تمیزه، پس الان خودِ لیبلِ
@@ -579,19 +625,23 @@ fun BankLoanScreen(
                         colors = appFieldColors(),
                         suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
                     )
-                    SlimSlider(
-                        value = rateSlider,
-                        onValueChange = { v ->
-                            if (!rateReadOnly) {
+                    // فریمِ `69b` بندِ ۱: اسلایدر در حالتِ خواندنی **نمی‌آید**، نه این‌که
+                    // بی‌اثر باشد. قبلاً رندر می‌شد و `onValueChange` با `if (!rateReadOnly)`
+                    // بی‌صدا دورش می‌انداخت - کاربر دستگیره را می‌کشید و هیچ اتفاقی نمی‌افتاد.
+                    // کنترلِ بی‌اثر از نبودنِ کنترل بدتر است.
+                    if (!rateReadOnly) {
+                        SlimSlider(
+                            value = rateSlider,
+                            onValueChange = { v ->
                                 onInputChanged()
                                 rateSlider = v
                                 rateText = trimRate(v.toDouble())
-                            }
-                        },
-                        valueRange = 0f..50f,
-                        // پله‌ی ۰.۵ درصدی - رجوع کن به کامنتِ SlimSlider برای فرمولِ steps.
-                        steps = 99,
-                    )
+                            },
+                            valueRange = 0f..50f,
+                            // پله‌ی ۰.۵ درصدی - رجوع کن به کامنتِ SlimSlider برای فرمولِ steps.
+                            steps = 99,
+                        )
+                    }
                 }
             }
         }
@@ -625,10 +675,26 @@ fun BankLoanScreen(
             }
         }
 
+        // فریمِ `69b` بندِ ۴: «فاصله‌ی هر قسط» و «دوره‌ی تنفس» یک کارت شدند.
+        //
+        // هر دو پیش‌فرضِ درستی دارند (ماهانه، خاموش) و اکثرِ کاربران دستشان نمی‌زنند، پس
+        // دو کارتِ هم‌وزنِ فیلدهای اصلی گرفتن جایی که تصمیمِ واقعی نیست.
         item {
-            AppCard(label = "فاصله زمانی هر قسط") {
+            AppCard(label = "تنظیماتِ پیشرفته") {
                 Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "فاصله‌ی هر قسط",
+                        color = AppText,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()).padding(bottom = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
                     intervalChipOptions.forEach { (v, label) ->
@@ -639,11 +705,7 @@ fun BankLoanScreen(
                         )
                     }
                 }
-            }
-        }
-
-        item {
-            AppCard {
+                HorizontalDivider(color = AppLine, modifier = Modifier.padding(vertical = 10.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -674,18 +736,6 @@ fun BankLoanScreen(
                         textAlign = TextAlign.Center,
                     )
                 }
-            }
-        }
-
-        item {
-            AppCard {
-                Text(
-                    "کارمزد بانک به‌صورت خودکار طبق قانون بانک مرکزی و ضوابط هر بانک محاسبه می‌شود.",
-                    fontSize = 13.5.sp,
-                    color = AppMuted,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                )
             }
         }
 
@@ -739,15 +789,84 @@ fun BankLoanScreen(
                             method = method,
                             borrower = borrowerName.ifBlank { "—" },
                             bankName = selectedBank?.name ?: "مشخص‌نشده",
+                            rateSourceLabel = rateSource.label,
                         ),
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("محاسبه کن", fontWeight = FontWeight.Bold)
+                // فریمِ `69b` بندِ ۶: «محاسبه کن» وقتی درست بود که نتیجه فقط آن‌جا دیده
+                // می‌شد. با هیروِ زنده، محاسبه از قبل جلوی چشم است و دکمه کارِ واقعی‌اش را
+                // می‌گوید: رفتن به جدول.
+                Text("جدولِ اقساط را ببین", fontWeight = FontWeight.Bold)
+            }
+
+            // فریمِ `69b` بندِ ۵: پانویس `AppCard` نمی‌گیرد - یک کارت که فقط متنِ
+            // خاکستریِ وسط‌چین دارد، وزنِ یک فیلد می‌گیرد برای چیزی که پانویس است.
+            Text(
+                "کارمزد بانک به‌صورت خودکار طبق قانون بانک مرکزی و ضوابط هر بانک محاسبه می‌شود.",
+                fontSize = 10.sp,
+                color = AppMuted,
+                fontWeight = FontWeight.Bold,
+                lineHeight = 17.sp,
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp, start = 4.dp, end = 4.dp),
+                textAlign = TextAlign.Center,
+            )
+
+            // فریمِ `69b` بندِ ۲: «امور چک» از **وسطِ فرم** به این‌جا آمد.
+            //
+            // یک مقصدِ ناوبری بینِ «انتخابِ بانک» و «انتخابِ تاریخ» جریانِ پر‌کردنِ فرم را
+            // می‌شکست. دسترسی حفظ شد (خواسته‌ی ثبت‌شده‌ی کاربر)، ولی جایش تهِ فهرست است -
+            // بعد از این‌که کارِ اصلیِ صفحه تمام شده.
+            AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().pressScaleClickable { showCheque = true },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Text("امور چک", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            "چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    // `ArrowForwardIos`ِ خودچرخان: تو RTL چپ رو نشون می‌ده، یعنی «برو».
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForwardIos,
+                        contentDescription = null,
+                        tint = AppMuted,
+                    )
+                }
             }
 
             footer()
+        }
+    }
+
+        if (showCalendarPicker) {
+            Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
+                CalendarPickerScreen(
+                    initialDate = PersianDate(startYear, startMonth, startDay),
+                    onDateSelected = { date ->
+                        startYear = date.y
+                        startMonth = date.m
+                        startDay = date.d
+                        showCalendarPicker = false
+                    },
+                    onBack = { showCalendarPicker = false },
+                )
+            }
+        }
+
+        // «امور چک» رو کاربر می‌خواست تو همین تب هم در دسترس باشه، نه فقط از تنظیمات -
+        // رجوع کن به کارتِ «امور چک» تهِ همین LazyColumn.
+        if (showCheque) {
+            Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
+                ChequeScreen(onBack = { showCheque = false })
+            }
         }
     }
 }
@@ -759,7 +878,7 @@ fun BankLoanScreen(
  * نرخِ وامِ بانک‌های دولتی به **نوعِ وام** بستگی داره نه به بانک (ازدواج ۴٪، مسکن ۱۸٪،
  * قرض‌الحسنه ۰٪)، پس «بانک ملی» یه نرخِ واحد نداره که خودکار پر بشه.
  */
-private enum class RateSource(val label: String) {
+enum class RateSource(val label: String) {
     CREDIT_SERVICE("سرویسِ اعتباری"),
     BANK_LOAN("وامِ بانکی"),
 }
@@ -776,6 +895,9 @@ private val loanTypePresets: List<Pair<String, Double?>> = listOf(
     "قرض‌الحسنه" to 0.0,
     "سایر" to null,
 )
+
+/** ذخیره/محاسبه ریال است و نمایش تومان (بندِ ۲ی README) - تنها نقطه‌ی تبدیلِ نمایشِ این فایل. */
+private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
 
 private fun trimRate(v: Double): String {
     // نمایشِ حداکثر دو رقمِ اعشار (خواسته‌ی صریحِ کاربر، مورد ۱) - وگرنه v.toString() خامِ فلوتینگ-
