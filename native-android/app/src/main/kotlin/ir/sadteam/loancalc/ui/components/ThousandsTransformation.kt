@@ -45,7 +45,10 @@ class ThousandsSeparatorTransformation : VisualTransformation {
 
             override fun transformedToOriginal(offset: Int): Int {
                 val t = offset.coerceIn(0, formatted.length)
-                val commas = formatted.take(t).count { it == ',' }
+                // 🚨 جداکننده `٬`ِ فارسی است نه `,`ِ لاتین (خروجی از `toFa` می‌آید). شمردنِ
+                // کاماي لاتین همیشه صفر می‌داد، پس مکان‌نما به‌اندازه‌ی تعدادِ جداکننده‌ها جلو
+                // می‌افتاد و ویرایشِ وسطِ عدد رقم را جای غلط درج می‌کرد.
+                val commas = formatted.take(t).count { it == FA_THOUSANDS_SEPARATOR }
                 return (t - commas).coerceIn(0, digits.length)
             }
         }

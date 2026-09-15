@@ -40,18 +40,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -121,6 +124,7 @@ import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
@@ -129,6 +133,8 @@ import ir.sadteam.loancalc.ui.settings.FullScreenDialog
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
+import ir.sadteam.loancalc.ui.theme.AppGoldBorder
+import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
 import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -557,7 +563,10 @@ fun LoanDetailScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    val newAmount = editAmountText.toDoubleOrNull()
+                    // 🚨 فیلد **تومان** می‌گیرد (برچسبش هم همین را می‌گفت) ولی مقدارش ریالِ
+                    // خام می‌نشست - یعنی عددی که کاربر می‌دید ده برابر بود و ذخیره‌اش هم
+                    // ده‌برابرِ چیزی که تایپ کرده. قاعده‌ی «دیتابیس ریال، نمایش تومان».
+                    val newAmount = editAmountText.toLongOrNull()?.let { tomanToRial(it).toDouble() }
                     val m = editingRowM
                     if (newAmount != null && newAmount > 0 && m != null) {
                         viewModel.setRowInstallment(loan, m, newAmount) {
@@ -620,7 +629,13 @@ fun LoanDetailScreen(
         AlertDialog(
             onDismissRequest = { bulkPayChoiceOpen = false },
             title = { Text("ثبت پرداختِ ${toFa(count)} قسط") },
-            text = { Text("این اقساط سرِ موعد پرداخت شدن یا با تاخیر؟") },
+            text = {
+                // جمعِ مبلغ در متنِ تایید تکرار می‌شود (فریمِ `64b`) - «پرداختِ ۲ قسط» بی عدد
+                // یعنی تاییدِ کور، و واگردِ پرداختِ گروهی ردیف‌به‌ردیف است نه یک تپ.
+                val sum = rows.filter { (it["m"] as? Number)?.toInt() in selectedBulkMs }
+                    .sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
+                Text("جمعاً ${amountToman(sum)} تومان. این اقساط سرِ موعد پرداخت شدن یا با تاخیر؟")
+            },
             confirmButton = {
                 TextButton(onClick = {
                     applyPayment(PendingLoanPayment(selectedBulkMs.toList(), null))
@@ -949,11 +964,6 @@ fun LoanDetailScreen(
                         color = AppMuted,
                         fontSize = 12.sp,
                     )
-                    if (selectedBulkMs.isNotEmpty()) {
-                        GradientButton(onClick = { bulkPayChoiceOpen = true }) {
-                            Text("ثبت پرداخت", fontSize = 13.sp)
-                        }
-                    }
                 }
             }
         }
@@ -1117,6 +1127,17 @@ fun LoanDetailScreen(
                             privacyMode = privacyMode,
                             bulkPayMode = bulkPayMode,
                             selected = m in selectedBulkMs,
+                            dueInDays = (row["dueDate"] as? Map<*, *>)?.let { due ->
+                                val y = (due["y"] as? Number)?.toInt()
+                                val mm = (due["m"] as? Number)?.toInt()
+                                val d = (due["d"] as? Number)?.toInt()
+                                if (y != null && mm != null && d != null) {
+                                    viewModel.daysUntilToday(PersianDate(y, mm, d))
+                                } else {
+                                    null
+                                }
+                            },
+                            isNext = row === rows.firstOrNull { it["paid"] != true },
                             onTogglePaid = { rowM, paid ->
                                 if (bulkPayMode) {
                                     if (row["paid"] != true) {
@@ -1126,18 +1147,56 @@ fun LoanDetailScreen(
                                             selectedBulkMs + rowM
                                         }
                                     }
-                                } else if (paid) {
-                                    viewModel.setRowUnpaid(loan, rowM)
-                                } else {
+                                } else if (!paid) {
+                                    // 🚨 تپ **فقط می‌زند، برنمی‌دارد** (فریمِ `64c`): در فهرستِ
+                                    // متراکمِ دوازده‌ردیفی یک تپِ اشتباه یعنی یک قسطِ پرداخت‌شده‌ی
+                                    // ازدست‌رفته، و برداشتن هیچ تاییدی نداشت. برداشتن به منویِ
+                                    // سه‌نقطه رفت - تفکیکِ `46c`: کنشِ سازنده تپ، ویرانگر نه.
                                     payChoiceM = rowM
                                 }
                             },
+                            onUnmark = { rowM -> viewModel.setRowUnpaid(loan, rowM) },
                             onOpenPhoto = { rowM -> photoRowM = rowM },
                             onEditAmount = { rowM, installment ->
                                 editingRowM = rowM
-                                editAmountText = installment.toLong().toString()
+                                editAmountText = rialToToman(installment.toLong()).toString()
                             },
                         )
+                    }
+                    // جا برای نوارِ چسبانِ پایین، وگرنه آخرین ردیف زیرش گم می‌شود.
+                    if (bulkPayMode && selectedBulkMs.isNotEmpty()) {
+                        item { Spacer(modifier = Modifier.height(64.dp)) }
+                    }
+                }
+                // **تنها جایی که جعبه‌ی اقساط دکمه‌ی چسبان می‌گیرد** (فریمِ `64b`): بی آن،
+                // کاربر انتخاب می‌کند و بعد باید دنبالِ دکمه بگردد.
+                if (bulkPayMode && selectedBulkMs.isNotEmpty()) {
+                    val bulkSum = rows.filter { (it["m"] as? Number)?.toInt() in selectedBulkMs }
+                        .sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .background(AppSurface, RoundedCornerShape(AppRadius.card))
+                            .border(2.dp, AppLineRow, RoundedCornerShape(AppRadius.card))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column {
+                            Text("جمعِ انتخاب‌شده", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            PrivacyCrossfade(privacyMode) { masked ->
+                                Text(
+                                    maskIfPrivate(masked, amountToman(bulkSum)),
+                                    color = AppText,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Black,
+                                )
+                            }
+                        }
+                        GradientButton(onClick = { bulkPayChoiceOpen = true }) {
+                            Text("پرداختِ ${toFa(selectedBulkMs.size)} قسط", fontSize = 13.sp)
+                        }
                     }
                 }
             }
@@ -1725,9 +1784,12 @@ private fun InstallmentRow(
     loan: LoanEntity,
     privacyMode: Boolean,
     onTogglePaid: (m: Int, paid: Boolean) -> Unit,
+    onUnmark: (m: Int) -> Unit,
     onOpenPhoto: (m: Int) -> Unit,
     onEditAmount: (m: Int, installment: Double) -> Unit,
     modifier: Modifier = Modifier,
+    dueInDays: Int? = null,
+    isNext: Boolean = false,
     bulkPayMode: Boolean = false,
     selected: Boolean = false,
 ) {
@@ -1735,27 +1797,48 @@ private fun InstallmentRow(
     val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
     val paid = row["paid"] == true
     val paidLate = paid && row["paidLate"] == true
+    val hasPhoto = (row["photoPath"] as? String) != null
     val due = row["dueDate"] as? Map<*, *>
     val dueLabel = due?.let {
         "${toFa(it["y"].toString())}/${toFa(it["m"].toString())}/${toFa(it["d"].toString())}"
     } ?: ""
+    val overdue = !paid && dueInDays != null && dueInDays < 0
+
+    // 🚨 بجِ «پرداخت نشده» حذف شد (فریمِ `64a`): در فهرستی که بیشترش پرداخت‌نشده است، آن بج
+    // روی ده ردیف تکرار می‌شود و خبری نمی‌دهد. جایش **مهلت** نشسته - همان زبانِ `27b`.
+    // ردیفِ آینده‌ی دور عمداً هیچ برچسبی نمی‌گیرد.
     val statusLabel = when {
         paidLate -> "با تأخیر"
         paid -> "پرداخت شد"
-        else -> "پرداخت نشده"
+        overdue -> "${toFa(-(dueInDays ?: 0))} روز گذشته"
+        dueInDays == 0 -> "امروز"
+        dueInDays != null && dueInDays in 1..7 -> "${toFa(dueInDays)} روز مانده"
+        isNext -> "بعدی"
+        else -> null
     }
-    // مورد ۱۰: بجِ «پرداخت نشده» رنگش همون خاکستریِ قبلی (AppText) می‌مونه - کاربر صریح خواستِ رنگ
-    // عوض نشه، فقط پالسِ ظریفِ زیرش (پایین‌تر) قابلِ‌تپه‌بودنش رو نشون بده.
     val statusColor = when {
         paidLate -> AppDanger
-        paid -> AppPrimary
-        else -> AppText
+        paid -> AppMuted
+        overdue || dueInDays == 0 -> AppDanger
+        isNext || (dueInDays != null && dueInDays in 1..7) -> AppGoldInk
+        else -> AppMuted
     }
     val rowShape = RoundedCornerShape(14.dp)
-    // موقعِ پرداختِ گروهی، اقساطِ ازقبل‌پرداخت‌شده اصلاً قابلِ‌انتخاب نیستن (کم‌رنگ‌تر نشون داده
-    // می‌شن)؛ فقط اقساطِ پرداخت‌نشده با تپ انتخاب/لغوِ انتخاب می‌شن.
+    // 🚨 حاشیه‌ی سبزِ همه‌ی ردیف‌ها رفت (فریمِ `64a`): وقتی هر ردیف حاشیه‌ی سبز دارد، حاشیه
+    // هیچ چیزی نمی‌گوید. حالا فقط **دو حالتِ فوری** حاشیه‌ی رنگی می‌گیرند - قاعده‌ی `51a`:
+    // رنگ از فوریت می‌آید.
     val bulkSelectable = bulkPayMode && !paid
-    val borderColor = if (selected) AppPrimary else AppPrimary.copy(alpha = 0.4f)
+    val borderColor = when {
+        selected -> AppPrimary
+        overdue -> AppDanger
+        !paid && isNext -> AppGoldBorder
+        else -> AppLineRow
+    }
+    // متنِ ردیفِ پرداخت‌شده خاکستری می‌شود ولی ردیف **محو نمی‌شود** - تفکیکِ پرداخت‌شده کارِ
+    // جوهر است نه alpha؛ محوکردنِ کلِ ردیف مبلغ و تاریخ را هم ناخوانا می‌کند. تنها استثنا
+    // حالتِ گروهی است که آن ردیف واقعاً بی‌کار است.
+    val inkColor = if (paid) AppMuted else AppText
+    var menuOpen by remember { mutableStateOf(false) }
 
     Row(
         modifier = modifier
@@ -1763,11 +1846,12 @@ private fun InstallmentRow(
             .height(installmentRowHeight)
             .alpha(if (bulkPayMode && paid) 0.5f else 1f)
             .background(if (selected) AppPrimary.pillOverSurface(0.10f) else AppSurface, rowShape)
-            .border(if (selected) 1.5.dp else 1.dp, borderColor, rowShape)
-            // پرتپ‌ترین المانِ کلِ اپ (علامت‌زدنِ پرداختِ هر قسط) ولی تا الان هیچ واکنشِ لمسی
-            // نداشت - حالا مثلِ بقیه‌ی کارت‌ها فشرده می‌شه و یه tick هپتیک می‌ده.
+            .border(if (selected || overdue) 1.5.dp else 1.dp, borderColor, rowShape)
+            // پرتپ‌ترین المانِ کلِ اپ - فشرده می‌شه و یه tick هپتیک می‌ده. کشفِ لمس‌پذیری کارِ
+            // همین فشردگیه، نه پالسِ بج (که طبقِ `64a` برداشته شد: ده ردیفِ هم‌زمان
+            // نفس‌کشنده نویز است نه راهنما).
             .pressScaleClickable(scale = 0.975f) { onTogglePaid(m, paid) }
-            .padding(horizontal = 12.dp),
+            .padding(start = 12.dp, end = if (bulkPayMode) 12.dp else 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -1775,54 +1859,67 @@ private fun InstallmentRow(
             Checkbox(checked = selected, onCheckedChange = null, enabled = bulkSelectable)
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text("قسط شماره ${toFa(m)}", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Text(dueLabel, color = AppMuted, fontSize = 12.sp)
-        }
-        PrivacyCrossfade(privacyMode) { masked ->
-            Text("${maskIfPrivate(masked, amountToman(installment))} تومان", color = AppText, fontSize = 13.sp)
-        }
-        // وضعیت پرداخت تو یه باکس رنگیِ گوشه‌گرد (بج) - تا از بقیه‌ی متن جدا و واضح دیده بشه
-        // (خواسته‌ی کاربر). رنگ پس‌زمینه نسخه‌ی کم‌رنگِ رنگ وضعیته.
-        // مورد ۱۰: فقط موقعِ «پرداخت نشده» یه پالسِ خیلی ظریفِ بزرگ/کوچیک‌شدن اضافه شده - تا کاربر
-        // بفهمه این بج (و کلِ ردیف زیرش) واقعاً قابلِ‌لمسه، نه فقط یه لیبلِ خاموش.
-        val unpaidPulse = rememberInfiniteTransition(label = "unpaidBadgePulse")
-        val pulseScale by if (!paid) {
-            unpaidPulse.animateFloat(
-                initialValue = 1f,
-                targetValue = 1.08f,
-                animationSpec = infiniteRepeatable(tween(700, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-                label = "pulseScale",
-            )
-        } else {
-            remember { mutableStateOf(1f) }
-        }
-        Box(
-            modifier = Modifier
-                .padding(horizontal = 6.dp)
-                .scale(pulseScale)
-                .background(statusColor.pillOverSurface(), RoundedCornerShape(8.dp))
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-        ) {
-            Text(
-                statusLabel,
-                color = statusColor,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-        if (!bulkPayMode) {
-            if (paid) {
-                IconButton(onClick = { onOpenPhoto(m) }) {
-                    val hasPhoto = (row["photoPath"] as? String) != null
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("قسط ${toFa(m)}", color = inkColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                // گیره‌ی ریز یعنی «رسید دارد» - قبلاً فقط از رنگِ آیکونِ دوربین فهمیده می‌شد
+                // که هم نامرئی بود هم با حذفِ آن آیکون از دست می‌رفت.
+                if (hasPhoto) {
                     Icon(
-                        Icons.Filled.PhotoCamera,
-                        contentDescription = "رسید قسط",
-                        tint = if (hasPhoto) AppPrimary else AppMuted,
+                        Icons.Filled.AttachFile,
+                        contentDescription = "رسید دارد",
+                        tint = AppMuted,
+                        modifier = Modifier.size(12.dp),
                     )
                 }
             }
-            IconButton(onClick = { onEditAmount(m, installment) }) {
-                Icon(Icons.Filled.Edit, contentDescription = "ویرایش مبلغ", tint = AppMuted)
+            Text(dueLabel, color = AppMuted, fontSize = 12.sp)
+        }
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text("${maskIfPrivate(masked, amountToman(installment))} تومان", color = inkColor, fontSize = 13.sp)
+        }
+        if (statusLabel != null) {
+            Text(
+                statusLabel,
+                color = statusColor,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 8.dp),
+            )
+        }
+        if (!bulkPayMode) {
+            // 🚨 دو آیکونِ لختِ ۲۴پیکسلی (دوربین و مداد) هر دو زیرِ هدفِ لمسیِ ۴۴ بودند و کنارِ
+            // بجِ لمس‌پذیر می‌نشستند - سه هدفِ چسبیده. یک سه‌نقطه‌ی ۴۴ جای هر دو (فریمِ `64c`).
+            Box {
+                IconButton(onClick = { menuOpen = true }) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = "کارهای این قسط", tint = AppMuted)
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    // منو شماره‌ی قسط را در سرش می‌گوید - در فهرستِ دوازده‌ردیفی کاربر باید
+                    // بداند منو مالِ کدام ردیف است.
+                    Text(
+                        "قسط ${toFa(m)} · $dueLabel",
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    )
+                    if (paid) {
+                        DropdownMenuItem(
+                            text = { Text("پیوستِ عکسِ رسید", fontSize = 13.sp) },
+                            onClick = { menuOpen = false; onOpenPhoto(m) },
+                        )
+                    }
+                    DropdownMenuItem(
+                        text = { Text("ویرایشِ مبلغِ این قسط", fontSize = 13.sp) },
+                        onClick = { menuOpen = false; onEditAmount(m, installment) },
+                    )
+                    if (paid) {
+                        DropdownMenuItem(
+                            text = { Text("برداشتنِ پرداخت", color = AppDanger, fontSize = 13.sp) },
+                            onClick = { menuOpen = false; onUnmark(m) },
+                        )
+                    }
+                }
             }
         }
     }
