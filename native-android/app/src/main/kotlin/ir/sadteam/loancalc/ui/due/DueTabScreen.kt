@@ -57,7 +57,13 @@ import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppChartGrid
 import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
-import ir.sadteam.loancalc.ui.theme.AppDangerPill
+import ir.sadteam.loancalc.ui.theme.AppDueLaterBorder
+import ir.sadteam.loancalc.ui.theme.AppDueLaterPill
+import ir.sadteam.loancalc.ui.theme.AppDueNextBorder
+import ir.sadteam.loancalc.ui.theme.AppDueNextPill
+import ir.sadteam.loancalc.ui.theme.AppDueOverdueBorder
+import ir.sadteam.loancalc.ui.theme.AppDueOverduePill
+import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -69,7 +75,6 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppUrgentBorder
-import ir.sadteam.loancalc.ui.theme.AppWarning
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import ir.sadteam.loancalc.ui.theme.hardShadow
 
@@ -291,8 +296,26 @@ private fun DueRowCard(
         row.daysOverdue == -1 -> "فردا"
         else -> "${toFa(-row.daysOverdue)} روز"
     }
-    val dayInk = if (overdue || row.daysOverdue == 0) AppDangerInk else AppWarning
-    val dayBg = if (overdue || row.daysOverdue == 0) AppDangerPill else AppWarningPill
+    // 🚨 **بخشِ ۶۵**: هر سه حالت **جوهرِ روشن روی قرصِ هم‌فام** می‌گیرند، نه پس‌زمینه‌ی
+    // رنگی - در شب قرمزِ روز ناخوانا می‌شود و طلایی چنان می‌درخشد که از هشدارِ قرمز
+    // بلندتر حرف می‌زند. شش هگزِ این قرص‌ها در `AppColorPalette` نشسته‌اند، نه این‌جا.
+    val urgent = overdue || row.daysOverdue == 0
+    val soon = !urgent && row.daysOverdue >= -7
+    val dayInk = when {
+        urgent -> AppDangerInk
+        soon -> AppGoldInk
+        else -> AppMuted
+    }
+    val dayBg = when {
+        urgent -> AppDueOverduePill
+        soon -> AppDueNextPill
+        else -> AppDueLaterPill
+    }
+    val dayBorder = when {
+        urgent -> AppDueOverdueBorder
+        soon -> AppDueNextBorder
+        else -> AppDueLaterBorder
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -309,10 +332,10 @@ private fun DueRowCard(
             modifier = Modifier
                 .size(34.dp)
                 .clip(RoundedCornerShape(11.dp))
-                .background(AppIconFrame),
+                .background(dayBg),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = AppMuted, modifier = Modifier.size(16.dp))
+            Icon(icon, contentDescription = null, tint = dayInk, modifier = Modifier.size(16.dp))
         }
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -331,6 +354,7 @@ private fun DueRowCard(
                     modifier = Modifier
                         .clip(RoundedCornerShape(999.dp))
                         .background(dayBg)
+                        .border(1.dp, dayBorder, RoundedCornerShape(999.dp))
                         .padding(horizontal = 7.dp, vertical = 2.dp),
                 )
             }

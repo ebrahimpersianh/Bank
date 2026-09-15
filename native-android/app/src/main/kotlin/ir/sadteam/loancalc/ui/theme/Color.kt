@@ -44,6 +44,24 @@ data class AppColorPalette(
     val purplePill: Color,
     /** ته‌رنگِ قابِ آیکونِ **نارنجی** (هشدارِ نرم). */
     val warningPill: Color,
+
+    // ── تبِ سررسید، سه گروهِ فوریت (بخشِ ۶۵) ──────────────────────────────────────
+    // 🚨 در شب فوریت با **جوهر** گفته می‌شود نه پس‌زمینه: قرمزِ روزِ `#C4342F` روی سطحِ
+    // تیره به ۲٫۱:۱ می‌رسد و ناخوانا می‌شود، و طلایی برعکس چنان می‌درخشد که از هشدارِ
+    // قرمز بلندتر حرف می‌زند - یعنی سلسله‌مراتب وارونه می‌شود. پس هر دو **جوهرِ
+    // روشن‌شده روی قرصِ تیره‌ی هم‌فام** می‌گیرند.
+    //
+    // ⚠️ این شش‌تا عمداً این‌جا نشسته‌اند نه داخلِ خودِ صفحه - همان دامی که یک‌بار در تبِ
+    // دارایی چهار هگزِ نچرخنده ساخت.
+    /** قرصِ ردیفِ عقب‌افتاده. */
+    val dueOverduePill: Color,
+    val dueOverdueBorder: Color,
+    /** قرصِ ردیفِ پیشِ‌رو (همین هفته). */
+    val dueNextPill: Color,
+    val dueNextBorder: Color,
+    /** قرصِ ردیفِ دورتر - خنثی. */
+    val dueLaterPill: Color,
+    val dueLaterBorder: Color,
     /** جوهرِ متنِ هشدارِ نرم - «با این روند، X تا آخرِ ماه می‌مونه». */
     val warningInk: Color,
     /** حاشیه‌ی نقطه‌چینِ حالتِ خالی. */
@@ -185,6 +203,12 @@ val LightAppColors = AppColorPalette(
     infoPill = Color(0xFFEAF1FE),
     purplePill = Color(0xFFF3EAFE),
     warningPill = Color(0xFFFFF1DC),
+    dueOverduePill = Color(0xFFFFF5F5),
+    dueOverdueBorder = Color(0xFFFFC9C9),
+    dueNextPill = Color(0xFFFFF7E6),
+    dueNextBorder = Color(0xFFEBD9B4),
+    dueLaterPill = Color(0xFFF5F8F6),
+    dueLaterBorder = Color(0xFFE3EAE6),
     warningInk = Color(0xFFB45F00),
     dashedBorder = Color(0xFFC9D6CF),
     primaryBorder = Color(0xFF9FE0BC),
@@ -259,6 +283,13 @@ val DarkAppColors = AppColorPalette(
     infoPill = Color(0xFF1D2C3A),
     purplePill = Color(0xFF252436),
     warningPill = Color(0xFF2A2317),
+    // جدولِ جوهرِ `65b`: نسبتِ کنتراست ۷٫۱:۱ برای عقب‌افتاده و ۸٫۹:۱ برای بعدی.
+    dueOverduePill = Color(0xFF3A1F1E),
+    dueOverdueBorder = Color(0xFF5A2E2C),
+    dueNextPill = Color(0xFF332A12),
+    dueNextBorder = Color(0xFF4A3D22),
+    dueLaterPill = Color(0xFF233029),
+    dueLaterBorder = Color(0xFF2A3640),
     warningInk = Color(0xFFF0D9A8),
     dashedBorder = Color(0xFF3A464F),
     primaryBorder = Color(0x593DDC96),
@@ -336,6 +367,12 @@ val AppSegmentPill: Color @Composable get() = LocalAppColors.current.segmentPill
 val AppInfoPill: Color @Composable get() = LocalAppColors.current.infoPill
 val AppPurplePill: Color @Composable get() = LocalAppColors.current.purplePill
 val AppWarningPill: Color @Composable get() = LocalAppColors.current.warningPill
+val AppDueOverduePill: Color @Composable get() = LocalAppColors.current.dueOverduePill
+val AppDueOverdueBorder: Color @Composable get() = LocalAppColors.current.dueOverdueBorder
+val AppDueNextPill: Color @Composable get() = LocalAppColors.current.dueNextPill
+val AppDueNextBorder: Color @Composable get() = LocalAppColors.current.dueNextBorder
+val AppDueLaterPill: Color @Composable get() = LocalAppColors.current.dueLaterPill
+val AppDueLaterBorder: Color @Composable get() = LocalAppColors.current.dueLaterBorder
 val AppWarningInk: Color @Composable get() = LocalAppColors.current.warningInk
 val AppDashedBorder: Color @Composable get() = LocalAppColors.current.dashedBorder
 val AppPrimaryBorder: Color @Composable get() = LocalAppColors.current.primaryBorder
