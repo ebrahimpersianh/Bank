@@ -37,7 +37,7 @@ import net.sqlcipher.database.SupportFactory
         DangItemEntity::class,
         DangItemShareEntity::class,
     ],
-    version = 30,
+    version = 31,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -494,6 +494,13 @@ abstract class AppDatabase : RoomDatabase() {
          * `sourceLabel` خطِ «از کجا آمده» و `sourceText` متنِ خامِ همان پیامک/اعلان است.
          * پیام‌های قدیمی `NULL` می‌مانند و کارتشان مثلِ قبل بی منبع نشان داده می‌شود.
          */
+        /** `71a`: منبعِ ثبت روی خودِ تراکنش می‌نشیند تا بعدِ تایید هم پیدا باشد. */
+        private val MIGRATION_30_31 = object : Migration(30, 31) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE account_transactions ADD COLUMN originLabel TEXT")
+            }
+        }
+
         private val MIGRATION_29_30 = object : Migration(29, 30) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE inbox_messages ADD COLUMN sourceLabel TEXT")
@@ -629,6 +636,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_27_28,
                             MIGRATION_28_29,
                             MIGRATION_29_30,
+                            MIGRATION_30_31,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

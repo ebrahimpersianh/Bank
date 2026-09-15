@@ -116,6 +116,14 @@ data class AppColorPalette(
     val dangerInk: Color,
     /** تهرنگِ قرصِ قرمز. */
     val dangerPill: Color,
+    /**
+     * سبز و قرمزِ **ردیفِ تراکنش** (`71b`).
+     *
+     * جدا از `primaryInk`/`dangerInk`اند چون در شب باید **روشن‌تر** باشند: ردیفِ ریزِ ۵۰px
+     * با جوهرِ عادی روی سطحِ تیره خوانده نمی‌شود. در تمِ روشن همان مقدارهای موجودند.
+     */
+    val txIn: Color,
+    val txOut: Color,
     /** زمینه‌ی کارتِ **فوری** (سررسیدِ امروز/فردا). حداکثر یکی در هر صفحه، بالای فهرست. */
     val urgentBg: Color,
     /** حاشیه‌ی کارتِ فوری. */
@@ -224,6 +232,8 @@ val LightAppColors = AppColorPalette(
     danger = Color(0xFFFF4B4B),
     dangerInk = Color(0xFFD93838),
     dangerPill = Color(0xFFFFF5F5),
+    txIn = Color(0xFF0B8C57),
+    txOut = Color(0xFFD93838),
     urgentBg = Color(0xFFFFF5F5),
     urgentBorder = Color(0xFFFFC9C9),
     urgentShadow = Color(0xFFFFECEC),
@@ -306,6 +316,9 @@ val DarkAppColors = AppColorPalette(
     danger = Color(0xFFFF6B6B),
     dangerInk = Color(0xFFFF6B6B),
     dangerPill = Color(0x1FFF6B6B), // rgba(255,107,107,.12)
+    // جدولِ `71b` - روشن‌تر از جوهرِ عادیِ شب، چون ردیفِ تراکنش ریز است.
+    txIn = Color(0xFF4FD49A),
+    txOut = Color(0xFFFF8E8E),
     // معادلِ تیره‌ی کارتِ فوری - همون قرمزِ #FF6B6B با آلفای کم، ولی **مات** روی سطحِ #1B2530
     // حساب‌شده (کارت نباید نیمه‌شفاف باشه؛ قاعده‌ی «سطحِ کاملاً مات»).
     urgentBg = Color(0xFF2A1E22),
@@ -387,6 +400,8 @@ val AppPrimaryPillBorder: Color @Composable get() = LocalAppColors.current.prima
 val AppDanger: Color @Composable get() = LocalAppColors.current.danger
 val AppDangerInk: Color @Composable get() = LocalAppColors.current.dangerInk
 val AppDangerPill: Color @Composable get() = LocalAppColors.current.dangerPill
+val AppTxIn: Color @Composable get() = LocalAppColors.current.txIn
+val AppTxOut: Color @Composable get() = LocalAppColors.current.txOut
 /** حاشیه‌ی قرمز - قرینه‌ی AppPrimaryBorder برای دکمه/کارتِ قرمز. مشتق از AppDanger، نه هگزِ ثابت. */
 val AppDangerBorder: Color @Composable get() = AppDanger.copy(alpha = 0.35f)
 

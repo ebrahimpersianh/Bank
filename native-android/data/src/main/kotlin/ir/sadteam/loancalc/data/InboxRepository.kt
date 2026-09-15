@@ -81,13 +81,16 @@ class InboxRepository(
 
     /** دو قاعده‌ی نگهداشتِ طرح: خبرِ خوانده‌شده‌ی کهنه‌تر از ۳۰ روز، و سقفِ ۲۰۰ ردیف. */
     private suspend fun enforceLimits() {
-        dao.purgeOldNews(System.currentTimeMillis() - THIRTY_DAYS_MS)
+        dao.purgeOldNews(System.currentTimeMillis() - NINETY_DAYS_MS)
         val total = dao.total()
         if (total > MAX_ROWS) dao.deleteOldest(total - MAX_ROWS)
     }
 
     private companion object {
-        const val MAX_ROWS = 200
-        const val THIRTY_DAYS_MS = 30L * 24 * 60 * 60 * 1000
+        // `71e`: این جدول حالا **تاریخچه‌ی اعلان‌ها** هم هست، نه فقط صندوقِ کارهای باز - پس
+        // سقف بالاتر رفت. ولی بی‌سقف نشد: دفترِ بی‌سقف روی کاربرِ دوساله هزاران ردیف می‌شود و
+        // اسکرول و پشتیبان را سنگین می‌کند، و کسی اعلانِ سالِ پیش را نمی‌خواند.
+        const val MAX_ROWS = 600
+        const val NINETY_DAYS_MS = 90L * 24 * 60 * 60 * 1000
     }
 }

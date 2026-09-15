@@ -104,6 +104,8 @@ class AccountRepository(
         /** `false` فقط برای ثبتِ **خودکار** از پیامک/اعلانِ بانکی - تا تاییدِ کاربر رو موجودی
          * اثر نمی‌ذاره. ثبتِ دستیِ خودِ کاربر همیشه تاییدشده‌ست. */
         confirmed: Boolean = true,
+        /** «اعلانِ بلوبانک» / «پیامکِ ۲۰۰۰۱۵»؛ `null` یعنی ثبتِ دستیِ خودِ کاربر (`71a`). */
+        originLabel: String? = null,
     ): Long {
         val txId = id ?: System.currentTimeMillis()
         transactionDao.upsert(
@@ -121,6 +123,7 @@ class AccountRepository(
                 sourceType = sourceType,
                 sourceId = sourceId,
                 confirmed = confirmed,
+                originLabel = originLabel,
             ),
         )
         // «هر روزِ ثبتِ تراکنش ۱۰ سکه» (کارتِ `20e`). عمداً اینجاست نه تو ViewModel، تا ثبتِ

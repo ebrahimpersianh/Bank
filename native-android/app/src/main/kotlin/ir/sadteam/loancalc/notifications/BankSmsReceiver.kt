@@ -106,6 +106,8 @@ class BankSmsReceiver : BroadcastReceiver() {
                     day = today.d,
                     category = category,
                     confirmed = false,
+                    // `71a`: منبع روی خودِ تراکنش می‌نشیند، نه فقط در مرکزِ پیام‌ها.
+                    originLabel = "پیامکِ $sender",
                 )
                 // واحد **تومان** و رقمِ فارسی - قبلاً «ریال»ِ لاتین بود (بندِ ۹ی تحویلِ اعلان‌ها).
                 val amountToman = fmt(rialToToman(parsed.amountRial.toLong()).toDouble()).faDigits()

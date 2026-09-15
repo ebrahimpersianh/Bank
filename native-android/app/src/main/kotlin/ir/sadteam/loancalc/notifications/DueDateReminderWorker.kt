@@ -25,6 +25,8 @@ import ir.sadteam.loancalc.ui.jibak.faDigits
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.ChequeRepository
+import ir.sadteam.loancalc.data.InboxRepository
+import ir.sadteam.loancalc.data.db.InboxMessageEntity
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.data.db.LoanEntity
@@ -47,6 +49,14 @@ class DueDateReminderWorker @AssistedInject constructor(
     private val accountRepository: AccountRepository,
     private val uiPrefs: UiPrefs,
     private val reminderScheduler: ReminderScheduler,
+    /**
+     * `71e`: هر اعلانی که فرستاده می‌شود یک ردیف هم می‌نویسد، وگرنه «تاریخچه‌ی اعلان‌ها»
+     * ناقص می‌مانَد - یادآورِ سررسید هیچ‌وقت واردِ مرکزِ پیام‌ها نمی‌شد.
+     *
+     * ⚠️ گونه‌شان **خبر** است نه اقدام‌دار: اقدام‌دار شمارنده‌ی زنگ را بالا می‌برد و تا
+     * تصمیمِ کاربر باز می‌مانَد، ولی یادآور کارِ باز نمی‌سازد - کارش در صفحه‌ی خودِ قسط است.
+     */
+    private val inboxRepository: InboxRepository,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -273,7 +283,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         else -> "${toFa(daysLeft.toString())} روز دیگه"
     }
 
-    private fun notifyLoan(loan: LoanEntity, m: Int, daysLeft: Int, privacyMode: Boolean) {
+    private suspend fun notifyLoan(loan: LoanEntity, m: Int, daysLeft: Int, privacyMode: Boolean) {
         val whenLabel = dayLabel(daysLeft)
         val notificationId = "${loan.id}_$m".hashCode()
         // زدنِ نوتیفیکیشن باید مستقیم همون وام رو باز کنه (مورد ۵ تو CLAUDE.md) - رجوع کن به
@@ -310,9 +320,14 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
+        inboxRepository.post(
+            kind = InboxMessageEntity.Kind.SYSTEM,
+            title = "یادآوریِ قسط",
+            body = "قسط شماره ${toFa(m)} وام «${loan.name}» $whenLabel سررسید می‌شه",
+        )
     }
 
-    private fun notifyCheque(cheque: ChequeEntity, daysLeft: Int, privacyMode: Boolean) {
+    private suspend fun notifyCheque(cheque: ChequeEntity, daysLeft: Int, privacyMode: Boolean) {
         val whenLabel = dayLabel(daysLeft)
         val notificationId = "cheque_${cheque.id}".hashCode()
         // 🚨 این اعلان `setContentIntent` **نداشت**، پس تپ روش هیچ کاری نمی‌کرد - نه برنامه
@@ -349,6 +364,11 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
+        inboxRepository.post(
+            kind = InboxMessageEntity.Kind.SYSTEM,
+            title = "یادآوریِ چک",
+            body = "چک شماره ${cheque.chequeNumber} (${cheque.bankName}) $whenLabel سررسید می‌شه",
+        )
     }
 
     /**
@@ -356,7 +376,7 @@ class DueDateReminderWorker @AssistedInject constructor(
      * «۳۲۰٬۰۰۰ ریال» رو صفحه‌ی قفلِ گوشی دقیقاً همون چیزیه که این کلید می‌خواد جلوشو بگیره.
      * پس وقتی روشنه مبلغ از متنِ اعلان حذف می‌شه - نه یه کلیدِ دومِ جدا.
      */
-    private fun notifyRecurringPayment(
+    private suspend fun notifyRecurringPayment(
         payment: RecurringPaymentEntity,
         daysLeft: Int,
         privacyMode: Boolean,
@@ -385,9 +405,14 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
+        inboxRepository.post(
+            kind = InboxMessageEntity.Kind.SYSTEM,
+            title = "یادآوریِ پرداختِ تکراری",
+            body = "«${payment.name}» $whenLabel سررسید می‌شه",
+        )
     }
 
-    private fun notifyDailyExpenseReminder() {
+    private suspend fun notifyDailyExpenseReminder() {
         val pendingIntent = openAppIntent(DAILY_EXPENSE_REMINDER_REQUEST_CODE)
         // کانالِ انگیزشیِ کم‌اهمیت، نه کانالِ سررسید - این یکی نباید صدا کند و کاربر باید
         // بتواند جدا خاموشش کند بی این‌که یادآورِ قسط را از دست بدهد.
@@ -401,6 +426,11 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
         NotificationManagerCompat.from(applicationContext).notify(DAILY_EXPENSE_REMINDER_NOTIFICATION_ID, notification)
+        inboxRepository.post(
+            kind = InboxMessageEntity.Kind.STREAK_REMINDER,
+            title = "دخل‌وخرج امروز یادت نره",
+            body = "امروز هنوز هیچ تراکنشی ثبت نکردی - یه سر بزن به «جیبک»",
+        )
     }
 
     private companion object {

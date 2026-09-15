@@ -125,6 +125,8 @@ class BankNotificationListener : NotificationListenerService() {
                 day = today.d,
                 category = category,
                 confirmed = false,
+                // `71a`: منبع روی خودِ تراکنش می‌نشیند، نه فقط در مرکزِ پیام‌ها.
+                originLabel = "اعلانِ ${appLabelOf(packageName)}",
             )
             // منبعِ واحد: پیام اول اینجا ساخته می‌شه؛ اعلانِ گوشی از رو همین ردیف ساخته
             // می‌شه، نه مستقل.

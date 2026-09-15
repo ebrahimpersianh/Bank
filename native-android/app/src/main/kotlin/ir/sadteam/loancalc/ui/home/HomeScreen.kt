@@ -35,6 +35,9 @@ import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
@@ -42,6 +45,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,6 +67,7 @@ import ir.sadteam.loancalc.ui.jibak.rialToFaCompactParts
 import ir.sadteam.loancalc.ui.jibak.toFa
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.account.CompactTransactionRow
 import ir.sadteam.loancalc.ui.accounting.NewTransactionSheet
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.components.SkeletonRowList
@@ -106,6 +111,7 @@ import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMarkOff
+import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
@@ -223,6 +229,7 @@ fun HomeScreen(
     // پیش‌بینیِ «تا آخرِ ماه کم میاری» - رجوع کن به MonthForecast تو :core.
     // موجودی = جمعِ موجودیِ همه‌ی حساب‌کتاب‌ها (همون تعریفی که تبِ دارایی نشون می‌ده).
     val accounts by accountViewModel.accounts.collectAsState()
+    var showTodaySpend by rememberSaveable { mutableStateOf(false) }
     val monthForecast = remember(transactions, accounts, monthSpend) {
         MonthForecast.compute(
             spentSoFarRial = monthSpend,
@@ -327,7 +334,10 @@ fun HomeScreen(
                     yesterdaySpend = weekSpend[weekSpend.lastIndex - 1],
                     weekSpend = weekSpend,
                     privacyMode = privacyMode,
-                    onClick = { onNavigateToRoute("assets") },
+                    // `71d`: عددی که جلوی چشم است و لمس می‌شود ولی جواب نمی‌دهد یک بن‌بست
+                    // است. مقصدش **شیت** است نه صفحه - یک نگاهِ دوثانیه‌ای، و زمینه
+                    // (خودِ عددِ هیرو) بالای شیت می‌مانَد.
+                    onClick = { showTodaySpend = true },
                 )
             }
             if (monthCap > 0.0) {
@@ -426,6 +436,13 @@ fun HomeScreen(
         if (showCoinWallet) {
             CoinWalletScreen(onBack = { showCoinWallet = false }, todayHasEntry = todayHasEntry)
         }
+        if (showTodaySpend) {
+            TodaySpendSheet(
+                transactions = transactions,
+                accountNameOf = { id -> accounts.firstOrNull { it.id == id }?.name },
+                onDismiss = { showTodaySpend = false },
+            )
+        }
         confirmPayDue?.let { due ->
             ConfirmPayDialog(
                 title = "تاییدِ پرداخت",
@@ -433,6 +450,64 @@ fun HomeScreen(
                 onConfirm = { urgentDueViewModel.markPaid(due); confirmPayDue = null },
                 onDismiss = { confirmPayDue = null },
             )
+        }
+    }
+}
+
+/**
+ * شیتِ «خرجِ امروز» - فریمِ `71d`.
+ *
+ * **واریزهای امروز این‌جا نمی‌آیند**: عددِ هیرو «خرج» است نه تراز، و فهرستی که واریز هم
+ * داشته باشد با آن عدد نمی‌خواند.
+ *
+ * ردیف همان ردیفِ `71a` است با یک چیزِ اضافه: **نامِ حساب پیشِ منبع** - خرجِ امروز چند
+ * حساب را قطع می‌کند و بی نامِ حساب دو ردیفِ هم‌مبلغ از هم جدا نمی‌شوند. سرگروهِ روز هم
+ * نیست، همه‌اش امروز است.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TodaySpendSheet(
+    transactions: List<AccountTransactionEntity>,
+    accountNameOf: (Long) -> String?,
+    onDismiss: () -> Unit,
+) {
+    val today = remember { JalaliCalendar.today() }
+    val rows = remember(transactions, today) {
+        transactions.filter { it.isExpenseOn(today.y, today.m, today.d) }
+            .sortedByDescending { it.createdAt }
+    }
+    val total = remember(rows) { rows.sumOf { it.amount } }
+    val privacyMode = LocalPrivacyMode.current
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = AppBg) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            AppHeroCard {
+                Text("خرجِ امروز", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        maskIfPrivate(masked, rialToToman(total.toLong()).toFaMoney()) + " تومان",
+                        color = Color.White,
+                        fontSize = 26.sp,
+                        letterSpacing = (-0.5).sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
+            }
+            if (rows.isEmpty()) {
+                Text(
+                    "امروز هنوز خرجی ثبت نشده.",
+                    color = AppMuted,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(vertical = 12.dp),
+                )
+            } else {
+                rows.forEach { tx ->
+                    CompactTransactionRow(tx = tx, accountName = accountNameOf(tx.accountId))
+                }
+            }
         }
     }
 }

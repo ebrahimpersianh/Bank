@@ -107,7 +107,7 @@ fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel())
             EmptyState(
                 icon = Icons.Filled.NotificationsNone,
                 title = "پیامی نداری",
-                description = "هر تراکنشی که خودکار تشخیص داده بشه و هر خبرِ مهمی اینجا میاد.",
+                description = "هر تراکنشی که خودکار تشخیص داده بشه و هر اعلانی که برنامه می‌فرسته اینجا می‌مونه.",
             )
             return@Column
         }
@@ -118,7 +118,7 @@ fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel())
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (actionable.isNotEmpty()) {
-                item { SectionLabel("نیاز به بررسی · ${toFa(actionable.size)}") }
+                item { SectionLabel("در انتظارِ تو · ${toFa(actionable.size)}") }
                 items(actionable, key = { it.id }) { message ->
                     ActionableCard(
                         message = message,
@@ -129,7 +129,7 @@ fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel())
                 }
             }
             if (news.isNotEmpty()) {
-                item { SectionLabel("خبرها") }
+                item { SectionLabel("پیشینه") }
                 items(news, key = { it.id }) { message ->
                     NewsCard(
                         message = message,

@@ -1,31 +1,23 @@
 package ir.sadteam.loancalc.ui.account
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -41,15 +33,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.numberToWordsFa
@@ -57,6 +54,10 @@ import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.HeroMuted
+import ir.sadteam.loancalc.ui.components.HeroPillBg
+import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
@@ -65,15 +66,17 @@ import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.jibak.toFaDate
-import ir.sadteam.loancalc.ui.jibak.toFaDateNumeric
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.jibak.toFaSignedMoney
 import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.theme.AppDanger
-import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
+import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 
@@ -97,6 +100,25 @@ fun AccountDetailScreen(
         allTransactions.filter { it.accountId == account.id }
     }
     val balance = remember(account, allTransactions) { viewModel.balanceOf(account, allTransactions) }
+
+    // `71a`: انتخابِ ماه. پیش‌فرض ماهِ جاری؛ فلشِ ماهِ آینده وقتی داده ندارد **خاموش** است
+    // نه غایب (قاعده‌ی ۵ِ `71c`) - جای خالی کاربر را دنبالِ دکمه‌ی گم‌شده می‌فرستد.
+    val today = remember { JalaliCalendar.today() }
+    var shownYear by rememberSaveable { mutableStateOf(today.y) }
+    var shownMonth by rememberSaveable { mutableStateOf(today.m) }
+    val monthTransactions = remember(transactions, shownYear, shownMonth) {
+        transactions.filter { it.year == shownYear && it.month == shownMonth }
+            .sortedWith(compareByDescending<AccountTransactionEntity> { it.day }.thenByDescending { it.createdAt })
+    }
+    val monthIn = remember(monthTransactions) {
+        monthTransactions.filter { it.type == TransactionType.DEPOSIT.name }.sumOf { it.amount }
+    }
+    val monthOut = remember(monthTransactions) {
+        monthTransactions.filter { it.type != TransactionType.DEPOSIT.name }.sumOf { it.amount }
+    }
+    val hasNextMonth = remember(transactions, shownYear, shownMonth) {
+        transactions.any { it.year > shownYear || (it.year == shownYear && it.month > shownMonth) }
+    }
 
     var showAddTransaction by remember { mutableStateOf(false) }
     var txType by remember { mutableStateOf(TransactionType.DEPOSIT) }
@@ -138,13 +160,16 @@ fun AccountDetailScreen(
         }
 
         item {
-            AppCard(label = "موجودی فعلی") {
-                Text(
-                    "${rialToToman(balance.toLong()).toFaMoney()} تومان",
-                    color = if (balance < 0) AppDangerInk else AppPrimaryInk,
-                    fontSize = 22.sp,
-                )
-            }
+            BalanceHero(balance = balance, monthIn = monthIn, monthOut = monthOut, monthName = persianMonthName(shownMonth))
+        }
+
+        item {
+            MonthBar(
+                year = shownYear,
+                month = shownMonth,
+                hasNext = hasNextMonth,
+                onChange = { y, m -> shownYear = y; shownMonth = m },
+            )
         }
 
         if (onEdit != null || onDelete != null) {
@@ -266,22 +291,47 @@ fun AccountDetailScreen(
             }
         }
 
-        if (transactions.isEmpty()) {
+        if (monthTransactions.isEmpty()) {
             item {
                 EmptyState(
                     icon = Icons.Outlined.SwapVert,
-                    title = "هنوز تراکنشی ثبت نشده",
-                    description = "واریز و برداشت‌های این حساب که ثبت بشن، همین‌جا " +
-                        "به‌ترتیبِ تاریخ می‌بینیشون.",
+                    title = if (transactions.isEmpty()) "هنوز تراکنشی ثبت نشده" else "این ماه تراکنشی نداری",
+                    description = if (transactions.isEmpty()) {
+                        "واریز و برداشت‌های این حساب که ثبت بشن، همین‌جا به‌ترتیبِ تاریخ می‌بینیشون."
+                    } else {
+                        "ماهِ دیگری را از نوارِ بالا انتخاب کن."
+                    },
                 )
             }
         } else {
-            items(transactions, key = { it.id }) { tx ->
-                TransactionRow(
-                    tx = tx,
-                    onDelete = { deletingTx = tx },
-                    onEdit = { editingTx = tx },
-                    modifier = Modifier.animateItem(),
+            // قاعده‌ی ۴ِ `71c`: تاریخ یک‌بار بالای گروه، نه روی تک‌تکِ ردیف‌ها.
+            monthTransactions.groupBy { it.day }.forEach { (day, rows) ->
+                item(key = "day-${'$'}shownYear-${'$'}shownMonth-${'$'}day") {
+                    Text(
+                        "${'$'}{toFa(day)} ${'$'}{persianMonthName(shownMonth)}",
+                        color = AppMuted,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
+                    )
+                }
+                items(rows, key = { it.id }) { tx ->
+                    SwipeToDeleteRow(
+                        onDelete = { deletingTx = tx },
+                        confirmDismiss = false,
+                        modifier = Modifier.animateItem(),
+                    ) {
+                        CompactTransactionRow(tx = tx, onClick = { editingTx = tx })
+                    }
+                }
+            }
+            item {
+                // نشانه‌ی کشف‌پذیری - یک‌بار زیرِ فهرست، نه زیرِ هر ردیف (که ردیف را دوبرابر می‌کرد).
+                Text(
+                    "برای ویرایش بزن · برای حذف بکش",
+                    color = AppMuted.copy(alpha = 0.7f),
+                    fontSize = 9.5.sp,
+                    modifier = Modifier.padding(top = 6.dp),
                 )
             }
         }
@@ -330,61 +380,93 @@ fun AccountDetailScreen(
     }
 }
 
-/** دو ستون: نوع+توضیح+تاریخ و مبلغِ باعلامت. دکمه‌ی «حذف»ِ دائمی برداشته شد - `SwipeToDeleteRow`
- * از قبل همون کار رو می‌کرد، دو راهِ حذف روی یه ردیف زیادی بود. */
+/**
+ * هیرویِ `71a` - موجودی + دو قرصِ جمعِ **همان ماهِ انتخاب‌شده**.
+ *
+ * قاعده‌ی ۵ِ `71c`: انتخابِ ماه بی جمعِ همان ماه فقط فهرست را کوتاه می‌کند و خبری نمی‌دهد،
+ * پس این دو قرص جزوِ خودِ انتخابِ ماه‌اند نه تزئین.
+ */
 @Composable
-private fun TransactionRow(
-    tx: AccountTransactionEntity,
-    onDelete: () -> Unit,
-    onEdit: () -> Unit,
+private fun BalanceHero(balance: Double, monthIn: Double, monthOut: Double, monthName: String) {
+    val privacyMode = LocalPrivacyMode.current
+    AppHeroCard {
+        Text("موجودیِ نقدی", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text(
+                maskIfPrivate(masked, rialToToman(balance.toLong()).toFaMoney()) + " تومان",
+                color = Color.White,
+                fontSize = 26.sp,
+                letterSpacing = (-0.5).sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(top = 3.dp),
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            MonthSumPill("واریزِ $monthName", monthIn, positive = true, privacyMode = privacyMode, modifier = Modifier.weight(1f))
+            MonthSumPill("برداشتِ $monthName", monthOut, positive = false, privacyMode = privacyMode, modifier = Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun MonthSumPill(
+    label: String,
+    amount: Double,
+    positive: Boolean,
+    privacyMode: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    SwipeToDeleteRow(onDelete = onDelete, confirmDismiss = false, modifier = modifier) {
-        // تپ روی ردیف ویرایش را باز می‌کند. کاربر گزارش کرد گاهی تراکنش اشتباه ثبت
-        // می‌شود و راهی برای اصلاحش نبود؛ فقط کشیدن برای حذف بود، آن هم بی هیچ نشانه.
-        AppCard(modifier = Modifier.clickable(onClick = onEdit)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column {
-                    Text(
-                        if (tx.type == TransactionType.DEPOSIT.name) "واریز" else "برداشت",
-                        color = if (tx.type == TransactionType.DEPOSIT.name) AppPrimaryInk else AppDangerInk,
-                        fontSize = 13.sp,
-                    )
-                    if (tx.description.isNotBlank()) {
-                        Text(tx.description, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
-                    }
-                    Text(
-                        // «۱۴۰۵/۰۶/۱۰» - بی صفرِ پیشوند ستون نمی‌چیند.
-                        toFaDateNumeric(tx.year, tx.month, tx.day),
-                        color = AppMuted,
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                    // نشانه‌ی کشف‌پذیری: بی این، حذف یک قابلیتِ پنهان بود و ویرایش هم
-                    // معلوم نبود اصلاً وجود دارد (هر دو گزارشِ کاربر).
-                    Text(
-                        "برای ویرایش بزن · برای حذف بکش",
-                        color = AppMuted.copy(alpha = 0.7f),
-                        fontSize = 9.5.sp,
-                        modifier = Modifier.padding(top = 3.dp),
-                    )
-                }
-                // واحد روی خودِ ردیف لازم است: بی آن «۳۵۰٬۰۰۰٬۰۰+» بی‌معناست و کاربر
-                // نمی‌داند ریال است یا تومان (گزارشِ کاربر با اسکرین‌شات). ستونِ `amount`
-                // ریال است، پس تبدیل همین‌جا و یک‌بار.
-                Text(
-                    rialToToman(tx.amount.toLong())
-                        .let { if (tx.type == TransactionType.DEPOSIT.name) it else -it }
-                        .toFaSignedMoney() + " تومان",
-                    color = if (tx.type == TransactionType.DEPOSIT.name) AppPrimaryInk else AppDangerInk,
-                    fontSize = 13.sp,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
-                )
-            }
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(AppRadius.row))
+            .background(HeroPillBg)
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+    ) {
+        Text(label, color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text(
+                maskIfPrivate(
+                    masked,
+                    rialToToman(amount.toLong()).let { if (positive) it else -it }.toFaSignedMoney(),
+                ),
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+    }
+}
+
+/**
+ * نوارِ ماه - همان الگوی تبِ گزارش (قاعده‌ی ۵ِ `71c`: «بله، قرضش بگیر»).
+ *
+ * ⚠️ در RTL فلشِ **قبلی سمتِ راست** است و «بعدی» سمتِ چپ (قاعده‌ی سیستمِ طراحی)، پس
+ * `ChevronRight` ماهِ قبل را می‌آورد نه بعد را.
+ */
+@Composable
+private fun MonthBar(year: Int, month: Int, hasNext: Boolean, onChange: (Int, Int) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = { if (month == 1) onChange(year - 1, 12) else onChange(year, month - 1) }) {
+            Icon(Icons.Filled.ChevronRight, contentDescription = "ماهِ قبل", tint = AppText)
+        }
+        Text(
+            "${persianMonthName(month)} ${toFa(year)}",
+            color = AppText,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(onClick = { if (month == 12) onChange(year + 1, 1) else onChange(year, month + 1) }, enabled = hasNext) {
+            Icon(
+                Icons.Filled.ChevronLeft,
+                contentDescription = "ماهِ بعد",
+                // خاموش، نه غایب - جای خالی کاربر را دنبالِ دکمه‌ی گم‌شده می‌فرستد.
+                tint = if (hasNext) AppText else AppMuted.copy(alpha = 0.4f),
+            )
         }
     }
 }

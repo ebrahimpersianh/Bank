@@ -196,6 +196,7 @@ fun SmsImportScreen(
                     month = today.m,
                     day = today.d,
                     category = MerchantCategoryGuesser.guess(sms.body, parsed.type == TransactionType.WITHDRAWAL),
+                    originLabel = "پیامکِ ${sms.address}",
                 )
                 addedIds = addedIds + sms.id
                 pending = null
@@ -215,6 +216,7 @@ fun SmsImportScreen(
                         year = today.y,
                         month = today.m,
                         day = today.d,
+                        originLabel = "پیامکِ ${sms.address}",
                         category = MerchantCategoryGuesser.guess(
                             sms.body,
                             parsed.type == TransactionType.WITHDRAWAL,

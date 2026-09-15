@@ -151,10 +151,13 @@ class AccountViewModel @Inject constructor(
         sourceType: String? = null,
         sourceId: String? = null,
         id: Long? = null,
+        /** `71a`: منبعِ نمایشی - `null` یعنی ثبتِ دستیِ خودِ کاربر. */
+        originLabel: String? = null,
     ) {
         viewModelScope.launch {
             accountRepository.addTransaction(
                 accountId, type, amount, description, year, month, day, category, sourceType, sourceId, id,
+                originLabel = originLabel,
             )
             syncIfLoggedIn()
         }

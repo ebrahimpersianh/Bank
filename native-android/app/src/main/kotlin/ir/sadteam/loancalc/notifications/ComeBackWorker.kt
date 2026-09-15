@@ -20,6 +20,8 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.InboxRepository
+import ir.sadteam.loancalc.data.db.InboxMessageEntity
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
@@ -47,6 +49,8 @@ class ComeBackWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val accountRepository: AccountRepository,
     private val uiPrefs: UiPrefs,
+    /** `71e`: اعلانِ برگشت هم یک ردیفِ تاریخچه می‌نویسد - وگرنه «تمامِ اعلان‌ها» ناقص است. */
+    private val inboxRepository: InboxRepository,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -78,7 +82,7 @@ class ComeBackWorker @AssistedInject constructor(
         return Result.success()
     }
 
-    private fun notifyComeBack(days: Int) {
+    private suspend fun notifyComeBack(days: Int) {
         // اعلانِ انگیزشی کانالِ کم‌اهمیتِ خودش را دارد، جدا از یادآورِ سررسید - پس کاربر
         // می‌تواند این یکی را خاموش کند و یادآورِ قسط را نگه دارد.
         ReminderChannels.ensureAll(applicationContext)
@@ -108,6 +112,11 @@ class ComeBackWorker @AssistedInject constructor(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
         NotificationManagerCompat.from(applicationContext).notify(NOTIFICATION_ID, notification)
+        inboxRepository.post(
+            kind = InboxMessageEntity.Kind.STREAK_REMINDER,
+            title = "${toFa(days)} روزه رفتی، وقتشه برگردی",
+            body = "${toFa(days)} روزه تراکنش ثبت نکردی و نظمِ مالی‌ت در خطره.",
+        )
     }
 
     /** فاصله‌ی روزِ تقریبی بینِ دو تاریخِ شمسی - برای «چند روز غایب بودی» دقتِ روز کافیه. */
