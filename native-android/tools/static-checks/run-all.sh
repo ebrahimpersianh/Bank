@@ -65,6 +65,7 @@ run "نمادِ فراخوانی‌شده‌ی ناموجود" "$DIR/localcalls.
 run "فرمتِ عددی بدونِ Locale" "$DIR/localeformat.py"
 run "امضای تابع و ثابتِ enum" "$DIR/apisurface.py"
 run "لامبدای انتهایی" "$DIR/trailinglambda.py"
+run "APIِ آزمایشیِ متریال" "$DIR/experimental.py"
 
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then

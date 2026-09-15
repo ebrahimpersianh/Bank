@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Icon
@@ -71,6 +72,7 @@ import ir.sadteam.loancalc.ui.theme.AppText
  * تو حالتِ ویرایش نشون داده نمی‌شه چون منبعِ حقیقتِ وضعیتِ پرداختِ هر قسط از این به بعد خودِ
  * تک‌تکِ ردیف‌هاست (قابلِ تغییر تو LoanDetailScreen)، نه این فیلدِ خلاصه.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddManualLoanScreen(
     onSaved: () -> Unit,
