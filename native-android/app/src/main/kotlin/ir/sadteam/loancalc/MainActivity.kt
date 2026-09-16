@@ -28,6 +28,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -192,6 +194,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
@@ -1367,6 +1370,11 @@ private fun LoanTab(
     // **محاسبه‌گر** را باز می‌کند؛ و «افزودنِ وامِ دستی» به تهِ همان محاسبه‌گر رفت. این پرچم
     // همان مسیرِ برگشت است: محاسبه‌گر می‌گوید «فرمِ دستی را باز کن» و تبِ «وام‌های من» بازش می‌کند.
     var openManualAdd by remember { mutableStateOf(false) }
+    // **فریمِ ۷۶**: جست‌وجو و «تحلیل درآمد» از داخلِ فهرست به دو آیکونِ هم‌ردیفِ عنوان آمدند،
+    // پس حالتشان این‌جاست و به [MyLoansScreen] پاس داده می‌شود. فقط در زیرتبِ «وام‌های من»
+    // معنی دارند.
+    var searchOpen by remember { mutableStateOf(false) }
+    var incomeOpen by remember { mutableStateOf(false) }
     LaunchedEffect(requestedSubTab) {
         requestedSubTab?.let { subTab = it }
     }
@@ -1401,6 +1409,26 @@ private fun LoanTab(
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.weight(1f),
             )
+            // فریمِ ۷۶a: دو آیکونِ ۳۲ی هم‌ردیفِ عنوان - **صفر پیکسل ارتفاعِ تازه**.
+            // ⚠️ انحراف از بندِ ۵ فریمِ `76c`: دکمه‌ی بازگشت **می‌مانَد**. طراح فرض کرده
+            // «وام» تبِ سطحِ اول است و نوارِ پایین جای برگشتن، ولی در این برنامه وام
+            // **تبِ نوارِ پایین نیست** - صفحه‌ای پوش‌شده از «خانه»/«سررسید» است، پس
+            // برداشتنِ دکمه تنها راهِ برگشت را به دکمه‌ی سخت‌افزاری محدود می‌کرد.
+            // چون در همان ردیف است، ارتفاعی هم اضافه نمی‌کند.
+            if (subTab == LoanSubTab.MY_LOANS) {
+                LoanHeaderIcon(
+                    icon = Icons.Filled.Search,
+                    label = "جست‌وجو در وام‌ها",
+                    active = searchOpen,
+                    onClick = { searchOpen = !searchOpen },
+                )
+                LoanHeaderIcon(
+                    icon = Icons.Filled.ShowChart,
+                    label = "تحلیل درآمد",
+                    active = incomeOpen,
+                    onClick = { incomeOpen = !incomeOpen },
+                )
+            }
         }
         Row(
             modifier = Modifier
@@ -1453,6 +1481,8 @@ private fun LoanTab(
                 )
                 LoanSubTab.DEPOSIT -> DepositScreen()
                 LoanSubTab.MY_LOANS -> MyLoansScreen(
+                    searchOpen = searchOpen,
+                    incomeOpen = incomeOpen,
                     onOpenCalculator = { subTab = LoanSubTab.CALCULATOR },
                     openManualAddSignal = openManualAdd,
                     onManualAddSignalConsumed = { openManualAdd = false },
@@ -1462,6 +1492,49 @@ private fun LoanTab(
                     onDeepLinkConsumed = onDeepLinkConsumed,
                 )
             }
+        }
+    }
+}
+
+/**
+ * آیکونِ ۳۲یِ هم‌ردیفِ عنوانِ تبِ وام - فریمِ `76a`.
+ *
+ * هدفِ لمسی ۴۴dp است ولی **قاب** ۳۲ - همان الگوی بندِ ۸ سیستمِ طراحی: فضای لمسی بزرگ‌تر
+ * از فضای دیده‌شده. حالتِ فعال قرصِ سبز می‌گیرد تا کاربر بداند فیلد/کارتِ پایین مالِ
+ * کدام دکمه است.
+ */
+@Composable
+private fun LoanHeaderIcon(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    active: Boolean,
+    onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(11.dp)
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(shape)
+                .background(if (active) AppPrimaryPill else AppSurface)
+                .border(1.5.dp, if (active) AppPrimaryBorder else AppLineRow, shape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                icon,
+                contentDescription = label,
+                tint = if (active) AppPrimaryInk else AppMuted,
+                modifier = Modifier.size(15.dp),
+            )
         }
     }
 }

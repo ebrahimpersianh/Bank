@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,17 +28,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.history.CalculationHistoryScreen
 import ir.sadteam.loancalc.ui.jibak.faDigits
 import ir.sadteam.loancalc.ui.jibak.rialToToman
-import ir.sadteam.loancalc.ui.theme.AppSegmentPill
-import ir.sadteam.loancalc.ui.theme.AppSegmentRail
+import ir.sadteam.loancalc.ui.theme.AppChipBg
+import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
@@ -64,7 +71,8 @@ private enum class CalcMode(val label: String) {
  * ⚠️ **هیچ منطقی حذف نشد** - هر دو صفحه و ViewModelهاشون دست‌نخورده‌ان؛ این فقط یه میزبانِ
  * دوحالته‌ست که بالاشون می‌شینه.
  *
- * حالتِ آخر عمداً **ذخیره نمی‌شه** (خواسته‌ی صریحِ طرح): هر بار ورود با `INSTALLMENT` شروع می‌شه.
+ * حالتِ آخر عمداً **ذخیره نمی‌شه** (خواسته‌ی صریحِ طرح): هر بار ورود، فهرستِ انتخابِ فریمِ `76b`
+ * دیده می‌شه، نه آخرین حالت.
  */
 @Composable
 fun CalculatorHostScreen(
@@ -72,82 +80,142 @@ fun CalculatorHostScreen(
     /** رجوع کن به `BankLoanScreen.onAddManualLoan`. */
     onAddManualLoan: () -> Unit = {},
 ) {
-    var mode by remember { mutableStateOf(CalcMode.INSTALLMENT) }
+    // 🚨 **فریمِ ۷۶b - سگمنتِ دوحالته به دو کارتِ توضیح‌دار تبدیل شد.**
+    //
+    // آن دو حالت **هم‌وزن و هم‌جنس نبودند**: هرکدام یک سوالِ متفاوت می‌پرسد («قسطم چقدر
+    // می‌شود» در برابرِ «چقدر وام از عهده‌ام برمی‌آید») و تاگلِ دوکلمه‌ای این را پنهان
+    // می‌کرد. کارتِ توضیح‌دار خودش می‌گوید کدام را لازم داری. ضمناً ردیفِ دومِ تاگل از
+    // بالای صفحه می‌رود، که مسئله‌ی اصلیِ کاربر بود (هدرِ ۲۴۸dp).
+    //
+    // `null` یعنی هنوز انتخاب نشده و فهرستِ انتخاب دیده می‌شود.
+    var mode by remember { mutableStateOf<CalcMode?>(null) }
+    var showHistory by remember { mutableStateOf(false) }
 
     // 🚨 فریمِ `70a`: این قبلاً از `onCalculated` پر می‌شد، یعنی **فقط با تپِ دکمه**.
     //
     // تا بخشِ ۶۸ درست بود: دکمه تنها راهِ دیدنِ قسط بود، پس هر کسی که نتیجه می‌خواست
     // می‌زدش. ولی بخشِ ۶۹ هیروِ زنده آورد و متنِ دکمه «جدولِ اقساط را ببین» شد - کاربری
     // که فقط قسط را می‌خواست دیگر دکمه را نمی‌زند، و کارتِ پل **هیچ‌وقت ظاهر نمی‌شد**.
-    // فیچر بی این‌که کسی کدش را دست بزند غیب شده بود.
-    //
-    // حالا به **محاسبه‌ی زنده** گره خورده: هیرو هر بار که عوض می‌شود خبر می‌دهد. و چون
-    // مقدار خودش با ورودی عوض می‌شود، `onInputChanged` دیگر لازم نیست - یک منبعِ حقیقت
-    // جای دو تا.
     var liveInstallment by remember { mutableStateOf<Double?>(null) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // سگمنتِ فریم: ریل و قرصِ فعال توکنِ اختصاصی دارن، چون نقششون بینِ دو تم جابه‌جا می‌شه
-        // (رجوع کن به segmentRail/segmentPill تو Color.kt).
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 8.dp)
-                .clip(RoundedCornerShape(999.dp))
-                .background(AppSegmentRail)
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            CalcMode.entries.forEach { entry ->
-                val selected = entry == mode
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(999.dp))
-                        .then(if (selected) Modifier.background(AppSegmentPill) else Modifier)
-                        .pressScaleClickable { mode = entry }
-                        // ارتفاعِ لمسیِ هر نیمه ≥۴۴dp - تاکیدِ صریحِ هندآف.
-                        .heightIn(min = 44.dp)
-                        .padding(vertical = 9.dp, horizontal = 6.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        entry.label,
-                        color = if (selected) AppText else AppMuted,
-                        fontSize = 10.5.sp,
-                        fontWeight = if (selected) FontWeight.Black else FontWeight.ExtraBold,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-        }
+    // برگشت از یک حالت به فهرستِ انتخاب، قبل از اینکه دکمه‌ی برگشت تب را عوض کند.
+    BackHandler(enabled = mode != null || showHistory) {
+        showHistory = false
+        mode = null
+    }
 
-        // `weight(1f)` نه `fillMaxSize()`: داخلِ همین Column، ارتفاعِ کاملِ والد رو خواستن
-        // یعنی ارتفاعِ سگمنت هم روش حساب می‌شه، پس تهِ محتوا به اندازه‌ی نوارِ بالا از کادر
-        // بیرون می‌زد (دکمه‌ی «محاسبه» تهِ فرمِ بانکی).
-        Box(modifier = Modifier.weight(1f)) {
-            when (mode) {
-                CalcMode.INSTALLMENT -> BankLoanScreen(
-                    onCalculated = onCalculated,
-                    onAddManualLoan = onAddManualLoan,
-                    // هیروِ زنده هر بار که عددش عوض می‌شود این را صدا می‌زند؛ `null` یعنی
-                    // ورودی ناقص یا ترکیبِ نامعتبر است و هیرو ساخته نشده.
-                    onLiveInstallment = { liveInstallment = it },
-                    // کارتِ سبزِ «از عهده‌اش برمی‌آیم؟» زیرِ نتیجه - تنها چیزی که این ادغام رو از
-                    // دو تبِ جدا **بهتر** می‌کنه، نه فقط جمع‌وجورتر (تاکیدِ صریحِ طرح: حذفش نکن).
-                    footer = {
-                        val installment = liveInstallment
-                        if (installment != null && installment > 0) {
-                            AffordabilityBridgeCard(
-                                installment = installment,
-                                onClick = { mode = CalcMode.AFFORDABILITY },
-                            )
-                        }
-                    },
+    Box(modifier = Modifier.fillMaxSize()) {
+        when {
+            showHistory -> CalculationHistoryScreen(onBack = { showHistory = false })
+            mode == CalcMode.INSTALLMENT -> BankLoanScreen(
+                onCalculated = onCalculated,
+                onAddManualLoan = onAddManualLoan,
+                // هیروِ زنده هر بار که عددش عوض می‌شود این را صدا می‌زند؛ `null` یعنی
+                // ورودی ناقص یا ترکیبِ نامعتبر است و هیرو ساخته نشده.
+                onLiveInstallment = { liveInstallment = it },
+                // کارتِ سبزِ «از عهده‌اش برمی‌آیم؟» زیرِ نتیجه - تنها چیزی که این ادغام رو از
+                // دو تبِ جدا **بهتر** می‌کنه، نه فقط جمع‌وجورتر (تاکیدِ صریحِ طرح: حذفش نکن).
+                footer = {
+                    val installment = liveInstallment
+                    if (installment != null && installment > 0) {
+                        AffordabilityBridgeCard(
+                            installment = installment,
+                            onClick = { mode = CalcMode.AFFORDABILITY },
+                        )
+                    }
+                },
+            )
+            mode == CalcMode.AFFORDABILITY -> AffordScreen(initialInstallment = liveInstallment)
+            else -> Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                CalcChoiceCard(
+                    icon = Icons.Filled.Calculate,
+                    title = CalcMode.INSTALLMENT.label,
+                    hint = "مبلغ و نرخ را می‌دانی، قسط را می‌خواهی",
+                    tint = AppPrimaryInk,
+                    tintBg = AppPrimaryPill,
+                    onClick = { mode = CalcMode.INSTALLMENT },
                 )
-                CalcMode.AFFORDABILITY -> AffordScreen(initialInstallment = liveInstallment)
+                CalcChoiceCard(
+                    icon = Icons.Filled.TrendingUp,
+                    title = CalcMode.AFFORDABILITY.label,
+                    hint = "قسطی که می‌توانی بدهی را می‌دانی",
+                    tint = AppPrimaryInk,
+                    tintBg = AppPrimaryPill,
+                    onClick = { mode = CalcMode.AFFORDABILITY },
+                )
+                // بندِ ۶ فریمِ ۷۶c: تاریخچه **همین‌جا** می‌مانَد نه در «ابزارها» - جایش
+                // همان‌جاست که محاسبه ساخته می‌شود.
+                CalcChoiceCard(
+                    icon = Icons.Filled.History,
+                    title = "تاریخچه‌ی محاسبات",
+                    hint = "محاسبه‌های قبلیِ وام، سقفِ وام و سودِ سپرده",
+                    tint = AppMuted,
+                    tintBg = AppChipBg,
+                    onClick = { showHistory = true },
+                )
             }
         }
+    }
+}
+
+/**
+ * کارتِ انتخابِ فریمِ `76b` - قابِ آیکونِ ۳۴ + عنوان + یک خطِ توضیح + فلش.
+ *
+ * ⚠️ توضیح **اختیاری نیست**: کلِ استدلالِ این فریم همین است که دو حالت هم‌جنس نیستند و
+ * عنوانِ دوکلمه‌ای این را نمی‌گوید.
+ */
+@Composable
+private fun CalcChoiceCard(
+    icon: ImageVector,
+    title: String,
+    hint: String,
+    tint: Color,
+    tintBg: Color,
+    onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(16.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(AppSurface)
+            .border(1.5.dp, AppLineRow, shape)
+            .pressScaleClickable(onClick = onClick)
+            .heightIn(min = 44.dp)
+            .padding(horizontal = 13.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(11.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(tintBg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(17.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
+            Text(
+                hint,
+                color = AppMuted,
+                fontSize = 9.5.sp,
+                fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        Icon(
+            Icons.AutoMirrored.Filled.ArrowForwardIos,
+            contentDescription = null,
+            tint = AppMuted,
+            modifier = Modifier.size(13.dp),
+        )
     }
 }
 

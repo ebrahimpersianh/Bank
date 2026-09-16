@@ -270,6 +270,17 @@ fun MyLoansScreen(
     /** `true` یعنی محاسبه‌گر گفته «فرمِ دستی را باز کن» (رجوع کن به `LoanTab`). */
     openManualAddSignal: Boolean = false,
     onManualAddSignalConsumed: () -> Unit = {},
+    /**
+     * **فریمِ ۷۶ - جست‌وجو و تحلیلِ درآمد از فهرست به دو آیکونِ هم‌ردیفِ عنوان رفتند.**
+     *
+     * هر دو در ردیفِ «وام» (تو `LoanTab`) می‌نشینند، پس **صفر پیکسل** ارتفاعِ تازه
+     * می‌گیرند - در حالی که فیلدِ همیشه‌بازِ تمام‌عرض و کارتِ ثابتِ درآمد با هم ~۱۳۰dp
+     * از بالای فهرست می‌خوردند، برای فهرستی که معمولاً سه ردیف است.
+     *
+     * حالتشان بالا نگه داشته می‌شود چون دکمه‌اش آن‌جاست؛ این صفحه فقط مصرف‌کننده است.
+     */
+    searchOpen: Boolean = false,
+    incomeOpen: Boolean = false,
 ) {
     var showAddForm by remember { mutableStateOf(false) }
     var openedLoanId by remember { mutableStateOf<Long?>(null) }
@@ -309,6 +320,9 @@ fun MyLoansScreen(
     // نمایشیِ پایینِ صفحه (visibleLoans).
     var showSettled by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    // بستنِ فیلدِ جست‌وجو باید فیلتر را هم بردارد - وگرنه فهرست فیلترشده می‌مانَد و
+    // دلیلش دیگر روی صفحه دیده نمی‌شود، یعنی کاربر فکر می‌کند وام‌هایش گم شده‌اند.
+    LaunchedEffect(searchOpen) { if (!searchOpen) searchQuery = "" }
     // تاریخِ تسویه = تاریخِ پرداختِ آخرین قسط (ستونِ تازه لازم نیست - همون استدلالی که
     // settledAt رو منتفی کرد). دو کاربرد: سطرِ دومِ ردیفِ تسویه‌شده، و شرطِ «همین ماه».
     var settledDates by remember { mutableStateOf(emptyMap<Long, PersianDate>()) }
@@ -573,12 +587,13 @@ fun MyLoansScreen(
                             totalOverdue = totalOverdue,
                             overdueCount = overdueInstallments,
                             totalMonthlyInstallment = totalMonthlyInstallment,
+                            showIncome = incomeOpen,
                             onAddIncome = { label, amount, type -> viewModel.addIncome(label, amount, type) },
                             onDeleteIncome = { viewModel.deleteIncome(it) },
                         )
                     }
 
-                    if (loans.isNotEmpty()) {
+                    if (loans.isNotEmpty() && searchOpen) {
                         item {
                             OutlinedTextField(
                                 value = searchQuery,
@@ -589,6 +604,8 @@ fun MyLoansScreen(
                                 singleLine = true,
                             )
                         }
+                    }
+                    if (loans.isNotEmpty()) {
                         item {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -1209,6 +1226,8 @@ private fun DashboardSummary(
     totalOverdue: Double,
     overdueCount: Int,
     totalMonthlyInstallment: Double,
+    /** فریمِ ۷۶: کارتِ «تحلیل درآمد» دیگر ثابت نیست - پشتِ آیکونِ نمودارِ هدر است. */
+    showIncome: Boolean,
     onAddIncome: (label: String, amount: Double, type: IncomeType) -> Unit,
     onDeleteIncome: (IncomeEntity) -> Unit,
 ) {
@@ -1307,7 +1326,10 @@ private fun DashboardSummary(
         // یه پس‌زمینه‌ی سبزِ اختصاصیِ نیمه‌شفاف اینجا امتحان شده بود، ولی رو Surface (که خودش
         // tonalElevation داره) رنگ‌ها بهم می‌ریخت و دوتُنی/کثیف به‌نظر می‌رسید. کاربر خواست دقیقاً
         // مثل بقیه‌ی کارت‌های داشبورد (DashboardStatCard بالا) باشه - پس همون پیش‌فرضِ AppCard.
-        AppCard(label = "تحلیل درآمد") {
+        // 🚨 **بندِ ۴ فریمِ ۷۶c**: این کارت قبلاً همیشه بود، حتی وقتی هیچ منبعِ درآمدی ثبت
+        // نشده بود - یعنی یک کارتِ تمام‌عرض که تنها محتوایش یک دکمه‌ی «+ افزودن» بود.
+        // کارتی که هیچ‌وقت پر نیست، وزنِ محتوا می‌گیرد برای محتوایی که وجود ندارد.
+        if (showIncome) AppCard(label = "تحلیل درآمد") {
             if (incomes.isNotEmpty()) {
                 Column(modifier = Modifier.padding(bottom = 8.dp)) {
                     incomes.forEach { income ->
