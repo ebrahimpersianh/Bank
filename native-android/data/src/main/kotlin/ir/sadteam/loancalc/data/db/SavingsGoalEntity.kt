@@ -42,4 +42,8 @@ data class SavingsGoalEntity(
     val remainingRial: Double get() = (targetRial - savedRial).coerceAtLeast(0.0)
 
     val reached: Boolean get() = savedRial >= targetRial && targetRial > 0.0
+
+    /** سررسید کامل است؟ هر سه با هم پر یا هر سه `null`. */
+    val hasDeadline: Boolean
+        get() = deadlineYear != null && deadlineMonth != null && deadlineDay != null
 }

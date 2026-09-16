@@ -60,7 +60,10 @@ class SavingsGoalViewModel @Inject constructor(
             val after = repository.contribute(goalId, deltaRial) ?: return@launch
             if (after.reached && before?.reached != true) {
                 _justReached.value = after
-                badgeEvaluator.evaluate(silent = false)
+                // ⚠️ `silent = true` عمدی است (ایرادِ ۲ی طراح): خودِ همین صفحه جشن را
+                // نشان می‌دهد، پس جشنِ دومِ `BadgeEvaluator` یعنی دو تا با هم.
+                // سکه‌ی نشان همچنان ریخته می‌شود؛ فقط گونه‌ی ردیف `badge_retro` است.
+                badgeEvaluator.evaluate(silent = true)
             }
         }
     }

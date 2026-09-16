@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.toFa
@@ -54,6 +56,8 @@ import ir.sadteam.loancalc.ui.components.ConfirmDialog
 import ir.sadteam.loancalc.ui.components.ConfirmTone
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
+import ir.sadteam.loancalc.ui.components.SuccessCheckmarkOverlay
 import ir.sadteam.loancalc.ui.components.HeroMuted
 import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
@@ -132,23 +136,28 @@ fun SavingsGoalScreen(
                                 fontWeight = FontWeight.Black,
                             )
                         }
+                        // ⚠️ این خط هم مبلغ است و باید ماسک شود (ایرادِ ۳ی طراح): اگر
+                        // عددِ درشت پنهان باشد و این نه، پنهان‌کاری بی‌معنی است.
+                        PrivacyCrossfade(privacyMode) { masked ->
+                            Text(
+                                "از ${maskIfPrivate(masked, amountToman(totalTarget))} تومانِ " +
+                                    "${toFa(goals.size)} هدف",
+                                color = HeroMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                        // 🚨 **داخلِ هیرو، نه زیرش** (اصلاحِ طراح): فرضِ طبیعیِ کاربر این
+                        // است که واریزِ هدف از حسابش کم می‌کند - نمی‌کند. این جمله قبلاً
+                        // متنِ خاکستریِ بینِ هیرو و دکمه بود، یعنی جایی که چشم رد می‌شود.
                         Text(
-                            "از ${amountToman(totalTarget)} تومانِ ${toFa(goals.size)} هدف",
+                            "این‌جا فقط نشانه‌گذاری می‌کنی؛ پولی از حساب‌کتاب‌هایت کم یا زیاد نمی‌شود.",
                             color = HeroMuted,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 2.dp),
+                            fontSize = 10.sp,
+                            lineHeight = 17.sp,
+                            modifier = Modifier.padding(top = 8.dp),
                         )
                     }
-                }
-                item {
-                    // فرضِ طبیعیِ کاربر این است که واریزِ هدف از حسابش کم می‌کند. نمی‌کند -
-                    // و چیزی که کاربر اشتباه فرض می‌کند باید نوشته شود، نه حدس زده.
-                    Text(
-                        "این‌جا فقط نشانه‌گذاری می‌کنی؛ پولی از حساب‌کتاب‌هایت کم یا زیاد نمی‌شود.",
-                        color = AppMuted,
-                        fontSize = 10.5.sp,
-                        lineHeight = 18.sp,
-                    )
                 }
             }
 
@@ -156,8 +165,15 @@ fun SavingsGoalScreen(
                 item {
                     AddGoalForm(
                         onCancel = { showAddForm = false },
-                        onSubmit = { title, targetRial, iconKey ->
-                            viewModel.addGoal(title, targetRial, iconKey)
+                        onSubmit = { title, targetRial, iconKey, deadline ->
+                            viewModel.addGoal(
+                                title = title,
+                                targetRial = targetRial,
+                                iconKey = iconKey,
+                                deadlineYear = deadline?.first,
+                                deadlineMonth = deadline?.second,
+                                deadlineDay = deadline?.third,
+                            )
                             showAddForm = false
                         },
                     )
@@ -216,16 +232,27 @@ fun SavingsGoalScreen(
         )
     }
 
-    justReached?.let { goal ->
-        ConfirmDialog(
-            tone = ConfirmTone.HEAVY_CHANGE,
-            title = "به «${goal.title}» رسیدی 🎉",
-            consequence = "نشانِ «هدف‌رس» هم باز شد. هدف در فهرست می‌مانَد تا خودت پاکش کنی.",
-            actionLabel = "عالی",
-            onConfirm = { viewModel.consumeJustReached() },
-            onDismiss = { viewModel.consumeJustReached() },
-        )
-    }
+    // 🚨 جشن **اورلی** است نه دیالوگ (اصلاحِ طراح): دیالوگی که تنها دکمه‌اش «عالی»
+    // است، کاربر را برای یک **خبرِ خوب** متوقف می‌کند. اورلی خودش می‌رود.
+    SuccessCheckmarkOverlay(
+        visible = justReached != null,
+        onFinished = { viewModel.consumeJustReached() },
+    )
+}
+
+/**
+ * چند ماه تا سررسید. `null` یعنی سررسید ندارد یا گذشته - در هر دو حالت خطِ سرعت
+ * **نمی‌آید**، چون تقسیم بر صفر یا عددِ منفی حرفِ بی‌معنی می‌زند.
+ *
+ * ماه از روز ساخته می‌شود (تقسیم بر ۳۰) نه از اختلافِ شماره‌ی ماه: تقویمِ فارسی ماهِ
+ * یکسان ندارد و همان لغزشی می‌شد که یک‌بار روزِ سررسید را جابه‌جا کرد.
+ */
+private fun monthsUntil(goal: SavingsGoalEntity): Int? {
+    if (!goal.hasDeadline) return null
+    val due = PersianDate(goal.deadlineYear!!, goal.deadlineMonth!!, goal.deadlineDay!!)
+    val days = JalaliCalendar.daysBetween(JalaliCalendar.today(), due)
+    if (days <= 0) return null
+    return (days / 30).coerceAtLeast(1)
 }
 
 /** ذخیره ریال، نمایش تومان - قاعده‌ی واحدِ برنامه. */
@@ -270,7 +297,8 @@ private fun GoalRow(
                 }
             }
             Text(
-                "٪${toFa((goal.progress * 100).toInt())}",
+                // نشانه **بعد** از عدد: «۵۰٪»، نه «٪۵۰» (ایرادِ ۴ی طراح).
+                "${toFa((goal.progress * 100).toInt())}٪",
                 color = barColor,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Black,
@@ -294,16 +322,38 @@ private fun GoalRow(
                 )
             }
         }
+        // 🚨 سررسید **سرعت** است نه مهلت (تصمیمِ طراح): عددِ دوم تصمیم است، اولی فقط
+        // اطلاع. و «دیر شده»ی قرمز عمداً نداریم - هدفِ پس‌انداز تعهد به کسی نیست و
+        // قرمزکردنش قرمزهای واقعیِ برنامه (قسطِ معوق، چکِ برگشتی) را ارزان می‌کند.
+        if (goal.hasDeadline && !goal.reached) {
+            val months = monthsUntil(goal)
+            if (months != null && months > 0) {
+                Text(
+                    "${toFa(months)} ماه مانده · ماهی " +
+                        "${amountToman(goal.remainingRial / months)} تومان لازم است",
+                    color = AppMuted,
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+        }
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                if (goal.reached) "ثبتِ تغییر" else "${amountToman(goal.remainingRial)} تومان مانده",
-                color = AppMuted,
-                fontSize = 10.5.sp,
-                modifier = Modifier.weight(1f),
-            )
+            // «مانده» هم مبلغ است: دو عددِ ماسک‌شده و عددِ سومی که از تفریقشان می‌آید
+            // روی صفحه، یعنی هر دوی آن‌ها هم لو رفته‌اند (ایرادِ ۳ی طراح).
+            PrivacyCrossfade(privacyMode, modifier = Modifier.weight(1f)) { masked ->
+                Text(
+                    if (goal.reached) {
+                        "ثبتِ تغییر"
+                    } else {
+                        "${maskIfPrivate(masked, amountToman(goal.remainingRial))} تومان مانده"
+                    },
+                    color = AppMuted,
+                    fontSize = 10.5.sp,
+                )
+            }
             Text(
                 "ثبتِ پس‌انداز",
                 color = AppPrimary,
@@ -328,11 +378,18 @@ private fun GoalRow(
 @Composable
 private fun AddGoalForm(
     onCancel: () -> Unit,
-    onSubmit: (title: String, targetRial: Double, iconKey: String) -> Unit,
+    onSubmit: (title: String, targetRial: Double, iconKey: String, deadline: Triple<Int, Int, Int>?) -> Unit,
 ) {
     var title by rememberSaveable { mutableStateOf("") }
     var targetText by rememberSaveable { mutableStateOf("") }
     var iconKey by rememberSaveable { mutableStateOf("star") }
+    // سررسید **اختیاری** است: هدفی که تاریخ ندارد هم هدف است. پیش‌فرض خاموش تا فرم
+    // برای کسی که فقط می‌خواهد شروع کند سه فیلدِ اضافه نشود.
+    var hasDeadline by rememberSaveable { mutableStateOf(false) }
+    val today = remember { JalaliCalendar.today() }
+    var dYear by rememberSaveable { mutableStateOf(today.y + 1) }
+    var dMonth by rememberSaveable { mutableStateOf(today.m) }
+    var dDay by rememberSaveable { mutableStateOf(today.d) }
     val targetToman = targetText.toDoubleOrNull() ?: 0.0
     val valid = title.isNotBlank() && targetToman > 0.0
 
@@ -359,6 +416,22 @@ private fun AddGoalForm(
                 "${numberToWordsFa(targetToman)} تومان",
                 color = AppMuted,
                 fontSize = 10.sp,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("تا تاریخِ مشخصی؟", color = AppMuted, fontSize = 11.sp, modifier = Modifier.weight(1f))
+            Switch(checked = hasDeadline, onCheckedChange = { hasDeadline = it })
+        }
+        if (hasDeadline) {
+            InlineJalaliDateRow(
+                year = dYear,
+                month = dMonth,
+                day = dDay,
+                onDateChange = { y, m, d -> dYear = y; dMonth = m; dDay = d },
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
@@ -393,7 +466,16 @@ private fun AddGoalForm(
             modifier = Modifier.padding(top = 12.dp),
         ) {
             GradientButton(
-                onClick = { if (valid) onSubmit(title.trim(), tomanToRial(targetToman.toLong()).toDouble(), iconKey) },
+                onClick = {
+                    if (valid) {
+                        onSubmit(
+                            title.trim(),
+                            tomanToRial(targetToman.toLong()).toDouble(),
+                            iconKey,
+                            if (hasDeadline) Triple(dYear, dMonth, dDay) else null,
+                        )
+                    }
+                },
                 enabled = valid,
                 modifier = Modifier.weight(1f),
             ) { Text("بساز") }
@@ -415,8 +497,9 @@ private fun ContributeDialog(
     onDismiss: () -> Unit,
     onConfirm: (deltaRial: Double) -> Unit,
 ) {
-    var amountText by remember { mutableStateOf("") }
-    var isWithdraw by remember { mutableStateOf(false) }
+    // چرخشِ گوشی وسطِ تایپِ مبلغ نباید پاکش کند - همان قاعده‌ی فرم‌های بخشِ ۷۰.
+    var amountText by rememberSaveable { mutableStateOf("") }
+    var isWithdraw by rememberSaveable { mutableStateOf(false) }
     val toman = amountText.toDoubleOrNull() ?: 0.0
     val valid = toman > 0.0
 
