@@ -165,7 +165,7 @@ import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.AppHeroRow
 import ir.sadteam.loancalc.ui.components.AvatarPicker
-import ir.sadteam.loancalc.ui.components.AvatarView
+import ir.sadteam.loancalc.ui.components.FramedAvatar
 import ir.sadteam.loancalc.ui.components.GoldSheenBox
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
@@ -766,13 +766,14 @@ private fun AccountSettings(
         // دکمه‌ی تمام‌عرض بالای صفحه وزنِ بی‌دلیل می‌گیره.
         val avatarViewModel: AvatarViewModel = hiltViewModel()
         val avatar by avatarViewModel.avatar.collectAsState()
+        val avatarFrame by avatarViewModel.frame.collectAsState()
         AppCard(modifier = Modifier.padding(top = 8.dp), contentPadding = 20.dp) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box {
-                    AvatarView(avatar, size = 72.dp)
+                    FramedAvatar(avatar, size = 72.dp, frame = avatarFrame)
                     // ناحیه‌ی لمس ۴۴ه ولی خودِ مداد ۲۶ - قاعده‌ی «هدفِ لمسی بزرگ‌تر از نشانه».
                     Box(
                         modifier = Modifier

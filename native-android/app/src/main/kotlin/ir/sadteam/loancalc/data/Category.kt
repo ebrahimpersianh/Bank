@@ -1,19 +1,5 @@
 package ir.sadteam.loancalc.data
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CardGiftcard
-import androidx.compose.material.icons.filled.Celebration
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocalHospital
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Sell
-import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.Work
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import ir.sadteam.loancalc.core.TransactionType
@@ -23,32 +9,39 @@ import ir.sadteam.loancalc.core.TransactionType
  * حسابداریِ شخصی. اسمِ همین [CategoryEntry.name] رو خودِ `AccountTransactionEntity.category`
  * ذخیره می‌شه (نه idِ عددی)، پس اگه بعداً اسمِ یه دسته عوض بشه، تراکنش‌های قدیمی دیگه با هیچ
  * دسته‌ای match نمی‌شن - تغییرِ اسمِ دسته‌های موجود عمداً باید با احتیاط انجام بشه.
+ *
+ * ⚠️ **آیکون دیگر مقدارِ ثابت نیست، از [iconKey] مشتق می‌شود.** ستِ نمادِ خریدنی
+ * (`symbolset:rounded`، بندِ ۱ی `72a`) باید روی دسته‌های ثابت هم بنشیند، وگرنه کاربر
+ * ۵۰۰ سکه می‌دهد و فقط دسته‌های دلخواهش عوض می‌شوند. `icon` یک `get()` است، پس خواندنش
+ * داخلِ composable خودش کامپوزِ دوباره را بعدِ خرید راه می‌اندازد.
  */
 data class CategoryEntry(
     val name: String,
     val color: Color,
-    val icon: ImageVector,
+    val iconKey: String,
     val type: TransactionType,
-)
+) {
+    val icon: ImageVector get() = iconForKey(iconKey)
+}
 
 val expenseCategories: List<CategoryEntry> = listOf(
-    CategoryEntry("خوراک", Color(0xFFE53935), Icons.Filled.Restaurant, TransactionType.WITHDRAWAL),
-    CategoryEntry("خانه", Color(0xFF6D4C41), Icons.Filled.Home, TransactionType.WITHDRAWAL),
-    CategoryEntry("رفت‌وآمد", Color(0xFF1E88E5), Icons.Filled.DirectionsCar, TransactionType.WITHDRAWAL),
-    CategoryEntry("سلامت", Color(0xFF43A047), Icons.Filled.LocalHospital, TransactionType.WITHDRAWAL),
-    CategoryEntry("خرید", Color(0xFF8E24AA), Icons.Filled.ShoppingBag, TransactionType.WITHDRAWAL),
-    CategoryEntry("قبض", Color(0xFFF4511E), Icons.Filled.ReceiptLong, TransactionType.WITHDRAWAL),
-    CategoryEntry("تفریح", Color(0xFF00ACC1), Icons.Filled.Celebration, TransactionType.WITHDRAWAL),
-    CategoryEntry("قسط/چک", Color(0xFF3949AB), Icons.Filled.Payments, TransactionType.WITHDRAWAL),
-    CategoryEntry("سایر هزینه", Color(0xFF757575), Icons.Filled.MoreHoriz, TransactionType.WITHDRAWAL),
+    CategoryEntry("خوراک", Color(0xFFE53935), "restaurant", TransactionType.WITHDRAWAL),
+    CategoryEntry("خانه", Color(0xFF6D4C41), "home", TransactionType.WITHDRAWAL),
+    CategoryEntry("رفت‌وآمد", Color(0xFF1E88E5), "car", TransactionType.WITHDRAWAL),
+    CategoryEntry("سلامت", Color(0xFF43A047), "hospital", TransactionType.WITHDRAWAL),
+    CategoryEntry("خرید", Color(0xFF8E24AA), "shopping", TransactionType.WITHDRAWAL),
+    CategoryEntry("قبض", Color(0xFFF4511E), "receipt", TransactionType.WITHDRAWAL),
+    CategoryEntry("تفریح", Color(0xFF00ACC1), "celebration", TransactionType.WITHDRAWAL),
+    CategoryEntry("قسط/چک", Color(0xFF3949AB), "payments", TransactionType.WITHDRAWAL),
+    CategoryEntry("سایر هزینه", Color(0xFF757575), "other", TransactionType.WITHDRAWAL),
 )
 
 val incomeCategories: List<CategoryEntry> = listOf(
-    CategoryEntry("حقوق", Color(0xFF2E7D32), Icons.Filled.Work, TransactionType.DEPOSIT),
-    CategoryEntry("فروش", Color(0xFF00838F), Icons.Filled.Sell, TransactionType.DEPOSIT),
-    CategoryEntry("هدیه", Color(0xFFAD1457), Icons.Filled.CardGiftcard, TransactionType.DEPOSIT),
-    CategoryEntry("سودِ سرمایه‌گذاری", Color(0xFFF9A825), Icons.Filled.TrendingUp, TransactionType.DEPOSIT),
-    CategoryEntry("سایر درآمد", Color(0xFF757575), Icons.Filled.MoreHoriz, TransactionType.DEPOSIT),
+    CategoryEntry("حقوق", Color(0xFF2E7D32), "work", TransactionType.DEPOSIT),
+    CategoryEntry("فروش", Color(0xFF00838F), "sell", TransactionType.DEPOSIT),
+    CategoryEntry("هدیه", Color(0xFFAD1457), "gift", TransactionType.DEPOSIT),
+    CategoryEntry("سودِ سرمایه‌گذاری", Color(0xFFF9A825), "trending", TransactionType.DEPOSIT),
+    CategoryEntry("سایر درآمد", Color(0xFF757575), "other", TransactionType.DEPOSIT),
 )
 
 val allCategories: List<CategoryEntry> = expenseCategories + incomeCategories

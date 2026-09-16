@@ -9,9 +9,11 @@ import ir.sadteam.loancalc.data.Badge
 import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.coin.BuyResult
 import ir.sadteam.loancalc.data.coin.ShopCategory
+import ir.sadteam.loancalc.data.coin.SHOP_CATALOG
 import ir.sadteam.loancalc.data.coin.ShopItem
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import ir.sadteam.loancalc.ui.widget.IconWither
+import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -58,12 +60,32 @@ class ShopViewModel @Inject constructor(
      * ندارند (`ShopItem.comingSoon`) پس چیزی هم فعال نیست.
      */
     val active: StateFlow<Map<ShopCategory, String>> =
-        combine(uiPrefs.colorTheme, uiPrefs.activeIcon) { theme, icon ->
+        combine(
+            uiPrefs.colorTheme,
+            uiPrefs.activeIcon,
+            uiPrefs.activeFrame,
+            uiPrefs.activeSymbolSet,
+        ) { theme, icon, frame, symbols ->
             buildMap {
                 if (theme != null) put(ShopCategory.THEME, "theme:$theme")
                 if (icon != null) put(ShopCategory.ICON, icon)
+                if (frame != null) put(ShopCategory.FRAME, frame)
+                if (symbols != null) put(ShopCategory.SYMBOL, symbols)
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    /**
+     * ردیف‌های ویترین - قلمِ مناسبتیِ خارج از بازه **حذف** می‌شود مگر کاربر خریده باشد.
+     *
+     * ⚠️ خریدار ردیفش را نگه می‌دارد تا بتواند دوباره فعالش کند؛ بی این، تمی که پول
+     * داده برایش بعدِ نوروز غیبش می‌زد.
+     */
+    val catalog: StateFlow<List<ShopItem>> = owned
+        .map { ownedNow ->
+            val today = LocalDate.now()
+            SHOP_CATALOG.filter { it.isOpen(today) || it.id in ownedNow }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SHOP_CATALOG)
 
     /** نتیجه‌ی آخرین خرید - UI بعدِ نشان‌دادنش [consumeResult] را صدا می‌زند. */
     private val _lastResult = MutableStateFlow<BuyResult?>(null)
@@ -90,6 +112,7 @@ class ShopViewModel @Inject constructor(
         }
         // ⚠️ موجودی **همین لحظه** از دفتر خوانده می‌شود، نه از `StateFlow`ِ UI: بینِ
         // رندرِ ردیف و زدنِ دکمه ممکن است خرجِ دیگری ثبت شده باشد.
+        if (!item.isOpen(LocalDate.now())) return BuyResult.WindowClosed
         val now = repository.balance.first()
         if (now < item.price) return BuyResult.NotEnough(item.price - now)
 
@@ -105,6 +128,12 @@ class ShopViewModel @Inject constructor(
         viewModelScope.launch {
             when (item.kind.category) {
                 ShopCategory.THEME -> uiPrefs.setColorTheme(item.id.removePrefix("theme:"))
+                ShopCategory.FRAME -> uiPrefs.setActiveFrame(item.id)
+                ShopCategory.SYMBOL -> {
+                    // «سکه‌ی کهن» هم دسته‌ی نماد است ولی هنوز مقصد ندارد (`comingSoon`)،
+                    // پس فقط ستِ دسته‌بندی فعال می‌شود.
+                    if (item.id.startsWith("symbolset:")) uiPrefs.setActiveSymbolSet(item.id)
+                }
                 ShopCategory.ICON -> {
                     uiPrefs.setActiveIcon(item.id)
                     // هر چهار طرح هشت پله دارند (بخشِ ۶۱)، پس پله‌ی **واقعیِ** کاربر اعمال
@@ -116,6 +145,15 @@ class ShopViewModel @Inject constructor(
                 else -> Unit
             }
         }
+    }
+
+    /** برداشتنِ قاب/ستِ نماد - همان قاعده‌ی «بی راهِ بازگشت نگذار»ِ بندِ ۵ی `60d`. */
+    fun resetFrame() {
+        viewModelScope.launch { uiPrefs.setActiveFrame(null) }
+    }
+
+    fun resetSymbolSet() {
+        viewModelScope.launch { uiPrefs.setActiveSymbolSet(null) }
     }
 
     /** بازگشت به آیکونِ پیش‌فرضِ «کیفِ پول» - بندِ ۵ی `60d`. */

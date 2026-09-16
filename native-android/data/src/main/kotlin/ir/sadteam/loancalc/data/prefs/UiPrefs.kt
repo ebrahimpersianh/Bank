@@ -54,6 +54,8 @@ class UiPrefs(private val context: Context) {
         val OWNED_THEMES = stringPreferencesKey("owned_themes")
         val OWNED_ITEMS = stringPreferencesKey("owned_items")
         val ACTIVE_ICON = stringPreferencesKey("active_icon")
+        val ACTIVE_FRAME = stringPreferencesKey("active_frame")
+        val ACTIVE_SYMBOL_SET = stringPreferencesKey("active_symbol_set")
         val NAV_SLOTS = stringPreferencesKey("nav_slots")
         val NAV_USAGE = stringPreferencesKey("nav_usage")
         val NAV_USAGE_STARTED_AT = longPreferencesKey("nav_usage_started_at")
@@ -279,6 +281,34 @@ class UiPrefs(private val context: Context) {
     suspend fun setActiveIcon(key: String?) {
         context.uiPrefsDataStore.edit { prefs ->
             if (key == null) prefs.remove(Keys.ACTIVE_ICON) else prefs[Keys.ACTIVE_ICON] = key
+        }
+    }
+
+    /**
+     * قابِ آواتارِ فعال (`frame:gold`…). `null` یعنی بی‌قاب - همان حالتی که تا امروز بود.
+     *
+     * ⚠️ قاب **جای آواتار را نمی‌گیرد**، دورش می‌نشیند: آواتار تنها جای شخصیِ برنامه است
+     * (بندِ ۲ی `72a`) و قاب باید همان‌جا دیده شود که کاربر خریدش را انجام داده - هدرِ خانه.
+     */
+    val activeFrame: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.ACTIVE_FRAME] }
+
+    suspend fun setActiveFrame(key: String?) {
+        context.uiPrefsDataStore.edit { prefs ->
+            if (key == null) prefs.remove(Keys.ACTIVE_FRAME) else prefs[Keys.ACTIVE_FRAME] = key
+        }
+    }
+
+    /**
+     * ستِ نمادِ دسته‌بندیِ فعال (`symbolset:outlined`…). `null` یعنی ستِ توپرِ پیش‌فرض.
+     *
+     * تنها قلمی که **هر روز** دیده می‌شود (بندِ ۱ی `72a`): در فرمِ ثبت، در دونات، و روی هر
+     * ردیفِ تراکنش.
+     */
+    val activeSymbolSet: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.ACTIVE_SYMBOL_SET] }
+
+    suspend fun setActiveSymbolSet(key: String?) {
+        context.uiPrefsDataStore.edit { prefs ->
+            if (key == null) prefs.remove(Keys.ACTIVE_SYMBOL_SET) else prefs[Keys.ACTIVE_SYMBOL_SET] = key
         }
     }
 

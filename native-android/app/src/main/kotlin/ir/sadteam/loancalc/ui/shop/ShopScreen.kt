@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
@@ -33,6 +35,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,16 +45,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.LocalDate
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.data.SymbolStyle
+import ir.sadteam.loancalc.data.categoryIconChoices
+import ir.sadteam.loancalc.data.iconForKey
 import ir.sadteam.loancalc.data.coin.BASE_THEME_IDS
 import ir.sadteam.loancalc.data.coin.BuyResult
 import ir.sadteam.loancalc.data.coin.CoinSpend
 import ir.sadteam.loancalc.data.coin.ShopCategory
 import ir.sadteam.loancalc.data.coin.ShopItem
-import ir.sadteam.loancalc.data.coin.catalogOf
 import ir.sadteam.loancalc.data.coin.themeById
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AvatarFramePreview
+import ir.sadteam.loancalc.ui.components.AvatarFrameStyle
 import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.ConfirmDialog
 import ir.sadteam.loancalc.ui.components.ConfirmTone
@@ -59,6 +67,7 @@ import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
 import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppLabel
@@ -86,7 +95,10 @@ fun ShopScreen(onBack: () -> Unit, viewModel: ShopViewModel = hiltViewModel()) {
     val active by viewModel.active.collectAsState()
     val earnedBadges by viewModel.earnedBadges.collectAsState()
     val result by viewModel.lastResult.collectAsState()
+    val catalog by viewModel.catalog.collectAsState()
     var confirming by remember { mutableStateOf<ShopItem?>(null) }
+    /** `null` یعنی تبِ «همه». */
+    var tab by rememberSaveable { mutableStateOf<ShopCategory?>(null) }
     val banner = rememberInAppBanner()
 
     // نتیجه‌ی خرید در بنرِ داخلی دیده می‌شود، نه Toast - قاعده‌ی پروژه. «سکه کم» و
@@ -132,73 +144,137 @@ fun ShopScreen(onBack: () -> Unit, viewModel: ShopViewModel = hiltViewModel()) {
             modifier = Modifier.padding(start = 4.dp),
         )
     }
+    // ═══ تبِ افقی، نه سرگروهِ بیشتر (`72b`) ═══
+    //
+    // با پنج نوعِ قلم، سرگروه‌بندیِ تنها یعنی کاربر برای رسیدنِ به «قاب» باید از چهارده تم
+    // عبور کند. تب فهرست را **کوتاه** می‌کند، سرگروه فقط نشانه‌گذاری‌اش - پس هر دو
+    // می‌مانند: تب بیرون، سرگروه داخلِ همان تب.
+    ShopTabs(tab) { tab = it }
     LazyColumn(
-        contentPadding = PaddingValues(start = 10.dp, end = 16.dp, top = 12.dp, bottom = 28.dp),
+        contentPadding = PaddingValues(start = 10.dp, end = 16.dp, top = 10.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item { BalanceCard(balance) }
 
-        // ═══ تم - دو سرگروه (`60a`) ═══
-        //
-        // ده ردیفِ پشتِ‌هم بلندترین دسته‌ی فروشگاه می‌شد و کاربر نمی‌فهمید کدام از قبل
-        // مالِ اوست. `BASE_THEME_IDS` مرزِ همین دو گروه است.
-        val themes = catalogOf(ShopCategory.THEME)
-        val base = themes.filter { it.id.removePrefix("theme:") in BASE_THEME_IDS }
-        val colorful = themes - base.toSet()
-
-        item { GroupHeader("تمِ پایه", "${toFa(base.size)} تمِ اولِ برنامه") }
-        items(base.size) { index ->
-            val shopItem = base[index]
-            ThemeRow(shopItem, stateOf(shopItem), balance, viewModel::activate) { confirming = it }
-        }
-        item { GroupHeader("تمِ رنگی", "${toFa(CoinSpend.THEME_PALETTE.price)} سکه هرکدام") }
-        items(colorful.size) { index ->
-            val shopItem = colorful[index]
-            ThemeRow(shopItem, stateOf(shopItem), balance, viewModel::activate) { confirming = it }
-        }
-
-        // ═══ آیکونِ برنامه (`60b`) ═══
-        val icons = catalogOf(ShopCategory.ICON)
-        item { GroupHeader("آیکونِ برنامه", "${toFa(CoinSpend.APP_ICON.price)} سکه") }
-        items(icons.size) { index ->
-            // ⚠️ ویترین **همیشه پله‌ی صفر** است، حتی اگر آیکونِ فعالِ کاربر پژمرده باشد
-            // (`49d`) - وگرنه کاربر فکر می‌کند جنسِ خراب می‌خرد. پس این‌جا هیچ‌جا
-            // `witherStage` خوانده نمی‌شود؛ اگر روزی اضافه‌اش کردید، همین را می‌شکنید.
-            val shopItem = icons[index]
-            // 🚨 لامبدای انتهایی به **آخرین** پارامتر می‌چسبد و آخرینِ `ShopRow` همان
-            // `leading` است، نه `onConfirm` - پس نامش صریح نوشته می‌شود (بیلدِ ۵۴۱).
-            ShopRow(
-                shopItem,
-                stateOf(shopItem),
-                balance,
-                viewModel::activate,
+        // قلمِ کمیاب **بالای همه‌ی تب‌ها** می‌آید، بیرونِ تب‌بندی: چیزی که مهلت دارد نباید
+        // پشتِ یک تپ پنهان شود (`72b`).
+        val rare = catalog.filter { it.window != null && it.id !in owned }
+        items(rare.size) { index ->
+            val shopItem = rare[index]
+            RareItemCard(
+                item = shopItem,
+                state = stateOf(shopItem),
+                balance = balance,
+                onActivate = viewModel::activate,
                 onConfirm = { confirming = it },
-                // خواسته‌ی کاربر (۲۶ شهریور): «کنارِ هرکدام یک عکسی چیزی باشد که معلوم شود
-                // چیست». برای آیکونِ برنامه، **خودِ آیکون** درست‌ترین پیش‌نمایش است.
-                leading = { AppIconPreview(shopItem.id) },
             )
         }
-        // بندِ ۵ی `60d`: بی این ردیف، آیکونِ پیش‌فرض بی‌راهِ‌بازگشت است - «کیفِ پول» در
-        // کاتالوگ نیست چون فروشی نیست، پس ردیفی هم ندارد که فعالش کند.
-        if (active[ShopCategory.ICON] != null) {
-            item { ResetRow("بازگشت به آیکونِ پیش‌فرض", viewModel::resetIcon) }
+
+        fun rowsOf(category: ShopCategory) = catalog.filter { it.kind.category == category && it.window == null }
+
+        if (tab == null || tab == ShopCategory.THEME) {
+            // ═══ تم - دو سرگروه (`60a`) ═══
+            //
+            // چهارده ردیفِ پشتِ‌هم بلندترین دسته‌ی فروشگاه است و کاربر نمی‌فهمد کدام از قبل
+            // مالِ اوست. `BASE_THEME_IDS` مرزِ همین دو گروه است.
+            val themes = rowsOf(ShopCategory.THEME)
+            val base = themes.filter { it.id.removePrefix("theme:") in BASE_THEME_IDS }
+            val colorful = themes - base.toSet()
+
+            item { GroupHeader("تمِ پایه", "${toFa(base.size)} تمِ اولِ برنامه") }
+            items(base.size) { index ->
+                val shopItem = base[index]
+                ThemeRow(shopItem, stateOf(shopItem), balance, viewModel::activate) { confirming = it }
+            }
+            item { GroupHeader("تمِ رنگی", "${toFa(CoinSpend.THEME_PALETTE.price)} سکه هرکدام") }
+            items(colorful.size) { index ->
+                val shopItem = colorful[index]
+                ThemeRow(shopItem, stateOf(shopItem), balance, viewModel::activate) { confirming = it }
+            }
         }
 
-        // ═══ نمادها و جایزه ═══
-        val rest = catalogOf(ShopCategory.SYMBOL) + catalogOf(ShopCategory.REWARD)
-        item { GroupHeader("نماد و جایزه", "به‌زودی") }
-        items(rest.size) { index ->
-            val shopItem = rest[index]
-            // 🚨 لامبدای انتهایی به **آخرین** پارامتر می‌چسبد و آخرینِ `ShopRow` همان
-            // `leading` است، نه `onConfirm` - پس نامش صریح نوشته می‌شود (بیلدِ ۵۴۱).
-            ShopRow(
-                shopItem,
-                stateOf(shopItem),
-                balance,
-                viewModel::activate,
-                onConfirm = { confirming = it },
-                leading = { GenericItemPreview(shopItem) },
-            )
+        if (tab == null || tab == ShopCategory.ICON) {
+            // ═══ آیکونِ برنامه (`60b`) ═══
+            val icons = rowsOf(ShopCategory.ICON)
+            item { GroupHeader("آیکونِ برنامه", "${toFa(CoinSpend.APP_ICON.price)} سکه") }
+            items(icons.size) { index ->
+                // ⚠️ ویترین **همیشه پله‌ی صفر** است، حتی اگر آیکونِ فعالِ کاربر پژمرده باشد
+                // (`49d`) - وگرنه کاربر فکر می‌کند جنسِ خراب می‌خرد. پس این‌جا هیچ‌جا
+                // `witherStage` خوانده نمی‌شود؛ اگر روزی اضافه‌اش کردید، همین را می‌شکنید.
+                val shopItem = icons[index]
+                // 🚨 لامبدای انتهایی به **آخرین** پارامتر می‌چسبد و آخرینِ `ShopRow` همان
+                // `leading` است، نه `onConfirm` - پس نامش صریح نوشته می‌شود (بیلدِ ۵۴۱).
+                ShopRow(
+                    shopItem,
+                    stateOf(shopItem),
+                    balance,
+                    viewModel::activate,
+                    onConfirm = { confirming = it },
+                    // خواسته‌ی کاربر (۲۶ شهریور): «کنارِ هرکدام یک عکسی چیزی باشد که معلوم شود
+                    // چیست». برای آیکونِ برنامه، **خودِ آیکون** درست‌ترین پیش‌نمایش است.
+                    leading = { AppIconPreview(shopItem.id) },
+                )
+            }
+            // بندِ ۵ی `60d`: بی این ردیف، آیکونِ پیش‌فرض بی‌راهِ‌بازگشت است - «کیفِ پول» در
+            // کاتالوگ نیست چون فروشی نیست، پس ردیفی هم ندارد که فعالش کند.
+            if (active[ShopCategory.ICON] != null) {
+                item { ResetRow("بازگشت به آیکونِ پیش‌فرض", viewModel::resetIcon) }
+            }
+        }
+
+        if (tab == null || tab == ShopCategory.SYMBOL) {
+            val symbols = rowsOf(ShopCategory.SYMBOL)
+            item { GroupHeader("نمادِ دسته‌بندی", "${toFa(CoinSpend.CATEGORY_ICON_SET.price)} سکه") }
+            items(symbols.size) { index ->
+                val shopItem = symbols[index]
+                ShopRow(
+                    shopItem,
+                    stateOf(shopItem),
+                    balance,
+                    viewModel::activate,
+                    onConfirm = { confirming = it },
+                    // یک نماد کافی نیست - **ست** است، پس چهارتا در شبکه (`72b`).
+                    leading = { SymbolSetPreview(shopItem.id) },
+                )
+            }
+            if (active[ShopCategory.SYMBOL] != null) {
+                item { ResetRow("بازگشت به نمادهای توپر", viewModel::resetSymbolSet) }
+            }
+        }
+
+        if (tab == null || tab == ShopCategory.FRAME) {
+            val frames = rowsOf(ShopCategory.FRAME)
+            item { GroupHeader("قابِ آواتار", "${toFa(CoinSpend.AVATAR_FRAME.price)} سکه") }
+            items(frames.size) { index ->
+                val shopItem = frames[index]
+                ShopRow(
+                    shopItem,
+                    stateOf(shopItem),
+                    balance,
+                    viewModel::activate,
+                    onConfirm = { confirming = it },
+                    leading = { AvatarFramePreview(AvatarFrameStyle.fromItemId(shopItem.id)) },
+                )
+            }
+            if (active[ShopCategory.FRAME] != null) {
+                item { ResetRow("برداشتنِ قاب", viewModel::resetFrame) }
+            }
+        }
+
+        if (tab == null || tab == ShopCategory.REWARD) {
+            val rewards = rowsOf(ShopCategory.REWARD)
+            item { GroupHeader("جایزه", "به‌زودی") }
+            items(rewards.size) { index ->
+                val shopItem = rewards[index]
+                ShopRow(
+                    shopItem,
+                    stateOf(shopItem),
+                    balance,
+                    viewModel::activate,
+                    onConfirm = { confirming = it },
+                    leading = { GenericItemPreview(shopItem) },
+                )
+            }
         }
     }
     }
@@ -434,5 +510,106 @@ private fun GenericItemPreview(item: ShopItem) {
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = null, tint = AppMuted, modifier = Modifier.size(19.dp))
+    }
+}
+
+
+/**
+ * نوارِ تبِ افقیِ ویترین (`72b`). «همه» تبِ پیش‌فرض است تا کاربری که فقط نگاه می‌کند
+ * همه‌چیز را ببیند؛ تب‌ها برای کسی‌اند که دنبالِ چیزِ مشخصی آمده.
+ */
+@Composable
+private fun ShopTabs(selected: ShopCategory?, onSelect: (ShopCategory?) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(start = 10.dp, end = 16.dp, top = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TabChip("همه", selected == null) { onSelect(null) }
+        ShopCategory.entries.forEach { category ->
+            Spacer(modifier = Modifier.width(7.dp))
+            TabChip(category.tab, selected == category) { onSelect(category) }
+        }
+    }
+}
+
+@Composable
+private fun TabChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        label,
+        color = if (selected) AppPrimaryInk else AppMuted,
+        fontSize = 10.5.sp,
+        fontWeight = FontWeight.Black,
+        modifier = Modifier
+            .clip(RoundedCornerShape(AppRadius.button))
+            .background(if (selected) AppPrimaryPill else AppIconFrame)
+            .pressScaleClickable(scale = 0.97f, onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 9.dp),
+    )
+}
+
+/**
+ * کارتِ قلمِ کمیاب - بالای تب‌ها، با شمارشِ روزِ باقی‌مانده.
+ *
+ * ⚠️ مهلت روی **خودِ کارت** نوشته می‌شود نه در یک بجِ ریز: تنها فوریتِ کلِ فروشگاه همین
+ * است، و سکه‌ای که فوریت نداشته باشد جمع می‌شود و خرج نمی‌شود (`72a`).
+ */
+@Composable
+private fun RareItemCard(
+    item: ShopItem,
+    state: RowState,
+    balance: Int,
+    onActivate: (ShopItem) -> Unit,
+    onConfirm: (ShopItem) -> Unit,
+) {
+    val left = item.daysLeft(LocalDate.now())
+    Column {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+        ) {
+            Text("تا پایانِ بازه", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Black)
+            Spacer(modifier = Modifier.width(8.dp))
+            if (left != null) {
+                Text(
+                    "${toFa(left.toInt())} روز",
+                    color = AppAccent,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                )
+            }
+        }
+        ThemeRow(item, state, balance, onActivate, onConfirm)
+    }
+}
+
+/**
+ * پیش‌نمایشِ ستِ نماد - **چهار نماد در شبکه**، نه یکی: ست است و یک نماد جنسش را نمی‌گوید
+ * (`72b`). همان قابِ ۳۸ِ بقیه‌ی قلم‌ها.
+ */
+@Composable
+private fun SymbolSetPreview(itemId: String) {
+    val style = SymbolStyle.fromItemId(itemId)
+    val keys = categoryIconChoices.take(4).map { it.first }
+    Box(
+        modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(AppIconFrame),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column {
+            keys.chunked(2).forEach { pair ->
+                Row {
+                    pair.forEach { key ->
+                        Icon(
+                            iconForKey(key, style),
+                            contentDescription = null,
+                            tint = AppMuted,
+                            modifier = Modifier.size(13.dp).padding(1.dp),
+                        )
+                    }
+                }
+            }
+        }
     }
 }

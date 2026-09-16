@@ -1,5 +1,9 @@
 package ir.sadteam.loancalc.data.coin
 
+import ir.sadteam.loancalc.ui.components.AvatarFrameStyle
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
+
 /**
  * ═══════════ کاتالوگِ فروشگاه ═══════════
  *
@@ -43,8 +47,22 @@ data class ShopItem(
      * پس ردیف می‌آید (هدف دیده شود) ولی خریدنی نیست تا کدِ واقعی‌اش ساخته شود.
      */
     val comingSoon: Boolean = false,
+    /**
+     * بازه‌ی فروشِ قلمِ کمیاب. `null` یعنی همیشگی.
+     *
+     * ⚠️ بعدِ بازه ردیف از ویترین **می‌رود**، ولی کسی که خریده نگهش می‌دارد - تنها جایی
+     * که «از دست دادن» در برنامه هست، و همان است که سکه را ارزشمند می‌کند.
+     */
+    val window: ClosedRange<LocalDate>? = null,
 ) {
     val price: Int get() = if (unlockBadge != null) 0 else kind.price
+
+    /** هنوز در بازه است؟ قلمِ همیشگی همیشه `true`. */
+    fun isOpen(today: LocalDate): Boolean = window == null || today in window
+
+    /** چند روز تا بسته‌شدن - برای نوارِ «۱۲ روز» بالای ویترین (`72b`). */
+    fun daysLeft(today: LocalDate): Long? =
+        window?.let { ChronoUnit.DAYS.between(today, it.endInclusive).coerceAtLeast(0) }
 }
 
 /**
@@ -101,13 +119,14 @@ val THEME_CATALOG = listOf(
     // شش‌تایشان با **سفید** بالای ۴٫۵:۱ کنتراست دارند چون `primary` پُرکنِ دکمه است.
     // ⚠️ نامشان صریح رنگ را می‌گوید - «مسی» یک‌بار با نامِ فوتبالیست اشتباه گرفته شد.
     ThemePalette("indigo", "بنفشِ نیلی", dark = 0xFF1E1B4B, primary = 0xFF4338CA, light = 0xFFA5B4FC, inkLight = 0xFF312BA0),
-    ThemePalette("teal", "سبزآبی", dark = 0xFF10302C, primary = 0xFF12796B, light = 0xFF8EE0D2, inkLight = 0xFF0E5D52),
+    ThemePalette("teal", "سبزآبیِ تیره", dark = 0xFF0B2320, primary = 0xFF0E5F53, light = 0xFF7ACBBC, inkLight = 0xFF0A4A41),
     ThemePalette("crimson", "قرمزِ شرابی", dark = 0xFF4A0F2B, primary = 0xFF9E2A52, light = 0xFFF2A4BF, inkLight = 0xFF721E3C),
     ThemePalette("olive", "سبزِ زیتونی", dark = 0xFF2A2E12, primary = 0xFF5F6B22, light = 0xFFC7D68A, inkLight = 0xFF444C18),
 )
 
 /** نگاشتِ شناسه به پالت. `null` یعنی تمِ پیش‌فرضِ برند. */
-fun themeById(id: String?): ThemePalette? = THEME_CATALOG.firstOrNull { it.id == id }
+fun themeById(id: String?): ThemePalette? =
+    (THEME_CATALOG + SEASONAL_PALETTES).firstOrNull { it.id == id }
 
 /**
  * کلِ کاتالوگ.
@@ -115,6 +134,25 @@ fun themeById(id: String?): ThemePalette? = THEME_CATALOG.firstOrNull { it.id ==
  * ترتیب **همان ترتیبِ نمایش** است. دسته از `kind.category` می‌آید، پس ردیف‌های یک دسته
  * باید پشتِ‌هم باشند.
  */
+/**
+ * پالتِ تمِ مناسبتی. بازه‌ی فروشش در [SEASONAL_THEMES] می‌نشیند، نه این‌جا - خودِ پالت
+ * بعدِ بازه هم لازم است تا کسی که خریده نگهش دارد.
+ */
+val SEASONAL_PALETTES = listOf(
+    ThemePalette("nowruz1405", "سبزِ نوروزی", dark = 0xFF14401F, primary = 0xFF1E8A3C, light = 0xFF96E0AC, inkLight = 0xFF156630),
+)
+
+/** ردیف‌های مناسبتی با بازه‌ی خودشان. */
+val SEASONAL_THEMES: List<ShopItem> = listOf(
+    ShopItem(
+        id = "theme:nowruz1405",
+        kind = CoinSpend.THEME_SEASONAL,
+        label = "تمِ سبزِ نوروزی",
+        blurb = "تمِ رنگی · فقط تا پایانِ فروردین",
+        window = LocalDate.of(2026, 3, 1)..LocalDate.of(2026, 4, 20),
+    ),
+)
+
 val SHOP_CATALOG: List<ShopItem> = buildList {
 
     // ═══ تمِ پایه (`60a`) ═══
@@ -153,6 +191,13 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     // می‌رود. **شناسه باید سال داشته باشد** - وگرنه نوروزِ سالِ بعد را کسی که پارسال
     // خریده مالکِ آن حساب می‌شود و «از دست دادن» که کلِ ارزشِ قلمِ کمیاب است می‌شکند.
 
+    // ═══ تمِ مناسبتی - تنها قلمِ مهلت‌دارِ فروشگاه (`72a` بندِ ۳) ═══
+    // بقیه‌ی فروشگاه همیشه سرِ جایش است، پس هیچ فوریتی نمی‌سازد؛ و سکه‌ای که فوریت
+    // نداشته باشد جمع می‌شود و خرج نمی‌شود.
+    // 🚨 **شناسه سال دارد.** بی سال، نوروزِ سالِ بعد برای کسی که پارسال خریده مجانی است و
+    // «از دست دادن» - که کلِ ارزشِ قلمِ کمیاب است - می‌شکند.
+    SEASONAL_THEMES.forEach { add(it) }
+
     // ═══ آیکونِ برنامه ═══
     // چهار طرحِ `58a`. «کیف» پیش‌فرض است و فروشی نیست، پس در کاتالوگ نمی‌آید.
     add(ShopItem("icon:coin", CoinSpend.APP_ICON, "آیکونِ سکه", "سکه‌ی طلایی روی زمینه‌ی روشن"))
@@ -160,18 +205,41 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     add(ShopItem("icon:piggy", CoinSpend.APP_ICON, "آیکونِ قلک", "هم‌خانواده‌ی نمادِ بودجه"))
 
     // ═══ نمادها ═══
-    add(ShopItem("symbolset:rounded", CoinSpend.CATEGORY_ICON_SET, "نمادهای گرد", "نمادِ همه‌ی دسته‌ها یک‌دست می‌شود", comingSoon = true))
+    // تنها قلمی که **هر روز** دیده می‌شود (بندِ ۱ی `72a`): در فرمِ ثبت، در دونات، و روی
+    // هر ردیفِ تراکنش. هر دو ست واقعی‌اند - `SymbolStyle` سه شکلِ هر کلید را دارد و
+    // خریدشان روی دسته‌های **ثابت** هم می‌نشیند، نه فقط دلخواه‌ها.
+    add(ShopItem("symbolset:rounded", CoinSpend.CATEGORY_ICON_SET, "نمادهای گرد", "۱۸ نمادِ دسته، گوشه‌گرد و نرم"))
+    add(ShopItem("symbolset:outlined", CoinSpend.CATEGORY_ICON_SET, "نمادهای خطی", "۱۸ نمادِ دسته، فقط خط بی پُرکن"))
     add(ShopItem("coinskin:ancient", CoinSpend.COIN_SKIN, "سکه‌ی کهن", "شکلِ سکه در همه‌ی برنامه", comingSoon = true))
     add(
         ShopItem(
             id = "coinskin:aged_gold",
             kind = CoinSpend.COIN_SKIN,
             label = "سکه‌ی طلای کهنه",
-            blurb = "با نشانِ «سالِ کامل» باز می‌شود",
-            unlockBadge = "YEAR_COMPLETE",
+            blurb = "با نشانِ «وامِ بسته» باز می‌شود",
+            // ⚠️ قبلاً `YEAR_COMPLETE` بود که **هیچ نشانی با آن کد وجود ندارد** - یعنی
+            // این ردیف برای همیشه قفل می‌مانْد و برچسبِ دیالوگ هم کدِ خام را نشان می‌داد.
+            unlockBadge = "loan_closed",
             comingSoon = true,
         ),
     )
+
+    // ═══ قابِ آواتار (`72a` بندِ ۲) ═══
+    // ارزان‌ترین قلم و همین درست است: پنج‌شش شکلِ سادهٔ وکتوری. قیمت کارِ ساخت را می‌گوید،
+    // نه میزانِ دیده‌شدن (`72c`).
+    AvatarFrameStyle.entries.forEach { frame ->
+        add(
+            ShopItem(
+                id = "frame:${frame.id}",
+                kind = CoinSpend.AVATAR_FRAME,
+                label = frame.label,
+                blurb = frame.blurb,
+                // قلمِ نشان‌قفلِ این نوع: با هیچ مقدار سکه‌ای خریدنی نیست، پس نشان
+                // می‌گوید کاربر **چه کرده** - همان چیزی که سکه هیچ‌وقت نمی‌تواند بگوید.
+                unlockBadge = if (frame == AvatarFrameStyle.LAUREL) "under_budget" else null,
+            ),
+        )
+    }
 
     // ═══ جایزه ═══
     // ترمیمِ زنجیره در فروشگاه **نمی‌آید**: دسته ندارد، مالکیت نمی‌آورد، و جایش کارتِ

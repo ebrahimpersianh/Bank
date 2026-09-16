@@ -3,6 +3,8 @@ package ir.sadteam.loancalc.ui.theme
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.data.SymbolStyle
+import ir.sadteam.loancalc.data.SymbolTheme
 import ir.sadteam.loancalc.data.coin.ThemePalette
 import ir.sadteam.loancalc.data.coin.themeById
 import ir.sadteam.loancalc.data.prefs.UiPrefs
@@ -15,6 +17,15 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewModel() {
+
+    init {
+        // ستِ نمادِ خریداری‌شده (`72a`) یک state سراسری است نه `CompositionLocal`، چون
+        // نمادها از فهرست‌های **ثابتِ** `Category.kt` می‌آیند و آن‌ها composable نیستند.
+        // این‌جا تنها نقطه‌ی نوشتنش است.
+        viewModelScope.launch {
+            uiPrefs.activeSymbolSet.collect { SymbolTheme.style = SymbolStyle.fromItemId(it) }
+        }
+    }
     val themeMode: StateFlow<ThemeMode> = uiPrefs.themeMode
         .map { raw -> ThemeMode.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } ?: ThemeMode.LIGHT }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.LIGHT)

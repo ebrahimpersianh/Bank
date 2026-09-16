@@ -77,7 +77,7 @@ import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.AppFab
 import ir.sadteam.loancalc.ui.components.AppHeroCard
-import ir.sadteam.loancalc.ui.components.AvatarView
+import ir.sadteam.loancalc.ui.components.FramedAvatar
 import ir.sadteam.loancalc.ui.components.CategoryDonut
 import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.CoinChip
@@ -545,6 +545,7 @@ private fun HomeHeader(
 ) {
     val avatarViewModel: AvatarViewModel = hiltViewModel()
     val avatar by avatarViewModel.avatar.collectAsState()
+    val avatarFrame by avatarViewModel.frame.collectAsState()
     // آستانه‌ی حالتِ باریک که طراح نگذاشته بود چون عددش دستِ ماست: زیرِ این عرض، عددِ
     // سکه برداشته می‌شود و فقط خودِ سکه می‌مانَد (ترتیبِ `55b`: عددِ سکه ← تاریخ ← نام).
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -568,7 +569,10 @@ private fun HomeHeader(
         // ⚠️ **تنها استثنای قاعده‌ی ۴۴ در هدر، و عمدی**: جعبه‌ی ۴۴ نمی‌گیرد چون کنش نیست.
         // هدفِ لمسی برای چیزی که هیچ کاری نمی‌کند، تپ‌های اطرافش را می‌خورد. اندازه ۳۰ شد
         // نه ۳۲، تا کنارِ متن بنشیند و ارتفاعِ ردیف را بالا نبرد.
-        AvatarView(avatar = avatar, size = 30.dp)
+        // قابِ خریداری‌شده دورِ همین آواتار می‌نشیند - جایی که خرید نتیجه می‌دهد (`72a`).
+        // ⚠️ قطرِ بیرونی همان ۳۰ می‌مانَد؛ خودِ آدمک کوچک‌تر می‌شود، پس ارتفاعِ ردیف
+        // عوض نمی‌شود.
+        FramedAvatar(avatar = avatar, size = 30.dp, frame = avatarFrame)
         Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
             // تاریخ **دومین چیزی است که در تنگنا می‌رود** (بعدِ عددِ سکه، قبلِ نام).
             // `Row`ِ بیرونی `SpaceBetween` است و ستون `weight(1f)` دارد، پس خودِ Compose

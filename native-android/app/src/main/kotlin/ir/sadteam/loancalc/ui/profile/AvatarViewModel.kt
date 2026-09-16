@@ -6,10 +6,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import ir.sadteam.loancalc.ui.components.Avatar
 import ir.sadteam.loancalc.ui.components.AvatarColor
+import ir.sadteam.loancalc.ui.components.AvatarFrameStyle
 import ir.sadteam.loancalc.ui.components.AvatarShape
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,6 +35,14 @@ class AvatarViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewMo
             photoPath = photo,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Avatar())
+
+    /**
+     * قابِ خریداری‌شده‌ی فعال (`72a` بندِ ۲). فقط رویِ آواتارِ **خودِ کاربر** می‌نشیند -
+     * آواتارِ طرفِ‌حساب قاب نمی‌گیرد، وگرنه قاب معنیِ «مالِ من» را از دست می‌دهد.
+     */
+    val frame: StateFlow<AvatarFrameStyle?> = uiPrefs.activeFrame
+        .map { AvatarFrameStyle.fromItemId(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun save(value: Avatar) {
         viewModelScope.launch {

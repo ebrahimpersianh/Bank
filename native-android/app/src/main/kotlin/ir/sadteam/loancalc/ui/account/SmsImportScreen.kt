@@ -181,21 +181,27 @@ fun SmsImportScreen(
         } else {
             val ofSender = messages.filter { it.address == sender }
             val addable = ofSender.filter { it.parsed != null && it.id !in addedIds }
-            if (addable.isNotEmpty()) {
-                GradientButton(
-                    onClick = { bulkSender = sender },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                ) {
-                    Text("افزودنِ همه‌ی ${toFa(addable.size)} پیامِ مبلغ‌دار")
-                }
-            }
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 items(ofSender, key = { it.id }) { sms ->
                     SmsRow(
                         sms = sms,
                         added = sms.id in addedIds,
                         onAdd = { pending = sms },
                     )
+                }
+            }
+            // 🚨 **نوارِ چسبانِ پایین، نه دکمه‌ی بالای فهرست** (جوابِ طراح، بخشِ ۷۲) - همان
+            // الگوی نوارِ گروهیِ `64`: کاربر اول فهرست را می‌خوانَد و بعد تصمیم می‌گیرد؛
+            // دکمه‌ی بالای فهرست پیش از دیدنِ N فشار می‌آورد. و عددِ N روی **خودِ دکمه** است.
+            if (addable.isNotEmpty()) {
+                GradientButton(
+                    onClick = { bulkSender = sender },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp),
+                ) {
+                    Text("افزودنِ همه‌ی ${toFa(addable.size)} پیامِ مبلغ‌دار")
                 }
             }
         }

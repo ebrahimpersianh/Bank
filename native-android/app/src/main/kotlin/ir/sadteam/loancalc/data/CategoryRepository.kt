@@ -21,7 +21,7 @@ class CategoryRepository(private val categoryDao: CategoryDao) {
         return combine(categoryDao.observeCustom(), categoryDao.observeOrder()) { custom, order ->
             val staticList = categoriesFor(type)
             val customForType = custom.filter { it.type == typeName }
-                .map { CategoryEntry(it.name, Color(it.colorArgb), iconForKey(it.iconKey), type) }
+                .map { CategoryEntry(it.name, Color(it.colorArgb), it.iconKey, type) }
             val combined = staticList + customForType
             val orderMap = order.filter { it.type == typeName }.associate { it.name to it.sortOrder }
             combined.sortedWith(

@@ -86,8 +86,20 @@ enum class CoinSpend(
     THEME_SEASONAL(300, "تمِ مناسبتی", ShopCategory.THEME, timeGated = false),
 
     APP_ICON(400, "آیکونِ برنامه", ShopCategory.ICON, timeGated = false),
-    CATEGORY_ICON_SET(250, "مجموعه‌ی نمادِ دسته‌ها", ShopCategory.SYMBOL, timeGated = false),
+
+    /**
+     * 🚨 **قیمت کارِ ساخت را می‌گوید، نه میزانِ دیده‌شدن** (بندِ `72c`).
+     *
+     * منطقِ «هرچه بیشتر دیده شود گران‌تر» منطقِ فروشنده است نه خریدار: با سقفِ ماهانه‌ی
+     * ~۹۰۰ سکه، کاربرِ تازه تنها چیزی را که واقعاً می‌خواهد آخر می‌خرد و بین راه دلسرد
+     * می‌شود. ستِ ۲۴نمادی از آیکونِ برنامه (نُه پله + یک فایلِ هنری) کارِ بیشتری دارد،
+     * پس ۵۰۰ است - نه چون روزانه دیده می‌شود.
+     */
+    CATEGORY_ICON_SET(500, "مجموعه‌ی نمادِ دسته‌ها", ShopCategory.SYMBOL, timeGated = false),
     COIN_SKIN(200, "نمادِ سکه", ShopCategory.SYMBOL, timeGated = false),
+
+    /** پنج‌شش شکلِ ساده‌ی وکتوری - ارزان‌ترین قلمِ فروشگاه، و همین درست است. */
+    AVATAR_FRAME(100, "قابِ آواتار", ShopCategory.FRAME, timeGated = false),
 
     STREAK_REPAIR(100, "ترمیمِ زنجیره", ShopCategory.REWARD, timeGated = true),
     SUBSCRIPTION_3D(1200, "اشتراکِ جایزه ۳ روزه", ShopCategory.REWARD, timeGated = true),
@@ -104,8 +116,19 @@ enum class CoinSpend(
     val isFlagship: Boolean get() = this == SUBSCRIPTION_7D
 }
 
-enum class ShopCategory(val label: String) {
-    THEME("تم"), ICON("آیکونِ برنامه"), SYMBOL("نمادها"), REWARD("جایزه")
+/**
+ * پنج نوعِ قلم - همان پنج تبِ ویترینِ `72b`.
+ *
+ * [tab] نامِ کوتاهِ تب است؛ [label] عنوانِ سرگروهِ داخلِ همان تب. با پنج نوع، سرگروه‌بندیِ
+ * تنها یعنی کاربر برای رسیدن به «قاب» باید از چهارده تم عبور کند - تب فهرست را **کوتاه**
+ * می‌کند، سرگروه فقط نشانه‌گذاری‌اش.
+ */
+enum class ShopCategory(val label: String, val tab: String) {
+    THEME("تم", "تم"),
+    ICON("آیکونِ برنامه", "آیکون"),
+    SYMBOL("نمادها", "نماد"),
+    FRAME("قابِ آواتار", "قاب"),
+    REWARD("جایزه", "جایزه"),
 }
 
 /** یک ردیفِ دفتر. `amount` مثبت = کسب، منفی = خرج. */
