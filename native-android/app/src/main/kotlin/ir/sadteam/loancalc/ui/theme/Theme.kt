@@ -10,7 +10,6 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import ir.sadteam.loancalc.data.coin.ThemePalette
 import androidx.compose.ui.unit.dp
 
@@ -23,23 +22,28 @@ private val defaultTypography = Typography()
  * فروشگاه) و باید با تغییرِ [AppFontState] دوباره ساخته شود. ورودی صریح است تا از
  * بیرونِ composition هم قابلِ ساخت بماند.
  */
-private fun appTypography(family: FontFamily) = Typography(
-    displayLarge = defaultTypography.displayLarge.copy(fontFamily = family),
-    displayMedium = defaultTypography.displayMedium.copy(fontFamily = family),
-    displaySmall = defaultTypography.displaySmall.copy(fontFamily = family),
-    headlineLarge = defaultTypography.headlineLarge.copy(fontFamily = family),
-    headlineMedium = defaultTypography.headlineMedium.copy(fontFamily = family),
-    headlineSmall = defaultTypography.headlineSmall.copy(fontFamily = family),
-    titleLarge = defaultTypography.titleLarge.copy(fontFamily = family),
-    titleMedium = defaultTypography.titleMedium.copy(fontFamily = family),
-    titleSmall = defaultTypography.titleSmall.copy(fontFamily = family),
-    bodyLarge = defaultTypography.bodyLarge.copy(fontFamily = family),
-    bodyMedium = defaultTypography.bodyMedium.copy(fontFamily = family),
-    bodySmall = defaultTypography.bodySmall.copy(fontFamily = family),
-    labelLarge = defaultTypography.labelLarge.copy(fontFamily = family),
-    labelMedium = defaultTypography.labelMedium.copy(fontFamily = family),
-    labelSmall = defaultTypography.labelSmall.copy(fontFamily = family),
-)
+private fun appTypography(choice: AppFontChoice): Typography {
+    // تیتر و بدنه دو خانواده‌ی جدا می‌گیرند - جوابِ طراح به سوالِ وزن (دورِ ۱۰).
+    val titleFamily = if (choice.target == FontTarget.BODY) VazirmatnFontFamily else choice.family
+    val bodyFamily = if (choice.target == FontTarget.TITLE) VazirmatnFontFamily else choice.family
+    return Typography(
+        displayLarge = defaultTypography.displayLarge.copy(fontFamily = titleFamily),
+        displayMedium = defaultTypography.displayMedium.copy(fontFamily = titleFamily),
+        displaySmall = defaultTypography.displaySmall.copy(fontFamily = titleFamily),
+        headlineLarge = defaultTypography.headlineLarge.copy(fontFamily = titleFamily),
+        headlineMedium = defaultTypography.headlineMedium.copy(fontFamily = titleFamily),
+        headlineSmall = defaultTypography.headlineSmall.copy(fontFamily = titleFamily),
+        titleLarge = defaultTypography.titleLarge.copy(fontFamily = titleFamily),
+        titleMedium = defaultTypography.titleMedium.copy(fontFamily = titleFamily),
+        titleSmall = defaultTypography.titleSmall.copy(fontFamily = titleFamily),
+        bodyLarge = defaultTypography.bodyLarge.copy(fontFamily = bodyFamily),
+        bodyMedium = defaultTypography.bodyMedium.copy(fontFamily = bodyFamily),
+        bodySmall = defaultTypography.bodySmall.copy(fontFamily = bodyFamily),
+        labelLarge = defaultTypography.labelLarge.copy(fontFamily = bodyFamily),
+        labelMedium = defaultTypography.labelMedium.copy(fontFamily = bodyFamily),
+        labelSmall = defaultTypography.labelSmall.copy(fontFamily = bodyFamily),
+    )
+}
 
 // ⚠️ **بازطراحیِ جیبک**: این شکل‌ها فقط سلیقه‌ای نیستن - `AlertDialog`، `OutlinedTextField`،
 // `DropdownMenu` و بقیه‌ی کامپوننت‌های آماده‌ی Material شکلشون رو از همین‌جا می‌گیرن. با
@@ -124,7 +128,7 @@ fun LoanCalcTheme(
     CompositionLocalProvider(LocalAppColors provides palette) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = appTypography(AppFontState.choice.family),
+            typography = appTypography(AppFontState.choice),
             shapes = AppShapes,
             content = content,
         )

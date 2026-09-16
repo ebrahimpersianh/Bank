@@ -284,7 +284,7 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
             id = AppFontChoice.NASKH.id,
             kind = CoinSpend.FONT_FACE,
             label = AppFontChoice.NASKH.label,
-            blurb = "قلمِ کتابی و آرام · کلِ برنامه",
+            blurb = "متنِ برنامه · کتابی و آرام",
         ),
     )
     add(
@@ -292,7 +292,7 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
             id = AppFontChoice.MARKAZI.id,
             kind = CoinSpend.FONT_FACE,
             label = AppFontChoice.MARKAZI.label,
-            blurb = "کشیده و باریک · جا برای متنِ بلندتر",
+            blurb = "متنِ برنامه · کشیده و باریک",
         ),
     )
     add(
@@ -300,7 +300,10 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
             id = AppFontChoice.LALEZAR.id,
             kind = CoinSpend.FONT_FACE,
             label = AppFontChoice.LALEZAR.label,
-            blurb = "درشت و نمایشی · برای عنوان‌ها می‌درخشد",
+            // ⚠️ **باید بگوید «برای تیترها»** (بندِ صریحِ طراح، دورِ ۱۰): لاله‌زار فقط روی
+            // تیتر می‌نشیند و بدنه وزیرمتن می‌ماند. بی این جمله، کاربر ۱۲۰ سکه می‌دهد،
+            // متنِ بدنه عوض نمی‌شود و فکر می‌کند خرید اعمال نشده.
+            blurb = "فقط برای تیترها · درشت و نمایشی",
         ),
     )
 
