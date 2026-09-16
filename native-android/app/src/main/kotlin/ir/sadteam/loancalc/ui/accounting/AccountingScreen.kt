@@ -133,7 +133,9 @@ import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.debt.DebtScreen
 import ir.sadteam.loancalc.ui.debt.DebtViewModel
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
+import ir.sadteam.loancalc.ui.privacy.RevealOnTap
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppInfo
@@ -358,7 +360,9 @@ private fun MainSection(
                             Text("داراییِ کل", color = HeroMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             // شمارشِ بالارونده - تو حالتِ خصوصی خاموشه (عدد پشتِ ••• مخفیه).
                             val shownBalance = countUpAmount(totalBalance, enabled = !privacyMode)
-                            PrivacyCrossfade(privacyMode) { masked ->
+                            // فریمِ دورِ ۱۱: تپ روی همین یک عدد، ۴ ثانیه نشانش می‌دهد -
+                            // بی اینکه بقیه‌ی صفحه از پرده بیرون بیاید.
+                            RevealOnTap(privacyMode) { masked ->
                                 Text(
                                     maskIfPrivate(masked, fmt(shownBalance)),
                                     color = Color.White,
@@ -1500,10 +1504,19 @@ private fun PersianDate.ordinal(): Int = y * 400 + m * 32 + d
 /** ردیفِ راهنمای رنگیِ کارتِ اختلافِ دخل/خرج - مربعِ ۸.dp + برچسب + مبلغ. */
 @Composable
 private fun IncomeExpenseLegendRow(color: Color, label: String, amount: Double) {
+    val privacyMode = LocalPrivacyMode.current
     Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(color))
         Text(label, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(start = 6.dp).weight(1f))
-        Text("${fmt(amount)} ریال", color = AppText, fontSize = 11.sp)
+        // 🐛 قبلاً **مقدارِ خامِ ریال با برچسبِ «ریال»** بود و از حالتِ خصوصی هم رد نمی‌شد -
+        // همان دو اشتباهی که در صفحه‌ی آمارِ وام هم پیدا شد (دورِ ۹).
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text(
+                "${maskIfPrivate(masked, fmt(rialToToman(amount.toLong()).toDouble()))} تومان",
+                color = AppText,
+                fontSize = 11.sp,
+            )
+        }
     }
 }
 
@@ -1917,20 +1930,27 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
                         color = AppMuted,
                         fontSize = 12.sp,
                     )
-                    Text(
-                        "${fmt(activeAmount)} ریال",
-                        color = AppText,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                    if (diffFromPrev != 0.0) {
+                    // 🐛 همان باگِ ۱۰برابر: ریالِ خام با برچسبِ «ریال»، و بی ماسکِ حالتِ خصوصی.
+                    PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            "${if (diffFromPrev > 0) "↗" else "↘"} ${fmt(kotlin.math.abs(diffFromPrev))} ریال اختلاف با روز قبل",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 2.dp),
+                            "${maskIfPrivate(masked, fmt(rialToToman(activeAmount.toLong()).toDouble()))} تومان",
+                            color = AppText,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 4.dp),
                         )
+                    }
+                    if (diffFromPrev != 0.0) {
+                        PrivacyCrossfade(privacyMode) { masked ->
+                            Text(
+                                "${if (diffFromPrev > 0) "↗" else "↘"} " +
+                                    maskIfPrivate(masked, fmt(rialToToman(kotlin.math.abs(diffFromPrev).toLong()).toDouble())) +
+                                    " تومان اختلاف با روز قبل",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
                     }
                 }
             }

@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -192,8 +193,12 @@ fun SavingsGoalScreen(
                     EmptyState(
                         icon = Icons.Filled.Savings,
                         title = "هنوز هدفی نداری",
+                        // جمله‌ی دوم خواسته‌ی طراح است: `goal_reached` تنها نشانی بود که راهِ
+                        // گرفتن نداشت، و حالتِ خالی **جای گفتنِ همین** است - جایی که کاربر
+                        // هنوز دلیلی برای ساختنِ اولین هدف ندارد.
                         description = "یک هدف بساز - مثلِ «سفر» یا «گوشیِ نو» - و هر بار که " +
-                            "پولی کنار گذاشتی همین‌جا ثبتش کن.",
+                            "پولی کنار گذاشتی همین‌جا ثبتش کن.\n\n" +
+                            "اولین هدفی که کامل شود، نشانِ «هدف‌رس» را باز می‌کند.",
                     )
                 }
             }
@@ -306,20 +311,45 @@ private fun GoalRow(
         }
         // ریلِ پیشرفت: دو باکسِ تودرتو، نه `LinearProgressIndicator` - تا شعاع و رنگش با
         // بقیه‌ی برنامه یکی باشد.
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-                .height(6.dp)
-                .background(AppChipBg, RoundedCornerShape(AppRadius.button)),
-        ) {
-            if (goal.progress > 0f) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(goal.progress)
-                        .height(6.dp)
-                        .background(barColor, RoundedCornerShape(AppRadius.button)),
+        // 🚨 **ردیفِ رسیده ریل نمی‌گیرد، مدال می‌گیرد** (قاعده‌ی `BadgeMedal`، دورِ ۱۱):
+        // دو حالت با **جنسِ** المان از هم جدا می‌شوند، نه با رنگِ همان نوار - ریلِ پرِ
+        // طلایی از دور شبیهِ ریلِ نیمه‌پر است و «تمام شد» را نمی‌گوید. مبلغ در هر دو
+        // حالت می‌مانَد؛ کاربر می‌خواهد بداند چه چیزی را تمام کرده.
+        if (goal.reached) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(
+                    Icons.Filled.EmojiEvents,
+                    contentDescription = null,
+                    tint = AppAccent,
+                    modifier = Modifier.size(16.dp),
                 )
+                Text(
+                    "هدف کامل شد",
+                    color = AppAccent,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Black,
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .height(6.dp)
+                    .background(AppChipBg, RoundedCornerShape(AppRadius.button)),
+            ) {
+                if (goal.progress > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(goal.progress)
+                            .height(6.dp)
+                            .background(barColor, RoundedCornerShape(AppRadius.button)),
+                    )
+                }
             }
         }
         // 🚨 سررسید **سرعت** است نه مهلت (تصمیمِ طراح): عددِ دوم تصمیم است، اولی فقط
@@ -331,6 +361,14 @@ private fun GoalRow(
                 Text(
                     "${toFa(months)} ماه مانده · ماهی " +
                         "${amountToman(goal.remainingRial / months)} تومان لازم است",
+                    color = AppMuted,
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            } else {
+                // تاریخِ گذشته **خاکستری** است نه قرمز، و به‌جای سرزنش یک پیشنهاد می‌دهد.
+                Text(
+                    "تاریخش گذشت - تاریخِ تازه بگذار؟",
                     color = AppMuted,
                     fontSize = 10.sp,
                     modifier = Modifier.padding(top = 6.dp),

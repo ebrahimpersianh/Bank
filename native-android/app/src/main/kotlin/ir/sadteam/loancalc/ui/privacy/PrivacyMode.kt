@@ -5,8 +5,16 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -50,9 +58,21 @@ class PrivacyModeViewModel @Inject constructor(
 
 val LocalPrivacyMode = staticCompositionLocalOf { false }
 
-/** رشته‌ی مبلغ رو، اگه حالت خصوصی روشن باشه، با «•••» جایگزین می‌کنه؛ وگرنه دست‌نخورده برمی‌گردونه. */
+/**
+ * رشته‌ی مبلغ رو، اگه حالت خصوصی روشن باشه، با ماسک جایگزین می‌کنه.
+ *
+ * 🚨 **هفت نقطه، همیشه - مستقل از خودِ عدد** (تصمیمِ دورِ ۱۱). طولِ ثابت **تنها چیزی است
+ * که تعدادِ رقم را پنهان می‌کند**: ماسکی که هم‌طولِ عدد باشد، تفاوتِ میلیون و میلیارد را
+ * با همان دقتی لو می‌دهد که خودِ عدد می‌گفت. هفت، چون بیشترِ مبالغِ این برنامه شش تا
+ * نُه رقم‌اند و هفت نقطه در هر سه حالت عرضی می‌گیرد که چیدمان را نمی‌شکند.
+ *
+ * ⚠️ پسوندِ «تومان» در خودِ جای مصرف می‌مانَد و اینجا حذف نمی‌شود - بی آن کاربر نمی‌داند
+ * چه چیزی پنهان شده.
+ */
 fun maskIfPrivate(privacyMode: Boolean, formatted: String): String =
-    if (privacyMode) "•••••" else formatted
+    if (privacyMode) MASK_DOTS else formatted
+
+private const val MASK_DOTS = "•••••••"
 
 /**
  * قبلاً فعال/غیرفعال‌کردنِ حالتِ خصوصی باعثِ عوض‌شدنِ یهوییِ مبلغ↔«•••» می‌شد. این کامپوننت هر
@@ -78,3 +98,51 @@ fun PrivacyCrossfade(
         label = "privacyCrossfade",
     ) { masked -> content(masked) }
 }
+
+/**
+ * **تپ برای نمایشِ کوتاه** (فریمِ دورِ ۱۱، بندِ ۲).
+ *
+ * تا امروز تنها راهِ دیدنِ یک مبلغِ پنهان، خاموش‌کردنِ **کلِ** حالتِ خصوصی بود - یعنی
+ * برای دیدنِ یک عدد، همه‌ی عددهای صفحه با هم لو می‌رفتند.
+ *
+ * سه تصمیمِ طراح که عمداً رعایت شده‌اند:
+ * - **۴ ثانیه.** کمتر برای خواندنِ یک عددِ نُه‌رقمی کم است، بیشتر یعنی عملاً خاموش.
+ * - **هیچ نشانه‌ی شمارشِ معکوسی نیست** - نه حلقه، نه عدد. شمارنده‌ی کنارِ مبلغ کاربر را
+ *   به عجله وادار می‌کند و چشمش را از خودِ عدد می‌برد. برگشتِ ماسک خودش «وقتش تمام شد»
+ *   را می‌گوید.
+ * - **دامنه فقط همین یک عدد است** - بقیه‌ی صفحه پنهان می‌مانَد، وگرنه این همان
+ *   خاموش‌کردنِ کلِ حالتِ خصوصی است با یک تپِ راحت‌تر.
+ *
+ * ⚠️ فقط روی چند عددِ **خلاصه** بگذارش (هیروِ کل، وسطِ دونات، خلاصه‌ی گزارش). روی
+ * ردیف‌های فهرست نه: تپشان از قبل به جزئیات می‌رود و آن‌جا عدد پنهان نیست.
+ */
+@Composable
+fun RevealOnTap(
+    privacyMode: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable (masked: Boolean) -> Unit,
+) {
+    var revealed by remember { mutableStateOf(false) }
+    // کلیدِ privacyMode: اگر کاربر خودش حالت را عوض کرد، نمایشِ موقت باید تمام شود.
+    LaunchedEffect(revealed, privacyMode) {
+        if (revealed) {
+            delay(REVEAL_MS)
+            revealed = false
+        }
+    }
+    val masked = privacyMode && !revealed
+    PrivacyCrossfade(
+        privacyMode = masked,
+        modifier = if (privacyMode) {
+            modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { revealed = true }
+        } else {
+            modifier
+        },
+        content = content,
+    )
+}
+
+private const val REVEAL_MS = 4_000L
