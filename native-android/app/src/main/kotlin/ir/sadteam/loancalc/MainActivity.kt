@@ -135,6 +135,8 @@ import ir.sadteam.loancalc.notifications.EXTRA_OPEN_LOAN_ID
 import ir.sadteam.loancalc.notifications.EXTRA_OPEN_TX_ID
 import ir.sadteam.loancalc.notifications.EXTRA_PICK_CATEGORY
 import ir.sadteam.loancalc.notifications.PendingChequeDeepLink
+import ir.sadteam.loancalc.notifications.PendingSharedSms
+import ir.sadteam.loancalc.ui.account.SharedSmsDialog
 import ir.sadteam.loancalc.notifications.PendingTxDeepLink
 import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.SubscriptionManager
@@ -349,7 +351,18 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var pendingTxDeepLink: PendingTxDeepLink
 
+    @Inject
+    lateinit var pendingSharedSms: PendingSharedSms
+
     private fun handleDeepLinkIntent(intent: Intent?) {
+        // «اشتراک‌گذاری» از برنامه‌ی پیامکِ خودِ گوشی - تنها راهِ رسمیِ اندروید برای
+        // انتخابِ یک پیام از آن‌جا. رجوع کن به [PendingSharedSms].
+        if (intent?.action == Intent.ACTION_SEND && intent.type?.startsWith("text/") == true) {
+            intent.getStringExtra(Intent.EXTRA_TEXT)?.takeIf { it.isNotBlank() }?.let {
+                pendingSharedSms.set(it)
+            }
+        }
+
         val loanId = intent?.getLongExtra(EXTRA_OPEN_LOAN_ID, -1L) ?: -1L
         if (loanId > 0) deepLinkTarget.setLoanId(loanId)
         // اعلانِ چک تا امروز هیچ مقصدی نداشت (نه باز می‌شد نه بسته) - رجوع کن به
@@ -660,6 +673,14 @@ private fun LoanCalcApp(
             showInbox = true
             deepLinkViewModel.consumeTx()
         }
+    }
+
+    // پیامی که از برنامه‌ی پیامکِ خودِ گوشی «اشتراک‌گذاری» شده - خواسته‌ی صریحِ کاربر:
+    // «وقتی رفت داخلِ پیامک‌های گوشی، از اون‌جا بتونم انتخاب کنم». اندروید اجازه‌ی
+    // دکمه‌گذاشتن داخلِ آن برنامه را نمی‌دهد، پس این تنها راهِ رسمی است.
+    val sharedSms by deepLinkViewModel.sharedSmsText.collectAsState()
+    sharedSms?.let { body ->
+        SharedSmsDialog(text = body, onDone = { deepLinkViewModel.consumeSharedSms() })
     }
 
     // میان‌برِ فشارِ طولانی رو آیکونِ اپ (مثلِ دولینگو) - رجوع کن به res/xml/shortcuts.xml.

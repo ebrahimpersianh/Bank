@@ -13,6 +13,7 @@ class DeepLinkViewModel @Inject constructor(
     private val pendingTxDeepLink: PendingTxDeepLink,
     private val pendingChequeDeepLink: PendingChequeDeepLink,
     private val pendingDebtDeepLink: PendingDebtDeepLink,
+    private val pendingSharedSms: PendingSharedSms,
 ) : ViewModel() {
     val pendingCounterpartyId: StateFlow<Long?> = pendingDebtDeepLink.pendingCounterpartyId
 
@@ -57,5 +58,12 @@ class DeepLinkViewModel @Inject constructor(
 
     fun consumeShortcut() {
         deepLinkTarget.consumeShortcut()
+    }
+
+    /** متنِ پیامکِ اشتراک‌گذاری‌شده از برنامه‌ی پیامکِ گوشی - رجوع کن به [PendingSharedSms]. */
+    val sharedSmsText: StateFlow<String?> = pendingSharedSms.text
+
+    fun consumeSharedSms() {
+        pendingSharedSms.consume()
     }
 }

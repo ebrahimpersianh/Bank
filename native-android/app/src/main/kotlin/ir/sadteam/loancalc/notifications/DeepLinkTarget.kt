@@ -114,3 +114,25 @@ class PendingDebtDeepLink @Inject constructor() {
         _pendingCounterpartyId.value = null
     }
 }
+
+/**
+ * متنِ پیامکی که کاربر از **برنامه‌ی پیامکِ خودِ گوشی** با «اشتراک‌گذاری» به جیبک فرستاده.
+ *
+ * چرا این‌جوری: اندروید هیچ راهی نمی‌دهد که ما داخلِ برنامه‌ی پیامکِ گوشی دکمه‌ی «انتخاب»
+ * بگذاریم - آن برنامه مالِ سازنده‌ی دیگری است. تنها پلِ رسمی همین `ACTION_SEND` است:
+ * کاربر پیام را در برنامه‌ی پیامک نگه می‌دارد، «اشتراک‌گذاری/ارسال» را می‌زند و جیبک را
+ * انتخاب می‌کند. متن این‌جا می‌نشیند و اپ همان لحظه فرمِ تاییدِ تراکنش را باز می‌کند.
+ */
+@Singleton
+class PendingSharedSms @Inject constructor() {
+    private val _text = MutableStateFlow<String?>(null)
+    val text: StateFlow<String?> = _text
+
+    fun set(value: String) {
+        _text.value = value.take(2000)
+    }
+
+    fun consume() {
+        _text.value = null
+    }
+}
