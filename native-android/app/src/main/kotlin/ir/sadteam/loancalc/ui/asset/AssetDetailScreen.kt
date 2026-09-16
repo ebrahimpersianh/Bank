@@ -299,12 +299,32 @@ private fun AssetSummaryCard(
         ) {
             AssetBadge(asset.symbol, asset.category, 38.dp)
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    formatQuantity(quantity),
-                    color = p.ink,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Black,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        formatQuantity(quantity),
+                        color = p.ink,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                    // 🚨 `hasLivePrice` گرفته می‌شد و **هیچ‌جا خوانده نمی‌شد** - بجِ
+                    // «قیمتِ دستی»ِ فریمِ `62c` هیچ‌وقت رندر نمی‌شد.
+                    //
+                    // هشت نمادِ کاتالوگ و هر داراییِ دلخواهِ کاربر سرویس ندارند؛ بی این بج،
+                    // کاربر نمی‌داند عددِ «ارزشِ روز» از کجاست و چرا تازه نمی‌شود.
+                    if (!hasLivePrice) {
+                        Text(
+                            "قیمتِ دستی",
+                            color = p.subInk,
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier
+                                .padding(start = 7.dp)
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(p.rowBorder)
+                                .padding(horizontal = 7.dp, vertical = 2.dp),
+                        )
+                    }
+                }
                 Text(
                     if (quantity > 0 && netCost > 0) {
                         "میانگینِ خرید ${(netCost / quantity).rialToFaCompact()} هر واحد"
@@ -347,6 +367,21 @@ private fun AssetSummaryCard(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 2.dp),
                 )
+                // ⚠️ دو حالتِ متفاوت که یکی نیستند (تاییدِ خودتان، ۲۳ شهریور):
+                // `hasLivePrice = false` یعنی «این نماد اصلاً نرخِ زنده ندارد» (دائمی)، و
+                // `unitPriceRial == null` یعنی «کاربر هنوز قیمتی نزده» (ناقص). دومی تا
+                // امروز **هیچ متنی نداشت** - خطِ «قیمتِ هر واحد» فقط غیب می‌شد و «ارزشِ
+                // روز» هم «—» بود، پس کاربر دو خطِ خالی می‌دید بی این‌که بداند چه کند.
+                if (asset.unitPriceRial == null && !hasLivePrice) {
+                    Text(
+                        "قیمتی ثبت نشده - با ثبتِ خرید یا فروش، قیمتِ واحد هم ذخیره می‌شود.",
+                        color = p.subInk,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 16.sp,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
                 asset.unitPriceRial?.let { unit ->
                     Text(
                         "قیمتِ هر واحد ${unit.rialToFaCompact()}",

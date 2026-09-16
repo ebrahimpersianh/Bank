@@ -198,13 +198,21 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
                                         // تعهد - همان قاعده‌ی فریمِ `51a` (تمایزِ نوع از آیکون
                                         // می‌آید، نه رنگ). راهنمای زیرِ گرید می‌گوید کدام کدام است.
                                         if (items != null) {
-                                            val allPaid = items.all { it.paid }
+                                            // سه حالت، چون `paid` سه‌حالتی است: قرمز اگر
+                                            // چیزی **واقعاً** پرداخت‌نشده باشد · سبز اگر همه
+                                            // پرداخت شده‌اند · خاکستری اگر فقط پرداختِ تکراری
+                                            // است (وضعیتی ثبت نشده).
+                                            val known = items.mapNotNull { it.paid }
                                             Box(
                                                 modifier = Modifier
                                                     .padding(top = 2.dp)
                                                     .size(5.dp)
                                                     .background(
-                                                        if (allPaid) AppPrimary else AppDanger,
+                                                        when {
+                                                            known.isEmpty() -> AppLabel
+                                                            known.all { it } -> AppPrimary
+                                                            else -> AppDanger
+                                                        },
                                                         CircleShape,
                                                     ),
                                             )
@@ -226,8 +234,10 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
             verticalAlignment = Alignment.CenterVertically,
         ) {
             DotLegend(color = AppDanger, label = "پرداخت‌نشده")
-            Spacer(Modifier.size(14.dp))
+            Spacer(Modifier.size(12.dp))
             DotLegend(color = AppPrimary, label = "پرداخت‌شده")
+            Spacer(Modifier.size(12.dp))
+            DotLegend(color = AppLabel, label = "تکراری")
         }
 
         val selectedItems = selectedDate?.let { dueMap[it] } ?: emptyList()
@@ -281,9 +291,19 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
                                             fontSize = 13.sp,
                                         )
                                     }
+                                    // `null` یعنی این جدول وضعیتی ندارد - «پرداخت‌نشده»
+                                    // نوشتن سرِ اجاره‌ای که سالِ پیش داده شده، غلط است.
                                     Text(
-                                        if (item.paid) "پرداخت‌شده" else "پرداخت‌نشده",
-                                        color = if (item.paid) AppPrimary else AppDanger,
+                                        when (item.paid) {
+                                            true -> "پرداخت‌شده"
+                                            false -> "پرداخت‌نشده"
+                                            null -> "پرداختِ تکراری"
+                                        },
+                                        color = when (item.paid) {
+                                            true -> AppPrimary
+                                            false -> AppDanger
+                                            null -> AppLabel
+                                        },
                                         fontSize = 11.sp,
                                     )
                                 }

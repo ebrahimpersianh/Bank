@@ -28,8 +28,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,8 +42,7 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.jibak.faMonthName
-import ir.sadteam.loancalc.ui.components.AppButtonVariant
-import ir.sadteam.loancalc.ui.components.GradientButton
+// ⚠️ دو importِ `ui.components.*` حذف شد - خودِ این فایل در همان پکیج است.
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -73,10 +74,13 @@ fun CalendarPickerScreen(
     onDateSelected: (PersianDate) -> Unit,
     onBack: () -> Unit,
 ) {
-    var viewYear by remember { mutableStateOf(initialDate.y) }
-    var viewMonth by remember { mutableStateOf(initialDate.m) }
+    // `rememberSaveable`: چرخشِ گوشی وسطِ انتخابِ تاریخ ماه و سال و انتخابِ کاربر را به
+    // `initialDate` برمی‌گرداند. `PersianDate` را `remember` نگه داشتم چون `Saveable`
+    // نیست؛ سه عددِ دیگر مهم‌ترند و همان‌ها ماه و سالِ دیده‌شده را حفظ می‌کنند.
+    var viewYear by rememberSaveable { mutableIntStateOf(initialDate.y) }
+    var viewMonth by rememberSaveable { mutableIntStateOf(initialDate.m) }
     var selected by remember { mutableStateOf<PersianDate?>(initialDate) }
-    var mode by remember { mutableStateOf(CalendarMode.DAYS) }
+    var mode by rememberSaveable { mutableStateOf(CalendarMode.DAYS) }
     val today = remember { JalaliCalendar.today() }
 
     // ⚠️ دکمه‌ی فلشِ سرصفحه از گریدِ ماه/سال به گریدِ روز برمی‌گشت، ولی بازگشتِ سیستمی از این
@@ -236,7 +240,11 @@ private fun DayGrid(
                         modifier = Modifier
                             .weight(1f)
                             .aspectRatio(1f)
-                            .padding(2.dp),
+                            // ⚠️ همان حسابِ `FinancialCalendarScreen`: در گریدِ ۷ستونه‌ی
+                            // عرضِ ۳۶۰ هر خانه ~۴۷dp است و ۲dp از هر طرف آن را به ~۴۳
+                            // می‌رساند - زیرِ حداقلِ ۴۴. آن‌جا به ۱ کم شد و این‌جا نه، و
+                            // این صفحه بیشتر لمس می‌شود.
+                            .padding(1.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (day in 1..daysInMonth) {

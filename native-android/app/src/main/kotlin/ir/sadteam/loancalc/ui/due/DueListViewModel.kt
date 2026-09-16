@@ -185,11 +185,16 @@ class DueListViewModel @Inject constructor(
                 amount = cheque.amount,
                 daysOverdue = JalaliCalendar.daysBetween(date, today),
                 date = date,
-                // ⚠️ `status` رشته فرض شده. در دورِ اعلان‌ها امضای واقعی
-                // `setStatus(cheque, ChequeStatus.PASSED)` بود، یعنی **enum**. اگه enum
-                // باشه این مقایسه یا کامپایل نمی‌شه یا همیشه درسته و **همه‌ی چک‌ها
-                // پرداخت‌نشده حساب می‌شن**. دست نزدم چون `:data` این‌جا نیست - تایید کنید.
-                paid = cheque.status != "PENDING",
+                // 🚨 همان باگی که طراح در تقویم گرفت، این‌جا هم بود (بخشِ ۷۳):
+                // `status != "PENDING"` چکِ **برگشتی** را پرداخت‌شده حساب می‌کرد، پس چکِ
+                // برگشتی از گروهِ «عقب‌افتاده» بیرون می‌افتاد و اصلاً دیده نمی‌شد - بدترین
+                // خبرِ ممکن، غایب. فقط `PASSED` پرداخت‌شده است.
+                // `when` نوشته شده نه `==` تا اگر وضعیتِ تازه‌ای اضافه شد جایش پیدا باشد.
+                paid = when (cheque.status) {
+                    "PASSED" -> true
+                    "BOUNCED" -> false
+                    else -> false
+                },
                 chequeId = cheque.id,
                 kind = DueSource.CHEQUE,
                 subtitle = cheque.bankName,

@@ -22,7 +22,16 @@ data class DueItem(
     val title: String,
     val subtitle: String,
     val amount: Double,
-    val paid: Boolean,
+    /**
+     * `null` = **وضعیت ندارد**، نه «پرداخت‌نشده».
+     *
+     * 🚨 پرداختِ تکراری `paid = false` می‌گرفت، و چون تکرارهایش برای ۱۸ ماه ساخته می‌شوند،
+     * هر ماهِ تقویم روی `dayOfMonth` یک نقطه‌ی **قرمز** می‌گرفت - برای همیشه، شاملِ
+     * ماه‌های گذشته‌ای که کاربر اجاره‌اش را سالِ پیش داده. قرمز معنیِ ثبت‌شده دارد
+     * (پرداخت‌نشده)، و `RecurringPaymentEntity` فقط الگو را نگه می‌دارد نه ثبتِ واقعی -
+     * پس این جدول نمی‌تواند بداند پرداخت شده یا نه.
+     */
+    val paid: Boolean?,
     val kind: DueKind,
 )
 
@@ -73,7 +82,14 @@ class FinancialCalendarViewModel @Inject constructor(
                     title = "چکِ ${cheque.bankName}",
                     subtitle = cheque.ownerName,
                     amount = cheque.amount,
-                    paid = cheque.status != "PENDING",
+                    // 🚨 `status != "PENDING"` چکِ **برگشتی** را هم پرداخت‌شده حساب می‌کرد،
+                    // پس روزِ چکِ برگشتی نقطه‌ی سبز می‌گرفت - یعنی بدترین خبرِ ممکن به
+                    // شکلِ خبرِ خوب. فقط `PASSED` پرداخت‌شده است.
+                    paid = when (cheque.status) {
+                        "PASSED" -> true
+                        "BOUNCED" -> false
+                        else -> false
+                    },
                     kind = DueKind.CHEQUE,
                 ),
             )
@@ -99,7 +115,8 @@ class FinancialCalendarViewModel @Inject constructor(
                             title = payment.name,
                             subtitle = payment.categoryName.orEmpty(),
                             amount = payment.amount,
-                            paid = false,
+                            // الگو است نه ثبت - رجوع کن به `DueItem.paid`.
+                            paid = null,
                             kind = DueKind.RECURRING,
                         ),
                     )
