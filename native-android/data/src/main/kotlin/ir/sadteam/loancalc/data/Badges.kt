@@ -24,10 +24,13 @@ enum class Badge(val code: String, val label: String, val coins: Int, val hint: 
     ;
 
     /**
-     * ⏳ هنوز شرطش قابلِ سنجش نیست، پس تو گروهِ «قفل» با متنِ «به‌زودی» می‌مونه.
-     * [GOAL_REACHED] چون **هدفِ پس‌انداز اصلاً تو برنامه نیست** (نه جدولی، نه صفحه‌ای).
+     * ⏳ نشانی که شرطش هنوز قابلِ سنجش نیست، تو گروهِ «قفل» با متنِ «به‌زودی» می‌مونه.
+     *
+     * ✅ **الان هیچ نشانی این حالت رو نداره.** [GOAL_REACHED] تنها موردش بود و با ساختنِ
+     * هدفِ پس‌انداز (جدولِ `savings_goals`) وصل شد - نشانی که راهِ گرفتنش وجود نداشت
+     * دیگه وجود نداره.
      */
-    val comingSoon: Boolean get() = this == GOAL_REACHED
+    val comingSoon: Boolean get() = false
 }
 
 /**

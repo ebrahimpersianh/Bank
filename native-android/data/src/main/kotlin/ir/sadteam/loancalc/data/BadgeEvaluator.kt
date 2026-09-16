@@ -6,6 +6,7 @@ import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.data.db.BudgetEntity
 import ir.sadteam.loancalc.data.db.LoanEntity
+import ir.sadteam.loancalc.data.db.SavingsGoalEntity
 import kotlinx.coroutines.flow.first
 
 /**
@@ -24,6 +25,7 @@ class BadgeEvaluator(
     private val gamification: GamificationRepository,
     private val accountRepository: AccountRepository,
     private val loanRepository: LoanRepository,
+    private val savingsGoalRepository: SavingsGoalRepository,
 ) {
     /**
      * همه‌ی شرط‌ها رو می‌سنجه و نشان‌های تازه رو باز می‌کنه.
@@ -61,6 +63,7 @@ class BadgeEvaluator(
         val budgets: List<BudgetEntity>,
         val loans: List<LoanEntity>,
         val activeDays: Int,
+        val goals: List<SavingsGoalEntity>,
     )
 
     private suspend fun snapshot() = Snapshot(
@@ -68,6 +71,7 @@ class BadgeEvaluator(
         budgets = accountRepository.observeBudgets().first(),
         loans = loanRepository.observeLoans().first(),
         activeDays = gamification.activeDays.first(),
+        goals = savingsGoalRepository.getGoals(),
     )
 
     private fun progressOf(badge: Badge, s: Snapshot): Float = when (badge) {
@@ -86,8 +90,10 @@ class BadgeEvaluator(
         Badge.LOAN_CLOSED -> s.loans.maxOfOrNull { loan ->
             if (loan.n <= 0) 0f else loan.paidCount.toFloat() / loan.n
         } ?: 0f
-        // هدفِ پس‌انداز هنوز تو برنامه نیست - رجوع کن به `Badge.comingSoon`.
-        Badge.GOAL_REACHED -> 0f
+        // ✅ دیگر «به‌زودی» نیست. پیشرفت = **نزدیک‌ترین هدف به رسیدن**، نه میانگینِ
+        // هدف‌ها: کاربری که یک هدفِ کوچکِ تمام‌شده و یک هدفِ بزرگِ تازه دارد باید
+        // ۱۰۰٪ ببیند نه ۵۰٪.
+        Badge.GOAL_REACHED -> s.goals.maxOfOrNull { it.progress } ?: 0f
     }
 
     /** چند روزِ پشتِ‌سرهمِ اخیر خرجش زیرِ میانگینِ ۳۰ روزه بوده. */

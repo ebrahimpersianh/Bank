@@ -22,6 +22,7 @@ import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.NoteRepository
 import ir.sadteam.loancalc.data.ParsingRuleRepository
+import ir.sadteam.loancalc.data.SavingsGoalRepository
 import ir.sadteam.loancalc.data.db.AccountDao
 import ir.sadteam.loancalc.data.db.AccountTransactionDao
 import ir.sadteam.loancalc.data.db.AchievementDao
@@ -47,6 +48,7 @@ import ir.sadteam.loancalc.data.db.LoanDao
 import ir.sadteam.loancalc.data.db.LoanRowDao
 import ir.sadteam.loancalc.data.db.NoteDao
 import ir.sadteam.loancalc.data.db.ParsingRuleDao
+import ir.sadteam.loancalc.data.db.SavingsGoalDao
 import ir.sadteam.loancalc.data.db.RecurringPaymentDao
 import ir.sadteam.loancalc.data.network.ApiClient
 import ir.sadteam.loancalc.data.network.ApiService
@@ -248,7 +250,18 @@ object AppModule {
         gamification: GamificationRepository,
         accountRepository: AccountRepository,
         loanRepository: LoanRepository,
-    ): BadgeEvaluator = BadgeEvaluator(gamification, accountRepository, loanRepository)
+        savingsGoalRepository: SavingsGoalRepository,
+    ): BadgeEvaluator =
+        BadgeEvaluator(gamification, accountRepository, loanRepository, savingsGoalRepository)
+
+    @Provides
+    @Singleton
+    fun provideSavingsGoalDao(database: AppDatabase): SavingsGoalDao = database.savingsGoalDao()
+
+    @Provides
+    @Singleton
+    fun provideSavingsGoalRepository(dao: SavingsGoalDao): SavingsGoalRepository =
+        SavingsGoalRepository(dao)
 
     @Provides
     @Singleton

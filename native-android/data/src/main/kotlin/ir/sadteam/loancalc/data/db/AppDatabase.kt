@@ -36,8 +36,9 @@ import net.sqlcipher.database.SupportFactory
         DangParticipantEntity::class,
         DangItemEntity::class,
         DangItemShareEntity::class,
+        SavingsGoalEntity::class,
     ],
-    version = 31,
+    version = 32,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -58,6 +59,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun accountTransactionDao(): AccountTransactionDao
     abstract fun incomeDao(): IncomeDao
     abstract fun calculationHistoryDao(): CalculationHistoryDao
+    abstract fun savingsGoalDao(): SavingsGoalDao
     abstract fun budgetDao(): BudgetDao
     abstract fun recurringPaymentDao(): RecurringPaymentDao
     abstract fun counterpartyDao(): CounterpartyDao
@@ -495,6 +497,31 @@ abstract class AppDatabase : RoomDatabase() {
          * پیام‌های قدیمی `NULL` می‌مانند و کارتشان مثلِ قبل بی منبع نشان داده می‌شود.
          */
         /** `71a`: منبعِ ثبت روی خودِ تراکنش می‌نشیند تا بعدِ تایید هم پیدا باشد. */
+        /**
+         * هدفِ پس‌انداز - جدولِ تازه، بی دست‌زدن به چیزی. نشانِ `goal_reached` از روزِ اول
+         * در برنامه بود و به هیچ‌جا وصل نبود؛ این جدول همان را وصل می‌کند.
+         *
+         * ⚠️ ستون‌ها باید مو‌به‌مو با `SavingsGoalEntity` بخوانند وگرنه Room موقعِ **آپگرید**
+         * کرش می‌کند (نصبِ تازه این باگ را نمی‌گیرد - درسِ نسخه‌ی ۱.۰.۳۱۵).
+         */
+        private val MIGRATION_31_32 = object : Migration(31, 32) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS savings_goals (" +
+                        "id INTEGER NOT NULL PRIMARY KEY, " +
+                        "title TEXT NOT NULL, " +
+                        "targetRial REAL NOT NULL, " +
+                        "savedRial REAL NOT NULL DEFAULT 0, " +
+                        "iconKey TEXT NOT NULL DEFAULT 'star', " +
+                        "deadlineYear INTEGER, " +
+                        "deadlineMonth INTEGER, " +
+                        "deadlineDay INTEGER, " +
+                        "achievedAt TEXT, " +
+                        "createdAt TEXT NOT NULL)",
+                )
+            }
+        }
+
         private val MIGRATION_30_31 = object : Migration(30, 31) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE account_transactions ADD COLUMN originLabel TEXT")
@@ -637,6 +664,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_28_29,
                             MIGRATION_29_30,
                             MIGRATION_30_31,
+                            MIGRATION_31_32,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

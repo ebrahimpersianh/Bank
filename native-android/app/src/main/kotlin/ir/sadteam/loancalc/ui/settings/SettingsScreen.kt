@@ -170,6 +170,7 @@ import ir.sadteam.loancalc.ui.components.AvatarPicker
 import ir.sadteam.loancalc.ui.components.FramedAvatar
 import ir.sadteam.loancalc.ui.components.GoldSheenBox
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.goal.SavingsGoalScreen
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.InAppBannerState
 import ir.sadteam.loancalc.ui.components.JibakLogo
@@ -290,6 +291,7 @@ fun SettingsScreen(
                     )
                     // همان شرطِ هدرِ خانه: امروز تراکنشی ثبت شده یا نه. این‌جا از رویدادهای
                     // سکه خوانده می‌شود چون `DAILY_LOG` دقیقاً به همان ثبت جایزه می‌دهد.
+                    "goals" -> SavingsGoalScreen(onBack = { tool = null })
                     "coins" -> CoinWalletScreen(
                         onBack = { tool = null },
                         todayHasEntry = coinTodayLogged,
@@ -2293,6 +2295,8 @@ private fun NotificationPermissionSteps(modifier: Modifier = Modifier) {
 private fun ToolsSettings(onOpenTool: (String) -> Unit, onTestCoins: () -> Unit = {}) {
     AppCard(modifier = Modifier.padding(top = 8.dp)) {
         ToolRow(Icons.Filled.DateRange, "تقویم مالی", "سررسیدِ اقساطِ همه‌ی وام‌هات رو رو تقویم ببین") { onOpenTool("calendar") }
+        // هدفِ پس‌انداز - تا امروز نشانِ `goal_reached` وجود داشت و مقصدی نداشت.
+        ToolRow(Icons.Filled.Savings, "هدف‌های پس‌انداز", "برای چیزی که می‌خوای پول کنار بذار و پیشرفتش رو ببین") { onOpenTool("goals") }
     }
     // ⚠️ ردیفِ «آمار و گزارشات» از این‌جا **حذف** شد (گزارشِ ۶.۵ی کاربر: «پرتی هست»).
     // محتوایش کاملاً دربارهٔ وام است، پس رفت کنارِ خودِ وام‌ها در تبِ وام. عمداً این‌جا
