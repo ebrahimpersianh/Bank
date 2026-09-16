@@ -33,6 +33,14 @@ data class DueItem(
      */
     val paid: Boolean?,
     val kind: DueKind,
+    /**
+     * مقصدِ تپ (خواسته‌ی کاربر، دورِ ۹): «هرچه آن پایین هست اگر بزنم برود رویش».
+     *
+     * پرداختِ تکراری مقصدی ندارد - الگوست، ردیفِ مستقلی در برنامه نیست - پس هر دو `null`
+     * می‌مانند و ردیفش عمداً کلیک‌پذیر نمی‌شود.
+     */
+    val loanId: Long? = null,
+    val chequeId: Long? = null,
 )
 
 /** پورت مفهومی «تقویم مالی» اپ رقیب (VAMMAN) - سررسیدِ **هر سه منبع** (قسطِ وام، چک، پرداختِ
@@ -68,6 +76,7 @@ class FinancialCalendarViewModel @Inject constructor(
                         amount = (row["installment"] as? Number)?.toDouble() ?: loan.installment,
                         paid = row["paid"] == true,
                         kind = DueKind.INSTALLMENT,
+                        loanId = loan.id,
                     ),
                 )
             }
@@ -91,6 +100,7 @@ class FinancialCalendarViewModel @Inject constructor(
                         else -> false
                     },
                     kind = DueKind.CHEQUE,
+                    chequeId = cheque.id,
                 ),
             )
         }

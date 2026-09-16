@@ -25,7 +25,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_CRYPTO
 import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_CUSTOM
@@ -251,22 +250,6 @@ fun PriceChangeBadge(percent: Double, modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * اسنادِ منبعِ قیمت - شرطِ خودِ سرویس (`attributionRequired` در جوابِ servix).
- *
- * ⚠️ **کنارِ خودِ عدد می‌نشیند، نه در «درباره‌ی جیبک»**: کاربری که عدد را می‌بیند هیچ‌وقت
- * صفحه‌ی درباره را باز نمی‌کند، پس اسنادی که آن‌جا بنشیند عملاً دیده نمی‌شود.
- *
- * ⚠️ و **روی نمادِ `hasLivePrice = false` نمی‌آید**: عددِ آن‌ها را خودِ کاربر زده، پس
- * نسبت‌دادنش به سرویس غلط است - آن‌ها بجِ «دستی» دارند و همان جای این خط را می‌گیرد.
- */
-@Composable
-fun PriceSourceNote(modifier: Modifier = Modifier, fontSize: TextUnit = 8.5.sp) {
-    Text(
-        "داده‌ی قیمت از Servix.cc",
-        color = AppMuted,
-        fontSize = fontSize,
-        fontWeight = FontWeight.Bold,
-        modifier = modifier,
-    )
-}
+// ⚠️ `PriceSourceNote` **حذف شد** (خواسته‌ی صریحِ کاربر، دورِ ۹: «هیچ جای برنامه نباشد»).
+// سرویسِ قیمت در پاسخِ `/api/v1/access` پرچمِ `attributionRequired: true` می‌دهد؛ این یک
+// تصمیمِ محصولیِ آگاهانه است و اگر روزی خواستید برگردد، فقط همین یک کامپوزبل لازم است.

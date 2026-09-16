@@ -51,6 +51,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.fmt
+// 🚨 این صفحه تنها جای برنامه بود که **ریال** چاپ می‌کرد؛ بقیه همه تومان‌اند
+// (قاعده‌ی ثبت‌شده: دیتابیس ریال، نمایش تومان). خواسته‌ی کاربر در دورِ ۹ هم همین بود:
+// «بخش‌های مختلفِ سیستم باید مچ باشند».
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.HeroMuted
@@ -187,7 +191,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
                     // AppPrimary) اینجا نامرئی می‌شدن.
                     Text("پرداخت‌شده", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                     Text(
-                        "${fmt(summary.paidAmount)} ریال",
+                        "${fmt(rialToToman(summary.paidAmount.toLong()).toDouble())} تومان",
                         color = Color.White,
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Black,
@@ -201,7 +205,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
                         modifier = Modifier.padding(top = 8.dp),
                     )
                     Text(
-                        "${fmt(summary.remainingAmount)} ریال",
+                        "${fmt(rialToToman(summary.remainingAmount.toLong()).toDouble())} تومان",
                         color = Color.White,
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Black,
@@ -233,9 +237,9 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
 
         val statItems = listOf(
             StatItem("تعداد وام‌ها", toFa(summary.loanCount), null),
-            StatItem("مجموع مبلغ وام‌ها", fmt(summary.totalAmount), "ریال"),
-            StatItem("مجموع پرداخت‌شده", fmt(summary.paidAmount), "ریال"),
-            StatItem("مانده‌ی کل", fmt(summary.remainingAmount), "ریال"),
+            StatItem("مجموع مبلغ وام‌ها", fmt(rialToToman(summary.totalAmount.toLong()).toDouble()), "تومان"),
+            StatItem("مجموع پرداخت‌شده", fmt(rialToToman(summary.paidAmount.toLong()).toDouble()), "تومان"),
+            StatItem("مانده‌ی کل", fmt(rialToToman(summary.remainingAmount.toLong()).toDouble()), "تومان"),
             StatItem("اقساط پرداخت‌شده", toFa(summary.paidInstallments), "از ${toFa(summary.totalInstallments)}"),
             StatItem("درصد پیشرفت", toFa((summary.progressRatio * 100).toInt()), "٪"),
         )
@@ -262,7 +266,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("تاریخچه پرداخت (تجمعی)", color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Text("${fmt(paymentHistory.last().cumulativeAmount)} ریال", color = AppInfo, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("${fmt(rialToToman(paymentHistory.last().cumulativeAmount.toLong()).toDouble())} تومان", color = AppInfo, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 PaymentHistoryLineChart(points = paymentHistory, modifier = Modifier.padding(top = 10.dp))
             }

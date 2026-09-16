@@ -73,7 +73,13 @@ private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).t
  * استفاده می‌کنه - محاسبه‌ی سررسید تکرار/تغییر داده نشده.
  */
 @Composable
-fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarViewModel = hiltViewModel()) {
+fun FinancialCalendarScreen(
+    onBack: () -> Unit,
+    /** تپ روی ردیفِ قسط → صفحه‌ی همان وام (دورِ ۹). `{}` یعنی این صفحه جایی باز شده که مقصدی ندارد. */
+    onOpenLoan: (Long) -> Unit = {},
+    onOpenCheque: (Long) -> Unit = {},
+    viewModel: FinancialCalendarViewModel = hiltViewModel(),
+) {
     val loans by viewModel.loans.collectAsState()
     // dueItemsByDate دیگه نمی‌تونه محاسبه‌ی همزمان (remember{}) باشه چون از رو رَدیف‌های واقعیِ Room
     // (loan_rows) می‌خونه، نه دیگه از رو JSONِ درون‌حافظه‌ای - رجوع کن به CLAUDE.md.
@@ -254,8 +260,20 @@ fun FinancialCalendarScreen(onBack: () -> Unit, viewModel: FinancialCalendarView
                             if (index > 0) {
                                 Spacer(Modifier.height(10.dp))
                             }
+                            // ردیفی که مقصد دارد کلیک‌پذیر می‌شود؛ پرداختِ تکراری الگوست و
+                            // ردیفِ مستقلی ندارد، پس عمداً بی‌کنش می‌مانَد.
+                            val target: (() -> Unit)? = item.loanId?.let { id -> { onOpenLoan(id) } }
+                                ?: item.chequeId?.let { id -> { onOpenCheque(id) } }
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .then(
+                                        if (target != null) {
+                                            Modifier.pressScaleClickable(scale = 0.99f, onClick = target)
+                                        } else {
+                                            Modifier
+                                        },
+                                    ),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {

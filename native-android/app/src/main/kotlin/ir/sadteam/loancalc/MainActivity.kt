@@ -722,7 +722,6 @@ private fun LoanCalcApp(
     val tourBounds = remember { mutableStateMapOf<TourTarget, Rect>() }
     // مرکزِ آیکونِ تم - مبدأ دایره‌ی بازشونده‌ی ThemeReveal. قبلاً از tourBounds خونده می‌شد،
     // ولی اون قدمِ تور حذف شد (رجوع کن به TourTarget).
-    var themeIconCenter by remember { mutableStateOf(Offset.Zero) }
 
     // پورت رفتار «یه‌بار برگشت بزنی هشدار بده، دوباره بزنی خارج شو» - فقط رو تب پیش‌فرض (وام بانکی)
     // فعاله، چون تو بقیه‌ی تب‌ها/تنظیمات دکمه‌ی برگشت باید همون رفتار عادیش (برگشت به تب قبلی/بستن
@@ -780,68 +779,15 @@ private fun LoanCalcApp(
                 // **هر پنج تب** حالا هدرِ درون‌صفحه‌ی خودشو داره (فریم‌های `15a`/`26b`/`26a`/
                 // `27c`/`3a`)، پس نوارِ بالا فقط رو صفحه‌های پوش‌شده‌ی «وام»/«چک» می‌مونه -
                 // وگرنه عنوان دو بار پشتِ‌هم دیده می‌شد (گزارشِ کاربر با اسکرین‌شات).
-                if (BottomTab.entries.none { it.route == currentRoute }) TopAppBar(
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                    // اسمِ اپ («جیبک») به‌خواستِ صریحِ کاربر کاملاً از بالای هر تب حذف شد -
-                    // به‌جاش عنوانِ خودِ همون تب نشون داده می‌شه (شبیهِ رفرنس)؛ تبِ «خانه» عنوان نداره
-                    // چون خودِ HomeScreen از قبل خلاصه‌ی مانده‌ی حساب رو بالای محتواش نشون می‌ده.
-                    title = {
-                        val tabLabel = BottomTab.entries.find { it.route == currentRoute }?.label
-                        if (currentRoute != BottomTab.HOME.route && tabLabel != null) {
-                            Text(tabLabel)
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(
-                            onClick = {
-                                buzz()
-                                // ترتیب مهمه: اول اسنپ‌شاتِ تمِ فعلی، بعد عوض‌کردنِ تم - رجوع کن
-                                // به ThemeReveal.kt. دایره از مرکزِ خودِ همین دکمه باز می‌شه، برای
-                                // همین از همون مستطیلی که پایین برای تور ثبت می‌شه استفاده می‌کنیم.
-                                if (!themeReveal.inProgress) {
-                                    val origin = themeIconCenter
-                                    themeToggleScope.launch {
-                                        themeReveal.startReveal(origin = origin, currentKey = themeMode)
-                                        themeViewModel.cycleThemeMode()
-                                    }
-                                }
-                            },
-                            // مختصاتِ واقعیِ این آیکون رو گزارش می‌ده - برای قدمِ TourTarget.DARK_MODE
-                            // تو AppTourOverlay، رجوع کن به onPositioned مشابه رو BottomNavItem.
-                            modifier = Modifier.onGloballyPositioned {
-                                themeIconCenter = it.boundsInRoot().center
-                            },
-                        ) {
-                            // آیکون وضعیتِ *فعلی* رو نشون می‌ده، نه نتیجه‌ی تپ‌کردن. تمِ تاریک
-                            // برای همه رایگانه. سه حالت: روشن ← تاریک ← خودکار (پیروی از گوشی).
-                            Icon(
-                                when (themeMode) {
-                                    ThemeMode.DARK -> Icons.Filled.DarkMode
-                                    ThemeMode.LIGHT -> Icons.Filled.LightMode
-                                    ThemeMode.SYSTEM -> Icons.Filled.BrightnessAuto
-                                },
-                                contentDescription = "تغییر تم",
-                            )
-                        }
-                    },
-                    actions = {
-                        // حالت خصوصی: مخفی‌کردن سریع همه‌ی مبلغ‌های صفحه پشت «•••» (برای وقتی
-                        // گوشیتو دستِ کسی می‌دی)، بدون نیاز به رفتن تو تنظیمات.
-                        IconButton(
-                            onClick = { buzz(); privacyModeViewModel.toggle() },
-                        ) {
-                            Icon(
-                                if (privacyMode) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                contentDescription = "حالت خصوصی",
-                            )
-                        }
-                        IconButton(
-                            onClick = { showSettings = true },
-                        ) {
-                            Icon(Icons.Filled.Settings, contentDescription = "تنظیمات")
-                        }
-                    },
-                )
+                // ⚠️ **نوارِ بالای سراسری کاملاً حذف شد** (بازخوردِ دورِ ۹).
+                //
+                // این نوار فقط روی صفحه‌های پوش‌شده (وام/چک/طلب‌وبدهی) دیده می‌شد و هر سه
+                // خودشان هدر و دکمه‌ی بازگشتِ خودشان را دارند - یعنی یک نوارِ **بی‌عنوان** با
+                // سه آیکون بالای هدرِ واقعی می‌نشست و تقریباً یک‌سومِ صفحه‌ی وام را می‌خورد.
+                //
+                // هر سه آیکون جای دیگری در دسترس‌اند و این‌جا **تکرار** بودند: چرخ‌دنده در
+                // هدرِ تبِ خانه · حالتِ خصوصی در هدرِ خانه و گزارش · تغییرِ تم در هدرِ خانه و
+                // در «تنظیمات ← ظاهر برنامه».
             },
             bottomBar = {
                 // نوارِ ناوبریِ پایین - **پنج تب و فقط همین پنج**: خانه، دارایی، گزارش، بودجه،

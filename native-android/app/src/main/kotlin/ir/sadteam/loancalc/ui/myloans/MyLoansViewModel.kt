@@ -173,6 +173,10 @@ class MyLoansViewModel @Inject constructor(
     suspend fun totalOverdueAmount(loans: List<LoanEntity>): Double =
         loans.sumOf { loanRepository.overdueInstallmentsTotal(it) }
 
+    /** تعدادِ قسط‌های عقب‌افتاده‌ی همه‌ی وام‌ها - رجوع کن به [LoanRepository.overdueInstallmentsCount]. */
+    suspend fun totalOverdueCount(loans: List<LoanEntity>): Int =
+        loans.sumOf { loanRepository.overdueInstallmentsCount(it) }
+
     /** جمعِ مبلغِ قسطِ همینِ الانِ همه‌ی وام‌ها («مجموع اقساط ماهانه» تو داشبورد) - مورد ۱۴/۳۵،
      * رجوع کن به [LoanRepository.currentInstallmentAmount]. */
     suspend fun totalCurrentInstallment(loans: List<LoanEntity>): Double =

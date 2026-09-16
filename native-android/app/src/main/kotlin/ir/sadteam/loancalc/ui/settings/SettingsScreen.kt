@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDownload
@@ -157,6 +158,7 @@ import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
+import ir.sadteam.loancalc.notifications.DeepLinkViewModel
 import ir.sadteam.loancalc.ui.calendar.FinancialCalendarScreen
 import ir.sadteam.loancalc.ui.components.AppButtonVariant
 import ir.sadteam.loancalc.ui.components.AppCard
@@ -203,6 +205,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
+import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSpacing
@@ -233,6 +236,7 @@ fun SettingsScreen(
     hapticsViewModel: HapticsViewModel = hiltViewModel(),
     smsAutoImportViewModel: SmsAutoImportViewModel = hiltViewModel(),
     gamificationViewModel: GamificationViewModel = hiltViewModel(),
+    deepLinkViewModel: DeepLinkViewModel = hiltViewModel(),
 ) {
     val coinTodayLogged by gamificationViewModel.todayLogged.collectAsState()
     var route by remember { mutableStateOf(SettingsRoute.MAIN) }
@@ -275,7 +279,15 @@ fun SettingsScreen(
             }
             "tool" -> FullScreenDialog(onDismissRequest = { tool = null }) {
                 when (tool) {
-                    "calendar" -> FinancialCalendarScreen(onBack = { tool = null })
+                    // تپ روی ردیفِ تقویم باید به خودِ وام/چک برود (دورِ ۹). همان مسیرِ
+                    // دیپ‌لینکی که اعلان و ردیفِ تبِ سررسید از آن می‌گذرند - پس منطقِ ناوبری
+                    // یک‌جاست. بستنِ ابزار و تنظیمات لازم است وگرنه مقصد زیرِ پوششِ
+                    // تمام‌صفحه‌ی تنظیمات باز می‌شود و دیده نمی‌شود.
+                    "calendar" -> FinancialCalendarScreen(
+                        onBack = { tool = null },
+                        onOpenLoan = { id -> tool = null; deepLinkViewModel.openLoan(id); onBack() },
+                        onOpenCheque = { id -> tool = null; deepLinkViewModel.openCheque(id); onBack() },
+                    )
                     // همان شرطِ هدرِ خانه: امروز تراکنشی ثبت شده یا نه. این‌جا از رویدادهای
                     // سکه خوانده می‌شود چون `DAILY_LOG` دقیقاً به همان ثبت جایزه می‌دهد.
                     "coins" -> CoinWalletScreen(
@@ -1790,6 +1802,15 @@ private fun BackgroundRunSettings() {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    // ═══ بازطراحی (دورِ ۹) ═══
+    //
+    // سه کارتِ بلندِ متنی بودند با دکمه‌ی جدا زیرشان؛ کاربر گفت «بهتر طراحی کن و تمامِ
+    // باکس‌ها کلیک‌شدنی باشند». حالا هر مرحله یک ردیفِ فشرده است: شماره در دایره،
+    // عنوان، یک خطِ توضیح، و قرصِ وضعیت - و **خودِ کارت** مقصدش را باز می‌کند.
+    //
+    // ⚠️ مرحله‌ی سوم عمداً کلیک‌پذیر **نیست**: قفلِ فهرستِ برنامه‌های اخیر از داخلِ هیچ
+    // برنامه‌ای شدنی نیست و هیچ صفحه‌ای در گوشی برایش وجود ندارد. کارتی که تپ را قبول
+    // کند و هیچ اتفاقی نیفتد بدتر از کارتِ بی‌تپ است، پس نشانه‌ی تپ هم نمی‌گیرد.
     AppCard {
         Text(
             "بستنِ برنامه داده‌ها را متوقف نمی‌کند",
@@ -1798,10 +1819,8 @@ private fun BackgroundRunSettings() {
             fontWeight = FontWeight.Black,
         )
         Text(
-            "خواندنِ پیامک و اعلانِ بانکی و یادآورِ سررسید، جدا از باز بودنِ برنامه کار می‌کنند - " +
-                "لازم نیست جیبک روی صفحه بماند و اندروید هم به هیچ برنامه‌ای اجازه‌ی همیشه‌باز‌ماندن " +
-                "نمی‌دهد. فقط سه اجازه‌ی زیر باید برقرار باشد، وگرنه گوشی برنامه را در پس‌زمینه " +
-                "می‌خواباند.",
+            "خواندنِ پیامک و اعلانِ بانکی و یادآورِ سررسید، جدا از باز بودنِ برنامه کار می‌کنند. " +
+                "فقط سه اجازه‌ی زیر باید برقرار باشد، وگرنه گوشی برنامه را در پس‌زمینه می‌خواباند.",
             color = AppMuted,
             fontSize = 11.5.sp,
             lineHeight = 20.sp,
@@ -1809,66 +1828,104 @@ private fun BackgroundRunSettings() {
         )
     }
 
-    AppCard(modifier = Modifier.padding(top = 10.dp)) {
-        Text(
-            if (batteryOk) "۱ · باتری: انجام شده" else "۱ · معافیت از بهینه‌سازیِ باتری",
-            color = if (batteryOk) AppPrimaryInk else AppText,
-            fontSize = 12.5.sp,
-            fontWeight = FontWeight.Black,
-        )
-        Text(
-            "بدونِ این، گوشی بعد از چند دقیقه کارهای پس‌زمینه‌ی برنامه را متوقف می‌کند و " +
-                "یادآورِ سررسید دیر می‌رسد یا اصلاً نمی‌رسد.",
-            color = AppMuted,
-            fontSize = 11.sp,
-            lineHeight = 19.sp,
-            modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
-        )
-        if (!batteryOk) {
-            GradientButton(
-                onClick = { runCatching { context.startActivity(BackgroundRunHelp.batteryIntent(context)) } },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("اجازه می‌دهم") }
-        }
-    }
+    BackgroundStepCard(
+        step = 1,
+        title = "معافیت از بهینه‌سازیِ باتری",
+        body = "بدونِ این، گوشی بعد از چند دقیقه کارهای پس‌زمینه را متوقف می‌کند و یادآورِ " +
+            "سررسید دیر می‌رسد یا اصلاً نمی‌رسد.",
+        done = batteryOk,
+        onClick = { runCatching { context.startActivity(BackgroundRunHelp.batteryIntent(context)) } },
+    )
 
     if (BackgroundRunHelp.needsAutostartSetting()) {
-        AppCard(modifier = Modifier.padding(top = 10.dp)) {
-            Text("۲ · اجرای خودکار بعد از روشن‌شدنِ گوشی", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
-            Text(
-                "سازنده‌ی این گوشی «اجرای خودکار» را پیش‌فرض خاموش می‌گذارد. تا وقتی روشن نشود، " +
-                    "بعد از خاموش‌وروشن‌کردنِ گوشی هیچ پیامکِ بانکی خودکار ثبت نمی‌شود تا وقتی " +
-                    "خودت یک‌بار برنامه را باز کنی.\n\n" + BackgroundRunHelp.autostartHint(),
-                color = AppMuted,
-                fontSize = 11.sp,
-                lineHeight = 19.sp,
-                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
-            )
-            GradientButton(
-                onClick = {
-                    // اگر صفحه‌ی مخصوصِ سازنده پیدا نشد، صفحه‌ی اطلاعاتِ خودِ برنامه باز می‌شود -
-                    // بن‌بست بهتر از کرشِ ActivityNotFound.
-                    val intent = BackgroundRunHelp.autostartIntent(context)
-                        ?: BackgroundRunHelp.appDetailsIntent(context)
-                    runCatching { context.startActivity(intent) }
-                },
-                variant = AppButtonVariant.SECONDARY,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("باز کردنِ تنظیماتِ گوشی") }
-        }
+        BackgroundStepCard(
+            step = 2,
+            title = "اجرای خودکار بعد از روشن‌شدنِ گوشی",
+            body = "سازنده‌ی این گوشی «اجرای خودکار» را پیش‌فرض خاموش می‌گذارد؛ تا روشن نشود، " +
+                "بعد از خاموش‌وروشن‌کردنِ گوشی پیامکِ بانکی خودکار ثبت نمی‌شود.\n" +
+                BackgroundRunHelp.autostartHint(),
+            // وضعیتش از بیرون خواندنی نیست (هر سازنده جای خودش را دارد)، پس ادعای
+            // «انجام شده» نمی‌کنیم - قرص خاکستریِ «باز کن» می‌مانَد.
+            done = false,
+            onClick = {
+                // اگر صفحه‌ی مخصوصِ سازنده پیدا نشد، صفحه‌ی اطلاعاتِ خودِ برنامه باز می‌شود -
+                // بن‌بست بهتر از کرشِ ActivityNotFound.
+                val intent = BackgroundRunHelp.autostartIntent(context)
+                    ?: BackgroundRunHelp.appDetailsIntent(context)
+                runCatching { context.startActivity(intent) }
+            },
+        )
     }
 
-    AppCard(modifier = Modifier.padding(top = 10.dp, bottom = 8.dp)) {
-        Text("۳ · قفل‌کردن در فهرستِ برنامه‌های اخیر", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
-        Text(
-            "این یکی دکمه ندارد چون از داخلِ برنامه شدنی نیست: کلیدِ مربع (برنامه‌های اخیر) را " +
-                "بزن، روی کارتِ جیبک نگه دار و گزینه‌ی قفل را بزن. بعد از آن، بستنِ همه‌ی " +
-                "برنامه‌ها دیگر جیبک را نمی‌بندد.",
-            color = AppMuted,
-            fontSize = 11.sp,
-            lineHeight = 19.sp,
-            modifier = Modifier.padding(top = 4.dp),
-        )
+    BackgroundStepCard(
+        step = 3,
+        title = "قفل‌کردن در فهرستِ برنامه‌های اخیر",
+        body = "کلیدِ مربع (برنامه‌های اخیر) را بزن، روی کارتِ جیبک نگه دار و گزینه‌ی قفل را بزن. " +
+            "بعد از آن، بستنِ همه‌ی برنامه‌ها دیگر جیبک را نمی‌بندد.",
+        done = false,
+        onClick = null,
+    )
+}
+
+/**
+ * یک مرحله‌ی «اجرا در پس‌زمینه» - خودِ کارت مقصد را باز می‌کند (دورِ ۹).
+ *
+ * [onClick] اگر `null` باشد کارت هیچ نشانه‌ی تپی نمی‌گیرد؛ مرحله‌ای که از داخلِ برنامه
+ * شدنی نیست نباید وانمود کند دکمه است.
+ */
+@Composable
+private fun BackgroundStepCard(
+    step: Int,
+    title: String,
+    body: String,
+    done: Boolean,
+    onClick: (() -> Unit)?,
+) {
+    AppCard(
+        modifier = Modifier
+            .padding(top = 10.dp)
+            .then(
+                if (onClick != null) Modifier.pressScaleClickable(scale = 0.99f, onClick = onClick) else Modifier,
+            ),
+    ) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(if (done) AppPrimaryPill else AppIconFrame),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (done) {
+                    Icon(Icons.Filled.Check, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(15.dp))
+                } else {
+                    Text(toFa(step), color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                }
+            }
+            Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                Text(
+                    title,
+                    color = if (done) AppPrimaryInk else AppText,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Black,
+                )
+                Text(
+                    body,
+                    color = AppMuted,
+                    fontSize = 11.sp,
+                    lineHeight = 19.sp,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+            if (onClick != null) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowForwardIos,
+                    contentDescription = null,
+                    tint = AppMuted,
+                    modifier = Modifier.padding(start = 8.dp).size(13.dp),
+                )
+            }
+        }
     }
 }
 

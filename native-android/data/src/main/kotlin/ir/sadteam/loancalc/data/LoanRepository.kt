@@ -517,6 +517,25 @@ class LoanRepository(
      * می‌کنه)، این همه‌ی ردیف‌های واقعاً معوق رو (اگه کاربر چندین ماهه پرداخت نکرده) با مبلغِ
      * واقعیِ خودِ همون ردیف (نه loan.installmentِ کهنه) جمع می‌زنه - برای همین به [getRows] که
      * suspendه نیاز داره. */
+    /**
+     * **تعدادِ** قسط‌های عقب‌افتاده‌ی یک وام - خواسته‌ی کاربر (دورِ ۹): «بگو ۲۰ تا اقساطِ معوق».
+     *
+     * مبلغِ تنها نمی‌گوید مشکل یک قسطِ بزرگ است یا بیست قسطِ کوچک، و این دو تصمیمِ متفاوتی
+     * می‌خواهند. همان شرطِ [overdueInstallmentsTotal] است، فقط شمارش به‌جای جمع.
+     */
+    suspend fun overdueInstallmentsCount(loan: LoanEntity): Int {
+        val today = JalaliCalendar.today()
+        val todayCode = today.y * 10000 + today.m * 100 + today.d
+        return getRows(loan).count { row ->
+            if (row["paid"] == true) return@count false
+            val due = row["dueDate"] as? Map<*, *> ?: return@count false
+            val y = (due["y"] as? Number)?.toInt() ?: return@count false
+            val mo = (due["m"] as? Number)?.toInt() ?: return@count false
+            val d = (due["d"] as? Number)?.toInt() ?: return@count false
+            y * 10000 + mo * 100 + d < todayCode
+        }
+    }
+
     suspend fun overdueInstallmentsTotal(loan: LoanEntity): Double {
         val today = JalaliCalendar.today()
         val todayCode = today.y * 10000 + today.m * 100 + today.d

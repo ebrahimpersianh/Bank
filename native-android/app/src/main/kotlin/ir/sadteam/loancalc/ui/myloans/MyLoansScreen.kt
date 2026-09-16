@@ -292,6 +292,10 @@ fun MyLoansScreen(
     // با LaunchedEffect جدا از بقیه‌ی مبالغِ سینکرونِ داشبورد حساب می‌شه.
     var totalOverdue by remember { mutableStateOf(0.0) }
     LaunchedEffect(loans) { totalOverdue = viewModel.totalOverdueAmount(loans) }
+    // **تعداد** هم لازم است، نه فقط مبلغ (خواسته‌ی کاربر، دورِ ۹): «۲۰ تا اقساطِ معوق».
+    // یک قسطِ بزرگ و بیست قسطِ کوچک جمعشان یکی است ولی دو وضعیتِ کاملاً متفاوت‌اند.
+    var overdueCount by remember { mutableStateOf(0) }
+    LaunchedEffect(loans) { overdueCount = viewModel.totalOverdueCount(loans) }
     // «مجموع اقساط ماهانه» (مورد ۱۴/۳۵) - قبلاً از loan.installmentِ کهنه حساب می‌شد که بعدِ
     // ویرایشِ تکیِ یه قسط دیگه درست نبود؛ الان از رو مبلغِ واقعیِ قسطِ همینِ الانِ هر وام.
     var totalMonthlyInstallment by remember { mutableStateOf(0.0) }
@@ -564,6 +568,7 @@ fun MyLoansScreen(
                             loans = loans,
                             incomes = incomes,
                             totalOverdue = totalOverdue,
+                            overdueCount = overdueCount,
                             totalMonthlyInstallment = totalMonthlyInstallment,
                             onAddIncome = { label, amount, type -> viewModel.addIncome(label, amount, type) },
                             onDeleteIncome = { viewModel.deleteIncome(it) },
@@ -1199,6 +1204,7 @@ private fun DashboardSummary(
     // پاس داده می‌شن چون محاسبه‌شون suspend ئه (رجوع کن به LaunchedEffect(loans) تو MyLoansScreen)؛
     // totalMonthlyInstallment قبلاً همین‌جا از loan.installmentِ کهنه حساب می‌شد.
     totalOverdue: Double,
+    overdueCount: Int,
     totalMonthlyInstallment: Double,
     onAddIncome: (label: String, amount: Double, type: IncomeType) -> Unit,
     onDeleteIncome: (IncomeEntity) -> Unit,
@@ -1285,7 +1291,9 @@ private fun DashboardSummary(
                 LoanSummaryDivider()
                 PrivacyCrossfade(privacyMode) { masked ->
                     LoanSummaryRow(
-                        label = "اقساطِ معوق",
+                        // تعداد در خودِ برچسب می‌آید، نه ردیفِ جدا - یک ردیفِ دیگر همان
+                        // هدرِ شلوغی است که کاربر شکایتش را کرد.
+                        label = if (overdueCount > 0) "${toFa(overdueCount)} قسطِ معوق" else "اقساطِ معوق",
                         value = maskIfPrivate(masked, amountToman(animatedOverdue)),
                         valueColor = AppDangerInk,
                     )

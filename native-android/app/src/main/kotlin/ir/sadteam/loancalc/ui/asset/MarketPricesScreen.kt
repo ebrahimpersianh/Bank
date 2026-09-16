@@ -21,7 +21,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -100,7 +99,10 @@ fun MarketPricesScreen(
     var buySymbol by remember { mutableStateOf<String?>(null) }
     var query by remember { mutableStateOf("") }
     // پیش‌فرضِ روشن: کسی که هفت قلم دارد نباید برای دیدنشان از ۵۶ ردیف بگذرد.
-    var onlyMine by remember { mutableStateOf(true) }
+    // ⚠️ **پیش‌فرض خاموش است** (خواسته‌ی کاربر، دورِ ۹): «صفحه‌ی اولی که می‌آید همه‌ی
+    // دارایی‌ها باشند». با روشن‌بودنش کاربرِ بی‌دارایی یک فهرستِ خالی می‌دید و فکر می‌کرد
+    // قیمت‌ها نیامده‌اند - دقیقاً همان چیزی که گزارش شد.
+    var onlyMine by remember { mutableStateOf(false) }
     var liveOnly by remember { mutableStateOf(false) }
     // رمزارز **بسته** باز می‌شود - ۳۸ ردیفش تنهایی همان فهرستِ قبلی است و سرگروهِ
     // «قیمتِ دستی» را زیرِ چهار صفحه اسکرول می‌بَرد.
@@ -176,14 +178,10 @@ fun MarketPricesScreen(
                             modifier = Modifier.padding(top = 1.dp),
                         )
                     }
-                    HeaderSquareButton(
-                        icon = Icons.Filled.Refresh,
-                        description = "به‌روزرسانی",
-                        fill = AppPrimaryPill,
-                        border = AppPrimaryBorder,
-                        ink = AppPrimaryInk,
-                        onClick = { viewModel.refreshPrices() },
-                    )
+                    // دکمه‌ی «به‌روزرسانی» **حذف شد** (دورِ ۹): تازه‌سازیِ واقعی روی سرور
+                    // هر ۲۹ دقیقه انجام می‌شود و زدنِ این دکمه همان عددِ کش‌شده را برمی‌گرداند
+                    // - یعنی دکمه‌ای که کاری نمی‌کرد ولی وعده‌ی کار می‌داد. ساعتِ کنارِ عنوان
+                    // همان چیزی است که کاربر واقعاً لازم دارد بداند.
                 }
             }
 
@@ -269,17 +267,10 @@ fun MarketPricesScreen(
                     }
                 }
             }
-            item {
-                Text(
-                    // اسنادِ منبع، پای همان فهرستی که عددهایش از سرویس آمده - با استثنای
-                    // گروهی که عددش مالِ خودِ کاربر است.
-                    "داده‌ی قیمت از Servix.cc — به‌جز گروهِ «قیمتِ دستی» که عددش مالِ خودت است.",
-                    color = AppMuted,
-                    fontSize = 8.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 10.dp),
-                )
-            }
+            // ⚠️ خطِ «داده‌ی قیمت از Servix.cc» **به خواستِ صریحِ کاربر برداشته شد**
+            // (دورِ ۹: «هیچ جای برنامه نباشد»). رجوع کن به یادداشتِ CLAUDE.md - سرویس در
+            // پاسخِ `/api/v1/access` پرچمِ `attributionRequired: true` می‌دهد، پس این یک
+            // تصمیمِ محصولیِ آگاهانه است نه فراموشی.
         }
 
         if (openAssetEntity != null) {
