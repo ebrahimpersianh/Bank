@@ -10,6 +10,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import ir.sadteam.loancalc.data.coin.ThemePalette
 import androidx.compose.ui.unit.dp
 
@@ -17,22 +18,27 @@ import androidx.compose.ui.unit.dp
 // چون MaterialTheme متنِ پیش‌فرضِ کلِ اپ رو از رو AppTypography.bodyLarge می‌گیره (با
 // ProvideTextStyle)، همین یه‌جا کافیه؛ هیچ Text ای تو اپ فونتِ صریح ست نکرده بود.
 private val defaultTypography = Typography()
-private val AppTypography = Typography(
-    displayLarge = defaultTypography.displayLarge.copy(fontFamily = VazirmatnFontFamily),
-    displayMedium = defaultTypography.displayMedium.copy(fontFamily = VazirmatnFontFamily),
-    displaySmall = defaultTypography.displaySmall.copy(fontFamily = VazirmatnFontFamily),
-    headlineLarge = defaultTypography.headlineLarge.copy(fontFamily = VazirmatnFontFamily),
-    headlineMedium = defaultTypography.headlineMedium.copy(fontFamily = VazirmatnFontFamily),
-    headlineSmall = defaultTypography.headlineSmall.copy(fontFamily = VazirmatnFontFamily),
-    titleLarge = defaultTypography.titleLarge.copy(fontFamily = VazirmatnFontFamily),
-    titleMedium = defaultTypography.titleMedium.copy(fontFamily = VazirmatnFontFamily),
-    titleSmall = defaultTypography.titleSmall.copy(fontFamily = VazirmatnFontFamily),
-    bodyLarge = defaultTypography.bodyLarge.copy(fontFamily = VazirmatnFontFamily),
-    bodyMedium = defaultTypography.bodyMedium.copy(fontFamily = VazirmatnFontFamily),
-    bodySmall = defaultTypography.bodySmall.copy(fontFamily = VazirmatnFontFamily),
-    labelLarge = defaultTypography.labelLarge.copy(fontFamily = VazirmatnFontFamily),
-    labelMedium = defaultTypography.labelMedium.copy(fontFamily = VazirmatnFontFamily),
-    labelSmall = defaultTypography.labelSmall.copy(fontFamily = VazirmatnFontFamily),
+/**
+ * 🚨 از `val`ِ ثابت به **تابع** تبدیل شد: قلم حالا خریدنی است (دسته‌ی «قلم» در
+ * فروشگاه) و باید با تغییرِ [AppFontState] دوباره ساخته شود. ورودی صریح است تا از
+ * بیرونِ composition هم قابلِ ساخت بماند.
+ */
+private fun appTypography(family: FontFamily) = Typography(
+    displayLarge = defaultTypography.displayLarge.copy(fontFamily = family),
+    displayMedium = defaultTypography.displayMedium.copy(fontFamily = family),
+    displaySmall = defaultTypography.displaySmall.copy(fontFamily = family),
+    headlineLarge = defaultTypography.headlineLarge.copy(fontFamily = family),
+    headlineMedium = defaultTypography.headlineMedium.copy(fontFamily = family),
+    headlineSmall = defaultTypography.headlineSmall.copy(fontFamily = family),
+    titleLarge = defaultTypography.titleLarge.copy(fontFamily = family),
+    titleMedium = defaultTypography.titleMedium.copy(fontFamily = family),
+    titleSmall = defaultTypography.titleSmall.copy(fontFamily = family),
+    bodyLarge = defaultTypography.bodyLarge.copy(fontFamily = family),
+    bodyMedium = defaultTypography.bodyMedium.copy(fontFamily = family),
+    bodySmall = defaultTypography.bodySmall.copy(fontFamily = family),
+    labelLarge = defaultTypography.labelLarge.copy(fontFamily = family),
+    labelMedium = defaultTypography.labelMedium.copy(fontFamily = family),
+    labelSmall = defaultTypography.labelSmall.copy(fontFamily = family),
 )
 
 // ⚠️ **بازطراحیِ جیبک**: این شکل‌ها فقط سلیقه‌ای نیستن - `AlertDialog`، `OutlinedTextField`،
@@ -118,7 +124,7 @@ fun LoanCalcTheme(
     CompositionLocalProvider(LocalAppColors provides palette) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = AppTypography,
+            typography = appTypography(AppFontState.choice.family),
             shapes = AppShapes,
             content = content,
         )

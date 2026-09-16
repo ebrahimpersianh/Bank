@@ -85,6 +85,14 @@ enum class CoinSpend(
     THEME_PALETTE(150, "تمِ رنگی", ShopCategory.THEME, timeGated = true),
     THEME_SEASONAL(300, "تمِ مناسبتی", ShopCategory.THEME, timeGated = false),
 
+    /**
+     * تمِ **هنری** - گران‌تر از تمِ رنگی چون کارِ ساختش بیشتر است، نه چون بیشتر دیده
+     * می‌شود (همان قاعده‌ی `72c`). پالتِ رنگیِ معمولی سه رنگِ هم‌فام است؛ پالتِ هنری از
+     * روی یک اثر برداشته می‌شود و هر سه رنگش باید هم با هم بخوانند هم کنتراستِ متنِ
+     * سفید را نگه دارند - همان چیزی که چند دورِ تنظیم می‌برد.
+     */
+    THEME_ART(800, "تمِ هنری", ShopCategory.THEME, timeGated = false),
+
     APP_ICON(400, "آیکونِ برنامه", ShopCategory.ICON, timeGated = false),
 
     /**
@@ -100,6 +108,14 @@ enum class CoinSpend(
 
     /** پنج‌شش شکلِ ساده‌ی وکتوری - ارزان‌ترین قلمِ فروشگاه، و همین درست است. */
     AVATAR_FRAME(100, "قابِ آواتار", ShopCategory.FRAME, timeGated = false),
+
+    /**
+     * قلمِ فونت. سه ردیف دارد و **ارزان‌ترینش زیرِ ۱۵۰** است (شرطِ صریحِ طراح در دورِ ۹:
+     * هر دسته باید دستِ‌کم یک قلمِ زیرِ ۱۵۰ داشته باشد، وگرنه کاربرِ تازه در آن دسته
+     * فقط قفل می‌بیند و ویترین به نمایشگاه تبدیل می‌شود). پس قیمت **روی خودِ ردیف**
+     * است نه این‌جا - رجوع کن به `FONT_CATALOG`.
+     */
+    FONT_FACE(120, "قلمِ متن", ShopCategory.FONT, timeGated = false),
 
     STREAK_REPAIR(100, "ترمیمِ زنجیره", ShopCategory.REWARD, timeGated = true),
     SUBSCRIPTION_3D(1200, "اشتراکِ جایزه ۳ روزه", ShopCategory.REWARD, timeGated = true),
@@ -128,6 +144,7 @@ enum class ShopCategory(val label: String, val tab: String) {
     ICON("آیکونِ برنامه", "آیکون"),
     SYMBOL("نمادها", "نماد"),
     FRAME("قابِ آواتار", "قاب"),
+    FONT("قلمِ متن", "قلم"),
     REWARD("جایزه", "جایزه"),
 }
 

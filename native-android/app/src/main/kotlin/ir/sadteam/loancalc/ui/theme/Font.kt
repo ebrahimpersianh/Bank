@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.theme
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -17,3 +20,33 @@ val VazirmatnFontFamily = FontFamily(
     Font(R.font.vazirmatn_extrabold, FontWeight.ExtraBold),
     Font(R.font.vazirmatn_black, FontWeight.Black),
 )
+
+/**
+ * قلم‌های خریدنیِ فروشگاه (دستهٔ «قلم»).
+ *
+ * 🚨 چرا `mutableStateOf`ِ سراسری و نه `CompositionLocal`: دقیقاً همان دلیلِ
+ * `SymbolTheme` در بخشِ ۷۲ - `AppTypography` یک `val`ِ سطحِ فایل است و ساخته‌شدنش
+ * composable نیست. تنها نقطه‌ی **نوشتن** `ThemeViewModel.init` است.
+ *
+ * ⚠️ وزن‌ها: فقط وزیرمتن شش وزنِ واقعی دارد. بقیه تک‌وزن‌اند و اندروید وزنِ سنگین را
+ * **مصنوعی** می‌سازد؛ روی حروفِ فارسی این پخش و بدترکیب می‌شود (همان درسی که یک‌بار
+ * برای خودِ وزیرمتن گرفتیم). پس قلمِ تک‌وزن فقط برای کسی است که خودش انتخابش کرده،
+ * و پیش‌فرض هیچ‌وقت عوض نمی‌شود.
+ */
+enum class AppFontChoice(val id: String, val label: String, val family: FontFamily) {
+    VAZIRMATN("font:vazirmatn", "وزیرمتن", VazirmatnFontFamily),
+    NASKH("font:naskh", "نسخِ عربی", FontFamily(Font(R.font.noto_naskh_arabic, FontWeight.Normal))),
+    MARKAZI("font:markazi", "مرکزی", FontFamily(Font(R.font.markazi_text, FontWeight.Normal))),
+    LALEZAR("font:lalezar", "لاله‌زار", FontFamily(Font(R.font.lalezar_regular, FontWeight.Normal))),
+    ;
+
+    companion object {
+        /** شناسه‌ی ناشناس یا `null` → وزیرمتن. قلمِ خوانده‌نشده نباید برنامه را بی‌متن کند. */
+        fun fromId(id: String?): AppFontChoice = entries.firstOrNull { it.id == id } ?: VAZIRMATN
+    }
+}
+
+/** قلمِ فعال. فقط `ThemeViewModel` می‌نویسد؛ `Theme.kt` می‌خوانَد. */
+object AppFontState {
+    var choice: AppFontChoice by mutableStateOf(AppFontChoice.VAZIRMATN)
+}

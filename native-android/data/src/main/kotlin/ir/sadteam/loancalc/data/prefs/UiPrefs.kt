@@ -56,6 +56,7 @@ class UiPrefs(private val context: Context) {
         val ACTIVE_ICON = stringPreferencesKey("active_icon")
         val ACTIVE_FRAME = stringPreferencesKey("active_frame")
         val ACTIVE_SYMBOL_SET = stringPreferencesKey("active_symbol_set")
+        val ACTIVE_FONT = stringPreferencesKey("active_font")
         val NAV_SLOTS = stringPreferencesKey("nav_slots")
         val NAV_USAGE = stringPreferencesKey("nav_usage")
         val NAV_USAGE_STARTED_AT = longPreferencesKey("nav_usage_started_at")
@@ -309,6 +310,15 @@ class UiPrefs(private val context: Context) {
     suspend fun setActiveSymbolSet(key: String?) {
         context.uiPrefsDataStore.edit { prefs ->
             if (key == null) prefs.remove(Keys.ACTIVE_SYMBOL_SET) else prefs[Keys.ACTIVE_SYMBOL_SET] = key
+        }
+    }
+
+    /** قلمِ متنِ فعال (دسته‌ی «قلم»ِ فروشگاه). `null` = وزیرمتنِ پیش‌فرض. */
+    val activeFont: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.ACTIVE_FONT] }
+
+    suspend fun setActiveFont(key: String?) {
+        context.uiPrefsDataStore.edit { prefs ->
+            if (key == null) prefs.remove(Keys.ACTIVE_FONT) else prefs[Keys.ACTIVE_FONT] = key
         }
     }
 

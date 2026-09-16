@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.data.coin
 
 import ir.sadteam.loancalc.ui.components.AvatarFrameStyle
+import ir.sadteam.loancalc.ui.theme.AppFontChoice
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -126,9 +127,25 @@ val THEME_CATALOG = listOf(
     ThemePalette("graphite", "دودی", dark = 0xFF1A1F24, primary = 0xFF44525F, light = 0xFFA8B8C6, inkLight = 0xFF2C3640),
 )
 
+/**
+ * تمِ **هنری** - گران‌تر و کمیاب‌تر از تمِ رنگی (خواسته‌ی کاربر: «یک تمِ ون‌گوگ، خاص‌تر
+ * و گران‌تر»).
+ *
+ * رنگ‌ها از «شبِ پرستاره» برداشته شده‌اند: `dark` آبیِ عمیقِ آسمان، `primary` آبیِ
+ * چرخش‌های میانی، `light` زردِ ستاره‌ها.
+ *
+ * ⚠️ **زرد `primary` نشد** با این‌که رنگِ امضای آن تابلوست: `primary` پُرکنِ دکمه است و
+ * متنِ **سفید** رویش می‌نشیند؛ زرد با سفید به ~۱٫۶:۱ می‌رسد یعنی کاملاً ناخوانا. پس زرد
+ * جای `light` نشست (همان‌جا که جوهر روی سطحِ تیره است) و آبی پُرکنِ دکمه ماند.
+ * قاعده‌ی «دستِ‌کم ۴٫۵:۱ با سفید» بندِ صریحِ همین فایل است و برای هیچ تمی استثنا ندارد.
+ */
+val ART_PALETTES = listOf(
+    ThemePalette("vangogh", "شبِ پرستاره", dark = 0xFF0B1A3A, primary = 0xFF1F4E8C, light = 0xFFF2C14E, inkLight = 0xFF17396B),
+)
+
 /** نگاشتِ شناسه به پالت. `null` یعنی تمِ پیش‌فرضِ برند. */
 fun themeById(id: String?): ThemePalette? =
-    (THEME_CATALOG + SEASONAL_PALETTES).firstOrNull { it.id == id }
+    (THEME_CATALOG + SEASONAL_PALETTES + ART_PALETTES).firstOrNull { it.id == id }
 
 /**
  * کلِ کاتالوگ.
@@ -183,6 +200,20 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
                 kind = CoinSpend.THEME_PALETTE,
                 label = "تمِ ${theme.label}",
                 blurb = "رنگِ اصلیِ برنامه را عوض می‌کند",
+            ),
+        )
+    }
+
+    // ═══ تمِ هنری ═══
+    // بعد از تم‌های رنگی می‌نشیند نه بینشان: گران‌تر است و اگر وسطِ ده ردیفِ ۱۵۰سکه‌ای
+    // بیفتد، فقط یک ردیفِ گران به‌نظر می‌رسد نه یک قلمِ متفاوت.
+    ART_PALETTES.forEach { art ->
+        add(
+            ShopItem(
+                id = "theme:${art.id}",
+                kind = CoinSpend.THEME_ART,
+                label = "تمِ ${art.label}",
+                blurb = "پالتِ «شبِ پرستاره»ی ون‌گوگ · آبیِ عمیق و زردِ ستاره",
             ),
         )
     }
@@ -242,6 +273,36 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
             ),
         )
     }
+
+    // ═══ قلمِ متن ═══
+    // نوعِ تازه‌ی ششم. قلم **هر کلمه‌ی برنامه** را عوض می‌کند، پس بیشترین اثرِ بصری را
+    // با کمترین فایلِ تازه دارد - ولی همین باعث می‌شود خطرناک هم باشد: قلمِ ناخوانا
+    // یعنی برنامه‌ی ناخوانا. پس هر سه قلم **متنی** و فارسی‌خوان‌اند و «لاله‌زار»
+    // (تزئینی‌ترینشان) گران‌ترین است، نه ارزان‌ترین - تا اولین خریدِ کاربرِ تازه نباشد.
+    add(
+        ShopItem(
+            id = AppFontChoice.NASKH.id,
+            kind = CoinSpend.FONT_FACE,
+            label = AppFontChoice.NASKH.label,
+            blurb = "قلمِ کتابی و آرام · کلِ برنامه",
+        ),
+    )
+    add(
+        ShopItem(
+            id = AppFontChoice.MARKAZI.id,
+            kind = CoinSpend.FONT_FACE,
+            label = AppFontChoice.MARKAZI.label,
+            blurb = "کشیده و باریک · جا برای متنِ بلندتر",
+        ),
+    )
+    add(
+        ShopItem(
+            id = AppFontChoice.LALEZAR.id,
+            kind = CoinSpend.FONT_FACE,
+            label = AppFontChoice.LALEZAR.label,
+            blurb = "درشت و نمایشی · برای عنوان‌ها می‌درخشد",
+        ),
+    )
 
     // ═══ جایزه ═══
     // ترمیمِ زنجیره در فروشگاه **نمی‌آید**: دسته ندارد، مالکیت نمی‌آورد، و جایش کارتِ

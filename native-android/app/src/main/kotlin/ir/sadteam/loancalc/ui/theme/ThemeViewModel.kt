@@ -25,6 +25,10 @@ class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewMod
         viewModelScope.launch {
             uiPrefs.activeSymbolSet.collect { SymbolTheme.style = SymbolStyle.fromItemId(it) }
         }
+        // همان الگو برای قلمِ متن - `appTypography` بیرونِ composition ساخته می‌شود.
+        viewModelScope.launch {
+            uiPrefs.activeFont.collect { AppFontState.choice = AppFontChoice.fromId(it) }
+        }
     }
     val themeMode: StateFlow<ThemeMode> = uiPrefs.themeMode
         .map { raw -> ThemeMode.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } ?: ThemeMode.LIGHT }

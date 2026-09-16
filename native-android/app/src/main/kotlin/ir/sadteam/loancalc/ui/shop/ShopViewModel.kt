@@ -65,12 +65,14 @@ class ShopViewModel @Inject constructor(
             uiPrefs.activeIcon,
             uiPrefs.activeFrame,
             uiPrefs.activeSymbolSet,
-        ) { theme, icon, frame, symbols ->
+            uiPrefs.activeFont,
+        ) { theme, icon, frame, symbols, font ->
             buildMap {
                 if (theme != null) put(ShopCategory.THEME, "theme:$theme")
                 if (icon != null) put(ShopCategory.ICON, icon)
                 if (frame != null) put(ShopCategory.FRAME, frame)
                 if (symbols != null) put(ShopCategory.SYMBOL, symbols)
+                if (font != null) put(ShopCategory.FONT, font)
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
@@ -129,6 +131,7 @@ class ShopViewModel @Inject constructor(
             when (item.kind.category) {
                 ShopCategory.THEME -> uiPrefs.setColorTheme(item.id.removePrefix("theme:"))
                 ShopCategory.FRAME -> uiPrefs.setActiveFrame(item.id)
+                ShopCategory.FONT -> uiPrefs.setActiveFont(item.id)
                 ShopCategory.SYMBOL -> {
                     // «سکه‌ی کهن» هم دسته‌ی نماد است ولی هنوز مقصد ندارد (`comingSoon`)،
                     // پس فقط ستِ دسته‌بندی فعال می‌شود.
@@ -154,6 +157,11 @@ class ShopViewModel @Inject constructor(
 
     fun resetSymbolSet() {
         viewModelScope.launch { uiPrefs.setActiveSymbolSet(null) }
+    }
+
+    /** بازگشت به وزیرمتن - تنها قلمی که شش وزنِ واقعی دارد، پس راهِ بازگشت لازم است. */
+    fun resetFont() {
+        viewModelScope.launch { uiPrefs.setActiveFont(null) }
     }
 
     /** بازگشت به آیکونِ پیش‌فرضِ «کیفِ پول» - بندِ ۵ی `60d`. */

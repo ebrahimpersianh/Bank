@@ -76,6 +76,8 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppFontChoice
+import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /*
@@ -258,6 +260,27 @@ fun ShopScreen(onBack: () -> Unit, viewModel: ShopViewModel = hiltViewModel()) {
             }
             if (active[ShopCategory.FRAME] != null) {
                 item { ResetRow("برداشتنِ قاب", viewModel::resetFrame) }
+            }
+        }
+
+        if (tab == null || tab == ShopCategory.FONT) {
+            val fonts = rowsOf(ShopCategory.FONT)
+            item { GroupHeader("قلمِ متن", "${toFa(CoinSpend.FONT_FACE.price)} سکه") }
+            items(fonts.size) { index ->
+                val shopItem = fonts[index]
+                ShopRow(
+                    shopItem,
+                    stateOf(shopItem),
+                    balance,
+                    viewModel::activate,
+                    onConfirm = { confirming = it },
+                    // پیش‌نمایشِ قلم **با خودِ همان قلم** نوشته می‌شود - تنها قلمی که
+                    // توضیحِ متنی‌اش بی‌فایده است: «کشیده و باریک» را باید دید نه خواند.
+                    leading = { FontPreview(AppFontChoice.fromId(shopItem.id)) },
+                )
+            }
+            if (active[ShopCategory.FONT] != null) {
+                item { ResetRow("بازگشت به وزیرمتن", viewModel::resetFont) }
             }
         }
 
@@ -589,6 +612,25 @@ private fun RareItemCard(
  * پیش‌نمایشِ ستِ نماد - **چهار نماد در شبکه**، نه یکی: ست است و یک نماد جنسش را نمی‌گوید
  * (`72b`). همان قابِ ۳۸ِ بقیه‌ی قلم‌ها.
  */
+/** پیش‌نمایشِ قلم: حرفِ «آ» با خودِ همان قلم، هم‌اندازه‌ی بقیه‌ی پیش‌نمایش‌ها. */
+@Composable
+private fun FontPreview(choice: AppFontChoice) {
+    Box(
+        modifier = Modifier
+            .size(38.dp)
+            .clip(RoundedCornerShape(AppRadius.icon))
+            .background(AppSurface2),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            "آ",
+            color = AppText,
+            fontSize = 19.sp,
+            fontFamily = choice.family,
+        )
+    }
+}
+
 @Composable
 private fun SymbolSetPreview(itemId: String) {
     val style = SymbolStyle.fromItemId(itemId)
