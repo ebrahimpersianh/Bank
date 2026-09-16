@@ -63,6 +63,29 @@ for p in APP.rglob("*.kt"):
             if depth <= 0:
                 break
 
+# الگوی دوم (از شکستِ بیلدِ ۵۴۷): `when { x.p == null -> … ; x.p.startsWith(…) }`.
+# حالتِ کلی‌ترش این است: هر جا `x.p.something` صدا زده می‌شود **و** همان فایل جای دیگری
+# `x.p` را با null مقایسه کرده (یعنی می‌داند nullable است)، کامپایلر smart-cast نمی‌کند.
+MEMBER_CALL = re.compile(r"(?<![?\w.])(\w+)\.(\w+)\.\w")
+for p in APP.rglob("*.kt"):
+    src = p.read_text(encoding="utf-8")
+    for n, line in enumerate(src.splitlines(), 1):
+        if line.lstrip().startswith(("*", "//", "/*")):
+            continue
+        for m in MEMBER_CALL.finditer(line):
+            receiver, prop = m.group(1), m.group(2)
+            if prop not in nullable_props:
+                continue
+            if f"{receiver}.{prop} == null" not in src and f"{receiver}.{prop} != null" not in src:
+                continue
+            entry = (
+                f"  {p.relative_to(ROOT)}:{n}\n"
+                f"     {receiver}.{prop}.… بی `?.` روی پراپرتیِ nullableی `:data`\n"
+                f"     → اول `val {prop} = {receiver}.{prop}` بذار و رو همون کار کن"
+            )
+            if entry not in bad:
+                bad.append(entry)
+
 if bad:
     print(f"❌ {len(bad)} smart-castِ غیرمجاز رو پراپرتیِ `:data`:\n" + "\n".join(bad))
     sys.exit(1)

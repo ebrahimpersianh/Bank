@@ -66,19 +66,22 @@ fun CompactTransactionRow(
     val ink = if (isIn) AppTxIn else AppTxOut
     val privacyMode = LocalPrivacyMode.current
     // «دستی» صریح نوشته می‌شود، نه با خالی‌گذاشتنِ منبع (قاعده‌ی ۳): خطِ خالی یعنی «نمی‌دانم».
-    val origin = tx.originLabel?.takeIf { it.isNotBlank() } ?: "دستی"
+    // ⚠️ در یک `val` محلی خوانده می‌شود: `originLabel` پراپرتیِ ماژولِ `:data` است و کاتلین
+    // روی آن smart-cast نمی‌کند (همان قاعده‌ی `smartcast.py`، شکستِ بیلدِ ۵۴۷).
+    val originLabel = tx.originLabel
+    val origin = originLabel?.takeIf { it.isNotBlank() } ?: "دستی"
     val icon: ImageVector = when {
-        tx.originLabel == null -> Icons.Filled.Add
-        tx.originLabel.startsWith("پیامک") -> Icons.Filled.ChatBubble
+        originLabel == null -> Icons.Filled.Add
+        originLabel.startsWith("پیامک") -> Icons.Filled.ChatBubble
         else -> Icons.Filled.Notifications
     }
     // خانه‌ی آیکونِ ثبتِ دستی خنثی است - رنگِ جهت را فقط خودکارها می‌گیرند.
     val iconBg = when {
-        tx.originLabel == null -> AppChipBg
+        originLabel == null -> AppChipBg
         isIn -> AppPrimaryPill
         else -> AppDangerPill
     }
-    val iconTint = if (tx.originLabel == null) AppMuted else ink
+    val iconTint = if (originLabel == null) AppMuted else ink
 
     AppCard(modifier = if (onClick != null) modifier.clickable(onClick = onClick) else modifier) {
         Row(
