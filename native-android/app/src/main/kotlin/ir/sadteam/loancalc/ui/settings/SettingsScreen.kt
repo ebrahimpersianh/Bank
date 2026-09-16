@@ -1859,13 +1859,17 @@ private fun BackgroundRunSettings() {
         )
     }
 
+    // بندِ ۷ِ دورِ ۹: این مرحله از داخلِ هیچ برنامه‌ای شدنی نیست، پس مقصد ندارد - ولی
+    // کارتی که تپ نمی‌گیرد باید **بگوید** دستورالعمل است، وگرنه کاربر تپ می‌زند و فکر
+    // می‌کند خراب است. پس بجِ «دستی»، و متن با **فعل** شروع می‌شود.
     BackgroundStepCard(
         step = 3,
-        title = "قفل‌کردن در فهرستِ برنامه‌های اخیر",
+        title = "در فهرستِ برنامه‌های اخیر، جیبک را قفل کن",
         body = "کلیدِ مربع (برنامه‌های اخیر) را بزن، روی کارتِ جیبک نگه دار و گزینه‌ی قفل را بزن. " +
             "بعد از آن، بستنِ همه‌ی برنامه‌ها دیگر جیبک را نمی‌بندد.",
         done = false,
         onClick = null,
+        manualBadge = true,
     )
 }
 
@@ -1882,6 +1886,8 @@ private fun BackgroundStepCard(
     body: String,
     done: Boolean,
     onClick: (() -> Unit)?,
+    /** مرحله‌ای که خودِ کاربر باید بیرونِ برنامه انجامش بدهد - بجِ «دستی» می‌گیرد. */
+    manualBadge: Boolean = false,
 ) {
     AppCard(
         modifier = Modifier
@@ -1925,6 +1931,18 @@ private fun BackgroundStepCard(
                     contentDescription = null,
                     tint = AppMuted,
                     modifier = Modifier.padding(start = 8.dp).size(13.dp),
+                )
+            } else if (manualBadge) {
+                Text(
+                    "دستی",
+                    color = AppMuted,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(AppIconFrame)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }
         }

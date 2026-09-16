@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -123,11 +124,10 @@ fun SmsImportScreen(
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.weight(1f).padding(start = 4.dp),
             )
-            // خواسته‌ی کاربر: «می‌خوام واردِ پیامکِ گوشی بشه» - برنامه‌ی پیامکِ پیش‌فرضِ خودِ
-            // گوشی باز می‌شود. اگر پیدا نشد، `sms:`ِ عمومی که هر برنامه‌ی پیامکی می‌گیردش.
-            IconButton(onClick = { openPhoneSmsApp(context) }) {
-                Icon(Icons.Filled.OpenInNew, contentDescription = "بازکردنِ برنامه‌ی پیامک", tint = AppMuted)
-            }
+            // 🚨 دکمه‌ی «بازکردنِ برنامه‌ی پیامک» از این‌جا **برداشته شد** (بندِ ۱۰ِ دورِ ۹).
+            // هدر جای **کنشِ اصلیِ** صفحه است و کنشِ اصلیِ این صفحه «از این فهرست انتخاب
+            // کن» است، نه «برو جای دیگر» - کاربر آن را می‌زد، از برنامه بیرون می‌رفت و
+            // فهرستِ داخلی را اصلاً نمی‌دید. حالا تهِ صفحه است، به‌عنوانِ راهِ فرار.
         }
         Text(
             if (sender == null) {
@@ -178,6 +178,7 @@ fun SmsImportScreen(
                         onClick = { openSender = entry.key },
                     )
                 }
+                item { OpenPhoneSmsRow(onClick = { openPhoneSmsApp(context) }) }
             }
         } else {
             val ofSender = messages.filter { it.address == sender }
@@ -193,6 +194,7 @@ fun SmsImportScreen(
                         onAdd = { pending = sms },
                     )
                 }
+                item { OpenPhoneSmsRow(onClick = { openPhoneSmsApp(context) }) }
             }
             // 🚨 **نوارِ چسبانِ پایین، نه دکمه‌ی بالای فهرست** (جوابِ طراح، بخشِ ۷۲) - همان
             // الگوی نوارِ گروهیِ `64`: کاربر اول فهرست را می‌خوانَد و بعد تصمیم می‌گیرد؛
@@ -293,6 +295,35 @@ fun SmsImportScreen(
                     addedIds = addedIds + sms.id
                     pending = null
                 },
+            )
+        }
+    }
+}
+
+/**
+ * راهِ فرار، نه راهِ اصلی (بندِ ۱۰ِ دورِ ۹): اگر پیامِ موردِ نظر این‌جا نبود، برنامه‌ی
+ * پیامکِ گوشی باز می‌شود. **تهِ فهرست** است چون کنشِ اصلیِ این صفحه انتخاب از همین
+ * فهرست است؛ در هدر بودنش کاربر را قبل از دیدنِ فهرست بیرون می‌فرستاد.
+ */
+@Composable
+private fun OpenPhoneSmsRow(onClick: () -> Unit) {
+    AppCard(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.99f, onClick = onClick),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Filled.OpenInNew,
+                contentDescription = null,
+                tint = AppMuted,
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                "پیامِ موردِ نظرت این‌جا نیست؟ برنامه‌ی پیامک را باز کن",
+                color = AppMuted,
+                fontSize = 11.sp,
+                lineHeight = 19.sp,
+                modifier = Modifier.weight(1f).padding(start = 8.dp),
             )
         }
     }
