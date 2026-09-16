@@ -133,10 +133,13 @@ import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.debt.DebtScreen
 import ir.sadteam.loancalc.ui.debt.DebtViewModel
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import androidx.compose.material.icons.filled.Assessment
+import ir.sadteam.loancalc.ui.stats.StatsScreen
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.RevealOnTap
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
+import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppInfoPill
@@ -1731,6 +1734,7 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
     var viewDate by remember { mutableStateOf(today) }
     var showExpenseTab by remember { mutableStateOf(true) }
     var showCustomReport by remember { mutableStateOf(false) }
+    var showLoanStats by remember { mutableStateOf(false) }
 
     fun txOn(date: PersianDate) = allTransactions.filter { it.year == date.y && it.month == date.m && it.day == date.d }
 
@@ -2057,6 +2061,30 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
                 }
             }
         }
+        // **آمارِ وام‌ها از تبِ وام به این‌جا آمد** (خواسته‌ی صریحِ کاربر، دورِ ۱۲).
+        // جایش این‌جا درست‌تر است: زبانش زبانِ گزارش است (نمودار، روند، خروجیِ PDF) و
+        // در تبِ وام یک ردیفِ کاملِ بالای فهرست را می‌خورد، جایی که کاربر آمده وام‌هایش
+        // را ببیند نه نمودارشان را.
+        item {
+            AppCard(
+                modifier = Modifier.pressScaleClickable(onClick = { showLoanStats = true }),
+                borderColor = AppInfo.copy(alpha = 0.26f),
+            ) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(11.dp)).background(AppInfoPill),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Filled.Assessment, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))
+                    }
+                    Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                        Text("آمارِ وام‌ها", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("پیشرفتِ پرداخت · سود · خروجیِ PDF", color = AppMuted, fontSize = 11.sp)
+                    }
+                    Text("‹", color = AppMuted, fontSize = 15.sp)
+                }
+            }
+        }
         item {
             // دکمه‌ی متنیِ قبلی به کارتِ آبی تبدیل شد (AppInfo، ابزار نه پول) - تپ همون
             // showCustomReport = !showCustomReport، بدونِ تغییرِ منطق/خروجی‌گیرها.
@@ -2178,6 +2206,14 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
                 )
             }
         }
+        }
+    }
+    // صفحه‌ی آمارِ وام به‌عنوانِ پوششِ تمام‌صفحه روی همین تب - `LazyColumn` دارد پس
+    // داخلِ فهرستِ تنبلِ بالا نمی‌رود (همان قاعده‌ی کرشِ اسکرولِ تودرتو).
+    if (showLoanStats) {
+        BackHandler { showLoanStats = false }
+        Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
+            StatsScreen(onBack = { showLoanStats = false })
         }
     }
     InAppBannerHost(banner)

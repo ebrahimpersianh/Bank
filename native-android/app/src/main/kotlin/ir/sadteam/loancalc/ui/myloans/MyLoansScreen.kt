@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -628,36 +629,6 @@ fun MyLoansScreen(
                         }
                     }
 
-                    // ردیفِ «پشتیبان‌گیری و بازیابیِ وام‌ها» - فریمِ `27a`. قبلاً دو تا دکمه‌ی
-                    // OutlinedButtonِ کنارِ هم بود که نه به سبکِ بقیه‌ی اپ می‌خورد نه تو فریم بود؛
-                    // طرح یه **ردیفِ فهرست** می‌خواد (قابِ آیکونِ ۳۰ + عنوان + فلش).
-                    item {
-                        BackupRestoreRow(
-                            onBackup = {
-                                viewModel.exportBackup { json ->
-                                    pendingExportJson = json
-                                    createDocumentLauncher.launch("loans-backup.json")
-                                }
-                            },
-                            onRestore = { openDocumentLauncher.launch(arrayOf("application/json")) },
-                        )
-                    }
-
-                    // **آمارِ وام‌ها از تنظیمات آمد این‌جا** (فریمِ `29b`): محتوایش کاملاً
-                    // دربارهٔ وام است - پیشرفتِ پرداخت، سود، تاریخچه‌ی اقساط - پس جایش
-                    // کنارِ خودِ وام‌هاست، نه زیرِ «ابزارها»ی تنظیمات که کاربر گفت «پرتی هست».
-                    // ردیفِ تنظیمات **حذف** شد، نه اینکه به این‌جا لینک بدهد: ردیفی که فقط
-                    // کاربر را جای دیگری می‌فرستد یک پرش است.
-                    if (loans.isNotEmpty()) {
-                        item {
-                            LoanListActionRow(
-                                icon = Icons.Filled.Assessment,
-                                label = "آمارِ وام‌ها و خروجیِ PDF",
-                                onClick = { showStats = true },
-                            )
-                        }
-                    }
-
                     // 🚨 **چندتا وام عقب‌افتاده است** - خواسته‌ی صریحِ کاربر (۲۴ شهریور).
                     // کارتِ تک‌تکِ وام‌ها از قبل «عقب‌افتاده» را می‌گفت، ولی کاربر باید تا ته
                     // فهرست اسکرول می‌کرد تا بفهمد چندتاست. این یک خطِ جمع‌بندیِ بالای فهرست
@@ -943,6 +914,22 @@ fun MyLoansScreen(
                     }
                 }
             }
+
+                    // **پشتیبان‌گیری به تهِ فهرست رفت** (خواسته‌ی صریحِ کاربر، دورِ ۱۲):
+                    // کاری است که کاربر سالی چند بار می‌کند، ولی بالای فهرست می‌نشست و
+                    // جای وام‌ها را می‌گرفت - و شکایتِ اصلی همین بود که «وام‌های من پیدا
+                    // نیستند». پایینِ فهرست هم پیداست هم سرِ راه نیست.
+                    item {
+                        BackupRestoreRow(
+                            onBackup = {
+                                viewModel.exportBackup { json ->
+                                    pendingExportJson = json
+                                    createDocumentLauncher.launch("loans-backup.json")
+                                }
+                            },
+                            onRestore = { openDocumentLauncher.launch(arrayOf("application/json")) },
+                        )
+                    }
         }
     }
         // دکمه‌ی «+» دایره‌ای سبز گوشه‌ی سمت چپ (در RTL: BottomEnd) - جایگزین دکمه‌ی تمام‌عرضِ
@@ -1269,56 +1256,135 @@ private fun DashboardSummary(
         // قبلاً سه کارتِ سفیدِ جدا بود (بدهی/قسطِ ماهانه/معوق). طرح یه **کارتِ کاغذِ طلاییِ
         // واحد** با سه ردیفِ جداشده می‌خواد - طلایی اینجا موجهه چون این کارتِ «پول»ه، همون
         // کاربردی که قاعده‌ی «طلایی فقط پرمیوم/پول» اجازه می‌ده.
+        // 🚨 **کارتِ طلایی سه لایه‌ی اطلاعاتی دارد، نه چهار ردیفِ هم‌وزن** (بندِ ۳ فریمِ `76c`
+        // و خواسته‌ی دوباره‌ی کاربر در دورِ ۱۲: «اصلاً وام‌های من پیدا نیستند»).
+        //
+        // چهار ردیفِ تمام‌عرضِ برچسب/مقدار با سه خطِ جداکننده ~۲۲۰dp می‌خورد، یعنی کاربر
+        // برای رسیدن به اولین وام باید اسکرول کند. حالا:
+        //   بالا  - بجِ معوق و درصدِ پرداخت‌شده، هر دو ریز و در یک ردیف
+        //   وسط  - **قسطِ این ماه** درشت (تنها عددِ قابلِ‌اقدام)
+        //   پایین - ماندهٔ کل و تا آزادی، کنارِ هم و ریز
+        // ترتیب **دلیل** دارد: از «چقدر عقبم» به «حالا چقدر بدهم» به «کلِ ماجرا».
+        val monthsLeft = remember(loans) { loans.maxOfOrNull { it.n - it.paidCount } ?: 0 }
+        val paidPct = remember(loans) {
+            val totalRows = loans.sumOf { it.n }
+            if (totalRows > 0) loans.sumOf { it.paidCount } * 100 / totalRows else 0
+        }
         AppCard(variant = AppCardVariant.GOLD) {
-            PrivacyCrossfade(privacyMode) { masked ->
-                LoanSummaryRow(
-                    label = "مانده‌ی کلِ بدهی",
-                    value = maskIfPrivate(masked, amountToman(animatedDebt)),
-                    valueColor = AppGoldInk,
-                    big = true,
-                )
-            }
-            LoanSummaryDivider()
-            PrivacyCrossfade(privacyMode) { masked ->
-                LoanSummaryRow(
-                    label = "قسطِ ماهانه",
-                    value = maskIfPrivate(masked, amountToman(animatedMonthly)),
-                    valueColor = AppPrimaryInk,
-                )
-            }
-            // «تا آزادیِ کامل» - بلندترین وامِ بازه؛ عددِ اقساطِ باقی‌مانده‌ی همون.
-            val monthsLeft = remember(loans) { loans.maxOfOrNull { it.n - it.paidCount } ?: 0 }
-            if (monthsLeft > 0) {
-                LoanSummaryDivider()
-                Column(modifier = Modifier.fillMaxWidth()) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                if (overdueCount > 0) {
                     Text(
-                        "تا آزادیِ کامل",
-                        color = AppGoldInk.copy(alpha = 0.65f),
-                        fontSize = 10.5.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                    )
-                    Text(
-                        "${toFa(monthsLeft)} ماه",
-                        color = AppGoldInk,
-                        fontSize = 13.sp,
+                        "${toFa(overdueCount)} قسطِ معوق",
+                        color = AppDangerInk,
+                        fontSize = 9.5.sp,
                         fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(top = 2.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppDangerPill)
+                            .padding(horizontal = 9.dp, vertical = 3.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    "${toFa(paidPct)}٪ پرداخت شده",
+                    color = AppGoldInk.copy(alpha = 0.75f),
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Black,
+                )
+            }
+            Column(modifier = Modifier.fillMaxWidth().padding(top = 9.dp)) {
+                Text(
+                    "قسطِ این ماه",
+                    color = AppGoldInk.copy(alpha = 0.65f),
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Black,
+                )
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        "${maskIfPrivate(masked, amountToman(animatedMonthly))} تومان",
+                        color = AppGoldInk,
+                        fontSize = 25.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-0.4).sp,
                     )
                 }
             }
-            // مورد ۱۹: فقط وقتی واقعاً چیزی معوقه نشون داده می‌شه - وگرنه برای اکثرِ کاربرها
-            // (که عقب نیستن) یه ردیفِ همیشگیِ صفرِ بی‌فایده می‌شد.
-            if (totalOverdue > 0) {
-                val animatedOverdue = countUpDouble(totalOverdue)
-                LoanSummaryDivider()
-                PrivacyCrossfade(privacyMode) { masked ->
-                    LoanSummaryRow(
-                        // تعداد در خودِ برچسب می‌آید، نه ردیفِ جدا - یک ردیفِ دیگر همان
-                        // هدرِ شلوغی است که کاربر شکایتش را کرد.
-                        label = if (overdueCount > 0) "${toFa(overdueCount)} قسطِ معوق" else "اقساطِ معوق",
-                        value = maskIfPrivate(masked, amountToman(animatedOverdue)),
-                        valueColor = AppDangerInk,
+            // نوارِ پیشرفت جای خطِ جداکننده - هم فاصله می‌سازد هم حرف می‌زند.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp)
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AppGoldInk.copy(alpha = 0.22f)),
+            ) {
+                if (paidPct > 0) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(paidPct / 100f)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppGoldInk),
                     )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
+            ) {
+                Column {
+                    Text(
+                        "ماندهٔ کل",
+                        color = AppGoldInk.copy(alpha = 0.65f),
+                        fontSize = 8.5.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            maskIfPrivate(masked, amountToman(animatedDebt)),
+                            color = AppGoldInk,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(top = 1.dp),
+                        )
+                    }
+                }
+                if (monthsLeft > 0) {
+                    Column {
+                        Text(
+                            "تا آزادی",
+                            color = AppGoldInk.copy(alpha = 0.65f),
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                        Text(
+                            "${toFa(monthsLeft)} ماه",
+                            color = AppGoldInk,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(top = 1.dp),
+                        )
+                    }
+                }
+                // مبلغِ معوق فقط وقتی واقعاً هست - وگرنه ستونِ صفرِ همیشگی.
+                if (totalOverdue > 0) {
+                    Column {
+                        Text(
+                            "معوق",
+                            color = AppDangerInk.copy(alpha = 0.75f),
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                        PrivacyCrossfade(privacyMode) { masked ->
+                            Text(
+                                maskIfPrivate(masked, amountToman(totalOverdue)),
+                                color = AppDangerInk,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black,
+                                modifier = Modifier.padding(top = 1.dp),
+                            )
+                        }
+                    }
                 }
             }
         }
