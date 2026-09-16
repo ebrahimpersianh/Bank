@@ -13,6 +13,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -83,6 +84,9 @@ fun AddEditAccountScreen(
         mutableStateOf(existing?.initialBalance?.toLong()?.let { rialToToman(it) }?.toString() ?: "")
     }
     var error by remember { mutableStateOf<String?>(null) }
+    // همه‌ی حساب‌های دیگر - برای چکِ یکتاییِ سرشماره و شماره‌ی کارت. خودِ حسابِ در حالِ
+    // ویرایش بیرون می‌ماند، وگرنه ویرایشِ بی‌تغییر خطا می‌دهد.
+    val otherAccounts = viewModel.accounts.collectAsState().value.filter { it.id != existing?.id }
     var showSmsSenderPicker by remember { mutableStateOf(false) }
 
     // ⚠️ فرم هیچ راهِ خروجی در دسترس نداشت: «انصراف» تهِ یک فرمِ هفت‌کارتی بود و بازگشتِ
@@ -230,6 +234,18 @@ fun AddEditAccountScreen(
                         singleLine = true,
                     )
                 }
+                // فریمِ `74c` بندِ ۳: تشخیصِ خودکار کارِ برنامه است و باید **دیده شود** که
+                // کار کرده. بی این، کاربر نمی‌داند اسمی که در فیلد نشسته را خودش زده یا
+                // برنامه از شماره‌ی کارت حدس زده - و اگر حدس غلط بود، نمی‌داند که
+                // می‌تواند اصلاحش کند.
+                if (bankName.isNotBlank() && bankName == lastAutoDetected) {
+                    Text(
+                        "از شماره‌ی کارت تشخیص داده شد - اگر درست نیست، عوضش کن.",
+                        color = AppPrimary,
+                        fontSize = 10.sp,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
             }
         }
         item {
@@ -259,7 +275,13 @@ fun AddEditAccountScreen(
         }
         } // پایانِ بخشِ مخصوصِ «کارت بانکی» - منبعِ دیگر شماره‌کارت/بانک/سرشماره نداره.
         item {
-            AppCard(label = "موجودی اولیه") {
+            // 🚨 یادداشتِ بسته (بندِ ۷) می‌گوید «موجودیِ اولیه یعنی موجودیِ همین حالا» -
+            // ولی کد خلافش را می‌گوید و **کد درست است**: `currentBalance` این رقم را
+            // به‌علاوه‌ی همه‌ی تراکنش‌ها حساب می‌کند، پس اگر کاربر رقمِ امروز را بزند
+            // تراکنش‌های گذشته دوباره روی آن سوار می‌شوند.
+            //
+            // برچسب هم همین را بگوید: «اولیه» مبهم است، «روزِ شروع» نیست.
+            AppCard(label = "موجودیِ روزِ شروع") {
                 OutlinedTextField(
                     value = initialBalanceText,
                     onValueChange = { initialBalanceText = cleanNum(it) },
@@ -282,19 +304,27 @@ fun AddEditAccountScreen(
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
-                // موجودیِ اولیه رقمِ شروع است، نه رقمِ امروز - موجودیِ فعلی از این رقم به‌علاوه‌ی
-                // تراکنش‌ها حساب می‌شه، پس عوض‌کردنش کلِ تاریخچه رو جابه‌جا می‌کنه. برای «رقمِ
-                // امروزم غلطه» راهِ درست یه تراکنشِ تنظیمیه، نه دست‌زدن به رقمِ شروع.
-                if (existing != null) {
-                    Text(
+                // 🚨 این هشدار فقط `if (existing != null)` بود - یعنی حسابِ **تازه** هیچ
+                // توضیحی نمی‌گرفت، دقیقاً جایی که کاربر برای اولین بار باید تصمیم بگیرد چه
+                // عددی بزند. حسابِ موجود آن رقم را از قبل دارد و فقط ویرایشش می‌کند؛ حسابِ
+                // تازه از صفر تصمیم می‌گیرد. جای هشدار برعکس بود.
+                //
+                // دو متن، چون دو خطرِ متفاوت است: تازه «چه عددی بزنم»، موجود «عوض‌کردنش چه
+                // می‌کند».
+                Text(
+                    if (existing == null) {
+                        "موجودیِ روزی که این حساب را شروع می‌کنی. موجودیِ امروز از این رقم " +
+                            "به‌علاوه‌ی تراکنش‌ها حساب می‌شود - پس اگر رقمِ امروز را بزنی، " +
+                            "تراکنش‌های گذشته دوباره روی آن سوار می‌شوند."
+                    } else {
                         "این رقمِ شروعِ حساب است. موجودیِ امروز از این رقم به‌علاوه‌ی تراکنش‌ها " +
-                            "حساب می‌شود، پس عوض‌کردنش کلِ تاریخچه را جابه‌جا می‌کند.",
-                        color = AppMuted,
-                        fontSize = 10.5.sp,
-                        lineHeight = 18.sp,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
-                }
+                            "حساب می‌شود، پس عوض‌کردنش کلِ تاریخچه را جابه‌جا می‌کند."
+                    },
+                    color = AppMuted,
+                    fontSize = 10.5.sp,
+                    lineHeight = 18.sp,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
             }
         }
         if (error != null) {
@@ -311,6 +341,18 @@ fun AddEditAccountScreen(
                         error = when {
                             name.trim().isEmpty() -> if (isBank) "اسم حساب‌کتاب رو وارد کن" else "اسم منبع رو وارد کن"
                             isBank && bankName.trim().isEmpty() -> "اسم بانک رو وارد کن"
+                            // 🚨 سرشماره‌ی تکراری چک نمی‌شد: دو حساب با یک سرشماره یعنی
+                            // `BankSmsReceiver` نمی‌داند تراکنش را روی **کدام** حساب
+                            // بنشاند - همان جنسِ باگِ نامِ تکراریِ دسته، با همان ریشه
+                            // (رشته‌ای که کلید است و یکتایی‌اش چک نمی‌شود).
+                            isBank && smsSenderText.isNotBlank() && otherAccounts.any {
+                                it.smsSender?.equals(smsSenderText.trim(), ignoreCase = true) == true
+                            } -> "این سرشماره روی حسابِ دیگری ثبت شده"
+                            // و شماره‌ی کارتِ تکراری یعنی دو ردیفِ یک کارت در فهرستِ
+                            // حساب‌ها، که کاربر نمی‌تواند از هم تشخیصشان بدهد.
+                            isBank && cardNumberText.isNotBlank() && otherAccounts.any {
+                                it.cardNumber == cardNumberText.trim()
+                            } -> "این شماره‌ی کارت روی حسابِ دیگری ثبت شده"
                             else -> null
                         }
                         if (error == null) {

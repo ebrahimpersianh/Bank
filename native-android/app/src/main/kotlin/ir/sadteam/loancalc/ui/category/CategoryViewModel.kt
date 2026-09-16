@@ -4,15 +4,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.CategoryEntry
 import ir.sadteam.loancalc.data.CategoryRepository
+import ir.sadteam.loancalc.data.ParsingRuleRepository
 import ir.sadteam.loancalc.data.db.CustomCategoryEntity
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -22,6 +25,7 @@ import kotlinx.coroutines.launch
 class CategoryViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
+    private val parsingRuleRepository: ParsingRuleRepository,
 ) : ViewModel() {
     val expenseCategories: StateFlow<List<CategoryEntry>> = categoryRepository.orderedCategories(TransactionType.WITHDRAWAL)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -31,6 +35,27 @@ class CategoryViewModel @Inject constructor(
 
     val customCategories: StateFlow<List<CustomCategoryEntity>> = categoryRepository.observeCustomCategories()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * جمعِ **ماهِ جاری** به ازای نامِ هر دسته، ریال - فریمِ `74a` بندِ ۳.
+     *
+     * کارتِ راهنمای پایینِ صفحه از این عدد حرف می‌زد ولی هیچ ردیفی نشانش نمی‌داد، و این
+     * تنها عددی است که مدیریتِ دسته را از یک فهرستِ اسم به یک ابزار تبدیل می‌کند: کاربر
+     * می‌خواهد بداند کدام دسته‌ی دلخواهش واقعاً استفاده می‌شود.
+     *
+     * ⚠️ زیرمجموعه‌ها **جمع نمی‌شوند** در والد. گزارش‌ها این کار را می‌کنند (`36b`) ولی
+     * این‌جا نه: ردیفِ والد و ردیفِ زیرمجموعه پشتِ‌هم‌اند، و اگر والد جمعِ خودش+بچه‌ها را
+     * نشان بدهد، دو عدد جلوی چشم کاربر جمع نمی‌خوانند.
+     */
+    val monthTotals: StateFlow<Map<String, Double>> = accountRepository.observeTransactions()
+        .map { all ->
+            val today = JalaliCalendar.today()
+            all.asSequence()
+                .filter { it.year == today.y && it.month == today.m }
+                .groupBy { it.category }
+                .mapValues { (_, rows) -> rows.sumOf { it.amount } }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     fun categoriesFor(type: TransactionType): List<CategoryEntry> =
         if (type == TransactionType.DEPOSIT) incomeCategories.value else expenseCategories.value
@@ -49,9 +74,50 @@ class CategoryViewModel @Inject constructor(
     suspend fun childCountOf(entity: CustomCategoryEntity): Int =
         categoryRepository.childCountOf(entity)
 
-    /** تغییرِ نام؛ زیرمجموعه‌ها هم‌قدم به‌روز می‌شوند (رجوع کن به مخزن). */
+    /**
+     * تغییرِ نام. زیرمجموعه‌ها را مخزن هم‌قدم به‌روز می‌کند، و **تراکنش‌ها را این‌جا**.
+     *
+     * 🚨 باگی که رفع شد: `renameCustomCategory`ِ مخزن فقط ردیفِ دسته و `parentName`ِ
+     * بچه‌ها را عوض می‌کند و به تراکنش‌ها دست نمی‌زند. ولی
+     * `AccountTransactionEntity.category` خودِ **نام** را ذخیره می‌کند - پس هر تغییرِ نام
+     * تمامِ تراکنش‌های گذشته‌ی آن دسته را **بی‌دسته** می‌کرد.
+     *
+     * یعنی کاربری که یک غلطِ املایی را اصلاح می‌کرد، بی هیچ هشداری گزارشِ چند ماهش را
+     * خالی می‌کرد. `deleteCustomCategory` برای همین خطر یک دیالوگِ کاملِ «به کدام دسته
+     * منتقل شود» دارد؛ تغییرِ نام همان عمل روی همان کلید است و هیچ‌چیز نداشت.
+     *
+     * ترتیب مهم است: **اول** تراکنش‌ها، بعد خودِ دسته. برعکسش اگر بین دو مرحله چیزی
+     * بشکند، دسته‌ی تازه بی تراکنش می‌مانَد و تراکنش‌ها به نامی اشاره می‌کنند که نیست.
+     */
     fun renameCustomCategory(entity: CustomCategoryEntity, newName: String) {
-        viewModelScope.launch { categoryRepository.renameCustomCategory(entity, newName) }
+        viewModelScope.launch {
+            // ⚠️ رفعِ طراح فقط تراکنش‌ها را می‌گرفت. همان ریشه **سه جای دیگر** هم دارد و
+            // هر سه بی‌صدا خراب می‌کنند: بودجه (سقف دیگر هیچ خرجی نمی‌شمارد و کاربر فکر
+            // می‌کند رعایتش کرده)، پرداختِ تکراری، و قاعده‌ی تشخیصِ پیامک (تراکنشِ خودکارِ
+            // بعدی بی‌دسته می‌نشیند). رجوع کن به `renameCategoryEverywhere`.
+            accountRepository.renameCategoryEverywhere(entity.name, newName)
+            parsingRuleRepository.getRules()
+                .filter { it.category == entity.name }
+                .forEach { parsingRuleRepository.save(it.copy(category = newName)) }
+            categoryRepository.renameCustomCategory(entity, newName)
+        }
+    }
+
+    /**
+     * آیا دسته‌ای با این نام از قبل هست؟ - فرمِ ساخت و دیالوگِ تغییرِ نام هر دو باید
+     * بپرسند.
+     *
+     * 🚨 هیچ‌کدام نمی‌پرسیدند. چون **نام کلیدِ تراکنش‌هاست**، دو دسته‌ی هم‌نام یعنی
+     * تراکنش‌هایشان قابلِ تفکیک نیست و در دونات یکی می‌شوند؛ و تغییرِ نام به نامِ یک
+     * دسته‌ی موجود، دو دسته را **بی اجازه ادغام** می‌کند.
+     *
+     * دسته‌های ثابتِ برنامه هم حساب می‌شوند (`categoriesFor`)، نه فقط ردیف‌های دلخواه -
+     * وگرنه کاربر می‌تواند دسته‌ای هم‌نامِ «خوراک»ِ ثابت بسازد.
+     */
+    fun nameTaken(name: String, type: TransactionType, excluding: String? = null): Boolean {
+        val target = name.trim()
+        if (target.isBlank()) return false
+        return categoriesFor(type).any { it.name != excluding && it.name.equals(target, ignoreCase = true) }
     }
 
     fun deleteCustomCategory(entity: CustomCategoryEntity) {

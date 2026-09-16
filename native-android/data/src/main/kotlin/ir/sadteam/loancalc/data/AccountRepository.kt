@@ -208,6 +208,31 @@ class AccountRepository(
         )
     }
 
+    /**
+     * 🚨 نامِ دسته کلیدِ **چهار** جدول است، نه فقط تراکنش‌ها.
+     *
+     * بخشِ ۷۴ طراح یک باگ گرفت (تغییرِ نامِ دسته تراکنش‌ها را بی‌دسته می‌کرد) و رفعش را
+     * فقط روی تراکنش‌ها گذاشت. ولی همان ریشه دو جای دیگر هم دارد و هر دو **بی‌صدا**
+     * خراب می‌کنند:
+     * - `BudgetEntity.categoryName` → بودجه به دسته‌ای اشاره می‌کند که دیگر نیست، پس
+     *   سقف دیگر هیچ خرجی را نمی‌شمارد و کاربر فکر می‌کند بودجه‌اش را رعایت کرده.
+     * - `RecurringPaymentEntity.categoryName` → پرداختِ تکراریِ بعدی بی‌دسته ثبت می‌شود.
+     *
+     * (جای چهارم `ParsingRuleEntity.category` است که مخزنِ خودش را دارد و در
+     * `CategoryViewModel` هم‌قدم به‌روز می‌شود.)
+     */
+    suspend fun renameCategoryEverywhere(oldName: String, newName: String) {
+        transactionDao.getAll()
+            .filter { it.category == oldName }
+            .forEach { transactionDao.upsert(it.copy(category = newName)) }
+        budgetDao.getAll()
+            .filter { it.categoryName == oldName }
+            .forEach { budgetDao.upsert(it.copy(categoryName = newName)) }
+        recurringPaymentDao.getAll()
+            .filter { it.categoryName == oldName }
+            .forEach { recurringPaymentDao.upsert(it.copy(categoryName = newName)) }
+    }
+
     suspend fun deleteBudget(budget: BudgetEntity) {
         budgetDao.delete(budget)
     }

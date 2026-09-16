@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.TransactionType
+import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.categoryIconChoices
 import ir.sadteam.loancalc.data.db.CustomCategoryEntity
@@ -59,6 +60,11 @@ import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
+import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -67,6 +73,9 @@ import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
+
+/** ذخیره و محاسبه ریال، نمایش تومان - قاعده‌ی واحدِ برنامه. */
+private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
 
 private val categoryColorChoices = listOf(
     Color(0xFFE53935), Color(0xFFF4511E), Color(0xFFFB8C00), Color(0xFFF9A825),
@@ -87,16 +96,27 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
     var showAddForm by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<CustomCategoryEntity?>(null) }
     var renaming by remember { mutableStateOf<CustomCategoryEntity?>(null) }
+    val monthTotals by viewModel.monthTotals.collectAsState()
+    // مبلغِ ماهِ هر دسته مبلغ است، پس از حالتِ خصوصی عبور می‌کند.
+    val privacyMode = LocalPrivacyMode.current
 
     // ⚠️ **خطرناک‌ترین کارِ این صفحه**: تراکنش‌های گذشته به دسته وصل‌ان. اگه دسته تراکنش
     // داشته باشه، دیالوگ **دسته‌ی مقصد می‌پرسه**، نه فقط تایید (قاعده‌ی صریحِ طراح) -
     // وگرنه اون تراکنش‌ها بی‌دسته می‌مونن و کاربر بعداً گمشون می‌کنه.
     renaming?.let { entity ->
         var childCount by remember(entity.name) { mutableStateOf(0) }
-        LaunchedEffect(entity.name) { childCount = viewModel.childCountOf(entity) }
+        var txCount by remember(entity.name) { mutableStateOf<Int?>(null) }
+        LaunchedEffect(entity.name) {
+            childCount = viewModel.childCountOf(entity)
+            txCount = viewModel.transactionCount(entity.name)
+        }
         RenameCategoryDialog(
             entity = entity,
             childCount = childCount,
+            transactionCount = txCount,
+            // فریمِ `74b`: حالا که تراکنش‌ها هم‌قدم مهاجرت می‌کنند، تکراری‌بودنِ نام تنها
+            // چیزی است که می‌تواند کار را خراب کند - و ادغامِ بی‌اجازه‌ی دو دسته است.
+            isTaken = { candidate -> viewModel.nameTaken(candidate, type, excluding = entity.name) },
             onRename = { newName -> viewModel.renameCustomCategory(entity, newName); renaming = null },
             onDismiss = { renaming = null },
         )
@@ -211,6 +231,7 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
             item {
                 AddCategoryForm(
                     parentChoices = categories.map { it.name },
+                    isTaken = { candidate -> viewModel.nameTaken(candidate, type) },
                     onCancel = { showAddForm = false },
                     onSubmit = { name, color, iconKey, parentName ->
                         viewModel.addCustomCategory(name, color, iconKey, type, parentName)
@@ -225,8 +246,22 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
             // زیرمجموعه‌ها (تسکِ #32) با یه تورفتگی و نامِ والد زیرشون نشون داده می‌شن - ساختارِ
             // خودِ لیست تخت می‌مونه تا جابه‌جایی/ترتیبِ دستیِ موجود دست‌نخورده کار کنه.
             val parentName = row?.parentName
+            val isChild = !parentName.isNullOrBlank()
             AppCard(modifier = Modifier.animateItem()) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    // فریمِ `74a` بندِ ۱: تورفتگی + خطِ عمودیِ نازک جای خطِ «زیرمجموعه‌ی X».
+                    //
+                    // آن خط نامِ والد را در هر ردیف تکرار می‌کرد و **خطِ دومِ ردیف** را
+                    // می‌گرفت - جایی که مبلغِ ماه باید باشد. و چون زیرمجموعه بلافاصله زیرِ
+                    // والد است، تورفتگی همان را بی هیچ کلمه‌ای می‌گوید.
+                    if (isChild) {
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .size(width = 2.dp, height = 22.dp)
+                                .background(AppLineRow, CircleShape),
+                        )
+                    }
                     Box(
                         modifier = Modifier
                             .size(30.dp)
@@ -237,19 +272,36 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                     }
                     Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
                         Text(cat.name, color = AppText, fontSize = 13.sp)
-                        if (!parentName.isNullOrBlank()) {
-                            Text("زیرمجموعه‌ی $parentName", color = AppMuted, fontSize = 10.5.sp)
+                        // فریمِ `74a` بندِ ۳: مبلغِ ماهِ جاری - از `viewModel.monthTotals`.
+                        //
+                        // کارتِ راهنمای پایینِ صفحه از این عدد حرف می‌زد ولی هیچ ردیفی
+                        // نشانش نمی‌داد.
+                        monthTotals[cat.name]?.takeIf { it > 0 }?.let { total ->
+                            PrivacyCrossfade(privacyMode) { masked ->
+                                Text(
+                                    "${maskIfPrivate(masked, amountToman(total))} تومان",
+                                    color = AppMuted,
+                                    fontSize = 9.5.sp,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                )
+                            }
                         }
                     }
-                    IconButton(onClick = { viewModel.moveUp(type, cat.name) }, enabled = index > 0) {
-                        Icon(Icons.Filled.ArrowUpward, contentDescription = "جابه‌جایی به بالا", tint = if (index > 0) AppText else AppMuted)
-                    }
-                    IconButton(onClick = { viewModel.moveDown(type, cat.name) }, enabled = index < categories.lastIndex) {
-                        Icon(
-                            Icons.Filled.ArrowDownward,
-                            contentDescription = "جابه‌جایی به پایین",
-                            tint = if (index < categories.lastIndex) AppText else AppMuted,
-                        )
+                    // دو تپِ جابه‌جایی از زیرمجموعه **حذف می‌شوند**: ترتیب داخلِ والد معنا
+                    // دارد نه در فهرستِ تخت (`moveUp` روی فهرستِ تخت کار می‌کند و
+                    // زیرمجموعه را از زیرِ والدش بیرون می‌برد)، و چهار آیکون در یک ردیف
+                    // هدفِ لمسیِ ۴۴ را می‌شکند.
+                    if (!isChild) {
+                        IconButton(onClick = { viewModel.moveUp(type, cat.name) }, enabled = index > 0) {
+                            Icon(Icons.Filled.ArrowUpward, contentDescription = "جابه‌جایی به بالا", tint = if (index > 0) AppText else AppMuted)
+                        }
+                        IconButton(onClick = { viewModel.moveDown(type, cat.name) }, enabled = index < categories.lastIndex) {
+                            Icon(
+                                Icons.Filled.ArrowDownward,
+                                contentDescription = "جابه‌جایی به پایین",
+                                tint = if (index < categories.lastIndex) AppText else AppMuted,
+                            )
+                        }
                     }
                     if (isCustom) {
                         // تغییرِ نام تا حالا اصلاً راهی نداشت: تنها راهِ اصلاحِ یک غلطِ املایی
@@ -282,6 +334,8 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
 @Composable
 private fun AddCategoryForm(
     parentChoices: List<String>,
+    /** نامِ تکراری دو دسته‌ی هم‌نام می‌سازد و نام کلیدِ تراکنش‌هاست - فریمِ `74b`. */
+    isTaken: (String) -> Boolean,
     onCancel: () -> Unit,
     onSubmit: (name: String, color: Color, iconKey: String, parentName: String?) -> Unit,
 ) {
@@ -291,6 +345,7 @@ private fun AddCategoryForm(
     // null یعنی «دسته‌ی سطحِ اول» - حالتِ پیش‌فرض و همون رفتارِ قبلی.
     var parentName by remember { mutableStateOf<String?>(null) }
 
+    val taken = isTaken(name)
     AppCard(label = "دسته‌بندیِ جدید") {
         OutlinedTextField(
             value = name,
@@ -298,6 +353,12 @@ private fun AddCategoryForm(
             label = { Text("اسم") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            isError = taken,
+            supportingText = if (taken) {
+                { Text("دسته‌ای با این نام هست", color = AppDanger, fontSize = 11.sp) }
+            } else {
+                null
+            },
         )
         Text("رنگ", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 10.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
@@ -348,7 +409,9 @@ private fun AddCategoryForm(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
             GradientButton(
-                onClick = { if (name.isNotBlank()) onSubmit(name.trim(), selectedColor, selectedIconKey, parentName) },
+                onClick = { if (name.isNotBlank() && !taken) onSubmit(name.trim(), selectedColor, selectedIconKey, parentName) },
+                // دکمه‌ای که با تپ هیچ نمی‌کند، خودش باید خاموش باشد.
+                enabled = name.isNotBlank() && !taken,
                 modifier = Modifier.weight(1f),
             ) { Text("افزودن") }
             OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("انصراف") }
@@ -365,11 +428,15 @@ private fun AddCategoryForm(
 private fun RenameCategoryDialog(
     entity: CustomCategoryEntity,
     childCount: Int,
+    /** `null` = هنوز شمرده نشده. */
+    transactionCount: Int?,
+    isTaken: (String) -> Boolean,
     onRename: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var name by remember { mutableStateOf(entity.name) }
-    val valid = name.isNotBlank() && name.trim() != entity.name
+    val taken = isTaken(name)
+    val valid = name.isNotBlank() && name.trim() != entity.name && !taken
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = AppSurface,
@@ -381,10 +448,28 @@ private fun RenameCategoryDialog(
                     onValueChange = { name = it },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    isError = taken,
                 )
+                if (taken) {
+                    Text(
+                        "دسته‌ای با این نام هست - دو دسته با هم ادغام می‌شن.",
+                        color = AppDanger,
+                        fontSize = 11.sp,
+                    )
+                }
+                // فریمِ `74b`: دو خطِ خبر، نه هشدار. تا وقتی تراکنش‌ها مهاجرت نمی‌کردند
+                // این کار واقعاً خراب می‌کرد و متن باید هشدار می‌داد؛ حالا که بی‌خطر شده،
+                // متن باید **اطمینان** بدهد - وگرنه کاربر از کارِ درست می‌ترسد.
+                if ((transactionCount ?: 0) > 0) {
+                    Text(
+                        "${toFa(transactionCount ?: 0)} تراکنش با نامِ تازه ذخیره می‌شن.",
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                    )
+                }
                 if (childCount > 0) {
                     Text(
-                        "${toFa(childCount)} زیرمجموعه هم به نامِ تازه وصل می‌شن.",
+                        "${toFa(childCount)} زیرمجموعه هم وصل می‌مونن.",
                         color = AppMuted,
                         fontSize = 11.sp,
                     )
