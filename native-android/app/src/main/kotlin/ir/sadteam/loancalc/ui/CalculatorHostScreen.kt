@@ -67,7 +67,11 @@ private enum class CalcMode(val label: String) {
  * حالتِ آخر عمداً **ذخیره نمی‌شه** (خواسته‌ی صریحِ طرح): هر بار ورود با `INSTALLMENT` شروع می‌شه.
  */
 @Composable
-fun CalculatorHostScreen(onCalculated: (BankLoanOutcome) -> Unit) {
+fun CalculatorHostScreen(
+    onCalculated: (BankLoanOutcome) -> Unit,
+    /** رجوع کن به `BankLoanScreen.onAddManualLoan`. */
+    onAddManualLoan: () -> Unit = {},
+) {
     var mode by remember { mutableStateOf(CalcMode.INSTALLMENT) }
 
     // 🚨 فریمِ `70a`: این قبلاً از `onCalculated` پر می‌شد، یعنی **فقط با تپِ دکمه**.
@@ -125,6 +129,7 @@ fun CalculatorHostScreen(onCalculated: (BankLoanOutcome) -> Unit) {
             when (mode) {
                 CalcMode.INSTALLMENT -> BankLoanScreen(
                     onCalculated = onCalculated,
+                    onAddManualLoan = onAddManualLoan,
                     // هیروِ زنده هر بار که عددش عوض می‌شود این را صدا می‌زند؛ `null` یعنی
                     // ورودی ناقص یا ترکیبِ نامعتبر است و هیرو ساخته نشده.
                     onLiveInstallment = { liveInstallment = it },

@@ -1318,12 +1318,12 @@ private fun AppTourOverlay(
  * منطقِ فرم↔نتیجه و حفظِ حالتِ فرم عیناً همون قبلیه.
  */
 @Composable
-private fun CalculatorHostTab() {
-    BankLoanTab(useCalculatorHost = true)
+private fun CalculatorHostTab(onAddManualLoan: () -> Unit = {}) {
+    BankLoanTab(useCalculatorHost = true, onAddManualLoan = onAddManualLoan)
 }
 
 @Composable
-private fun BankLoanTab(useCalculatorHost: Boolean = false) {
+private fun BankLoanTab(useCalculatorHost: Boolean = false, onAddManualLoan: () -> Unit = {}) {
     var loanOutcome by remember { mutableStateOf<BankLoanOutcome?>(null) }
     // نگه‌دارنده‌ی حالتِ ذخیره‌پذیر (SaveableStateHolder): وقتی loanOutcome پر می‌شه، BankLoanScreen
     // کاملاً از کامپوزیشن بیرون می‌ره (جایگزینِ ResultScreen می‌شه) - remember/rememberSaveableِ
@@ -1351,9 +1351,12 @@ private fun BankLoanTab(useCalculatorHost: Boolean = false) {
         if (outcome == null) {
             formStateHolder.SaveableStateProvider("bankLoanForm") {
                 if (useCalculatorHost) {
-                    CalculatorHostScreen(onCalculated = { loanOutcome = it })
+                    CalculatorHostScreen(
+                        onCalculated = { loanOutcome = it },
+                        onAddManualLoan = onAddManualLoan,
+                    )
                 } else {
-                    BankLoanScreen(onCalculated = { loanOutcome = it })
+                    BankLoanScreen(onCalculated = { loanOutcome = it }, onAddManualLoan = onAddManualLoan)
                 }
             }
         } else {
@@ -1393,6 +1396,10 @@ private fun LoanTab(
     onDeepLinkConsumed: () -> Unit,
 ) {
     var subTab by remember { mutableStateOf(LoanSubTab.MY_LOANS) }
+    // خواسته‌ی کاربر (۲۶ شهریور): دکمه‌ی «+»ِ «وام‌های من» دیگر مستقیم فرمِ دستی را باز نمی‌کند،
+    // **محاسبه‌گر** را باز می‌کند؛ و «افزودنِ وامِ دستی» به تهِ همان محاسبه‌گر رفت. این پرچم
+    // همان مسیرِ برگشت است: محاسبه‌گر می‌گوید «فرمِ دستی را باز کن» و تبِ «وام‌های من» بازش می‌کند.
+    var openManualAdd by remember { mutableStateOf(false) }
     LaunchedEffect(requestedSubTab) {
         requestedSubTab?.let { subTab = it }
     }
@@ -1471,9 +1478,17 @@ private fun LoanTab(
         }
         Box(modifier = Modifier.weight(1f)) {
             when (subTab) {
-                LoanSubTab.CALCULATOR -> CalculatorHostTab()
+                LoanSubTab.CALCULATOR -> CalculatorHostTab(
+                    onAddManualLoan = {
+                        openManualAdd = true
+                        subTab = LoanSubTab.MY_LOANS
+                    },
+                )
                 LoanSubTab.DEPOSIT -> DepositScreen()
                 LoanSubTab.MY_LOANS -> MyLoansScreen(
+                    onOpenCalculator = { subTab = LoanSubTab.CALCULATOR },
+                    openManualAddSignal = openManualAdd,
+                    onManualAddSignalConsumed = { openManualAdd = false },
                     onManualAddFabPositioned = onManualAddFabPositioned,
                     onBottomBarVisibilityChanged = onBottomBarVisibilityChanged,
                     deepLinkLoanId = deepLinkLoanId,

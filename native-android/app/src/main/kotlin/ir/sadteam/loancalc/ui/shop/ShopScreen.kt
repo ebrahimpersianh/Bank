@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.shop
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,11 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.ui.res.painterResource
+import ir.sadteam.loancalc.R
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -161,7 +167,16 @@ fun ShopScreen(onBack: () -> Unit, viewModel: ShopViewModel = hiltViewModel()) {
             val shopItem = icons[index]
             // 🚨 لامبدای انتهایی به **آخرین** پارامتر می‌چسبد و آخرینِ `ShopRow` همان
             // `leading` است، نه `onConfirm` - پس نامش صریح نوشته می‌شود (بیلدِ ۵۴۱).
-            ShopRow(shopItem, stateOf(shopItem), balance, viewModel::activate, onConfirm = { confirming = it })
+            ShopRow(
+                shopItem,
+                stateOf(shopItem),
+                balance,
+                viewModel::activate,
+                onConfirm = { confirming = it },
+                // خواسته‌ی کاربر (۲۶ شهریور): «کنارِ هرکدام یک عکسی چیزی باشد که معلوم شود
+                // چیست». برای آیکونِ برنامه، **خودِ آیکون** درست‌ترین پیش‌نمایش است.
+                leading = { AppIconPreview(shopItem.id) },
+            )
         }
         // بندِ ۵ی `60d`: بی این ردیف، آیکونِ پیش‌فرض بی‌راهِ‌بازگشت است - «کیفِ پول» در
         // کاتالوگ نیست چون فروشی نیست، پس ردیفی هم ندارد که فعالش کند.
@@ -176,7 +191,14 @@ fun ShopScreen(onBack: () -> Unit, viewModel: ShopViewModel = hiltViewModel()) {
             val shopItem = rest[index]
             // 🚨 لامبدای انتهایی به **آخرین** پارامتر می‌چسبد و آخرینِ `ShopRow` همان
             // `leading` است، نه `onConfirm` - پس نامش صریح نوشته می‌شود (بیلدِ ۵۴۱).
-            ShopRow(shopItem, stateOf(shopItem), balance, viewModel::activate, onConfirm = { confirming = it })
+            ShopRow(
+                shopItem,
+                stateOf(shopItem),
+                balance,
+                viewModel::activate,
+                onConfirm = { confirming = it },
+                leading = { GenericItemPreview(shopItem) },
+            )
         }
     }
     }
@@ -362,4 +384,55 @@ private fun Pill(text: String, bg: Color, ink: Color) {
             .background(bg)
             .padding(horizontal = 11.dp, vertical = 7.dp),
     )
+}
+
+
+/**
+ * پیش‌نمایشِ آیکونِ برنامه - **خودِ فایلِ آیکون**، نه یک نمادِ جایگزین.
+ *
+ * دو لایه‌ی `adaptive-icon` دستی روی هم می‌نشینند (پس‌زمینه و پیش‌زمینه)، چون
+ * `mipmap-anydpi-v26` را `painterResource` مستقیم نمی‌کشد.
+ *
+ * ⚠️ همیشه **پله‌ی صفر** است، حتی اگر آیکونِ فعالِ کاربر پژمرده باشد (`49d`).
+ */
+@Composable
+private fun AppIconPreview(itemId: String) {
+    val (bg, fg) = when (itemId) {
+        "icon:coin" -> R.drawable.ic_launcher_coin_background to R.drawable.ic_launcher_coin_foreground
+        "icon:letter" -> R.drawable.ic_launcher_letter_background to R.drawable.ic_launcher_letter_foreground
+        "icon:piggy" -> R.drawable.ic_launcher_piggy_background to R.drawable.ic_launcher_piggy_foreground
+        // پیش‌فرض «کیفِ پول» است؛ پیش‌زمینه‌اش PNGِ mipmap است نه وکتورِ drawable.
+        else -> R.drawable.ic_launcher_background to R.mipmap.ic_launcher_foreground
+    }
+    Box(
+        modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(bg),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+        )
+        Image(
+            painter = painterResource(fg),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+/** پیش‌نمایشِ بقیه‌ی قلم‌ها - نمادی که کارِ قلم را می‌گوید، در همان قابِ ۳۸ِ آیکون. */
+@Composable
+private fun GenericItemPreview(item: ShopItem) {
+    val icon = when {
+        item.id.startsWith("coinskin:") -> Icons.Filled.Savings
+        item.id.startsWith("symbolset:") -> Icons.Filled.Category
+        else -> Icons.Filled.WorkspacePremium
+    }
+    Box(
+        modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(AppIconFrame),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = AppMuted, modifier = Modifier.size(19.dp))
+    }
 }

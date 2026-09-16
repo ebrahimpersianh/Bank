@@ -67,6 +67,9 @@ class GamificationRepository(
         /** نشانی که بابتِ **کارهای گذشته** باز شده - بی‌جشن، فقط تو شیتِ جمع‌بندی. */
         const val BADGE_RETRO = "badge_retro"
         const val SPEND_SUBSCRIPTION = "spend_subscription"
+
+        /** شارژِ آزمایشی - جدا نگه داشته می‌شود تا با دستاوردِ واقعیِ کاربر قاطی نشود. */
+        const val TEST_GRANT = "test_grant"
     }
 
     val balance: Flow<Int> = coinDao.observeBalance()
@@ -172,6 +175,20 @@ class GamificationRepository(
     suspend fun unlock(code: String, coins: Int, silent: Boolean = false) {
         val inserted = achievementDao.unlock(AchievementEntity(code, System.currentTimeMillis()))
         if (inserted != -1L) award(if (silent) Type.BADGE_RETRO else Type.BADGE, coins, code)
+    }
+
+    /**
+     * **شارژِ آزمایشیِ سکه** - خواسته‌ی صریحِ کاربر (۲۶ شهریور): «سکه‌ی من را یک میلیون کن
+     * تا همه را تست کنم».
+     *
+     * یک ردیفِ عادیِ دفتر است، پس موجودی همچنان **مشتق** می‌مانَد و هیچ شمارنده‌ای جایی
+     * ذخیره نمی‌شود. `dateKey` ثابت است، یعنی هرچند بار هم زده شود **یک‌بار** می‌نشیند و
+     * موجودی تصادفی بالا نمی‌رود؛ خودِ تابع هم فقط کمبود تا [target] را می‌ریزد.
+     */
+    suspend fun grantTestCoins(target: Int = 1_000_000): Int {
+        val missing = target - balanceNow()
+        if (missing > 0) award(Type.TEST_GRANT, missing, "test-grant")
+        return balanceNow()
     }
 
     private suspend fun award(type: String, amount: Int, dateKey: String): Boolean =

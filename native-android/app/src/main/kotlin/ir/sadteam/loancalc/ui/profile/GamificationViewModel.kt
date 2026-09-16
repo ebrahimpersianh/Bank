@@ -56,6 +56,14 @@ class GamificationViewModel @Inject constructor(
     val achievements: StateFlow<List<AchievementEntity>> = repository.achievements
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /**
+     * شارژِ آزمایشیِ سکه (خواسته‌ی کاربر برای تستِ فروشگاه). یک ردیفِ دفتر با کلیدِ ثابت،
+     * پس چندبار زدن موجودی را بالاتر از سقف نمی‌برد.
+     */
+    fun grantTestCoins(onDone: (Int) -> Unit = {}) {
+        viewModelScope.launch { onDone(repository.grantTestCoins()) }
+    }
+
     /** رویدادهای یک‌باره‌ی جدولِ `20e` - از جایی که واقعاً اتفاق می‌افتن صدا زده می‌شن. */
     /** خرجِ سکه - `refId` کلیدِ ضدِتکراره، پس دوبار زدنِ دکمه دوبار خرج نمی‌کنه. */
     fun spendCoins(amount: Int, refId: String) {

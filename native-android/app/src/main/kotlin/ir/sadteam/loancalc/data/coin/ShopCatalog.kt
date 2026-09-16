@@ -93,9 +93,17 @@ val THEME_CATALOG = listOf(
     ThemePalette("lapis", "لاجورد", dark = 0xFF16275E, primary = 0xFF2F4FC4, light = 0xFF93B0F5, inkLight = 0xFF1E357F),
     ThemePalette("garnet", "انار", dark = 0xFF5E0F20, primary = 0xFFB32943, light = 0xFFF0A3B2, inkLight = 0xFF7C1A2E),
     ThemePalette("turquoise", "فیروزه", dark = 0xFF08484B, primary = 0xFF0B7A7E, light = 0xFF86E0E3, inkLight = 0xFF075254),
-    ThemePalette("copper", "مسی", dark = 0xFF5C2A10, primary = 0xFFB05520, light = 0xFFF0B489, inkLight = 0xFF7A3A16),
+    ThemePalette("copper", "نارنجیِ مسی", dark = 0xFF5C2A10, primary = 0xFFB05520, light = 0xFFF0B489, inkLight = 0xFF7A3A16),
     ThemePalette("aubergine", "بادمجانی", dark = 0xFF3A1648, primary = 0xFF7E3799, light = 0xFFD9A8E8, inkLight = 0xFF56236A),
     ThemePalette("graphite", "دودی", dark = 0xFF1A1F24, primary = 0xFF44525F, light = 0xFFA8B8C6, inkLight = 0xFF2C3640),
+    // چهار تمِ تازه (خواسته‌ی کاربر، ۲۶ شهریور: «چندتا از این‌ها هم بگذار»). همان قاعده‌ی
+    // بالا: روی محورِ فام پخش‌اند، هیچ‌کدام نزدیکِ سبزِ برند یا طلای نشان نیستند، و هر
+    // شش‌تایشان با **سفید** بالای ۴٫۵:۱ کنتراست دارند چون `primary` پُرکنِ دکمه است.
+    // ⚠️ نامشان صریح رنگ را می‌گوید - «مسی» یک‌بار با نامِ فوتبالیست اشتباه گرفته شد.
+    ThemePalette("indigo", "بنفشِ نیلی", dark = 0xFF1E1B4B, primary = 0xFF4338CA, light = 0xFFA5B4FC, inkLight = 0xFF312BA0),
+    ThemePalette("teal", "سبزآبی", dark = 0xFF10302C, primary = 0xFF12796B, light = 0xFF8EE0D2, inkLight = 0xFF0E5D52),
+    ThemePalette("crimson", "قرمزِ شرابی", dark = 0xFF4A0F2B, primary = 0xFF9E2A52, light = 0xFFF2A4BF, inkLight = 0xFF721E3C),
+    ThemePalette("olive", "سبزِ زیتونی", dark = 0xFF2A2E12, primary = 0xFF5F6B22, light = 0xFFC7D68A, inkLight = 0xFF444C18),
 )
 
 /** نگاشتِ شناسه به پالت. `null` یعنی تمِ پیش‌فرضِ برند. */

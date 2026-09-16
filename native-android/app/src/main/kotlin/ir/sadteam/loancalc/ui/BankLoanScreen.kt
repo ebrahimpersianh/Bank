@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -151,6 +152,12 @@ fun BankLoanScreen(
      * نه دو تا.
      */
     onLiveInstallment: (Double?) -> Unit = {},
+    /**
+     * «افزودنِ وامِ دستی» - خواسته‌ی کاربر (۲۶ شهریور): دکمه‌ی «+»ِ فهرستِ وام‌ها حالا همین
+     * صفحه را باز می‌کند، پس ثبتِ دستی باید از این‌جا هم در دسترس باشد. `{}` یعنی این صفحه
+     * از جایی باز شده که مقصدی برایش ندارد (آن‌وقت ردیفش اصلاً ساخته نمی‌شود).
+     */
+    onAddManualLoan: () -> Unit = {},
     creditRatesViewModel: CreditRatesViewModel = hiltViewModel(),
     /** خانه‌ی خالیِ **زیرِ** دکمه‌ی محاسبه - میزبانِ `27f` کارتِ «از عهده‌اش برمی‌آیم؟» رو
      * اینجا می‌ذاره. پیش‌فرض خالیه، پس هر جای دیگه‌ای که این صفحه صدا زده بشه فرقی نمی‌کنه. */
@@ -817,6 +824,33 @@ fun BankLoanScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp, start = 4.dp, end = 4.dp),
                 textAlign = TextAlign.Center,
             )
+
+            // «افزودنِ وامِ دستی» - وامی که از قبل گرفته‌ای و فقط می‌خواهی پیگیری‌اش کنی،
+            // نه محاسبه. کنارِ «امور چک» تهِ فهرست می‌نشیند: هر دو مقصدِ ناوبری‌اند، نه بخشی
+            // از فرم.
+            AppCard(modifier = Modifier.padding(top = 10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().pressScaleClickable { onAddManualLoan() },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Text("افزودنِ وامِ دستی", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            "وامی که از قبل گرفته‌ای رو ثبت کن تا قسط‌هاش پیگیری بشن",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForwardIos,
+                        contentDescription = null,
+                        tint = AppMuted,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
+            }
 
             // فریمِ `69b` بندِ ۲: «امور چک» از **وسطِ فرم** به این‌جا آمد.
             //

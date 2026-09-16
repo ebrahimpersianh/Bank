@@ -260,6 +260,15 @@ fun MyLoansScreen(
     // بعدِ مصرف [onDeepLinkConsumed] صدا زده می‌شه تا با چرخشِ صفحه/رفرش دوباره تریگر نشه.
     deepLinkLoanId: Long? = null,
     onDeepLinkConsumed: () -> Unit = {},
+    /**
+     * خواسته‌ی کاربر (۲۶ شهریور): دکمه‌ی «+» **محاسبه‌گر** را باز می‌کند، نه فرمِ دستی را.
+     * دلیلش هم روشن است - کسی که وام می‌گیرد اول می‌خواهد قسطش را ببیند؛ ثبتِ دستیِ وامِ
+     * قدیمی کارِ کمتری است و حالا تهِ همان محاسبه‌گر ردیفِ خودش را دارد.
+     */
+    onOpenCalculator: () -> Unit = {},
+    /** `true` یعنی محاسبه‌گر گفته «فرمِ دستی را باز کن» (رجوع کن به `LoanTab`). */
+    openManualAddSignal: Boolean = false,
+    onManualAddSignalConsumed: () -> Unit = {},
 ) {
     var showAddForm by remember { mutableStateOf(false) }
     var openedLoanId by remember { mutableStateOf<Long?>(null) }
@@ -366,6 +375,24 @@ fun MyLoansScreen(
             openedLoanId = target
         }
         onDeepLinkConsumed()
+    }
+
+    // سیگنالِ ورودی از محاسبه‌گر: همان گیتِ اشتراک/ورود را می‌خورد که دکمه‌ی خودِ این صفحه
+    // می‌خورد - وگرنه یک مسیرِ دورزننده‌ی سقفِ وام ساخته می‌شد.
+    fun openManualAddForm() {
+        when {
+            canSaveAnotherLoan -> showAddForm = true
+            gateState == null -> Unit
+            gateState != GateState.LOGGED_IN -> showLoginPrompt = true
+            else -> showSubscriptionScreen = true
+        }
+    }
+
+    LaunchedEffect(openManualAddSignal, canSaveAnotherLoan, gateState) {
+        if (openManualAddSignal && gateState != null) {
+            openManualAddForm()
+            onManualAddSignalConsumed()
+        }
     }
 
     fun onAddLoanClick() {
@@ -905,8 +932,9 @@ fun MyLoansScreen(
                 .padding(16.dp),
         ) {
             AppFab(
-                onClick = { onAddLoanClick() },
-                contentDescription = "افزودن دستی وام",
+                // مقصدش عوض شد: محاسبه‌گر، نه فرمِ دستی (خواسته‌ی صریحِ کاربر، ۲۶ شهریور).
+                onClick = { onOpenCalculator() },
+                contentDescription = "محاسبه‌ی قسط و سود",
                 modifier = Modifier.onGloballyPositioned {
                     onManualAddFabPositioned(it.boundsInRoot())
                 },

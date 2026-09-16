@@ -696,6 +696,8 @@ private fun SettingsSubPage(
     onOpenRules: () -> Unit,
 ) {
     val banner = rememberInAppBanner()
+    // فقط برای ردیفِ آزمایشیِ سکه - نمونه‌ی خودِ همین زیرصفحه، نه پارامترِ تازه‌ی امضا.
+    val gamification: GamificationViewModel = hiltViewModel()
 
     // 🚨 **عمداً بیرونِ `SettingsSubPageScaffold`**: آن اسکافولد یک `Column(verticalScroll)`
     // است و فروشگاه خودش فهرستِ تنبل دارد - اسکرولِ تودرتو با ارتفاعِ بی‌نهایت اپ را
@@ -716,7 +718,14 @@ private fun SettingsSubPage(
                 SettingsRoute.DATA -> DataSettings(authViewModel, autoBackupViewModel, banner)
                 SettingsRoute.SMS -> SmsSettings(smsAutoImportViewModel, onOpenRules = { onOpenRules() })
                 SettingsRoute.BACKGROUND -> BackgroundRunSettings()
-                SettingsRoute.TOOLS -> ToolsSettings(onOpenTool)
+                SettingsRoute.TOOLS -> ToolsSettings(
+                    onOpenTool = onOpenTool,
+                    onTestCoins = {
+                        gamification.grantTestCoins { balance ->
+                            banner.show("موجودی شد ${toFa(balance)} سکه", isSuccess = true)
+                        }
+                    },
+                )
                 // دیگه تو یه AppCardِ بیرونی پیچیده نمی‌شه - خودش گروه‌های خودشو داره.
                 SettingsRoute.SECURITY -> SecuritySettings(appLockViewModel)
                 SettingsRoute.PARSING_RULES -> ParsingRulesScreen()
@@ -2223,7 +2232,7 @@ private fun NotificationPermissionSteps(modifier: Modifier = Modifier) {
 /** «ابزارها»: تقویمِ مالی/آمار/تاریخچه‌ی محاسبات. این‌ها فیچرن نه تنظیمات، ولی هیچ نقطه‌ی ورودیِ
  * دیگه‌ای تو اپ ندارن - پس به‌جای حذف از تنظیمات (که یعنی گم‌شدنشون)، زیرِ یه ردیفِ واحد جمع شدن. */
 @Composable
-private fun ToolsSettings(onOpenTool: (String) -> Unit) {
+private fun ToolsSettings(onOpenTool: (String) -> Unit, onTestCoins: () -> Unit = {}) {
     AppCard(modifier = Modifier.padding(top = 8.dp)) {
         ToolRow(Icons.Filled.DateRange, "تقویم مالی", "سررسیدِ اقساطِ همه‌ی وام‌هات رو رو تقویم ببین") { onOpenTool("calendar") }
     }
@@ -2236,6 +2245,11 @@ private fun ToolsSettings(onOpenTool: (String) -> Unit) {
         // کیفِ سکه (کارتِ `20d`) - طرح می‌گه «تبِ جدید در نوارِ پایین اضافه نشد؛ پنج تب سقفِ
         // خوانایی است»، پس از همین‌جا باز می‌شه.
         ToolRow(Icons.Filled.Savings, "کیفِ سکه", "موجودی و تاریخچه‌ی سکه‌هایی که جمع کردی") { onOpenTool("coins") }
+        // ⚠️ **ردیفِ آزمایشی** - خواسته‌ی صریحِ کاربر (۲۶ شهریور) برای تستِ فروشگاه.
+        // یک ردیفِ عادیِ دفتر می‌نویسد (کلیدِ ثابت، پس چندبار زدن اثرِ دوباره ندارد) و
+        // نوعش `test_grant` است تا با دستاوردِ واقعی قاطی نشود. قبل از انتشارِ عمومی
+        // باید برداشته شود.
+        ToolRow(Icons.Filled.Savings, "شارژِ آزمایشیِ سکه", "موجودی رو برای تست یک‌میلیون کن", onTestCoins)
     }
 }
 

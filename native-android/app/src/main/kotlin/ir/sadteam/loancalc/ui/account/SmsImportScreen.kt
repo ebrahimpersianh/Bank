@@ -1,7 +1,9 @@
 package ir.sadteam.loancalc.ui.account
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.provider.Telephony
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,10 +41,13 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.MerchantCategoryGuesser
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.core.smsSenderMatches
 import ir.sadteam.loancalc.ui.components.AccountPickerDialog
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.components.ConfirmDialog
+import ir.sadteam.loancalc.ui.components.ConfirmTone
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -81,6 +87,9 @@ fun SmsImportScreen(
     var openSender by remember { mutableStateOf<String?>(null) }
     var pending by remember { mutableStateOf<SmsInboxMessage?>(null) }
     var addedIds by remember { mutableStateOf(setOf<Long>()) }
+    // خواسته‌ی کاربر: «یک شماره را کامل بتوانم افزودن بزنم، نه دانه‌دانه‌ی پیام‌ها».
+    var bulkSender by remember { mutableStateOf<String?>(null) }
+    var bulkAccountPickFor by remember { mutableStateOf<List<SmsInboxMessage>?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -112,8 +121,13 @@ fun SmsImportScreen(
                 color = AppText,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(start = 4.dp),
+                modifier = Modifier.weight(1f).padding(start = 4.dp),
             )
+            // خواسته‌ی کاربر: «می‌خوام واردِ پیامکِ گوشی بشه» - برنامه‌ی پیامکِ پیش‌فرضِ خودِ
+            // گوشی باز می‌شود. اگر پیدا نشد، `sms:`ِ عمومی که هر برنامه‌ی پیامکی می‌گیردش.
+            IconButton(onClick = { openPhoneSmsApp(context) }) {
+                Icon(Icons.Filled.OpenInNew, contentDescription = "بازکردنِ برنامه‌ی پیامک", tint = AppMuted)
+            }
         }
         Text(
             if (sender == null) {
@@ -166,6 +180,15 @@ fun SmsImportScreen(
             }
         } else {
             val ofSender = messages.filter { it.address == sender }
+            val addable = ofSender.filter { it.parsed != null && it.id !in addedIds }
+            if (addable.isNotEmpty()) {
+                GradientButton(
+                    onClick = { bulkSender = sender },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                ) {
+                    Text("افزودنِ همه‌ی ${toFa(addable.size)} پیامِ مبلغ‌دار")
+                }
+            }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(ofSender, key = { it.id }) { sms ->
                     SmsRow(
@@ -176,6 +199,44 @@ fun SmsImportScreen(
                 }
             }
         }
+    }
+
+    // ثبتِ گروهی: چون چند تراکنش پشتِ‌هم ساخته می‌شود، **idِ صریحِ شمارنده‌دار** پاس داده
+    // می‌شود - پیش‌فرضِ `System.currentTimeMillis()` در حلقه‌ی سریع یکی درمی‌آید و `@Upsert`
+    // بی‌صدا رویشان می‌نویسد (باگِ ثبت‌شده در CLAUDE.md).
+    bulkSender?.let { address ->
+        val rows = messages.filter { it.address == address && it.parsed != null && it.id !in addedIds }
+        ConfirmDialog(
+            tone = ConfirmTone.HEAVY_CHANGE,
+            title = "${toFa(rows.size)} پیام یک‌جا ثبت شود؟",
+            consequence = "همه‌ی پیام‌های مبلغ‌دارِ این فرستنده به یک حساب‌کتاب اضافه می‌شوند. " +
+                "هر کدام را بعداً می‌توانی جدا ویرایش یا حذف کنی.",
+            actionLabel = "ثبت کن",
+            onConfirm = {
+                bulkSender = null
+                val guessed = accounts.firstOrNull { smsSenderMatches(it.smsSender, address) }
+                if (guessed != null) {
+                    addAllFromSender(accountViewModel, guessed.id, rows)
+                    addedIds = addedIds + rows.map { it.id }
+                } else {
+                    bulkAccountPickFor = rows
+                }
+            },
+            onDismiss = { bulkSender = null },
+        )
+    }
+
+    bulkAccountPickFor?.let { rows ->
+        AccountPickerDialog(
+            accounts = accounts,
+            title = "روی کدام حساب‌کتاب ثبت شوند؟",
+            onDismiss = { bulkAccountPickFor = null },
+            onSelect = { account ->
+                addAllFromSender(accountViewModel, account.id, rows)
+                addedIds = addedIds + rows.map { it.id }
+                bulkAccountPickFor = null
+            },
+        )
     }
 
     pending?.let { sms ->
@@ -311,5 +372,45 @@ private fun SmsRow(sms: SmsInboxMessage, added: Boolean, onAdd: () -> Unit) {
                     .padding(horizontal = 8.dp, vertical = 10.dp),
             )
         }
+    }
+}
+
+
+/**
+ * بازکردنِ برنامه‌ی پیامکِ خودِ گوشی (خواسته‌ی کاربر).
+ *
+ * اول برنامه‌ی **پیش‌فرضِ پیامک** را می‌گیرد؛ اگر نشد `sms:`ِ عمومی، که هر برنامه‌ی پیامکی
+ * جوابش را می‌دهد. هیچ‌کدام نشد، بی‌صدا رد می‌شود - این یک میان‌بر است نه مسیرِ اصلی.
+ */
+private fun openPhoneSmsApp(context: android.content.Context) {
+    val pkg = runCatching { Telephony.Sms.getDefaultSmsPackage(context) }.getOrNull()
+    val intent = pkg?.let { context.packageManager.getLaunchIntentForPackage(it) }
+        ?: Intent(Intent.ACTION_VIEW, android.net.Uri.parse("sms:"))
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { context.startActivity(intent) }
+}
+
+/** ثبتِ گروهیِ پیام‌های یک فرستنده روی یک حساب - با شمارنده‌ی صریحِ id. */
+private fun addAllFromSender(
+    accountViewModel: AccountViewModel,
+    accountId: Long,
+    rows: List<SmsInboxMessage>,
+) {
+    val today = JalaliCalendar.today()
+    val base = System.currentTimeMillis()
+    rows.forEachIndexed { index, sms ->
+        val parsed = sms.parsed ?: return@forEachIndexed
+        accountViewModel.addTransaction(
+            accountId = accountId,
+            type = parsed.type,
+            amount = parsed.amountRial,
+            description = "از پیامکِ ${sms.address}",
+            year = today.y,
+            month = today.m,
+            day = today.d,
+            category = MerchantCategoryGuesser.guess(sms.body, parsed.type == TransactionType.WITHDRAWAL),
+            id = base + index,
+            originLabel = "پیامکِ ${sms.address}",
+        )
     }
 }
