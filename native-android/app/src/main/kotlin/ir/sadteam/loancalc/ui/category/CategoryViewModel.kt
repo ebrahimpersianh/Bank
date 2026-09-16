@@ -52,8 +52,11 @@ class CategoryViewModel @Inject constructor(
             val today = JalaliCalendar.today()
             all.asSequence()
                 .filter { it.year == today.y && it.month == today.m }
-                .groupBy { it.category }
-                .mapValues { (_, rows) -> rows.sumOf { it.amount } }
+                // `category` در خودِ جدول nullable است (تراکنشِ بی‌دسته)؛ بی این فیلتر،
+                // کلیدِ نقشه `String?` می‌شود و به امضای `Map<String, Double>` نمی‌خورد.
+                .mapNotNull { row -> row.category?.let { it to row.amount } }
+                .groupBy({ it.first }, { it.second })
+                .mapValues { (_, amounts) -> amounts.sum() }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
