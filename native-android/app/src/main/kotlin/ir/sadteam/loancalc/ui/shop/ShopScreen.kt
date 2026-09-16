@@ -91,7 +91,15 @@ import ir.sadteam.loancalc.ui.theme.AppText
 private enum class RowState { BUY, POOR, OWNED, ACTIVE, BADGE_LOCKED, SOON }
 
 @Composable
-fun ShopScreen(onBack: () -> Unit, viewModel: ShopViewModel = hiltViewModel()) {
+fun ShopScreen(
+    onBack: () -> Unit,
+    /**
+     * داخلِ «سکه»ی ادغام‌شده رندر می‌شود (`75a`)؟ آن‌وقت هدر و کارتِ موجودی را خودِ
+     * میزبان می‌گذارد و این‌جا تکرار نمی‌شوند.
+     */
+    embedded: Boolean = false,
+    viewModel: ShopViewModel = hiltViewModel(),
+) {
     val balance by viewModel.balance.collectAsState()
     val owned by viewModel.owned.collectAsState()
     val active by viewModel.active.collectAsState()
@@ -131,20 +139,24 @@ fun ShopScreen(onBack: () -> Unit, viewModel: ShopViewModel = hiltViewModel()) {
 
     Box(modifier = Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize()) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(onClick = onBack) {
-            Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
+    // در حالتِ **جاسازی‌شده** (`75a`) هدر و کارتِ موجودی از بالا می‌آیند: هیرو بالای
+    // تب‌ها مشترک است، وگرنه موجودی دو بار دیده می‌شود.
+    if (!embedded) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
+            }
+            Text(
+                "فروشگاهِ سکه",
+                color = AppText,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(start = 4.dp),
+            )
         }
-        Text(
-            "فروشگاهِ سکه",
-            color = AppText,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Black,
-            modifier = Modifier.padding(start = 4.dp),
-        )
     }
     // ═══ تبِ افقی، نه سرگروهِ بیشتر (`72b`) ═══
     //
@@ -156,7 +168,7 @@ fun ShopScreen(onBack: () -> Unit, viewModel: ShopViewModel = hiltViewModel()) {
         contentPadding = PaddingValues(start = 10.dp, end = 16.dp, top = 10.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item { BalanceCard(balance) }
+        if (!embedded) item { BalanceCard(balance) }
 
         // قلمِ کمیاب **بالای همه‌ی تب‌ها** می‌آید، بیرونِ تب‌بندی: چیزی که مهلت دارد نباید
         // پشتِ یک تپ پنهان شود (`72b`).

@@ -153,7 +153,7 @@ import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.account.SmsImportScreen
-import ir.sadteam.loancalc.ui.shop.ShopScreen
+import ir.sadteam.loancalc.ui.coin.CoinHubScreen
 import ir.sadteam.loancalc.ui.account.SmsSenderPickerDialog
 import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
@@ -187,7 +187,6 @@ import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.profile.AvatarViewModel
 import ir.sadteam.loancalc.ui.profile.BadgesScreen
-import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
@@ -237,10 +236,8 @@ fun SettingsScreen(
     autoBackupViewModel: AutoBackupViewModel = hiltViewModel(),
     hapticsViewModel: HapticsViewModel = hiltViewModel(),
     smsAutoImportViewModel: SmsAutoImportViewModel = hiltViewModel(),
-    gamificationViewModel: GamificationViewModel = hiltViewModel(),
     deepLinkViewModel: DeepLinkViewModel = hiltViewModel(),
 ) {
-    val coinTodayLogged by gamificationViewModel.todayLogged.collectAsState()
     var route by remember { mutableStateOf(SettingsRoute.MAIN) }
     // زیرصفحه‌های «فیچری» (تقویم/آمار/تاریخچه) از رو خودِ صفحه‌ی «ابزارها» باز می‌شن، پس یه استیتِ
     // جدا لازم دارن تا با برگشت، به «ابزارها» برگردن نه به ریشه‌ی تنظیمات.
@@ -290,13 +287,7 @@ fun SettingsScreen(
                         onOpenLoan = { id -> tool = null; deepLinkViewModel.openLoan(id); onBack() },
                         onOpenCheque = { id -> tool = null; deepLinkViewModel.openCheque(id); onBack() },
                     )
-                    // همان شرطِ هدرِ خانه: امروز تراکنشی ثبت شده یا نه. این‌جا از رویدادهای
-                    // سکه خوانده می‌شود چون `DAILY_LOG` دقیقاً به همان ثبت جایزه می‌دهد.
                     "goals" -> SavingsGoalScreen(onBack = { tool = null })
-                    "coins" -> CoinWalletScreen(
-                        onBack = { tool = null },
-                        todayHasEntry = coinTodayLogged,
-                    )
                     else -> CalculationHistoryScreen(onBack = { tool = null })
                 }
             }
@@ -343,7 +334,12 @@ private enum class SettingsRoute(val title: String, val keywords: List<String>) 
     ),
     TOOLS("ابزارها", listOf("تقویم مالی", "آمار", "گزارش", "تاریخچه محاسبات")),
     SECURITY("امنیت", listOf("قفل", "PIN", "اثر انگشت")),
-    COLOR_THEME("فروشگاهِ سکه", listOf("تم", "رنگ", "پوسته", "سکه", "فروشگاه", "آیکون")),
+    // ⚠️ نامش از «فروشگاهِ سکه» به «تمِ رنگی» رفت (`75c`): فروشگاه حالا یک در دارد
+    // (سکه‌ی هدرِ خانه) و این ردیف فقط **لینکی** به همان است، نه درِ دوم. خودِ «ظاهر
+    // برنامه» در تنظیمات می‌ماند چون سه چیز دارد و فقط یکی‌اش خریدنی است - اندازه‌ی
+    // متن و انیمیشنِ کم دسترس‌پذیری‌اند و کاربری که متن برایش ریز است نباید برای
+    // بزرگ‌کردنش وارد ویترین شود.
+    COLOR_THEME("تمِ رنگی", listOf("تم", "رنگ", "پوسته", "سکه", "فروشگاه", "آیکون", "قلم", "فونت")),
     BADGES("نشان‌ها", listOf("نشان", "دستاورد", "مدال", "سکه")),
     PARSING_RULES("قاعده‌های تشخیص", listOf("قاعده", "دسته‌بندی خودکار", "تشخیص")),
     ABOUT("درباره‌ی برنامه", listOf("درباره", "پشتیبانی", "حریم خصوصی", "نسخه")),
@@ -560,7 +556,7 @@ private fun SettingsMainContent(
                         Icons.Filled.ColorLens,
                         SettingsRoute.COLOR_THEME,
                         tone = SettingsTone.PURPLE,
-                        status = "تم و آیکونِ برنامه را با سکه بخر",
+                        status = "در فروشگاهِ سکه",
                     ) { onOpen(SettingsRoute.COLOR_THEME) }
                     SettingsDivider()
                 }
@@ -719,7 +715,8 @@ private fun SettingsSubPage(
     // می‌کشد (همان کرشِ «افزودن از پیامک‌ها»). هدرِ خودش را دارد.
     if (route == SettingsRoute.COLOR_THEME) {
         Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
-            ShopScreen(onBack = onBack)
+            // همان صفحه‌ی ادغام‌شده‌ی سکه، روی تبِ فروشگاه (پیش‌فرض) - نه یک نسخه‌ی دوم.
+            CoinHubScreen(onBack = onBack, todayHasEntry = gamification.todayLogged.collectAsState().value)
         }
         return
     }
@@ -2323,9 +2320,9 @@ private fun ToolsSettings(onOpenTool: (String) -> Unit, onTestCoins: () -> Unit 
     // دو مسیر برای یک صفحه همان دوگانگی‌ای است که یک‌بار دو عددِ متفاوتِ «داراییِ کل» ساخت.
     AppCard(modifier = Modifier.padding(top = 8.dp)) {
         ToolRow(Icons.Filled.History, "تاریخچه‌ی محاسبات", "مرورِ محاسبه‌های قبلیِ وام/سقف وام/سود سپرده") { onOpenTool("history") }
-        // کیفِ سکه (کارتِ `20d`) - طرح می‌گه «تبِ جدید در نوارِ پایین اضافه نشد؛ پنج تب سقفِ
-        // خوانایی است»، پس از همین‌جا باز می‌شه.
-        ToolRow(Icons.Filled.Savings, "کیفِ سکه", "موجودی و تاریخچه‌ی سکه‌هایی که جمع کردی") { onOpenTool("coins") }
+        // ⚠️ ردیفِ «کیفِ سکه» **حذف شد** (`75a` بندِ ۴): کیف و فروشگاه در یک صفحه ادغام
+        // شدند و تنها درش سکه‌ی هدرِ خانه است. دری که به جای آشنا می‌رسد فقط فهرست را
+        // بلند می‌کند.
         // ⚠️ **ردیفِ آزمایشی** - خواسته‌ی صریحِ کاربر (۲۶ شهریور) برای تستِ فروشگاه.
         // یک ردیفِ عادیِ دفتر می‌نویسد (کلیدِ ثابت، پس چندبار زدن اثرِ دوباره ندارد) و
         // نوعش `test_grant` است تا با دستاوردِ واقعی قاطی نشود. قبل از انتشارِ عمومی

@@ -94,7 +94,7 @@ import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.profile.AvatarViewModel
-import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
+import ir.sadteam.loancalc.ui.coin.CoinHubScreen
 import ir.sadteam.loancalc.ui.profile.BadgeRetroSheet
 import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.theme.AppAssetBorder
@@ -436,7 +436,7 @@ fun HomeScreen(
         // تا وقتی سکه مقصدِ `NavHost` نشده، این کوتاه‌ترین راهِ درست است؛ روکش پس‌زمینه‌ی
         // مات دارد پس صفحه‌ی زیرش دیده نمی‌شود.
         if (showCoinWallet) {
-            CoinWalletScreen(onBack = { showCoinWallet = false }, todayHasEntry = todayHasEntry)
+            CoinHubScreen(onBack = { showCoinWallet = false }, todayHasEntry = todayHasEntry)
         }
         if (showTodaySpend) {
             TodaySpendSheet(

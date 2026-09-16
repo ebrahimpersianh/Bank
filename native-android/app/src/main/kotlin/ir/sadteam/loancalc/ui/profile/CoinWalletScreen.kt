@@ -82,6 +82,8 @@ import java.util.Locale
 @Composable
 fun CoinWalletScreen(
     onBack: () -> Unit,
+    /** داخلِ «سکه»ی ادغام‌شده (`75b`)؟ هدر و کارتِ بزرگِ موجودی از میزبان می‌آیند. */
+    embedded: Boolean = false,
     /**
      * امروز تراکنشی ثبت شده یا نه - همان ورودیِ `HomeScreen` (بخشِ ۵۵).
      *
@@ -105,25 +107,26 @@ fun CoinWalletScreen(
     // این صفحه هم از تنظیمات باز می‌شود هم به‌صورتِ روکش از قرصِ سکه‌ی تبِ خانه، پس
     // خودش هم پس‌زمینه‌ی مات لازم دارد هم بازگشتِ سیستمی - وگرنه در حالتِ روکش
     // صفحه‌ی زیرش پیدا می‌شود و back کلِ برنامه را می‌بندد.
-    BackHandler(onBack = onBack)
+    if (!embedded) BackHandler(onBack = onBack)
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(AppBg),
         contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 40.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+        if (!embedded) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                    }
+                    Text("کیفِ سکه", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
                 }
-                Text("کیفِ سکه", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
             }
-        }
-        item {
-            AppCard {
+            item {
+                AppCard {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -146,6 +149,7 @@ fun CoinWalletScreen(
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 8.dp),
                     )
+                    }
                 }
             }
         }
