@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -267,10 +268,20 @@ fun MarketPricesScreen(
                     }
                 }
             }
-            // ⚠️ خطِ «داده‌ی قیمت از Servix.cc» **به خواستِ صریحِ کاربر برداشته شد**
-            // (دورِ ۹: «هیچ جای برنامه نباشد»). رجوع کن به یادداشتِ CLAUDE.md - سرویس در
-            // پاسخِ `/api/v1/access` پرچمِ `attributionRequired: true` می‌دهد، پس این یک
-            // تصمیمِ محصولیِ آگاهانه است نه فراموشی.
+            // 🚨 **ذکرِ منبع - شرطِ قراردادیِ سرویس.** یک دور کاملاً حذف شد و با راهِ
+            // میانیِ طراح برگشت: ردیفِ اصلی در «درباره‌ی برنامه» است و این‌جا فقط یک خطِ
+            // ریز، چون داده‌ی همین صفحه واقعاً مالِ آن سرویس است. نادیده‌گرفتنِ
+            // `attributionRequired` یعنی ریسکِ قطعِ دسترسی، و آن یعنی خوابیدنِ قیمت‌ها
+            // برای همه‌ی کاربران. **بی تاییدِ صریحِ کاربر دوباره حذفش نکن.**
+            item(key = "attribution") {
+                Text(
+                    "منبعِ قیمت‌ها: Servix.cc",
+                    color = AppMuted,
+                    fontSize = 9.sp,
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 10.dp),
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
 
         if (openAssetEntity != null) {
