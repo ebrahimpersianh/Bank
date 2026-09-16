@@ -294,8 +294,11 @@ fun MyLoansScreen(
     LaunchedEffect(loans) { totalOverdue = viewModel.totalOverdueAmount(loans) }
     // **تعداد** هم لازم است، نه فقط مبلغ (خواسته‌ی کاربر، دورِ ۹): «۲۰ تا اقساطِ معوق».
     // یک قسطِ بزرگ و بیست قسطِ کوچک جمعشان یکی است ولی دو وضعیتِ کاملاً متفاوت‌اند.
-    var overdueCount by remember { mutableStateOf(0) }
-    LaunchedEffect(loans) { overdueCount = viewModel.totalOverdueCount(loans) }
+    // ⚠️ نامش عمداً `overdueCount` **نیست**: چند ده خط پایین‌تر یک `overdueCount`ِ دیگر
+    // هست که تعدادِ **وام**‌های عقب‌افتاده را می‌شمارد. این یکی تعدادِ **قسط** است -
+    // دو عددِ متفاوت. هم‌نام‌بودنشان بیلدِ ۵۵۳ را شکست («Conflicting declarations»).
+    var overdueInstallments by remember { mutableStateOf(0) }
+    LaunchedEffect(loans) { overdueInstallments = viewModel.totalOverdueCount(loans) }
     // «مجموع اقساط ماهانه» (مورد ۱۴/۳۵) - قبلاً از loan.installmentِ کهنه حساب می‌شد که بعدِ
     // ویرایشِ تکیِ یه قسط دیگه درست نبود؛ الان از رو مبلغِ واقعیِ قسطِ همینِ الانِ هر وام.
     var totalMonthlyInstallment by remember { mutableStateOf(0.0) }
@@ -568,7 +571,7 @@ fun MyLoansScreen(
                             loans = loans,
                             incomes = incomes,
                             totalOverdue = totalOverdue,
-                            overdueCount = overdueCount,
+                            overdueCount = overdueInstallments,
                             totalMonthlyInstallment = totalMonthlyInstallment,
                             onAddIncome = { label, amount, type -> viewModel.addIncome(label, amount, type) },
                             onDeleteIncome = { viewModel.deleteIncome(it) },
