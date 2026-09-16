@@ -112,6 +112,7 @@ import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMarkOff
 import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary

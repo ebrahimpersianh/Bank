@@ -66,6 +66,7 @@ run "فرمتِ عددی بدونِ Locale" "$DIR/localeformat.py"
 run "امضای تابع و ثابتِ enum" "$DIR/apisurface.py"
 run "لامبدای انتهایی" "$DIR/trailinglambda.py"
 run "APIِ آزمایشیِ متریال" "$DIR/experimental.py"
+run "ایمپورتِ ui.jibak" "$DIR/jibakimports.py"
 
 printf '\n'
 if [ "$FAIL" -eq 0 ]; then
