@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -47,6 +48,14 @@ fun AppFab(
     modifier: Modifier = Modifier,
     icon: ImageVector = Icons.Filled.Add,
     contentDescription: String? = "افزودن",
+    /**
+     * نشانکِ ریزِ «+» روی گوشه‌ی پایین-چپ (جوابِ طراح، دورِ ۸).
+     *
+     * فقط برای FABای که مقصدش **افزودن نیست ولی کارِ نهایی‌اش افزودن است** - مثلِ FABِ تبِ
+     * وام که ماشین‌حساب را باز می‌کند. «+»ِ خالی وعده‌ی فرم می‌دهد و ماشین‌حساب نشان
+     * می‌دهد؛ ماشین‌حسابِ تنها هم یک‌دستیِ FAB را در پنج تبِ دیگر می‌شکند.
+     */
+    plusBadge: Boolean = false,
 ) {
     // ⚠️ **دایره، نه گردگوشه.** فریمِ `15a` صریحاً `border-radius:50%` داره. اندازه ۵۶،
     // سایه‌ی سختِ ۵ پیکسلی، و یه گرادیانِ شعاعیِ ملایم (`#17C57D` → `#0EA968` تا ۶۵٪).
@@ -97,6 +106,26 @@ fun AppFab(
             tint = Color.White,
             modifier = Modifier.size(24.dp),
         )
+        if (plusBadge) {
+            // دایره‌ی ریز **هم‌رنگِ خودِ FAB** با حاشیه‌ی سفید، تا روی گرادیان بنشیند و
+            // جزئی از نماد دیده شود نه یک بجِ چسبانده‌شده.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 11.dp, bottom = 11.dp)
+                    .size(15.dp)
+                    .clip(shape)
+                    .background(Color.White),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.Add,
+                    contentDescription = null,
+                    tint = AppPrimary,
+                    modifier = Modifier.size(12.dp),
+                )
+            }
+        }
     }
 }
 

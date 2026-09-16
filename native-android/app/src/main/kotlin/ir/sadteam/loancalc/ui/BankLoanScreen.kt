@@ -240,6 +240,37 @@ fun BankLoanScreen(
         contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        // 🚨 **بالای صفحه، نه تهِ آن** (جوابِ طراح، دورِ ۸).
+        //
+        // «+»ِ فهرستِ وام‌ها این صفحه را باز می‌کند، پس کسی که «+» زده ممکن است **فرم**
+        // می‌خواسته نه ماشین‌حساب. اولین چیزی که می‌بیند باید راهِ رسیدن به فرم باشد، نه
+        // آخرین - نمادِ FAB به‌تنهایی این شکاف را پر نمی‌کند.
+        item {
+            AppCard(modifier = Modifier.padding(bottom = 4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().pressScaleClickable { onAddManualLoan() },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Text("افزودنِ وامِ دستی", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            "وامی که از قبل گرفته‌ای رو ثبت کن تا قسط‌هاش پیگیری بشن",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForwardIos,
+                        contentDescription = null,
+                        tint = AppMuted,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
+            }
+        }
+
         // فریمِ `69a`: هیروِ زنده - همان الگوی `67a`.
         //
         // کاربر یازده فیلد را پر می‌کرد و برای دیدنِ قسط باید به صفحه‌ی دیگری می‌رفت؛ اگر
@@ -824,33 +855,6 @@ fun BankLoanScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp, start = 4.dp, end = 4.dp),
                 textAlign = TextAlign.Center,
             )
-
-            // «افزودنِ وامِ دستی» - وامی که از قبل گرفته‌ای و فقط می‌خواهی پیگیری‌اش کنی،
-            // نه محاسبه. کنارِ «امور چک» تهِ فهرست می‌نشیند: هر دو مقصدِ ناوبری‌اند، نه بخشی
-            // از فرم.
-            AppCard(modifier = Modifier.padding(top = 10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().pressScaleClickable { onAddManualLoan() },
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column {
-                        Text("افزودنِ وامِ دستی", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            "وامی که از قبل گرفته‌ای رو ثبت کن تا قسط‌هاش پیگیری بشن",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowForwardIos,
-                        contentDescription = null,
-                        tint = AppMuted,
-                        modifier = Modifier.size(14.dp),
-                    )
-                }
-            }
 
             // فریمِ `69b` بندِ ۲: «امور چک» از **وسطِ فرم** به این‌جا آمد.
             //
