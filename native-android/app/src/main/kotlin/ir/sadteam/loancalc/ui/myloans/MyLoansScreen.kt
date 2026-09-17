@@ -278,10 +278,10 @@ fun MyLoansScreen(
      * می‌گیرند - در حالی که فیلدِ همیشه‌بازِ تمام‌عرض و کارتِ ثابتِ درآمد با هم ~۱۳۰dp
      * از بالای فهرست می‌خوردند، برای فهرستی که معمولاً سه ردیف است.
      *
-     * حالتشان بالا نگه داشته می‌شود چون دکمه‌اش آن‌جاست؛ این صفحه فقط مصرف‌کننده است.
+     * ⚠️ فقط جست‌وجو از بالا می‌آید. «تحلیل درآمد» در دورِ ۱۲ درِ ورودیِ خودش را گرفت
+     * (قرصِ درصد داخلِ کارتِ طلایی) و آیکونِ نمودارِ هدر حذف شد.
      */
     searchOpen: Boolean = false,
-    incomeOpen: Boolean = false,
 ) {
     var showAddForm by remember { mutableStateOf(false) }
     var openedLoanId by remember { mutableStateOf<Long?>(null) }
@@ -588,7 +588,6 @@ fun MyLoansScreen(
                             totalOverdue = totalOverdue,
                             overdueCount = overdueInstallments,
                             totalMonthlyInstallment = totalMonthlyInstallment,
-                            showIncome = incomeOpen,
                             onAddIncome = { label, amount, type -> viewModel.addIncome(label, amount, type) },
                             onDeleteIncome = { viewModel.deleteIncome(it) },
                         )
@@ -617,6 +616,8 @@ fun MyLoansScreen(
                                     SettledLoansToggle(
                                         showSettled = showSettled,
                                         settledCount = settledCount,
+                                        activeCount = loans.size - settledCount,
+                                        overdueLoanCount = overdueCount,
                                         onToggle = { showSettled = !showSettled },
                                     )
                                 } else {
@@ -629,15 +630,10 @@ fun MyLoansScreen(
                         }
                     }
 
-                    // 🚨 **چندتا وام عقب‌افتاده است** - خواسته‌ی صریحِ کاربر (۲۴ شهریور).
-                    // کارتِ تک‌تکِ وام‌ها از قبل «عقب‌افتاده» را می‌گفت، ولی کاربر باید تا ته
-                    // فهرست اسکرول می‌کرد تا بفهمد چندتاست. این یک خطِ جمع‌بندیِ بالای فهرست
-                    // است، نه تکرارِ همان اطلاعات.
-                    //
-                    // فقط در نمای «فعال» می‌آید: وامِ تسویه‌شده تعریفاً عقب‌افتاده نیست.
-                    if (!showSettled && overdueCount > 0) {
-                        item { OverdueSummaryRow(count = overdueCount) }
-                    }
+                    // ⚠️ نوارِ «N وام عقب‌افتاده» **حذف شد** (جوابِ دورِ ۱۲): همان خبر را
+                    // کارتِ طلایی با واحدِ «قسط» و این نوار با واحدِ «وام» می‌گفت، یعنی یک
+                    // موضوع با دو عدد. عددش حالا روی قرصِ «فعال» می‌نشیند - صفر پیکسلِ تازه.
+
 
                     if (visibleLoans.isEmpty()) {
                         item {
@@ -1213,8 +1209,6 @@ private fun DashboardSummary(
     totalOverdue: Double,
     overdueCount: Int,
     totalMonthlyInstallment: Double,
-    /** فریمِ ۷۶: کارتِ «تحلیل درآمد» دیگر ثابت نیست - پشتِ آیکونِ نمودارِ هدر است. */
-    showIncome: Boolean,
     onAddIncome: (label: String, amount: Double, type: IncomeType) -> Unit,
     onDeleteIncome: (IncomeEntity) -> Unit,
 ) {
@@ -1223,6 +1217,13 @@ private fun DashboardSummary(
     }
     val totalIncome = remember(incomes) { incomes.sumOf { it.amount } }
     val ratio = if (totalIncome > 0) totalMonthlyInstallment / totalIncome else 0.0
+    // `null` یعنی هیچ منبعِ درآمدی ثبت نشده - و آن‌جا به‌جای «۰٪»ِ گمراه‌کننده، درِ ورودی
+    // نشان داده می‌شود.
+    val incomeRatio: Float? = if (totalIncome > 0) ratio.toFloat() else null
+    // 🚨 **آیکونِ نمودارِ هدر حذف شد** (جوابِ دورِ ۱۲): درِ ورودیِ درآمد حالا همان قرصِ
+    // درصد است، یعنی همان‌جایی که عدد دیده می‌شود. آیکونِ هدر یک درِ دومِ بی‌نشانه بود.
+    var showIncome by remember { mutableStateOf(false) }
+    val onOpenIncome: () -> Unit = { showIncome = !showIncome }
     val statusLabel: String?
     val statusColor: Color
     when {
@@ -1285,12 +1286,6 @@ private fun DashboardSummary(
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    "${toFa(paidPct)}٪ پرداخت شده",
-                    color = AppGoldInk.copy(alpha = 0.75f),
-                    fontSize = 9.5.sp,
-                    fontWeight = FontWeight.Black,
-                )
             }
             Column(modifier = Modifier.fillMaxWidth().padding(top = 9.dp)) {
                 Text(
@@ -1308,6 +1303,54 @@ private fun DashboardSummary(
                         letterSpacing = (-0.4).sp,
                     )
                 }
+            }
+            // 🚨 **نسبتِ قسط به درآمد آمد داخلِ کارت** (بندِ ۱ جوابِ دورِ ۱۲).
+            //
+            // این عدد کسرِ همین «قسطِ این ماه» بر درآمد است، پس جایش زیرِ همان عدد است نه
+            // در تهِ یک کارتِ جمع‌شونده - و وقتی از ۱۰۰ بگذرد یعنی قسط از درآمد بیشتر
+            // است، که مهم‌ترین خبرِ کلِ صفحه است.
+            //
+            // ⚠️ در عوض «٪ پرداخت‌شده» از کارت رفت: **یک کارت، یک عددِ درصددار**. دو
+            // درصد کنارِ هم روی یک کارت، هر دو را بی‌معنی می‌کند (کدام مالِ کدام؟).
+            // خودِ پیشرفت با نوارِ زیر گفته می‌شود، بی عدد.
+            if (incomeRatio != null) {
+                val over = incomeRatio > 1f
+                Row(
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (over) AppDangerPill else AppGoldInk.copy(alpha = 0.12f))
+                        .pressScaleClickable(onClick = onOpenIncome)
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Text(
+                        "${toFa((incomeRatio * 100).roundToInt())}٪ از درآمدت صرفِ اقساط می‌شه",
+                        color = if (over) AppDangerInk else AppGoldInk,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                    Icon(
+                        Icons.Filled.ChevronLeft,
+                        contentDescription = null,
+                        tint = if (over) AppDangerInk else AppGoldInk,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
+            } else {
+                // بی منبعِ درآمد، درصدی وجود ندارد - پس به‌جای عددِ دروغ، درِ ورودی.
+                Text(
+                    "درآمدِ ماهانه‌ات را ثبت کن ‹",
+                    color = AppGoldInk.copy(alpha = 0.75f),
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .pressScaleClickable(onClick = onOpenIncome)
+                        .padding(vertical = 3.dp),
+                )
             }
             // نوارِ پیشرفت جای خطِ جداکننده - هم فاصله می‌سازد هم حرف می‌زند.
             Box(
@@ -1618,7 +1661,13 @@ private fun LoanSummaryDivider() {
  * روش نزنه.
  */
 @Composable
-private fun SettledLoansToggle(showSettled: Boolean, settledCount: Int, onToggle: () -> Unit) {
+private fun SettledLoansToggle(
+    showSettled: Boolean,
+    settledCount: Int,
+    activeCount: Int,
+    overdueLoanCount: Int,
+    onToggle: () -> Unit,
+) {
     val shape = RoundedCornerShape(999.dp)
     Row(
         modifier = Modifier
@@ -1627,7 +1676,17 @@ private fun SettledLoansToggle(showSettled: Boolean, settledCount: Int, onToggle
             .padding(3.dp),
         horizontalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        FilterChipHalf(label = "فعال", selected = !showSettled) {
+        FilterChipHalf(
+            // بندِ ۳ جوابِ دورِ ۱۲: نوارِ «۹ وام عقب‌افتاده» **رفت** و عددش این‌جا نشست -
+            // صفر پیکسلِ ارتفاعِ تازه، چون این ردیف از قبل بود. و «فعال» هم شمارش گرفت،
+            // وگرنه یک قرصِ شماره‌دار کنارِ یک قرصِ بی‌شماره بی‌قاعده به نظر می‌رسید.
+            label = buildString {
+                append("فعال")
+                if (activeCount > 0) append(" · ${toFa(activeCount)}")
+                if (overdueLoanCount > 0) append(" (${toFa(overdueLoanCount)} عقب)")
+            },
+            selected = !showSettled,
+        ) {
             if (showSettled) onToggle()
         }
         FilterChipHalf(

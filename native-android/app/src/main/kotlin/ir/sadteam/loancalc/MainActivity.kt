@@ -29,7 +29,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -1374,7 +1373,6 @@ private fun LoanTab(
     // پس حالتشان این‌جاست و به [MyLoansScreen] پاس داده می‌شود. فقط در زیرتبِ «وام‌های من»
     // معنی دارند.
     var searchOpen by remember { mutableStateOf(false) }
-    var incomeOpen by remember { mutableStateOf(false) }
     LaunchedEffect(requestedSubTab) {
         requestedSubTab?.let { subTab = it }
     }
@@ -1421,12 +1419,6 @@ private fun LoanTab(
                     label = "جست‌وجو در وام‌ها",
                     active = searchOpen,
                     onClick = { searchOpen = !searchOpen },
-                )
-                LoanHeaderIcon(
-                    icon = Icons.Filled.ShowChart,
-                    label = "تحلیل درآمد",
-                    active = incomeOpen,
-                    onClick = { incomeOpen = !incomeOpen },
                 )
             }
         }
@@ -1482,7 +1474,6 @@ private fun LoanTab(
                 LoanSubTab.DEPOSIT -> DepositScreen()
                 LoanSubTab.MY_LOANS -> MyLoansScreen(
                     searchOpen = searchOpen,
-                    incomeOpen = incomeOpen,
                     onOpenCalculator = { subTab = LoanSubTab.CALCULATOR },
                     openManualAddSignal = openManualAdd,
                     onManualAddSignalConsumed = { openManualAdd = false },
