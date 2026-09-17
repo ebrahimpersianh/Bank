@@ -186,6 +186,8 @@ import ir.sadteam.loancalc.ui.security.LockScreen
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.inbox.InboxScreen
 import ir.sadteam.loancalc.ui.theme.AppBg
+import ir.sadteam.loancalc.ui.theme.LiveBackdrop
+import ir.sadteam.loancalc.ui.theme.BackdropState
 import ir.sadteam.loancalc.ui.theme.AppDisabledText
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLineRow
@@ -791,8 +793,16 @@ private fun LoanCalcApp(
         // سایه‌های سختشون رو یه سطحِ آروم بشینن؛ هاله‌ی متحرک پشتشون همون «شلوغیِ» بصری‌ای بود
         // که این بازطراحی می‌خواد ازش فاصله بگیره.
         // `AuroraBackground.kt` عمداً پاک نشد (ممکنه برای اسپلش/صفحه‌ی خوش‌آمد لازم بشه).
+        // **پس‌زمینه‌ی زنده‌ی خریدنی** (قلمِ تازه‌ی فروشگاه، دورِ ۱۳). زیرِ `Scaffold` که
+        // خودش `containerColor` دارد نمی‌شود کشیدش، پس یک `Box` بیرونی می‌گیرد: رنگِ تخت
+        // + لایه‌ی متحرک + محتوا. `Scaffold` بعدش شفاف می‌شود وگرنه لایه را می‌پوشاند.
+        val backdrop = BackdropState.active
+        Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
+            if (backdrop != null) {
+                LiveBackdrop(backdrop = backdrop, modifier = Modifier.fillMaxSize())
+            }
         Scaffold(
-            containerColor = AppBg,
+            containerColor = if (backdrop != null) Color.Transparent else AppBg,
             topBar = {
                 // ⚠️ **تبِ خانه نوارِ بالا نداره.** فریمِ `15a`/`15b` هیچ نوارِ بالایی نشون نمی‌ده
                 // و کاربر هم صریحاً گفت «اون تنظیمات بالا نباشن، حالت شب نباشه». راهِ رفتن به
@@ -1030,6 +1040,7 @@ private fun LoanCalcApp(
                 )
             }
             }
+        }
         }
     
         AnimatedVisibility(

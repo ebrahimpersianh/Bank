@@ -730,14 +730,7 @@ private fun SettingsSubPage(
                 SettingsRoute.DATA -> DataSettings(authViewModel, autoBackupViewModel, banner)
                 SettingsRoute.SMS -> SmsSettings(smsAutoImportViewModel, onOpenRules = { onOpenRules() })
                 SettingsRoute.BACKGROUND -> BackgroundRunSettings()
-                SettingsRoute.TOOLS -> ToolsSettings(
-                    onOpenTool = onOpenTool,
-                    onTestCoins = {
-                        gamification.grantTestCoins { balance ->
-                            banner.show("موجودی شد ${toFa(balance)} سکه", isSuccess = true)
-                        }
-                    },
-                )
+                SettingsRoute.TOOLS -> ToolsSettings(onOpenTool = onOpenTool)
                 // دیگه تو یه AppCardِ بیرونی پیچیده نمی‌شه - خودش گروه‌های خودشو داره.
                 SettingsRoute.SECURITY -> SecuritySettings(appLockViewModel)
                 SettingsRoute.PARSING_RULES -> ParsingRulesScreen()
@@ -2305,30 +2298,47 @@ private fun NotificationPermissionSteps(modifier: Modifier = Modifier) {
     }
 }
 
-/** «ابزارها»: تقویمِ مالی/آمار/تاریخچه‌ی محاسبات. این‌ها فیچرن نه تنظیمات، ولی هیچ نقطه‌ی ورودیِ
- * دیگه‌ای تو اپ ندارن - پس به‌جای حذف از تنظیمات (که یعنی گم‌شدنشون)، زیرِ یه ردیفِ واحد جمع شدن. */
+/**
+ * **«ابزارها» - دو گروهِ نام‌دار** (بندِ ۵ فریمِ `75c`، و خواسته‌ی کاربر: «خیلی ساده است»).
+ *
+ * قبلاً چهار ردیفِ بی‌عنوان در دو کارتِ بی‌اسم بود، یعنی گروه‌بندی‌اش هیچ حرفی نمی‌زد.
+ * حالا هر گروه **کاری** را نام می‌برد که کاربر آمده انجام دهد، نه جنسِ فنیِ ابزار را:
+ * کسی که دنبالِ تقویم است «پولم را کِی باید بدهم» در ذهنش است، نه «ابزارِ تقویمی».
+ */
 @Composable
-private fun ToolsSettings(onOpenTool: (String) -> Unit, onTestCoins: () -> Unit = {}) {
-    AppCard(modifier = Modifier.padding(top = 8.dp)) {
-        ToolRow(Icons.Filled.DateRange, "تقویم مالی", "سررسیدِ اقساطِ همه‌ی وام‌هات رو رو تقویم ببین") { onOpenTool("calendar") }
-        // هدفِ پس‌انداز - تا امروز نشانِ `goal_reached` وجود داشت و مقصدی نداشت.
+private fun ToolsSettings(onOpenTool: (String) -> Unit) {
+    ToolGroupTitle("پولم را می‌بینم")
+    AppCard(modifier = Modifier.padding(top = 6.dp)) {
+        ToolRow(Icons.Filled.DateRange, "تقویمِ مالی", "سررسیدِ اقساط و چک‌ها روی تقویم") { onOpenTool("calendar") }
         ToolRow(Icons.Filled.Savings, "هدف‌های پس‌انداز", "برای چیزی که می‌خوای پول کنار بذار و پیشرفتش رو ببین") { onOpenTool("goals") }
     }
-    // ⚠️ ردیفِ «آمار و گزارشات» از این‌جا **حذف** شد (گزارشِ ۶.۵ی کاربر: «پرتی هست»).
-    // محتوایش کاملاً دربارهٔ وام است، پس رفت کنارِ خودِ وام‌ها در تبِ وام. عمداً این‌جا
-    // یک ردیفِ لینک‌دهنده نماند: ردیفی که فقط کاربر را جای دیگری می‌فرستد یک پرش است، و
-    // دو مسیر برای یک صفحه همان دوگانگی‌ای است که یک‌بار دو عددِ متفاوتِ «داراییِ کل» ساخت.
-    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+    ToolGroupTitle("چیزی را بررسی می‌کنم")
+    AppCard(modifier = Modifier.padding(top = 6.dp)) {
         ToolRow(Icons.Filled.History, "تاریخچه‌ی محاسبات", "مرورِ محاسبه‌های قبلیِ وام/سقف وام/سود سپرده") { onOpenTool("history") }
-        // ⚠️ ردیفِ «کیفِ سکه» **حذف شد** (`75a` بندِ ۴): کیف و فروشگاه در یک صفحه ادغام
-        // شدند و تنها درش سکه‌ی هدرِ خانه است. دری که به جای آشنا می‌رسد فقط فهرست را
-        // بلند می‌کند.
-        // ⚠️ **ردیفِ آزمایشی** - خواسته‌ی صریحِ کاربر (۲۶ شهریور) برای تستِ فروشگاه.
-        // یک ردیفِ عادیِ دفتر می‌نویسد (کلیدِ ثابت، پس چندبار زدن اثرِ دوباره ندارد) و
-        // نوعش `test_grant` است تا با دستاوردِ واقعی قاطی نشود. قبل از انتشارِ عمومی
-        // باید برداشته شود.
-        ToolRow(Icons.Filled.Savings, "شارژِ آزمایشیِ سکه", "موجودی رو برای تست یک‌میلیون کن", onTestCoins)
     }
+    // ⚠️ ردیفِ «آمار و گزارشات» از این‌جا **حذف** شد (گزارشِ ۶.۵ی کاربر: «پرتی هست»).
+    // محتوایش دربارهٔ وام است، پس به تبِ گزارش رفت (دورِ ۱۲). عمداً این‌جا یک ردیفِ
+    // لینک‌دهنده نماند: ردیفی که فقط کاربر را جای دیگری می‌فرستد یک پرش است.
+    //
+    // ⚠️ **ردیفِ «شارژِ آزمایشیِ سکه» حذف شد** (خواسته‌ی صریحِ کاربر، دورِ ۱۳). ابزارِ
+    // تستِ فروشگاه بود و کارش تمام شد؛ ماندنش در نسخه‌ی عمومی یعنی هر کاربری می‌توانست
+    // موجودی‌اش را یک‌میلیون کند و کلِ اقتصادِ سکه بی‌معنی می‌شد.
+    //
+    // ⏳ سه ابزارِ دیگرِ فریمِ `75c` (اشتراک‌یاب · دنگ · استعلامِ صیادی) هنوز این‌جا
+    // نیامده‌اند: هر سه از جای دیگری پارامتر می‌گیرند و بردنشان به این‌جا یک لایه‌ی
+    // داده‌ی تازه می‌خواهد، نه یک ردیف.
+}
+
+/** سرگروهِ «ابزارها» - متنِ ریزِ خاکستری بالای هر کارت، نه عنوانِ داخلِ کارت. */
+@Composable
+private fun ToolGroupTitle(text: String) {
+    Text(
+        text,
+        color = AppMuted,
+        fontSize = 10.5.sp,
+        fontWeight = FontWeight.Black,
+        modifier = Modifier.padding(top = 14.dp, start = 4.dp),
+    )
 }
 
 @Composable

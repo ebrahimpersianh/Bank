@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.data.coin
 
 import ir.sadteam.loancalc.ui.components.AvatarFrameStyle
 import ir.sadteam.loancalc.ui.theme.AppFontChoice
+import ir.sadteam.loancalc.ui.theme.Backdrop
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -125,6 +126,15 @@ val THEME_CATALOG = listOf(
     // «دودی» عمداً **آخر** است و نه جایی وسطِ طیف: بی‌فام است، پس هر جای دیگری بگذاریش
     // طیف را وسط می‌شکند. تنها گزینه‌ی کسی است که اصلاً رنگ نمی‌خواهد.
     ThemePalette("graphite", "دودی", dark = 0xFF1A1F24, primary = 0xFF44525F, light = 0xFFA8B8C6, inkLight = 0xFF2C3640),
+    // ── چهار فامِ تازه (دورِ ۱۳) ──────────────────────────────────────────────
+    // هر چهار تا **حفره‌های واقعیِ طیف** را پر می‌کنند، نه ردیفِ بیشتر: بینِ مسی و
+    // زیتونی ۴۸ درجه فاصله بود، بینِ لاجورد و نیلی هیچ آبیِ روشنی نبود، و کلِ طیف
+    // هیچ قهوه‌ای/خاکی نداشت. تمِ هم‌فام با تمِ موجود یعنی کاربر ۱۵۰ سکه داده و
+    // تفاوتی نمی‌بیند - همان قاعده‌ی خودِ این فایل.
+    ThemePalette("saffron", "زعفرانی", dark = 0xFF4A3508, primary = 0xFF9A7209, light = 0xFFF2D488, inkLight = 0xFF6B4E0B), // ۴۴°
+    ThemePalette("cobalt", "آبیِ کبالت", dark = 0xFF0A2E52, primary = 0xFF0F6BB5, light = 0xFF8FCBF2, inkLight = 0xFF0B4A7D), // ۲۰۵°
+    ThemePalette("plum", "آلوییِ روشن", dark = 0xFF2E1533, primary = 0xFF6B3D8F, light = 0xFFCBAEE6, inkLight = 0xFF4A2A63), // ۲۷۵°
+    ThemePalette("clay", "خاکِ رس", dark = 0xFF32211A, primary = 0xFF7A4A33, light = 0xFFD9B29C, inkLight = 0xFF4F3124), // ۱۸°
 )
 
 /**
@@ -250,6 +260,13 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
             unlockBadge = "goal_reached",
         ),
     )
+
+    // ═══ پس‌زمینه‌ی زنده (قلمِ تازه‌ی دورِ ۱۳) ═══
+    // رنگش از توکنِ تمِ فعال می‌آید، پس با هر تمی که کاربر دارد هم‌قدم است و ردیفِ
+    // ویترین هم همین را می‌گوید.
+    Backdrop.entries.forEach { b ->
+        add(ShopItem(b.id, CoinSpend.LIVE_BACKDROP, b.label, b.blurb))
+    }
 
     // ═══ نمادها ═══
     // تنها قلمی که **هر روز** دیده می‌شود (بندِ ۱ی `72a`): در فرمِ ثبت، در دونات، و روی

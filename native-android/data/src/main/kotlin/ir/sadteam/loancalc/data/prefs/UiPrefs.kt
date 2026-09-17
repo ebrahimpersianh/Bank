@@ -57,6 +57,7 @@ class UiPrefs(private val context: Context) {
         val ACTIVE_FRAME = stringPreferencesKey("active_frame")
         val ACTIVE_SYMBOL_SET = stringPreferencesKey("active_symbol_set")
         val ACTIVE_FONT = stringPreferencesKey("active_font")
+        val ACTIVE_BACKDROP = stringPreferencesKey("active_backdrop")
         val NAV_SLOTS = stringPreferencesKey("nav_slots")
         val NAV_USAGE = stringPreferencesKey("nav_usage")
         val NAV_USAGE_STARTED_AT = longPreferencesKey("nav_usage_started_at")
@@ -315,6 +316,15 @@ class UiPrefs(private val context: Context) {
 
     /** قلمِ متنِ فعال (دسته‌ی «قلم»ِ فروشگاه). `null` = وزیرمتنِ پیش‌فرض. */
     val activeFont: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.ACTIVE_FONT] }
+
+    /** پس‌زمینه‌ی زنده‌ی فعال - `null` یعنی پس‌زمینه‌ی سادهٔ برنامه. */
+    val activeBackdrop: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.ACTIVE_BACKDROP] }
+
+    suspend fun setActiveBackdrop(key: String?) {
+        context.uiPrefsDataStore.edit { prefs ->
+            if (key == null) prefs.remove(Keys.ACTIVE_BACKDROP) else prefs[Keys.ACTIVE_BACKDROP] = key
+        }
+    }
 
     suspend fun setActiveFont(key: String?) {
         context.uiPrefsDataStore.edit { prefs ->

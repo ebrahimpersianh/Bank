@@ -66,13 +66,23 @@ class ShopViewModel @Inject constructor(
             uiPrefs.activeFrame,
             uiPrefs.activeSymbolSet,
             uiPrefs.activeFont,
-        ) { theme, icon, frame, symbols, font ->
+            uiPrefs.activeBackdrop,
+        ) { values ->
+            // ⚠️ `combine`ِ شش‌تایی امضای `vararg` دارد و آرایه می‌دهد، نه شش پارامترِ
+            // نام‌دار - نسخه‌ی پارامتریِ آن تا پنج جریان است.
+            val theme = values[0]
+            val icon = values[1]
+            val frame = values[2]
+            val symbols = values[3]
+            val font = values[4]
+            val backdrop = values[5]
             buildMap {
                 if (theme != null) put(ShopCategory.THEME, "theme:$theme")
                 if (icon != null) put(ShopCategory.ICON, icon)
                 if (frame != null) put(ShopCategory.FRAME, frame)
                 if (symbols != null) put(ShopCategory.SYMBOL, symbols)
                 if (font != null) put(ShopCategory.FONT, font)
+                if (backdrop != null) put(ShopCategory.BACKDROP, backdrop)
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
@@ -132,6 +142,7 @@ class ShopViewModel @Inject constructor(
                 ShopCategory.THEME -> uiPrefs.setColorTheme(item.id.removePrefix("theme:"))
                 ShopCategory.FRAME -> uiPrefs.setActiveFrame(item.id)
                 ShopCategory.FONT -> uiPrefs.setActiveFont(item.id)
+                ShopCategory.BACKDROP -> uiPrefs.setActiveBackdrop(item.id)
                 ShopCategory.SYMBOL -> {
                     // «سکه‌ی کهن» هم دسته‌ی نماد است ولی هنوز مقصد ندارد (`comingSoon`)،
                     // پس فقط ستِ دسته‌بندی فعال می‌شود.
@@ -151,6 +162,11 @@ class ShopViewModel @Inject constructor(
     }
 
     /** برداشتنِ قاب/ستِ نماد - همان قاعده‌ی «بی راهِ بازگشت نگذار»ِ بندِ ۵ی `60d`. */
+    /** برداشتنِ پس‌زمینه‌ی زنده - بازگشت به زمینه‌ی تختِ برنامه. */
+    fun resetBackdrop() {
+        viewModelScope.launch { uiPrefs.setActiveBackdrop(null) }
+    }
+
     fun resetFrame() {
         viewModelScope.launch { uiPrefs.setActiveFrame(null) }
     }

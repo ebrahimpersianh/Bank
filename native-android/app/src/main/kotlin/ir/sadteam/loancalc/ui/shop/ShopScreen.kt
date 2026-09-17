@@ -78,6 +78,8 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppFontChoice
 import ir.sadteam.loancalc.ui.theme.AppSurface2
+import ir.sadteam.loancalc.ui.theme.LiveBackdrop
+import ir.sadteam.loancalc.ui.theme.Backdrop
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /*
@@ -293,6 +295,28 @@ fun ShopScreen(
             }
             if (active[ShopCategory.FONT] != null) {
                 item { ResetRow("بازگشت به وزیرمتن", viewModel::resetFont) }
+            }
+        }
+
+        if (tab == null || tab == ShopCategory.BACKDROP) {
+            val backdrops = rowsOf(ShopCategory.BACKDROP)
+            item { GroupHeader("پس‌زمینه‌ی زنده", "${toFa(CoinSpend.LIVE_BACKDROP.price)} سکه") }
+            items(backdrops.size) { index ->
+                val shopItem = backdrops[index]
+                ShopRow(
+                    shopItem,
+                    stateOf(shopItem),
+                    balance,
+                    viewModel::activate,
+                    onConfirm = { confirming = it },
+                    // مثلِ قلم، این هم دیدنی است نه خواندنی: «هاله‌ای که نفس می‌کشد» را
+                    // با متن نمی‌شود فروخت. پیش‌نمایش **همان انیمیشنِ واقعی** است، در
+                    // یک مربعِ ۳۸ - نه یک تصویرِ ثابتِ نماینده.
+                    leading = { BackdropPreview(Backdrop.fromId(shopItem.id)) },
+                )
+            }
+            if (active[ShopCategory.BACKDROP] != null) {
+                item { ResetRow("برداشتنِ پس‌زمینه", viewModel::resetBackdrop) }
             }
         }
 
@@ -664,6 +688,29 @@ private fun SymbolSetPreview(itemId: String) {
                     }
                 }
             }
+        }
+    }
+}
+
+
+/**
+ * پیش‌نمایشِ پس‌زمینه‌ی زنده - همان `LiveBackdrop`ِ واقعی در یک مربعِ ۳۸، روی زمینه‌ی
+ * سطحِ برنامه تا نسبتش با صفحه‌ی واقعی دیده شود.
+ *
+ * ⚠️ آلفای لایه در اندازه‌ی ۳۸ تقریباً نامرئی است، پس این پیش‌نمایش عمداً **دو برابرِ**
+ * اندازه را در خودش می‌کشد و برش می‌دهد؛ وگرنه ردیفِ ویترین یک مربعِ خالی می‌شد.
+ */
+@Composable
+private fun BackdropPreview(backdrop: Backdrop?) {
+    Box(
+        modifier = Modifier
+            .size(38.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(AppSurface2),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (backdrop != null) {
+            LiveBackdrop(backdrop = backdrop, modifier = Modifier.size(76.dp))
         }
     }
 }

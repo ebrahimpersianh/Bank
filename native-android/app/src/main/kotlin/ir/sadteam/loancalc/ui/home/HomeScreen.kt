@@ -1,6 +1,14 @@
 package ir.sadteam.loancalc.ui.home
 
 import androidx.activity.compose.BackHandler
+import ir.sadteam.loancalc.ui.profile.BadgesScreen
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -198,6 +206,11 @@ fun HomeScreen(
     val retroBadges by gamificationViewModel.retroUnlocked.collectAsState()
     var showNewTransaction by remember { mutableStateOf(false) }
     var showCoinWallet by remember { mutableStateOf(false) }
+    // 🚨 **آدمک حالا مقصد دارد** (خواسته‌ی صریحِ کاربر: «رو آدمک می‌زنم، به جایی برود»).
+    // فریمِ `55a` عمداً بی‌مقصدش کرده بود تا با چرخ‌دنده دو درِ یک اتاق نشوند - ولی مقصدِ
+    // درست تنظیمات نبود: **نشان‌ها** جای طبیعیِ آدمک‌اند (همان‌جا که شخصی‌سازی و پیشرفتِ
+    // شخصی نشان داده می‌شود). پس تنظیمات هنوز یک در دارد و آدمک درِ دیگری به اتاقِ دیگر.
+    var showProfile by remember { mutableStateOf(false) }
     // «پرداخت شد» بازگشت‌ناپذیر است و روی کارتِ قهرمانِ خانه یک تپِ اشتباه راحت رخ می‌دهد.
     // ⚠️ این تایید یک‌بار اضافه شده بود و بسته‌ی بازطراحیِ خانه رویش را نوشت - اگر دوباره
     // فایل را از طراح گرفتید، همین‌جا را چک کنید.
@@ -254,6 +267,7 @@ fun HomeScreen(
                     userName = userName,
                     activeDays = activeDays,
                     onOpenCoins = { showCoinWallet = true },
+                    onOpenProfile = { showProfile = true },
                     coins = coins,
                     onOpenSettings = onOpenSettings,
                     inboxCount = inboxCount,
@@ -438,6 +452,36 @@ fun HomeScreen(
         if (showCoinWallet) {
             CoinHubScreen(onBack = { showCoinWallet = false }, todayHasEntry = todayHasEntry)
         }
+        if (showProfile) {
+            BackHandler { showProfile = false }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppBg)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 14.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = { showProfile = false }) {
+                        Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
+                    }
+                    Text(
+                        "نشان‌های من",
+                        color = AppText,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                // ⚠️ `BadgesScreen` یک `Column` است نه فهرستِ تنبل، پس داخلِ اسکرولِ
+                // عمودی امن است (قاعده‌ی کرشِ اسکرولِ تودرتو).
+                BadgesScreen()
+                Spacer(modifier = Modifier.height(90.dp))
+            }
+        }
         if (showTodaySpend) {
             TodaySpendSheet(
                 transactions = transactions,
@@ -540,6 +584,7 @@ private fun HomeHeader(
     inboxUnreadNews: Int,
     onOpenInbox: () -> Unit,
     onOpenCoins: () -> Unit,
+    onOpenProfile: () -> Unit,
     /** امروز تراکنشی ثبت شده یا نه - شرطِ برگشتنِ قرصِ «فعال» به هدر (فریمِ `55a`). */
     todayHasEntry: Boolean,
 ) {
@@ -572,7 +617,18 @@ private fun HomeHeader(
         // قابِ خریداری‌شده دورِ همین آواتار می‌نشیند - جایی که خرید نتیجه می‌دهد (`72a`).
         // ⚠️ قطرِ بیرونی همان ۳۰ می‌مانَد؛ خودِ آدمک کوچک‌تر می‌شود، پس ارتفاعِ ردیف
         // عوض نمی‌شود.
-        FramedAvatar(avatar = avatar, size = 30.dp, frame = avatarFrame)
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onOpenProfile,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            FramedAvatar(avatar = avatar, size = 30.dp, frame = avatarFrame)
+        }
         Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
             // تاریخ **دومین چیزی است که در تنگنا می‌رود** (بعدِ عددِ سکه، قبلِ نام).
             // `Row`ِ بیرونی `SpaceBetween` است و ستون `weight(1f)` دارد، پس خودِ Compose

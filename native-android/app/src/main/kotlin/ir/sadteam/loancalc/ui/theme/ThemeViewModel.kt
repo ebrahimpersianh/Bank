@@ -29,6 +29,10 @@ class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewMod
         viewModelScope.launch {
             uiPrefs.activeFont.collect { AppFontState.choice = AppFontChoice.fromId(it) }
         }
+        // و همان الگو برای پس‌زمینه‌ی زنده - لایه‌اش بیرونِ `Scaffold` کشیده می‌شود.
+        viewModelScope.launch {
+            uiPrefs.activeBackdrop.collect { BackdropState.active = Backdrop.fromId(it) }
+        }
     }
     val themeMode: StateFlow<ThemeMode> = uiPrefs.themeMode
         .map { raw -> ThemeMode.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } ?: ThemeMode.LIGHT }
