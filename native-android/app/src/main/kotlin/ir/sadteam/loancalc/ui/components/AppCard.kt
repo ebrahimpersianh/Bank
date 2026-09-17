@@ -31,6 +31,7 @@ import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppShadowNeutral
 import ir.sadteam.loancalc.ui.theme.AppSpacing
 import ir.sadteam.loancalc.ui.theme.AppStroke
+import ir.sadteam.loancalc.ui.background.LiveBackgroundState
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -109,8 +110,15 @@ fun AppCard(
         variant == AppCardVariant.GOLD -> Brush.linearGradient(listOf(AppGoldFrom, AppGoldTo))
         else -> null
     }
+    // 🚨 **کارتِ سفیدِ مات، پس‌زمینه‌ی زنده را هدر می‌دهد** (بندِ ۴ی وصله‌ی بخشِ ۷۸):
+    // با کارتِ مات، لایه فقط در حاشیه‌ها دیده می‌شد و ۲۵۰ سکه بی‌نتیجه می‌ماند. پس وقتی
+    // - و **فقط** وقتی - پس‌زمینه‌ی زنده فعال است، کارتِ ساده کمی شفاف می‌شود.
+    //
+    // ⚠️ شرطی است و نباید همیشگی شود: بی پس‌زمینه، کارتِ شفاف فقط کنتراستِ متن را کم
+    // می‌کند و هیچ چیزی پشتش نیست که دیده شود.
+    val liveBg = LiveBackgroundState.active != null
     val fillColor: Color = backgroundColor ?: when (variant) {
-        AppCardVariant.DEFAULT -> AppSurface
+        AppCardVariant.DEFAULT -> if (liveBg) AppSurface.copy(alpha = 0.72f) else AppSurface
         AppCardVariant.GOLD -> AppGoldFrom // زیرِ گرادیان؛ برای وقتی گرادیان رسم نشه
         AppCardVariant.URGENT -> colors.urgentBg
         AppCardVariant.DONE -> AppSurface2

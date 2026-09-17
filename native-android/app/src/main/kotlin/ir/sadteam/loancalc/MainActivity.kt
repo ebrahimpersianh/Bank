@@ -186,8 +186,10 @@ import ir.sadteam.loancalc.ui.security.LockScreen
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.inbox.InboxScreen
 import ir.sadteam.loancalc.ui.theme.AppBg
-import ir.sadteam.loancalc.ui.theme.LiveBackdrop
-import ir.sadteam.loancalc.ui.theme.BackdropState
+import ir.sadteam.loancalc.ui.theme.LocalAppColors
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
+import ir.sadteam.loancalc.ui.background.LiveBackgroundLayer
+import ir.sadteam.loancalc.ui.background.LiveBackgroundState
 import ir.sadteam.loancalc.ui.theme.AppDisabledText
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLineRow
@@ -796,11 +798,18 @@ private fun LoanCalcApp(
         // **پس‌زمینه‌ی زنده‌ی خریدنی** (قلمِ تازه‌ی فروشگاه، دورِ ۱۳). زیرِ `Scaffold` که
         // خودش `containerColor` دارد نمی‌شود کشیدش، پس یک `Box` بیرونی می‌گیرد: رنگِ تخت
         // + لایه‌ی متحرک + محتوا. `Scaffold` بعدش شفاف می‌شود وگرنه لایه را می‌پوشاند.
-        val backdrop = BackdropState.active
+        val backdrop = LiveBackgroundState.active
         Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
-            if (backdrop != null) {
-                LiveBackdrop(backdrop = backdrop, modifier = Modifier.fillMaxSize())
-            }
+            // 🚨 **در `Scaffold`ِ ریشه کشیده می‌شود، نه در هر صفحه** (تاکیدِ صریحِ بخشِ ۷۸):
+            // با کشیدن در هر صفحه، انیمیشن در هر تعویضِ تب از صفر شروع می‌شود و پرشِ
+            // محسوس می‌دهد.
+            LiveBackgroundLayer(
+                background = backdrop,
+                primary = AppPrimary,
+                primaryLight = AppPrimaryInkLight,
+                isDark = LocalAppColors.current.isDark,
+                modifier = Modifier.fillMaxSize(),
+            )
         Scaffold(
             containerColor = if (backdrop != null) Color.Transparent else AppBg,
             topBar = {

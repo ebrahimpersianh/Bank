@@ -73,13 +73,20 @@ import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppFontChoice
 import ir.sadteam.loancalc.ui.theme.AppSurface2
-import ir.sadteam.loancalc.ui.theme.LiveBackdrop
-import ir.sadteam.loancalc.ui.theme.Backdrop
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
+import ir.sadteam.loancalc.ui.background.LiveBackgroundLayer
+import androidx.compose.foundation.border
+import ir.sadteam.loancalc.ui.theme.hardShadow
+import ir.sadteam.loancalc.ui.theme.AppGoldInk
+import ir.sadteam.loancalc.ui.theme.AppGoldBorder
+import ir.sadteam.loancalc.data.coin.featuredItemId
+import ir.sadteam.loancalc.ui.background.LiveBackground
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /*
@@ -111,6 +118,10 @@ fun ShopScreen(
     var confirming by remember { mutableStateOf<ShopItem?>(null) }
     /** `null` یعنی تبِ «همه». */
     var tab by rememberSaveable { mutableStateOf<ShopCategory?>(null) }
+    // 🚨 **فیلتر است، نه تبِ ششم** (بندِ ۳ی وصله‌ی بخشِ ۷۸): تبِ «مالِ من» یعنی یک ستونِ
+    // دیگر در نوارِ تب و یک جای دیگر برای گم‌شدن؛ قرص کنارِ همان نوار می‌نشیند و
+    // **صفر پیکسل** ارتفاع می‌گیرد. پیش‌فرض خاموش است چون ویترین برای دیدنِ نداشته‌هاست.
+    var onlyMine by rememberSaveable { mutableStateOf(false) }
     val banner = rememberInAppBanner()
 
     // نتیجه‌ی خرید در بنرِ داخلی دیده می‌شود، نه Toast - قاعده‌ی پروژه. «سکه کم» و
@@ -165,7 +176,19 @@ fun ShopScreen(
     // با پنج نوعِ قلم، سرگروه‌بندیِ تنها یعنی کاربر برای رسیدنِ به «قاب» باید از چهارده تم
     // عبور کند. تب فهرست را **کوتاه** می‌کند، سرگروه فقط نشانه‌گذاری‌اش - پس هر دو
     // می‌مانند: تب بیرون، سرگروه داخلِ همان تب.
-    ShopTabs(tab) { tab = it }
+    // کارتِ «قلمِ هفته» **بالای نوارِ تب**: اولین چیزی که دیده می‌شود باید یک پیشنهادِ
+    // مشخص باشد، نه فهرستِ دسته‌ها. `null` یعنی کاربر همه را دارد و کارت **نمی‌آید** -
+    // پیامِ «همه را داری» عمداً جایگزینش نمی‌شود (تبریکِ بی‌کار، ارتفاعِ گران).
+    val featuredId = remember(owned) { featuredItemId(owned) }
+    val featured = remember(featuredId, catalog) { catalog.firstOrNull { it.id == featuredId } }
+    if (featured != null && !onlyMine) {
+        FeaturedCard(
+            item = featured,
+            balance = balance,
+            onConfirm = { confirming = it },
+        )
+    }
+    ShopTabs(tab, onlyMine, { tab = it }) { onlyMine = !onlyMine }
     LazyColumn(
         contentPadding = PaddingValues(start = 10.dp, end = 16.dp, top = 10.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -186,7 +209,34 @@ fun ShopScreen(
             )
         }
 
-        fun rowsOf(category: ShopCategory) = catalog.filter { it.kind.category == category && it.window == null }
+        fun rowsOf(category: ShopCategory) = catalog
+            .filter { it.kind.category == category && it.window == null }
+            .filter { !onlyMine || it.id in owned }
+
+        if (tab == null || tab == ShopCategory.BACKDROP) {
+            val backdrops = rowsOf(ShopCategory.BACKDROP)
+            // ⚠️ متنِ سرگروه **قیمتِ بسته‌ای** را می‌گوید نه قیمتِ ردیف: چهار ردیفِ
+            // ۲۵۰سکه‌ای پشتِ‌هم یعنی «۱۰۰۰ سکه برای همه»، که غلط است.
+            item { GroupHeader("پس‌زمینه‌ی زنده", "${toFa(CoinSpend.LIVE_BACKDROP.price)} سکه برای هر چهار طرح") }
+            items(backdrops.size) { index ->
+                val shopItem = backdrops[index]
+                ShopRow(
+                    shopItem,
+                    stateOf(shopItem),
+                    balance,
+                    viewModel::activate,
+                    onConfirm = { confirming = it },
+                    // مثلِ قلم، این هم دیدنی است نه خواندنی: «هاله‌ای که نفس می‌کشد» را
+                    // با متن نمی‌شود فروخت. پیش‌نمایش **همان انیمیشنِ واقعی** است، در
+                    // یک مربعِ ۳۸ - نه یک تصویرِ ثابتِ نماینده.
+                    leading = { BackdropPreview(LiveBackground.byId(shopItem.id.removePrefix("bg_"))) },
+                )
+            }
+            if (active[ShopCategory.BACKDROP] != null) {
+                item { ResetRow("برداشتنِ پس‌زمینه", viewModel::resetBackdrop) }
+            }
+        }
+
 
         if (tab == null || tab == ShopCategory.THEME) {
             // ═══ تم - دو سرگروه (`60a`) ═══
@@ -295,28 +345,6 @@ fun ShopScreen(
             }
             if (active[ShopCategory.FONT] != null) {
                 item { ResetRow("بازگشت به وزیرمتن", viewModel::resetFont) }
-            }
-        }
-
-        if (tab == null || tab == ShopCategory.BACKDROP) {
-            val backdrops = rowsOf(ShopCategory.BACKDROP)
-            item { GroupHeader("پس‌زمینه‌ی زنده", "${toFa(CoinSpend.LIVE_BACKDROP.price)} سکه") }
-            items(backdrops.size) { index ->
-                val shopItem = backdrops[index]
-                ShopRow(
-                    shopItem,
-                    stateOf(shopItem),
-                    balance,
-                    viewModel::activate,
-                    onConfirm = { confirming = it },
-                    // مثلِ قلم، این هم دیدنی است نه خواندنی: «هاله‌ای که نفس می‌کشد» را
-                    // با متن نمی‌شود فروخت. پیش‌نمایش **همان انیمیشنِ واقعی** است، در
-                    // یک مربعِ ۳۸ - نه یک تصویرِ ثابتِ نماینده.
-                    leading = { BackdropPreview(Backdrop.fromId(shopItem.id)) },
-                )
-            }
-            if (active[ShopCategory.BACKDROP] != null) {
-                item { ResetRow("برداشتنِ پس‌زمینه", viewModel::resetBackdrop) }
             }
         }
 
@@ -578,7 +606,12 @@ private fun GenericItemPreview(item: ShopItem) {
  * همه‌چیز را ببیند؛ تب‌ها برای کسی‌اند که دنبالِ چیزِ مشخصی آمده.
  */
 @Composable
-private fun ShopTabs(selected: ShopCategory?, onSelect: (ShopCategory?) -> Unit) {
+private fun ShopTabs(
+    selected: ShopCategory?,
+    onlyMine: Boolean,
+    onSelect: (ShopCategory?) -> Unit,
+    onToggleMine: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -586,7 +619,9 @@ private fun ShopTabs(selected: ShopCategory?, onSelect: (ShopCategory?) -> Unit)
             .padding(start = 10.dp, end = 16.dp, top = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TabChip("همه", selected == null) { onSelect(null) }
+        TabChip("مالِ من", onlyMine, onToggleMine)
+        Spacer(modifier = Modifier.width(7.dp))
+        TabChip("همه", selected == null && !onlyMine) { onSelect(null) }
         ShopCategory.entries.forEach { category ->
             Spacer(modifier = Modifier.width(7.dp))
             TabChip(category.tab, selected == category) { onSelect(category) }
@@ -701,7 +736,7 @@ private fun SymbolSetPreview(itemId: String) {
  * اندازه را در خودش می‌کشد و برش می‌دهد؛ وگرنه ردیفِ ویترین یک مربعِ خالی می‌شد.
  */
 @Composable
-private fun BackdropPreview(backdrop: Backdrop?) {
+private fun BackdropPreview(backdrop: LiveBackground?) {
     Box(
         modifier = Modifier
             .size(38.dp)
@@ -710,7 +745,56 @@ private fun BackdropPreview(backdrop: Backdrop?) {
         contentAlignment = Alignment.Center,
     ) {
         if (backdrop != null) {
-            LiveBackdrop(backdrop = backdrop, modifier = Modifier.size(76.dp))
+            LiveBackgroundLayer(
+                background = backdrop,
+                primary = AppPrimary,
+                primaryLight = AppPrimaryInkLight,
+                // پیش‌نمایش همیشه حالتِ تیره را می‌کشد، وگرنه «چرخشِ شب» در تمِ روشن
+                // یک مربعِ خالی می‌شد و کاربر فکر می‌کرد ردیف خراب است.
+                isDark = true,
+                modifier = Modifier.size(76.dp),
+            )
+        }
+    }
+}
+
+
+/**
+ * **کارتِ قلمِ هفته** - فریمِ `78c`.
+ *
+ * ویترینی که با فهرستِ دسته‌ها شروع شود، از کاربر می‌خواهد خودش جست‌وجو کند. این کارت
+ * یک پیشنهادِ **مشخص** می‌دهد؛ و چون از [featuredItemId] می‌آید، برای هر کاربر چیزِ
+ * دیگری است بی هیچ سرور یا تاریخی.
+ */
+@Composable
+private fun FeaturedCard(item: ShopItem, balance: Int, onConfirm: (ShopItem) -> Unit) {
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 4.dp)
+            .hardShadow(AppGoldBorder, offsetY = 4.dp, cornerRadius = 20.dp)
+            .clip(shape)
+            .background(AppGoldPillSoft)
+            .border(2.dp, AppGoldBorder, shape)
+            .pressScaleClickable { onConfirm(item) }
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(11.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("قلمِ این هفته", color = AppGoldInk.copy(alpha = 0.7f), fontSize = 9.5.sp, fontWeight = FontWeight.Black)
+            Text(item.label, color = AppGoldInk, fontSize = 14.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 2.dp))
+            Text(item.blurb, color = AppGoldInk.copy(alpha = 0.75f), fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 2.dp))
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("${toFa(item.price)}", color = AppGoldInk, fontSize = 15.sp, fontWeight = FontWeight.Black)
+            Text(
+                if (balance >= item.price) "سکه" else "سکه کم داری",
+                color = AppGoldInk.copy(alpha = 0.7f),
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+            )
         }
     }
 }

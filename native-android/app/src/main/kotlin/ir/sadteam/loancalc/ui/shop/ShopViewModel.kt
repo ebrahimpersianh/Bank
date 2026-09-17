@@ -12,6 +12,7 @@ import ir.sadteam.loancalc.data.coin.ShopCategory
 import ir.sadteam.loancalc.data.coin.SHOP_CATALOG
 import ir.sadteam.loancalc.data.coin.ShopItem
 import ir.sadteam.loancalc.data.prefs.UiPrefs
+import ir.sadteam.loancalc.ui.background.LiveBackground
 import ir.sadteam.loancalc.ui.widget.IconWither
 import java.time.LocalDate
 import javax.inject.Inject
@@ -82,7 +83,7 @@ class ShopViewModel @Inject constructor(
                 if (frame != null) put(ShopCategory.FRAME, frame)
                 if (symbols != null) put(ShopCategory.SYMBOL, symbols)
                 if (font != null) put(ShopCategory.FONT, font)
-                if (backdrop != null) put(ShopCategory.BACKDROP, backdrop)
+                if (backdrop != null) put(ShopCategory.BACKDROP, "bg_$backdrop")
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
@@ -132,6 +133,13 @@ class ShopViewModel @Inject constructor(
             repository.spend(item.price, item.id, GamificationRepository.Type.SPEND_THEME)
         }
         uiPrefs.addOwnedItem(item.id)
+        // 🚨 **بسته‌ی پس‌زمینه یک خرید است و چهار مالکیت** (بخشِ ۷۸): یک ردیفِ دفتر
+        // نوشته می‌شود (بالاتر، با `refId`ِ همان ردیفی که زده شده) ولی هر چهار شناسه
+        // مالکِ کاربر می‌شوند - وگرنه کاربر یکی می‌خرید و سه طرحِ دیگر را هیچ‌وقت
+        // نمی‌دید، که دقیقاً همان چیزی است که این بسته برای رفعش آمد.
+        if (item.kind.category == ShopCategory.BACKDROP) {
+            LiveBackground.entries.forEach { uiPrefs.addOwnedItem("bg_${it.id}") }
+        }
         activate(item)
         return BuyResult.Ok
     }
@@ -142,7 +150,9 @@ class ShopViewModel @Inject constructor(
                 ShopCategory.THEME -> uiPrefs.setColorTheme(item.id.removePrefix("theme:"))
                 ShopCategory.FRAME -> uiPrefs.setActiveFrame(item.id)
                 ShopCategory.FONT -> uiPrefs.setActiveFont(item.id)
-                ShopCategory.BACKDROP -> uiPrefs.setActiveBackdrop(item.id)
+                // شناسه‌ی ذخیره‌شده **بی پیشوند** است (`aurora`)، چون `LiveBackground.byId`
+                // همان را می‌خواند؛ پیشوندِ `bg_` فقط برای یکتاییِ ردیفِ فروشگاه است.
+                ShopCategory.BACKDROP -> uiPrefs.setActiveBackdrop(item.id.removePrefix("bg_"))
                 ShopCategory.SYMBOL -> {
                     // «سکه‌ی کهن» هم دسته‌ی نماد است ولی هنوز مقصد ندارد (`comingSoon`)،
                     // پس فقط ستِ دسته‌بندی فعال می‌شود.

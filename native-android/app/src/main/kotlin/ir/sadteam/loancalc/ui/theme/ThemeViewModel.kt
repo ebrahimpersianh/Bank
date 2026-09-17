@@ -8,6 +8,8 @@ import ir.sadteam.loancalc.data.SymbolTheme
 import ir.sadteam.loancalc.data.coin.ThemePalette
 import ir.sadteam.loancalc.data.coin.themeById
 import ir.sadteam.loancalc.data.prefs.UiPrefs
+import ir.sadteam.loancalc.ui.background.LiveBackground
+import ir.sadteam.loancalc.ui.background.LiveBackgroundState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -31,7 +33,7 @@ class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewMod
         }
         // و همان الگو برای پس‌زمینه‌ی زنده - لایه‌اش بیرونِ `Scaffold` کشیده می‌شود.
         viewModelScope.launch {
-            uiPrefs.activeBackdrop.collect { BackdropState.active = Backdrop.fromId(it) }
+            uiPrefs.activeBackdrop.collect { LiveBackgroundState.active = LiveBackground.byId(it) }
         }
     }
     val themeMode: StateFlow<ThemeMode> = uiPrefs.themeMode

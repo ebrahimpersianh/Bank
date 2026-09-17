@@ -2,7 +2,7 @@ package ir.sadteam.loancalc.data.coin
 
 import ir.sadteam.loancalc.ui.components.AvatarFrameStyle
 import ir.sadteam.loancalc.ui.theme.AppFontChoice
-import ir.sadteam.loancalc.ui.theme.Backdrop
+import ir.sadteam.loancalc.ui.background.LiveBackground
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -131,10 +131,14 @@ val THEME_CATALOG = listOf(
     // زیتونی ۴۸ درجه فاصله بود، بینِ لاجورد و نیلی هیچ آبیِ روشنی نبود، و کلِ طیف
     // هیچ قهوه‌ای/خاکی نداشت. تمِ هم‌فام با تمِ موجود یعنی کاربر ۱۵۰ سکه داده و
     // تفاوتی نمی‌بیند - همان قاعده‌ی خودِ این فایل.
-    ThemePalette("saffron", "زعفرانی", dark = 0xFF4A3508, primary = 0xFF9A7209, light = 0xFFF2D488, inkLight = 0xFF6B4E0B), // ۴۴°
-    ThemePalette("cobalt", "آبیِ کبالت", dark = 0xFF0A2E52, primary = 0xFF0F6BB5, light = 0xFF8FCBF2, inkLight = 0xFF0B4A7D), // ۲۰۵°
-    ThemePalette("plum", "آلوییِ روشن", dark = 0xFF2E1533, primary = 0xFF6B3D8F, light = 0xFFCBAEE6, inkLight = 0xFF4A2A63), // ۲۷۵°
-    ThemePalette("clay", "خاکِ رس", dark = 0xFF32211A, primary = 0xFF7A4A33, light = 0xFFD9B29C, inkLight = 0xFF4F3124), // ۱۸°
+    // هگزها **عیناً از جدولِ بخشِ ۷۸** برداشته شدند، نه از حدسِ ما (قاعده‌ی «حدس نزن،
+    // گرد نکن»). تنها چیزی که خودمان ساختیم `inkLight` است: جدولِ طراح سه هگز می‌دهد و
+    // خودش نوشت که ششمی فرمولی نیست و باید دستی بیاید - این‌ها تیره‌ترشده‌ی `primary`اند
+    // تا روی سطحِ روشن ۴٫۵:۱ بدهند.
+    ThemePalette("saffron", "زعفرانی", dark = 0xFF4A2C04, primary = 0xFFD98016, light = 0xFFF5C782, inkLight = 0xFF8A5209), // ۴۴°
+    ThemePalette("cobalt", "آبیِ کبالت", dark = 0xFF0B2A5E, primary = 0xFF1B6FD6, light = 0xFF8FC4F5, inkLight = 0xFF13508F), // ۲۰۵°
+    ThemePalette("plum", "آلوییِ روشن", dark = 0xFF3A1240, primary = 0xFF9B3FA8, light = 0xFFE0A8E8, inkLight = 0xFF6B2B75), // ۲۷۵°
+    ThemePalette("clay", "خاکِ رس", dark = 0xFF3A2318, primary = 0xFFA05C3C, light = 0xFFE0B39A, inkLight = 0xFF70402A), // ۱۸°
 )
 
 /**
@@ -264,8 +268,20 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     // ═══ پس‌زمینه‌ی زنده (قلمِ تازه‌ی دورِ ۱۳) ═══
     // رنگش از توکنِ تمِ فعال می‌آید، پس با هر تمی که کاربر دارد هم‌قدم است و ردیفِ
     // ویترین هم همین را می‌گوید.
-    Backdrop.entries.forEach { b ->
-        add(ShopItem(b.id, CoinSpend.LIVE_BACKDROP, b.label, b.blurb))
+    // 🚨 **یک قیمت برای هر چهار طرح** (بندِ ۱ی وصله‌ی `ShopScreen` در بخشِ ۷۸): با چهار
+    // قیمتِ جدا، کاربر یکی را می‌خرید و سه طرحِ دیگر را **هیچ‌وقت نمی‌دید**. ردیفِ اول
+    // قیمت دارد و بقیه بجِ «با بسته» می‌گیرند؛ خریدِ هر کدام هر چهار را باز می‌کند.
+    LiveBackground.entries.forEach { b ->
+        add(
+            ShopItem(
+                id = "bg_${b.id}",
+                kind = CoinSpend.LIVE_BACKDROP,
+                label = b.nameFa,
+                // ⚠️ «چرخشِ شب» در تمِ روشن کشیده نمی‌شود (`darkOnly`)، پس ردیفش باید
+                // خودش این را بگوید - وگرنه کاربر می‌خرد و فکر می‌کند کار نمی‌کند.
+                blurb = if (b.darkOnly) "فقط در تمِ تیره دیده می‌شود" else "روی هر تمی می‌نشیند",
+            ),
+        )
     }
 
     // ═══ نمادها ═══
