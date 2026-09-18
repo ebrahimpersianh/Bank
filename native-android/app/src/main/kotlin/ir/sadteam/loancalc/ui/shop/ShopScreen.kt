@@ -440,8 +440,22 @@ private fun ThemeRow(
     onConfirm: (ShopItem) -> Unit,
 ) {
     val paletteId = item.id.removePrefix("theme:")
+    // اسمِ رنگ به‌تنهایی کافی نیست؛ توضیحِ کوتاه حسِ واقعیِ هر تم را می‌دهد و مثل
+    // پیش‌نمایشِ فروشگاه، انتخاب را قبل از خرید قابل‌فهم می‌کند.
+    val displayItem = item.copy(
+        blurb = when (paletteId) {
+            "aubergine", "plum" -> "بنفشِ عمیق و آرام"
+            "crimson", "garnet" -> "قرمزِ عمیق و رسمی"
+            "saffron", "copper" -> "گرم و پرانرژی"
+            "cobalt", "lapis", "indigo" -> "آبیِ عمیق و خنک"
+            "olive", "teal", "turquoise" -> "سبزآبیِ نرم و تازه"
+            "graphite" -> "خنثی و مینیمال"
+            "gold" -> "طلاییِ ویژه"
+            else -> item.blurb
+        },
+    )
     ShopRow(
-        item = item,
+        item = displayItem,
         state = state,
         balance = balance,
         onActivate = onActivate,
