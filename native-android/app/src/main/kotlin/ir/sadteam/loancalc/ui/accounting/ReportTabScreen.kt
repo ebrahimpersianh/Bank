@@ -846,13 +846,31 @@ private fun CommitmentReportsCard(
 ) {
     val shape = RoundedCornerShape(AppRadius.card)
     Column(
-        modifier = Modifier.fillMaxWidth().clip(shape).background(AppSurface).border(2.dp, AppLineRow, shape).padding(14.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(Brush.linearGradient(listOf(AppPrimaryPill, AppSurface)))
+            .border(1.dp, AppLineRow, shape)
+            .padding(14.dp),
     ) {
-        Text("گزارشِ اقساط و چک‌ها", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
-        Text("ریزِ پرداخت‌ها، مانده و وضعیت سررسیدها", color = AppMuted, fontSize = 9.5.sp, modifier = Modifier.padding(top = 2.dp))
-        Row(modifier = Modifier.fillMaxWidth().padding(top = 11.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CommitmentReportButton(Icons.Filled.EventRepeat, "اقساط وام", "آمار و مانده", onOpenLoanStats, Modifier.weight(1f))
-            CommitmentReportButton(Icons.Filled.CheckCircle, "چک‌ها", "وضعیت و سررسید", onOpenChequeReport, Modifier.weight(1f))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(AppPrimary),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.EventRepeat, contentDescription = null, tint = Color.White, modifier = Modifier.size(17.dp))
+            }
+            Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
+                Text("تعهدهای مالی", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                Text("قسط‌ها و چک‌های در انتظار را یک‌جا ببین", color = AppMuted, fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp))
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            CommitmentReportButton(Icons.Filled.EventRepeat, "اقساط وام", "مانده و پرداخت‌ها", AppPrimary, onOpenLoanStats, Modifier.weight(1f))
+            CommitmentReportButton(Icons.Filled.CheckCircle, "چک‌ها", "سررسید و وضعیت", AppPurple, onOpenChequeReport, Modifier.weight(1f))
         }
     }
 }
@@ -862,21 +880,35 @@ private fun CommitmentReportButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     subtitle: String,
+    accent: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(14.dp)
-    Row(
-        modifier = modifier.clip(shape).background(AppPrimaryPill).border(1.dp, AppLineRow, shape)
-            .pressScaleClickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    val shape = RoundedCornerShape(15.dp)
+    Column(
+        modifier = modifier
+            .clip(shape)
+            .background(AppSurface)
+            .border(1.dp, accent.copy(alpha = 0.22f), shape)
+            .pressScaleClickable(onClick = onClick)
+            .padding(horizontal = 11.dp, vertical = 11.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
-        Column(modifier = Modifier.weight(1f).padding(start = 7.dp)) {
-            Text(title, color = AppText, fontSize = 10.5.sp, fontWeight = FontWeight.Black)
-            Text(subtitle, color = AppMuted, fontSize = 8.5.sp, modifier = Modifier.padding(top = 1.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(accent.copy(alpha = 0.13f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(15.dp))
+            }
+            Icon(
+                Icons.Filled.ChevronLeft,
+                contentDescription = "مشاهده گزارش",
+                tint = accent,
+                modifier = Modifier.weight(1f, fill = false).padding(start = 5.dp).size(15.dp),
+            )
         }
-        Icon(Icons.Filled.ChevronLeft, contentDescription = "مشاهده گزارش", tint = AppPrimary, modifier = Modifier.size(15.dp))
+        Text(title, color = AppText, fontSize = 10.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 8.dp))
+        Text(subtitle, color = AppMuted, fontSize = 8.5.sp, modifier = Modifier.padding(top = 2.dp))
     }
 }
 
