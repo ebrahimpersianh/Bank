@@ -66,7 +66,6 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material.icons.outlined.Groups
@@ -281,7 +280,7 @@ private val allShortcutPool = defaultShortcuts + listOf(
     Shortcut("loan", "وام", Icons.Outlined.Payments, LOAN_ROUTE),
     Shortcut("home", "خانه", Icons.Outlined.Home, "home"),
     Shortcut("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, "assets"),
-    Shortcut("tools", "ابزارها", Icons.Outlined.Build, TOOLS_ROUTE),
+    Shortcut("tools", "ابزارها", Icons.Outlined.Groups, TOOLS_ROUTE),
 )
 
 private const val LOAN_ROUTE = "loan"
