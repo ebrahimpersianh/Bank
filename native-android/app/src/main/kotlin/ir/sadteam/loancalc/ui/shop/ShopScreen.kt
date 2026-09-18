@@ -306,7 +306,10 @@ fun ShopScreen(
                     activateItem,
                     onConfirm = { confirming = it },
                     // یک نماد کافی نیست - **ست** است، پس چهارتا در شبکه (`72b`).
-                    leading = { SymbolSetPreview(shopItem.id) },
+                    leading = {
+                        if (shopItem.id.startsWith("coinskin:")) CoinSkinPreview(shopItem.id)
+                        else SymbolSetPreview(shopItem.id)
+                    },
                 )
             }
             if (active[ShopCategory.SYMBOL] != null) {
@@ -745,25 +748,44 @@ private fun FontPreview(choice: AppFontChoice) {
 @Composable
 private fun SymbolSetPreview(itemId: String) {
     val style = SymbolStyle.fromItemId(itemId)
-    val keys = categoryIconChoices.take(4).map { it.first }
+    val (background, tint) = when (style) {
+        SymbolStyle.FILLED -> AppIconFrame to AppMuted
+        SymbolStyle.ROUNDED -> AppPrimaryPill to AppPrimaryInk
+        SymbolStyle.OUTLINED -> AppSurface2 to AppText
+        SymbolStyle.SHARP -> Color(0xFFFFEEE2) to Color(0xFFB64C19)
+        SymbolStyle.TWO_TONE -> Color(0xFFEAE5FF) to Color(0xFF6842B8)
+        SymbolStyle.PICTORIAL -> Color(0xFFE0F4EE) to Color(0xFF087D5B)
+    }
+    val keys = listOf("restaurant", "home", "car", "celebration")
     Box(
-        modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(AppIconFrame),
+        modifier = Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(background),
         contentAlignment = Alignment.Center,
     ) {
-        Column {
+        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
             keys.chunked(2).forEach { pair ->
-                Row {
+                Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
                     pair.forEach { key ->
                         Icon(
                             iconForKey(key, style),
                             contentDescription = null,
-                            tint = AppMuted,
-                            modifier = Modifier.size(13.dp).padding(1.dp),
+                            tint = tint,
+                            modifier = Modifier.size(16.dp).padding(1.dp),
                         )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CoinSkinPreview(itemId: String) {
+    val accent = if (itemId == "coinskin:ancient") Color(0xFF8A6744) else Color(0xFFC99625)
+    Box(
+        modifier = Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(accent.copy(alpha = 0.14f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        CoinIcon(size = 25.dp, modifier = Modifier.alpha(if (itemId == "coinskin:ancient") 0.76f else 1f))
     }
 }
 
