@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- نشانِ کاملِ جیبک برای foreground آیکون تطبیقی؛ تمامِ شکل داخل safe zone لانچر است. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- سکه، کامل و کمی بیرون‌آمده از کیف -->
+    <path android:fillColor="#F6C846"
+        android:pathData="M39,35 A15,15 0,1 0,69,35 A15,15 0,1 0,39,35 Z"/>
+    <path android:fillColor="#FFE7A0"
+        android:pathData="M44,35 A10,10 0,1 0,64,35 A10,10 0,1 0,44,35 Z"/>
+    <path android:fillColor="#E2A926"
+        android:pathData="M47,35 A7,7 0,1 0,61,35 A7,7 0,1 0,47,35 Z"/>
+    <!-- بدنه‌ی کیف، پایینِ سکه و کاملاً داخل ناحیهٔ امن -->
+    <path android:fillColor="#13A96F"
+        android:pathData="M30,46 L78,46 A8,8 0,0 1,86,54 L86,78 A8,8 0,0 1,78,86 L30,86 A8,8 0,0 1,22,78 L22,54 A8,8 0,0 1,30,46 Z"/>
+    <path android:fillColor="#20C48A"
+        android:pathData="M22,55 A8,8 0,0 1,30,47 L78,47 A8,8 0,0 1,86,55 L86,62 L22,62 Z"/>
+    <path android:fillColor="#087754"
+        android:pathData="M22,64 L86,64 L86,70 L22,70 Z"/>
+    <path android:fillColor="#075D43"
+        android:pathData="M64,65 L86,65 L86,78 A8,8 0,0 1,78,86 L64,86 Z"/>
+    <path android:fillColor="#67E8B5"
+        android:pathData="M69,73 A5,5 0,1 0,79,73 A5,5 0,1 0,69,73 Z"/>
+</vector>
