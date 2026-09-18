@@ -19,6 +19,24 @@ import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.BusinessCenter
+import androidx.compose.material.icons.filled.Cake
+import androidx.compose.material.icons.filled.Commute
+import androidx.compose.material.icons.filled.Cottage
+import androidx.compose.material.icons.filled.ElectricBolt
+import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.ListAlt
+import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.Medication
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Park
+import androidx.compose.material.icons.filled.Redeem
+import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.Stars
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.Celebration
@@ -81,32 +99,33 @@ enum class SymbolStyle(val id: String, val label: String) {
     companion object { fun fromItemId(itemId: String?): SymbolStyle = entries.firstOrNull { itemId == "symbolset:${it.id}" } ?: FILLED }
 }
 object SymbolTheme { var style: SymbolStyle by mutableStateOf(SymbolStyle.FILLED) }
-private data class IconPack(val key:String,val filled:ImageVector,val rounded:ImageVector,val outlined:ImageVector,val sharp:ImageVector,val twoTone:ImageVector)
+private data class IconPack(val key:String,val filled:ImageVector,val rounded:ImageVector,val outlined:ImageVector,val sharp:ImageVector,val twoTone:ImageVector,val pictorial:ImageVector)
 private val ICON_TABLE = listOf(
-    IconPack("restaurant", Icons.Filled.Restaurant, Icons.Rounded.Restaurant, Icons.Outlined.Restaurant, Icons.Sharp.Restaurant, Icons.TwoTone.Restaurant),
-    IconPack("home", Icons.Filled.Home, Icons.Rounded.Home, Icons.Outlined.Home, Icons.Sharp.Home, Icons.TwoTone.Home),
-    IconPack("car", Icons.Filled.DirectionsCar, Icons.Rounded.DirectionsCar, Icons.Outlined.DirectionsCar, Icons.Sharp.DirectionsCar, Icons.TwoTone.DirectionsCar),
-    IconPack("hospital", Icons.Filled.LocalHospital, Icons.Rounded.LocalHospital, Icons.Outlined.LocalHospital, Icons.Sharp.LocalHospital, Icons.TwoTone.LocalHospital),
-    IconPack("shopping", Icons.Filled.ShoppingBag, Icons.Rounded.ShoppingBag, Icons.Outlined.ShoppingBag, Icons.Sharp.ShoppingBag, Icons.TwoTone.ShoppingBag),
-    IconPack("receipt", Icons.Filled.ReceiptLong, Icons.Rounded.ReceiptLong, Icons.Outlined.ReceiptLong, Icons.Sharp.ReceiptLong, Icons.TwoTone.ReceiptLong),
-    IconPack("celebration", Icons.Filled.Celebration, Icons.Rounded.Celebration, Icons.Outlined.Celebration, Icons.Sharp.Celebration, Icons.TwoTone.Celebration),
-    IconPack("payments", Icons.Filled.Payments, Icons.Rounded.Payments, Icons.Outlined.Payments, Icons.Sharp.Payments, Icons.TwoTone.Payments),
-    IconPack("work", Icons.Filled.Work, Icons.Rounded.Work, Icons.Outlined.Work, Icons.Sharp.Work, Icons.TwoTone.Work),
-    IconPack("sell", Icons.Filled.Sell, Icons.Rounded.Sell, Icons.Outlined.Sell, Icons.Sharp.Sell, Icons.TwoTone.Sell),
-    IconPack("gift", Icons.Filled.CardGiftcard, Icons.Rounded.CardGiftcard, Icons.Outlined.CardGiftcard, Icons.Sharp.CardGiftcard, Icons.TwoTone.CardGiftcard),
-    IconPack("trending", Icons.Filled.TrendingUp, Icons.Rounded.TrendingUp, Icons.Outlined.TrendingUp, Icons.Sharp.TrendingUp, Icons.TwoTone.TrendingUp),
-    IconPack("bolt", Icons.Filled.Bolt, Icons.Rounded.Bolt, Icons.Outlined.Bolt, Icons.Sharp.Bolt, Icons.TwoTone.Bolt),
-    IconPack("school", Icons.Filled.School, Icons.Rounded.School, Icons.Outlined.School, Icons.Sharp.School, Icons.TwoTone.School),
-    IconPack("pets", Icons.Filled.Pets, Icons.Rounded.Pets, Icons.Outlined.Pets, Icons.Sharp.Pets, Icons.TwoTone.Pets),
-    IconPack("sports", Icons.Filled.SportsSoccer, Icons.Rounded.SportsSoccer, Icons.Outlined.SportsSoccer, Icons.Sharp.SportsSoccer, Icons.TwoTone.SportsSoccer),
-    IconPack("star", Icons.Filled.Star, Icons.Rounded.Star, Icons.Outlined.Star, Icons.Sharp.Star, Icons.TwoTone.Star),
-    IconPack("other", Icons.Filled.MoreHoriz, Icons.Rounded.MoreHoriz, Icons.Outlined.MoreHoriz, Icons.Sharp.MoreHoriz, Icons.TwoTone.MoreHoriz),
+    IconPack("restaurant", Icons.Filled.Restaurant, Icons.Rounded.Restaurant, Icons.Outlined.Restaurant, Icons.Sharp.Restaurant, Icons.TwoTone.Restaurant, Icons.Filled.Fastfood),
+    IconPack("home", Icons.Filled.Home, Icons.Rounded.Home, Icons.Outlined.Home, Icons.Sharp.Home, Icons.TwoTone.Home, Icons.Filled.Cottage),
+    IconPack("car", Icons.Filled.DirectionsCar, Icons.Rounded.DirectionsCar, Icons.Outlined.DirectionsCar, Icons.Sharp.DirectionsCar, Icons.TwoTone.DirectionsCar, Icons.Filled.Commute),
+    IconPack("hospital", Icons.Filled.LocalHospital, Icons.Rounded.LocalHospital, Icons.Outlined.LocalHospital, Icons.Sharp.LocalHospital, Icons.TwoTone.LocalHospital, Icons.Filled.Medication),
+    IconPack("shopping", Icons.Filled.ShoppingBag, Icons.Rounded.ShoppingBag, Icons.Outlined.ShoppingBag, Icons.Sharp.ShoppingBag, Icons.TwoTone.ShoppingBag, Icons.Filled.Storefront),
+    IconPack("receipt", Icons.Filled.ReceiptLong, Icons.Rounded.ReceiptLong, Icons.Outlined.ReceiptLong, Icons.Sharp.ReceiptLong, Icons.TwoTone.ReceiptLong, Icons.Filled.ListAlt),
+    IconPack("celebration", Icons.Filled.Celebration, Icons.Rounded.Celebration, Icons.Outlined.Celebration, Icons.Sharp.Celebration, Icons.TwoTone.Celebration, Icons.Filled.Cake),
+    IconPack("payments", Icons.Filled.Payments, Icons.Rounded.Payments, Icons.Outlined.Payments, Icons.Sharp.Payments, Icons.TwoTone.Payments, Icons.Filled.AccountBalanceWallet),
+    IconPack("work", Icons.Filled.Work, Icons.Rounded.Work, Icons.Outlined.Work, Icons.Sharp.Work, Icons.TwoTone.Work, Icons.Filled.BusinessCenter),
+    IconPack("sell", Icons.Filled.Sell, Icons.Rounded.Sell, Icons.Outlined.Sell, Icons.Sharp.Sell, Icons.TwoTone.Sell, Icons.Filled.LocalOffer),
+    IconPack("gift", Icons.Filled.CardGiftcard, Icons.Rounded.CardGiftcard, Icons.Outlined.CardGiftcard, Icons.Sharp.CardGiftcard, Icons.TwoTone.CardGiftcard, Icons.Filled.Redeem),
+    IconPack("trending", Icons.Filled.TrendingUp, Icons.Rounded.TrendingUp, Icons.Outlined.TrendingUp, Icons.Sharp.TrendingUp, Icons.TwoTone.TrendingUp, Icons.Filled.ShowChart),
+    IconPack("bolt", Icons.Filled.Bolt, Icons.Rounded.Bolt, Icons.Outlined.Bolt, Icons.Sharp.Bolt, Icons.TwoTone.Bolt, Icons.Filled.ElectricBolt),
+    IconPack("school", Icons.Filled.School, Icons.Rounded.School, Icons.Outlined.School, Icons.Sharp.School, Icons.TwoTone.School, Icons.Filled.MenuBook),
+    IconPack("pets", Icons.Filled.Pets, Icons.Rounded.Pets, Icons.Outlined.Pets, Icons.Sharp.Pets, Icons.TwoTone.Pets, Icons.Filled.Park),
+    IconPack("sports", Icons.Filled.SportsSoccer, Icons.Rounded.SportsSoccer, Icons.Outlined.SportsSoccer, Icons.Sharp.SportsSoccer, Icons.TwoTone.SportsSoccer, Icons.Filled.FitnessCenter),
+    IconPack("star", Icons.Filled.Star, Icons.Rounded.Star, Icons.Outlined.Star, Icons.Sharp.Star, Icons.TwoTone.Star, Icons.Filled.Stars),
+    IconPack("other", Icons.Filled.MoreHoriz, Icons.Rounded.MoreHoriz, Icons.Outlined.MoreHoriz, Icons.Sharp.MoreHoriz, Icons.TwoTone.MoreHoriz, Icons.Filled.Apps),
 )
 val categoryIconChoices: List<Pair<String, ImageVector>> get() = ICON_TABLE.map { it.key to iconForKey(it.key) }
 fun iconForKey(key: String, style: SymbolStyle = SymbolTheme.style): ImageVector {
     val icon = ICON_TABLE.firstOrNull { it.key == key } ?: ICON_TABLE.last()
     return when(style) {
-        SymbolStyle.FILLED, SymbolStyle.PICTORIAL -> icon.filled
+        SymbolStyle.FILLED -> icon.filled
+        SymbolStyle.PICTORIAL -> icon.pictorial
         SymbolStyle.ROUNDED -> icon.rounded
         SymbolStyle.OUTLINED -> icon.outlined
         SymbolStyle.SHARP -> icon.sharp
