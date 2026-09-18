@@ -95,8 +95,7 @@ data class Shortcut(
 private const val AUTO_CLOSE_MS = 10_000L
 private const val COLUMNS = 5
 
-/** سقفِ میان‌برهای کشو (فریمِ `53a`) - یک ردیفِ پنج‌تایی. */
-const val SHORTCUT_SLOTS = 5
+/** هر ردیفِ کشو پنج‌تایی است؛ تعدادِ میان‌برهای انتخابی محدود نیست. */
 
 @Composable
 fun ShortcutDrawer(
@@ -214,7 +213,7 @@ fun ShortcutDrawer(
                 if (editMode) {
                     // شمارنده‌ی «۶ از ۸» - بی آن کاربر نمی‌فهمد چرا نهمی انتخاب نمی‌شود.
                     Text(
-                        "${selectedIds.size} از $SHORTCUT_SLOTS",
+                        "${selectedIds.size} انتخاب شده",
                         color = AppLabel,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -262,8 +261,7 @@ fun ShortcutDrawer(
                     onToggle = { id ->
                         selectedIds = when {
                             id in selectedIds -> selectedIds - id
-                            selectedIds.size < SHORTCUT_SLOTS -> selectedIds + id
-                            else -> selectedIds
+                            else -> selectedIds + id
                         }
                     },
                 )
@@ -469,12 +467,12 @@ fun ShortcutDrawerHandle(onOpen: () -> Unit, modifier: Modifier = Modifier) {
         ) {
             Box(
                 modifier = Modifier
-                    .width(30.dp)
-                    .height(4.dp)
+                    .width(72.dp)
+                    .height(5.dp)
                     .clip(RoundedCornerShape(999.dp))
                     .background(AppPrimary),
             )
-            Text("میان‌برها", color = AppLabel, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+
         }
     }
 }
