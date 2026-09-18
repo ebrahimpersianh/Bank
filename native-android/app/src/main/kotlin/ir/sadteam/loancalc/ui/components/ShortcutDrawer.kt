@@ -204,7 +204,7 @@ fun ShortcutDrawer(
                     when {
                         editMode -> "کدام‌ها در کشو باشند"
                         reorderMode -> "جای‌شان را عوض کن"
-                        else -> "میان‌بُرها"
+                        else -> "دسترسیِ سریع"
                     },
                     color = AppText,
                     fontSize = 14.sp,
@@ -413,25 +413,26 @@ private fun ShortcutTile(
             .clickable(onClick = onClick)
             .padding(vertical = 8.dp, horizontal = 4.dp),
     ) {
+        val isPrimaryAction = shortcut.locked
         Box(
             modifier = Modifier
-                .size(52.dp)
-                .clip(RoundedCornerShape(AppRadius.row))
-                .background(AppPrimaryPill),
+                .size(if (isPrimaryAction) 56.dp else 50.dp)
+                .clip(RoundedCornerShape(if (isPrimaryAction) 18.dp else AppRadius.row))
+                .background(if (isPrimaryAction) AppPrimary else AppChipBg),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 shortcut.icon,
                 contentDescription = shortcut.label,
-                tint = AppPrimaryInk,
-                modifier = Modifier.size(22.dp),
+                tint = if (isPrimaryAction) Color.White else AppPrimaryInk,
+                modifier = Modifier.size(if (isPrimaryAction) 24.dp else 21.dp),
             )
         }
         Text(
             shortcut.label,
-            color = AppText,
-            fontSize = 10.5.sp,
-            fontWeight = FontWeight.Bold,
+            color = if (isPrimaryAction) AppPrimaryInk else AppText,
+            fontSize = if (isPrimaryAction) 10.5.sp else 10.sp,
+            fontWeight = if (isPrimaryAction) FontWeight.Black else FontWeight.Bold,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 6.dp),
         )
@@ -462,13 +463,19 @@ fun ShortcutDrawerHandle(onOpen: () -> Unit, modifier: Modifier = Modifier) {
             .clickable(onClick = onOpen),
         contentAlignment = Alignment.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .width(38.dp)
-                .height(4.dp)
-                .clip(RoundedCornerShape(999.dp))
-                .background(AppLineRow),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(30.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AppPrimary),
+            )
+            Text("میان‌برها", color = AppLabel, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
