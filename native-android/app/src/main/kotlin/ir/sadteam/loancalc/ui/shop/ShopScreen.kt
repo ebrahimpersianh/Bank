@@ -49,6 +49,7 @@ import java.time.LocalDate
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.SymbolStyle
+import ir.sadteam.loancalc.data.Badge
 import ir.sadteam.loancalc.data.categoryIconChoices
 import ir.sadteam.loancalc.data.iconForKey
 import ir.sadteam.loancalc.data.coin.BASE_THEME_IDS
@@ -95,6 +96,30 @@ import ir.sadteam.loancalc.ui.theme.AppText
  * ترتیبِ دسته‌ها و قیمت‌ها از `SHOP_CATALOG` می‌آیند، پس این فایل هیچ قیمت و شناسه‌ای
  * **نمی‌داند** - همان قاعده‌ی `CoinEconomy.kt` که تنها مرجعِ اعداد باشد.
  */
+
+
+/** کالکشن کوچک اما واقعی: دو خریدی که با هم یک فضای یکپارچه می‌سازند. */
+@Composable
+private fun StarryNightCollectionCard(owned: Set<String>, earned: Boolean) {
+    val required = setOf("theme:vangogh", "bg_night_swirl")
+    val collected = required.count(owned::contains)
+    val complete = collected == required.size
+    val shape = RoundedCornerShape(18.dp)
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp).clip(shape)
+            .background(if (complete) Color(0xFF10295D) else AppSurface2)
+            .border(1.dp, if (complete) Color(0xFFF2C14E).copy(alpha = 0.65f) else AppLine, shape)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text("✦", color = if (complete) Color(0xFFF2C14E) else AppMuted, fontSize = 24.sp, fontWeight = FontWeight.Black)
+        Column(modifier = Modifier.weight(1f)) {
+            Text("کالکشنِ شبِ پرستاره", color = if (complete) Color.White else AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
+            Text(if (complete) "تم ون‌گوگ + چرخش شب · نشان باز شد" else "تم ون‌گوگ و بسته‌ی پس‌زمینه را بگیر", color = if (complete) Color.White.copy(alpha = 0.75f) else AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 3.dp))
+        }
+        Pill(if (earned) "نشان گرفتی" else "${toFa(collected)} از ۲", if (complete) Color(0x33F2C14E) else AppIconFrame, if (complete) Color(0xFFF2C14E) else AppMuted)
+    }
+}
 
 /** حالتِ یک ردیف. از موجودی و مالکیت و نشان‌ها مشتق می‌شود، جایی ذخیره نمی‌شود. */
 private enum class RowState { BUY, POOR, OWNED, ACTIVE, BADGE_LOCKED, SOON }
@@ -183,6 +208,7 @@ fun ShopScreen(
     // کارتِ «قلمِ هفته» **بالای نوارِ تب**: اولین چیزی که دیده می‌شود باید یک پیشنهادِ
     // مشخص باشد، نه فهرستِ دسته‌ها. `null` یعنی کاربر همه را دارد و کارت **نمی‌آید** -
     // پیامِ «همه را داری» عمداً جایگزینش نمی‌شود (تبریکِ بی‌کار، ارتفاعِ گران).
+    StarryNightCollectionCard(owned = owned, earned = Badge.COLLECTION_STARRY_NIGHT.code in earnedBadges)
     val featuredId = remember(owned) { featuredItemId(owned) }
     val featured = remember(featuredId, catalog) { catalog.firstOrNull { it.id == featuredId } }
     if (featured != null && !onlyMine) {
