@@ -672,7 +672,7 @@ private fun LoanCalcApp(
         val selected = if (stored.isEmpty() || stored.map { it.id } == defaultShortcuts.map { it.id }) allShortcutPool else stored
         // ترتیبِ ذخیره‌شده اول میاد؛ شناسه‌ی ناشناخته نادیده و میان‌برِ تازه ته لیست اضافه می‌شه.
         val ordered = savedShortcutOrder.mapNotNull { id -> selected.firstOrNull { it.id == id } }
-        ordered + selected.filterNot { it.id in savedShortcutOrder)
+        ordered + selected.filterNot { it.id in savedShortcutOrder }
     }
 
     // «وام‌های من» دیگه تبِ جداگانه‌ی خودش نیست، یه زیرصفحه‌ی داخلِ تبِ «وام»ه (رجوع کن به
