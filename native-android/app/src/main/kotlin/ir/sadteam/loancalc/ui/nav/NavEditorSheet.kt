@@ -143,7 +143,7 @@ fun NavEditorSheet(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "چیدنِ نوار",
+                    "نوار پایینت را بچین",
                     color = AppText,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Black,
@@ -158,11 +158,16 @@ fun NavEditorSheet(
             }
             Spacer(Modifier.height(6.dp))
             Text(
-                "یک مقصد را بگیر و روی جای دلخواهت بکش. یا یک جا را بزن و بعد مقصدش را انتخاب کن. " +
-                    "نوارِ واقعیِ پایینِ صفحه همان لحظه عوض می‌شود.",
+                "برای باز کردن این بخش، روی هر دکمه‌ی نوار پایین یک لحظه نگه‌دار. " +
+                    "اینجا مقصد را بکش یا اول جایش را بزن و بعد مقصدش را انتخاب کن؛ تغییر همان لحظه پایین صفحه دیده می‌شود.",
                 color = AppMuted,
                 fontSize = 11.5.sp,
                 lineHeight = 19.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(AppRadius.row))
+                    .background(AppPrimaryPill)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
             )
 
             Spacer(Modifier.height(14.dp))
