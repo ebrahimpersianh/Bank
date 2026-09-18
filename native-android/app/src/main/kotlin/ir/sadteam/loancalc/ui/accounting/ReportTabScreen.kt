@@ -110,6 +110,8 @@ import ir.sadteam.loancalc.ui.theme.hardShadow
 @Composable
 fun ReportTabScreen(
     onOpenExport: () -> Unit = {},
+    onOpenLoanStats: () -> Unit = {},
+    onOpenChequeReport: () -> Unit = {},
     accountViewModel: AccountViewModel = hiltViewModel(),
     privacyViewModel: PrivacyModeViewModel = hiltViewModel(),
     discoveryDismissViewModel: DiscoveryDismissViewModel = hiltViewModel(),
@@ -201,6 +203,8 @@ fun ReportTabScreen(
                     total = stats.periodSpend,
                     periodLabel = stats.periodLabel,
                     privacyMode = privacyMode,
+                    onOpenLoanStats = onOpenLoanStats,
+                    onOpenChequeReport = onOpenChequeReport,
                 )
             }
         }
@@ -746,6 +750,8 @@ private fun CategoryDonutCard(
     total: Double,
     periodLabel: String,
     privacyMode: Boolean,
+    onOpenLoanStats: () -> Unit,
+    onOpenChequeReport: () -> Unit,
 ) {
     val top = remember(byCategory) { byCategory.entries.sortedByDescending { it.value }.take(3) }
     val colors = listOf(AppDanger, AppPurple, AppInfo)
@@ -823,9 +829,57 @@ private fun CategoryDonutCard(
         }
     }
     }
+    // «قسط/چک» خرجِ تعهدی‌اند؛ گزارش جزئی‌شان از داده‌های وام و چک می‌آید، نه از دسته‌بندی حساب.
+    CommitmentReportsCard(
+        onOpenLoanStats = onOpenLoanStats,
+        onOpenChequeReport = onOpenChequeReport,
+    )
 }
 
 // ═══ ۵ و ۶ · کارت‌های کشف ═══════════════════════════════════════════════════════
+
+/** ورودیِ واضح به دو گزارشِ تعهدی؛ فلش و press-scale نشان می‌دهند که قابل لمس‌اند. */
+@Composable
+private fun CommitmentReportsCard(
+    onOpenLoanStats: () -> Unit,
+    onOpenChequeReport: () -> Unit,
+) {
+    val shape = RoundedCornerShape(AppRadius.card)
+    Column(
+        modifier = Modifier.fillMaxWidth().clip(shape).background(AppSurface).border(2.dp, AppLineRow, shape).padding(14.dp),
+    ) {
+        Text("گزارشِ اقساط و چک‌ها", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
+        Text("ریزِ پرداخت‌ها، مانده و وضعیت سررسیدها", color = AppMuted, fontSize = 9.5.sp, modifier = Modifier.padding(top = 2.dp))
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 11.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CommitmentReportButton(Icons.Filled.EventRepeat, "اقساط وام", "آمار و مانده", onOpenLoanStats, Modifier.weight(1f))
+            CommitmentReportButton(Icons.Filled.CheckCircle, "چک‌ها", "وضعیت و سررسید", onOpenChequeReport, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun CommitmentReportButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        modifier = modifier.clip(shape).background(AppPrimaryPill).border(1.dp, AppLineRow, shape)
+            .pressScaleClickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
+        Column(modifier = Modifier.weight(1f).padding(start = 7.dp)) {
+            Text(title, color = AppText, fontSize = 10.5.sp, fontWeight = FontWeight.Black)
+            Text(subtitle, color = AppMuted, fontSize = 8.5.sp, modifier = Modifier.padding(top = 1.dp))
+        }
+        Icon(Icons.Filled.ChevronLeft, contentDescription = "مشاهده گزارش", tint = AppPrimary, modifier = Modifier.size(15.dp))
+    }
+}
+
 /** کارتِ کشف - گوشه ۲۰ · پدینگ ۱۴×۱۶ · حاشیه ۲ · قابِ آیکونِ ۳۴ با گوشه‌ی ۱۱ · فاصله ۱۱. */
 @Composable
 private fun DiscoveryCard(
