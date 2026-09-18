@@ -56,22 +56,23 @@ fun SplashIntroScreen(onDone: () -> Unit) {
         launch {
             coinDrop.animateTo(
                 1f,
-                animationSpec = spring(dampingRatio = 0.52f, stiffness = 310f),
+                animationSpec = tween(820, easing = CubicBezierEasing(0.18f, 0.82f, 0.22f, 1f)),
             )
         }
         launch {
-            delay(360)
+            // کیف کمی پیش از رسیدنِ سکه ظاهر می‌شود تا فرودِ سکه واقعاً دیده شود.
+            delay(500)
             walletReveal.animateTo(
                 1f,
-                animationSpec = tween(440, easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)),
+                animationSpec = tween(470, easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)),
             )
         }
         launch {
-            delay(680)
+            delay(880)
             wordsReveal.animateTo(1f, animationSpec = tween(330))
         }
         launch { progress.animateTo(1f, animationSpec = tween(1450)) }
-        delay(1650)
+        delay(1900)
         exit.animateTo(1f, animationSpec = tween(220))
         onDone()
     }
@@ -105,7 +106,7 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                     .size(100.dp)
                     .graphicsLayer {
                         alpha = 1f - walletReveal.value
-                        translationY = -250f * (1f - coinDrop.value)
+                        translationY = 30f - 520f * (1f - coinDrop.value)
                         scaleX = 0.88f + 0.12f * coinDrop.value
                         scaleY = 0.88f + 0.12f * coinDrop.value
                     }
@@ -122,7 +123,7 @@ fun SplashIntroScreen(onDone: () -> Unit) {
             // Wallet catches the coin. The asset already contains the final,
             // carefully illustrated coin so the handoff ends in the true logo.
             Image(
-                painter = painterResource(R.drawable.jibak_stage_0),
+                painter = painterResource(R.drawable.jibak_brand_mark),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
