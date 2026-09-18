@@ -141,6 +141,11 @@ class ShopViewModel @Inject constructor(
             LiveBackground.entries.forEach { uiPrefs.addOwnedItem("bg_${it.id}") }
         }
         activate(item)
+        // کالکشن «شب پرستاره» بعد از خرید دوم، یک‌بار و از همان دفتر نشان باز می‌شود.
+        val ownedNow = uiPrefs.ownedItems.first()
+        if (setOf("theme:vangogh", "bg_night_swirl").all(ownedNow::contains)) {
+            repository.unlock(Badge.COLLECTION_STARRY_NIGHT.code, Badge.COLLECTION_STARRY_NIGHT.coins, silent = false)
+        }
         return BuyResult.Ok
     }
 
