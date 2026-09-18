@@ -21,6 +21,7 @@ enum class Badge(val code: String, val label: String, val coins: Int, val hint: 
     GOAL_REACHED("goal_reached", "هدف‌رس", 100, "به یه هدفِ پس‌انداز برس"),
     LOAN_CLOSED("loan_closed", "وامِ بسته", 150, "آخرین قسطِ یه وام رو پرداخت کن"),
     STEADY_MONTH("steady_month", "ماهِ منظم", 150, "سی روزِ پشتِ‌سرهم تراکنش ثبت کن"),
+    COLLECTION_STARRY_NIGHT("collection_starry_night", "شبِ پرستاره", 75, "تمِ ون‌گوگ و پس‌زمینه‌ی چرخش شب را بگیر"),
     ;
 
     /**
