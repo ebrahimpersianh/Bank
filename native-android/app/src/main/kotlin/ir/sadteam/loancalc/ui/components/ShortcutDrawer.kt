@@ -495,13 +495,13 @@ private fun SelectionGrid(
             Row(modifier = Modifier.fillMaxWidth()) {
                 rowItems.forEach { item ->
                     val selected = item.id in selectedIds
-                    val atLimit = !selected && selectedIds.size >= SHORTCUT_SLOTS
+                    // میان‌برها سقف ندارند؛ کشو در ردیف‌های پنج‌تایی ادامه پیدا می‌کند.
+                    val atLimit = false
                     Box(modifier = Modifier.weight(1f)) {
                         SelectionTile(
                             shortcut = item,
                             selected = selected,
-                            // میان‌برِ قفل و مقصدِ سقف‌خورده هر دو خاموش‌اند، ولی به دو دلیل:
-                            // قفل «نمی‌شود برداشت»، سقف «اول یکی را بردار».
+                            // فقط «ثبت خرج» قفل است و از کشو حذف نمی‌شود.
                             disabled = item.locked || atLimit,
                             inBottomBar = item.id in inBottomBarIds,
                             onClick = { if (!item.locked && !atLimit) onToggle(item.id) },
