@@ -215,7 +215,9 @@ fun ShopScreen(
 
         fun rowsOf(category: ShopCategory) = catalog
             .filter { it.kind.category == category && it.window == null }
-            .filter { !onlyMine || it.id in owned }
+            // آیتمِ فعال هرگز نباید با زدنِ «مالِ من» ناپدید شود، حتی اگر نسخه‌ی
+            // قدیمیِ برنامه کلیدِ مالکیتش را ثبت نکرده باشد.
+            .filter { !onlyMine || it.id in owned || active[category] == it.id }
 
         if (tab == null || tab == ShopCategory.BACKDROP) {
             val backdrops = rowsOf(ShopCategory.BACKDROP)

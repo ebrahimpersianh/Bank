@@ -269,7 +269,9 @@ class UiPrefs(private val context: Context) {
         val items = prefs[Keys.OWNED_ITEMS]?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
         val legacy = prefs[Keys.OWNED_THEMES]?.split(",")?.filter { it.isNotBlank() }
             ?.map { "theme:$it" }?.toSet() ?: emptySet()
-        items + legacy
+        // تمِ سبز همیشه تمِ پیش‌فرضِ برنامه است؛ حتی نصبِ تازه هم باید آن را در
+        // فیلترِ «مالِ من» ببیند، بدون نیاز به یک نوشتنِ اضافه در DataStore.
+        items + legacy + "theme:green"
     }
 
     /**
