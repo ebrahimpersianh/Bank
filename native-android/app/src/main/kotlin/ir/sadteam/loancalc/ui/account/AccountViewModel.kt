@@ -110,32 +110,36 @@ class AccountViewModel @Inject constructor(
         year: Int,
         month: Int,
         day: Int,
+        onSuccess: () -> Unit = {},
+        onFailure: (Throwable) -> Unit = {},
     ) {
         viewModelScope.launch {
-            val transferId = System.currentTimeMillis()
-            accountRepository.addTransaction(
-                accountId = fromAccountId,
-                type = TransactionType.WITHDRAWAL,
-                amount = amount,
-                description = description,
-                year = year, month = month, day = day,
-                category = null,
-                sourceType = "transfer",
-                sourceId = transferId.toString(),
-                id = transferId,
-            )
-            accountRepository.addTransaction(
-                accountId = toAccountId,
-                type = TransactionType.DEPOSIT,
-                amount = amount,
-                description = description,
-                year = year, month = month, day = day,
-                category = null,
-                sourceType = "transfer",
-                sourceId = transferId.toString(),
-                id = transferId + 1,
-            )
-            syncIfLoggedIn()
+            runCatching {
+                val transferId = System.currentTimeMillis()
+                accountRepository.addTransaction(
+                    accountId = fromAccountId,
+                    type = TransactionType.WITHDRAWAL,
+                    amount = amount,
+                    description = description,
+                    year = year, month = month, day = day,
+                    category = null,
+                    sourceType = "transfer",
+                    sourceId = transferId.toString(),
+                    id = transferId,
+                )
+                accountRepository.addTransaction(
+                    accountId = toAccountId,
+                    type = TransactionType.DEPOSIT,
+                    amount = amount,
+                    description = description,
+                    year = year, month = month, day = day,
+                    category = null,
+                    sourceType = "transfer",
+                    sourceId = transferId.toString(),
+                    id = transferId + 1,
+                )
+                syncIfLoggedIn()
+            }.onSuccess { onSuccess() }.onFailure(onFailure)
         }
     }
 
@@ -153,13 +157,17 @@ class AccountViewModel @Inject constructor(
         id: Long? = null,
         /** `71a`: منبعِ نمایشی - `null` یعنی ثبتِ دستیِ خودِ کاربر. */
         originLabel: String? = null,
+        onSuccess: () -> Unit = {},
+        onFailure: (Throwable) -> Unit = {},
     ) {
         viewModelScope.launch {
-            accountRepository.addTransaction(
-                accountId, type, amount, description, year, month, day, category, sourceType, sourceId, id,
-                originLabel = originLabel,
-            )
-            syncIfLoggedIn()
+            runCatching {
+                accountRepository.addTransaction(
+                    accountId, type, amount, description, year, month, day, category, sourceType, sourceId, id,
+                    originLabel = originLabel,
+                )
+                syncIfLoggedIn()
+            }.onSuccess { onSuccess() }.onFailure(onFailure)
         }
     }
 
