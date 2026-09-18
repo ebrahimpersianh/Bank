@@ -293,6 +293,9 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     // خریدشان روی دسته‌های **ثابت** هم می‌نشیند، نه فقط دلخواه‌ها.
     add(ShopItem("symbolset:rounded", CoinSpend.CATEGORY_ICON_SET, "نمادهای گرد", "۱۸ نمادِ دسته، گوشه‌گرد و نرم"))
     add(ShopItem("symbolset:outlined", CoinSpend.CATEGORY_ICON_SET, "نمادهای خطی", "۱۸ نمادِ دسته، فقط خط بی پُرکن"))
+    add(ShopItem("symbolset:sharp", CoinSpend.CATEGORY_ICON_SET, "نمادهای زاویه‌دار", "۱۸ نمادِ دسته، تیز و مدرن"))
+    add(ShopItem("symbolset:two_tone", CoinSpend.CATEGORY_ICON_SET, "نمادهای دو‌لایه", "۱۸ نمادِ دسته، سایه‌دار و چشمگیر"))
+    add(ShopItem("symbolset:pictorial", CoinSpend.CATEGORY_ICON_SET, "نمادهای روزمره", "۱۸ نمادِ دسته، ساده و آشنا"))
     add(ShopItem("coinskin:ancient", CoinSpend.COIN_SKIN, "سکه‌ی کهن", "شکلِ سکه در همه‌ی برنامه", comingSoon = true))
     add(
         ShopItem(
