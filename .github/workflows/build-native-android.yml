@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     env:
       # چون `secrets` مستقیم تو `if:` یه step مجاز نیست، اول یه‌بار تو env سطح job (که این‌جا مجازه)
       # منتقلش می‌کنیم تا استپِ بعدی بتونه با env.HAS_RELEASE_KEY تصمیم بگیره.
@@ -114,3 +114,15 @@ jobs:
       # ما fail می‌کنه)، هر بیلد یه GitHub Release می‌سازه و APKها رو بهش پیوست می‌کنه - Releaseها
       # سهمیه‌ی جدا و بازتری دارن، این مشکل رو ندارن. تگ بر اساسِ شماره‌ی رانه، پس هر بیلد یه ریلیزِ
       # جدا/غیرتکراری می‌سازه.
+
+      - name: انتشار APKها در Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: بیلد خودکار #${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          files: |
+            native-android/app/build/outputs/apk/cafebazaar/release/app-cafebazaar-release.apk
+            native-android/app/build/outputs/apk/myket/release/app-myket-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
