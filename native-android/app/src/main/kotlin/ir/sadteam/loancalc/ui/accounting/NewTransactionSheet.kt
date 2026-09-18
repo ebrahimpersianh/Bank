@@ -469,6 +469,22 @@ fun NewTransactionSheet(
             val amount = tomanToRial(toman).toDouble()
             error = validate(kind, amount, accountId, fromAccountId, toAccountId)
             if (error == null) {
+                val onSaved = {
+                    if (andClose) {
+                        onDismiss()
+                    } else {
+                        // فقط مبلغ و توضیح پاک می‌شوند؛ حساب/تاریخ/دسته می‌مانند چون معمولاً
+                        // تراکنش‌های پشتِ‌هم همان حساب و همان روزند.
+                        amountText = ""
+                        description = ""
+                    }
+                }
+                // ثبتِ مالی نباید با یک exceptionِ پس‌زمینه‌ای برنامه را ببندد. تا وقتی DAO
+                // موفق نشده، فرم باز می‌ماند؛ در خطا هم کاربر همان‌جا پیام می‌بیند و اطلاعاتش
+                // را از دست نمی‌دهد.
+                val onSaveFailure: (Throwable) -> Unit = {
+                    error = "ثبت تراکنش ناموفق بود؛ دوباره تلاش کن."
+                }
                 if (kind == NewTxKind.TRANSFER) {
                     accountViewModel.addTransfer(
                         fromAccountId = fromAccountId!!,
@@ -478,6 +494,8 @@ fun NewTransactionSheet(
                         year = date.y,
                         month = date.m,
                         day = date.d,
+                        onSuccess = onSaved,
+                        onFailure = onSaveFailure,
                     )
                 } else {
                     accountViewModel.addTransaction(
@@ -489,15 +507,9 @@ fun NewTransactionSheet(
                         month = date.m,
                         day = date.d,
                         category = category,
+                        onSuccess = onSaved,
+                        onFailure = onSaveFailure,
                     )
-                }
-                if (andClose) {
-                    onDismiss()
-                } else {
-                    // فقط مبلغ و توضیح پاک می‌شوند؛ حساب/تاریخ/دسته می‌مانند چون معمولاً
-                    // تراکنش‌های پشتِ‌هم همان حساب و همان روزند.
-                    amountText = ""
-                    description = ""
                 }
             }
         }
