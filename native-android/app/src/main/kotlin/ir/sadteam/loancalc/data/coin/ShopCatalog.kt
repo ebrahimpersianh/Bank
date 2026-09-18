@@ -137,6 +137,9 @@ val THEME_CATALOG = listOf(
     // تا روی سطحِ روشن ۴٫۵:۱ بدهند.
     ThemePalette("saffron", "زعفرانی", dark = 0xFF4A2C04, primary = 0xFFD98016, light = 0xFFF5C782, inkLight = 0xFF8A5209), // ۴۴°
     ThemePalette("cobalt", "آبیِ کبالت", dark = 0xFF0B2A5E, primary = 0xFF1B6FD6, light = 0xFF8FC4F5, inkLight = 0xFF13508F), // ۲۰۵°
+    // الهام از نورِ آبیِ الکتریکی روی سرمه‌ایِ عمیق: تیره، تمیز و چشمگیر؛ نه کپیِ یک رابط دیگر.
+    // primary با سفید کنتراستِ خوانا دارد و light فقط نقشِ درخشش/لهجه را می‌گیرد.
+    ThemePalette("neon_midnight", "نئونِ نیمه‌شب", dark = 0xFF070C24, primary = 0xFF1D54E8, light = 0xFF62D5FF, inkLight = 0xFF143C9A), // ۲۲۱°
     ThemePalette("plum", "آلوییِ روشن", dark = 0xFF3A1240, primary = 0xFF9B3FA8, light = 0xFFE0A8E8, inkLight = 0xFF6B2B75), // ۲۷۵°
     ThemePalette("clay", "خاکِ رس", dark = 0xFF3A2318, primary = 0xFFA05C3C, light = 0xFFE0B39A, inkLight = 0xFF70402A), // ۱۸°
 )
