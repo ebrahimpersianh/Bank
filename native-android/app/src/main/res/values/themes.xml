@@ -9,7 +9,7 @@
          کیف ظاهر می‌شود و متن و نوار پیشرفت وارد می‌شوند. -->
     <style name="Theme.LoanCalc.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_bg</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/jibak_brand_mark</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_wallet_closed</item>
         <item name="postSplashScreenTheme">@style/Theme.LoanCalc</item>
     </style>
 </resources>
