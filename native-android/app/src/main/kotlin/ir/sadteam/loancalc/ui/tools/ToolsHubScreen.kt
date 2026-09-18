@@ -44,6 +44,7 @@ import ir.sadteam.loancalc.ui.theme.AppText
 @Composable
 fun ToolsHubScreen(
     onBack: () -> Unit,
+    onOpenArchive: () -> Unit,
     onOpenDeng: () -> Unit,
     onOpenSayad: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel(),
@@ -89,6 +90,15 @@ fun ToolsHubScreen(
                     }
                     Text("ابزارها", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
                 }
+            }
+            item {
+                ToolCard(
+                    icon = Icons.Outlined.Description,
+                    title = "آرشیو سالانه",
+                    text = "خلاصهٔ درآمد، هزینه و خالص هر سال را از تراکنش‌ها ببین.",
+                    action = "باز کردن آرشیو",
+                    onClick = onOpenArchive,
+                )
             }
             item {
                 ToolCard(
