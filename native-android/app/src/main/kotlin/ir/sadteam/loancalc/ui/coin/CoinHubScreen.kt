@@ -1,7 +1,6 @@
 package ir.sadteam.loancalc.ui.coin
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,7 +35,6 @@ import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
 import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.shop.ShopScreen
-import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
 
