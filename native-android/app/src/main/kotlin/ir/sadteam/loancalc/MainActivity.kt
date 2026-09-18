@@ -188,6 +188,7 @@ import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.inbox.InboxScreen
 import ir.sadteam.loancalc.ui.cheque.SayadInquiryScreen
 import ir.sadteam.loancalc.ui.tools.ToolsHubScreen
+import ir.sadteam.loancalc.ui.archive.AnnualArchiveScreen
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.LocalAppColors
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
@@ -290,6 +291,7 @@ private const val CHEQUE_REPORT_ROUTE = "cheque-report"
 private const val DEBT_ROUTE = "debt"
 private const val TOOLS_ROUTE = "tools"
 private const val SAYAD_INQUIRY_ROUTE = "sayad-inquiry"
+private const val ANNUAL_ARCHIVE_ROUTE = "annual-archive"
 
 /** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
 private enum class LoanSubTab(val label: String) {
@@ -1073,6 +1075,7 @@ private fun LoanCalcApp(
                 composable(TOOLS_ROUTE) {
                     ToolsHubScreen(
                         onBack = { navigateTo(BottomTab.HOME.route) },
+                        onOpenArchive = { navigateTo(ANNUAL_ARCHIVE_ROUTE) },
                         onOpenDeng = { navigateTo(DEBT_ROUTE) },
                         onOpenSayad = { navigateTo(SAYAD_INQUIRY_ROUTE) },
                     )
@@ -1082,6 +1085,9 @@ private fun LoanCalcApp(
                         sayadId = null,
                         onBack = { navigateTo(TOOLS_ROUTE) },
                     )
+                }
+                composable(ANNUAL_ARCHIVE_ROUTE) {
+                    AnnualArchiveScreen(onBack = { navigateTo(TOOLS_ROUTE) })
                 }
             }
             if (navEditorOpen) {
