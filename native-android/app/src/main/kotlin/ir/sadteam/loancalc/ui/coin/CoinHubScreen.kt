@@ -70,7 +70,9 @@ fun CoinHubScreen(
     var onWallet by rememberSaveable { mutableStateOf(false) }
 
     BackHandler(onBack = onBack)
-    // شفاف است تا پس‌زمینهٔ زنده‌ای که در ریشهٔ برنامه کشیده می‌شود، از میان\n    // فاصلهٔ کارت‌ها دیده شود؛ رنگِ تختِ AppBg این لایه را کامل پنهان می‌کرد.\n    Column(modifier = Modifier.fillMaxSize()) {
+    // شفاف است تا پس‌زمینهٔ زنده‌ای که در ریشهٔ برنامه کشیده می‌شود، از میان
+    // فاصلهٔ کارت‌ها دیده شود؛ رنگِ تختِ AppBg این لایه را کامل پنهان می‌کرد.
+    Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
