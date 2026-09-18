@@ -1817,21 +1817,37 @@ private fun BackgroundRunSettings() {
     // ⚠️ مرحله‌ی سوم عمداً کلیک‌پذیر **نیست**: قفلِ فهرستِ برنامه‌های اخیر از داخلِ هیچ
     // برنامه‌ای شدنی نیست و هیچ صفحه‌ای در گوشی برایش وجود ندارد. کارتی که تپ را قبول
     // کند و هیچ اتفاقی نیفتد بدتر از کارتِ بی‌تپ است، پس نشانه‌ی تپ هم نمی‌گیرد.
-    AppCard {
-        Text(
-            "بستنِ برنامه داده‌ها را متوقف نمی‌کند",
-            color = AppText,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Black,
-        )
-        Text(
-            "خواندنِ پیامک و اعلانِ بانکی و یادآورِ سررسید، جدا از باز بودنِ برنامه کار می‌کنند. " +
-                "فقط سه اجازه‌ی زیر باید برقرار باشد، وگرنه گوشی برنامه را در پس‌زمینه می‌خواباند.",
-            color = AppMuted,
-            fontSize = 11.5.sp,
-            lineHeight = 20.sp,
-            modifier = Modifier.padding(top = 6.dp),
-        )
+    // خلاصه‌ی وضعیت: قبل از متنِ راهنما، کاربر در یک نگاه می‌فهمد چه چیزی باقی مانده.
+    AppCard(backgroundColor = if (batteryOk) AppPrimaryPill else AppSurface2, borderColor = if (batteryOk) AppPrimaryBorder else AppLineRow) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(42.dp).clip(CircleShape).background(if (batteryOk) AppPrimary else AppIconFrame),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    if (batteryOk) Icons.Filled.Check else Icons.Filled.BatterySaver,
+                    contentDescription = null,
+                    tint = if (batteryOk) Color.White else AppMuted,
+                    modifier = Modifier.size(21.dp),
+                )
+            }
+            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                Text(
+                    if (batteryOk) "پس‌زمینه برای کار آماده است" else "برای اجرای مطمئن، دو دقیقه زمان بگذار",
+                    color = if (batteryOk) AppPrimaryInk else AppText,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Black,
+                )
+                Text(
+                    if (batteryOk) "معافیت باتری فعال است؛ مراحل باقی‌مانده را هم یک‌بار بررسی کن."
+                    else "دو یا سه مرحله‌ی کوتاه باقی مانده تا یادآورها و ثبت خودکار پایدار بمانند.",
+                    color = AppMuted,
+                    fontSize = 10.5.sp,
+                    lineHeight = 18.sp,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
     }
 
     BackgroundStepCard(
