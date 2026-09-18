@@ -8,6 +8,7 @@ import ir.sadteam.loancalc.data.db.BudgetEntity
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.data.db.SavingsGoalEntity
 import kotlinx.coroutines.flow.first
+import ir.sadteam.loancalc.data.prefs.UiPrefs
 
 /**
  * **سنجشِ نُه نشانِ `18a`** - یک‌جا، رو داده‌ی محلی.
@@ -26,6 +27,7 @@ class BadgeEvaluator(
     private val accountRepository: AccountRepository,
     private val loanRepository: LoanRepository,
     private val savingsGoalRepository: SavingsGoalRepository,
+    private val uiPrefs: UiPrefs,
 ) {
     /**
      * همه‌ی شرط‌ها رو می‌سنجه و نشان‌های تازه رو باز می‌کنه.
@@ -64,6 +66,7 @@ class BadgeEvaluator(
         val loans: List<LoanEntity>,
         val activeDays: Int,
         val goals: List<SavingsGoalEntity>,
+        val ownedShopItems: Set<String>,
     )
 
     private suspend fun snapshot() = Snapshot(
@@ -72,6 +75,7 @@ class BadgeEvaluator(
         loans = loanRepository.observeLoans().first(),
         activeDays = gamification.activeDays.first(),
         goals = savingsGoalRepository.getGoals(),
+        ownedShopItems = uiPrefs.ownedItems.first(),
     )
 
     private fun progressOf(badge: Badge, s: Snapshot): Float = when (badge) {
@@ -94,6 +98,7 @@ class BadgeEvaluator(
         // هدف‌ها: کاربری که یک هدفِ کوچکِ تمام‌شده و یک هدفِ بزرگِ تازه دارد باید
         // ۱۰۰٪ ببیند نه ۵۰٪.
         Badge.GOAL_REACHED -> s.goals.maxOfOrNull { it.progress } ?: 0f
+        Badge.COLLECTION_STARRY_NIGHT -> if (setOf("theme:vangogh", "bg_night_swirl").all(s.ownedShopItems::contains)) 1f else 0f
     }
 
     /** چند روزِ پشتِ‌سرهمِ اخیر خرجش زیرِ میانگینِ ۳۰ روزه بوده. */
