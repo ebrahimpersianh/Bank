@@ -123,6 +123,10 @@ fun ShopScreen(
     // **صفر پیکسل** ارتفاع می‌گیرد. پیش‌فرض خاموش است چون ویترین برای دیدنِ نداشته‌هاست.
     var onlyMine by rememberSaveable { mutableStateOf(false) }
     val banner = rememberInAppBanner()
+    val activateItem: (ShopItem) -> Unit = { item ->
+        viewModel.activate(item)
+        banner.show("«${item.label}» فعال شد.", isSuccess = true)
+    }
 
     // نتیجه‌ی خرید در بنرِ داخلی دیده می‌شود، نه Toast - قاعده‌ی پروژه. «سکه کم» و
     // «نشان لازم» بی این، بی‌صدا رد می‌شدند و کاربر فکر می‌کرد دکمه خراب است.
@@ -204,7 +208,7 @@ fun ShopScreen(
                 item = shopItem,
                 state = stateOf(shopItem),
                 balance = balance,
-                onActivate = viewModel::activate,
+                onActivate = activateItem,
                 onConfirm = { confirming = it },
             )
         }
@@ -217,14 +221,14 @@ fun ShopScreen(
             val backdrops = rowsOf(ShopCategory.BACKDROP)
             // ⚠️ متنِ سرگروه **قیمتِ بسته‌ای** را می‌گوید نه قیمتِ ردیف: چهار ردیفِ
             // ۲۵۰سکه‌ای پشتِ‌هم یعنی «۱۰۰۰ سکه برای همه»، که غلط است.
-            item { GroupHeader("پس‌زمینه‌ی زنده", "${toFa(CoinSpend.LIVE_BACKDROP.price)} سکه برای هر چهار طرح") }
+            item { GroupHeader("پس‌زمینه‌ی زنده", "${toFa(CoinSpend.LIVE_BACKDROP.price)} سکه · بازکردن هر چهار طرح") }
             items(backdrops.size) { index ->
                 val shopItem = backdrops[index]
                 ShopRow(
                     shopItem,
                     stateOf(shopItem),
                     balance,
-                    viewModel::activate,
+                    activateItem,
                     onConfirm = { confirming = it },
                     // مثلِ قلم، این هم دیدنی است نه خواندنی: «هاله‌ای که نفس می‌کشد» را
                     // با متن نمی‌شود فروخت. پیش‌نمایش **همان انیمیشنِ واقعی** است، در
@@ -250,12 +254,12 @@ fun ShopScreen(
             item { GroupHeader("تمِ پایه", "${toFa(base.size)} تمِ اولِ برنامه") }
             items(base.size) { index ->
                 val shopItem = base[index]
-                ThemeRow(shopItem, stateOf(shopItem), balance, viewModel::activate) { confirming = it }
+                ThemeRow(shopItem, stateOf(shopItem), balance, activateItem) { confirming = it }
             }
             item { GroupHeader("تمِ رنگی", "${toFa(CoinSpend.THEME_PALETTE.price)} سکه هرکدام") }
             items(colorful.size) { index ->
                 val shopItem = colorful[index]
-                ThemeRow(shopItem, stateOf(shopItem), balance, viewModel::activate) { confirming = it }
+                ThemeRow(shopItem, stateOf(shopItem), balance, activateItem) { confirming = it }
             }
         }
 
@@ -274,7 +278,7 @@ fun ShopScreen(
                     shopItem,
                     stateOf(shopItem),
                     balance,
-                    viewModel::activate,
+                    activateItem,
                     onConfirm = { confirming = it },
                     // خواسته‌ی کاربر (۲۶ شهریور): «کنارِ هرکدام یک عکسی چیزی باشد که معلوم شود
                     // چیست». برای آیکونِ برنامه، **خودِ آیکون** درست‌ترین پیش‌نمایش است.
@@ -297,7 +301,7 @@ fun ShopScreen(
                     shopItem,
                     stateOf(shopItem),
                     balance,
-                    viewModel::activate,
+                    activateItem,
                     onConfirm = { confirming = it },
                     // یک نماد کافی نیست - **ست** است، پس چهارتا در شبکه (`72b`).
                     leading = { SymbolSetPreview(shopItem.id) },
@@ -317,7 +321,7 @@ fun ShopScreen(
                     shopItem,
                     stateOf(shopItem),
                     balance,
-                    viewModel::activate,
+                    activateItem,
                     onConfirm = { confirming = it },
                     leading = { AvatarFramePreview(AvatarFrameStyle.fromItemId(shopItem.id)) },
                 )
@@ -336,7 +340,7 @@ fun ShopScreen(
                     shopItem,
                     stateOf(shopItem),
                     balance,
-                    viewModel::activate,
+                    activateItem,
                     onConfirm = { confirming = it },
                     // پیش‌نمایشِ قلم **با خودِ همان قلم** نوشته می‌شود - تنها قلمی که
                     // توضیحِ متنی‌اش بی‌فایده است: «کشیده و باریک» را باید دید نه خواند.
@@ -357,7 +361,7 @@ fun ShopScreen(
                     shopItem,
                     stateOf(shopItem),
                     balance,
-                    viewModel::activate,
+                    activateItem,
                     onConfirm = { confirming = it },
                     leading = { GenericItemPreview(shopItem) },
                 )
@@ -498,8 +502,8 @@ private fun ShopRow(
             }
             Spacer(modifier = Modifier.width(9.dp))
             when (state) {
-                RowState.ACTIVE -> Pill("در حالِ استفاده", AppPrimaryPill, AppPrimaryInk)
-                RowState.OWNED -> Pill("داری · بزن", AppPrimaryPill, AppPrimaryInk)
+                RowState.ACTIVE -> Pill("فعال است", AppPrimaryPill, AppPrimaryInk)
+                RowState.OWNED -> Pill("برای فعال‌سازی بزن", AppPrimaryPill, AppPrimaryInk)
                 // ردیفی که هنوز مقصد ندارد پنهان **نمی‌شود**: هدفی که دیده نشود،
                 // جمع‌کردنِ سکه را بی‌معنی می‌کند. ولی خریدنی هم نیست.
                 RowState.SOON -> Pill("به‌زودی", AppIconFrame, AppMuted)

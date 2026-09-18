@@ -1,14 +1,6 @@
-name: Build Native Kotlin App (در حال ساخت - فقط تب وام بانکی)
+name: Build Native Kotlin App (اجرای دستی)
 
 on:
-  push:
-    branches:
-      - main
-      - master
-      - claude/bank-9fiumm
-    paths:
-      - "native-android/**"
-      - ".github/workflows/build-native-android.yml"
   pull_request:
     paths:
       - "native-android/**"
