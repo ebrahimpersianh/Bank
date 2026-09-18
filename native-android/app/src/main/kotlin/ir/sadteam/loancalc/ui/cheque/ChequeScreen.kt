@@ -161,6 +161,8 @@ fun ChequeScreen(
     /** تپ روی ردیفِ چک در تبِ سررسید (و اعلانِ سررسیدِ چک) مستقیم همین چک را باز می‌کند -
      * تا امروز هیچ راهی برای رسیدن به یک چکِ مشخص از بیرونِ این صفحه نبود. */
     initialChequeId: Long? = null,
+    /** ورودِ مستقیم از تب گزارش؛ صفحه‌ی گزارش چک‌ها را به‌جای فهرست باز می‌کند. */
+    initialReport: Boolean = false,
     viewModel: ChequeViewModel = hiltViewModel(),
 ) {
     var showAddForm by remember { mutableStateOf(false) }
@@ -174,7 +176,7 @@ fun ChequeScreen(
     var chequeTab by remember { mutableIntStateOf(0) }
     val showArchived = chequeTab == 2
     var showSayadInquiry by remember { mutableStateOf(false) }
-    var showReport by remember { mutableStateOf(false) }
+    var showReport by remember { mutableStateOf(initialReport) }
     var showReminderSettings by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
