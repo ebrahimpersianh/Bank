@@ -55,6 +55,8 @@ import androidx.compose.material.icons.rounded.SportsSoccer
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Work
+import androidx.compose.material.icons.sharp.*
+import androidx.compose.material.icons.twotone.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -74,68 +76,40 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * نماد **چیزی را که کاربر به آن نگاه می‌کند**.
  */
 enum class SymbolStyle(val id: String, val label: String) {
-    FILLED("filled", "توپر"),
-    ROUNDED("rounded", "گرد"),
-    OUTLINED("outlined", "خطی"),
-    ;
-
-    companion object {
-        /** شناسه‌ی فروشگاهی (`symbolset:rounded`) به سبک. `null`/ناشناس یعنی پیش‌فرض. */
-        fun fromItemId(itemId: String?): SymbolStyle =
-            entries.firstOrNull { itemId == "symbolset:${it.id}" } ?: FILLED
-    }
+    FILLED("filled", "توپر"), ROUNDED("rounded", "گرد"), OUTLINED("outlined", "خطی"),
+    SHARP("sharp", "زاویه‌دار"), TWO_TONE("two_tone", "دو‌لایه"), PICTORIAL("pictorial", "روزمره");
+    companion object { fun fromItemId(itemId: String?): SymbolStyle = entries.firstOrNull { itemId == "symbolset:${it.id}" } ?: FILLED }
 }
-
-/**
- * 🚨 **سبکِ فعال یک `mutableStateOf` سراسری است، نه `CompositionLocal`.**
- *
- * دلیلش این است که نمادها از فهرست‌های **ثابتِ** بالای فایل می‌آیند
- * ([expenseCategories]، `iconForKey`) و آن‌ها composable نیستند؛ سی‌وهشت جای مصرف هم
- * نباید امضا عوض کنند. با state سراسری، عوض‌شدنِ سبک خودش کامپوزِ دوباره را راه می‌اندازد
- * چون خواندنش داخلِ composable اتفاق می‌افتد.
- *
- * مقدارش را `MainActivity` از `UiPrefs.activeSymbolSet` پر می‌کند - یعنی **یک نقطه‌ی
- * نوشتن** دارد، همان قاعده‌ی «دو منبعِ حقیقت = فاجعه».
- */
-object SymbolTheme {
-    var style: SymbolStyle by mutableStateOf(SymbolStyle.FILLED)
-}
-
-/** سه شکلِ یک کلید. ترتیب: توپر، گرد، خطی. */
-private val ICON_TABLE: List<Triple<String, ImageVector, Pair<ImageVector, ImageVector>>> = listOf(
-    Triple("restaurant", Icons.Filled.Restaurant, Icons.Rounded.Restaurant to Icons.Outlined.Restaurant),
-    Triple("home", Icons.Filled.Home, Icons.Rounded.Home to Icons.Outlined.Home),
-    Triple("car", Icons.Filled.DirectionsCar, Icons.Rounded.DirectionsCar to Icons.Outlined.DirectionsCar),
-    Triple("hospital", Icons.Filled.LocalHospital, Icons.Rounded.LocalHospital to Icons.Outlined.LocalHospital),
-    Triple("shopping", Icons.Filled.ShoppingBag, Icons.Rounded.ShoppingBag to Icons.Outlined.ShoppingBag),
-    Triple("receipt", Icons.Filled.ReceiptLong, Icons.Rounded.ReceiptLong to Icons.Outlined.ReceiptLong),
-    Triple("celebration", Icons.Filled.Celebration, Icons.Rounded.Celebration to Icons.Outlined.Celebration),
-    Triple("payments", Icons.Filled.Payments, Icons.Rounded.Payments to Icons.Outlined.Payments),
-    Triple("work", Icons.Filled.Work, Icons.Rounded.Work to Icons.Outlined.Work),
-    Triple("sell", Icons.Filled.Sell, Icons.Rounded.Sell to Icons.Outlined.Sell),
-    Triple("gift", Icons.Filled.CardGiftcard, Icons.Rounded.CardGiftcard to Icons.Outlined.CardGiftcard),
-    Triple("trending", Icons.Filled.TrendingUp, Icons.Rounded.TrendingUp to Icons.Outlined.TrendingUp),
-    Triple("bolt", Icons.Filled.Bolt, Icons.Rounded.Bolt to Icons.Outlined.Bolt),
-    Triple("school", Icons.Filled.School, Icons.Rounded.School to Icons.Outlined.School),
-    Triple("pets", Icons.Filled.Pets, Icons.Rounded.Pets to Icons.Outlined.Pets),
-    Triple("sports", Icons.Filled.SportsSoccer, Icons.Rounded.SportsSoccer to Icons.Outlined.SportsSoccer),
-    Triple("star", Icons.Filled.Star, Icons.Rounded.Star to Icons.Outlined.Star),
-    Triple("other", Icons.Filled.MoreHoriz, Icons.Rounded.MoreHoriz to Icons.Outlined.MoreHoriz),
+object SymbolTheme { var style: SymbolStyle by mutableStateOf(SymbolStyle.FILLED) }
+private data class IconPack(val key:String,val filled:ImageVector,val rounded:ImageVector,val outlined:ImageVector,val sharp:ImageVector,val twoTone:ImageVector)
+private val ICON_TABLE = listOf(
+    IconPack("restaurant", Icons.Filled.Restaurant, Icons.Rounded.Restaurant, Icons.Outlined.Restaurant, Icons.Sharp.Restaurant, Icons.TwoTone.Restaurant),
+    IconPack("home", Icons.Filled.Home, Icons.Rounded.Home, Icons.Outlined.Home, Icons.Sharp.Home, Icons.TwoTone.Home),
+    IconPack("car", Icons.Filled.DirectionsCar, Icons.Rounded.DirectionsCar, Icons.Outlined.DirectionsCar, Icons.Sharp.DirectionsCar, Icons.TwoTone.DirectionsCar),
+    IconPack("hospital", Icons.Filled.LocalHospital, Icons.Rounded.LocalHospital, Icons.Outlined.LocalHospital, Icons.Sharp.LocalHospital, Icons.TwoTone.LocalHospital),
+    IconPack("shopping", Icons.Filled.ShoppingBag, Icons.Rounded.ShoppingBag, Icons.Outlined.ShoppingBag, Icons.Sharp.ShoppingBag, Icons.TwoTone.ShoppingBag),
+    IconPack("receipt", Icons.Filled.ReceiptLong, Icons.Rounded.ReceiptLong, Icons.Outlined.ReceiptLong, Icons.Sharp.ReceiptLong, Icons.TwoTone.ReceiptLong),
+    IconPack("celebration", Icons.Filled.Celebration, Icons.Rounded.Celebration, Icons.Outlined.Celebration, Icons.Sharp.Celebration, Icons.TwoTone.Celebration),
+    IconPack("payments", Icons.Filled.Payments, Icons.Rounded.Payments, Icons.Outlined.Payments, Icons.Sharp.Payments, Icons.TwoTone.Payments),
+    IconPack("work", Icons.Filled.Work, Icons.Rounded.Work, Icons.Outlined.Work, Icons.Sharp.Work, Icons.TwoTone.Work),
+    IconPack("sell", Icons.Filled.Sell, Icons.Rounded.Sell, Icons.Outlined.Sell, Icons.Sharp.Sell, Icons.TwoTone.Sell),
+    IconPack("gift", Icons.Filled.CardGiftcard, Icons.Rounded.CardGiftcard, Icons.Outlined.CardGiftcard, Icons.Sharp.CardGiftcard, Icons.TwoTone.CardGiftcard),
+    IconPack("trending", Icons.Filled.TrendingUp, Icons.Rounded.TrendingUp, Icons.Outlined.TrendingUp, Icons.Sharp.TrendingUp, Icons.TwoTone.TrendingUp),
+    IconPack("bolt", Icons.Filled.Bolt, Icons.Rounded.Bolt, Icons.Outlined.Bolt, Icons.Sharp.Bolt, Icons.TwoTone.Bolt),
+    IconPack("school", Icons.Filled.School, Icons.Rounded.School, Icons.Outlined.School, Icons.Sharp.School, Icons.TwoTone.School),
+    IconPack("pets", Icons.Filled.Pets, Icons.Rounded.Pets, Icons.Outlined.Pets, Icons.Sharp.Pets, Icons.TwoTone.Pets),
+    IconPack("sports", Icons.Filled.SportsSoccer, Icons.Rounded.SportsSoccer, Icons.Outlined.SportsSoccer, Icons.Sharp.SportsSoccer, Icons.TwoTone.SportsSoccer),
+    IconPack("star", Icons.Filled.Star, Icons.Rounded.Star, Icons.Outlined.Star, Icons.Sharp.Star, Icons.TwoTone.Star),
+    IconPack("other", Icons.Filled.MoreHoriz, Icons.Rounded.MoreHoriz, Icons.Outlined.MoreHoriz, Icons.Sharp.MoreHoriz, Icons.TwoTone.MoreHoriz),
 )
-
-/**
- * فهرستِ انتخابِ آیکونِ دسته‌ی دلخواه - با سبکِ **فعال**، نه همیشه توپر: دیالوگِ ساختِ دسته
- * باید همان چیزی را نشان بدهد که بعداً روی ردیف می‌نشیند.
- */
-val categoryIconChoices: List<Pair<String, ImageVector>>
-    get() = ICON_TABLE.map { it.first to iconForKey(it.first) }
-
-/** نمادِ یک کلید در سبکِ [style] (پیش‌فرض: سبکِ فعالِ کاربر). */
+val categoryIconChoices: List<Pair<String, ImageVector>> get() = ICON_TABLE.map { it.key to iconForKey(it.key) }
 fun iconForKey(key: String, style: SymbolStyle = SymbolTheme.style): ImageVector {
-    val row = ICON_TABLE.firstOrNull { it.first == key } ?: ICON_TABLE.last()
-    return when (style) {
-        SymbolStyle.FILLED -> row.second
-        SymbolStyle.ROUNDED -> row.third.first
-        SymbolStyle.OUTLINED -> row.third.second
+    val icon = ICON_TABLE.firstOrNull { it.key == key } ?: ICON_TABLE.last()
+    return when(style) {
+        SymbolStyle.FILLED, SymbolStyle.PICTORIAL -> icon.filled
+        SymbolStyle.ROUNDED -> icon.rounded
+        SymbolStyle.OUTLINED -> icon.outlined
+        SymbolStyle.SHARP -> icon.sharp
+        SymbolStyle.TWO_TONE -> icon.twoTone
     }
 }
