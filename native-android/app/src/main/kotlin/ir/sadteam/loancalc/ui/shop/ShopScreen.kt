@@ -447,20 +447,40 @@ private fun ThemeRow(
         onActivate = onActivate,
         onConfirm = onConfirm,
         leading = {
-            // سه‌رنگیِ هر ردیف **سه‌رنگِ واقعیِ پالت** است، نه نمونه‌ی تزئینی.
-            // نامِ متغیر عمداً `palette` نیست: `palette.py` هر `palette.X` را دسترسی به
-            // فیلدِ `AppColorPalette` می‌خواند و این‌جا مثبتِ کاذب می‌داد.
+            // خودِ رنگِ واقعیِ تم، در یک کاشیِ درشت؛ نمونه‌ی سه‌خطیِ قبلی در گوشی
+            // تقریباً دیده نمی‌شد و کاربر نمی‌فهمید «بادمجانی» واقعاً چه رنگی است.
             val swatch = themeById(paletteId)
-            Row(
-                modifier = Modifier.size(width = 38.dp, height = 24.dp).clip(RoundedCornerShape(9.dp)),
+            val (dark, primary, light) = swatch?.let {
+                Triple(Color(it.dark), Color(it.primary), Color(it.light))
+            } ?: when (paletteId) {
+                "green" -> Triple(Color(0xFF08734B), Color(0xFF0EA968), Color(0xFF80D6AE))
+                "blue" -> Triple(Color(0xFF174A8B), Color(0xFF2878D4), Color(0xFF9BC7F5))
+                "purple" -> Triple(Color(0xFF5D3585), Color(0xFF8B55C7), Color(0xFFCBA9EC))
+                "gold" -> Triple(Color(0xFF806018), Color(0xFFC99625), Color(0xFFF3D57B))
+                else -> Triple(AppMuted, AppIconFrame, AppSurface2)
+            }
+            val tileShape = RoundedCornerShape(13.dp)
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(tileShape)
+                    .background(primary)
+                    .border(1.dp, light.copy(alpha = 0.72f), tileShape),
             ) {
-                if (swatch == null) {
-                    Box(modifier = Modifier.weight(1f).background(AppIconFrame))
-                } else {
-                    Box(modifier = Modifier.weight(1f).background(Color(swatch.dark)))
-                    Box(modifier = Modifier.weight(1f).background(Color(swatch.primary)))
-                    Box(modifier = Modifier.weight(1f).background(Color(swatch.light)))
-                }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .size(15.dp)
+                        .clip(RoundedCornerShape(bottomEnd = 10.dp))
+                        .background(light),
+                )
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(17.dp)
+                        .clip(RoundedCornerShape(topStart = 11.dp))
+                        .background(dark),
+                )
             }
         },
     )
