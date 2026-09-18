@@ -1652,5 +1652,14 @@ private fun RowScope.BottomNavItem(
             fontWeight = if (selected) FontWeight.Black else FontWeight.Bold,
             modifier = Modifier.padding(top = 4.dp),
         )
+        if (selected) {
+            Text(
+                "نگه‌دار برای چیدمان",
+                color = AppLabel,
+                fontSize = 7.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 1.dp),
+            )
+        }
     }
 }
