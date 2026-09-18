@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,6 +41,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.InboxMessageEntity
 import ir.sadteam.loancalc.ui.account.AccountDetailScreen
+import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -62,6 +64,9 @@ import ir.sadteam.loancalc.ui.theme.AppText
 fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel()) {
     val messages by viewModel.messages.collectAsState()
     val sourceAccount by viewModel.sourceAccount.collectAsState()
+    // اعلان و صفحهٔ «دارایی» باید دقیقاً از همان مسیرِ داده و ViewModel استفاده کنند؛
+    // ساختنِ ViewModel تازه در دلِ دیالوگِ اعلان روی بعضی گوشی‌ها موقع بازشدنِ جزئیات کرش می‌کرد.
+    val accountViewModel: AccountViewModel = hiltViewModel()
     // پیامی که کاربر «منبعش» را لمس کرده - متنِ خامِ همان پیامک/اعلان را نشان می‌دهیم.
     var sourceOf by remember { mutableStateOf<InboxMessageEntity?>(null) }
     val actionable = messages.filter {
@@ -157,8 +162,14 @@ fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel())
     // «رفتن به منبع» - همان حساب‌کتابی که تراکنش رویش نشسته؛ خودِ تراکنش در فهرستش هست و
     // با لمس قابلِ ویرایش است.
     sourceAccount?.let { account ->
-        Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
-            AccountDetailScreen(account = account, onBack = { viewModel.closeSourceAccount() })
+        key(account.id) {
+            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+                AccountDetailScreen(
+                    account = account,
+                    onBack = { viewModel.closeSourceAccount() },
+                    viewModel = accountViewModel,
+                )
+            }
         }
     }
 }
