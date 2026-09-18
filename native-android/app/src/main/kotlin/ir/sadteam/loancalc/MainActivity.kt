@@ -213,6 +213,9 @@ import ir.sadteam.loancalc.ui.theme.ThemeRevealHost
 import ir.sadteam.loancalc.ui.theme.ThemeRevealState
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 import ir.sadteam.loancalc.ui.update.AppUpdateViewModel
+import ir.sadteam.loancalc.data.SymbolStyle
+import ir.sadteam.loancalc.data.SymbolTheme
+import ir.sadteam.loancalc.data.prefs.UiPrefs
 import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -404,6 +407,11 @@ class MainActivity : FragmentActivity() {
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val themeMode by themeViewModel.themeMode.collectAsState()
+    val symbolPrefs = remember { UiPrefs(LocalContext.current.applicationContext) }
+    val activeSymbolSet by symbolPrefs.activeSymbolSet.collectAsState(initial = null)
+    LaunchedEffect(activeSymbolSet) {
+        SymbolTheme.style = SymbolStyle.fromItemId(activeSymbolSet)
+    }
             val fontScale by themeViewModel.fontScale.collectAsState()
             val colorTheme by themeViewModel.colorTheme.collectAsState()
             val catalogTheme by themeViewModel.catalogTheme.collectAsState()
