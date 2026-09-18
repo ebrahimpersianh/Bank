@@ -156,6 +156,7 @@ import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.cheque.ChequeScreen
+import ir.sadteam.loancalc.ui.stats.StatsScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.LocalReducedMotion
 import ir.sadteam.loancalc.ui.components.Shortcut
@@ -278,6 +279,8 @@ private val allShortcutPool = defaultShortcuts + listOf(
 
 private const val LOAN_ROUTE = "loan"
 private const val CHEQUE_ROUTE = "cheque"
+private const val LOAN_STATS_ROUTE = "loan-stats"
+private const val CHEQUE_REPORT_ROUTE = "cheque-report"
 private const val DEBT_ROUTE = "debt"
 
 /** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
@@ -976,7 +979,12 @@ private fun LoanCalcApp(
                 }
                 composable(BottomTab.REPORT.route) {
                     // ⚠️ **بازنویسیِ فریمِ `26a`** - رجوع کن به `ui/accounting/ReportTabScreen.kt`.
-                    key(tabResetKeys[BottomTab.REPORT] ?: 0) { ReportTabScreen() }
+                    key(tabResetKeys[BottomTab.REPORT] ?: 0) {
+                        ReportTabScreen(
+                            onOpenLoanStats = { navigateTo(LOAN_STATS_ROUTE) },
+                            onOpenChequeReport = { navigateTo(CHEQUE_REPORT_ROUTE) },
+                        )
+                    }
                 }
                 composable(BottomTab.BUDGET.route) {
                     key(tabResetKeys[BottomTab.BUDGET] ?: 0) { BudgetScreen() }
@@ -1026,6 +1034,16 @@ private fun LoanCalcApp(
                         onBack = { navigateTo(BottomTab.HOME.route) },
                         standalone = false,
                         initialChequeId = openId,
+                    )
+                }
+                composable(LOAN_STATS_ROUTE) {
+                    StatsScreen(onBack = { navigateTo(BottomTab.REPORT.route) })
+                }
+                composable(CHEQUE_REPORT_ROUTE) {
+                    ChequeScreen(
+                        onBack = { navigateTo(BottomTab.REPORT.route) },
+                        standalone = false,
+                        initialReport = true,
                     )
                 }
                 composable(DEBT_ROUTE) {
