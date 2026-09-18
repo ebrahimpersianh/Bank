@@ -251,8 +251,9 @@ object AppModule {
         accountRepository: AccountRepository,
         loanRepository: LoanRepository,
         savingsGoalRepository: SavingsGoalRepository,
+        uiPrefs: UiPrefs,
     ): BadgeEvaluator =
-        BadgeEvaluator(gamification, accountRepository, loanRepository, savingsGoalRepository)
+        BadgeEvaluator(gamification, accountRepository, loanRepository, savingsGoalRepository, uiPrefs)
 
     @Provides
     @Singleton
