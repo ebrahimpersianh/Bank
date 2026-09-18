@@ -75,6 +75,7 @@ fun badgeIconOf(badge: Badge): ImageVector = when (badge) {
     Badge.GOAL_REACHED -> Icons.Filled.EmojiEvents   // جامِ هدف
     Badge.LOAN_CLOSED  -> Icons.Filled.Shield        // دیده نمی‌شود؛ SettledMedal جایش است
     Badge.STEADY_MONTH -> Icons.Filled.CalendarMonth // ماهِ کامل
+    Badge.COLLECTION_STARRY_NIGHT -> Icons.Filled.EmojiEvents // تکمیل مجموعه‌ی شب پرستاره
 }
 
 /**
