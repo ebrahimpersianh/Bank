@@ -61,14 +61,14 @@ fun SplashIntroScreen(onDone: () -> Unit) {
         }
         launch {
             // کیف کمی پیش از رسیدنِ سکه ظاهر می‌شود تا فرودِ سکه واقعاً دیده شود.
-            delay(500)
+            delay(650)
             walletReveal.animateTo(
                 1f,
-                animationSpec = tween(470, easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)),
+                animationSpec = tween(360, easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)),
             )
         }
         launch {
-            delay(880)
+            delay(980)
             wordsReveal.animateTo(1f, animationSpec = tween(330))
         }
         launch { progress.animateTo(1f, animationSpec = tween(1450)) }
@@ -106,7 +106,7 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                     .size(100.dp)
                     .graphicsLayer {
                         alpha = 1f - walletReveal.value
-                        translationY = 30f - 520f * (1f - coinDrop.value)
+                        translationY = 90f - 610f * (1f - coinDrop.value)
                         scaleX = 0.88f + 0.12f * coinDrop.value
                         scaleY = 0.88f + 0.12f * coinDrop.value
                     }
