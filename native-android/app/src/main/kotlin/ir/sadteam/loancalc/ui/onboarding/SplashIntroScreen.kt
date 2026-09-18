@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.ui.onboarding
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,26 +40,38 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Warm, minimal splash for the wallet-and-coin Jibak identity.
- *
- * The launcher and splash deliberately share the same stage-0 artwork, so the
- * Android system splash transitions into the in-app intro without a logo jump.
+ * Animated brand intro: a coin drops in first, the wallet catches it, then the
+ * wordmark and progress line settle in. The final artwork is the same stage-0
+ * image as the launcher, so there is no visual jump between system and app.
  */
 @Composable
 fun SplashIntroScreen(onDone: () -> Unit) {
-    val reveal = remember { Animatable(0f) }
+    val coinDrop = remember { Animatable(0f) }
+    val walletReveal = remember { Animatable(0f) }
+    val wordsReveal = remember { Animatable(0f) }
     val progress = remember { Animatable(0f) }
     val exit = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
         launch {
-            reveal.animateTo(
+            coinDrop.animateTo(
                 1f,
-                animationSpec = tween(620, easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)),
+                animationSpec = spring(dampingRatio = 0.52f, stiffness = 310f),
             )
         }
-        launch { progress.animateTo(1f, animationSpec = tween(1320)) }
-        delay(1450)
+        launch {
+            delay(360)
+            walletReveal.animateTo(
+                1f,
+                animationSpec = tween(440, easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)),
+            )
+        }
+        launch {
+            delay(680)
+            wordsReveal.animateTo(1f, animationSpec = tween(330))
+        }
+        launch { progress.animateTo(1f, animationSpec = tween(1450)) }
+        delay(1650)
         exit.animateTo(1f, animationSpec = tween(220))
         onDone()
     }
@@ -71,32 +85,68 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                     brush = Brush.radialGradient(
                         colors = listOf(SplashGlow, Color.Transparent),
                         center = center,
-                        radius = size.minDimension * 0.48f,
+                        radius = size.minDimension * 0.50f,
                     ),
-                    radius = size.minDimension * 0.48f,
+                    radius = size.minDimension * 0.50f,
                     center = center,
                 )
             }
             .graphicsLayer { alpha = 1f - exit.value },
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(horizontal = 32.dp)
-                .graphicsLayer {
-                    alpha = reveal.value
-                    scaleX = 0.82f + 0.18f * reveal.value
-                    scaleY = 0.82f + 0.18f * reveal.value
-                    translationY = 24f * (1f - reveal.value)
-                },
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .size(270.dp),
         ) {
+            // Coin: it drops from above with a small physical bounce.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .size(100.dp)
+                    .graphicsLayer {
+                        alpha = 1f - walletReveal.value
+                        translationY = -250f * (1f - coinDrop.value)
+                        scaleX = 0.88f + 0.12f * coinDrop.value
+                        scaleY = 0.88f + 0.12f * coinDrop.value
+                    }
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(CoinShine, CoinGold, CoinEdge),
+                            center = androidx.compose.ui.geometry.Offset(30f, 25f),
+                            radius = 110f,
+                        ),
+                    ),
+            )
+
+            // Wallet catches the coin. The asset already contains the final,
+            // carefully illustrated coin so the handoff ends in the true logo.
             Image(
                 painter = painterResource(R.drawable.jibak_stage_0),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.size(252.dp),
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(270.dp)
+                    .graphicsLayer {
+                        alpha = walletReveal.value
+                        scaleX = 0.80f + 0.20f * walletReveal.value
+                        scaleY = 0.80f + 0.20f * walletReveal.value
+                        translationY = 34f * (1f - walletReveal.value)
+                    },
             )
+        }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(top = 320.dp)
+                .graphicsLayer {
+                    alpha = wordsReveal.value
+                    translationY = 18f * (1f - wordsReveal.value)
+                },
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Text(
                 text = "جیبک",
                 color = SplashGreen,
@@ -149,3 +199,6 @@ private val SplashGlow = Color(0x3329C97E)
 private val SplashGreen = Color(0xFF0B8C57)
 private val SplashMuted = Color(0xFF83A697)
 private val SplashTrack = Color(0x3329C97E)
+private val CoinShine = Color(0xFFFFFDF5)
+private val CoinGold = Color(0xFFF9C042)
+private val CoinEdge = Color(0xFFBC7A08)
