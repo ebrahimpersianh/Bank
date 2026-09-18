@@ -772,54 +772,67 @@ private fun AccountSettings(
         val avatarViewModel: AvatarViewModel = hiltViewModel()
         val avatar by avatarViewModel.avatar.collectAsState()
         val avatarFrame by avatarViewModel.frame.collectAsState()
-        AppCard(modifier = Modifier.padding(top = 8.dp), contentPadding = 20.dp) {
-            Column(
+        // کارتِ هویتِ فشرده: صفحه با «خودِ کاربر» شروع می‌شود، نه یک فضای خالیِ بزرگ.
+        AppCard(
+            backgroundColor = AppPrimaryPill,
+            borderColor = AppPrimaryBorder,
+            modifier = Modifier.padding(top = 8.dp),
+            contentPadding = 16.dp,
+        ) {
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box {
-                    FramedAvatar(avatar, size = 72.dp, frame = avatarFrame)
-                    // ناحیه‌ی لمس ۴۴ه ولی خودِ مداد ۲۶ - قاعده‌ی «هدفِ لمسی بزرگ‌تر از نشانه».
+                    FramedAvatar(avatar, size = 64.dp, frame = avatarFrame)
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
-                            .size(AppSpacing.minTouchTarget)
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(AppSurface)
+                            .border(1.5.dp, AppPrimaryBorder, CircleShape)
                             .pressScaleClickable { showAvatarSheet = true },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(26.dp)
-                                .clip(CircleShape)
-                                .background(AppSurface)
-                                .border(1.5.dp, AppLine, CircleShape),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.Filled.Edit,
-                                contentDescription = "تغییرِ آدمک",
-                                tint = AppMuted,
-                                modifier = Modifier.size(12.dp),
-                            )
-                        }
+                        Icon(
+                            Icons.Filled.Edit,
+                            contentDescription = "تغییرِ آدمک",
+                            tint = AppPrimaryInk,
+                            modifier = Modifier.size(14.dp),
+                        )
                     }
                 }
-                Text(
-                    if (savedName.isNullOrBlank()) "بی‌نام" else savedName!!,
-                    color = AppText,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier.padding(top = 12.dp),
-                )
-                Ltr {
+                Column(modifier = Modifier.weight(1f).padding(start = 13.dp)) {
                     Text(
-                        toFa(phone ?: ""),
-                        color = AppMuted,
+                        if (savedName.isNullOrBlank()) "بی‌نام" else savedName!!,
+                        color = AppText,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                    Ltr {
+                        Text(
+                            toFa(phone ?: ""),
+                            color = AppMuted,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 3.dp),
+                        )
+                    }
+                    Text(
+                        if (subscribed) "اشتراک فعال" else "حساب معمولی",
+                        color = if (subscribed) AppAccent else AppPrimaryInk,
                         fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 3.dp),
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 7.dp),
                     )
                 }
+                Icon(
+                    Icons.Filled.Badge,
+                    contentDescription = null,
+                    tint = AppPrimaryInk,
+                    modifier = Modifier.size(21.dp),
+                )
             }
         }
 
