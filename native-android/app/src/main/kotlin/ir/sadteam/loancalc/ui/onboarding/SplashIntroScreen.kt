@@ -123,7 +123,7 @@ fun SplashIntroScreen(onDone: () -> Unit) {
             // Wallet catches the coin. The asset already contains the final,
             // carefully illustrated coin so the handoff ends in the true logo.
             Image(
-                painter = painterResource(R.drawable.jibak_brand_mark),
+                painter = painterResource(R.drawable.splash_wallet_closed),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
