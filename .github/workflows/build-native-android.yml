@@ -1,13 +1,19 @@
 name: Build Native Kotlin App (اجرای دستی)
 
 on:
+  push:
+    branches:
+      - "claude/bank-9fiumm"
+    paths:
+      - "native-android/**"
+      - ".github/workflows/build-native-android.yml"
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     env:
       # چون `secrets` مستقیم تو `if:` یه step مجاز نیست، اول یه‌بار تو env سطح job (که این‌جا مجازه)
       # منتقلش می‌کنیم تا استپِ بعدی بتونه با env.HAS_RELEASE_KEY تصمیم بگیره.
@@ -108,12 +114,3 @@ jobs:
       # ما fail می‌کنه)، هر بیلد یه GitHub Release می‌سازه و APKها رو بهش پیوست می‌کنه - Releaseها
       # سهمیه‌ی جدا و بازتری دارن، این مشکل رو ندارن. تگ بر اساسِ شماره‌ی رانه، پس هر بیلد یه ریلیزِ
       # جدا/غیرتکراری می‌سازه.
-      - name: انتشارِ APKها به‌عنوانِ GitHub Release (همیشه کار می‌کنه، سهمیه‌ی جدا از Artifact)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "build-${{ github.run_number }}" \
-            --title "بیلدِ خودکار #${{ github.run_number }}" \
-            --notes "نسخه‌ی ۱.۰.${{ github.run_number }} - ساخته‌شده از کامیتِ ${{ github.sha }}" \
-            app/build/outputs/apk/cafebazaar/release/app-cafebazaar-release.apk \
-            app/build/outputs/apk/myket/release/app-myket-release.apk
