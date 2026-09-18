@@ -1,6 +1,6 @@
 package ir.sadteam.loancalc.ui.components
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Canvas\nimport androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,12 +18,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.Stroke\nimport androidx.compose.ui.layout.ContentScale\nimport androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.R\nimport ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -55,8 +55,18 @@ import ir.sadteam.loancalc.ui.theme.AppText
  */
 @Composable
 fun JibakLogo(width: Dp, modifier: Modifier = Modifier) {
-    Box(modifier = modifier.size(width, width * 76f / 96f)) {
-        Canvas(modifier = Modifier.fillMaxSize()) { drawJibakWallet() }
+    // The same approved artwork used by the launcher and splash. Keeping this
+    // composable as the single entry-point updates every auth/onboarding mark.
+    Box(
+        modifier = modifier.size(width, width * 0.90f),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.jibak_brand_mark),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 
