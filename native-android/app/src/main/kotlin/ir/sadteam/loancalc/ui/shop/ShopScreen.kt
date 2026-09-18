@@ -238,9 +238,6 @@ fun ShopScreen(
                     leading = { BackdropPreview(LiveBackground.byId(shopItem.id.removePrefix("bg_"))) },
                 )
             }
-            if (active[ShopCategory.BACKDROP] != null) {
-                item { ResetRow("برداشتنِ پس‌زمینه", viewModel::resetBackdrop) }
-            }
         }
 
 
