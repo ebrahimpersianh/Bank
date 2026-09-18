@@ -56,12 +56,12 @@ fun SplashIntroScreen(onDone: () -> Unit) {
         launch {
             coinDrop.animateTo(
                 1f,
-                animationSpec = tween(820, easing = CubicBezierEasing(0.18f, 0.82f, 0.22f, 1f)),
+                animationSpec = tween(780, easing = CubicBezierEasing(0.18f, 0.82f, 0.22f, 1f)),
             )
         }
         launch {
-            // کیف کمی پیش از رسیدنِ سکه ظاهر می‌شود تا فرودِ سکه واقعاً دیده شود.
-            delay(650)
+            // لوگوی نهایی فقط بعد از رسیدن سکه ظاهر می‌شود؛ هم‌پوشانی دو سکه نداریم.
+            delay(805)
             walletReveal.animateTo(
                 1f,
                 animationSpec = tween(360, easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)),
@@ -105,20 +105,38 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                     .align(Alignment.TopCenter)
                     .size(100.dp)
                     .graphicsLayer {
-                        alpha = 1f - walletReveal.value
+                        // این سکه دقیقاً تا لحظه‌ی تحویل به لوگوی نهایی دیده می‌شود.
+                        alpha = if (walletReveal.value == 0f) 1f else 0f
                         translationY = 90f - 610f * (1f - coinDrop.value)
                         scaleX = 0.88f + 0.12f * coinDrop.value
                         scaleY = 0.88f + 0.12f * coinDrop.value
                     }
                     .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(CoinShine, CoinGold, CoinEdge),
-                            center = androidx.compose.ui.geometry.Offset(30f, 25f),
-                            radius = 110f,
+                    .background(CoinEdge),
+                contentAlignment = Alignment.Center,
+            ) {
+                // همان زبانِ بصریِ سکه‌ی داخل لوگو: لبه، سطح طلایی و درخشش.
+                Box(
+                    modifier = Modifier
+                        .size(84.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(CoinShine, CoinGold, Color(0xFFE7A51D)),
+                                center = androidx.compose.ui.geometry.Offset(26f, 22f),
+                                radius = 92f,
+                            ),
                         ),
-                    ),
-            )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .size(58.dp)
+                            .clip(CircleShape)
+                            .background(Color(0x22A85E00)),
+                    )
+                }
+            }
 
             // Wallet catches the coin. The asset already contains the final,
             // carefully illustrated coin so the handoff ends in the true logo.
