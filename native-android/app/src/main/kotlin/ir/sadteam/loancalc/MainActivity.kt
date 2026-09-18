@@ -407,8 +407,9 @@ class MainActivity : FragmentActivity() {
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val themeMode by themeViewModel.themeMode.collectAsState()
-    val symbolPrefs = remember { UiPrefs(LocalContext.current.applicationContext) }
-    val activeSymbolSet by symbolPrefs.activeSymbolSet.collectAsState(initial = null)
+            val appContext = LocalContext.current.applicationContext
+            val symbolPrefs = remember(appContext) { UiPrefs(appContext) }
+            val activeSymbolSet by symbolPrefs.activeSymbolSet.collectAsState(initial = null)
     LaunchedEffect(activeSymbolSet) {
         SymbolTheme.style = SymbolStyle.fromItemId(activeSymbolSet)
     }
