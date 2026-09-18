@@ -828,12 +828,12 @@ private fun CategoryDonutCard(
             }
         }
     }
-    }
     // «قسط/چک» خرجِ تعهدی‌اند؛ گزارش جزئی‌شان از داده‌های وام و چک می‌آید، نه از دسته‌بندی حساب.
     CommitmentReportsCard(
         onOpenLoanStats = onOpenLoanStats,
         onOpenChequeReport = onOpenChequeReport,
     )
+    }
 }
 
 // ═══ ۵ و ۶ · کارت‌های کشف ═══════════════════════════════════════════════════════
