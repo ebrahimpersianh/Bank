@@ -259,11 +259,8 @@ private val defaultShortcuts = listOf(
     Shortcut("expense", "ثبتِ خرج", Icons.Outlined.Payments, "home", locked = true),
     Shortcut("transfer", "انتقال", Icons.Outlined.SwapHoriz, "assets"),
     Shortcut("report", "گزارشِ ماه", Icons.Outlined.BarChart, "report"),
-    Shortcut("cheque", "چک‌ها", Icons.Outlined.Description, "cheque"),
-    Shortcut("gold", "طلا", Icons.Outlined.AccountBalanceWallet, "assets"),
-    Shortcut("budget", "بودجه", Icons.Outlined.Savings, "budget"),
     Shortcut("due", "سررسید", Icons.Outlined.EventNote, "due"),
-    Shortcut("debt", "دنگ", Icons.Outlined.Groups, "due"),
+    Shortcut("cheque", "چک‌ها", Icons.Outlined.Description, "cheque"),
 )
 
 /**
@@ -275,6 +272,9 @@ private val defaultShortcuts = listOf(
  * فعلی مقصدِ ناوبری **نیستند**. با اضافه‌شدنِ هر route، فقط یک ردیف این‌جا اضافه می‌شود.
  */
 private val allShortcutPool = defaultShortcuts + listOf(
+    Shortcut("gold", "طلا", Icons.Outlined.AccountBalanceWallet, "assets"),
+    Shortcut("budget", "بودجه", Icons.Outlined.Savings, "budget"),
+    Shortcut("debt", "دنگ", Icons.Outlined.Groups, "due"),
     Shortcut("loan", "وام", Icons.Outlined.Payments, LOAN_ROUTE),
     Shortcut("home", "خانه", Icons.Outlined.Home, "home"),
     Shortcut("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, "assets"),
@@ -662,7 +662,7 @@ private fun LoanCalcApp(
         val selected = savedShortcutSelection.mapNotNull { byId[it] }.ifEmpty { defaultShortcuts }
         // ترتیبِ ذخیره‌شده اول میاد؛ شناسه‌ی ناشناخته نادیده و میان‌برِ تازه ته لیست اضافه می‌شه.
         val ordered = savedShortcutOrder.mapNotNull { id -> selected.firstOrNull { it.id == id } }
-        ordered + selected.filterNot { it.id in savedShortcutOrder }
+        (ordered + selected.filterNot { it.id in savedShortcutOrder }).take(5)
     }
 
     // «وام‌های من» دیگه تبِ جداگانه‌ی خودش نیست، یه زیرصفحه‌ی داخلِ تبِ «وام»ه (رجوع کن به
