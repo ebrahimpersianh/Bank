@@ -70,6 +70,7 @@ fun CoinHubScreen(
     BackHandler(onBack = onBack)
     // شفاف است تا پس‌زمینهٔ زنده‌ای که در ریشهٔ برنامه کشیده می‌شود، از میان
     // فاصلهٔ کارت‌ها دیده شود؛ رنگِ تختِ AppBg این لایه را کامل پنهان می‌کرد.
+    // رنگِ پایه و خودِ انیمیشن در ریشهٔ برنامه می‌مانند تا با جابه‌جایی تب‌ها قطع نشوند.
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
