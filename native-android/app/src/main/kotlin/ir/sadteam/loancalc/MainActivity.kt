@@ -186,6 +186,8 @@ import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.LockScreen
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.inbox.InboxScreen
+import ir.sadteam.loancalc.ui.cheque.SayadInquiryScreen
+import ir.sadteam.loancalc.ui.tools.ToolsHubScreen
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.LocalAppColors
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
@@ -278,6 +280,7 @@ private val allShortcutPool = defaultShortcuts + listOf(
     Shortcut("loan", "وام", Icons.Outlined.Payments, LOAN_ROUTE),
     Shortcut("home", "خانه", Icons.Outlined.Home, "home"),
     Shortcut("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, "assets"),
+    Shortcut("tools", "ابزارها", Icons.Outlined.Build, TOOLS_ROUTE),
 )
 
 private const val LOAN_ROUTE = "loan"
@@ -285,6 +288,8 @@ private const val CHEQUE_ROUTE = "cheque"
 private const val LOAN_STATS_ROUTE = "loan-stats"
 private const val CHEQUE_REPORT_ROUTE = "cheque-report"
 private const val DEBT_ROUTE = "debt"
+private const val TOOLS_ROUTE = "tools"
+private const val SAYAD_INQUIRY_ROUTE = "sayad-inquiry"
 
 /** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
 private enum class LoanSubTab(val label: String) {
@@ -1063,6 +1068,19 @@ private fun LoanCalcApp(
                     DebtScreen(
                         onBack = { navigateTo(BottomTab.DUE.route) },
                         initialCounterpartyId = openCounterparty,
+                    )
+                }
+                composable(TOOLS_ROUTE) {
+                    ToolsHubScreen(
+                        onBack = { navigateTo(BottomTab.HOME.route) },
+                        onOpenDeng = { navigateTo(DEBT_ROUTE) },
+                        onOpenSayad = { navigateTo(SAYAD_INQUIRY_ROUTE) },
+                    )
+                }
+                composable(SAYAD_INQUIRY_ROUTE) {
+                    SayadInquiryScreen(
+                        sayadId = null,
+                        onBack = { navigateTo(TOOLS_ROUTE) },
                     )
                 }
             }
