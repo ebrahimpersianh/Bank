@@ -93,10 +93,10 @@ data class Shortcut(
 )
 
 private const val AUTO_CLOSE_MS = 10_000L
-private const val COLUMNS = 4
+private const val COLUMNS = 5
 
-/** سقفِ میان‌برهای کشو (فریمِ `53a`) - دو ردیفِ چهارتایی. */
-const val SHORTCUT_SLOTS = 8
+/** سقفِ میان‌برهای کشو (فریمِ `53a`) - یک ردیفِ پنج‌تایی. */
+const val SHORTCUT_SLOTS = 5
 
 @Composable
 fun ShortcutDrawer(
