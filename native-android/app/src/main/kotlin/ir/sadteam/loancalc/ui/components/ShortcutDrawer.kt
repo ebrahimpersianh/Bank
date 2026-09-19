@@ -94,6 +94,7 @@ data class Shortcut(
 
 private const val AUTO_CLOSE_MS = 10_000L
 private const val COLUMNS = 5
+private const val MIN_SHORTCUTS = 10
 
 /** هر ردیفِ کشو پنج‌تایی است؛ تعدادِ میان‌برهای انتخابی محدود نیست. */
 
@@ -495,16 +496,16 @@ private fun SelectionGrid(
             Row(modifier = Modifier.fillMaxWidth()) {
                 rowItems.forEach { item ->
                     val selected = item.id in selectedIds
-                    // میان‌برها سقف ندارند؛ کشو در ردیف‌های پنج‌تایی ادامه پیدا می‌کند.
-                    val atLimit = false
+                    // کشو همیشه دست‌کم دو ردیفِ پنج‌تایی دارد؛ سقفِ بالایی ندارد.
+                    val atMinimum = selected && selectedIds.size <= MIN_SHORTCUTS
                     Box(modifier = Modifier.weight(1f)) {
                         SelectionTile(
                             shortcut = item,
                             selected = selected,
                             // فقط «ثبت خرج» قفل است و از کشو حذف نمی‌شود.
-                            disabled = item.locked || atLimit,
+                            disabled = item.locked || atMinimum,
                             inBottomBar = item.id in inBottomBarIds,
-                            onClick = { if (!item.locked && !atLimit) onToggle(item.id) },
+                            onClick = { if (!item.locked && !atMinimum) onToggle(item.id) },
                         )
                     }
                 }
