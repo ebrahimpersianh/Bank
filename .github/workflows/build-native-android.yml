@@ -1,12 +1,7 @@
 name: Build Native Kotlin App (اجرای دستی)
 
 on:
-  push:
-    branches:
-      - "claude/bank-9fiumm"
-    paths:
-      - "native-android/**"
-      - ".github/workflows/build-native-android.yml"
+  # فقط با درخواستِ دستی اجرا می‌شود؛ کامیت و پوشِ جدید هیچ بیلدی شروع نمی‌کند.
   workflow_dispatch:
 
 jobs:
