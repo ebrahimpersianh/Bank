@@ -2,7 +2,6 @@ package ir.sadteam.loancalc.ui.onboarding
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,35 +38,26 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Animated brand intro: a single gold coin drops into the mark, then the exact
- * launcher logo settles in. The system icon and the first in-app frame are one
- * visual language, not two unrelated illustrations.
+ * Animated brand intro.  The mark is drawn exactly once: the same vector that
+ * is used by the launcher icon.  Keeping one composable source prevents two
+ * coins or two wallets from crossing over during the handoff.
  */
 @Composable
 fun SplashIntroScreen(onDone: () -> Unit) {
-    val coinDrop = remember { Animatable(0f) }
-    val walletReveal = remember { Animatable(0f) }
+    val markReveal = remember { Animatable(0f) }
     val wordsReveal = remember { Animatable(0f) }
     val progress = remember { Animatable(0f) }
     val exit = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
         launch {
-            coinDrop.animateTo(
+            markReveal.animateTo(
                 1f,
-                animationSpec = tween(780, easing = CubicBezierEasing(0.18f, 0.82f, 0.22f, 1f)),
+                animationSpec = tween(760, easing = CubicBezierEasing(0.18f, 0.82f, 0.22f, 1f)),
             )
         }
         launch {
-            // لوگوی نهایی فقط بعد از رسیدن سکه ظاهر می‌شود؛ هم‌پوشانی دو سکه نداریم.
-            delay(790)
-            walletReveal.animateTo(
-                1f,
-                animationSpec = tween(420, easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)),
-            )
-        }
-        launch {
-            delay(1080)
+            delay(570)
             wordsReveal.animateTo(1f, animationSpec = tween(360))
         }
         launch { progress.animateTo(1f, animationSpec = tween(1580)) }
@@ -94,74 +83,27 @@ fun SplashIntroScreen(onDone: () -> Unit) {
             }
             .graphicsLayer { alpha = 1f - exit.value },
     ) {
+        // One image only: no temporary coin and no replacement layer.
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(276.dp),
+                .size(228.dp)
+                .clip(RoundedCornerShape(58.dp))
+                .background(LauncherGreen)
+                .graphicsLayer {
+                    alpha = markReveal.value
+                    scaleX = 0.78f + 0.22f * markReveal.value
+                    scaleY = 0.78f + 0.22f * markReveal.value
+                    translationY = 34f * (1f - markReveal.value)
+                },
+            contentAlignment = Alignment.Center,
         ) {
-            // Coin: it drops from above with a small physical bounce.
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .size(96.dp)
-                    .graphicsLayer {
-                        // فقط یک سکه می‌بینیم: قبل از رسیدن سکه‌ی متحرک و بعدش سکه‌ی خود لوگو.
-                        alpha = if (walletReveal.value == 0f) 1f else 0f
-                        translationY = 84f - 560f * (1f - coinDrop.value)
-                        scaleX = 0.82f + 0.18f * coinDrop.value
-                        scaleY = 0.82f + 0.18f * coinDrop.value
-                        rotationZ = -10f * (1f - coinDrop.value)
-                    }
-                    .clip(CircleShape)
-                    .background(CoinEdge),
-                contentAlignment = Alignment.Center,
-            ) {
-                // همان زبانِ بصریِ سکه‌ی داخل لوگو: لبه، سطح طلایی و درخشش.
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(CoinShine, CoinGold, Color(0xFFE7A51D)),
-                                center = androidx.compose.ui.geometry.Offset(26f, 22f),
-                                radius = 92f,
-                            ),
-                        ),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .size(58.dp)
-                            .clip(CircleShape)
-                            .background(Color(0x22A85E00)),
-                    )
-                }
-            }
-
-            // قاب و نشانِ نهایی دقیقاً از همان وکتورِ لانچر ساخته می‌شوند.
-            // این کار اختلافِ اسپلش و آیکونِ صفحهٔ اصلی را از ریشه حذف می‌کند.
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(228.dp)
-                    .clip(RoundedCornerShape(58.dp))
-                    .background(LauncherGreen)
-                    .graphicsLayer {
-                        alpha = walletReveal.value
-                        scaleX = 0.84f + 0.16f * walletReveal.value
-                        scaleY = 0.84f + 0.16f * walletReveal.value
-                        translationY = 26f * (1f - walletReveal.value)
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.jibak_brand_mark),
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.size(228.dp),
-                )
-            }
+            Image(
+                painter = painterResource(R.drawable.jibak_brand_mark),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(228.dp),
+            )
         }
 
         Column(
@@ -227,6 +169,3 @@ private val LauncherGreen = Color(0xFF0B3A2A)
 private val SplashGreen = Color(0xFF0B8C57)
 private val SplashMuted = Color(0xFF83A697)
 private val SplashTrack = Color(0x3329C97E)
-private val CoinShine = Color(0xFFFFFDF5)
-private val CoinGold = Color(0xFFF9C042)
-private val CoinEdge = Color(0xFFBC7A08)
