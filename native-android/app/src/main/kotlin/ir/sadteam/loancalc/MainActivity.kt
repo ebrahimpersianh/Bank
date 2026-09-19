@@ -156,6 +156,7 @@ import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
 import ir.sadteam.loancalc.ui.cheque.ChequeScreen
+import ir.sadteam.loancalc.ui.calendar.FinancialCalendarScreen
 import ir.sadteam.loancalc.ui.stats.StatsScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.LocalReducedMotion
@@ -282,6 +283,7 @@ private val allShortcutPool = defaultShortcuts + listOf(
     Shortcut("home", "خانه", Icons.Outlined.Home, "home"),
     Shortcut("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, "assets"),
     Shortcut("tools", "ابزارها", Icons.Outlined.Groups, TOOLS_ROUTE),
+    Shortcut("calendar", "تقویم مالی", Icons.Outlined.EventNote, CALENDAR_ROUTE),
 )
 
 private const val LOAN_ROUTE = "loan"
@@ -292,6 +294,7 @@ private const val DEBT_ROUTE = "debt"
 private const val TOOLS_ROUTE = "tools"
 private const val SAYAD_INQUIRY_ROUTE = "sayad-inquiry"
 private const val ANNUAL_ARCHIVE_ROUTE = "annual-archive"
+private const val CALENDAR_ROUTE = "financial-calendar"
 
 /** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
 private enum class LoanSubTab(val label: String) {
@@ -902,7 +905,7 @@ private fun LoanCalcApp(
                                 dest = dest,
                                 selected = currentRoute == dest.route,
                                 onPositioned = { rect -> registerTabTourBounds(dest.route, rect, tourBounds) },
-                                onLongClick = { navEditorOpen = true },
+                                onLongClick = { shortcutDrawerOpen = true },
                                 onClick = {
                                     val tab = BottomTab.entries.firstOrNull { it.route == dest.route }
                                     if (dest.route == currentRoute) {
@@ -979,7 +982,7 @@ private fun LoanCalcApp(
                                         onApply = { navSlotsViewModel.applySuggestion(suggestion) },
                                         onEdit = {
                                             navSlotsViewModel.snoozeSuggestion()
-                                            navEditorOpen = true
+                                            shortcutDrawerOpen = true
                                         },
                                         onDismiss = { navSlotsViewModel.dismissSuggestion(suggestion) },
                                     )
@@ -1088,6 +1091,19 @@ private fun LoanCalcApp(
                 }
                 composable(ANNUAL_ARCHIVE_ROUTE) {
                     AnnualArchiveScreen(onBack = { navigateTo(TOOLS_ROUTE) })
+                }
+                composable(CALENDAR_ROUTE) {
+                    FinancialCalendarScreen(
+                        onBack = { navigateTo(BottomTab.HOME.route) },
+                        onOpenLoan = { loanId ->
+                            deepLinkViewModel.openLoan(loanId)
+                            navigateTo(LOAN_ROUTE)
+                        },
+                        onOpenCheque = { chequeId ->
+                            deepLinkViewModel.openCheque(chequeId)
+                            navigateTo(CHEQUE_ROUTE)
+                        },
+                    )
                 }
             }
             if (navEditorOpen) {
