@@ -672,7 +672,9 @@ private fun LoanCalcApp(
         val byId = allShortcutPool.associateBy { it.id }
         val stored = savedShortcutSelection.mapNotNull { byId[it] }
         // انتخابِ پنج‌تاییِ نسخه‌های قبلی، فقط یک ردیفِ اولیه بود؛ حالا همه‌ی مقصدها نمایش داده می‌شوند.
-        val selected = if (stored.isEmpty() || stored.map { it.id } == defaultShortcuts.map { it.id }) allShortcutPool else stored
+        // کشو همیشه حداقل دو ردیفِ پنج‌تایی دارد؛ انتخابِ قدیمیِ پنج‌تایی با مقصدهای تازه کامل می‌شود.
+        val selected = (if (stored.isEmpty() || stored.map { it.id } == defaultShortcuts.map { it.id }) allShortcutPool else stored)
+            .let { chosen -> if (chosen.size >= 10) chosen else chosen + allShortcutPool.filterNot { it.id in chosen.map { item -> item.id } }.take(10 - chosen.size) }
         // ترتیبِ ذخیره‌شده اول میاد؛ شناسه‌ی ناشناخته نادیده و میان‌برِ تازه ته لیست اضافه می‌شه.
         val ordered = savedShortcutOrder.mapNotNull { id -> selected.firstOrNull { it.id == id } }
         ordered + selected.filterNot { it.id in savedShortcutOrder }
