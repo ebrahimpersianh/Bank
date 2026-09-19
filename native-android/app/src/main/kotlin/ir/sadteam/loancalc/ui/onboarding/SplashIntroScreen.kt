@@ -40,9 +40,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Animated brand intro: a coin drops in first, the wallet catches it, then the
- * wordmark and progress line settle in. The final artwork is the same stage-0
- * image as the launcher, so there is no visual jump between system and app.
+ * Animated brand intro: a single gold coin drops into the mark, then the exact
+ * launcher logo settles in. The system icon and the first in-app frame are one
+ * visual language, not two unrelated illustrations.
  */
 @Composable
 fun SplashIntroScreen(onDone: () -> Unit) {
@@ -61,18 +61,18 @@ fun SplashIntroScreen(onDone: () -> Unit) {
         }
         launch {
             // لوگوی نهایی فقط بعد از رسیدن سکه ظاهر می‌شود؛ هم‌پوشانی دو سکه نداریم.
-            delay(805)
+            delay(790)
             walletReveal.animateTo(
                 1f,
-                animationSpec = tween(360, easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)),
+                animationSpec = tween(420, easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)),
             )
         }
         launch {
-            delay(980)
-            wordsReveal.animateTo(1f, animationSpec = tween(330))
+            delay(1080)
+            wordsReveal.animateTo(1f, animationSpec = tween(360))
         }
-        launch { progress.animateTo(1f, animationSpec = tween(1450)) }
-        delay(1900)
+        launch { progress.animateTo(1f, animationSpec = tween(1580)) }
+        delay(2080)
         exit.animateTo(1f, animationSpec = tween(220))
         onDone()
     }
@@ -97,19 +97,20 @@ fun SplashIntroScreen(onDone: () -> Unit) {
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(270.dp),
+                .size(276.dp),
         ) {
             // Coin: it drops from above with a small physical bounce.
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .size(100.dp)
+                    .size(96.dp)
                     .graphicsLayer {
-                        // این سکه دقیقاً تا لحظه‌ی تحویل به لوگوی نهایی دیده می‌شود.
+                        // فقط یک سکه می‌بینیم: قبل از رسیدن سکه‌ی متحرک و بعدش سکه‌ی خود لوگو.
                         alpha = if (walletReveal.value == 0f) 1f else 0f
-                        translationY = 90f - 610f * (1f - coinDrop.value)
-                        scaleX = 0.88f + 0.12f * coinDrop.value
-                        scaleY = 0.88f + 0.12f * coinDrop.value
+                        translationY = 84f - 560f * (1f - coinDrop.value)
+                        scaleX = 0.82f + 0.18f * coinDrop.value
+                        scaleY = 0.82f + 0.18f * coinDrop.value
+                        rotationZ = -10f * (1f - coinDrop.value)
                     }
                     .clip(CircleShape)
                     .background(CoinEdge),
@@ -118,7 +119,7 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                 // همان زبانِ بصریِ سکه‌ی داخل لوگو: لبه، سطح طلایی و درخشش.
                 Box(
                     modifier = Modifier
-                        .size(84.dp)
+                        .size(80.dp)
                         .clip(CircleShape)
                         .background(
                             Brush.radialGradient(
@@ -138,22 +139,29 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                 }
             }
 
-            // Wallet catches the coin. The asset already contains the final,
-            // carefully illustrated coin so the handoff ends in the true logo.
-            Image(
-                painter = painterResource(R.drawable.splash_wallet_closed),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
+            // قاب و نشانِ نهایی دقیقاً از همان وکتورِ لانچر ساخته می‌شوند.
+            // این کار اختلافِ اسپلش و آیکونِ صفحهٔ اصلی را از ریشه حذف می‌کند.
+            Box(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .size(270.dp)
+                    .size(228.dp)
+                    .clip(RoundedCornerShape(58.dp))
+                    .background(LauncherGreen)
                     .graphicsLayer {
                         alpha = walletReveal.value
-                        scaleX = 0.80f + 0.20f * walletReveal.value
-                        scaleY = 0.80f + 0.20f * walletReveal.value
-                        translationY = 34f * (1f - walletReveal.value)
+                        scaleX = 0.84f + 0.16f * walletReveal.value
+                        scaleY = 0.84f + 0.16f * walletReveal.value
+                        translationY = 26f * (1f - walletReveal.value)
                     },
-            )
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.jibak_brand_mark),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(228.dp),
+                )
+            }
         }
 
         Column(
@@ -214,7 +222,8 @@ fun SplashIntroScreen(onDone: () -> Unit) {
 }
 
 private val SplashCream = Color(0xFFFFFCF4)
-private val SplashGlow = Color(0x3329C97E)
+private val SplashGlow = Color(0x4429C97E)
+private val LauncherGreen = Color(0xFF0B3A2A)
 private val SplashGreen = Color(0xFF0B8C57)
 private val SplashMuted = Color(0xFF83A697)
 private val SplashTrack = Color(0x3329C97E)
