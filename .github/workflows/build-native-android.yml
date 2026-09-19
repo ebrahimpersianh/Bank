@@ -1,7 +1,12 @@
 name: Build Native Kotlin App (اجرای دستی)
 
 on:
-  # فقط با درخواستِ دستی اجرا می‌شود؛ کامیت و پوشِ جدید هیچ بیلدی شروع نمی‌کند.
+  # بیلدِ خودکارِ عمومی خاموش است. فقط تغییرِ فایل درخواست بیلد، آن را اجرا می‌کند.
+  push:
+    branches:
+      - "claude/bank-9fiumm"
+    paths:
+      - "ci/build-request.txt"
   workflow_dispatch:
 
 jobs:
