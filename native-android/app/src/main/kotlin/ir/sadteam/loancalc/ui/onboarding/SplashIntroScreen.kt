@@ -38,9 +38,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Animated brand intro.  The mark is drawn exactly once: the same vector that
- * is used by the launcher icon.  Keeping one composable source prevents two
- * coins or two wallets from crossing over during the handoff.
+ * Animated brand intro.  The mark is drawn exactly once, from the same artwork
+ * the launcher icon uses, so no second coin or wallet can cross over during the
+ * handoff from Android's own splash frame.
  */
 @Composable
 fun SplashIntroScreen(onDone: () -> Unit) {
@@ -98,8 +98,11 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                 },
             contentAlignment = Alignment.Center,
         ) {
+            // `jibak_stage_0` و نه `jibak_brand_mark`: این کادر همان کاشیِ آیکونِ
+            // لانچر را تقلید می‌کند، و نشانِ لبه‌به‌لبه این‌جا کیف را بزرگ‌تر از
+            // آیکونِ واقعیِ روی صفحه‌ی گوشی نشان می‌داد.
             Image(
-                painter = painterResource(R.drawable.jibak_brand_mark),
+                painter = painterResource(R.drawable.jibak_stage_0),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(228.dp),
