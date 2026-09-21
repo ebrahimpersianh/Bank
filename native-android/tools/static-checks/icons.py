@@ -53,12 +53,18 @@ def main() -> int:
     problems = []
     for path in targets:
         text = strip_noise(path.read_text(encoding="utf-8"))
-        imports = set(re.findall(r'^import (androidx\.compose\.material\.icons\.[\w.]+)$', text, re.M))
+        imports = set(re.findall(r'^import (androidx\.compose\.material\.icons\.[\w.]+(?:\*)?)$', text, re.M))
+        # ⚠️ **ایمپورتِ ستاره‌دار هم معتبر است** - `import ...icons.sharp.*` همه‌ی آیکون‌های آن
+        # پکیج را می‌آورد. بی این، `CategoryIcons.kt` (که عمداً ستاره‌دار نوشته شده چون ۱۸×۵
+        # آیکون دارد) ۳۶ خطای دروغین می‌داد و کلِ بررسی را برای همیشه قرمز نگه می‌داشت -
+        # یعنی سیگنالِ واقعی زیرِ نویز گم می‌شد.
+        star_pkgs = {imp[: -len(".*")] for imp in imports if imp.endswith(".*")}
         missing = set()
         for group, name in USE.findall(text):
             imp = expected_import(group, name)[len("import "):]
-            if imp not in imports:
-                missing.add((group, name))
+            if imp in imports or imp.rsplit(".", 1)[0] in star_pkgs:
+                continue
+            missing.add((group, name))
         for group, name in sorted(missing):
             problems.append((path.relative_to(ROOT), f"Icons.{group}.{name}", expected_import(group, name)))
 
