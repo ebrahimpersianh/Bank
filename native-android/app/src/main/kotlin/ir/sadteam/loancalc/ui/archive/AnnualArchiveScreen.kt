@@ -34,6 +34,8 @@ import ir.sadteam.loancalc.ui.components.AppHeroCard
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.HeroMuted
 import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.jibak.toFa
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.theme.AppBg
@@ -44,6 +46,7 @@ import ir.sadteam.loancalc.ui.theme.AppText
 @Composable
 fun AnnualArchiveScreen(onBack: () -> Unit, accountViewModel: AccountViewModel = hiltViewModel()) {
     val transactions by accountViewModel.transactions.collectAsState()
+    val privacyMode = LocalPrivacyMode.current
     val years = remember(transactions) { transactions.groupBy { it.year }.toSortedMap(compareByDescending { it }) }
     BackHandler(onBack = onBack)
     Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
@@ -66,11 +69,11 @@ fun AnnualArchiveScreen(onBack: () -> Unit, accountViewModel: AccountViewModel =
                             Text("${year.toFa()} · ${rows.size.toFa()} تراکنش", color = AppText, fontWeight = FontWeight.Black, fontSize = 15.sp)
                             AppHeroCard(modifier = Modifier.padding(top = 10.dp)) {
                                 Text("خالصِ سال", color = HeroMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                Text(rialToToman(net.toLong()).toFaMoney() + " تومان", color = androidx.compose.ui.graphics.Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
+                                Text(maskIfPrivate(privacyMode, rialToToman(net.toLong()).toFaMoney()) + " تومان", color = androidx.compose.ui.graphics.Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
                             }
                             Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                                ArchiveStat("واریز", income, AppPrimary)
-                                ArchiveStat("برداشت", expense, AppMuted)
+                                ArchiveStat("واریز", income, AppPrimary, privacyMode = privacyMode)
+                                ArchiveStat("برداشت", expense, AppMuted, privacyMode = privacyMode)
                                 ArchiveStat("ماه فعال", rows.map { it.month }.distinct().size.toDouble(), AppText, plain = true)
                             }
                         }
@@ -82,9 +85,16 @@ fun AnnualArchiveScreen(onBack: () -> Unit, accountViewModel: AccountViewModel =
 }
 
 @Composable
-private fun ArchiveStat(label: String, value: Double, color: androidx.compose.ui.graphics.Color, plain: Boolean = false) {
+private fun ArchiveStat(
+    label: String,
+    value: Double,
+    color: androidx.compose.ui.graphics.Color,
+    plain: Boolean = false,
+    // «ماه فعال» شمارش است نه مبلغ، پس ماسک نمی‌خورد - حالتِ خصوصی فقط مبلغ را می‌پوشاند.
+    privacyMode: Boolean = false,
+) {
     Column {
         Text(label, color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
-        Text(if (plain) value.toInt().toFa() else rialToToman(value.toLong()).toFaMoney(), color = color, fontSize = 12.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 3.dp))
+        Text(if (plain) value.toInt().toFa() else maskIfPrivate(privacyMode, rialToToman(value.toLong()).toFaMoney()), color = color, fontSize = 12.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 3.dp))
     }
 }

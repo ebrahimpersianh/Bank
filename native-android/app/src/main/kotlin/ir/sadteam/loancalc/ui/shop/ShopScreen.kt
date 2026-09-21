@@ -264,6 +264,12 @@ fun ShopScreen(
                     leading = { BackdropPreview(LiveBackground.byId(shopItem.id.removePrefix("bg_"))) },
                 )
             }
+            // قاعده‌ی «بی راهِ بازگشت نگذار» (بندِ ۵ فریمِ 60d): هر قلمِ فعال‌شدنی باید
+            // خاموش‌شدنی هم باشد. این ردیف یک‌بار حذف شده بود و پس‌زمینه‌ی خریداری‌شده
+            // دیگر برداشته نمی‌شد.
+            if (active[ShopCategory.BACKDROP] != null) {
+                item { ResetRow("برداشتنِ پس‌زمینه‌ی زنده", viewModel::resetBackdrop) }
+            }
         }
 
 

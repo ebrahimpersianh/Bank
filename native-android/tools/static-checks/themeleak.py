@@ -25,7 +25,10 @@ BRAND = {
 SKIP = ("/theme/", "JibakLogo.kt", "SplashIntroScreen.kt", "BrandMarks.kt", "JibakMascot.kt", "AppHeroCard.kt", "Avatar.kt",
         # ویجت Glance است نه Compose: `LocalAppColors` را نمی‌بیند، پس رنگش ناچار خام است
         # (قاعده‌ی ۴ی فریمِ `57c` - تمِ خریدنی روی ویجت نمی‌آید).
-        "/ui/widget/")
+        "/ui/widget/",
+        # ویترینِ فروشگاه باید رنگِ **واقعیِ هر تم** را به‌عنوان نمونه نشان دهد؛ این‌جا هگزِ
+        # سبز رنگِ کاشیِ تمِ «سبز» است نه رنگِ برند، و با تمِ فعال نباید عوض شود.
+        "/ui/shop/ShopScreen.kt")
 
 found = []
 for root in ("app/src", "data/src", "core/src"):
