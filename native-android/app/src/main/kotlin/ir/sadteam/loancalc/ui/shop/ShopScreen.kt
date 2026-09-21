@@ -636,6 +636,7 @@ private fun AppIconPreview(itemId: String) {
         "icon:coin" -> R.drawable.ic_launcher_coin_background to R.drawable.ic_launcher_coin_foreground
         "icon:letter" -> R.drawable.ic_launcher_letter_background to R.drawable.ic_launcher_letter_foreground
         "icon:piggy" -> R.drawable.ic_launcher_piggy_background to R.drawable.ic_launcher_piggy_foreground
+        "icon:shop" -> R.drawable.ic_launcher_shop_background to R.drawable.jibak_shop_0
         // پیش‌فرض «کیفِ پول» است؛ پیش‌زمینه‌اش PNGِ mipmap است نه وکتورِ drawable.
         else -> R.drawable.ic_launcher_background to R.mipmap.ic_launcher_foreground
     }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_shop_w8_background" />
+    <foreground android:drawable="@drawable/jibak_shop_8" />
+    <monochrome android:drawable="@drawable/jibak_shop_8" />
+</adaptive-icon>

@@ -42,13 +42,13 @@ class IconWither @Inject constructor() {
      * پله‌ی متناظر با آخرین روزِ ثبت‌شده در دفترِ سکه (`DAILY_LOG`) را اعمال می‌کند.
      *
      * [activeIcon] آیکونِ خریداری‌شده‌ی فعال (`icon:piggy`…) یا `null` برای پیش‌فرض.
-     * هر چهار طرح هشت پله دارند (بخشِ ۶۱)، پس پژمردگی روی آیکونِ خریدنی هم اجرا می‌شود.
+     * هر پنج طرح هشت پله دارند (بخشِ ۶۱)، پس پژمردگی روی آیکونِ خریدنی هم اجرا می‌شود.
      */
     fun applyFromDateKeys(context: Context, dateKeys: Collection<String>, activeIcon: String? = null) {
         apply(context, stepFor(lastDay(dateKeys)), activeIcon)
     }
 
-    /** دقیقاً **یک** الیاس از ۳۶ تا روشن می‌ماند. */
+    /** دقیقاً **یک** الیاس از ۴۵ تا روشن می‌ماند. */
     fun apply(context: Context, step: Int, activeIcon: String? = null) {
         val target = aliasFor(activeIcon, step)
         val pm = context.packageManager
@@ -96,17 +96,19 @@ class IconWither @Inject constructor() {
          * آیکونِ خریدنی → شماره‌ی الیاسِ **پله‌ی صفر**ش. شناسه‌ها همان `ShopItem.id`ِ
          * کاتالوگ‌اند. «کیفِ پول» این‌جا نیست چون پیش‌فرض است و الیاسِ ۰..۸ مالِ اوست.
          */
-        val ICON_ALIAS = mapOf("icon:coin" to 9, "icon:letter" to 10, "icon:piggy" to 11)
+        val ICON_ALIAS =
+            mapOf("icon:coin" to 9, "icon:letter" to 10, "icon:piggy" to 11, "icon:shop" to 36)
 
         /** پله‌ی ۱..۸ِ هر طرحِ خریدنی (بخشِ ۶۱) - ۳۲ پله‌ی ساخته‌شده‌ی `generate-wither.py`. */
-        private val WITHER_BASE = mapOf("icon:coin" to 12, "icon:letter" to 20, "icon:piggy" to 28)
+        private val WITHER_BASE =
+            mapOf("icon:coin" to 12, "icon:letter" to 20, "icon:piggy" to 28, "icon:shop" to 37)
 
-        private const val LAST_ALIAS = 35
+        private const val LAST_ALIAS = 44
 
         /**
          * کدام الیاس روشن شود.
          *
-         * پله‌ی صفرِ هر طرح الیاسِ جدا دارد (۰ و ۹ و ۱۰ و ۱۱) چون فایلِ «تازه»ی طرح است، و
+         * پله‌ی صفرِ هر طرح الیاسِ جدا دارد (۰ و ۹ و ۱۰ و ۱۱ و ۳۶) چون فایلِ «تازه»ی طرح است، و
          * پله‌های ۱..۸ پشتِ‌هم می‌آیند. پس نگاشت **دو تکه** است، نه یک جمعِ ساده.
          */
         fun aliasFor(activeIcon: String?, step: Int): Int {
