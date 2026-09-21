@@ -13,9 +13,11 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -862,9 +864,16 @@ private fun LoanCalcApp(
                 // سررسید. «وام» و «چک» عمداً تب نیستن و از داخلِ صفحه‌های دیگه باز می‌شن، و
                 // **دکمه‌ی شناورِ میانی هم نداریم** (یه‌بار اضافه و به‌خواستِ کاربر برداشته شد؛
                 // سیستمِ طراحی هم صریحاً همینو می‌گه) - افزودنِ تراکنش از دکمه‌ی درونِ تبِ خانه‌ست.
-                // حذفِ آنی لازم است: AnimatedVisibility تا پایان خروج، فضای bottomBar را
-                // برای Scaffold نگه می‌داشت و روی اسکرولِ سریع یک نوار سفید موقت می‌ساخت.
-                if (bottomBarVisible) {
+                // ⚠️ محوِ آنی بود و کاربر گفت می‌خواهد نرم باشد. علتِ آن حذفِ آنی هم واقعی
+                // بود: `AnimatedVisibility`ِ **فقط محوشونده** تا پایانِ خروج ارتفاعِ نوار را
+                // برای `Scaffold` نگه می‌داشت و روی اسکرولِ سریع یک نوارِ سفیدِ موقت می‌ساخت.
+                // `shrinkVertically` همان ارتفاع را هم‌قدمِ لغزش جمع می‌کند، پس جای خالی
+                // نمی‌مانَد.
+                AnimatedVisibility(
+                    visible = bottomBarVisible,
+                    enter = slideInVertically(tween(220)) { it } + expandVertically(tween(220)),
+                    exit = slideOutVertically(tween(180)) { it } + shrinkVertically(tween(180)),
+                ) {
                     // ⚠️ **بازطراحیِ سبکِ «جیبک»**: نوارِ «شناورِ شیشه‌ای»ِ دورِ قبل (کارتِ گردگوشه‌ی
                     // جدا از لبه با گرادیانِ نوری و سایه‌ی تارِ سبز + نشانگرِ قرصیِ لغزنده) کاملاً
                     // حذف شد. طبقِ بخشِ «۹ · نویگیشنِ پایین»ِ سیستمِ طراحی نوار حالا:
@@ -894,6 +903,14 @@ private fun LoanCalcApp(
                         // دستگیره‌ی کشوی میان‌بُر - نوارِ ۲۶ پیکسلیِ بالای تب‌ها. کشیدنِ به بالا
                         // یا تپِ ساده بازش می‌کنه (قاعده‌ی `31c`).
                         ShortcutDrawerHandle(onOpen = { shortcutDrawerOpen = true })
+                        Text(
+                            "روی هر دکمه نگه‌دار تا جابه‌جایش کنی",
+                            color = AppLabel,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                        )
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1695,14 +1712,9 @@ private fun RowScope.BottomNavItem(
             fontWeight = if (selected) FontWeight.Black else FontWeight.Bold,
             modifier = Modifier.padding(top = 4.dp),
         )
-        if (selected) {
-            Text(
-                "نگه‌دار برای چیدمان",
-                color = AppLabel,
-                fontSize = 7.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 1.dp),
-            )
-        }
+        // ⚠️ راهنمای «نگه‌دار برای چیدمان» از این‌جا **برداشته شد**. زیرِ تبِ فعال که
+        // می‌نشست، یعنی «همین یکی جابه‌جا می‌شود»، در حالی که نگه‌داشتن روی **هر** دکمه
+        // ویرایشگر را باز می‌کند - و ۷sp هم خواندنی نبود. حالا یک خطِ مشترک بالای
+        // کلِ نوار است.
     }
 }

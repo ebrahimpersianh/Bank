@@ -46,13 +46,18 @@ import androidx.compose.material.icons.Icons
  * باشه (نه شعله و نه هیچ نمادِ دیگه). زیرِ ۷ روز همون زنجیرِ کوچیکِ بخشِ ۳۴ می‌مونه.
  */
 @Composable
-fun ActiveChip(days: Int, modifier: Modifier = Modifier) {
+fun ActiveChip(days: Int, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+    // ⚠️ این قرص **جای** قرصِ سکه می‌نشیند (رشته در خطرِ پاره‌شدن)، پس اگر بی‌مقصد بماند
+    // تپِ کاربری که سراغِ کیفِ سکه‌اش می‌رفت به هیچ‌جا نمی‌خورد - گزارشِ خودِ کاربر:
+    // «اون بالا باید سکه می‌بود … روش کلیک می‌کنم هیچی نمی‌شه». مقصد همان کیفِ سکه است،
+    // چون رشته و ترمیمش هم همان‌جا زندگی می‌کنند.
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .clip(RoundedCornerShape(999.dp))
             // رنگِ قرص طبقِ فریم نارنجیِ کم‌رنگه (`#FFF1DC`)، نه سبز.
             .background(AppWarningPill)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 10.dp, vertical = 5.dp),
     ) {
         if (days >= 7) {

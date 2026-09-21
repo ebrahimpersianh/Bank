@@ -668,7 +668,7 @@ private fun HomeHeader(
             // شده یا نه». امضایش را حدس نزدم.
             val streakAtRisk = activeDays >= 7 && !todayHasEntry
             if (streakAtRisk) {
-                ActiveChip(days = activeDays)
+                ActiveChip(days = activeDays, onClick = onOpenCoins)
             } else if (coins > 0) {
                 CoinChip(coins = coins, onClick = onOpenCoins, compact = compactChips)
             }
