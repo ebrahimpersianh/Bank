@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.LocalDate
@@ -54,7 +57,11 @@ import ir.sadteam.loancalc.data.SymbolStyle
 import ir.sadteam.loancalc.data.Badge
 import ir.sadteam.loancalc.data.categoryIconChoices
 import ir.sadteam.loancalc.data.iconForKey
+import ir.sadteam.loancalc.core.ActiveStreak
+import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.data.coin.BASE_THEME_IDS
+import ir.sadteam.loancalc.data.coin.FEATURED_ITEM_IDS
 import ir.sadteam.loancalc.data.coin.BuyResult
 import ir.sadteam.loancalc.data.coin.CoinSpend
 import ir.sadteam.loancalc.data.coin.ShopCategory
@@ -154,6 +161,9 @@ fun ShopScreen(
     // **صفر پیکسل** ارتفاع می‌گیرد. پیش‌فرض خاموش است چون ویترین برای دیدنِ نداشته‌هاست.
     var onlyMine by rememberSaveable { mutableStateOf(false) }
     val banner = rememberInAppBanner()
+    // کلیدِ جلالیِ امروز - مبنای «تازه‌رسیده». یک‌بار خوانده می‌شود؛ روزِ تقویم وسطِ
+    // یک ترکیب عوض نمی‌شود.
+    val todayKey = remember { ActiveStreak.dateKey(JalaliCalendar.today()) }
     val activateItem: (ShopItem) -> Unit = { item ->
         viewModel.activate(item)
         banner.show("«${item.label}» فعال شد.", isSuccess = true)
@@ -225,6 +235,15 @@ fun ShopScreen(
         )
     }
     ShopTabs(tab, onlyMine, { tab = it }) { onlyMine = !onlyMine }
+    // ⚠️ هر دو **بیرونِ** `LazyColumn` حساب می‌شوند: `remember` در بدنه‌ی لیستِ تنبل
+    // (بیرونِ `item {}`) مجاز نیست - بررسیِ ایستای پروژه همین را گرفت.
+    val featuredTrio = remember(catalog) {
+        FEATURED_ITEM_IDS.mapNotNull { id -> catalog.firstOrNull { it.id == id } }
+    }
+    // «تازه» از روی `addedOn` هر قلم حساب می‌شود، نه از ترتیبِ کاتالوگ.
+    val fresh = remember(catalog, todayKey) {
+        catalog.filter { it.isNew(todayKey) { from, to -> daysBetweenKeys(from, to) } }
+    }
     LazyColumn(
         contentPadding = PaddingValues(start = 10.dp, end = 16.dp, top = 10.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -243,6 +262,43 @@ fun ShopScreen(
                 onActivate = activateItem,
                 onConfirm = { confirming = it },
             )
+        }
+
+        // ═══ پیشنهادهای ویژه و تازه‌رسیده‌ها (بخشِ ۸۳) ═══
+        //
+        // 🚨 **فقط این دو بخش کارتِ دوتایی‌اند** - تصمیمِ قفل‌شده‌ی کاربر. ۲۸ ردیفِ تم
+        // به‌شکلِ کارتِ دوتایی یعنی صفحه‌ای که ته ندارد؛ بقیه‌ی ویترین همان ردیفِ فشرده
+        // می‌مانَد.
+        //
+        // ⚠️ هر دو فقط در تبِ «همه» و بیرونِ حالتِ «مالِ من» دیده می‌شوند: این‌ها
+        // **ویترین**اند نه فهرست، و در فهرستِ داشته‌های کاربر معنی ندارند.
+        if (tab == null && !onlyMine) {
+            if (featuredTrio.isNotEmpty()) {
+                item { SectionHeader("پیشنهادهای ویژه", Icons.Filled.AutoAwesome) }
+                items(featuredTrio.chunked(2).size) { rowIndex ->
+                    ProductCardRow(
+                        pair = featuredTrio.chunked(2)[rowIndex],
+                        stateOf = ::stateOf,
+                        onActivate = activateItem,
+                        onConfirm = { confirming = it },
+                        leadingOf = { previewFor(it) },
+                    )
+                }
+            }
+            // نبودِ قلمِ تازه یعنی **کلِ بخش پنهان** - تصمیمِ قفل‌شده. سرگروهِ خالی
+            // بدتر از نبودنش است.
+            if (fresh.isNotEmpty()) {
+                item { SectionHeader("تازه رسیده‌ها", Icons.Filled.NewReleases) }
+                items(fresh.chunked(2).size) { rowIndex ->
+                    ProductCardRow(
+                        pair = fresh.chunked(2)[rowIndex],
+                        stateOf = ::stateOf,
+                        onActivate = activateItem,
+                        onConfirm = { confirming = it },
+                        leadingOf = { previewFor(it) },
+                    )
+                }
+            }
         }
 
         fun rowsOf(category: ShopCategory) = catalog
@@ -744,6 +800,151 @@ private fun ThemeMiniPreview(dark: Color, primary: Color, light: Color) {
     }
 }
 
+/**
+ * فاصله‌ی دو کلیدِ جلالیِ `۱۴۰۵-۰۶-۳۱` به روز.
+ *
+ * ⚠️ کلیدِ خراب `Int.MAX_VALUE` می‌دهد نه صفر: صفر یعنی «امروز» و یک قلمِ بدتاریخ را
+ * برای همیشه «تازه» نگه می‌داشت - دقیقاً همان چیزی که `addedOn = null` جلویش را می‌گیرد.
+ */
+private fun daysBetweenKeys(from: String, to: String): Int {
+    fun parse(key: String): PersianDate? {
+        val parts = key.split('-')
+        if (parts.size != 3) return null
+        val y = parts[0].toIntOrNull() ?: return null
+        val m = parts[1].toIntOrNull() ?: return null
+        val d = parts[2].toIntOrNull() ?: return null
+        return PersianDate(y, m, d)
+    }
+    val a = parse(from) ?: return Int.MAX_VALUE
+    val b = parse(to) ?: return Int.MAX_VALUE
+    return runCatching { JalaliCalendar.daysBetween(a, b) }.getOrDefault(Int.MAX_VALUE)
+}
+
+/** سرگروهِ بخش‌های ویترین («پیشنهادهای ویژه»، «تازه رسیده‌ها»). */
+@Composable
+private fun SectionHeader(title: String, icon: ImageVector) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 6.dp, top = 6.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = AppAccent, modifier = Modifier.size(14.dp))
+        Text(title, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+    }
+}
+
+/**
+ * یک ردیفِ **دوتایی** از کارتِ محصول.
+ *
+ * ⚠️ `LazyVerticalGrid` داخلِ `LazyColumn` ممنوع است (قاعده‌ی ثبت‌شده‌ی پروژه)، پس
+ * ردیف‌بندی با `chunked(2)` انجام می‌شود و خانه‌ی خالیِ ردیفِ فرد با `Spacer(weight)`
+ * پر می‌شود - وگرنه کارتِ تک، تمام‌عرض می‌شد.
+ */
+@Composable
+private fun ProductCardRow(
+    pair: List<ShopItem>,
+    stateOf: (ShopItem) -> RowState,
+    onActivate: (ShopItem) -> Unit,
+    onConfirm: (ShopItem) -> Unit,
+    leadingOf: @Composable (ShopItem) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        pair.forEach { item ->
+            Box(modifier = Modifier.weight(1f)) {
+                ProductCard(item, stateOf(item), onActivate, onConfirm) { leadingOf(item) }
+            }
+        }
+        if (pair.size == 1) Spacer(modifier = Modifier.weight(1f))
+    }
+}
+
+/**
+ * کارتِ محصولِ ویترین - پیش‌نمایشِ بزرگ بالا، نام و توضیح، و قیمت پایین.
+ *
+ * پیش‌نمایش **همان چیزی است که ردیفِ فشرده هم نشان می‌دهد**، فقط بزرگ‌تر؛ دو پیاده‌سازیِ
+ * جدا یعنی روزی یکی عوض می‌شود و دیگری جا می‌مانَد.
+ */
+@Composable
+private fun ProductCard(
+    item: ShopItem,
+    state: RowState,
+    onActivate: (ShopItem) -> Unit,
+    onConfirm: (ShopItem) -> Unit,
+    preview: @Composable () -> Unit,
+) {
+    val tap: (() -> Unit)? = when (state) {
+        RowState.OWNED -> ({ onActivate(item) })
+        RowState.BUY, RowState.POOR -> ({ onConfirm(item) })
+        else -> null
+    }
+    AppCard(
+        contentPadding = 10.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (tap != null) Modifier.pressScaleClickable(scale = 0.98f, onClick = tap) else Modifier),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(74.dp)
+                .clip(RoundedCornerShape(AppRadius.card))
+                .background(AppSurface2),
+            contentAlignment = Alignment.Center,
+        ) { preview() }
+        Text(
+            item.label,
+            color = AppText,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        Text(
+            item.blurb,
+            color = AppLabel,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 1.dp),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            when (state) {
+                RowState.ACTIVE -> Pill("فعال است", AppPrimaryPill, AppPrimaryInk)
+                RowState.OWNED -> Pill("فعال‌سازی", AppPrimaryPill, AppPrimaryInk)
+                RowState.SOON -> Pill("به‌زودی", AppIconFrame, AppMuted)
+                RowState.BADGE_LOCKED -> Pill("نشان لازم است", AppIconFrame, AppMuted)
+                // قیمت **یکدست** است: سکه و عدد کنارِ هم در یک قرص، نه دو جای کارت.
+                else -> CoinPrice(item.price)
+            }
+            Spacer(modifier = Modifier.weight(1f))
+        }
+    }
+}
+
+/** قیمت به شکلِ واحدِ «🪙 ۱۵۰» - تصمیمِ قفل‌شده‌ی کاربر. */
+@Composable
+private fun CoinPrice(price: Int) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(AppRadius.button))
+            .background(AppGoldPillSoft)
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        CoinIcon(size = 11.dp)
+        Text(toFa(price), color = AppGoldInk, fontSize = 10.sp, fontWeight = FontWeight.Black)
+    }
+}
+
 @Composable
 private fun Pill(text: String, bg: Color, ink: Color) {
     Text(
@@ -758,6 +959,31 @@ private fun Pill(text: String, bg: Color, ink: Color) {
     )
 }
 
+
+/**
+ * پیش‌نمایشِ هر قلم، بر اساسِ نوعش - همان چیزی که ردیفِ فشرده هم می‌گذارد.
+ *
+ * یک نقطه‌ی انتخاب برای هر دو نما، تا کارت و ردیف هیچ‌وقت دو چیزِ متفاوت نشان ندهند.
+ */
+@Composable
+private fun previewFor(item: ShopItem) {
+    when {
+        item.id.startsWith("icon:") -> AppIconPreview(item.id)
+        item.id.startsWith("symbolset:") -> SymbolSetPreview(item.id)
+        item.id.startsWith("coinskin:") -> CoinSkinPreview(item.id)
+        item.id.startsWith("frame:") -> AvatarFramePreview(AvatarFrameStyle.fromItemId(item.id))
+        item.id.startsWith("bg_") -> BackdropPreview(LiveBackground.byId(item.id.removePrefix("bg_")))
+        item.id.startsWith("theme:") -> {
+            val tone = themeById(item.id.removePrefix("theme:"))
+            if (tone != null) {
+                ThemeMiniPreview(Color(tone.dark), Color(tone.primary), Color(tone.light))
+            } else {
+                GenericItemPreview(item)
+            }
+        }
+        else -> GenericItemPreview(item)
+    }
+}
 
 /**
  * پیش‌نمایشِ آیکونِ برنامه - **خودِ فایلِ آیکون**، نه یک نمادِ جایگزین.

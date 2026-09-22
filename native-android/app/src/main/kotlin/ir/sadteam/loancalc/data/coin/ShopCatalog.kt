@@ -56,16 +56,45 @@ data class ShopItem(
      * که «از دست دادن» در برنامه هست، و همان است که سکه را ارزشمند می‌کند.
      */
     val window: ClosedRange<LocalDate>? = null,
+    /**
+     * روزِ اضافه‌شدنِ قلم به ویترین، کلیدِ جلالیِ `۱۴۰۵-۰۶-۳۱`.
+     *
+     * تنها مبنای بخشِ «تازه‌رسیده‌ها» (تصمیمِ قفل‌شده‌ی کاربر: حداکثر **۱۴ روز**).
+     *
+     * 🚨 `null` یعنی «قدیمی»، نه «امروز» - وگرنه هر قلمی که کسی یادش رفته تاریخ بدهد،
+     * برای همیشه «تازه» می‌مانْد و آن بخش بی‌معنی می‌شد.
+     */
+    val addedOn: String? = null,
 ) {
     val price: Int get() = if (unlockBadge != null) 0 else kind.price
 
     /** هنوز در بازه است؟ قلمِ همیشگی همیشه `true`. */
     fun isOpen(today: LocalDate): Boolean = window == null || today in window
 
+    /**
+     * در بازه‌ی «تازه‌رسیده» هست؟ ورودی کلیدِ جلالیِ امروز است تا این فایل به تقویم
+     * وابسته نشود (`:data` و `:core` از هم جدا می‌مانند).
+     */
+    fun isNew(todayKey: String, daysSince: (String, String) -> Int): Boolean =
+        addedOn?.let { daysSince(it, todayKey) in 0..NEW_ITEM_DAYS } == true
+
     /** چند روز تا بسته‌شدن - برای نوارِ «۱۲ روز» بالای ویترین (`72b`). */
     fun daysLeft(today: LocalDate): Long? =
         window?.let { ChronoUnit.DAYS.between(today, it.endInclusive).coerceAtLeast(0) }
 }
+
+/** بازه‌ی «تازه‌رسیده» - تصمیمِ قفل‌شده‌ی کاربر (۳۱ شهریور). */
+const val NEW_ITEM_DAYS = 14
+
+/**
+ * سه قلمِ «پیشنهادهای ویژه» - **دستی و ثابت**، تصمیمِ قفل‌شده‌ی کاربر.
+ *
+ * 🚨 خودکار نیست (نه گران‌ترین، نه نخریده‌ها، نه چرخشی): کنترلِ ویترین دستِ ماست و
+ * انتخابِ خودکار یعنی روزی سه قلمِ بی‌ربط بالای صفحه بنشینند.
+ *
+ * شناسه‌ی ناشناخته بی‌صدا نادیده گرفته می‌شود، پس حذفِ یک محصول این‌جا را نمی‌شکند.
+ */
+val FEATURED_ITEM_IDS = listOf("theme:night", "icon:calligraphy", "symbolset:pictorial")
 
 /**
  * چهار تمِ پایه - مرزِ دو سرگروهِ `60a`. شناسه‌ها از `ColorTheme.id` می‌آیند، و مبنای
@@ -276,15 +305,15 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     // فایلِ هنری‌شان رستری‌ست نه وکتور، پس **پله‌ی پژمردگی ندارند** و همیشه تازه می‌مانند
     // (رجوع کن به کامنتِ `IconWither.ICON_ALIAS`). قیمتشان همان `APP_ICON` است تا کسی
     // مجبور نشود بینِ «طرحِ قشنگ‌تر» و «طرحِ ارزان‌تر» انتخاب کند.
-    add(ShopItem("icon:calligraphy", CoinSpend.APP_ICON, "آیکونِ خطاطی", "نامِ جیبک به خطِ طلایی روی برگ"))
-    add(ShopItem("icon:leaf", CoinSpend.APP_ICON, "آیکونِ برگ", "برگِ سبزِ قاب‌طلا، ساده‌ترین طرح"))
-    add(ShopItem("icon:emerald", CoinSpend.APP_ICON, "آیکونِ زمرد", "گویِ سبز در پیچِ طلایی"))
-    add(ShopItem("icon:aqua", CoinSpend.APP_ICON, "آیکونِ نیلگون", "گویِ آبیِ شیشه‌ای، تنها طرحِ سرد"))
-    add(ShopItem("icon:orbit", CoinSpend.APP_ICON, "آیکونِ مدار", "سکه در حلقه‌ی سبز و طلایی"))
-    add(ShopItem("icon:growth", CoinSpend.APP_ICON, "آیکونِ رشد", "سکه با نمودار و فلشِ رو به بالا"))
-    add(ShopItem("icon:sprout", CoinSpend.APP_ICON, "آیکونِ جوانه", "سکه در کاسه‌ی برگ"))
-    add(ShopItem("icon:fox", CoinSpend.APP_ICON, "آیکونِ روباه", "نیم‌رخِ روباهِ طلایی-فیروزه‌ای"))
-    add(ShopItem("icon:neon", CoinSpend.APP_ICON, "آیکونِ نئون", "نامِ جیبک با نورِ نئون، فقط برای شب‌ها"))
+    add(ShopItem("icon:calligraphy", CoinSpend.APP_ICON, "آیکونِ خطاطی", "نامِ جیبک به خطِ طلایی روی برگ", addedOn = "1405-06-31"))
+    add(ShopItem("icon:leaf", CoinSpend.APP_ICON, "آیکونِ برگ", "برگِ سبزِ قاب‌طلا، ساده‌ترین طرح", addedOn = "1405-06-31"))
+    add(ShopItem("icon:emerald", CoinSpend.APP_ICON, "آیکونِ زمرد", "گویِ سبز در پیچِ طلایی", addedOn = "1405-06-31"))
+    add(ShopItem("icon:aqua", CoinSpend.APP_ICON, "آیکونِ نیلگون", "گویِ آبیِ شیشه‌ای، تنها طرحِ سرد", addedOn = "1405-06-31"))
+    add(ShopItem("icon:orbit", CoinSpend.APP_ICON, "آیکونِ مدار", "سکه در حلقه‌ی سبز و طلایی", addedOn = "1405-06-31"))
+    add(ShopItem("icon:growth", CoinSpend.APP_ICON, "آیکونِ رشد", "سکه با نمودار و فلشِ رو به بالا", addedOn = "1405-06-31"))
+    add(ShopItem("icon:sprout", CoinSpend.APP_ICON, "آیکونِ جوانه", "سکه در کاسه‌ی برگ", addedOn = "1405-06-31"))
+    add(ShopItem("icon:fox", CoinSpend.APP_ICON, "آیکونِ روباه", "نیم‌رخِ روباهِ طلایی-فیروزه‌ای", addedOn = "1405-06-31"))
+    add(ShopItem("icon:neon", CoinSpend.APP_ICON, "آیکونِ نئون", "نامِ جیبک با نورِ نئون، فقط برای شب‌ها", addedOn = "1405-06-31"))
     // 🚨 **قلک با هیچ قیمتی خریدنی نیست - با نشانِ «هدف‌رس» باز می‌شود** (جوابِ دورِ ۱۱).
     // قاعده‌ی `72c` می‌گفت هر نوعِ قلم باید یک نمونه‌ی نشان‌قفل داشته باشد و «آیکون» نداشت.
     // طراح فایلِ هنریِ تازه نداد و لازم هم نبود: نشان‌قفل باید **معنی** داشته باشد نه فقط
