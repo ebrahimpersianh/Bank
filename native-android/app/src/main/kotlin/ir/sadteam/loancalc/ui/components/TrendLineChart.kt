@@ -1,9 +1,21 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -14,6 +26,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 
 /**
  * **نمودارِ خطیِ نرم با نقطه‌ی انتها** - طرحِ مرجعِ کاربر (۳۱ شهریور).
@@ -37,9 +50,64 @@ fun TrendLineChart(
     modifier: Modifier = Modifier,
     height: Dp = 56.dp,
     strokeWidth: Dp = 2.5.dp,
+    /** برچسبِ هر نقطه («۱۲ شهریور»…) - بی این، لمس چیزی برای گفتن ندارد و خاموش می‌مانَد. */
+    labels: List<String> = emptyList(),
+    /** عددِ هر نقطه، آماده‌ی نمایش. */
+    valueLabel: (Double) -> String = { "" },
+    tooltipBackground: Color = Color.Black.copy(alpha = 0.55f),
+    tooltipTitleColor: Color = Color.White.copy(alpha = 0.75f),
+    tooltipValueColor: Color = Color.White,
 ) {
     if (values.size < 2) return
-    Canvas(modifier = modifier.fillMaxWidth().height(height)) {
+    val interactive = labels.size == values.size
+    // نقطه‌ی انتخاب‌شده با لمس. `null` یعنی دستی روی نمودار نیست و نقطه‌ی «امروز» فعال است.
+    var touchedIndex by remember(values) { mutableStateOf<Int?>(null) }
+    var widthPx by remember { mutableFloatStateOf(0f) }
+    val activeIndex = touchedIndex ?: values.lastIndex
+    // 🚨 **حرکتِ نرمِ نقطه** (خواسته‌ی صریح: «با انیمیشن برود آن‌ور، نه پرشی»): خودِ
+    // شاخص انیمیت می‌شود نه مختصاتِ پیکسلی، پس نقطه دقیقاً **روی** منحنی می‌لغزد و از
+    // آن جدا نمی‌افتد.
+    val animatedIndex by animateFloatAsState(
+        targetValue = activeIndex.toFloat(),
+        animationSpec = tween(220),
+        label = "trendDot",
+    )
+    Box(modifier = modifier.fillMaxWidth()) {
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .then(
+                if (!interactive) {
+                    Modifier
+                } else {
+                    Modifier.pointerInput(values) {
+                        // لمس و کشیدن هر دو یک کار می‌کنند: نزدیک‌ترین نقطه به انگشت.
+                        // برداشتنِ انگشت حباب را می‌بندد و نقطه به «امروز» برمی‌گردد.
+                        detectDragGestures(
+                            onDragStart = { offset ->
+                                touchedIndex = indexAt(offset.x, size.width.toFloat(), values.size)
+                            },
+                            onDragEnd = { touchedIndex = null },
+                            onDragCancel = { touchedIndex = null },
+                            onDrag = { change, _ ->
+                                change.consume()
+                                touchedIndex = indexAt(change.position.x, size.width.toFloat(), values.size)
+                            },
+                        )
+                    }.pointerInput(values) {
+                        detectTapGestures(
+                            onPress = { offset ->
+                                touchedIndex = indexAt(offset.x, size.width.toFloat(), values.size)
+                                tryAwaitRelease()
+                                touchedIndex = null
+                            },
+                        )
+                    }
+                },
+            ),
+    ) {
+        widthPx = size.width
         val min = values.min()
         val max = values.max()
         val span = (max - min).takeIf { it > 0.0 } ?: 1.0
@@ -77,16 +145,54 @@ fun TrendLineChart(
         }
         drawPath(
             path = area,
-            brush = Brush.verticalGradient(listOf(fillTop, Color.Transparent)),
+            brush = Brush.verticalGradient(
+                listOf(fillTop, fillTop.copy(alpha = fillTop.alpha * 0.35f)),
+            ),
         )
         drawPath(
             path = line,
             color = lineColor,
             style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
-        // نقطه‌ی انتها = «امروز». هاله‌ی کم‌رنگ دورش تا روی خط گم نشود.
-        val last = points.last()
-        drawCircle(color = dotColor.copy(alpha = 0.28f), radius = 7.dp.toPx(), center = last)
-        drawCircle(color = dotColor, radius = 3.5.dp.toPx(), center = last)
+        // نقطه‌ی فعال: «امروز»، یا هر نقطه‌ای که انگشت رویش است. بینِ دو نقطه‌ی همسایه
+        // درون‌یابی می‌شود تا حرکتش پیوسته دیده شود.
+        val lower = animatedIndex.toInt().coerceIn(0, points.lastIndex)
+        val upper = (lower + 1).coerceAtMost(points.lastIndex)
+        val t = (animatedIndex - lower).coerceIn(0f, 1f)
+        val active = Offset(
+            x = points[lower].x + (points[upper].x - points[lower].x) * t,
+            y = points[lower].y + (points[upper].y - points[lower].y) * t,
+        )
+        if (touchedIndex != null) {
+            // خطِ راهنمای عمودی - بی آن معلوم نیست نقطه دقیقاً روی کدام ستون است.
+            drawLine(
+                color = dotColor.copy(alpha = 0.35f),
+                start = Offset(active.x, 0f),
+                end = Offset(active.x, size.height),
+                strokeWidth = 1.dp.toPx(),
+            )
+        }
+        drawCircle(color = dotColor.copy(alpha = 0.28f), radius = 7.dp.toPx(), center = active)
+        drawCircle(color = dotColor, radius = 3.5.dp.toPx(), center = active)
     }
+        ChartTooltipHost(visible = touchedIndex != null, modifier = Modifier.align(Alignment.TopStart)) {
+            val index = touchedIndex ?: values.lastIndex
+            ChartTooltip(
+                title = labels.getOrElse(index) { "" },
+                value = valueLabel(values.getOrElse(index) { 0.0 }),
+                centerX = if (values.size > 1) widthPx * index / (values.size - 1) else 0f,
+                containerWidth = widthPx,
+                background = tooltipBackground,
+                titleColor = tooltipTitleColor,
+                valueColor = tooltipValueColor,
+            )
+        }
+    }
+}
+
+/** نزدیک‌ترین نقطه به مختصاتِ افقیِ انگشت. */
+private fun indexAt(x: Float, width: Float, count: Int): Int {
+    if (count < 2 || width <= 0f) return 0
+    val step = width / (count - 1)
+    return (x / step).roundToInt().coerceIn(0, count - 1)
 }

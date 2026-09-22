@@ -689,9 +689,17 @@ private fun TotalWealthHero(
                 TrendLineChart(
                     values = trend,
                     lineColor = Color.White,
-                    fillTop = Color.White.copy(alpha = 0.22f),
+                    // پررنگ‌تر از ۰٫۲۲ی قبلی - خواسته‌ی کاربر: «زیرِ این خط انگار پر باشد».
+                    fillTop = Color.White.copy(alpha = 0.38f),
                     dotColor = Color.White,
                     modifier = Modifier.padding(top = 10.dp),
+                    // برچسبِ هر نقطه = «N روز پیش»/«امروز». همین است که لمس را معنادار
+                    // می‌کند؛ بی آن `TrendLineChart` خودش را غیرِتعاملی می‌گیرد.
+                    labels = trend.indices.map { index ->
+                        val ago = trend.lastIndex - index
+                        if (ago == 0) "امروز" else "${ago.toFa()} روز پیش"
+                    },
+                    valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
                 )
                 Text(
                     // صادقانه: تا وقتی عکسِ روزانه جمع نشده، نمودار فقط نقد را می‌گوید.
