@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.coin
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,13 +30,19 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.coin.CoinReason
 import ir.sadteam.loancalc.data.db.CoinEventEntity
+import ir.sadteam.loancalc.ui.background.LiveBackgroundLayer
+import ir.sadteam.loancalc.ui.background.LiveBackgroundState
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.profile.CoinWalletScreen
 import ir.sadteam.loancalc.ui.profile.GamificationViewModel
 import ir.sadteam.loancalc.ui.shop.ShopScreen
+import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
+import ir.sadteam.loancalc.ui.theme.LocalAppColors
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -68,9 +75,18 @@ fun CoinHubScreen(
     var onWallet by rememberSaveable { mutableStateOf(false) }
 
     BackHandler(onBack = onBack)
-    // شفاف است تا پس‌زمینهٔ زنده‌ای که در ریشهٔ برنامه کشیده می‌شود، از میان
-    // فاصلهٔ کارت‌ها دیده شود؛ رنگِ تختِ AppBg این لایه را کامل پنهان می‌کرد.
-    // رنگِ پایه و خودِ انیمیشن در ریشهٔ برنامه می‌مانند تا با جابه‌جایی تب‌ها قطع نشوند.
+    // 🚨 **کدر است، نه شفاف** (گزارشِ کاربر ۳۱ شهریور: «رو سکه که می‌زنم صفحه اون‌طوری
+    // می‌شه»). این صفحه از تبِ خانه به‌صورتِ **رویه** باز می‌شود، پس اگر زمینه نداشته
+    // باشد خانه از زیرش پیداست. زمینه‌ی خودش را می‌گیرد و پس‌زمینه‌ی زنده‌ی خریداری‌شده
+    // را هم خودش می‌کشد تا با کدرشدن از دست نرود (همان الگوی `BackdropPreview`).
+    Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
+        LiveBackgroundLayer(
+            background = LiveBackgroundState.active,
+            primary = AppPrimary,
+            primaryLight = AppPrimaryInkLight,
+            isDark = LocalAppColors.current.isDark,
+            modifier = Modifier.fillMaxSize(),
+        )
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
@@ -112,6 +128,7 @@ fun CoinHubScreen(
                 ShopScreen(onBack = onBack, embedded = true)
             }
         }
+    }
     }
 }
 

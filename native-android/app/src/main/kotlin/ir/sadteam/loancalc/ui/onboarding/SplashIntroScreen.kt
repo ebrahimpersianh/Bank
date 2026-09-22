@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.ui.onboarding
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,9 +39,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Animated brand intro.  The mark is drawn exactly once, from the same artwork
- * the launcher icon uses, so no second coin or wallet can cross over during the
- * handoff from Android's own splash frame.
+ * Animated brand intro.
+ *
+ * The mark is split in two here, and only here: the wallet holds still and the coin
+ * falls into it from above (the user's own brief). The coin is drawn *under* the
+ * wallet, so it slides behind the front panel on its way down without any mask.
+ * Everywhere else the mark stays one piece.
  */
 @Composable
 fun SplashIntroScreen(onDone: () -> Unit) {
@@ -48,6 +52,8 @@ fun SplashIntroScreen(onDone: () -> Unit) {
     val wordsReveal = remember { Animatable(0f) }
     val progress = remember { Animatable(0f) }
     val exit = remember { Animatable(0f) }
+    // سقوطِ سکه. جدا از `markReveal` است چون کیف باید **ثابت** بماند و فقط سکه حرکت کند.
+    val coinDrop = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
         launch {
@@ -59,6 +65,12 @@ fun SplashIntroScreen(onDone: () -> Unit) {
         launch {
             delay(570)
             wordsReveal.animateTo(1f, animationSpec = tween(360))
+        }
+        launch {
+            // بعد از ظاهرشدنِ کیف شروع می‌شود، وگرنه سکه در هوا معلق می‌مانَد تا کیف بیاید.
+            // `EaseOutBounce` نه: سکه داخلِ کیف می‌افتد، از روی میز نمی‌پرد.
+            delay(300)
+            coinDrop.animateTo(1f, animationSpec = tween(620, easing = EaseOutCubic))
         }
         launch { progress.animateTo(1f, animationSpec = tween(1580)) }
         delay(2080)
@@ -98,11 +110,25 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                 },
             contentAlignment = Alignment.Center,
         ) {
-            // `jibak_stage_0` و نه `jibak_brand_mark`: این کادر همان کاشیِ آیکونِ
-            // لانچر را تقلید می‌کند، و نشانِ لبه‌به‌لبه این‌جا کیف را بزرگ‌تر از
-            // آیکونِ واقعیِ روی صفحه‌ی گوشی نشان می‌داد.
+            // 🚨 **سکه از بالا می‌افتد، کیف تکان نمی‌خورد** (خواسته‌ی کاربر، ۳۱ شهریور).
+            // نشانِ یک‌تکه دو تکه شد: `jibak_splash_wallet` (بی سکه) و `jibak_splash_coin`.
+            // سکه **زیرِ** کیف کشیده می‌شود، پس وقتی پایین می‌آید خودبه‌خود پشتِ لبه‌ی
+            // کیف می‌رود و «داخلش» می‌افتد - بی هیچ ماسک یا بُرشِ دستی.
             Image(
-                painter = painterResource(R.drawable.jibak_stage_0),
+                painter = painterResource(R.drawable.jibak_splash_coin),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .size(114.dp)
+                    .graphicsLayer {
+                        // مسیرِ سقوط: از بالای کادر تا جای نهایی‌اش داخلِ کیف. مقصد
+                        // (-46dp) همان‌جایی است که سکه در نشانِ اصلی می‌نشیند.
+                        translationY = (-46.dp.toPx()) - (1f - coinDrop.value) * 190.dp.toPx()
+                        alpha = if (coinDrop.value > 0f) 1f else 0f
+                    },
+            )
+            Image(
+                painter = painterResource(R.drawable.jibak_splash_wallet),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(228.dp),
@@ -168,7 +194,7 @@ fun SplashIntroScreen(onDone: () -> Unit) {
 
 private val SplashCream = Color(0xFFFFFCF4)
 private val SplashGlow = Color(0x4429C97E)
-private val LauncherGreen = Color(0xFF0B3A2A)
+private val LauncherGreen = Color(0xFF0A5A40)  // هم‌رنگِ `ic_launcher_wallet_background`
 private val SplashGreen = Color(0xFF0B8C57)
 private val SplashMuted = Color(0xFF83A697)
 private val SplashTrack = Color(0x3329C97E)
