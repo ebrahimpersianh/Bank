@@ -246,14 +246,30 @@ class LoanRepository(
         bank: String,
         borrower: String,
         startDate: Map<String, Int>,
+        category: String? = null,
     ) {
         val data = parseDataMutable(loan)
         data["name"] = name
         data["bank"] = bank
         data["borrower"] = borrower
         data["startDate"] = startDate
+        if (category != null) data["category"] = category
         loanDao.upsert(loan.copy(name = name, bank = bank, dataJson = gson.toJson(data)))
     }
+
+    /**
+     * نوعِ وام (`home`/`car`/…) - نشانِ ردیفِ فهرست از این می‌آید.
+     *
+     * 🚨 **ستونِ تازه نگرفت، داخلِ [LoanEntity.dataJson] نشست.** دو دلیل، هر دو ثبت‌شده در
+     * قواعدِ پروژه: مهاجرتِ دیتابیس پرریسک‌ترین کارِ این برنامه است و برای یک برچسب صرف
+     * نمی‌کند؛ و مهم‌تر، `dataJson` همان چیزی است که به **سرور و فایلِ پشتیبان** می‌رود، پس
+     * نوعِ وام بی هیچ کارِ اضافه‌ای سینک و بکاپ می‌شود. یک ستونِ تازه باید جداگانه به
+     * `toWebMap`/`fromWebMap` هم اضافه می‌شد و جا ماندنش یعنی نوعِ وام بعدِ بازیابی می‌پرید.
+     *
+     * `null` یعنی کاربر نوعی انتخاب نکرده - آن‌وقت نشان از **نامِ وام** حدس زده می‌شود.
+     */
+    fun categoryOf(loan: LoanEntity): String? =
+        (parseDataMutable(loan)["category"] as? String)?.takeIf { it.isNotBlank() }
 
     /**
      * ویرایشِ مشخصاتِ کلیِ یه وامِ دستیِ ازقبل‌ذخیره‌شده (اسم/بانک/مبلغِ هر قسط/تعدادِ کل/تاریخِ
@@ -321,6 +337,7 @@ class LoanRepository(
         principalAmount: Double,
         n: Int,
         startDate: Map<String, Int>,
+        category: String? = null,
     ) {
         require(loan.paidCount == 0) {
             "updateComputedLoanAmount فقط رو وامی که هنوز هیچ قسطی پرداخت نشده مجازه"
@@ -336,6 +353,10 @@ class LoanRepository(
         newData["name"] = name
         newData["bank"] = bank
         newData["borrower"] = borrower
+        // ⚠️ نوعِ وام همین‌جا نوشته می‌شود، نه با یک فراخوانیِ جدا بعدش: آن فراخوانی
+        // `dataJson`ِ **کهنه** را می‌خواند (شیءِ `loan` هنوز نسخه‌ی قبلِ این تابع است) و
+        // همه‌ی مبالغِ تازه‌نوشته را دوباره با مقادیرِ قدیمی رویِ هم می‌نوشت.
+        if (category != null) newData["category"] = category
         newData["amount"] = result.principal
         newData["n"] = n
         newData["installment"] = result.installment

@@ -404,6 +404,9 @@ fun LoanDetailScreen(
     var editMetaMonth by remember { mutableStateOf(1) }
     var editMetaDay by remember { mutableStateOf(1) }
     var editMetaGraceMonths by remember { mutableStateOf(0) }
+    // نوعِ وام - نشانِ ردیفِ فهرست از همین می‌آید. `null` یعنی هنوز انتخاب نشده و نشان از
+    // نامِ وام حدس زده می‌شود (رجوع کن به `loanGlyphFor`).
+    var editMetaCategory by remember(loan.id) { mutableStateOf(viewModel.categoryOf(loan)) }
     // مبلغ/تعدادِ اقساطِ وامِ محاسبه‌شده فقط وقتی هنوز هیچ قسطی پرداخت نشده قابلِ‌ویرایشه - رجوع کن
     // به کامنتِ LoanRepository.updateComputedLoanAmount برای دلیلِ این محدودیت.
     val canEditComputedAmount = loan.paidCount == 0
@@ -451,6 +454,23 @@ fun LoanDetailScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    // ═══ نوعِ وام ═══
+                    // تا امروز نشانِ ردیفِ فهرست فقط از **نامِ وام** حدس زده می‌شد؛ نامی مثل
+                    // «وام ۹۵ میلیونی» هیچ کلیدواژه‌ای ندارد و همیشه نشانِ پیش‌فرض می‌گرفت.
+                    // این ردیف همان حدس را به انتخاب تبدیل می‌کند.
+                    Text("نوعِ وام", color = AppMuted, fontSize = 11.sp)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(LoanCategory.entries, key = { it.id }) { category ->
+                            val selected = editMetaCategory == category.id
+                            AppChip(
+                                label = category.label,
+                                selected = selected,
+                                // دوباره‌زدنِ نوعِ انتخاب‌شده آن را برمی‌دارد و به حدسِ
+                                // خودکار برمی‌گرداند - وگرنه راهی برای بازگشت نبود.
+                                onClick = { editMetaCategory = if (selected) null else category.id },
+                            )
+                        }
+                    }
                     // برچسب + توضیحِ دینامیک قبلاً دو تیکه‌ی جدا بودن - همون رفعِ مورد ۳ که تو
                     // BankLoanScreen انجام شد، اینجا هم یکی‌شون کردیم به یه جمله‌ی تمیز.
                     Text(
@@ -518,6 +538,7 @@ fun LoanDetailScreen(
                             n = editMetaNText.toIntOrNull()?.takeIf { it > 0 } ?: loan.n,
                             startDate = PersianDate(editMetaYear, editMetaMonth, editMetaDay),
                             onSaved = {},
+                            category = editMetaCategory,
                         )
                     } else {
                         viewModel.updateLoanMeta(
@@ -527,6 +548,7 @@ fun LoanDetailScreen(
                             borrower = editMetaBorrower.trim().ifEmpty { "—" },
                             startDate = PersianDate(editMetaYear, editMetaMonth, editMetaDay),
                             onSaved = {},
+                            category = editMetaCategory,
                         )
                     }
                     showEditMetaDialog = false

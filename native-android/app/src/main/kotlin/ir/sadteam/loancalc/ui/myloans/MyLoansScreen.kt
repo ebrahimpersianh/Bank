@@ -796,7 +796,7 @@ fun MyLoansScreen(
                                         // بگیرد **نوعِ وام** است نه درصدش، و ده ردیفِ حلقه‌دارِ
                                         // هم‌شکل دقیقاً همان بی‌روحی‌ای بود که کاربر گفت.
                                         LoanGlyphTile(
-                                            glyph = loanGlyphFor(loan.name),
+                                            glyph = loanGlyphFor(loan.name, viewModel.categoryOf(loan)),
                                             tint = when {
                                                 settled -> AppPrimaryInk
                                                 attention -> AppDangerInk

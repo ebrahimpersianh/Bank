@@ -213,6 +213,7 @@ class MyLoansViewModel @Inject constructor(
         borrower: String,
         startDate: PersianDate,
         onSaved: () -> Unit,
+        category: String? = null,
     ) {
         viewModelScope.launch {
             loanRepository.updateLoanMeta(
@@ -221,11 +222,15 @@ class MyLoansViewModel @Inject constructor(
                 bank = bank,
                 borrower = borrower,
                 startDate = mapOf("y" to startDate.y, "m" to startDate.m, "d" to startDate.d),
+                category = category,
             )
             syncIfLoggedIn()
             onSaved()
         }
     }
+
+    /** نوعِ وام از `dataJson` - رجوع کن به [LoanRepository.categoryOf]. */
+    fun categoryOf(loan: LoanEntity): String? = loanRepository.categoryOf(loan)
 
     /** ویرایشِ مبلغ/تعدادِ اقساطِ یه وامِ محاسبه‌شده - فقط وقتی [loan.paidCount] صفره؛ رجوع کن به
      * [LoanRepository.updateComputedLoanAmount]. */
@@ -238,6 +243,7 @@ class MyLoansViewModel @Inject constructor(
         n: Int,
         startDate: PersianDate,
         onSaved: () -> Unit,
+        category: String? = null,
     ) {
         viewModelScope.launch {
             loanRepository.updateComputedLoanAmount(
@@ -248,6 +254,7 @@ class MyLoansViewModel @Inject constructor(
                 principalAmount = principalAmount,
                 n = n,
                 startDate = mapOf("y" to startDate.y, "m" to startDate.m, "d" to startDate.d),
+                category = category,
             )
             syncIfLoggedIn()
             onSaved()

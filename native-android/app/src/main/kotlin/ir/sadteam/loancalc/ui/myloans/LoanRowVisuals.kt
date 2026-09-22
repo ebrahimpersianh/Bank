@@ -44,7 +44,35 @@ import androidx.compose.ui.unit.dp
  * دقیقاً همان کلمه را نوشته که نشان را پیدا می‌کند. چیزی هم از دست نمی‌رود - نامِ بی‌کلیدواژه
  * نشانِ پیش‌فرضِ «سند» می‌گیرد.
  */
-fun loanGlyphFor(name: String): ImageVector {
+/**
+ * نوع‌های انتخابیِ وام. `id` در `dataJson` ذخیره می‌شود و **هیچ‌وقت عوض نمی‌شود** - همان
+ * رشته در فایلِ پشتیبان و روی سرور هم نشسته.
+ */
+enum class LoanCategory(val id: String, val label: String, val glyph: ImageVector) {
+    HOME("home", "مسکن", Icons.Filled.Home),
+    CAR("car", "خودرو", Icons.Filled.DirectionsCar),
+    TRIP("trip", "سفر", Icons.Filled.AirplanemodeActive),
+    MARRIAGE("marriage", "ازدواج", Icons.Filled.Favorite),
+    HEALTH("health", "درمان", Icons.Filled.LocalHospital),
+    STUDY("study", "تحصیل", Icons.Filled.School),
+    BUSINESS("business", "کسب‌وکار", Icons.Filled.Storefront),
+    GOODS("goods", "کالا", Icons.Filled.ShoppingBag),
+    OTHER("other", "سایر", Icons.Filled.Description),
+}
+
+/**
+ * نشانِ ردیف: اگر کاربر نوع را **انتخاب کرده** همان، وگرنه حدس از روی نام.
+ *
+ * ترتیب مهم است - انتخابِ صریحِ کاربر همیشه بر حدس مقدم است، حتی اگر نامِ وام کلیدواژه‌ای
+ * داشته باشد که حدس را به جای دیگری ببرد.
+ */
+fun loanGlyphFor(name: String, categoryId: String? = null): ImageVector {
+    val chosen = categoryId?.let { id -> LoanCategory.entries.firstOrNull { it.id == id } }
+    if (chosen != null) return chosen.glyph
+    return loanGlyphGuessedFrom(name)
+}
+
+private fun loanGlyphGuessedFrom(name: String): ImageVector {
     val n = name.trim()
     fun has(vararg keys: String) = keys.any { n.contains(it) }
     return when {
