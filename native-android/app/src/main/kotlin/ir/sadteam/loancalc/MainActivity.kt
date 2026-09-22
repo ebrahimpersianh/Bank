@@ -73,6 +73,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.MonetizationOn
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.DateRange
