@@ -48,7 +48,7 @@ class IconWither @Inject constructor() {
         apply(context, stepFor(lastDay(dateKeys)), activeIcon)
     }
 
-    /** دقیقاً **یک** الیاس از ۴۵ تا روشن می‌ماند. */
+    /** دقیقاً **یک** الیاس از ۵۴ تا روشن می‌ماند. */
     fun apply(context: Context, step: Int, activeIcon: String? = null) {
         val target = aliasFor(activeIcon, step)
         val pm = context.packageManager
@@ -102,6 +102,20 @@ class IconWither @Inject constructor() {
                 "icon:letter" to 10,
                 "icon:piggy" to 11,
                 "icon:shop" to 36,
+                // ═══ نه آیکونِ تصویریِ بخشِ ۸۰ ═══
+                // این‌ها **پله‌ی پژمردگی ندارند**: فایلشان تصویرِ رستری‌ست نه وکتور، پس
+                // هشت پله‌ی دست‌ساز برایشان وجود ندارد. `aliasFor` وقتی طرحی در
+                // [WITHER_BASE] نباشد همان پله‌ی صفر را برمی‌گرداند، پس بی هیچ استثنای
+                // تازه‌ای همیشه تازه می‌مانند.
+                "icon:aqua" to 45,
+                "icon:calligraphy" to 46,
+                "icon:fox" to 47,
+                "icon:emerald" to 48,
+                "icon:leaf" to 49,
+                "icon:orbit" to 50,
+                "icon:growth" to 51,
+                "icon:sprout" to 52,
+                "icon:neon" to 53,
             )
 
         /** پله‌ی ۱..۸ِ هر طرحِ خریدنی (بخشِ ۶۱) - ۳۲ پله‌ی ساخته‌شده‌ی `generate-wither.py`. */
@@ -113,7 +127,7 @@ class IconWither @Inject constructor() {
                 "icon:shop" to 37,
             )
 
-        private const val LAST_ALIAS = 44
+        private const val LAST_ALIAS = 53
 
         /**
          * کدام الیاس روشن شود.

@@ -253,6 +253,19 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     add(ShopItem("icon:coin", CoinSpend.APP_ICON, "آیکونِ سکه", "سکه‌ی طلایی روی زمینه‌ی روشن"))
     add(ShopItem("icon:letter", CoinSpend.APP_ICON, "آیکونِ حرفِ ج", "نشانِ حرفی، ساده‌ترین طرح"))
     add(ShopItem("icon:shop", CoinSpend.APP_ICON, "آیکونِ فروشگاه", "ویترینِ سکه، پرجزئیات‌ترین طرح"))
+    // ═══ نه طرحِ تصویریِ بخشِ ۸۰ ═══
+    // فایلِ هنری‌شان رستری‌ست نه وکتور، پس **پله‌ی پژمردگی ندارند** و همیشه تازه می‌مانند
+    // (رجوع کن به کامنتِ `IconWither.ICON_ALIAS`). قیمتشان همان `APP_ICON` است تا کسی
+    // مجبور نشود بینِ «طرحِ قشنگ‌تر» و «طرحِ ارزان‌تر» انتخاب کند.
+    add(ShopItem("icon:calligraphy", CoinSpend.APP_ICON, "آیکونِ خطاطی", "نامِ جیبک به خطِ طلایی روی برگ"))
+    add(ShopItem("icon:leaf", CoinSpend.APP_ICON, "آیکونِ برگ", "برگِ سبزِ قاب‌طلا، ساده‌ترین طرح"))
+    add(ShopItem("icon:emerald", CoinSpend.APP_ICON, "آیکونِ زمرد", "گویِ سبز در پیچِ طلایی"))
+    add(ShopItem("icon:aqua", CoinSpend.APP_ICON, "آیکونِ نیلگون", "گویِ آبیِ شیشه‌ای، تنها طرحِ سرد"))
+    add(ShopItem("icon:orbit", CoinSpend.APP_ICON, "آیکونِ مدار", "سکه در حلقه‌ی سبز و طلایی"))
+    add(ShopItem("icon:growth", CoinSpend.APP_ICON, "آیکونِ رشد", "سکه با نمودار و فلشِ رو به بالا"))
+    add(ShopItem("icon:sprout", CoinSpend.APP_ICON, "آیکونِ جوانه", "سکه در کاسه‌ی برگ"))
+    add(ShopItem("icon:fox", CoinSpend.APP_ICON, "آیکونِ روباه", "نیم‌رخِ روباهِ طلایی-فیروزه‌ای"))
+    add(ShopItem("icon:neon", CoinSpend.APP_ICON, "آیکونِ نئون", "نامِ جیبک با نورِ نئون، فقط برای شب‌ها"))
     // 🚨 **قلک با هیچ قیمتی خریدنی نیست - با نشانِ «هدف‌رس» باز می‌شود** (جوابِ دورِ ۱۱).
     // قاعده‌ی `72c` می‌گفت هر نوعِ قلم باید یک نمونه‌ی نشان‌قفل داشته باشد و «آیکون» نداشت.
     // طراح فایلِ هنریِ تازه نداد و لازم هم نبود: نشان‌قفل باید **معنی** داشته باشد نه فقط
