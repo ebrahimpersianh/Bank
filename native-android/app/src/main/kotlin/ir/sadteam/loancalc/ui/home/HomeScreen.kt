@@ -598,6 +598,8 @@ private fun TodaySpendSheet(
                         fontSize = 26.sp,
                         letterSpacing = (-0.5).sp,
                         fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 3.dp),
                     )
                 }
@@ -885,8 +887,18 @@ private fun HeroFlowLine(
     privacyMode: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    // 🚨 **هر دو خط تک‌خطی‌اند** (گزارشِ کاربر با اسکرین‌شات: «همه‌چی کشیده شده»).
+    // با اندازه‌ی متنِ بزرگِ تنظیمات، «درآمدِ امروز» و مبلغ می‌شکستند و چند خط می‌شدند؛
+    // چون ارتفاعِ کارتِ قهرمان از محتوایش می‌آید، کارت سه‌برابر بلند می‌شد.
     Column(modifier = modifier, horizontalAlignment = Alignment.End) {
-        Text(label, color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+        Text(
+            label,
+            color = HeroMuted,
+            fontSize = 9.5.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
@@ -894,6 +906,8 @@ private fun HeroFlowLine(
                     color = if (income) HeroIncome else HeroExpense,
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             Icon(
