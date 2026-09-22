@@ -373,7 +373,15 @@ private data class Discovery(
 /** سقفِ کارتِ کشف در یک صفحه (فریمِ `52a`). */
 private const val DISCOVERY_LIMIT = 2
 
-enum class ReportPeriod(val label: String, val months: Int) {
+/**
+ * بازه‌ی گزارش. [months] فقط برای بازه‌های ماهانه معنی دارد؛ «هفته» با [days] کار می‌کند
+ * (خواسته‌ی کاربر، ۳۱ شهریور: «بین هفته و ماه و فصل و سال قابلِ تنظیم باشد»).
+ *
+ * ⚠️ هفته عمداً «۷ روزِ گذشته» است نه «از شنبه»: بقیه‌ی برنامه (نمودارِ خانه، مرورِ
+ * هفتگی) هم همین تعریف را دارد و دو تعریف از «هفته» یعنی دو عددِ متفاوت برای یک چیز.
+ */
+enum class ReportPeriod(val label: String, val months: Int, val days: Int = 0) {
+    WEEK("هفته", 0, days = 7),
     MONTH("ماه", 1),
     SEASON("فصل", 3),
     YEAR("سال", 12),

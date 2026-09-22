@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.accounting
 
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.RecurringDetector
 import ir.sadteam.loancalc.core.RecurringExpense
@@ -79,16 +80,30 @@ fun buildReportStats(
     val realTransactions = transactions.filter { it.sourceType != "transfer" }
     val expenses = realTransactions.filter { it.type == EXPENSE }
 
+    // 🚨 **هفته با روز شمرده می‌شود، نه با ماه** - بازه‌ی تازه‌ی بندِ «هفته».
+    // برای بازه‌های ماهانه همان منطقِ قبلی سرِ جایش است.
+    val weekDays = (0 until period.days).map { back -> PersianCalendar.addDays(today, -back) }
+    val prevWeekDays = (period.days until period.days * 2).map { back -> PersianCalendar.addDays(today, -back) }
+    fun inWeek(tx: AccountTransactionEntity, dayList: List<PersianDate>) =
+        dayList.any { it.y == tx.year && it.m == tx.month && it.d == tx.day }
+
     // ماه‌های پنجره‌ی فعلی (۱ / ۳ / ۱۲ ماه، شاملِ همین ماه)
     val windowMonths = (0 until period.months).map { back -> monthBack(today, back) }
-    val inWindow = expenses.filter { tx -> windowMonths.any { it.first == tx.year && it.second == tx.month } }
+    val prevMonths = (period.months until period.months * 2).map { back -> monthBack(today, back) }
+
+    fun inCurrentWindow(tx: AccountTransactionEntity) =
+        if (period.days > 0) inWeek(tx, weekDays)
+        else windowMonths.any { it.first == tx.year && it.second == tx.month }
+
+    fun inPrevWindow(tx: AccountTransactionEntity) =
+        if (period.days > 0) inWeek(tx, prevWeekDays)
+        else prevMonths.any { it.first == tx.year && it.second == tx.month }
+
+    val inWindow = expenses.filter { inCurrentWindow(it) }
     val periodSpend = inWindow.sumOf { it.amount }
 
     // پنجره‌ی قبلی، برای درصدِ تغییر
-    val prevMonths = (period.months until period.months * 2).map { back -> monthBack(today, back) }
-    val prevSpend = expenses
-        .filter { tx -> prevMonths.any { it.first == tx.year && it.second == tx.month } }
-        .sumOf { it.amount }
+    val prevSpend = expenses.filter { inPrevWindow(it) }.sumOf { it.amount }
     val delta = if (prevSpend > 0.0) (((periodSpend - prevSpend) / prevSpend) * 100).toInt() else null
 
     // 🚨 **میله‌ها با خودِ دوره عوض می‌شوند** (بازخوردِ ۳۱ شهریور با طرحِ مرجع).
@@ -97,7 +112,13 @@ fun buildReportStats(
     // یعنی عددِ بالای کارت مالِ یک ماه بود و نمودارِ زیرش مالِ هفت ماه. در نمای ماه،
     // **روزهای همان ماه** را نشان می‌دهد؛ در فصل و سال همان روندِ ماهانه می‌مانَد چون
     // ۹۰ یا ۳۶۵ میله در عرضِ یک کارت خط می‌شود نه نمودار.
-    val bars = if (period == ReportPeriod.MONTH) {
+    val bars = if (period == ReportPeriod.WEEK) {
+        // هفت میله، قدیمی‌ترین → امروز؛ همان ترتیبِ نمودارِ خانه.
+        (period.days - 1 downTo 0).map { back ->
+            val d = PersianCalendar.addDays(today, -back)
+            expenses.filter { it.year == d.y && it.month == d.m && it.day == d.d }.sumOf { it.amount }
+        }
+    } else if (period == ReportPeriod.MONTH) {
         (1..JalaliCalendar.daysInMonth(today.y, today.m)).map { day ->
             expenses.filter { it.year == today.y && it.month == today.m && it.day == day }.sumOf { it.amount }
         }
@@ -115,18 +136,20 @@ fun buildReportStats(
     // ثابت در برابرِ آزاد: «ثابت» جمعِ پرداخت‌های تکراریِ ماهانه‌ست (اجاره، قسط، قبض)،
     // «آزاد» یعنی درآمدِ همین پنجره منهای همون.
     val recurringExpenses = recurring.filter { it.type == EXPENSE }
-    val fixedAmount = recurringExpenses.sumOf { it.amount } * period.months
-    val income = realTransactions
-        .filter { it.type == DEPOSIT && windowMonths.any { w -> w.first == it.year && w.second == it.month } }
-        .sumOf { it.amount }
-    val prevIncome = realTransactions
-        .filter { it.type == DEPOSIT && prevMonths.any { p -> p.first == it.year && p.second == it.month } }
-        .sumOf { it.amount }
+    // برای هفته، سهمِ هفتگیِ پرداخت‌های ماهانه (تقریبِ ۱/۴) - وگرنه با `months = 0`
+    // کلِ کارتِ «ثابت و متغیر» صفر می‌شد.
+    val fixedAmount = if (period.days > 0) {
+        recurringExpenses.sumOf { it.amount } / 4.0
+    } else {
+        recurringExpenses.sumOf { it.amount } * period.months
+    }
+    val income = realTransactions.filter { it.type == DEPOSIT && inCurrentWindow(it) }.sumOf { it.amount }
+    val prevIncome = realTransactions.filter { it.type == DEPOSIT && inPrevWindow(it) }.sumOf { it.amount }
     val incomeDelta = if (prevIncome > 0.0) (((income - prevIncome) / prevIncome) * 100).toInt() else null
     // شمارش روی **همه‌ی** تراکنش‌های واقعی است (واریز و برداشت)، نه فقط خرج: عنوانش
     // «تعدادِ تراکنش» است و کاربر همان را می‌شمارد.
-    val countNow = realTransactions.count { tx -> windowMonths.any { it.first == tx.year && it.second == tx.month } }
-    val countPrev = realTransactions.count { tx -> prevMonths.any { it.first == tx.year && it.second == tx.month } }
+    val countNow = realTransactions.count { inCurrentWindow(it) }
+    val countPrev = realTransactions.count { inPrevWindow(it) }
     val fixedShare = if (income > 0.0 && fixedAmount > 0.0) {
         ((fixedAmount / income) * 100).toInt().coerceIn(0, 100)
     } else {
@@ -135,6 +158,7 @@ fun buildReportStats(
 
     return ReportStats(
         periodLabel = when (period) {
+            ReportPeriod.WEEK -> "هفته"
             ReportPeriod.MONTH -> persianMonthName(today.m)
             ReportPeriod.SEASON -> "سه ماه"
             ReportPeriod.YEAR -> "امسال"
@@ -143,12 +167,16 @@ fun buildReportStats(
         deltaPercent = delta,
         monthlyBars = bars,
         // برچسبِ دو سرِ نمودار با همان چیزی که کشیده شده می‌خوانَد.
-        firstBarLabel = if (period == ReportPeriod.MONTH) {
+        firstBarLabel = if (period == ReportPeriod.WEEK) {
+            "۷ روزِ گذشته"
+        } else if (period == ReportPeriod.MONTH) {
             "${1.toFa()} ${persianMonthName(today.m)}"
         } else {
             persianMonthName(monthBack(today, BAR_MONTHS - 1).second)
         },
-        lastBarLabel = if (period == ReportPeriod.MONTH) {
+        lastBarLabel = if (period == ReportPeriod.WEEK) {
+            "امروز"
+        } else if (period == ReportPeriod.MONTH) {
             "${JalaliCalendar.daysInMonth(today.y, today.m).toFa()} ${persianMonthName(today.m)}"
         } else {
             persianMonthName(today.m)

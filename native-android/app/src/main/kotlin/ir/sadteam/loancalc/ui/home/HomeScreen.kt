@@ -74,6 +74,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.MonthForecast
 import ir.sadteam.loancalc.core.PersianCalendar
+import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.ui.jibak.faDigits
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompactParts
@@ -82,6 +83,7 @@ import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.accounting.ReportPeriod
 import ir.sadteam.loancalc.ui.account.CompactTransactionRow
 import ir.sadteam.loancalc.ui.accounting.NewTransactionSheet
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
@@ -250,6 +252,13 @@ fun HomeScreen(
             .sumOf { it.amount }
     }
     val weekTotal = remember(weekSpend) { weekSpend.sum() }
+    // 🚨 **بازه‌ی کارتِ قهرمان قابلِ انتخاب شد** (خواسته‌ی کاربر، ۳۱ شهریور).
+    // همان چهار بازه‌ی تبِ گزارش، پس `ReportPeriod` دوباره تعریف نمی‌شود - دو enum برای
+    // یک مفهوم یعنی روزی که یکی عوض می‌شود و دیگری جا می‌مانَد.
+    var heroPeriod by rememberSaveable { mutableStateOf(ReportPeriod.WEEK) }
+    val heroSeries = remember(transactions, heroPeriod, today) {
+        buildHeroSeries(transactions, today, heroPeriod)
+    }
     val prevWeekTotal = remember(transactions) {
         (13 downTo 7).sumOf { back ->
             val d = PersianCalendar.addDays(today, -back)
@@ -372,10 +381,14 @@ fun HomeScreen(
             // ── حالتِ عادی (فریمِ `15a`) ───────────────────────────────────────────────
             item {
                 TodaySpendHero(
-                    todaySpend = weekSpend.last(),
+                    period = heroPeriod,
+                    onPeriod = { heroPeriod = it },
+                    periodLabel = heroSeries.label,
+                    periodSpend = heroSeries.total,
                     todayIncome = todayIncome,
                     yesterdaySpend = weekSpend[weekSpend.lastIndex - 1],
-                    weekSpend = weekSpend,
+                    todaySpend = weekSpend.last(),
+                    weekSpend = heroSeries.bars,
                     privacyMode = privacyMode,
                     // `71d`: عددی که جلوی چشم است و لمس می‌شود ولی جواب نمی‌دهد یک بن‌بست
                     // است. مقصدش **شیت** است نه صفحه - یک نگاهِ دوثانیه‌ای، و زمینه
@@ -583,7 +596,7 @@ private fun TodaySpendSheet(
                 // فلشِ قرمز کنارِ خودِ برچسب می‌نشیند، نه کنارِ عدد: عددِ ۲۶ی قهرمان با یک
                 // فلشِ هم‌قد شلوغ می‌شود، و جهت را همان یک‌بار گفتن کافی است.
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("خرجِ امروز", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                    Text(periodLabel, color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                     Icon(
                         Icons.Filled.ArrowDownward,
                         contentDescription = null,
@@ -801,6 +814,10 @@ fun PrivacyEyeButton(
 // ═══ ۲ · کارتِ سبزِ خرجِ امروز ═══════════════════════════════════════════════════
 @Composable
 private fun TodaySpendHero(
+    period: ReportPeriod,
+    onPeriod: (ReportPeriod) -> Unit,
+    periodLabel: String,
+    periodSpend: Double,
     todaySpend: Double,
     todayIncome: Double,
     yesterdaySpend: Double,
@@ -808,13 +825,35 @@ private fun TodaySpendHero(
     privacyMode: Boolean,
     onClick: () -> Unit,
 ) {
-    val shown = countUpAmount(todaySpend, enabled = !privacyMode)
+    val shown = countUpAmount(periodSpend, enabled = !privacyMode)
     val deltaPercent: Int? = if (yesterdaySpend > 0.0) {
         (((todaySpend - yesterdaySpend) / yesterdaySpend) * 100).toInt()
     } else {
         null
     }
     AppHeroCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
+        // چهار قرصِ بازه. روی زمینه‌ی تیره‌ی کارت، انتخاب‌شده سفیدِ مات و بقیه فقط متن -
+        // همان زبانِ تاگلِ تبِ گزارش، با رنگِ مناسبِ این زمینه.
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            ReportPeriod.entries.forEach { p ->
+                val selected = p == period
+                Text(
+                    p.label,
+                    color = if (selected) AppPrimaryInk else Color.White,
+                    fontSize = 9.5.sp,
+                    fontWeight = if (selected) FontWeight.Black else FontWeight.Bold,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (selected) Color.White else HeroPillBg)
+                        .pressScaleClickable { onPeriod(p) }
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                )
+            }
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -1266,6 +1305,48 @@ private fun CategoryBreakdownCard(
  * ⚠️ ستونِ سوم دورِ قبل جا افتاده بود چون فقط وقتی هفته‌ی قبل عدد داشت رندر می‌شد؛ فریم
  * همیشه هر سه ستون رو نشون می‌ده.
  */
+/** خروجیِ [buildHeroSeries]: عنوان، جمعِ بازه و میله‌های همان بازه. */
+private data class HeroSeries(val label: String, val total: Double, val bars: List<Double>)
+
+/**
+ * داده‌ی کارتِ قهرمان برای بازه‌ی انتخاب‌شده.
+ *
+ * ⚠️ همان تعریف‌های تبِ گزارش: جابه‌جاییِ بینِ حساب‌ها خرج نیست، و «هفته» یعنی ۷ روزِ
+ * گذشته تا امروز. اگر این دو تعریف این‌جا فرق کنند، کاربر برای یک چیز دو عدد می‌بیند.
+ *
+ * میله‌ها: هفته ۷ روز · ماه روزهای همان ماه · فصل و سال ماه‌به‌ماه (۹۰ میله در عرضِ یک
+ * کارت خط می‌شود نه نمودار - همان تصمیمِ تبِ گزارش).
+ */
+private fun buildHeroSeries(
+    transactions: List<AccountTransactionEntity>,
+    today: PersianDate,
+    period: ReportPeriod,
+): HeroSeries {
+    val expenses = transactions.filter { it.sourceType != SOURCE_TYPE_TRANSFER && it.type != "DEPOSIT" }
+    fun sumOfDay(d: PersianDate) =
+        expenses.filter { it.year == d.y && it.month == d.m && it.day == d.d }.sumOf { it.amount }
+    fun sumOfMonth(y: Int, m: Int) =
+        expenses.filter { it.year == y && it.month == m }.sumOf { it.amount }
+
+    val bars = when (period) {
+        ReportPeriod.WEEK -> (6 downTo 0).map { back -> sumOfDay(PersianCalendar.addDays(today, -back)) }
+        ReportPeriod.MONTH -> (1..JalaliCalendar.daysInMonth(today.y, today.m))
+            .map { day -> sumOfDay(PersianDate(today.y, today.m, day)) }
+        else -> (period.months - 1 downTo 0).map { back ->
+            val m = ((today.m - 1 - back) % 12 + 12) % 12 + 1
+            val y = if (today.m - back <= 0) today.y - 1 else today.y
+            sumOfMonth(y, m)
+        }
+    }
+    val label = when (period) {
+        ReportPeriod.WEEK -> "خرجِ هفته"
+        ReportPeriod.MONTH -> "خرجِ ${persianMonthName(today.m)}"
+        ReportPeriod.SEASON -> "خرجِ سه ماه"
+        ReportPeriod.YEAR -> "خرجِ امسال"
+    }
+    return HeroSeries(label = label, total = bars.sum(), bars = bars)
+}
+
 /**
  * **چهار درِ همیشه‌درمعرض** زیرِ کارتِ قهرمان - طرحِ مرجعِ کاربر.
  *
