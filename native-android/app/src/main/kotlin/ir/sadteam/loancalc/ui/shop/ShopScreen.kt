@@ -637,16 +637,18 @@ private fun AppIconPreview(itemId: String) {
         "icon:letter" -> R.drawable.ic_launcher_letter_background to R.drawable.ic_launcher_letter_foreground
         "icon:piggy" -> R.drawable.ic_launcher_piggy_background to R.drawable.ic_launcher_piggy_foreground
         "icon:shop" -> R.drawable.ic_launcher_shop_background to R.drawable.jibak_shop_0
-        // نه طرحِ تصویریِ بخشِ ۸۰ - پس‌زمینه‌ی مشترکِ شفاف، پیش‌زمینه PNGِ خودِ طرح.
-        "icon:aqua" -> R.drawable.ic_launcher_clear_background to R.drawable.jibak_ic_aqua
-        "icon:calligraphy" -> R.drawable.ic_launcher_clear_background to R.drawable.jibak_ic_calligraphy
-        "icon:fox" -> R.drawable.ic_launcher_clear_background to R.drawable.jibak_ic_fox
-        "icon:emerald" -> R.drawable.ic_launcher_clear_background to R.drawable.jibak_ic_emerald
-        "icon:leaf" -> R.drawable.ic_launcher_clear_background to R.drawable.jibak_ic_leaf
-        "icon:orbit" -> R.drawable.ic_launcher_clear_background to R.drawable.jibak_ic_orbit
-        "icon:growth" -> R.drawable.ic_launcher_clear_background to R.drawable.jibak_ic_growth
-        "icon:sprout" -> R.drawable.ic_launcher_clear_background to R.drawable.jibak_ic_sprout
-        "icon:neon" -> R.drawable.ic_launcher_clear_background to R.drawable.jibak_ic_neon
+        // نه طرحِ تصویریِ بخشِ ۸۰ - هر کدام پس‌زمینه‌ی **پُرِ** خودش را دارد (رنگ از
+        // تیره‌ترین ناحیه‌ی خودِ فایلِ هنری)، چون لایه‌ی شفاف روی بعضی لانچرها
+        // صفحه‌ی مشکی می‌گیرد.
+        "icon:aqua" -> R.drawable.ic_launcher_aqua_background to R.drawable.jibak_ic_aqua
+        "icon:calligraphy" -> R.drawable.ic_launcher_calligraphy_background to R.drawable.jibak_ic_calligraphy
+        "icon:fox" -> R.drawable.ic_launcher_fox_background to R.drawable.jibak_ic_fox
+        "icon:emerald" -> R.drawable.ic_launcher_emerald_background to R.drawable.jibak_ic_emerald
+        "icon:leaf" -> R.drawable.ic_launcher_leaf_background to R.drawable.jibak_ic_leaf
+        "icon:orbit" -> R.drawable.ic_launcher_orbit_background to R.drawable.jibak_ic_orbit
+        "icon:growth" -> R.drawable.ic_launcher_growth_background to R.drawable.jibak_ic_growth
+        "icon:sprout" -> R.drawable.ic_launcher_sprout_background to R.drawable.jibak_ic_sprout
+        "icon:neon" -> R.drawable.ic_launcher_neon_background to R.drawable.jibak_ic_neon
         // پیش‌فرض «کیفِ پول» است؛ پیش‌زمینه‌اش PNGِ mipmap است نه وکتورِ drawable.
         else -> R.drawable.ic_launcher_background to R.mipmap.ic_launcher_foreground
     }
