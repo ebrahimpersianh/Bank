@@ -97,18 +97,32 @@ class IconWither @Inject constructor() {
          * کاتالوگ‌اند. «کیفِ پول» این‌جا نیست چون پیش‌فرض است و الیاسِ ۰..۸ مالِ اوست.
          */
         val ICON_ALIAS =
-            mapOf("icon:coin" to 9, "icon:letter" to 10, "icon:piggy" to 11, "icon:shop" to 36)
+            mapOf(
+                "icon:coin" to 9,
+                "icon:letter" to 10,
+                "icon:piggy" to 11,
+                "icon:shop" to 36,
+                "icon:emblem" to 45,
+            )
 
         /** پله‌ی ۱..۸ِ هر طرحِ خریدنی (بخشِ ۶۱) - ۳۲ پله‌ی ساخته‌شده‌ی `generate-wither.py`. */
         private val WITHER_BASE =
-            mapOf("icon:coin" to 12, "icon:letter" to 20, "icon:piggy" to 28, "icon:shop" to 37)
+            mapOf(
+                "icon:coin" to 12,
+                "icon:letter" to 20,
+                "icon:piggy" to 28,
+                "icon:shop" to 37,
+                // «نشانِ رشد» هشت پله‌ی خودش را همراه داشت (شبکه‌ی ۳×۳ِ خودِ طراح)، پس
+                // `generate-wither.py` برایش اجرا نشد.
+                "icon:emblem" to 46,
+            )
 
-        private const val LAST_ALIAS = 44
+        private const val LAST_ALIAS = 53
 
         /**
          * کدام الیاس روشن شود.
          *
-         * پله‌ی صفرِ هر طرح الیاسِ جدا دارد (۰ و ۹ و ۱۰ و ۱۱ و ۳۶) چون فایلِ «تازه»ی طرح است، و
+         * پله‌ی صفرِ هر طرح الیاسِ جدا دارد (۰ و ۹ و ۱۰ و ۱۱ و ۳۶ و ۴۵) چون فایلِ «تازه»ی طرح است، و
          * پله‌های ۱..۸ پشتِ‌هم می‌آیند. پس نگاشت **دو تکه** است، نه یک جمعِ ساده.
          */
         fun aliasFor(activeIcon: String?, step: Int): Int {

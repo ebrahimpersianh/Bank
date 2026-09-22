@@ -67,6 +67,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.EventNote
@@ -288,6 +289,12 @@ private val allShortcutPool = defaultShortcuts + listOf(
     Shortcut("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, "assets"),
     Shortcut("tools", "ابزارها", Icons.Outlined.Groups, TOOLS_ROUTE),
     Shortcut("calendar", "تقویم مالی", Icons.Outlined.EventNote, CALENDAR_ROUTE),
+    // خواسته‌ی کاربر (۳۱ شهریور): «تعدادِ میان‌برها را بیشتر کن». هر ردیفِ تازه باید
+    // یک routeِ **واقعیِ** NavHost داشته باشد، وگرنه میان‌بر به هیچ‌جا نمی‌رود.
+    Shortcut("loan-stats", "آمارِ وام", Icons.Outlined.BarChart, LOAN_STATS_ROUTE),
+    Shortcut("cheque-report", "گزارشِ چک", Icons.Outlined.Description, CHEQUE_REPORT_ROUTE),
+    Shortcut("archive", "آرشیوِ سالانه", Icons.Outlined.Archive, ANNUAL_ARCHIVE_ROUTE),
+    Shortcut("sayad", "استعلامِ صیادی", Icons.Outlined.Description, SAYAD_INQUIRY_ROUTE),
 )
 
 private const val LOAN_ROUTE = "loan"
@@ -691,7 +698,9 @@ private fun LoanCalcApp(
         // انتخابِ پنج‌تاییِ نسخه‌های قبلی، فقط یک ردیفِ اولیه بود؛ حالا همه‌ی مقصدها نمایش داده می‌شوند.
         // کشو همیشه حداقل دو ردیفِ پنج‌تایی دارد؛ انتخابِ قدیمیِ پنج‌تایی با مقصدهای تازه کامل می‌شود.
         val selected = (if (stored.isEmpty() || stored.map { it.id } == defaultShortcuts.map { it.id }) allShortcutPool else stored)
-            .let { chosen -> if (chosen.size >= 10) chosen else chosen + allShortcutPool.filterNot { it.id in chosen.map { item -> item.id } }.take(10 - chosen.size) }
+            // کفِ نمایش با بزرگ‌شدنِ مخزن بالا رفت: انتخابِ قدیمیِ کوچک با مقصدهای تازه
+            // کامل می‌شود تا کشو خالی‌تر از چیزی که هست به‌نظر نرسد.
+            .let { chosen -> if (chosen.size >= 12) chosen else chosen + allShortcutPool.filterNot { it.id in chosen.map { item -> item.id } }.take(12 - chosen.size) }
         // ترتیبِ ذخیره‌شده اول میاد؛ شناسه‌ی ناشناخته نادیده و میان‌برِ تازه ته لیست اضافه می‌شه.
         val ordered = savedShortcutOrder.mapNotNull { id -> selected.firstOrNull { it.id == id } }
         ordered + selected.filterNot { it.id in savedShortcutOrder }
