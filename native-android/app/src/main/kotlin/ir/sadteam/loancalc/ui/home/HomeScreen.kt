@@ -74,6 +74,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.MonthForecast
 import ir.sadteam.loancalc.core.PersianCalendar
+import ir.sadteam.loancalc.ui.jibak.faDigits
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompactParts
 import ir.sadteam.loancalc.ui.jibak.toFa
@@ -1335,7 +1336,9 @@ private fun localTimeOf(createdAt: String): String? = runCatching {
     val date = parser.parse(createdAt) ?: return null
     val out = SimpleDateFormat("HH:mm", Locale.US)
     out.timeZone = TimeZone.getDefault()
-    out.format(date).toFa()
+    // ⚠️ `toFa()` **اکستنشنِ Int** است نه String (باگِ بیلدِ ۶۱۶). برای رشته‌ی ساعت
+    // `faDigits()` درست است - همان چیزی که `toFaTime` هم استفاده می‌کند.
+    out.format(date).faDigits()
 }.getOrNull()
 
 /**

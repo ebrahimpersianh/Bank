@@ -49,6 +49,21 @@ def main() -> int:
                 if re.search(rf"(?<![.\w]){re.escape(name)}\s*\(", line):
                     problems.append((f.relative_to(ROOT), i, name, line.strip()))
 
+    # ── گیرنده‌ی غلط برای `.toFa()` (بیلدِ ۶۱۶) ───────────────────────────────
+    # `toFa` اکستنشنِ عددی است (`Int`/`Long`)، پس صداکردنش روی یک **رشته** کامپایل
+    # نمی‌شود. این خطا از دیدِ بررسیِ بالا سالم است (نقطه دارد)، پس جدا گرفته می‌شود.
+    # فهرست عمداً کوتاه است: فقط متدهایی که **قطعاً** رشته برمی‌گردانند.
+    string_tail = re.compile(
+        r"\.(?:format|trim|substring|padStart|padEnd|joinToString|toString|uppercase|lowercase|"
+        r"replace|removePrefix|removeSuffix|ifBlank|ifEmpty)\([^()]*\)\s*\.toFa\s*\(\)"
+    )
+    for f in files:
+        for i, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+            if line.lstrip().startswith(("import ", "*", "//")):
+                continue
+            if string_tail.search(line) or re.search(r'"\s*\.toFa\s*\(\)', line):
+                problems.append((f.relative_to(ROOT), i, "toFa", line.strip()))
+
     if problems:
         print(f"❌ {len(problems)} بار اکستنشن مثلِ تابعِ سراسری صدا زده شده:")
         for path, line_no, name, src in problems:
