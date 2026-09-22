@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.RecurringDetector
 import ir.sadteam.loancalc.core.RecurringExpense
@@ -7,6 +8,7 @@ import ir.sadteam.loancalc.core.RecurringInput
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.data.db.RecurringPaymentEntity
 import ir.sadteam.loancalc.ui.components.persianMonthName
+import ir.sadteam.loancalc.ui.jibak.toFa
 
 /** خروجیِ محاسبه‌شده‌ی تبِ گزارش - همه‌چیزِ فریمِ `26a` تو یه شیِ واحد. */
 data class ReportStats(
@@ -89,10 +91,21 @@ fun buildReportStats(
         .sumOf { it.amount }
     val delta = if (prevSpend > 0.0) (((periodSpend - prevSpend) / prevSpend) * 100).toInt() else null
 
-    // نمودارِ ۷ ماهه - همیشه ماهانه‌ست، مستقل از دوره‌ی انتخاب‌شده
-    val bars = (BAR_MONTHS - 1 downTo 0).map { back ->
-        val (y, m) = monthBack(today, back)
-        expenses.filter { it.year == y && it.month == m }.sumOf { it.amount }
+    // 🚨 **میله‌ها با خودِ دوره عوض می‌شوند** (بازخوردِ ۳۱ شهریور با طرحِ مرجع).
+    //
+    // تا امروز نمودار همیشه «۷ ماهِ گذشته» بود، حتی وقتی کاربر روی «ماه» ایستاده بود -
+    // یعنی عددِ بالای کارت مالِ یک ماه بود و نمودارِ زیرش مالِ هفت ماه. در نمای ماه،
+    // **روزهای همان ماه** را نشان می‌دهد؛ در فصل و سال همان روندِ ماهانه می‌مانَد چون
+    // ۹۰ یا ۳۶۵ میله در عرضِ یک کارت خط می‌شود نه نمودار.
+    val bars = if (period == ReportPeriod.MONTH) {
+        (1..JalaliCalendar.daysInMonth(today.y, today.m)).map { day ->
+            expenses.filter { it.year == today.y && it.month == today.m && it.day == day }.sumOf { it.amount }
+        }
+    } else {
+        (BAR_MONTHS - 1 downTo 0).map { back ->
+            val (y, m) = monthBack(today, back)
+            expenses.filter { it.year == y && it.month == m }.sumOf { it.amount }
+        }
     }
 
     val byCategory = inWindow
@@ -129,8 +142,17 @@ fun buildReportStats(
         periodSpend = periodSpend,
         deltaPercent = delta,
         monthlyBars = bars,
-        firstBarLabel = persianMonthName(monthBack(today, BAR_MONTHS - 1).second),
-        lastBarLabel = persianMonthName(today.m),
+        // برچسبِ دو سرِ نمودار با همان چیزی که کشیده شده می‌خوانَد.
+        firstBarLabel = if (period == ReportPeriod.MONTH) {
+            "${1.toFa()} ${persianMonthName(today.m)}"
+        } else {
+            persianMonthName(monthBack(today, BAR_MONTHS - 1).second)
+        },
+        lastBarLabel = if (period == ReportPeriod.MONTH) {
+            "${JalaliCalendar.daysInMonth(today.y, today.m).toFa()} ${persianMonthName(today.m)}"
+        } else {
+            persianMonthName(today.m)
+        },
         byCategory = byCategory,
         fixedShare = fixedShare,
         fixedAmount = fixedAmount,

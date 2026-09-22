@@ -218,6 +218,8 @@ fun ReportTabScreen(
                 firstLabel = stats.firstBarLabel,
                 lastLabel = stats.lastBarLabel,
                 privacyMode = privacyMode,
+                // در نمای ماه، میله‌ی سفید **امروز** است نه آخرین روزِ ماه.
+                currentBarIndex = if (period == ReportPeriod.MONTH) today.d - 1 else stats.monthlyBars.lastIndex,
             )
         }
         if (stats.fixedShare != null) {
@@ -621,6 +623,8 @@ private fun PeriodSpendHero(
     firstLabel: String,
     lastLabel: String,
     privacyMode: Boolean,
+    /** کدام میله «حالا»ست. در نمای ماه روزِ جاری، در فصل/سال آخرین ماه. */
+    currentBarIndex: Int = bars.lastIndex,
 ) {
     Column(
         modifier = Modifier
@@ -685,11 +689,13 @@ private fun PeriodSpendHero(
             val max = bars.max()
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(40.dp),
-                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                // ۳۱ میله در عرضِ یک کارت با فاصله‌ی ۳ جا نمی‌شود؛ فاصله با تعدادِ
+                // میله‌ها کم می‌شود تا هر دو نما تمیز بمانند.
+                horizontalArrangement = Arrangement.spacedBy(if (bars.size > 12) 1.5.dp else 3.dp),
                 verticalAlignment = Alignment.Bottom,
             ) {
                 bars.forEachIndexed { index, value ->
-                    val current = index == bars.lastIndex
+                    val current = index == currentBarIndex
                     Box(
                         modifier = Modifier
                             .weight(1f)
