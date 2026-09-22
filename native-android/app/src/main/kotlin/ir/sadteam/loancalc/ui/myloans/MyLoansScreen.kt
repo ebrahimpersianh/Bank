@@ -116,6 +116,9 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.HeroMuted
+import ir.sadteam.loancalc.ui.components.HeroTone
 import androidx.compose.material.icons.filled.Calculate
 import ir.sadteam.loancalc.ui.components.AppFab
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
@@ -146,8 +149,6 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
 import ir.sadteam.loancalc.ui.theme.AppElevation
-import ir.sadteam.loancalc.ui.theme.AppGoldInk
-import ir.sadteam.loancalc.ui.theme.AppGoldInk2
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -1294,17 +1295,26 @@ private fun DashboardSummary(
             val totalRows = loans.sumOf { it.n }
             if (totalRows > 0) loans.sumOf { it.paidCount } * 100 / totalRows else 0
         }
-        AppCard(variant = AppCardVariant.GOLD) {
+        // 🎨 **کارتِ قهرمانِ مشترک، نه کارتِ طلاییِ اختصاصی** (خواسته‌ی کاربر: «مثلِ بقیه‌ی
+        // تب‌ها بشود و با تمِ رنگی عوض شود»).
+        //
+        // کارتِ طلایی رنگِ ثابت داشت، پس تنها جای برنامه بود که با تمِ خریدنیِ کاربر
+        // هم‌قدم نمی‌شد - کسی که تمِ لاجوردی خریده بود، تبِ وام را همچنان کرم می‌دید.
+        // [AppHeroCard] همان چیزی است که خانه و دارایی و بودجه دارند و لحنِ سبزش از
+        // خودِ تمِ فعال می‌آید.
+        //
+        // ⚠️ لحنِ **قرمز** فقط وقتی قسطِ معوق هست - همان تنها مصرفِ مجازش در سیستمِ طراحی.
+        AppHeroCard(tone = if (overdueCount > 0) HeroTone.RED else HeroTone.GREEN) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 if (overdueCount > 0) {
                     Text(
                         "${toFa(overdueCount)} قسطِ معوق",
-                        color = AppDangerInk,
+                        color = Color.White,
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier
                             .clip(RoundedCornerShape(999.dp))
-                            .background(AppDangerPill)
+                            .background(Color.White.copy(alpha = 0.22f))
                             .padding(horizontal = 9.dp, vertical = 3.dp),
                     )
                 }
@@ -1320,14 +1330,14 @@ private fun DashboardSummary(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     "قسطِ این ماه",
-                    color = AppGoldInk.copy(alpha = 0.65f),
+                    color = HeroMuted,
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Black,
                 )
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         "${maskIfPrivate(masked, amountToman(animatedMonthly))} تومان",
-                        color = AppGoldInk,
+                        color = Color.White,
                         fontSize = 23.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = (-0.4).sp,
@@ -1347,12 +1357,12 @@ private fun DashboardSummary(
                 ) {
                     PaidRing(
                         fraction = paidPct / 100f,
-                        ringColor = AppGoldInk,
-                        trackColor = AppGoldInk.copy(alpha = 0.22f),
+                        ringColor = Color.White,
+                        trackColor = Color.White.copy(alpha = 0.3f),
                         centerTop = toFa(rowsLeft),
                         centerBottom = "از ${toFa(rowsAll)} قسط",
-                        centerTopColor = AppGoldInk,
-                        centerBottomColor = AppGoldInk.copy(alpha = 0.7f),
+                        centerTopColor = Color.White,
+                        centerBottomColor = HeroMuted,
                         size = 78.dp,
                         stroke = 11.dp,
                         centerTopSize = 19,
@@ -1361,7 +1371,7 @@ private fun DashboardSummary(
                         modifier = Modifier
                             .padding(top = 5.dp)
                             .clip(RoundedCornerShape(999.dp))
-                            .background(AppGoldInk.copy(alpha = 0.12f))
+                            .background(Color.White.copy(alpha = 0.16f))
                             .padding(horizontal = 7.dp, vertical = 3.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(3.dp),
@@ -1369,12 +1379,12 @@ private fun DashboardSummary(
                         Icon(
                             Icons.Filled.Autorenew,
                             contentDescription = null,
-                            tint = AppGoldInk,
+                            tint = Color.White,
                             modifier = Modifier.size(9.dp),
                         )
                         Text(
                             "${toFa(paidPct)}٪ پرداخت‌شده",
-                            color = AppGoldInk,
+                            color = Color.White,
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Black,
                             maxLines = 1,
@@ -1397,7 +1407,7 @@ private fun DashboardSummary(
                     modifier = Modifier
                         .padding(top = 8.dp)
                         .clip(RoundedCornerShape(999.dp))
-                        .background(if (over) AppDangerPill else AppGoldInk.copy(alpha = 0.12f))
+                        .background(Color.White.copy(alpha = if (over) 0.3f else 0.16f))
                         .pressScaleClickable(onClick = onOpenIncome)
                         .padding(horizontal = 10.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -1405,14 +1415,14 @@ private fun DashboardSummary(
                 ) {
                     Text(
                         "${toFa((incomeRatio * 100).roundToInt())}٪ از درآمدت صرفِ اقساط می‌شه",
-                        color = if (over) AppDangerInk else AppGoldInk,
+                        color = Color.White,
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Black,
                     )
                     Icon(
                         Icons.Filled.ChevronLeft,
                         contentDescription = null,
-                        tint = if (over) AppDangerInk else AppGoldInk,
+                        tint = Color.White,
                         modifier = Modifier.size(12.dp),
                     )
                 }
@@ -1420,7 +1430,7 @@ private fun DashboardSummary(
                 // بی منبعِ درآمد، درصدی وجود ندارد - پس به‌جای عددِ دروغ، درِ ورودی.
                 Text(
                     "درآمدِ ماهانه‌ات را ثبت کن ‹",
-                    color = AppGoldInk.copy(alpha = 0.75f),
+                    color = HeroMuted,
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Black,
                     modifier = Modifier
@@ -1443,18 +1453,18 @@ private fun DashboardSummary(
                 Box(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
                     DebtTrendWave(
                         points = debtCurve,
-                        lineColor = AppGoldInk.copy(alpha = 0.45f),
-                        dotColor = AppGoldInk,
+                        lineColor = Color.White.copy(alpha = 0.5f),
+                        dotColor = Color.White,
                     )
                     Text(
                         persianMonthName(todayForWave.m),
-                        color = AppGoldInk,
+                        color = Color.White,
                         fontSize = 7.5.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .clip(RoundedCornerShape(999.dp))
-                            .background(AppGoldInk.copy(alpha = 0.14f))
+                            .background(Color.White.copy(alpha = 0.18f))
                             .padding(horizontal = 6.dp, vertical = 2.dp),
                     )
                 }
@@ -1468,14 +1478,14 @@ private fun DashboardSummary(
                 Column {
                     Text(
                         "ماندهٔ کل",
-                        color = AppGoldInk.copy(alpha = 0.65f),
+                        color = HeroMuted,
                         fontSize = 8.5.sp,
                         fontWeight = FontWeight.Black,
                     )
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
                             maskIfPrivate(masked, amountToman(animatedDebt)),
-                            color = AppGoldInk,
+                            color = Color.White,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(top = 1.dp),
@@ -1486,13 +1496,13 @@ private fun DashboardSummary(
                     Column {
                         Text(
                             "تا آزادی",
-                            color = AppGoldInk.copy(alpha = 0.65f),
+                            color = HeroMuted,
                             fontSize = 8.5.sp,
                             fontWeight = FontWeight.Black,
                         )
                         Text(
                             "${toFa(monthsLeft)} ماه",
-                            color = AppGoldInk,
+                            color = Color.White,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(top = 1.dp),
@@ -1511,7 +1521,7 @@ private fun DashboardSummary(
                         PrivacyCrossfade(privacyMode) { masked ->
                             Text(
                                 maskIfPrivate(masked, amountToman(totalOverdue)),
-                                color = AppDangerInk,
+                                color = Color.White,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Black,
                                 modifier = Modifier.padding(top = 1.dp),
@@ -1685,60 +1695,7 @@ private fun DashboardSummary(
     }
 }
 
-/**
- * یه ردیفِ کارتِ خلاصه‌ی وام - کارتِ `27a`ی طرح: برچسبِ ۱۰٫۵/۸۰۰ با جوهرِ طلایی و زیرش عدد.
- * عددِ ردیفِ اول بزرگ‌تره ([big])، بقیه ۱۳/۹۰۰.
- */
-@Composable
-private fun LoanSummaryRow(label: String, value: String, valueColor: Color, big: Boolean = false) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        // برچسب طبقِ فریم `AppGoldInk` با آلفای ۰٫۶۵ه، نه `AppGoldInk2`.
-        Text(label, color = AppGoldInk.copy(alpha = 0.65f), fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold)
-        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
-            Text(
-                value,
-                color = valueColor,
-                fontSize = if (big) 15.sp else 13.sp,
-                fontWeight = FontWeight.Black,
-            )
-            Text(
-                " تومان",
-                color = AppGoldInk2,
-                fontSize = if (big) 10.sp else 9.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 3.dp, bottom = 1.dp),
-            )
-        }
-    }
-}
 
-/**
- * جداکننده‌ی **نقطه‌چینِ** ردیف‌های کارتِ طلایی - `rgba(139,111,61,.32)` طبقِ قاعده‌ی صریحِ
- * گونه‌ی «پول و دستاورد» تو بخشِ ۵ سیستمِ طراحی.
- */
-@Composable
-private fun LoanSummaryDivider() {
-    // ⚠️ توکنِ رنگ `@Composable`ه و داخلِ `drawBehind` صدا زده نمی‌شه - تو `val` محلی خونده می‌شه.
-    val ink = AppGoldInk.copy(alpha = 0.32f)
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 11.dp)
-            .height(1.dp)
-            .drawBehind {
-                drawLine(
-                    color = ink,
-                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                    end = androidx.compose.ui.geometry.Offset(size.width, 0f),
-                    strokeWidth = size.height,
-                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                        floatArrayOf(5f, 5f),
-                        0f,
-                    ),
-                )
-            },
-    )
-}
 
 /**
  * **فیلترِ دوتاییِ «فعال / تسویه‌شده» - فریمِ `27a`.**
