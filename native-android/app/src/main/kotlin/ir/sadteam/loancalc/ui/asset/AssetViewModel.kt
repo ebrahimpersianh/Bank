@@ -4,7 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.data.AssetRepository
+import ir.sadteam.loancalc.data.WealthSnapshotRepository
+import ir.sadteam.loancalc.data.db.WealthSnapshotEntity
 import ir.sadteam.loancalc.data.db.AssetEntity
 import ir.sadteam.loancalc.data.db.AssetTradeEntity
 import ir.sadteam.loancalc.ui.jibak.toFaTime
@@ -26,7 +29,29 @@ import javax.inject.Inject
 @HiltViewModel
 class AssetViewModel @Inject constructor(
     private val assetRepository: AssetRepository,
+    private val wealthSnapshots: WealthSnapshotRepository,
 ) : ViewModel() {
+    /**
+     * عکس‌های روزانه‌ی دارایی - پایه‌ی نمودارِ **واقعیِ** روند.
+     *
+     * تا وقتی کمتر از دو روز ردیف داریم، کارتِ دارایی همان بازسازیِ رو-به-عقبِ نقدی را
+     * نشان می‌دهد؛ از دو روز به بعد این منبع جایش را می‌گیرد و طلا و ارز هم در روند
+     * دیده می‌شوند.
+     */
+    val wealthTrend: StateFlow<List<WealthSnapshotEntity>> = wealthSnapshots.observe()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * عکسِ امروز را ثبت می‌کند. از تبِ دارایی صدا زده می‌شود - همان‌جا که هر دو عدد
+     * (نقد و ارزشِ روزِ دارایی‌ها) حاضرند.
+     *
+     * ⚠️ نوشتن فقط وقتی انجام می‌شود که قیمتی در دست باشد یا اصلاً دارایی‌ای نباشد؛
+     * ثبتِ «صفر» در لحظه‌ای که قیمت‌ها هنوز نیامده‌اند، یک دره‌ی دروغ در نمودار می‌سازد.
+     */
+    fun recordWealthSnapshot(today: PersianDate, cashRial: Double, assetsRial: Double, pricesReady: Boolean) {
+        if (!pricesReady) return
+        viewModelScope.launch { wealthSnapshots.record(today, cashRial, assetsRial) }
+    }
     val assets: StateFlow<List<AssetEntity>> = assetRepository.observeAssets()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

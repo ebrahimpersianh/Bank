@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -189,6 +190,10 @@ fun AssetsTabScreen(
     //
     // ⚠️ فقط **نقد** است نه کلِ دارایی: قیمتِ طلا و ارز در گذشته را نداریم و بازسازی‌اش
     // یعنی نموداری که عددهایش ساختگی است.
+    // 🚨 **از امروز به بعد، روند از عکسِ روزانه می‌آید نه بازسازی** (خواسته‌ی کاربر،
+    // ۳۱ شهریور: «قیمت‌ها را هر روز ذخیره کن»). تا وقتی کمتر از دو روز ردیف باشد،
+    // همان بازسازیِ رو-به-عقبِ نقدی کار می‌کند - پس کاربرِ تازه هم نمودار دارد.
+    val wealthSnapshots by assetViewModel.wealthTrend.collectAsState()
     val cashTrend = remember(transactions, cashTotal, today) {
         val days = (0 until 30).map { back -> PersianCalendar.addDays(today, -back) }
         var running = cashTotal
@@ -202,11 +207,32 @@ fun AssetsTabScreen(
         }
         series.reversed()
     }
-    // درصدِ تغییر نسبت به ۳۰ روز پیش. مبنای صفر یعنی درصد بی‌معنی، پس `null`.
-    val cashTrendPercent = remember(cashTrend) {
-        val first = cashTrend.firstOrNull() ?: 0.0
-        val last = cashTrend.lastOrNull() ?: 0.0
+    // سریِ نهایی: عکسِ واقعی اگر هست، وگرنه بازسازیِ نقدی.
+    val trendSeries = remember(wealthSnapshots, cashTrend) {
+        if (wealthSnapshots.size >= 2) {
+            wealthSnapshots.takeLast(30).map { it.totalRial }
+        } else {
+            cashTrend
+        }
+    }
+    val trendIsReal = wealthSnapshots.size >= 2
+    // درصدِ تغییر نسبت به ابتدای همان سری. مبنای صفر یعنی درصد بی‌معنی، پس `null`.
+    val cashTrendPercent = remember(trendSeries) {
+        val first = trendSeries.firstOrNull() ?: 0.0
+        val last = trendSeries.lastOrNull() ?: 0.0
         if (kotlin.math.abs(first) > 0.0) (((last - first) / kotlin.math.abs(first)) * 100).toInt() else null
+    }
+    // ثبتِ عکسِ امروز. `marketPrices` در کلید هست تا وقتی قیمت‌ها رسیدند ردیف با
+    // مقدارِ درست **به‌روز** شود، نه اینکه صفرِ لحظه‌ی اول بماند.
+    val assetsValueNow = goldTotal + fiatTotal + cryptoTotal + otherTotal
+    LaunchedEffect(cashTotal, assetsValueNow, marketPrices, today) {
+        assetViewModel.recordWealthSnapshot(
+            today = today,
+            cashRial = cashTotal,
+            assetsRial = assetsValueNow,
+            // بی قیمت، ارزشِ دارایی صفر درمی‌آید و یک دره‌ی دروغ در نمودار می‌سازد.
+            pricesReady = holdings.isEmpty() || marketPrices.isNotEmpty(),
+        )
     }
     val nothingYet = accounts.isEmpty() && holdings.isEmpty()
 
@@ -246,7 +272,8 @@ fun AssetsTabScreen(
                     fiat = fiatTotal,
                     crypto = cryptoTotal,
                     other = otherTotal,
-                    trend = cashTrend,
+                    trend = trendSeries,
+                    trendIsReal = trendIsReal,
                     trendPercent = cashTrendPercent,
                     privacyMode = privacyMode,
                     onPill = { key ->
@@ -598,6 +625,7 @@ private fun TotalWealthHero(
     crypto: Double,
     other: Double,
     trend: List<Double>,
+    trendIsReal: Boolean,
     trendPercent: Int?,
     privacyMode: Boolean,
     onPill: (String) -> Unit,
@@ -666,7 +694,8 @@ private fun TotalWealthHero(
                     modifier = Modifier.padding(top = 10.dp),
                 )
                 Text(
-                    "روندِ ۳۰ روزِ گذشته",
+                    // صادقانه: تا وقتی عکسِ روزانه جمع نشده، نمودار فقط نقد را می‌گوید.
+                    if (trendIsReal) "روندِ ۳۰ روزِ گذشته" else "روندِ نقدیِ ۳۰ روزِ گذشته",
                     color = HeroMuted,
                     fontSize = 8.5.sp,
                     fontWeight = FontWeight.Bold,

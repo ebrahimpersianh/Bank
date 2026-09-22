@@ -29,7 +29,9 @@ import ir.sadteam.loancalc.data.db.AchievementDao
 import ir.sadteam.loancalc.data.InboxRepository
 import ir.sadteam.loancalc.data.db.InboxMessageDao
 import ir.sadteam.loancalc.data.db.AppDatabase
+import ir.sadteam.loancalc.data.WealthSnapshotRepository
 import ir.sadteam.loancalc.data.db.AssetDao
+import ir.sadteam.loancalc.data.db.WealthSnapshotDao
 import ir.sadteam.loancalc.data.db.AssetTradeDao
 import ir.sadteam.loancalc.data.db.BudgetDao
 import ir.sadteam.loancalc.data.db.CalculationHistoryDao
@@ -158,6 +160,14 @@ object AppModule {
         uiPrefs: UiPrefs,
     ): AccountRepository =
         AccountRepository(accountDao, transactionDao, apiService, budgetDao, recurringPaymentDao, gamification, database, uiPrefs)
+
+    @Provides
+    fun provideWealthSnapshotDao(database: AppDatabase): WealthSnapshotDao = database.wealthSnapshotDao()
+
+    @Provides
+    @Singleton
+    fun provideWealthSnapshotRepository(dao: WealthSnapshotDao): WealthSnapshotRepository =
+        WealthSnapshotRepository(dao)
 
     @Provides
     fun provideAssetDao(database: AppDatabase): AssetDao = database.assetDao()

@@ -11,6 +11,7 @@ import net.sqlcipher.database.SupportFactory
 
 @Database(
     entities = [
+        WealthSnapshotEntity::class,
         ParsingRuleEntity::class,
         LoanEntity::class,
         LoanRowEntity::class,
@@ -38,7 +39,7 @@ import net.sqlcipher.database.SupportFactory
         DangItemShareEntity::class,
         SavingsGoalEntity::class,
     ],
-    version = 32,
+    version = 33,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -68,6 +69,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
 
     abstract fun parsingRuleDao(): ParsingRuleDao
+    abstract fun wealthSnapshotDao(): WealthSnapshotDao
     abstract fun assetDao(): AssetDao
     abstract fun assetTradeDao(): AssetTradeDao
     abstract fun dangEventDao(): DangEventDao
@@ -504,6 +506,25 @@ abstract class AppDatabase : RoomDatabase() {
          * ⚠️ ستون‌ها باید مو‌به‌مو با `SavingsGoalEntity` بخوانند وگرنه Room موقعِ **آپگرید**
          * کرش می‌کند (نصبِ تازه این باگ را نمی‌گیرد - درسِ نسخه‌ی ۱.۰.۳۱۵).
          */
+        /**
+         * جدولِ عکسِ روزانه‌ی دارایی - رجوع کن به [WealthSnapshotEntity].
+         *
+         * فقط **یک جدولِ تازه**، بی هیچ دست‌زدنی به جدول‌های موجود: کم‌خطرترین شکلِ
+         * مهاجرت. هیچ ایندکسِ دستی هم ندارد، پس قاعده‌ی «هر CREATE INDEX باید در
+         * `indices` انتیتی هم باشد» این‌جا موضوعیت ندارد.
+         */
+        private val MIGRATION_32_33 = object : Migration(32, 33) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS wealth_snapshots (" +
+                        "dateKey TEXT NOT NULL PRIMARY KEY, " +
+                        "cashRial REAL NOT NULL, " +
+                        "assetsRial REAL NOT NULL, " +
+                        "createdAt TEXT NOT NULL)",
+                )
+            }
+        }
+
         private val MIGRATION_31_32 = object : Migration(31, 32) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -665,6 +686,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_29_30,
                             MIGRATION_30_31,
                             MIGRATION_31_32,
+                            MIGRATION_32_33,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

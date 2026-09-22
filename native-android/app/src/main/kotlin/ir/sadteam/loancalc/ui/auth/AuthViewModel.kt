@@ -14,6 +14,7 @@ import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
 import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.NoteRepository
+import ir.sadteam.loancalc.data.WealthSnapshotRepository
 import ir.sadteam.loancalc.data.SyncOutcome
 import ir.sadteam.loancalc.data.network.SubscriptionPurchaseDto
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -42,6 +43,7 @@ class AuthViewModel @Inject constructor(
     private val debtRepository: DebtRepository,
     private val dangRepository: DangRepository,
     private val noteRepository: NoteRepository,
+    private val wealthSnapshotRepository: WealthSnapshotRepository,
     private val gamification: GamificationRepository,
 ) : ViewModel() {
     init {
@@ -187,6 +189,9 @@ class AuthViewModel @Inject constructor(
             debtRepository.clearLocal()
             dangRepository.clearLocal()
             noteRepository.clearLocal()
+            // عکس‌های روزانه‌ی دارایی هم **کاربرمحور**ند: مانده‌ی حسابِ کاربرِ قبلی
+            // نباید در نمودارِ کاربرِ بعدی دیده شود (قاعده‌ی داده‌ی کاربرمحور در خروج).
+            wealthSnapshotRepository.clearLocal()
         }
     }
 
