@@ -6,6 +6,7 @@ import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.network.RequestOtpRequest
 import ir.sadteam.loancalc.data.network.SetNameRequest
 import ir.sadteam.loancalc.data.network.SubscriptionPurchaseDto
+import ir.sadteam.loancalc.data.network.BugReportRequest
 import ir.sadteam.loancalc.data.network.RedeemGiftRequest
 import ir.sadteam.loancalc.data.network.VerifySubscriptionRequest
 import ir.sadteam.loancalc.data.network.VerifyOtpRequest
@@ -99,6 +100,22 @@ class AuthRepository(
             AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))
         } catch (e: Exception) {
             AuthResult.Error(null)
+        }
+    }
+
+    /**
+     * 🐞 ثبتِ گزارشِ مشکل روی سرور. خروجی **کدِ پیگیری** است، یا `null` اگر نشد.
+     *
+     * ⚠️ فقط برای کاربرِ واردشده: بی `user_id` گزارش به هیچ حسابی بسته نمی‌شود و
+     * دادنِ هدیه ممکن نیست - همان دلیلی که این کار را سمتِ سرور می‌بَرَد.
+     */
+    suspend fun reportBug(message: String, appVersion: String?, device: String?): String? {
+        val token = authPrefs.authToken.first()
+        if (token.isNullOrEmpty()) return null
+        return try {
+            apiService.reportBug("Bearer $token", BugReportRequest(message, appVersion, device)).ticket
+        } catch (e: Exception) {
+            null
         }
     }
 

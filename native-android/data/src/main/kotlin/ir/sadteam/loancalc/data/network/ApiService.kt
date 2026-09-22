@@ -51,6 +51,14 @@ interface ApiService {
 
     // 🎁 کدِ هدیه‌ی اشتراک (جایزه، یا هدیه‌ی گزارشِ باگ به پشتیبانی). سرور کد را
     // می‌سازد و یک‌بارمصرف نگه می‌دارد - رجوع کن به `server/routes/GiftCodeRoutes.kt`.
+    // 🐞 گزارشِ مشکل. پاسخ یک **کدِ پیگیری** می‌دهد که هم به کاربر نشان داده می‌شود و
+    // هم در ایمیل می‌رود؛ روی سرور به `user_id` بسته است تا بشود به همان حساب هدیه داد.
+    @POST("api/support/report")
+    suspend fun reportBug(
+        @Header("Authorization") authHeader: String,
+        @Body body: BugReportRequest,
+    ): BugReportResponse
+
     @POST("api/gift/redeem")
     suspend fun redeemGiftCode(
         @Header("Authorization") authHeader: String,
@@ -173,6 +181,10 @@ data class SubscriptionPurchaseDto(
 data class SubscriptionHistoryResponse(val ok: Boolean, val items: List<SubscriptionPurchaseDto>)
 
 data class SetNameRequest(val name: String?)
+
+data class BugReportRequest(val message: String, val appVersion: String?, val device: String?)
+
+data class BugReportResponse(val ok: Boolean, val ticket: String)
 
 data class RedeemGiftRequest(val code: String)
 

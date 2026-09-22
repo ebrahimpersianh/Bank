@@ -300,6 +300,11 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    /** 🐞 ثبتِ گزارشِ مشکل - `onResult` کدِ پیگیری می‌گیرد، یا `null` اگر نشد. */
+    fun reportBug(message: String, appVersion: String?, device: String?, onResult: (String?) -> Unit) {
+        viewModelScope.launch { onResult(authRepository.reportBug(message, appVersion, device)) }
+    }
+
     /** 🎁 خرج‌کردنِ کدِ هدیه - رجوع کن به [AuthRepository.redeemGiftCode]. */
     fun redeemGiftCode(code: String, onSuccess: () -> Unit, onError: (String?) -> Unit) {
         viewModelScope.launch {

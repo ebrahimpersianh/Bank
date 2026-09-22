@@ -293,4 +293,40 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.Unauthorized, denied.status)
     }
 
+    @Test
+    fun `bug report is stored with a ticket and the user id`() = testApplication {
+        val dbFile = File.createTempFile("loan-calc-test-support", ".sqlite")
+        dbFile.deleteOnExit()
+        System.setProperty("DB_PATH", dbFile.absolutePath)
+        System.setProperty("JWT_SECRET", "test-secret-for-unit-tests-only-support")
+
+        application { module() }
+
+        val uid = Db.withConnection { conn ->
+            conn.insertReturningId("INSERT INTO users (phone) VALUES (?)", "09120007788")
+        }
+        val token = signToken(uid, "09120007788")
+
+        val response = client.post("/api/support/report") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody("""{"message":"دکمه‌ی پرداخت کار نمی‌کند","appVersion":"1.0.622","device":"Xiaomi"}""")
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        // مهم‌ترین بخش: گزارش به **همان حساب** بسته شده، وگرنه نمی‌شود هدیه داد.
+        val storedUid = Db.withConnection { conn ->
+            conn.queryOne("SELECT user_id FROM bug_reports WHERE phone = ?", "09120007788") { it.getLong("user_id") }
+        }
+        assertEquals(uid, storedUid)
+
+        // متنِ خیلی کوتاه پذیرفته نمی‌شود - وگرنه صندوق پر از گزارشِ خالی می‌شود.
+        val tooShort = client.post("/api/support/report") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody("""{"message":"سلام"}""")
+        }
+        assertEquals(HttpStatusCode.BadRequest, tooShort.status)
+    }
+
 }

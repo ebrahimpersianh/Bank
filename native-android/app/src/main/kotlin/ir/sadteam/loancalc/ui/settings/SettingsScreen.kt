@@ -81,6 +81,7 @@ import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Source
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Vibration
@@ -190,6 +191,8 @@ import ir.sadteam.loancalc.ui.profile.BadgesScreen
 import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
+import ir.sadteam.loancalc.ui.support.BugReportScreen
+import ir.sadteam.loancalc.ui.support.SUPPORT_EMAIL
 import ir.sadteam.loancalc.ui.subscription.parseSubscribedUntil
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppBg
@@ -245,11 +248,14 @@ fun SettingsScreen(
     var showLoginPrompt by remember { mutableStateOf(false) }
     var showSubscription by remember { mutableStateOf(false) }
     var showReminderSettings by remember { mutableStateOf(false) }
+    // 🐞 گزارشِ مشکل - زیرصفحه‌ی تمام‌صفحه، مثلِ بقیه‌ی زیرصفحه‌های تنظیمات.
+    var showBugReport by remember { mutableStateOf(false) }
 
     val screenKey = when {
         showLoginPrompt -> "login"
         showSubscription -> "subscription"
         showReminderSettings -> "reminderSettings"
+        showBugReport -> "bugReport"
         tool != null -> "tool"
         route != SettingsRoute.MAIN -> "sub"
         else -> "main"
@@ -275,6 +281,9 @@ fun SettingsScreen(
             }
             "reminderSettings" -> FullScreenDialog(onDismissRequest = { showReminderSettings = false }) {
                 ReminderSettingsScreen(onBack = { showReminderSettings = false })
+            }
+            "bugReport" -> FullScreenDialog(onDismissRequest = { showBugReport = false }) {
+                BugReportScreen(onBack = { showBugReport = false })
             }
             "tool" -> FullScreenDialog(onDismissRequest = { tool = null }) {
                 when (tool) {
@@ -306,6 +315,7 @@ fun SettingsScreen(
                     onShowReminderSettings = { showReminderSettings = true },
                     onOpenTool = { tool = it },
                     onOpenRules = { route = SettingsRoute.PARSING_RULES },
+                    onOpenBugReport = { showBugReport = true },
                 )
             }
             else -> SettingsMainContent(
@@ -705,6 +715,7 @@ private fun SettingsSubPage(
     onShowReminderSettings: () -> Unit,
     onOpenTool: (String) -> Unit,
     onOpenRules: () -> Unit,
+    onOpenBugReport: () -> Unit,
 ) {
     val banner = rememberInAppBanner()
     // فقط برای ردیفِ آزمایشیِ سکه - نمونه‌ی خودِ همین زیرصفحه، نه پارامترِ تازه‌ی امضا.
@@ -735,7 +746,7 @@ private fun SettingsSubPage(
                 SettingsRoute.SECURITY -> SecuritySettings(appLockViewModel)
                 SettingsRoute.PARSING_RULES -> ParsingRulesScreen()
                 SettingsRoute.BADGES -> BadgesScreen()
-                SettingsRoute.ABOUT -> AboutSettings(banner)
+                SettingsRoute.ABOUT -> AboutSettings(banner, onOpenBugReport)
                 // بالاتر زودتر return شده - این شاخه فقط برای کاملِ‌بودنِ `when` است.
                 SettingsRoute.COLOR_THEME -> Unit
                 SettingsRoute.MAIN -> Unit
@@ -2397,7 +2408,7 @@ private fun ToolRow(
 }
 
 @Composable
-private fun AboutSettings(banner: InAppBannerState) {
+private fun AboutSettings(banner: InAppBannerState, onOpenBugReport: () -> Unit) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     var showContact by remember { mutableStateOf(false) }
@@ -2441,6 +2452,16 @@ private fun AboutSettings(banner: InAppBannerState) {
     // که به صفحه‌ی خالی می‌ره بدتر از نبودنشه (همون قاعده‌ی ردیفِ ایمیل).
     SettingsGroupLabel("کمک")
     SettingsGroup(modifier = Modifier.padding(top = 28.dp)) {
+        // 🐞 **بالای «تماس با ما»** و نه زیرش: کسی که مشکل دارد اول این را می‌خواهد،
+        // و این مسیر گزارش را روی سرور هم ثبت می‌کند (شرطِ هدیه‌ی اشتراک).
+        SettingsRowItem(
+            title = "گزارشِ مشکل",
+            icon = Icons.Filled.BugReport,
+            tone = SettingsTone.ORANGE,
+            status = "ثبت می‌شود و کدِ پیگیری می‌گیری",
+            onClick = { onOpenBugReport() },
+        )
+        SettingsDivider()
         SettingsRowItem(
             title = "تماس با ما",
             icon = Icons.Filled.SupportAgent,
@@ -2582,7 +2603,8 @@ internal fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable
 }
 
 
-private const val SUPPORT_EMAIL = "vamman.pbs@gmail.com"
+// ⚠️ نشانی **یک‌جا** تعریف شده (`ui/support`)؛ دو کپی یعنی روزی که یکی عوض می‌شود و
+// نیمی از پیام‌ها به صندوقِ قدیمی می‌روند.
 
 /** پشتیبانی فقط با ایمیل - با تپ مستقیم Gmail (نه یه چوزر عمومی) با گیرنده‌ی از قبل پرشده باز
  * می‌شه تا کاربر فقط متن رو بنویسه و بزنه ارسال؛ اگه Gmail نصب نباشه mailto عادی (هر اپ ایمیلی)

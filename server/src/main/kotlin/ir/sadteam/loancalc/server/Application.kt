@@ -23,6 +23,7 @@ import ir.sadteam.loancalc.server.routes.loansRoutes
 import ir.sadteam.loancalc.server.routes.pricesRoutes
 import ir.sadteam.loancalc.server.routes.giftCodeRoutes
 import ir.sadteam.loancalc.server.routes.subscriptionRoutes
+import ir.sadteam.loancalc.server.routes.supportRoutes
 import kotlinx.serialization.json.Json
 
 fun main() {
@@ -63,6 +64,7 @@ fun Application.module() {
         crashRoutes()
         subscriptionRoutes()
         giftCodeRoutes()
+        supportRoutes()
         appVersionRoutes()
         pricesRoutes()
     }

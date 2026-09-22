@@ -70,6 +70,7 @@ import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material.icons.outlined.Groups
@@ -184,6 +185,7 @@ import ir.sadteam.loancalc.ui.nav.NavDestination
 import ir.sadteam.loancalc.ui.nav.NavEditorSheet
 import ir.sadteam.loancalc.ui.nav.NavSlotsViewModel
 import ir.sadteam.loancalc.ui.note.NoteScreen
+import ir.sadteam.loancalc.ui.support.BugReportScreen
 import ir.sadteam.loancalc.ui.nav.NavSuggestionCard
 import ir.sadteam.loancalc.ui.profile.ShortcutViewModel
 import ir.sadteam.loancalc.ui.rating.RatePromptDialog
@@ -298,6 +300,9 @@ private val allShortcutPool = defaultShortcuts + listOf(
     Shortcut("archive", "آرشیوِ سالانه", Icons.Outlined.Archive, ANNUAL_ARCHIVE_ROUTE),
     Shortcut("sayad", "استعلامِ صیادی", Icons.Outlined.Description, SAYAD_INQUIRY_ROUTE),
     Shortcut("notes", "یادداشت‌ها", Icons.Outlined.EditNote, NOTES_ROUTE),
+    // 🐞 گزارشِ مشکل - هم این‌جا هم در تنظیمات (خواسته‌ی کاربر): باگ همیشه سرِ
+    // ناراحتی پیدا می‌شود، و آن لحظه کسی حوصله‌ی گشتن در تنظیمات را ندارد.
+    Shortcut("bug", "گزارشِ مشکل", Icons.Outlined.BugReport, BUG_REPORT_ROUTE),
 )
 
 private const val LOAN_ROUTE = "loan"
@@ -310,6 +315,7 @@ private const val SAYAD_INQUIRY_ROUTE = "sayad-inquiry"
 private const val ANNUAL_ARCHIVE_ROUTE = "annual-archive"
 private const val CALENDAR_ROUTE = "financial-calendar"
 private const val NOTES_ROUTE = "notes"
+private const val BUG_REPORT_ROUTE = "bug-report"
 
 /** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
 private enum class LoanSubTab(val label: String) {
@@ -1132,6 +1138,9 @@ private fun LoanCalcApp(
                 }
                 composable(NOTES_ROUTE) {
                     NoteScreen(onBack = { navigateTo(TOOLS_ROUTE) })
+                }
+                composable(BUG_REPORT_ROUTE) {
+                    BugReportScreen(onBack = { navigateTo(BottomTab.HOME.route) })
                 }
                 composable(SAYAD_INQUIRY_ROUTE) {
                     SayadInquiryScreen(
