@@ -35,6 +35,21 @@ NEEDS = {
     # هیچ بررسی‌ای نگرفتش چون در جدول نبود.
     'TextOverflow': 'androidx.compose.ui.text.style.TextOverflow',
     'TextStyle': 'androidx.compose.ui.text.TextStyle',
+    # بیلدِ ۶۲۳/۶۲۴ با `OutlinedTextField` شکست. کامپوننت‌های پرکاربردِ متریال هم به
+    # جدول آمدند تا این دسته خطا دیگر به CI نرسد.
+    'OutlinedTextField': 'androidx.compose.material3.OutlinedTextField',
+    'TextField': 'androidx.compose.material3.TextField',
+    'OutlinedButton': 'androidx.compose.material3.OutlinedButton',
+    'TextButton': 'androidx.compose.material3.TextButton',
+    'Switch': 'androidx.compose.material3.Switch',
+    'Checkbox': 'androidx.compose.material3.Checkbox',
+    'RadioButton': 'androidx.compose.material3.RadioButton',
+    'Slider': 'androidx.compose.material3.Slider',
+    'LinearProgressIndicator': 'androidx.compose.material3.LinearProgressIndicator',
+    'CircularProgressIndicator': 'androidx.compose.material3.CircularProgressIndicator',
+    'ModalBottomSheet': 'androidx.compose.material3.ModalBottomSheet',
+    'Icon': 'androidx.compose.material3.Icon',
+    'IconButton': 'androidx.compose.material3.IconButton',
     'KeyboardOptions': 'androidx.compose.foundation.text.KeyboardOptions',
     'Spacer': 'androidx.compose.foundation.layout.Spacer',
     'Box': 'androidx.compose.foundation.layout.Box',
