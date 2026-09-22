@@ -72,6 +72,12 @@ import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Storefront
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.MarkEmailUnread
 import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
@@ -194,6 +200,11 @@ import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.LockScreen
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.inbox.InboxScreen
+import ir.sadteam.loancalc.ui.goal.SavingsGoalScreen
+import ir.sadteam.loancalc.ui.category.CategoryManagementScreen
+import ir.sadteam.loancalc.ui.history.CalculationHistoryScreen
+import ir.sadteam.loancalc.ui.shop.ShopScreen
+import ir.sadteam.loancalc.ui.account.AccountsScreen
 import ir.sadteam.loancalc.ui.cheque.SayadInquiryScreen
 import ir.sadteam.loancalc.ui.tools.ToolsHubScreen
 import ir.sadteam.loancalc.ui.archive.AnnualArchiveScreen
@@ -287,7 +298,9 @@ private val defaultShortcuts = listOf(
 private val allShortcutPool = defaultShortcuts + listOf(
     Shortcut("gold", "طلا", Icons.Outlined.AccountBalanceWallet, "assets"),
     Shortcut("budget", "بودجه", Icons.Outlined.Savings, "budget"),
-    Shortcut("debt", "دنگ", Icons.Outlined.Groups, "due"),
+    // مقصدش «سررسید» بود و اشتباه: «دنگ» زیرصفحه‌ی `DebtScreen` است، پس تپ روی این
+    // میان‌بر کاربر را به تبِ سررسید می‌برد و هیچ‌وقت به دنگ نمی‌رساند.
+    Shortcut("debt", "دنگ", Icons.Outlined.Groups, DEBT_ROUTE),
     Shortcut("loan", "وام", Icons.Outlined.Payments, LOAN_ROUTE),
     Shortcut("home", "خانه", Icons.Outlined.Home, "home"),
     Shortcut("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, "assets"),
@@ -303,6 +316,15 @@ private val allShortcutPool = defaultShortcuts + listOf(
     // 🐞 گزارشِ مشکل - هم این‌جا هم در تنظیمات (خواسته‌ی کاربر): باگ همیشه سرِ
     // ناراحتی پیدا می‌شود، و آن لحظه کسی حوصله‌ی گشتن در تنظیمات را ندارد.
     Shortcut("bug", "گزارشِ مشکل", Icons.Outlined.BugReport, BUG_REPORT_ROUTE),
+    // خواسته‌ی کاربر (۳۱ شهریور، دورِ دوم): «این‌جا را اگر می‌توانی بیشتر اضافه کن».
+    // هر شش مقصدِ زیر صفحه‌ی **واقعیِ** موجود بودند که تا حالا فقط از دلِ تنظیمات یا
+    // یک تب باز می‌شدند؛ این‌جا فقط `composable` گرفتند، صفحه‌ی تازه‌ای ساخته نشد.
+    Shortcut("savings-goal", "هدفِ پس‌انداز", Icons.Outlined.Flag, SAVINGS_GOAL_ROUTE),
+    Shortcut("categories", "دسته‌بندی‌ها", Icons.Outlined.Category, CATEGORIES_ROUTE),
+    Shortcut("accounts", "حساب‌های بانکی", Icons.Outlined.AccountBalance, ACCOUNTS_ROUTE),
+    Shortcut("shop", "فروشگاهِ سکه", Icons.Outlined.Storefront, SHOP_ROUTE),
+    Shortcut("inbox", "پیام‌ها", Icons.Outlined.MarkEmailUnread, INBOX_ROUTE),
+    Shortcut("calc-history", "تاریخچه‌ی محاسبات", Icons.Outlined.History, CALC_HISTORY_ROUTE),
 )
 
 private const val LOAN_ROUTE = "loan"
@@ -316,6 +338,12 @@ private const val ANNUAL_ARCHIVE_ROUTE = "annual-archive"
 private const val CALENDAR_ROUTE = "financial-calendar"
 private const val NOTES_ROUTE = "notes"
 private const val BUG_REPORT_ROUTE = "bug-report"
+private const val SAVINGS_GOAL_ROUTE = "savings-goal"
+private const val CATEGORIES_ROUTE = "categories"
+private const val ACCOUNTS_ROUTE = "accounts"
+private const val SHOP_ROUTE = "shop"
+private const val INBOX_ROUTE = "inbox"
+private const val CALC_HISTORY_ROUTE = "calc-history"
 
 /** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
 private enum class LoanSubTab(val label: String) {
@@ -1141,6 +1169,24 @@ private fun LoanCalcApp(
                 }
                 composable(BUG_REPORT_ROUTE) {
                     BugReportScreen(onBack = { navigateTo(BottomTab.HOME.route) })
+                }
+                composable(SAVINGS_GOAL_ROUTE) {
+                    SavingsGoalScreen(onBack = { navigateTo(BottomTab.BUDGET.route) })
+                }
+                composable(CATEGORIES_ROUTE) {
+                    CategoryManagementScreen(onBack = { navigateTo(BottomTab.REPORT.route) })
+                }
+                composable(ACCOUNTS_ROUTE) {
+                    AccountsScreen(onBack = { navigateTo(BottomTab.ASSETS.route) })
+                }
+                composable(SHOP_ROUTE) {
+                    ShopScreen(onBack = { navigateTo(BottomTab.HOME.route) })
+                }
+                composable(INBOX_ROUTE) {
+                    InboxScreen(onBack = { navigateTo(BottomTab.HOME.route) })
+                }
+                composable(CALC_HISTORY_ROUTE) {
+                    CalculationHistoryScreen(onBack = { navigateTo(LOAN_ROUTE) })
                 }
                 composable(SAYAD_INQUIRY_ROUTE) {
                     SayadInquiryScreen(
