@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Visibility
@@ -44,6 +46,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.data.accountIconForKey
 import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_CRYPTO
@@ -57,6 +61,9 @@ import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.account.AccountsScreen
 import ir.sadteam.loancalc.ui.account.AddEditAccountScreen
 import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.HeroExpense
+import ir.sadteam.loancalc.ui.components.HeroIncome
+import ir.sadteam.loancalc.ui.components.TrendLineChart
 import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.HeroMuted
@@ -64,6 +71,7 @@ import ir.sadteam.loancalc.ui.components.dashedBorder
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.jibak.rialToFaSignedCompact
+import ir.sadteam.loancalc.ui.jibak.toFa
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
@@ -149,6 +157,8 @@ fun AssetsTabScreen(
         }
     }
 
+    // امروزِ جلالی - مبنای نمودارِ روند.
+    val today = remember { JalaliCalendar.today() }
     val cashTotal = remember(accounts, transactions) {
         accounts.sumOf { acc -> accountViewModel.balanceOf(acc, transactions) }
     }
@@ -171,6 +181,33 @@ fun AssetsTabScreen(
     val cryptoTotal = totalOf(ASSET_CATEGORY_CRYPTO)
     val otherTotal = totalOf(ASSET_CATEGORY_CUSTOM)
     val grandTotal = cashTotal + goldTotal + fiatTotal + cryptoTotal + otherTotal
+    // 🚨 **روندِ ۳۰ روزِ گذشته** (طرحِ مرجعِ کاربر، ۳۱ شهریور).
+    //
+    // رو به عقب از موجودیِ امروز ساخته می‌شود: موجودیِ دیروز = موجودیِ امروز منهای
+    // اثرِ تراکنش‌های امروز. هیچ ستون یا جدولِ تاریخچه‌ای لازم نیست و عددِ امروز هم
+    // همان `cashTotal` می‌مانَد، پس با کارت ناهماهنگ نمی‌شود.
+    //
+    // ⚠️ فقط **نقد** است نه کلِ دارایی: قیمتِ طلا و ارز در گذشته را نداریم و بازسازی‌اش
+    // یعنی نموداری که عددهایش ساختگی است.
+    val cashTrend = remember(transactions, cashTotal, today) {
+        val days = (0 until 30).map { back -> PersianCalendar.addDays(today, -back) }
+        var running = cashTotal
+        val series = ArrayList<Double>(30)
+        days.forEach { day ->
+            series.add(running)
+            val delta = transactions
+                .filter { it.confirmed && it.year == day.y && it.month == day.m && it.day == day.d }
+                .sumOf { if (it.type == "DEPOSIT") it.amount else -it.amount }
+            running -= delta
+        }
+        series.reversed()
+    }
+    // درصدِ تغییر نسبت به ۳۰ روز پیش. مبنای صفر یعنی درصد بی‌معنی، پس `null`.
+    val cashTrendPercent = remember(cashTrend) {
+        val first = cashTrend.firstOrNull() ?: 0.0
+        val last = cashTrend.lastOrNull() ?: 0.0
+        if (kotlin.math.abs(first) > 0.0) (((last - first) / kotlin.math.abs(first)) * 100).toInt() else null
+    }
     val nothingYet = accounts.isEmpty() && holdings.isEmpty()
 
     val listState = rememberLazyListState()
@@ -209,6 +246,8 @@ fun AssetsTabScreen(
                     fiat = fiatTotal,
                     crypto = cryptoTotal,
                     other = otherTotal,
+                    trend = cashTrend,
+                    trendPercent = cashTrendPercent,
                     privacyMode = privacyMode,
                     onPill = { key ->
                         if (key == PILL_CASH) {
@@ -558,12 +597,47 @@ private fun TotalWealthHero(
     fiat: Double,
     crypto: Double,
     other: Double,
+    trend: List<Double>,
+    trendPercent: Int?,
     privacyMode: Boolean,
     onPill: (String) -> Unit,
 ) {
     AppHeroCard {
         Column(modifier = Modifier.fillMaxWidth()) {
-            Text("داراییِ کل", color = HeroMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "داراییِ کل",
+                    color = HeroMuted,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+                if (trendPercent != null && trendPercent != 0) {
+                    val up = trendPercent > 0
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(Color.White.copy(alpha = 0.18f))
+                            .padding(horizontal = 9.dp, vertical = 4.dp),
+                    ) {
+                        Icon(
+                            if (up) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
+                            contentDescription = null,
+                            tint = if (up) HeroIncome else HeroExpense,
+                            modifier = Modifier.size(10.dp),
+                        )
+                        Text(
+                            "${kotlin.math.abs(trendPercent).toFa()}٪ نسبت به ماهِ قبل",
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
+                    }
+                }
+            }
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
                     maskIfPrivate(masked, total.rialToFaCompact()),
@@ -581,6 +655,24 @@ private fun TotalWealthHero(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 2.dp),
             )
+            // نمودارِ روندِ نقدی - فقط وقتی داده‌ی واقعی هست. در حالتِ خصوصی هم می‌مانَد:
+            // شکلِ روند مبلغ لو نمی‌دهد، و همان چیزی است که کارت برایش ساخته شده.
+            if (trend.size >= 2 && trend.any { it != trend.first() }) {
+                TrendLineChart(
+                    values = trend,
+                    lineColor = Color.White,
+                    fillTop = Color.White.copy(alpha = 0.22f),
+                    dotColor = Color.White,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
+                Text(
+                    "روندِ ۳۰ روزِ گذشته",
+                    color = HeroMuted,
+                    fontSize = 8.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
             // پنج قرص تو یه ردیفِ عادی جا نمی‌شن؛ FlowRow خطِ دوم می‌سازه.
             FlowRow(
                 modifier = Modifier.padding(top = 12.dp),
