@@ -53,7 +53,10 @@ fun HomeSevenDayChart(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(34.dp),
+                // 🚨 **۲۶ نه ۳۴** (بازخوردِ ۳۱ شهریور با طرحِ مرجع): نمودار حالا **کنارِ**
+                // جفتِ درآمد/خرج می‌نشیند نه زیرِ کلِ کارت، پس عرضش کمتر است و میله‌ی
+                // بلند در عرضِ کم، کارت را دراز می‌کرد.
+                .height(26.dp),
             horizontalArrangement = Arrangement.spacedBy(3.dp),
             verticalAlignment = Alignment.Bottom,
         ) {

@@ -834,6 +834,8 @@ private fun TodaySpendHero(
                         modifier = Modifier.padding(top = 3.dp),
                     )
                 }
+                HomeSevenDayChart(values = weekSpend, modifier = Modifier.padding(top = 12.dp))
+                HomeSevenDayChartLabels()
             }
             // 🚨 **درآمد و خرجِ امروز، با فلشِ رنگی** (خواسته‌ی کاربر با طرحِ مرجع).
             //
@@ -843,7 +845,10 @@ private fun TodaySpendHero(
             //
             // رنگ‌ها معنایی‌اند نه تزئینی، پس **با تمِ خریدنی نمی‌چرخند**: سبزِ درآمد و
             // قرمزِ خرج همان دو توکنِ سراسری‌اند. روی زمینه‌ی تیره‌ی هیرو، نسخه‌ی روشنشان.
-            Column(horizontalAlignment = Alignment.End) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.padding(start = 10.dp, top = 4.dp),
+            ) {
                 HeroFlowLine(
                     label = "درآمدِ امروز",
                     amount = todayIncome,
@@ -863,8 +868,6 @@ private fun TodaySpendHero(
                 }
             }
         }
-        HomeSevenDayChart(values = weekSpend, modifier = Modifier.padding(top = 14.dp))
-        HomeSevenDayChartLabels()
     }
 }
 
