@@ -1016,41 +1016,46 @@ private fun UrgentDueCard(
 ) {
     // ⚠️ **بی‌سایه** - این کارت درست زیرِ کارتِ قهرمان می‌شینه و دو سایه‌ی سختِ پشتِ‌هم
     // شلوغ می‌شه (قاعده‌ی صریحِ طراح برای همین فریم؛ تو فریم‌های دیگه سایه داره).
+    // 🚨 **باریک‌تر شد** (بازخوردِ ۳۱ شهریور): این نوار مهم است ولی هر روز دیده می‌شود،
+    // و یک کارتِ بلندِ قرمز بالای صفحه با گذشتِ زمان بیشتر «سروصدا» می‌شود تا هشدار.
+    // پدینگِ ۱۱، آیکونِ ۳۲ و دکمه‌ی تک‌کلمه‌ای، همان اطلاعات را در ~۲۰٪ ارتفاعِ کمتر می‌دهد.
     AppCard(
         variant = AppCardVariant.URGENT,
         shadow = false,
+        contentPadding = 11.dp,
         modifier = Modifier.pressScaleClickable(onClick = onOpen),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(11.dp),
+            horizontalArrangement = Arrangement.spacedBy(9.dp),
         ) {
             Box(
                 modifier = Modifier
-                    .size(38.dp)
+                    .size(32.dp)
                     .clip(RoundedCornerShape(AppRadius.icon))
                     // قابِ آیکون مقدارِ محلیِ خودشه (#FFECEC)، نه `AppDangerPill` که
                     // روشن‌تره (#FFF5F5) - همون تفکیکی که طراح تو فایلِ آدمک هم تاکید کرد.
                     .background(UrgentIconBg),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.PriorityHigh, contentDescription = null, tint = AppDanger, modifier = Modifier.size(17.dp))
+                Icon(Icons.Filled.PriorityHigh, contentDescription = null, tint = AppDanger, modifier = Modifier.size(15.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
+                Text(title, color = AppText, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         (if (daysOverdue == 0) "امروز سررسید" else "${(daysOverdue).toFa()} روز عقب") +
                             " — " + maskIfPrivate(masked, amount.rialToFaCompact()),
                         color = AppDangerInk,
-                        fontSize = 10.5.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 2.dp),
+                        modifier = Modifier.padding(top = 1.dp),
                     )
                 }
             }
-            GradientButton(onClick = onPay, variant = AppButtonVariant.IN_ROW) { Text("پرداخت شد") }
+            // «پرداخت» به‌جای «پرداخت شد»: در یک ردیفِ باریک، دو کلمه دو خط می‌شد.
+            GradientButton(onClick = onPay, variant = AppButtonVariant.IN_ROW) { Text("پرداخت") }
         }
     }
 }
@@ -1301,21 +1306,24 @@ private fun HomeQuickCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    AppCard(contentPadding = 10.dp, modifier = modifier.pressScaleClickable(onClick = onClick)) {
-        Icon(icon, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(18.dp))
+    // کوتاه‌تر از دورِ قبل (بازخوردِ ۳۱ شهریور: «کارت‌ها کمی کوتاه‌تر تا محتوای بیشتری
+    // دیده شود»): پدینگ ۱۰→۸ و فاصله‌ی عنوان ۷→۵. آیکون‌ها همه از یک خانواده‌ی
+    // `Filled` و یک اندازه‌اند تا ردیف یکدست دیده شود.
+    AppCard(contentPadding = 8.dp, modifier = modifier.pressScaleClickable(onClick = onClick)) {
+        Icon(icon, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(17.dp))
         Text(
             title,
             color = AppText,
-            fontSize = 11.sp,
+            fontSize = 10.5.sp,
             fontWeight = FontWeight.Black,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 7.dp),
+            modifier = Modifier.padding(top = 5.dp),
         )
         Text(
             subtitle,
             color = AppLabel,
-            fontSize = 9.sp,
+            fontSize = 8.5.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
