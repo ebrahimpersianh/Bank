@@ -230,7 +230,7 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
                 id = "theme:${art.id}",
                 kind = CoinSpend.THEME_ART,
                 label = "تمِ ${art.label}",
-                blurb = "پالتِ «شبِ پرستاره»ی ون‌گوگ · آبیِ عمیق و زردِ ستاره",
+                blurb = "پالتِ «شبِ پرستاره»ی ون‌گوگ · با بافتِ زمینه",
             ),
         )
     }

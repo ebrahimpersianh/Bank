@@ -58,6 +58,8 @@ class UiPrefs(private val context: Context) {
         val ACTIVE_SYMBOL_SET = stringPreferencesKey("active_symbol_set")
         val ACTIVE_FONT = stringPreferencesKey("active_font")
         val ACTIVE_BACKDROP = stringPreferencesKey("active_backdrop")
+        val REORDER_HINT_SHOWN = intPreferencesKey("reorder_hint_shown_count")
+        val HAS_REORDERED_ONCE = booleanPreferencesKey("has_reordered_once")
         val NAV_SLOTS = stringPreferencesKey("nav_slots")
         val NAV_USAGE = stringPreferencesKey("nav_usage")
         val NAV_USAGE_STARTED_AT = longPreferencesKey("nav_usage_started_at")
@@ -321,6 +323,30 @@ class UiPrefs(private val context: Context) {
 
     /** پس‌زمینه‌ی زنده‌ی فعال - `null` یعنی پس‌زمینه‌ی سادهٔ برنامه. */
     val activeBackdrop: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.ACTIVE_BACKDROP] }
+
+    /**
+     * راهنمای «نگه‌دار تا جابه‌جا کنی» — بندِ ۲ی بخشِ ۸۱.
+     *
+     * 🚨 راهنمای همیشگی روی لبه‌ی پایین با دستگیره‌ی کشو رقابت می‌کند و هر دو را خفه می‌کند.
+     * سه بار برای یادگیریِ یک حرکت بس است، و **بعد از اولین جابه‌جایی فوراً می‌رود**: کسی که
+     * یاد گرفته حتی بارِ دوم راهنما نمی‌بیند. خانه‌ی دائمی‌اش داخلِ خودِ کشوست.
+     */
+    val reorderHintShownCount: Flow<Int> =
+        context.uiPrefsDataStore.data.map { it[Keys.REORDER_HINT_SHOWN] ?: 0 }
+
+    val hasReorderedOnce: Flow<Boolean> =
+        context.uiPrefsDataStore.data.map { it[Keys.HAS_REORDERED_ONCE] ?: false }
+
+    suspend fun noteReorderHintShown() {
+        context.uiPrefsDataStore.edit { prefs ->
+            val seen = prefs[Keys.REORDER_HINT_SHOWN] ?: 0
+            if (seen < 3) prefs[Keys.REORDER_HINT_SHOWN] = seen + 1
+        }
+    }
+
+    suspend fun markReordered() {
+        context.uiPrefsDataStore.edit { prefs -> prefs[Keys.HAS_REORDERED_ONCE] = true }
+    }
 
     suspend fun setActiveBackdrop(key: String?) {
         context.uiPrefsDataStore.edit { prefs ->

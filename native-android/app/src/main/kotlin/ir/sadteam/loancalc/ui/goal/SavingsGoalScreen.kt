@@ -37,6 +37,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -128,7 +129,10 @@ fun SavingsGoalScreen(
             if (goals.isNotEmpty()) {
                 item {
                     AppHeroCard {
-                        Text("جمعِ پس‌اندازت", color = HeroMuted, fontSize = 11.sp)
+                        // 🚨 «کنار گذاشته‌ام» و نه «جمعِ پس‌اندازت» (بندِ ۷ی بخشِ ۸۱): صرفِ اولِ‌شخصِ
+                        // ماضی خودش می‌گوید پول از قبل هست و کاری انجام نشده - نصفِ ابهامی
+                        // که آن پاراگراف می‌خواست رفعش کند، با دو کلمه.
+                        Text("کنار گذاشته‌ام", color = HeroMuted, fontSize = 11.sp)
                         PrivacyCrossfade(privacyMode) { masked ->
                             Text(
                                 "${maskIfPrivate(masked, amountToman(totalSaved))} تومان",
@@ -148,15 +152,20 @@ fun SavingsGoalScreen(
                                 modifier = Modifier.padding(top = 2.dp),
                             )
                         }
-                        // 🚨 **داخلِ هیرو، نه زیرش** (اصلاحِ طراح): فرضِ طبیعیِ کاربر این
-                        // است که واریزِ هدف از حسابش کم می‌کند - نمی‌کند. این جمله قبلاً
-                        // متنِ خاکستریِ بینِ هیرو و دکمه بود، یعنی جایی که چشم رد می‌شود.
+                        // 🚨 **بج، نه خطِ توضیحی** (بندِ ۷ی بخشِ ۸۱). پاراگرافِ قبلی زیرِ هیرو
+                        // بود و قاعده‌ی `77d` ردش می‌کند: توضیح باید به همان چیزی بچسبد که
+                        // ابهام را می‌سازد، و ابهام‌ساز خودِ **عددِ هیرو**ست. سه کلمه، چسبیده
+                        // به عدد، جای پاراگراف را می‌گیرد.
                         Text(
-                            "این‌جا فقط نشانه‌گذاری می‌کنی؛ پولی از حساب‌کتاب‌هایت کم یا زیاد نمی‌شود.",
-                            color = HeroMuted,
-                            fontSize = 10.sp,
-                            lineHeight = 17.sp,
-                            modifier = Modifier.padding(top = 8.dp),
+                            "برچسب است، نه حساب",
+                            color = Color.White,
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier
+                                .padding(top = 9.dp)
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(Color.White.copy(alpha = 0.16f))
+                                .padding(horizontal = 9.dp, vertical = 4.dp),
                         )
                     }
                 }
@@ -374,6 +383,15 @@ private fun GoalRow(
                     modifier = Modifier.padding(top = 6.dp),
                 )
             }
+        } else if (!goal.hasDeadline && !goal.reached) {
+            // بندِ ۷ی بخشِ ۸۱: هدفِ بی‌تاریخ **«بی تاریخ» می‌گیرد، نه خطِ خالی**. جای خالی
+            // شبیهِ داده‌ی گم‌شده است، نه انتخابِ کاربر.
+            Text(
+                "بی تاریخ",
+                color = AppMuted,
+                fontSize = 10.sp,
+                modifier = Modifier.padding(top = 6.dp),
+            )
         }
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),

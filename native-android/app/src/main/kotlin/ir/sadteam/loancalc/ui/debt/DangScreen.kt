@@ -40,7 +40,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.rememberGraphicsLayer
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.LocalAppColors
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -69,10 +77,8 @@ import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.JibakLogo
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
-import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
-import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
@@ -180,6 +186,8 @@ fun DangDetailScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val receiptLayer = rememberGraphicsLayer()
+    // رو یا پشتِ رسید (`81e`). عکسِ خروجی همان رویی است که دیده می‌شود.
+    var receiptBack by rememberSaveable { mutableStateOf(false) }
     var pendingReceiptBitmap by remember { mutableStateOf<Bitmap?>(null) }
     val saveReceiptLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { uri ->
         val bitmap = pendingReceiptBitmap
@@ -264,6 +272,8 @@ fun DangDetailScreen(
                 event = event,
                 participants = participants,
                 counterpartyNameFor = counterpartyNameFor,
+                showBack = receiptBack,
+                onFlip = { receiptBack = !receiptBack },
                 modifier = Modifier.drawWithContent {
                     receiptLayer.record { this@drawWithContent.drawContent() }
                     drawLayer(receiptLayer)
@@ -281,20 +291,40 @@ fun DangDetailScreen(
     }
 }
 
-/** خودِ محتوایی که به‌عنوانِ صورت‌حسابِ عکسی ضبط می‌شه - سبک‌وساده و هم‌رنگِ اپ، طبقِ جوابِ سوالِ ۹
- * («طرحِ دقیقِ ظاهری لازم نیست»). فقط تو صفحه نشون داده می‌شه، رمزِ خصوصی‌سازی روش اثر نداره
- * (رسیدِ خروجی همیشه عددِ واقعی داره - همون چیزی که کاربر می‌خواد بفرسته). */
+/**
+ * صورت‌حسابِ عکسیِ دنگ — **رو و پشت** (فریمِ `81e`).
+ *
+ * 🚨 **پشت جدولِ سهم‌هاست و نه چیزِ دیگر**: همان چیزی که رو نمی‌تواند بگوید. رو یک عدد و
+ * یک شمارش دارد؛ پشت شش ردیف. نسخه‌ی قبلی هر دو را در یک کارت ریخته بود، پس نه خلاصه‌ی
+ * فرستادنی بود نه جدولِ خواندنی.
+ *
+ * 🚨 **کاغذِ طلایی در پشت نمی‌آید**: گرادیانِ طلایی زیرِ جدولِ شش‌ردیفی خوانایی را می‌خورد.
+ * پشت زمینه‌ی استخوانی می‌گیرد و جنسِ خانواده با حاشیه و رنگِ متن حفظ می‌شود.
+ *
+ * رمزِ حالتِ خصوصی این‌جا اثر ندارد — رسیدِ خروجی همیشه عددِ واقعی دارد، چون همان چیزی
+ * است که کاربر می‌خواهد بفرستد.
+ */
 @Composable
 private fun DangReceiptCard(
     event: DangEventEntity,
     participants: List<DangParticipantEntity>,
     counterpartyNameFor: (Long?) -> String,
+    showBack: Boolean,
+    onFlip: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val dark = LocalAppColors.current.isDark
+    // هگزِ خام این‌جا عمدی است: رسید یک **تصویرِ خروجی** است که بیرونِ برنامه فرستاده
+    // می‌شود، پس مثلِ اسپلش و لوگو کاغذِ خودش را دارد و با تمِ خریداری‌شده نمی‌چرخد.
+    val paper = if (dark) Color(0xFF171310) else Color(0xFFFFFDF6)
+    val edge = if (dark) Color(0xFF3A3426) else Color(0xFFE8D9AE)
+    val ink = if (dark) Color(0xFFE8C25A) else Color(0xFF5A4208)
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(AppPrimaryPill, RoundedCornerShape(14.dp))
+            .background(if (showBack) paper else AppPrimaryPill, RoundedCornerShape(14.dp))
+            .then(if (showBack) Modifier.border(1.dp, edge, RoundedCornerShape(14.dp)) else Modifier)
+            .pressScaleClickable(onClick = onFlip)
             .padding(16.dp),
     ) {
         // ⚠️ لوگوی واقعی، نه فقط اسم: این تصویر قراره تو گروهِ دوستان فرستاده بشه، پس تنها
@@ -303,24 +333,96 @@ private fun DangReceiptCard(
             JibakLogo(width = 26.dp)
             Text(
                 "جیبک",
-                color = AppPrimary,
+                color = if (showBack) ink else AppPrimary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.padding(start = 6.dp),
             )
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                if (showBack) "رو" else "پشت",
+                color = if (showBack) ink.copy(alpha = 0.7f) else AppMuted,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+            )
         }
-        Text(event.title, color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
         Text(
-            "${toFa(event.day)}/${toFa(event.month)}/${toFa(event.year)} · مبلغِ کل: ${fmt(event.totalAmount)} ریال",
-            color = AppMuted,
-            fontSize = 11.sp,
-            modifier = Modifier.padding(top = 2.dp, bottom = 10.dp),
+            event.title,
+            color = if (showBack) ink else AppText,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 6.dp),
         )
-        participants.forEach { participant ->
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(counterpartyNameFor(participant.counterpartyId), color = AppText, fontSize = 12.5.sp)
-                Text("${fmt(participant.shareAmount)} ریال", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+        if (!showBack) {
+            // رو: یک عدد و یک شمارش. همین و بس.
+            Text(
+                "${toFa(event.day)}/${toFa(event.month)}/${toFa(event.year)} · " +
+                    "${toFa(participants.size)} نفر",
+                color = AppMuted,
+                fontSize = 11.sp,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+            Text(
+                "${fmt(event.totalAmount)} ریال",
+                color = AppText,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        } else {
+            Text(
+                "${toFa(event.day)}/${toFa(event.month)}/${toFa(event.year)}",
+                color = ink.copy(alpha = 0.7f),
+                fontSize = 11.sp,
+                modifier = Modifier.padding(top = 2.dp, bottom = 10.dp),
+            )
+            participants.forEach { participant ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val name = counterpartyNameFor(participant.counterpartyId)
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(ink.copy(alpha = 0.14f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            name.take(1),
+                            color = ink,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
+                    Text(
+                        name,
+                        color = ink,
+                        fontSize = 12.5.sp,
+                        modifier = Modifier.weight(1f).padding(start = 8.dp),
+                    )
+                    // تسویه سبز، بدهی قرمز: قرمزِ این‌جا با قاعده‌ی رنگِ برنامه جور است —
+                    // پولی است که واقعاً نرسیده.
+                    if (participant.settled) {
+                        Text("تسویه", color = AppPrimary, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+                    } else {
+                        Text(
+                            "${fmt(participant.shareAmount)} ریال",
+                            color = AppDanger,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
+                }
             }
+            Text(
+                DangMethod.valueOf(event.method).label,
+                color = ink.copy(alpha = 0.7f),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 10.dp),
+            )
         }
     }
 }

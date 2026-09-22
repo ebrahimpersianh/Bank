@@ -27,6 +27,21 @@ class NavSlotsViewModel @Inject constructor(private val uiPrefs: UiPrefs) : View
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), NavDestination.sanitize(NavDestination.DEFAULT_SLOTS))
 
     /** آیا کاربر نوار رو دستی عوض کرده - ردیفِ «نوارِ پیش‌فرض» فقط وقتی معنی داره. */
+    /**
+     * آیا راهنمای «نگه‌دار تا جابه‌جا کنی» زیرِ نوار نشان داده شود.
+     *
+     * سه بار، و بعد از اولین جابه‌جایی دیگر هیچ‌وقت — بندِ ۲ی بخشِ ۸۱.
+     */
+    val showReorderHint: StateFlow<Boolean> =
+        combine(uiPrefs.reorderHintShownCount, uiPrefs.hasReorderedOnce) { seen, reordered ->
+            !reordered && seen < 3
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /** یک بار در هر اجرا شمرده می‌شود، نه در هر بازسازیِ نوار. */
+    fun noteReorderHintShown() {
+        viewModelScope.launch { uiPrefs.noteReorderHintShown() }
+    }
+
     val customized: StateFlow<Boolean> = uiPrefs.navSlots
         .map { it != null }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -74,7 +89,11 @@ class NavSlotsViewModel @Inject constructor(private val uiPrefs: UiPrefs) : View
     }
 
     fun setSlots(ids: List<String>) {
-        viewModelScope.launch { uiPrefs.setNavSlots(NavDestination.sanitize(ids).map { it.id }) }
+        viewModelScope.launch {
+            uiPrefs.setNavSlots(NavDestination.sanitize(ids).map { it.id })
+            // اولین جابه‌جایی راهنما را برای همیشه برمی‌دارد (بندِ ۲ی بخشِ ۸۱).
+            uiPrefs.markReordered()
+        }
     }
 
     /** ردیفِ «نوارِ پیش‌فرض» - بی‌مودالِ تأیید (قاعده‌ی `41c`). */

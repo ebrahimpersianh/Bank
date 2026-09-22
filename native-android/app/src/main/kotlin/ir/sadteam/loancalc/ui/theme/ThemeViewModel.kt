@@ -8,6 +8,8 @@ import ir.sadteam.loancalc.data.SymbolTheme
 import ir.sadteam.loancalc.data.coin.ThemePalette
 import ir.sadteam.loancalc.data.coin.themeById
 import ir.sadteam.loancalc.data.prefs.UiPrefs
+import ir.sadteam.loancalc.ui.background.ArtTexture
+import ir.sadteam.loancalc.ui.background.ArtTextureState
 import ir.sadteam.loancalc.ui.background.LiveBackground
 import ir.sadteam.loancalc.ui.background.LiveBackgroundState
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,6 +36,17 @@ class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewMod
         // و همان الگو برای پس‌زمینه‌ی زنده - لایه‌اش بیرونِ `Scaffold` کشیده می‌شود.
         viewModelScope.launch {
             uiPrefs.activeBackdrop.collect { LiveBackgroundState.active = LiveBackground.byId(it) }
+        }
+        // بافتِ تمِ هنری (بندِ ۶ی بخشِ ۸۱): بافت **به تم بسته است**، قلمِ جدا نیست — با
+        // فعال‌شدنِ تمِ هنری می‌آید و با هر تمِ دیگری می‌رود. برخلافِ پس‌زمینه‌ی زنده حرکت
+        // نمی‌کند، پس این دو با هم جمع می‌شوند.
+        viewModelScope.launch {
+            uiPrefs.colorTheme.collect { id ->
+                ArtTextureState.active = when (id) {
+                    "vangogh" -> ArtTexture.BRUSH
+                    else -> null
+                }
+            }
         }
     }
     val themeMode: StateFlow<ThemeMode> = uiPrefs.themeMode

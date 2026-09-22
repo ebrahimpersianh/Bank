@@ -27,18 +27,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppHeroCard
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.HeroMuted
+import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.jibak.toFa
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.theme.AppBg
+import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -47,6 +50,7 @@ import ir.sadteam.loancalc.ui.theme.AppText
 fun AnnualArchiveScreen(onBack: () -> Unit, accountViewModel: AccountViewModel = hiltViewModel()) {
     val transactions by accountViewModel.transactions.collectAsState()
     val privacyMode = LocalPrivacyMode.current
+    val today = remember { JalaliCalendar.today() }
     val years = remember(transactions) { transactions.groupBy { it.year }.toSortedMap(compareByDescending { it }) }
     BackHandler(onBack = onBack)
     Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
@@ -64,17 +68,54 @@ fun AnnualArchiveScreen(onBack: () -> Unit, accountViewModel: AccountViewModel =
                     val income = rows.filter { it.type == TransactionType.DEPOSIT.name }.sumOf { it.amount }
                     val expense = rows.filter { it.type != TransactionType.DEPOSIT.name }.sumOf { it.amount }
                     val net = income - expense
+                    // 🚨 **پرخرج‌ترین ماه، نه شمارشِ ماهِ فعال** (بندِ ۷ی بخشِ ۸۱): شمارشِ ماه
+                    // خبری نمی‌داد - تقریباً همیشه ۱۲ بود، و در سالِ جاری همان شماره‌ی ماهِ
+                    // امروز. پرخرج‌ترین ماه از همین تراکنش‌ها درمی‌آید و جوابِ سوالی است که
+                    // کاربر واقعاً دارد.
+                    val topMonth = rows
+                        .filter { it.type != TransactionType.DEPOSIT.name }
+                        .groupBy { it.month }
+                        .maxByOrNull { entry -> entry.value.sumOf { it.amount } }
+                        ?.key
+                    val isCurrentYear = year == today.year
                     item(key = year) {
                         AppCard {
                             Text("${year.toFa()} · ${rows.size.toFa()} تراکنش", color = AppText, fontWeight = FontWeight.Black, fontSize = 15.sp)
                             AppHeroCard(modifier = Modifier.padding(top = 10.dp)) {
                                 Text("خالصِ سال", color = HeroMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                Text(maskIfPrivate(privacyMode, rialToToman(net.toLong()).toFaMoney()) + " تومان", color = androidx.compose.ui.graphics.Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
+                                // سالِ منفی با رنگِ سالِ مثبت، تنها عددِ قهرمانِ کارت را
+                                // بی‌معنی می‌کند - پس علامت و رنگ می‌گیرد (بندِ ۷ی بخشِ ۸۱).
+                                // منفی با «−» است نه پرانتز، طبقِ قاعده‌ی عددهای برنامه.
+                                val sign = if (net < 0) "−" else "+"
+                                Text(
+                                    sign + " " + maskIfPrivate(privacyMode, rialToToman(kotlin.math.abs(net).toLong()).toFaMoney()) + " تومان",
+                                    color = if (net < 0) AppDanger else AppPrimary,
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Black,
+                                )
                             }
                             Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                 ArchiveStat("واریز", income, AppPrimary, privacyMode = privacyMode)
                                 ArchiveStat("برداشت", expense, AppMuted, privacyMode = privacyMode)
-                                ArchiveStat("ماه فعال", rows.map { it.month }.distinct().size.toDouble(), AppText, plain = true)
+                                if (isCurrentYear) {
+                                    // «۹ ماه» کنارِ «۱۲ ماه» شبیهِ داده‌ی ناقص به‌نظر می‌رسد نه
+                                    // سالِ نیمه‌تمام، پس سالِ جاری بج می‌گیرد نه عدد.
+                                    Column {
+                                        Text("وضعیت", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                                        Text("در جریان", color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 3.dp))
+                                    }
+                                } else {
+                                    Column {
+                                        Text("پرخرج‌ترین", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                                        Text(
+                                            topMonth?.let { persianMonthName(it) } ?: "—",
+                                            color = AppText,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Black,
+                                            modifier = Modifier.padding(top = 3.dp),
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -89,12 +130,10 @@ private fun ArchiveStat(
     label: String,
     value: Double,
     color: androidx.compose.ui.graphics.Color,
-    plain: Boolean = false,
-    // «ماه فعال» شمارش است نه مبلغ، پس ماسک نمی‌خورد - حالتِ خصوصی فقط مبلغ را می‌پوشاند.
-    privacyMode: Boolean = false,
+    privacyMode: Boolean,
 ) {
     Column {
         Text(label, color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
-        Text(if (plain) value.toInt().toFa() else maskIfPrivate(privacyMode, rialToToman(value.toLong()).toFaMoney()), color = color, fontSize = 12.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 3.dp))
+        Text(maskIfPrivate(privacyMode, rialToToman(value.toLong()).toFaMoney()), color = color, fontSize = 12.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 3.dp))
     }
 }

@@ -48,7 +48,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.JalaliCalendar
+import androidx.compose.foundation.layout.defaultMinSize
+import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.toFaMoney
+import ir.sadteam.loancalc.ui.theme.AppPurpleInk
+import ir.sadteam.loancalc.ui.theme.AppPurplePill
+import ir.sadteam.loancalc.ui.cheque.ChequeViewModel
+import ir.sadteam.loancalc.ui.myloans.MyLoansViewModel
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompactParts
 import ir.sadteam.loancalc.ui.jibak.toFa
@@ -115,11 +123,30 @@ fun ReportTabScreen(
     accountViewModel: AccountViewModel = hiltViewModel(),
     privacyViewModel: PrivacyModeViewModel = hiltViewModel(),
     discoveryDismissViewModel: DiscoveryDismissViewModel = hiltViewModel(),
+    loansViewModel: MyLoansViewModel = hiltViewModel(),
+    chequeViewModel: ChequeViewModel = hiltViewModel(),
 ) {
     val transactions by accountViewModel.transactions.collectAsState()
     val recurring by accountViewModel.recurringPayments.collectAsState()
     val privacyMode = LocalPrivacyMode.current
     val today = remember { JalaliCalendar.today() }
+
+    // دو عددِ ردیف‌های تعهد (بخشِ ۸۱). هیچ‌کدام تازه نیستند: مبلغ همان عددِ کارتِ طلاییِ تبِ
+    // وام است و شمارش همان چکِ در انتظارِ تبِ چک.
+    // ⚠️ `totalCurrentInstallment` **suspend** است، پس از `LaunchedEffect` صدا زده می‌شود نه
+    // از `remember{}` - قاعده‌ی ماندگارِ پروژه.
+    val loans by loansViewModel.loans.collectAsState()
+    val cheques by chequeViewModel.cheques.collectAsState()
+    var monthlyInstallmentRial by remember { mutableStateOf(0.0) }
+    LaunchedEffect(loans) { monthlyInstallmentRial = loansViewModel.totalCurrentInstallment(loans) }
+    val chequesThisMonth = remember(cheques, today) {
+        cheques.count {
+            !it.archived &&
+                it.status == ChequeStatus.PENDING.name &&
+                it.dueYear == today.year &&
+                it.dueMonth == today.month
+        }
+    }
     var period by remember { mutableStateOf(ReportPeriod.MONTH) }
 
     val stats = remember(transactions, recurring, period) {
@@ -203,6 +230,8 @@ fun ReportTabScreen(
                     total = stats.periodSpend,
                     periodLabel = stats.periodLabel,
                     privacyMode = privacyMode,
+                    monthlyInstallmentRial = monthlyInstallmentRial,
+                    chequesThisMonth = chequesThisMonth,
                     onOpenLoanStats = onOpenLoanStats,
                     onOpenChequeReport = onOpenChequeReport,
                 )
@@ -750,6 +779,8 @@ private fun CategoryDonutCard(
     total: Double,
     periodLabel: String,
     privacyMode: Boolean,
+    monthlyInstallmentRial: Double,
+    chequesThisMonth: Int,
     onOpenLoanStats: () -> Unit,
     onOpenChequeReport: () -> Unit,
 ) {
@@ -829,7 +860,12 @@ private fun CategoryDonutCard(
         }
     }
     // «قسط/چک» خرجِ تعهدی‌اند؛ گزارش جزئی‌شان از داده‌های وام و چک می‌آید، نه از دسته‌بندی حساب.
-    CommitmentReportsCard(
+    // ⚠️ **بندِ ۴ی بخشِ ۸۱**: فاصله‌ی بالا نصف است تا به دونات بچسبد. فاصله‌ی مساوی بود که
+    // این دو ردیف را «یتیم» نشان می‌داد.
+    CommitmentRows(
+        monthlyInstallmentRial = monthlyInstallmentRial,
+        chequesThisMonth = chequesThisMonth,
+        privacyMode = privacyMode,
         onOpenLoanStats = onOpenLoanStats,
         onOpenChequeReport = onOpenChequeReport,
     )
@@ -838,77 +874,103 @@ private fun CategoryDonutCard(
 
 // ═══ ۵ و ۶ · کارت‌های کشف ═══════════════════════════════════════════════════════
 
-/** ورودیِ واضح به دو گزارشِ تعهدی؛ فلش و press-scale نشان می‌دهند که قابل لمس‌اند. */
+/**
+ * دو ردیفِ ورودی به گزارشِ تعهدی — بخشِ ۸۱، فریمِ `81a`.
+ *
+ * 🚨 **چرا ردیف و نه کارت** (تشخیصِ مرکزیِ طراح): کاری که این تکه می‌کند **دو تپ** است، و
+ * هر چیزی که فقط در را باز می‌کند در این برنامه ردیف است. نسخه‌ی قبلی یک کارتِ مادر با
+ * سرصفحه داشت و دو کارتِ فرزند داخلش — سه لایه قاب برای دو تپ، و «کارتِ داخلِ کارت» با
+ * تبِ تختِ گزارش هم‌خانواده نمی‌شد. **دو کارتِ هم‌عرض هم امتحان و رد شد**: عرضِ ~۱۵۰dp جای
+ * `۴۶٬۸۳۸٬۶۳۶` را ندارد و عدد خلاصه می‌شد.
+ *
+ * 🚨 **سرصفحه حذف شد و عددِ سرصفحه هم ساخته نشد**: جمعِ قسط و چک همان ۵۷٪ِ دوناتِ بالای
+ * همین صفحه است، و یک عدد دو بار در یک صفحه کاربر را دنبالِ تفاوتشان می‌فرستد. جایش خطِ
+ * گروه با نقطه‌ی هم‌رنگِ تکه‌ی دونات است — کارِ سرصفحه‌ی ۳۴پیکسلی را ۹ پیکسل انجام می‌دهد.
+ *
+ * ⚠️ **هیچ عددِ تازه‌ای ساخته نشد**: مبلغ همان صورتِ کسرِ قرصِ «۱۰۹٪ از درآمدت» در تبِ وام
+ * است، و شمارش همان چکِ در انتظارِ تبِ چک. دو ردیف دو **جنسِ** عدد دارند (مبلغ و شمارش) و
+ * همین تفاوت دو مقصد را بی یک کلمه توضیح از هم جدا می‌کند.
+ */
 @Composable
-private fun CommitmentReportsCard(
+private fun CommitmentRows(
+    monthlyInstallmentRial: Double,
+    chequesThisMonth: Int,
+    privacyMode: Boolean,
     onOpenLoanStats: () -> Unit,
     onOpenChequeReport: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(AppRadius.card)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(Brush.linearGradient(listOf(AppPrimaryPill, AppSurface)))
-            .border(1.dp, AppLineRow, shape)
-            .padding(14.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(AppPrimary),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.EventRepeat, contentDescription = null, tint = Color.White, modifier = Modifier.size(17.dp))
-            }
-            Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
-                Text("تعهدهای مالی", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
-                Text("قسط‌ها و چک‌های در انتظار را یک‌جا ببین", color = AppMuted, fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp))
-            }
-        }
+    Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 16.dp)) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 4.dp, bottom = 7.dp),
         ) {
-            CommitmentReportButton(Icons.Filled.EventRepeat, "اقساط وام", "مانده و پرداخت‌ها", AppPrimary, onOpenLoanStats, Modifier.weight(1f))
-            CommitmentReportButton(Icons.Filled.CheckCircle, "چک‌ها", "سررسید و وضعیت", AppPurple, onOpenChequeReport, Modifier.weight(1f))
+            Box(
+                modifier = Modifier.size(9.dp).clip(RoundedCornerShape(999.dp)).background(AppDanger),
+            )
+            Text(
+                "تعهدهای مالی",
+                color = AppMuted,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(start = 7.dp),
+            )
+        }
+        AppCard {
+            CommitmentRow(
+                icon = Icons.Filled.EventRepeat,
+                title = "اقساط وام",
+                value = maskIfPrivate(privacyMode, rialToToman(monthlyInstallmentRial.toLong()).toFaMoney()) + " تومان",
+                caption = "این ماه",
+                onClick = onOpenLoanStats,
+            )
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppLineRow))
+            CommitmentRow(
+                icon = Icons.Filled.CheckCircle,
+                title = "چک‌ها",
+                // شمارش است نه مبلغ، پس حالتِ خصوصی پوشانده‌اش نمی‌کند.
+                value = "${chequesThisMonth.toFa()} چک",
+                caption = "تا آخرِ ماه",
+                onClick = onOpenChequeReport,
+            )
         }
     }
 }
 
+/** یک ردیفِ تعهد. بنفش فقط سه نقطه می‌آید: زمینه‌ی آیکون، خودِ عدد، و نقطه‌ی خطِ گروه. */
 @Composable
-private fun CommitmentReportButton(
+private fun CommitmentRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
-    subtitle: String,
-    accent: Color,
+    value: String,
+    caption: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(15.dp)
-    Column(
-        modifier = modifier
-            .clip(shape)
-            .background(AppSurface)
-            .border(1.dp, accent.copy(alpha = 0.22f), shape)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 11.dp, vertical = 11.dp),
+            .defaultMinSize(minHeight = AppSpacing.minTouchTarget)
+            .padding(vertical = 9.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(accent.copy(alpha = 0.13f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(15.dp))
-            }
-            Icon(
-                Icons.Filled.ChevronLeft,
-                contentDescription = "مشاهده گزارش",
-                tint = accent,
-                modifier = Modifier.weight(1f, fill = false).padding(start = 5.dp).size(15.dp),
-            )
+        Box(
+            modifier = Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(AppPurplePill),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = AppPurple, modifier = Modifier.size(15.dp))
         }
-        Text(title, color = AppText, fontSize = 10.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 8.dp))
-        Text(subtitle, color = AppMuted, fontSize = 8.5.sp, modifier = Modifier.padding(top = 2.dp))
+        Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
+            Text(title, color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+            Text(caption, color = AppMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 1.dp))
+        }
+        Text(value, color = AppPurpleInk, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+        Icon(
+            Icons.Filled.ChevronLeft,
+            contentDescription = null,
+            tint = AppMuted,
+            modifier = Modifier.padding(start = 4.dp).size(15.dp),
+        )
     }
 }
 

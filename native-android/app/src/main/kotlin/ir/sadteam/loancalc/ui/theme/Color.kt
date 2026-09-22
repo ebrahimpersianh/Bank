@@ -154,6 +154,9 @@ data class AppColorPalette(
     val info: Color,
     /** بنفش - بودجه و آمار. */
     val purple: Color,
+    /** جوهرِ عددِ ردیفِ تعهد (بخشِ ۸۱). در شب یک پله روشن‌تر از [purple] است: بنفشِ پایه برای
+     *  متنِ درشت روی زمینه‌ی تیره بس است ولی برای عددِ ۱۲٫۵ نه. */
+    val purpleInk: Color,
     /** نارنجی - هشدارِ نرم، بودجه‌ی بالای ۷۰٪. */
     val warning: Color,
 
@@ -248,6 +251,7 @@ val LightAppColors = AppColorPalette(
 
     info = Color(0xFF1CB0F6),
     purple = Color(0xFFA56EFF),
+    purpleInk = Color(0xFF7A45D6),
     warning = Color(0xFFFF9600),
 
     goldFrom = Color(0xFFFFFCF4),
@@ -335,6 +339,7 @@ val DarkAppColors = AppColorPalette(
 
     info = Color(0xFF55C8FF),
     purple = Color(0xFFBE97FF),
+    purpleInk = Color(0xFFD3B6FF),
     warning = Color(0xFFFFB44D),
 
     goldFrom = Color(0xFF2A2317),
@@ -407,6 +412,7 @@ val AppDangerBorder: Color @Composable get() = AppDanger.copy(alpha = 0.35f)
 
 val AppInfo: Color @Composable get() = LocalAppColors.current.info
 val AppPurple: Color @Composable get() = LocalAppColors.current.purple
+val AppPurpleInk: Color @Composable get() = LocalAppColors.current.purpleInk
 val AppWarning: Color @Composable get() = LocalAppColors.current.warning
 
 val AppGoldFrom: Color @Composable get() = LocalAppColors.current.goldFrom

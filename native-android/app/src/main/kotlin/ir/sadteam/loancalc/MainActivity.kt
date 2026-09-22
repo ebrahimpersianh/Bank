@@ -195,6 +195,8 @@ import ir.sadteam.loancalc.ui.archive.AnnualArchiveScreen
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.LocalAppColors
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
+import ir.sadteam.loancalc.ui.background.ArtTextureLayer
+import ir.sadteam.loancalc.ui.background.ArtTextureState
 import ir.sadteam.loancalc.ui.background.LiveBackgroundLayer
 import ir.sadteam.loancalc.ui.background.LiveBackgroundState
 import ir.sadteam.loancalc.ui.theme.AppDisabledText
@@ -643,6 +645,9 @@ private fun LoanCalcApp(
     val navSlots by navSlotsViewModel.slots.collectAsState()
     val navCustomized by navSlotsViewModel.customized.collectAsState()
     val navSuggestion by navSlotsViewModel.suggestion.collectAsState()
+    val showReorderHint by navSlotsViewModel.showReorderHint.collectAsState()
+    // یک بار در هر اجرا شمرده می‌شود، نه در هر بازسازیِ نوار.
+    LaunchedEffect(showReorderHint) { if (showReorderHint) navSlotsViewModel.noteReorderHintShown() }
     var navEditorOpen by remember { mutableStateOf(false) }
 
     // ناوبریِ مشترک - همون الگویی که قبلاً تو ۴+ جا تکرار شده بود (تبِ پایین، دیپ‌لینک، تور،
@@ -838,6 +843,9 @@ private fun LoanCalcApp(
                 isDark = LocalAppColors.current.isDark,
                 modifier = Modifier.fillMaxSize(),
             )
+            // بافتِ تمِ هنری. ایستاست، پس روی همان لایه می‌نشیند و با پس‌زمینه‌ی زنده جمع
+            // می‌شود؛ زیرِ کارت‌ها هیچ‌وقت نمی‌آید، فقط زمینه‌ی صفحه.
+            ArtTextureLayer(texture = ArtTextureState.active, modifier = Modifier.fillMaxSize())
         Scaffold(
             containerColor = if (backdrop != null) Color.Transparent else AppBg,
             topBar = {
@@ -903,14 +911,19 @@ private fun LoanCalcApp(
                         // دستگیره‌ی کشوی میان‌بُر - نوارِ ۲۶ پیکسلیِ بالای تب‌ها. کشیدنِ به بالا
                         // یا تپِ ساده بازش می‌کنه (قاعده‌ی `31c`).
                         ShortcutDrawerHandle(onOpen = { shortcutDrawerOpen = true })
-                        Text(
-                            "روی هر دکمه نگه‌دار تا جابه‌جایش کنی",
-                            color = AppLabel,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                        )
+                        // ⚠️ **سه بار، بعد برو** (بندِ ۲ی بخشِ ۸۱): راهنمای همیشگی با دستگیره‌ی
+                        // کشو رقابت می‌کند و هر دو را خفه می‌کند. با اولین جابه‌جایی هم فوراً
+                        // می‌رود. خانه‌ی دائمی‌اش داخلِ خودِ کشوست، همان‌جا که جابه‌جایی معنی دارد.
+                        if (showReorderHint) {
+                            Text(
+                                "روی هر دکمه نگه‌دار تا جابه‌جایش کنی",
+                                color = AppLabel,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                            )
+                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
