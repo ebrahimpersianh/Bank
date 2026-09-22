@@ -60,6 +60,9 @@ class UiPrefs(private val context: Context) {
         val OWNED_THEMES = stringPreferencesKey("owned_themes")
         val OWNED_ITEMS = stringPreferencesKey("owned_items")
         val ACTIVE_ICON = stringPreferencesKey("active_icon")
+
+        /** آخرین روزی که برنامه **باز** شد - مبنای پژمردگیِ آیکون. رجوع کن به [UiPrefs.lastSeenDay]. */
+        val LAST_SEEN_DAY = stringPreferencesKey("last_seen_day")
         val ACTIVE_FRAME = stringPreferencesKey("active_frame")
         val ACTIVE_SYMBOL_SET = stringPreferencesKey("active_symbol_set")
         val ACTIVE_FONT = stringPreferencesKey("active_font")
@@ -294,6 +297,22 @@ class UiPrefs(private val context: Context) {
         context.uiPrefsDataStore.edit { prefs ->
             if (key == null) prefs.remove(Keys.ACTIVE_ICON) else prefs[Keys.ACTIVE_ICON] = key
         }
+    }
+
+    /**
+     * آخرین روزِ **بازکردنِ برنامه** (کلیدِ `۱۴۰۵-۰۶-۳۱`).
+     *
+     * 🚨 چرا جدا از دفترِ سکه: پژمردگیِ آیکون تا امروز از `DAILY_LOG` می‌خواند، و آن سکه
+     * فقط وقتی ثبت می‌شود که کاربر **تراکنشی بزند**. یعنی کسی که ده بار در روز برنامه را
+     * باز می‌کرد ولی خرجی ثبت نمی‌کرد، آیکونش پژمرده می‌مانْد - گزارشِ صریحِ کاربر.
+     *
+     * سکه دست‌نخورده می‌مانَد (وگرنه سکه‌ی «ثبتِ روزانه» بی‌ثبت هم داده می‌شد)؛ فقط آیکون
+     * مبنای درست‌ترش را گرفت: «آخرین باری که سر زدی».
+     */
+    val lastSeenDay: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.LAST_SEEN_DAY] }
+
+    suspend fun setLastSeenDay(key: String) {
+        context.uiPrefsDataStore.edit { prefs -> prefs[Keys.LAST_SEEN_DAY] = key }
     }
 
     /**

@@ -137,6 +137,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.colorResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -190,7 +191,6 @@ import ir.sadteam.loancalc.ui.onboarding.AnimatedAppEntrance
 import ir.sadteam.loancalc.ui.onboarding.OnboardingFlow
 import ir.sadteam.loancalc.ui.onboarding.PermissionGateScreen
 import ir.sadteam.loancalc.ui.onboarding.PostLoginSheets
-import ir.sadteam.loancalc.ui.onboarding.SplashIntroScreen
 import ir.sadteam.loancalc.ui.onboarding.permissionGateSatisfied
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
@@ -586,9 +586,16 @@ private fun AppRoot(
     val legacyGift by authViewModel.legacyGift.collectAsState()
     val userName by authViewModel.userName.collectAsState()
     val gateState by authViewModel.gateState.collectAsState()
-    var introTimerDone by remember { mutableStateOf(false) }
-    if (!introTimerDone || onboardingDone == null || gateState == null) {
-        SplashIntroScreen(onDone = { introTimerDone = true })
+    // 🚨 **اسپلش حذف شد** (خواسته‌ی صریحِ کاربر، ۳۱ شهریور: «کلِ اسپلش را حذف کن»).
+    //
+    // پیش از این یک اینتروی ~۲٫۳ ثانیه‌ایِ Compose این‌جا می‌نشست. حالا فقط تا وقتی دو
+    // مقدارِ محلیِ زیر از DataStore برسند یک زمینه‌ی یکدست دیده می‌شود - همان چیزی که
+    // فلاشِ سفیدِ قدیمی را هم می‌گرفت، بی هیچ تاخیرِ ساختگی.
+    //
+    // ⚠️ `Surface` عمداً `AppSurface` **نیست**: همان رنگِ زمینه‌ی اسپلشِ سیستمی است، پس
+    // فریمِ اولِ اندروید و این یکی از هم قابلِ تفکیک نیستند و پرشِ رنگ دیده نمی‌شود.
+    if (onboardingDone == null || gateState == null) {
+        Box(modifier = Modifier.fillMaxSize().background(colorResource(R.color.splash_bg)))
         return
     }
 

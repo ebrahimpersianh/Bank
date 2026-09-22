@@ -12,6 +12,8 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.request.ImageRequest
 import dagger.hilt.android.HiltAndroidApp
+import ir.sadteam.loancalc.core.ActiveStreak
+import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.crash.CrashReporter
 import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.LoanDataChange
@@ -79,9 +81,16 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
                             val active = uiPrefs.activeIcon.first()
                             val known = active == null || IconWither.ICON_ALIAS.containsKey(active)
                             if (!known) uiPrefs.setActiveIcon(null)
+                            // 🚨 **امروز را همین‌جا «دیده‌شده» ثبت می‌کنیم.**
+                            // پژمردگی تا امروز از دفترِ سکه می‌خواند و آن دفتر فقط با
+                            // **ثبتِ تراکنش** پر می‌شود؛ کاربری که ده بار در روز برنامه را
+                            // باز می‌کرد ولی خرجی ثبت نمی‌کرد آیکونِ پژمرده می‌دید. سکه
+                            // دست‌نخورده مانْد و فقط آیکون مبنای درستش را گرفت.
+                            val today = ActiveStreak.dateKey(JalaliCalendar.today())
+                            uiPrefs.setLastSeenDay(today)
                             iconWither.applyFromDateKeys(
                                 this@LoanCalcApplication,
-                                gamificationRepository.activeDayKeys(),
+                                gamificationRepository.activeDayKeys() + today,
                                 if (known) active else null,
                             )
                         }
