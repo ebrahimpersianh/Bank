@@ -73,6 +73,12 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.MonetizationOn
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.PieChart
+import androidx.compose.material.icons.outlined.Assessment
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Storefront
@@ -295,23 +301,27 @@ private val defaultShortcuts = listOf(
  * می‌زند و «پیام‌ها»/«هدفِ پس‌انداز»/«تقویم»/«سکه‌ها» را هم می‌شمرد؛ آن‌ها در `NavHost`ِ
  * فعلی مقصدِ ناوبری **نیستند**. با اضافه‌شدنِ هر route، فقط یک ردیف این‌جا اضافه می‌شود.
  */
+// 🚨 **هیچ دو میان‌بری نباید یک آیکون داشته باشند.** شش جفتِ تکراری بود (پرداخت،
+// کیفِ پول، نمودار، تقویم، سند، گروه) و کاربر دو خانه‌ی هم‌شکل می‌دید که از هم
+// تشخیص‌پذیر نبودند - فقط برچسبِ ریزِ زیرشان فرق داشت. ردیفِ تازه هم باید آیکونی
+// بردارد که در این فهرست نیست.
 private val allShortcutPool = defaultShortcuts + listOf(
-    Shortcut("gold", "طلا", Icons.Outlined.AccountBalanceWallet, "assets"),
+    Shortcut("gold", "طلا", Icons.Outlined.MonetizationOn, "assets"),
     Shortcut("budget", "بودجه", Icons.Outlined.Savings, "budget"),
     // مقصدش «سررسید» بود و اشتباه: «دنگ» زیرصفحه‌ی `DebtScreen` است، پس تپ روی این
     // میان‌بر کاربر را به تبِ سررسید می‌برد و هیچ‌وقت به دنگ نمی‌رساند.
     Shortcut("debt", "دنگ", Icons.Outlined.Groups, DEBT_ROUTE),
-    Shortcut("loan", "وام", Icons.Outlined.Payments, LOAN_ROUTE),
+    Shortcut("loan", "وام", Icons.Outlined.CreditCard, LOAN_ROUTE),
     Shortcut("home", "خانه", Icons.Outlined.Home, "home"),
     Shortcut("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, "assets"),
-    Shortcut("tools", "ابزارها", Icons.Outlined.Groups, TOOLS_ROUTE),
-    Shortcut("calendar", "تقویم مالی", Icons.Outlined.EventNote, CALENDAR_ROUTE),
+    Shortcut("tools", "ابزارها", Icons.Outlined.Build, TOOLS_ROUTE),
+    Shortcut("calendar", "تقویم مالی", Icons.Outlined.DateRange, CALENDAR_ROUTE),
     // خواسته‌ی کاربر (۳۱ شهریور): «تعدادِ میان‌برها را بیشتر کن». هر ردیفِ تازه باید
     // یک routeِ **واقعیِ** NavHost داشته باشد، وگرنه میان‌بر به هیچ‌جا نمی‌رود.
-    Shortcut("loan-stats", "آمارِ وام", Icons.Outlined.BarChart, LOAN_STATS_ROUTE),
-    Shortcut("cheque-report", "گزارشِ چک", Icons.Outlined.Description, CHEQUE_REPORT_ROUTE),
+    Shortcut("loan-stats", "آمارِ وام", Icons.Outlined.PieChart, LOAN_STATS_ROUTE),
+    Shortcut("cheque-report", "گزارشِ چک", Icons.Outlined.Assessment, CHEQUE_REPORT_ROUTE),
     Shortcut("archive", "آرشیوِ سالانه", Icons.Outlined.Archive, ANNUAL_ARCHIVE_ROUTE),
-    Shortcut("sayad", "استعلامِ صیادی", Icons.Outlined.Description, SAYAD_INQUIRY_ROUTE),
+    Shortcut("sayad", "استعلامِ صیادی", Icons.Outlined.Search, SAYAD_INQUIRY_ROUTE),
     Shortcut("notes", "یادداشت‌ها", Icons.Outlined.EditNote, NOTES_ROUTE),
     // 🐞 گزارشِ مشکل - هم این‌جا هم در تنظیمات (خواسته‌ی کاربر): باگ همیشه سرِ
     // ناراحتی پیدا می‌شود، و آن لحظه کسی حوصله‌ی گشتن در تنظیمات را ندارد.
