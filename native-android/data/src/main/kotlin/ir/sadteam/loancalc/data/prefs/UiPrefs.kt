@@ -61,6 +61,9 @@ class UiPrefs(private val context: Context) {
         val OWNED_ITEMS = stringPreferencesKey("owned_items")
         val ACTIVE_ICON = stringPreferencesKey("active_icon")
 
+        /** رنگِ قابِ آواتار - رجوع کن به [UiPrefs.activeFrameColor]. */
+        val ACTIVE_FRAME_COLOR = stringPreferencesKey("active_frame_color")
+
         /** آخرین روزی که برنامه **باز** شد - مبنای پژمردگیِ آیکون. رجوع کن به [UiPrefs.lastSeenDay]. */
         val LAST_SEEN_DAY = stringPreferencesKey("last_seen_day")
         val ACTIVE_FRAME = stringPreferencesKey("active_frame")
@@ -326,6 +329,22 @@ class UiPrefs(private val context: Context) {
     suspend fun setActiveFrame(key: String?) {
         context.uiPrefsDataStore.edit { prefs ->
             if (key == null) prefs.remove(Keys.ACTIVE_FRAME) else prefs[Keys.ACTIVE_FRAME] = key
+        }
+    }
+
+    /**
+     * رنگِ قابِ آواتار - شناسه‌ی یکی از پالت‌های [ThemePalette]، یا `null` یعنی
+     * «هم‌رنگِ تمِ فعال» (همان رفتارِ تا امروز).
+     *
+     * 🚨 **جدا از خودِ قاب ذخیره می‌شود، نه به‌عنوان یک قلمِ تازه‌ی فروشگاه.** پنج قاب
+     * در شانزده رنگ یعنی هشتاد ردیفِ ویترین، که ویترین را غیرقابلِ‌استفاده می‌کرد.
+     * این‌طوری کاربر قابش را می‌خرد و رنگش را جدا و رایگان انتخاب می‌کند.
+     */
+    val activeFrameColor: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.ACTIVE_FRAME_COLOR] }
+
+    suspend fun setActiveFrameColor(id: String?) {
+        context.uiPrefsDataStore.edit { prefs ->
+            if (id == null) prefs.remove(Keys.ACTIVE_FRAME_COLOR) else prefs[Keys.ACTIVE_FRAME_COLOR] = id
         }
     }
 

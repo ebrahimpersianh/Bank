@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
@@ -57,6 +58,7 @@ import ir.sadteam.loancalc.data.coin.BuyResult
 import ir.sadteam.loancalc.data.coin.CoinSpend
 import ir.sadteam.loancalc.data.coin.ShopCategory
 import ir.sadteam.loancalc.data.coin.ShopItem
+import ir.sadteam.loancalc.data.coin.THEME_CATALOG
 import ir.sadteam.loancalc.data.coin.themeById
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AvatarFramePreview
@@ -135,6 +137,7 @@ fun ShopScreen(
     viewModel: ShopViewModel = hiltViewModel(),
 ) {
     val balance by viewModel.balance.collectAsState()
+    val frameColor by viewModel.frameColor.collectAsState()
     val owned by viewModel.owned.collectAsState()
     val active by viewModel.active.collectAsState()
     val earnedBadges by viewModel.earnedBadges.collectAsState()
@@ -360,7 +363,15 @@ fun ShopScreen(
                     leading = { AvatarFramePreview(AvatarFrameStyle.fromItemId(shopItem.id)) },
                 )
             }
+            // 🎨 **رنگِ قاب** (خواسته‌ی کاربر: «هر حلقه را به تعدادِ رنگ‌های تم بگذار»).
+            //
+            // ⚠️ به‌جای ساختنِ یک ردیفِ ویترین برای هر ترکیبِ قاب×رنگ - که پنج قاب در
+            // شانزده رنگ یعنی **هشتاد ردیف** و ویترین را غیرقابلِ‌استفاده می‌کرد - رنگ
+            // یک نوارِ افقیِ اسکرول‌شونده‌ی زیرِ همین گروه است. خریدْ قاب است، رنگ تنظیم.
+            //
+            // فقط وقتی دیده می‌شود که کاربر قابی فعال دارد؛ وگرنه رنگ چیزی برای رنگ‌کردن ندارد.
             if (active[ShopCategory.FRAME] != null) {
+                item { FrameColorRow(selected = frameColor, onSelect = viewModel::setFrameColor) }
                 item { ResetRow("برداشتنِ قاب", viewModel::resetFrame) }
             }
         }
@@ -605,6 +616,53 @@ private fun ResetRow(label: String, onClick: () -> Unit) {
             Text("بازگردان", color = AppPrimaryInk, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
         }
     }
+}
+
+/**
+ * نوارِ انتخابِ رنگِ قابِ آواتار.
+ *
+ * رنگ‌ها از `THEME_CATALOG` می‌آیند - همان شانزده رنگی که تم‌های فروشگاه دارند، پس
+ * افزودنِ تمِ تازه خودبه‌خود این‌جا هم می‌آید و دو فهرستِ موازی ساخته نمی‌شود.
+ *
+ * اولین گزینه «هم‌رنگِ تم» است (`null`)، یعنی همان رفتاری که تا امروز بود.
+ */
+@Composable
+private fun FrameColorRow(selected: String?, onSelect: (String?) -> Unit) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+        Text("رنگِ قاب", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Black)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(top = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            FrameColorDot(color = AppPrimary, selected = selected == null) { onSelect(null) }
+            THEME_CATALOG.forEach { tone ->
+                FrameColorDot(
+                    color = Color(tone.primary),
+                    selected = selected == tone.id,
+                ) { onSelect(tone.id) }
+            }
+        }
+    }
+}
+
+/** یک نقطه‌ی رنگ. انتخاب‌شده حلقه‌ی دورش را می‌گیرد، نه تیک - تیک روی رنگِ تیره گم می‌شود. */
+@Composable
+private fun FrameColorDot(color: Color, selected: Boolean, onClick: () -> Unit) {
+    val ring = AppText
+    Box(
+        modifier = Modifier
+            .size(34.dp)
+            .clip(CircleShape)
+            .then(if (selected) Modifier.border(2.dp, ring, CircleShape) else Modifier)
+            .padding(if (selected) 4.dp else 2.dp)
+            .clip(CircleShape)
+            .background(color)
+            .pressScaleClickable(onClick = onClick),
+    )
 }
 
 @Composable

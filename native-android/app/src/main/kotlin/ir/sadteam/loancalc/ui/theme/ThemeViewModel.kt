@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.data.SymbolStyle
 import ir.sadteam.loancalc.data.SymbolTheme
+import ir.sadteam.loancalc.ui.components.FrameTint
 import ir.sadteam.loancalc.data.coin.ThemePalette
 import ir.sadteam.loancalc.data.coin.themeById
 import ir.sadteam.loancalc.data.prefs.UiPrefs
@@ -28,6 +29,10 @@ class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewMod
         // این‌جا تنها نقطه‌ی نوشتنش است.
         viewModelScope.launch {
             uiPrefs.activeSymbolSet.collect { SymbolTheme.style = SymbolStyle.fromItemId(it) }
+        }
+        // و همان الگو برای رنگِ قابِ آواتار.
+        viewModelScope.launch {
+            uiPrefs.activeFrameColor.collect { FrameTint.colorId = it }
         }
         // همان الگو برای قلمِ متن - `appTypography` بیرونِ composition ساخته می‌شود.
         viewModelScope.launch {

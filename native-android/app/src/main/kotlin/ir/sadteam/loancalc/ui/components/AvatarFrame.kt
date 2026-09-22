@@ -6,11 +6,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import ir.sadteam.loancalc.data.coin.THEME_CATALOG
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
@@ -53,6 +57,16 @@ enum class AvatarFrameStyle(val id: String, val label: String, val blurb: String
  * آواتار با قابِ اختیاری. [size] **قطرِ بیرونیِ قاب** است، پس جایگزینیِ `AvatarView` با این
  * چیدمانِ اطراف را جابه‌جا نمی‌کند.
  */
+/**
+ * رنگِ انتخابیِ قاب - همان الگوی `SymbolTheme`/`AppFontState`: یک نگه‌دارنده‌ی سراسری،
+ * چون سه جای برنامه [FramedAvatar] را صدا می‌زنند و هیچ‌کدام نباید رنگ را پاس بدهند.
+ *
+ * `null` یعنی «هم‌رنگِ تمِ فعال». تنها نقطه‌ی نوشتنش `ThemeViewModel` است.
+ */
+object FrameTint {
+    var colorId: String? by mutableStateOf(null)
+}
+
 @Composable
 fun FramedAvatar(
     avatar: Avatar,
@@ -67,7 +81,12 @@ fun FramedAvatar(
     }
     // ⚠️ توکن‌های رنگ `@Composable`ان و داخلِ `DrawScope` صدا زده نمی‌شوند - قاعده‌ی مستندِ
     // پروژه: قبل از `Canvas` در یک `val` محلی خوانده شوند.
-    val primary = AppPrimary
+    // رنگِ انتخابیِ کاربر، وگرنه رنگِ تم. `THEME_CATALOG` منبعِ همان شانزده رنگی است
+    // که در فروشگاه فروخته می‌شوند، پس فهرستِ رنگِ قاب خودبه‌خود با آن هم‌قدم می‌مانَد.
+    val primary = FrameTint.colorId
+        ?.let { id -> THEME_CATALOG.firstOrNull { it.id == id } }
+        ?.let { Color(it.primary) }
+        ?: AppPrimary
     val accent = AppAccent
     val line = AppLine
     val inset = size * 0.14f

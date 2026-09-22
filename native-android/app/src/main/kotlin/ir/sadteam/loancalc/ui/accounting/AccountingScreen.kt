@@ -655,12 +655,14 @@ private fun AccountingTransactionRow(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (category != null) {
+                    // قابِ ۳۴ با پدِ ۷ یعنی خودِ نماد ۲۰ پیکسل می‌شد - همان اندازه‌ای که
+                    // تفاوتِ ست‌های نماد در آن گم می‌شد. حالا ۳۸ با پدِ ۷، یعنی نماد ۲۴.
                     Icon(
                         category.icon,
                         contentDescription = null,
                         tint = category.color,
                         modifier = Modifier
-                            .size(34.dp)
+                            .size(38.dp)
                             .clip(CircleShape)
                             .background(category.color.copy(alpha = 0.14f))
                             .padding(7.dp),

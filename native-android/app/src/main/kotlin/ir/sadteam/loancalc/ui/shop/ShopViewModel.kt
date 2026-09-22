@@ -186,6 +186,19 @@ class ShopViewModel @Inject constructor(
         viewModelScope.launch { uiPrefs.setActiveFrame(null) }
     }
 
+    /**
+     * رنگِ قابِ آواتار - `null` یعنی هم‌رنگِ تمِ فعال.
+     *
+     * عمداً **رایگان** است و خریدِ تازه‌ای لازم ندارد: رنگ یک قلمِ جدا نیست، یک تنظیمِ
+     * همان قابی است که کاربر خریده (رجوع کن به `UiPrefs.activeFrameColor`).
+     */
+    val frameColor: StateFlow<String?> = uiPrefs.activeFrameColor
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun setFrameColor(id: String?) {
+        viewModelScope.launch { uiPrefs.setActiveFrameColor(id) }
+    }
+
     fun resetSymbolSet() {
         viewModelScope.launch { uiPrefs.setActiveSymbolSet(null) }
     }
