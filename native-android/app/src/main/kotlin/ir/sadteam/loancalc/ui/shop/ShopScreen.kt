@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -81,6 +82,8 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppFontChoice
+import ir.sadteam.loancalc.ui.theme.AppLineRow
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
 import ir.sadteam.loancalc.ui.background.LiveBackgroundLayer
@@ -516,29 +519,17 @@ private fun ThemeRow(
                 "gold" -> Triple(Color(0xFF806018), Color(0xFFC99625), Color(0xFFF3D57B))
                 else -> Triple(AppMuted, AppIconFrame, AppSurface2)
             }
-            val tileShape = RoundedCornerShape(13.dp)
-            Box(
-                modifier = Modifier
-                    .size(46.dp)
-                    .clip(tileShape)
-                    .background(primary)
-                    .border(1.dp, light.copy(alpha = 0.72f), tileShape),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .size(15.dp)
-                        .clip(RoundedCornerShape(bottomEnd = 10.dp))
-                        .background(light),
-                )
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(17.dp)
-                        .clip(RoundedCornerShape(topStart = 11.dp))
-                        .background(dark),
-                )
-            }
+            // 🚨 **نمای کوچکِ خودِ برنامه، نه یک کاشیِ رنگ** (خواسته‌ی کاربر با طرحِ
+            // مرجع: «تم‌ها آن‌طوری بشود»).
+            //
+            // کاشیِ رنگ می‌گفت تم **چه رنگی** است، ولی نمی‌گفت **برنامه با آن چه شکلی**
+            // می‌شود - و کسی که ۱۵۰ سکه می‌دهد دقیقاً همین را می‌خواهد بداند. این‌جا یک
+            // صفحه‌ی مینیاتوریِ واقعی کشیده می‌شود: کارتِ قهرمان با گرادیانِ همان تم، دو
+            // کارتِ سفید، سه میله‌ی نمودار و نوارِ پایین.
+            //
+            // ⚠️ هیچ فایلِ تصویری لازم ندارد و با هر تمِ تازه‌ای که به `THEME_CATALOG`
+            // اضافه شود خودبه‌خود کار می‌کند - برخلافِ موکاپِ عکسی که باید دستی ساخته شود.
+            ThemeMiniPreview(dark = dark, primary = primary, light = light)
         },
     )
 }
@@ -663,6 +654,86 @@ private fun FrameColorDot(color: Color, selected: Boolean, onClick: () -> Unit) 
             .background(color)
             .pressScaleClickable(onClick = onClick),
     )
+}
+
+/**
+ * مینیاتورِ صفحه‌ی خانه با رنگ‌های یک تم - پیش‌نمایشِ ردیفِ تمِ فروشگاه.
+ *
+ * عمداً **شبیهِ تبِ خانه** است نه یک شکلِ انتزاعی: کارتِ قهرمانِ رنگی بالا، دو کارتِ
+ * روشن، میله‌های نمودار و نوارِ پایین با قرصِ تبِ فعال. همان چیزهایی که تم واقعاً
+ * عوضشان می‌کند.
+ */
+@Composable
+private fun ThemeMiniPreview(dark: Color, primary: Color, light: Color) {
+    val paper = AppSurface
+    val shape = RoundedCornerShape(11.dp)
+    Column(
+        modifier = Modifier
+            .size(width = 46.dp, height = 62.dp)
+            .clip(shape)
+            .background(paper)
+            .border(1.dp, AppLineRow, shape)
+            .padding(3.dp),
+        verticalArrangement = Arrangement.spacedBy(2.5.dp),
+    ) {
+        // کارتِ قهرمان - همان گرادیانِ ۱۶۰درجه‌ی `AppHeroCard`، در مقیاسِ کوچک.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(20.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(Brush.linearGradient(listOf(primary, dark))),
+            contentAlignment = Alignment.BottomStart,
+        ) {
+            Row(
+                modifier = Modifier.padding(start = 3.dp, bottom = 3.dp),
+                horizontalArrangement = Arrangement.spacedBy(1.5.dp),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                listOf(4, 7, 5, 9).forEach { h ->
+                    Box(
+                        modifier = Modifier
+                            .width(2.5.dp)
+                            .height(h.dp)
+                            .clip(RoundedCornerShape(topStart = 1.dp, topEnd = 1.dp))
+                            .background(Color.White.copy(alpha = 0.75f)),
+                    )
+                }
+            }
+        }
+        // دو کارتِ روشن - همان شبکه‌ی «دسترسیِ سریع»ِ تبِ خانه.
+        Row(horizontalArrangement = Arrangement.spacedBy(2.5.dp), modifier = Modifier.fillMaxWidth()) {
+            repeat(2) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(11.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(light.copy(alpha = 0.38f)),
+                )
+            }
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        // نوارِ پایین با قرصِ تبِ فعال.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(9.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(AppSurface2),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            repeat(4) { index ->
+                Box(
+                    modifier = Modifier
+                        .size(if (index == 0) 5.dp else 3.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(if (index == 0) primary else AppMuted.copy(alpha = 0.45f)),
+                )
+            }
+        }
+    }
 }
 
 @Composable
