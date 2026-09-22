@@ -142,6 +142,25 @@ val THEME_CATALOG = listOf(
     ThemePalette("neon_midnight", "نئونِ نیمه‌شب", dark = 0xFF070C24, primary = 0xFF1D54E8, light = 0xFF62D5FF, inkLight = 0xFF143C9A), // ۲۲۱°
     ThemePalette("plum", "آلوییِ روشن", dark = 0xFF3A1240, primary = 0xFF9B3FA8, light = 0xFFE0A8E8, inkLight = 0xFF6B2B75), // ۲۷۵°
     ThemePalette("clay", "خاکِ رس", dark = 0xFF3A2318, primary = 0xFFA05C3C, light = 0xFFE0B39A, inkLight = 0xFF70402A), // ۱۸°
+    // ── هفت تمِ نام‌دارِ پوسترِ طراح (بخشِ ۸۲) ────────────────────────────────
+    // 🚨 **فامشان از خودِ پوستر نمونه‌برداری شد، نه از حدس** - قاعده‌ی «حدس نزن، گرد
+    // نکن». ولی خودِ چهار مقدار **مشتق** شده‌اند نه برداشته: موکاپ‌های پوستر عکسِ
+    // منظره‌اند و رنگِ غالبشان مالِ آسمان و درخت است، نه توکنِ رابط. پس فقط فام
+    // برداشته شد و روشنایی/اشباع با همان قاعده‌ی بقیه‌ی جدول ساخته شد.
+    //
+    // ⚠️ کنتراستِ **هر چهارده مقدار** با سفید حساب شد و همه ≥۴٫۶ درآمدند - شرطِ
+    // خواناییِ متنِ سفید روی دکمه که همین جدول بالاتر می‌گوید.
+    //
+    // ⚠️ «طبیعت» سبز و «لوکس» طلایی است و این دو با قاعده‌ی «سبز = برند، طلایی =
+    // پرمیوم» همپوشانی دارند. کاربر با دیدنِ همین تداخل صریحاً خواستشان، پس
+    // مانده‌اند - ولی هر دو عمداً **تیره‌تر و کم‌اشباع‌تر** از سبزِ برند و طلای نشان‌اند.
+    ThemePalette("nature", "طبیعت", dark = 0xFF1A3717, primary = 0xFF42823D, light = 0xFFBBF0B7, inkLight = 0xFF3E8039),
+    ThemePalette("night", "شب", dark = 0xFF0A1E56, primary = 0xFF2551CC, light = 0xFF97AFF0, inkLight = 0xFF1942B2),
+    ThemePalette("sunset", "غروب", dark = 0xFF432917, primary = 0xFFA1663F, light = 0xFFF0C8AE, inkLight = 0xFFA1633A),
+    ThemePalette("minimal", "مینیمال", dark = 0xFF17362F, primary = 0xFF3B8071, light = 0xFFB6F0E4, inkLight = 0xFF377D6F),
+    ThemePalette("luxe", "لوکس", dark = 0xFF3F2C0A, primary = 0xFF966D22, light = 0xFFF0D29C, inkLight = 0xFF94691C),
+    ThemePalette("calm", "آرام", dark = 0xFF321D56, primary = 0xFF7E4FCC, light = 0xFFC7AEF0, inkLight = 0xFF6B40B2),
+    ThemePalette("ice", "یخی", dark = 0xFF093441, primary = 0xFF1F7F9C, light = 0xFF99DCF0, inkLight = 0xFF187B99),
 )
 
 /**
