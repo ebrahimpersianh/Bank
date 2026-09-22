@@ -20,9 +20,15 @@ package ir.sadteam.loancalc.server
  * 🔑 **نگاشتِ نمادها عمداً اینجاست، نه تو اپ** - اصلاحش با یه دیپلویِ سرور می‌شه، ولی اگه
  * تو اپ بود هر اصلاح یه انتشارِ جدیدِ اپ می‌خواست. اپ فقط `prices["BTC"]` رو می‌خونه.
  *
- * مقصدهایی که تو کاتالوگِ اپ هستن ولی سرویس معادلِ ریالیِ مستقیم نداره: `SILVER_999`
- * (فقط `SILVER_OUNCE_USD` داره، نه یه جفتِ `..._RLS`)، `TRX`, `SOL`, `DOGE`, `TON`.
- * برای این‌ها قیمت نمیاد و اپ «—» نشون می‌ده - این درسته، نه باگ.
+ * 📋 **فهرستِ کاملِ ۵۶ نمادِ سرویس تو `design/SERVIX-symbols.md`ه** (از صفحه‌ی رسمیِ
+ * «نمادها»ی servix، ۱۲ شهریور ۱۴۰۵). این نگاشت همون فهرسته، مو‌به‌مو.
+ *
+ * هشت نمادِ کاتالوگِ اپ عمداً **اینجا نیستن چون سرویس اصلاً نداردشون**: `SILVER_999`,
+ * `NIM_SEKKE`, `ROB_SEKKE`, `SEKKE_GERAMI`, `TON`, `GBP`, `TRY`, `CAD`. کاربر می‌تونه
+ * ثبتشون کنه و قیمتِ واحد رو دستی بزنه، ولی تو صفحه‌ی «قیمتِ روز» نمیان.
+ * ⚠️ قبلاً پنج‌تاشون (نیم‌سکه/ربع‌سکه/سکه گرمی و CAD/GBP/TRY) به کدهای **ناموجود** نگاشته
+ * شده بودن و بی‌صدا «—» می‌دادن؛ و `TRX`/`SOL`/`DOGE` که سرویس **دارد** اصلاً تو نگاشت
+ * نبودن - همین سه‌تا باگِ واقعیِ «—»ی گزارش‌شده‌ی کاربر بودن.
  */
 
 import io.ktor.client.HttpClient
@@ -42,37 +48,78 @@ import java.time.LocalDate
 object PriceService {
     private val PRICE_API_KEY = env("PRICE_API_KEY")
     private const val SERVIX_URL = "https://servix.cc/api/v1/assets"
-    private val REFRESH_INTERVAL = Duration.ofHours(1)
+    /**
+     * سهمیه‌ی سرویکس ۵۰ درخواست در ۲۴ ساعت است: ۱۴۴۰÷۵۰ = هر ۲۸ دقیقه و ۴۸ ثانیه.
+     * ۲۹ دقیقه می‌گیریم تا ۴۹ درخواست در روز بشود و یک واحد حاشیه بماند. این با
+     * `staleThresholdMinutes: 30`ی خودِ سرویس هم می‌خواند - تندتر پرسیدن جوابِ
+     * تازه‌تری نمی‌دهد، فقط سهمیه می‌سوزاند. (قبلاً یک ساعت بود، یعنی نصفِ سهمیه هدر.)
+     */
+    private val REFRESH_INTERVAL = Duration.ofMinutes(29)
 
     private val httpClient = HttpClient(CIO)
     private val json = Json { ignoreUnknownKeys = true }
 
     /** نمادِ کاتالوگِ اپ → کدِ نمادِ سرویکس. همه‌ی مقصدها مستقیم به ریال (`_RLS`) هستن. */
     private val CATALOG_TO_CODE: Map<String, String> = mapOf(
-        // رمزارز
+        // ── ارز (۳ نمادِ سرویس) ──
+        "USD" to "USD_RLS",
+        "EUR" to "EUR_RLS",
+        "AED" to "AED_RLS",
+        // ── طلا و سکه (۵) ──
+        "GOLD_24" to "GOLD_24_RLS",
+        "GOLD_18" to "GOLD_18_RLS",
+        "GOLD_MESGHAL" to "GOLD_MESGHAL_RLS",
+        "SEKKE_EMAMI" to "SEKKEH_RLS",
+        "SEKKE_AZADI" to "BAHAR_RLS",
+        // ── رمزارز (۴۸) ──
         "BTC" to "BTC_RLS",
         "ETH" to "ETH_RLS",
         "USDT" to "USDT_RLS",
-        "XAUT" to "XAUT_RLS",
         "BNB" to "BNB_RLS",
-        "LTC" to "LTC_RLS",
         "XRP" to "XRP_RLS",
-        // ارز
-        "USD" to "USD_RLS",
-        "EUR" to "EUR_RLS",
-        "CAD" to "CAD_RLS",
-        "GBP" to "GBP_RLS",
-        "TRY" to "TRY_RLS",
-        "AED" to "AED_RLS",
-        // طلا
-        "GOLD_24" to "GOLD_24_RLS",
-        "GOLD_18" to "GOLD_18_RLS",
-        // سکه
-        "SEKKE_EMAMI" to "SEKKEH_RLS",
-        "SEKKE_AZADI" to "BAHAR_RLS",
-        "NIM_SEKKE" to "NIM_SEKKEH_RLS",
-        "ROB_SEKKE" to "ROB_SEKKEH_RLS",
-        "SEKKE_GERAMI" to "GERAMI_SEKKEH_RLS",
+        "USDC" to "USDC_RLS",
+        "SOL" to "SOL_RLS",
+        "TRX" to "TRX_RLS",
+        "DOGE" to "DOGE_RLS",
+        "HYPE" to "HYPE_RLS",
+        "LINK" to "LINK_RLS",
+        "ZEC" to "ZEC_RLS",
+        "XLM" to "XLM_RLS",
+        "ADA" to "ADA_RLS",
+        "BCH" to "BCH_RLS",
+        "DAI" to "DAI_RLS",
+        "USD1" to "USD1_RLS",
+        "USDE" to "USDE_RLS",
+        "LTC" to "LTC_RLS",
+        "CC" to "CC_RLS",
+        "HBAR" to "HBAR_RLS",
+        "USDG" to "USDG_RLS",
+        "SUI" to "SUI_RLS",
+        "AVAX" to "AVAX_RLS",
+        "PYUSD" to "PYUSD_RLS",
+        "SHIB" to "SHIB_RLS",
+        "CRO" to "CRO_RLS",
+        "XAUT" to "XAUT_RLS",
+        "UNI" to "UNI_RLS",
+        "TAO" to "TAO_RLS",
+        "OKB" to "OKB_RLS",
+        "NEAR" to "NEAR_RLS",
+        "WLFI" to "WLFI_RLS",
+        "PAXG" to "PAXG_RLS",
+        "ASTER" to "ASTER_RLS",
+        "RLUSD" to "RLUSD_RLS",
+        "MNT" to "MNT_RLS",
+        "ONDO" to "ONDO_RLS",
+        "USDD" to "USDD_RLS",
+        "M" to "M_RLS",
+        "PUMP" to "PUMP_RLS",
+        "AAVE" to "AAVE_RLS",
+        "DOT" to "DOT_RLS",
+        "SKY" to "SKY_RLS",
+        "ICP" to "ICP_RLS",
+        "WLD" to "WLD_RLS",
+        "ATOM" to "ATOM_RLS",
+        "PEPE" to "PEPE_RLS",
     )
 
     /** یه ردیفِ جوابِ سرویکس بعد از پارس. */

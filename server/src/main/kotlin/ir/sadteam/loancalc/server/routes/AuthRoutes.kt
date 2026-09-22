@@ -8,6 +8,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.Db
 import ir.sadteam.loancalc.server.Log
@@ -83,7 +84,14 @@ private data class MeResponse(
     val subscribedUntil: String?,
     val subscriptionTier: String?,
     val trialDaysLeft: Int?,
+    /** true یعنی این کاربر ۱۵ روزِ هدیه‌ی «قدیمی‌بودن» گرفته - اپ جمله‌ی اضافه رو نشون می‌ده. */
+    val legacyGift: Boolean = false,
+    /** نامِ اختیاریِ کاربر؛ null یعنی هنوز وارد نکرده (کاملاً عادیه). */
+    val name: String? = null,
 )
+
+@Serializable
+private data class SetNameBody(val name: String? = null)
 
 private data class OtpRow(val id: Long, val codeHash: String, val expiresAt: Long, val attempts: Int)
 
@@ -201,7 +209,12 @@ fun Route.authRoutes() {
                 "login_ok", "ورودِ موفق",
                 "uid" to user.id, "phone" to maskPhone(user.phone), "new" to (user.subscribedUntil == null),
             )
-            val token = signToken(user.id, user.phone)
+            // نسخه‌ی نشستِ همین لحظه داخلِ توکن می‌نشیند؛ `requireAuth` هر بار با ستونِ
+            // دیتابیس مقایسه‌اش می‌کند، پس ابطال فوری اثر می‌کند.
+            val sessionVersion = Db.withConnection { conn ->
+                conn.queryOne("SELECT session_version FROM users WHERE id = ?", user.id) { it.getLong("session_version") }
+            } ?: 0L
+            val token = signToken(user.id, user.phone, sessionVersion)
             call.respond(
                 VerifyOtpResponse(
                     token = token,
@@ -232,6 +245,8 @@ fun Route.authRoutes() {
                 MeResponse(
                     phone = user.phone,
                     subscribed = isSubscribed(user),
+                    legacyGift = user.legacyGift,
+                    name = user.name,
                     subscribedUntil = user.subscribedUntil,
                     subscriptionTier = user.subscriptionTier,
                     trialDaysLeft = trialDaysLeftIfApplicable(user)
@@ -244,15 +259,38 @@ fun Route.authRoutes() {
            Db.kt با ON DELETE CASCADE تعریف نشده، هر جدولِ وابسته به user_id/phone رو دستی و قبل از
            خودِ ردیفِ users پاک می‌کنیم؛ اگه جدولِ جدیدی به user_id/phone وابسته اضافه شد، همینجا هم
            باید اضافه بشه. */
+        /* نامِ اختیاریِ کاربر - همیشه قابلِ خالی‌کردنه (null/رشته‌ی خالی = پاک‌کردنِ اسم).
+           عمداً هیچ اعتبارسنجیِ سخت‌گیرانه‌ای نداره چون این فیلد هیچ‌جا اجباری نیست. */
+        put("/name") {
+            val authed = call.requireAuth() ?: return@put
+            val body = runCatching { call.receive<SetNameBody>() }.getOrNull()
+            val name = body?.name?.trim()?.take(60)?.ifBlank { null }
+            Db.withConnection { conn ->
+                conn.execute("UPDATE users SET name = ? WHERE id = ?", name, authed.uid)
+            }
+            call.respond(mapOf("ok" to true))
+        }
+
         delete("/account") {
             val authed = call.requireAuth() ?: return@delete
             Log.info("account_deleted", "حذفِ کاملِ حساب", "uid" to authed.uid, "phone" to maskPhone(authed.phone))
+            // ⚠️ **یک تراکنش**: تا امروز پنج حذفِ مستقل بود و شکستِ وسطِ کار، ردیف‌های
+            // پشتیبانِ بی‌صاحب به‌جا می‌گذاشت. حالا یا همه پاک می‌شوند یا هیچ‌کدام.
             Db.withConnection { conn ->
-                conn.execute("DELETE FROM loans WHERE user_id = ?", authed.uid)
-                conn.execute("DELETE FROM cheques_backup WHERE user_id = ?", authed.uid)
-                conn.execute("DELETE FROM accounts_backup WHERE user_id = ?", authed.uid)
-                conn.execute("DELETE FROM otps WHERE phone = ?", authed.phone)
-                conn.execute("DELETE FROM users WHERE id = ?", authed.uid)
+                conn.autoCommit = false
+                try {
+                    conn.execute("DELETE FROM loans WHERE user_id = ?", authed.uid)
+                    conn.execute("DELETE FROM cheques_backup WHERE user_id = ?", authed.uid)
+                    conn.execute("DELETE FROM accounts_backup WHERE user_id = ?", authed.uid)
+                    conn.execute("DELETE FROM otps WHERE phone = ?", authed.phone)
+                    conn.execute("DELETE FROM users WHERE id = ?", authed.uid)
+                    conn.commit()
+                } catch (e: Exception) {
+                    conn.rollback()
+                    throw e
+                } finally {
+                    conn.autoCommit = true
+                }
             }
             call.respond(mapOf("ok" to true))
         }

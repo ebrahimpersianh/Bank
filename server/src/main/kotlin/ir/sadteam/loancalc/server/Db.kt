@@ -19,6 +19,7 @@ object Db {
                         subscribed INTEGER NOT NULL DEFAULT 0,
                         subscribed_until TEXT,
                         subscription_tier TEXT,
+                        session_version INTEGER NOT NULL DEFAULT 0,
                         created_at TEXT NOT NULL DEFAULT (datetime('now'))
                     )
                     """.trimIndent()
@@ -40,6 +41,7 @@ object Db {
                     CREATE TABLE IF NOT EXISTS loans (
                         user_id INTEGER PRIMARY KEY REFERENCES users(id),
                         data TEXT NOT NULL DEFAULT '[]',
+                        revision INTEGER NOT NULL DEFAULT 0,
                         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
                     )
                     """.trimIndent()
@@ -53,6 +55,7 @@ object Db {
                     CREATE TABLE IF NOT EXISTS cheques_backup (
                         user_id INTEGER PRIMARY KEY REFERENCES users(id),
                         data TEXT NOT NULL DEFAULT '{}',
+                        revision INTEGER NOT NULL DEFAULT 0,
                         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
                     )
                     """.trimIndent()
@@ -62,7 +65,29 @@ object Db {
                     CREATE TABLE IF NOT EXISTS accounts_backup (
                         user_id INTEGER PRIMARY KEY REFERENCES users(id),
                         data TEXT NOT NULL DEFAULT '{}',
+                        revision INTEGER NOT NULL DEFAULT 0,
                         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                    """.trimIndent()
+                )
+                // 🎁 **کدهای هدیه‌ی اشتراک** - خواسته‌ی کاربر (۳۱ شهریور): جایزه‌ی
+                // ۱ تا ۱۵ روزه، و هدیه به کسی که باگ گزارش می‌کند.
+                //
+                // 🚨 **چرا کد و نه یک دکمه‌ی «جایزه بگیر» در اپ**: موجودیِ سکه و رخدادهای
+                // اپ همگی **روی خودِ گوشی**اند و سرور نمی‌تواند راستی‌آزمایی‌شان کند؛ یک
+                // اندپوینتِ «به من N روز اشتراک بده» یعنی هرکسی با یک درخواستِ ساده
+                // اشتراکِ نامحدود می‌گیرد. کد را **سرور** می‌سازد، پس مرجعِ حقیقت سرور
+                // می‌مانَد و هر کد دقیقاً یک بار مصرف می‌شود.
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS gift_codes (
+                        code TEXT PRIMARY KEY,
+                        days INTEGER NOT NULL,
+                        note TEXT,
+                        used_by INTEGER REFERENCES users(id),
+                        used_at TEXT,
+                        expires_at TEXT,
+                        created_at TEXT NOT NULL DEFAULT (datetime('now'))
                     )
                     """.trimIndent()
                 )
@@ -175,22 +200,86 @@ object Db {
                     """.trimIndent()
                 )
             }
-            /* migration برای دیتابیس‌های قدیمی که از قبل جدول users رو بدون این ستون‌ها دارن */
-            runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN subscribed INTEGER NOT NULL DEFAULT 0") } }
-            runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN subscribed_until TEXT") } }
+            /* migration برای دیتابیس‌های قدیمی که از قبل جدول users رو بدون این ستون‌ها دارن.
+               ⚠️ **فقط خطای «ستون از قبل هست» بخشیده می‌شود**؛ هر خطای دیگری بالا می‌رود تا
+               دیتابیسِ خراب/ناسازگار بی‌صدا رد نشود (یافته‌ی بازبینی، ۳۱ شهریور). */
+            addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN subscribed INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN subscribed_until TEXT")
             // پلنِ خریداری‌شده ("1m"/"3m"/"6m"/"1y") - قبلاً اصلاً ذخیره نمی‌شد، فقط تاریخِ انقضا؛
             // برای نمایشِ دقیقِ نوعِ اشتراک تو تنظیمات لازم شد - رجوع کن به SubscriptionRoutes.kt.
-            runCatching { conn.createStatement().use { it.executeUpdate("ALTER TABLE users ADD COLUMN subscription_tier TEXT") } }
+            addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN subscription_tier TEXT")
+            // نامِ اختیاریِ کاربر - فقط برای سربرگِ خروجیِ PDF/اکسل. هیچ‌وقت اجباری نیست.
+            addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN name TEXT")
+            // هدیه‌ی «کاربرِ قدیمی» - رجوع کن به grantLegacyGift پایین‌تر.
+            addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN legacy_gift_granted INTEGER NOT NULL DEFAULT 0")
+            // نسخه‌ی نشست - رجوع کن به Auth.kt. بالا رفتنش یعنی «همه‌ی توکن‌های قبلی باطل».
+            addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN session_version INTEGER NOT NULL DEFAULT 0")
+            // شماره‌ی نسخه‌ی هر اسنپ‌شاتِ ابری - پایه‌ی کنترلِ هم‌زمانی (رجوع کن به BackupRoutes).
+            // کلاینتِ کهنه که `expectedRevision` نمی‌فرستد، رفتارِ قبلی را می‌گیرد.
+            addColumnIfMissing(conn, "ALTER TABLE loans ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing(conn, "ALTER TABLE cheques_backup ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing(conn, "ALTER TABLE accounts_backup ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")
+            grantLegacyGift(conn)
         }
     }
 
     /* هر فراخوانی یه کانکشن جدا باز/بسته می‌کنه (به‌جای یه کانکشن مشترک سراسری مثل better-sqlite3)
        چون Ktor/Netty چندریسمانیه و JDBC Connection thread-safe نیست؛ با WAL + busy_timeout
        چندین کانکشن هم‌زمان رو یه فایل SQLite بدون قفل‌شدن کار می‌کنن. */
+    /**
+     * هدیه‌ی یک‌بارمصرفِ کاربرانِ قدیمی: **۱۵ روزِ اضافه** (روی ۳۰ روزِ پایه، جمعاً ۴۵) برای هر
+     * شماره‌ای که *در لحظه‌ی اجرای این مهاجرت* از قبل تو دیتابیس بوده.
+     *
+     * خواسته‌ی صریحِ کاربر (۲۰ مرداد). عمداً یه مهاجرتِ خودکاره نه یه دستورِ دستیِ SSH - چون
+     * `sqlite3` رو VPS نصب نیست و اجرای دستیِ SQL رو سرورِ زنده هنوز تاییدنشده‌ست (CLAUDE.md).
+     *
+     * ستونِ `legacy_gift_granted` ضامنِ ضدِتکراره: هر ردیف حداکثر یک بار هدیه می‌گیره، پس
+     * ری‌استارت‌های بعدیِ سرور دوباره تمدیدش نمی‌کنن. کاربرانی که بعد از این نقطه ثبت‌نام کنن،
+     * چون ستونشون از همون اول ۱ ست می‌شه، فقط ۳۰ روزِ پایه رو می‌گیرن.
+     */
+    /**
+     * `ALTER TABLE ... ADD COLUMN` را اجرا می‌کند و **تنها** خطای «این ستون از قبل هست» را
+     * می‌بخشد. تفاوتِ «مهاجرت لازم نبود» با «مهاجرت شکست خورد» باید دیده شود.
+     */
+    private fun addColumnIfMissing(conn: Connection, sql: String) {
+        try {
+            conn.createStatement().use { it.executeUpdate(sql) }
+        } catch (e: java.sql.SQLException) {
+            val message = e.message.orEmpty().lowercase()
+            if (!message.contains("duplicate column")) throw e
+        }
+    }
+
+    private fun grantLegacyGift(conn: Connection) {
+        runCatching {
+            // ۴۵ روز از الان: ۳۰ روزِ پایه + ۱۵ روزِ هدیه‌ی قدیمی‌بودن.
+            val until = java.time.Instant.now().plusSeconds(45L * 24 * 60 * 60).toString()
+            conn.prepareStatement(
+                """
+                UPDATE users
+                SET subscribed_until = ?, legacy_gift_granted = 1
+                WHERE legacy_gift_granted = 0
+                  AND (subscribed_until IS NULL OR subscribed_until < ?)
+                """.trimIndent(),
+            ).use { ps ->
+                ps.setString(1, until)
+                ps.setString(2, until)
+                ps.executeUpdate()
+            }
+            // هر کسی که از قبل اشتراکِ طولانی‌تری داشته، فقط علامت می‌خوره تا دوباره بررسی نشه -
+            // اشتراکش عمداً کوتاه نمی‌شه.
+            conn.createStatement().use { it.executeUpdate("UPDATE users SET legacy_gift_granted = 1 WHERE legacy_gift_granted = 0") }
+        }
+    }
+
     fun <T> withConnection(block: (Connection) -> T): T {
         DriverManager.getConnection("jdbc:sqlite:$dbPath").use { conn ->
             conn.createStatement().use { it.executeUpdate("PRAGMA journal_mode=WAL") }
             conn.createStatement().use { it.executeUpdate("PRAGMA busy_timeout=5000") }
+            // 🚨 **کلیدهای خارجی در SQLite پیش‌فرض خاموش‌اند و هر کانکشن جداگانه باید
+            // روشنشان کند.** بی این خط، `REFERENCES users(id)`ِ جدول‌ها فقط یک جمله‌ی
+            // تزئینی بود: حذفِ کاربر می‌توانست ردیف‌های پشتیبانِ یتیم به‌جا بگذارد.
+            conn.createStatement().use { it.executeUpdate("PRAGMA foreign_keys=ON") }
             return block(conn)
         }
     }
@@ -237,6 +326,11 @@ data class UserRow(
     val subscribed: Boolean,
     val subscribedUntil: String?,
     val subscriptionTier: String?,
+    /** نامِ اختیاریِ کاربر (می‌تونه null باشه) - رجوع کن به مسیرِ PUT /api/auth/name. */
+    val name: String?,
+    /** آیا این کاربر جزو «کاربرانِ قدیمی» بود که ۱۵ روزِ هدیه‌ی اضافه گرفت؟ اپ ازش برای نشون‌دادنِ
+     * جمله‌ی «چون از قبل وارد برنامه شده بودی...» استفاده می‌کنه - رجوع کن به grantLegacyGift. */
+    val legacyGift: Boolean,
     val createdAt: String
 )
 
@@ -246,5 +340,8 @@ fun ResultSet.toUserRow(): UserRow = UserRow(
     subscribed = getInt("subscribed") != 0,
     subscribedUntil = getString("subscribed_until"),
     subscriptionTier = getString("subscription_tier"),
+    name = runCatching { getString("name") }.getOrNull(),
+    // runCatching چون دیتابیس‌های خیلی قدیمی ممکنه هنوز این ستون رو نداشته باشن (قبل از migration).
+    legacyGift = runCatching { getInt("legacy_gift_granted") != 0 }.getOrDefault(false),
     createdAt = getString("created_at")
 )
