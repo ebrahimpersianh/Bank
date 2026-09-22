@@ -879,7 +879,15 @@ private fun TodaySpendHero(
                         modifier = Modifier.padding(top = 3.dp),
                     )
                 }
-                HomeSevenDayChart(values = weekSpend, modifier = Modifier.padding(top = 12.dp))
+                HomeSevenDayChart(
+                    values = weekSpend,
+                    modifier = Modifier.padding(top = 12.dp),
+                    // برچسبِ هر میله - بی این، لمسِ نمودار چیزی برای گفتن ندارد.
+                    labels = weekSpend.indices.map { index ->
+                        val ago = weekSpend.lastIndex - index
+                        if (ago == 0) "امروز" else "${ago.toFa()} روز پیش"
+                    },
+                )
                 HomeSevenDayChartLabels()
             }
             // 🚨 **درآمد و خرجِ امروز، با فلشِ رنگی** (خواسته‌ی کاربر با طرحِ مرجع).

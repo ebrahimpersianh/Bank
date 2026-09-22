@@ -18,6 +18,13 @@ data class ReportStats(
     val deltaPercent: Int?,
     val monthlyBars: List<Double>,
     val firstBarLabel: String,
+    /**
+     * برچسبِ **تک‌تکِ** میله‌ها برای حبابِ لمس - جدا از دو برچسبِ سرِ نمودار.
+     *
+     * هم‌اندازه‌ی [monthlyBars] است؛ اگر روزی نبود، `InteractiveBars` خودش لمس را
+     * خاموش می‌کند و چیزی نمی‌شکند.
+     */
+    val barLabels: List<String>,
     val lastBarLabel: String,
     val byCategory: Map<String, Double>,
     val fixedShare: Int?,
@@ -166,6 +173,19 @@ fun buildReportStats(
         periodSpend = periodSpend,
         deltaPercent = delta,
         monthlyBars = bars,
+        // هر میله نامِ خودش را دارد: در هفته روزِ هفته، در ماه روزِ ماه، در فصل/سال نامِ ماه.
+        barLabels = when (period) {
+            ReportPeriod.WEEK -> bars.indices.map { index ->
+                val ago = bars.lastIndex - index
+                if (ago == 0) "امروز" else "${ago.toFa()} روز پیش"
+            }
+            ReportPeriod.MONTH -> bars.indices.map { index ->
+                "${(index + 1).toFa()} ${persianMonthName(today.m)}"
+            }
+            else -> bars.indices.map { index ->
+                persianMonthName(monthBack(today, bars.lastIndex - index).second)
+            }
+        },
         // برچسبِ دو سرِ نمودار با همان چیزی که کشیده شده می‌خوانَد.
         firstBarLabel = if (period == ReportPeriod.WEEK) {
             "۷ روزِ گذشته"

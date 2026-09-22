@@ -57,6 +57,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.InteractiveBars
 import ir.sadteam.loancalc.ui.components.drawHeroLeaves
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
@@ -222,6 +223,7 @@ fun ReportTabScreen(
                 privacyMode = privacyMode,
                 // در نمای ماه، میله‌ی سفید **امروز** است نه آخرین روزِ ماه.
                 currentBarIndex = if (period == ReportPeriod.MONTH) today.d - 1 else stats.monthlyBars.lastIndex,
+                barLabels = stats.barLabels,
             )
         }
         if (stats.fixedShare != null) {
@@ -635,6 +637,8 @@ private fun PeriodSpendHero(
     privacyMode: Boolean,
     /** کدام میله «حالا»ست. در نمای ماه روزِ جاری، در فصل/سال آخرین ماه. */
     currentBarIndex: Int = bars.lastIndex,
+    /** برچسبِ هر میله برای حبابِ لمس. خالی یعنی نمودار لمس‌پذیر نیست. */
+    barLabels: List<String> = emptyList(),
 ) {
     Column(
         modifier = Modifier
@@ -699,25 +703,21 @@ private fun PeriodSpendHero(
             }
         }
         if (bars.any { it > 0.0 }) {
-            val max = bars.max()
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(40.dp),
+            InteractiveBars(
+                values = bars,
+                labels = barLabels,
+                valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
+                currentIndex = currentBarIndex,
+                barColor = Color.White.copy(alpha = 0.30f),
+                currentBarColor = Color.White,
+                tooltipBackground = PurpleDeep,
+                tooltipTitleColor = Color.White.copy(alpha = 0.75f),
+                tooltipValueColor = Color.White,
+                modifier = Modifier.padding(top = 12.dp),
                 // ۳۱ میله در عرضِ یک کارت با فاصله‌ی ۳ جا نمی‌شود؛ فاصله با تعدادِ
                 // میله‌ها کم می‌شود تا هر دو نما تمیز بمانند.
-                horizontalArrangement = Arrangement.spacedBy(if (bars.size > 12) 1.5.dp else 3.dp),
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                bars.forEachIndexed { index, value ->
-                    val current = index == currentBarIndex
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight((value / max).toFloat().coerceIn(0.06f, 1f))
-                            .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
-                            .background(if (current) Color.White else Color.White.copy(alpha = 0.30f)),
-                    )
-                }
-            }
+                spacing = if (bars.size > 12) 1.5.dp else 3.dp,
+            )
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,

@@ -11,15 +11,28 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.R
 import kotlin.math.PI
 import kotlin.math.sin
@@ -31,7 +44,12 @@ import kotlinx.coroutines.delay
  *
  * **خودِ تصویرِ طراح، نه بازسازیِ دستی‌اش.** چند دورِ بازسازیِ کدیِ اسپلش شکست خورد تا این
  * قاعده نوشته شد: وقتی طرحِ مرجع یک رندرِ سه‌بعدی/نوری است، فایلش مستقیم گذاشته می‌شود.
- * نامِ «جیبک»، زیرنویس و حلقه‌ی بارگذاری همه بخشی از خودِ تصویرند، نه `Text`.
+ * نامِ «جیبک» و زیرنویس بخشی از خودِ تصویرند.
+ *
+ * ⚠️ **حلقه‌ی بارگذاری عمداً در تصویر نیست و این‌جا کشیده می‌شود** (خواسته‌ی کاربر): حلقه‌ی
+ * پخته‌شده در عکس نمی‌چرخد و یک نمادِ مرده است. طراح آن را از تصویر برداشت تا دو حلقه
+ * روی هم نیفتند، و این‌جا همان‌شکل ولی **چرخان** ساخته می‌شود - در همان جای تصویرِ اصلی
+ * (۷۹٪ ارتفاع).
  *
  * ⚠️ یک دور این صفحه با `Text`ِ واقعی و نشانِ بریده‌شده از آیکون ساخته شد و کاربر رد کرد
  * («خوشم نیومد») - خالی و بی‌جان بود. تصویرِ کامل برگشت.
@@ -90,6 +108,57 @@ fun SplashIntroScreen(onDone: () -> Unit) {
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
+        // حلقه‌ی چرخانِ بارگذاری + متنش، دقیقاً همان‌جای تصویرِ مرجع.
+        val spin by transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1100, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+            label = "splashSpinner",
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxHeight(0.845f)
+                .padding(top = 0.dp),
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Canvas(modifier = Modifier.size(34.dp)) {
+                val stroke = 3.dp.toPx()
+                val inset = stroke / 2f
+                val box = Size(size.width - stroke, size.height - stroke)
+                // حلقه‌ی زمینه: سبزِ تیره‌ی کم‌رنگ، مثلِ خودِ تصویر.
+                drawArc(
+                    color = Color(0xFF0B6B3A).copy(alpha = 0.55f),
+                    startAngle = 0f,
+                    sweepAngle = 360f,
+                    useCenter = false,
+                    topLeft = Offset(inset, inset),
+                    size = box,
+                    style = Stroke(width = stroke, cap = StrokeCap.Round),
+                )
+                // کمانِ روشن که می‌چرخد.
+                drawArc(
+                    color = Color(0xFF3FD98A),
+                    startAngle = spin,
+                    sweepAngle = 96f,
+                    useCenter = false,
+                    topLeft = Offset(inset, inset),
+                    size = box,
+                    style = Stroke(width = stroke, cap = StrokeCap.Round),
+                )
+            }
+            Text(
+                "در حال بارگذاری ...",
+                color = Color.White.copy(alpha = 0.66f),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+        }
         Canvas(modifier = Modifier.fillMaxSize()) {
             sparkles.forEach { s ->
                 // موجِ سینوسی: هر ذره فازِ خودش را دارد، پس همه با هم چشمک نمی‌زنند.

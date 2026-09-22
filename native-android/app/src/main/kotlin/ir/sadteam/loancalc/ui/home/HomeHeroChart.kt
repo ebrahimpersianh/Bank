@@ -17,6 +17,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import ir.sadteam.loancalc.ui.components.InteractiveBars
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +35,8 @@ import androidx.compose.ui.unit.sp
 fun HomeSevenDayChart(
     values: List<Double>,
     modifier: Modifier = Modifier,
+    /** برچسبِ هر میله برای حبابِ لمس - خالی یعنی نمودار لمس‌پذیر نیست. */
+    labels: List<String> = emptyList(),
 ) {
     // ⚠️ **حالتِ خالی**: اگه کلِ هفته خرجی نبوده، هر هفت میله ارتفاعِ صفر می‌گیرن و یه نوارِ
     // ۳۴ پیکسلیِ **کاملاً خالی** وسطِ کارتِ قهرمان جا می‌مونه - رو گوشیِ واقعی مثلِ یه سوراخ
@@ -48,35 +52,22 @@ fun HomeSevenDayChart(
         )
         return
     }
-    val max = values.maxOrNull()?.takeIf { it > 0.0 } ?: 1.0
-    Box(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                // 🚨 **۲۶ نه ۳۴** (بازخوردِ ۳۱ شهریور با طرحِ مرجع): نمودار حالا **کنارِ**
-                // جفتِ درآمد/خرج می‌نشیند نه زیرِ کلِ کارت، پس عرضش کمتر است و میله‌ی
-                // بلند در عرضِ کم، کارت را دراز می‌کرد.
-                .height(26.dp),
-            horizontalArrangement = Arrangement.spacedBy(3.dp),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            values.forEachIndexed { index, value ->
-                val isToday = index == values.lastIndex
-                // کسرِ ارتفاع با انیمیشن بالا میاد - همون حسِ نموداری که بقیه‌ی نمودارهای اپ دارن.
-                val target = (value / max).toFloat().coerceIn(0.06f, 1f)
-                val fraction by animateFloatAsState(target, tween(520), label = "bar$index")
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(fraction)
-                        .background(
-                            color = if (isToday) Color.White else Color.White.copy(alpha = 0.32f),
-                            shape = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
-                        ),
-                )
-            }
-        }
-    }
+    InteractiveBars(
+        values = values,
+        labels = labels,
+        valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
+        currentIndex = values.lastIndex,
+        barColor = Color.White.copy(alpha = 0.32f),
+        currentBarColor = Color.White,
+        tooltipBackground = Color.Black.copy(alpha = 0.45f),
+        tooltipTitleColor = Color.White.copy(alpha = 0.75f),
+        tooltipValueColor = Color.White,
+        modifier = modifier,
+        // 🚨 **۲۶ نه ۳۴** (بازخوردِ ۳۱ شهریور با طرحِ مرجع): نمودار حالا **کنارِ**
+        // جفتِ درآمد/خرج می‌نشیند نه زیرِ کلِ کارت، پس عرضش کمتر است و میله‌ی
+        // بلند در عرضِ کم، کارت را دراز می‌کرد.
+        height = 26.dp,
+    )
 }
 
 /** ردیفِ برچسبِ زیرِ نمودار - «۷ روزِ گذشته» چپ‌رنگ‌تر، «امروز» پررنگ‌تر. طبقِ طرح. */
