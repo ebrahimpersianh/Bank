@@ -123,7 +123,7 @@ fun AppHeroCard(
             // **هر تمی** جور دربیاید (خواسته‌ی دومِ همان پیام): روی سبز، بنفش، لاجورد یا
             // هر تمِ خریدنیِ بعدی، رنگش از خودِ زمینه می‌آید. یک هگزِ ثابت روی نیمی از
             // تم‌ها لکه می‌شد.
-            .drawBehind { drawHeroLeaves() }
+            .drawBehind { drawHeroLeaves(bothSides = true) }
             .padding(AppSpacing.cardPadding),
     ) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
@@ -141,7 +141,7 @@ fun AppHeroCard(
  * ⚠️ شفافیتِ ۰٫۰۹ و ۰٫۰۶ عمدی است: نقش باید **حس** شود نه دیده؛ پررنگ‌تر از این با
  * عددِ قهرمان رقابت می‌کند - همان دلیلی که کارتِ تزئینیِ شلوغ در این بازطراحی حذف شد.
  */
-private fun DrawScope.drawHeroLeaves() {
+fun DrawScope.drawHeroLeaves(bothSides: Boolean = false) {
     val unit = size.minDimension
     // برگِ بزرگ‌تر، کمی بیرون از کادر می‌نشیند تا «بریده از لبه» دیده شود نه «چسبانده».
     drawLeaf(
@@ -157,6 +157,24 @@ private fun DrawScope.drawHeroLeaves() {
         width = unit * 0.19f,
         rotationDeg = -14f,
         color = Color.White.copy(alpha = 0.06f),
+    )
+    if (!bothSides) return
+    // 🚨 **قرینه‌ی سمتِ راست** (خواسته‌ی کاربر، ۳۱ شهریور: «قرار بود سمت راست هم باشد»).
+    // کم‌رنگ‌تر از چپ است چون سمتِ راست جای برچسب و عدد است و نقش نباید پشتِ متن
+    // پررنگ شود؛ در تمِ راست‌به‌چپ چشم از همان‌جا شروع می‌کند.
+    drawLeaf(
+        center = Offset(size.width - unit * 0.08f, unit * 0.10f),
+        length = unit * 0.50f,
+        width = unit * 0.21f,
+        rotationDeg = -28f,
+        color = Color.White.copy(alpha = 0.06f),
+    )
+    drawLeaf(
+        center = Offset(size.width - unit * 0.01f, unit * 0.34f),
+        length = unit * 0.36f,
+        width = unit * 0.15f,
+        rotationDeg = 12f,
+        color = Color.White.copy(alpha = 0.04f),
     )
 }
 

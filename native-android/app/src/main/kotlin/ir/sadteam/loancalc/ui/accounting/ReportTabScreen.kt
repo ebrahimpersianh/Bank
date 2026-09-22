@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -56,6 +57,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.drawHeroLeaves
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.theme.AppPurpleInk
@@ -640,6 +642,9 @@ private fun PeriodSpendHero(
             .hardShadow(PurpleShadow, 5.dp, AppRadius.card)
             .clip(RoundedCornerShape(AppRadius.card))
             .background(Brush.linearGradient(listOf(AppPurple, PurpleDeep)))
+            // این کارت `AppHeroCard` نیست (گرادیانِ بنفشِ خودش را دارد)، پس نقشِ برگ را
+            // باید صریح بگیرد - وگرنه تنها کارتِ قهرمانِ برنامه بود که نداشت.
+            .drawBehind { drawHeroLeaves(bothSides = true) }
             .padding(16.dp),
     ) {
         Row(

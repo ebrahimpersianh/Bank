@@ -595,15 +595,7 @@ private fun TodaySpendSheet(
             AppHeroCard {
                 // فلشِ قرمز کنارِ خودِ برچسب می‌نشیند، نه کنارِ عدد: عددِ ۲۶ی قهرمان با یک
                 // فلشِ هم‌قد شلوغ می‌شود، و جهت را همان یک‌بار گفتن کافی است.
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(periodLabel, color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Icon(
-                        Icons.Filled.ArrowDownward,
-                        contentDescription = null,
-                        tint = HeroExpense,
-                        modifier = Modifier.padding(start = 3.dp).size(11.dp),
-                    )
-                }
+                Text(periodLabel, color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         maskIfPrivate(masked, rialToToman(total.toLong()).toFaMoney()) + " تومان",
@@ -859,8 +851,18 @@ private fun TodaySpendHero(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top,
         ) {
-            Column {
-                Text("خرجِ امروز", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+            // ستونِ چپ. `weight` اجباری است: بی آن، عددِ بزرگ با اندازه‌ی متنِ درشت کلِ
+            // عرض را می‌گیرد و ستونِ درآمد/خرج از کادر بیرون می‌افتد (باگی که کاربر با
+            // اسکرین‌شات گزارش کرد: «همه‌چی کشیده شده»).
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    periodLabel,
+                    color = HeroMuted,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         // fmt() جداکننده‌ی لاتین می‌داد و عدد ریال بود.
@@ -872,6 +874,8 @@ private fun TodaySpendHero(
                         fontSize = 26.sp,
                         letterSpacing = (-0.5).sp,
                         fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 3.dp),
                     )
                 }
@@ -895,6 +899,16 @@ private fun TodaySpendHero(
                     amount = todayIncome,
                     income = true,
                     privacyMode = privacyMode,
+                )
+                // ⚠️ این خط یک‌بار حذف شده بود چون عددِ بزرگِ کارت هم «خرجِ امروز» بود و
+                // تکراری می‌شد. حالا که عددِ بزرگ **بازه‌ی انتخاب‌شده** است (هفته/ماه/…)،
+                // دیگر تکراری نیست و جفتِ فلشِ مثبت/منفیِ طرح کامل می‌شود.
+                HeroFlowLine(
+                    label = "خرجِ امروز",
+                    amount = todaySpend,
+                    income = false,
+                    privacyMode = privacyMode,
+                    modifier = Modifier.padding(top = 7.dp),
                 )
                 // درصدِ دیروز از قرص درآمد و به یک خطِ ریزِ زیرِ همین جفت تبدیل شد -
                 // خبرش می‌مانَد، ولی دیگر جای عددِ اصلی را نمی‌گیرد.
