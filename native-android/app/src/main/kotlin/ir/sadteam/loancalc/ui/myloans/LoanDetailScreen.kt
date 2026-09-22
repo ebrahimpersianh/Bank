@@ -52,6 +52,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PriorityHigh
@@ -116,6 +117,9 @@ import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.components.AccountPickerDialog
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.HeroMuted
+import ir.sadteam.loancalc.ui.components.HeroTone
 import ir.sadteam.loancalc.ui.components.PaidRing
 import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.AppChip
@@ -767,22 +771,17 @@ fun LoanDetailScreen(
             }
             // 🚨 **نامِ بانک از جدولِ مشخصات به سرصفحه آمد** (بندِ ۲ی بخشِ ۸۰): نامِ بانک
             // **هویتِ** وام است نه یکی از مشخصاتش، پس کنارِ نامِ وام می‌نشیند نه در فهرست.
+            // نامِ وام از سرصفحه به **کارتِ هویت** رفت (طرحِ مرجعِ کاربر، ۳۱ شهریور):
+            // آن‌جا کنارِ نشانِ بانک و وضعیت می‌نشیند و یک‌جا می‌گوید «این کدام وام است».
             Column(modifier = Modifier.padding(start = 4.dp).weight(1f)) {
+                Text("وام", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    loan.name,
-                    color = AppText,
-                    fontSize = 18.sp,
+                    "جزئیاتِ وام و وضعیتِ پرداخت",
+                    color = AppMuted,
+                    fontSize = 10.5.sp,
                     fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 1.dp),
                 )
-                if (loan.bank.isNotBlank() && loan.bank != "—") {
-                    Text(
-                        loan.bank,
-                        color = AppMuted,
-                        fontSize = 10.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 1.dp),
-                    )
-                }
             }
             IconButton(onClick = {
                 if (isManualLoan) {
@@ -854,6 +853,23 @@ fun LoanDetailScreen(
             rows.filter { it["paid"] != true }.take(overdueCount)
                 .sumOf { (it["installment"] as? Number)?.toDouble() ?: loan.installment }
         }
+        LoanIdentityCard(
+            name = loan.name,
+            bank = loan.bank,
+            settled = loan.n > 0 && loan.paidCount >= loan.n,
+            overdue = overdueCount > 0,
+            amount = loan.amount,
+            months = loan.n,
+            ratePct = ratePct,
+            startLabel = remember(loan) {
+                val sd = viewModel.getLoanStartDate(loan)
+                "${toFa(sd.y)}/${sd.m}/${sd.d}".let { _ ->
+                    "${toFa(sd.y)}/${toFa(sd.m)}/${toFa(sd.d)}"
+                }
+            },
+            privacyMode = privacyMode,
+        )
+
         LoanHeroCard(
             remaining = remaining,
             installment = displayInstallment,
@@ -1801,6 +1817,138 @@ private fun LoanHeroCard(
  * پرداخت‌شده/معوق/مانده را می‌دهد و حلقه فقط یک عددِ درشت. کاربر در یک نگاه عدد را
  * می‌خواند و در نگاهِ دوم تفکیک را.
  */
+/**
+ * **کارتِ هویتِ وام** - طرحِ مرجعِ کاربر (۳۱ شهریور).
+ *
+ * یک کارتِ رنگیِ بالای صفحه که در یک نگاه می‌گوید «این کدام وام است و چه شکلی است»:
+ * نشانِ بانک در یک دایره، نامِ وام، بجِ وضعیت، و نوارِ چهار عددِ ثابتِ وام.
+ *
+ * ⚠️ **چهار عددِ این نوار هیچ‌وقت عوض نمی‌شوند** (مبلغِ وام، مدت، نرخ، تاریخِ شروع) -
+ * برعکسِ کارتِ زیرش که همه‌چیزش با هر پرداخت تغییر می‌کند. همین مرز دلیلِ دو کارت
+ * جدا بودن است، نه سلیقه.
+ */
+@Composable
+private fun LoanIdentityCard(
+    name: String,
+    bank: String,
+    settled: Boolean,
+    overdue: Boolean,
+    amount: Double,
+    months: Int,
+    ratePct: Double,
+    startLabel: String,
+    privacyMode: Boolean,
+) {
+    val statusLabel = when {
+        settled -> "تسویه‌شده"
+        overdue -> "معوق"
+        else -> "فعال"
+    }
+    val statusColor = when {
+        settled -> AppPrimary
+        overdue -> AppDanger
+        else -> AppPrimary
+    }
+    AppHeroCard(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
+        tone = if (overdue) HeroTone.RED else HeroTone.GREEN,
+    ) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            // دایره‌ی نشانِ بانک - همان عنصرِ گردِ گوشه‌ی طرح.
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color.White.copy(alpha = 0.22f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.AccountBalance,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Column(modifier = Modifier.weight(1f).padding(start = 11.dp)) {
+                Text(
+                    name,
+                    color = Color.White,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (bank.isNotBlank() && bank != "—") {
+                    Text(
+                        bank,
+                        color = HeroMuted,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 1.dp),
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .padding(top = 6.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(Color.White)
+                        .padding(horizontal = 9.dp, vertical = 3.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(statusColor),
+                    )
+                    Text(
+                        statusLabel,
+                        color = statusColor,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(start = 5.dp),
+                    )
+                }
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            LoanIdentityStat(
+                label = "مبلغِ وام",
+                value = maskIfPrivate(privacyMode, amountToman(amount)),
+                unit = "تومان",
+                modifier = Modifier.weight(1.2f),
+            )
+            LoanIdentityStat(label = "مدتِ کل", value = toFa(months), unit = "ماه", modifier = Modifier.weight(1f))
+            LoanIdentityStat(label = "نرخِ سود", value = "${fmtRate(ratePct).faDigits()}٪", unit = "سالانه", modifier = Modifier.weight(1f))
+            LoanIdentityStat(label = "تاریخِ شروع", value = startLabel, unit = "", modifier = Modifier.weight(1.2f))
+        }
+    }
+}
+
+@Composable
+private fun LoanIdentityStat(label: String, value: String, unit: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(label, color = HeroMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            value,
+            color = Color.White,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+        if (unit.isNotBlank()) {
+            Text(unit, color = HeroMuted, fontSize = 7.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        }
+    }
+}
+
 /**
  * سه کارتِ ریزِ زیرِ کارتِ اصلی: تعدادِ کلِ اقساط · مبلغِ هر قسط · سررسیدِ بعدی.
  *
