@@ -29,6 +29,17 @@ data class ReportStats(
      * کاربره، این چیزیه که فراموش شده. رجوع کن به [RecurringDetector].
      */
     val detectedSubscriptions: List<RecurringExpense> = emptyList(),
+    /**
+     * سه عددِ ردیفِ آمارِ دوره (بازخوردِ ۳۱ شهریور با طرحِ مرجع).
+     *
+     * ⚠️ درآمد از قبل **داخلِ همین تابع** حساب می‌شد (برای `fixedShare`) ولی هیچ‌جا نشان
+     * داده نمی‌شد - یعنی کلِ تبِ گزارش فقط خرج را می‌گفت. حالا بیرون می‌آید، نه دوباره
+     * حساب می‌شود: دو منبعِ حقیقت برای یک عدد همان خطای ثبت‌شده‌ی پروژه است.
+     */
+    val periodIncome: Double = 0.0,
+    val incomeDeltaPercent: Int? = null,
+    val transactionCount: Int = 0,
+    val transactionCountDelta: Int = 0,
 ) {
     /** جمعِ ماهانه‌ی اشتراک‌های کشف‌شده. */
     val detectedMonthly: Double get() = detectedSubscriptions.sumOf { it.typicalAmountRial }
@@ -95,6 +106,14 @@ fun buildReportStats(
     val income = realTransactions
         .filter { it.type == DEPOSIT && windowMonths.any { w -> w.first == it.year && w.second == it.month } }
         .sumOf { it.amount }
+    val prevIncome = realTransactions
+        .filter { it.type == DEPOSIT && prevMonths.any { p -> p.first == it.year && p.second == it.month } }
+        .sumOf { it.amount }
+    val incomeDelta = if (prevIncome > 0.0) (((income - prevIncome) / prevIncome) * 100).toInt() else null
+    // شمارش روی **همه‌ی** تراکنش‌های واقعی است (واریز و برداشت)، نه فقط خرج: عنوانش
+    // «تعدادِ تراکنش» است و کاربر همان را می‌شمارد.
+    val countNow = realTransactions.count { tx -> windowMonths.any { it.first == tx.year && it.second == tx.month } }
+    val countPrev = realTransactions.count { tx -> prevMonths.any { it.first == tx.year && it.second == tx.month } }
     val fixedShare = if (income > 0.0 && fixedAmount > 0.0) {
         ((fixedAmount / income) * 100).toInt().coerceIn(0, 100)
     } else {
@@ -120,6 +139,10 @@ fun buildReportStats(
         recurringMonthly = recurringExpenses.sumOf { it.amount },
         overspentCategory = findOverspentCategory(expenses, today),
         detectedSubscriptions = detectSubscriptions(expenses, recurringExpenses),
+        periodIncome = income,
+        incomeDeltaPercent = incomeDelta,
+        transactionCount = countNow,
+        transactionCountDelta = countNow - countPrev,
     )
 }
 

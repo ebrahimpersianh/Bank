@@ -42,7 +42,9 @@ for path in glob.glob(os.path.join(ROOT, '**/*.kt'), recursive=True):
                 # استثنا: شمارنده‌ها و شناسه‌ها
                 # `number` هم شمارنده است نه مبلغ: `installmentNumber` یعنی **شماره‌ی** قسط
                 # (ردیفِ چندم)، نه مبلغش - و دقیقاً برای همین ابهام صریح نام‌گذاری شده.
-                if re.search(r'(count|index|id|number|days?|months?|years?|steps?|digits?|seconds?)$', name, re.I):
+                # `...Percent`/`...Ratio`/`...Share` درصدند نه مبلغ: `spendChangePercent`
+                # یعنی «چند درصد تغییر»، و `Int` برایش درست است.
+                if re.search(r'(count|index|id|number|days?|months?|years?|steps?|digits?|seconds?|percent|ratio|share)$', name, re.I):
                     continue
                 # `value` و `total`ِ خالی خیلی عمومی‌ان - تو setterهای تنظیمات و شمارنده‌ی
                 # مرحله هم میان. فقط اسمِ صریحاً پولی گزارش می‌شه.

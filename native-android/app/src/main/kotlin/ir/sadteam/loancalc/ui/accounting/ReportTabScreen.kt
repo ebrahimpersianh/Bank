@@ -26,6 +26,9 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
@@ -88,6 +91,7 @@ import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMarkOff
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppPurple
@@ -217,6 +221,20 @@ fun ReportTabScreen(
             )
         }
         if (stats.fixedShare != null) {
+            // ردیفِ سه‌تاییِ آمارِ دوره (طرحِ مرجعِ کاربر). زیرِ هیرو می‌نشیند چون هیرو
+            // فقط **خرج** را می‌گوید و این سه، همان یک عدد را در جا می‌گذارد: چقدر آمد،
+            // چقدر رفت، در چند تراکنش.
+            item {
+                PeriodStatRow(
+                    income = stats.periodIncome,
+                    incomeChangePercent = stats.incomeDeltaPercent,
+                    spend = stats.periodSpend,
+                    spendChangePercent = stats.deltaPercent,
+                    count = stats.transactionCount,
+                    countDelta = stats.transactionCountDelta,
+                    privacyMode = privacyMode,
+                )
+            }
             item {
                 FixedVsFreeCard(
                     fixedShare = stats.fixedShare,
@@ -706,6 +724,105 @@ private val PurpleShadow = Color(0xFF5C2FA8)
 
 // ═══ ۳ · ثابت و متغیر ══════════════════════════════════════════════════════════
 /** نوارِ ۲۴ پیکسلی با گوشه‌ی ۹: بخشِ «ثابت» راه‌راهِ قرمز، بخشِ «آزاد» سبزِ کم‌رنگ. */
+/**
+ * سه کارتِ کوچکِ «درآمد / هزینه / تعدادِ تراکنش»، هرکدام با تغییرِ نسبت به دوره‌ی قبل.
+ *
+ * ⚠️ رنگِ فلش **معناییِ پول** است نه «خوب/بد»: بالا رفتنِ درآمد سبز و بالا رفتنِ هزینه
+ * قرمز است. همان دو توکنِ سراسری، پس با تمِ خریدنی نمی‌چرخند.
+ */
+@Composable
+private fun PeriodStatRow(
+    income: Double,
+    incomeChangePercent: Int?,
+    spend: Double,
+    spendChangePercent: Int?,
+    count: Int,
+    countDelta: Int,
+    privacyMode: Boolean,
+) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        PeriodStatCard(
+            icon = Icons.Filled.ArrowDownward,
+            iconTint = AppPrimaryInk,
+            iconBg = AppPrimaryPill,
+            title = "درآمد",
+            value = maskIfPrivate(privacyMode, income.rialToFaCompact()),
+            unit = "تومان",
+            footer = incomeChangePercent?.let { "${kotlin.math.abs(it).toFa()}٪ از دوره‌ی قبل" } ?: "دوره‌ی قبل خالی",
+            footerTint = if ((incomeChangePercent ?: 0) >= 0) AppPrimaryInk else AppDangerInk,
+            modifier = Modifier.weight(1f),
+        )
+        PeriodStatCard(
+            icon = Icons.Filled.ArrowUpward,
+            iconTint = AppDangerInk,
+            iconBg = AppDangerPill,
+            title = "هزینه",
+            value = maskIfPrivate(privacyMode, spend.rialToFaCompact()),
+            unit = "تومان",
+            footer = spendChangePercent?.let { "${kotlin.math.abs(it).toFa()}٪ از دوره‌ی قبل" } ?: "دوره‌ی قبل خالی",
+            footerTint = if ((spendChangePercent ?: 0) > 0) AppDangerInk else AppPrimaryInk,
+            modifier = Modifier.weight(1f),
+        )
+        PeriodStatCard(
+            icon = Icons.Filled.SwapHoriz,
+            iconTint = AppPurple,
+            iconBg = AppIconFrame,
+            title = "تعدادِ تراکنش",
+            value = count.toFa(),
+            unit = "عدد",
+            footer = when {
+                countDelta > 0 -> "+${countDelta.toFa()} از دوره‌ی قبل"
+                countDelta < 0 -> "−${(-countDelta).toFa()} از دوره‌ی قبل"
+                else -> "بی‌تغییر"
+            },
+            footerTint = AppMuted,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun PeriodStatCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: Color,
+    iconBg: Color,
+    title: String,
+    value: String,
+    unit: String,
+    footer: String,
+    footerTint: Color,
+    modifier: Modifier = Modifier,
+) {
+    AppCard(contentPadding = 10.dp, modifier = modifier) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, color = AppText, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, modifier = Modifier.weight(1f))
+            Box(
+                modifier = Modifier.size(22.dp).clip(RoundedCornerShape(999.dp)).background(iconBg),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(12.dp))
+            }
+        }
+        Text(
+            value,
+            color = AppText,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        Text(unit, color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
+        Text(
+            footer,
+            color = footerTint,
+            fontSize = 8.5.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            modifier = Modifier.padding(top = 5.dp),
+        )
+    }
+}
+
 @Composable
 private fun FixedVsFreeCard(
     fixedShare: Int,
