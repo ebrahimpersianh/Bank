@@ -3,5 +3,5 @@
     <color name="app_bg">#10181F</color>
     <!-- زمینه‌ی فریمِ اولِ اندروید در حالتِ شب. بی این، کرمِ روشن روی گوشیِ تاریک یک
          فلاشِ سفیدِ ناگهانی می‌داد؛ خودِ اینتروی Compose عمداً همیشه کرم می‌مانَد. -->
-    <color name="splash_bg">#10181F</color>
+    <color name="splash_bg">#013D1F</color>
 </resources>

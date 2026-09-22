@@ -10,16 +10,23 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.R
 import kotlin.math.PI
 import kotlin.math.sin
@@ -29,9 +36,12 @@ import kotlinx.coroutines.delay
 /**
  * ═══════════ اسپلش ═══════════
  *
- * **خودِ تصویرِ طراح، نه بازسازیِ دستی‌اش.** سه دورِ بازسازیِ کدیِ اسپلش شکست خورد تا بالاخره
- * همین قاعده نوشته شد: وقتی طرحِ مرجع یک رندرِ سه‌بعدی/نوری است، فایلش مستقیم گذاشته می‌شود.
- * متنِ «جیبک» و زیرنویس و نوار همه بخشی از خودِ تصویرند، نه `Text`.
+ * **همان نشانِ آیکونِ لانچر، نه یک تصویرِ جدا.** فایلِ اسپلش از خودِ فایلِ «حالتِ سالمِ»
+ * آیکون ساخته می‌شود، پس فریمِ اولِ سیستمی و این صفحه و آیکونِ روی صفحه‌ی گوشی هر سه یک
+ * چیزند و گذار بینشان دیده نمی‌شود.
+ *
+ * ⚠️ نامِ «جیبک» این‌جا **`Text` است نه بخشی از تصویر**: تصویرِ قبلی متن را پخته داشت و
+ * با قلمِ خریدنیِ کاربر هم‌قدم نمی‌شد.
  *
  * تنها چیزی که کد اضافه می‌کند **برق‌زدنِ نقطه‌های پس‌زمینه** است (خواسته‌ی کاربر): چند ذره‌ی
  * ریز که آرام روشن و خاموش می‌شوند و کمی بالا می‌روند، پس صفحه‌ی اول زنده دیده می‌شود نه یک
@@ -79,14 +89,33 @@ fun SplashIntroScreen(onDone: () -> Unit) {
         label = "sparklePhase",
     )
 
-    // زمینه هم‌رنگِ گوشه‌ی خودِ تصویر است، پس روی نسبت‌های مختلفِ صفحه لبه‌ی روشن دیده نمی‌شود.
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF00150E))) {
-        Image(
-            painter = painterResource(R.drawable.jibak_splash_art),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
-        )
+    // زمینه **دقیقاً** رنگِ `splash_bg` است (همان `#013D1F`ِ فریمِ سیستمی)، پس لحظه‌ی
+    // تحویلِ فریمِ اندروید به این صفحه هیچ پرشِ رنگی دیده نمی‌شود.
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF013D1F))) {
+        Column(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.jibak_splash_mark),
+                contentDescription = null,
+                modifier = Modifier.size(148.dp),
+            )
+            Text(
+                "جیبک",
+                color = Color(0xFFF2D488),
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(top = 14.dp),
+            )
+            Text(
+                "مدیریت ساده، زندگی آسوده",
+                color = Color.White.copy(alpha = 0.72f),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 5.dp),
+            )
+        }
         Canvas(modifier = Modifier.fillMaxSize()) {
             sparkles.forEach { s ->
                 // موجِ سینوسی: هر ذره فازِ خودش را دارد، پس همه با هم چشمک نمی‌زنند.

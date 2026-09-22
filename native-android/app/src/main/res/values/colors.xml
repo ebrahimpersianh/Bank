@@ -3,5 +3,5 @@
          اولین فریمه. -->
     <color name="app_bg">#F5FBFF</color>
     <!-- دقیقاً رنگِ پس‌زمینه‌ی SplashIntroScreen: فریمِ سیستم و فریمِ Compose یک صحنه‌اند. -->
-    <color name="splash_bg">#FFFCF4</color>
+    <color name="splash_bg">#013D1F</color>
 </resources>
