@@ -41,6 +41,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.CloudUpload
@@ -51,7 +52,9 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -109,6 +112,7 @@ import ir.sadteam.loancalc.ui.stats.StatsScreen
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
+import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.AppChip
@@ -116,10 +120,10 @@ import androidx.compose.material.icons.filled.Calculate
 import ir.sadteam.loancalc.ui.components.AppFab
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.BankBadge
-import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.PaidRing
+import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.ProgressRing
@@ -138,7 +142,6 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
 import ir.sadteam.loancalc.ui.theme.AppAccent
-import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
@@ -156,7 +159,6 @@ import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
-import ir.sadteam.loancalc.ui.theme.AppUrgentBorder
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.hardShadow
 import kotlin.math.roundToInt
@@ -585,7 +587,7 @@ fun MyLoansScreen(
                 LazyColumn(
                     state = loansListState,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 100.dp),
+                    contentPadding = PaddingValues(22.dp, 12.dp, 22.dp, 100.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     item {
@@ -788,13 +790,23 @@ fun MyLoansScreen(
                                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        LoanStateRing(
-                                            dim = settled,
-                                            progress = if (settled) 1f else paidPct,
-                                            settled = settled,
-                                            urgent = attention,
-                                            // سکه‌ی ریزِ روی حلقه نشانِ **قسطِ نزدیک** است (فریم).
-                                            showCoin = attention,
+                                        // 🚨 **کاشیِ نشان جای حلقه، سمتِ راست** (طرحِ مرجعِ
+                                        // کاربر: «باکسِ هر وام مثلِ همین عکس با همان آیکون‌ها»).
+                                        // حلقه رفت سمتِ چپ و ریزتر شد؛ چیزی که چشم اول باید
+                                        // بگیرد **نوعِ وام** است نه درصدش، و ده ردیفِ حلقه‌دارِ
+                                        // هم‌شکل دقیقاً همان بی‌روحی‌ای بود که کاربر گفت.
+                                        LoanGlyphTile(
+                                            glyph = loanGlyphFor(loan.name),
+                                            tint = when {
+                                                settled -> AppPrimaryInk
+                                                attention -> AppDangerInk
+                                                else -> AppPrimaryInk
+                                            },
+                                            background = when {
+                                                settled -> AppPrimaryPill
+                                                attention -> AppDangerPill
+                                                else -> AppPrimaryPill
+                                            },
                                         )
                                         Column(
                                             modifier = Modifier
@@ -808,7 +820,32 @@ fun MyLoansScreen(
                                                     color = AppText,
                                                     fontSize = 12.5.sp,
                                                     fontWeight = FontWeight.Black,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier.weight(1f, fill = false),
                                                 )
+                                                // بجِ وضعیت کنارِ اسم (طرحِ مرجع) - رنگِ کارت
+                                                // همین را می‌گفت ولی بی کلمه، و کسی که رنگ را
+                                                // نمی‌خوانَد هیچ‌وقت نمی‌فهمید کدام عقب‌افتاده است.
+                                                val stateLabel = when {
+                                                    settled -> "تسویه شده"
+                                                    overdue -> "معوق"
+                                                    dueSoon -> "نزدیک"
+                                                    else -> null
+                                                }
+                                                if (stateLabel != null) {
+                                                    Text(
+                                                        stateLabel,
+                                                        color = if (settled) AppPrimaryInk else AppDangerInk,
+                                                        fontSize = 8.sp,
+                                                        fontWeight = FontWeight.Black,
+                                                        modifier = Modifier
+                                                            .padding(start = 6.dp)
+                                                            .clip(RoundedCornerShape(999.dp))
+                                                            .background(if (settled) AppPrimaryPill else AppDangerPill)
+                                                            .padding(horizontal = 7.dp, vertical = 2.dp),
+                                                    )
+                                                }
                                                 if (isLocked) {
                                                     Icon(
                                                         Icons.Filled.Lock,
@@ -856,29 +893,79 @@ fun MyLoansScreen(
                                             }
                                             // سطرِ سوم فقط برای وامِ بازه - وامِ تسویه‌شده نداردش.
                                             if (!settled) {
-                                                Text(
-                                                    "${toFa(loan.paidCount)} از ${toFa(loan.n)} قسط · ${loan.bank}",
-                                                    color = AppMuted,
-                                                    fontSize = 9.sp,
-                                                    fontWeight = FontWeight.Bold,
+                                                // دو نشانِ ریز جای نقطه‌ی جداکننده (طرحِ مرجع):
+                                                // چشم «۲ از ۱۲» و نامِ بانک را جدا می‌بیند، نه
+                                                // یک رشته‌ی طولانیِ یکدست.
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                                                     modifier = Modifier.padding(top = 2.dp),
-                                                )
+                                                ) {
+                                                    Icon(
+                                                        Icons.Outlined.EventNote,
+                                                        contentDescription = null,
+                                                        tint = AppLabel,
+                                                        modifier = Modifier.size(10.dp),
+                                                    )
+                                                    Text(
+                                                        "${toFa(loan.paidCount)} از ${toFa(loan.n)} قسط",
+                                                        color = AppMuted,
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                    )
+                                                    Icon(
+                                                        Icons.Outlined.AccountBalance,
+                                                        contentDescription = null,
+                                                        tint = AppLabel,
+                                                        modifier = Modifier.padding(start = 3.dp).size(10.dp),
+                                                    )
+                                                    Text(
+                                                        loan.bank,
+                                                        color = AppMuted,
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                    )
+                                                }
                                             }
                                         }
-                                        when {
-                                            settled -> SettledMedal(diskSize = 34.dp)
-                                            attention -> LoanPayButton(
-                                                onClick = {
-                                                    heroOrigin = cardBounds.heroOriginIn(listBounds)
-                                                    openedLoanId = loan.id
-                                                },
-                                            )
-                                            else -> Icon(
-                                                Icons.Filled.ChevronLeft,
-                                                contentDescription = null,
-                                                tint = AppLabel,
-                                                modifier = Modifier.size(14.dp),
-                                            )
+                                        // ستونِ چپ: درصد بالا، کنشِ ردیف پایین - همان چیدمانِ
+                                        // طرحِ مرجع. حلقه این‌جا **ریز** است چون خبرِ درجه‌دوم
+                                        // است؛ خبرِ اول مبلغِ عقب‌افتاده‌ی وسطِ ردیف است.
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            if (settled) {
+                                                SettledMedal(diskSize = 34.dp)
+                                            } else {
+                                                PaidRing(
+                                                    fraction = paidPct,
+                                                    ringColor = if (attention) AppDangerInk else AppPrimary,
+                                                    trackColor = (if (attention) AppDangerInk else AppPrimary)
+                                                        .copy(alpha = 0.2f),
+                                                    centerTop = "${toFa((paidPct * 100).roundToInt())}٪",
+                                                    centerBottom = "",
+                                                    centerTopColor = if (attention) AppDangerInk else AppPrimary,
+                                                    centerBottomColor = AppMuted,
+                                                    size = 40.dp,
+                                                    stroke = 5.dp,
+                                                    centerTopSize = 10,
+                                                )
+                                            }
+                                            if (attention) {
+                                                LoanPayButton(
+                                                    onClick = {
+                                                        heroOrigin = cardBounds.heroOriginIn(listBounds)
+                                                        openedLoanId = loan.id
+                                                    },
+                                                )
+                                            } else {
+                                                Icon(
+                                                    Icons.Filled.ChevronLeft,
+                                                    contentDescription = null,
+                                                    tint = AppLabel,
+                                                    modifier = Modifier.padding(top = 4.dp).size(14.dp),
+                                                )
+                                            }
                                         }
                                     }
                                 } else {
@@ -1068,81 +1155,6 @@ private fun BackupRestoreRow(onBackup: () -> Unit, onRestore: () -> Unit) {
     )
 }
 
-@Composable
-private fun LoanStateRing(
-    progress: Float,
-    settled: Boolean,
-    urgent: Boolean,
-    showCoin: Boolean,
-    dim: Boolean = false,
-) {
-    // ⚠️ توکن‌های رنگ `@Composable`ان و داخلِ `Canvas` صدا زده نمی‌شن.
-    val track = when {
-        settled -> AppPrimaryPill
-        urgent -> AppUrgentBorder
-        else -> AppChipBg
-    }
-    val arc = if (urgent) AppDanger else AppPrimary
-    val centerInk = when {
-        settled -> AppPrimary
-        urgent -> AppDangerInk
-        else -> AppPrimaryInk
-    }
-    Box(
-        modifier = Modifier
-            .size(52.dp)
-            .then(if (dim) Modifier.alpha(0.7f) else Modifier),
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val stroke = 6.5.dp.toPx()
-            val inset = stroke / 2f
-            val arcSize = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke)
-            drawArc(
-                color = track,
-                startAngle = 0f,
-                sweepAngle = 360f,
-                useCenter = false,
-                topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
-                size = arcSize,
-                style = Stroke(width = stroke, cap = StrokeCap.Round),
-            )
-            if (progress > 0f) {
-                drawArc(
-                    color = arc,
-                    startAngle = -90f,
-                    // پادساعت‌گرد طبقِ فریم.
-                    sweepAngle = -360f * progress.coerceIn(0f, 1f),
-                    useCenter = false,
-                    topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
-                    size = arcSize,
-                    style = Stroke(width = stroke, cap = StrokeCap.Round),
-                )
-            }
-        }
-        if (settled) {
-            Icon(
-                Icons.Filled.Check,
-                contentDescription = "تسویه شد",
-                tint = centerInk,
-                modifier = Modifier.size(18.dp),
-            )
-        } else {
-            Text(
-                "${toFa((progress * 100).roundToInt())}٪",
-                color = centerInk,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Black,
-            )
-        }
-        if (showCoin) {
-            CoinIcon(
-                size = 11.dp,
-                modifier = Modifier.align(Alignment.TopEnd).offset(x = 1.dp, y = (-1).dp),
-            )
-        }
-    }
-}
 
 /**
  * خطِ «N وام عقب‌افتاده» بالای فهرست.
@@ -1254,6 +1266,10 @@ private fun DashboardSummary(
     var type by remember { mutableStateOf(IncomeType.FIXED) }
     var incomePendingDelete by remember { mutableStateOf<IncomeEntity?>(null) }
 
+    // ماهِ جاری برای برچسبِ نقطه‌ی موج. `remember` بی‌کلید کافی است - روزِ تقویم وسطِ
+    // یک ترکیب عوض نمی‌شود.
+    val todayForWave = remember { JalaliCalendar.today() }
+
     // شمارش صعودی اعداد بزرگ داشبورد (پورت animateNumber وب) - حس «پریمیوم» موقع ورود به تب.
     val animatedDebt = countUpDouble(totalRemainingDebt)
     val animatedMonthly = countUpDouble(totalMonthlyInstallment)
@@ -1322,19 +1338,49 @@ private fun DashboardSummary(
             }
                 val rowsLeft = remember(loans) { loans.sumOf { it.n - it.paidCount }.coerceAtLeast(0) }
                 val rowsAll = remember(loans) { loans.sumOf { it.n } }
-                PaidRing(
-                    fraction = paidPct / 100f,
-                    ringColor = AppGoldInk,
-                    trackColor = AppGoldInk.copy(alpha = 0.22f),
-                    centerTop = toFa(rowsLeft),
-                    centerBottom = "از ${toFa(rowsAll)} قسط",
-                    centerTopColor = AppGoldInk,
-                    centerBottomColor = AppGoldInk.copy(alpha = 0.7f),
+                // 🚨 **حلقه ضخیم‌تر شد و «٪ پرداخت‌شده» زیرش نشست** (طرحِ مرجعِ کاربر).
+                // پیش از این حلقه فقط «چند قسط مانده» را می‌گفت و درصد هیچ‌جای کارت نبود؛
+                // آن دو یک جفت‌اند - «چقدر مانده» بی «چقدر رفته» نصفِ خبر است.
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(start = 8.dp),
-                    size = 72.dp,
-                    stroke = 8.dp,
-                    centerTopSize = 17,
-                )
+                ) {
+                    PaidRing(
+                        fraction = paidPct / 100f,
+                        ringColor = AppGoldInk,
+                        trackColor = AppGoldInk.copy(alpha = 0.22f),
+                        centerTop = toFa(rowsLeft),
+                        centerBottom = "از ${toFa(rowsAll)} قسط",
+                        centerTopColor = AppGoldInk,
+                        centerBottomColor = AppGoldInk.copy(alpha = 0.7f),
+                        size = 78.dp,
+                        stroke = 11.dp,
+                        centerTopSize = 19,
+                    )
+                    Row(
+                        modifier = Modifier
+                            .padding(top = 5.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppGoldInk.copy(alpha = 0.12f))
+                            .padding(horizontal = 7.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    ) {
+                        Icon(
+                            Icons.Filled.Autorenew,
+                            contentDescription = null,
+                            tint = AppGoldInk,
+                            modifier = Modifier.size(9.dp),
+                        )
+                        Text(
+                            "${toFa(paidPct)}٪ پرداخت‌شده",
+                            color = AppGoldInk,
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                        )
+                    }
+                }
             }
             // 🚨 **نسبتِ قسط به درآمد آمد داخلِ کارت** (بندِ ۱ جوابِ دورِ ۱۲).
             //
@@ -1383,6 +1429,35 @@ private fun DashboardSummary(
                         .pressScaleClickable(onClick = onOpenIncome)
                         .padding(vertical = 3.dp),
                 )
+            }
+            // 🌊 **موجِ ماندهٔ بدهی** - خواسته‌ی کاربر با طرحِ مرجع: «آن خطِ پایینِ رقم».
+            // شش نقطه = ماندهٔ بدهی در شش ماهِ پیشِ رو، و نقطه‌ی برجسته ماهِ جاری است.
+            // پس شیبِ خط دقیقاً همان چیزی را می‌گوید که کاربر می‌خواهد بداند: دارد کم می‌شود.
+            val debtCurve = remember(loans, totalMonthlyInstallment, totalRemainingDebt) {
+                val monthly = totalMonthlyInstallment
+                (0 until 6).map { month ->
+                    (totalRemainingDebt - monthly * month).coerceAtLeast(0.0).toFloat()
+                }
+            }
+            if (debtCurve.any { it > 0f } && totalMonthlyInstallment > 0) {
+                Box(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
+                    DebtTrendWave(
+                        points = debtCurve,
+                        lineColor = AppGoldInk.copy(alpha = 0.45f),
+                        dotColor = AppGoldInk,
+                    )
+                    Text(
+                        persianMonthName(todayForWave.m),
+                        color = AppGoldInk,
+                        fontSize = 7.5.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppGoldInk.copy(alpha = 0.14f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
             }
             // ⚠️ نوارِ تختِ پیشرفت **حذف شد**: همان درصد حالا در حلقه است و دو گرافیک
             // برای یک عدد، همان چیزی است که این صفحه یک‌بار از آن پاک شد.
