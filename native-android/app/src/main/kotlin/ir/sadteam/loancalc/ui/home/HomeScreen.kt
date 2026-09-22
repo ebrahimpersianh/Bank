@@ -593,9 +593,9 @@ private fun TodaySpendSheet(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             AppHeroCard {
-                // فلشِ قرمز کنارِ خودِ برچسب می‌نشیند، نه کنارِ عدد: عددِ ۲۶ی قهرمان با یک
-                // فلشِ هم‌قد شلوغ می‌شود، و جهت را همان یک‌بار گفتن کافی است.
-                Text(periodLabel, color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                // شیتِ «خرجِ امروز» همیشه مالِ **امروز** است، مستقل از بازه‌ی کارتِ قهرمان -
+                // ردیف‌های زیرش هم تراکنش‌های امروزند.
+                Text("خرجِ امروز", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         maskIfPrivate(masked, rialToToman(total.toLong()).toFaMoney()) + " تومان",

@@ -31,6 +31,9 @@ NEEDS = {
     'BasicTextField': 'androidx.compose.foundation.text.BasicTextField',
     'SolidColor': 'androidx.compose.ui.graphics.SolidColor',
     'TextAlign': 'androidx.compose.ui.text.style.TextAlign',
+    # بیلدِ ۶۱۹ با همین یکی شکست: چهار جا `TextOverflow.Ellipsis` بی ایمپورت بود و
+    # هیچ بررسی‌ای نگرفتش چون در جدول نبود.
+    'TextOverflow': 'androidx.compose.ui.text.style.TextOverflow',
     'TextStyle': 'androidx.compose.ui.text.TextStyle',
     'KeyboardOptions': 'androidx.compose.foundation.text.KeyboardOptions',
     'Spacer': 'androidx.compose.foundation.layout.Spacer',
