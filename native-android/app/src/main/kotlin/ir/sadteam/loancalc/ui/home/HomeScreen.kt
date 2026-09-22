@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CreditCard
@@ -73,6 +74,7 @@ import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompactParts
 import ir.sadteam.loancalc.ui.jibak.toFa
+import ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.account.CompactTransactionRow
@@ -92,6 +94,8 @@ import ir.sadteam.loancalc.ui.components.CoinChip
 import ir.sadteam.loancalc.ui.components.ConfirmPayDialog
 import ir.sadteam.loancalc.ui.components.DonutSlice
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.HeroExpense
+import ir.sadteam.loancalc.ui.components.HeroIncome
 import ir.sadteam.loancalc.ui.components.HeroMuted
 import ir.sadteam.loancalc.ui.components.HeroPillBg
 import ir.sadteam.loancalc.ui.components.JibakMascotFrame
@@ -228,6 +232,12 @@ fun HomeScreen(
             transactions.filter { it.isExpenseOn(d.y, d.m, d.d) }.sumOf { it.amount }
         }
     }
+    // درآمدِ امروز - برای جفتِ «درآمد/خرجِ امروز»ِ کارتِ قهرمان (خواسته‌ی کاربر با طرحِ
+    // مرجع، ۳۱ شهریور). خرج از `weekSpend.last()` می‌آید، پس فقط این یکی تازه است.
+    val todayIncome = remember(transactions) {
+        transactions.filter { it.type == "DEPOSIT" && it.year == today.y && it.month == today.m && it.day == today.d }
+            .sumOf { it.amount }
+    }
     val weekTotal = remember(weekSpend) { weekSpend.sum() }
     val prevWeekTotal = remember(transactions) {
         (13 downTo 7).sumOf { back ->
@@ -347,6 +357,7 @@ fun HomeScreen(
             item {
                 TodaySpendHero(
                     todaySpend = weekSpend.last(),
+                    todayIncome = todayIncome,
                     yesterdaySpend = weekSpend[weekSpend.lastIndex - 1],
                     weekSpend = weekSpend,
                     privacyMode = privacyMode,
@@ -414,6 +425,18 @@ fun HomeScreen(
                         total = monthSpend,
                         privacyMode = privacyMode,
                         onClick = { onNavigateToRoute("report") },
+                    )
+                }
+            }
+            // 🚨 **سه تراکنشِ آخر، ته صفحه** (خواسته‌ی کاربر با طرحِ مرجع، ۳۱ شهریور).
+            // بالاتر نمی‌نشیند: کارت‌های بالای صفحه «وضعیت» را می‌گویند و این «تاریخچه»
+            // است؛ و در حالتِ خالی اصلاً نمی‌آید تا صفحه‌ی اولِ کاربرِ تازه شلوغ نشود.
+            if (transactions.isNotEmpty()) {
+                item {
+                    RecentTransactionsCard(
+                        transactions = transactions,
+                        privacyMode = privacyMode,
+                        onSeeAll = { onNavigateToRoute("assets") },
                     )
                 }
             }
@@ -530,7 +553,17 @@ private fun TodaySpendSheet(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             AppHeroCard {
-                Text("خرجِ امروز", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                // فلشِ قرمز کنارِ خودِ برچسب می‌نشیند، نه کنارِ عدد: عددِ ۲۶ی قهرمان با یک
+                // فلشِ هم‌قد شلوغ می‌شود، و جهت را همان یک‌بار گفتن کافی است.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("خرجِ امروز", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                    Icon(
+                        Icons.Filled.ArrowDownward,
+                        contentDescription = null,
+                        tint = HeroExpense,
+                        modifier = Modifier.padding(start = 3.dp).size(11.dp),
+                    )
+                }
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         maskIfPrivate(masked, rialToToman(total.toLong()).toFaMoney()) + " تومان",
@@ -642,15 +675,23 @@ private fun HomeHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                if (userName.isNullOrBlank()) "خوش آمدی" else "سلامْ $userName",
-                color = AppText,
-                fontSize = 19.sp,
-                fontWeight = FontWeight.Black,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 2.dp),
-            )
+            // خواسته‌ی کاربر (۳۱ شهریور): «خوش آمدی جمع‌تر بشود و برگ کنارش بنشیند».
+            // ۱۹ به ۱۶٫۵ آمد - هنوز بزرگ‌ترین متنِ هدر است ولی دیگر ارتفاعِ ردیف را
+            // نمی‌کشد، و برگ جای حروفِ کم‌شده را پر می‌کند.
+            // ⚠️ برگ **تصویرِ همان جمله است، نه مسکات**: هیچ صورت/شخصیتی ندارد و در
+            // حالتِ خالی یا جای دیگری تکرار نمی‌شود (تصمیمِ صریحِ کاربر: مسکات هیچ‌جا).
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 1.dp)) {
+                Text(
+                    if (userName.isNullOrBlank()) "خوش آمدی" else "سلامْ $userName",
+                    color = AppText,
+                    fontSize = 16.5.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                Text("🌱", fontSize = 14.sp, modifier = Modifier.padding(start = 5.dp))
+            }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             // ⚠️ **قرصِ «فعال» از هدر رفت** - فریمِ `55a`.
@@ -730,6 +771,7 @@ fun PrivacyEyeButton(
 @Composable
 private fun TodaySpendHero(
     todaySpend: Double,
+    todayIncome: Double,
     yesterdaySpend: Double,
     weekSpend: List<Double>,
     privacyMode: Boolean,
@@ -764,33 +806,71 @@ private fun TodaySpendHero(
                     )
                 }
             }
-            if (deltaPercent != null) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(HeroPillBg)
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                ) {
-                    Icon(
-                        if (deltaPercent < 0) Icons.Filled.ArrowDownward else Icons.Filled.ArrowUpward,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(10.dp),
-                    )
+            // 🚨 **درآمد و خرجِ امروز، با فلشِ رنگی** (خواسته‌ی کاربر با طرحِ مرجع).
+            //
+            // تا امروز این گوشه یک قرصِ «٪ کمتر از دیروز» بود: یک عددِ نسبی که فقط با
+            // حفظ‌کردنِ رقمِ دیروز معنی می‌داد. جفتِ درآمد/خرج جوابِ سوالی است که کاربر
+            // واقعاً صبح می‌پرسد - «امروز چقدر آمد، چقدر رفت».
+            //
+            // رنگ‌ها معنایی‌اند نه تزئینی، پس **با تمِ خریدنی نمی‌چرخند**: سبزِ درآمد و
+            // قرمزِ خرج همان دو توکنِ سراسری‌اند. روی زمینه‌ی تیره‌ی هیرو، نسخه‌ی روشنشان.
+            Column(horizontalAlignment = Alignment.End) {
+                HeroFlowLine(
+                    label = "درآمدِ امروز",
+                    amount = todayIncome,
+                    income = true,
+                    privacyMode = privacyMode,
+                )
+                // درصدِ دیروز از قرص درآمد و به یک خطِ ریزِ زیرِ همین جفت تبدیل شد -
+                // خبرش می‌مانَد، ولی دیگر جای عددِ اصلی را نمی‌گیرد.
+                if (deltaPercent != null && deltaPercent != 0) {
                     Text(
-                        (if (deltaPercent < 0) "${(-deltaPercent).toFa()}٪ کمتر" else "${(deltaPercent).toFa()}٪ بیشتر") +
-                            " از دیروز",
-                        color = Color.White,
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(start = 4.dp),
+                        if (deltaPercent < 0) "${(-deltaPercent).toFa()}٪ کمتر از دیروز" else "${deltaPercent.toFa()}٪ بیشتر از دیروز",
+                        color = HeroMuted,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 6.dp),
                     )
                 }
             }
         }
         HomeSevenDayChart(values = weekSpend, modifier = Modifier.padding(top = 14.dp))
         HomeSevenDayChartLabels()
+    }
+}
+
+/**
+ * یک خطِ «برچسب + فلش + مبلغ» برای گوشه‌ی کارتِ قهرمان.
+ *
+ * فلش **بالا برای درآمد و پایین برای خرج** است - همان قراردادی که در طرحِ مرجعِ کاربر
+ * بود و در همه‌ی برنامه‌های مالی یکی است، پس چیزی برای یادگرفتن ندارد.
+ */
+@Composable
+private fun HeroFlowLine(
+    label: String,
+    amount: Double,
+    income: Boolean,
+    privacyMode: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.End) {
+        Text(label, color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
+            PrivacyCrossfade(privacyMode) { masked ->
+                Text(
+                    (if (income) "+ " else "− ") + maskIfPrivate(masked, amount.rialToFaCompact()),
+                    color = if (income) HeroIncome else HeroExpense,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Black,
+                )
+            }
+            Icon(
+                if (income) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
+                contentDescription = null,
+                tint = if (income) HeroIncome else HeroExpense,
+                modifier = Modifier.padding(start = 3.dp).size(11.dp),
+            )
+        }
     }
 }
 
@@ -1035,7 +1115,18 @@ private fun CategoryBreakdownCard(
       Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
         // «این ماه» از داخلِ دایره بیرون آمد: در ۷sp تقریباً خوانده نمی‌شد و جای واحد را
         // می‌گرفت. اینجا برچسبِ کارت است، جایی که برچسبِ کارت باید باشد.
-        Text("این ماه", color = AppLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        // سربرگ: برچسبِ کارت راست، درِ خروجی چپ. تا امروز کلِ کارت کلیک‌پذیر بود ولی
+        // **هیچ نشانه‌ای نداشت**؛ کاربر با طرحِ مرجع همین را خواست.
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("این ماه", color = AppLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("جزئیاتِ بیشتر", color = AppPrimaryInk, fontSize = 10.5.sp, fontWeight = FontWeight.Black)
+            Icon(
+                Icons.Filled.ChevronLeft,
+                contentDescription = null,
+                tint = AppPrimaryInk,
+                modifier = Modifier.size(14.dp),
+            )
+        }
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             CategoryDonut(
                 slices = top.mapIndexed { i, e -> DonutSlice(e.value, colors[i % colors.size]) },
@@ -1089,14 +1180,26 @@ private fun CategoryBreakdownCard(
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f).padding(start = 7.dp),
                         )
-                        Text(
-                            // total صفر → NaN٪. کارت با جمعِ صفر نمی‌آید، ولی نگهبانش یک خط است.
-                            if (total <= 0.0) "—"
-                            else "${((entry.value / total * 100).toInt()).toFa()}٪",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                        )
+                        // درصد **و** مبلغ: درصد می‌گوید سهمش چقدر است، مبلغ می‌گوید چقدر
+                        // پول بود - بی دومی کاربر باید حساب کند.
+                        Column(horizontalAlignment = Alignment.Start) {
+                            Text(
+                                // total صفر → NaN٪. کارت با جمعِ صفر نمی‌آید، ولی نگهبانش یک خط است.
+                                if (total <= 0.0) "—"
+                                else "${((entry.value / total * 100).toInt()).toFa()}٪",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                            )
+                            PrivacyCrossfade(privacyMode) { masked ->
+                                Text(
+                                    maskIfPrivate(masked, entry.value.rialToFaCompact()),
+                                    color = AppLabel,
+                                    fontSize = 9.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -1112,6 +1215,101 @@ private fun CategoryBreakdownCard(
  * ⚠️ ستونِ سوم دورِ قبل جا افتاده بود چون فقط وقتی هفته‌ی قبل عدد داشت رندر می‌شد؛ فریم
  * همیشه هر سه ستون رو نشون می‌ده.
  */
+/**
+ * **سه تراکنشِ آخر** - میان‌برِ تاریخچه روی صفحه‌ی اول.
+ *
+ * سه ردیف نه بیشتر: این‌جا جای مرورِ تاریخچه نیست، جای «آخرین چیزی که ثبت شد درست
+ * ثبت شد؟» است. «مشاهده‌ی همه» به تبِ دارایی می‌رود که دفترِ کاملِ تراکنش‌ها آن‌جاست.
+ *
+ * ⚠️ مرتب‌سازی با **شناسه** است نه تاریخِ شمسی: شناسه زمانِ ثبت است (میلی‌ثانیه) و دو
+ * تراکنشِ یک روز را هم درست پشتِ هم می‌چیند.
+ */
+@Composable
+private fun RecentTransactionsCard(
+    transactions: List<AccountTransactionEntity>,
+    privacyMode: Boolean,
+    onSeeAll: () -> Unit,
+) {
+    val recent = remember(transactions) { transactions.sortedByDescending { it.id }.take(3) }
+    AppCard(contentPadding = 14.dp) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("آخرین تراکنش‌ها", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+            Text(
+                "مشاهده‌ی همه",
+                color = AppPrimaryInk,
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .clickable(onClick = onSeeAll)
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+            )
+        }
+        recent.forEachIndexed { index, tx ->
+            val income = tx.type == "DEPOSIT"
+            val transfer = tx.sourceType == SOURCE_TYPE_TRANSFER
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = if (index == 0) 10.dp else 9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(
+                            when {
+                                transfer -> AppIconFrame
+                                income -> AppPrimaryPill
+                                else -> AppDangerPill
+                            },
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        when {
+                            transfer -> Icons.Filled.SwapHoriz
+                            income -> Icons.Filled.ArrowUpward
+                            else -> Icons.Filled.ArrowDownward
+                        },
+                        contentDescription = null,
+                        tint = when {
+                            transfer -> AppMuted
+                            income -> AppPrimaryInk
+                            else -> AppDangerInk
+                        },
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
+                Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
+                    Text(
+                        tx.description.ifBlank { tx.category ?: (if (income) "واریز" else "برداشت") },
+                        color = AppText,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        "${tx.day.toFa()} ${persianMonthName(tx.month)}",
+                        color = AppLabel,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 1.dp),
+                    )
+                }
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        (if (income) "+ " else "− ") + maskIfPrivate(masked, tx.amount.rialToFaCompact()),
+                        color = if (income) AppPrimaryInk else AppDangerInk,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun WeekReviewCard(
     weekTotal: Double,
