@@ -61,7 +61,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /** همان صندوقی که «تماس با ما» هم به آن می‌فرستد - یک نشانی، نه دو تا. */
-const val SUPPORT_EMAIL = "vamman.pbs@gmail.com"
+const val SUPPORT_EMAIL = "jibak.support@gmail.com"
 
 /**
  * 🐞 **گزارشِ مشکل** - خواسته‌ی کاربر (۳۱ شهریور).
