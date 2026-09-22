@@ -12,6 +12,7 @@ import ir.sadteam.loancalc.server.env
 import ir.sadteam.loancalc.server.execute
 import ir.sadteam.loancalc.server.executeCounting
 import ir.sadteam.loancalc.server.queryOne
+import ir.sadteam.loancalc.server.rateLimitOk
 import ir.sadteam.loancalc.server.requireAuth
 import kotlinx.serialization.Serializable
 import java.security.SecureRandom
@@ -63,6 +64,10 @@ private fun newCode(): String {
 fun Route.giftCodeRoutes() {
     route("/api/gift") {
         post("/redeem") {
+            // 🚨 **سقفِ تلاش** - کد ۱۰ نویسه از ۳۲ حرف است (~۱۰^۱۵ حالت) پس حدسِ کورکورانه
+            // عملاً ناممکن است، ولی بی سقف، همان تلاشِ بی‌پایان دیتابیس را مشغول می‌کند.
+            // ۲۰ تلاش در ساعت برای هر IP: کاربرِ واقعی یک کد دارد و یک بار می‌زند.
+            if (!call.rateLimitOk("gift_redeem", 20, 60 * 60 * 1000L)) return@post
             val authed = call.requireAuth() ?: return@post
             val body = runCatching { call.receive<RedeemBody>() }.getOrNull()
             val code = body?.code?.trim()?.uppercase()
