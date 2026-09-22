@@ -70,6 +70,7 @@ import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
@@ -182,6 +183,7 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.nav.NavDestination
 import ir.sadteam.loancalc.ui.nav.NavEditorSheet
 import ir.sadteam.loancalc.ui.nav.NavSlotsViewModel
+import ir.sadteam.loancalc.ui.note.NoteScreen
 import ir.sadteam.loancalc.ui.nav.NavSuggestionCard
 import ir.sadteam.loancalc.ui.profile.ShortcutViewModel
 import ir.sadteam.loancalc.ui.rating.RatePromptDialog
@@ -295,6 +297,7 @@ private val allShortcutPool = defaultShortcuts + listOf(
     Shortcut("cheque-report", "گزارشِ چک", Icons.Outlined.Description, CHEQUE_REPORT_ROUTE),
     Shortcut("archive", "آرشیوِ سالانه", Icons.Outlined.Archive, ANNUAL_ARCHIVE_ROUTE),
     Shortcut("sayad", "استعلامِ صیادی", Icons.Outlined.Description, SAYAD_INQUIRY_ROUTE),
+    Shortcut("notes", "یادداشت‌ها", Icons.Outlined.EditNote, NOTES_ROUTE),
 )
 
 private const val LOAN_ROUTE = "loan"
@@ -306,6 +309,7 @@ private const val TOOLS_ROUTE = "tools"
 private const val SAYAD_INQUIRY_ROUTE = "sayad-inquiry"
 private const val ANNUAL_ARCHIVE_ROUTE = "annual-archive"
 private const val CALENDAR_ROUTE = "financial-calendar"
+private const val NOTES_ROUTE = "notes"
 
 /** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
 private enum class LoanSubTab(val label: String) {
@@ -1123,7 +1127,11 @@ private fun LoanCalcApp(
                         onOpenArchive = { navigateTo(ANNUAL_ARCHIVE_ROUTE) },
                         onOpenDeng = { navigateTo(DEBT_ROUTE) },
                         onOpenSayad = { navigateTo(SAYAD_INQUIRY_ROUTE) },
+                        onOpenNotes = { navigateTo(NOTES_ROUTE) },
                     )
+                }
+                composable(NOTES_ROUTE) {
+                    NoteScreen(onBack = { navigateTo(TOOLS_ROUTE) })
                 }
                 composable(SAYAD_INQUIRY_ROUTE) {
                     SayadInquiryScreen(

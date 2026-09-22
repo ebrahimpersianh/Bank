@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +48,7 @@ fun ToolsHubScreen(
     onOpenArchive: () -> Unit,
     onOpenDeng: () -> Unit,
     onOpenSayad: () -> Unit,
+    onOpenNotes: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel(),
 ) {
     val transactions by accountViewModel.transactions.collectAsState()
@@ -113,9 +115,22 @@ fun ToolsHubScreen(
                 ToolCard(
                     icon = Icons.Outlined.Groups,
                     title = "دنگ",
-                    text = "طلب و بدهی‌ها را ثبت و سررسیدشان را پیگیری کن.",
+                    // متنِ قبلی توضیحِ «طلب و بدهی» بود نه دنگ (گزارشِ خودِ بازبینی).
+                    text = "یک هزینه را بینِ چند نفر تقسیم کن و سهمِ هرکس را پیگیری کن.",
                     action = "رفتن به دنگ",
                     onClick = onOpenDeng,
+                )
+            }
+            item {
+                // 🚨 **صفحه‌ی یادداشت از قبل ساخته شده بود ولی هیچ دری نداشت** - موقعِ
+                // بازطراحیِ تنظیمات ورودی‌اش رفت و جایگزین نشد، پس قابلیتی کامل روی
+                // دیسک می‌خوابید. این کارت همان در است.
+                ToolCard(
+                    icon = Icons.Outlined.EditNote,
+                    title = "یادداشت‌ها",
+                    text = "یادداشتِ تاریخ‌دار با یادآور - مستقل از وام و چک.",
+                    action = "رفتن به یادداشت‌ها",
+                    onClick = onOpenNotes,
                 )
             }
             item {

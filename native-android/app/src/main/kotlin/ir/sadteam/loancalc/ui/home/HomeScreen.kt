@@ -35,9 +35,12 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.NotificationsNone
@@ -74,6 +77,7 @@ import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompactParts
 import ir.sadteam.loancalc.ui.jibak.toFa
+import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
@@ -83,6 +87,7 @@ import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.components.SkeletonRowList
 import ir.sadteam.loancalc.ui.components.ActiveChip
 import ir.sadteam.loancalc.ui.components.AppButtonVariant
+import ir.sadteam.loancalc.ui.cheque.ChequeViewModel
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.AppFab
@@ -140,6 +145,9 @@ import ir.sadteam.loancalc.ui.inbox.InboxViewModel
 import ir.sadteam.loancalc.ui.theme.AppUrgentShadow
 import ir.sadteam.loancalc.ui.theme.AppWarningInk
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 /**
  * تبِ **خانه** - بازسازیِ کاملِ فریمِ `15a` (حالتِ عادی) و `15b` (روزِ اول / خالی).
@@ -184,6 +192,8 @@ fun HomeScreen(
     urgentDueViewModel: UrgentDueViewModel = hiltViewModel(),
     gamificationViewModel: GamificationViewModel = hiltViewModel(),
     inboxViewModel: InboxViewModel = hiltViewModel(),
+    // فقط برای شمارنده‌ی کارتِ «چک‌ها»ی ردیفِ میان‌بر - همان ViewModelی که تبِ گزارش دارد.
+    chequeViewModel: ChequeViewModel = hiltViewModel(),
 ) {
     val inboxCount by inboxViewModel.actionableCount.collectAsState()
     val inboxUnreadNews by inboxViewModel.unreadNews.collectAsState()
@@ -254,6 +264,11 @@ fun HomeScreen(
     // پیش‌بینیِ «تا آخرِ ماه کم میاری» - رجوع کن به MonthForecast تو :core.
     // موجودی = جمعِ موجودیِ همه‌ی حساب‌کتاب‌ها (همون تعریفی که تبِ دارایی نشون می‌ده).
     val accounts by accountViewModel.accounts.collectAsState()
+    val cheques by chequeViewModel.cheques.collectAsState()
+    /** چکِ «باز» = بایگانی‌نشده و هنوز وصول/برگشت نخورده. */
+    val openChequeCount = remember(cheques) {
+        cheques.count { !it.archived && it.status == ChequeStatus.PENDING.name }
+    }
     var showTodaySpend by rememberSaveable { mutableStateOf(false) }
     val monthForecast = remember(transactions, accounts, monthSpend) {
         MonthForecast.compute(
@@ -365,6 +380,17 @@ fun HomeScreen(
                     // است. مقصدش **شیت** است نه صفحه - یک نگاهِ دوثانیه‌ای، و زمینه
                     // (خودِ عددِ هیرو) بالای شیت می‌مانَد.
                     onClick = { showTodaySpend = true },
+                )
+            }
+            // 🚨 **چهار درِ همیشه‌درمعرض** (طرحِ مرجعِ کاربر). کشوی میان‌بر قدرتمندتر است
+            // ولی باید کشیده شود؛ این ردیف بی هیچ کنشی هم **خبر** می‌دهد: تعدادِ حساب،
+            // تعدادِ تراکنشِ ماه، تعدادِ چکِ باز. عدد همان چیزی است که کارتِ بی‌عدد ندارد.
+            item {
+                HomeQuickCardsRow(
+                    accountCount = accounts.size,
+                    monthTransactionCount = transactions.count { it.year == today.y && it.month == today.m },
+                    openChequeCount = openChequeCount,
+                    onNavigateToRoute = onNavigateToRoute,
                 )
             }
             if (monthCap > 0.0) {
@@ -668,7 +694,9 @@ private fun HomeHeader(
             // نام را کوتاه می‌کند؛ `maxLines`/`Ellipsis` اجباری است وگرنه نامِ بلند قرص‌ها
             // را از صفحه بیرون می‌راند.
             Text(
-                "${(today.d).toFa()} ${persianMonthName(today.m)}",
+                // سال هم آمد (خواسته‌ی کاربر با طرحِ مرجع). در ۱۱sp چهار رقمِ بیشتر
+                // ارتفاع را عوض نمی‌کند و ستون خودش کوتاهش می‌کند اگر تنگ شد.
+                "${(today.d).toFa()} ${persianMonthName(today.m)} ${today.y.toFa()}",
                 color = AppMuted,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
@@ -1216,6 +1244,101 @@ private fun CategoryBreakdownCard(
  * همیشه هر سه ستون رو نشون می‌ده.
  */
 /**
+ * **چهار درِ همیشه‌درمعرض** زیرِ کارتِ قهرمان - طرحِ مرجعِ کاربر.
+ *
+ * هر کارت یک عدد دارد، و همان عدد فرقش با یک دکمه‌ی ساده است: «۴ حساب» و «۳ چکِ باز»
+ * پیش از بازکردن هم خبر می‌دهند. «گزارش‌ها» عددِ معناداری ندارد، پس زیرنویسِ توصیفی
+ * می‌گیرد نه یک عددِ ساختگی.
+ */
+@Composable
+private fun HomeQuickCardsRow(
+    accountCount: Int,
+    monthTransactionCount: Int,
+    openChequeCount: Int,
+    onNavigateToRoute: (String) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        HomeQuickCard(
+            icon = Icons.Filled.AccountBalanceWallet,
+            title = "حساب‌ها",
+            subtitle = "${accountCount.toFa()} حساب",
+            modifier = Modifier.weight(1f),
+            onClick = { onNavigateToRoute("assets") },
+        )
+        HomeQuickCard(
+            icon = Icons.Filled.SwapHoriz,
+            title = "تراکنش‌ها",
+            subtitle = "${monthTransactionCount.toFa()} این ماه",
+            modifier = Modifier.weight(1f),
+            onClick = { onNavigateToRoute("assets") },
+        )
+        HomeQuickCard(
+            icon = Icons.Filled.PieChart,
+            title = "گزارش‌ها",
+            subtitle = "تحلیلِ مالی",
+            modifier = Modifier.weight(1f),
+            onClick = { onNavigateToRoute("report") },
+        )
+        HomeQuickCard(
+            icon = Icons.Filled.Description,
+            title = "چک‌ها",
+            subtitle = "${openChequeCount.toFa()} چکِ باز",
+            modifier = Modifier.weight(1f),
+            onClick = { onNavigateToRoute("cheque") },
+        )
+    }
+}
+
+@Composable
+private fun HomeQuickCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    AppCard(contentPadding = 10.dp, modifier = modifier.pressScaleClickable(onClick = onClick)) {
+        Icon(icon, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(18.dp))
+        Text(
+            title,
+            color = AppText,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 7.dp),
+        )
+        Text(
+            subtitle,
+            color = AppLabel,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 1.dp),
+        )
+    }
+}
+
+/**
+ * ساعتِ محلیِ ثبت از رشته‌ی `createdAt` (ISOی UTC).
+ *
+ * `null` یعنی رشته خوانا نبود - تراکنشِ خیلی قدیمی یا واردشده از پشتیبانِ دستی؛
+ * آن‌وقت ردیف فقط تاریخ نشان می‌دهد، نه ساعتِ ساختگی.
+ */
+private fun localTimeOf(createdAt: String): String? = runCatching {
+    val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+    parser.timeZone = TimeZone.getTimeZone("UTC")
+    val date = parser.parse(createdAt) ?: return null
+    val out = SimpleDateFormat("HH:mm", Locale.US)
+    out.timeZone = TimeZone.getDefault()
+    out.format(date).toFa()
+}.getOrNull()
+
+/**
  * **سه تراکنشِ آخر** - میان‌برِ تاریخچه روی صفحه‌ی اول.
  *
  * سه ردیف نه بیشتر: این‌جا جای مرورِ تاریخچه نیست، جای «آخرین چیزی که ثبت شد درست
@@ -1290,7 +1413,10 @@ private fun RecentTransactionsCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        "${tx.day.toFa()} ${persianMonthName(tx.month)}",
+                        // ساعت از `createdAt` می‌آید (ISOی UTC که همان لحظه‌ی ثبت است)،
+                        // پس **هیچ ستونِ تازه و هیچ مهاجرتی لازم نبود**؛ تراکنشِ قدیمی که
+                        // رشته‌اش خراب باشد فقط تاریخ نشان می‌دهد.
+                        "${tx.day.toFa()} ${persianMonthName(tx.month)}" + (localTimeOf(tx.createdAt)?.let { " · $it" } ?: ""),
                         color = AppLabel,
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Bold,
