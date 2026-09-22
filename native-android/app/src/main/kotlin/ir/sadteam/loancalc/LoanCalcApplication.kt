@@ -70,10 +70,19 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
                 if (event == Lifecycle.Event.ON_STOP) {
                     CoroutineScope(Dispatchers.IO).launch {
                         runCatching {
+                            // 🚨 **آیکونِ ناشناخته پاک می‌شود، نه اینکه اعمال شود.**
+                            // «نشانِ رشد» (`icon:emblem`) به‌خاطرِ کیفیتِ پایینِ فایلِ هنری
+                            // حذف شد؛ کسی که در بیلدهای ۶۱۵..۶۲۲ فعالش کرده بود، الیاسش
+                            // دیگر وجود ندارد و بی این خط، آیکونِ اپ از صفحه‌ی گوشی
+                            // ناپدید می‌مانْد. `aliasFor` خودش به پیش‌فرض برمی‌گردد، ولی
+                            // ترجیحِ ذخیره‌شده هم باید پاک شود وگرنه هر بار تکرار می‌شود.
+                            val active = uiPrefs.activeIcon.first()
+                            val known = active == null || IconWither.ICON_ALIAS.containsKey(active)
+                            if (!known) uiPrefs.setActiveIcon(null)
                             iconWither.applyFromDateKeys(
                                 this@LoanCalcApplication,
                                 gamificationRepository.activeDayKeys(),
-                                uiPrefs.activeIcon.first(),
+                                if (known) active else null,
                             )
                         }
                     }
