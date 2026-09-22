@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,9 +52,11 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import androidx.compose.foundation.layout.defaultMinSize
 import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.ui.account.AccountViewModel
+import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.theme.AppPurpleInk
+import ir.sadteam.loancalc.ui.theme.AppSpacing
 import ir.sadteam.loancalc.ui.theme.AppPurplePill
 import ir.sadteam.loancalc.ui.cheque.ChequeViewModel
 import ir.sadteam.loancalc.ui.myloans.MyLoansViewModel
@@ -143,8 +146,8 @@ fun ReportTabScreen(
         cheques.count {
             !it.archived &&
                 it.status == ChequeStatus.PENDING.name &&
-                it.dueYear == today.year &&
-                it.dueMonth == today.month
+                it.dueYear == today.y &&
+                it.dueMonth == today.m
         }
     }
     var period by remember { mutableStateOf(ReportPeriod.MONTH) }

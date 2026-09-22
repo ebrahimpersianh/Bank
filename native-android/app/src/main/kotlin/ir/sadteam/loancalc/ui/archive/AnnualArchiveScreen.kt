@@ -77,7 +77,7 @@ fun AnnualArchiveScreen(onBack: () -> Unit, accountViewModel: AccountViewModel =
                         .groupBy { it.month }
                         .maxByOrNull { entry -> entry.value.sumOf { it.amount } }
                         ?.key
-                    val isCurrentYear = year == today.year
+                    val isCurrentYear = year == today.y
                     item(key = year) {
                         AppCard {
                             Text("${year.toFa()} · ${rows.size.toFa()} تراکنش", color = AppText, fontWeight = FontWeight.Black, fontSize = 15.sp)

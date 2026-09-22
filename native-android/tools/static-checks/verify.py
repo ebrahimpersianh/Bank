@@ -43,6 +43,12 @@ NEEDS = {
     'ModalBottomSheet': 'androidx.compose.material3.ModalBottomSheet',
     # موقعِ ساختِ انتخابگرِ اپ (رفعِ باگِ خواندنِ اعلان) هر چهارتا بی‌ایمپورت مونده بودن.
     'produceState': 'androidx.compose.runtime.produceState',
+    # بیلدِ ۶۱۲: `LaunchedEffect` در این فهرست نبود، پس ایمپورتِ جاماند‌ه‌اش تا CI دیده نشد -
+    # و چون تابعِ suspend داخلش بود، خطای بعدی «suspend function should be called from a
+    # coroutine» شد که اصلاً علت نبود.
+    'LaunchedEffect': 'androidx.compose.runtime.LaunchedEffect',
+    'DisposableEffect': 'androidx.compose.runtime.DisposableEffect',
+    'SideEffect': 'androidx.compose.runtime.SideEffect',
     'collectAsState': 'androidx.compose.runtime.collectAsState',
     'withContext': 'kotlinx.coroutines.withContext',
     'Dispatchers': 'kotlinx.coroutines.Dispatchers',

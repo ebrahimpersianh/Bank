@@ -27,6 +27,10 @@ PROP = re.compile(r'^(?:public |private |internal )?val ([A-Z]\w*)\s*[:=]', re.M
 LOCAL = re.compile(r'^\s*(?:@\w+\s+)*' + MODS + r'(?:fun\s+(?:[\w.<>, ?]+\.)?([A-Z]\w*)\s*\(|(?:class|object|interface)\s+([A-Z]\w*))', re.M)
 # فلیورها/ویجت: پکیج‌بندیِ متفاوت یا نسخه‌ی جدا به‌ازای هر فلیور
 SKIP = ("/widget/", "/src/myket/", "/src/cafebazaar/")
+# نامی که **پلتفرم هم دارد** و از کلاسِ پایه به ارث می‌رسد: `Result.success()` در یک
+# `CoroutineWorker` همان `ListenableWorker.Result` است، نه `core.Result`ِ ما. الگوی
+# «عضوِ کوچک‌حرف» بی این فهرست سه موردِ کاذب می‌داد.
+AMBIGUOUS = {"Result"}
 
 files = [p for d in SRC for p in d.rglob("*.kt") if not any(s in str(p) for s in SKIP)]
 index = collections.defaultdict(set)
@@ -57,9 +61,18 @@ for p, (pkg, names, src) in own.items():
     # عضوِ enum/object هم پرانتز نداره: `AppButtonVariant.SECONDARY`. بیلدِ ۵۱۸ دقیقاً
     # همین‌جا شکست - نوعِ پروژه ایمپورت نشده بود ولی چون با `(` صدا زده نمی‌شد دیده نمی‌شد.
     used |= set(re.findall(r'(?<![\w.])([A-Z]\w*)\.[A-Z_]\w*', body))
+    # 🚨 **صدازدن با لامبدای انتهایی، بی پرانتز**: `AppCard { … }`. بیلدِ ۶۱۲ دقیقاً همین‌جا
+    # شکست - `AppCard` ایمپورت نشده بود و چون `(` نداشت، الگوی بالا نمی‌دیدش و بعدش
+    # کامپایلر ده خطای «@Composable invocations» پشتِ‌هم داد که هیچ‌کدام علت نبودند.
+    used |= set(re.findall(r'(?<![\w.])([A-Z]\w*)\s*\{', body))
+    # 🚨 **عضوِ کوچک‌حرفِ یک object**: `AppSpacing.minTouchTarget`. الگوی `[A-Z_]`ی بالا فقط
+    # ثابتِ بزرگ‌حرف را می‌گرفت، پس `AppSpacing` هم در همان بیلد از قلم افتاد.
+    used |= set(re.findall(r'(?<![\w.])([A-Z]\w*)\.[a-z]\w*', body))
     # پراپرتی‌ها با پرانتز صدا زده نمی‌شن، پس جدا دنبالِ ارجاعِ لختشون می‌گردیم.
     used |= {n for n in prop_names if re.search(r'(?<![\w.])' + n + r'(?![\w(])', body)}
     for name in sorted(used):
+        if name in AMBIGUOUS:
+            continue
         pkgs = index.get(name)
         if not pkgs or len(pkgs) != 1:
             continue                       # نامِ ناشناخته یا تکراری - قابلِ اتکا نیست

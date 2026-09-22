@@ -328,7 +328,14 @@ private enum class TourTarget(val title: String, val hint: String) {
     ),
     BUDGET(
         "بودجه",
-        "برای هر دسته‌بندی یه سقفِ ماهانه بذار تا هزینه‌هات دستت باشه - آخرین قدمِ تور!",
+        "برای هر دسته‌بندی یه سقفِ ماهانه بذار تا هزینه‌هات دستت باشه.",
+    ),
+
+    // جای راهنمای متنیِ زیرِ نوار. یک‌بار، همان‌جایی که کاربر تازه با نوار آشنا شده، و بعد
+    // دیگر هیچ‌وقت - به‌جای متنی که همیشه آن پایین بماند.
+    REORDER(
+        "نوار رو خودت بچین",
+        "روی هر دکمه‌ی نوارِ پایین نگه‌دار تا جایش رو عوض کنی - آخرین قدمِ تور!",
     ),
 }
 
@@ -339,6 +346,9 @@ private fun TourTarget.asBottomTab(): BottomTab? = when (this) {
     TourTarget.ASSETS -> BottomTab.ASSETS
     TourTarget.REPORT -> BottomTab.REPORT
     TourTarget.BUDGET -> BottomTab.BUDGET
+    // قدمِ «چیدمانِ نوار» روی خودِ خانه اسپاتلایت می‌شود: نوار همان‌جا هم هست و تبِ تازه‌ای
+    // باز نمی‌کند.
+    TourTarget.REORDER -> BottomTab.HOME
     else -> null
 }
 
@@ -911,19 +921,10 @@ private fun LoanCalcApp(
                         // دستگیره‌ی کشوی میان‌بُر - نوارِ ۲۶ پیکسلیِ بالای تب‌ها. کشیدنِ به بالا
                         // یا تپِ ساده بازش می‌کنه (قاعده‌ی `31c`).
                         ShortcutDrawerHandle(onOpen = { shortcutDrawerOpen = true })
-                        // ⚠️ **سه بار، بعد برو** (بندِ ۲ی بخشِ ۸۱): راهنمای همیشگی با دستگیره‌ی
-                        // کشو رقابت می‌کند و هر دو را خفه می‌کند. با اولین جابه‌جایی هم فوراً
-                        // می‌رود. خانه‌ی دائمی‌اش داخلِ خودِ کشوست، همان‌جا که جابه‌جایی معنی دارد.
-                        if (showReorderHint) {
-                            Text(
-                                "روی هر دکمه نگه‌دار تا جابه‌جایش کنی",
-                                color = AppLabel,
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                            )
-                        }
+                        // 🚨 **هیچ متنی زیرِ نوار نمی‌نشیند** (خواسته‌ی صریحِ کاربر، ۳۱ شهریور:
+                        // «نمی‌خوام اصلا نوشته باشه رو اون ۵ تب پایین»). راهنمای سه‌باره‌ی
+                        // بندِ ۲ی بخشِ ۸۱ از این‌جا برداشته شد و جایش **قدمِ تورِ اولین ورود**
+                        // است؛ خانه‌ی دائمی‌اش هم داخلِ کشوی میان‌بر می‌مانَد.
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
