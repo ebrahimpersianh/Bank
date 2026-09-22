@@ -52,6 +52,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.AlertDialog
@@ -114,6 +116,7 @@ import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.components.AccountPickerDialog
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.PaidRing
 import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.BankTile
@@ -142,6 +145,9 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerBorder
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
+import ir.sadteam.loancalc.ui.theme.AppIconFrame
+import ir.sadteam.loancalc.ui.theme.AppInfo
+import ir.sadteam.loancalc.ui.theme.AppPurple
 import ir.sadteam.loancalc.ui.theme.AppGoldBorder
 import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
@@ -868,6 +874,34 @@ fun LoanDetailScreen(
             installmentNote = if (installmentsVary) "چون اقساطِ این وام باهم فرق دارن" else null,
             privacyMode = privacyMode,
             onPay = { showAllInstallments = true },
+        )
+
+        // سه کارتِ ریزِ حقایقِ وام (طرحِ مرجعِ کاربر). «سررسیدِ بعدی» همان تاریخِ هیروست،
+        // ولی این‌جا با بجِ «N روز گذشته» وقتی از سررسید رد شده.
+        LoanQuickFacts(
+            total = loan.n,
+            installment = displayInstallment,
+            nextDueLabel = nextRow?.let { row ->
+                (row["dueDate"] as? Map<*, *>)?.let {
+                    val d = (it["d"] as? Number)?.toInt()
+                    val mo = (it["m"] as? Number)?.toInt()
+                    if (d != null && mo != null) "${toFa(d)} ${persianMonthName(mo)}" else null
+                }
+            },
+            overdueDays = nextRow?.let { row ->
+                (row["dueDate"] as? Map<*, *>)?.let { due ->
+                    val y = (due["y"] as? Number)?.toInt()
+                    val mo = (due["m"] as? Number)?.toInt()
+                    val d = (due["d"] as? Number)?.toInt()
+                    if (y != null && mo != null && d != null) {
+                        val days = JalaliCalendar.daysBetween(PersianDate(y, mo, d), today)
+                        days.takeIf { it > 0 }
+                    } else {
+                        null
+                    }
+                }
+            },
+            privacyMode = privacyMode,
         )
 
         // ریتمِ پرداخت - جانشینِ حلقه‌ی درصد. تنها المانِ صفحه که **ریتم** را می‌گوید نه یک لحظه.
@@ -1630,19 +1664,59 @@ private fun LoanHeroCard(
                 }
             }
         } else {
-            Text(
-                if (overdue) "مانده · ${toFa(overdueCount)} قسط عقب افتاده" else "مانده",
-                color = muted,
-                fontSize = 10.5.sp,
-                fontWeight = FontWeight.Black,
-            )
-            PrivacyCrossfade(privacyMode) { masked ->
-                Text(
-                    maskIfPrivate(masked, amountToman(remaining)) + " تومان",
-                    color = ink,
-                    fontSize = 31.sp,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier.padding(top = 2.dp),
+            // 🚨 **بج، نه یک خطِ متن** (طرحِ مرجعِ کاربر، ۳۱ شهریور): «۱۰ قسط عقب‌افتاده»
+            // مهم‌ترین خبرِ این صفحه است و کنارِ برچسبِ «مانده» گم می‌شد.
+            if (overdue) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(AppDangerPill)
+                        .padding(horizontal = 9.dp, vertical = 4.dp),
+                ) {
+                    Icon(
+                        Icons.Filled.PriorityHigh,
+                        contentDescription = null,
+                        tint = AppDanger,
+                        modifier = Modifier.size(11.dp),
+                    )
+                    Text(
+                        "${toFa(overdueCount)} قسط عقب‌افتاده",
+                        color = AppDangerInk,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(start = 4.dp),
+                    )
+                }
+            }
+            // عدد و حلقه کنارِ هم: حلقه درصد را در یک نگاه می‌دهد، عدد مبلغ را.
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = if (overdue) 9.dp else 0.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("مانده", color = muted, fontSize = 10.5.sp, fontWeight = FontWeight.Black)
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            maskIfPrivate(masked, amountToman(remaining)) + " تومان",
+                            color = ink,
+                            fontSize = 27.sp,
+                            fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                }
+                PaidRing(
+                    fraction = paidFraction,
+                    ringColor = if (overdue) AppDanger else AppPrimary,
+                    trackColor = AppSurface2,
+                    centerTop = "${toFa((paidFraction * 100).roundToInt())}٪",
+                    centerBottom = "پرداخت‌شده",
+                    centerTopColor = if (overdue) AppDanger else AppPrimary,
+                    centerBottomColor = AppMuted,
+                    modifier = Modifier.padding(start = 10.dp),
                 )
             }
             Row(
@@ -1717,6 +1791,110 @@ private fun LoanHeroCard(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 5.dp),
         )
+    }
+}
+
+/**
+ * حلقه‌ی «٪ پرداخت‌شده» کنارِ مبلغِ مانده (طرحِ مرجعِ کاربر).
+ *
+ * ⚠️ این همان درصدِ نوارِ تهِ کارت است، ولی **جایگزینش نمی‌شود**: نوار نسبتِ سه‌تکه‌ی
+ * پرداخت‌شده/معوق/مانده را می‌دهد و حلقه فقط یک عددِ درشت. کاربر در یک نگاه عدد را
+ * می‌خواند و در نگاهِ دوم تفکیک را.
+ */
+/**
+ * سه کارتِ ریزِ زیرِ کارتِ اصلی: تعدادِ کلِ اقساط · مبلغِ هر قسط · سررسیدِ بعدی.
+ *
+ * ⚠️ هیچ‌کدام عددِ تازه‌ای نیستند - همه از قبل در صفحه بودند، ولی پخش یا پشتِ دکمه‌ی
+ * «بیشتر». کنارِ هم گذاشتنشان همان سه سوالی است که کاربر پشتِ‌هم می‌پرسد.
+ */
+@Composable
+private fun LoanQuickFacts(
+    total: Int,
+    installment: Double,
+    nextDueLabel: String?,
+    overdueDays: Int?,
+    privacyMode: Boolean,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        LoanFactCard(
+            icon = Icons.Filled.EventNote,
+            tint = AppPrimaryInk,
+            bg = AppPrimaryPill,
+            label = "تعدادِ کلِ اقساط",
+            value = toFa(total),
+            unit = "قسط",
+            modifier = Modifier.weight(1f),
+        )
+        LoanFactCard(
+            icon = Icons.Filled.Payments,
+            tint = AppInfo,
+            bg = AppIconFrame,
+            label = "مبلغِ هر قسط",
+            value = maskIfPrivate(privacyMode, amountToman(installment)),
+            unit = "تومان",
+            modifier = Modifier.weight(1f),
+        )
+        LoanFactCard(
+            icon = Icons.Filled.CalendarMonth,
+            tint = AppPurple,
+            bg = AppIconFrame,
+            label = "سررسیدِ بعدی",
+            value = nextDueLabel ?: "—",
+            unit = overdueDays?.let { "${toFa(it)} روز گذشته" } ?: "",
+            unitIsWarning = overdueDays != null,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun LoanFactCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    tint: Color,
+    bg: Color,
+    label: String,
+    value: String,
+    unit: String,
+    modifier: Modifier = Modifier,
+    unitIsWarning: Boolean = false,
+) {
+    AppCard(contentPadding = 9.dp, modifier = modifier) {
+        Box(
+            modifier = Modifier.size(24.dp).clip(RoundedCornerShape(999.dp)).background(bg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(13.dp))
+        }
+        Text(
+            label,
+            color = AppMuted,
+            fontSize = 8.5.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        Text(
+            value,
+            color = AppText,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+        if (unit.isNotBlank()) {
+            Text(
+                unit,
+                color = if (unitIsWarning) AppDangerInk else AppLabel,
+                fontSize = 8.sp,
+                fontWeight = if (unitIsWarning) FontWeight.Black else FontWeight.Bold,
+                maxLines = 1,
+            )
+        }
     }
 }
 
@@ -1810,6 +1988,34 @@ private fun PaymentRhythm(
                             },
                         ),
                 )
+            }
+        }
+        // 🚨 **برچسبِ ماه زیرِ میله‌ها** (طرحِ مرجعِ کاربر): بی آن معلوم نبود میله‌ی قرمز
+        // مالِ کدام ماه است. برچسب فقط وقتی می‌آید که میله‌ها کم باشند؛ با ۳۶ قسط،
+        // ۳۶ نامِ ماه روی هم می‌افتد، پس یکی‌درمیان نوشته می‌شود.
+        val monthLabels = remember(rows, byYear) {
+            if (byYear) emptyList() else rows.map { row ->
+                val due = row["dueDate"] as? Map<*, *>
+                (due?.get("m") as? Number)?.toInt()?.let { persianMonthName(it) } ?: ""
+            }
+        }
+        if (monthLabels.isNotEmpty() && monthLabels.size <= 24) {
+            val everyOther = monthLabels.size > 12
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.5.dp),
+            ) {
+                monthLabels.forEachIndexed { index, name ->
+                    Text(
+                        if (everyOther && index % 2 == 1) "" else name,
+                        color = AppMuted,
+                        fontSize = 6.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
         Text(

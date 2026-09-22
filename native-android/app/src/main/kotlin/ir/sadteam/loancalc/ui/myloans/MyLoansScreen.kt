@@ -118,6 +118,7 @@ import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
+import ir.sadteam.loancalc.ui.components.PaidRing
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.ProgressRing
@@ -319,7 +320,11 @@ fun MyLoansScreen(
     // خودکار از لیستِ فعال بیرون میره، پشتِ همین تاگل نمایش داده می‌شه. لیستِ اصلی (loans، برای
     // openedLoan/editingLoan/canSaveAnotherLoan/DashboardSummary) عمداً فیلتر نمی‌شه - فقط لیستِ
     // نمایشیِ پایینِ صفحه (visibleLoans).
-    var showSettled by remember { mutableStateOf(false) }
+    // 🚨 **سه‌حالته شد** (طرحِ مرجعِ کاربر، ۳۱ شهریور): پیش از این یک کلیدِ دوحالته بود و
+    // هیچ راهی نبود هر دو گروه را با هم دید. `showSettled` برای بقیه‌ی صفحه مشتق می‌ماند،
+    // پس شرط‌های موجود دست‌نخورده کار می‌کنند.
+    var loanFilter by remember { mutableStateOf(LoanFilter.ACTIVE) }
+    val showSettled = loanFilter == LoanFilter.SETTLED
     var searchQuery by remember { mutableStateOf("") }
     // بستنِ فیلدِ جست‌وجو باید فیلتر را هم بردارد - وگرنه فهرست فیلترشده می‌مانَد و
     // دلیلش دیگر روی صفحه دیده نمی‌شود، یعنی کاربر فکر می‌کند وام‌هایش گم شده‌اند.
@@ -334,14 +339,15 @@ fun MyLoansScreen(
     // وامی که همین ماهِ جاری تسویه شده، تو حالتِ «فعال» هم دیده می‌شه (با مدالِ روبان‌دار) -
     // تصمیمِ ۲ی تحویلِ 27a. لحظه‌ی پرداختِ آخرین قسط لحظه‌ی دستاورده؛ بدترین وقت برای
     // غیب‌شدنِ کارت. از ماهِ بعد فقط زیرِ فیلترِ دوم.
-    val visibleLoans = remember(loans, showSettled, searchQuery, settledDates, today) {
+    val visibleLoans = remember(loans, loanFilter, searchQuery, settledDates, today) {
         val q = searchQuery.trim()
         loans.filter { loan ->
             val settled = isLoanSettled(loan)
-            val keep = if (showSettled) {
-                settled
-            } else {
-                !settled || settledDates[loan.id]?.let { isSameJalaliMonth(it, today) } == true
+            val keep = when (loanFilter) {
+                LoanFilter.ALL -> true
+                LoanFilter.SETTLED -> settled
+                LoanFilter.ACTIVE ->
+                    !settled || settledDates[loan.id]?.let { isSameJalaliMonth(it, today) } == true
             }
             keep && (
                 q.isBlank() || loan.name.contains(q, ignoreCase = true) ||
@@ -614,11 +620,12 @@ fun MyLoansScreen(
                             ) {
                                 if (settledCount > 0) {
                                     SettledLoansToggle(
-                                        showSettled = showSettled,
+                                        filter = loanFilter,
+                                        allCount = loans.size,
                                         settledCount = settledCount,
                                         activeCount = loans.size - settledCount,
                                         overdueLoanCount = overdueCount,
-                                        onToggle = { showSettled = !showSettled },
+                                        onFilter = { loanFilter = it },
                                     )
                                 } else {
                                     Box {}
@@ -1286,7 +1293,14 @@ private fun DashboardSummary(
                 }
                 Spacer(modifier = Modifier.weight(1f))
             }
-            Column(modifier = Modifier.fillMaxWidth().padding(top = 9.dp)) {
+            // 🚨 **حلقه جای نوارِ تخت** (طرحِ مرجعِ کاربر، ۳۱ شهریور): نوار درصد را
+            // بی‌عدد می‌گفت و «چند قسط مانده» هیچ‌جای این کارت نبود. حلقه هر دو را
+            // می‌دهد و ارتفاعِ تازه‌ای هم نمی‌گیرد چون کنارِ عددِ قهرمان می‌نشیند.
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     "قسطِ این ماه",
                     color = AppGoldInk.copy(alpha = 0.65f),
@@ -1297,11 +1311,29 @@ private fun DashboardSummary(
                     Text(
                         "${maskIfPrivate(masked, amountToman(animatedMonthly))} تومان",
                         color = AppGoldInk,
-                        fontSize = 25.sp,
+                        fontSize = 23.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = (-0.4).sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
+            }
+                val rowsLeft = remember(loans) { loans.sumOf { it.n - it.paidCount }.coerceAtLeast(0) }
+                val rowsAll = remember(loans) { loans.sumOf { it.n } }
+                PaidRing(
+                    fraction = paidPct / 100f,
+                    ringColor = AppGoldInk,
+                    trackColor = AppGoldInk.copy(alpha = 0.22f),
+                    centerTop = toFa(rowsLeft),
+                    centerBottom = "از ${toFa(rowsAll)} قسط",
+                    centerTopColor = AppGoldInk,
+                    centerBottomColor = AppGoldInk.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(start = 8.dp),
+                    size = 72.dp,
+                    stroke = 8.dp,
+                    centerTopSize = 17,
+                )
             }
             // 🚨 **نسبتِ قسط به درآمد آمد داخلِ کارت** (بندِ ۱ جوابِ دورِ ۱۲).
             //
@@ -1351,25 +1383,8 @@ private fun DashboardSummary(
                         .padding(vertical = 3.dp),
                 )
             }
-            // نوارِ پیشرفت جای خطِ جداکننده - هم فاصله می‌سازد هم حرف می‌زند.
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 10.dp)
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(AppGoldInk.copy(alpha = 0.22f)),
-            ) {
-                if (paidPct > 0) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(paidPct / 100f)
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(AppGoldInk),
-                    )
-                }
-            }
+            // ⚠️ نوارِ تختِ پیشرفت **حذف شد**: همان درصد حالا در حلقه است و دو گرافیک
+            // برای یک عدد، همان چیزی است که این صفحه یک‌بار از آن پاک شد.
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(18.dp),
@@ -1661,11 +1676,12 @@ private fun LoanSummaryDivider() {
  */
 @Composable
 private fun SettledLoansToggle(
-    showSettled: Boolean,
+    filter: LoanFilter,
+    allCount: Int,
     settledCount: Int,
     activeCount: Int,
     overdueLoanCount: Int,
-    onToggle: () -> Unit,
+    onFilter: (LoanFilter) -> Unit,
 ) {
     val shape = RoundedCornerShape(999.dp)
     Row(
@@ -1676,26 +1692,27 @@ private fun SettledLoansToggle(
         horizontalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         FilterChipHalf(
-            // بندِ ۳ جوابِ دورِ ۱۲: نوارِ «۹ وام عقب‌افتاده» **رفت** و عددش این‌جا نشست -
-            // صفر پیکسلِ ارتفاعِ تازه، چون این ردیف از قبل بود. و «فعال» هم شمارش گرفت،
-            // وگرنه یک قرصِ شماره‌دار کنارِ یک قرصِ بی‌شماره بی‌قاعده به نظر می‌رسید.
-            label = buildString {
-                append("فعال")
-                if (activeCount > 0) append(" · ${toFa(activeCount)}")
-                if (overdueLoanCount > 0) append(" (${toFa(overdueLoanCount)} عقب)")
-            },
-            selected = !showSettled,
-        ) {
-            if (showSettled) onToggle()
-        }
+            label = "همه (${toFa(allCount)})",
+            selected = filter == LoanFilter.ALL,
+        ) { onFilter(LoanFilter.ALL) }
         FilterChipHalf(
-            label = if (settledCount > 0) "تسویه‌شده · ${toFa(settledCount)}" else "تسویه‌شده",
-            selected = showSettled,
-        ) {
-            if (!showSettled) onToggle()
-        }
+            // بندِ ۳ جوابِ دورِ ۱۲: نوارِ «۹ وام عقب‌افتاده» **رفت** و عددش این‌جا نشست -
+            // صفر پیکسلِ ارتفاعِ تازه، چون این ردیف از قبل بود.
+            label = buildString {
+                append("فعال (${toFa(activeCount)})")
+                if (overdueLoanCount > 0) append(" · ${toFa(overdueLoanCount)} عقب")
+            },
+            selected = filter == LoanFilter.ACTIVE,
+        ) { onFilter(LoanFilter.ACTIVE) }
+        FilterChipHalf(
+            label = "تسویه‌شده (${toFa(settledCount)})",
+            selected = filter == LoanFilter.SETTLED,
+        ) { onFilter(LoanFilter.SETTLED) }
     }
 }
+
+/** سه‌حالتِ فیلترِ فهرستِ وام - طرحِ مرجعِ کاربر. */
+private enum class LoanFilter { ALL, ACTIVE, SETTLED }
 
 /** یه نیمه‌ی فیلترِ دوتایی - انتخاب‌شده قرصِ سفیدِ سایه‌دار می‌گیره، بقیه فقط متنِ خاکستری. */
 @Composable

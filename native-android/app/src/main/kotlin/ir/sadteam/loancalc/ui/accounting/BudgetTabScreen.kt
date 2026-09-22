@@ -196,6 +196,9 @@ fun BudgetTabScreen(
                         allowance = dailyAllowance,
                         week = weekUnderShare,
                         saved = savedSoFar,
+                        dayOfMonth = today.d,
+                        daysInMonth = daysInMonth,
+                        daysLeft = daysLeft,
                         privacyMode = privacyMode,
                     )
                 }
@@ -543,6 +546,9 @@ private fun DailyAllowanceHero(
     allowance: Double,
     week: List<Boolean>,
     saved: Double,
+    dayOfMonth: Int,
+    daysInMonth: Int,
+    daysLeft: Int,
     privacyMode: Boolean,
 ) {
     Column(
@@ -566,12 +572,27 @@ private fun DailyAllowanceHero(
             }
             .padding(16.dp),
     ) {
-        Text(
-            "امروز می‌توانی خرج کنی",
-            color = Color.White.copy(alpha = 0.8f),
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-        )
+        // 🚨 **شمارنده‌ی روزِ ماه** (طرحِ مرجعِ کاربر، ۳۱ شهریور): «سهمِ امروز» بی این‌که
+        // بدانی کجای ماهی، عددِ بی‌لنگری است - روزِ دوم با روزِ بیست‌وهشتم فرق دارد.
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "امروز می‌توانی خرج کنی",
+                color = Color.White.copy(alpha = 0.8f),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                "روزِ ${toFa(dayOfMonth)} از ${toFa(daysInMonth)}",
+                color = Color.White,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color.White.copy(alpha = 0.20f))
+                    .padding(horizontal = 9.dp, vertical = 4.dp),
+            )
+        }
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
                 // ⚠️ `fmt()` جداکننده‌ی **لاتین** می‌دهد و عددش **ریال** است: سهمِ روزانه‌ی
@@ -617,7 +638,18 @@ private fun DailyAllowanceHero(
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Bold,
                 )
-                if (saved > 0) {
+                Text(
+                    "تا پایانِ ماه ${toFa(daysLeft)} روز مانده",
+                    color = Color.White.copy(alpha = 0.82f),
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            if (saved > 0) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
+                    horizontalArrangement = Arrangement.End,
+                ) {
                     Text(
                         "+${(saved).rialToFaCompact()} ذخیره",
                         color = Color.White,
