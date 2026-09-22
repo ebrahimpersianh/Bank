@@ -75,7 +75,12 @@ class ApplicationTest {
 
         application { module() }
 
-        val token = signToken(1, "09120000000")
+        // ⚠️ از وقتی توکنِ کاربرِ ناموجود ۴۰۱ می‌گیرد (ابطالِ نشست)، این تست باید یک
+        // کاربرِ واقعی بسازد تا همان چیزی را بسنجد که برایش نوشته شده: ردِ بدنه‌ی نامعتبر.
+        val uid = Db.withConnection { conn ->
+            conn.insertReturningId("INSERT INTO users (phone) VALUES (?)", "09120000000")
+        }
+        val token = signToken(uid, "09120000000")
         val response = client.put("/api/loans") {
             header("Authorization", "Bearer $token")
             contentType(ContentType.Application.Json)
@@ -93,8 +98,12 @@ class ApplicationTest {
 
         application { module() }
 
-        // توکنی که uid ـش اصلاً تو جدول users نیست = isSubscribed(null) = false
-        val token = signToken(999, "09129999999")
+        // کاربرِ واقعیِ **بدونِ اشتراک** - قبلاً uidِ ناموجود بود، که حالا اصلاً به
+        // بررسیِ اشتراک نمی‌رسد چون نشستش باطل شمرده می‌شود.
+        val uid = Db.withConnection { conn ->
+            conn.insertReturningId("INSERT INTO users (phone, created_at) VALUES (?, '2000-01-01 00:00:00')", "09129999999")
+        }
+        val token = signToken(uid, "09129999999")
         val response = client.put("/api/cheques") {
             header("Authorization", "Bearer $token")
             contentType(ContentType.Application.Json)
@@ -162,4 +171,71 @@ class ApplicationTest {
         val first = rates!!.first().jsonObject
         assertEquals("digipay", first["key"]?.jsonPrimitive?.content)
     }
+    @Test
+    fun `token of a deleted user is rejected`() = testApplication {
+        val dbFile = File.createTempFile("loan-calc-test-revoked", ".sqlite")
+        dbFile.deleteOnExit()
+        System.setProperty("DB_PATH", dbFile.absolutePath)
+        System.setProperty("JWT_SECRET", "test-secret-for-unit-tests-only-revoke")
+
+        application { module() }
+
+        val uid = Db.withConnection { conn ->
+            conn.insertReturningId("INSERT INTO users (phone, subscribed) VALUES (?, 1)", "09120001122")
+        }
+        val token = signToken(uid, "09120001122")
+        assertEquals(HttpStatusCode.OK, client.get("/api/cheques") { header("Authorization", "Bearer $token") }.status)
+
+        Db.withConnection { conn -> conn.execute("DELETE FROM users WHERE id = ?", uid) }
+
+        // امضای توکن هنوز معتبر است، ولی حساب دیگر وجود ندارد.
+        assertEquals(
+            HttpStatusCode.Unauthorized,
+            client.get("/api/cheques") { header("Authorization", "Bearer $token") }.status,
+        )
+    }
+
+    @Test
+    fun `stale revision put is rejected with conflict`() = testApplication {
+        val dbFile = File.createTempFile("loan-calc-test-revision", ".sqlite")
+        dbFile.deleteOnExit()
+        System.setProperty("DB_PATH", dbFile.absolutePath)
+        System.setProperty("JWT_SECRET", "test-secret-for-unit-tests-only-revision")
+
+        application { module() }
+
+        val uid = Db.withConnection { conn ->
+            conn.insertReturningId("INSERT INTO users (phone, subscribed) VALUES (?, 1)", "09120002233")
+        }
+        val token = signToken(uid, "09120002233")
+
+        fun putWith(expected: Long?) = buildJsonObject {
+            put("data", JsonPrimitive("""{"accounts":[],"transactions":[]}"""))
+            if (expected != null) put("expectedRevision", JsonPrimitive(expected))
+        }.toString()
+
+        val first = client.put("/api/accounts") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(putWith(0))
+        }
+        assertEquals(HttpStatusCode.OK, first.status)
+
+        // همان نسخه‌ی کهنه دوباره: یعنی گوشیِ دوم چیزی را که ندیده پاک می‌کرد.
+        val stale = client.put("/api/accounts") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(putWith(0))
+        }
+        assertEquals(HttpStatusCode.Conflict, stale.status)
+
+        // کلاینتِ قدیمی که اصلاً نسخه نمی‌فرستد، مثلِ قبل کار می‌کند.
+        val legacy = client.put("/api/accounts") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(putWith(null))
+        }
+        assertEquals(HttpStatusCode.OK, legacy.status)
+    }
+
 }

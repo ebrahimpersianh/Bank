@@ -139,9 +139,9 @@ data class MeResponse(
     val name: String? = null,
 )
 
-data class LoansResponse(val loans: List<Map<String, Any?>>, val updatedAt: String?)
+data class LoansResponse(val loans: List<Map<String, Any?>>, val updatedAt: String?, val revision: Long = 0)
 
-data class PutLoansRequest(val loans: List<Map<String, Any?>>)
+data class PutLoansRequest(val loans: List<Map<String, Any?>>, val expectedRevision: Long? = null)
 
 /** productId یکی از unlimited_loans_1m/3m/6m/1y — باید دقیقاً با پنل کافه‌بازار/مایکت و
  * TIER_DURATION_DAYS تو server/routes/SubscriptionRoutes.kt یکی باشه. store مشخص می‌کنه سرور
@@ -166,9 +166,11 @@ data class SubscriptionHistoryResponse(val ok: Boolean, val items: List<Subscrip
 
 data class SetNameRequest(val name: String?)
 
-data class BackupBlobResponse(val data: String, val updatedAt: String?)
+data class BackupBlobResponse(val data: String, val updatedAt: String?, val revision: Long = 0)
 
-data class BackupBlobRequest(val data: String)
+/** [expectedRevision] = نسخه‌ای که این گوشی آخرین بار از سرور دید. اگر سرور جلوتر باشد
+ * (گوشیِ دیگری نوشته)، پاسخ ۴۰۹ است و نوشتن انجام نمی‌شود - رجوع کن به `server/BackupRoutes.kt`. */
+data class BackupBlobRequest(val data: String, val expectedRevision: Long? = null)
 
 data class CreditRateDto(
     val key: String,

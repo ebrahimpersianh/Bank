@@ -77,8 +77,13 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideLoanRepository(loanDao: LoanDao, loanRowDao: LoanRowDao, apiService: ApiService): LoanRepository =
-        LoanRepository(loanDao, loanRowDao, apiService)
+    fun provideLoanRepository(
+        loanDao: LoanDao,
+        loanRowDao: LoanRowDao,
+        apiService: ApiService,
+        database: AppDatabase,
+        uiPrefs: UiPrefs,
+    ): LoanRepository = LoanRepository(loanDao, loanRowDao, apiService, database, uiPrefs)
 
     @Provides
     @Singleton
@@ -120,8 +125,13 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideChequeRepository(chequeDao: ChequeDao, chequeBookDao: ChequeBookDao, apiService: ApiService): ChequeRepository =
-        ChequeRepository(chequeDao, chequeBookDao, apiService)
+    fun provideChequeRepository(
+        chequeDao: ChequeDao,
+        chequeBookDao: ChequeBookDao,
+        apiService: ApiService,
+        database: AppDatabase,
+        uiPrefs: UiPrefs,
+    ): ChequeRepository = ChequeRepository(chequeDao, chequeBookDao, apiService, database, uiPrefs)
 
     @Provides
     fun provideAccountDao(database: AppDatabase): AccountDao = database.accountDao()
@@ -144,8 +154,10 @@ object AppModule {
         budgetDao: BudgetDao,
         recurringPaymentDao: RecurringPaymentDao,
         gamification: GamificationRepository,
+        database: AppDatabase,
+        uiPrefs: UiPrefs,
     ): AccountRepository =
-        AccountRepository(accountDao, transactionDao, apiService, budgetDao, recurringPaymentDao, gamification)
+        AccountRepository(accountDao, transactionDao, apiService, budgetDao, recurringPaymentDao, gamification, database, uiPrefs)
 
     @Provides
     fun provideAssetDao(database: AppDatabase): AssetDao = database.assetDao()

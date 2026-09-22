@@ -6,6 +6,7 @@ import android.content.Intent
 import android.provider.Telephony
 import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.core.BankSmsParser
+import ir.sadteam.loancalc.core.smsDedupeFingerprint
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.MerchantCategoryGuesser
 import ir.sadteam.loancalc.core.TransactionType
@@ -83,7 +84,7 @@ class BankSmsReceiver : BroadcastReceiver() {
 
                 // هم‌الگو با BankNotificationListener: یک پیامک که دو بار تحویل شود (تکرارِ
                 // شبکه یا اجرای دوباره‌ی receiver) نباید دو تراکنش بسازد.
-                val importKey = "sms|$sender|${parsed.type}|${parsed.amountRial}|${parsed.cardSuffix.orEmpty()}"
+                val importKey = "sms|$sender|${parsed.type}|${parsed.amountRial}|${parsed.cardSuffix.orEmpty()}|${smsDedupeFingerprint(body)}"
                 if (!uiPrefs.claimAutoImportKey(importKey)) return@launch
 
                 val today = JalaliCalendar.today()

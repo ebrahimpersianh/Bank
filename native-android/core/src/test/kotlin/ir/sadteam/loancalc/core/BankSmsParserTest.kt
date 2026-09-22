@@ -135,4 +135,22 @@ class BankSmsParserTest {
         assertEquals(TransactionType.WITHDRAWAL, parsed?.type)
         assertEquals(1_209_000.0, parsed?.amountRial)
     }
+
+    /** دو خریدِ **واقعیِ** هم‌مبلغ با یک کارت باید دو اثرانگشتِ متفاوت بدهند - وگرنه دومی
+     * به‌عنوانِ «تکراری» دور ریخته می‌شود (یافته‌ی بازبینی، ۳۱ شهریور). */
+    @Test
+    fun `two genuine same-amount messages get different fingerprints`() {
+        val first = "خرید ۵۰۰,۰۰۰ ریال\nمانده: ۱۲,۰۰۰,۰۰۰ ریال"
+        val second = "خرید ۵۰۰,۰۰۰ ریال\nمانده: ۱۱,۵۰۰,۰۰۰ ریال"
+        assertTrue(smsDedupeFingerprint(first) != smsDedupeFingerprint(second))
+    }
+
+    /** همان اعلان که دوباره منتشر می‌شود (فقط فاصله/رقمِ فارسی فرق دارد) واقعاً تکراری است. */
+    @Test
+    fun `redelivery of the same message keeps one fingerprint`() {
+        val once = "برداشت 250,000 ریال از کارت 1234"
+        val again = "برداشت  ۲۵۰,۰۰۰ ریال از کارت ۱۲۳۴"
+        assertEquals(smsDedupeFingerprint(once), smsDedupeFingerprint(again))
+    }
+
 }

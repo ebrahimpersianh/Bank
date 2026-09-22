@@ -86,7 +86,11 @@ import androidx.compose.material.icons.outlined.BarChart
 @Composable
 fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel()) {
     val loans by viewModel.loans.collectAsState()
-    val summary = remember(loans) { viewModel.summarize(loans) }
+    // 🚨 `summarize` حالا **suspend** است (از روی ردیف‌های واقعیِ قسط می‌خوانَد)، پس مثلِ
+    // `paymentHistory` باید در `LaunchedEffect` باشد نه `remember{}` - قاعده‌ی ثبت‌شده‌ی
+    // پروژه: صداکردنِ suspend داخلِ `remember{}` کرشِ تردِ اصلی می‌دهد.
+    var summary by remember { mutableStateOf(StatsSummary(0, 0.0, 0.0, 0.0, 0, 0)) }
+    LaunchedEffect(loans) { summary = viewModel.summarize(loans) }
     // paymentHistory دیگه نمی‌تونه محاسبه‌ی همزمان (remember{}) باشه چون از رو رَدیف‌های واقعیِ Room
     // (loan_rows) می‌خونه، نه دیگه از رو JSONِ درون‌حافظه‌ای - رجوع کن به CLAUDE.md.
     var paymentHistory by remember { mutableStateOf<List<PaymentHistoryPoint>>(emptyList()) }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER
 import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
@@ -115,28 +116,14 @@ class AccountViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             runCatching {
-                val transferId = System.currentTimeMillis()
-                accountRepository.addTransaction(
-                    accountId = fromAccountId,
-                    type = TransactionType.WITHDRAWAL,
+                // 🚨 **هر دو سمت با هم یا هیچ‌کدام** - منطقش رفت داخلِ ریپازیتوری تا یک
+                // تراکنشِ واقعیِ دیتابیس باشد. سینک **بعد از** موفقیتِ نوشتن است، نه داخلش.
+                accountRepository.addTransfer(
+                    fromAccountId = fromAccountId,
+                    toAccountId = toAccountId,
                     amount = amount,
                     description = description,
                     year = year, month = month, day = day,
-                    category = null,
-                    sourceType = "transfer",
-                    sourceId = transferId.toString(),
-                    id = transferId,
-                )
-                accountRepository.addTransaction(
-                    accountId = toAccountId,
-                    type = TransactionType.DEPOSIT,
-                    amount = amount,
-                    description = description,
-                    year = year, month = month, day = day,
-                    category = null,
-                    sourceType = "transfer",
-                    sourceId = transferId.toString(),
-                    id = transferId + 1,
                 )
                 syncIfLoggedIn()
             }.onSuccess { onSuccess() }.onFailure(onFailure)
@@ -185,6 +172,9 @@ class AccountViewModel @Inject constructor(
             accountRepository.updateTransaction(
                 transaction.copy(amount = amountRial, description = description.trim()),
             )
+            // ویرایش هم مثلِ افزودن و حذف باید به ابر برود، وگرنه اصلاحِ مبلغ فقط روی
+            // همین گوشی می‌مانْد و اولین بازگردانی برش می‌گردانْد به مقدارِ غلط.
+            syncIfLoggedIn()
         }
     }
 
@@ -197,7 +187,12 @@ class AccountViewModel @Inject constructor(
 
     /** جمعِ درآمد/هزینه‌ی یه ماهِ خاص، رو همه‌ی حساب‌ها - برای کارتِ گزارشِ ماهانه. */
     fun monthlyTotals(allTransactions: List<AccountTransactionEntity>, year: Int, month: Int): Pair<Double, Double> {
-        val forMonth = allTransactions.filter { it.year == year && it.month == month }
+        // 🚨 **جابه‌جاییِ داخلی نه درآمد است نه خرج.** انتقالِ ۱۰ میلیون از حسابِ الف به ب
+        // دو ردیف می‌سازد (برداشت + واریز) و بی این فیلتر، گزارشِ ماه هم ۱۰ میلیون درآمد
+        // نشان می‌داد هم ۱۰ میلیون هزینه - در حالی که هیچ پولی وارد یا خارج نشده.
+        val forMonth = allTransactions.filter {
+            it.year == year && it.month == month && it.sourceType != SOURCE_TYPE_TRANSFER
+        }
         val income = forMonth.filter { it.type == TransactionType.DEPOSIT.name }.sumOf { it.amount }
         val expense = forMonth.filter { it.type == TransactionType.WITHDRAWAL.name }.sumOf { it.amount }
         return income to expense

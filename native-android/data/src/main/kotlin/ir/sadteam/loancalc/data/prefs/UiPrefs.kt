@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.uiPrefsDataStore by preferencesDataStore(name = "ui_prefs")
@@ -22,6 +23,11 @@ class UiPrefs(private val context: Context) {
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
         val LAST_AUTO_BACKUP_AT = stringPreferencesKey("last_auto_backup_at")
+        /** 🚨 جدا از بالایی: «پشتیبانِ محلی ساخته شد» با «به ابر هم رفت» یکی نیستند. */
+        val LAST_CLOUD_BACKUP_AT = stringPreferencesKey("last_cloud_backup_at")
+        val LAST_CLOUD_BACKUP_FAILED = booleanPreferencesKey("last_cloud_backup_failed")
+        /** آخرین نسخه‌ای که از هر بخشِ ابری دیده‌ایم - پایه‌ی جلوگیری از پاک‌کردنِ کارِ گوشیِ دیگر. */
+        val CLOUD_REVISIONS = stringPreferencesKey("cloud_revisions")
         val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
         val PRIVACY_MODE_ENABLED = booleanPreferencesKey("privacy_mode_enabled")
         val REMINDER_DAY_OFFSETS = stringPreferencesKey("reminder_day_offsets")
@@ -406,6 +412,47 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setLastAutoBackupAt(value: String) {
         context.uiPrefsDataStore.edit { it[Keys.LAST_AUTO_BACKUP_AT] = value }
+    }
+
+    /**
+     * آخرین باری که نسخه‌ی پشتیبان واقعاً **روی سرور** نشست.
+     *
+     * 🚨 چرا جدا: تا امروز فقط یک زمان ذخیره می‌شد و همان لحظه‌ی نوشتنِ فایلِ محلی ثبت
+     * می‌شد. یعنی اگر آپلود شکست می‌خورد، تنظیمات باز هم «آخرین پشتیبان: امروز» نشان
+     * می‌داد و کاربر خیال می‌کرد داده‌اش جای امنی هست.
+     */
+    val lastCloudBackupAt: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.LAST_CLOUD_BACKUP_AT] }
+
+    /** `true` یعنی آخرین تلاشِ آپلود شکست خورد (اینترنت، توکن، سرور). */
+    val lastCloudBackupFailed: Flow<Boolean> =
+        context.uiPrefsDataStore.data.map { it[Keys.LAST_CLOUD_BACKUP_FAILED] ?: false }
+
+    /**
+     * نسخه‌ی ابریِ هر بخش (`loans`/`cheques`/`accounts`).
+     *
+     * سرور با هر نوشتنِ موفق یکی بالا می‌برَدش. این گوشی همان عدد را نگه می‌دارد و دفعه‌ی
+     * بعد می‌فرستد؛ اگر نخوانْد یعنی گوشیِ دیگری زودتر نوشته و نوشتنِ ما رد می‌شود.
+     */
+    suspend fun cloudRevision(module: String): Long? {
+        val raw = context.uiPrefsDataStore.data.map { it[Keys.CLOUD_REVISIONS] }.first().orEmpty()
+        return raw.split(',').firstOrNull { it.startsWith("$module:") }
+            ?.substringAfter(':')?.toLongOrNull()
+    }
+
+    suspend fun setCloudRevision(module: String, revision: Long) {
+        context.uiPrefsDataStore.edit { prefs ->
+            val kept = prefs[Keys.CLOUD_REVISIONS].orEmpty()
+                .split(',')
+                .filter { it.isNotBlank() && !it.startsWith("$module:") }
+            prefs[Keys.CLOUD_REVISIONS] = (kept + "$module:$revision").joinToString(",")
+        }
+    }
+
+    suspend fun setCloudBackupResult(okAt: String?) {
+        context.uiPrefsDataStore.edit { prefs ->
+            if (okAt != null) prefs[Keys.LAST_CLOUD_BACKUP_AT] = okAt
+            prefs[Keys.LAST_CLOUD_BACKUP_FAILED] = okAt == null
+        }
     }
 
     /** ویبره‌ی واقعی (نه فقط هپتیک ظریف Compose) رو تپ‌های اصلی - ویژگی اشتراکی؛ پیش‌فرض روشنه

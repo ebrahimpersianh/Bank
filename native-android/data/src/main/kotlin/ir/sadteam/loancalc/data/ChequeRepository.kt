@@ -8,6 +8,8 @@ import ir.sadteam.loancalc.core.ChequeType
 import ir.sadteam.loancalc.core.computeChequeRiskScore
 import ir.sadteam.loancalc.data.db.ChequeBookDao
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
+import androidx.room.withTransaction
+import ir.sadteam.loancalc.data.db.AppDatabase
 import ir.sadteam.loancalc.data.db.ChequeDao
 import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.data.network.ApiService
@@ -23,11 +25,24 @@ import java.util.TimeZone
  * خودکار شماره سریال بعدی). محلی (Room) + پشتیبان‌گیری ابری اختیاری (pushToServer/restoreFromServer)،
  * هم‌الگو با LoanRepository.
  */
+/** کلیدِ این بخش در جدولِ نسخه‌های ابری. */
+private const val CHEQUE_CLOUD_MODULE = "cheques"
+
 class ChequeRepository(
     private val chequeDao: ChequeDao,
     private val chequeBookDao: ChequeBookDao,
     private val apiService: ApiService,
+    /** اختیاری - برای اتمیک‌بودنِ بازیابیِ چک‌ها و دسته‌چک‌ها با هم. */
+    private val database: AppDatabase? = null,
+    private val uiPrefs: ir.sadteam.loancalc.data.prefs.UiPrefs? = null,
 ) {
+    /** بدنه را داخلِ یک تراکنشِ دیتابیس اجرا می‌کند - یا اگر دیتابیسی نداریم، همان‌طور.
+     * تودرتو امن است: Room تراکنشِ داخلی را به همان تراکنشِ بیرونی می‌چسبانَد. */
+    private suspend fun <T> inTransaction(block: suspend () -> T): T {
+        val db = database ?: return block()
+        return db.withTransaction { block() }
+    }
+
     fun observeCheques(): Flow<List<ChequeEntity>> = chequeDao.observeAll()
     fun observeChequeBooks(): Flow<List<ChequeBookEntity>> = chequeBookDao.observeAll()
 
@@ -183,22 +198,42 @@ class ChequeRepository(
         val booksJson = gson.toJson(parsed["chequeBooks"] ?: return false)
         val cheques: List<ChequeEntity> = gson.fromJson(chequesJson, object : TypeToken<List<ChequeEntity>>() {}.type)
         val books: List<ChequeBookEntity> = gson.fromJson(booksJson, object : TypeToken<List<ChequeBookEntity>>() {}.type)
-        chequeDao.replaceAll(cheques)
-        chequeBookDao.replaceAll(books)
+        // 🚨 **چک و دسته‌چک با هم یا هیچ‌کدام**: اگر بینِ این دو کار نیمه می‌مانْد،
+        // چک‌های تازه کنارِ دسته‌چک‌های قدیمی می‌نشستند - یعنی داده‌ی دو نسل مخلوط.
+        inTransaction {
+            chequeDao.replaceAll(cheques)
+            chequeBookDao.replaceAll(books)
+        }
         return true
     }
 
     /** پورت مفهومی pushToServer تو LoanRepository - fire-and-forget، خطاها (اینترنت قطع، اشتراک
      * منقضی و ...) عمداً قورت داده می‌شن چون این یه سینک پس‌زمینه‌ست. */
-    suspend fun pushToServer(token: String) {
+    suspend fun pushToServer(token: String): Boolean {
         try {
-            apiService.putChequesBackup("Bearer $token", BackupBlobRequest(exportBackupJson()))
+            val expected = uiPrefs?.cloudRevision(CHEQUE_CLOUD_MODULE)
+            val response = apiService.putChequesBackup(
+                "Bearer $token",
+                BackupBlobRequest(exportBackupJson(), expected),
+            )
+            if (!response.isSuccessful) return false
+            uiPrefs?.let { prefs -> expected?.let { prefs.setCloudRevision(CHEQUE_CLOUD_MODULE, it + 1) } }
+            return true
         } catch (e: Exception) {
-            // عمداً نادیده گرفته می‌شه
+            return false
         }
     }
 
     /** آخرین بکاپِ ابریِ چک‌ها/دسته‌چک‌ها رو می‌گیره و جایگزینِ دیتای محلی می‌کنه. */
+    /** فقط می‌گیرد، چیزی نمی‌نویسد - رجوع کن به [LoanRepository.fetchServerBackupJson]. */
+    suspend fun fetchServerBackupJson(token: String): String? = try {
+        val response = apiService.getChequesBackup("Bearer $token")
+        uiPrefs?.setCloudRevision(CHEQUE_CLOUD_MODULE, response.revision)
+        response.data
+    } catch (e: Exception) {
+        null
+    }
+
     suspend fun restoreFromServer(token: String): Boolean {
         val blob = try {
             apiService.getChequesBackup("Bearer $token").data

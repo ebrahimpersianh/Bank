@@ -39,16 +39,46 @@ class StatsViewModel @Inject constructor(
     val loans: StateFlow<List<LoanEntity>> = loanRepository.observeLoans()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun summarize(loans: List<LoanEntity>): StatsSummary {
-        val totalAmount = loans.sumOf { it.installment * it.n }
-        val paidAmount = loans.sumOf { it.installment * it.paidCount }
+    /**
+     * 🚨 **از روی خودِ ردیف‌های قسط، نه `installment × n`** (یافته‌ی بازبینی، ۳۱ شهریور).
+     *
+     * مبلغِ تکِ قسط‌ها دستی قابلِ ویرایش است (کارمزد یا جریمه‌ی بانک). ضربِ ساده یعنی
+     * خلاصه‌ی بالای صفحه با تاریخچه‌ی همان صفحه - که از `loan_rows` می‌آید - نمی‌خوانْد و
+     * کاربر دو عددِ متفاوت برای یک چیز می‌دید. حالا هر دو یک منبع دارند.
+     *
+     * وامی که هنوز ردیفی ندارد (وامِ تازه‌ی مهاجرت‌نشده) به همان محاسبه‌ی قدیمی برمی‌گردد.
+     */
+    suspend fun summarize(loans: List<LoanEntity>): StatsSummary {
+        var totalAmount = 0.0
+        var paidAmount = 0.0
+        var totalInstallments = 0
+        var paidInstallments = 0
+        loans.forEach { loan ->
+            val rows = loanRepository.getRows(loan)
+            if (rows.isEmpty()) {
+                totalAmount += loan.installment * loan.n
+                paidAmount += loan.installment * loan.paidCount
+                totalInstallments += loan.n
+                paidInstallments += loan.paidCount
+                return@forEach
+            }
+            rows.forEach { row ->
+                val amount = (row["installment"] as? Number)?.toDouble() ?: loan.installment
+                totalAmount += amount
+                totalInstallments += 1
+                if (row["paid"] == true) {
+                    paidAmount += amount
+                    paidInstallments += 1
+                }
+            }
+        }
         return StatsSummary(
             loanCount = loans.size,
             totalAmount = totalAmount,
             paidAmount = paidAmount,
             remainingAmount = totalAmount - paidAmount,
-            totalInstallments = loans.sumOf { it.n },
-            paidInstallments = loans.sumOf { it.paidCount },
+            totalInstallments = totalInstallments,
+            paidInstallments = paidInstallments,
         )
     }
 

@@ -5,6 +5,7 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.core.BankSmsParser
+import ir.sadteam.loancalc.core.smsDedupeFingerprint
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.core.MerchantCategoryGuesser
 import ir.sadteam.loancalc.core.TransactionType
@@ -87,7 +88,7 @@ class BankNotificationListener : NotificationListenerService() {
             // 🚨 اپ‌های بانکی همان اعلان را دوباره منتشر/به‌روزرسانی می‌کنند و این تابع هر بار
             // اجرا می‌شود؛ بی این کنترل، یک واریز دو تراکنشِ منتظرِ تایید می‌ساخت و با تاییدِ
             // هر دو، موجودی دو برابر جابه‌جا می‌شد.
-            val importKey = "notif|$packageName|${parsed.type}|${parsed.amountRial}|${parsed.cardSuffix.orEmpty()}"
+            val importKey = "notif|$packageName|${parsed.type}|${parsed.amountRial}|${parsed.cardSuffix.orEmpty()}|${smsDedupeFingerprint(body)}"
             if (!uiPrefs.claimAutoImportKey(importKey)) return@launch
             val accounts = accountRepository.observeAccounts().first()
             // ⚠️ بستهٔ فرستنده اول **مجموعه‌ی نامزدها** را محدود می‌کند و بعد شماره‌ی کارت بینِ

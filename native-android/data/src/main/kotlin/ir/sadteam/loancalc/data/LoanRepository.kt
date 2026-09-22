@@ -8,6 +8,8 @@ import ir.sadteam.loancalc.core.LoanCalculator
 import ir.sadteam.loancalc.core.LoanMethod
 import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.PersianDate
+import androidx.room.withTransaction
+import ir.sadteam.loancalc.data.db.AppDatabase
 import ir.sadteam.loancalc.data.db.LoanDao
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.data.db.LoanRowDao
@@ -44,12 +46,25 @@ sealed class SyncOutcome {
  * برابر بازسازی می‌شه و همون‌جا هم persist می‌شه - یعنی تاریخچه‌ی پرداختِ هیچ کاربری با این تغییر
  * گم نمی‌شه.
  */
+/** کلیدِ این بخش در جدولِ نسخه‌های ابری. */
+private const val LOAN_CLOUD_MODULE = "loans"
+
 class LoanRepository(
     private val loanDao: LoanDao,
     private val loanRowDao: LoanRowDao,
     private val apiService: ApiService,
+    /** اختیاری - برای اتمیک‌بودنِ جایگزینیِ وام‌ها و ردیف‌های قسطشان با هم. */
+    private val database: AppDatabase? = null,
+    private val uiPrefs: ir.sadteam.loancalc.data.prefs.UiPrefs? = null,
 ) {
     private val gson = Gson()
+    /** بدنه را داخلِ یک تراکنشِ دیتابیس اجرا می‌کند - یا اگر دیتابیسی نداریم، همان‌طور.
+     * تودرتو امن است: Room تراکنشِ داخلی را به همان تراکنشِ بیرونی می‌چسبانَد. */
+    private suspend fun <T> inTransaction(block: suspend () -> T): T {
+        val db = database ?: return block()
+        return db.withTransaction { block() }
+    }
+
 
     fun observeLoans(): Flow<List<LoanEntity>> = loanDao.observeAll()
 
@@ -615,9 +630,14 @@ class LoanRepository(
         val rows = getOrMigrateRows(loan)
         val current = rows.firstOrNull { it.m == m }
             ?: LoanRowEntity(loanId = loan.id, m = m, installment = loan.installment, paid = false)
-        loanRowDao.upsertAll(listOf(transform(current)))
-        val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
-        loanDao.upsert(loan.withPaidCount(newPaidCount))
+        // 🚨 **ردیفِ قسط و شمارنده‌ی وام یک کارند.** اگر بینشان کار نیمه می‌مانْد، ردیف
+        // «پرداخت‌شده» می‌شد ولی `paidCount` کهنه می‌مانْد - دقیقاً همان دوگانگیِ منبعِ
+        // حقیقت که یک‌بار پیشرفتِ همه‌ی وام‌ها را صفر کرد.
+        inTransaction {
+            loanRowDao.upsertAll(listOf(transform(current)))
+            val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
+            loanDao.upsert(loan.withPaidCount(newPaidCount))
+        }
         // ویجت هر شش ساعت یک‌بار خودش تازه می‌شود؛ بی این خط، کاربر قسط را پرداخت‌شده
         // علامت می‌زند و ویجت تا شش ساعت همان قسط را نشان می‌دهد.
         LoanDataChange.notifyChanged()
@@ -632,9 +652,11 @@ class LoanRepository(
             val current = rows[m] ?: LoanRowEntity(loanId = loan.id, m = m, installment = loan.installment, paid = false)
             transform(current)
         }
-        loanRowDao.upsertAll(updated)
-        val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
-        loanDao.upsert(loan.withPaidCount(newPaidCount))
+        inTransaction {
+            loanRowDao.upsertAll(updated)
+            val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
+            loanDao.upsert(loan.withPaidCount(newPaidCount))
+        }
         LoanDataChange.notifyChanged()
     }
 
@@ -798,12 +820,19 @@ class LoanRepository(
 
     /** پورت syncLoansToServer: fire-and-forget، خطاها رو قورت می‌ده (دقیقاً مثل `.catch(()=>{})`
      * تو وب) چون این یه سینک پس‌زمینه‌ست، نه یه عملیات که کاربر منتظرش بمونه. */
-    suspend fun pushToServer(token: String) {
+    suspend fun pushToServer(token: String): Boolean {
         try {
             val loans = loanDao.getAll().map { toWebMap(it) }
-            apiService.putLoans("Bearer $token", PutLoansRequest(loans))
+            val expected = uiPrefs?.cloudRevision(LOAN_CLOUD_MODULE)
+            val response = apiService.putLoans("Bearer $token", PutLoansRequest(loans, expected))
+            if (!response.isSuccessful) return false
+            uiPrefs?.let { prefs -> expected?.let { prefs.setCloudRevision(LOAN_CLOUD_MODULE, it + 1) } }
+            return true
         } catch (e: Exception) {
-            // عمداً نادیده گرفته می‌شه
+            // 🚨 خطا دیگر **بی‌صدا** نیست: `false` برمی‌گردد تا مصرف‌کننده (کارگرِ
+            // پشتیبان‌گیری) بتواند به کاربر بگوید نسخه‌ی ابری ساخته نشد. بالا رفتنِ خطا
+            // عمداً نه - قطعیِ اینترنت نباید کارِ پشتیبانِ محلی را هم زمین بزند.
+            return false
         }
     }
 
@@ -835,14 +864,28 @@ class LoanRepository(
 
     suspend fun replaceAllWithServerData(serverLoans: List<Map<String, Any?>>) {
         val parsed = serverLoans.mapNotNull { fromWebMap(it) }
-        loanDao.replaceAll(parsed.map { it.first })
-        loanRowDao.clearAll()
-        parsed.forEach { (entity, rows) -> if (rows.isNotEmpty()) loanRowDao.upsertAll(rows) }
+        // 🚨 **وام و ردیف‌های قسطش یک کارند**: قطعِ کار بینِ `clearAll` و درجِ دوباره،
+        // وام‌هایی بی هیچ قسطی به‌جا می‌گذاشت - یعنی پیشرفتِ پرداختِ همه صفر.
+        inTransaction {
+            loanDao.replaceAll(parsed.map { it.first })
+            loanRowDao.clearAll()
+            parsed.forEach { (_, rows) -> if (rows.isNotEmpty()) loanRowDao.upsertAll(rows) }
+        }
     }
 
     /** پورت مفهومی restoreFromServer تو ChequeRepository/AccountRepository - برای «بازیابی از سرور
      * ابری» دستی تو تنظیمات، برخلاف syncAfterLogin که یه‌بار خودکار بعد از ورود صدا زده می‌شه و
      * برخورد داده‌ی محلی/سرور رو مدیریت می‌کنه، این همیشه بی‌قیدوشرط با نسخه‌ی سرور جایگزین می‌کنه. */
+    /** فقط **می‌گیرد**، چیزی نمی‌نویسد - تا بازیابیِ چندبخشی بتواند اول همه را دانلود کند
+     * و بعد یک‌جا بنویسد. `null` یعنی نیامد. */
+    suspend fun fetchServerBackupJson(token: String): String? = try {
+        val response = apiService.getLoans("Bearer $token")
+        uiPrefs?.setCloudRevision(LOAN_CLOUD_MODULE, response.revision)
+        gson.toJson(response.loans)
+    } catch (e: Exception) {
+        null
+    }
+
     suspend fun restoreFromServer(token: String): Boolean {
         val serverLoans = try {
             apiService.getLoans("Bearer $token").loans

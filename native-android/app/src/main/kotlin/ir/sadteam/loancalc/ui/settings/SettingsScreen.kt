@@ -1340,6 +1340,7 @@ private fun DataSettings(
     val subscribed by authViewModel.subscribed.collectAsState()
     val autoBackupEnabled by autoBackupViewModel.enabled.collectAsState()
     val lastAutoBackupAt by autoBackupViewModel.lastBackupAt.collectAsState()
+    val cloudBackupFailed by autoBackupViewModel.cloudBackupFailed.collectAsState()
 
     val lastBackupLabel = remember(lastAutoBackupAt) {
         lastAutoBackupAt?.let { iso ->
@@ -1360,13 +1361,18 @@ private fun DataSettings(
             title = "پشتیبان‌گیریِ خودکارِ روزانه",
             icon = Icons.Filled.CloudUpload,
             tone = SettingsTone.GREEN,
+            // ⚠️ «آخرین پشتیبان: امروز» وقتی آپلود شکست خورده، دروغِ خطرناکی است -
+            // کاربر خیال می‌کند داده‌اش جای امنی هست. حالا شکستِ ابری صریح گفته می‌شود.
             status = when {
                 !autoBackupEnabled -> "خاموش - هیچ نسخه‌ی پشتیبانی ساخته نمی‌شود"
+                cloudBackupFailed && lastBackupLabel != null ->
+                    "روی گوشی ذخیره شد ($lastBackupLabel) - ولی به فضای ابری نرفت"
                 lastBackupLabel != null -> "آخرین پشتیبان: $lastBackupLabel"
                 else -> "روشن - هنوز پشتیبانی ساخته نشده"
             },
             statusTone = when {
                 !autoBackupEnabled -> StatusTone.NEUTRAL
+                cloudBackupFailed && lastBackupLabel != null -> StatusTone.BROKEN
                 lastBackupLabel != null -> StatusTone.HEALTHY
                 else -> StatusTone.NEUTRAL
             },

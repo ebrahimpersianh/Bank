@@ -14,6 +14,7 @@ import ir.sadteam.loancalc.server.isSubscribed
 import ir.sadteam.loancalc.server.queryOne
 import ir.sadteam.loancalc.server.requireAuth
 import ir.sadteam.loancalc.server.toUserRow
+import ir.sadteam.loancalc.server.routes.WriteOkResponse
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -25,22 +26,23 @@ import kotlinx.serialization.json.JsonElement
    چون شکل دقیق هر وام کاملاً دست کلاینته، سرور فقط یه blob رو ذخیره/برمی‌گردونه. */
 
 @Serializable
-private data class LoansGetResponse(val loans: JsonElement, val updatedAt: String?)
+private data class LoansGetResponse(val loans: JsonElement, val updatedAt: String?, val revision: Long = 0)
 
 @Serializable
-private data class LoansPutBody(val loans: JsonElement? = null)
+/** [expectedRevision]: رجوع کن به BackupRoutes - `null` یعنی کلاینتِ قدیمی و رفتارِ قبلی. */
+private data class LoansPutBody(val loans: JsonElement? = null, val expectedRevision: Long? = null)
 
 fun Route.loansRoutes() {
     route("/api/loans") {
         get {
             val authed = call.requireAuth() ?: return@get
             val row = Db.withConnection { conn ->
-                conn.queryOne("SELECT data, updated_at FROM loans WHERE user_id = ?", authed.uid) { rs ->
-                    (rs.getString("data") ?: "[]") to rs.getString("updated_at")
+                conn.queryOne("SELECT data, updated_at, revision FROM loans WHERE user_id = ?", authed.uid) { rs ->
+                    Triple(rs.getString("data") ?: "[]", rs.getString("updated_at"), rs.getLong("revision"))
                 }
             }
             val loansJson = Json.parseToJsonElement(row?.first ?: "[]")
-            call.respond(LoansGetResponse(loans = loansJson, updatedAt = row?.second))
+            call.respond(LoansGetResponse(loans = loansJson, updatedAt = row?.second, revision = row?.third ?: 0))
         }
 
         put {
@@ -64,17 +66,46 @@ fun Route.loansRoutes() {
                 return@put
             }
 
-            Db.withConnection { conn ->
-                conn.execute(
-                    """
-                    INSERT INTO loans (user_id, data, updated_at) VALUES (?, ?, datetime('now'))
-                    ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at
-                    """.trimIndent(),
-                    authed.uid, loans.toString()
-                )
+            // 🚨 کنترلِ هم‌زمانی - رجوع کن به BackupRoutes. نوشتنِ کلاینتی که نسخه‌ی
+            // کهنه در دست دارد، کارِ گوشیِ دیگر را پاک می‌کرد.
+            val newRevision = Db.withConnection { conn ->
+                conn.autoCommit = false
+                try {
+                    val current = conn.queryOne(
+                        "SELECT revision FROM loans WHERE user_id = ?", authed.uid,
+                    ) { it.getLong("revision") } ?: 0L
+                    if (body.expectedRevision != null && body.expectedRevision != current) {
+                        conn.rollback()
+                        return@withConnection null
+                    }
+                    val next = current + 1
+                    conn.execute(
+                        """
+                        INSERT INTO loans (user_id, data, revision, updated_at) VALUES (?, ?, ?, datetime('now'))
+                        ON CONFLICT(user_id) DO UPDATE SET
+                            data = excluded.data,
+                            revision = excluded.revision,
+                            updated_at = excluded.updated_at
+                        """.trimIndent(),
+                        authed.uid, loans.toString(), next,
+                    )
+                    conn.commit()
+                    next
+                } catch (e: Exception) {
+                    conn.rollback()
+                    throw e
+                } finally {
+                    conn.autoCommit = true
+                }
             }
 
-            call.respond(mapOf("ok" to true))
+            if (newRevision == null) {
+                call.respond(HttpStatusCode.Conflict, mapOf("error" to "revision_conflict"))
+                return@put
+            }
+            // ⚠️ `mapOf("ok" to true, "revision" to 1L)` سریالایز نمی‌شود (دو نوعِ متفاوت
+            // در یک Map)؛ پاسخ باید یک تایپِ مشخص باشد.
+            call.respond(WriteOkResponse(revision = newRevision))
         }
     }
 }

@@ -27,22 +27,39 @@ import kotlinx.serialization.Serializable
  * GET همیشه مجازه (دیتای خودِ کاربره، حتی اگه اشتراکش الان منقضی شده باشه بازیابیِ بکاپِ قدیمی
  * نباید قفل بشه)؛ PUT فقط برای مشترک/دوره‌ی آزمایشی مجازه - سازگار با تبلیغِ «فیچر اشتراکی».
  */
+/** پاسخِ موفقِ نوشتن - نسخه‌ی تازه برمی‌گردد تا کلاینت برای نوشتنِ بعدی داشته باشدش. */
 @Serializable
-private data class BackupBlobResponse(val data: String, val updatedAt: String?)
+data class WriteOkResponse(val ok: Boolean = true, val revision: Long)
 
 @Serializable
-private data class BackupBlobRequest(val data: String)
+private data class BackupBlobResponse(val data: String, val updatedAt: String?, val revision: Long = 0)
+
+@Serializable
+/**
+ * [expectedRevision] = نسخه‌ای که کلاینت آخرین بار از سرور گرفته.
+ *
+ * 🚨 اگر با نسخه‌ی فعلیِ سرور نخواند یعنی **گوشیِ دیگری زودتر نوشته** و این نوشتن
+ * داده‌ی تازه‌تر را پاک می‌کرد؛ سرور ۴۰۹ می‌دهد و کلاینت باید اول بگیرد.
+ * `null` = کلاینتِ نسخه‌ی قدیمی، همان رفتارِ قبلیِ «آخرین نوشته برنده».
+ */
+private data class BackupBlobRequest(val data: String, val expectedRevision: Long? = null)
 
 private fun Route.backupBlobRoutes(path: String, table: String) {
     route(path) {
         get {
             val authed = call.requireAuth() ?: return@get
             val row = Db.withConnection { conn ->
-                conn.queryOne("SELECT data, updated_at FROM $table WHERE user_id = ?", authed.uid) { rs ->
-                    (rs.getString("data") ?: "{}") to rs.getString("updated_at")
+                conn.queryOne("SELECT data, updated_at, revision FROM $table WHERE user_id = ?", authed.uid) { rs ->
+                    Triple(rs.getString("data") ?: "{}", rs.getString("updated_at"), rs.getLong("revision"))
                 }
             }
-            call.respond(BackupBlobResponse(data = row?.first ?: "{}", updatedAt = row?.second))
+            call.respond(
+                BackupBlobResponse(
+                    data = row?.first ?: "{}",
+                    updatedAt = row?.second,
+                    revision = row?.third ?: 0,
+                ),
+            )
         }
 
         put {
@@ -63,17 +80,45 @@ private fun Route.backupBlobRoutes(path: String, table: String) {
                 return@put
             }
 
-            Db.withConnection { conn ->
-                conn.execute(
-                    """
-                    INSERT INTO $table (user_id, data, updated_at) VALUES (?, ?, datetime('now'))
-                    ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at
-                    """.trimIndent(),
-                    authed.uid, body.data
-                )
+            val newRevision = Db.withConnection { conn ->
+                conn.autoCommit = false
+                try {
+                    val current = conn.queryOne(
+                        "SELECT revision FROM $table WHERE user_id = ?", authed.uid,
+                    ) { it.getLong("revision") } ?: 0L
+                    if (body.expectedRevision != null && body.expectedRevision != current) {
+                        conn.rollback()
+                        return@withConnection null
+                    }
+                    val next = current + 1
+                    conn.execute(
+                        """
+                        INSERT INTO $table (user_id, data, revision, updated_at) VALUES (?, ?, ?, datetime('now'))
+                        ON CONFLICT(user_id) DO UPDATE SET
+                            data = excluded.data,
+                            revision = excluded.revision,
+                            updated_at = excluded.updated_at
+                        """.trimIndent(),
+                        authed.uid, body.data, next,
+                    )
+                    conn.commit()
+                    next
+                } catch (e: Exception) {
+                    conn.rollback()
+                    throw e
+                } finally {
+                    conn.autoCommit = true
+                }
             }
 
-            call.respond(mapOf("ok" to true))
+            if (newRevision == null) {
+                // کلاینت باید اول بگیرد، بعد دوباره بنویسد - سکوت یعنی پاک‌شدنِ داده‌ی گوشیِ دیگر.
+                call.respond(HttpStatusCode.Conflict, mapOf("error" to "revision_conflict"))
+                return@put
+            }
+            // ⚠️ `mapOf("ok" to true, "revision" to 1L)` سریالایز نمی‌شود (دو نوعِ متفاوت
+            // در یک Map)؛ پاسخ باید یک تایپِ مشخص باشد.
+            call.respond(WriteOkResponse(revision = newRevision))
         }
     }
 }

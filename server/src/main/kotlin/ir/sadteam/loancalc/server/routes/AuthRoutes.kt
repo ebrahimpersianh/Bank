@@ -209,7 +209,12 @@ fun Route.authRoutes() {
                 "login_ok", "ورودِ موفق",
                 "uid" to user.id, "phone" to maskPhone(user.phone), "new" to (user.subscribedUntil == null),
             )
-            val token = signToken(user.id, user.phone)
+            // نسخه‌ی نشستِ همین لحظه داخلِ توکن می‌نشیند؛ `requireAuth` هر بار با ستونِ
+            // دیتابیس مقایسه‌اش می‌کند، پس ابطال فوری اثر می‌کند.
+            val sessionVersion = Db.withConnection { conn ->
+                conn.queryOne("SELECT session_version FROM users WHERE id = ?", user.id) { it.getLong("session_version") }
+            } ?: 0L
+            val token = signToken(user.id, user.phone, sessionVersion)
             call.respond(
                 VerifyOtpResponse(
                     token = token,
@@ -269,12 +274,23 @@ fun Route.authRoutes() {
         delete("/account") {
             val authed = call.requireAuth() ?: return@delete
             Log.info("account_deleted", "حذفِ کاملِ حساب", "uid" to authed.uid, "phone" to maskPhone(authed.phone))
+            // ⚠️ **یک تراکنش**: تا امروز پنج حذفِ مستقل بود و شکستِ وسطِ کار، ردیف‌های
+            // پشتیبانِ بی‌صاحب به‌جا می‌گذاشت. حالا یا همه پاک می‌شوند یا هیچ‌کدام.
             Db.withConnection { conn ->
-                conn.execute("DELETE FROM loans WHERE user_id = ?", authed.uid)
-                conn.execute("DELETE FROM cheques_backup WHERE user_id = ?", authed.uid)
-                conn.execute("DELETE FROM accounts_backup WHERE user_id = ?", authed.uid)
-                conn.execute("DELETE FROM otps WHERE phone = ?", authed.phone)
-                conn.execute("DELETE FROM users WHERE id = ?", authed.uid)
+                conn.autoCommit = false
+                try {
+                    conn.execute("DELETE FROM loans WHERE user_id = ?", authed.uid)
+                    conn.execute("DELETE FROM cheques_backup WHERE user_id = ?", authed.uid)
+                    conn.execute("DELETE FROM accounts_backup WHERE user_id = ?", authed.uid)
+                    conn.execute("DELETE FROM otps WHERE phone = ?", authed.phone)
+                    conn.execute("DELETE FROM users WHERE id = ?", authed.uid)
+                    conn.commit()
+                } catch (e: Exception) {
+                    conn.rollback()
+                    throw e
+                } finally {
+                    conn.autoCommit = true
+                }
             }
             call.respond(mapOf("ok" to true))
         }
