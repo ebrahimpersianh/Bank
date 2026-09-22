@@ -70,6 +70,24 @@ object Db {
                     )
                     """.trimIndent()
                 )
+                // 🐞 **گزارشِ مشکل** - رجوع کن به `routes/SupportRoutes.kt`.
+                // `user_id` مهم‌ترین ستون است: کدِ هدیه به همان حساب داده می‌شود.
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS bug_reports (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        ticket TEXT UNIQUE NOT NULL,
+                        user_id INTEGER REFERENCES users(id),
+                        phone TEXT,
+                        message TEXT NOT NULL,
+                        app_version TEXT,
+                        device TEXT,
+                        status TEXT NOT NULL DEFAULT 'open',
+                        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                    """.trimIndent()
+                )
+
                 // 🎁 **کدهای هدیه‌ی اشتراک** - خواسته‌ی کاربر (۳۱ شهریور): جایزه‌ی
                 // ۱ تا ۱۵ روزه، و هدیه به کسی که باگ گزارش می‌کند.
                 //
