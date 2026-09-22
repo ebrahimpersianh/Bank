@@ -27,22 +27,30 @@ import javax.inject.Singleton
 class IconWither @Inject constructor() {
 
     /**
-     * پله‌ی پژمردگی از روی آخرین روزِ فعالیت.
+     * پله‌ی پژمردگی از روی آخرین روزِ **سرزدن** به برنامه.
      *
-     * **از روزِ دوم شروع می‌شود** (تصحیحِ صریحِ کاربر: «نزدیک هشتا طراحیه و دوتا نیست») -
-     * یک روز نرفتن هنوز غیبت نیست.
+     * جدولِ صریحِ کاربر (۳۱ شهریور):
+     *
+     *     همین امروز  → پله‌ی ۰ (سالم)
+     *     ۱ روز نرفته → پله‌ی ۱ (~۲۰٪ کهنه)
+     *     ۲ روز       → پله‌ی ۲ (~۴۰٪ کهنه)
+     *     ۳ روز و بیشتر → پله‌ی ۳ (آخرین حالت)
+     *
+     * ⚠️ **دیگر یک روز ارفاق ندارد.** پیش از این `away - 1` بود («یک روز نرفتن هنوز
+     * غیبت نیست») و با هشت پله معنی داشت؛ با چهار پله همان ارفاق یعنی پله‌ی دوم
+     * عملاً هیچ‌وقت دیده نمی‌شد.
      */
     fun stepFor(lastActiveDay: PersianDate?, today: PersianDate = JalaliCalendar.today()): Int {
         if (lastActiveDay == null) return 0
         val away = runCatching { JalaliCalendar.daysBetween(lastActiveDay, today) }.getOrDefault(0)
-        return (away - 1).coerceIn(0, STEPS)
+        return away.coerceIn(0, STEPS)
     }
 
     /**
      * پله‌ی متناظر با آخرین روزِ ثبت‌شده در دفترِ سکه (`DAILY_LOG`) را اعمال می‌کند.
      *
      * [activeIcon] آیکونِ خریداری‌شده‌ی فعال (`icon:piggy`…) یا `null` برای پیش‌فرض.
-     * هر پنج طرح هشت پله دارند (بخشِ ۶۱)، پس پژمردگی روی آیکونِ خریدنی هم اجرا می‌شود.
+     * پنج طرحِ وکتوری چهار حالت دارند؛ نه طرحِ تصویری همیشه حالتِ سالم می‌مانند.
      */
     fun applyFromDateKeys(context: Context, dateKeys: Collection<String>, activeIcon: String? = null) {
         apply(context, stepFor(lastDay(dateKeys)), activeIcon)
@@ -89,12 +97,45 @@ class IconWither @Inject constructor() {
         }.maxByOrNull { ActiveStreak.dateKey(it) }
 
     companion object {
-        /** هشت پله - تصحیحِ صریحِ کاربر، نه دو حالت. */
-        const val STEPS = 8
+        /**
+         * **چهار حالت** (`۰..۳`) - خواسته‌ی صریحِ کاربر، جایگزینِ هشت پله‌ی قبلی.
+         *
+         * هشت پله از دیدِ کاربر تفاوتِ دیدنی نمی‌ساخت: هر پله ۱۰٪ اشباع کم می‌کرد و دو
+         * پله‌ی کنارِ هم عملاً یکی دیده می‌شدند. چهار حالتِ «سالم / ۲۰٪ / ۴۰٪ / ۶۰٪»
+         * همان قصه را با گام‌هایی می‌گوید که واقعاً از هم جدا دیده می‌شوند.
+         */
+        const val STEPS = 3
 
         /**
-         * آیکونِ خریدنی → شماره‌ی الیاسِ **پله‌ی صفر**ش. شناسه‌ها همان `ShopItem.id`ِ
-         * کاتالوگ‌اند. «کیفِ پول» این‌جا نیست چون پیش‌فرض است و الیاسِ ۰..۸ مالِ اوست.
+         * آیکون → **چهار الیاسِ** پله‌ی ۰..۳ آن.
+         *
+         * 🚨 جدولِ قبلی دو تکه بود (`ICON_ALIAS` برای پله‌ی صفر و `WITHER_BASE` برای
+         * ۱..۸ِ پشتِ‌هم) و همان دوتکه‌بودن یک‌بار باعثِ نگاشتِ اشتباه شد. حالا هر طرح
+         * فهرستِ صریحِ خودش را دارد؛ شماره‌ها پشتِ‌هم نیستند و لازم هم نیست باشند.
+         *
+         * ⚠️ الیاس‌های میانی (پله‌های استفاده‌نشده‌ی ستِ هشت‌تاییِ قدیمی) در مانیفست
+         * می‌مانند و خاموش‌اند - حذفشان یعنی کسی که همین حالا آن پله رویش فعال است،
+         * آیکونش از صفحه‌ی گوشی ناپدید شود.
+         */
+        private val STAGES: Map<String, IntArray> =
+            mapOf(
+                // طرحِ پیش‌فرضِ «کیف»: پله‌ی صفر خودِ `ic_launcher` است.
+                DEFAULT_ICON to intArrayOf(0, 2, 4, 6),
+                "icon:coin" to intArrayOf(9, 13, 15, 17),
+                "icon:letter" to intArrayOf(10, 21, 23, 25),
+                "icon:piggy" to intArrayOf(11, 29, 31, 33),
+                "icon:shop" to intArrayOf(36, 38, 40, 42),
+            )
+
+        /** کلیدِ داخلیِ طرحِ پیش‌فرض - `activeIcon`ِ `null` به این نگاشت می‌شود. */
+        private const val DEFAULT_ICON = "icon:wallet"
+
+        /**
+         * آیکونِ خریدنی → الیاسِ پله‌ی صفرش. `LoanCalcApplication` با همین تشخیص می‌دهد
+         * ترجیحِ ذخیره‌شده‌ی کاربر هنوز وجود دارد یا باید پاک شود.
+         *
+         * نه طرحِ تصویریِ بخشِ ۸۰ پله‌ی پژمردگی ندارند (فایلشان رستری است) و همیشه
+         * تازه می‌مانند.
          */
         val ICON_ALIAS =
             mapOf(
@@ -102,11 +143,6 @@ class IconWither @Inject constructor() {
                 "icon:letter" to 10,
                 "icon:piggy" to 11,
                 "icon:shop" to 36,
-                // ═══ نه آیکونِ تصویریِ بخشِ ۸۰ ═══
-                // این‌ها **پله‌ی پژمردگی ندارند**: فایلشان تصویرِ رستری‌ست نه وکتور، پس
-                // هشت پله‌ی دست‌ساز برایشان وجود ندارد. `aliasFor` وقتی طرحی در
-                // [WITHER_BASE] نباشد همان پله‌ی صفر را برمی‌گرداند، پس بی هیچ استثنای
-                // تازه‌ای همیشه تازه می‌مانند.
                 "icon:aqua" to 45,
                 "icon:calligraphy" to 46,
                 "icon:fox" to 47,
@@ -118,29 +154,15 @@ class IconWither @Inject constructor() {
                 "icon:neon" to 53,
             )
 
-        /** پله‌ی ۱..۸ِ هر طرحِ خریدنی (بخشِ ۶۱) - ۳۲ پله‌ی ساخته‌شده‌ی `generate-wither.py`. */
-        private val WITHER_BASE =
-            mapOf(
-                "icon:coin" to 12,
-                "icon:letter" to 20,
-                "icon:piggy" to 28,
-                "icon:shop" to 37,
-            )
-
         private const val LAST_ALIAS = 53
 
-        /**
-         * کدام الیاس روشن شود.
-         *
-         * پله‌ی صفرِ هر طرح الیاسِ جدا دارد (۰ و ۹ و ۱۰ و ۱۱ و ۳۶) چون فایلِ «تازه»ی طرح است، و
-         * پله‌های ۱..۸ پشتِ‌هم می‌آیند. پس نگاشت **دو تکه** است، نه یک جمعِ ساده.
-         */
+        /** کدام الیاس روشن شود - رجوع کن به [STAGES]. */
         fun aliasFor(activeIcon: String?, step: Int): Int {
             val safe = step.coerceIn(0, STEPS)
-            val zero = ICON_ALIAS[activeIcon] ?: return safe
-            if (safe == 0) return zero
-            val base = WITHER_BASE[activeIcon] ?: return zero
-            return base + safe - 1
+            val stages = STAGES[activeIcon ?: DEFAULT_ICON]
+            // طرحی که پله ندارد (نه آیکونِ تصویری) همیشه پله‌ی صفرِ خودش است.
+            if (stages == null) return ICON_ALIAS[activeIcon] ?: 0
+            return stages[safe]
         }
     }
 }
