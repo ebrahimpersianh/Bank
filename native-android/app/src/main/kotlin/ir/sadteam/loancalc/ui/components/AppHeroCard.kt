@@ -20,7 +20,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -109,11 +113,72 @@ fun AppHeroCard(
             .hardShadow(shadow, 5.dp, AppRadius.card)
             .clip(shape)
             .background(gradient)
+            // 🌿 **نقشِ برگِ گوشه** (خواسته‌ی کاربر با طرحِ مرجع، ۳۱ شهریور).
+            //
+            // با `drawBehind` **زیرِ محتوا** کشیده می‌شود و هیچ فضایی نمی‌گیرد، پس چیدمانِ
+            // هیچ کارتی عوض نمی‌شود. گوشه‌ی بالا-چپ انتخاب شد نه راست: برنامه راست‌به‌چپ
+            // است و راستِ کارت جای برچسب و عدد است.
+            //
+            // ⚠️ **سفیدِ کم‌رنگ، نه یک رنگِ ثابت** - همین یک تصمیم کاری می‌کند که نقش با
+            // **هر تمی** جور دربیاید (خواسته‌ی دومِ همان پیام): روی سبز، بنفش، لاجورد یا
+            // هر تمِ خریدنیِ بعدی، رنگش از خودِ زمینه می‌آید. یک هگزِ ثابت روی نیمی از
+            // تم‌ها لکه می‌شد.
+            .drawBehind { drawHeroLeaves() }
             .padding(AppSpacing.cardPadding),
     ) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
             content()
         }
+    }
+}
+
+/**
+ * دو برگِ هم‌پوشان در گوشه‌ی بالا-چپِ کارتِ قهرمان.
+ *
+ * تصویر نیست، مسیرِ برداری است: هیچ فایلی به بسته اضافه نمی‌کند، در هر اندازه‌ی صفحه
+ * تمیز می‌مانَد و رنگش از زمینه‌ی همان کارت می‌آید.
+ *
+ * ⚠️ شفافیتِ ۰٫۰۹ و ۰٫۰۶ عمدی است: نقش باید **حس** شود نه دیده؛ پررنگ‌تر از این با
+ * عددِ قهرمان رقابت می‌کند - همان دلیلی که کارتِ تزئینیِ شلوغ در این بازطراحی حذف شد.
+ */
+private fun DrawScope.drawHeroLeaves() {
+    val unit = size.minDimension
+    // برگِ بزرگ‌تر، کمی بیرون از کادر می‌نشیند تا «بریده از لبه» دیده شود نه «چسبانده».
+    drawLeaf(
+        center = Offset(unit * 0.10f, unit * 0.06f),
+        length = unit * 0.62f,
+        width = unit * 0.26f,
+        rotationDeg = 32f,
+        color = Color.White.copy(alpha = 0.09f),
+    )
+    drawLeaf(
+        center = Offset(unit * 0.02f, unit * 0.30f),
+        length = unit * 0.46f,
+        width = unit * 0.19f,
+        rotationDeg = -14f,
+        color = Color.White.copy(alpha = 0.06f),
+    )
+}
+
+/** یک برگ: دو کمانِ قرینه از نوک تا نوک. */
+private fun DrawScope.drawLeaf(
+    center: Offset,
+    length: Float,
+    width: Float,
+    rotationDeg: Float,
+    color: Color,
+) {
+    val path = Path().apply {
+        moveTo(0f, 0f)
+        quadraticBezierTo(width, length * 0.30f, 0f, length)
+        quadraticBezierTo(-width, length * 0.30f, 0f, 0f)
+        close()
+    }
+    withTransform({
+        translate(center.x, center.y)
+        rotate(rotationDeg, Offset.Zero)
+    }) {
+        drawPath(path, color)
     }
 }
 
