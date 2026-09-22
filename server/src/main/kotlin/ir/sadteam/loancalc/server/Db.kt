@@ -70,6 +70,27 @@ object Db {
                     )
                     """.trimIndent()
                 )
+                // 🎁 **کدهای هدیه‌ی اشتراک** - خواسته‌ی کاربر (۳۱ شهریور): جایزه‌ی
+                // ۱ تا ۱۵ روزه، و هدیه به کسی که باگ گزارش می‌کند.
+                //
+                // 🚨 **چرا کد و نه یک دکمه‌ی «جایزه بگیر» در اپ**: موجودیِ سکه و رخدادهای
+                // اپ همگی **روی خودِ گوشی**اند و سرور نمی‌تواند راستی‌آزمایی‌شان کند؛ یک
+                // اندپوینتِ «به من N روز اشتراک بده» یعنی هرکسی با یک درخواستِ ساده
+                // اشتراکِ نامحدود می‌گیرد. کد را **سرور** می‌سازد، پس مرجعِ حقیقت سرور
+                // می‌مانَد و هر کد دقیقاً یک بار مصرف می‌شود.
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS gift_codes (
+                        code TEXT PRIMARY KEY,
+                        days INTEGER NOT NULL,
+                        note TEXT,
+                        used_by INTEGER REFERENCES users(id),
+                        used_at TEXT,
+                        expires_at TEXT,
+                        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                    """.trimIndent()
+                )
                 st.executeUpdate(
                     """
                     CREATE TABLE IF NOT EXISTS crash_reports (

@@ -30,9 +30,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -50,10 +52,12 @@ import ir.sadteam.loancalc.ui.theme.AppGoldFrom
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.LottieSpinner
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
 
@@ -92,6 +96,10 @@ fun SubscriptionScreen(
     var prices by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var purchasingProductId by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+    // کدِ هدیه: متنِ فیلد، در حالِ ارسال، و پیامِ موفقیت.
+    var giftCode by rememberSaveable { mutableStateOf("") }
+    var redeeming by remember { mutableStateOf(false) }
+    var giftMessage by remember { mutableStateOf<String?>(null) }
     // این صفحه دو نما داره (خواسته‌ی صریحِ کاربر، هم‌الگو با اپِ رفرنس): «مرورِ اشتراک» که وضعیت و
     // مزیت‌ها رو نشون می‌ده، و «تعرفه‌ها» که همون لیستِ خریدِ قبلیه. پیش‌فرض مرورـه.
     var showPlans by remember { mutableStateOf(false) }
@@ -445,6 +453,78 @@ fun SubscriptionScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
                 ) {
                     Text("بازگشت به وضعیتِ اشتراک", fontSize = 12.5.sp)
+                }
+            }
+        }
+
+        // 🎁 **کدِ هدیه** - جایزه‌ی ۱ تا ۱۵ روزه و هدیه‌ی گزارشِ باگ به پشتیبانی.
+        // همیشه دیده می‌شود، حتی برای مشترکِ فعلی: روزها **به انتهای اشتراکِ فعلی**
+        // اضافه می‌شوند، پس خرج‌کردنِ کد در وسطِ اشتراک چیزی را هدر نمی‌دهد.
+        item {
+            AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                Text("کدِ هدیه داری؟", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
+                Text(
+                    "کدِ جایزه یا هدیه‌ی گزارشِ باگ را این‌جا وارد کن.",
+                    color = AppMuted,
+                    fontSize = 10.5.sp,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // ⚠️ کد ذاتاً چپ‌به‌راست است (حروفِ لاتین و خط‌تیره)، پس مثلِ شماره‌ی
+                    // موبایل و شناسه‌ی صیادی در `Ltr` پیچیده می‌شود.
+                    Ltr {
+                        OutlinedTextField(
+                            value = giftCode,
+                            onValueChange = { giftCode = it.uppercase() },
+                            placeholder = { Text("JIBAK-XXXXX-XXXXX", fontSize = 11.sp) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    GradientButton(
+                        enabled = giftCode.isNotBlank() && !redeeming,
+                        onClick = {
+                            if (gateState != GateState.LOGGED_IN) {
+                                onNeedsLogin()
+                                return@GradientButton
+                            }
+                            error = null
+                            giftMessage = null
+                            redeeming = true
+                            authViewModel.redeemGiftCode(
+                                code = giftCode,
+                                onSuccess = {
+                                    redeeming = false
+                                    giftCode = ""
+                                    giftMessage = "هدیه فعال شد 🎁"
+                                },
+                                onError = { code ->
+                                    redeeming = false
+                                    error = when (code) {
+                                        "already_used" -> "این کد قبلاً استفاده شده"
+                                        "expired" -> "مهلتِ این کد تمام شده"
+                                        "not_found" -> "کد پیدا نشد؛ دوباره نگاهش کن"
+                                        else -> "فعال‌سازی ناموفق بود؛ اینترنت را بررسی کن"
+                                    }
+                                },
+                            )
+                        },
+                        modifier = Modifier.padding(start = 8.dp),
+                    ) {
+                        if (redeeming) LottieSpinner(modifier = Modifier.size(18.dp)) else Text("فعال کن")
+                    }
+                }
+                if (giftMessage != null) {
+                    Text(
+                        giftMessage ?: "",
+                        color = AppPrimaryInk,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
                 }
             }
         }

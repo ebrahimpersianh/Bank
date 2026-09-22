@@ -6,6 +6,7 @@ import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.network.RequestOtpRequest
 import ir.sadteam.loancalc.data.network.SetNameRequest
 import ir.sadteam.loancalc.data.network.SubscriptionPurchaseDto
+import ir.sadteam.loancalc.data.network.RedeemGiftRequest
 import ir.sadteam.loancalc.data.network.VerifySubscriptionRequest
 import ir.sadteam.loancalc.data.network.VerifyOtpRequest
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -93,6 +94,26 @@ class AuthRepository(
                 VerifySubscriptionRequest(productId, purchaseToken, store),
             )
             authPrefs.setSubscribed(result.subscribed)
+            AuthResult.Success
+        } catch (e: HttpException) {
+            AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))
+        } catch (e: Exception) {
+            AuthResult.Error(null)
+        }
+    }
+
+    /**
+     * 🎁 خرج‌کردنِ کدِ هدیه. موفق که شد، اشتراکِ محلی هم فوراً روشن می‌شود تا کاربر
+     * برای دیدنِ نتیجه مجبور به ورود/خروج نباشد.
+     *
+     * خطاها همان کدهای سرورند: `not_found` / `already_used` / `expired`.
+     */
+    suspend fun redeemGiftCode(code: String): AuthResult {
+        val token = authPrefs.authToken.first()
+        if (token.isNullOrEmpty()) return AuthResult.Error(null)
+        return try {
+            apiService.redeemGiftCode("Bearer $token", RedeemGiftRequest(code.trim().uppercase()))
+            authPrefs.setSubscribed(true)
             AuthResult.Success
         } catch (e: HttpException) {
             AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))

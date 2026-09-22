@@ -238,4 +238,59 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.OK, legacy.status)
     }
 
+    @Test
+    fun `gift code grants days once and rejects reuse`() = testApplication {
+        val dbFile = File.createTempFile("loan-calc-test-gift", ".sqlite")
+        dbFile.deleteOnExit()
+        System.setProperty("DB_PATH", dbFile.absolutePath)
+        System.setProperty("JWT_SECRET", "test-secret-for-unit-tests-only-gift")
+
+        application { module() }
+
+        val uid = Db.withConnection { conn ->
+            conn.insertReturningId("INSERT INTO users (phone) VALUES (?)", "09120005566")
+        }
+        val token = signToken(uid, "09120005566")
+        Db.withConnection { conn ->
+            conn.execute("INSERT INTO gift_codes (code, days, note) VALUES (?, ?, ?)", "JIBAK-TEST1-TEST2", 15, "تست")
+        }
+
+        val first = client.post("/api/gift/redeem") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody("""{"code":"jibak-test1-test2"}""")
+        }
+        assertEquals(HttpStatusCode.OK, first.status)
+        // اشتراک واقعاً تمدید شد، نه فقط پاسخِ موفق.
+        val until = Db.withConnection { conn ->
+            conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", uid) { it.getString("subscribed_until") }
+        }
+        assertTrue(!until.isNullOrBlank())
+
+        // همان کد، بارِ دوم: باید رد شود وگرنه یک کد بی‌نهایت اشتراک می‌دهد.
+        val again = client.post("/api/gift/redeem") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody("""{"code":"JIBAK-TEST1-TEST2"}""")
+        }
+        assertEquals(HttpStatusCode.BadRequest, again.status)
+    }
+
+    @Test
+    fun `gift code creation needs the admin token`() = testApplication {
+        val dbFile = File.createTempFile("loan-calc-test-gift-admin", ".sqlite")
+        dbFile.deleteOnExit()
+        System.setProperty("DB_PATH", dbFile.absolutePath)
+        System.setProperty("JWT_SECRET", "test-secret-for-unit-tests-only-gift-admin")
+
+        application { module() }
+
+        // بی هدرِ ادمین (و با ADMIN_TOKENِ تنظیم‌نشده) مسیر بسته است.
+        val denied = client.post("/api/gift/create") {
+            contentType(ContentType.Application.Json)
+            setBody("""{"days":5}""")
+        }
+        assertEquals(HttpStatusCode.Unauthorized, denied.status)
+    }
+
 }

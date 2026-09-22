@@ -300,6 +300,19 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    /** 🎁 خرج‌کردنِ کدِ هدیه - رجوع کن به [AuthRepository.redeemGiftCode]. */
+    fun redeemGiftCode(code: String, onSuccess: () -> Unit, onError: (String?) -> Unit) {
+        viewModelScope.launch {
+            when (val result = authRepository.redeemGiftCode(code)) {
+                is AuthResult.Success -> {
+                    refreshStatus()
+                    onSuccess()
+                }
+                is AuthResult.Error -> onError(result.code)
+            }
+        }
+    }
+
     /** تاریخچه‌ی خریدهای اشتراک - صفحه‌ی اشتراک هر بار که باز می‌شه یه‌بار می‌خونتش. */
     val purchaseHistory: StateFlow<List<SubscriptionPurchaseDto>?> = _purchaseHistory
 

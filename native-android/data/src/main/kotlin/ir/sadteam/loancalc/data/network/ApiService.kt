@@ -49,6 +49,14 @@ interface ApiService {
         @Body body: PutLoansRequest,
     ): Response<Unit>
 
+    // 🎁 کدِ هدیه‌ی اشتراک (جایزه، یا هدیه‌ی گزارشِ باگ به پشتیبانی). سرور کد را
+    // می‌سازد و یک‌بارمصرف نگه می‌دارد - رجوع کن به `server/routes/GiftCodeRoutes.kt`.
+    @POST("api/gift/redeem")
+    suspend fun redeemGiftCode(
+        @Header("Authorization") authHeader: String,
+        @Body body: RedeemGiftRequest,
+    ): RedeemGiftResponse
+
     @POST("api/subscription/verify")
     suspend fun verifySubscription(
         @Header("Authorization") authHeader: String,
@@ -165,6 +173,10 @@ data class SubscriptionPurchaseDto(
 data class SubscriptionHistoryResponse(val ok: Boolean, val items: List<SubscriptionPurchaseDto>)
 
 data class SetNameRequest(val name: String?)
+
+data class RedeemGiftRequest(val code: String)
+
+data class RedeemGiftResponse(val ok: Boolean, val days: Int, val subscribedUntil: String)
 
 data class BackupBlobResponse(val data: String, val updatedAt: String?, val revision: Long = 0)
 
