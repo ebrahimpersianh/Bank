@@ -370,6 +370,8 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     add(ShopItem("symbolset:outlined", CoinSpend.CATEGORY_ICON_SET, "نمادهای خطی", "۱۸ نمادِ دسته، فقط خط بی پُرکن"))
     add(ShopItem("symbolset:pictorial", CoinSpend.CATEGORY_ICON_SET, "نمادهای روزمره", "۱۸ نمادِ دسته، ساده و آشنا"))
     add(ShopItem("symbolset:solid", CoinSpend.CATEGORY_ICON_SET, "نمادهای برجسته", "۱۸ نمادِ توپر با طرحِ اختصاصیِ جیبک", addedOn = "1405-07-01"))
+    add(ShopItem("symbolset:cute", CoinSpend.CATEGORY_ICON_SET, "نمادهای گرد و بامزه", "۱۸ نمادِ توپر با گوشه‌های کاملاً گرد", addedOn = "1405-07-01"))
+    add(ShopItem("symbolset:line", CoinSpend.CATEGORY_ICON_SET, "نمادهای خطیِ ظریف", "۱۸ نمادِ خطی با ضخامتِ یکدست", addedOn = "1405-07-01"))
     add(ShopItem("coinskin:ancient", CoinSpend.COIN_SKIN, "سکه‌ی کهن", "شکلِ سکه در همه‌ی برنامه", comingSoon = true))
     add(
         ShopItem(

@@ -1298,6 +1298,8 @@ private fun SymbolSetPreview(itemId: String) {
         SymbolStyle.TWO_TONE -> Color(0xFFEAE5FF) to Color(0xFF6842B8)
         SymbolStyle.PICTORIAL -> Color(0xFFE0F4EE) to Color(0xFF087D5B)
         SymbolStyle.SOLID -> Color(0xFFFFF4D6) to Color(0xFF7A5A00)
+        SymbolStyle.CUTE -> Color(0xFFFFE6F0) to Color(0xFFB0306A)
+        SymbolStyle.FINE_LINE -> Color(0xFFE3F0FF) to Color(0xFF1F5FB0)
     }
     val keys = listOf("restaurant", "home", "car", "celebration")
     Box(

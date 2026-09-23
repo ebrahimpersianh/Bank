@@ -95,7 +95,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
  */
 enum class SymbolStyle(val id: String, val label: String) {
     FILLED("filled", "توپر"), ROUNDED("rounded", "گرد"), OUTLINED("outlined", "خطی"),
-    SHARP("sharp", "زاویه‌دار"), TWO_TONE("two_tone", "دو‌لایه"), PICTORIAL("pictorial", "روزمره"), SOLID("solid", "برجسته");
+    SHARP("sharp", "زاویه‌دار"), TWO_TONE("two_tone", "دو‌لایه"), PICTORIAL("pictorial", "روزمره"), SOLID("solid", "برجسته"),
+    CUTE("cute", "گرد و بامزه"), FINE_LINE("line", "خطی ظریف");
     companion object { fun fromItemId(itemId: String?): SymbolStyle = entries.firstOrNull { itemId == "symbolset:${it.id}" } ?: FILLED }
 }
 object SymbolTheme { var style: SymbolStyle by mutableStateOf(SymbolStyle.FILLED) }
@@ -127,6 +128,8 @@ fun iconForKey(key: String, style: SymbolStyle = SymbolTheme.style): ImageVector
         SymbolStyle.FILLED -> icon.filled
         SymbolStyle.PICTORIAL -> icon.pictorial
         SymbolStyle.SOLID -> SolidSymbols.forKey(icon.key) ?: icon.filled
+        SymbolStyle.CUTE -> RoundSymbols.forKey(icon.key) ?: icon.filled
+        SymbolStyle.FINE_LINE -> LineSymbols.forKey(icon.key) ?: icon.outlined
         SymbolStyle.ROUNDED -> icon.rounded
         SymbolStyle.OUTLINED -> icon.outlined
         SymbolStyle.SHARP -> icon.sharp
