@@ -88,7 +88,8 @@ fun PaidRing(
                 maxLines = 1,
                 style = tight,
             )
-            Text(
+            // خطِ دومِ خالی هم ۲dp فاصله + یک خطِ نامرئی می‌گرفت و درصد را از مرکز بالا می‌برد.
+            if (centerBottom.isNotEmpty()) Text(
                 centerBottom,
                 color = centerBottomColor,
                 fontSize = 7.5.sp,
