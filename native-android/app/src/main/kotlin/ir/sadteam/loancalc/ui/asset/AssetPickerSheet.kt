@@ -1,5 +1,22 @@
 package ir.sadteam.loancalc.ui.asset
 
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_CRYPTO
+import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_FIAT
+import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_GOLD
+import ir.sadteam.loancalc.ui.components.CoinIcon
+import ir.sadteam.loancalc.ui.jibak.toFa
+import ir.sadteam.loancalc.ui.theme.AppInfoPill
+import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -97,63 +114,140 @@ fun AssetPickerSheet(
     Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 28.dp),
-            verticalArrangement = Arrangement.spacedBy(9.dp),
+            contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 120.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item(key = "head") {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    HeaderSquareButton(
-                        icon = Icons.Filled.Close,
-                        description = "بستن",
-                        fill = AppIconFrame,
-                        border = AppLine,
-                        ink = AppMuted,
-                        onClick = onDismiss,
-                    )
-                    Text(
-                        "نوع دارایی",
-                        color = AppText,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier.weight(1f),
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("نوع دارایی", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                        Text(
+                            "دارایی موردنظرت را انتخاب کن",
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(AppIconFrame)
+                            .pressScaleClickable(onClick = onDismiss),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Filled.Close, contentDescription = "بستن", tint = AppText, modifier = Modifier.size(20.dp))
+                    }
                 }
             }
 
             item(key = "search") {
-                OutlinedTextField(
+                // جست‌وجوی کپسولی و سبک (طرحِ ChatGPT) - همان فیلترِ قبلی، فقط ظاهر.
+                BasicTextField(
                     value = query,
                     onValueChange = { query = it },
-                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    shape = RoundedCornerShape(AppRadius.button),
+                    textStyle = TextStyle(color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold),
+                    cursorBrush = SolidColor(AppPrimary),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    leadingIcon = {
-                        Icon(
-                            Icons.Filled.Search,
-                            contentDescription = null,
-                            tint = AppMuted,
-                            modifier = Modifier.size(18.dp),
-                        )
+                    modifier = Modifier.fillMaxWidth(),
+                    decorationBox = { inner ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp)
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(AppSurface)
+                                .border(1.dp, AppLine, RoundedCornerShape(999.dp))
+                                .padding(horizontal = 16.dp),
+                        ) {
+                            Icon(Icons.Filled.Search, contentDescription = null, tint = AppMuted, modifier = Modifier.size(20.dp))
+                            Box(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                                if (query.isEmpty()) {
+                                    Text(
+                                        when (filter) {
+                                            ASSET_CATEGORY_GOLD -> "جست‌وجو در طلا (مثلاً سکه، ۱۸ عیار…)"
+                                            ASSET_CATEGORY_FIAT -> "جست‌وجو در ارزها (مثلاً دلار، یورو…)"
+                                            ASSET_CATEGORY_CRYPTO -> "جست‌وجو در رمزارزها (مثلاً بیت‌کوین…)"
+                                            else -> "جست‌وجو (مثلاً دلار، طلا، بیت‌کوین…)"
+                                        },
+                                        color = AppMuted,
+                                        fontSize = 12.5.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                inner()
+                            }
+                            if (query.isNotEmpty()) {
+                                Icon(
+                                    Icons.Filled.Close,
+                                    contentDescription = "پاک‌کردنِ جست‌وجو",
+                                    tint = AppMuted,
+                                    modifier = Modifier.size(18.dp).clip(CircleShape).pressScaleClickable { query = "" },
+                                )
+                            }
+                        }
                     },
-                    placeholder = { Text("جست‌وجو — دلار، سکه، بیت…", color = AppMuted, fontSize = 12.5.sp) },
                 )
             }
 
             item(key = "filters") {
-                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                // اسکرولِ افقی تا در ۳۶۰dp هم دو خط نشود.
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                ) {
                     // «همه» فیلترِ null است، نه یک دسته‌ی چهارم.
-                    FilterPill("همه", filter == null) { filter = null }
+                    FilterPill("همه", filter == null, icon = {
+                        Icon(Icons.Filled.GridView, contentDescription = null, tint = it, modifier = Modifier.size(16.dp))
+                    }) { filter = null }
                     assetGroupOrder.forEach { (category, title) ->
                         if (category == ASSET_CATEGORY_CUSTOM) return@forEach
-                        FilterPill(title, filter == category) {
+                        FilterPill(title, filter == category, icon = { _ -> CategoryGlyph(category, 18.dp) }) {
                             filter = if (filter == category) null else category
                         }
                     }
+                }
+            }
+
+            // کارتِ معرفیِ دسته - فقط وقتی یک دسته انتخاب شده (طرحِ ChatGPT برای «طلا»).
+            val activeFilter = filter
+            if (activeFilter != null && query.isBlank()) {
+                item(key = "banner_$activeFilter") { CategoryBanner(activeFilter) }
+            }
+
+            item(key = "listhead") {
+                val title = when (activeFilter) {
+                    null -> "همه‌ی دارایی‌ها"
+                    else -> "فهرستِ " + (assetGroupOrder.firstOrNull { it.first == activeFilter }?.second ?: "")
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        if (query.isBlank()) title else "نتیجه‌ی جست‌وجو",
+                        color = AppText,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        "${visible.size.toFa()} مورد",
+                        color = AppMuted,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppIconFrame)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    )
                 }
             }
 
@@ -179,14 +273,19 @@ fun AssetPickerSheet(
                 }
                 if (visible.isEmpty()) {
                     item(key = "none") {
-                        Text(
-                            "چیزی با این اسم پیدا نشد. می‌توانی پایین با «عنوانِ دلخواه» خودت " +
-                                "اضافه‌اش کنی.",
-                            color = AppMuted,
-                            fontSize = 12.sp,
-                            lineHeight = 22.sp,
-                            modifier = Modifier.padding(vertical = 10.dp),
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
+                        ) {
+                            Text("موردی پیدا نشد", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                            Text(
+                                "می‌توانی پایین با «عنوانِ دلخواه» خودت اضافه‌اش کنی.",
+                                color = AppMuted,
+                                fontSize = 11.5.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -253,30 +352,85 @@ private fun PickerGroupLabel(title: String) {
     Text(
         title,
         color = AppMuted,
-        fontSize = 11.sp,
+        fontSize = 12.sp,
         fontWeight = FontWeight.Black,
-        modifier = Modifier.padding(top = 6.dp),
+        modifier = Modifier.padding(top = 8.dp),
     )
 }
 
 @Composable
-private fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit) {
-    Text(
-        label,
-        color = if (selected) AppPrimaryInk else AppMuted,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Black,
+private fun FilterPill(
+    label: String,
+    selected: Boolean,
+    icon: @Composable (tint: androidx.compose.ui.graphics.Color) -> Unit,
+    onClick: () -> Unit,
+) {
+    val ink = if (selected) androidx.compose.ui.graphics.Color.White else AppText
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .clip(RoundedCornerShape(AppRadius.button))
-            .background(if (selected) AppPrimaryPill else AppIconFrame)
-            .border(
-                1.5.dp,
-                if (selected) AppPrimaryBorder else AppLine,
-                RoundedCornerShape(AppRadius.button),
-            )
+            .height(42.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(if (selected) AppPrimary else AppSurface)
+            .border(1.dp, if (selected) AppPrimary else AppLine, RoundedCornerShape(999.dp))
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 13.dp, vertical = 7.dp),
-    )
+            .padding(horizontal = 14.dp),
+    ) {
+        icon(ink)
+        Text(
+            label,
+            color = ink,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 7.dp),
+        )
+    }
+}
+
+/** نشانِ کوچکِ هر دسته، از همان منبعِ نشان‌های فهرست (سکه / دلار / بیت‌کوین). */
+@Composable
+private fun CategoryGlyph(category: String, size: androidx.compose.ui.unit.Dp) {
+    when (category) {
+        ASSET_CATEGORY_GOLD -> CoinIcon(size)
+        ASSET_CATEGORY_FIAT -> AssetBadge("USD", ASSET_CATEGORY_FIAT, size)
+        else -> AssetBadge("BTC", ASSET_CATEGORY_CRYPTO, size)
+    }
+}
+
+/** کارتِ معرفیِ دسته‌ی انتخاب‌شده - ته‌رنگِ خودِ همان دسته، نه کلِ صفحه. */
+@Composable
+private fun CategoryBanner(category: String) {
+    val (title, hint, bg) = when (category) {
+        ASSET_CATEGORY_GOLD -> Triple("طلا", "دارایی‌های مرتبط با طلا، مثلِ سکه، طلای آب‌شده و …", AppWarningPill)
+        ASSET_CATEGORY_FIAT -> Triple("ارز", "ارزهای خارجی، مثلِ دلار، یورو، درهم و …", AppPrimaryPill)
+        else -> Triple("رمز ارز", "رمزارزها، مثلِ بیت‌کوین، اتریوم، تتر و …", AppInfoPill)
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .background(bg)
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black)
+            Text(
+                hint,
+                color = AppMuted,
+                fontSize = 11.sp,
+                lineHeight = 19.sp,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+        Box(
+            modifier = Modifier.padding(start = 12.dp).size(64.dp).clip(CircleShape).background(AppSurface.copy(alpha = 0.6f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            CategoryGlyph(category, 40.dp)
+        }
+    }
 }
 
 /**
@@ -294,24 +448,24 @@ private fun PickerRow(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(AppRadius.row)
+    val shape = RoundedCornerShape(20.dp)
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
             .background(AppSurface)
-            .border(if (selected) 2.dp else 2.dp, if (selected) AppPrimary else AppLineRow, shape)
+            .border(if (selected) 1.5.dp else 1.dp, if (selected) AppPrimary else AppLine, shape)
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
-        AssetBadge(entry.symbol, entry.category, 30.dp)
+        AssetBadge(entry.symbol, entry.category, 42.dp)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 entry.name,
                 color = AppText,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Black,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -320,17 +474,21 @@ private fun PickerRow(
             Text(
                 entry.symbol.removePrefix("CUSTOM_"),
                 color = AppMuted,
-                fontSize = 8.5.sp,
+                fontSize = 10.5.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 2.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 3.dp),
             )
         }
-        Column(horizontalAlignment = Alignment.Start) {
+        Column(horizontalAlignment = Alignment.End) {
             Text(
                 // «—» یعنی سرور قیمت نداده؛ جای عدد سرِ جایش می‌ماند.
                 priceRial?.rialToFaCompact() ?: "—",
                 color = if (priceRial == null) AppMuted else AppText,
-                fontSize = 11.5.sp,
+                fontSize = 14.sp,
+                maxLines = 1,
+                softWrap = false,
                 fontWeight = FontWeight.Black,
             )
             if (changePercent != null) {
@@ -338,13 +496,11 @@ private fun PickerRow(
             }
             // ⚠️ اسنادِ منبع عمداً این‌جا هم نیست - رجوع کن به کامنتِ `AssetDetailScreen`.
         }
-        if (selected) {
-            Icon(
-                Icons.Filled.Check,
-                contentDescription = "انتخاب‌شده",
-                tint = AppPrimaryInk,
-                modifier = Modifier.size(16.dp),
-            )
-        }
+        Icon(
+            if (selected) Icons.Filled.Check else Icons.Filled.ChevronLeft,
+            contentDescription = if (selected) "انتخاب‌شده" else null,
+            tint = if (selected) AppPrimaryInk else AppMuted,
+            modifier = Modifier.size(18.dp),
+        )
     }
 }
