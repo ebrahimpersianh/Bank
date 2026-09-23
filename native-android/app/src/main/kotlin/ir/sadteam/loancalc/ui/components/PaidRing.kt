@@ -1,5 +1,9 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,20 +72,31 @@ fun PaidRing(
                 )
             }
         }
+        // 🚨 فاصله‌ی داخلیِ فونت (وزیرمتن بالا و پایینِ هر خط جای خالیِ نامساوی دارد) حذف و
+        // خط‌ها روی مرکز بریده می‌شوند - وگرنه متن در دایره بالا می‌نشست (گزارشِ کاربر).
+        val tight = TextStyle(
+            platformStyle = PlatformTextStyle(includeFontPadding = false),
+            lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
+        )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 centerTop,
                 color = centerTopColor,
                 fontSize = centerTopSize.sp,
+                lineHeight = centerTopSize.sp,
                 fontWeight = FontWeight.Black,
                 maxLines = 1,
+                style = tight,
             )
             Text(
                 centerBottom,
                 color = centerBottomColor,
                 fontSize = 7.5.sp,
+                lineHeight = 9.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
+                style = tight,
+                modifier = Modifier.padding(top = 2.dp),
             )
         }
     }

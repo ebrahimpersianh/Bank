@@ -1367,9 +1367,10 @@ private fun DashboardSummary(
                         centerBottom = "از ${toFa(rowsAll)} قسط",
                         centerTopColor = Color.White,
                         centerBottomColor = HeroMuted,
-                        size = 78.dp,
-                        stroke = 11.dp,
-                        centerTopSize = 19,
+                        // کوچک‌تر (۷۸→۶۶) تا کارتِ وام هم‌قدِ بقیه‌ی کارت‌های قهرمان شود.
+                        size = 66.dp,
+                        stroke = 9.dp,
+                        centerTopSize = 17,
                     )
                     Row(
                         modifier = Modifier
@@ -1466,7 +1467,7 @@ private fun DashboardSummary(
                         lineColor = Color.White.copy(alpha = 0.6f),
                         fillTop = Color.White.copy(alpha = 0.16f),
                         dotColor = Color.White,
-                        height = 40.dp,
+                        height = 30.dp,
                         labels = waveMonths.reversed(),
                         valueLabel = { value -> if (privacyMode) "•••" else "مانده ${value.rialToFaCompact()} تومان" },
                     )
