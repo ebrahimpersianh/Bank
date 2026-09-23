@@ -1306,7 +1306,9 @@ private fun DashboardSummary(
         // خودِ تمِ فعال می‌آید.
         //
         // ⚠️ لحنِ **قرمز** فقط وقتی قسطِ معوق هست - همان تنها مصرفِ مجازش در سیستمِ طراحی.
-        AppHeroCard(tone = if (overdueCount > 0) HeroTone.RED else HeroTone.GREEN) {
+        // خواسته‌ی کاربر (۱ مهر): مثلِ بقیه‌ی کارت‌ها رنگِ تم + برگ؛ قسطِ معوق فقط یک هاله‌ی
+        // قرمزِ کناری می‌گیرد، نه کلِ کارت قرمز (همان قاعده‌ی کارتِ بودجه).
+        AppHeroCard(glow = if (overdueCount > 0) Color(0xFFFF4B4B) else null) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 if (overdueCount > 0) {
                     Text(
