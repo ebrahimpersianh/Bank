@@ -666,7 +666,7 @@ private fun ShopRow(
             Spacer(modifier = Modifier.width(9.dp))
             when (state) {
                 RowState.ACTIVE -> Pill("فعال است", AppPrimaryPill, AppPrimaryInk)
-                RowState.OWNED -> Pill("برای فعال‌سازی بزن", AppPrimaryPill, AppPrimaryInk)
+                RowState.OWNED -> Pill("فعال‌سازی", AppPrimaryPill, AppPrimaryInk)
                 // ردیفی که هنوز مقصد ندارد پنهان **نمی‌شود**: هدفی که دیده نشود،
                 // جمع‌کردنِ سکه را بی‌معنی می‌کند. ولی خریدنی هم نیست.
                 RowState.SOON -> Pill("به‌زودی", AppIconFrame, AppMuted)
