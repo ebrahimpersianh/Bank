@@ -1,5 +1,10 @@
 package ir.sadteam.loancalc.ui.asset
 
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.layout.Spacer
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -305,7 +310,15 @@ fun AssetsTabScreen(
             }
 
             if (accounts.isNotEmpty()) {
-                item { SectionLabel("حساب‌های بانکی") }
+                item {
+                    SectionHeader(
+                        title = "حساب‌های بانکی",
+                        icon = Icons.Filled.AccountBalance,
+                        count = accounts.size,
+                        actionLabel = "مدیریتِ حساب‌ها",
+                        onAction = { showAccountList = true },
+                    )
+                }
                 items(accounts.size) { index ->
                     val account = accounts[index]
                     AccountRow(
@@ -433,36 +446,74 @@ private fun AssetsHeader(
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("دارایی", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
+        Column(modifier = Modifier.weight(1f)) {
+            Text("دارایی", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
+            Text(
+                "نمای کلیِ دارایی‌های شما",
+                color = AppMuted,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
         if (!showActions) return@Row
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            HeaderSquareButton(
+        // سه کنشِ گرد با برچسبِ زیرش (طرحِ ChatGPT) - همان سه کارِ قبلی، فقط خواناتر.
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HeaderRoundAction(
                 icon = if (privacyMode) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                label = if (privacyMode) "پنهان" else "نمایش",
                 description = "پنهان‌کردنِ مبلغ‌ها",
                 fill = if (privacyMode) AppWarningPill else AppIconFrame,
-                border = if (privacyMode) AppAssetBorder else AppLine,
                 ink = if (privacyMode) AppWarningInk else AppMuted,
                 onClick = onTogglePrivacy,
             )
-            HeaderSquareButton(
+            HeaderRoundAction(
                 icon = Icons.Filled.TrendingUp,
+                label = "نمودار",
                 description = "قیمتِ روز",
                 fill = AppIconFrame,
-                border = AppLine,
                 ink = AppMuted,
                 onClick = onPrices,
             )
-            HeaderSquareButton(
+            HeaderRoundAction(
                 icon = Icons.Filled.Add,
+                label = "افزودن",
                 description = "افزودنِ دارایی",
                 fill = AppPrimaryPill,
-                border = AppPrimaryBorder,
                 ink = AppPrimaryInk,
                 onClick = onAdd,
             )
         }
+    }
+}
+
+@Composable
+private fun HeaderRoundAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    description: String,
+    fill: Color,
+    ink: Color,
+    onClick: () -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.pressScaleClickable(onClick = onClick),
+    ) {
+        Box(
+            modifier = Modifier.size(44.dp).clip(CircleShape).background(fill),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = description, tint = ink, modifier = Modifier.size(21.dp))
+        }
+        Text(
+            label,
+            color = AppMuted,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 4.dp),
+        )
     }
 }
 
@@ -573,17 +624,17 @@ private fun NoAccountCard(onAddAccount: () -> Unit) {
  * همون کار رو می‌کنه - دو راهِ هم‌معنی تو یه صفحه لازم نبود. */
 @Composable
 private fun StarterAssetTiles(onPick: () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        SectionLabel("یا اینها را ثبت کن")
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StarterTile("طلا", AppWarningPill, modifier = Modifier.weight(1f), onClick = onPick) {
-                CoinIcon(17.dp)
+    Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
+        SectionHeader(title = "دارایی‌ها را ثبت کنید", actionLabel = "مشاهده‌ی همه", onAction = onPick)
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            StarterTile("طلا", "طلای آب‌شده، سکه و …", AppWarningPill, modifier = Modifier.weight(1f), onClick = onPick) {
+                CoinIcon(26.dp)
             }
-            StarterTile("ارز", AppIconFrame, modifier = Modifier.weight(1f), onClick = onPick) {
-                AssetBadge("USD", ASSET_CATEGORY_FIAT, 19.dp)
+            StarterTile("ارز", "دلار، یورو و …", AppPrimaryPill, modifier = Modifier.weight(1f), onClick = onPick) {
+                AssetBadge("USD", ASSET_CATEGORY_FIAT, 30.dp)
             }
-            StarterTile("رمز ارز", AppIconFrame, modifier = Modifier.weight(1f), onClick = onPick) {
-                AssetBadge("BTC", ASSET_CATEGORY_CRYPTO, 19.dp)
+            StarterTile("رمز ارز", "بیت‌کوین، تتر و …", AppWarningPill, modifier = Modifier.weight(1f), onClick = onPick) {
+                AssetBadge("BTC", ASSET_CATEGORY_CRYPTO, 30.dp)
             }
         }
     }
@@ -592,26 +643,42 @@ private fun StarterAssetTiles(onPick: () -> Unit) {
 @Composable
 private fun StarterTile(
     label: String,
+    hint: String,
     iconBg: Color,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
     icon: @Composable () -> Unit,
 ) {
+    val shape = RoundedCornerShape(20.dp)
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
+            .shadow(1.dp, shape, clip = false)
+            .clip(shape)
             .background(AppSurface)
-            .border(2.dp, AppLineRow, RoundedCornerShape(16.dp))
+            .border(1.dp, AppLine, shape)
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 7.dp, vertical = 13.dp),
+            .padding(horizontal = 8.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         Box(
-            modifier = Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(iconBg),
+            modifier = Modifier.size(52.dp).clip(CircleShape).background(iconBg),
             contentAlignment = Alignment.Center,
         ) { icon() }
-        Text(label, color = AppText, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold)
+        Text(
+            label,
+            color = AppText,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.padding(top = 10.dp),
+        )
+        Text(
+            hint,
+            color = AppMuted,
+            fontSize = 9.5.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 3.dp),
+        )
     }
 }
 
@@ -635,12 +702,26 @@ private fun TotalWealthHero(
     AppHeroCard {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White.copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.AccountBalanceWallet,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(19.dp),
+                    )
+                }
                 Text(
-                    "داراییِ کل",
-                    color = HeroMuted,
-                    fontSize = 10.sp,
+                    "ارزشِ کلِ دارایی‌ها",
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).padding(start = 9.dp),
                 )
                 if (trendPercent != null && trendPercent != 0) {
                     val up = trendPercent > 0
@@ -672,16 +753,18 @@ private fun TotalWealthHero(
                 Text(
                     maskIfPrivate(masked, total.rialToFaCompact()),
                     color = Color.White,
-                    fontSize = 27.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Black,
-                    modifier = Modifier.padding(top = 3.dp),
+                    maxLines = 1,
+                    softWrap = false,
+                    modifier = Modifier.padding(top = 10.dp),
                 )
             }
             // واحد تو کارتِ خلاصه میاد - قاعده‌ی عددِ TOKENS.md، مثلِ AccountsTotalHero.
             Text(
                 "تومان",
                 color = HeroMuted,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 2.dp),
             )
@@ -706,14 +789,31 @@ private fun TotalWealthHero(
                     },
                     valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
                 )
-                Text(
-                    // صادقانه: تا وقتی عکسِ روزانه جمع نشده، نمودار فقط نقد را می‌گوید.
-                    if (trendIsReal) "روندِ ۳۰ روزِ گذشته" else "روندِ نقدیِ ۳۰ روزِ گذشته",
-                    color = HeroMuted,
-                    fontSize = 8.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
+                // قرصِ بازه‌ی نمودار با نشانِ تقویم (طرحِ ChatGPT).
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(Color.White.copy(alpha = 0.16f))
+                        .padding(horizontal = 11.dp, vertical = 6.dp),
+                ) {
+                    Icon(
+                        Icons.Filled.CalendarMonth,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(13.dp),
+                    )
+                    Text(
+                        // صادقانه: تا وقتی عکسِ روزانه جمع نشده، نمودار فقط نقد را می‌گوید.
+                        if (trendIsReal) "روندِ ۳۰ روزِ گذشته" else "روندِ نقدیِ ۳۰ روزِ گذشته",
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 6.dp),
+                    )
+                }
             }
             // پنج قرص تو یه ردیفِ عادی جا نمی‌شن؛ FlowRow خطِ دوم می‌سازه.
             FlowRow(
@@ -787,30 +887,31 @@ private fun AccountRow(
     privacyMode: Boolean,
     onClick: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(20.dp)
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(1.dp, shape, clip = false)
             .clip(shape)
             .background(AppSurface)
-            .border(2.dp, AppLine, shape)
+            .border(1.dp, AppLine, shape)
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 13.dp),
+            .padding(horizontal = 14.dp, vertical = 14.dp),
     ) {
         if (account.type == ACCOUNT_TYPE_BANK) {
-            BankBadge(bankName = account.bankName, size = 38.dp)
+            BankBadge(bankName = account.bankName, size = 46.dp)
         } else {
             Box(
-                modifier = Modifier.size(38.dp).clip(CircleShape).background(AppIconFrame),
+                modifier = Modifier.size(46.dp).clip(CircleShape).background(AppIconFrame),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     accountIconForKey(account.iconKey),
                     contentDescription = null,
                     tint = AppMuted,
-                    modifier = Modifier.size(17.dp),
+                    modifier = Modifier.size(21.dp),
                 )
             }
         }
@@ -818,7 +919,7 @@ private fun AccountRow(
             Text(
                 account.name,
                 color = AppText,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Black,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -826,23 +927,115 @@ private fun AccountRow(
             val meta = account.smsSender?.takeIf { it.isNotBlank() }?.let { "پیامک $it" }
                 ?: account.bankName.ifBlank { null }
                 ?: "منبعِ نقدی"
-            Text(meta, color = AppMuted, fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp))
-        }
-        PrivacyCrossfade(privacyMode) { masked ->
             Text(
-                maskIfPrivate(masked, balance.rialToFaCompact()),
-                // موجودیِ منفیِ کارتِ اعتباری وضعِ عادیه نه خطا: فقط عدد قرمز می‌شه.
-                color = if (balance < 0) AppDangerInk else AppText,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Black,
+                meta,
+                color = AppMuted,
+                fontSize = 10.5.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 3.dp),
             )
         }
-        Icon(
-            Icons.Filled.ChevronLeft,
-            contentDescription = null,
-            tint = AppLine,
-            modifier = Modifier.size(14.dp),
+        Column(horizontalAlignment = Alignment.End) {
+            Text("موجودی", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+            PrivacyCrossfade(privacyMode) { masked ->
+                Text(
+                    maskIfPrivate(masked, balance.rialToFaCompact()) + " تومان",
+                    // موجودیِ منفیِ کارتِ اعتباری وضعِ عادیه نه خطا: فقط عدد قرمز می‌شه.
+                    color = if (balance < 0) AppDangerInk else AppText,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    softWrap = false,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            // چهار رقمِ آخرِ کارت، اگر ثبت شده - بقیه ستاره (شماره‌ی کامل هیچ‌جا نشان داده نمی‌شود).
+            val digits = account.cardNumber?.filter { it.isDigit() }.orEmpty()
+            if (digits.length >= 8) {
+                Text(
+                    "${digits.takeLast(4).faNum()} **** **** ${digits.take(4).faNum()}",
+                    color = AppMuted,
+                    fontSize = 9.5.sp,
+                    maxLines = 1,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+        Box(
+            modifier = Modifier.size(30.dp).clip(CircleShape).background(AppIconFrame),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.ChevronLeft,
+                contentDescription = null,
+                tint = AppMuted,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
+}
+
+/** سرِ بخش (طرحِ ChatGPT): کاشیِ آیکون + عنوان + شمارنده، و قرصِ کنش در سمتِ چپ. */
+@Composable
+private fun SectionHeader(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    count: Int? = null,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) {
+            Box(
+                modifier = Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(AppPrimaryPill),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(18.dp))
+            }
+        }
+        Text(
+            title,
+            color = AppText,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.padding(start = if (icon != null) 9.dp else 0.dp),
         )
+        if (count != null) {
+            Text(
+                count.toFa(),
+                color = AppPrimaryInk,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .clip(CircleShape)
+                    .background(AppPrimaryPill)
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+            )
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        if (actionLabel != null && onAction != null) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AppIconFrame)
+                    .pressScaleClickable(onClick = onAction)
+                    .padding(start = 14.dp, end = 8.dp, top = 7.dp, bottom = 7.dp),
+            ) {
+                Text(actionLabel, color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Icon(
+                    Icons.Filled.ChevronLeft,
+                    contentDescription = null,
+                    tint = AppMuted,
+                    modifier = Modifier.padding(start = 4.dp).size(16.dp),
+                )
+            }
+        }
     }
 }
 
@@ -973,3 +1166,6 @@ private fun HoldingRow(
         }
     }
 }
+
+/** رقم‌های لاتین → فارسی، بی جداکننده‌ی هزارگان (برای شماره‌ی کارت). */
+private fun String.faNum(): String = map { if (it in '0'..'9') '۰' + (it - '0') else it }.joinToString("")
