@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -1330,7 +1331,7 @@ private fun DashboardSummary(
                         Text(
                             "${toFa(overdueCount)} قسطِ معوق",
                             color = Color.White,
-                            fontSize = 8.5.sp,
+                            fontSize = 7.5.sp,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier
                                 .padding(start = 6.dp)
@@ -1344,7 +1345,7 @@ private fun DashboardSummary(
                     Text(
                         "${maskIfPrivate(masked, amountToman(animatedMonthly))} تومان",
                         color = Color.White,
-                        fontSize = 23.sp,
+                        fontSize = 19.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = (-0.4).sp,
                         maxLines = 1,
@@ -1370,9 +1371,9 @@ private fun DashboardSummary(
                         centerTopColor = Color.White,
                         centerBottomColor = HeroMuted,
                         // کوچک‌تر (۷۸→۶۶) تا کارتِ وام هم‌قدِ بقیه‌ی کارت‌های قهرمان شود.
-                        size = 66.dp,
-                        stroke = 9.dp,
-                        centerTopSize = 17,
+                        size = 54.dp,
+                        stroke = 7.dp,
+                        centerTopSize = 14,
                     )
                     Row(
                         modifier = Modifier
@@ -1412,11 +1413,11 @@ private fun DashboardSummary(
                 val over = incomeRatio > 1f
                 Row(
                     modifier = Modifier
-                        .padding(top = 8.dp)
+                        .padding(top = 5.dp)
                         .clip(RoundedCornerShape(999.dp))
                         .background(Color.White.copy(alpha = if (over) 0.3f else 0.16f))
                         .pressScaleClickable(onClick = onOpenIncome)
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                        .padding(horizontal = 9.dp, vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
@@ -1441,7 +1442,7 @@ private fun DashboardSummary(
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Black,
                     modifier = Modifier
-                        .padding(top = 8.dp)
+                        .padding(top = 5.dp)
                         .clip(RoundedCornerShape(999.dp))
                         .pressScaleClickable(onClick = onOpenIncome)
                         .padding(vertical = 3.dp),
@@ -1457,20 +1458,21 @@ private fun DashboardSummary(
                 }
             }
             if (debtCurve.any { it > 0f } && totalMonthlyInstallment > 0) {
-                Box(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
-                    // 🚨 حالا لمس‌پذیر (گزارشِ کاربر: «این یکی هیچ‌کدام را ندارد») - همان
-                    // نمودارِ مشترکِ دارایی. فهرست **برعکس** داده می‌شود تا ماهِ جاری مثلِ قبل
-                    // سمتِ راست بماند و ماه‌های آینده به چپ بروند.
+                Box(modifier = Modifier.fillMaxWidth().padding(top = 2.dp)) {
+                    // لمس‌پذیر، همان نمودارِ مشترکِ دارایی. جهت مثلِ بقیه‌ی نمودارهای برنامه
+                    // (خواسته‌ی کاربر): زمان چپ‌به‌راست - ماهِ جاری چپ، ماه‌های آینده به راست.
                     val waveMonths = (0 until debtCurve.size).map { ahead ->
                         persianMonthName(((todayForWave.m - 1 + ahead) % 12) + 1)
                     }
                     TrendLineChart(
-                        values = debtCurve.map { it.toDouble() }.reversed(),
+                        values = debtCurve.map { it.toDouble() },
                         lineColor = Color.White.copy(alpha = 0.6f),
                         fillTop = Color.White.copy(alpha = 0.16f),
                         dotColor = Color.White,
-                        height = 30.dp,
-                        labels = waveMonths.reversed(),
+                        height = 22.dp,
+                        labels = waveMonths,
+                        // ماهِ جاری (اولِ فهرست) برجسته می‌ماند، نه ششمین ماهِ آینده.
+                        restIndex = 0,
                         valueLabel = { value -> if (privacyMode) "•••" else "مانده ${value.rialToFaCompact()} تومان" },
                     )
                     Text(
@@ -1479,7 +1481,7 @@ private fun DashboardSummary(
                         fontSize = 7.5.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
+                            .align(AbsoluteAlignment.TopLeft)
                             .clip(RoundedCornerShape(999.dp))
                             .background(Color.White.copy(alpha = 0.18f))
                             .padding(horizontal = 6.dp, vertical = 2.dp),
@@ -1489,21 +1491,21 @@ private fun DashboardSummary(
             // ⚠️ نوارِ تختِ پیشرفت **حذف شد**: همان درصد حالا در حلقه است و دو گرافیک
             // برای یک عدد، همان چیزی است که این صفحه یک‌بار از آن پاک شد.
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(18.dp),
             ) {
                 Column {
                     Text(
                         "ماندهٔ کل",
                         color = HeroMuted,
-                        fontSize = 8.5.sp,
+                        fontSize = 7.5.sp,
                         fontWeight = FontWeight.Black,
                     )
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
                             maskIfPrivate(masked, amountToman(animatedDebt)),
                             color = Color.White,
-                            fontSize = 12.sp,
+                            fontSize = 10.5.sp,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(top = 1.dp),
                         )
@@ -1514,13 +1516,13 @@ private fun DashboardSummary(
                         Text(
                             "تا آزادی",
                             color = HeroMuted,
-                            fontSize = 8.5.sp,
+                            fontSize = 7.5.sp,
                             fontWeight = FontWeight.Black,
                         )
                         Text(
                             "${toFa(monthsLeft)} ماه",
                             color = Color.White,
-                            fontSize = 12.sp,
+                            fontSize = 10.5.sp,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(top = 1.dp),
                         )
@@ -1532,14 +1534,14 @@ private fun DashboardSummary(
                         Text(
                             "معوق",
                             color = AppDangerInk.copy(alpha = 0.75f),
-                            fontSize = 8.5.sp,
+                            fontSize = 7.5.sp,
                             fontWeight = FontWeight.Black,
                         )
                         PrivacyCrossfade(privacyMode) { masked ->
                             Text(
                                 maskIfPrivate(masked, amountToman(totalOverdue)),
                                 color = Color.White,
-                                fontSize = 12.sp,
+                                fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Black,
                                 modifier = Modifier.padding(top = 1.dp),
                             )

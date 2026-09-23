@@ -63,6 +63,8 @@ fun TrendLineChart(
      * جای واقعی‌شان می‌نشینند و بقیه‌ی محور خالی می‌مانَد. `null` یعنی کلِ عرض مالِ داده است.
      */
     slots: Int? = null,
+    /** نقطه‌ی برجسته وقتی دستی روی نمودار نیست؛ پیش‌فرض آخرین (امروز). */
+    restIndex: Int? = null,
 ) {
     if (values.size < 2) return
     val interactive = labels.size == values.size
@@ -71,7 +73,7 @@ fun TrendLineChart(
     // نقطه‌ی انتخاب‌شده با لمس. `null` یعنی دستی روی نمودار نیست و نقطه‌ی «امروز» فعال است.
     var touchedIndex by remember(values) { mutableStateOf<Int?>(null) }
     var widthPx by remember { mutableFloatStateOf(0f) }
-    val activeIndex = touchedIndex ?: values.lastIndex
+    val activeIndex = touchedIndex ?: (restIndex ?: values.lastIndex)
     // 🚨 **حرکتِ نرمِ نقطه** (خواسته‌ی صریح: «با انیمیشن برود آن‌ور، نه پرشی»): خودِ
     // شاخص انیمیت می‌شود نه مختصاتِ پیکسلی، پس نقطه دقیقاً **روی** منحنی می‌لغزد و از
     // آن جدا نمی‌افتد.
@@ -190,7 +192,7 @@ fun TrendLineChart(
         drawCircle(color = dotColor, radius = 3.5.dp.toPx(), center = active)
     }
         ChartTooltipHost(visible = touchedIndex != null, modifier = Modifier.align(AbsoluteAlignment.TopLeft)) {
-            val index = touchedIndex ?: values.lastIndex
+            val index = touchedIndex ?: (restIndex ?: values.lastIndex)
             ChartTooltip(
                 title = labels.getOrElse(index) { "" },
                 value = valueLabel(values.getOrElse(index) { 0.0 }),
