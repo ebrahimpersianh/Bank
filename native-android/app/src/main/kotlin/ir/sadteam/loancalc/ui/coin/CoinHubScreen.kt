@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.coin
 
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -173,6 +174,7 @@ fun CoinHubScreen(
                 options = listOf("فروشگاه", "کیف"),
                 selectedIndex = if (onWallet) 1 else 0,
                 onSelect = { onWallet = it == 1 },
+                icons = listOf(Icons.Filled.ShoppingBag, Icons.Filled.AccountBalanceWallet),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
             )
         }

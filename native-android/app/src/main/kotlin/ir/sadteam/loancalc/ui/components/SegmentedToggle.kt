@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -45,6 +48,8 @@ fun SegmentedToggle(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
     selectedColor: Color = AppPrimary,
+    /** آیکونِ کنارِ هر گزینه (اختیاری، هم‌اندازه‌ی `options`). */
+    icons: List<ImageVector>? = null,
 ) {
     BoxWithConstraints(
         modifier = modifier
@@ -78,6 +83,15 @@ fun SegmentedToggle(
                         .pressScaleClickable(onClick = { onSelect(index) }),
                     contentAlignment = Alignment.Center,
                 ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    icons?.getOrNull(index)?.let { icon ->
+                        Icon(
+                            icon,
+                            contentDescription = null,
+                            tint = if (index == selectedIndex) Color.White else AppMuted,
+                            modifier = Modifier.padding(end = 6.dp).size(17.dp),
+                        )
+                    }
                     Text(
                         label,
                         // وزنِ ۹۰۰ برای تبِ فعال و ۸۰۰ برای بقیه - بخشِ «۶ · فیلد، چیپ، تب»ِ
@@ -86,6 +100,7 @@ fun SegmentedToggle(
                         fontSize = 11.5.sp,
                         fontWeight = if (index == selectedIndex) FontWeight.Black else FontWeight.ExtraBold,
                     )
+                    }
                 }
             }
         }
