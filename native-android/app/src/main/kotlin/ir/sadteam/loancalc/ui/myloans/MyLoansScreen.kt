@@ -1309,35 +1309,37 @@ private fun DashboardSummary(
         // خواسته‌ی کاربر (۱ مهر): مثلِ بقیه‌ی کارت‌ها رنگِ تم + برگ؛ قسطِ معوق فقط یک هاله‌ی
         // قرمزِ کناری می‌گیرد، نه کلِ کارت قرمز (همان قاعده‌ی کارتِ بودجه).
         AppHeroCard(glow = if (overdueCount > 0) Color(0xFFFF4B4B) else null) {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                if (overdueCount > 0) {
-                    Text(
-                        "${toFa(overdueCount)} قسطِ معوق",
-                        color = Color.White,
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(Color.White.copy(alpha = 0.22f))
-                            .padding(horizontal = 9.dp, vertical = 3.dp),
-                    )
-                }
-                Spacer(modifier = Modifier.weight(1f))
-            }
             // 🚨 **حلقه جای نوارِ تخت** (طرحِ مرجعِ کاربر، ۳۱ شهریور): نوار درصد را
             // بی‌عدد می‌گفت و «چند قسط مانده» هیچ‌جای این کارت نبود. حلقه هر دو را
             // می‌دهد و ارتفاعِ تازه‌ای هم نمی‌گیرد چون کنارِ عددِ قهرمان می‌نشیند.
+            // خواسته‌ی کاربر (۱ مهر): کارت کوتاه‌تر، هم‌قدِ بقیه. برچسبِ «قسطِ معوق» دیگر ردیفِ
+            // جدا نمی‌گیرد؛ کنارِ «قسطِ این ماه» می‌نشیند.
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 9.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "قسطِ این ماه",
-                    color = HeroMuted,
-                    fontSize = 9.5.sp,
-                    fontWeight = FontWeight.Black,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "قسطِ این ماه",
+                        color = HeroMuted,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                    if (overdueCount > 0) {
+                        Text(
+                            "${toFa(overdueCount)} قسطِ معوق",
+                            color = Color.White,
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier
+                                .padding(start = 6.dp)
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(Color.White.copy(alpha = 0.22f))
+                                .padding(horizontal = 7.dp, vertical = 2.dp),
+                        )
+                    }
+                }
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         "${maskIfPrivate(masked, amountToman(animatedMonthly))} تومان",
