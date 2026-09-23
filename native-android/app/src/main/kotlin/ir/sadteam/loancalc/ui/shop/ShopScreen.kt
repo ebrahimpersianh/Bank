@@ -100,7 +100,6 @@ import androidx.compose.foundation.border
 import ir.sadteam.loancalc.ui.theme.hardShadow
 import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.theme.AppGoldBorder
-import ir.sadteam.loancalc.data.coin.featuredItemId
 import ir.sadteam.loancalc.ui.background.LiveBackground
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppBg
@@ -240,15 +239,8 @@ fun ShopScreen(
     // مشخص باشد، نه فهرستِ دسته‌ها. `null` یعنی کاربر همه را دارد و کارت **نمی‌آید** -
     // پیامِ «همه را داری» عمداً جایگزینش نمی‌شود (تبریکِ بی‌کار، ارتفاعِ گران).
     StarryNightCollectionCard(owned = owned, earned = Badge.COLLECTION_STARRY_NIGHT.code in earnedBadges)
-    val featuredId = remember(owned) { featuredItemId(owned) }
-    val featured = remember(featuredId, catalog) { catalog.firstOrNull { it.id == featuredId } }
-    if (featured != null && !onlyMine) {
-        FeaturedCard(
-            item = featured,
-            balance = balance,
-            onConfirm = { confirming = it },
-        )
-    }
+    // کارتِ «قلمِ هفته» به‌خواستِ کاربر حذف شد: «پیشنهادهای ویژه» همان کار را می‌کند و
+    // دو پیشنهاد پشتِ‌هم بالای صفحه طرحِ مرجع را شلوغ می‌کرد.
     ShopTabs(tab, onlyMine, { tab = it }) { onlyMine = !onlyMine }
     // ⚠️ هر دو **بیرونِ** `LazyColumn` حساب می‌شوند: `remember` در بدنه‌ی لیستِ تنبل
     // (بیرونِ `item {}`) مجاز نیست - بررسیِ ایستای پروژه همین را گرفت.
@@ -1257,53 +1249,6 @@ private fun BackdropPreview(backdrop: LiveBackground?) {
 }
 
 
-/**
- * **کارتِ قلمِ هفته** - فریمِ `78c`.
- *
- * ویترینی که با فهرستِ دسته‌ها شروع شود، از کاربر می‌خواهد خودش جست‌وجو کند. این کارت
- * یک پیشنهادِ **مشخص** می‌دهد؛ و چون از [featuredItemId] می‌آید، برای هر کاربر چیزِ
- * دیگری است بی هیچ سرور یا تاریخی.
- */
-@Composable
-private fun FeaturedCard(item: ShopItem, balance: Int, onConfirm: (ShopItem) -> Unit) {
-    val shape = RoundedCornerShape(20.dp)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 4.dp)
-            .hardShadow(AppGoldBorder, offsetY = 4.dp, cornerRadius = 20.dp)
-            .clip(shape)
-            .background(AppGoldPillSoft)
-            .border(2.dp, AppGoldBorder, shape)
-            .pressScaleClickable { onConfirm(item) }
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp),
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text("قلمِ این هفته", color = AppGoldInk.copy(alpha = 0.7f), fontSize = 9.5.sp, fontWeight = FontWeight.Black)
-            Text(item.label, color = AppGoldInk, fontSize = 14.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 2.dp))
-            Text(item.blurb, color = AppGoldInk.copy(alpha = 0.75f), fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 2.dp))
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("${toFa(item.price)}", color = AppGoldInk, fontSize = 15.sp, fontWeight = FontWeight.Black)
-            Text(
-                if (balance >= item.price) "سکه" else "سکه کم داری",
-                color = AppGoldInk.copy(alpha = 0.7f),
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-    }
-}
-
-/**
- * صفحه‌ی اختصاصیِ محصول (تصمیمِ ۵ِ فروشگاه) - برای **همه‌ی** قلم‌های خریدنی.
- *
- * تپ روی ردیف یا کارت دیگر مستقیم نمی‌خرد: اول همین صفحه باز می‌شود تا خریدار ببیند
- * چه می‌گیرد. خرید همچنان از دیالوگِ تاییدِ قبلی می‌گذرد - این صفحه راهِ دومی برای
- * کم‌کردنِ سکه نمی‌سازد.
- */
 @Composable
 private fun ProductDetailSheet(
     item: ShopItem,
