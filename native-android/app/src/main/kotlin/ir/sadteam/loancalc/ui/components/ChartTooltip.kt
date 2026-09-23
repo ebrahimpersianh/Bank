@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -70,7 +71,7 @@ private fun Modifier.offsetPx(x: Float): Modifier =
     this.then(Modifier.offsetLayout(x))
 
 private fun Modifier.offsetLayout(x: Float): Modifier =
-    androidx.compose.ui.layout.layout { measurable, constraints ->
+    this.layout { measurable, constraints ->
         val placeable = measurable.measure(constraints)
         layout(placeable.width, placeable.height) {
             placeable.placeRelative(IntOffset(x.roundToInt(), 0))
