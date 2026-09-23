@@ -42,7 +42,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.CloudUpload
@@ -707,7 +706,6 @@ fun MyLoansScreen(
                             AppCard(
                                 variant = when {
                                     isLoanSettled(loan) -> AppCardVariant.DONE
-                                    attention -> AppCardVariant.URGENT
                                     else -> AppCardVariant.DEFAULT
                                 },
                                 // مدالِ تسویه نباید با بقیه‌ی محتوا محو بشه.
@@ -799,18 +797,11 @@ fun MyLoansScreen(
                                         // حلقه رفت سمتِ چپ و ریزتر شد؛ چیزی که چشم اول باید
                                         // بگیرد **نوعِ وام** است نه درصدش، و ده ردیفِ حلقه‌دارِ
                                         // هم‌شکل دقیقاً همان بی‌روحی‌ای بود که کاربر گفت.
-                                        LoanGlyphTile(
-                                            glyph = loanGlyphFor(loan.name, viewModel.categoryOf(loan)),
-                                            tint = when {
-                                                settled -> AppPrimaryInk
-                                                attention -> AppDangerInk
-                                                else -> AppPrimaryInk
-                                            },
-                                            background = when {
-                                                settled -> AppPrimaryPill
-                                                attention -> AppDangerPill
-                                                else -> AppPrimaryPill
-                                            },
+                                        Icon(
+                                            Icons.Filled.ChevronLeft,
+                                            contentDescription = null,
+                                            tint = AppLabel,
+                                            modifier = Modifier.size(20.dp),
                                         )
                                         Column(
                                             modifier = Modifier
@@ -822,7 +813,7 @@ fun MyLoansScreen(
                                                 Text(
                                                     loan.name,
                                                     color = AppText,
-                                                    fontSize = 12.5.sp,
+                                                    fontSize = 15.sp,
                                                     fontWeight = FontWeight.Black,
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis,
@@ -835,18 +826,18 @@ fun MyLoansScreen(
                                                     settled -> "تسویه شده"
                                                     overdue -> "معوق"
                                                     dueSoon -> "نزدیک"
-                                                    else -> null
+                                                    else -> "در جریان"
                                                 }
                                                 if (stateLabel != null) {
                                                     Text(
                                                         stateLabel,
-                                                        color = if (settled) AppPrimaryInk else AppDangerInk,
-                                                        fontSize = 8.sp,
+                                                        color = if (overdue || dueSoon) AppDangerInk else AppPrimaryInk,
+                                                        fontSize = 10.sp,
                                                         fontWeight = FontWeight.Black,
                                                         modifier = Modifier
-                                                            .padding(start = 6.dp)
+                                                            .padding(start = 8.dp)
                                                             .clip(RoundedCornerShape(999.dp))
-                                                            .background(if (settled) AppPrimaryPill else AppDangerPill)
+                                                            .background(if (overdue || dueSoon) AppDangerPill else AppPrimaryPill)
                                                             .padding(horizontal = 7.dp, vertical = 2.dp),
                                                     )
                                                 }
@@ -891,7 +882,7 @@ fun MyLoansScreen(
                                                         dueSoon -> AppDangerInk
                                                         else -> AppMuted
                                                     },
-                                                    fontSize = 9.5.sp,
+                                                    fontSize = 11.5.sp,
                                                     fontWeight = FontWeight.Bold,
                                                 )
                                             }
@@ -909,24 +900,24 @@ fun MyLoansScreen(
                                                         Icons.Outlined.EventNote,
                                                         contentDescription = null,
                                                         tint = AppLabel,
-                                                        modifier = Modifier.size(10.dp),
+                                                        modifier = Modifier.size(13.dp),
                                                     )
                                                     Text(
                                                         "${toFa(loan.paidCount)} از ${toFa(loan.n)} قسط",
                                                         color = AppMuted,
-                                                        fontSize = 9.sp,
+                                                        fontSize = 10.5.sp,
                                                         fontWeight = FontWeight.Bold,
                                                     )
                                                     Icon(
                                                         Icons.Outlined.AccountBalance,
                                                         contentDescription = null,
                                                         tint = AppLabel,
-                                                        modifier = Modifier.padding(start = 3.dp).size(10.dp),
+                                                        modifier = Modifier.padding(start = 6.dp).size(13.dp),
                                                     )
                                                     Text(
                                                         loan.bank,
                                                         color = AppMuted,
-                                                        fontSize = 9.sp,
+                                                        fontSize = 10.5.sp,
                                                         fontWeight = FontWeight.Bold,
                                                         maxLines = 1,
                                                         overflow = TextOverflow.Ellipsis,
@@ -950,24 +941,17 @@ fun MyLoansScreen(
                                                     centerBottom = "",
                                                     centerTopColor = if (attention) AppDangerInk else AppPrimary,
                                                     centerBottomColor = AppMuted,
-                                                    size = 40.dp,
+                                                    size = 50.dp,
                                                     stroke = 5.dp,
-                                                    centerTopSize = 10,
+                                                    centerTopSize = 12,
                                                 )
                                             }
-                                            if (attention) {
+                                            if (!settled && !isLocked) {
                                                 LoanPayButton(
                                                     onClick = {
                                                         heroOrigin = cardBounds.heroOriginIn(listBounds)
                                                         openedLoanId = loan.id
                                                     },
-                                                )
-                                            } else {
-                                                Icon(
-                                                    Icons.Filled.ChevronLeft,
-                                                    contentDescription = null,
-                                                    tint = AppLabel,
-                                                    modifier = Modifier.padding(top = 4.dp).size(14.dp),
                                                 )
                                             }
                                         }
@@ -1030,7 +1014,9 @@ fun MyLoansScreen(
         // «افزودن دستی وام»؛ فقط رو خودِ لیست نشون داده می‌شه، نه رو فرم افزودن/جزئیات.
         // با یه pop فنری ظاهر/محو می‌شه (نه یهو).
         androidx.compose.animation.AnimatedVisibility(
-            visible = screenKey == "list",
+            // FABِ ماشین‌حساب رفت (طرحِ ChatGPT): محاسبه‌گر در تبِ بالا هست. قاب می‌ماند
+            // چون موقعیتش برای تورِ اپ گزارش می‌شود.
+            visible = false,
             enter = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) + fadeIn(tween(150)),
             exit = scaleOut(tween(120)) + fadeOut(tween(120)),
             modifier = Modifier
@@ -1208,12 +1194,12 @@ private fun LoanPayButton(onClick: () -> Unit) {
                 .clip(RoundedCornerShape(999.dp))
                 .background(AppPrimary)
                 .pressScaleClickable(onClick = onClick)
-                .padding(horizontal = 13.dp, vertical = 9.dp),
+                .padding(horizontal = 22.dp, vertical = 9.dp),
         ) {
             Text(
                 "پرداخت",
                 color = Color.White,
-                fontSize = 10.5.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Black,
                 maxLines = 1,
                 softWrap = false,
@@ -1309,7 +1295,7 @@ private fun DashboardSummary(
         // ⚠️ لحنِ **قرمز** فقط وقتی قسطِ معوق هست - همان تنها مصرفِ مجازش در سیستمِ طراحی.
         // خواسته‌ی کاربر (۱ مهر): مثلِ بقیه‌ی کارت‌ها رنگِ تم + برگ؛ قسطِ معوق فقط یک هاله‌ی
         // قرمزِ کناری می‌گیرد، نه کلِ کارت قرمز (همان قاعده‌ی کارتِ بودجه).
-        AppHeroCard(glow = if (overdueCount > 0) Color(0xFFFF4B4B) else null) {
+        AppHeroCard {
             // 🚨 **حلقه جای نوارِ تخت** (طرحِ مرجعِ کاربر، ۳۱ شهریور): نوار درصد را
             // بی‌عدد می‌گفت و «چند قسط مانده» هیچ‌جای این کارت نبود. حلقه هر دو را
             // می‌دهد و ارتفاعِ تازه‌ای هم نمی‌گیرد چون کنارِ عددِ قهرمان می‌نشیند.
@@ -1366,7 +1352,7 @@ private fun DashboardSummary(
                         fraction = paidPct / 100f,
                         ringColor = Color.White,
                         trackColor = Color.White.copy(alpha = 0.3f),
-                        centerTop = toFa(rowsLeft),
+                        centerTop = "${toFa(paidPct)}٪",
                         centerBottom = "از ${toFa(rowsAll)} قسط",
                         centerTopColor = Color.White,
                         centerBottomColor = HeroMuted,
@@ -1385,13 +1371,13 @@ private fun DashboardSummary(
                         horizontalArrangement = Arrangement.spacedBy(3.dp),
                     ) {
                         Icon(
-                            Icons.Filled.Autorenew,
+                            Icons.Filled.Check,
                             contentDescription = null,
                             tint = Color.White,
                             modifier = Modifier.size(9.dp),
                         )
                         Text(
-                            "${toFa(paidPct)}٪ پرداخت‌شده",
+                            "${toFa(rowsAll - rowsLeft)} پرداخت شده",
                             color = Color.White,
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Black,
