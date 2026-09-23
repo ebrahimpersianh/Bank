@@ -1,5 +1,17 @@
 package ir.sadteam.loancalc.ui.profile
 
+import ir.sadteam.loancalc.ui.settings.SettingsHero
+import ir.sadteam.loancalc.ui.settings.SettingsGroupLabel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MilitaryTech
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
+import ir.sadteam.loancalc.ui.theme.AppAccent
+import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -61,40 +73,42 @@ fun BadgesScreen(viewModel: GamificationViewModel = hiltViewModel()) {
     val locked = badges.filter { !it.unlocked && (it.progress ?: 0f) <= 0f }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        AppCard(modifier = Modifier.padding(top = 8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "${toFa(unlocked.size)} از ${toFa(badges.size)} نشان",
-                        color = AppText,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Black,
-                    )
-                    Text(
-                        "هر نشان یک‌بار در عمرِ حساب باز می‌شود",
-                        color = AppMuted,
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 3.dp),
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(toFa(coins), color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
-                    CoinIcon(size = 16.dp, modifier = Modifier.padding(start = 4.dp))
-                }
+        // کارتِ رنگیِ بالا (با تم عوض می‌شود): پیشرفت و سکه‌ها، هر دو از state واقعی.
+        SettingsHero(
+            Icons.Filled.MilitaryTech,
+            "نشان‌های من",
+            "${toFa(unlocked.size)} از ${toFa(badges.size)} نشان باز شده · هر نشان یک‌بار",
+            badge = "${toFa(coins)} سکه",
+        ) {
+            val fraction = if (badges.isEmpty()) 0f else unlocked.size.toFloat() / badges.size
+            Box(
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color.White.copy(alpha = 0.25f)),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(fraction)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(Color.White),
+                )
             }
         }
 
         if (inProgress.isNotEmpty()) {
-            GroupTitle("در جریان")
+            SettingsGroupLabel("در جریان", accent = AppPrimary)
             inProgress.forEach { BadgeRow(it) }
         }
         if (unlocked.isNotEmpty()) {
-            GroupTitle("باز شده")
+            SettingsGroupLabel("باز شده", accent = AppAccent)
             unlocked.forEach { BadgeRow(it) }
         }
         if (locked.isNotEmpty()) {
-            GroupTitle("قفل")
+            SettingsGroupLabel("قفل", accent = AppMuted)
             locked.forEach { BadgeRow(it) }
         }
     }
@@ -171,14 +185,38 @@ private fun BadgeRow(item: BadgeProgress) {
                 Text(
                     if (badge.comingSoon) "به‌زودی" else badge.hint,
                     color = AppMuted,
-                    fontSize = 9.5.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
+                    lineHeight = 15.sp,
                     modifier = Modifier.padding(top = 2.dp),
                 )
+                // نوارِ پیشرفتِ واقعی - فقط برای نشانِ در جریان.
+                if (!item.unlocked && progress > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 7.dp)
+                            .fillMaxWidth()
+                            .height(5.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppSurface2),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(progress.coerceIn(0f, 1f))
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(AppPrimary),
+                        )
+                    }
+                }
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.then(if (item.unlocked) Modifier else Modifier.alpha(0.55f)),
+                modifier = Modifier
+                    .then(if (item.unlocked) Modifier else Modifier.alpha(0.6f))
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AppGoldPillSoft)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
             ) {
                 Text(
                     toFa(badge.coins),

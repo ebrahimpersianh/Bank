@@ -1,5 +1,22 @@
 package ir.sadteam.loancalc.ui.settings
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.VolumeUp
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -113,10 +130,24 @@ fun ReminderSettingsScreen(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(AppSurface)
+                        .border(1.dp, AppLine, RoundedCornerShape(14.dp))
+                        .pressScaleClickable(onClick = onBack),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
                 }
-                Text("تنظیمات یادآوری", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+                Text(
+                    "تنظیمات یادآوری",
+                    color = AppText,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(start = 12.dp),
+                )
             }
         }
 
@@ -136,19 +167,20 @@ fun ReminderSettingsScreen(
                     ) {
                         // بازه‌ی ۶ تا ۲۳ عمدی است: کانالِ سررسید `IMPORTANCE_HIGH` است و ویبره
                         // می‌زند؛ کسی یادآورِ پول را سه بامداد نمی‌خواهد و آن را خرابی می‌بیند.
-                        IconButton(onClick = { viewModel.setReminderHour(if (reminderHour <= 6) 23 else reminderHour - 1) }) {
-                            Icon(Icons.Filled.Remove, contentDescription = "یک ساعت زودتر", tint = AppPrimary)
+                        HourStepButton(Icons.Filled.Remove, "یک ساعت زودتر") {
+                            viewModel.setReminderHour(if (reminderHour <= 6) 23 else reminderHour - 1)
                         }
                         // بی برچسب، «۳:۰۰» یعنی سه بامداد یا سه بعدازظهر - معلوم نیست.
                         Text(
                             "${toFa(if (reminderHour % 12 == 0) 12 else reminderHour % 12)}:۰۰ ${dayPartLabel(reminderHour)}",
                             color = AppText,
-                            fontSize = 20.sp,
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Black,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.weight(1f),
                         )
-                        IconButton(onClick = { viewModel.setReminderHour(if (reminderHour >= 23) 6 else reminderHour + 1) }) {
-                            Icon(Icons.Filled.Add, contentDescription = "یک ساعت دیرتر", tint = AppPrimary)
+                        HourStepButton(Icons.Filled.Add, "یک ساعت دیرتر") {
+                            viewModel.setReminderHour(if (reminderHour >= 23) 6 else reminderHour + 1)
                         }
                     }
                 }
@@ -159,9 +191,12 @@ fun ReminderSettingsScreen(
             // فریمِ `50a`: سه کلید **یک تصمیم**‌اند («چه چیزی خبر بدهد») پس در یک کارت با
             // جداکننده می‌نشینند؛ ساعت تصمیمِ دیگری است («کِی») و کارتِ خودش را دارد. قبلاً
             // ساعت وسطِ کلیدها افتاده بود و کاربر باید تصمیمِ اول را رها می‌کرد و برمی‌گشت.
-            AppCard(label = "چه چیزی خبر بدهد") {
-                Column {
+            SettingsGroupLabel("چه چیزی خبر بدهد")
+            SettingsGroup {
+                run {
                     ReminderToggleRow(
+                        icon = Icons.Filled.Event,
+                        tone = SettingsTone.RED,
                         title = "یادآوری سررسید",
                         subtitle = "برای اقساط و چک‌های نزدیک به سررسید یه نوتیف بده",
                         checked = enabled,
@@ -181,17 +216,21 @@ fun ReminderSettingsScreen(
                             }
                         },
                     )
-                    HorizontalDivider(color = AppLine, modifier = Modifier.padding(vertical = 4.dp))
+                    SettingsDivider()
                     ReminderToggleRow(
+                        icon = Icons.Filled.Sms,
+                        tone = SettingsTone.GREEN,
                         title = "تراکنشِ خودکار",
                         subtitle = "وقتی تراکنشی از پیامک یا اعلانِ بانک ثبت شد خبر بده",
                         checked = autoTxEnabled,
                         onCheckedChange = { viewModel.setAutoTxEnabled(it) },
                     )
-                    HorizontalDivider(color = AppLine, modifier = Modifier.padding(vertical = 4.dp))
+                    SettingsDivider()
                     // ⚠️ استثنای عمدی: این یکی شب اجرا می‌شود نه سرِ ساعتِ کارتِ بالا، چون
                     // شرطش «تا حالا چیزی ثبت نشده» است و صبح همیشه درست است.
                     ReminderToggleRow(
+                        icon = Icons.Filled.Notifications,
+                        tone = SettingsTone.ORANGE,
                         title = "یادآورِ روزانه",
                         subtitle = "اگر تا شب چیزی ثبت نکردی یادم بینداز",
                         checked = comeBackEnabled,
@@ -253,10 +292,10 @@ fun ReminderSettingsScreen(
             AppCard(label = "زمان‌بندیِ پیش‌فرض") {
                 Column {
                     Text(
-                        "چند روز قبل از سررسید یادآوری بگیری؟ می‌تونی چندتا رو هم‌زمان انتخاب کنی - "
-                            + "هر وام یا چک هم می‌تونه از تنظیمِ اختصاصیِ خودش (تو صفحه‌ی جزئیاتش) این پیش‌فرض رو رد کنه.",
+                        "چند روز قبل از سررسید خبر بده؟ چندتا رو می‌شه با هم انتخاب کرد.",
                         color = AppMuted,
                         fontSize = 12.sp,
+                        lineHeight = 19.sp,
                     )
                     Row(
                         modifier = Modifier.padding(top = 8.dp),
@@ -280,45 +319,43 @@ fun ReminderSettingsScreen(
             // لحظه‌ی ساختِ اولِ کانال می‌خواند و تغییرِ بعدی هیچ اثری ندارد. کنترلی که
             // می‌چرخد و کاری نمی‌کند از نبودنش بدتر است - حالا همان تنظیم، در جای واقعی‌اش
             // یعنی تنظیماتِ خودِ اندروید، باز می‌شود.
-            AppCard(label = "صدا و ویبره") {
-                Column {
-                    Text(
-                        "صدا و ویبره‌ی یادآورها را اندروید نگه می‌دارد، نه برنامه - از آن‌جا " +
-                            "می‌توانی برای هر نوع اعلان جدا تنظیمش کنی.",
-                        color = AppMuted,
-                        fontSize = 12.sp,
-                        lineHeight = 20.sp,
-                    )
-                    OutlinedButton(
-                        onClick = { ReminderChannels.openChannelSettings(context) },
-                        modifier = Modifier.padding(top = 8.dp),
-                    ) {
-                        Text("تنظیماتِ صدا و ویبره")
-                    }
-                }
+            SettingsGroupLabel("صدا و آزمایش")
+            SettingsGroup {
+                SettingsRowItem(
+                    title = "تنظیماتِ صدا و ویبره",
+                    icon = Icons.Filled.VolumeUp,
+                    tone = SettingsTone.PURPLE,
+                    status = "در تنظیماتِ اعلانِ خودِ گوشی",
+                    onClick = { ReminderChannels.openChannelSettings(context) },
+                )
+                SettingsDivider()
+                SettingsRowItem(
+                    title = "ارسالِ نوتیفِ آزمایشی",
+                    icon = Icons.Filled.NotificationsActive,
+                    tone = SettingsTone.BLUE,
+                    status = "همین الان یه نمونه بفرست",
+                    onClick = { fireTestNotification() },
+                )
             }
         }
 
+        // متن‌های بلندِ قبلی حذف نشدند - پشتِ «راهنمای یادآوری» رفتند.
         item {
-            AppCard(label = "تستِ نوتیفیکیشن") {
-                Column {
-                    Text(
-                        "بدونِ نیاز به صبرکردن (چک‌کردنِ روزانه تا ۲۴ ساعت طول می‌کشه)، همین الان یه " +
-                            "نوتیفِ نمونه بفرست تا مطمئن بشی درست کار می‌کنه. صدا و ویبره‌اش همان چیزی " +
-                            "است که در تنظیماتِ اعلانِ گوشی برای این کانال انتخاب شده.",
-                        color = AppMuted,
-                        fontSize = 12.sp,
-                    )
-                    OutlinedButton(
-                        onClick = { fireTestNotification() },
-                        modifier = Modifier.padding(top = 8.dp),
-                    ) {
-                        Text("ارسالِ نوتیفِ آزمایشی")
-                    }
-                }
+            SettingsDisclosure(title = "راهنمای یادآوری") {
+                SettingsParagraph(
+                    "هر وام یا چک می‌تونه از تنظیمِ اختصاصیِ خودش (تو صفحه‌ی جزئیاتش) زمان‌بندیِ پیش‌فرض رو رد کنه.",
+                )
+                SettingsParagraph(
+                    "صدا و ویبره‌ی یادآورها را اندروید نگه می‌دارد، نه برنامه - از آن‌جا " +
+                        "می‌توانی برای هر نوع اعلان جدا تنظیمش کنی.",
+                )
+                SettingsParagraph(
+                    "بدونِ نیاز به صبرکردن (چک‌کردنِ روزانه تا ۲۴ ساعت طول می‌کشه)، با نوتیفِ آزمایشی همین الان " +
+                        "مطمئن می‌شی درست کار می‌کنه. صدا و ویبره‌اش همان چیزی است که در تنظیماتِ اعلانِ گوشی " +
+                        "برای این کانال انتخاب شده.",
+                )
             }
         }
-
     }
 }
 
@@ -351,32 +388,34 @@ private const val TEST_NOTIFICATION_ID = 999999
 /** سه ردیفِ کلید کدِ یکسان با متنِ متفاوت داشتند - فریمِ `50a` هر سه را در یک کارت می‌گذارد. */
 @Composable
 private fun ReminderToggleRow(
+    icon: ImageVector,
+    tone: SettingsTone,
     title: String,
     subtitle: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    SettingsRowItem(
+        title = title,
+        icon = icon,
+        tone = tone,
+        status = subtitle,
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+    )
+}
+
+/** دکمه‌ی گردِ ۴۸dpِ کم/زیادِ ساعت. */
+@Composable
+private fun HourStepButton(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .background(AppPrimaryPill)
+            .pressScaleClickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, color = AppText, fontSize = 13.sp)
-            Text(
-                subtitle,
-                color = AppMuted,
-                fontSize = 12.sp,
-                lineHeight = 19.sp,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = AppPrimary,
-                checkedTrackColor = AppPrimary.copy(alpha = 0.5f),
-            ),
-        )
+        Icon(icon, contentDescription = label, tint = AppPrimary, modifier = Modifier.size(22.dp))
     }
 }
