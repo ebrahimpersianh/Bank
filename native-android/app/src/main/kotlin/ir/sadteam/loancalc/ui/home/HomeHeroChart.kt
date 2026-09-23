@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.home
 
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -73,6 +76,8 @@ fun HomeSevenDayChart(
 /** ردیفِ برچسبِ زیرِ نمودار - «۷ روزِ گذشته» چپ‌رنگ‌تر، «امروز» پررنگ‌تر. طبقِ طرح. */
 @Composable
 fun HomeSevenDayChartLabels(modifier: Modifier = Modifier) {
+    // هم‌جهتِ میله‌ها: فیزیکی چپ‌به‌راست، «امروز» سمتِ راست.
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -91,5 +96,6 @@ fun HomeSevenDayChartLabels(modifier: Modifier = Modifier) {
             fontSize = 8.5.sp,
             fontWeight = FontWeight.ExtraBold,
         )
+    }
     }
 }

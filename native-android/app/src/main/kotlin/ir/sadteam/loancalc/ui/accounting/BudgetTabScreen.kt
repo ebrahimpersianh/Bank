@@ -1,5 +1,15 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.AbsoluteAlignment
+import ir.sadteam.loancalc.ui.components.ChartTooltipHost
+import ir.sadteam.loancalc.ui.components.ChartTooltip
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -146,6 +156,15 @@ fun BudgetTabScreen(
                 .sumOf { it.amount } <= fairShare
         }
     }
+    /** خرجِ هر یک از هفت روزِ اخیر (قدیمی→امروز) - برای حبابِ لمسِ نوارِ هفته. */
+    val weekSpent = remember(allTransactions, today) {
+        (6 downTo 0).map { back ->
+            val d = PersianCalendar.addDays(today, -back)
+            allTransactions
+                .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == d.y && it.month == d.m && it.day == d.d }
+                .sumOf { it.amount }
+        }
+    }
     val savedSoFar = if (fairShare > 0) (fairShare * today.d - totalSpent).coerceAtLeast(0.0) else 0.0
     /** پیش‌بینیِ سرِ ماه با همین سرعتِ خرج - خطِ طلاییِ کارتِ «کلِ ماه». */
     val projectedLeft = if (today.d > 0 && totalCap > 0) {
@@ -196,6 +215,7 @@ fun BudgetTabScreen(
                     DailyAllowanceHero(
                         allowance = dailyAllowance,
                         week = weekUnderShare,
+                        weekSpent = weekSpent,
                         saved = savedSoFar,
                         behind = fairShare > 0 && fairShare * today.d < totalSpent,
                         dayOfMonth = today.d,
@@ -547,6 +567,7 @@ private fun StarterSuggestions(
 private fun DailyAllowanceHero(
     allowance: Double,
     week: List<Boolean>,
+    weekSpent: List<Double>,
     saved: Double,
     /** خرجِ تا امروز از سهمِ منصفانه‌ی همین روزها بیشتر شده. */
     behind: Boolean,
@@ -601,20 +622,7 @@ private fun DailyAllowanceHero(
             modifier = Modifier.padding(top = 2.dp),
         )
         if (week.isNotEmpty()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 13.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                week.forEach { under ->
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(if (under) Color.White else Color.White.copy(alpha = 0.35f)),
-                    )
-                }
-            }
+            WeekShareStrip(week = week, spent = weekSpent, privacyMode = privacyMode)
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 9.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -948,3 +956,71 @@ private val GoldTextInk: Color
     @Composable get() = AppGoldInkSoft
 private val GoldButton: Color
     @Composable get() = AppWarning
+
+/**
+ * نوارِ هفت‌روزه‌ی کارتِ بودجه - **لمس‌پذیر** (گزارشِ کاربر، ۱ مهر: «بودجه اصلاً نمی‌گیرد»).
+ * لمس، نگه‌داشتن و کشیدن مثلِ بقیه‌ی نمودارها؛ حباب روز و خرجِ آن روز را می‌گوید.
+ * فیزیکی چپ‌به‌راست است: امروز سمتِ راست، مثلِ بقیه‌ی نمودارها.
+ */
+@Composable
+private fun WeekShareStrip(week: List<Boolean>, spent: List<Double>, privacyMode: Boolean) {
+    var touched by remember(week) { mutableStateOf<Int?>(null) }
+    var widthPx by remember { mutableFloatStateOf(0f) }
+    fun slotAt(x: Float, w: Float) = if (w <= 0f) 0 else ((x / w) * week.size).toInt().coerceIn(0, week.size - 1)
+    Box(modifier = Modifier.fillMaxWidth().padding(top = 13.dp)) {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(22.dp)
+                    .pointerInput(week) {
+                        widthPx = size.width.toFloat()
+                        detectDragGestures(
+                            onDragStart = { touched = slotAt(it.x, size.width.toFloat()) },
+                            onDragEnd = { touched = null },
+                            onDragCancel = { touched = null },
+                            onDrag = { change, _ ->
+                                change.consume()
+                                touched = slotAt(change.position.x, size.width.toFloat())
+                            },
+                        )
+                    }
+                    .pointerInput(week) {
+                        widthPx = size.width.toFloat()
+                        detectTapGestures(onPress = {
+                            touched = slotAt(it.x, size.width.toFloat())
+                            tryAwaitRelease()
+                            touched = null
+                        })
+                    },
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                week.forEachIndexed { index, under ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(if (index == touched) 9.dp else 6.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(if (under) Color.White else Color.White.copy(alpha = 0.35f)),
+                    )
+                }
+            }
+        }
+        ChartTooltipHost(visible = touched != null, modifier = Modifier.align(AbsoluteAlignment.TopLeft)) {
+            val index = touched ?: week.lastIndex
+            val ago = week.lastIndex - index
+            val amount = spent.getOrElse(index) { 0.0 }
+            ChartTooltip(
+                title = when (ago) { 0 -> "امروز"; 1 -> "دیروز"; else -> "${toFa(ago)} روز پیش" },
+                value = if (privacyMode) "•••" else
+                    "${amount.rialToFaCompact()} تومان · ${if (week.getOrElse(index) { true }) "زیرِ سهم" else "بیشتر از سهم"}",
+                centerX = widthPx * (index + 0.5f) / week.size,
+                containerWidth = widthPx,
+                background = Color.Black.copy(alpha = 0.45f),
+                titleColor = Color.White.copy(alpha = 0.75f),
+                valueColor = Color.White,
+            )
+        }
+    }
+}

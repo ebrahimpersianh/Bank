@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -64,9 +65,12 @@ fun InteractiveBars(
     var widthPx by remember { mutableFloatStateOf(0f) }
     // 🚨 `Row` در راست‌به‌چپ میله‌ی اول را **راست** می‌گذارد، ولی مختصاتِ لمس همیشه از چپ
     // است. بی این، کشیدن برعکس کار می‌کرد و لمس اطلاعاتِ میله‌ی قرینه را نشان می‌داد.
-    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    // خواسته‌ی کاربر (۱ مهر): «امروز باید سمتِ راست باشد» - پس میله‌ها **فیزیکی چپ‌به‌راست**
+    // چیده می‌شوند (قدیمی چپ، امروز راست)، مستقل از راست‌به‌چپِ برنامه.
+    val rtl = false
 
     Box(modifier = modifier.fillMaxWidth()) {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -121,6 +125,7 @@ fun InteractiveBars(
                         ),
                 )
             }
+        }
         }
         ChartTooltipHost(visible = touchedIndex != null, modifier = Modifier.align(AbsoluteAlignment.TopLeft)) {
             val index = touchedIndex ?: currentIndex

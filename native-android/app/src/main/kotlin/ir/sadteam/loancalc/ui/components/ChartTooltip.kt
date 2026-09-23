@@ -51,11 +51,8 @@ fun ChartTooltip(
     valueColor: Color,
     modifier: Modifier = Modifier,
 ) {
-    // عرضِ تقریبیِ حباب؛ دقیق نیست و لازم هم نیست - فقط برای اینکه به لبه نچسبد.
-    val halfWidth = 46f
-    val x = centerX.coerceIn(halfWidth, (containerWidth - halfWidth).coerceAtLeast(halfWidth))
     Box(
-        modifier = modifier.offsetPx(x - halfWidth),
+        modifier = modifier.tooltipPlacement(centerX, containerWidth),
     ) {
         Column(
             modifier = Modifier
@@ -70,8 +67,6 @@ fun ChartTooltip(
     }
 }
 
-private fun Modifier.offsetPx(x: Float): Modifier =
-    this.then(Modifier.offsetLayout(x))
 
 /**
  * 🚨 **حباب هیچ جایی در چیدمان نمی‌گیرد** (گزارشِ کاربر: «می‌زنم رو کندل، صفحه کشیده
@@ -79,11 +74,15 @@ private fun Modifier.offsetPx(x: Float): Modifier =
  * اندازه‌ی گزارش‌شده صفر است و حباب **بالای** نمودار، روی بقیه‌ی کارت، کشیده می‌شود.
  * `place` نه `placeRelative`: مختصات فیزیکی است (بالا را ببین).
  */
-private fun Modifier.offsetLayout(x: Float): Modifier =
+private fun Modifier.tooltipPlacement(centerX: Float, containerWidth: Float): Modifier =
     this.layout { measurable, constraints ->
-        val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
+        val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0, maxWidth = Int.MAX_VALUE))
+        // 🚨 گیره با **عرضِ واقعیِ حباب**، نه عددِ حدسی: قبلاً روی میله/نقطه‌ی لبه نیمی از
+        // حباب بیرونِ کارت می‌افتاد (گزارشِ کاربر).
+        val w = placeable.width.toFloat()
+        val left = (centerX - w / 2f).coerceIn(0f, (containerWidth - w).coerceAtLeast(0f))
         layout(0, 0) {
-            placeable.place(IntOffset(x.roundToInt(), -placeable.height - 4.dp.roundToPx()))
+            placeable.place(IntOffset(left.roundToInt(), -placeable.height - 4.dp.roundToPx()))
         }
     }
 

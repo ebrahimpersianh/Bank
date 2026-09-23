@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -718,12 +721,15 @@ private fun PeriodSpendHero(
                 // میله‌ها کم می‌شود تا هر دو نما تمیز بمانند.
                 spacing = if (bars.size > 12) 1.5.dp else 3.dp,
             )
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(firstLabel, color = Color.White.copy(alpha = 0.62f), fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
-                Text(lastLabel, color = Color.White, fontSize = 8.5.sp, fontWeight = FontWeight.ExtraBold)
+            // هم‌جهتِ میله‌ها (فیزیکی چپ‌به‌راست): اولِ دوره چپ، امروز راست.
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(firstLabel, color = Color.White.copy(alpha = 0.62f), fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
+                    Text(lastLabel, color = Color.White, fontSize = 8.5.sp, fontWeight = FontWeight.ExtraBold)
+                }
             }
         } else {
             Text(

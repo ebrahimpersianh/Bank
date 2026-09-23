@@ -209,13 +209,15 @@ fun AssetsTabScreen(
     }
     // سریِ نهایی: عکسِ واقعی اگر هست، وگرنه بازسازیِ نقدی.
     val trendSeries = remember(wealthSnapshots, cashTrend) {
-        if (wealthSnapshots.size >= 2) {
+        // ⚠️ عکسِ روزانه تا یک هفته جمع نشده، دو-سه نقطه بیشتر ندارد و نمودار یک خطِ صاف
+        // می‌شد (گزارشِ کاربر: «نقطه ندارد»). تا آن موقع بازسازیِ ۳۰روزه‌ی نقدی بهتر است.
+        if (wealthSnapshots.size >= 7) {
             wealthSnapshots.takeLast(30).map { it.totalRial }
         } else {
             cashTrend
         }
     }
-    val trendIsReal = wealthSnapshots.size >= 2
+    val trendIsReal = wealthSnapshots.size >= 7
     // درصدِ تغییر نسبت به ابتدای همان سری. مبنای صفر یعنی درصد بی‌معنی، پس `null`.
     val cashTrendPercent = remember(trendSeries) {
         val first = trendSeries.firstOrNull() ?: 0.0
