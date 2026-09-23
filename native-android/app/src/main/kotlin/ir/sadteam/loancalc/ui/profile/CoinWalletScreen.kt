@@ -468,6 +468,9 @@ private fun CoinEventRow(event: CoinEventEntity) {
                     color = ink,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Black,
+                    // 🚨 بی این، «+۱۰» در ستونِ باریک دو خط می‌شد و «۰» زیرش می‌افتاد.
+                    maxLines = 1,
+                    softWrap = false,
                 )
                 Text("سکه", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }

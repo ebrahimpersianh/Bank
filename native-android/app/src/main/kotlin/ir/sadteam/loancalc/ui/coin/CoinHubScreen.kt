@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.coin
 
+import ir.sadteam.loancalc.ui.components.AppHeroCard
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.ui.graphics.Brush
@@ -248,32 +249,29 @@ private fun CoinHero(coins: Int, activeDays: Int, earnedToday: Int) {
  */
 @Composable
 private fun WalletHero(coins: Int, activeDays: Int, earnedToday: Int) {
-    val tint = AppPrimaryPill
-    AppCard(
-        modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp),
-        accentGradient = Brush.linearGradient(listOf(AppSurface, tint)),
-    ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            CoinIcon(size = 58.dp)
+    // خواسته‌ی کاربر (۱ مهر): مثلِ بقیه‌ی کارت‌های بالای صفحه - **رنگِ تم + نقشِ برگ**.
+    AppHeroCard(modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            CoinIcon(size = 56.dp)
             Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text(toFa(coins), color = AppText, fontSize = 26.sp, fontWeight = FontWeight.Black, maxLines = 1)
-                    Text("سکه", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp, bottom = 4.dp))
+                    Text(toFa(coins), color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black, maxLines = 1)
+                    Text("سکه", color = Color.White.copy(alpha = 0.75f), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp, bottom = 4.dp))
                 }
                 Text(
                     "امروز ${toFa(earnedToday)} از ${toFa(CoinReason.DAILY_COIN_CAP)}" +
                         if (activeDays > 0) " · ${toFa(activeDays)} روزِ پیاپی" else "",
-                    color = AppMuted,
+                    color = Color.White.copy(alpha = 0.8f),
                     fontSize = 10.5.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
             Box(
-                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(AppSurface),
+                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(16.dp)).background(Color.White.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.Eco, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(28.dp))
+                Icon(Icons.Filled.Eco, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
             }
         }
     }
