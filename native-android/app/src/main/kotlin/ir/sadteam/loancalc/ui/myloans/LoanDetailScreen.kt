@@ -194,6 +194,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.material.icons.filled.Eco
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -1482,18 +1483,19 @@ private fun LoanIdentityCard(
     val statusColor = if (overdue && !settled) AppDanger else AppPrimary
     AppHeroCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            // کاشیِ برگ - همان نشانِ کارت‌های قهرمانِ دیگر (کیف، بودجه) تا این کارت هم خانواده‌شان باشد.
             Box(
                 modifier = Modifier
-                    .size(46.dp)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(Color.White.copy(alpha = 0.22f)),
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    Icons.Filled.AccountBalance,
+                    Icons.Filled.Eco,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(22.dp),
+                    modifier = Modifier.size(24.dp),
                 )
             }
             Column(modifier = Modifier.weight(1f).padding(start = 11.dp)) {
