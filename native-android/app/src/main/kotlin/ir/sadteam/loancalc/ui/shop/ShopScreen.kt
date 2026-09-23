@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Wallpaper
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.AccountCircle
@@ -82,6 +83,10 @@ import ir.sadteam.loancalc.data.coin.ShopItem
 import ir.sadteam.loancalc.data.coin.THEME_CATALOG
 import ir.sadteam.loancalc.data.coin.themeById
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.HeroChart
+import ir.sadteam.loancalc.ui.components.HeroChartStyle
+import ir.sadteam.loancalc.ui.components.LocalHeroChartStyle
 import ir.sadteam.loancalc.ui.components.AvatarFramePreview
 import ir.sadteam.loancalc.ui.components.AvatarFrameStyle
 import ir.sadteam.loancalc.ui.components.CoinIcon
@@ -496,6 +501,25 @@ fun ShopScreen(
             }
             if (active[ShopCategory.SYMBOL] != null) {
                 item { ResetRow("بازگشت به نمادهای توپر", viewModel::resetSymbolSet) }
+            }
+        }
+
+        if (tab == null || tab == ShopCategory.CHART) {
+            val charts = rowsOf(ShopCategory.CHART)
+            item { GroupHeader("سبکِ نمودار", "۱۵۰ تا ۵۰۰ سکه") }
+            items(charts.size) { index ->
+                val shopItem = charts[index]
+                ShopRow(
+                    shopItem,
+                    stateOf(shopItem),
+                    balance,
+                    activateItem,
+                    onConfirm = { confirming = it },
+                    leading = { ChartStylePreview(shopItem.id) },
+                )
+            }
+            if (active[ShopCategory.CHART] != null) {
+                item { ResetRow("بازگشت به نمودارِ پیش‌فرض", viewModel::resetChartStyle) }
             }
         }
 
@@ -1106,6 +1130,7 @@ private fun previewFor(item: ShopItem) {
         item.id.startsWith("icon:") -> AppIconPreview(item.id)
         item.id.startsWith("symbolset:") -> SymbolSetPreview(item.id)
         item.id.startsWith("coinskin:") -> CoinSkinPreview(item.id)
+        item.id.startsWith("chart:") -> ChartStylePreview(item.id)
         item.id.startsWith("frame:") -> AvatarFramePreview(AvatarFrameStyle.fromItemId(item.id))
         item.id.startsWith("bg_") -> BackdropPreview(LiveBackground.byId(item.id.removePrefix("bg_")))
         item.id.startsWith("theme:") -> {
@@ -1238,6 +1263,7 @@ private fun tabIcon(category: ShopCategory): ImageVector = when (category) {
     ShopCategory.ICON -> Icons.Filled.Apps
     ShopCategory.SYMBOL -> Icons.Filled.Category
     ShopCategory.FRAME -> Icons.Filled.AccountCircle
+    ShopCategory.CHART -> Icons.Filled.ShowChart
     ShopCategory.FONT -> Icons.Filled.TextFields
     ShopCategory.REWARD -> Icons.Filled.CardGiftcard
 }
@@ -1446,6 +1472,7 @@ private fun ProductDetailSheet(
                 item { DetailFacts(item) }
                 if (item.id.startsWith("icon:")) item { IconUsageSample(item.id) }
                 if (item.id.startsWith("symbolset:")) item { SymbolSetSample(item.id) }
+                if (item.id.startsWith("chart:")) item { ChartStyleSample(item.id) }
             }
             Box(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 18.dp, top = 6.dp)) {
                 DetailAction(item, state, balance, onActivate, onBuy)
@@ -1535,6 +1562,55 @@ private fun SymbolSetSample(itemId: String) {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/** داده‌ی نمونه‌ی پیش‌نمایش (بسته‌ی ChatGPT) - آخرین نقطه «امروز» است. */
+private val chartSampleValues = listOf(0.28, 0.42, 0.36, 0.58, 0.50, 0.74, 0.88)
+private val chartSampleLabels = listOf("شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "امروز")
+
+/**
+ * پیش‌نمایشِ سبکِ نمودار - **همان [HeroChart]ِ کارت‌های واقعی**، نه عکس، تا چیزی که
+ * کاربر می‌خرد دقیقاً همانی باشد که روی کارت‌ها می‌نشیند.
+ */
+@Composable
+private fun ChartStylePreview(itemId: String) {
+    val style = HeroChartStyle.fromItemId(itemId) ?: return
+    Box(
+        modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(AppPrimary).padding(horizontal = 5.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        CompositionLocalProvider(LocalHeroChartStyle provides style) {
+            HeroChart(
+                values = chartSampleValues,
+                labels = emptyList(),
+                valueLabel = { "" },
+                currentIndex = chartSampleValues.lastIndex,
+                natural = style,
+                height = 26.dp,
+            )
+        }
+    }
+}
+
+/** نمونه‌ی بزرگِ صفحه‌ی محصول - روی همان کارتِ رنگیِ بالای صفحه‌ها، و لمس‌پذیر. */
+@Composable
+private fun ChartStyleSample(itemId: String) {
+    val style = HeroChartStyle.fromItemId(itemId) ?: return
+    AppHeroCard(modifier = Modifier.fillMaxWidth()) {
+        Text("نمونه روی کارت", color = Color.White.copy(alpha = 0.8f), fontSize = 10.5.sp, fontWeight = FontWeight.Black)
+        Box(modifier = Modifier.padding(top = 26.dp)) {
+            CompositionLocalProvider(LocalHeroChartStyle provides style) {
+                HeroChart(
+                    values = chartSampleValues,
+                    labels = chartSampleLabels,
+                    valueLabel = { "${toFa((it * 100).toInt())}٪" },
+                    currentIndex = chartSampleValues.lastIndex,
+                    natural = style,
+                    height = 40.dp,
+                )
             }
         }
     }

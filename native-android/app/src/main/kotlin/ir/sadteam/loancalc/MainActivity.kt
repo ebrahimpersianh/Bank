@@ -180,6 +180,8 @@ import ir.sadteam.loancalc.ui.cheque.ChequeScreen
 import ir.sadteam.loancalc.ui.calendar.FinancialCalendarScreen
 import ir.sadteam.loancalc.ui.stats.StatsScreen
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.HeroChartStyle
+import ir.sadteam.loancalc.ui.components.LocalHeroChartStyle
 import ir.sadteam.loancalc.ui.components.LocalReducedMotion
 import ir.sadteam.loancalc.ui.components.Shortcut
 import ir.sadteam.loancalc.ui.components.ShortcutDrawer
@@ -493,6 +495,8 @@ class MainActivity : FragmentActivity() {
             val appContext = LocalContext.current.applicationContext
             val symbolPrefs = remember(appContext) { UiPrefs(appContext) }
             val activeSymbolSet by symbolPrefs.activeSymbolSet.collectAsState(initial = null)
+            // سبکِ نمودارِ خریده‌شده - یک مقدار برای همه‌ی کارت‌های بالای صفحه.
+            val activeChartStyle by symbolPrefs.activeChartStyle.collectAsState(initial = null)
     LaunchedEffect(activeSymbolSet) {
         SymbolTheme.style = SymbolStyle.fromItemId(activeSymbolSet)
     }
@@ -508,6 +512,7 @@ class MainActivity : FragmentActivity() {
                     LocalLayoutDirection provides LayoutDirection.Rtl,
                     LocalSubscriptionManager provides subscriptionManager,
                     LocalThemeReveal provides themeReveal,
+                    LocalHeroChartStyle provides HeroChartStyle.fromItemId(activeChartStyle),
                     // پورت .app.fs-small/fs-medium/fs-large (CSS zoom) تو www/index.html - هم
                     // فونت هم فاصله‌ها (dp) با هم مقیاس می‌شن، دقیقاً مثل زوم کل کانتینر .app.
                     // 🚨 فقط `fontScale` ضرب می‌شود، نه `density`. قبلاً هر دو ضرب می‌شدند،

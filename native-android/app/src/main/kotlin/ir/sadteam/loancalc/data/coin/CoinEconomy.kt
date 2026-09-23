@@ -135,6 +135,12 @@ enum class CoinSpend(
      */
     FONT_FACE(120, "قلمِ متن", ShopCategory.FONT, timeGated = false),
 
+    /**
+     * سبکِ نمودارِ کارت‌های رنگی. شش سبک شش قیمت دارند (۱۵۰..۵۰۰، بسته‌ی ChatGPT)، پس
+     * قیمتِ واقعی **روی ردیف** است (`ShopItem.priceOverride`)؛ این عدد فقط کف است.
+     */
+    CHART_STYLE(150, "سبکِ نمودار", ShopCategory.CHART, timeGated = false),
+
     STREAK_REPAIR(100, "ترمیمِ زنجیره", ShopCategory.REWARD, timeGated = true),
     SUBSCRIPTION_3D(1200, "اشتراکِ جایزه ۳ روزه", ShopCategory.REWARD, timeGated = true),
     SUBSCRIPTION_7D(2500, "اشتراکِ جایزه ۷ روزه", ShopCategory.REWARD, timeGated = true),
@@ -165,6 +171,7 @@ enum class ShopCategory(val label: String, val tab: String) {
     ICON("آیکونِ برنامه", "آیکون"),
     SYMBOL("نمادها", "نماد"),
     FRAME("قابِ آواتار", "قاب"),
+    CHART("سبکِ نمودار", "نمودار"),
     FONT("قلمِ متن", "قلم"),
     REWARD("جایزه", "جایزه"),
 }

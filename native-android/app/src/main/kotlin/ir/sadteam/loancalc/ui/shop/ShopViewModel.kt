@@ -68,6 +68,7 @@ class ShopViewModel @Inject constructor(
             uiPrefs.activeSymbolSet,
             uiPrefs.activeFont,
             uiPrefs.activeBackdrop,
+            uiPrefs.activeChartStyle,
         ) { values ->
             // ⚠️ `combine`ِ شش‌تایی امضای `vararg` دارد و آرایه می‌دهد، نه شش پارامترِ
             // نام‌دار - نسخه‌ی پارامتریِ آن تا پنج جریان است.
@@ -77,6 +78,7 @@ class ShopViewModel @Inject constructor(
             val symbols = values[3]
             val font = values[4]
             val backdrop = values[5]
+            val chart = values[6]
             buildMap {
                 if (theme != null) put(ShopCategory.THEME, "theme:$theme")
                 if (icon != null) put(ShopCategory.ICON, icon)
@@ -84,6 +86,7 @@ class ShopViewModel @Inject constructor(
                 if (symbols != null) put(ShopCategory.SYMBOL, symbols)
                 if (font != null) put(ShopCategory.FONT, font)
                 if (backdrop != null) put(ShopCategory.BACKDROP, "bg_$backdrop")
+                if (chart != null) put(ShopCategory.CHART, chart)
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
@@ -155,6 +158,7 @@ class ShopViewModel @Inject constructor(
                 ShopCategory.THEME -> uiPrefs.setColorTheme(item.id.removePrefix("theme:"))
                 ShopCategory.FRAME -> uiPrefs.setActiveFrame(item.id)
                 ShopCategory.FONT -> uiPrefs.setActiveFont(item.id)
+                ShopCategory.CHART -> uiPrefs.setActiveChartStyle(item.id)
                 // شناسه‌ی ذخیره‌شده **بی پیشوند** است (`aurora`)، چون `LiveBackground.byId`
                 // همان را می‌خواند؛ پیشوندِ `bg_` فقط برای یکتاییِ ردیفِ فروشگاه است.
                 ShopCategory.BACKDROP -> uiPrefs.setActiveBackdrop(item.id.removePrefix("bg_"))
@@ -197,6 +201,11 @@ class ShopViewModel @Inject constructor(
 
     fun setFrameColor(id: String?) {
         viewModelScope.launch { uiPrefs.setActiveFrameColor(id) }
+    }
+
+    /** بازگشت به نمودارِ پیش‌فرضِ هر صفحه (میله‌ای/خطیِ رایگان). */
+    fun resetChartStyle() {
+        viewModelScope.launch { uiPrefs.setActiveChartStyle(null) }
     }
 
     fun resetSymbolSet() {

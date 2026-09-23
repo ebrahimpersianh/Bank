@@ -11,7 +11,25 @@ import androidx.compose.ui.unit.dp
  * شکلِ نمودارِ کارت‌های قهرمان. قرار است از **فروشگاه** خریده شود و روی **همه‌ی** کارت‌ها
  * یک‌جا بنشیند (خواسته‌ی کاربر، ۲ مهر).
  */
-enum class HeroChartStyle { BARS, LINE }
+enum class HeroChartStyle(val itemId: String?) {
+    // رایگان - شکلِ پیش‌فرضِ هر صفحه.
+    BARS(null),
+    LINE(null),
+
+    // خریدنی از فروشگاه (بسته‌ی ChatGPT) - [StyledHeroChart].
+    SOFT_WAVE("chart:soft_wave"),
+    STEPPED("chart:stepped"),
+    DOTS("chart:dots"),
+    GRADIENT_COLUMNS("chart:gradient_columns"),
+    AREA_WAVE("chart:area_wave"),
+    BUBBLES("chart:bubbles"),
+    ;
+
+    companion object {
+        /** شناسه‌ی ذخیره‌شده ← سبک؛ ناشناخته یا `null` یعنی «پیش‌فرضِ هر صفحه». */
+        fun fromItemId(id: String?): HeroChartStyle? = entries.firstOrNull { it.itemId != null && it.itemId == id }
+    }
+}
 
 /**
  * شکلِ انتخابیِ کاربر. `null` یعنی «پیش‌فرضِ خودِ هر صفحه» ([HeroChart] پارامترِ `natural` را
@@ -39,7 +57,8 @@ fun HeroChart(
     slots: Int? = null,
     tooltipBackground: Color = Color.Black.copy(alpha = 0.40f),
 ) {
-    when (LocalHeroChartStyle.current ?: natural) {
+    val style = LocalHeroChartStyle.current ?: natural
+    when (style) {
         HeroChartStyle.BARS -> InteractiveBars(
             values = values,
             labels = labels,
@@ -67,6 +86,17 @@ fun HeroChart(
             tooltipBackground = tooltipBackground,
             slots = slots,
             restIndex = currentIndex,
+        )
+        else -> StyledHeroChart(
+            style = style,
+            values = values,
+            labels = labels,
+            valueLabel = valueLabel,
+            currentIndex = currentIndex,
+            modifier = modifier,
+            height = height,
+            slots = slots,
+            tooltipBackground = tooltipBackground,
         )
     }
 }

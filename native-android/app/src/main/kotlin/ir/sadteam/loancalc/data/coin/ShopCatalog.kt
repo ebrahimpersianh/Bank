@@ -65,8 +65,10 @@ data class ShopItem(
      * برای همیشه «تازه» می‌مانْد و آن بخش بی‌معنی می‌شد.
      */
     val addedOn: String? = null,
+    /** قیمتِ خودِ ردیف وقتی قلم‌های یک نوع قیمتِ یکسان ندارند (سبک‌های نمودار). */
+    val priceOverride: Int? = null,
 ) {
-    val price: Int get() = if (unlockBadge != null) 0 else kind.price
+    val price: Int get() = if (unlockBadge != null) 0 else priceOverride ?: kind.price
 
     /** هنوز در بازه است؟ قلمِ همیشگی همیشه `true`. */
     fun isOpen(today: LocalDate): Boolean = window == null || today in window
@@ -440,6 +442,13 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     // ترمیمِ زنجیره در فروشگاه **نمی‌آید**: دسته ندارد، مالکیت نمی‌آورد، و جایش کارتِ
     // `56b` است که فقط وقتی رشته پاره شده دیده می‌شود. قلمی که همیشه در ویترین باشد
     // ولی فقط دو روز در ماه قابلِ خرید، ردیفِ خاموشِ دائمی است.
+    // سبک‌های نمودار (بسته‌ی ChatGPT). میله‌ای و خطی رایگان‌اند و ردیفِ فروشی ندارند.
+    add(ShopItem("chart:dots", CoinSpend.CHART_STYLE, "نقطه‌ای", "فقط نقطه‌ها، سبک و خلوت", addedOn = "1405-07-01", priceOverride = 150))
+    add(ShopItem("chart:stepped", CoinSpend.CHART_STYLE, "پله‌ای", "تغییرِ هر روز مثلِ یک پله", addedOn = "1405-07-01", priceOverride = 200))
+    add(ShopItem("chart:soft_wave", CoinSpend.CHART_STYLE, "موجی نرم", "خطِ منحنیِ نرم به‌جای شکسته", addedOn = "1405-07-01", priceOverride = 300))
+    add(ShopItem("chart:gradient_columns", CoinSpend.CHART_STYLE, "ستون‌های گرادیانی", "ستون‌هایی که پایینشان محو می‌شود", addedOn = "1405-07-01", priceOverride = 350))
+    add(ShopItem("chart:area_wave", CoinSpend.CHART_STYLE, "ناحیه‌ای", "منحنیِ نرم با سطحِ پُرشده زیرش", addedOn = "1405-07-01", priceOverride = 400))
+    add(ShopItem("chart:bubbles", CoinSpend.CHART_STYLE, "حبابی", "هر روز یک حباب روی ساقه", addedOn = "1405-07-01", priceOverride = 500))
     add(ShopItem("sub:3d", CoinSpend.SUBSCRIPTION_3D, "اشتراکِ ۳ روزه", "همه‌ی امکاناتِ اشتراکی، سه روز", comingSoon = true))
     add(ShopItem("sub:7d", CoinSpend.SUBSCRIPTION_7D, "اشتراکِ ۷ روزه", "همه‌ی امکاناتِ اشتراکی، یک هفته", comingSoon = true))
 }

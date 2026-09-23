@@ -141,6 +141,9 @@ import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.jibak.faDigits
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.components.TrendLineChart
+import ir.sadteam.loancalc.ui.components.HeroChart
+import ir.sadteam.loancalc.ui.components.HeroChartStyle
+import ir.sadteam.loancalc.ui.components.LocalHeroChartStyle
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
@@ -1458,17 +1461,30 @@ private fun DashboardSummary(
                     val waveMonths = (0 until debtCurve.size).map { ahead ->
                         persianMonthName(((todayForWave.m - 1 + ahead) % 12) + 1)
                     }
-                    TrendLineChart(
-                        values = debtCurve.map { it.toDouble() },
-                        lineColor = Color.White.copy(alpha = 0.6f),
-                        fillTop = Color.White.copy(alpha = 0.16f),
-                        dotColor = Color.White,
-                        height = 22.dp,
-                        labels = waveMonths,
-                        // ماهِ جاری (اولِ فهرست) برجسته می‌ماند، نه ششمین ماهِ آینده.
-                        restIndex = 0,
-                        valueLabel = { value -> if (privacyMode) "•••" else "مانده ${value.rialToFaCompact()} تومان" },
-                    )
+                    val waveValue: (Double) -> String = { value -> if (privacyMode) "•••" else "مانده ${value.rialToFaCompact()} تومان" }
+                    // سبکِ خریده‌شده از فروشگاه روی این موج هم می‌نشیند؛ بی خرید، همان خطِ کم‌رنگِ قبلی.
+                    if (LocalHeroChartStyle.current?.itemId != null) {
+                        HeroChart(
+                            values = debtCurve.map { it.toDouble() },
+                            labels = waveMonths,
+                            valueLabel = waveValue,
+                            currentIndex = 0,
+                            natural = HeroChartStyle.LINE,
+                            height = 22.dp,
+                        )
+                    } else {
+                        TrendLineChart(
+                            values = debtCurve.map { it.toDouble() },
+                            lineColor = Color.White.copy(alpha = 0.6f),
+                            fillTop = Color.White.copy(alpha = 0.16f),
+                            dotColor = Color.White,
+                            height = 22.dp,
+                            labels = waveMonths,
+                            // ماهِ جاری (اولِ فهرست) برجسته می‌ماند، نه ششمین ماهِ آینده.
+                            restIndex = 0,
+                            valueLabel = waveValue,
+                        )
+                    }
                     Text(
                         persianMonthName(todayForWave.m),
                         color = Color.White,

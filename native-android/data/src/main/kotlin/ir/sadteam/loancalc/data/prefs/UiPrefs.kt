@@ -68,6 +68,7 @@ class UiPrefs(private val context: Context) {
         val LAST_SEEN_DAY = stringPreferencesKey("last_seen_day")
         val ACTIVE_FRAME = stringPreferencesKey("active_frame")
         val ACTIVE_SYMBOL_SET = stringPreferencesKey("active_symbol_set")
+        val ACTIVE_CHART_STYLE = stringPreferencesKey("selected_chart_style")
         val ACTIVE_FONT = stringPreferencesKey("active_font")
         val ACTIVE_BACKDROP = stringPreferencesKey("active_backdrop")
         val REORDER_HINT_SHOWN = intPreferencesKey("reorder_hint_shown_count")
@@ -359,6 +360,19 @@ class UiPrefs(private val context: Context) {
     suspend fun setActiveSymbolSet(key: String?) {
         context.uiPrefsDataStore.edit { prefs ->
             if (key == null) prefs.remove(Keys.ACTIVE_SYMBOL_SET) else prefs[Keys.ACTIVE_SYMBOL_SET] = key
+        }
+    }
+
+    /**
+     * سبکِ نمودارِ کارت‌های رنگیِ بالای صفحه (`chart:soft_wave`…). **یک مقدار برای کلِ
+     * برنامه** - خانه، گزارش، بودجه، دارایی و وام همه همین را می‌خوانند. `null` یعنی
+     * شکلِ پیش‌فرضِ خودِ هر صفحه.
+     */
+    val activeChartStyle: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.ACTIVE_CHART_STYLE] }
+
+    suspend fun setActiveChartStyle(key: String?) {
+        context.uiPrefsDataStore.edit { prefs ->
+            if (key == null) prefs.remove(Keys.ACTIVE_CHART_STYLE) else prefs[Keys.ACTIVE_CHART_STYLE] = key
         }
     }
 
