@@ -5,6 +5,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.WorkspacePremium
 import ir.sadteam.loancalc.ui.theme.AppPurple
 import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.components.AppHeroCard
@@ -751,19 +752,28 @@ private fun SettingsSubPageScaffold(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Filled.Close, contentDescription = "بستن")
+            Box(
+                modifier = Modifier
+                    .padding(4.dp)
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(AppSurface)
+                    .border(1.dp, AppLine, RoundedCornerShape(14.dp))
+                    .pressScaleClickable(onClick = onBack),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Close, contentDescription = "بستن", tint = AppMuted)
             }
             Text(
                 title,
                 color = AppText,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Black,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
             )
             // هم‌عرضِ دکمه‌ی بستن، تا عنوان دقیقاً وسط بمونه.
-            Box(modifier = Modifier.size(48.dp))
+            Box(modifier = Modifier.size(52.dp))
         }
         Column(modifier = Modifier.padding(horizontal = 14.dp)) { content() }
         Box(modifier = Modifier.padding(bottom = 20.dp))
@@ -854,18 +864,19 @@ private fun AccountSettings(
         val avatar by avatarViewModel.avatar.collectAsState()
         val avatarFrame by avatarViewModel.frame.collectAsState()
         // کارتِ هویتِ فشرده: صفحه با «خودِ کاربر» شروع می‌شود، نه یک فضای خالیِ بزرگ.
-        AppCard(
-            backgroundColor = AppPrimaryPill,
-            borderColor = AppPrimaryBorder,
-            modifier = Modifier.padding(top = 8.dp),
-            contentPadding = 16.dp,
-        ) {
+        // همان کارتِ رنگیِ بالای بقیه‌ی صفحه‌ها (با تم عوض می‌شود)؛ آدمک و قاب همان هدرِ خانه.
+        AppHeroCard(modifier = Modifier.padding(top = 8.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box {
-                    FramedAvatar(avatar, size = 64.dp, frame = avatarFrame)
+                    Box(
+                        modifier = Modifier.size(80.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.18f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        FramedAvatar(avatar, size = 68.dp, frame = avatarFrame)
+                    }
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
@@ -887,33 +898,33 @@ private fun AccountSettings(
                 Column(modifier = Modifier.weight(1f).padding(start = 13.dp)) {
                     Text(
                         if (savedName.isNullOrBlank()) "بی‌نام" else savedName!!,
-                        color = AppText,
-                        fontSize = 16.sp,
+                        color = Color.White,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Black,
                     )
                     Ltr {
                         Text(
                             toFa(phone ?: ""),
-                            color = AppMuted,
-                            fontSize = 10.5.sp,
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 3.dp),
                         )
                     }
                     Text(
                         if (subscribed) "اشتراک فعال" else "حساب معمولی",
-                        color = if (subscribed) AppAccent else AppPrimaryInk,
-                        fontSize = 10.sp,
+                        color = if (subscribed) AppAccent else Color.White.copy(alpha = 0.8f),
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(top = 7.dp),
                     )
                 }
-                Icon(
-                    Icons.Filled.Badge,
-                    contentDescription = null,
-                    tint = AppPrimaryInk,
-                    modifier = Modifier.size(21.dp),
-                )
+                Box(
+                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(Color.White.copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.Badge, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                }
             }
         }
 
@@ -933,7 +944,7 @@ private fun AccountSettings(
             SettingsRowItem(
                 title = "شماره‌ی موبایل",
                 icon = Icons.Filled.Person,
-                tone = SettingsTone.GREEN,
+                tone = SettingsTone.BLUE,
                 status = toFa(phone ?: ""),
                 statusTone = StatusTone.HEALTHY,
                 value = "تأییدشده",
@@ -980,10 +991,28 @@ private fun AccountSettings(
                 },
             )
         }
-        AppCard(modifier = Modifier.padding(top = 8.dp)) {
+        AppCard(
+            backgroundColor = AppPrimaryPill,
+            borderColor = AppPrimaryBorder,
+            modifier = Modifier.padding(top = AppSpacing.betweenCards),
+            contentPadding = 16.dp,
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Star, contentDescription = null, tint = if (subscribed) AppAccent else AppMuted, modifier = Modifier.size(22.dp))
-                Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (subscribed) AppAccent else AppSurface),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.WorkspacePremium,
+                        contentDescription = null,
+                        tint = if (subscribed) AppGoldInk else AppMuted,
+                        modifier = Modifier.size(26.dp),
+                    )
+                }
+                Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                     // متنِ نوعِ اشتراک - رجوع کن به توضیحِ کاملِ همین منطق تو AuthViewModel/سرور:
                     // subscriptionTier فقط برای خریدِ واقعیِ زمان‌دار پر می‌شه.
                     val tierLabel = when (subscriptionTier) {
@@ -1000,7 +1029,8 @@ private fun AccountSettings(
                             else -> "مشترک"
                         },
                         color = AppText,
-                        fontSize = 14.sp,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Black,
                     )
                     // تاریخِ انقضا + شمارشِ روزِ باقی‌مونده (خواسته‌ی صریحِ کاربر، هم‌الگو با
                     // اپِ رفرنس: «تا ۱۳ شهریور ۱۴۰۵ (۲۸ روز دیگر)») - قبلاً فقط بجِ آزمایشی/دائمی بود.
@@ -1025,8 +1055,32 @@ private fun AccountSettings(
                     }
                 }
             }
-            OutlinedButton(onClick = onShowSubscription, modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
-                Text(if (subscribed) "مدیریت اشتراک" else "مشاهده پلن‌ها")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 14.dp)
+                    .height(52.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AppSurface)
+                    .border(1.dp, AppPrimaryBorder, RoundedCornerShape(999.dp))
+                    .pressScaleClickable(scale = 0.98f, onClick = onShowSubscription)
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    if (subscribed) "مدیریت اشتراک" else "مشاهده پلن‌ها",
+                    color = AppPrimaryInk,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Black,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f),
+                )
+                Box(
+                    modifier = Modifier.size(36.dp).clip(CircleShape).background(AppPrimaryPill),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(20.dp))
+                }
             }
         }
         // ── خروج ─────────────────────────────────────────────────────────────
@@ -1037,39 +1091,50 @@ private fun AccountSettings(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = AppSpacing.betweenCards * 2)
-                .height(48.dp)
-                .clip(RoundedCornerShape(999.dp))
+                .height(76.dp)
+                .clip(RoundedCornerShape(24.dp))
                 .background(AppDangerPill)
-                .border(2.dp, AppDanger, RoundedCornerShape(999.dp))
-                .pressScaleClickable { showLogoutConfirm = true },
-            horizontalArrangement = Arrangement.Center,
+                .border(1.dp, AppDanger.copy(alpha = 0.35f), RoundedCornerShape(24.dp))
+                .pressScaleClickable { showLogoutConfirm = true }
+                .padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                Icons.AutoMirrored.Filled.Logout,
-                contentDescription = null,
-                tint = AppDanger,
-                modifier = Modifier.size(15.dp),
-            )
+            Box(
+                modifier = Modifier.size(46.dp).clip(RoundedCornerShape(15.dp)).background(AppDanger.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = null,
+                    tint = AppDanger,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
             Text(
                 "خروج از حساب",
                 color = AppDanger,
-                fontSize = 12.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(start = 7.dp),
+                modifier = Modifier.weight(1f).padding(start = 12.dp),
             )
+            Box(
+                modifier = Modifier.size(30.dp).clip(CircleShape).background(AppDanger.copy(alpha = 0.10f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = null, tint = AppDanger, modifier = Modifier.size(18.dp))
+            }
         }
         // الزامِ فروشگاه‌ها: راهِ داخل‌برنامه‌ای برای حذفِ کاملِ حساب. **ظاهرِ کم‌وزن،
         // مسیرِ سخت** - برعکسِ خروج که ظاهرِ پروزن و مسیرِ آسون داره.
         Text(
             "حذفِ کاملِ حساب کاربری",
-            color = AppLabel,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.ExtraBold,
+            color = AppMuted,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp)
+                .padding(top = 22.dp)
                 .pressScaleClickable { showDeleteAccountConfirm = true },
         )
         if (showLogoutConfirm) {
