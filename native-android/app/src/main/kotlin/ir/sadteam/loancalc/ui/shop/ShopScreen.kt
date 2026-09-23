@@ -1249,6 +1249,9 @@ private fun BackdropPreview(backdrop: LiveBackground?) {
 }
 
 
+/**
+ * صفحه‌ی اختصاصیِ محصول (تصمیمِ ۵ِ فروشگاه). خرید همچنان از دیالوگِ تاییدِ قبلی می‌گذرد.
+ */
 @Composable
 private fun ProductDetailSheet(
     item: ShopItem,
