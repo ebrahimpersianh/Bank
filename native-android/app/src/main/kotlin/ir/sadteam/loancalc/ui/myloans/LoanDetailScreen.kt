@@ -187,6 +187,13 @@ import ir.sadteam.loancalc.ui.theme.AppInfoPill
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPillBorder
 import ir.sadteam.loancalc.ui.theme.AppPurpleInk
 import ir.sadteam.loancalc.ui.theme.AppPurplePill
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -766,6 +773,46 @@ fun LoanDetailScreen(
     val today = remember { JalaliCalendar.today() }
     val nextRow = remember(rows) { rows.firstOrNull { it["paid"] != true } }
     var detailTab by rememberSaveable { mutableStateOf(0) }
+    // کشیدنِ افقی روی صفحه تب را عوض می‌کند، مثلِ ورق‌زدنِ گالری (خواسته‌ی کاربر): محتوای تب
+    // دنبالِ انگشت می‌آید، اگر از یک‌چهارمِ عرض رد شد بیرون می‌رود و تبِ کناری از سمتِ دیگر
+    // می‌آید، وگرنه برمی‌گردد. در RTL تبِ بعدی سمتِ چپ است، پس کشیدن به راست = تبِ بعدی.
+    val tabSwipe = remember { Animatable(0f) }
+    var swipeWidth by remember { mutableStateOf(1f) }
+    val swipeShift = Modifier.graphicsLayer {
+        translationX = tabSwipe.value
+        alpha = 1f - (kotlin.math.abs(tabSwipe.value) / swipeWidth).coerceIn(0f, 1f) * 0.7f
+    }
+    val tabSwipeGesture = Modifier
+        .onSizeChanged { swipeWidth = it.width.toFloat().coerceAtLeast(1f) }
+        .pointerInput(Unit) {
+            detectHorizontalDragGestures(
+                onDragEnd = {
+                    val x = tabSwipe.value
+                    val target = when {
+                        x > swipeWidth / 4 && detailTab < 2 -> detailTab + 1
+                        x < -swipeWidth / 4 && detailTab > 0 -> detailTab - 1
+                        else -> null
+                    }
+                    scope.launch {
+                        if (target == null) {
+                            tabSwipe.animateTo(0f, spring(stiffness = Spring.StiffnessMediumLow))
+                        } else {
+                            val out = if (x > 0) swipeWidth else -swipeWidth
+                            tabSwipe.animateTo(out, tween(140))
+                            detailTab = target
+                            tabSwipe.snapTo(-out)
+                            tabSwipe.animateTo(0f, tween(220, easing = FastOutSlowInEasing))
+                        }
+                    }
+                },
+                onDragCancel = { scope.launch { tabSwipe.animateTo(0f) } },
+            ) { change, dx ->
+                change.consume()
+                // لبه‌ها مقاومت دارند: بعد از تبِ آخر فقط کمی جلو می‌آید.
+                val atEdge = (tabSwipe.value + dx > 0 && detailTab == 2) || (tabSwipe.value + dx < 0 && detailTab == 0)
+                scope.launch { tabSwipe.snapTo(tabSwipe.value + if (atEdge) dx * 0.25f else dx) }
+            }
+        }
     // عددِ بالای صفحه همیشه باید مبلغِ *واقعیِ* اولین قسطِ پرداخت‌نشده رو نشون بده، نه
     // loan.installmentِ کهنه - رجوع کن به مورد ۱۴/۱۶ تو CLAUDE.md.
     // باگِ رفع‌شده: نسخه‌ی قبلی فقط وقتی «قسط‌های پرداخت‌نشده با هم فرق دارن»
@@ -832,6 +879,7 @@ fun LoanDetailScreen(
         modifier = Modifier
             .weight(1f)
             .fillMaxWidth()
+            .then(tabSwipeGesture)
             .lazyColumnScrollbar(detailListState, AppPrimary),
         verticalArrangement = Arrangement.spacedBy(10.dp),
         contentPadding = PaddingValues(bottom = 16.dp),
@@ -920,7 +968,7 @@ fun LoanDetailScreen(
 
         if (detailTab == 0) {
             item {
-                Column {
+                Column(modifier = swipeShift) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(start = 18.dp, end = 14.dp, top = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -966,8 +1014,8 @@ fun LoanDetailScreen(
         }
 
         if (detailTab == 1) {
-            item { PaymentRhythm(rows = rows, today = today, onOpenAll = { detailTab = 0 }) }
-            item {
+            item { Box(swipeShift) { PaymentRhythm(rows = rows, today = today, onOpenAll = { detailTab = 0 }) } }
+            item { Box(swipeShift) {
                 val lastDue = rows.lastOrNull()?.get("dueDate") as? Map<*, *>
                 LoanSpecsCard(
                     amount = loan.amount,
@@ -987,8 +1035,8 @@ fun LoanDetailScreen(
                     },
                     privacyMode = privacyMode,
                 )
-            }
-            item {
+            } }
+            item { Box(swipeShift) {
                 run {
                     var expandedAttachment by remember(loan.id) { mutableStateOf<String?>(null) }
                     var noteText by remember(loan.id) { mutableStateOf(viewModel.getLoanNotes(loan)) }
@@ -1070,7 +1118,7 @@ fun LoanDetailScreen(
                     }
                 }
 
-            }
+            } }
         }
 
         // تبِ اول همه‌ی اقساط، تبِ سوم فقط پرداخت‌شده‌ها - هر دو از همان `rows`.
@@ -1087,14 +1135,14 @@ fun LoanDetailScreen(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                    modifier = swipeShift.fillMaxWidth().padding(vertical = 24.dp),
                 )
             }
         }
         items(shownRows, key = { "row-" + ((it["m"] as? Number)?.toInt() ?: 0) }) { row ->
             val m = (row["m"] as? Number)?.toInt() ?: 0
             InstallmentRow(
-                modifier = Modifier.animateItem().padding(horizontal = 14.dp),
+                modifier = Modifier.animateItem().then(swipeShift).padding(horizontal = 14.dp),
                 row = row,
                 loan = loan,
                 privacyMode = privacyMode,
