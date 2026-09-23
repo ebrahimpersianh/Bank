@@ -33,6 +33,15 @@ import androidx.compose.ui.res.painterResource
 import ir.sadteam.loancalc.R
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Wallpaper
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.LaunchedEffect
@@ -118,26 +127,62 @@ import ir.sadteam.loancalc.ui.widget.IconWither
  */
 
 
-/** کالکشن کوچک اما واقعی: دو خریدی که با هم یک فضای یکپارچه می‌سازند. */
+/**
+ * بنرِ «کالکشن شب پرستاره» - طبقِ طرحِ فروشگاه: کارتِ بزرگِ سرمه‌ای، برچسبِ «ویژه»،
+ * دکمه‌ی «مشاهده» و تصویرِ جعبه‌ی هدیه (کارِ ChatGPT، بی متن - متن‌ها همین‌جا نوشته می‌شوند
+ * تا فارسی و قابلِ‌تغییر بمانند). سه نقطه‌ی اسلایدر عمداً نیست: فقط یک بنر داریم.
+ */
 @Composable
-private fun StarryNightCollectionCard(owned: Set<String>, earned: Boolean) {
+private fun StarryNightCollectionCard(owned: Set<String>, earned: Boolean, onView: () -> Unit) {
     val required = setOf("theme:vangogh", "bg_night_swirl")
     val collected = required.count(owned::contains)
-    val complete = collected == required.size
-    val shape = RoundedCornerShape(18.dp)
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp).clip(shape)
-            .background(if (complete) Color(0xFF10295D) else AppSurface2)
-            .border(1.dp, if (complete) Color(0xFFF2C14E).copy(alpha = 0.65f) else AppLine, shape)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+    val gold = Color(0xFFF2C14E)
+    AppCard(
+        modifier = Modifier.fillMaxWidth().padding(start = 10.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
+        accentGradient = Brush.linearGradient(listOf(Color(0xFF1B3A7A), Color(0xFF0B1A3A))),
+        contentPadding = 14.dp,
     ) {
-        Text("✦", color = if (complete) Color(0xFFF2C14E) else AppMuted, fontSize = 24.sp, fontWeight = FontWeight.Black)
-        Column(modifier = Modifier.weight(1f)) {
-            Text("کالکشنِ شبِ پرستاره", color = if (complete) Color.White else AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
-            Text(if (complete) "تم ون‌گوگ + چرخش شب · نشان باز شد" else "تم ون‌گوگ و بسته‌ی پس‌زمینه را بگیر", color = if (complete) Color.White.copy(alpha = 0.75f) else AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 3.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Pill(if (earned) "نشان گرفتی" else "ویژه", gold, Color(0xFF3A2A00))
+                Text(
+                    "کالکشن شب پرستاره",
+                    color = Color.White,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
+                Text(
+                    if (collected == 0) "تم‌های خاص، حال و هوای جدید!" else "${toFa(collected)} از ۲ تکه را داری",
+                    color = Color.White.copy(alpha = 0.78f),
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
+                Row(
+                    modifier = Modifier
+                        .padding(top = 12.dp)
+                        .clip(RoundedCornerShape(AppRadius.button))
+                        .background(Color.White)
+                        .pressScaleClickable(scale = 0.97f, onClick = onView)
+                        .padding(horizontal = 16.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("مشاهده", color = Color(0xFF0B1A3A), fontSize = 11.sp, fontWeight = FontWeight.Black)
+                    Icon(
+                        Icons.Filled.ChevronLeft,
+                        contentDescription = null,
+                        tint = Color(0xFF0B1A3A),
+                        modifier = Modifier.padding(start = 4.dp).size(16.dp),
+                    )
+                }
+            }
+            Image(
+                painter = painterResource(R.drawable.banner_starry_gift),
+                contentDescription = null,
+                modifier = Modifier.size(118.dp),
+            )
         }
-        Pill(if (earned) "نشان گرفتی" else "${toFa(collected)} از ۲", if (complete) Color(0x33F2C14E) else AppIconFrame, if (complete) Color(0xFFF2C14E) else AppMuted)
     }
 }
 
@@ -147,6 +192,9 @@ private fun StarryNightCollectionCard(owned: Set<String>, earned: Boolean) {
  * لازم نباشد یک پارامترِ تازه از همه‌ی محل‌های فراخوانی رد شود.
  */
 private val LocalOpenProduct = staticCompositionLocalOf<((ShopItem) -> Unit)?> { null }
+
+/** «تازه رسیده‌ها» پیش از «همه را ببین» دو ردیفِ دوتایی نشان می‌دهد. */
+private const val FRESH_PREVIEW = 4
 
 private enum class RowState { BUY, POOR, OWNED, ACTIVE, BADGE_LOCKED, SOON }
 
@@ -169,6 +217,7 @@ fun ShopScreen(
     val catalog by viewModel.catalog.collectAsState()
     var confirming by remember { mutableStateOf<ShopItem?>(null) }
     var detail by remember { mutableStateOf<ShopItem?>(null) }
+    var freshExpanded by rememberSaveable { mutableStateOf(false) }
     /** `null` یعنی تبِ «همه». */
     var tab by rememberSaveable { mutableStateOf<ShopCategory?>(null) }
     // 🚨 **فیلتر است، نه تبِ ششم** (بندِ ۳ی وصله‌ی بخشِ ۷۸): تبِ «مالِ من» یعنی یک ستونِ
@@ -222,13 +271,21 @@ fun ShopScreen(
             IconButton(onClick = onBack) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
             }
-            Text(
-                "فروشگاهِ سکه",
-                color = AppText,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(start = 4.dp),
-            )
+            Column(modifier = Modifier.padding(start = 4.dp).weight(1f)) {
+                Text("فروشگاه", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                Text(
+                    "با سکه‌ها، امکاناتِ بیشتری باز کن",
+                    color = AppLabel,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Box(
+                modifier = Modifier.padding(end = 12.dp).size(40.dp).clip(RoundedCornerShape(12.dp)).background(AppPrimaryPill),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.ShoppingBag, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(20.dp))
+            }
         }
     }
     // ═══ تبِ افقی، نه سرگروهِ بیشتر (`72b`) ═══
@@ -239,7 +296,11 @@ fun ShopScreen(
     // کارتِ «قلمِ هفته» **بالای نوارِ تب**: اولین چیزی که دیده می‌شود باید یک پیشنهادِ
     // مشخص باشد، نه فهرستِ دسته‌ها. `null` یعنی کاربر همه را دارد و کارت **نمی‌آید** -
     // پیامِ «همه را داری» عمداً جایگزینش نمی‌شود (تبریکِ بی‌کار، ارتفاعِ گران).
-    StarryNightCollectionCard(owned = owned, earned = Badge.COLLECTION_STARRY_NIGHT.code in earnedBadges)
+    StarryNightCollectionCard(
+        owned = owned,
+        earned = Badge.COLLECTION_STARRY_NIGHT.code in earnedBadges,
+        onView = { detail = catalog.firstOrNull { it.id == "theme:vangogh" } },
+    )
     // کارتِ «قلمِ هفته» به‌خواستِ کاربر حذف شد: «پیشنهادهای ویژه» همان کار را می‌کند و
     // دو پیشنهاد پشتِ‌هم بالای صفحه طرحِ مرجع را شلوغ می‌کرد.
     ShopTabs(tab, onlyMine, { tab = it }) { onlyMine = !onlyMine }
@@ -297,10 +358,18 @@ fun ShopScreen(
             // نبودِ قلمِ تازه یعنی **کلِ بخش پنهان** - تصمیمِ قفل‌شده. سرگروهِ خالی
             // بدتر از نبودنش است.
             if (fresh.isNotEmpty()) {
-                item { SectionHeader("تازه رسیده‌ها", Icons.Filled.NewReleases) }
-                items(fresh.chunked(2).size) { rowIndex ->
+                item {
+                    SectionHeader(
+                        "تازه رسیده‌ها",
+                        Icons.Filled.NewReleases,
+                        seeAll = if (fresh.size > FRESH_PREVIEW) ({ freshExpanded = !freshExpanded }) else null,
+                        expanded = freshExpanded,
+                    )
+                }
+                val shownFresh = if (freshExpanded) fresh else fresh.take(FRESH_PREVIEW)
+                items(shownFresh.chunked(2).size) { rowIndex ->
                     ProductCardRow(
-                        pair = fresh.chunked(2)[rowIndex],
+                        pair = shownFresh.chunked(2)[rowIndex],
                         stateOf = ::stateOf,
                         onActivate = activateItem,
                         onConfirm = { confirming = it },
@@ -844,7 +913,7 @@ private fun daysBetweenKeys(from: String, to: String): Int {
 
 /** سرگروهِ بخش‌های ویترین («پیشنهادهای ویژه»، «تازه رسیده‌ها»). */
 @Composable
-private fun SectionHeader(title: String, icon: ImageVector) {
+private fun SectionHeader(title: String, icon: ImageVector, seeAll: (() -> Unit)? = null, expanded: Boolean = false) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 6.dp, top = 6.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -852,6 +921,21 @@ private fun SectionHeader(title: String, icon: ImageVector) {
     ) {
         Icon(icon, contentDescription = null, tint = AppAccent, modifier = Modifier.size(14.dp))
         Text(title, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+        Spacer(modifier = Modifier.weight(1f))
+        // «همه را ببین» فقط وقتی می‌آید که واقعاً چیزی پنهان مانده - دکمه‌ی بی‌اثر نمی‌سازیم.
+        if (seeAll != null) {
+            Text(
+                if (expanded) "کمتر" else "همه را ببین",
+                color = AppPrimaryInk,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(AppRadius.button))
+                    .background(AppPrimaryPill)
+                    .pressScaleClickable(scale = 0.97f, onClick = seeAll)
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
+            )
+        }
     }
 }
 
@@ -948,6 +1032,21 @@ private fun ProductCard(
                 else -> CoinPrice(item.price)
             }
             Spacer(modifier = Modifier.weight(1f))
+            // دکمه‌ی «خرید» طبقِ طرح. تپ روی خودِ کارت صفحه‌ی محصول را باز می‌کند؛ این دکمه
+            // یک‌راست به دیالوگِ تاییدِ خرید می‌رود.
+            if (state == RowState.BUY) {
+                Text(
+                    "خرید",
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(AppRadius.button))
+                        .background(AppPrimary)
+                        .pressScaleClickable(scale = 0.95f) { onConfirm(item) }
+                        .padding(horizontal = 14.dp, vertical = 7.dp),
+                )
+            }
         }
     }
 }
@@ -1092,27 +1191,42 @@ private fun ShopTabs(
     ) {
         TabChip("مالِ من", onlyMine, onToggleMine)
         Spacer(modifier = Modifier.width(5.dp))
-        TabChip("همه", selected == null && !onlyMine) { onSelect(null) }
+        TabChip("همه", selected == null && !onlyMine, Icons.Filled.GridView) { onSelect(null) }
         ShopCategory.entries.forEach { category ->
             Spacer(modifier = Modifier.width(5.dp))
-            TabChip(category.tab, selected == category) { onSelect(category) }
+            TabChip(category.tab, selected == category, tabIcon(category)) { onSelect(category) }
         }
     }
 }
 
 @Composable
-private fun TabChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Text(
-        label,
-        color = if (selected) AppPrimaryInk else AppMuted,
-        fontSize = 10.5.sp,
-        fontWeight = FontWeight.Black,
+private fun TabChip(label: String, selected: Boolean, icon: ImageVector? = null, onClick: () -> Unit) {
+    val ink = if (selected) AppPrimaryInk else AppMuted
+    Row(
         modifier = Modifier
             .clip(RoundedCornerShape(AppRadius.button))
             .background(if (selected) AppPrimaryPill else AppIconFrame)
             .pressScaleClickable(scale = 0.97f, onClick = onClick)
             .padding(horizontal = 11.dp, vertical = 8.dp),
-    )
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(14.dp))
+            Spacer(modifier = Modifier.width(5.dp))
+        }
+        Text(label, color = ink, fontSize = 10.5.sp, fontWeight = FontWeight.Black)
+    }
+}
+
+/** آیکونِ هر تبِ دسته - طبقِ طرح، هر دکمه یک نشانه‌ی کوچک کنارِ نامش دارد. */
+private fun tabIcon(category: ShopCategory): ImageVector = when (category) {
+    ShopCategory.BACKDROP -> Icons.Filled.Wallpaper
+    ShopCategory.THEME -> Icons.Filled.Palette
+    ShopCategory.ICON -> Icons.Filled.Apps
+    ShopCategory.SYMBOL -> Icons.Filled.Category
+    ShopCategory.FRAME -> Icons.Filled.AccountCircle
+    ShopCategory.FONT -> Icons.Filled.TextFields
+    ShopCategory.REWARD -> Icons.Filled.CardGiftcard
 }
 
 /**
