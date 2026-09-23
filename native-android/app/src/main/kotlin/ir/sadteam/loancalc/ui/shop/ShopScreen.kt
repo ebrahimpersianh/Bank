@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.shop
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -139,7 +140,7 @@ private fun StarryNightCollectionCard(owned: Set<String>, earned: Boolean, onVie
     val collected = required.count(owned::contains)
     val gold = Color(0xFFF2C14E)
     AppCard(
-        modifier = Modifier.fillMaxWidth().padding(start = 10.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
+        modifier = Modifier.fillMaxWidth(),
         accentGradient = Brush.linearGradient(listOf(Color(0xFF1B3A7A), Color(0xFF0B1A3A))),
         contentPadding = 14.dp,
     ) {
@@ -199,6 +200,7 @@ private const val FRESH_PREVIEW = 4
 
 private enum class RowState { BUY, POOR, OWNED, ACTIVE, BADGE_LOCKED, SOON }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ShopScreen(
     onBack: () -> Unit,
@@ -297,14 +299,8 @@ fun ShopScreen(
     // کارتِ «قلمِ هفته» **بالای نوارِ تب**: اولین چیزی که دیده می‌شود باید یک پیشنهادِ
     // مشخص باشد، نه فهرستِ دسته‌ها. `null` یعنی کاربر همه را دارد و کارت **نمی‌آید** -
     // پیامِ «همه را داری» عمداً جایگزینش نمی‌شود (تبریکِ بی‌کار، ارتفاعِ گران).
-    StarryNightCollectionCard(
-        owned = owned,
-        earned = Badge.COLLECTION_STARRY_NIGHT.code in earnedBadges,
-        onView = { detail = catalog.firstOrNull { it.id == "theme:vangogh" } },
-    )
     // کارتِ «قلمِ هفته» به‌خواستِ کاربر حذف شد: «پیشنهادهای ویژه» همان کار را می‌کند و
     // دو پیشنهاد پشتِ‌هم بالای صفحه طرحِ مرجع را شلوغ می‌کرد.
-    ShopTabs(tab, onlyMine, { tab = it }) { onlyMine = !onlyMine }
     // ⚠️ هر دو **بیرونِ** `LazyColumn` حساب می‌شوند: `remember` در بدنه‌ی لیستِ تنبل
     // (بیرونِ `item {}`) مجاز نیست - بررسیِ ایستای پروژه همین را گرفت.
     val featuredTrio = remember(catalog) {
@@ -320,6 +316,22 @@ fun ShopScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         if (!embedded) item { BalanceCard(balance) }
+
+        // 🚨 بنر و نوارِ تب **داخلِ فهرست** آمدند (خواسته‌ی کاربر، ۱ مهر: «وقتی به بالا
+        // می‌کشم، بالا محو شود و آیکون‌ها دیده شوند؛ الان دو-سه تا بیشتر پیدا نیست»).
+        // بنر با فهرست بالا می‌رود؛ نوارِ تب **می‌چسبد** تا دسته‌ها همیشه در دسترس باشند.
+        item {
+            StarryNightCollectionCard(
+                owned = owned,
+                earned = Badge.COLLECTION_STARRY_NIGHT.code in earnedBadges,
+                onView = { detail = catalog.firstOrNull { it.id == "theme:vangogh" } },
+            )
+        }
+        stickyHeader {
+            Box(modifier = Modifier.fillMaxWidth().background(AppBg).padding(vertical = 4.dp)) {
+                ShopTabs(tab, onlyMine, { tab = it }) { onlyMine = !onlyMine }
+            }
+        }
 
         // قلمِ کمیاب **بالای همه‌ی تب‌ها** می‌آید، بیرونِ تب‌بندی: چیزی که مهلت دارد نباید
         // پشتِ یک تپ پنهان شود (`72b`).
@@ -1187,7 +1199,7 @@ private fun ShopTabs(
         modifier = Modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState())
-            .padding(start = 10.dp, end = 16.dp, top = 2.dp),
+            .padding(top = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TabChip("مالِ من", onlyMine, Icons.Filled.Inventory2, onClick = onToggleMine)

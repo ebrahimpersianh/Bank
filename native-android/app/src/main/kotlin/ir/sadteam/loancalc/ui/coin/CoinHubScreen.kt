@@ -1,5 +1,23 @@
 package ir.sadteam.loancalc.ui.coin
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.layout
+import kotlin.math.roundToInt
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -87,39 +105,77 @@ fun CoinHubScreen(
             isDark = LocalAppColors.current.isDark,
             modifier = Modifier.fillMaxSize(),
         )
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
+    // 🚨 **سربرگِ جمع‌شونده** (خواسته‌ی کاربر، ۱ مهر: «وقتی به بالا می‌کشم، بالا محو شود و
+    // همه‌ی آیکون‌ها دیده شوند»). اسکرولِ فهرستِ پایین اول سربرگ را بالا می‌بَرد و محو
+    // می‌کند، بعد خودِ فهرست می‌رود؛ برعکسش هم با کشیدن به پایین برمی‌گردد.
+    var headerPx by remember { mutableFloatStateOf(0f) }
+    var headerOffset by remember { mutableFloatStateOf(0f) }
+    val collapse = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y >= 0f) return Offset.Zero
+                val next = (headerOffset + available.y).coerceIn(-headerPx, 0f)
+                val used = next - headerOffset
+                headerOffset = next
+                return Offset(0f, used)
             }
-            Text(
-                "سکه",
-                color = AppText,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(start = 4.dp),
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (available.y <= 0f) return Offset.Zero
+                val next = (headerOffset + available.y).coerceIn(-headerPx, 0f)
+                val used = next - headerOffset
+                headerOffset = next
+                return Offset(0f, used)
+            }
+        }
+    }
+    Column(modifier = Modifier.fillMaxSize().nestedScroll(collapse)) {
+        Column(
+            modifier = Modifier
+                .clipToBounds()
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    headerPx = placeable.height.toFloat()
+                    val shown = (placeable.height + headerOffset).roundToInt().coerceAtLeast(0)
+                    layout(placeable.width, shown) { placeable.place(0, headerOffset.roundToInt()) }
+                }
+                .graphicsLayer { alpha = if (headerPx > 0f) 1f + headerOffset / headerPx else 1f },
+        ) {
+            // ═══ سربرگ طبقِ طرحِ ChatGPT: عنوان و توضیح راست، کارتِ موجودیِ جمع‌وجور چپ ═══
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimaryPill),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.ShoppingBag, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(22.dp))
+                }
+                Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                    Text(if (onWallet) "کیفِ سکه" else "فروشگاه", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                    Text(
+                        "با سکه‌ها، امکاناتِ بیشتری باز کن",
+                        color = AppMuted,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                CoinHero(
+                    coins = coins,
+                    activeDays = activeDays,
+                    // کلیدِ روز **از خودِ همان تابعی** می‌آید که دفتر با آن می‌نویسد
+                    // (`ActiveStreak.dateKey`) - قالبِ دستی یعنی دو تعریف از «امروز».
+                    earnedToday = earnedToday(events, ActiveStreak.dateKey(JalaliCalendar.today())),
+                )
+            }
+
+            SegmentedToggle(
+                options = listOf("فروشگاه", "کیف"),
+                selectedIndex = if (onWallet) 1 else 0,
+                onSelect = { onWallet = it == 1 },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
             )
         }
-
-        CoinHero(
-            coins = coins,
-            activeDays = activeDays,
-            // کلیدِ روز همان قالبی است که خودِ دفتر می‌نویسد (جلالی)، نه ساعتِ محلی -
-            // وگرنه در نیمه‌شب دو تعریفِ متفاوت از «امروز» داریم.
-            // کلیدِ روز **از خودِ همان تابعی** می‌آید که دفتر با آن می‌نویسد
-            // (`ActiveStreak.dateKey`) - قالبِ دستی یعنی دو تعریف از «امروز».
-            earnedToday = earnedToday(events, ActiveStreak.dateKey(JalaliCalendar.today())),
-        )
-
-        SegmentedToggle(
-            options = listOf("فروشگاه", "کیف"),
-            selectedIndex = if (onWallet) 1 else 0,
-            onSelect = { onWallet = it == 1 },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
-        )
 
         Box(modifier = Modifier.fillMaxSize()) {
             if (onWallet) {
@@ -139,42 +195,34 @@ fun CoinHubScreen(
 private fun earnedToday(events: List<CoinEventEntity>, todayKey: String): Int =
     events.filter { it.amount > 0 && it.dateKey == todayKey }.sumOf { it.amount }
 
-/** هیرویِ مشترک: موجودی + سقفِ امروز + زنجیره. */
+/**
+ * کارتِ موجودیِ **جمع‌وجور** (طرحِ ChatGPT): سکه، عدد، و قرصِ سبزِ «امروز +X سکه».
+ * سقفِ روزانه و زنجیره داخلِ همان قرص می‌مانند تا کاربر بفهمد چرا ثبتِ بعدی سکه نداد.
+ */
 @Composable
 private fun CoinHero(coins: Int, activeDays: Int, earnedToday: Int) {
-    AppCard(modifier = Modifier.padding(horizontal = 14.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            CoinIcon(size = 44.dp)
-            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+    AppCard(modifier = Modifier.width(170.dp), contentPadding = 10.dp, horizontalPadding = 10.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        toFa(coins),
-                        color = AppText,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Black,
-                    )
-                    Text(
-                        "سکه",
-                        color = AppMuted,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(start = 6.dp, bottom = 4.dp),
-                    )
+                    Text(toFa(coins), color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black, maxLines = 1)
+                    Text("سکه", color = AppMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp, bottom = 2.dp))
                 }
-                // سقفِ روزانه **پیدا** می‌شود، وگرنه کاربر نمی‌فهمد چرا ثبتِ چهارمش سکه
-                // نداد و باگ گزارش می‌کند (همان بندِ `remainingDailyCap`).
                 Text(
-                    "امروز ${toFa(earnedToday)} از ${toFa(CoinReason.DAILY_COIN_CAP)}" +
-                        if (activeDays > 0) " · ${toFa(activeDays)} روزِ پیاپی" else "",
-                    color = AppMuted,
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 2.dp),
+                    "امروز +${toFa(earnedToday)} از ${toFa(CoinReason.DAILY_COIN_CAP)}" +
+                        if (activeDays > 0) " · ${toFa(activeDays)} روز" else "",
+                    color = Color(0xFF0B8C57),
+                    fontSize = 8.5.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .padding(top = 3.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(Color(0xFF0EA968).copy(alpha = 0.14f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }
+            CoinIcon(size = 34.dp, modifier = Modifier.padding(start = 6.dp))
         }
     }
 }
