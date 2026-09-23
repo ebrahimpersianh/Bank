@@ -1,5 +1,14 @@
 package ir.sadteam.loancalc.ui.components
 
+import kotlin.math.sin
+import kotlin.math.cos
+import kotlin.math.PI
+import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.foundation.background
@@ -114,6 +123,14 @@ fun AppHeroCard(
         start = Offset.Zero,
         end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )
+    // 🌊 حرکتِ موج (خواسته‌ی کاربر: «خیلی نرم و شیک»): یک فازِ ۰..۲π در ۱۴ ثانیه، خطی و بی‌پایان.
+    // فقط **رسم** را تازه می‌کند نه چیدمان را، پس هزینه‌اش ناچیز است.
+    val wavePhase by rememberInfiniteTransition(label = "heroWaves").animateFloat(
+        initialValue = 0f,
+        targetValue = (2 * PI).toFloat(),
+        animationSpec = infiniteRepeatable(tween(14_000, easing = LinearEasing)),
+        label = "heroWavePhase",
+    )
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -132,7 +149,7 @@ fun AppHeroCard(
             // هر تمِ خریدنیِ بعدی، رنگش از خودِ زمینه می‌آید. یک هگزِ ثابت روی نیمی از
             // تم‌ها لکه می‌شد.
             .drawBehind {
-                drawHeroWaves()
+                drawHeroWaves(wavePhase)
                 drawHeroLeaves(bothSides = true)
                 if (glow != null) {
                     // از لبه‌ی **راست** (آغازِ راست‌به‌چپ) تا ۴۵٪ عرض محو می‌شود.
@@ -203,28 +220,44 @@ fun DrawScope.drawHeroLeaves(bothSides: Boolean = false) {
  * موج‌های نرمِ پس‌زمینه (طرحِ ChatGPT): دو دایره‌ی بزرگِ سفیدِ خیلی کم‌رنگ که از گوشه‌ی
  * بالا-چپ بیرون زده‌اند + یک هاله‌ی روشنِ ملایم. مثلِ برگ‌ها سفیدِ شفاف است تا روی هر تمی بنشیند.
  */
-fun DrawScope.drawHeroWaves() {
+fun DrawScope.drawHeroWaves(phase: Float = 0f) {
     val w = size.width
     val h = size.height
+    // هر لایه با فاز و دامنه‌ی خودش آرام شناور است - چند درصدِ ارتفاع، نه بیشتر، تا حس شود نه دیده.
+    val a = h * 0.06f
+    val glow = Offset(w * 0.15f + a * cos(phase), a * sin(phase))
     drawCircle(
         brush = Brush.radialGradient(
             listOf(Color.White.copy(alpha = 0.16f), Color.Transparent),
-            center = Offset(w * 0.15f, 0f),
+            center = glow,
             radius = w * 0.7f,
         ),
         radius = w * 0.7f,
-        center = Offset(w * 0.15f, 0f),
+        center = glow,
     )
     drawCircle(
         color = Color.White.copy(alpha = 0.07f),
-        radius = h * 0.95f,
-        center = Offset(-h * 0.25f, -h * 0.15f),
+        radius = h * (0.95f + 0.03f * sin(phase * 2)),
+        center = Offset(-h * 0.25f + a * sin(phase + 1f), -h * 0.15f + a * cos(phase + 1f)),
     )
     drawCircle(
         color = Color.White.copy(alpha = 0.05f),
-        radius = h * 1.35f,
-        center = Offset(-h * 0.45f, h * 0.25f),
+        radius = h * (1.35f + 0.04f * cos(phase)),
+        center = Offset(-h * 0.45f + a * 1.4f * cos(phase + 2.5f), h * 0.25f + a * sin(phase + 2.5f)),
     )
+    // موجِ سینوسیِ پایینِ کارت: یک نوارِ سفیدِ خیلی کم‌رنگ که آرام به پهلو می‌لغزد.
+    val wave = Path().apply {
+        moveTo(0f, h)
+        val steps = 24
+        for (i in 0..steps) {
+            val x = w * i / steps
+            val y = h * 0.78f + h * 0.05f * sin(x / w * 2f * PI.toFloat() + phase)
+            lineTo(x, y)
+        }
+        lineTo(w, h)
+        close()
+    }
+    drawPath(wave, Color.White.copy(alpha = 0.05f))
     // کمی تیرگی در پایین-چپ تا عددهای سفیدِ پایینِ کارت همیشه کنتراست داشته باشند.
     drawRect(
         brush = Brush.verticalGradient(
