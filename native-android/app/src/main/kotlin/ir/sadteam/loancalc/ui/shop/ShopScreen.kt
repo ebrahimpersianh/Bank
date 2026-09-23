@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Apps
@@ -1189,7 +1190,7 @@ private fun ShopTabs(
             .padding(start = 10.dp, end = 16.dp, top = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TabChip("مالِ من", onlyMine, onToggleMine)
+        TabChip("مالِ من", onlyMine, Icons.Filled.Inventory2, onClick = onToggleMine)
         Spacer(modifier = Modifier.width(5.dp))
         TabChip("همه", selected == null && !onlyMine, Icons.Filled.GridView) { onSelect(null) }
         ShopCategory.entries.forEach { category ->
