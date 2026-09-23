@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -111,16 +112,27 @@ enum class SettingsTone {
 /** رنگِ زیرنویسِ وضعیت. اگه داده‌ای نیست زیرنویس **حذف** می‌شه - «نامشخص» نوشته نمی‌شه. */
 enum class StatusTone { HEALTHY, NEUTRAL, BROKEN }
 
-/** برچسبِ گروه - ۱۱/۹۰۰، بی‌کارت. */
+/** برچسبِ گروه - خطِ رنگیِ کوچکِ کنارش و زیرنویسِ اختیاری (بسته‌ی تنظیماتِ ChatGPT). */
 @Composable
-fun SettingsGroupLabel(text: String) {
-    Text(
-        text,
-        color = AppLabel,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Black,
-        modifier = Modifier.padding(end = 4.dp, top = AppSpacing.betweenCards, bottom = 8.dp),
-    )
+fun SettingsGroupLabel(text: String, subtitle: String? = null, accent: Color = AppPrimary) {
+    Row(
+        modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = AppSpacing.betweenCards + 4.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .height(if (subtitle != null) 26.dp else 14.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(accent),
+        )
+        Column(modifier = Modifier.padding(start = 8.dp)) {
+            Text(text, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+            if (subtitle != null) {
+                Text(subtitle, color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
 }
 
 /**
@@ -129,10 +141,11 @@ fun SettingsGroupLabel(text: String) {
  */
 @Composable
 fun SettingsGroup(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    val shape = RoundedCornerShape(AppRadius.card)
+    val shape = RoundedCornerShape(22.dp)
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .shadow(6.dp, shape, ambientColor = AppPrimary.copy(alpha = 0.10f), spotColor = AppPrimary.copy(alpha = 0.10f))
             .clip(shape)
             .background(AppSurface)
             .border(AppStroke.card, AppLine, shape),
@@ -178,22 +191,22 @@ fun SettingsRowItem(
         modifier = Modifier
             .fillMaxWidth()
             .then(if (rowClick != null) Modifier.pressScaleClickable(scale = 0.99f, onClick = rowClick) else Modifier)
-            .defaultMinSize(minHeight = AppSpacing.minTouchTarget)
-            .padding(horizontal = 14.dp, vertical = 13.dp),
-        horizontalArrangement = Arrangement.spacedBy(11.dp),
+            .defaultMinSize(minHeight = 68.dp)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
-                .size(32.dp)
-                .clip(RoundedCornerShape(AppRadius.icon))
+                .size(42.dp)
+                .clip(RoundedCornerShape(14.dp))
                 .background(tone.fill),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = tone.ink, modifier = Modifier.size(15.dp))
+            Icon(icon, contentDescription = null, tint = tone.ink, modifier = Modifier.size(21.dp))
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold)
+            Text(title, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
             if (status != null) {
                 Text(
                     status,
@@ -202,22 +215,27 @@ fun SettingsRowItem(
                         StatusTone.NEUTRAL -> AppMuted
                         StatusTone.BROKEN -> AppDangerInk
                     },
-                    fontSize = 9.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 2.dp),
+                    modifier = Modifier.padding(top = 3.dp),
                 )
             }
         }
         when {
             checked != null && onCheckedChange != null -> AppSwitch(checked = checked, onCheckedChange = onCheckedChange)
             value != null -> Text(value, color = AppLabel, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-            else -> Icon(
-                // تو RTL فلشِ «برو تو» رو به چپه - `KeyboardArrowLeft` خودش آینه نمی‌شه.
-                Icons.Filled.KeyboardArrowLeft,
-                contentDescription = null,
-                tint = AppLabel,
-                modifier = Modifier.size(13.dp),
-            )
+            else -> Box(
+                modifier = Modifier.size(30.dp).clip(CircleShape).background(AppSurface2),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    // تو RTL فلشِ «برو تو» رو به چپه - `KeyboardArrowLeft` خودش آینه نمی‌شه.
+                    Icons.Filled.KeyboardArrowLeft,
+                    contentDescription = null,
+                    tint = AppMuted,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
         }
     }
 }

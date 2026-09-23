@@ -1,5 +1,13 @@
 package ir.sadteam.loancalc.ui.settings
 
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import ir.sadteam.loancalc.ui.theme.AppPurple
+import ir.sadteam.loancalc.ui.theme.AppGoldInk
+import ir.sadteam.loancalc.ui.components.AppHeroCard
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -380,106 +388,155 @@ private fun SettingsMainContent(
             .verticalScroll(rememberScrollState())
             .navigationBarsPadding(),
     ) {
+        // ── سربرگ (بسته‌ی تنظیماتِ ChatGPT): برگشتِ گرد، عنوان و زیرنویس، چرخ‌دنده‌ی کوچک ──
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(
-                    if (subscribed) {
-                        Modifier.background(
-                            Brush.horizontalGradient(listOf(AppAccent.copy(alpha = 0.28f), Color.Transparent)),
-                        )
-                    } else {
-                        Modifier
-                    },
-                )
-                .padding(horizontal = 10.dp, vertical = 8.dp),
+                .padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
-            }
             Box(
                 modifier = Modifier
-                    .padding(start = 4.dp)
-                    .size(40.dp)
-                    .background(AppSurface2, CircleShape)
-                    .border(if (subscribed) 3.dp else 1.dp, if (subscribed) AppAccent else AppLine, CircleShape),
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(AppSurface)
+                    .border(1.dp, AppLine, RoundedCornerShape(14.dp))
+                    .pressScaleClickable(onClick = onBack),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    Icons.Filled.Person,
-                    contentDescription = null,
-                    tint = if (subscribed) AppAccent else AppMuted,
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
+            }
+            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                Text("تنظیمات", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                Text(
+                    "مدیریت حساب و شخصی‌سازی برنامه",
+                    color = AppMuted,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
                 )
             }
-            // برچسبِ «نسخه اشتراکی/عادی» زیرِ عنوان به‌خواستِ صریحِ کاربر حذف شد - اضافه بود، چون
-            // همون اطلاعات (با جزئیاتِ بیشتر) تو ردیفِ «حساب کاربری» هست. حلقه‌ی طلاییِ دورِ آیکونِ
-            // بالا عمداً موند: تنها نشانه‌ی بصریِ باقی‌مونده‌ی وضعیتِ اشتراک تو خودِ هدره.
-            Text("تنظیمات", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 8.dp))
+            Box(
+                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimaryPill),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Settings, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(24.dp))
+            }
         }
 
         Column(modifier = Modifier.padding(horizontal = 14.dp)) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = { Text("جستجو تو تنظیمات") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            // جستجوی واقعیِ همین صفحه - فقط شکلش قرصِ گرد شد.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(AppSurface)
+                    .border(1.dp, AppLine, RoundedCornerShape(20.dp))
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                    if (searchQuery.isEmpty()) {
+                        Text("جستجو در تنظیمات…", color = AppLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                    BasicTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        singleLine = true,
+                        textStyle = TextStyle(color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold),
+                        cursorBrush = SolidColor(AppPrimary),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                if (searchQuery.isNotEmpty()) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = "پاک‌کردن",
+                        tint = AppMuted,
+                        modifier = Modifier.size(20.dp).clip(CircleShape).pressScaleClickable { searchQuery = "" },
+                    )
+                } else {
+                    Icon(Icons.Filled.Search, contentDescription = null, tint = AppMuted, modifier = Modifier.size(22.dp))
+                }
+            }
 
-            // ── ردیفِ پروفایل (فریمِ `27d`) ────────────────────────────────────────
+            // ── کارتِ حساب: همان کارتِ رنگیِ بالای بقیه‌ی صفحه‌ها (با تم عوض می‌شود) ──────
+            // آدمک و قاب **همان** `FramedAvatar`ِ هدرِ خانه است، از همان `AvatarViewModel`؛
+            // پس هر تغییرِ آدمک/قاب/رنگِ قاب همان لحظه این‌جا هم دیده می‌شود.
             if (searchQuery.isBlank()) {
-                AppCard(
+                val avatarViewModel: AvatarViewModel = hiltViewModel()
+                val avatar by avatarViewModel.avatar.collectAsState()
+                val avatarFrame by avatarViewModel.frame.collectAsState()
+                AppHeroCard(
                     modifier = Modifier
-                        .padding(top = 10.dp)
+                        .padding(top = 14.dp)
                         .pressScaleClickable(scale = 0.99f) { onOpen(SettingsRoute.ACCOUNT) },
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(AppPrimaryPill)
-                                .border(2.dp, AppPrimary, CircleShape),
+                            modifier = Modifier.size(64.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.18f)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
-                                Icons.Filled.Person,
-                                contentDescription = null,
-                                tint = AppPrimaryInk,
-                                modifier = Modifier.size(30.dp),
-                            )
+                            FramedAvatar(avatar, size = 52.dp, frame = avatarFrame)
                         }
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                if (gateState == GateState.LOGGED_IN) "حساب کاربری" else "وارد نشدی",
-                                color = AppText,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Black,
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    if (gateState == GateState.LOGGED_IN) "حساب کاربری" else "وارد نشدی",
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Black,
+                                )
+                                // حلقه‌ی طلاییِ قبلیِ سربرگ تنها نشانه‌ی اشتراک بود؛ حالا این‌جاست.
+                                if (subscribed) {
+                                    Text(
+                                        "اشتراکی",
+                                        color = AppGoldInk,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Black,
+                                        modifier = Modifier
+                                            .padding(start = 8.dp)
+                                            .clip(RoundedCornerShape(999.dp))
+                                            .background(AppAccent)
+                                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                                    )
+                                }
+                            }
                             if (gateState == GateState.LOGGED_IN && phone != null) {
                                 // شماره ذاتاً چپ‌به‌راسته ولی جای خودش راست‌چین می‌مونه.
                                 Ltr {
                                     Text(
                                         toFa(phone ?: ""),
-                                        color = AppMuted,
-                                        fontSize = 9.5.sp,
+                                        color = Color.White.copy(alpha = 0.92f),
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(top = 2.dp),
+                                        modifier = Modifier.padding(top = 3.dp),
                                     )
                                 }
                             }
+                            Text(
+                                "ویرایشِ اطلاعات، اشتراک و خروج",
+                                color = Color.White.copy(alpha = 0.75f),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 3.dp),
+                            )
                         }
-                        Icon(
-                            Icons.Filled.KeyboardArrowLeft,
-                            contentDescription = null,
-                            tint = AppLabel,
-                            modifier = Modifier.size(13.dp),
-                        )
+                        Box(
+                            modifier = Modifier.size(34.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.20f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Filled.KeyboardArrowLeft,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
                     }
                 }
             } else if (matches(SettingsRoute.ACCOUNT)) {
@@ -507,7 +564,7 @@ private fun SettingsMainContent(
                 )
             }
 
-            SettingsSectionLabel("ثبتِ خودکار")
+            SettingsSectionLabel("ثبتِ خودکار", "مدیریتِ ورود و ثبتِ اطلاعات")
             SettingsGroup {
                 if (matches(SettingsRoute.SMS)) {
                     SettingsRow(
@@ -534,7 +591,7 @@ private fun SettingsMainContent(
                 }
             }
 
-            SettingsSectionLabel("برنامه")
+            SettingsSectionLabel("برنامه", "شخصی‌سازی و ظاهرِ برنامه", AppPurple)
             SettingsGroup {
                 if (matches(SettingsRoute.REMINDERS)) {
                     SettingsRow(
@@ -632,7 +689,7 @@ private fun SettingsRow(
         title = route.title,
         icon = icon,
         tone = tone,
-        status = status ?: value,
+        status = status ?: value ?: routeHint(route),
         statusTone = statusTone,
         onClick = onClick,
     )
@@ -661,7 +718,20 @@ private fun SettingsSwitchRow(
 }
 
 @Composable
-private fun SettingsSectionLabel(text: String) = SettingsGroupLabel(text)
+private fun SettingsSectionLabel(text: String, subtitle: String? = null, accent: Color = AppPrimary) =
+    SettingsGroupLabel(text, subtitle, accent)
+
+/** زیرنویسِ ردیف‌های ریشه - فقط کاری را که همان زیرصفحه واقعاً دارد می‌گوید. */
+private fun routeHint(route: SettingsRoute): String? = when (route) {
+    SettingsRoute.SMS -> "خواندن و ثبتِ خودکارِ پیامک‌های بانکی"
+    SettingsRoute.BACKGROUND -> "برای ثبتِ خودکار و به‌روز ماندنِ اطلاعات"
+    SettingsRoute.DATA -> "پشتیبان‌گیری، بازیابی و پاک‌سازیِ داده‌ها"
+    SettingsRoute.REMINDERS -> "یادآوریِ سررسید و ثبتِ روزانه"
+    SettingsRoute.APPEARANCE -> "حالتِ روشن و تیره، اندازه‌ی متن و انیمیشن"
+    SettingsRoute.SECURITY -> "قفل با رمزِ عددی و اثرِ انگشت"
+    SettingsRoute.TOOLS -> "تقویمِ مالی، آمار و گزارش"
+    else -> null
+}
 
 /** سرآیندِ مشترکِ همه‌ی زیرصفحه‌های تنظیمات (عنوان وسط + ضربدرِ بستن) - هم‌شکلِ اپِ مرجع. */
 @Composable
