@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.asset
 
+import ir.sadteam.loancalc.ui.components.HeroChart
+import ir.sadteam.loancalc.ui.components.HeroChartStyle
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -771,18 +773,14 @@ private fun TotalWealthHero(
             // نمودارِ روندِ نقدی - فقط وقتی داده‌ی واقعی هست. در حالتِ خصوصی هم می‌مانَد:
             // شکلِ روند مبلغ لو نمی‌دهد، و همان چیزی است که کارت برایش ساخته شده.
             if (trend.size >= 2 && trend.any { it != trend.first() }) {
-                TrendLineChart(
+                HeroChart(
                     values = trend,
-                    // خواسته‌ی کاربر: دو روز داده = **دو نقطه در جای واقعی‌شان** روی محورِ ۳۰روزه
-                    // (سمتِ راست)، نه یک خطِ کشیده از این سر تا آن سر.
+                    // دو روز داده = دو نقطه در جای واقعی‌شان روی محورِ ۳۰روزه (خواسته‌ی کاربر).
                     slots = 30,
-                    lineColor = Color.White,
-                    // پررنگ‌تر از ۰٫۲۲ی قبلی - خواسته‌ی کاربر: «زیرِ این خط انگار پر باشد».
-                    fillTop = Color.White.copy(alpha = 0.38f),
-                    dotColor = Color.White,
+                    natural = HeroChartStyle.LINE,
+                    currentIndex = trend.lastIndex,
+                    height = 56.dp,
                     modifier = Modifier.padding(top = 10.dp),
-                    // برچسبِ هر نقطه = «N روز پیش»/«امروز». همین است که لمس را معنادار
-                    // می‌کند؛ بی آن `TrendLineChart` خودش را غیرِتعاملی می‌گیرد.
                     labels = trend.indices.map { index ->
                         val ago = trend.lastIndex - index
                         if (ago == 0) "امروز" else "${ago.toFa()} روز پیش"

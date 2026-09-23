@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import ir.sadteam.loancalc.ui.components.HeroChart
+import ir.sadteam.loancalc.ui.components.HeroChartStyle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Today
@@ -656,19 +658,13 @@ private fun DailyAllowanceHero(
             }
         }
         if (monthDaily.isNotEmpty()) {
-            InteractiveBars(
+            HeroChart(
                 values = monthDaily,
                 labels = monthDaily.indices.map { i -> if (i + 1 == dayOfMonth) "امروز" else "${toFa(i + 1)} این ماه" },
                 valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
                 currentIndex = (dayOfMonth - 1).coerceIn(0, monthDaily.lastIndex),
-                barColor = Color.White.copy(alpha = 0.28f),
-                currentBarColor = Color.White,
-                tooltipBackground = Color.Black.copy(alpha = 0.35f),
-                tooltipTitleColor = Color.White.copy(alpha = 0.75f),
-                tooltipValueColor = Color.White,
+                natural = HeroChartStyle.BARS,
                 modifier = Modifier.padding(top = 14.dp),
-                height = 44.dp,
-                spacing = 1.5.dp,
             )
         }
         Row(

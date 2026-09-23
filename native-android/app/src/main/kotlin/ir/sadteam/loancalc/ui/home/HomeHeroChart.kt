@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.home
 
+import ir.sadteam.loancalc.ui.components.HeroChart
+import ir.sadteam.loancalc.ui.components.HeroChartStyle
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.runtime.CompositionLocalProvider
@@ -55,16 +57,12 @@ fun HomeSevenDayChart(
         )
         return
     }
-    InteractiveBars(
+    HeroChart(
         values = values,
         labels = labels,
         valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
         currentIndex = values.lastIndex,
-        barColor = Color.White.copy(alpha = 0.32f),
-        currentBarColor = Color.White,
-        tooltipBackground = Color.Black.copy(alpha = 0.45f),
-        tooltipTitleColor = Color.White.copy(alpha = 0.75f),
-        tooltipValueColor = Color.White,
+        natural = HeroChartStyle.BARS,
         modifier = modifier,
         // 🚨 **۲۶ نه ۳۴** (بازخوردِ ۳۱ شهریور با طرحِ مرجع): نمودار حالا **کنارِ**
         // جفتِ درآمد/خرج می‌نشیند نه زیرِ کلِ کارت، پس عرضش کمتر است و میله‌ی

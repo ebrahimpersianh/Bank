@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import ir.sadteam.loancalc.ui.components.HeroChart
+import ir.sadteam.loancalc.ui.components.HeroChartStyle
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.runtime.CompositionLocalProvider
@@ -706,20 +708,14 @@ private fun PeriodSpendHero(
             }
         }
         if (bars.any { it > 0.0 }) {
-            InteractiveBars(
+            HeroChart(
                 values = bars,
                 labels = barLabels,
                 valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
                 currentIndex = currentBarIndex,
-                barColor = Color.White.copy(alpha = 0.30f),
-                currentBarColor = Color.White,
+                natural = HeroChartStyle.BARS,
                 tooltipBackground = PurpleDeep,
-                tooltipTitleColor = Color.White.copy(alpha = 0.75f),
-                tooltipValueColor = Color.White,
                 modifier = Modifier.padding(top = 12.dp),
-                // ۳۱ میله در عرضِ یک کارت با فاصله‌ی ۳ جا نمی‌شود؛ فاصله با تعدادِ
-                // میله‌ها کم می‌شود تا هر دو نما تمیز بمانند.
-                spacing = if (bars.size > 12) 1.5.dp else 3.dp,
             )
             // هم‌جهتِ میله‌ها (فیزیکی چپ‌به‌راست): اولِ دوره چپ، امروز راست.
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
