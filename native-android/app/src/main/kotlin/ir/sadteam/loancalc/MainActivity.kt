@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc
 
+import ir.sadteam.loancalc.ui.theme.AppLine
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.animation.animateColorAsState
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -953,44 +956,27 @@ private fun LoanCalcApp(
                     enter = slideInVertically(tween(220)) { it } + expandVertically(tween(220)),
                     exit = slideOutVertically(tween(180)) { it } + shrinkVertically(tween(180)),
                 ) {
-                    // ⚠️ **بازطراحیِ سبکِ «جیبک»**: نوارِ «شناورِ شیشه‌ای»ِ دورِ قبل (کارتِ گردگوشه‌ی
-                    // جدا از لبه با گرادیانِ نوری و سایه‌ی تارِ سبز + نشانگرِ قرصیِ لغزنده) کاملاً
-                    // حذف شد. طبقِ بخشِ «۹ · نویگیشنِ پایین»ِ سیستمِ طراحی نوار حالا:
-                    // - به لبه‌ی پایین **چسبیده**، سطحِ **مات** (`#FFFFFF` / `#1B2530`)
-                    // - فقط یه **خطِ بالایی ۲ پیکسلی** داره (`#EEF3F0` / `#232E38`) - نه سایه، نه گرادیان
-                    // - **هیچ نشانگرِ قرصی/لغزنده‌ای نداره** - تبِ فعال فقط با رنگ، ضخامتِ آیکون و
-                    //   وزنِ ۹۰۰ِ برچسب مشخص می‌شه
-                    //
-                    // ⚠️ توکن‌های رنگ `@Composable`ان و داخلِ `drawBehind` (که `DrawScope`ه) صدا
-                    // زده نمی‌شن - قاعده‌ی ماندگارِ پروژه. برای همین اینجا تو یه `val` محلی خونده می‌شه.
-                    val navTopLine = AppLineRow
+                    // 🎨 **نوارِ شناورِ گردگوشه** (طرحِ ChatGPT، ۲ مهر): سطحِ سفید با حاشیه‌ی ظریف و
+                    // سایه‌ی نرم، با فاصله از لبه‌ها؛ عرض همیشه `fillMaxWidth` منهای حاشیه، پس در
+                    // هیچ عرضی بیرون نمی‌زند. پنج خانه با وزنِ برابر.
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(AppSurface)
-                            .drawBehind {
-                                // خطِ بالاییِ ۲ پیکسلی. `drawBehind` (نه `border`) چون فقط یه ضلعه.
-                                val h = 2.dp.toPx()
-                                drawRect(
-                                    color = navTopLine,
-                                    topLeft = androidx.compose.ui.geometry.Offset(0f, 0f),
-                                    size = androidx.compose.ui.geometry.Size(size.width, h),
-                                )
-                            }
-                            .navigationBarsPadding(),
+                            .navigationBarsPadding()
+                            .padding(start = 12.dp, end = 12.dp, bottom = 6.dp),
                     ) {
-                        // دستگیره‌ی کشوی میان‌بُر - نوارِ ۲۶ پیکسلیِ بالای تب‌ها. کشیدنِ به بالا
-                        // یا تپِ ساده بازش می‌کنه (قاعده‌ی `31c`).
+                        // دستگیره‌ی کشوی میان‌بُر - کشیدنِ به بالا یا تپ بازش می‌کند (`31c`).
                         ShortcutDrawerHandle(onOpen = { shortcutDrawerOpen = true })
-                        // 🚨 **هیچ متنی زیرِ نوار نمی‌نشیند** (خواسته‌ی صریحِ کاربر، ۳۱ شهریور:
-                        // «نمی‌خوام اصلا نوشته باشه رو اون ۵ تب پایین»). راهنمای سه‌باره‌ی
-                        // بندِ ۲ی بخشِ ۸۱ از این‌جا برداشته شد و جایش **قدمِ تورِ اولین ورود**
-                        // است؛ خانه‌ی دائمی‌اش هم داخلِ کشوی میان‌بر می‌مانَد.
+                        val navShape = RoundedCornerShape(28.dp)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(start = 6.dp, end = 6.dp, bottom = 11.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                                .shadow(12.dp, navShape, ambientColor = AppPrimary.copy(alpha = 0.25f), spotColor = AppPrimary.copy(alpha = 0.25f))
+                                .clip(navShape)
+                                .background(AppSurface)
+                                .border(1.dp, AppLine, navShape)
+                                .padding(horizontal = 6.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                         // **بخشِ ۴۱**: دیگه `BottomTab.entries` نیست - چیدمان از [NavSlotsViewModel]
                         // میاد. اسلاتِ ۰ همیشه «خانه»ست (قفلِ `41c`، تو `NavDestination.sanitize`).
@@ -1752,65 +1738,64 @@ private fun RowScope.BottomNavItem(
     //
     // ⚠️ قرصِ پشتِ آیکون یه دورِ اشتباهاً حذف شده بود (فرضِ غلط: «طرح نشانگر نداره»). خودِ طرح
     // داره - فقط به‌جای نشانگرِ **لغزنده**ی دورِ قبل، یه قرصِ ثابتِ پشتِ آیکونِ همون تبه.
-    val ink = if (selected) AppPrimaryInk else AppLabel
-    // پورت easing فنری تب فعال تو وب (cubic-bezier(.34,1.56,.64,1) رو .nav-item .ic svg).
-    val iconScale by animateFloatAsState(
-        targetValue = if (selected) 1.08f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-        label = "navIconScale",
-    )
+    // انتقالِ نرمِ ۲۲۰ms فقط روی رنگ‌ها و مقیاسِ خیلی جزئی - هیچ اندازه‌ای عوض نمی‌شود، پس
+    // نوار هنگامِ جابه‌جایی نمی‌لرزد.
+    val ink by animateColorAsState(if (selected) AppPrimaryInk else AppLabel, tween(220), label = "navInk")
+    val pill by animateColorAsState(if (selected) AppPrimaryPill else Color.Transparent, tween(220), label = "navPill")
+    val iconScale by animateFloatAsState(if (selected) 1.06f else 1f, tween(220), label = "navIconScale")
+    val dotAlpha by animateFloatAsState(if (selected) 1f else 0f, tween(220), label = "navDot")
     val buzz = rememberBuzz()
     Column(
         modifier = Modifier
             .weight(1f)
+            .padding(horizontal = 3.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(pill)
             // **بخشِ ۴۱**: فشارِ طولانی رو هر خانه‌ی نوار، ویرایشگرِ چیدمان رو باز می‌کنه.
-            // ⚠️ این تو سندِ طراح **نیست** - طرح فقط دکمه‌ی «خودم می‌چینم»ِ کارتِ `41a` رو
-            // به‌عنوانِ درِ ورودی داره، ولی اون کارت تا ۲۱ روز داده جمع نشه اصلاً نمیاد. بدونِ
-            // این، قابلیت تو سه هفته‌ی اولِ نصب هیچ راهِ دسترسی‌ای نداشت.
             .combinedClickable(
                 onClick = { buzz(); onClick() },
                 onLongClick = { buzz(); onLongClick() },
             )
-            .padding(vertical = 2.dp)
-            // مختصاتِ ریشه‌ی خودِ تب رو گزارش می‌ده - برای AppTourOverlay که دقیقاً همین محدوده رو
-            // نورانی می‌کنه، نه یه مختصاتِ حدسی/هاردکد.
+            .padding(top = 8.dp, bottom = 5.dp)
+            // مختصاتِ خودِ تب برای AppTourOverlay.
             .onGloballyPositioned { coordinates -> onPositioned(coordinates.boundsInRoot()) },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            modifier = Modifier
-                .size(width = 42.dp, height = 28.dp)
-                .clip(RoundedCornerShape(11.dp))
-                .background(if (selected) AppPrimaryPill else Color.Transparent),
-            contentAlignment = Alignment.Center,
-        ) {
-            // **بخشِ ۴۱**: وقتی کاربر مقصدِ این خانه رو عوض می‌کنه، آیکون با «۱۸۰ms محو +
-            // scale .9→1» جا عوض می‌کنه - **نه جابه‌جاییِ افقی** و نه لرزشِ کلِ نوار (`41c`).
-            // برچسبِ متن عمداً بی‌انیمیشنه، پس بیرونِ این بلوکه.
-            AnimatedContent(
-                targetState = dest,
-                transitionSpec = {
-                    (fadeIn(tween(180)) + scaleIn(tween(180), initialScale = 0.9f))
-                        .togetherWith(fadeOut(tween(180)))
-                },
-                label = "navIconSwap",
-            ) { current ->
-                Icon(
-                    if (selected) current.selectedIcon else current.icon,
-                    contentDescription = current.label,
-                    tint = ink,
-                    modifier = Modifier
-                        .size(18.dp)
-                        .graphicsLayer { scaleX = iconScale; scaleY = iconScale },
-                )
-            }
+        // **بخشِ ۴۱**: عوض‌شدنِ مقصدِ خانه = «۱۸۰ms محو + scale .9→1»، نه جابه‌جاییِ افقی (`41c`).
+        AnimatedContent(
+            targetState = dest,
+            transitionSpec = {
+                (fadeIn(tween(180)) + scaleIn(tween(180), initialScale = 0.9f))
+                    .togetherWith(fadeOut(tween(180)))
+            },
+            label = "navIconSwap",
+        ) { current ->
+            Icon(
+                if (selected) current.selectedIcon else current.icon,
+                contentDescription = current.label,
+                tint = ink,
+                modifier = Modifier
+                    .size(22.dp)
+                    .graphicsLayer { scaleX = iconScale; scaleY = iconScale },
+            )
         }
         Text(
             dest.label,
             color = ink,
-            fontSize = 9.5.sp,
+            fontSize = 11.sp,
             fontWeight = if (selected) FontWeight.Black else FontWeight.Bold,
+            maxLines = 1,
+            softWrap = false,
             modifier = Modifier.padding(top = 4.dp),
+        )
+        // نقطه‌ی ریزِ زیرِ تبِ فعال (طرحِ مرجع). همیشه جا دارد و فقط شفافیتش عوض می‌شود.
+        Box(
+            modifier = Modifier
+                .padding(top = 3.dp)
+                .size(4.dp)
+                .graphicsLayer { alpha = dotAlpha }
+                .clip(CircleShape)
+                .background(AppPrimary),
         )
         // ⚠️ راهنمای «نگه‌دار برای چیدمان» از این‌جا **برداشته شد**. زیرِ تبِ فعال که
         // می‌نشست، یعنی «همین یکی جابه‌جا می‌شود»، در حالی که نگه‌داشتن روی **هر** دکمه

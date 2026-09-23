@@ -465,7 +465,7 @@ fun ShortcutDrawerHandle(onOpen: () -> Unit, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(26.dp)
+            .height(18.dp)
             .draggable(
                 orientation = Orientation.Vertical,
                 state = rememberDraggableState { delta -> dragged += delta },
@@ -483,10 +483,11 @@ fun ShortcutDrawerHandle(onOpen: () -> Unit, modifier: Modifier = Modifier) {
         ) {
             Box(
                 modifier = Modifier
-                    .width(72.dp)
-                    .height(5.dp)
+                    // ظریف‌تر (خواسته‌ی کاربر، ۲ مهر): «بمونه ولی به برنامه بیاد».
+                    .width(52.dp)
+                    .height(3.dp)
                     .clip(RoundedCornerShape(999.dp))
-                    .background(AppPrimary),
+                    .background(AppPrimary.copy(alpha = 0.85f)),
             )
 
         }
