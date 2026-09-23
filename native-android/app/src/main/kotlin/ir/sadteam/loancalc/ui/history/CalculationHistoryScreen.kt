@@ -1,5 +1,25 @@
 package ir.sadteam.loancalc.ui.history
 
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.AppChip
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppLabel
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppDangerPill
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -78,41 +98,90 @@ fun CalculationHistoryScreen(onBack: () -> Unit, viewModel: CalculationHistoryVi
         }
     }
 
+    // فیلترِ نوع - فقط نوع‌هایی که واقعاً در تاریخچه هستند چیپ می‌گیرند.
+    var kindFilter by remember { mutableStateOf<String?>(null) }
+    val kinds = remember(history) { history.map { it.kind }.distinct() }
+    val shown = remember(filtered, kindFilter) { if (kindFilter == null) filtered else filtered.filter { it.kind == kindFilter } }
+    var confirmClearAll by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<CalculationHistoryEntity?>(null) }
+
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(AppSurface)
+                    .border(1.dp, AppLine, RoundedCornerShape(14.dp))
+                    .pressScaleClickable(onClick = onBack),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
             }
-            Text("تاریخچه محاسبات", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
-            Box(modifier = Modifier.weight(1f))
+            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                Text("تاریخچه‌ی محاسبات", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                if (history.isNotEmpty()) {
+                    Text("${toFa(history.size)} محاسبه", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                }
+            }
             if (history.isNotEmpty()) {
-                TextButton(onClick = { viewModel.clearAll() }) {
-                    Text("پاک‌کردن همه", color = AppDanger)
+                TextButton(onClick = { confirmClearAll = true }) {
+                    Text("پاک‌کردنِ همه", color = AppDanger, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
 
-        OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
-            placeholder = { Text("جستجو (نام بانک، مبلغ، ...)") },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            singleLine = true,
-            colors = appFieldColors(),
+        Row(
             modifier = Modifier
+                .padding(horizontal = 14.dp, vertical = 4.dp)
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 4.dp),
-        )
+                .height(52.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(AppSurface)
+                .border(1.dp, AppLine, RoundedCornerShape(18.dp))
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.Search, contentDescription = null, tint = AppMuted, modifier = Modifier.size(20.dp))
+            Box(modifier = Modifier.weight(1f).padding(start = 10.dp), contentAlignment = Alignment.CenterStart) {
+                if (query.isEmpty()) {
+                    Text("نامِ بانک، مبلغ، نوعِ محاسبه…", color = AppLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                BasicTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    singleLine = true,
+                    textStyle = TextStyle(color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold),
+                    cursorBrush = SolidColor(AppPrimary),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (query.isNotEmpty()) {
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = "پاک‌کردنِ جستجو",
+                    tint = AppMuted,
+                    modifier = Modifier.size(20.dp).clip(CircleShape).pressScaleClickable { query = "" },
+                )
+            }
+        }
 
-        if (filtered.isEmpty()) {
+        if (kinds.size > 1) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                AppChip(label = "همه", selected = kindFilter == null, onClick = { kindFilter = null })
+                kinds.forEach { k -> AppChip(label = kindLabel(k), selected = kindFilter == k, onClick = { kindFilter = k }) }
+            }
+        }
+
+        if (shown.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                // دو حالتِ کاملاً متفاوت: «هیچ‌وقت چیزی نبوده» در برابر «هست ولی جستجو چیزی
-                // پیدا نکرد» - متن و آیکونِ یکسان برای این دوتا گیج‌کننده بود.
+                // دو حالتِ کاملاً متفاوت: «هیچ‌وقت چیزی نبوده» در برابر «هست ولی جستجو چیزی پیدا نکرد».
                 if (history.isEmpty()) {
                     EmptyState(
                         icon = Icons.Outlined.History,
@@ -131,19 +200,40 @@ fun CalculationHistoryScreen(onBack: () -> Unit, viewModel: CalculationHistoryVi
         } else {
             LazyColumn(
                 contentPadding = PaddingValues(14.dp, 8.dp, 14.dp, 100.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                items(filtered, key = { it.id }) { entry ->
-                    // بدونِ این، فیلترشدنِ لیست با هر حرفی که تو جستجو تایپ می‌شه یه پرشِ
-                    // ناگهانیه؛ با این، ردیف‌ها نرم جابه‌جا/محو می‌شن.
+                items(shown, key = { it.id }) { entry ->
                     HistoryRow(
                         entry,
-                        onDelete = { viewModel.delete(entry) },
+                        onDelete = { pendingDelete = entry },
                         modifier = Modifier.animateItem(),
                     )
                 }
             }
         }
+    }
+
+    if (confirmClearAll) {
+        AlertDialog(
+            onDismissRequest = { confirmClearAll = false },
+            title = { Text("همه‌ی تاریخچه پاک شود؟", fontWeight = FontWeight.Black) },
+            text = { Text("${toFa(history.size)} محاسبه برای همیشه پاک می‌شود و برگشت ندارد.") },
+            confirmButton = {
+                TextButton(onClick = { confirmClearAll = false; viewModel.clearAll() }) { Text("پاک کن", color = AppDanger) }
+            },
+            dismissButton = { TextButton(onClick = { confirmClearAll = false }) { Text("بی‌خیال") } },
+        )
+    }
+    pendingDelete?.let { entry ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("این محاسبه حذف شود؟", fontWeight = FontWeight.Black) },
+            text = { Text(entry.title) },
+            confirmButton = {
+                TextButton(onClick = { pendingDelete = null; viewModel.delete(entry) }) { Text("حذف", color = AppDanger) }
+            },
+            dismissButton = { TextButton(onClick = { pendingDelete = null }) { Text("بی‌خیال") } },
+        )
     }
 }
 
@@ -153,28 +243,38 @@ private fun HistoryRow(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SwipeToDeleteRow(onDelete = onDelete, modifier = modifier) {
-    AppCard {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(kindLabel(entry.kind), color = AppPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    Text(
-                        " · ${dateLabel(entry.createdAt)}",
-                        color = AppMuted,
-                        fontSize = 11.sp,
-                    )
-                }
-                Text(entry.title, color = AppText, fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp))
-                Text(entry.summary, color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
-                if (entry.amount > 0) {
-                    Text("${fmt(entry.amount)} ریال", color = AppText, fontSize = 12.5.sp, modifier = Modifier.padding(top = 2.dp))
-                }
+    AppCard(modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                kindLabel(entry.kind),
+                color = AppPrimaryInk,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AppPrimaryPill)
+                    .padding(horizontal = 9.dp, vertical = 3.dp),
+            )
+            Box(modifier = Modifier.weight(1f))
+            Text(dateLabel(entry.createdAt), color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+        }
+        Text(entry.title, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 8.dp))
+        Text(entry.summary, color = AppMuted, fontSize = 11.5.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 3.dp))
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (entry.amount > 0) {
+                Text("${fmt(entry.amount)} ریال", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, contentDescription = "حذف", tint = AppDanger)
+            Box(modifier = Modifier.weight(1f))
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(AppDangerPill)
+                    .pressScaleClickable(onClick = onDelete),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Delete, contentDescription = "حذف", tint = AppDanger, modifier = Modifier.size(18.dp))
             }
         }
-    }
     }
 }

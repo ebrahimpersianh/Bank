@@ -1,5 +1,14 @@
 package ir.sadteam.loancalc.ui.settings
 
+import ir.sadteam.loancalc.ui.components.AppHeroCard
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.rotate
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -277,4 +286,106 @@ fun AppSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
                 .background(Color.White, CircleShape),
         )
     }
+}
+
+/**
+ * کارتِ رنگیِ کوتاهِ بالای هر زیرصفحه (بسته‌ی «۱۰ نمای تنظیمات»ِ ChatGPT) - همان
+ * [AppHeroCard]ِ بقیه‌ی صفحه‌ها، پس با تم عوض می‌شود. تنها accentِ غالبِ صفحه است.
+ *
+ * @param badge وضعیتِ واقعیِ همین صفحه («فعال»، «۷ از ۱۰»)؛ `null` یعنی چیزی برای گفتن نیست.
+ */
+@Composable
+fun SettingsHero(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    badge: String? = null,
+    modifier: Modifier = Modifier,
+    extra: (@Composable ColumnScope.() -> Unit)? = null,
+) {
+    AppHeroCard(modifier = modifier.padding(top = 4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(46.dp).clip(RoundedCornerShape(15.dp)).background(Color.White.copy(alpha = 0.20f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+            }
+            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                Text(title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Black)
+                Text(
+                    subtitle,
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 16.sp,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            if (badge != null) {
+                Text(
+                    badge,
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(Color.White.copy(alpha = 0.22f))
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+            }
+        }
+        extra?.invoke(this)
+    }
+}
+
+/**
+ * متنِ بلندِ راهنما پشتِ یک ردیفِ بازشونده - **حذف نمی‌شود**، فقط تا وقتی کاربر
+ * نخواهد جا نمی‌گیرد.
+ */
+@Composable
+fun SettingsDisclosure(
+    title: String,
+    icon: ImageVector = Icons.Filled.Info,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    val turn by animateFloatAsState(if (open) 180f else 0f, tween(200), label = "disclosure")
+    SettingsGroup(modifier = modifier.padding(top = 10.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .pressScaleClickable(scale = 0.99f) { open = !open }
+                .defaultMinSize(minHeight = 56.dp)
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(20.dp))
+            Text(
+                title,
+                color = AppText,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.weight(1f).padding(start = 10.dp),
+            )
+            Icon(
+                Icons.Filled.KeyboardArrowDown,
+                contentDescription = if (open) "بستن" else "باز کردن",
+                tint = AppMuted,
+                modifier = Modifier.size(22.dp).rotate(turn),
+            )
+        }
+        AnimatedVisibility(visible = open) {
+            Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 14.dp), content = content)
+        }
+    }
+}
+
+/** پاراگرافِ توضیحیِ داخلِ [SettingsDisclosure] - فاصله‌ی خطِ ۱٫۵ برای متنِ فارسیِ بلند. */
+@Composable
+fun SettingsParagraph(text: String, modifier: Modifier = Modifier) {
+    Text(text, color = AppMuted, fontSize = 11.5.sp, lineHeight = 19.sp, modifier = modifier.padding(top = 6.dp))
 }

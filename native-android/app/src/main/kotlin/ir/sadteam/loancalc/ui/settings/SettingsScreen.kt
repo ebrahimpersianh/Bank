@@ -5,8 +5,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.WorkspacePremium
 import ir.sadteam.loancalc.ui.theme.AppPurple
+import ir.sadteam.loancalc.ui.theme.AppInfo
+import ir.sadteam.loancalc.ui.theme.AppWarningInk
 import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.components.AppHeroCard
 import android.Manifest
@@ -1235,20 +1239,27 @@ private fun AppearanceSettings(themeViewModel: ThemeViewModel) {
     val chipCenters = remember { mutableStateMapOf<ThemeMode, Offset>() }
     val themeToggleScope = rememberCoroutineScope()
 
+    SettingsHero(
+        Icons.Filled.Palette,
+        "ظاهرِ برنامه",
+        "پوسته، اندازه‌ی متن و حرکت",
+        badge = themeModeOptions.firstOrNull { it.first == themeMode }?.second,
+    )
     // ── سه‌حالتیِ روشن · تیره · سیستم ─────────────────────────────────────────
-    AppCard(modifier = Modifier.padding(top = 8.dp)) {
+    SettingsGroupLabel("پوسته")
+    SettingsGroup {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            modifier = Modifier.fillMaxWidth().padding(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             themeModeOptions.forEach { (mode, label) ->
                 val selected = themeMode == mode
                 Row(
                     modifier = Modifier
                         .weight(1f)
-                        .defaultMinSize(minHeight = AppSpacing.minTouchTarget)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(if (selected) AppSurface2 else Color.Transparent)
+                        .height(46.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (selected) AppPrimary else AppSurface2)
                         .pressScaleClickable {
                             if (mode != themeMode && !themeReveal.inProgress) {
                                 val origin = chipCenters[mode] ?: Offset.Zero
@@ -1271,13 +1282,14 @@ private fun AppearanceSettings(themeViewModel: ThemeViewModel) {
                             ThemeMode.SYSTEM -> Icons.Filled.BrightnessAuto
                         },
                         contentDescription = null,
-                        tint = if (selected) AppText else AppMuted,
-                        modifier = Modifier.size(14.dp),
+                        tint = if (selected) Color.White else AppMuted,
+                        modifier = Modifier.size(18.dp),
                     )
                     Text(
                         label,
-                        color = if (selected) AppText else AppMuted,
-                        fontSize = 11.sp,
+                        color = if (selected) Color.White else AppMuted,
+                        fontSize = 11.5.sp,
+                        maxLines = 1,
                         fontWeight = if (selected) FontWeight.Black else FontWeight.ExtraBold,
                         modifier = Modifier.padding(start = 5.dp),
                     )
@@ -1297,7 +1309,7 @@ private fun AppearanceSettings(themeViewModel: ThemeViewModel) {
     }
 
     // ── گروهِ خواندن ──────────────────────────────────────────────────────────
-    SettingsGroupLabel("خواندن")
+    SettingsGroupLabel("خوانایی")
     SettingsGroup {
         SettingsRowItem(
             title = "اندازه‌ی متن",
@@ -1318,6 +1330,19 @@ private fun AppearanceSettings(themeViewModel: ThemeViewModel) {
                 )
             }
         }
+        // پیش‌نمایشِ زنده - اندازه‌ی انتخابی همین حالا روی کلِ برنامه نشسته، پس همین متن نمونه‌اش است.
+        Text(
+            "نمونه: امروز ۲۵۰٬۰۰۰ تومان خرجِ خوراک ثبت شد.",
+            color = AppText,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(start = 14.dp, end = 14.dp, bottom = 14.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(AppSurface2)
+                .padding(12.dp),
+        )
     }
 
     // ── گروهِ حرکت ────────────────────────────────────────────────────────────
@@ -1369,6 +1394,13 @@ private fun ReminderToggles(
         )
     }
 
+    val anyReminderOn = notificationsEnabled || dailyExpenseReminderEnabled
+    SettingsHero(
+        Icons.Filled.NotificationsActive,
+        "یادآورها",
+        "سررسیدها و یادآورِ ثبتِ روزانه",
+        badge = if (!permissionGranted) "اجازه نیست" else if (anyReminderOn) "فعال" else "خاموش",
+    )
     // ── کارتِ اجازه - **بالای صفحه، نه پایین** ────────────────────────────────
     // بی اجازه هیچ‌کدوم از این کلیدها کار نمی‌کنه، و کاربری که کلید رو روشن می‌کنه و
     // خبری نمی‌شه به برنامه بی‌اعتماد می‌شه. وقتی اجازه هست، کارت **کلاً نیست** -
@@ -1418,7 +1450,7 @@ private fun ReminderToggles(
     }
 
     // ── گروهِ یادآورِ روزانه (عادت‌سازی) - خاموشِ پیش‌فرض ───────────────────────
-    SettingsGroupLabel("یادآورِ روزانه")
+    SettingsGroupLabel("روزانه", accent = AppWarningInk)
     SettingsGroup {
         SettingsRowItem(
             title = "یادآورِ ثبتِ روزانه",
@@ -1443,7 +1475,7 @@ private fun ReminderToggles(
     }
 
     // ── گروهِ سررسیدها (خطر) - روشنِ پیش‌فرض ───────────────────────────────────
-    SettingsGroupLabel("سررسیدها")
+    SettingsGroupLabel("سررسیدها", accent = AppDanger)
     SettingsGroup {
         SettingsRowItem(
             title = "یادآوریِ سررسید",
@@ -1501,8 +1533,25 @@ private fun DataSettings(
         }
     }
 
+    // بازیابیِ در انتظارِ تایید («local»/«cloud») و قفلِ ضدِ دوبار زدن.
+    var pendingRestore by remember { mutableStateOf<String?>(null) }
+    var restoring by remember { mutableStateOf(false) }
+
+    SettingsHero(
+        Icons.Filled.CloudQueue,
+        "وضعیتِ پشتیبان‌گیری",
+        when {
+            !autoBackupEnabled -> "پشتیبانِ خودکار خاموش است"
+            cloudBackupFailed && lastBackupLabel != null -> "آخرین نسخه فقط روی گوشی ذخیره شد"
+            lastBackupLabel != null -> "آخرین نسخه: $lastBackupLabel"
+            else -> "هنوز نسخه‌ای ساخته نشده"
+        },
+        badge = if (autoBackupEnabled) "روشن" else "خاموش",
+    )
+
     // ── کارتِ وضعیتِ پشتیبان - «یک نگاه، جواب می‌گیرد» ────────────────────────
-    SettingsGroup(modifier = Modifier.padding(top = 8.dp)) {
+    SettingsGroupLabel("پشتیبان‌گیری")
+    SettingsGroup {
         SettingsRowItem(
             title = "پشتیبان‌گیریِ خودکارِ روزانه",
             icon = Icons.Filled.CloudUpload,
@@ -1538,14 +1587,7 @@ private fun DataSettings(
                 icon = Icons.Filled.Restore,
                 tone = SettingsTone.NEUTRAL,
                 status = lastBackupLabel?.let { "نسخه‌ی $it" },
-                onClick = {
-                    autoBackupViewModel.restoreFromAutoBackup { ok ->
-                        banner.show(
-                            if (ok) "بازیابی از پشتیبان خودکار انجام شد" else "پشتیبانی برای بازیابی پیدا نشد",
-                            isSuccess = ok,
-                        )
-                    }
-                },
+                onClick = { if (!restoring) pendingRestore = "local" },
             )
             // بازیابی از سرور فقط برای کاربرِ واردشده‌ی مشترکه - پوش به سرور هم فقط برای همونه.
             if (gateState == GateState.LOGGED_IN && subscribed) {
@@ -1555,17 +1597,46 @@ private fun DataSettings(
                     icon = Icons.Filled.CloudDownload,
                     tone = SettingsTone.GREEN,
                     status = "برای وقتی گوشی عوض شده یا برنامه پاک شده",
-                    onClick = {
-                        autoBackupViewModel.restoreFromCloud { ok ->
-                            banner.show(
-                                if (ok) "بازیابی از سرور ابری انجام شد" else "پشتیبانی رو سرور ابری پیدا نشد",
-                                isSuccess = ok,
-                            )
-                        }
-                    },
+                    onClick = { if (!restoring) pendingRestore = "cloud" },
                 )
             }
         }
+    }
+
+    // 🚨 بازیابی داده‌های فعلیِ گوشی را جایگزین می‌کند - پس اول تاییدِ صریح.
+    pendingRestore?.let { source ->
+        AlertDialog(
+            onDismissRequest = { pendingRestore = null },
+            title = { Text(if (source == "cloud") "بازیابی از سرورِ ابری؟" else "بازیابی از پشتیبانِ گوشی؟", fontWeight = FontWeight.Black) },
+            text = {
+                Text(
+                    "اطلاعاتِ فعلیِ برنامه با " +
+                        (if (source == "cloud") "آخرین نسخه‌ی روی سرور" else "نسخه‌ی ${lastBackupLabel ?: "ذخیره‌شده"}") +
+                        " جایگزین می‌شه. هر چیزی که بعد از اون نسخه ثبت کردی از بین می‌ره.",
+                    lineHeight = 21.sp,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingRestore = null
+                    restoring = true
+                    val done: (Boolean) -> Unit = { ok ->
+                        restoring = false
+                        banner.show(
+                            when {
+                                ok && source == "cloud" -> "بازیابی از سرور ابری انجام شد"
+                                ok -> "بازیابی از پشتیبان خودکار انجام شد"
+                                source == "cloud" -> "پشتیبانی رو سرور ابری پیدا نشد"
+                                else -> "پشتیبانی برای بازیابی پیدا نشد"
+                            },
+                            isSuccess = ok,
+                        )
+                    }
+                    if (source == "cloud") autoBackupViewModel.restoreFromCloud(done) else autoBackupViewModel.restoreFromAutoBackup(done)
+                }) { Text("بازیابی کن", color = AppDanger) }
+            },
+            dismissButton = { TextButton(onClick = { pendingRestore = null }) { Text("بی‌خیال") } },
+        )
     }
 }
 
@@ -1970,37 +2041,15 @@ private fun BackgroundRunSettings() {
     // برنامه‌ای شدنی نیست و هیچ صفحه‌ای در گوشی برایش وجود ندارد. کارتی که تپ را قبول
     // کند و هیچ اتفاقی نیفتد بدتر از کارتِ بی‌تپ است، پس نشانه‌ی تپ هم نمی‌گیرد.
     // خلاصه‌ی وضعیت: قبل از متنِ راهنما، کاربر در یک نگاه می‌فهمد چه چیزی باقی مانده.
-    AppCard(backgroundColor = if (batteryOk) AppPrimaryPill else AppSurface2, borderColor = if (batteryOk) AppPrimaryBorder else AppLineRow) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier.size(42.dp).clip(CircleShape).background(if (batteryOk) AppPrimary else AppIconFrame),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    if (batteryOk) Icons.Filled.Check else Icons.Filled.BatterySaver,
-                    contentDescription = null,
-                    tint = if (batteryOk) Color.White else AppMuted,
-                    modifier = Modifier.size(21.dp),
-                )
-            }
-            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
-                Text(
-                    if (batteryOk) "پس‌زمینه برای کار آماده است" else "برای اجرای مطمئن، دو دقیقه زمان بگذار",
-                    color = if (batteryOk) AppPrimaryInk else AppText,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Black,
-                )
-                Text(
-                    if (batteryOk) "معافیت باتری فعال است؛ مراحل باقی‌مانده را هم یک‌بار بررسی کن."
-                    else "دو یا سه مرحله‌ی کوتاه باقی مانده تا یادآورها و ثبت خودکار پایدار بمانند.",
-                    color = AppMuted,
-                    fontSize = 10.5.sp,
-                    lineHeight = 18.sp,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            }
-        }
-    }
+    // «آماده» فقط یعنی معافیتِ باتری داده شده - تضمینِ رسیدنِ هر پیامک نیست، و متن هم همین را می‌گوید.
+    SettingsHero(
+        Icons.Filled.BatterySaver,
+        if (batteryOk) "پس‌زمینه برای کار آماده است" else "برای اجرای مطمئن، دو دقیقه وقت بگذار",
+        if (batteryOk) "معافیتِ باتری فعال است؛ مراحلِ دستی را هم یک‌بار بررسی کن."
+        else "چند مرحله‌ی کوتاه تا یادآورها و ثبتِ خودکار پایدار بمانند.",
+        badge = if (batteryOk) "آماده" else "نیازمندِ اقدام",
+    )
+    SettingsGroupLabel("مراحل")
 
     BackgroundStepCard(
         step = 1,
@@ -2488,14 +2537,16 @@ private fun NotificationPermissionSteps(modifier: Modifier = Modifier) {
  */
 @Composable
 private fun ToolsSettings(onOpenTool: (String) -> Unit) {
-    ToolGroupTitle("پولم را می‌بینم")
-    AppCard(modifier = Modifier.padding(top = 6.dp)) {
-        ToolRow(Icons.Filled.DateRange, "تقویمِ مالی", "سررسیدِ اقساط و چک‌ها روی تقویم") { onOpenTool("calendar") }
-        ToolRow(Icons.Filled.Savings, "هدف‌های پس‌انداز", "برای چیزی که می‌خوای پول کنار بذار و پیشرفتش رو ببین") { onOpenTool("goals") }
+    SettingsHero(Icons.Filled.Build, "ابزارهای مالی", "برنامه‌ریزی، پس‌انداز و مرورِ محاسبه‌ها")
+    SettingsGroupLabel("برنامه‌ریزی", accent = AppInfo)
+    SettingsGroup {
+        SettingsRowItem("تقویمِ مالی", Icons.Filled.DateRange, SettingsTone.BLUE, status = "سررسیدِ اقساط و چک‌ها روی تقویم") { onOpenTool("calendar") }
+        SettingsDivider()
+        SettingsRowItem("هدف‌های پس‌انداز", Icons.Filled.Savings, SettingsTone.GREEN, status = "پول کنار بذار و پیشرفتش رو ببین") { onOpenTool("goals") }
     }
-    ToolGroupTitle("چیزی را بررسی می‌کنم")
-    AppCard(modifier = Modifier.padding(top = 6.dp)) {
-        ToolRow(Icons.Filled.History, "تاریخچه‌ی محاسبات", "مرورِ محاسبه‌های قبلیِ وام/سقف وام/سود سپرده") { onOpenTool("history") }
+    SettingsGroupLabel("بررسی و محاسبه", accent = AppPurple)
+    SettingsGroup {
+        SettingsRowItem("تاریخچه‌ی محاسبات", Icons.Filled.History, SettingsTone.PURPLE, status = "محاسبه‌های قبلیِ وام، سقفِ وام و سودِ سپرده") { onOpenTool("history") }
     }
     // ⚠️ ردیفِ «آمار و گزارشات» از این‌جا **حذف** شد (گزارشِ ۶.۵ی کاربر: «پرتی هست»).
     // محتوایش دربارهٔ وام است، پس به تبِ گزارش رفت (دورِ ۱۲). عمداً این‌جا یک ردیفِ
@@ -2805,12 +2856,18 @@ private fun SecuritySettings(
     // ── گروهِ قفل ─────────────────────────────────────────────────────────────
     // قاعده‌ی صریحِ طراح: **قفل که خاموشه، ردیف‌های زیرش پنهان می‌شن، نه خاکستری.**
     // «سه ردیفِ خاکستریِ بی‌کار بدتر از یه ردیفِ تنهاست.»
+    SettingsHero(
+        Icons.Filled.Shield,
+        "امنیت و حریمِ خصوصی",
+        "قفلِ برنامه روی همین گوشی و پنهان‌کردنِ مبلغ‌ها",
+        badge = if (hasLock) "قفل فعال" else "بی‌قفل",
+    )
     SettingsGroupLabel("قفلِ برنامه")
     SettingsGroup {
         SettingsRowItem(
             title = "قفل با رمزِ عددی",
             icon = Icons.Filled.Lock,
-            tone = SettingsTone.RED,
+            tone = SettingsTone.BLUE,
             status = if (pinHash != null) "فعال است" else "خاموش",
             statusTone = if (pinHash != null) StatusTone.HEALTHY else StatusTone.NEUTRAL,
             checked = pinHash != null,
@@ -2831,7 +2888,7 @@ private fun SecuritySettings(
         if (pinHash != null) SettingsRowItem(
             title = "قفل با اثرِ انگشت",
             icon = Icons.Filled.Fingerprint,
-            tone = SettingsTone.RED,
+            tone = SettingsTone.BLUE,
             status = if (biometricAvailable(context)) null else "این گوشی اثرِ انگشتِ ثبت‌شده ندارد",
             statusTone = StatusTone.BROKEN,
             checked = if (biometricAvailable(context)) biometricEnabled else null,
@@ -2886,24 +2943,36 @@ private fun SecuritySettings(
             checked = privacyMode,
             onCheckedChange = { privacyViewModel.toggle() },
         )
+        // پیش‌نمایشِ دو حالت با عددِ نمونه - مبلغِ واقعیِ کاربر این‌جا نشان داده نمی‌شود.
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            listOf(false to "۱۲٬۳۴۵٬۶۷۸", true to "••••••").forEach { (hidden, sample) ->
+                val active = hidden == privacyMode
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (active) AppPrimaryPill else AppSurface2)
+                        .border(if (active) 1.5.dp else 0.dp, if (active) AppPrimary else Color.Transparent, RoundedCornerShape(14.dp))
+                        .padding(vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(sample, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                    Text(if (hidden) "پنهان" else "نمایان", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
     }
 
     // ── کارتِ توضیحِ ته صفحه ──────────────────────────────────────────────────
     // جمله‌ی سوم مهم‌ترینه: بی اون، کاربرِ فراموش‌کار فکر می‌کنه داده‌ش رفته و اپ رو پاک می‌کنه.
-    AppCard(
-        backgroundColor = AppSurface2,
-        borderColor = AppLineRow,
-        shadow = false,
-        modifier = Modifier.padding(top = AppSpacing.betweenCards),
-    ) {
-        Text(
+    SettingsDisclosure(title = "قفلِ برنامه چه کاری می‌کند؟") {
+        SettingsParagraph(
             "قفلِ برنامه فقط جلوی بازشدنِ برنامه رو همین گوشی رو می‌گیره. داده‌هات رو سرور با " +
                 "حسابِ کاربریت محافظت می‌شه، نه با این رمز. اگه رمز رو فراموش کنی، با ورودِ " +
                 "دوباره به حساب بازش می‌کنی.",
-            color = AppMuted,
-            fontSize = 10.5.sp,
-            fontWeight = FontWeight.Bold,
-            lineHeight = 20.sp,
         )
     }
 }
