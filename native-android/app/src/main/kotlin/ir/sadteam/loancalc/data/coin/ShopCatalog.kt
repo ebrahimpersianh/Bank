@@ -369,6 +369,7 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     // اصلاً نمادِ دیگری می‌کشد (به‌جای بشقاب، همبرگر).
     add(ShopItem("symbolset:outlined", CoinSpend.CATEGORY_ICON_SET, "نمادهای خطی", "۱۸ نمادِ دسته، فقط خط بی پُرکن"))
     add(ShopItem("symbolset:pictorial", CoinSpend.CATEGORY_ICON_SET, "نمادهای روزمره", "۱۸ نمادِ دسته، ساده و آشنا"))
+    add(ShopItem("symbolset:solid", CoinSpend.CATEGORY_ICON_SET, "نمادهای برجسته", "۱۸ نمادِ توپر با طرحِ اختصاصیِ جیبک", addedOn = "1405-07-01"))
     add(ShopItem("coinskin:ancient", CoinSpend.COIN_SKIN, "سکه‌ی کهن", "شکلِ سکه در همه‌ی برنامه", comingSoon = true))
     add(
         ShopItem(
