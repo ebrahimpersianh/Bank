@@ -33,6 +33,8 @@ import androidx.compose.ui.res.painterResource
 import ir.sadteam.loancalc.R
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -101,6 +103,12 @@ import ir.sadteam.loancalc.ui.theme.AppGoldBorder
 import ir.sadteam.loancalc.data.coin.featuredItemId
 import ir.sadteam.loancalc.ui.background.LiveBackground
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppBg
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.text.style.TextAlign
+import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.settings.FullScreenDialog
+import ir.sadteam.loancalc.ui.widget.IconWither
 
 /*
  * فروشگاهِ سکه - فریم‌های `60a`..`60d` (تکمیلِ `45b` روی کاتالوگِ واقعی).
@@ -134,6 +142,12 @@ private fun StarryNightCollectionCard(owned: Set<String>, earned: Boolean) {
 }
 
 /** حالتِ یک ردیف. از موجودی و مالکیت و نشان‌ها مشتق می‌شود، جایی ذخیره نمی‌شود. */
+/**
+ * بازکردنِ صفحه‌ی اختصاصیِ محصول (تصمیمِ ۵ِ فروشگاه). از ردیف و کارت خوانده می‌شود تا
+ * لازم نباشد یک پارامترِ تازه از همه‌ی محل‌های فراخوانی رد شود.
+ */
+private val LocalOpenProduct = staticCompositionLocalOf<((ShopItem) -> Unit)?> { null }
+
 private enum class RowState { BUY, POOR, OWNED, ACTIVE, BADGE_LOCKED, SOON }
 
 @Composable
@@ -154,6 +168,7 @@ fun ShopScreen(
     val result by viewModel.lastResult.collectAsState()
     val catalog by viewModel.catalog.collectAsState()
     var confirming by remember { mutableStateOf<ShopItem?>(null) }
+    var detail by remember { mutableStateOf<ShopItem?>(null) }
     /** `null` یعنی تبِ «همه». */
     var tab by rememberSaveable { mutableStateOf<ShopCategory?>(null) }
     // 🚨 **فیلتر است، نه تبِ ششم** (بندِ ۳ی وصله‌ی بخشِ ۷۸): تبِ «مالِ من» یعنی یک ستونِ
@@ -244,6 +259,7 @@ fun ShopScreen(
     val fresh = remember(catalog, todayKey) {
         catalog.filter { it.isNew(todayKey) { from, to -> daysBetweenKeys(from, to) } }
     }
+    CompositionLocalProvider(LocalOpenProduct provides { detail = it }) {
     LazyColumn(
         contentPadding = PaddingValues(start = 10.dp, end = 16.dp, top = 10.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -473,7 +489,19 @@ fun ShopScreen(
         }
     }
     }
+    }
         InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
+    }
+
+    detail?.let { item ->
+        ProductDetailSheet(
+            item = item,
+            state = stateOf(item),
+            balance = balance,
+            onDismiss = { detail = null },
+            onActivate = activateItem,
+            onBuy = { confirming = it },
+        )
     }
 
     // خرید دیالوگِ تایید می‌گیرد (`46a`)؛ فعال‌کردنِ چیزی که داری نه - اولی واگرد ندارد،
@@ -608,7 +636,8 @@ private fun ShopRow(
     leading: (@Composable () -> Unit)? = null,
 ) {
     val dimmed = state == RowState.POOR || state == RowState.BADGE_LOCKED || state == RowState.SOON
-    val tap: (() -> Unit)? = when (state) {
+    val open = LocalOpenProduct.current
+    val tap: (() -> Unit)? = if (open != null) ({ open(item) }) else when (state) {
         RowState.OWNED -> ({ onActivate(item) })
         RowState.BUY -> ({ onConfirm(item) })
         else -> null
@@ -875,7 +904,8 @@ private fun ProductCard(
     onConfirm: (ShopItem) -> Unit,
     preview: @Composable () -> Unit,
 ) {
-    val tap: (() -> Unit)? = when (state) {
+    val open = LocalOpenProduct.current
+    val tap: (() -> Unit)? = if (open != null) ({ open(item) }) else when (state) {
         RowState.OWNED -> ({ onActivate(item) })
         RowState.BUY, RowState.POOR -> ({ onConfirm(item) })
         else -> null
@@ -1263,5 +1293,202 @@ private fun FeaturedCard(item: ShopItem, balance: Int, onConfirm: (ShopItem) -> 
                 fontWeight = FontWeight.Bold,
             )
         }
+    }
+}
+
+/**
+ * صفحه‌ی اختصاصیِ محصول (تصمیمِ ۵ِ فروشگاه) - برای **همه‌ی** قلم‌های خریدنی.
+ *
+ * تپ روی ردیف یا کارت دیگر مستقیم نمی‌خرد: اول همین صفحه باز می‌شود تا خریدار ببیند
+ * چه می‌گیرد. خرید همچنان از دیالوگِ تاییدِ قبلی می‌گذرد - این صفحه راهِ دومی برای
+ * کم‌کردنِ سکه نمی‌سازد.
+ */
+@Composable
+private fun ProductDetailSheet(
+    item: ShopItem,
+    state: RowState,
+    balance: Int,
+    onDismiss: () -> Unit,
+    onActivate: (ShopItem) -> Unit,
+    onBuy: (ShopItem) -> Unit,
+) {
+    FullScreenDialog(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.fillMaxSize().background(AppBg)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
+                }
+                Text(
+                    item.kind.category.label,
+                    color = AppText,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
+            }
+            LazyColumn(
+                contentPadding = PaddingValues(start = 10.dp, end = 16.dp, top = 6.dp, bottom = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.weight(1f),
+            ) {
+                item {
+                    AppCard(modifier = Modifier.fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(150.dp)
+                                .clip(RoundedCornerShape(AppRadius.card))
+                                .background(AppSurface2),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            // همان پیش‌نمایشِ ردیف، بزرگ‌شده - نه یک تصویرِ جدا که روزی جا بمانَد.
+                            Box(modifier = Modifier.scale(2.6f)) { previewFor(item) }
+                        }
+                        Text(
+                            item.label,
+                            color = AppText,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(top = 12.dp),
+                        )
+                        Text(
+                            item.blurb,
+                            color = AppLabel,
+                            fontSize = 11.sp,
+                            lineHeight = 19.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 3.dp),
+                        )
+                    }
+                }
+                item { DetailFacts(item) }
+                if (item.id.startsWith("icon:")) item { IconUsageSample(item.id) }
+                if (item.id.startsWith("symbolset:")) item { SymbolSetSample(item.id) }
+            }
+            Box(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 18.dp, top = 6.dp)) {
+                DetailAction(item, state, balance, onActivate, onBuy)
+            }
+        }
+    }
+}
+
+/** جدولِ مشخصات: نوع، تعداد/سبک (برای پک‌ها)، قیمت و وضعیت. */
+@Composable
+private fun DetailFacts(item: ShopItem) {
+    val facts = buildList {
+        add("نوع" to item.kind.category.label)
+        when {
+            item.id.startsWith("symbolset:") -> {
+                add("تعدادِ نماد" to "${toFa(categoryIconChoices.size)} نماد")
+                add("سبک" to item.label)
+            }
+            item.id.startsWith("icon:") -> add(
+                "حالت‌ها" to if (IconWither.hasAgingStages(item.id)) "۴ حالت (کهنه‌شدن با سرنزدن)" else "یک طرحِ ثابت",
+            )
+        }
+        add("قیمت" to "${toFa(item.price)} سکه")
+    }
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        facts.forEachIndexed { index, (label, value) ->
+            if (index > 0) Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppLine))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(label, color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.weight(1f))
+                Text(value, color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Black)
+            }
+        }
+    }
+}
+
+/** نمونه‌ی استفاده‌ی آیکونِ برنامه: کنارِ چند آیکونِ خنثی روی صفحه‌ی گوشی. */
+@Composable
+private fun IconUsageSample(itemId: String) {
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Text("روی صفحه‌ی گوشی", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Black)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            repeat(4) { index ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (index == 1) {
+                        AppIconPreview(itemId)
+                    } else {
+                        Box(
+                            modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(AppIconFrame),
+                        )
+                    }
+                    Text(
+                        if (index == 1) "جیبک" else "",
+                        color = AppText,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** چند نمادِ واقعی از همان پک، در اندازه‌ی واقعیِ فهرستِ دسته‌بندی. */
+@Composable
+private fun SymbolSetSample(itemId: String) {
+    val style = SymbolStyle.fromItemId(itemId)
+    val keys = categoryIconChoices.map { it.first }.take(12)
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Text("نمونه‌ی نمادها", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Black)
+        Column(modifier = Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            keys.chunked(6).forEach { row ->
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    row.forEach { key ->
+                        Box(
+                            modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(AppIconFrame),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(iconForKey(key, style), contentDescription = null, tint = AppText, modifier = Modifier.size(24.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** دکمه‌ی پایینِ صفحه - وضعیتِ خرید/فعال‌سازی را همان‌جا می‌گوید. */
+@Composable
+private fun DetailAction(
+    item: ShopItem,
+    state: RowState,
+    balance: Int,
+    onActivate: (ShopItem) -> Unit,
+    onBuy: (ShopItem) -> Unit,
+) {
+    when (state) {
+        RowState.BUY -> GradientButton(onClick = { onBuy(item) }, modifier = Modifier.fillMaxWidth()) {
+            Text("خرید با ${toFa(item.price)} سکه", fontWeight = FontWeight.Black)
+        }
+        RowState.OWNED -> GradientButton(onClick = { onActivate(item) }, modifier = Modifier.fillMaxWidth()) {
+            Text("خریداری شده · فعال‌سازی", fontWeight = FontWeight.Black)
+        }
+        else -> Text(
+            when (state) {
+                RowState.ACTIVE -> "خریداری شده · الان فعال است"
+                RowState.POOR -> "${toFa(item.price - balance)} سکه کم داری"
+                RowState.BADGE_LOCKED -> "اول باید نشانِ لازم را بگیری"
+                else -> "به‌زودی"
+            },
+            color = if (state == RowState.POOR) AppDangerInk else AppMuted,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        )
     }
 }

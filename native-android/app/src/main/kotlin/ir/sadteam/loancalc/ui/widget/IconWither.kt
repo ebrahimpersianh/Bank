@@ -156,6 +156,9 @@ class IconWither @Inject constructor() {
 
         private const val LAST_ALIAS = 53
 
+        /** این طرح چهار حالتِ کهنگی دارد؟ صفحه‌ی محصول همین را به خریدار می‌گوید. */
+        fun hasAgingStages(iconId: String): Boolean = STAGES.containsKey(iconId)
+
         /** کدام الیاس روشن شود - رجوع کن به [STAGES]. */
         fun aliasFor(activeIcon: String?, step: Int): Int {
             val safe = step.coerceIn(0, STEPS)
