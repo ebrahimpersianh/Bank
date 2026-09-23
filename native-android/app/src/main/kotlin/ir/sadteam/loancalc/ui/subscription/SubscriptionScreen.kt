@@ -1,5 +1,37 @@
 package ir.sadteam.loancalc.ui.subscription
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material.icons.filled.AllInclusive
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.Check
+import ir.sadteam.loancalc.core.fmt
+import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.AppSurface2
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppGoldInk
+import ir.sadteam.loancalc.ui.theme.AppInfoPill
+import ir.sadteam.loancalc.ui.settings.SettingsGroup
+import ir.sadteam.loancalc.ui.settings.SettingsRowItem
+import ir.sadteam.loancalc.ui.settings.SettingsDivider
+import ir.sadteam.loancalc.ui.settings.SettingsTone
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -133,399 +165,272 @@ fun SubscriptionScreen(
         }
     }
 
-    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+    // پلنِ انتخاب‌شده (بسته‌ی ChatGPT): پیش‌فرض یک‌ساله، همان که دکمه‌ی بزرگ می‌خرد.
+    var selectedProductId by rememberSaveable { mutableStateOf(subscriptionTiers.last().first) }
+    // سه ردیفِ بازشونده‌ی پایینِ صفحه.
+    var showHistory by remember { mutableStateOf(false) }
+    var showExpiryInfo by remember { mutableStateOf(false) }
+    var showGift by remember { mutableStateOf(false) }
+
+    fun startPurchase(productId: String) {
+        if (gateState != GateState.LOGGED_IN) {
+            onNeedsLogin()
+            return
+        }
+        error = null
+        purchasingProductId = productId
+        subscriptionManager?.purchase(
+            productId = productId,
+            onSucceed = { purchaseToken ->
+                authViewModel.verifySubscriptionPurchase(
+                    productId = productId,
+                    purchaseToken = purchaseToken,
+                    onSuccess = { purchasingProductId = null; onSubscribed() },
+                    onError = {
+                        purchasingProductId = null
+                        error = "تایید خرید ناموفق بود؛ اگه پول کم شده با پشتیبانی تماس بگیر"
+                    },
+                )
+            },
+            onFailed = { purchasingProductId = null; error = "خرید ناموفق بود" },
+            onCanceled = { purchasingProductId = null },
+        )
+    }
+
+    LazyColumn(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(bottom = 24.dp)) {
+        // ── سربرگ ─────────────────────────────────────────────────────────────────
         item {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
-                }
-                Text(
-                    "اشتراک",
-                    color = AppText,
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(start = 4.dp),
-                )
-            }
-        }
-
-        // ── مرورِ اشتراک - **همیشه** نشون داده می‌شه ────────────────────────────────────────
-        // خواسته‌ی صریحِ کاربر (تسکِ #31): «تعرفه‌ها رو *همون صفحه* باز بشه، نه صفحه‌ی جدا». پس
-        // به‌جای دو نمای جایگزینِ هم، لیستِ تعرفه‌ها زیرِ همین محتوا **باز می‌شه**.
-        run {
-            item {
-                val expiry = remember(subscribedUntil) { parseSubscribedUntil(subscribedUntil) }
-                AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(AppGoldFrom),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.Filled.WorkspacePremium,
-                                contentDescription = null,
-                                tint = AppAccent,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-                        Column(modifier = Modifier.padding(start = 10.dp)) {
-                            Text(PLUS_NAME, color = AppText, fontSize = 15.sp)
-                            Text(
-                                "بدونِ محدودیت از همه‌ی امکاناتِ اپ استفاده کن",
-                                color = AppMuted,
-                                fontSize = 11.5.sp,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
-                    }
-                    // وضعیتِ فعلی: نوعِ اشتراک + تاریخِ انقضا با شمارشِ روزِ باقی‌مونده.
-                    val tierLabel = when (subscriptionTier) {
-                        "1m" -> "اشتراکِ یک‌ماهه"
-                        "3m" -> "اشتراکِ سه‌ماهه"
-                        "6m" -> "اشتراکِ شش‌ماهه"
-                        "1y" -> "اشتراکِ یک‌ساله"
-                        else -> null
-                    }
-                    Text(
-                        when {
-                            !subscribed -> "الان اشتراکِ فعالی نداری"
-                            tierLabel != null -> tierLabel
-                            else -> "اشتراکِ فعال"
-                        },
-                        color = AppText,
-                        fontSize = 13.sp,
-                        modifier = Modifier.padding(top = 12.dp),
-                    )
-                    if (subscribed) {
-                        if (expiry != null) {
-                            Text(
-                                "تا ${toFa(expiry.date.d)} ${persianMonthName(expiry.date.m)} ${toFa(expiry.date.y)} " +
-                                    "(${toFa(expiry.daysLeft)} روزِ دیگه)",
-                                color = AppAccent,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        } else {
-                            Text("اشتراکِ دائمی", color = AppAccent, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
-                        }
-                    }
-                }
-            }
-
-            item {
-                // باکسِ «وقتی اشتراکم تموم بشه چی می‌شه؟» - محتواش عمداً دقیقاً همون چیزیه که تو
-                // کد واقعاً پشتِ اشتراکه (MyLoansScreen.canSaveAnotherLoan و AutoBackupWorker)،
-                // نه یه متنِ تبلیغاتیِ کلی.
-                AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                    Text("وقتی اشتراکم تموم بشه چی می‌شه؟", color = AppText, fontSize = 13.5.sp)
-                    Text(
-                        "نگران نباش، هیچ داده‌ای پاک نمی‌شه. کلِ حسابداری (دخل و خرج، بودجه، " +
-                            "دسته‌بندی‌ها، گزارش‌ها و طلب و بدهی) بدونِ محدودیت باز می‌مونه.\n\n" +
-                            "فقط دو چیز محدود می‌شه: از وام‌های ذخیره‌شده‌ت اولی باز می‌مونه و بقیه " +
-                            "قفل می‌شن (قفل، نه حذف - با تمدید دوباره باز می‌شن)، و پشتیبان‌گیریِ " +
-                            "خودکار رو سرور متوقف می‌شه.",
-                        color = AppMuted,
-                        fontSize = 12.sp,
-                        lineHeight = 20.sp,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-            }
-
-            item {
-                // تاریخچه‌ی خریدها - از GET /api/subscription/history میاد. سرور فقط از مرداد ۱۴۰۵
-                // خریدها رو ثبت می‌کنه، پس برای کاربرِ قدیمی می‌تونه خالی باشه و این طبیعیه.
-                AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                    Text("اشتراک‌های خریداری‌شده", color = AppText, fontSize = 13.5.sp)
-                    val history = purchaseHistory
-                    when {
-                        gateState != GateState.LOGGED_IN -> Text(
-                            "برای دیدنِ تاریخچه‌ی خرید باید وارد حسابت بشی.",
-                            color = AppMuted,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
-                        history == null -> Text(
-                            "در حال دریافت…",
-                            color = AppMuted,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
-                        history.isEmpty() -> Text(
-                            "هنوز خریدی ثبت نشده.",
-                            color = AppMuted,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
-                        else -> Column(modifier = Modifier.padding(top = 8.dp)) {
-                            history.forEach { p ->
-                                val bought = parseServerDate(p.createdAt)
-                                val until = parseServerDate(p.subscribedUntil)
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Icon(
-                                        Icons.Filled.WorkspacePremium,
-                                        contentDescription = null,
-                                        tint = AppAccent,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                    Column(modifier = Modifier.padding(start = 8.dp).weight(1f)) {
-                                        Text(tierDisplayName(p.tier), color = AppText, fontSize = 13.sp)
-                                        if (until != null) {
-                                            Text(
-                                                "اعتبار تا ${toFa(until.d)} ${persianMonthName(until.m)} ${toFa(until.y)}",
-                                                color = AppMuted,
-                                                fontSize = 11.sp,
-                                            )
-                                        }
-                                    }
-                                    if (bought != null) {
-                                        Text(
-                                            "${toFa(bought.d)} ${persianMonthName(bought.m)} ${toFa(bought.y)}",
-                                            color = AppMuted,
-                                            fontSize = 11.sp,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                    Text("با اشتراک چی گیرت میاد؟", color = AppText, fontSize = 13.5.sp)
-                    Column(modifier = Modifier.padding(top = 8.dp)) {
-                        SubscriptionBenefit(
-                            icon = Icons.Filled.WorkspacePremium,
-                            title = "وامِ نامحدود",
-                            subtitle = "هر تعداد وام که خواستی ذخیره کن، بدونِ قفل شدن",
-                        )
-                        SubscriptionBenefit(
-                            icon = Icons.Filled.CloudDone,
-                            title = "پشتیبان‌گیریِ خودکارِ ابری",
-                            subtitle = "اگه گوشیت گم شد یا عوض کردی، داده‌هات برمی‌گردن",
-                        )
-                        SubscriptionBenefit(
-                            icon = Icons.Filled.Sms,
-                            title = "ثبتِ خودکار از پیامک و اعلانِ بانک",
-                            subtitle = "برداشت و واریز خودکار ثبت می‌شه، بدونِ تایپِ دستی",
-                        )
-                        SubscriptionBenefit(
-                            icon = Icons.Filled.Receipt,
-                            title = "چک و دسته‌چکِ نامحدود",
-                            subtitle = "با استعلامِ صیادی، یادآوری و بایگانی",
-                        )
-                        SubscriptionBenefit(
-                            icon = Icons.Filled.Sync,
-                            title = "همگام‌سازی بینِ گوشی‌هات",
-                            subtitle = "با شماره‌ت هرجا وارد شی، همون اطلاعات رو داری",
-                        )
-                        SubscriptionBenefit(
-                            icon = Icons.Filled.Block,
-                            title = "بدونِ تبلیغات",
-                            subtitle = "تا وقتی اشتراک داری هیچ تبلیغی تو برنامه نمی‌بینی",
-                        )
-                        SubscriptionBenefit(
-                            icon = Icons.Filled.Description,
-                            title = "خروجیِ PDF و اکسل",
-                            subtitle = "گزارشِ کاملِ تراکنش‌ها برای چاپ یا آرشیو",
-                        )
-                        SubscriptionBenefit(
-                            icon = Icons.Filled.SupportAgent,
-                            title = "پشتیبانیِ مستقیم",
-                            subtitle = "پیامت اولویت‌دار به تیمِ پشتیبانی می‌رسه",
-                        )
-                    }
-                }
-            }
-
-            item {
-                AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                    SubscriptionRow(
-                        icon = Icons.Filled.LocalOffer,
-                        title = if (showPlans) "بستنِ تعرفه‌ها" else "مشاهده‌ی تعرفه‌ها",
-                        subtitle = "قیمتِ پلن‌ها و خریدِ اشتراک",
-                        onClick = { showPlans = !showPlans },
-                    )
-                }
-            }
-        }
-
-        // ── تعرفه‌ها - همین‌جا زیرِ همون ردیف باز می‌شه ────────────────────────────────────
-        if (showPlans && subscriptionManager == null) {
-            item {
-                Text(
-                    "این قابلیت فقط رو نسخه‌ی نصبی اپ (از کافه‌بازار) کار می‌کنه.",
-                    color = AppMuted,
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(horizontal = 14.dp),
-                )
-            }
-        } else if (showPlans) {
-            if (gateState != GateState.LOGGED_IN) {
-                item {
-                    Text(
-                        "قیمت‌های زیر رو ببین؛ برای تکمیل خرید، اول باید وارد حساب بشی.",
-                        color = AppMuted,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
-                    )
-                }
-            }
-            items(subscriptionTiers, key = { it.first }) { (productId, label) ->
-                AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(label, color = AppText, fontSize = 14.sp)
-                                discountPercentByProductId[productId]?.let { pct ->
-                                    Text(
-                                        "٪${toFa(pct)} تخفیف",
-                                        color = AppPrimary,
-                                        fontSize = 11.sp,
-                                        modifier = Modifier
-                                            .padding(start = 6.dp)
-                                            .background(AppPrimaryPill, RoundedCornerShape(8.dp))
-                                            .padding(horizontal = 6.dp, vertical = 2.dp),
-                                    )
-                                }
-                            }
-                            Text(prices[productId] ?: "…", color = AppMuted, fontSize = 12.sp)
-                        }
-                        GradientButton(
-                            enabled = purchasingProductId == null,
-                            onClick = {
-                                if (gateState != GateState.LOGGED_IN) {
-                                    onNeedsLogin()
-                                    return@GradientButton
-                                }
-                                error = null
-                                purchasingProductId = productId
-                                subscriptionManager?.purchase(
-                                    productId = productId,
-                                    onSucceed = { purchaseToken ->
-                                        authViewModel.verifySubscriptionPurchase(
-                                            productId = productId,
-                                            purchaseToken = purchaseToken,
-                                            onSuccess = { purchasingProductId = null; onSubscribed() },
-                                            onError = {
-                                                purchasingProductId = null
-                                                error = "تایید خرید ناموفق بود؛ اگه پول کم شده با پشتیبانی تماس بگیر"
-                                            },
-                                        )
-                                    },
-                                    onFailed = { purchasingProductId = null; error = "خرید ناموفق بود" },
-                                    onCanceled = { purchasingProductId = null },
-                                )
-                            },
-                        ) {
-                            if (purchasingProductId == productId) {
-                                LottieSpinner(modifier = Modifier.size(18.dp))
-                            } else {
-                                Text("خرید")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (showPlans) {
-            item {
-                androidx.compose.material3.OutlinedButton(
-                    onClick = { showPlans = false },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(AppSurface)
+                        .border(1.dp, AppLine, RoundedCornerShape(14.dp))
+                        .pressScaleClickable(onClick = onBack),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Text("بازگشت به وضعیتِ اشتراک", fontSize = 12.5.sp)
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
+                }
+                Column(modifier = Modifier.padding(start = 12.dp)) {
+                    Text("اشتراک", color = AppText, fontSize = 22.sp, fontWeight = FontWeight.Black)
+                    Text("امکاناتِ بیشتر، تجربه‌ی کامل‌تر", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
 
-        // 🎁 **کدِ هدیه** - جایزه‌ی ۱ تا ۱۵ روزه و هدیه‌ی گزارشِ باگ به پشتیبانی.
-        // همیشه دیده می‌شود، حتی برای مشترکِ فعلی: روزها **به انتهای اشتراکِ فعلی**
-        // اضافه می‌شوند، پس خرج‌کردنِ کد در وسطِ اشتراک چیزی را هدر نمی‌دهد.
+        // ── کارتِ «جیبک پلاس» - همان کارتِ رنگیِ بالای بقیه‌ی صفحه‌ها (با تم عوض می‌شود) ──
+        item {
+            val expiry = remember(subscribedUntil) { parseSubscribedUntil(subscribedUntil) }
+            AppHeroCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(AppAccent),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(Icons.Filled.WorkspacePremium, contentDescription = null, tint = AppGoldInk, modifier = Modifier.size(22.dp))
+                            }
+                            Text(
+                                PLUS_NAME,
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Black,
+                                modifier = Modifier.padding(start = 10.dp),
+                            )
+                        }
+                        Text(
+                            "بدونِ محدودیت از همه‌ی امکاناتِ اپ استفاده کن",
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 10.dp)
+                            .width(1.dp)
+                            .height(64.dp)
+                            .background(Color.White.copy(alpha = 0.25f)),
+                    )
+                    Column(modifier = Modifier.width(96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        val tierLabel = when (subscriptionTier) {
+                            "1m" -> "یک‌ماهه"
+                            "3m" -> "سه‌ماهه"
+                            "6m" -> "شش‌ماهه"
+                            "1y" -> "یک‌ساله"
+                            else -> null
+                        }
+                        Text(
+                            if (subscribed) "اشتراک فعال" else "بدونِ اشتراک",
+                            color = if (subscribed) AppAccent else Color.White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                        if (subscribed && tierLabel != null) {
+                            Text(tierLabel, color = Color.White.copy(alpha = 0.8f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
+                        if (subscribed) {
+                            Text(
+                                if (expiry != null) {
+                                    "تا ${toFa(expiry.date.d)} ${persianMonthName(expiry.date.m)} ${toFa(expiry.date.y)}"
+                                } else {
+                                    "اشتراکِ دائمی"
+                                },
+                                color = Color.White,
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                            if (expiry != null) {
+                                Text(
+                                    "(${toFa(expiry.daysLeft)} روزِ دیگه)",
+                                    color = Color.White.copy(alpha = 0.8f),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp).horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    HeroChip(Icons.Filled.AllInclusive, "بدونِ محدودیت")
+                    HeroChip(Icons.Filled.Lock, "امن و مطمئن")
+                    HeroChip(Icons.Filled.Bolt, "دسترسیِ کامل")
+                }
+            }
+        }
+
+        // ── مزایا - فقط چیزهایی که واقعاً پشتِ اشتراک‌اند ──────────────────────────────────
         item {
             AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                Text("کدِ هدیه داری؟", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
+                Text("مزایای $PLUS_NAME", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
                 Text(
-                    "کدِ جایزه یا هدیه‌ی گزارشِ باگ را این‌جا وارد کن.",
+                    "با $PLUS_NAME بدونِ محدودیت و راحت‌تر کار کن",
                     color = AppMuted,
                     fontSize = 10.5.sp,
-                    modifier = Modifier.padding(top = 2.dp),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 2.dp, bottom = 10.dp),
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 9.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // ⚠️ کد ذاتاً چپ‌به‌راست است (حروفِ لاتین و خط‌تیره)، پس مثلِ شماره‌ی
-                    // موبایل و شناسه‌ی صیادی در `Ltr` پیچیده می‌شود.
-                    Ltr {
-                        OutlinedTextField(
-                            value = giftCode,
-                            onValueChange = { giftCode = it.uppercase() },
-                            placeholder = { Text("JIBAK-XXXXX-XXXXX", fontSize = 11.sp) },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    GradientButton(
-                        enabled = giftCode.isNotBlank() && !redeeming,
-                        onClick = {
-                            if (gateState != GateState.LOGGED_IN) {
-                                onNeedsLogin()
-                                return@GradientButton
-                            }
-                            error = null
-                            giftMessage = null
-                            redeeming = true
-                            authViewModel.redeemGiftCode(
-                                code = giftCode,
-                                onSuccess = {
-                                    redeeming = false
-                                    giftCode = ""
-                                    giftMessage = "هدیه فعال شد 🎁"
-                                },
-                                onError = { code ->
-                                    redeeming = false
-                                    error = when (code) {
-                                        "already_used" -> "این کد قبلاً استفاده شده"
-                                        "expired" -> "مهلتِ این کد تمام شده"
-                                        "not_found" -> "کد پیدا نشد؛ دوباره نگاهش کن"
-                                        else -> "فعال‌سازی ناموفق بود؛ اینترنت را بررسی کن"
-                                    }
-                                },
-                            )
-                        },
-                        modifier = Modifier.padding(start = 8.dp),
-                    ) {
-                        if (redeeming) LottieSpinner(modifier = Modifier.size(18.dp)) else Text("فعال کن")
+                val benefits = listOf(
+                    Benefit(Icons.Filled.WorkspacePremium, "وامِ نامحدود", "هر تعداد وام، بدونِ قفل شدن", SettingsTone.GREEN),
+                    Benefit(Icons.Filled.CloudDone, "پشتیبان‌گیریِ ابری", "داده‌هات همیشه امن و در دسترس", SettingsTone.BLUE),
+                    Benefit(Icons.Filled.Sms, "ثبتِ خودکار از پیامک", "برداشت و واریز بدونِ تایپِ دستی", SettingsTone.PURPLE),
+                    Benefit(Icons.Filled.Receipt, "چک و دسته‌چکِ نامحدود", "با استعلامِ صیادی و یادآوری", SettingsTone.ORANGE),
+                    Benefit(Icons.Filled.Sync, "همگام‌سازی بینِ گوشی‌ها", "با شماره‌ت هرجا همون اطلاعات", SettingsTone.BLUE),
+                    Benefit(Icons.Filled.Description, "خروجیِ PDF و اکسل", "گزارشِ کامل برای چاپ یا آرشیو", SettingsTone.RED),
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    benefits.chunked(2).forEach { pair ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            pair.forEach { BenefitTile(it, Modifier.weight(1f)) }
+                        }
                     }
                 }
-                if (giftMessage != null) {
+            }
+        }
+
+        // ── انتخابِ پلن ──────────────────────────────────────────────────────────────
+        item {
+            AppCard(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                Text("انتخابِ اشتراک", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
+                Text(
+                    if (gateState == GateState.LOGGED_IN) "مدتِ موردِ نظرت را انتخاب کن" else "قیمت‌ها را ببین؛ برای خرید اول باید وارد حساب بشی",
+                    color = AppMuted,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 2.dp, bottom = 10.dp),
+                )
+                if (subscriptionManager == null) {
                     Text(
-                        giftMessage ?: "",
-                        color = AppPrimaryInk,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(top = 8.dp),
+                        "خرید فقط رو نسخه‌ی نصبی اپ (از کافه‌بازار یا مایکت) کار می‌کنه.",
+                        color = AppMuted,
+                        fontSize = 12.sp,
                     )
+                } else {
+                    val monthly = priceRial(prices[subscriptionTiers.first().first])
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        // چهار کارت کنارِ هم فقط وقتی جا می‌شوند؛ گوشیِ باریک دوتادوتا.
+                        val perRow = if (maxWidth >= 320.dp) 4 else 2
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            subscriptionTiers.chunked(perRow).forEach { row ->
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    row.forEach { (productId, label) ->
+                                        PlanCard(
+                                            label = label.removePrefix("اشتراک "),
+                                            priceText = prices[productId],
+                                            months = monthsOf(productId),
+                                            monthlyBase = monthly,
+                                            fallbackDiscount = discountPercentByProductId[productId],
+                                            selected = productId == selectedProductId,
+                                            onClick = { selectedProductId = productId },
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── دکمه‌ی خرید - به پلنِ انتخاب‌شده وصل است ─────────────────────────────────────
+        if (subscriptionManager != null) {
+            item {
+                val label = subscriptionTiers.firstOrNull { it.first == selectedProductId }?.second ?: ""
+                val busy = purchasingProductId != null
+                Row(
+                    modifier = Modifier
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .shadow(10.dp, RoundedCornerShape(32.dp), ambientColor = AppPrimary.copy(alpha = 0.3f), spotColor = AppPrimary.copy(alpha = 0.3f))
+                        .clip(RoundedCornerShape(32.dp))
+                        .background(AppPrimary)
+                        .pressScaleClickable(scale = 0.98f) { if (!busy) startPurchase(selectedProductId) }
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.18f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Filled.ShoppingCart, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                    }
+                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        if (busy) {
+                            LottieSpinner(modifier = Modifier.size(24.dp))
+                        } else {
+                            Text(
+                                if (subscribed) "تمدید با $label" else "خریدِ $label",
+                                color = Color.White,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Black,
+                            )
+                            Text(
+                                if (subscribed) "روزها به انتهای اشتراکِ فعلی اضافه می‌شوند" else "دسترسیِ کامل و بدونِ محدودیت",
+                                color = Color.White.copy(alpha = 0.85f),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
+                    Box(
+                        modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.White),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
+                    }
                 }
             }
         }
@@ -536,63 +441,292 @@ fun SubscriptionScreen(
                     text = error ?: "",
                     color = AppDanger,
                     fontSize = 12.sp,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 4.dp),
                 )
             }
         }
+
+        // ── ردیف‌های پایین: اشتراک‌های قبلی، «وقتی تموم بشه»، کدِ هدیه ───────────────────
+        item {
+            SettingsGroup(modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
+                SettingsRowItem(
+                    title = "اشتراک‌های قبلی",
+                    icon = Icons.Filled.Receipt,
+                    tone = SettingsTone.PURPLE,
+                    status = "تاریخچه‌ی خریدهای تو",
+                    onClick = { showHistory = !showHistory },
+                )
+                if (showHistory) {
+                    // تاریخچه از GET /api/subscription/history؛ سرور فقط از مرداد ۱۴۰۵ ثبت می‌کند.
+                    Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
+                        val history = purchaseHistory
+                        when {
+                            gateState != GateState.LOGGED_IN -> InfoText("برای دیدنِ تاریخچه‌ی خرید باید وارد حسابت بشی.")
+                            history == null -> InfoText("در حال دریافت…")
+                            history.isEmpty() -> InfoText("هنوز خریدی ثبت نشده.")
+                            else -> history.forEach { p ->
+                                val bought = parseServerDate(p.createdAt)
+                                val until = parseServerDate(p.subscribedUntil)
+                                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.WorkspacePremium, contentDescription = null, tint = AppAccent, modifier = Modifier.size(18.dp))
+                                    Column(modifier = Modifier.padding(start = 8.dp).weight(1f)) {
+                                        Text(tierDisplayName(p.tier), color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                                        if (until != null) {
+                                            Text(
+                                                "اعتبار تا ${toFa(until.d)} ${persianMonthName(until.m)} ${toFa(until.y)}",
+                                                color = AppMuted,
+                                                fontSize = 10.5.sp,
+                                            )
+                                        }
+                                    }
+                                    if (bought != null) {
+                                        Text("${toFa(bought.d)} ${persianMonthName(bought.m)} ${toFa(bought.y)}", color = AppMuted, fontSize = 10.5.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                SettingsDivider()
+                SettingsRowItem(
+                    title = "وقتی اشتراکم تموم بشه چی می‌شه؟",
+                    icon = Icons.Filled.Info,
+                    tone = SettingsTone.BLUE,
+                    status = "هیچ داده‌ای پاک نمی‌شه",
+                    onClick = { showExpiryInfo = !showExpiryInfo },
+                )
+                if (showExpiryInfo) {
+                    // محتوا عمداً همان چیزی است که در کد واقعاً پشتِ اشتراک است
+                    // (MyLoansScreen.canSaveAnotherLoan و AutoBackupWorker).
+                    Text(
+                        "کلِ حسابداری (دخل و خرج، بودجه، دسته‌بندی‌ها، گزارش‌ها و طلب و بدهی) بدونِ محدودیت " +
+                            "باز می‌مونه. فقط دو چیز محدود می‌شه: از وام‌های ذخیره‌شده‌ت اولی باز می‌مونه و بقیه " +
+                            "قفل می‌شن (قفل، نه حذف - با تمدید دوباره باز می‌شن)، و پشتیبان‌گیریِ خودکار رو سرور متوقف می‌شه.",
+                        color = AppMuted,
+                        fontSize = 11.5.sp,
+                        lineHeight = 19.sp,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+                    )
+                }
+                SettingsDivider()
+                // 🎁 کدِ هدیه - روزها به انتهای اشتراکِ فعلی اضافه می‌شوند.
+                SettingsRowItem(
+                    title = "کدِ هدیه داری؟",
+                    icon = Icons.Filled.CardGiftcard,
+                    tone = SettingsTone.GREEN,
+                    status = "کدِ جایزه یا هدیه‌ی گزارشِ باگ",
+                    onClick = { showGift = !showGift },
+                )
+                if (showGift || giftCode.isNotEmpty() || giftMessage != null) {
+                    Column(modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // ⚠️ کد ذاتاً چپ‌به‌راست است، پس در `Ltr` پیچیده می‌شود.
+                            Ltr {
+                                OutlinedTextField(
+                                    value = giftCode,
+                                    onValueChange = { giftCode = it.uppercase() },
+                                    placeholder = { Text("JIBAK-XXXXX-XXXXX", fontSize = 11.sp) },
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(16.dp),
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            GradientButton(
+                                enabled = giftCode.isNotBlank() && !redeeming,
+                                onClick = {
+                                    if (gateState != GateState.LOGGED_IN) {
+                                        onNeedsLogin()
+                                        return@GradientButton
+                                    }
+                                    error = null
+                                    giftMessage = null
+                                    redeeming = true
+                                    authViewModel.redeemGiftCode(
+                                        code = giftCode,
+                                        onSuccess = {
+                                            redeeming = false
+                                            giftCode = ""
+                                            giftMessage = "هدیه فعال شد 🎁"
+                                        },
+                                        onError = { code ->
+                                            redeeming = false
+                                            error = when (code) {
+                                                "already_used" -> "این کد قبلاً استفاده شده"
+                                                "expired" -> "مهلتِ این کد تمام شده"
+                                                "not_found" -> "کد پیدا نشد؛ دوباره نگاهش کن"
+                                                else -> "فعال‌سازی ناموفق بود؛ اینترنت را بررسی کن"
+                                            }
+                                        },
+                                    )
+                                },
+                                modifier = Modifier.padding(start = 8.dp),
+                            ) {
+                                if (redeeming) LottieSpinner(modifier = Modifier.size(18.dp)) else Text("فعال کن")
+                            }
+                        }
+                        if (giftMessage != null) {
+                            Text(
+                                giftMessage ?: "",
+                                color = AppPrimaryInk,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Black,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
-/** یه ردیفِ قابلِ‌تپِ صفحه‌ی اشتراک (تعرفه‌ها/تاریخچه) - آیکون + عنوان + زیرعنوان + فلش. */
+private data class Benefit(val icon: ImageVector, val title: String, val hint: String, val tone: SettingsTone)
+
 @Composable
-private fun SubscriptionRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-) {
+private fun BenefitTile(benefit: Benefit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(AppSurface2)
+            .padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(benefit.tone.fill),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(benefit.icon, contentDescription = null, tint = benefit.tone.ink, modifier = Modifier.size(19.dp))
+        }
+        Column(modifier = Modifier.padding(start = 8.dp)) {
+            Text(benefit.title, color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.Black, lineHeight = 15.sp)
+            Text(benefit.hint, color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, lineHeight = 13.sp)
+        }
+    }
+}
+
+/** برچسبِ کوچکِ سفیدِ روی کارتِ رنگی. */
+@Composable
+private fun HeroChip(icon: ImageVector, label: String) {
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .pressScaleClickable(onClick = onClick)
-            .padding(vertical = 4.dp),
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color.White.copy(alpha = 0.18f))
+            .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            androidx.compose.foundation.layout.Box(
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(CircleShape)
-                    .background(AppPrimaryPill),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(17.dp))
-            }
-            Column(modifier = Modifier.padding(start = 10.dp)) {
-                Text(title, color = AppText, fontSize = 13.sp)
-                Text(subtitle, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
-            }
-        }
-        Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
+        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
+        Text(label, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))
     }
 }
 
-/** یه مزیتِ اشتراک تو لیستِ «با اشتراک چی گیرت میاد؟». */
 @Composable
-private fun SubscriptionBenefit(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
+private fun InfoText(text: String) = Text(text, color = AppMuted, fontSize = 11.5.sp, modifier = Modifier.padding(vertical = 4.dp))
+
+/** کارتِ یک پلن. قیمت متنِ خودِ استور است؛ «٪ تخفیف» و «≈ ماهی» از روی همان عدد حساب می‌شوند. */
+@Composable
+private fun PlanCard(
+    label: String,
+    priceText: String?,
+    months: Int,
+    monthlyBase: Long?,
+    fallbackDiscount: Int?,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
-        Column(modifier = Modifier.padding(start = 10.dp)) {
-            Text(title, color = AppText, fontSize = 12.5.sp)
-            Text(subtitle, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+    val rial = priceRial(priceText)
+    val discount = if (rial != null && monthlyBase != null && monthlyBase > 0 && months > 1) {
+        (100 - rial * 100 / (monthlyBase * months)).toInt().takeIf { it > 0 }
+    } else {
+        fallbackDiscount.takeIf { months > 1 }
+    }
+    val shape = RoundedCornerShape(18.dp)
+    Box(modifier = modifier) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .background(if (selected) AppPrimaryPill else AppSurface)
+                .border(if (selected) 2.dp else 1.dp, if (selected) AppPrimary else AppLine, shape)
+                .pressScaleClickable(scale = 0.97f, onClick = onClick)
+                .padding(vertical = 12.dp, horizontal = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(label, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            Box(modifier = Modifier.padding(top = 5.dp).height(18.dp), contentAlignment = Alignment.Center) {
+                if (discount != null) {
+                    Text(
+                        "٪${toFa(discount)} تخفیف",
+                        color = AppPrimaryInk,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppInfoPill)
+                            .padding(horizontal = 6.dp, vertical = 1.dp),
+                    )
+                }
+            }
+            Text(
+                if (rial != null) groupedFa(rial) else (priceText ?: "…"),
+                color = AppText,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                modifier = Modifier.padding(top = 6.dp),
+            )
+            if (rial != null) {
+                Text("ریال", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "≈ ماهی ${groupedFa(rial / months)}",
+                    color = AppMuted,
+                    fontSize = 8.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+        if (selected) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = (-4).dp, y = (-6).dp)
+                    .size(20.dp)
+                    .clip(CircleShape)
+                    .background(AppPrimary),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
+            }
         }
     }
 }
+
+private fun monthsOf(productId: String): Int = when {
+    productId.endsWith("_1y") -> 12
+    productId.endsWith("_6m") -> 6
+    productId.endsWith("_3m") -> 3
+    else -> 1
+}
+
+/**
+ * عددِ ریالیِ متنِ قیمتِ استور («۳۰۰٬۰۰۰ ریال»). اگر واحد تومان باشد ×۱۰. نامعلوم ← `null`
+ * تا به‌جای عددِ غلط همان متنِ خامِ استور نشان داده شود.
+ */
+private fun priceRial(text: String?): Long? {
+    if (text.isNullOrBlank()) return null
+    val digits = text.map { c ->
+        when (c) {
+            in '۰'..'۹' -> '0' + (c - '۰')
+            in '٠'..'٩' -> '0' + (c - '٠')
+            else -> c
+        }
+    }.filter { it.isDigit() }.joinToString("")
+    val n = digits.toLongOrNull()?.takeIf { it > 0 } ?: return null
+    return if ("تومان" in text) n * 10 else n
+}
+
+private fun groupedFa(n: Long): String = fmt(n.toDouble())
