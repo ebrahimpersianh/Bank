@@ -58,9 +58,16 @@ fun TrendLineChart(
     tooltipBackground: Color = Color.Black.copy(alpha = 0.55f),
     tooltipTitleColor: Color = Color.White.copy(alpha = 0.75f),
     tooltipValueColor: Color = Color.White,
+    /**
+     * طولِ کاملِ محور بر حسبِ نقطه (مثلاً ۳۰ روز). اگر داده کمتر باشد، نقاط **سمتِ راست** در
+     * جای واقعی‌شان می‌نشینند و بقیه‌ی محور خالی می‌مانَد. `null` یعنی کلِ عرض مالِ داده است.
+     */
+    slots: Int? = null,
 ) {
     if (values.size < 2) return
     val interactive = labels.size == values.size
+    val axis = (slots ?: values.size).coerceAtLeast(values.size)
+    val lead = axis - values.size
     // نقطه‌ی انتخاب‌شده با لمس. `null` یعنی دستی روی نمودار نیست و نقطه‌ی «امروز» فعال است.
     var touchedIndex by remember(values) { mutableStateOf<Int?>(null) }
     var widthPx by remember { mutableFloatStateOf(0f) }
@@ -87,19 +94,19 @@ fun TrendLineChart(
                         // برداشتنِ انگشت حباب را می‌بندد و نقطه به «امروز» برمی‌گردد.
                         detectDragGestures(
                             onDragStart = { offset ->
-                                touchedIndex = indexAt(offset.x, size.width.toFloat(), values.size)
+                                touchedIndex = indexAt(offset.x, size.width.toFloat(), axis, lead)
                             },
                             onDragEnd = { touchedIndex = null },
                             onDragCancel = { touchedIndex = null },
                             onDrag = { change, _ ->
                                 change.consume()
-                                touchedIndex = indexAt(change.position.x, size.width.toFloat(), values.size)
+                                touchedIndex = indexAt(change.position.x, size.width.toFloat(), axis, lead)
                             },
                         )
                     }.pointerInput(values) {
                         detectTapGestures(
                             onPress = { offset ->
-                                touchedIndex = indexAt(offset.x, size.width.toFloat(), values.size)
+                                touchedIndex = indexAt(offset.x, size.width.toFloat(), axis, lead)
                                 tryAwaitRelease()
                                 touchedIndex = null
                             },
@@ -113,13 +120,13 @@ fun TrendLineChart(
         val max = values.max()
         val span = (max - min).takeIf { it > 0.0 } ?: 1.0
         val flat = max - min == 0.0
-        val stepX = size.width / (values.size - 1)
+        val stepX = size.width / (axis - 1)
         // ۱۰٪ حاشیه‌ی بالا و پایین تا نقطه‌ی انتها به لبه نچسبد.
         val usable = size.height * 0.80f
         val top = size.height * 0.10f
         val points = values.mapIndexed { index, value ->
             val ratio = if (flat) 0.5 else (value - min) / span
-            Offset(index * stepX, top + usable - (ratio.toFloat() * usable))
+            Offset((lead + index) * stepX, top + usable - (ratio.toFloat() * usable))
         }
 
         val line = Path().apply {
@@ -187,7 +194,7 @@ fun TrendLineChart(
             ChartTooltip(
                 title = labels.getOrElse(index) { "" },
                 value = valueLabel(values.getOrElse(index) { 0.0 }),
-                centerX = if (values.size > 1) widthPx * index / (values.size - 1) else 0f,
+                centerX = widthPx * (lead + index) / (axis - 1),
                 containerWidth = widthPx,
                 background = tooltipBackground,
                 titleColor = tooltipTitleColor,
@@ -198,8 +205,9 @@ fun TrendLineChart(
 }
 
 /** نزدیک‌ترین نقطه به مختصاتِ افقیِ انگشت. */
-private fun indexAt(x: Float, width: Float, count: Int): Int {
-    if (count < 2 || width <= 0f) return 0
-    val step = width / (count - 1)
-    return (x / step).roundToInt().coerceIn(0, count - 1)
+private fun indexAt(x: Float, width: Float, axis: Int, lead: Int): Int {
+    if (axis < 2 || width <= 0f) return 0
+    val step = width / (axis - 1)
+    // جای خالیِ ابتدای محور به اولین نقطه‌ی واقعی می‌چسبد.
+    return ((x / step).roundToInt() - lead).coerceIn(0, axis - lead - 1)
 }

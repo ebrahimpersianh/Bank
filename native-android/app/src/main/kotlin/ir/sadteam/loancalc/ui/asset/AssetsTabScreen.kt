@@ -211,13 +211,13 @@ fun AssetsTabScreen(
     val trendSeries = remember(wealthSnapshots, cashTrend) {
         // ⚠️ عکسِ روزانه تا یک هفته جمع نشده، دو-سه نقطه بیشتر ندارد و نمودار یک خطِ صاف
         // می‌شد (گزارشِ کاربر: «نقطه ندارد»). تا آن موقع بازسازیِ ۳۰روزه‌ی نقدی بهتر است.
-        if (wealthSnapshots.size >= 7) {
+        if (wealthSnapshots.size >= 2) {
             wealthSnapshots.takeLast(30).map { it.totalRial }
         } else {
             cashTrend
         }
     }
-    val trendIsReal = wealthSnapshots.size >= 7
+    val trendIsReal = wealthSnapshots.size >= 2
     // درصدِ تغییر نسبت به ابتدای همان سری. مبنای صفر یعنی درصد بی‌معنی، پس `null`.
     val cashTrendPercent = remember(trendSeries) {
         val first = trendSeries.firstOrNull() ?: 0.0
@@ -690,6 +690,9 @@ private fun TotalWealthHero(
             if (trend.size >= 2 && trend.any { it != trend.first() }) {
                 TrendLineChart(
                     values = trend,
+                    // خواسته‌ی کاربر: دو روز داده = **دو نقطه در جای واقعی‌شان** روی محورِ ۳۰روزه
+                    // (سمتِ راست)، نه یک خطِ کشیده از این سر تا آن سر.
+                    slots = 30,
                     lineColor = Color.White,
                     // پررنگ‌تر از ۰٫۲۲ی قبلی - خواسته‌ی کاربر: «زیرِ این خط انگار پر باشد».
                     fillTop = Color.White.copy(alpha = 0.38f),
