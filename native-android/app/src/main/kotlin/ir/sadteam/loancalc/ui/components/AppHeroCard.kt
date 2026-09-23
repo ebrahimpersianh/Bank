@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -104,15 +106,19 @@ fun AppHeroCard(
     // ⚠️ گرادیان **۱۶۰ درجه**ست نه عمودی (اصلاحیه‌ی طراح؛ دورِ قبل عمودی گفته بود و اشتباه
     // بود). نسخه‌ی بنفشِ فریمِ `26a` هم همینه، پس هر دو گونه یه جهت دارن. جهتش مهمه نه
     // عددِ دقیقش: از بالا-راست به پایین-چپ.
+    // 🎨 **سه‌رنگه** (طرحِ ChatGPT برای کارتِ دارایی، ۲ مهر - برای همه‌ی کارت‌های قهرمان):
+    // بالا-راست کمی روشن‌تر از رنگِ تم، پایین-چپ کمی تیره‌تر - عمق می‌دهد بی آنکه رنگِ تازه‌ای
+    // بسازد؛ هر سه از خودِ رنگِ تم مشتق می‌شوند، پس با هر تمِ خریدنی جور است.
     val gradient = Brush.linearGradient(
-        colors = listOf(from, to),
+        colors = listOf(lerp(from, Color.White, 0.14f), from, lerp(to, Color.Black, 0.22f)),
         start = Offset.Zero,
         end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .hardShadow(shadow, 5.dp, AppRadius.card)
+            // سایه‌ی نرمِ هم‌رنگ (طرحِ ChatGPT) به‌جای سایه‌ی سختِ ۵dp.
+            .shadow(14.dp, shape, ambientColor = shadow, spotColor = shadow)
             .clip(shape)
             .background(gradient)
             // 🌿 **نقشِ برگِ گوشه** (خواسته‌ی کاربر با طرحِ مرجع، ۳۱ شهریور).
@@ -126,6 +132,7 @@ fun AppHeroCard(
             // هر تمِ خریدنیِ بعدی، رنگش از خودِ زمینه می‌آید. یک هگزِ ثابت روی نیمی از
             // تم‌ها لکه می‌شد.
             .drawBehind {
+                drawHeroWaves()
                 drawHeroLeaves(bothSides = true)
                 if (glow != null) {
                     // از لبه‌ی **راست** (آغازِ راست‌به‌چپ) تا ۴۵٪ عرض محو می‌شود.
@@ -189,6 +196,42 @@ fun DrawScope.drawHeroLeaves(bothSides: Boolean = false) {
         width = unit * 0.15f,
         rotationDeg = 12f,
         color = Color.White.copy(alpha = 0.04f),
+    )
+}
+
+/**
+ * موج‌های نرمِ پس‌زمینه (طرحِ ChatGPT): دو دایره‌ی بزرگِ سفیدِ خیلی کم‌رنگ که از گوشه‌ی
+ * بالا-چپ بیرون زده‌اند + یک هاله‌ی روشنِ ملایم. مثلِ برگ‌ها سفیدِ شفاف است تا روی هر تمی بنشیند.
+ */
+fun DrawScope.drawHeroWaves() {
+    val w = size.width
+    val h = size.height
+    drawCircle(
+        brush = Brush.radialGradient(
+            listOf(Color.White.copy(alpha = 0.16f), Color.Transparent),
+            center = Offset(w * 0.15f, 0f),
+            radius = w * 0.7f,
+        ),
+        radius = w * 0.7f,
+        center = Offset(w * 0.15f, 0f),
+    )
+    drawCircle(
+        color = Color.White.copy(alpha = 0.07f),
+        radius = h * 0.95f,
+        center = Offset(-h * 0.25f, -h * 0.15f),
+    )
+    drawCircle(
+        color = Color.White.copy(alpha = 0.05f),
+        radius = h * 1.35f,
+        center = Offset(-h * 0.45f, h * 0.25f),
+    )
+    // کمی تیرگی در پایین-چپ تا عددهای سفیدِ پایینِ کارت همیشه کنتراست داشته باشند.
+    drawRect(
+        brush = Brush.verticalGradient(
+            listOf(Color.Transparent, Color.Black.copy(alpha = 0.10f)),
+            startY = h * 0.55f,
+            endY = h,
+        ),
     )
 }
 
