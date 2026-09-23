@@ -85,6 +85,8 @@ enum class HeroTone(
 fun AppHeroCard(
     modifier: Modifier = Modifier,
     tone: HeroTone = HeroTone.GREEN,
+    /** هاله‌ی رنگیِ لبه‌ی آغاز (راست)، مثلاً قرمز برای «عقب افتادی». `null` یعنی هیچ. */
+    glow: Color? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(AppRadius.card)
@@ -123,7 +125,19 @@ fun AppHeroCard(
             // **هر تمی** جور دربیاید (خواسته‌ی دومِ همان پیام): روی سبز، بنفش، لاجورد یا
             // هر تمِ خریدنیِ بعدی، رنگش از خودِ زمینه می‌آید. یک هگزِ ثابت روی نیمی از
             // تم‌ها لکه می‌شد.
-            .drawBehind { drawHeroLeaves(bothSides = true) }
+            .drawBehind {
+                drawHeroLeaves(bothSides = true)
+                if (glow != null) {
+                    // از لبه‌ی **راست** (آغازِ راست‌به‌چپ) تا ۴۵٪ عرض محو می‌شود.
+                    drawRect(
+                        brush = Brush.horizontalGradient(
+                            listOf(Color.Transparent, glow.copy(alpha = 0.75f)),
+                            startX = size.width * 0.55f,
+                            endX = size.width,
+                        ),
+                    )
+                }
+            }
             .padding(AppSpacing.cardPadding),
     ) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {

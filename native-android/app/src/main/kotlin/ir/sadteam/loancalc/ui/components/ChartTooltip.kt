@@ -39,7 +39,10 @@ import kotlin.math.roundToInt
 fun ChartTooltip(
     title: String,
     value: String,
-    /** مرکزِ افقیِ هدف، به پیکسل، نسبت به همان قابی که حباب در آن نشسته. */
+    /**
+     * مرکزِ افقیِ هدف، به پیکسلِ **فیزیکی از چپ** (نه «از آغاز»). نمودارها در `Canvas`
+     * می‌کشند که راست‌به‌چپ را نمی‌شناسد؛ اگر این‌جا آینه می‌شد، حباب طرفِ مقابلِ انگشت می‌افتاد.
+     */
     centerX: Float,
     /** عرضِ کلِ قاب به پیکسل - برای اینکه حباب از لبه بیرون نزند. */
     containerWidth: Float,
@@ -70,11 +73,17 @@ fun ChartTooltip(
 private fun Modifier.offsetPx(x: Float): Modifier =
     this.then(Modifier.offsetLayout(x))
 
+/**
+ * 🚨 **حباب هیچ جایی در چیدمان نمی‌گیرد** (گزارشِ کاربر: «می‌زنم رو کندل، صفحه کشیده
+ * می‌شود»). قبلاً ارتفاعِ حباب به قابِ نمودار اضافه می‌شد و کلِ کارت بلند می‌شد. حالا
+ * اندازه‌ی گزارش‌شده صفر است و حباب **بالای** نمودار، روی بقیه‌ی کارت، کشیده می‌شود.
+ * `place` نه `placeRelative`: مختصات فیزیکی است (بالا را ببین).
+ */
 private fun Modifier.offsetLayout(x: Float): Modifier =
     this.layout { measurable, constraints ->
-        val placeable = measurable.measure(constraints)
-        layout(placeable.width, placeable.height) {
-            placeable.placeRelative(IntOffset(x.roundToInt(), 0))
+        val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
+        layout(0, 0) {
+            placeable.place(IntOffset(x.roundToInt(), -placeable.height - 4.dp.roundToPx()))
         }
     }
 

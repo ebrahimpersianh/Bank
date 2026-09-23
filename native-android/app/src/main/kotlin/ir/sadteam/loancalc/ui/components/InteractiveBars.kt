@@ -19,10 +19,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -59,6 +62,9 @@ fun InteractiveBars(
     val interactive = labels.size == values.size
     var touchedIndex by remember(values) { mutableStateOf<Int?>(null) }
     var widthPx by remember { mutableFloatStateOf(0f) }
+    // 🚨 `Row` در راست‌به‌چپ میله‌ی اول را **راست** می‌گذارد، ولی مختصاتِ لمس همیشه از چپ
+    // است. بی این، کشیدن برعکس کار می‌کرد و لمس اطلاعاتِ میله‌ی قرینه را نشان می‌داد.
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
     Box(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -72,19 +78,19 @@ fun InteractiveBars(
                         Modifier.pointerInput(values) {
                             widthPx = size.width.toFloat()
                             detectDragGestures(
-                                onDragStart = { touchedIndex = barAt(it.x, size.width.toFloat(), values.size) },
+                                onDragStart = { touchedIndex = barAt(it.x, size.width.toFloat(), values.size, rtl) },
                                 onDragEnd = { touchedIndex = null },
                                 onDragCancel = { touchedIndex = null },
                                 onDrag = { change, _ ->
                                     change.consume()
-                                    touchedIndex = barAt(change.position.x, size.width.toFloat(), values.size)
+                                    touchedIndex = barAt(change.position.x, size.width.toFloat(), values.size, rtl)
                                 },
                             )
                         }.pointerInput(values) {
                             widthPx = size.width.toFloat()
                             detectTapGestures(
                                 onPress = {
-                                    touchedIndex = barAt(it.x, size.width.toFloat(), values.size)
+                                    touchedIndex = barAt(it.x, size.width.toFloat(), values.size, rtl)
                                     tryAwaitRelease()
                                     touchedIndex = null
                                 },
@@ -116,13 +122,16 @@ fun InteractiveBars(
                 )
             }
         }
-        ChartTooltipHost(visible = touchedIndex != null, modifier = Modifier.align(Alignment.TopStart)) {
+        ChartTooltipHost(visible = touchedIndex != null, modifier = Modifier.align(AbsoluteAlignment.TopLeft)) {
             val index = touchedIndex ?: currentIndex
             ChartTooltip(
                 title = labels.getOrElse(index) { "" },
                 value = valueLabel(values.getOrElse(index) { 0.0 }),
                 // مرکزِ میله: هر میله یک سهمِ مساوی از عرض دارد.
-                centerX = if (values.isNotEmpty()) widthPx * (index + 0.5f) / values.size else 0f,
+                centerX = if (values.isEmpty()) 0f else {
+                    val slot = if (rtl) values.size - 1 - index else index
+                    widthPx * (slot + 0.5f) / values.size
+                },
                 containerWidth = widthPx,
                 background = tooltipBackground,
                 titleColor = tooltipTitleColor,
@@ -133,7 +142,8 @@ fun InteractiveBars(
 }
 
 /** میله‌ی زیرِ انگشت. برخلافِ نمودارِ خطی این‌جا **سهمِ** میله مهم است نه نزدیک‌ترین نقطه. */
-private fun barAt(x: Float, width: Float, count: Int): Int {
+private fun barAt(x: Float, width: Float, count: Int, rtl: Boolean): Int {
     if (count <= 0 || width <= 0f) return 0
-    return ((x / width) * count).toInt().coerceIn(0, count - 1)
+    val slot = ((x / width) * count).toInt().coerceIn(0, count - 1)
+    return if (rtl) count - 1 - slot else slot
 }

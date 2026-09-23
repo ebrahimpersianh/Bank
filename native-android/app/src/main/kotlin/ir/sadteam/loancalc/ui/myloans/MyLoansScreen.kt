@@ -138,6 +138,8 @@ import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.components.rememberIsScrollingUp
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
 import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
+import ir.sadteam.loancalc.ui.components.TrendLineChart
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
@@ -1451,10 +1453,20 @@ private fun DashboardSummary(
             }
             if (debtCurve.any { it > 0f } && totalMonthlyInstallment > 0) {
                 Box(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
-                    DebtTrendWave(
-                        points = debtCurve,
-                        lineColor = Color.White.copy(alpha = 0.5f),
+                    // 🚨 حالا لمس‌پذیر (گزارشِ کاربر: «این یکی هیچ‌کدام را ندارد») - همان
+                    // نمودارِ مشترکِ دارایی. فهرست **برعکس** داده می‌شود تا ماهِ جاری مثلِ قبل
+                    // سمتِ راست بماند و ماه‌های آینده به چپ بروند.
+                    val waveMonths = (0 until debtCurve.size).map { ahead ->
+                        persianMonthName(((todayForWave.m - 1 + ahead) % 12) + 1)
+                    }
+                    TrendLineChart(
+                        values = debtCurve.map { it.toDouble() }.reversed(),
+                        lineColor = Color.White.copy(alpha = 0.6f),
+                        fillTop = Color.White.copy(alpha = 0.16f),
                         dotColor = Color.White,
+                        height = 40.dp,
+                        labels = waveMonths.reversed(),
+                        valueLabel = { value -> if (privacyMode) "•••" else "مانده ${value.rialToFaCompact()} تومان" },
                     )
                     Text(
                         persianMonthName(todayForWave.m),

@@ -15,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -172,10 +173,16 @@ fun TrendLineChart(
                 strokeWidth = 1.dp.toPx(),
             )
         }
+        // 🔘 **نقطه روی هر داده** (خواسته‌ی کاربر: «هر روز/ماه جدا با نقطه مشخص باشد، نه
+        // یک خطِ صاف»). وقتی نقاط خیلی نزدیکِ هم‌اند (بیش از ~۴۰ در عرض) کشیده نمی‌شوند
+        // تا خط به تسبیح تبدیل نشود؛ لمس همچنان هر نقطه را جدا پیدا می‌کند.
+        if (stepX >= 6.dp.toPx()) {
+            points.forEach { drawCircle(color = dotColor.copy(alpha = 0.55f), radius = 2.2.dp.toPx(), center = it) }
+        }
         drawCircle(color = dotColor.copy(alpha = 0.28f), radius = 7.dp.toPx(), center = active)
         drawCircle(color = dotColor, radius = 3.5.dp.toPx(), center = active)
     }
-        ChartTooltipHost(visible = touchedIndex != null, modifier = Modifier.align(Alignment.TopStart)) {
+        ChartTooltipHost(visible = touchedIndex != null, modifier = Modifier.align(AbsoluteAlignment.TopLeft)) {
             val index = touchedIndex ?: values.lastIndex
             ChartTooltip(
                 title = labels.getOrElse(index) { "" },

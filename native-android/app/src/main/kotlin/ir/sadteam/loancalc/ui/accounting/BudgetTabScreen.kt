@@ -53,6 +53,7 @@ import ir.sadteam.loancalc.data.CategoryEntry
 import ir.sadteam.loancalc.ui.account.AccountViewModel
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.category.CategoryViewModel
+import ir.sadteam.loancalc.ui.components.AppHeroCard
 import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.components.UndoBar
 import ir.sadteam.loancalc.ui.components.dashedBorder
@@ -196,6 +197,7 @@ fun BudgetTabScreen(
                         allowance = dailyAllowance,
                         week = weekUnderShare,
                         saved = savedSoFar,
+                        behind = fairShare > 0 && fairShare * today.d < totalSpent,
                         dayOfMonth = today.d,
                         daysInMonth = daysInMonth,
                         daysLeft = daysLeft,
@@ -546,32 +548,17 @@ private fun DailyAllowanceHero(
     allowance: Double,
     week: List<Boolean>,
     saved: Double,
+    /** خرجِ تا امروز از سهمِ منصفانه‌ی همین روزها بیشتر شده. */
+    behind: Boolean,
     dayOfMonth: Int,
     daysInMonth: Int,
     daysLeft: Int,
     privacyMode: Boolean,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .hardShadow(BudgetGreenShadow, 5.dp, 20.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(Brush.linearGradient(listOf(BudgetGreen, BudgetGreenDeep)))
-            .drawBehind {
-                // هاله‌ی گردِ گوشه‌ی بالا-چپ (۹۲ پیکسل، ۱۶٪) - عیناً فریم.
-                val r = 46.dp.toPx()
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        listOf(Color.White.copy(alpha = 0.16f), Color.Transparent),
-                        center = Offset(-22.dp.toPx() + r, -22.dp.toPx() + r),
-                        radius = r,
-                    ),
-                    radius = r,
-                    center = Offset(-22.dp.toPx() + r, -22.dp.toPx() + r),
-                )
-            }
-            .padding(16.dp),
-    ) {
+    // 🎨 **هم‌رنگِ بقیه‌ی کارت‌های قهرمان** (خواسته‌ی کاربر، ۱ مهر): رنگِ تم + نقشِ برگ.
+    // وقتی از سهمِ روزانه عقب است (`behind`) یک هاله‌ی قرمزِ ملایم از لبه‌ی راست
+    // می‌آید - هشدار بدونِ اینکه کلِ کارت قرمز و ترسناک شود.
+    AppHeroCard(glow = if (behind) Color(0xFFFF4B4B) else null) {
         // 🚨 **شمارنده‌ی روزِ ماه** (طرحِ مرجعِ کاربر، ۳۱ شهریور): «سهمِ امروز» بی این‌که
         // بدانی کجای ماهی، عددِ بی‌لنگری است - روزِ دوم با روزِ بیست‌وهشتم فرق دارد.
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
