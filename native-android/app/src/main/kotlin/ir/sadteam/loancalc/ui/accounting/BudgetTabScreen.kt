@@ -1,5 +1,20 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.TrackChanges
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.shape.CircleShape
+import ir.sadteam.loancalc.ui.components.InteractiveBars
+import ir.sadteam.loancalc.ui.components.HeroIncome
+import ir.sadteam.loancalc.ui.components.HeroExpense
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
@@ -165,6 +180,20 @@ fun BudgetTabScreen(
                 .sumOf { it.amount }
         }
     }
+    // خرجِ هر روزِ همین ماه (نمودارِ میله‌ایِ کارتِ بالا) + درآمد و خرجِ کلِ ماه (دو باکسِ کنارش).
+    val monthDailySpent = remember(allTransactions, today, daysInMonth) {
+        (1..daysInMonth).map { day ->
+            allTransactions
+                .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == today.y && it.month == today.m && it.day == day }
+                .sumOf { it.amount }
+        }
+    }
+    val monthIncome = remember(allTransactions, today) {
+        allTransactions
+            .filter { it.type == TransactionType.DEPOSIT.name && it.year == today.y && it.month == today.m }
+            .sumOf { it.amount }
+    }
+    val monthExpense = remember(monthDailySpent) { monthDailySpent.sum() }
     val savedSoFar = if (fairShare > 0) (fairShare * today.d - totalSpent).coerceAtLeast(0.0) else 0.0
     /** پیش‌بینیِ سرِ ماه با همین سرعتِ خرج - خطِ طلاییِ کارتِ «کلِ ماه». */
     val projectedLeft = if (today.d > 0 && totalCap > 0) {
@@ -214,6 +243,9 @@ fun BudgetTabScreen(
                 item {
                     DailyAllowanceHero(
                         allowance = dailyAllowance,
+                        monthDaily = monthDailySpent,
+                        monthIncome = monthIncome,
+                        monthExpense = monthExpense,
                         week = weekUnderShare,
                         weekSpent = weekSpent,
                         saved = savedSoFar,
@@ -228,6 +260,8 @@ fun BudgetTabScreen(
             if (totalCap > 0) {
                 item {
                     MonthTotalCard(
+                        cap = totalCap,
+                        spent = totalSpent,
                         percent = ((totalSpent / totalCap) * 100).roundToLong().toInt(),
                         fraction = (totalSpent / totalCap).toFloat(),
                         projectedLeft = projectedLeft,
@@ -367,24 +401,31 @@ private fun BudgetHeader(onAdd: () -> Unit, showAdd: Boolean = true) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("بودجه", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
+        Column(modifier = Modifier.weight(1f)) {
+            Text("بودجه", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
+            Text(
+                "مدیریتِ درآمد و هزینه‌های ماهانه",
+                color = AppMuted,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
         if (!showAdd) return@Row
         Box(
             modifier = Modifier
-                .size(32.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(AddTileBg)
-                .border(1.5.dp, AddTileBorder, RoundedCornerShape(10.dp))
+                .size(48.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(AppPrimaryPill)
                 .pressScaleClickable(onClick = onAdd),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 Icons.Filled.Add,
                 contentDescription = "افزودنِ بودجه",
-                tint = BudgetGreen,
-                modifier = Modifier.size(15.dp),
+                tint = AppPrimaryInk,
+                modifier = Modifier.size(22.dp),
             )
         }
     }
@@ -566,6 +607,9 @@ private fun StarterSuggestions(
 @Composable
 private fun DailyAllowanceHero(
     allowance: Double,
+    monthDaily: List<Double>,
+    monthIncome: Double,
+    monthExpense: Double,
     week: List<Boolean>,
     weekSpent: List<Double>,
     saved: Double,
@@ -576,82 +620,150 @@ private fun DailyAllowanceHero(
     daysLeft: Int,
     privacyMode: Boolean,
 ) {
-    // 🎨 **هم‌رنگِ بقیه‌ی کارت‌های قهرمان** (خواسته‌ی کاربر، ۱ مهر): رنگِ تم + نقشِ برگ.
-    // وقتی از سهمِ روزانه عقب است (`behind`) یک هاله‌ی قرمزِ ملایم از لبه‌ی راست
-    // می‌آید - هشدار بدونِ اینکه کلِ کارت قرمز و ترسناک شود.
-    AppHeroCard(glow = if (behind) Color(0xFFFF4B4B) else null) {
-        // 🚨 **شمارنده‌ی روزِ ماه** (طرحِ مرجعِ کاربر، ۳۱ شهریور): «سهمِ امروز» بی این‌که
-        // بدانی کجای ماهی، عددِ بی‌لنگری است - روزِ دوم با روزِ بیست‌وهشتم فرق دارد.
+    // چیدمانِ طرحِ ChatGPT (۲ مهر): دو قرصِ بالا، عددِ درشت راست و دو باکسِ درآمد/خرج چپ،
+    // نمودارِ روزهای ماه با «امروز»، و دو خطِ پایین. `week`/`weekSpent` دیگر نمایش داده
+    // نمی‌شوند - نمودارِ ماه همان خبر را کامل‌تر می‌دهد.
+    AppHeroCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            HeroPillLabel(icon = Icons.Filled.CalendarMonth, text = "ماهِ جاری")
+            Spacer(modifier = Modifier.weight(1f))
+            HeroPillLabel(icon = Icons.Filled.Today, text = "روزِ ${toFa(dayOfMonth)} از ${toFa(daysInMonth)}")
+        }
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.Top) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "امروز می‌توانی خرج کنی",
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        maskIfPrivate(masked, allowance.rialToFaCompact()),
+                        color = Color.White,
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+                Text("تومان", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(start = 10.dp)) {
+                HeroMiniStat(up = true, label = "درآمدِ این ماه", value = monthIncome, privacyMode = privacyMode)
+                HeroMiniStat(up = false, label = "خرجِ این ماه", value = monthExpense, privacyMode = privacyMode)
+            }
+        }
+        if (monthDaily.isNotEmpty()) {
+            InteractiveBars(
+                values = monthDaily,
+                labels = monthDaily.indices.map { i -> if (i + 1 == dayOfMonth) "امروز" else "${toFa(i + 1)} این ماه" },
+                valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
+                currentIndex = (dayOfMonth - 1).coerceIn(0, monthDaily.lastIndex),
+                barColor = Color.White.copy(alpha = 0.28f),
+                currentBarColor = Color.White,
+                tooltipBackground = Color.Black.copy(alpha = 0.35f),
+                tooltipTitleColor = Color.White.copy(alpha = 0.75f),
+                tooltipValueColor = Color.White,
+                modifier = Modifier.padding(top = 14.dp),
+                height = 44.dp,
+                spacing = 1.5.dp,
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
-                "امروز می‌توانی خرج کنی",
-                color = Color.White.copy(alpha = 0.8f),
+                "${toFa(dayOfMonth)} روز از ${toFa(daysInMonth)} روز گذشته",
+                color = Color.White.copy(alpha = 0.85f),
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f),
             )
-            Text(
-                "روزِ ${toFa(dayOfMonth)} از ${toFa(daysInMonth)}",
-                color = Color.White,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(Color.White.copy(alpha = 0.20f))
-                    .padding(horizontal = 9.dp, vertical = 4.dp),
-            )
-        }
-        PrivacyCrossfade(privacyMode) { masked ->
-            Text(
-                // ⚠️ `fmt()` جداکننده‌ی **لاتین** می‌دهد و عددش **ریال** است: سهمِ روزانه‌ی
-                // ۲۴۰ هزار تومان «2,400,000» چاپ می‌شد. همان باگی که در هیرویِ بنفشِ گزارش
-                // رفع شد و این‌جا در چهار جا باقی مانده بود.
-                maskIfPrivate(masked, allowance.rialToFaCompact()),
-                color = Color.White,
-                fontSize = 29.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(top = 3.dp),
-            )
-        }
-        // واحد یک‌بار زیرِ عدد - همان قاعده‌ی هیرویِ گزارش. هیرویِ بودجه واحد نداشت.
-        Text(
-            "تومان",
-            color = Color.White.copy(alpha = 0.8f),
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 2.dp),
-        )
-        if (week.isNotEmpty()) {
-            WeekShareStrip(week = week, spent = weekSpent, privacyMode = privacyMode)
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 9.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    "${toFa(week.count { it })} روز زیرِ سهم موندی",
-                    color = Color.White.copy(alpha = 0.82f),
-                    fontSize = 9.5.sp,
-                    fontWeight = FontWeight.Bold,
-                )
+            Column(horizontalAlignment = Alignment.End) {
                 Text(
                     "تا پایانِ ماه ${toFa(daysLeft)} روز مانده",
-                    color = Color.White.copy(alpha = 0.82f),
-                    fontSize = 9.5.sp,
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                 )
-            }
-            if (saved > 0) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    Text(
-                        "+${(saved).rialToFaCompact()} ذخیره",
-                        color = Color.White,
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.Black,
-                    )
+                if (saved > 0) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 3.dp)) {
+                        Text(
+                            "+${saved.rialToFaCompact()} ذخیره",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                        Icon(
+                            Icons.Filled.Savings,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.padding(start = 5.dp).size(16.dp),
+                        )
+                    }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroPillLabel(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color.White.copy(alpha = 0.16f))
+            .padding(horizontal = 11.dp, vertical = 6.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+        Text(
+            text,
+            color = Color.White,
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 6.dp),
+        )
+    }
+}
+
+/** باکسِ کوچکِ درآمد/خرج روی کارتِ بالا - فلشِ رنگی + عدد. */
+@Composable
+private fun HeroMiniStat(up: Boolean, label: String, value: Double, privacyMode: Boolean) {
+    val ink = if (up) HeroIncome else HeroExpense
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White.copy(alpha = 0.12f))
+            .padding(horizontal = 9.dp, vertical = 7.dp),
+    ) {
+        Box(
+            modifier = Modifier.size(26.dp).clip(RoundedCornerShape(9.dp)).background(Color.White.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                if (up) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
+                contentDescription = null,
+                tint = ink,
+                modifier = Modifier.size(15.dp),
+            )
+        }
+        Column(modifier = Modifier.padding(start = 7.dp)) {
+            Text(label, color = Color.White.copy(alpha = 0.8f), fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            PrivacyCrossfade(privacyMode) { masked ->
+                Text(
+                    maskIfPrivate(masked, value.rialToFaCompact()) + " تومان",
+                    color = ink,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    softWrap = false,
+                )
             }
         }
     }
@@ -660,83 +772,93 @@ private fun DailyAllowanceHero(
 // ═══ ۳ · کارتِ «کلِ ماه» ══════════════════════════════════════════════════════════
 @Composable
 private fun MonthTotalCard(
+    cap: Double,
+    spent: Double,
     percent: Int,
     fraction: Float,
     projectedLeft: Double,
     privacyMode: Boolean,
 ) {
+    val over = percent > 100
+    val barColor = if (over) OverInk else AppPrimary
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(AppSurface)
-            .border(2.dp, CardBorder, RoundedCornerShape(20.dp))
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
+            .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("کلِ ماه", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
-            // ⚠️ رنگ ثابت سبز بود: ماهی که ۱۳۰٪ِ بودجه خرج شده «۱۳۰٪» را **سبز** نشان
-            // می‌داد. ردیفِ تکیِ دسته از قبل `OverInk` می‌گرفت، پس کارتِ جمع تنها جایی بود
-            // که ردکردن را با رنگِ خوب می‌گفت.
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.TrackChanges, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(20.dp))
             Text(
-                "${toFa(percent)}٪",
-                color = if (percent > 100) OverInk else BudgetGreen,
-                fontSize = 12.sp,
+                "کلِ ماه",
+                color = AppText,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(start = 8.dp).weight(1f),
             )
+            // ماهِ ردشده قرمز، نه رنگِ «خوب».
+            Text("${toFa(percent)}٪", color = barColor, fontSize = 17.sp, fontWeight = FontWeight.Black)
         }
-        // نوارِ ۱۴ پیکسلی با سکه‌ی ۱۷ پیکسلیِ سرِ نوار. سکه رو یه Boxِ هم‌عرض می‌شینه و با
-        // نسبتِ پیشرفت جابه‌جا می‌شه؛ تو RTL هم چون از راست پر می‌شه درست درمیاد.
         val clamped = fraction.coerceIn(0f, 1f)
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp)
-                .height(17.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 14.dp).height(22.dp),
             contentAlignment = Alignment.CenterStart,
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(14.dp)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(RailTrack),
+                modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(999.dp)).background(RailTrack),
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(clamped)
-                        .height(14.dp)
+                        .height(10.dp)
                         .clip(RoundedCornerShape(999.dp))
-                        .background(Brush.horizontalGradient(listOf(BudgetGreenLight, BudgetGreen))),
+                        .background(Brush.horizontalGradient(listOf(barColor.copy(alpha = 0.45f), barColor))),
                 )
             }
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Box(modifier = Modifier.fillMaxWidth(clamped), contentAlignment = Alignment.CenterEnd) {
-                    CoinIcon(17.dp)
+            // دستگیره‌ی گردِ سرِ نوار (طرحِ ChatGPT) به‌جای سکه.
+            Box(modifier = Modifier.fillMaxWidth(clamped), contentAlignment = Alignment.CenterEnd) {
+                Box(
+                    modifier = Modifier
+                        .size(22.dp)
+                        .clip(CircleShape)
+                        .background(AppSurface)
+                        .border(4.dp, barColor, CircleShape),
+                )
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+            Column(modifier = Modifier.weight(1f)) {
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(maskIfPrivate(masked, cap.rialToFaCompact()), color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
                 }
+                Text("بودجه‌ی ماهانه", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(maskIfPrivate(masked, spent.rialToFaCompact()), color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
+                }
+                Text("خرج شده", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(AppIconFrame)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Icon(
-                Icons.Filled.AutoAwesome,
-                contentDescription = null,
-                tint = GoldInk,
-                modifier = Modifier.size(11.dp),
-            )
+            Icon(Icons.Filled.Lightbulb, contentDescription = null, tint = GoldInk, modifier = Modifier.size(16.dp))
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    "با این روند ${maskIfPrivate(masked, projectedLeft.rialToFaCompact())} تومان تا آخرِ ماه می‌مونه",
-                    color = GoldInk,
-                    fontSize = 10.sp,
+                    "با این روند ${maskIfPrivate(masked, projectedLeft.rialToFaCompact())} تومان تا آخرِ ماه می‌مونه.",
+                    color = AppMuted,
+                    fontSize = 10.5.sp,
                     fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 7.dp),
                 )
             }
         }
@@ -903,27 +1025,28 @@ private fun BudgetToolCard(
 ) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(22.dp))
             .background(AppSurface)
-            .border(2.dp, CardBorder, RoundedCornerShape(18.dp))
+            .border(1.dp, CardBorder, RoundedCornerShape(22.dp))
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 13.dp),
+            .padding(horizontal = 12.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(
             modifier = Modifier
-                .size(30.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .size(44.dp)
+                .clip(CircleShape)
                 .background(AddTileBg),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = BudgetGreen, modifier = Modifier.size(14.dp))
+            Icon(icon, contentDescription = null, tint = BudgetGreen, modifier = Modifier.size(22.dp))
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
-            Text(subtitle, color = AppMuted, fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp))
+            Text(title, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            Text(subtitle, color = AppMuted, fontSize = 10.5.sp, modifier = Modifier.padding(top = 3.dp))
         }
+        Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
     }
 }
 
