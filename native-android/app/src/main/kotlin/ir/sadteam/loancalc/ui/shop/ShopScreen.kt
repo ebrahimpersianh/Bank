@@ -524,22 +524,22 @@ fun ShopScreen(
 
 @Composable
 private fun BalanceCard(balance: Int) {
-    AppCard(modifier = Modifier.fillMaxWidth()) {
-        Column {
-            Text("سکه‌های تو", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold)
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 3.dp)) {
-                Text(toFa(balance), color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
-                CoinIcon(size = 18.dp, modifier = Modifier.padding(start = 5.dp))
-            }
-            // بن‌بست نساز - تنها جایی که کاربر انگیزه دارد بداند سکه از کجا می‌آید.
+    // کارتِ **فشرده**ی یک‌خطی (تصمیمِ فروشگاه): موجودی مهم است ولی ویترین اصل است؛
+    // نسخه‌ی سه‌خطیِ قبلی نصفِ صفحه‌ی اول را پیش از رسیدن به هر محصولی می‌گرفت.
+    AppCard(modifier = Modifier.fillMaxWidth(), contentPadding = 12.dp) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            CoinIcon(size = 20.dp)
             Text(
-                "هر روزِ ثبت ۱۰ سکه · هفت روزِ پشتِ‌سرهم ۵۰ · نشانِ تازه ۲۵ تا ۱۵۰",
-                color = AppLabel,
-                fontSize = 9.sp,
-                lineHeight = 17.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 8.dp),
+                toFa(balance),
+                color = AppText,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(start = 7.dp),
             )
+            Text("سکه", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 4.dp))
+            Spacer(modifier = Modifier.weight(1f))
+            // بن‌بست نساز - کوتاه‌ترین راهِ گرفتنِ سکه همین‌جا گفته می‌شود.
+            Text("هر روزِ ثبت · ۱۰ سکه", color = AppLabel, fontSize = 9.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -1098,10 +1098,10 @@ private fun ShopTabs(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TabChip("مالِ من", onlyMine, onToggleMine)
-        Spacer(modifier = Modifier.width(7.dp))
+        Spacer(modifier = Modifier.width(5.dp))
         TabChip("همه", selected == null && !onlyMine) { onSelect(null) }
         ShopCategory.entries.forEach { category ->
-            Spacer(modifier = Modifier.width(7.dp))
+            Spacer(modifier = Modifier.width(5.dp))
             TabChip(category.tab, selected == category) { onSelect(category) }
         }
     }
@@ -1118,7 +1118,7 @@ private fun TabChip(label: String, selected: Boolean, onClick: () -> Unit) {
             .clip(RoundedCornerShape(AppRadius.button))
             .background(if (selected) AppPrimaryPill else AppIconFrame)
             .pressScaleClickable(scale = 0.97f, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 9.dp),
+            .padding(horizontal = 11.dp, vertical = 8.dp),
     )
 }
 
