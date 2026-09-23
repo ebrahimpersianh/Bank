@@ -94,6 +94,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -813,7 +814,7 @@ fun MyLoansScreen(
                                                 Text(
                                                     loan.name,
                                                     color = AppText,
-                                                    fontSize = 15.sp,
+                                                    fontSize = 14.sp,
                                                     fontWeight = FontWeight.Black,
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis,
@@ -945,9 +946,9 @@ fun MyLoansScreen(
                                                     centerBottom = "",
                                                     centerTopColor = if (attention) AppDangerInk else AppPrimary,
                                                     centerBottomColor = AppMuted,
-                                                    size = 50.dp,
-                                                    stroke = 5.dp,
-                                                    centerTopSize = 12,
+                                                    size = 44.dp,
+                                                    stroke = 4.dp,
+                                                    centerTopSize = 11,
                                                 )
                                             }
                                             if (!settled && !isLocked) {
@@ -1194,16 +1195,19 @@ private fun LoanPayButton(onClick: () -> Unit) {
     ) {
         Box(
             modifier = Modifier
-                .hardShadow(AppPrimaryDim, AppElevation.inRow, 999.dp)
+                // کشیده و باریک (طرحِ ChatGPT): عرضِ ثابتِ کمینه، ارتفاعِ کم، بی سایه‌ی سخت.
+                .defaultMinSize(minWidth = 84.dp)
                 .clip(RoundedCornerShape(999.dp))
                 .background(AppPrimary)
                 .pressScaleClickable(onClick = onClick)
-                .padding(horizontal = 22.dp, vertical = 9.dp),
+                .padding(horizontal = 20.dp, vertical = 6.dp),
         ) {
             Text(
                 "پرداخت",
                 color = Color.White,
-                fontSize = 12.sp,
+                fontSize = 11.5.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.Center),
                 fontWeight = FontWeight.Black,
                 maxLines = 1,
                 softWrap = false,
