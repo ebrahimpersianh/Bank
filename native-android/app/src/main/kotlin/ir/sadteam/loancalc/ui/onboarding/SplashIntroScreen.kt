@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.onboarding
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -109,15 +111,12 @@ fun SplashIntroScreen(onDone: () -> Unit) {
             modifier = Modifier.fillMaxSize(),
         )
         // حلقه‌ی چرخانِ بارگذاری + متنش، دقیقاً همان‌جای تصویرِ مرجع.
-        val spin by transition.animateFloat(
-            initialValue = 0f,
-            targetValue = 360f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1100, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-            label = "splashSpinner",
-        )
+        // خواسته‌ی کاربر: حلقه **یک دورِ کامل** پر شود، نه چند دور بچرخد - هم‌زمان با
+        // خودِ اسپلش، تا لحظه‌ی بسته‌شدن درست کامل شده باشد.
+        val sweep = remember { Animatable(0f) }
+        LaunchedEffect(Unit) {
+            sweep.animateTo(360f, tween(SPLASH_MS.toInt(), easing = FastOutSlowInEasing))
+        }
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -140,11 +139,11 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                     size = box,
                     style = Stroke(width = stroke, cap = StrokeCap.Round),
                 )
-                // کمانِ روشن که می‌چرخد.
+                // کمانِ روشن که از بالا یک دور پر می‌شود.
                 drawArc(
                     color = Color(0xFF3FD98A),
-                    startAngle = spin,
-                    sweepAngle = 96f,
+                    startAngle = -90f,
+                    sweepAngle = sweep.value,
                     useCenter = false,
                     topLeft = Offset(inset, inset),
                     size = box,
