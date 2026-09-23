@@ -928,7 +928,11 @@ fun MyLoansScreen(
                                         // ستونِ چپ: درصد بالا، کنشِ ردیف پایین - همان چیدمانِ
                                         // طرحِ مرجع. حلقه این‌جا **ریز** است چون خبرِ درجه‌دوم
                                         // است؛ خبرِ اول مبلغِ عقب‌افتاده‌ی وسطِ ردیف است.
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            // فاصله‌ی حلقه تا دکمه - قبلاً دکمه به تهِ حلقه چسبیده بود (عکسِ کاربر).
+                                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        ) {
                                             if (settled) {
                                                 SettledMedal(diskSize = 34.dp)
                                             } else {
