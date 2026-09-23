@@ -1,5 +1,14 @@
 package ir.sadteam.loancalc.ui.profile
 
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.graphics.graphicsLayer
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -98,6 +107,8 @@ fun CoinWalletScreen(
     val activeDays by viewModel.activeDays.collectAsState()
     val repairable by viewModel.repairable.collectAsState()
     var confirmRepair by remember { mutableStateOf(false) }
+    /** فیلترِ تاریخچه: `null` همه، `true` فقط دریافت‌ها، `false` فقط خرج‌ها. */
+    var earnedOnly by remember { mutableStateOf<Boolean?>(null) }
 
     // ⚠️ `repairable` تا وقتی `refreshRepairable()` صدا زده نشود **همیشه null** است، پس
     // کارتِ ترمیم هیچ‌وقت دیده نمی‌شد. کامنتِ خودِ ViewModel می‌گفت «کارتِ خانه فقط وقتی
@@ -177,7 +188,14 @@ fun CoinWalletScreen(
             )
         }
         item {
-            Text("تاریخچه", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+            // سرگروهِ تاریخچه + فیلترِ «همه موارد» (طرحِ مرجعِ کاربر، ۱ مهر).
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("تاریخچه", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+                HistoryFilterChip(earnedOnly) { earnedOnly = it }
+            }
         }
         if (events.isEmpty()) {
             item {
@@ -188,7 +206,12 @@ fun CoinWalletScreen(
                 )
             }
         }
-        items(events, key = { it.id }) { event ->
+        val shownEvents = when (earnedOnly) {
+            true -> events.filter { it.amount > 0 }
+            false -> events.filter { it.amount < 0 }
+            null -> events
+        }
+        items(shownEvents, key = { it.id }) { event ->
             CoinEventRow(event)
         }
     }
@@ -282,16 +305,27 @@ private fun StreakRow(days: Int, todayHasEntry: Boolean, brokenDays: Int?) {
                 // پاداشِ بعدی فقط وقتی می‌آید که رشته زنده باشد - وعده به کسی که رشته‌اش
                 // پاره شده، طعنه است.
                 if (brokenDays == null) {
-                    Text(
-                        "${toFa(toBonus)} روز تا ${toFa(CoinReason.FULL_WEEK.amount)} سکه",
-                        color = AppPrimaryInk,
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.Black,
+                    Box(modifier = Modifier.padding(horizontal = 10.dp).width(1.dp).height(30.dp).background(AppLineRow))
+                    Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(999.dp))
                             .background(AppPrimaryPill)
-                            .padding(horizontal = 9.dp, vertical = 4.dp),
-                    )
+                            .padding(horizontal = 12.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "${toFa(toBonus)} روز تا ${toFa(CoinReason.FULL_WEEK.amount)} سکه",
+                            color = AppPrimaryInk,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                        Icon(
+                            Icons.Filled.CardGiftcard,
+                            contentDescription = null,
+                            tint = AppPrimaryInk,
+                            modifier = Modifier.padding(start = 6.dp).size(18.dp),
+                        )
+                    }
                 }
             }
             if (brokenDays == null) {
@@ -407,10 +441,20 @@ private fun StreakRepairCard(days: Int, hoursLeft: Int, price: Int, balance: Int
 
 @Composable
 private fun CoinEventRow(event: CoinEventEntity) {
+    // طرحِ مرجعِ کاربر (۱ مهر): فلش سمتِ راست، عنوان و زمان، مبلغ با «سکه» زیرش، و دایره‌ی
+    // +/− رنگی سمتِ چپ - تا دریافت و خرج از دور و بی خواندنِ عدد فرق کنند.
+    val spent = event.amount < 0
+    val ink = if (spent) AppDangerInk else AppPrimaryInk
     AppCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(coinEventLabel(event.type), color = AppText, fontSize = 13.sp)
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = null,
+                tint = AppMuted,
+                modifier = Modifier.size(20.dp),
+            )
+            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                Text(coinEventLabel(event.type), color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
                 Text(
                     formatEventTime(event.createdAt),
                     color = AppMuted,
@@ -418,13 +462,55 @@ private fun CoinEventRow(event: CoinEventEntity) {
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            val spent = event.amount < 0
-            Text(
-                (if (spent) "−" else "+") + toFa(kotlin.math.abs(event.amount)),
-                color = if (spent) AppDangerInk else AppPrimaryInk,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Black,
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    (if (spent) "−" else "+") + toFa(kotlin.math.abs(event.amount)),
+                    color = ink,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Black,
+                )
+                Text("سکه", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            }
+            Box(
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(if (spent) AppDangerInk.copy(alpha = 0.12f) else AppPrimaryPill),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    if (spent) Icons.Filled.Remove else Icons.Filled.Add,
+                    contentDescription = if (spent) "خرج" else "دریافت",
+                    tint = ink,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+    }
+}
+
+/** چیپِ «همه موارد ▾» با منوی سه‌گزینه‌ای. */
+@Composable
+private fun HistoryFilterChip(earnedOnly: Boolean?, onChange: (Boolean?) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val label = when (earnedOnly) { true -> "دریافت‌ها"; false -> "خرج‌ها"; null -> "همه موارد" }
+    Box {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .background(AppIconFrame)
+                .pressScaleClickable { open = true }
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(label, color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, tint = AppMuted, modifier = Modifier.padding(start = 6.dp).size(16.dp))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            listOf<Pair<Boolean?, String>>(null to "همه موارد", true to "دریافت‌ها", false to "خرج‌ها").forEach { (value, text) ->
+                DropdownMenuItem(text = { Text(text) }, onClick = { onChange(value); open = false })
+            }
         }
     }
 }

@@ -1,5 +1,9 @@
 package ir.sadteam.loancalc.ui.coin
 
+import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.Eco
+import androidx.compose.ui.graphics.Brush
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -141,6 +145,13 @@ fun CoinHubScreen(
                 }
                 .graphicsLayer { alpha = if (headerPx > 0f) 1f + headerOffset / headerPx else 1f },
         ) {
+            if (onWallet) {
+                WalletHero(
+                    coins = coins,
+                    activeDays = activeDays,
+                    earnedToday = earnedToday(events, ActiveStreak.dateKey(JalaliCalendar.today())),
+                )
+            } else {
             // ═══ سربرگ طبقِ طرحِ ChatGPT: عنوان و توضیح راست، کارتِ موجودیِ جمع‌وجور چپ ═══
             Row(
                 modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 4.dp),
@@ -170,11 +181,13 @@ fun CoinHubScreen(
                 )
             }
 
+            }
+
             SegmentedToggle(
                 options = listOf("فروشگاه", "کیف"),
                 selectedIndex = if (onWallet) 1 else 0,
                 onSelect = { onWallet = it == 1 },
-                icons = listOf(Icons.Filled.ShoppingBag, Icons.Filled.AccountBalanceWallet),
+                icons = listOf(Icons.Filled.Storefront, Icons.Filled.AccountBalanceWallet),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
             )
         }
@@ -225,6 +238,43 @@ private fun CoinHero(coins: Int, activeDays: Int, earnedToday: Int) {
                 )
             }
             CoinIcon(size = 34.dp, modifier = Modifier.padding(start = 6.dp))
+        }
+    }
+}
+
+/**
+ * هیرویِ تبِ **کیف** - طرحِ مرجعِ کاربر (۱ مهر): سکه‌ی درشت راست، موجودی و سقفِ امروز
+ * وسط، کاشیِ برگ چپ، و زمینه‌ی روشن با هاله‌ی رنگِ تم.
+ */
+@Composable
+private fun WalletHero(coins: Int, activeDays: Int, earnedToday: Int) {
+    val tint = AppPrimaryPill
+    AppCard(
+        modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp),
+        accentGradient = Brush.linearGradient(listOf(AppSurface, tint)),
+    ) {
+        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            CoinIcon(size = 58.dp)
+            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(toFa(coins), color = AppText, fontSize = 26.sp, fontWeight = FontWeight.Black, maxLines = 1)
+                    Text("سکه", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp, bottom = 4.dp))
+                }
+                Text(
+                    "امروز ${toFa(earnedToday)} از ${toFa(CoinReason.DAILY_COIN_CAP)}" +
+                        if (activeDays > 0) " · ${toFa(activeDays)} روزِ پیاپی" else "",
+                    color = AppMuted,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            Box(
+                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(AppSurface),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Eco, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(28.dp))
+            }
         }
     }
 }
