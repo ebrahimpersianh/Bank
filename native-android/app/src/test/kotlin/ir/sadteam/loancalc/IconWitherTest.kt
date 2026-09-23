@@ -6,28 +6,28 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * قاعده‌ی پله‌ی پژمردگی - **از روزِ دوم شروع می‌شود** (تصحیحِ صریحِ کاربر: «نزدیک هشتا
- * طراحیه و دوتا نیست»). یک روز نرفتن هنوز غیبت نیست.
+ * قاعده‌ی چهار حالتِ پژمردگی (تصمیمِ کاربر، ۳۱ شهریور): امروز ۰ · یک روز سرنزده ۱ ·
+ * دو روز ۲ · سه روز و بیشتر ۳. ارفاقِ «یک روز» دیگر نیست.
  */
 class IconWitherTest {
     private val wither = IconWither()
     private val today = PersianDate(1405, 6, 20)
 
     @Test
-    fun `today and yesterday are step zero`() {
+    fun `today is step zero`() {
         assertEquals(0, wither.stepFor(today, today))
-        assertEquals(0, wither.stepFor(PersianDate(1405, 6, 19), today))
     }
 
     @Test
-    fun `second day away is step one`() {
-        assertEquals(1, wither.stepFor(PersianDate(1405, 6, 18), today))
+    fun `one and two days away are steps one and two`() {
+        assertEquals(1, wither.stepFor(PersianDate(1405, 6, 19), today))
+        assertEquals(2, wither.stepFor(PersianDate(1405, 6, 18), today))
     }
 
     @Test
-    fun `steps stop at eight`() {
-        assertEquals(8, wither.stepFor(PersianDate(1405, 6, 11), today))
-        assertEquals(8, wither.stepFor(PersianDate(1405, 4, 1), today))
+    fun `steps stop at three`() {
+        assertEquals(3, wither.stepFor(PersianDate(1405, 6, 17), today))
+        assertEquals(3, wither.stepFor(PersianDate(1405, 4, 1), today))
     }
 
     @Test
