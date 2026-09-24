@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.InboxRepository
+import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.InboxMessageEntity
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +21,13 @@ import javax.inject.Inject
 class InboxViewModel @Inject constructor(
     private val inbox: InboxRepository,
     private val accounts: AccountRepository,
+    private val api: ApiService,
 ) : ViewModel() {
+
+    init {
+        // هر بار که صفحه‌ی پیام‌ها باز می‌شود، اطلاعیه‌های تازه‌ی جیبک گرفته می‌شوند (بی‌صدا در خطا).
+        viewModelScope.launch { runCatching { inbox.mergeAnnouncements(api.getAnnouncements().items) } }
+    }
 
     val messages: StateFlow<List<InboxMessageEntity>> = inbox.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

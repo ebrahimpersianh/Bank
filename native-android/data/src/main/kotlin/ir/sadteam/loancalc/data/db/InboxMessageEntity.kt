@@ -55,6 +55,9 @@ data class InboxMessageEntity(
         const val STREAK_REMINDER = "STREAK_REMINDER"
         const val SYSTEM = "SYSTEM"
 
+        /** «پیام‌های جیبک» - اطلاعیه‌ی عمومی از سرور (`GET /api/announcements`). `refId` = نوعش. */
+        const val ANNOUNCEMENT = "ANNOUNCEMENT"
+
         /** همون «دو دسته»ی طرح - هر جا رفتار فرق می‌کنه از این استفاده کن، نه از لیستِ دستی. */
         fun isActionable(kind: String): Boolean = kind == DETECTED_TX || kind == LOAN_DUE
     }

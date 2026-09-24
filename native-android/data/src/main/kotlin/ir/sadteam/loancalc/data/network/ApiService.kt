@@ -111,6 +111,10 @@ interface ApiService {
     @GET("api/app-version")
     suspend fun getAppVersion(): AppVersionResponse
 
+    /** «پیام‌های جیبک» - عمومی و بی‌ورود. رجوع کن به server/routes/AnnouncementRoutes.kt. */
+    @GET("api/announcements")
+    suspend fun getAnnouncements(@Query("since") since: Long = 0): AnnouncementsResponse
+
     // قیمتِ روزِ طلا/ارز/رمزارز - عمومی. کلیدِ APIِ سرویسِ بیرونی فقط رو سرورِ خودمونه و اپ
     // هیچ‌وقت مستقیم به اون سرویس وصل نمی‌شه. نگاشتِ نمادها هم سمتِ سروره، پس کلیدهای این
     // نگاشت دقیقاً همون symbolِ کاتالوگِ اپ‌ان (BTC/GOLD_18/...) و مقدارها **ریال**ن.
@@ -236,3 +240,14 @@ data class AppVersionResponse(
     val cafebazaarUrl: String?,
     val myketUrl: String?,
 )
+
+/** یک اطلاعیه‌ی عمومی؛ [kind] یکی از update/outage/feature/info. [createdAt] زمانِ UTCِ سرور. */
+data class AnnouncementDto(
+    val id: Long,
+    val title: String,
+    val body: String,
+    val kind: String,
+    val createdAt: String,
+)
+
+data class AnnouncementsResponse(val items: List<AnnouncementDto>)

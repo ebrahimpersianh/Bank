@@ -57,6 +57,41 @@ class InboxRepository(
         return messageId
     }
 
+    /**
+     * اطلاعیه‌های سرور را به صندوق اضافه می‌کند. شناسه‌ی پیام **منفیِ** شناسه‌ی سرور است تا با
+     * شناسه‌های زمانیِ بقیه‌ی پیام‌ها هرگز برخورد نکند، و اطلاعیه‌ای که از قبل هست دوباره نوشته
+     * نمی‌شود - وگرنه «خوانده‌شده» بودنش پاک می‌شد.
+     */
+    suspend fun mergeAnnouncements(items: List<ir.sadteam.loancalc.data.network.AnnouncementDto>) {
+        items.forEach { a ->
+            val localId = -a.id
+            if (dao.byId(localId) != null) return@forEach
+            val created = parseServerUtc(a.createdAt) ?: System.currentTimeMillis()
+            // اطلاعیه‌ی کهنه‌تر از ۶۰ روز اضافه نمی‌شود: پاک‌سازیِ ۹۰روزه‌ی خبرها آن را حذف
+            // می‌کند و بی این شرط، دفعه‌ی بعد دوباره «خوانده‌نشده» برمی‌گشت.
+            if (System.currentTimeMillis() - created > 60L * 24 * 60 * 60 * 1000) return@forEach
+            dao.upsert(
+                InboxMessageEntity(
+                    id = localId,
+                    kind = InboxMessageEntity.Kind.ANNOUNCEMENT,
+                    title = a.title,
+                    body = a.body,
+                    createdAt = created,
+                    actionState = InboxMessageEntity.ActionState.NONE,
+                    refId = a.kind,
+                ),
+            )
+        }
+    }
+
+    /** `2026-09-24 10:15:00` (UTCِ SQLite) → میلی‌ثانیه. */
+    // ⚠️ SimpleDateFormat نه java.time: minSdk 24 است و desugaring روشن نیست.
+    private fun parseServerUtc(raw: String): Long? = runCatching {
+        java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US)
+            .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+            .parse(raw)?.time
+    }.getOrNull()
+
     suspend fun markRead(id: Long) = dao.markRead(id, System.currentTimeMillis())
 
     /** ⚠️ فقط `readAt`ِ **خبر**ها رو پر می‌کنه - تاییدِ ضمنیِ هیچ تراکنشی نیست (قاعده‌ی طرح). */

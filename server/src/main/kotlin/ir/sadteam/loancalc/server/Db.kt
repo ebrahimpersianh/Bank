@@ -207,6 +207,20 @@ object Db {
                 // تاریخچه‌ی روزانه‌ی قیمت - یه ردیف در روز برای هر نماد، از رو همون fetchهای
                 // ساعتی ساخته می‌شه (سهمیه‌ی اضافه نمی‌خواد). مبنای «نسبت به ماهِ قبل» تو تبِ
                 // دارایی. کلیدِ مرکب یعنی fetchهای بعدیِ همون روز به‌روزرسانی می‌کنن نه تکرار.
+                // اطلاعیه‌های عمومیِ «پیام‌های جیبک» (نسخه‌ی جدید، اختلال، قابلیتِ تازه) - رجوع کن به
+                // routes/AnnouncementRoutes.kt. فقط صاحبِ برنامه با ADMIN_TOKEN می‌نویسد.
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS announcements (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        title TEXT NOT NULL,
+                        body TEXT NOT NULL,
+                        kind TEXT NOT NULL DEFAULT 'info',
+                        active INTEGER NOT NULL DEFAULT 1,
+                        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                    """.trimIndent()
+                )
                 st.executeUpdate(
                     """
                     CREATE TABLE IF NOT EXISTS price_history (

@@ -1,0 +1,77 @@
+name: ارسالِ پیامِ جیبک به همه‌ی کاربرها
+
+# اجرای دستی. اطلاعیه (نسخه‌ی جدید، اختلال، قابلیتِ تازه…) در بخشِ «پیام‌های جیبک»ِ همه‌ی
+# گوشی‌ها دیده می‌شه (اپ هر بار که صفحه‌ی پیام‌ها باز می‌شه و روزی یک‌بار در پس‌زمینه می‌گیره).
+# پیش‌نیاز: یک‌بار اجرای `set-admin-token-env.yml`.
+# برای برداشتنِ یه اطلاعیه، شماره‌اش رو تو «remove_id» بنویس و بقیه رو خالی بذار.
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "عنوان (مثلاً: نسخه‌ی جدید منتشر شد)"
+        required: false
+        default: ""
+      body:
+        description: "متنِ پیام"
+        required: false
+        default: ""
+      kind:
+        description: "نوع"
+        required: true
+        type: choice
+        default: info
+        options: [info, update, outage, feature]
+      remove_id:
+        description: "(اختیاری) شماره‌ی اطلاعیه‌ای که باید برداشته بشه"
+        required: false
+        default: ""
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ساختِ درخواست
+        id: payload
+        env:
+          TITLE: ${{ inputs.title }}
+          BODY: ${{ inputs.body }}
+          KIND: ${{ inputs.kind }}
+          REMOVE_ID: ${{ inputs.remove_id }}
+        run: |
+          # jq متن رو امن به JSON تبدیل می‌کنه (نقل‌قول و خطِ تازه خرابش نمی‌کنن).
+          if [ -n "$REMOVE_ID" ]; then
+            echo "path=deactivate" >> "$GITHUB_OUTPUT"
+            echo "json=$(jq -cn --argjson id "$REMOVE_ID" '{id:$id}')" >> "$GITHUB_OUTPUT"
+          else
+            if [ -z "$TITLE" ] || [ -z "$BODY" ]; then
+              echo "::error::عنوان و متن هر دو لازم‌اند."
+              exit 1
+            fi
+            echo "path=create" >> "$GITHUB_OUTPUT"
+            echo "json=$(jq -cn --arg t "$TITLE" --arg b "$BODY" --arg k "$KIND" '{title:$t,body:$b,kind:$k}')" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: فرستادن از طریقِ خودِ سرور
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: PAYLOAD,API_PATH
+          script: |
+            set -e
+            cd ~/VameMan
+            TOKEN=$(grep '^ADMIN_TOKEN=' .env | cut -d= -f2-)
+            if [ -z "$TOKEN" ]; then
+              echo "::error::ADMIN_TOKEN تنظیم نشده. اول ورک‌فلوی set-admin-token-env رو اجرا کن."
+              exit 1
+            fi
+            # درخواست از رو خودِ سرور به localhost می‌ره، پس رمز از اینترنت رد نمی‌شه.
+            curl -sS -X POST "http://localhost:3000/api/announcements/$API_PATH" \
+              -H "Content-Type: application/json" \
+              -H "X-Admin-Token: $TOKEN" \
+              -d "$PAYLOAD"
+            echo ""
+        env:
+          PAYLOAD: ${{ steps.payload.outputs.json }}
+          API_PATH: ${{ steps.payload.outputs.path }}
