@@ -2686,22 +2686,7 @@ private fun AboutSettings(banner: InAppBannerState, onOpenBugReport: () -> Unit)
             tone = SettingsTone.NEUTRAL,
             onClick = { showPrivacy = true },
         )
-        SettingsDivider()
-        // 🚨 **ذکرِ منبعِ قیمت - شرطِ قراردادیِ سرویس، نه یک تصمیمِ بصری.**
-        // جوابِ `/api/v1/access`ِ servix پرچمِ `attributionRequired: true` دارد؛
-        // نادیده‌گرفتنش یعنی ریسکِ قطعِ دسترسی، و آن یعنی خوابیدنِ قیمت‌ها برای
-        // **همه‌ی** کاربران نه یک صفحه.
-        //
-        // ⚠️ این خط یک‌بار به‌خواستِ کاربر از کلِ برنامه حذف شد و با راهِ میانیِ طراح
-        // برگشت: جایش این‌جاست (صفحه‌ای که کاربر تقریباً هیچ‌وقت باز نمی‌کند) و یک
-        // خطِ ریز پای صفحه‌ی «قیمتِ روز». **بی تاییدِ صریحِ کاربر دوباره حذفش نکن.**
-        SettingsRowItem(
-            title = "منبعِ قیمت‌ها",
-            icon = Icons.Filled.Source,
-            tone = SettingsTone.NEUTRAL,
-            status = "Servix.cc",
-            onClick = null,
-        )
+        // منبعِ قیمت (شرطِ servix) فقط پای صفحه‌ی «قیمتِ روز» می‌ماند؛ از این‌جا به‌خواستِ کاربر (۳ مهر) برداشته شد.
     }
 
     Text(
