@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.material.icons.filled.ShowChart
@@ -370,6 +371,7 @@ fun ShopScreen(
                         stateOf = ::stateOf,
                         onActivate = activateItem,
                         onConfirm = { confirming = it },
+                        compact = true,
                         leadingOf = { previewFor(it) },
                     )
                 }
@@ -392,6 +394,7 @@ fun ShopScreen(
                         stateOf = ::stateOf,
                         onActivate = activateItem,
                         onConfirm = { confirming = it },
+                        compact = true,
                         leadingOf = { previewFor(it) },
                     )
                 }
@@ -400,7 +403,7 @@ fun ShopScreen(
 
         // خواسته‌ی کاربر (۳ مهر): همه‌ی دسته‌ها هم مثلِ «پیشنهادهای ویژه» دوتایی کنارِ هم،
         // تا فضای کمتری بگیرند (تصمیمِ قبلیِ «فقط دو بخش دوتایی» را خودش عوض کرد).
-        fun grid(list: List<ShopItem>, compact: Boolean = false) {
+        fun grid(list: List<ShopItem>, compact: Boolean = true) {
             val rows = list.chunked(2)
             items(rows.size) { rowIndex ->
                 ProductCardRow(
@@ -1025,8 +1028,8 @@ private fun ProductCard(
 }
 
 /**
- * کارتِ دوتاییِ **کوتاه** (بسته‌ی ChatGPT، ۳ مهر): پیش‌نمایش کنارِ متن نه بالای آن، تا در
- * هر صفحه قلمِ بیشتری جا شود. فعلاً فقط تم‌ها (خواسته‌ی کاربر: «فعلاً بخشِ تم‌ها»).
+ * کارتِ دوتاییِ **کوتاه**: پیش‌نمایش کنارِ متن، نه بالای آن، تا همه‌ی دسته‌های فروشگاه
+ * با یک زبانِ بصری فشرده و قابل‌مرور نمایش داده شوند.
  */
 @Composable
 private fun CompactProductCard(
@@ -1230,7 +1233,7 @@ private fun ShopTabs(
             .padding(top = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TabChip("مالِ من", onlyMine, Icons.Filled.Favorite, onClick = onToggleMine)
+        TabChip("مجموعه من", onlyMine, Icons.Filled.Inventory2, onClick = onToggleMine)
         Spacer(modifier = Modifier.width(5.dp))
         TabChip("همه", selected == null && !onlyMine, Icons.Filled.GridView) { onSelect(null) }
         ShopCategory.entries.forEach { category ->
