@@ -20,6 +20,7 @@ class AuthPrefs(private val context: Context) {
         val TOKEN = stringPreferencesKey("auth_token")
         val PHONE = stringPreferencesKey("phone")
         val USER_NAME = stringPreferencesKey("user_name")
+        val USER_ID = androidx.datastore.preferences.core.longPreferencesKey("user_id")
         val SUBSCRIBED = booleanPreferencesKey("subscribed")
         val GUEST_MODE = booleanPreferencesKey("guest_mode")
         val BENEFITS_SEEN = booleanPreferencesKey("benefits_seen")
@@ -123,6 +124,15 @@ class AuthPrefs(private val context: Context) {
         }
     }
 
+    /** شماره‌ی کاربریِ یکتا از سرور؛ `null` یعنی هنوز نیامده (یا سرورِ قدیمی). */
+    val userId: Flow<Long?> = context.authDataStore.data.map { it[Keys.USER_ID] }
+
+    suspend fun setUserId(value: Long) {
+        context.authDataStore.edit { prefs ->
+            if (value > 0) prefs[Keys.USER_ID] = value else prefs.remove(Keys.USER_ID)
+        }
+    }
+
     suspend fun setUserName(value: String?) {
         context.authDataStore.edit { prefs ->
             if (value.isNullOrBlank()) prefs.remove(Keys.USER_NAME) else prefs[Keys.USER_NAME] = value
@@ -162,6 +172,7 @@ class AuthPrefs(private val context: Context) {
         context.authDataStore.edit { prefs ->
             prefs.remove(Keys.TOKEN)
             prefs.remove(Keys.PHONE)
+            prefs.remove(Keys.USER_ID)
             prefs[Keys.SUBSCRIBED] = false
         }
     }

@@ -9,6 +9,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.Db
 import ir.sadteam.loancalc.server.execute
+import ir.sadteam.loancalc.server.optionalUid
 import ir.sadteam.loancalc.server.rateLimitOk
 import kotlinx.serialization.Serializable
 
@@ -36,10 +37,12 @@ fun Route.crashRoutes() {
             val context = (body?.context ?: "").take(500)
             val appVersion = (body?.appVersion ?: "").take(50)
 
+            // اگر کاربر وارد بود، شناسه‌اش (نه موبایلش) کنارِ کرش ثبت می‌شود.
+            val uid = call.optionalUid()
             Db.withConnection { conn ->
                 conn.execute(
-                    "INSERT INTO crash_reports (message, stack, context, app_version) VALUES (?, ?, ?, ?)",
-                    message, stack, context, appVersion
+                    "INSERT INTO crash_reports (message, stack, context, app_version, user_id) VALUES (?, ?, ?, ?, ?)",
+                    message, stack, context, appVersion, uid
                 )
             }
 

@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 @HiltViewModel
@@ -22,11 +23,17 @@ class InboxViewModel @Inject constructor(
     private val inbox: InboxRepository,
     private val accounts: AccountRepository,
     private val api: ApiService,
+    private val authPrefs: ir.sadteam.loancalc.data.prefs.AuthPrefs,
 ) : ViewModel() {
 
     init {
         // هر بار که صفحه‌ی پیام‌ها باز می‌شود، اطلاعیه‌های تازه‌ی جیبک گرفته می‌شوند (بی‌صدا در خطا).
-        viewModelScope.launch { runCatching { inbox.mergeAnnouncements(api.getAnnouncements().items) } }
+        viewModelScope.launch {
+            runCatching {
+                val auth = authPrefs.authToken.first()?.let { "Bearer $it" }
+                inbox.mergeAnnouncements(api.getAnnouncements(authHeader = auth).items)
+            }
+        }
     }
 
     val messages: StateFlow<List<InboxMessageEntity>> = inbox.observeAll()

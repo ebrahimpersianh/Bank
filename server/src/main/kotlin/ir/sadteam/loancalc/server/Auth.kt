@@ -67,3 +67,13 @@ suspend fun ApplicationCall.requireAuth(): AuthedUser? {
     }
     return authed
 }
+
+/**
+ * شناسه‌ی کاربر اگر توکنِ معتبر فرستاده شده، وگرنه `null` - **بی پاسخِ ۴۰۱**. برای مسیرهای
+ * عمومی که با ورود فقط اطلاعاتِ بیشتری می‌گیرند (گزارشِ کرش، پیام‌های اختصاصی).
+ */
+fun ApplicationCall.optionalUid(): Long? {
+    val header = request.headers[HttpHeaders.Authorization] ?: return null
+    if (!header.startsWith("Bearer ")) return null
+    return runCatching { verifyToken(header.removePrefix("Bearer ")).uid }.getOrNull()
+}

@@ -79,7 +79,11 @@ interface ApiService {
     ): SubscriptionHistoryResponse
 
     @POST("api/crash")
-    suspend fun reportCrash(@Body body: CrashReportRequest): Response<Unit>
+    suspend fun reportCrash(
+        @Body body: CrashReportRequest,
+        // اختیاری: اگر کاربر وارد است، کرش به شماره‌ی کاربری‌اش وصل می‌شود (نه موبایل).
+        @Header("Authorization") authHeader: String? = null,
+    ): Response<Unit>
 
     // پشتیبان‌گیری ابری چک‌ها/حساب‌ها (پورت مفهومی «پشتیبان‌گیری ابری از تمامی وام‌ها» تبلیغ‌شده تو
     // BenefitsScreen): برخلاف loans که سرور شکلش رو می‌دونه، این دوتا فقط یه blob مات از همون JSON
@@ -113,7 +117,11 @@ interface ApiService {
 
     /** «پیام‌های جیبک» - عمومی و بی‌ورود. رجوع کن به server/routes/AnnouncementRoutes.kt. */
     @GET("api/announcements")
-    suspend fun getAnnouncements(@Query("since") since: Long = 0): AnnouncementsResponse
+    suspend fun getAnnouncements(
+        @Query("since") since: Long = 0,
+        // اختیاری: با توکن، پیام‌های اختصاصیِ همین کاربر هم می‌آیند.
+        @Header("Authorization") authHeader: String? = null,
+    ): AnnouncementsResponse
 
     // قیمتِ روزِ طلا/ارز/رمزارز - عمومی. کلیدِ APIِ سرویسِ بیرونی فقط رو سرورِ خودمونه و اپ
     // هیچ‌وقت مستقیم به اون سرویس وصل نمی‌شه. نگاشتِ نمادها هم سمتِ سروره، پس کلیدهای این
@@ -148,6 +156,8 @@ data class VerifyOtpResponse(
  * ترکیبِ اشتراکِ واقعی + دوره‌ی آزمایشیِ فعاله - برای گیت «۱ وام رایگان» فقط همون کافیه. */
 data class MeResponse(
     val phone: String,
+    /** شماره‌ی کاربریِ یکتا (۳ مهر)؛ سرورِ قدیمی نمی‌فرستد → ۰. */
+    val userId: Long = 0,
     val subscribed: Boolean,
     val subscribedUntil: String?,
     val subscriptionTier: String? = null,

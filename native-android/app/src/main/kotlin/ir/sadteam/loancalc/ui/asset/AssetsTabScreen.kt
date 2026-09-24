@@ -11,6 +11,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -659,11 +660,14 @@ private fun StarterTile(
             .background(AppSurface)
             .border(1.dp, AppLine, shape)
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 12.dp),
+            // تقریباً مربع (خواسته‌ی کاربر، ۳ مهر): کاشی‌ها بلند بودند.
+            .aspectRatio(0.95f)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
         Box(
-            modifier = Modifier.size(42.dp).clip(CircleShape).background(iconBg),
+            modifier = Modifier.size(36.dp).clip(CircleShape).background(iconBg),
             contentAlignment = Alignment.Center,
         ) { icon() }
         Text(
@@ -671,15 +675,15 @@ private fun StarterTile(
             color = AppText,
             fontSize = 13.sp,
             fontWeight = FontWeight.Black,
-            modifier = Modifier.padding(top = 7.dp),
+            modifier = Modifier.padding(top = 5.dp),
         )
         Text(
             hint,
             color = AppMuted,
-            fontSize = 9.5.sp,
+            fontSize = 9.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 3.dp),
+            modifier = Modifier.padding(top = 1.dp),
         )
     }
 }

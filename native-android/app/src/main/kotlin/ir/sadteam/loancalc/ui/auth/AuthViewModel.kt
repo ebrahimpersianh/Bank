@@ -94,6 +94,9 @@ class AuthViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     /** نامِ اختیاریِ کاربر - null یعنی وارد نکرده (کاملاً عادی). */
+    val userId: StateFlow<Long?> = authPrefs.userId
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val userName: StateFlow<String?> = authPrefs.userName
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 

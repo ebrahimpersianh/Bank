@@ -1,0 +1,52 @@
+name: هدیه‌ی اشتراک به یک نفر
+
+# اجرای دستی. بی کد، مستقیم به یک کاربر روز اشتراک می‌دهد و یک پیامِ اختصاصی هم در «پیام‌های
+# جیبک»ِ همان کاربر می‌گذارد. اشتراکِ فعالِ فعلی از دست نمی‌رود (از تاریخِ انقضایش جلو می‌رود).
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "شماره‌ی کاربری (مثلاً 739) یا موبایل (09...)"
+        required: true
+      days:
+        description: "چند روز"
+        required: true
+        default: "30"
+      message:
+        description: "(اختیاری) متنِ پیام؛ خالی = متنِ پیش‌فرضِ تشکر"
+        required: false
+        default: ""
+
+jobs:
+  gift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ساختِ درخواست
+        id: payload
+        env:
+          TARGET: ${{ inputs.target }}
+          DAYS: ${{ inputs.days }}
+          MESSAGE: ${{ inputs.message }}
+        run: |
+          if [[ "$TARGET" == 0* ]]; then WHO=$(jq -cn --arg p "$TARGET" '{phone:$p}')
+          else WHO=$(jq -cn --argjson u "$TARGET" '{userId:$u}'); fi
+          echo "json=$(jq -cn --argjson d "$DAYS" --arg m "$MESSAGE" --argjson w "$WHO" '{days:$d,message:$m} + $w')" >> "$GITHUB_OUTPUT"
+
+      - name: فرستادن از طریقِ خودِ سرور
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: PAYLOAD
+          script: |
+            set -e
+            cd ~/VameMan
+            TOKEN=$(grep '^ADMIN_TOKEN=' .env | cut -d= -f2-)
+            curl -sS -X POST "http://localhost:3000/api/announcements/gift" \
+              -H "Content-Type: application/json" \
+              -H "X-Admin-Token: $TOKEN" \
+              -d "$PAYLOAD"
+            echo ""
+        env:
+          PAYLOAD: ${{ steps.payload.outputs.json }}

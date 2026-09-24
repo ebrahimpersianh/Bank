@@ -76,6 +76,7 @@ class AuthRepository(
             authPrefs.setSubscribedUntil(result.subscribedUntil)
             authPrefs.setSubscriptionTier(result.subscriptionTier)
             authPrefs.setUserName(result.name)
+            authPrefs.setUserId(result.userId)
             authPrefs.setLegacyGift(result.legacyGift)
         } catch (e: Exception) {
             // بی‌صدا نادیده گرفته می‌شه - این فقط یه تازه‌سازیِ پس‌زمینه‌ست؛ اگه شکست بخوره (مثلاً

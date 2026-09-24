@@ -80,6 +80,8 @@ private data class VerifyOtpResponse(
 @Serializable
 private data class MeResponse(
     val phone: String,
+    /** شماره‌ی کاربریِ یکتا - در صفحه‌ی «حساب کاربری» برای پشتیبانی نشان داده می‌شود. */
+    val userId: Long = 0,
     val subscribed: Boolean,
     val subscribedUntil: String?,
     val subscriptionTier: String?,
@@ -244,6 +246,7 @@ fun Route.authRoutes() {
             call.respond(
                 MeResponse(
                     phone = user.phone,
+                    userId = authed.uid,
                     subscribed = isSubscribed(user),
                     legacyGift = user.legacyGift,
                     name = user.name,

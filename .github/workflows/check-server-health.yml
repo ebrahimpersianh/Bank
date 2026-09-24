@@ -53,7 +53,7 @@ jobs:
             # ⚠️ استکِ کرش عمداً به ۱۵۰ کاراکتر بریده می‌شه: استکِ کاملِ Compose صدها خطه و
             # کلِ خروجیِ این ورک‌فلو رو می‌بلعید (بخشِ قیمت‌ها دیگه با tail خونده نمی‌شد).
             echo "=== ۳ گزارشِ کرشِ آخر (استکِ بریده) ==="
-            sqlite3 ~/VameMan/data.sqlite "SELECT id, created_at, app_version, message, substr(replace(stack, char(10), ' '), 1, 150) FROM crash_reports ORDER BY id DESC LIMIT 3;" 2>&1 || echo "sqlite3 نصب نیست یا جدول پیدا نشد"
+            sqlite3 ~/VameMan/data.sqlite "SELECT id, created_at, app_version, user_id, message, substr(replace(stack, char(10), ' '), 1, 150) FROM crash_reports ORDER BY id DESC LIMIT 3;" 2>&1 || echo "sqlite3 نصب نیست یا جدول پیدا نشد"
             echo ""
             # 🔻 قیمت‌ها عمداً **آخرین** بخشه تا همیشه ته لاگ باشه و با tail خونده بشه.
             echo "=== قیمت‌ها: آیا کلید ست شده؟ ==="

@@ -61,6 +61,7 @@ import androidx.compose.material.icons.filled.Animation
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Check
@@ -860,6 +861,8 @@ private fun AccountSettings(
     val subscribedUntil by authViewModel.subscribedUntil.collectAsState()
     val subscriptionTier by authViewModel.subscriptionTier.collectAsState()
     val savedName by authViewModel.userName.collectAsState()
+    val userId by authViewModel.userId.collectAsState()
+    val idClipboard = LocalClipboardManager.current
     var showDeleteAccountConfirm by remember { mutableStateOf(false) }
     var deleteAccountInProgress by remember { mutableStateOf(false) }
 
@@ -921,12 +924,17 @@ private fun AccountSettings(
                             modifier = Modifier.padding(top = 3.dp),
                         )
                     }
+                    // قرصِ طلایی مثلِ «اشتراکی»ِ کارتِ تنظیمات - متنِ طلاییِ تیره روی سبز خوانا نبود.
                     Text(
                         if (subscribed) "اشتراک فعال" else "حساب معمولی",
-                        color = if (subscribed) AppAccent else Color.White.copy(alpha = 0.8f),
-                        fontSize = 11.sp,
+                        color = if (subscribed) AppGoldInk else Color.White,
+                        fontSize = 10.5.sp,
                         fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(top = 7.dp),
+                        modifier = Modifier
+                            .padding(top = 7.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(if (subscribed) AppGoldPillSoft else Color.White.copy(alpha = 0.18f))
+                            .padding(horizontal = 10.dp, vertical = 3.dp),
                     )
                 }
                 Box(
@@ -959,6 +967,21 @@ private fun AccountSettings(
                 statusTone = StatusTone.HEALTHY,
                 value = "تأییدشده",
             )
+            // شماره‌ی کاربری برای پشتیبانی (پیام/هدیه‌ی اختصاصی). تپ = کپی.
+            userId?.let { id ->
+                SettingsDivider()
+                SettingsRowItem(
+                    title = "شماره‌ی کاربری",
+                    icon = Icons.Filled.Tag,
+                    tone = SettingsTone.NEUTRAL,
+                    status = toFa(id),
+                    value = "کپی",
+                    onClick = {
+                        idClipboard.setText(androidx.compose.ui.text.AnnotatedString(id.toString()))
+                        banner.show("شماره‌ی کاربری کپی شد", isSuccess = true)
+                    },
+                )
+            }
         }
 
         if (showAvatarSheet) {

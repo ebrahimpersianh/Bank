@@ -106,7 +106,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideCrashRepository(apiService: ApiService): CrashRepository = CrashRepository(apiService)
+    fun provideCrashRepository(apiService: ApiService, authPrefs: AuthPrefs): CrashRepository =
+        CrashRepository(apiService, authPrefs)
 
     @Provides
     @Singleton

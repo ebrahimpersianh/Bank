@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 /**
@@ -24,6 +25,7 @@ import javax.inject.Inject
 class AppUpdateViewModel @Inject constructor(
     private val apiService: ApiService,
     private val inbox: InboxRepository,
+    private val authPrefs: ir.sadteam.loancalc.data.prefs.AuthPrefs,
 ) : ViewModel() {
     private val _updateUrl = MutableStateFlow<String?>(null)
     val updateUrl: StateFlow<String?> = _updateUrl.asStateFlow()
@@ -44,7 +46,10 @@ class AppUpdateViewModel @Inject constructor(
         }
         // «پیام‌های جیبک» هم با هر بازشدنِ اپ یک‌بار گرفته می‌شوند تا نقطه‌ی زنگ خبر بدهد.
         viewModelScope.launch {
-            runCatching { inbox.mergeAnnouncements(apiService.getAnnouncements().items) }
+            runCatching {
+                val auth = authPrefs.authToken.first()?.let { "Bearer $it" }
+                inbox.mergeAnnouncements(apiService.getAnnouncements(authHeader = auth).items)
+            }
         }
     }
 
