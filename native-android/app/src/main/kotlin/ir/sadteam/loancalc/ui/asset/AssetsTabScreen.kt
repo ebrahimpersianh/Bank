@@ -381,7 +381,7 @@ fun AssetsTabScreen(
                 .let { if (browsing) it.take(8) else it }
             if (market.isNotEmpty()) {
                 item {
-                    MarketGridSection(market, marketPrices, changes, onSeeAll = { showPrices = true }, onOpen = ::openEntry)
+                    MarketGridSection(market, marketPrices, assetViewModel, onSeeAll = { showPrices = true }, onOpen = ::openEntry)
                 }
             }
         }
@@ -1219,6 +1219,20 @@ private fun String.faNum(): String = map { if (it in '0'..'9') '۰' + (it - '0')
 // همه‌ی عددها از داده‌ی واقعی (قیمتِ روز، تغییرِ ۳۰روزه، تاریخچه‌ی سرور) - هیچ عددِ طرح.
 // شکلِ نمودارهای کوچک از همان سبکِ نمودارِ خریده‌شده در فروشگاه می‌آید (`HeroChart`).
 
+/**
+ * درصدِ تغییرِ **امروز** نسبت به آخرین قیمتِ ثبت‌شده‌ی روزهای قبل (خواسته‌ی کاربر، ۳ مهر).
+ * از تاریخچه‌ی روزانه‌ی سرور + قیمتِ همین لحظه ساخته می‌شود؛ بی تاریخچه = `null` («—»).
+ */
+@Composable
+private fun rememberDailyChange(symbol: String, viewModel: AssetViewModel): Double? {
+    val history by remember(symbol) { viewModel.historyOf(symbol) }.collectAsState(initial = emptyList())
+    val prices by viewModel.marketPrices.collectAsState()
+    val today = remember { JalaliCalendar.today() }
+    val prev = history.lastOrNull { !(it.year == today.y && it.month == today.m && it.day == today.d) }?.priceRial
+    val cur = prices[symbol] ?: history.lastOrNull()?.priceRial
+    return if (prev != null && cur != null && prev > 0.0) (cur - prev) / prev * 100.0 else null
+}
+
 /** نمودارِ کوچکِ روندِ یک نماد - هرچقدر تاریخچه هست؛ کمتر از ۲ نقطه = خطِ صاف. */
 @Composable
 private fun MiniTrend(symbol: String, change: Double?, viewModel: AssetViewModel, modifier: Modifier = Modifier, height: androidx.compose.ui.unit.Dp = 26.dp) {
@@ -1343,7 +1357,7 @@ private fun MarketOverviewSection(
         MarketSectionTitle("نمای کلیِ بازار", onSeeAll)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
             picks.forEach { e ->
-                val change = changes[e.symbol]
+                val change = rememberDailyChange(e.symbol, viewModel)
                 val shape = RoundedCornerShape(16.dp)
                 Column(
                     modifier = Modifier
@@ -1398,7 +1412,7 @@ private fun MyAssetsSection(
         MarketSectionTitle("دارایی‌های من", onSeeAll)
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
             rows.forEach { h ->
-                val change = changes[h.asset.symbol]
+                val change = rememberDailyChange(h.asset.symbol, viewModel)
                 val shape = RoundedCornerShape(18.dp)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -1447,7 +1461,7 @@ private fun MyAssetsSection(
 private fun MarketGridSection(
     entries: List<AssetCatalogEntry>,
     prices: Map<String, Double>,
-    changes: Map<String, Double>,
+    viewModel: AssetViewModel,
     onSeeAll: () -> Unit,
     onOpen: (AssetCatalogEntry) -> Unit,
 ) {
@@ -1475,7 +1489,7 @@ private fun MarketGridSection(
                         Column(horizontalAlignment = Alignment.End) {
                             Text(prices[e.symbol]?.rialToFaCompact() ?: "—", color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
                             Text("تومان", color = AppMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                            changes[e.symbol]?.let { PriceChangeBadge(it, modifier = Modifier.padding(top = 2.dp)) }
+                            rememberDailyChange(e.symbol, viewModel)?.let { PriceChangeBadge(it, modifier = Modifier.padding(top = 2.dp)) }
                         }
                     }
                 }
