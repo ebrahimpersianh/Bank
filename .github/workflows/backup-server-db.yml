@@ -31,25 +31,50 @@ jobs:
             set -e
             mkdir -p ~/VameMan/backups
             STAMP=$(date -u +%Y%m%d-%H%M%S)
-            # `.backup` نسخه‌ی سازگار می‌گیرد حتی وقتی سرور در حالِ نوشتن است.
-            sqlite3 ~/VameMan/data.sqlite ".backup '$HOME/VameMan/backups/data-$STAMP.sqlite'"
+            # `.backup` نسخه‌ی سازگار می‌گیرد حتی وقتی سرور در حالِ نوشتن است. اگر ابزارِ
+            # sqlite3 روی سرور نبود، همان کار با کتابخانه‌ی sqlite3ِ خودِ python3 انجام می‌شود.
+            OUT="$HOME/VameMan/backups/data-$STAMP.sqlite"
+            if command -v sqlite3 >/dev/null 2>&1; then
+              sqlite3 ~/VameMan/data.sqlite ".backup '$OUT'"
+            else
+              python3 -c "import sqlite3,sys; s=sqlite3.connect(sys.argv[1]); d=sqlite3.connect(sys.argv[2]); s.backup(d); d.close(); s.close()" ~/VameMan/data.sqlite "$OUT"
+            fi
             gzip -f ~/VameMan/backups/data-$STAMP.sqlite
             # سالم بودنِ خروجی تایید شود، وگرنه بکاپِ خراب حسِ کاذبِ امنیت می‌دهد.
             gzip -t ~/VameMan/backups/data-$STAMP.sqlite.gz
             ls -1t ~/VameMan/backups/*.sqlite.gz | tail -n +8 | xargs -r rm --
             ls -lh ~/VameMan/backups/data-$STAMP.sqlite.gz
 
-      - name: آوردنِ آخرین بکاپ به رانر
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "VameMan/backups/*.sqlite.gz"
-          target: "downloaded"
-          strip_components: 2
+      # 🚨 **رفعِ ۳ مهر**: `scp-action` فقط از رانر **به** سرور می‌فرستد، نه برعکس - برای همین
+      # هر شب با «tar: empty archive» شکست می‌خورد و هیچ نسخه‌ای بیرون نمی‌آمد.
+      # 🔒 مخزن عمومی است و artifactِ مخزنِ عمومی را هر کسی می‌تواند بگیرد؛ پس فایل **رمزنگاری‌شده**
+      # (AES-256) بیرون می‌آید. رمز: سکرتِ BACKUP_PASSPHRASE، و اگر نبود همان VPS_SSH_KEY.
+      - name: آوردنِ آخرین بکاپ و رمزنگاریِ آن
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          HOST: ${{ secrets.VPS_HOST }}
+          USER_NAME: ${{ secrets.VPS_USER }}
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE || secrets.VPS_SSH_KEY }}
+        run: |
+          set -e
+          install -m 600 /dev/null key
+          printf '%s\n' "$SSH_KEY" > key
+          SSH="ssh -i key -o StrictHostKeyChecking=no -o BatchMode=yes"
+          LATEST=$($SSH "$USER_NAME@$HOST" 'ls -1t ~/VameMan/backups/*.sqlite.gz | head -n 1')
+          mkdir -p downloaded
+          scp -i key -o StrictHostKeyChecking=no -o BatchMode=yes "$USER_NAME@$HOST:$LATEST" downloaded/
+          rm -f key
+          F=$(ls downloaded/*.sqlite.gz)
+          gzip -t "$F"
+          # سالم‌بودنِ خودِ دیتابیس (نه فقط فایلِ فشرده) + شمارِ کاربرها، بی چاپِ هیچ داده‌ای.
+          gunzip -c "$F" > check.sqlite
+          python3 -c "import sqlite3; c=sqlite3.connect('check.sqlite'); print('integrity:', c.execute('PRAGMA integrity_check').fetchone()[0]); print('users:', c.execute('SELECT COUNT(*) FROM users').fetchone()[0])"
+          rm -f check.sqlite
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in "$F" -out "$F.enc" -pass env:PASSPHRASE
+          rm -f "$F"
+          ls -lh downloaded/
 
-      - name: نگه‌داشتنِ نسخه‌ی بیرونی
+      - name: نگه‌داشتنِ نسخه‌ی بیرونی (رمزنگاری‌شده)
         uses: actions/upload-artifact@v4
         with:
           name: jibak-db-backup
