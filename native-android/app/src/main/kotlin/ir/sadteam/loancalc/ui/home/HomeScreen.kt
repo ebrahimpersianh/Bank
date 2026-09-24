@@ -517,34 +517,8 @@ fun HomeScreen(
             CoinHubScreen(onBack = { showCoinWallet = false }, todayHasEntry = todayHasEntry)
         }
         if (showProfile) {
-            BackHandler { showProfile = false }
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(AppBg)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 14.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = { showProfile = false }) {
-                        Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
-                    }
-                    Text(
-                        "نشان‌های من",
-                        color = AppText,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                // ⚠️ `BadgesScreen` یک `Column` است نه فهرستِ تنبل، پس داخلِ اسکرولِ
-                // عمودی امن است (قاعده‌ی کرشِ اسکرولِ تودرتو).
-                BadgesScreen()
-                Spacer(modifier = Modifier.height(90.dp))
-            }
+            // آدمکِ سربرگ → صفحه‌ی «حسابِ کاربری» (خواسته‌ی کاربر، ۳ مهر). نشان‌ها از تنظیمات در دسترس‌اند.
+            ir.sadteam.loancalc.ui.settings.SettingsScreen(onBack = { showProfile = false }, startAtAccount = true)
         }
         if (showTodaySpend) {
             TodaySpendSheet(

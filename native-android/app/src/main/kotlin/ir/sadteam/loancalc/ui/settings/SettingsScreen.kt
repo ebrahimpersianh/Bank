@@ -255,8 +255,11 @@ fun SettingsScreen(
     hapticsViewModel: HapticsViewModel = hiltViewModel(),
     smsAutoImportViewModel: SmsAutoImportViewModel = hiltViewModel(),
     deepLinkViewModel: DeepLinkViewModel = hiltViewModel(),
+    /** از آدمکِ سربرگِ خانه: مستقیم «حسابِ کاربری» باز شود و «بازگشت» کلِ صفحه را ببندد. */
+    startAtAccount: Boolean = false,
 ) {
-    var route by remember { mutableStateOf(SettingsRoute.MAIN) }
+    var route by remember { mutableStateOf(if (startAtAccount) SettingsRoute.ACCOUNT else SettingsRoute.MAIN) }
+    val closeSub: () -> Unit = { if (startAtAccount) onBack() else route = SettingsRoute.MAIN }
     // زیرصفحه‌های «فیچری» (تقویم/آمار/تاریخچه) از رو خودِ صفحه‌ی «ابزارها» باز می‌شن، پس یه استیتِ
     // جدا لازم دارن تا با برگشت، به «ابزارها» برگردن نه به ریشه‌ی تنظیمات.
     var tool by remember { mutableStateOf<String?>(null) }
@@ -315,10 +318,10 @@ fun SettingsScreen(
                     else -> CalculationHistoryScreen(onBack = { tool = null })
                 }
             }
-            "sub" -> FullScreenDialog(onDismissRequest = { route = SettingsRoute.MAIN }) {
+            "sub" -> FullScreenDialog(onDismissRequest = closeSub) {
                 SettingsSubPage(
                     route = route,
-                    onBack = { route = SettingsRoute.MAIN },
+                    onBack = closeSub,
                     authViewModel = authViewModel,
                     themeViewModel = themeViewModel,
                     notificationsViewModel = notificationsViewModel,
@@ -484,8 +487,9 @@ private fun SettingsMainContent(
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        // بی هاله - دقیقاً مثلِ آدمکِ سربرگِ خانه (خواسته‌ی کاربر، ۳ مهر).
                         Box(
-                            modifier = Modifier.size(64.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.18f)),
+                            modifier = Modifier.size(52.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             FramedAvatar(avatar, size = 52.dp, frame = avatarFrame)
@@ -878,7 +882,7 @@ private fun AccountSettings(
             ) {
                 Box {
                     Box(
-                        modifier = Modifier.size(74.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.18f)),
+                        modifier = Modifier.size(68.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         FramedAvatar(avatar, size = 68.dp, frame = avatarFrame)
