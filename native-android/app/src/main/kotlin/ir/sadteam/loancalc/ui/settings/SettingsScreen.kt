@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.settings
 
+import ir.sadteam.loancalc.ui.support.ContactSupportContent
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.graphics.SolidColor
@@ -2699,24 +2700,14 @@ private fun AboutSettings(banner: InAppBannerState, onOpenBugReport: () -> Unit)
     )
 
     if (showContact) {
-        AlertDialog(
-            onDismissRequest = { showContact = false },
-            confirmButton = { TextButton(onClick = { showContact = false }) { Text("بستن") } },
-            title = { Text("تماس با ما", fontWeight = FontWeight.Black) },
-            text = { SupportContacts(banner) },
-        )
+        FullScreenDialog(onDismissRequest = { showContact = false }) {
+            ContactSupportContent(onClose = { showContact = false })
+        }
     }
     if (showPrivacy) {
-        AlertDialog(
-            onDismissRequest = { showPrivacy = false },
-            confirmButton = { TextButton(onClick = { showPrivacy = false }) { Text("بستن") } },
-            title = { Text("حریمِ خصوصی", fontWeight = FontWeight.Black) },
-            text = {
-                Column(modifier = Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState())) {
-                    Text(privacyText, color = AppText, fontSize = 11.sp, lineHeight = 22.sp)
-                }
-            },
-        )
+        FullScreenDialog(onDismissRequest = { showPrivacy = false }) {
+            PrivacyPolicyScreen(onBack = { showPrivacy = false })
+        }
     }
 }
 

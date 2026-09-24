@@ -59,9 +59,13 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.settings.SettingsHero
+import ir.sadteam.loancalc.core.toFa
 
 /** همان صندوقی که «تماس با ما» هم به آن می‌فرستد - یک نشانی، نه دو تا. */
 const val SUPPORT_EMAIL = "jibak.support@gmail.com"
+
+private const val MAX_REPORT = 1000
 
 /**
  * 🐞 **گزارشِ مشکل** - خواسته‌ی کاربر (۳۱ شهریور).
@@ -134,25 +138,42 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
             }
 
             item {
+                SettingsHero(
+                    icon = Icons.Filled.BugReport,
+                    title = "یه مشکل دیدی؟",
+                    subtitle = "جزئیاتش را بنویس؛ اگر به رفعش کمک کند هدیه‌ی اشتراک می‌گیری.",
+                )
+            }
+
+            item {
                 AppCard {
+                    Text("توضیحِ مشکل", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
                     OutlinedTextField(
                         value = message,
-                        onValueChange = { message = it },
+                        onValueChange = { if (it.length <= MAX_REPORT) message = it },
                         placeholder = {
                             Text(
                                 "مثلاً: تو تبِ وام، دکمه‌ی پرداخت را می‌زنم و هیچ اتفاقی نمی‌افتد.",
                                 fontSize = 11.sp,
                             )
                         },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 140.dp),
                     )
-                    Text(
-                        "نسخه و مدلِ گوشی خودکار اضافه می‌شود.",
-                        color = AppLabel,
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
+                    Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "نسخه و مدلِ گوشی خودکار اضافه می‌شود.",
+                            color = AppLabel,
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            "${toFa(message.length)}/${toFa(MAX_REPORT)}",
+                            color = AppMuted,
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
             }
 
