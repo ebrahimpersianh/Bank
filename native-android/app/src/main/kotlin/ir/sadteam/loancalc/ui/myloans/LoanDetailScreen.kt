@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -1818,83 +1820,155 @@ private fun PaymentRhythm(
     val byYear = states.size > 60
     // بالای ۶۰ قسط هر میله یک سال است و **بدترین** حالتِ همان سال را می‌گیرد، چون خبرِ بد
     // نباید زیرِ میانگین گم شود.
-    val bars = if (!byYear) states else states.chunked(12).map { chunk -> chunk.minOrNull() ?: 3 }
-
-    AppCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("ریتمِ پرداخت", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                "دیدنِ همه",
-                color = AppPrimary,
-                fontSize = 10.5.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.pressScaleClickable(onClick = onOpenAll),
-            )
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp)
-                .height(26.dp)
-                .pressScaleClickable(onClick = onOpenAll),
-            horizontalArrangement = Arrangement.spacedBy(2.5.dp),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            bars.forEach { state ->
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        // قسطِ نیامده میله‌ی **کوتاه** می‌گیرد نه رنگِ کم‌رنگ: ارتفاع در یک
-                        // نگاه از رنگ سریع‌تر خوانده می‌شود.
-                        .fillMaxHeight(if (state == 3) 0.45f else 1f)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(
-                            when (state) {
-                                0 -> paidColor
-                                1 -> lateColor
-                                2 -> nextColor
-                                else -> emptyColor
-                            },
-                        ),
-                )
-            }
-        }
-        // 🚨 **برچسبِ ماه زیرِ میله‌ها** (طرحِ مرجعِ کاربر): بی آن معلوم نبود میله‌ی قرمز
-        // مالِ کدام ماه است. برچسب فقط وقتی می‌آید که میله‌ها کم باشند؛ با ۳۶ قسط،
-        // ۳۶ نامِ ماه روی هم می‌افتد، پس یکی‌درمیان نوشته می‌شود.
-        val monthLabels = remember(rows, byYear) {
-            if (byYear) emptyList() else rows.map { row ->
+    val allBars = if (!byYear) states else states.chunked(12).map { chunk -> chunk.minOrNull() ?: 3 }
+    val allLabels = remember(rows, byYear) {
+        if (byYear) {
+            allBars.indices.map { "سالِ ${toFa(it + 1)}" }
+        } else {
+            rows.map { row ->
                 val due = row["dueDate"] as? Map<*, *>
                 (due?.get("m") as? Number)?.toInt()?.let { persianMonthName(it) } ?: ""
             }
         }
-        if (monthLabels.isNotEmpty() && monthLabels.size <= 24) {
-            val everyOther = monthLabels.size > 12
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
-                horizontalArrangement = Arrangement.spacedBy(2.5.dp),
-            ) {
-                monthLabels.forEachIndexed { index, name ->
+    }
+    // 🎨 طرحِ مرجعِ کاربر (۳ مهر): ده میله‌ی کپسولی با نقطه روی خطِ پایه و نامِ ماه. با
+    // قسط‌های زیاد یک **پنجره‌ی ده‌تایی** دورِ قسطِ جاری نشان داده می‌شود؛ «دیدنِ همه»
+    // کلِ جدول را باز می‌کند.
+    val window = 10
+    val focus = allBars.indexOfFirst { it == 2 }.let { if (it < 0) allBars.lastIndex else it }
+    val start = (focus - 5).coerceIn(0, (allBars.size - window).coerceAtLeast(0))
+    val bars = allBars.drop(start).take(window)
+    val labels = allLabels.drop(start).take(window)
+    val futureColor = AppLine
+
+    fun colorOf(state: Int) = when (state) {
+        0 -> paidColor
+        1 -> lateColor
+        2 -> nextColor
+        else -> futureColor
+    }
+
+    AppCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column {
+                Text("ریتمِ پرداخت", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                Text(
+                    if (byYear) "هر میله یک سال" else "هر میله یک قسط",
+                    color = AppMuted,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                "دیدنِ همه",
+                color = AppPrimary,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.pressScaleClickable(onClick = onOpenAll),
+            )
+        }
+        val lineColor = AppLine
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+                .pressScaleClickable(scale = 0.99f, onClick = onOpenAll),
+        ) {
+            bars.forEachIndexed { index, state ->
+                val current = state == 2
+                val color = colorOf(state)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        // خطِ پایه‌ی نازک از وسطِ نقطه‌ها می‌گذرد.
+                        .drawBehind {
+                            val y = 58.dp.toPx() + 4.dp.toPx()
+                            drawLine(lineColor, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                        },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .height(56.dp)
+                            .fillMaxWidth(0.86f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (current) nextColor.copy(alpha = 0.16f) else Color.Transparent),
+                        contentAlignment = Alignment.BottomCenter,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .padding(bottom = 4.dp)
+                                .width(16.dp)
+                                .height(if (state == 3) 38.dp else if (current) 46.dp else 44.dp)
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(
+                                    Brush.verticalGradient(
+                                        0f to color.copy(alpha = 0.35f),
+                                        0.28f to color.copy(alpha = 0.55f),
+                                        0.3f to color,
+                                        1f to color,
+                                    ),
+                                ),
+                        )
+                    }
+                    Box(
+                        modifier = Modifier.padding(top = 2.dp).size(8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (current) {
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .clip(CircleShape)
+                                    .background(AppSurface)
+                                    .border(2.dp, nextColor, CircleShape),
+                            )
+                        } else {
+                            Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(color))
+                        }
+                    }
                     Text(
-                        if (everyOther && index % 2 == 1) "" else name,
-                        color = AppMuted,
-                        fontSize = 6.5.sp,
-                        fontWeight = FontWeight.Bold,
+                        labels.getOrElse(index) { "" },
+                        color = if (current) AppText else AppMuted,
+                        fontSize = 8.5.sp,
+                        fontWeight = if (current) FontWeight.Black else FontWeight.Bold,
                         maxLines = 1,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.padding(top = 5.dp),
                     )
                 }
             }
         }
-        Text(
-            if (byYear) "هر میله یک سال" else "هر میله یک قسط",
-            color = AppMuted,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 7.dp),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // جمله‌ی «هر میله یک قسط» جدا بالای راهنما نشست تا در گوشیِ باریک راهنما جا شود.
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .border(1.dp, AppLine, RoundedCornerShape(999.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                listOf(0 to "پرداخت‌شده", 2 to "قسطِ جاری", 1 to "پرداخت‌نشده", 3 to "آینده").forEach { (st, name) ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(colorOf(st)))
+                        Text(
+                            name,
+                            color = AppMuted,
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            modifier = Modifier.padding(start = 3.dp),
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
