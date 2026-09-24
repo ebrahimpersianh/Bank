@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -114,7 +114,7 @@ fun SmsSenderPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
         if (permissionGranted) senders = readSmsSenders(context)
     }
 
-    AlertDialog(
+    JibakAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("انتخاب از پیامک‌ها") },
         text = {

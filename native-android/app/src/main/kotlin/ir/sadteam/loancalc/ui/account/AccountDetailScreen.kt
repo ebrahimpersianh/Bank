@@ -24,7 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -491,7 +491,7 @@ private fun EditTransactionDialog(
     var description by remember { mutableStateOf(tx.description) }
     val toman = amountText.toLongOrNull() ?: 0L
 
-    AlertDialog(
+    JibakAlertDialog(
         onDismissRequest = onDismiss,
         containerColor = AppSurface,
         title = { Text("ویرایشِ تراکنش", color = AppText, fontWeight = FontWeight.Black) },

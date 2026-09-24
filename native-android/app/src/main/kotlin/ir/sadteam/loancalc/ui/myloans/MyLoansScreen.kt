@@ -55,7 +55,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.EventNote
-import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -1127,7 +1127,7 @@ private fun BackupRestoreRow(onBackup: () -> Unit, onRestore: () -> Unit) {
     var showSheet by remember { mutableStateOf(false) }
 
     if (showSheet) {
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { showSheet = false },
             title = { Text("پشتیبان‌گیری و بازیابیِ وام‌ها") },
             text = { Text("یه فایلِ پشتیبان از همه‌ی وام‌هات بساز، یا یه فایلِ قبلی رو برگردون.") },

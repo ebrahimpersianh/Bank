@@ -3,7 +3,7 @@ package ir.sadteam.loancalc.ui.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -25,7 +25,7 @@ fun AccountPickerDialog(
     onDismiss: () -> Unit,
     title: String = "از کدوم حساب پرداخت کردی؟",
 ) {
-    AlertDialog(
+    JibakAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {

@@ -20,7 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -559,7 +559,7 @@ private fun ContributeDialog(
     val toman = amountText.toDoubleOrNull() ?: 0.0
     val valid = toman > 0.0
 
-    AlertDialog(
+    JibakAlertDialog(
         onDismissRequest = onDismiss,
         containerColor = AppSurface,
         title = { Text(goal.title, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black) },

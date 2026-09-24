@@ -59,7 +59,7 @@ import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -439,7 +439,7 @@ fun LoanDetailScreen(
     var editMetaNText by remember { mutableStateOf("") }
 
     if (showEditMetaDialog) {
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { showEditMetaDialog = false },
             title = { Text("ویرایش مشخصات وام") },
             text = {
@@ -620,7 +620,7 @@ fun LoanDetailScreen(
     }
 
     if (editingRowM != null) {
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { editingRowM = null },
             title = { Text("ویرایش مبلغ قسط ${toFa(editingRowM ?: 0)}") },
             text = {
@@ -655,7 +655,7 @@ fun LoanDetailScreen(
     }
 
     if (applyAllPromptAmount != null) {
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { applyAllPromptAmount = null },
             title = { Text("اعمال به همه‌ی اقساط") },
             text = { Text("می‌خوای این مبلغ رو برای همه‌ی اقساط اعمال کنی؟") },
@@ -673,7 +673,7 @@ fun LoanDetailScreen(
 
     if (payChoiceM != null) {
         val m = payChoiceM!!
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { payChoiceM = null },
             title = { Text("ثبت پرداخت قسط ${toFa(m)}") },
             text = { Text("این قسط سر موعد پرداخت شده یا با تاخیر؟") },
@@ -698,7 +698,7 @@ fun LoanDetailScreen(
 
     if (bulkPayChoiceOpen) {
         val count = selectedBulkMs.size
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { bulkPayChoiceOpen = false },
             title = { Text("ثبت پرداختِ ${toFa(count)} قسط") },
             text = {
@@ -729,7 +729,7 @@ fun LoanDetailScreen(
 
     if (lateDateM != null) {
         val m = lateDateM!!
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { lateDateM = null },
             title = { Text("تاریخ واقعی پرداخت قسط ${toFa(m)}") },
             text = {

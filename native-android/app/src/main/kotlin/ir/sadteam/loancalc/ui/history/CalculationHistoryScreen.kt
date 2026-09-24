@@ -11,7 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppSurface
@@ -214,7 +214,7 @@ fun CalculationHistoryScreen(onBack: () -> Unit, viewModel: CalculationHistoryVi
     }
 
     if (confirmClearAll) {
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { confirmClearAll = false },
             title = { Text("همه‌ی تاریخچه پاک شود؟", fontWeight = FontWeight.Black) },
             text = { Text("${toFa(history.size)} محاسبه برای همیشه پاک می‌شود و برگشت ندارد.") },
@@ -225,7 +225,7 @@ fun CalculationHistoryScreen(onBack: () -> Unit, viewModel: CalculationHistoryVi
         )
     }
     pendingDelete?.let { entry ->
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text("این محاسبه حذف شود؟", fontWeight = FontWeight.Black) },
             text = { Text(entry.title) },

@@ -26,7 +26,7 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -130,7 +130,7 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
             val all = if (entity.type == TransactionType.WITHDRAWAL.name) expenseCategories else incomeCategories
             all.map { it.name }.filter { it != entity.name }
         }
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { pendingDelete = null },
             confirmButton = {
                 TextButton(
@@ -437,7 +437,7 @@ private fun RenameCategoryDialog(
     var name by remember { mutableStateOf(entity.name) }
     val taken = isTaken(name)
     val valid = name.isNotBlank() && name.trim() != entity.name && !taken
-    AlertDialog(
+    JibakAlertDialog(
         onDismissRequest = onDismiss,
         containerColor = AppSurface,
         title = { Text("تغییرِ نامِ دسته", color = AppText, fontWeight = FontWeight.Black) },

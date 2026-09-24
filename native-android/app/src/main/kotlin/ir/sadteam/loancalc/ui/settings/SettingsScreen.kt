@@ -102,7 +102,7 @@ import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -958,7 +958,7 @@ private fun AccountSettings(
         }
 
         if (showAvatarSheet) {
-            AlertDialog(
+            JibakAlertDialog(
                 onDismissRequest = { showAvatarSheet = false },
                 confirmButton = { TextButton(onClick = { showAvatarSheet = false }) { Text("تمام") } },
                 title = { Text("آدمکت را انتخاب کن", fontWeight = FontWeight.Black) },
@@ -967,7 +967,7 @@ private fun AccountSettings(
         }
         if (showNameSheet) {
             var nameDraft by remember(savedName) { mutableStateOf(savedName ?: "") }
-            AlertDialog(
+            JibakAlertDialog(
                 onDismissRequest = { showNameSheet = false },
                 confirmButton = {
                     TextButton(
@@ -1144,7 +1144,7 @@ private fun AccountSettings(
                 .pressScaleClickable { showDeleteAccountConfirm = true },
         )
         if (showLogoutConfirm) {
-            AlertDialog(
+            JibakAlertDialog(
                 onDismissRequest = { showLogoutConfirm = false },
                 confirmButton = {
                     TextButton(onClick = { showLogoutConfirm = false; authViewModel.logout() }) {
@@ -1185,7 +1185,7 @@ private fun AccountSettings(
     }
 
     if (showDeleteAccountConfirm) {
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { if (!deleteAccountInProgress) showDeleteAccountConfirm = false },
             title = { Text("حذف حساب کاربری") },
             text = {
@@ -1607,7 +1607,7 @@ private fun DataSettings(
 
     // 🚨 بازیابی داده‌های فعلیِ گوشی را جایگزین می‌کند - پس اول تاییدِ صریح.
     pendingRestore?.let { source ->
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { pendingRestore = null },
             title = { Text(if (source == "cloud") "بازیابی از سرورِ ابری؟" else "بازیابی از پشتیبانِ گوشی؟", fontWeight = FontWeight.Black) },
             text = {
@@ -2962,7 +2962,7 @@ private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     var confirmPin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
 
-    AlertDialog(
+    JibakAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("تنظیم PIN") },
         text = {

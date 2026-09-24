@@ -23,7 +23,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -337,7 +337,7 @@ fun AssetTradeSheet(
         }
 
         if (showAfterNote) {
-            AlertDialog(
+            JibakAlertDialog(
                 onDismissRequest = { showAfterNote = false; onDismiss() },
                 title = {
                     Text(

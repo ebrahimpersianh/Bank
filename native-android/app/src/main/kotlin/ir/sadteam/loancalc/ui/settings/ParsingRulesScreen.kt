@@ -14,7 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.Rule
-import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -277,7 +277,7 @@ private fun RuleSheet(
         matches = previewCount(pattern)
     }
 
-    AlertDialog(
+    JibakAlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(

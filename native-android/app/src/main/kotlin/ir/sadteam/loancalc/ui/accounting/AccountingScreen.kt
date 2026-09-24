@@ -46,7 +46,7 @@ import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.PieChart
-import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -1174,7 +1174,7 @@ private fun AddBudgetDialog(
     var capText by remember { mutableStateOf("") }
     val cat = selected
 
-    AlertDialog(
+    JibakAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (cat == null) "برای کدوم دسته بودجه بزاریم؟" else "سقفِ ماهانه‌ی «${cat.name}»") },
         text = {
@@ -2271,7 +2271,7 @@ internal fun NewBudgetSheet(
     var showCategoryPicker by remember { mutableStateOf(false) }
 
     if (showAccountPicker) {
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { showAccountPicker = false },
             title = { Text("حساب‌کتاب‌ها", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -2294,7 +2294,7 @@ internal fun NewBudgetSheet(
     }
 
     if (showCategoryPicker) {
-        AlertDialog(
+        JibakAlertDialog(
             onDismissRequest = { showCategoryPicker = false },
             title = { Text("دسته‌بندی", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -2319,7 +2319,7 @@ internal fun NewBudgetSheet(
 
     val accountLabel = accounts.firstOrNull { it.id == selectedAccountId }?.name ?: "همه حساب‌کتاب‌ها"
 
-    AlertDialog(
+    JibakAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("بودجه‌ی جدید", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
         text = {

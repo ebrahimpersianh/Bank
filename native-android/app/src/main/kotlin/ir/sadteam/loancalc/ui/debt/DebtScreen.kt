@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
+import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -549,7 +549,7 @@ private fun EditCounterpartyDialog(
     var phone by remember { mutableStateOf(counterparty.phone ?: "") }
     var shape by remember { mutableStateOf(runCatching { AvatarShape.valueOf(counterparty.avatarShape) }.getOrDefault(AvatarShape.BOY)) }
 
-    AlertDialog(
+    JibakAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("ویرایشِ طرف‌حساب") },
         text = {
