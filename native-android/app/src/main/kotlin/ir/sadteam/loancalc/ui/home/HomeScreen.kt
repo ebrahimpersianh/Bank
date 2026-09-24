@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -731,7 +732,7 @@ private fun HomeHeader(
             }
         }
         // خواسته‌ی کاربر (۳ مهر): سکه و زنگ کمی به چپ و به هم نزدیک‌تر.
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy((-4).dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(0.dp)) {
             // ⚠️ **قرصِ «فعال» از هدر رفت** - فریمِ `55a`.
             //
             // شمارنده‌ی روزهای پیاپی است: کنش نیست، مقصد ندارد، و هر روز همان عدد
@@ -749,7 +750,7 @@ private fun HomeHeader(
             if (streakAtRisk) {
                 ActiveChip(days = activeDays, onClick = onOpenCoins)
             } else if (coins > 0) {
-                CoinChip(coins = coins, onClick = onOpenCoins, compact = compactChips)
+                CoinChip(coins = coins, onClick = onOpenCoins, compact = compactChips, modifier = Modifier.offset(x = 6.dp))
             }
             // زنگِ مرکزِ پیام‌ها (بخشِ ۴۰). **عدد فقط برای اقدام‌دارهای بازه**؛ خبرِ
             // خوانده‌نشده فقط یه نقطه‌ی سبز می‌گیره، نه عدد (قاعده‌ی صریحِ طرح).

@@ -84,6 +84,7 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPurple
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -100,7 +101,8 @@ enum class NewTxKind { EXPENSE, INCOME, TRANSFER }
 private fun accentOf(kind: NewTxKind): Color = when (kind) {
     NewTxKind.EXPENSE -> AppDanger
     NewTxKind.INCOME -> IncomeBlue
-    NewTxKind.TRANSFER -> AppPrimary
+    // بنفش (خواسته‌ی کاربر، ۳ مهر): درآمد آبی و خرج قرمز است؛ انتقال نباید با درآمد یکی دیده شود.
+    NewTxKind.TRANSFER -> AppPurple
 }
 
 /**
