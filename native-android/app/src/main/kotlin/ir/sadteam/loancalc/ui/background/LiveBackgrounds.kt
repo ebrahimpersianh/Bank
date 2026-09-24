@@ -35,7 +35,10 @@ enum class LiveBackground(val id: String, val nameFa: String, val darkOnly: Bool
     AURORA("aurora", "شفق", darkOnly = false),
     NIGHT_SWIRL("night_swirl", "چرخشِ شب", darkOnly = true),
     SOFT_MESH("soft_mesh", "تورِ نرم", darkOnly = false),
-    TIDE("tide", "جزر و مد", darkOnly = false);
+    TIDE("tide", "جزر و مد", darkOnly = false),
+    // بسته‌ی ChatGPT (۳ مهر، `MOTION_SPEC.md`) - مثلِ بقیه فقط DrawScope، بی ویدیو و تصویر.
+    GALAXY("galaxy", "کهکشان", darkOnly = true),
+    SKY("sky", "آسمان", darkOnly = false);
 
     companion object {
         /** قیمتِ **بسته‌ای**. با چهار قیمتِ جدا کاربر سه طرح را هیچ‌وقت نمی‌دید. */
@@ -76,6 +79,7 @@ fun LiveBackgroundLayer(
     val pC = phase(72_000); val pD = phase(48_000)
     val pE = phase(24_000)
     val pF = phase(13_000); val pG = phase(17_000)
+    val pH = phase(30_000); val pI = phase(23_000)
 
     Box(modifier.fillMaxSize()) {
         androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
@@ -84,6 +88,8 @@ fun LiveBackgroundLayer(
                 LiveBackground.NIGHT_SWIRL -> drawNightSwirl(primary, primaryLight, pC, pD)
                 LiveBackground.SOFT_MESH -> drawSoftMesh(primary, pE)
                 LiveBackground.TIDE -> drawTide(primary, primaryLight, pF, pG)
+                LiveBackground.GALAXY -> drawGalaxy(primary, primaryLight, pH, pF)
+                LiveBackground.SKY -> drawSky(primaryLight, pI, pA)
             }
         }
     }
@@ -173,6 +179,63 @@ private fun DrawScope.drawTide(primary: Color, light: Color, pF: Float, pG: Floa
     }
     arc(primary, 0.070f, 0.52f + 0.06f * breathe(pF), 1.48f)
     arc(light, 0.055f, 0.44f - 0.05f * breathe(pG), 1.60f)
+}
+
+/** ستاره‌های ثابتِ کهکشان: (x, y, اندازه, لایه) - یک‌بار با بذرِ ثابت، نه هر فریم. */
+private val GALAXY_STARS: List<FloatArray> = kotlin.random.Random(1405).let { rnd ->
+    List(110) { floatArrayOf(rnd.nextFloat(), rnd.nextFloat(), 0.6f + rnd.nextFloat() * 1.4f, rnd.nextFloat()) }
+}
+
+/**
+ * سه سحابیِ کم‌رنگ + ستاره‌هایی که فقط سوسو می‌زنند و دو لایه‌شان با سرعتِ متفاوت
+ * آرام بالا می‌روند (پارالاکس). آلفاها هم‌اندازه‌ی بقیه‌ی طرح‌ها تا متن خوانا بماند.
+ */
+private fun DrawScope.drawGalaxy(primary: Color, light: Color, pH: Float, pF: Float) {
+    val w = size.width; val h = size.height
+    fun nebula(c: Color, cx: Float, cy: Float, r: Float, a: Float) = drawCircle(
+        brush = Brush.radialGradient(listOf(c.copy(alpha = a), Color.Transparent), center = Offset(cx, cy), radius = r),
+        radius = r, center = Offset(cx, cy),
+    )
+    nebula(primary, w * 0.25f, h * (0.30f + 0.03f * breathe(pH)), w * 0.9f, 0.075f)
+    nebula(light, w * 0.80f, h * (0.62f - 0.03f * breathe(pH)), w * 0.75f, 0.055f)
+    nebula(Color(0xFF7A4FD0), w * 0.55f, h * 0.10f, w * 0.6f, 0.045f)
+    GALAXY_STARS.forEachIndexed { i, s ->
+        val far = s[3] < 0.6f
+        val drift = (if (far) 0.04f else 0.12f) * pH
+        val y = ((s[1] - drift) % 1f + 1f) % 1f
+        val twinkle = 0.5f + 0.5f * sin((pF + i * 0.137f) * 2f * Math.PI.toFloat())
+        drawCircle(
+            color = Color.White.copy(alpha = (if (far) 0.05f else 0.09f) * (0.5f + 0.5f * twinkle)),
+            radius = s[2] * (if (far) 0.8f else 1.3f) * 1.dp.toPx(),
+            center = Offset(w * s[0], h * y),
+        )
+    }
+}
+
+/** درخششِ خورشید بالای صفحه + سه دسته ابرِ نرم که افقی می‌لغزند. */
+private fun DrawScope.drawSky(light: Color, pI: Float, pA: Float) {
+    val w = size.width; val h = size.height
+    val sun = Offset(w * 0.78f, h * 0.12f)
+    val sunR = w * (0.55f + 0.05f * breathe(pA))
+    drawCircle(
+        brush = Brush.radialGradient(listOf(Color(0xFFFFC46B).copy(alpha = 0.085f), Color.Transparent), center = sun, radius = sunR),
+        radius = sunR, center = sun,
+    )
+    fun cloud(yFrac: Float, scale: Float, speed: Float, offset: Float, a: Float) {
+        val x = (((pI * speed + offset) % 1f) * 1.6f - 0.3f) * w
+        val y = h * yFrac
+        listOf(-0.16f to 0f, 0f to -0.035f, 0.15f to 0.005f).forEach { (dx, dy) ->
+            val c = Offset(x + w * dx * scale, y + w * dy * scale)
+            val r = w * 0.14f * scale
+            drawCircle(
+                brush = Brush.radialGradient(listOf(light.copy(alpha = a), Color.Transparent), center = c, radius = r),
+                radius = r, center = c,
+            )
+        }
+    }
+    cloud(0.22f, 1.2f, 1f, 0.1f, 0.075f)
+    cloud(0.48f, 0.9f, 1f, 0.55f, 0.06f)
+    cloud(0.74f, 1.4f, 1f, 0.8f, 0.065f)
 }
 
 /**

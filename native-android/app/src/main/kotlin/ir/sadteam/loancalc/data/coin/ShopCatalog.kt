@@ -147,6 +147,8 @@ val THEME_CATALOG = listOf(
     // فامِ تقریبیِ هر `primary` جلوی خودش نوشته شده تا افزودنِ رنگِ تازه جایش را بداند.
     ThemePalette("copper", "نارنجیِ مسی", dark = 0xFF5C2A10, primary = 0xFFB05520, light = 0xFFF0B489, inkLight = 0xFF7A3A16), // ۲۵°
     ThemePalette("olive", "سبزِ زیتونی", dark = 0xFF2A2E12, primary = 0xFF5F6B22, light = 0xFFC7D68A, inkLight = 0xFF444C18), // ۷۳°
+    // بسته‌ی ChatGPT (۳ مهر) - هگزها عیناً از `THEME_SPEC.txt`.
+    ThemePalette("forest", "جنگلی", dark = 0xFF102D24, primary = 0xFF176B4B, light = 0xFF9FD9B7, inkLight = 0xFF14563D), // ۱۵۷°
     ThemePalette("teal", "سبزآبیِ تیره", dark = 0xFF0B2320, primary = 0xFF0E5F53, light = 0xFF7ACBBC, inkLight = 0xFF0A4A41), // ۱۶۸°
     ThemePalette("turquoise", "فیروزه", dark = 0xFF08484B, primary = 0xFF0B7A7E, light = 0xFF86E0E3, inkLight = 0xFF075254), // ۱۸۲°
     ThemePalette("lapis", "لاجورد", dark = 0xFF16275E, primary = 0xFF2F4FC4, light = 0xFF93B0F5, inkLight = 0xFF1E357F), // ۲۲۶°
@@ -316,6 +318,7 @@ val SHOP_CATALOG: List<ShopItem> = buildList {
     add(ShopItem("icon:sprout", CoinSpend.APP_ICON, "آیکونِ جوانه", "سکه در کاسه‌ی برگ", addedOn = "1405-06-31"))
     add(ShopItem("icon:fox", CoinSpend.APP_ICON, "آیکونِ روباه", "نیم‌رخِ روباهِ طلایی-فیروزه‌ای", addedOn = "1405-06-31"))
     add(ShopItem("icon:neon", CoinSpend.APP_ICON, "آیکونِ نئون", "نامِ جیبک با نورِ نئون، فقط برای شب‌ها", addedOn = "1405-06-31"))
+    add(ShopItem("icon:star", CoinSpend.APP_ICON, "آیکونِ ستاره", "ستاره‌ی طلایی روی سبزِ جنگلی", addedOn = "1405-07-03"))
     // 🚨 **قلک با هیچ قیمتی خریدنی نیست - با نشانِ «هدف‌رس» باز می‌شود** (جوابِ دورِ ۱۱).
     // قاعده‌ی `72c` می‌گفت هر نوعِ قلم باید یک نمونه‌ی نشان‌قفل داشته باشد و «آیکون» نداشت.
     // طراح فایلِ هنریِ تازه نداد و لازم هم نبود: نشان‌قفل باید **معنی** داشته باشد نه فقط

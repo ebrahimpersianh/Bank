@@ -41,6 +41,8 @@ enum class AvatarFrameStyle(val id: String, val label: String, val blurb: String
     DOUBLE("double", "حلقه‌ی دوجداره", "دو خط با فاصله‌ی نازک"),
     DOTTED("dotted", "حلقه‌ی نقطه‌چین", "خطِ بریده‌بریده، آرام‌تر"),
     NOTCHED("notched", "حلقه‌ی چهارتکه", "چهار کمان با چهار شکاف"),
+    /** بسته‌ی ChatGPT (۳ مهر، `frame_simple.png`): حلقه‌ی طلایی، خطِ درونیِ نازک و چهار نگین. */
+    GEMMED("gemmed", "حلقه‌ی نگین‌دار", "طلایی با خطِ نازکِ درونی و چهار نگین"),
 
     /** قلمِ نشان‌قفلِ این نوع (`72c`): با هیچ مقدار سکه‌ای خریدنی نیست. */
     LAUREL("laurel", "حلقه‌ی طلاییِ منظم", "با نشانِ «زیرِ بودجه» باز می‌شود"),
@@ -132,6 +134,26 @@ fun FramedAvatar(
                             size = Size(w - pad * 2f, w - pad * 2f),
                             style = Stroke(width = stroke),
                         )
+                    }
+                }
+                AvatarFrameStyle.GEMMED -> {
+                    ring(accent, 0.06f, 0f)
+                    ring(primary, 0.02f, 0.085f)
+                    val r = w / 2f - w * 0.03f
+                    val c = w / 2f
+                    val gem = w * 0.045f
+                    listOf(45f, 135f, 225f, 315f).forEach { deg ->
+                        val rad = Math.toRadians(deg.toDouble())
+                        val x = c + r * kotlin.math.cos(rad).toFloat()
+                        val y = c + r * kotlin.math.sin(rad).toFloat()
+                        val path = androidx.compose.ui.graphics.Path().apply {
+                            moveTo(x, y - gem)
+                            lineTo(x + gem, y)
+                            lineTo(x, y + gem)
+                            lineTo(x - gem, y)
+                            close()
+                        }
+                        drawPath(path, primary)
                     }
                 }
                 // طلایی فقط نشانِ پرمیوم/دستاورد است - قاعده‌ی ثبت‌شده‌ی پروژه، و همین

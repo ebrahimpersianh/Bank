@@ -103,6 +103,20 @@ class ShopViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SHOP_CATALOG)
 
+    init {
+        // بسته‌ی پس‌زمینه «همه‌ی طرح‌ها» است: کسی که پیش از افزوده‌شدنِ طرحِ تازه
+        // (کهکشان/آسمان، ۳ مهر) بسته را خریده، طرح‌های تازه را هم بی‌هزینه دارد.
+        viewModelScope.launch {
+            val ownedNow = uiPrefs.ownedItems.first()
+            if (ownedNow.any { it.startsWith("bg_") }) {
+                LiveBackground.entries
+                    .map { "bg_${it.id}" }
+                    .filterNot(ownedNow::contains)
+                    .forEach { uiPrefs.addOwnedItem(it) }
+            }
+        }
+    }
+
     /** نتیجه‌ی آخرین خرید - UI بعدِ نشان‌دادنش [consumeResult] را صدا می‌زند. */
     private val _lastResult = MutableStateFlow<BuyResult?>(null)
     val lastResult: StateFlow<BuyResult?> = _lastResult

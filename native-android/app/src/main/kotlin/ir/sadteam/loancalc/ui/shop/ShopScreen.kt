@@ -561,7 +561,7 @@ fun ShopScreen(
             val backdrops = rowsOf(ShopCategory.BACKDROP)
             // ⚠️ متنِ سرگروه **قیمتِ بسته‌ای** را می‌گوید نه قیمتِ ردیف: چهار ردیفِ
             // ۲۵۰سکه‌ای پشتِ‌هم یعنی «۱۰۰۰ سکه برای همه»، که غلط است.
-            item { GroupHeader("پس‌زمینه‌ی زنده", "${toFa(CoinSpend.LIVE_BACKDROP.price)} سکه · بازکردن هر چهار طرح") }
+            item { GroupHeader("پس‌زمینه‌ی زنده", "${toFa(CoinSpend.LIVE_BACKDROP.price)} سکه · بازکردنِ همه‌ی طرح‌ها") }
             grid(backdrops)
             // قاعده‌ی «بی راهِ بازگشت نگذار» (بندِ ۵ فریمِ 60d): هر قلمِ فعال‌شدنی باید
             // خاموش‌شدنی هم باشد. این ردیف یک‌بار حذف شده بود و پس‌زمینه‌ی خریداری‌شده
@@ -744,6 +744,7 @@ private fun themeDisplay(item: ShopItem): ShopItem {
             "cobalt", "lapis", "indigo" -> "آبیِ عمیق و خنک"
             "olive", "teal", "turquoise" -> "سبزآبیِ نرم و تازه"
             "graphite" -> "خنثی و مینیمال"
+            "forest" -> "سبزِ جنگلیِ عمیق و آرام"
             // هفت تمِ نام‌دارِ بخشِ ۸۲ - توضیحشان حس را می‌گوید نه رنگ را.
             "nature" -> "سبزِ جنگل، آرام و زنده"
             "night" -> "سرمه‌ایِ عمیقِ شبانه"
@@ -1324,6 +1325,7 @@ private fun AppIconPreview(itemId: String) {
         "icon:growth" -> R.drawable.jibak_ic_growth_bg to R.drawable.jibak_ic_growth
         "icon:sprout" -> R.drawable.jibak_ic_sprout_bg to R.drawable.jibak_ic_sprout
         "icon:neon" -> R.drawable.jibak_ic_neon_bg to R.drawable.jibak_ic_neon
+        "icon:star" -> R.drawable.jibak_ic_star_bg to R.drawable.jibak_ic_star
         // پیش‌فرض «کیفِ پول» است؛ پیش‌زمینه‌اش PNGِ mipmap است نه وکتورِ drawable.
         else -> R.drawable.ic_launcher_background to R.mipmap.ic_launcher_foreground
     }

@@ -135,6 +135,8 @@ class IconWither @Inject constructor() {
                 "icon:growth" to intArrayOf(51, 72, 73, 74),
                 "icon:sprout" to intArrayOf(52, 75, 76, 77),
                 "icon:neon" to intArrayOf(53, 78, 79, 80),
+                // آیکونِ ستاره (بسته‌ی ChatGPT، ۳ مهر): الیاس‌های ۸۱..۸۴.
+                "icon:star" to intArrayOf(81, 82, 83, 84),
             )
 
         /** کلیدِ داخلیِ طرحِ پیش‌فرض - `activeIcon`ِ `null` به این نگاشت می‌شود. */
@@ -161,9 +163,10 @@ class IconWither @Inject constructor() {
                 "icon:growth" to 51,
                 "icon:sprout" to 52,
                 "icon:neon" to 53,
+                "icon:star" to 81,
             )
 
-        private const val LAST_ALIAS = 80
+        private const val LAST_ALIAS = 84
 
         /** این طرح چهار حالتِ کهنگی دارد؟ صفحه‌ی محصول همین را به خریدار می‌گوید. */
         fun hasAgingStages(iconId: String): Boolean = STAGES.containsKey(iconId)
