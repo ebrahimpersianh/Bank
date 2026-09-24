@@ -7,6 +7,23 @@ import android.provider.Telephony
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppBg
+import ir.sadteam.loancalc.core.toFa
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -86,8 +103,12 @@ suspend fun readSmsSenders(context: Context, limit: Int = 400): List<SmsSenderIn
     }
 
 /**
- * دیالوگِ انتخابِ فرستنده. خودش مجوزِ `READ_SMS` رو (فقط همین لحظه) می‌گیره؛ اگه کاربر رد کنه، یه
- * پیامِ ساده می‌ده و تایپِ دستی همچنان راهِ کار می‌مونه.
+ * صفحه‌ی انتخاب از پیامک‌ها (خواسته‌ی کاربر، ۳ مهر): **خودِ پیامک‌ها** مثلِ صندوقِ گوشی، جدیدترین
+ * اول؛ تپ روی هر پیامک شماره‌ی فرستنده‌اش را برمی‌دارد. پیامک‌هایی که شبیهِ پیامکِ بانکی‌اند
+ * برچسبِ «بانکی» دارند. جست‌وجو هم روی شماره و هم روی متن.
+ *
+ * خودش مجوزِ `READ_SMS` را (فقط همین لحظه) می‌گیرد؛ اگر کاربر رد کند، تایپِ دستی همچنان راهِ کار است.
+ * هیچ پیامکی از گوشی بیرون نمی‌رود.
  */
 @Composable
 fun SmsSenderPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
@@ -99,7 +120,8 @@ fun SmsSenderPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
         )
     }
     var permissionDenied by remember { mutableStateOf(false) }
-    var senders by remember { mutableStateOf<List<SmsSenderInfo>?>(null) }
+    var messages by remember { mutableStateOf<List<SmsInboxMessage>?>(null) }
+    var query by remember { mutableStateOf("") }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
@@ -111,79 +133,106 @@ fun SmsSenderPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
         if (!permissionGranted) permissionLauncher.launch(Manifest.permission.READ_SMS)
     }
     LaunchedEffect(permissionGranted) {
-        if (permissionGranted) senders = readSmsSenders(context)
+        if (permissionGranted) messages = readSmsInbox(context, limit = 300)
     }
 
-    JibakAlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("انتخاب از پیامک‌ها") },
-        text = {
-            Column {
-                when {
-                    permissionDenied -> Text(
-                        "بدونِ اجازه‌ی خوندنِ پیامک نمی‌شه لیست رو نشون داد. می‌تونی شماره رو دستی هم وارد کنی.",
+    ir.sadteam.loancalc.ui.settings.FullScreenDialog(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.fillMaxSize().background(AppBg)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
+                }
+                Column(modifier = Modifier.padding(start = 4.dp)) {
+                    Text("انتخاب از پیامک‌ها", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                    Text(
+                        "روی پیامکِ بانکت بزن تا شماره‌اش برداشته شود",
                         color = AppMuted,
-                        fontSize = 12.sp,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
                     )
-                    senders == null -> Text("در حالِ خوندنِ پیامک‌ها…", color = AppMuted, fontSize = 12.sp)
-                    senders!!.isEmpty() -> Text("پیامکی تو صندوقِ گوشیت پیدا نشد", color = AppMuted, fontSize = 12.sp)
-                    else -> {
-                        Text(
-                            "فرستنده‌ی پیامکِ بانکت رو انتخاب کن (اونایی که شبیهِ پیامکِ بانکی‌ان اول لیستن)",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(bottom = 6.dp),
-                        )
-                        LazyColumn(
-                            modifier = Modifier.heightIn(max = 380.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            items(senders!!, key = { it.address }) { sender ->
-                                AppCard {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .pressScaleClickable(scale = 0.99f) { onPick(sender.address) },
-                                    ) {
-                                        Row(modifier = Modifier.fillMaxWidth()) {
-                                            Ltr {
-                                                Text(
-                                                    sender.address,
-                                                    color = AppText,
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                )
-                                            }
-                                            if (sender.looksBanky) {
-                                                Text(
-                                                    "بانکی",
-                                                    color = AppPrimary,
-                                                    fontSize = 10.sp,
-                                                    modifier = Modifier.padding(start = 8.dp),
-                                                )
-                                            }
-                                        }
+                }
+            }
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                singleLine = true,
+                placeholder = { Text("جست‌وجو در شماره یا متن", color = AppMuted, fontSize = 12.sp) },
+                shape = RoundedCornerShape(AppRadius.button),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp),
+            )
+            val list = messages
+            when {
+                permissionDenied -> CenterNote("بدونِ اجازه‌ی خوندنِ پیامک نمی‌شه پیامک‌ها رو نشون داد. می‌تونی شماره رو دستی هم وارد کنی.")
+                list == null -> CenterNote("در حالِ خوندنِ پیامک‌ها…")
+                list.isEmpty() -> CenterNote("پیامکی تو صندوقِ گوشیت پیدا نشد")
+                else -> {
+                    val q = query.trim()
+                    val shown = if (q.isEmpty()) list else list.filter { it.address.contains(q, true) || it.body.contains(q) }
+                    LazyColumn(
+                        contentPadding = PaddingValues(start = 10.dp, end = 14.dp, top = 4.dp, bottom = 28.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        items(shown, key = { it.id }) { msg ->
+                            AppCard(modifier = Modifier.pressScaleClickable(scale = 0.99f) { onPick(msg.address) }) {
+                                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Ltr {
+                                        Text(msg.address, color = AppText, fontSize = 13.5.sp, fontWeight = FontWeight.Black)
+                                    }
+                                    if (msg.parsed != null) {
                                         Text(
-                                            sender.sample,
-                                            color = AppMuted,
-                                            fontSize = 11.sp,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.padding(top = 2.dp),
+                                            "بانکی",
+                                            color = AppPrimaryInk,
+                                            fontSize = 9.5.sp,
+                                            fontWeight = FontWeight.Black,
+                                            modifier = Modifier
+                                                .padding(start = 8.dp)
+                                                .clip(RoundedCornerShape(999.dp))
+                                                .background(AppPrimaryPill)
+                                                .padding(horizontal = 7.dp, vertical = 2.dp),
                                         )
                                     }
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    Text(smsDateLabel(msg.dateMs), color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                                 }
+                                Text(
+                                    msg.body.replace('\n', ' '),
+                                    color = AppMuted,
+                                    fontSize = 11.sp,
+                                    lineHeight = 18.sp,
+                                    maxLines = 3,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
                             }
                         }
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("بستن") }
-        },
+        }
+    }
+}
+
+@Composable
+private fun CenterNote(text: String) {
+    Text(
+        text,
+        color = AppMuted,
+        fontSize = 12.sp,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(24.dp),
     )
 }
+
+/** «۷/۳ · ۱۴:۰۵» - روز/ماهِ جلالی + ساعت. */
+private fun smsDateLabel(ms: Long): String = runCatching {
+    val zoned = java.time.Instant.ofEpochMilli(ms).atZone(java.time.ZoneId.systemDefault())
+    val j = ir.sadteam.loancalc.core.JalaliCalendar.fromGregorian(zoned.year, zoned.monthValue, zoned.dayOfMonth)
+    "${toFa(j.m)}/${toFa(j.d)} · ${toFa(zoned.hour)}:${toFa(zoned.minute).padStart(2, '۰')}"
+}.getOrDefault("")
 
 /** یک پیامکِ صندوقِ ورودی - برای صفحه‌ی «افزودن از پیامک‌ها». */
 data class SmsInboxMessage(
