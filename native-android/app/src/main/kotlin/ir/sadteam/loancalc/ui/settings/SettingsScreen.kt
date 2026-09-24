@@ -12,6 +12,7 @@ import ir.sadteam.loancalc.ui.theme.AppPurple
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppWarningInk
 import ir.sadteam.loancalc.ui.theme.AppGoldInk
+import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
 import ir.sadteam.loancalc.ui.components.AppHeroCard
 import android.Manifest
 import android.content.ActivityNotFoundException
@@ -506,7 +507,7 @@ private fun SettingsMainContent(
                                         modifier = Modifier
                                             .padding(start = 8.dp)
                                             .clip(RoundedCornerShape(999.dp))
-                                            .background(AppAccent)
+                                            .background(AppGoldPillSoft)
                                             .padding(horizontal = 8.dp, vertical = 2.dp),
                                     )
                                 }
@@ -1006,7 +1007,7 @@ private fun AccountSettings(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(if (subscribed) AppAccent else AppSurface),
+                        .background(if (subscribed) AppGoldPillSoft else AppSurface),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(

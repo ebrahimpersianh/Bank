@@ -27,6 +27,7 @@ import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppGoldInk
+import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
 import ir.sadteam.loancalc.ui.theme.AppInfoPill
 import ir.sadteam.loancalc.ui.settings.SettingsGroup
 import ir.sadteam.loancalc.ui.settings.SettingsRowItem
@@ -230,7 +231,7 @@ fun SubscriptionScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
-                                modifier = Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(AppAccent),
+                                modifier = Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(AppGoldPillSoft),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(Icons.Filled.WorkspacePremium, contentDescription = null, tint = AppGoldInk, modifier = Modifier.size(22.dp))
