@@ -168,6 +168,9 @@ class IconWither @Inject constructor() {
         /** این طرح چهار حالتِ کهنگی دارد؟ صفحه‌ی محصول همین را به خریدار می‌گوید. */
         fun hasAgingStages(iconId: String): Boolean = STAGES.containsKey(iconId)
 
+        /** الیاس‌های چهار پله‌ی کهنگی، برای پیش‌نمایشِ صفحه‌ی محصول. */
+        fun stageAliases(iconId: String): IntArray? = STAGES[iconId]
+
         /** کدام الیاس روشن شود - رجوع کن به [STAGES]. */
         fun aliasFor(activeIcon: String?, step: Int): Int {
             val safe = step.coerceIn(0, STEPS)

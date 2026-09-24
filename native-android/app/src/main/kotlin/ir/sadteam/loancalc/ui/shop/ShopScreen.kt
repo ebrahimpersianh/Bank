@@ -125,6 +125,11 @@ import androidx.compose.ui.text.style.TextAlign
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.settings.FullScreenDialog
 import ir.sadteam.loancalc.ui.widget.IconWither
+import androidx.core.graphics.drawable.toBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import android.content.pm.PackageManager
+import android.content.ComponentName
 
 /*
  * فروشگاهِ سکه - فریم‌های `60a`..`60d` (تکمیلِ `45b` روی کاتالوگِ واقعی).
@@ -1512,26 +1517,53 @@ private fun DetailFacts(item: ShopItem) {
     }
 }
 
-/** نمونه‌ی استفاده‌ی آیکونِ برنامه: کنارِ چند آیکونِ خنثی روی صفحه‌ی گوشی. */
+/** نمونه‌ی استفاده‌ی آیکونِ برنامه: چهار حالتِ کهنه‌شدن روی صفحه‌ی گوشی. */
 @Composable
 private fun IconUsageSample(itemId: String) {
+    val context = LocalContext.current
+    val stages = remember(itemId) {
+        IconWither.stageAliases(itemId)?.map { alias ->
+            runCatching {
+                val pm = context.packageManager
+                pm.getActivityInfo(
+                    ComponentName(context, "ir.sadteam.loancalc.LauncherAlias$alias"),
+                    PackageManager.MATCH_DISABLED_COMPONENTS,
+                ).loadIcon(pm).toBitmap(144, 144).asImageBitmap()
+            }.getOrNull()
+        }
+    }
+    val labels = listOf("تازه", "چند روز", "یک هفته", "رهاشده")
     AppCard(modifier = Modifier.fillMaxWidth()) {
-        Text("روی صفحه‌ی گوشی", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Black)
+        Text(
+            if (stages != null) "روی صفحه‌ی گوشی · کهنه‌شدن با سرنزدن" else "روی صفحه‌ی گوشی",
+            color = AppMuted,
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Black,
+        )
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             repeat(4) { index ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    if (index == 1) {
-                        AppIconPreview(itemId)
-                    } else {
-                        Box(
+                    val bitmap = stages?.getOrNull(index)
+                    when {
+                        bitmap != null -> Image(
+                            bitmap = bitmap,
+                            contentDescription = null,
+                            modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)),
+                        )
+                        index == 1 -> AppIconPreview(itemId)
+                        else -> Box(
                             modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(AppIconFrame),
                         )
                     }
                     Text(
-                        if (index == 1) "جیبک" else "",
+                        when {
+                            stages != null -> labels[index]
+                            index == 1 -> "جیبک"
+                            else -> ""
+                        },
                         color = AppText,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
