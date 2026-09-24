@@ -359,10 +359,6 @@ fun ShopScreen(
 
         // ═══ پیشنهادهای ویژه و تازه‌رسیده‌ها (بخشِ ۸۳) ═══
         //
-        // 🚨 **فقط این دو بخش کارتِ دوتایی‌اند** - تصمیمِ قفل‌شده‌ی کاربر. ۲۸ ردیفِ تم
-        // به‌شکلِ کارتِ دوتایی یعنی صفحه‌ای که ته ندارد؛ بقیه‌ی ویترین همان ردیفِ فشرده
-        // می‌مانَد.
-        //
         // ⚠️ هر دو فقط در تبِ «همه» و بیرونِ حالتِ «مالِ من» دیده می‌شوند: این‌ها
         // **ویترین**اند نه فهرست، و در فهرستِ داشته‌های کاربر معنی ندارند.
         if (tab == null && !onlyMine) {
@@ -402,6 +398,21 @@ fun ShopScreen(
             }
         }
 
+        // خواسته‌ی کاربر (۳ مهر): همه‌ی دسته‌ها هم مثلِ «پیشنهادهای ویژه» دوتایی کنارِ هم،
+        // تا فضای کمتری بگیرند (تصمیمِ قبلیِ «فقط دو بخش دوتایی» را خودش عوض کرد).
+        fun grid(list: List<ShopItem>) {
+            val rows = list.chunked(2)
+            items(rows.size) { rowIndex ->
+                ProductCardRow(
+                    pair = rows[rowIndex],
+                    stateOf = ::stateOf,
+                    onActivate = activateItem,
+                    onConfirm = { confirming = it },
+                    leadingOf = { previewFor(it) },
+                )
+            }
+        }
+
         fun rowsOf(category: ShopCategory) = catalog
             .filter { it.kind.category == category && it.window == null }
             // آیتمِ فعال هرگز نباید با زدنِ «مالِ من» ناپدید شود، حتی اگر نسخه‌ی
@@ -413,20 +424,7 @@ fun ShopScreen(
             // ⚠️ متنِ سرگروه **قیمتِ بسته‌ای** را می‌گوید نه قیمتِ ردیف: چهار ردیفِ
             // ۲۵۰سکه‌ای پشتِ‌هم یعنی «۱۰۰۰ سکه برای همه»، که غلط است.
             item { GroupHeader("پس‌زمینه‌ی زنده", "${toFa(CoinSpend.LIVE_BACKDROP.price)} سکه · بازکردن هر چهار طرح") }
-            items(backdrops.size) { index ->
-                val shopItem = backdrops[index]
-                ShopRow(
-                    shopItem,
-                    stateOf(shopItem),
-                    balance,
-                    activateItem,
-                    onConfirm = { confirming = it },
-                    // مثلِ قلم، این هم دیدنی است نه خواندنی: «هاله‌ای که نفس می‌کشد» را
-                    // با متن نمی‌شود فروخت. پیش‌نمایش **همان انیمیشنِ واقعی** است، در
-                    // یک مربعِ ۳۸ - نه یک تصویرِ ثابتِ نماینده.
-                    leading = { BackdropPreview(LiveBackground.byId(shopItem.id.removePrefix("bg_"))) },
-                )
-            }
+            grid(backdrops)
             // قاعده‌ی «بی راهِ بازگشت نگذار» (بندِ ۵ فریمِ 60d): هر قلمِ فعال‌شدنی باید
             // خاموش‌شدنی هم باشد. این ردیف یک‌بار حذف شده بود و پس‌زمینه‌ی خریداری‌شده
             // دیگر برداشته نمی‌شد.
@@ -446,39 +444,16 @@ fun ShopScreen(
             val colorful = themes - base.toSet()
 
             item { GroupHeader("تمِ پایه", "${toFa(base.size)} تمِ اولِ برنامه") }
-            items(base.size) { index ->
-                val shopItem = base[index]
-                ThemeRow(shopItem, stateOf(shopItem), balance, activateItem) { confirming = it }
-            }
+            grid(base.map(::themeDisplay))
             item { GroupHeader("تمِ رنگی", "${toFa(CoinSpend.THEME_PALETTE.price)} سکه هرکدام") }
-            items(colorful.size) { index ->
-                val shopItem = colorful[index]
-                ThemeRow(shopItem, stateOf(shopItem), balance, activateItem) { confirming = it }
-            }
+            grid(colorful.map(::themeDisplay))
         }
 
         if (tab == null || tab == ShopCategory.ICON) {
             // ═══ آیکونِ برنامه (`60b`) ═══
             val icons = rowsOf(ShopCategory.ICON)
             item { GroupHeader("آیکونِ برنامه", "${toFa(CoinSpend.APP_ICON.price)} سکه") }
-            items(icons.size) { index ->
-                // ⚠️ ویترین **همیشه پله‌ی صفر** است، حتی اگر آیکونِ فعالِ کاربر پژمرده باشد
-                // (`49d`) - وگرنه کاربر فکر می‌کند جنسِ خراب می‌خرد. پس این‌جا هیچ‌جا
-                // `witherStage` خوانده نمی‌شود؛ اگر روزی اضافه‌اش کردید، همین را می‌شکنید.
-                val shopItem = icons[index]
-                // 🚨 لامبدای انتهایی به **آخرین** پارامتر می‌چسبد و آخرینِ `ShopRow` همان
-                // `leading` است، نه `onConfirm` - پس نامش صریح نوشته می‌شود (بیلدِ ۵۴۱).
-                ShopRow(
-                    shopItem,
-                    stateOf(shopItem),
-                    balance,
-                    activateItem,
-                    onConfirm = { confirming = it },
-                    // خواسته‌ی کاربر (۲۶ شهریور): «کنارِ هرکدام یک عکسی چیزی باشد که معلوم شود
-                    // چیست». برای آیکونِ برنامه، **خودِ آیکون** درست‌ترین پیش‌نمایش است.
-                    leading = { AppIconPreview(shopItem.id) },
-                )
-            }
+            grid(icons)
             // بندِ ۵ی `60d`: بی این ردیف، آیکونِ پیش‌فرض بی‌راهِ‌بازگشت است - «کیفِ پول» در
             // کاتالوگ نیست چون فروشی نیست، پس ردیفی هم ندارد که فعالش کند.
             if (active[ShopCategory.ICON] != null) {
@@ -489,21 +464,7 @@ fun ShopScreen(
         if (tab == null || tab == ShopCategory.SYMBOL) {
             val symbols = rowsOf(ShopCategory.SYMBOL)
             item { GroupHeader("نمادِ دسته‌بندی", "${toFa(CoinSpend.CATEGORY_ICON_SET.price)} سکه") }
-            items(symbols.size) { index ->
-                val shopItem = symbols[index]
-                ShopRow(
-                    shopItem,
-                    stateOf(shopItem),
-                    balance,
-                    activateItem,
-                    onConfirm = { confirming = it },
-                    // یک نماد کافی نیست - **ست** است، پس چهارتا در شبکه (`72b`).
-                    leading = {
-                        if (shopItem.id.startsWith("coinskin:")) CoinSkinPreview(shopItem.id)
-                        else SymbolSetPreview(shopItem.id)
-                    },
-                )
-            }
+            grid(symbols)
             if (active[ShopCategory.SYMBOL] != null) {
                 item { ResetRow("بازگشت به نمادهای توپر", viewModel::resetSymbolSet) }
             }
@@ -512,17 +473,7 @@ fun ShopScreen(
         if (tab == null || tab == ShopCategory.CHART) {
             val charts = rowsOf(ShopCategory.CHART)
             item { GroupHeader("سبکِ نمودار", "۱۵۰ تا ۵۰۰ سکه") }
-            items(charts.size) { index ->
-                val shopItem = charts[index]
-                ShopRow(
-                    shopItem,
-                    stateOf(shopItem),
-                    balance,
-                    activateItem,
-                    onConfirm = { confirming = it },
-                    leading = { ChartStylePreview(shopItem.id) },
-                )
-            }
+            grid(charts)
             if (active[ShopCategory.CHART] != null) {
                 item { ResetRow("بازگشت به نمودارِ پیش‌فرض", viewModel::resetChartStyle) }
             }
@@ -531,17 +482,7 @@ fun ShopScreen(
         if (tab == null || tab == ShopCategory.FRAME) {
             val frames = rowsOf(ShopCategory.FRAME)
             item { GroupHeader("قابِ آواتار", "${toFa(CoinSpend.AVATAR_FRAME.price)} سکه") }
-            items(frames.size) { index ->
-                val shopItem = frames[index]
-                ShopRow(
-                    shopItem,
-                    stateOf(shopItem),
-                    balance,
-                    activateItem,
-                    onConfirm = { confirming = it },
-                    leading = { AvatarFramePreview(AvatarFrameStyle.fromItemId(shopItem.id)) },
-                )
-            }
+            grid(frames)
             // 🎨 **رنگِ قاب** (خواسته‌ی کاربر: «هر حلقه را به تعدادِ رنگ‌های تم بگذار»).
             //
             // ⚠️ به‌جای ساختنِ یک ردیفِ ویترین برای هر ترکیبِ قاب×رنگ - که پنج قاب در
@@ -558,19 +499,7 @@ fun ShopScreen(
         if (tab == null || tab == ShopCategory.FONT) {
             val fonts = rowsOf(ShopCategory.FONT)
             item { GroupHeader("قلمِ متن", "${toFa(CoinSpend.FONT_FACE.price)} سکه") }
-            items(fonts.size) { index ->
-                val shopItem = fonts[index]
-                ShopRow(
-                    shopItem,
-                    stateOf(shopItem),
-                    balance,
-                    activateItem,
-                    onConfirm = { confirming = it },
-                    // پیش‌نمایشِ قلم **با خودِ همان قلم** نوشته می‌شود - تنها قلمی که
-                    // توضیحِ متنی‌اش بی‌فایده است: «کشیده و باریک» را باید دید نه خواند.
-                    leading = { FontPreview(AppFontChoice.fromId(shopItem.id)) },
-                )
-            }
+            grid(fonts)
             if (active[ShopCategory.FONT] != null) {
                 item { ResetRow("بازگشت به وزیرمتن", viewModel::resetFont) }
             }
@@ -579,17 +508,7 @@ fun ShopScreen(
         if (tab == null || tab == ShopCategory.REWARD) {
             val rewards = rowsOf(ShopCategory.REWARD)
             item { GroupHeader("جایزه", "به‌زودی") }
-            items(rewards.size) { index ->
-                val shopItem = rewards[index]
-                ShopRow(
-                    shopItem,
-                    stateOf(shopItem),
-                    balance,
-                    activateItem,
-                    onConfirm = { confirming = it },
-                    leading = { GenericItemPreview(shopItem) },
-                )
-            }
+            grid(rewards)
         }
     }
     }
@@ -664,19 +583,10 @@ private fun GroupHeader(title: String, trailing: String?) {
     }
 }
 
-/** ردیفِ تم. تفاوتش با ردیفِ عادی فقط سه‌رنگیِ سمتِ راست است. */
-@Composable
-private fun ThemeRow(
-    item: ShopItem,
-    state: RowState,
-    balance: Int,
-    onActivate: (ShopItem) -> Unit,
-    onConfirm: (ShopItem) -> Unit,
-) {
+/** توضیحِ کوتاهِ حسِ هر تم - هم ردیف و هم کارتِ دوتایی. */
+private fun themeDisplay(item: ShopItem): ShopItem {
     val paletteId = item.id.removePrefix("theme:")
-    // اسمِ رنگ به‌تنهایی کافی نیست؛ توضیحِ کوتاه حسِ واقعیِ هر تم را می‌دهد و مثل
-    // پیش‌نمایشِ فروشگاه، انتخاب را قبل از خرید قابل‌فهم می‌کند.
-    val displayItem = item.copy(
+    return item.copy(
         blurb = when (paletteId) {
             "aubergine", "plum" -> "بنفشِ عمیق و آرام"
             "crimson", "garnet" -> "قرمزِ عمیق و رسمی"
@@ -696,6 +606,21 @@ private fun ThemeRow(
             else -> item.blurb
         },
     )
+}
+
+/** ردیفِ تم. تفاوتش با ردیفِ عادی فقط سه‌رنگیِ سمتِ راست است. */
+@Composable
+private fun ThemeRow(
+    item: ShopItem,
+    state: RowState,
+    balance: Int,
+    onActivate: (ShopItem) -> Unit,
+    onConfirm: (ShopItem) -> Unit,
+) {
+    val displayItem = themeDisplay(item)
+    val paletteId = item.id.removePrefix("theme:")
+    // اسمِ رنگ به‌تنهایی کافی نیست؛ توضیحِ کوتاه حسِ واقعیِ هر تم را می‌دهد و مثل
+    // پیش‌نمایشِ فروشگاه، انتخاب را قبل از خرید قابل‌فهم می‌کند.
     ShopRow(
         item = displayItem,
         state = state,
@@ -1137,14 +1062,20 @@ private fun previewFor(item: ShopItem) {
         item.id.startsWith("coinskin:") -> CoinSkinPreview(item.id)
         item.id.startsWith("chart:") -> ChartStylePreview(item.id)
         item.id.startsWith("frame:") -> AvatarFramePreview(AvatarFrameStyle.fromItemId(item.id))
+        item.id.startsWith("font:") -> FontPreview(AppFontChoice.fromId(item.id))
         item.id.startsWith("bg_") -> BackdropPreview(LiveBackground.byId(item.id.removePrefix("bg_")))
         item.id.startsWith("theme:") -> {
             val tone = themeById(item.id.removePrefix("theme:"))
-            if (tone != null) {
-                ThemeMiniPreview(Color(tone.dark), Color(tone.primary), Color(tone.light))
-            } else {
-                GenericItemPreview(item)
+            val (dark, primary, light) = tone?.let {
+                Triple(Color(it.dark), Color(it.primary), Color(it.light))
+            } ?: when (item.id.removePrefix("theme:")) {
+                "green" -> Triple(Color(0xFF08734B), Color(0xFF0EA968), Color(0xFF80D6AE))
+                "blue" -> Triple(Color(0xFF174A8B), Color(0xFF2878D4), Color(0xFF9BC7F5))
+                "purple" -> Triple(Color(0xFF5D3585), Color(0xFF8B55C7), Color(0xFFCBA9EC))
+                "gold" -> Triple(Color(0xFF806018), Color(0xFFC99625), Color(0xFFF3D57B))
+                else -> Triple(AppMuted, AppIconFrame, AppSurface2)
             }
+            ThemeMiniPreview(dark, primary, light)
         }
         else -> GenericItemPreview(item)
     }
