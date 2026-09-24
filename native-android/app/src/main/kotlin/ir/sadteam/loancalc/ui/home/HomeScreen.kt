@@ -1069,8 +1069,14 @@ private fun BudgetBarWithCoin(ratio: Float, modifier: Modifier = Modifier) {
                 .fillMaxWidth(ratio.coerceIn(0f, 1f))
                 .height(14.dp)
                 .clip(RoundedCornerShape(999.dp))
-                .background(Brush.horizontalGradient(listOf(AppPrimary, BarGradientEnd))),
+                .background(
+                    // بودجه تمام شد: نوارِ پرِ قرمز و **بی سکه** - سکه‌ی تهِ نوارِ پر شبیهِ «نشانگری
+                    // وسطِ راه» خوانده می‌شد (گزارشِ کاربر، ۳ مهر).
+                    if (ratio >= 1f) Brush.horizontalGradient(listOf(AppDanger, AppDanger))
+                    else Brush.horizontalGradient(listOf(AppPrimary, BarGradientEnd)),
+                ),
         )
+        if (ratio >= 1f) return@Box
         // سکه دقیقاً رو لبه‌ی پرشده می‌شینه. تو RTL «شروع» سمتِ راسته، پس با کسرِ عرض
         // جابه‌جا می‌شه نه با offsetِ ثابت.
         //
