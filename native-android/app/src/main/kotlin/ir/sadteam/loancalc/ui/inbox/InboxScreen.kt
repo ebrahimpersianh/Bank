@@ -461,6 +461,13 @@ private enum class InboxFilter(val label: String, val icon: ImageVector) {
     UNREAD("خوانده‌نشده", Icons.Filled.MarkEmailUnread),
 }
 
+/** «اعلانِ blu» → («اعلان»، «blu») · «پیامک از 3000123» → («پیامک»، «3000123»). */
+private fun splitSource(label: String): Pair<String, String?> = when {
+    label.startsWith("اعلانِ ") -> "اعلان" to label.removePrefix("اعلانِ ").trim().ifBlank { null }
+    label.startsWith("پیامک از ") -> "پیامک" to label.removePrefix("پیامک از ").trim().ifBlank { null }
+    else -> label to null
+}
+
 /** یادآوریِ قسط/چک/پرداخت - سیستم آن‌ها را با نوعِ SYSTEM و عنوانِ «یادآوریِ …» می‌سازد. */
 private fun isReminder(m: InboxMessageEntity): Boolean =
     m.kind == InboxMessageEntity.Kind.LOAN_DUE ||
@@ -828,18 +835,32 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
                 lineHeight = 19.sp,
                 modifier = Modifier.padding(top = 5.dp),
             )
+            // منبع: نامِ برنامه/فرستنده **بالای** قرصِ نوع (خواسته‌ی کاربر، ۳ مهر) - «blu» روی «اعلان».
             message.sourceLabel?.let { label ->
-                Text(
-                    label,
-                    color = AppPrimaryDim,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(AppSurface2)
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
-                )
+                val (type, origin) = splitSource(label)
+                Column(modifier = Modifier.padding(top = 8.dp)) {
+                    if (origin != null) {
+                        Text(
+                            origin,
+                            color = AppText,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Text(
+                        type,
+                        color = AppPrimaryDim,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier
+                            .padding(top = 3.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppSurface2)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    )
+                }
             }
         }
         Icon(
