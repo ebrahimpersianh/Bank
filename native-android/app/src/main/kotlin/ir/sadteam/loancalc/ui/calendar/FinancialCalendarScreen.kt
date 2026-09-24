@@ -24,6 +24,11 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -150,8 +155,14 @@ fun FinancialCalendarScreen(
                 color = AppText,
                 fontSize = 15.5.sp,
                 fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(start = 4.dp),
+                modifier = Modifier.padding(start = 4.dp).weight(1f),
             )
+            Box(
+                Modifier.padding(end = 6.dp).size(40.dp).background(AppPrimaryPill, RoundedCornerShape(14.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.CalendarMonth, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(22.dp))
+            }
         }
 
         Column(
@@ -159,9 +170,9 @@ fun FinancialCalendarScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                CalendarSummary(nearCount, "نزدیک · ۷ روز", AppDangerInk, AppDangerPill, AppDangerBorder, Modifier.weight(1f))
-                CalendarSummary(monthInstallments.count { it.paid == true }, "پرداخت‌شده", AppPrimaryInk, AppPrimaryPill, AppPrimaryPillBorder, Modifier.weight(1f))
-                CalendarSummary(monthInstallments.size, "اقساطِ این‌ماه", AppWarningInk, AppWarningPill, AppDueNextBorder, Modifier.weight(1f))
+                CalendarSummary(nearCount, "نزدیک · ۷ روز", Icons.Filled.Schedule, AppDangerInk, AppDangerPill, AppDangerBorder, Modifier.weight(1f))
+                CalendarSummary(monthInstallments.count { it.paid == true }, "پرداخت‌شده", Icons.Filled.CheckCircle, AppPrimaryInk, AppPrimaryPill, AppPrimaryPillBorder, Modifier.weight(1f))
+                CalendarSummary(monthInstallments.size, "اقساطِ این‌ماه", Icons.Filled.CalendarMonth, AppWarningInk, AppWarningPill, AppDueNextBorder, Modifier.weight(1f))
             }
             AppCard(contentPadding = 12.dp, horizontalPadding = 12.dp) {
                 Row(
@@ -171,18 +182,14 @@ fun FinancialCalendarScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = { stepMonth(-1) }) {
-                        Icon(Icons.Filled.ChevronRight, contentDescription = "ماه قبل")
-                    }
+                    MonthArrow(Icons.Filled.ChevronRight, "ماه قبل") { stepMonth(-1) }
                     Text(
                         "${faMonthName(viewMonth)} ${toFa(viewYear)}",
                         color = AppText,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.ExtraBold,
                     )
-                    IconButton(onClick = { stepMonth(1) }) {
-                        Icon(Icons.Filled.ChevronLeft, contentDescription = "ماه بعد")
-                    }
+                    MonthArrow(Icons.Filled.ChevronLeft, "ماه بعد") { stepMonth(1) }
                 }
 
                 // روی نمایشگرِ باریک، به‌جای کوچک‌کردنِ هدفِ لمس، گرید کمی افقی پیمایش می‌شود.
@@ -233,10 +240,10 @@ fun FinancialCalendarScreen(
                                                 ) {
                                                     Column(
                                                         modifier = Modifier.size(38.dp)
-                                                            .then(if (isSelected) Modifier.hardShadow(AppPrimaryDim, 3.dp, 999.dp) else Modifier)
+                                                            .then(if (isSelected) Modifier.shadow(10.dp, CircleShape, ambientColor = AppPrimary, spotColor = AppPrimary) else Modifier)
                                                             .background(
-                                                                when { isSelected -> AppPrimary; col == 6 -> AppWarningPill; else -> Color.Transparent },
-                                                                if (isSelected) CircleShape else RoundedCornerShape(10.dp),
+                                                                when { isSelected -> AppPrimary; col == 6 -> AppWarningPill; else -> AppLineRow.copy(alpha = 0.45f) },
+                                                                if (isSelected) CircleShape else RoundedCornerShape(12.dp),
                                                             ),
                                                         horizontalAlignment = Alignment.CenterHorizontally,
                                                         verticalArrangement = Arrangement.Center,
@@ -285,7 +292,9 @@ fun FinancialCalendarScreen(
                 // راهنمای رنگِ نقطه‌ها. بی این، دو نقطه‌ی قرمز و سبز بی‌معنا بودند - کاربر باید
                 // روی روز بزند تا بفهمد نقطه چه می‌گفت.
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                        .background(AppPrimaryPill.copy(alpha = 0.5f), RoundedCornerShape(999.dp))
+                        .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -402,9 +411,26 @@ fun FinancialCalendarScreen(
 }
 
 @Composable
-private fun CalendarSummary(count: Int, label: String, ink: Color, fill: Color, border: Color, modifier: Modifier) {
+private fun MonthArrow(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Box(
+        Modifier.size(44.dp).padding(4.dp).background(AppPrimaryPill, CircleShape)
+            .pressScaleClickable(scale = 0.9f, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+private fun CalendarSummary(count: Int, label: String, icon: ImageVector, ink: Color, fill: Color, border: Color, modifier: Modifier) {
     AppCard(modifier = modifier, backgroundColor = fill, borderColor = border,
         contentPadding = 9.dp, horizontalPadding = 4.dp, shadow = false) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(30.dp).background(ink.copy(alpha = 0.14f), CircleShape), contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(16.dp))
+            }
+        }
         Text(toFa(count), color = ink, fontSize = 15.sp, fontWeight = FontWeight.Black,
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
         Text(label, color = ink, fontSize = 8.5.sp, fontWeight = FontWeight.Bold,
