@@ -1182,30 +1182,26 @@ private fun DiscoveryCard(
  */
 @Composable
 private fun NoDiscoveryCard(checkedCount: Int, monthsOfHistory: Int) {
-    val shape = RoundedCornerShape(AppRadius.card)
+    // بسته‌ی ChatGPT (۳ مهر): AppCard و آیکونِ بزرگ‌تر؛ متن و منطق همان.
+    AppCard(contentPadding = 14.dp, horizontalPadding = 16.dp) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(AppSurface)
-            .border(2.dp, AppLineRow, shape)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(13.dp),
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Box(
-            modifier = Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(AppPrimaryPill),
+            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(AppPrimaryPill),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 Icons.Filled.CheckCircle,
                 contentDescription = null,
                 tint = AppPrimary,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(25.dp),
             )
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text("چیزِ غیرعادی‌ای پیدا نشد", color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+            Text("چیزِ غیرعادی‌ای پیدا نشد", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
             Text(
                 if (monthsOfHistory < 4) {
                     // مقایسه‌ی سه‌ماهه به سه ماهِ کاملِ گذشته نیاز دارد (`detectOverspend`).
@@ -1215,11 +1211,12 @@ private fun NoDiscoveryCard(checkedCount: Int, monthsOfHistory: Int) {
                     "${(checkedCount).toFa()} تراکنشِ این ماه با میانگینِ سه ماهِ گذشته سنجیده شد"
                 },
                 color = AppMuted,
-                fontSize = 9.5.sp,
+                fontSize = 10.sp,
                 lineHeight = 17.sp,
-                modifier = Modifier.padding(top = 2.dp),
+                modifier = Modifier.padding(top = 3.dp),
             )
         }
+    }
     }
 }
 
@@ -1245,31 +1242,32 @@ private val ChevronInk: Color
 // ═══ ۷ · خروجی ═════════════════════════════════════════════════════════════════
 @Composable
 private fun ExportRow(onClick: () -> Unit) {
-    val shape = RoundedCornerShape(AppRadius.row)
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(AppSurface)
-            .border(2.dp, AppLineRow, shape)
-            .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+    AppCard(
+        contentPadding = 10.dp,
+        horizontalPadding = 12.dp,
+        modifier = Modifier.pressScaleClickable(onClick = onClick),
     ) {
-        Box(
-            modifier = Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(AppPrimaryPill),
-            contentAlignment = Alignment.Center,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp),
         ) {
-            Icon(Icons.Filled.Download, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(14.dp))
+            Box(
+                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimaryPill),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Download, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(21.dp))
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text("خروجیِ اکسل و PDF", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+                Text(
+                    "گزارشِ مالی را برای ذخیره یا اشتراک آماده کن",
+                    color = AppMuted,
+                    fontSize = 9.5.sp,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = ChevronInk, modifier = Modifier.size(18.dp))
         }
-        Text(
-            "خروجیِ اکسل و PDF",
-            color = AppText,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.weight(1f),
-        )
-        Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = ChevronInk, modifier = Modifier.size(13.dp))
     }
 }
