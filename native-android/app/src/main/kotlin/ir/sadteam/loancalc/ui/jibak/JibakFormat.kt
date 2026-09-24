@@ -136,11 +136,20 @@ fun Long.toFaCompact(): String {
     val body = when {
         v >= 1_000_000_000L -> faScaled(v, 1_000_000_000.0, "میلیارد")
         v >= 1_000_000L -> faScaled(v, 1_000_000.0, "میلیون")
-        v >= 1_000L -> faScaled(v, 1_000.0, "هزار")
-        else -> v.toFa()
+        // زیرِ یک میلیون عددِ کامل با جداکننده (خواسته‌ی کاربر، ۳ مهر): «۱٫۷ هزار» را
+        // «هزار و هفتصد» نمی‌خواند و ممیز گیج می‌کرد؛ «۱٬۶۶۷» حداکثر هفت نویسه است و جا می‌شود.
+        else -> faGrouped(v)
     }
     return if (negative) "$FA_MINUS$body" else body
 }
+
+/** عددِ کامل با ارقامِ فارسی و جداکننده‌ی هزارگانِ «٬». */
+private fun faGrouped(v: Long): String = buildString {
+    v.toString().reversed().forEachIndexed { i, c ->
+        if (i > 0 && i % 3 == 0) append(FA_GROUP_SEPARATOR)
+        append(faDigits[c - '0'])
+    }
+}.reversed()
 
 /**
  * یک رقمِ اعشار، بی صفرِ آخر، با واحدِ فارسی. `Locale.US` اجباری است (رجوع کن به
@@ -176,7 +185,7 @@ fun Double.rialToFaSignedCompact(): String {
  * به لبه‌ی رینگ می‌چسبد. دو خطِ کوتاه جا می‌شود، و عددِ درشت‌تر از واحد سلسله‌مراتبِ
  * درستی هم هست.
  *
- * زیرِ یک میلیون واحد «هزار تومان» می‌شود و زیرِ هزار «تومان» — پس خطِ دوم هیچ‌وقت خالی
+ * زیرِ یک میلیون عددِ کامل با واحدِ «تومان» — پس خطِ دوم هیچ‌وقت خالی
  * نمی‌ماند و ارتفاعِ کارت با تغییرِ مبلغ نمی‌پرد.
  *
  * ⚠️ اینجا و نه در دو صفحه‌ی جدا: صفحه‌ی اول و تبِ گزارش هر دو همین دونات را دارند، و
@@ -188,8 +197,7 @@ fun Double.rialToFaCompactParts(): Pair<String, String> {
     val (number, unit) = when {
         v >= 1_000_000_000L -> faOneDecimal(v / 1_000_000_000.0) to "میلیارد تومان"
         v >= 1_000_000L -> faOneDecimal(v / 1_000_000.0) to "میلیون تومان"
-        v >= 1_000L -> faOneDecimal(v / 1_000.0) to "هزار تومان"
-        else -> v.toFa() to "تومان"
+        else -> faGrouped(v) to "تومان"
     }
     return (if (toman < 0L) "$FA_MINUS$number" else number) to unit
 }
