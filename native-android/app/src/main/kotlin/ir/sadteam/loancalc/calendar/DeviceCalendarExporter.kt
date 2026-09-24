@@ -104,7 +104,7 @@ object DeviceCalendarExporter {
             val values = ContentValues().apply {
                 put(CalendarContract.Events.CALENDAR_ID, calendarId)
                 put(CalendarContract.Events.TITLE, if (item.paid) strikethrough(baseTitle) else baseTitle)
-                put(CalendarContract.Events.DESCRIPTION, "یادآوری قسط - ساخته‌شده توسط اپ «وام من»")
+                put(CalendarContract.Events.DESCRIPTION, "یادآوری قسط - ساخته‌شده توسط اپ «جیبک»")
                 put(CalendarContract.Events.DTSTART, startMillis)
                 put(CalendarContract.Events.DTEND, startMillis + 24L * 60 * 60 * 1000)
                 put(CalendarContract.Events.ALL_DAY, 1)

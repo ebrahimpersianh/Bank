@@ -4,10 +4,12 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.core.ChequeRiskScore
 import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.core.ChequeType
 import ir.sadteam.loancalc.data.AttachmentStorage
 import ir.sadteam.loancalc.data.ChequeRepository
+import ir.sadteam.loancalc.data.DebtRepository
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
 import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -23,7 +25,19 @@ class ChequeViewModel @Inject constructor(
     private val chequeRepository: ChequeRepository,
     private val attachmentStorage: AttachmentStorage,
     private val authPrefs: AuthPrefs,
+    private val debtRepository: DebtRepository,
 ) : ViewModel() {
+    init {
+        // حدسِ خودکارِ طرفِ‌حساب برای چک‌های قدیمی‌ای که قبل از فیچرِ طلب‌وبدهی ثبت شدن (سوالِ ۶ی
+        // design/ANSWERS-chequecounterpartydang.md) - نامِ صادرکننده/طرفِ چک با طرف‌حساب‌های موجود
+        // تطبیق داده می‌شه، مبهم/بی‌نام به «نامشخص» می‌ره. اجرای دوباره‌ش بی‌ضرره.
+        viewModelScope.launch {
+            chequeRepository.chequesWithoutCounterparty().forEach { cheque ->
+                val counterpartyId = debtRepository.guessOrCreateCounterparty(cheque.ownerName)
+                chequeRepository.updateCheque(cheque.copy(counterpartyId = counterpartyId))
+            }
+        }
+    }
     /** پورت syncIfLoggedIn تو MyLoansViewModel - چک‌ها/دسته‌چک‌ها قبلاً فقط با AutoBackupWorkerِ
      * روزانه سینک می‌شدن، نه بعد از هر تغییر؛ کاربر خواسته با کوچیک‌ترین تغییری هم بی‌صدا آنلاین
      * بکاپ بگیره، دقیقاً مثل وام‌ها. */
@@ -54,13 +68,14 @@ class ChequeViewModel @Inject constructor(
         nationalId: String?,
         previousBalance: Double?,
         depositAmount: Double?,
+        counterpartyId: Long? = null,
         onSaved: () -> Unit,
     ) {
         viewModelScope.launch {
             chequeRepository.addCheque(
                 type, amount, chequeNumber, sayadId, bankName, branchName, ownerName,
                 dueYear, dueMonth, dueDay, notes, chequeBookId,
-                photoPath, nationalId, previousBalance, depositAmount,
+                photoPath, nationalId, previousBalance, depositAmount, counterpartyId,
             )
             syncIfLoggedIn()
             onSaved()
@@ -128,9 +143,16 @@ class ChequeViewModel @Inject constructor(
         }
     }
 
-    fun addChequeBook(ownerName: String, bankName: String, startSerial: Long, endSerial: Long) {
+    fun addChequeBook(
+        ownerName: String,
+        bankName: String,
+        startSerial: Long,
+        endSerial: Long,
+        sayadId: String? = null,
+        last4: String? = null,
+    ) {
         viewModelScope.launch {
-            chequeRepository.addChequeBook(ownerName, bankName, startSerial, endSerial)
+            chequeRepository.addChequeBook(ownerName, bankName, startSerial, endSerial, sayadId, last4)
             syncIfLoggedIn()
         }
     }
@@ -138,6 +160,14 @@ class ChequeViewModel @Inject constructor(
     fun deleteChequeBook(book: ChequeBookEntity) {
         viewModelScope.launch {
             chequeRepository.deleteChequeBook(book)
+            syncIfLoggedIn()
+        }
+    }
+
+    /** بستنِ یه دسته‌چکِ تمام‌شده - فریمِ `29k`. */
+    fun closeChequeBook(book: ChequeBookEntity) {
+        viewModelScope.launch {
+            chequeRepository.closeChequeBook(book)
             syncIfLoggedIn()
         }
     }
@@ -150,6 +180,11 @@ class ChequeViewModel @Inject constructor(
             chequeRepository.updateCheque(cheque.copy(reminderDayOffsets = offsets))
             syncIfLoggedIn()
         }
+    }
+
+    /** امتیازِ ریسکِ برگشتِ صادرکننده - جوابِ سوالِ ۲، فریمِ `29l`. */
+    fun riskScoreFor(counterpartyId: Long, onResult: (ChequeRiskScore) -> Unit) {
+        viewModelScope.launch { onResult(chequeRepository.riskScoreFor(counterpartyId)) }
     }
 
     fun exportBackup(onResult: (String) -> Unit) {

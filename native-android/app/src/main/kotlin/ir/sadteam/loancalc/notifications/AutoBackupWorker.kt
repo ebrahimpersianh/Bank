@@ -28,7 +28,7 @@ import java.util.TimeZone
  * علاوه بر اسنپ‌شات محلی، اگه کاربر لاگین و مشترک باشه، همون سه‌تا رو به سرور هم آپلود می‌کنه
  * (LoanRepository/ChequeRepository/AccountRepository.pushToServer) - قبلاً این اسنپ‌شات فقط رو
  * خودِ گوشی می‌موند، یعنی با گم‌شدن/خرابیِ گوشی از بین می‌رفت با اینکه «پشتیبان‌گیری ابری» تو
- * BenefitsScreen به‌عنوان مزیت اشتراک تبلیغ شده بود.
+ * صفحه‌ی امکاناتِ قدیمی (حذف‌شده) به‌عنوان مزیت اشتراک تبلیغ شده بود.
  */
 @HiltWorker
 class AutoBackupWorker @AssistedInject constructor(
@@ -42,17 +42,36 @@ class AutoBackupWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val dir = File(applicationContext.filesDir, BACKUP_DIR_NAME).apply { mkdirs() }
-        File(dir, "loans.json").writeText(loanRepository.exportBackupJson())
-        File(dir, "cheques.json").writeText(chequeRepository.exportBackupJson())
-        File(dir, "accounts.json").writeText(accountRepository.exportBackupJson())
+        // 🚨 **اول هر سه فایلِ موقت، بعد جابه‌جاییِ یک‌جا.** اگر پروسه وسطِ نوشتن کشته
+        // می‌شد، پوشه‌ی پشتیبان ترکیبی از وامِ امروز و حسابِ دیروز می‌ماند - نسخه‌ای که
+        // هیچ‌وقت وجود نداشته و بازگرداندنش داده را خراب می‌کند.
+        val staged = listOf(
+            "loans.json" to loanRepository.exportBackupJson(),
+            "cheques.json" to chequeRepository.exportBackupJson(),
+            "accounts.json" to accountRepository.exportBackupJson(),
+        ).map { (name, json) ->
+            val tmp = File(dir, "$name.tmp")
+            tmp.writeText(json)
+            tmp to File(dir, name)
+        }
+        staged.forEach { (tmp, target) ->
+            if (target.exists()) target.delete()
+            tmp.renameTo(target)
+        }
         uiPrefs.setLastAutoBackupAt(isoNow())
 
         val token = authPrefs.authToken.first()
         val subscribed = authPrefs.subscribed.first()
         if (token != null && subscribed) {
-            loanRepository.pushToServer(token)
-            chequeRepository.pushToServer(token)
-            accountRepository.pushToServer(token)
+            // ⚠️ «پشتیبان گرفته شد» فقط وقتی درست است که آپلود هم انجام شده باشد. نتیجه
+            // جدا ثبت می‌شود تا صفحه‌ی تنظیمات بتواند صادقانه بگوید ابری شکست خورده.
+            val cloudOk = loanRepository.pushToServer(token) &&
+                chequeRepository.pushToServer(token) &&
+                accountRepository.pushToServer(token)
+            uiPrefs.setCloudBackupResult(if (cloudOk) isoNow() else null)
+            // شکستِ آپلود یعنی «دوباره تلاش کن»، نه «کار تمام شد». پشتیبانِ محلی از قبل
+            // نوشته شده، پس تلاشِ دوباره چیزی را خراب نمی‌کند.
+            if (!cloudOk) return Result.retry()
         }
 
         return Result.success()

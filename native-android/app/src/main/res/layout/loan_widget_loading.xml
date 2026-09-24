@@ -1,13 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- لایه‌ی موقتِ AppWidgetProviderInfo - فقط لحظه‌ی اول قبل از رندرِ واقعیِ Glance دیده می‌شه. -->
+<!--
+  لایه‌ی موقتِ AppWidgetProviderInfo - فقط لحظه‌ی اول قبل از رندرِ واقعیِ Glance دیده می‌شه.
+
+  فریمِ `57c` بندِ ۵: قبلاً `#000000` با یه چرخنده بود، پس اولین چیزی که کاربر بعدِ
+  گذاشتنِ ویجت می‌دید یه مستطیلِ سیاه بود - همون «ویجت کلاً سیاهه». حالا هم‌رنگِ خودِ
+  ویجته (`?android:attr/colorBackground` تمِ سیستم رو دنبال می‌کنه) و چرخنده هم نداره:
+  نیم‌ثانیه‌ست و چرخنده خودش یه پرشِ اضافه می‌سازه.
+-->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0D1321">
+    android:background="@drawable/widget_surface">
 
-    <ProgressBar
+    <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center" />
+        android:layout_gravity="start|center_vertical"
+        android:layout_marginStart="15dp"
+        android:text="جیبک"
+        android:textSize="11sp"
+        android:textColor="?android:attr/textColorSecondary" />
 
 </FrameLayout>

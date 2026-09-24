@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@500;700;800;900&display=swap" rel="stylesheet">
+<meta name="design_doc_mode" content="canvas">
+<style>
+body{margin:0;background:#EDF2F6}
+a{color:#0EA968}a:hover{color:#0B8C57}
+@keyframes jibakPopIn{0%{transform:scale(.4) rotate(-10deg);opacity:0}60%{transform:scale(1.1) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0deg)}}
+@keyframes jibakFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes jibakCoinWiggle{0%,100%{transform:rotate(-8deg) translateY(0)}50%{transform:rotate(8deg) translateY(-2px)}}
+@keyframes jibakGlow{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:.6;transform:scale(1.15)}}
+@keyframes jibakDot{0%,80%,100%{transform:scale(.7);opacity:.35}40%{transform:scale(1.25);opacity:1}}
+@keyframes jibakFadeUp{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes jibakShine{0%,100%{opacity:.25}50%{opacity:.65}}
+@keyframes jibakCoinFeed{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-7px) rotate(4deg)}}
+@keyframes jibakSlotGleam{0%,100%{opacity:.15}50%{opacity:.5}}
+@keyframes jibakShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes jibakSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes jbJig{0%{transform:rotate(-1.6deg)}100%{transform:rotate(1.6deg)}}
+@keyframes jbPick{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes spBag{0%{transform:scale(.62);opacity:0}26%{transform:scale(1.06);opacity:1}38%{transform:scale(.97)}46%{transform:scale(1)}100%{transform:scale(1)}}
+@keyframes spCoin{0%{transform:translateY(26px) scale(.5);opacity:0}22%{opacity:0}44%{transform:translateY(-9px) scale(1.05);opacity:1}56%{transform:translateY(0) scale(1)}100%{transform:translateY(0) scale(1)}}
+@keyframes spCoin2{0%{transform:translateY(26px) scale(.5);opacity:0}30%{opacity:0}52%{transform:translateY(-9px) scale(1.05);opacity:1}64%{transform:translateY(0) scale(1)}100%{transform:translateY(0) scale(1)}}
+@keyframes spWord{0%{transform:translateY(14px);opacity:0}48%{transform:translateY(14px);opacity:0}70%{transform:translateY(0);opacity:1}100%{transform:translateY(0);opacity:1}}
+@keyframes spBar{0%{width:0}70%{width:0}100%{width:64px}}
+</style>
+</helmet>
+<section style="display:flex;flex-direction:column;gap:26px;padding:44px;direction:rtl;color:#16221C;font-family:Vazirmatn,sans-serif;background:#EFF5F1">
+  <div style="display:flex;flex-direction:column;gap:7px;max-width:940px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="background:#16221C;color:#F4F0EA;font-weight:900;font-size:12px;padding:5px 13px;border-radius:999px">بخشِ ۴۴</div>
+      <div style="font-size:12.5px;font-weight:800;color:#5b6a63">تاییدِ حذفِ دسته‌ی مادر</div>
+    </div>
+    <div style="font-size:27px;font-weight:900">حذفی که چیزی را پاک نمی‌کند</div>
+    <div style="font-size:13.5px;color:#5b6a63;line-height:1.9;text-wrap:pretty">زیرمجموعه‌ها به سطحِ اول ترفیع می‌گیرند، نه اینکه با مادر بروند. مشکلِ این کار مشکلِ اعتماد است: کاربر دکمه‌ی «حذف» را می‌زند و انتظار دارد چیزی ناپدید شود، پس دیالوگ باید <b style="color:#16221C">قبل از تایید</b> بگوید سه زیرمجموعه کجا می‌روند — وگرنه فکر می‌کند کلِ شاخه رفته و دستی بازش می‌سازد. زبانِ تایید همان زبانِ <a href="#37d">37d</a> است: کارتِ حاشیه‌قرمز، دکمه‌ی سرخِ سایه‌دار، «بی‌خیال» هم‌عرضش.</div>
+  </div>
+
+  <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start">
+
+    <div id="44a" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">44a</div>
+        <div style="font-size:13px;font-weight:800">مادرِ زیرمجموعه‌دار، بی تراکنش</div>
+      </div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#dbe6e0">
+        <div style="border-radius:32px;background:#F5FBFF;overflow:hidden;height:660px;display:flex;flex-direction:column;position:relative">
+          <div style="padding:14px 16px 12px;display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;opacity:.42">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="font-size:15px;font-weight:900">دسته‌ها</div>
+            </div>
+            <div style="background:#FFFFFF;border:2px solid #E3ECE7;border-radius:18px;padding:13px;display:flex;align-items:center;gap:11px">
+              <div style="width:14px;display:flex;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(-90deg)"><path d="M15 18l-6-6 6-6"/></svg></div>
+              <div style="width:32px;height:32px;border-radius:11px;background:#E5484D;flex:none"></div>
+              <div style="flex:1;font-size:12.5px;font-weight:900">خوراک</div>
+              <div style="font-size:10px;color:#5b6a63;font-weight:800">۳ زیرمجموعه</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:7px;padding-right:24px">
+              <div style="background:#FFFFFF;border:1.5px solid #EEF3F0;border-radius:14px;padding:11px;display:flex;align-items:center;gap:10px"><div style="width:9px;height:9px;border-radius:50%;background:#FF8A8A;flex:none"></div><div style="flex:1;font-size:11.5px;font-weight:800">خواروبار</div></div>
+              <div style="background:#FFFFFF;border:1.5px solid #EEF3F0;border-radius:14px;padding:11px;display:flex;align-items:center;gap:10px"><div style="width:9px;height:9px;border-radius:50%;background:#FFB3B3;flex:none"></div><div style="flex:1;font-size:11.5px;font-weight:800">رستوران</div></div>
+              <div style="background:#FFFFFF;border:1.5px solid #EEF3F0;border-radius:14px;padding:11px;display:flex;align-items:center;gap:10px"><div style="width:9px;height:9px;border-radius:50%;background:#FFC9C9;flex:none"></div><div style="flex:1;font-size:11.5px;font-weight:800">قهوه</div></div>
+            </div>
+          </div>
+          <div style="position:absolute;inset:0;background:rgba(22,34,28,.30)"></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;padding:14px">
+            <div style="border-radius:24px;background:#FFFFFF;border:2px solid #FFC9C9;box-shadow:0 4px 0 #FFECEC;padding:17px;display:flex;flex-direction:column;gap:13px">
+              <div style="display:flex;align-items:flex-start;gap:12px">
+                <div style="width:40px;height:40px;border-radius:13px;background:#FFECEC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#D93838" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13.5px;font-weight:900">حذفِ «خوراک»؟</div>
+                  <div style="font-size:11px;color:#5b6a63;line-height:1.9;margin-top:4px">۳ زیرمجموعه‌اش پاک نمی‌شوند — <b style="font-weight:900;color:#16221C">به سطحِ اول می‌آیند</b> و در لیستِ دسته‌ها می‌مانند.</div>
+                </div>
+              </div>
+              <div style="background:#F3F7F5;border-radius:14px;padding:11px 12px;display:flex;flex-direction:column;gap:8px">
+                <div style="font-size:9.5px;font-weight:900;color:#5b6a63">بعد از حذف، این سه دسته‌ی مستقل می‌شوند</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <div style="background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px;padding:5px 11px;display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:#FF8A8A"></div><div style="font-size:10px;font-weight:800">خواروبار</div></div>
+                  <div style="background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px;padding:5px 11px;display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:#FFB3B3"></div><div style="font-size:10px;font-weight:800">رستوران</div></div>
+                  <div style="background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px;padding:5px 11px;display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:#FFC9C9"></div><div style="font-size:10px;font-weight:800">قهوه</div></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;border-radius:999px;padding:12px;background:#FF4B4B;box-shadow:0 4px 0 #D93838;color:#FFFFFF;font-size:12px;font-weight:900;text-align:center">حذف کن</div>
+                <div style="flex:1;border-radius:999px;padding:12px;background:#FFFFFF;border:2px solid #E3ECE7;color:#5b6a63;font-size:12px;font-weight:900;text-align:center">بی‌خیال</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#5b6a63;line-height:1.9">قرص‌های نامِ زیرمجموعه‌ها <b style="font-weight:900">قبل</b> از تایید دیده می‌شوند، نه در پیامِ بعدش. رنگِ نقطه همان سایه‌ی مشتق‌شده‌ی مادر است و بعدِ ترفیع <b style="font-weight:900">همان می‌ماند</b> — رنگِ تازه ندادن یعنی کاربر سه دسته‌ی آشنا می‌بیند نه سه دسته‌ی غریبه.</div>
+    </div>
+
+    <div id="44b" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">44b</div>
+        <div style="font-size:13px;font-weight:800">مادرِ زیرمجموعه‌دار + تراکنش‌دار</div>
+      </div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#dbe6e0">
+        <div style="border-radius:32px;background:#F5FBFF;overflow:hidden;height:660px;display:flex;flex-direction:column;position:relative">
+          <div style="flex:1"></div>
+          <div style="position:absolute;inset:0;background:rgba(22,34,28,.30)"></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;padding:14px">
+            <div style="border-radius:24px;background:#FFFFFF;border:2px solid #FFC9C9;box-shadow:0 4px 0 #FFECEC;padding:17px;display:flex;flex-direction:column;gap:13px">
+              <div style="display:flex;align-items:flex-start;gap:12px">
+                <div style="width:40px;height:40px;border-radius:13px;background:#FFECEC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#D93838" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13.5px;font-weight:900">حذفِ «خوراک»؟</div>
+                  <div style="font-size:11px;color:#5b6a63;line-height:1.9;margin-top:4px">این دسته <b style="font-weight:900;color:#16221C">۲۴ تراکنش</b> و ۳ زیرمجموعه دارد.</div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <div style="display:flex;align-items:center;gap:9px;background:#F3F7F5;border-radius:14px;padding:11px 12px">
+                  <div style="width:22px;height:22px;border-radius:50%;background:#0EA968;display:flex;align-items:center;justify-content:center;flex:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+                  <div style="flex:1;font-size:10.5px;color:#5b6a63;line-height:1.8">۳ زیرمجموعه به سطحِ اول می‌آیند</div>
+                </div>
+                <div style="background:#FFF7E6;border:1.5px solid #FFE2A8;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:9px">
+                  <div style="font-size:10.5px;font-weight:900;color:#8A5A00">۲۴ تراکنش به کدام دسته بروند؟</div>
+                  <div style="background:#FFFFFF;border:2px solid #FFE2A8;border-radius:12px;padding:11px 12px;display:flex;align-items:center;gap:9px">
+                    <div style="width:9px;height:9px;border-radius:50%;background:#8B9A94;flex:none"></div>
+                    <div style="flex:1;font-size:11px;font-weight:800;color:#5b6a63">انتخابِ دسته</div>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;border-radius:999px;padding:12px;background:#FFD9D9;box-shadow:0 4px 0 #FFC4C4;color:#B26060;font-size:12px;font-weight:900;text-align:center">حذف کن</div>
+                <div style="flex:1;border-radius:999px;padding:12px;background:#FFFFFF;border:2px solid #E3ECE7;color:#5b6a63;font-size:12px;font-weight:900;text-align:center">بی‌خیال</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#5b6a63;line-height:1.9"><b style="font-weight:900">یک دیالوگ، دو خبر</b> — نه دو پرسشِ پشتِ‌هم. ترفیع خبرِ انجام‌شده است (تیکِ سبز، بی انتخاب)، انتقالِ تراکنش تنها چیزی است که تصمیم می‌خواهد، پس تنها چیزی است که کادرِ زرد می‌گیرد. دکمه‌ی «حذف کن» تا انتخابِ دسته <b style="font-weight:900">غیرفعال</b> است.</div>
+    </div>
+
+    <div id="44c" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="background:#16221C;color:#F4F0EA;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">44c</div>
+        <div style="font-size:13px;font-weight:800">قاعده‌ها و متن‌ها</div>
+      </div>
+      <div style="background:#16221C;border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:11px">
+        <div style="font-size:12px;font-weight:900;color:#3DDC96">چهار حالتِ دکمه‌ی حذف</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.74);line-height:2"><b style="color:#F3F7F5">بی زیرمجموعه، بی تراکنش</b> ← دیالوگِ ساده‌ی <a href="#37d" style="color:#3DDC96">37d</a>، بی کادرِ اضافه.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.74);line-height:2"><b style="color:#F3F7F5">زیرمجموعه‌دار</b> ← <a href="#44a" style="color:#3DDC96">44a</a>. قرص‌های نام، حداکثر سه‌تا و بعد «+۲ دیگر».</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.74);line-height:2"><b style="color:#F3F7F5">تراکنش‌دار</b> ← همان کادرِ زردِ موجودِ برنامه، بی‌تغییر.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.74);line-height:2"><b style="color:#F3F7F5">هر دو</b> ← <a href="#44b" style="color:#3DDC96">44b</a>. ترتیب همیشه این است: ترفیع بالا (خبر)، انتقال پایین (تصمیم).</div>
+        <div style="height:1px;background:rgba(255,255,255,.1);margin:2px 0"></div>
+        <div style="font-size:12px;font-weight:900;color:#3DDC96">دو چیزی که عمداً نیست</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.74);line-height:2"><b style="color:#F3F7F5">گزینه‌ی «زیرمجموعه‌ها هم پاک شوند» نداریم.</b> اگر بگذاریمش، یک تپِ اشتباه سه دسته و تاریخِ خرجشان را می‌برد. کاربری که واقعاً می‌خواهدشان پاک کند، سه حذفِ جدا می‌زند و هر بار می‌بیند چه می‌کند.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.74);line-height:2"><b style="color:#F3F7F5">پیامِ «برگشت‌ناپذیر» نداریم.</b> این حذف داده‌ای از بین نمی‌برد؛ ترساندنِ کاربر از کاری که ضرری ندارد، هشدارِ واقعیِ جای دیگر را هم بی‌اثر می‌کند.</div>
+        <div style="height:1px;background:rgba(255,255,255,.1);margin:2px 0"></div>
+        <div style="font-size:12px;font-weight:900;color:#3DDC96">دیتا</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.74);line-height:2"><span style="direction:ltr;display:inline-block">CustomCategoryEntity.parentName</span> نام است نه id، چون مادر می‌تواند دسته‌ی <b style="color:#F3F7F5">ثابت</b> باشد و ردیفِ دیتابیس نداشته باشد. پس ترفیع = <span style="direction:ltr;display:inline-block">parentName = null</span> روی هر زیرمجموعه، در همان تراکنشِ دیتابیسیِ حذف.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.74);line-height:2">و چون کلید نام است، حذفِ مادر <b style="color:#F3F7F5">بی ترفیع</b> زیرمجموعه‌ها را یتیمِ نامرئی می‌کند: <span style="direction:ltr;display:inline-block">parentName</span>ی که به هیچ دسته‌ای نمی‌خورد، در هیچ گروهی رندر نمی‌شود. یعنی گزینه‌ی ۲ فقط خوش‌رفتارتر نیست، تنها گزینه‌ی بی‌باگ است.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<section style="display:flex;flex-direction:column;gap:26px;padding:44px;direction:rtl;color:#16221C;font-family:Vazirmatn,sans-serif;background:#F7FAF8">
+  <div style="display:flex;flex-direction:column;gap:7px;max-width:940px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:12px;padding:5px 13px;border-radius:999px">۴۰</div>
+      <div style="font-size:13px;font-weight:800;color:#5b6a63">موردِ ۴ — مرکزِ پیام‌ها</div>
+    </div>
+    <div style="font-size:27px;font-weight:900">مرکزِ پیام‌ها</div>
+    <div style="font-size:13.5px;color:#5b6a63;line-height:1.9;text-wrap:pretty">هر چیزی که تا امروز به‌شکلِ اعلانِ گوشی بیرون می‌رفت، جایی در برنامه لازم دارد که بمانَد. چهار منبع دارد: تراکنشِ تشخیص‌داده‌شده‌ی تأییدنشده، قسطِ وام و هشدارِ بودجه، جایزه و نشان، و اطلاعیه‌ی برنامه. تصمیمِ اصلی این است که فهرست دو نوعِ متفاوت را قاطی نکند: پیامی که <b style="font-weight:900">کار می‌خواهد</b> دکمه دارد و تا اقدام نشود می‌مانَد؛ پیامی که فقط <b style="font-weight:900">خبر می‌دهد</b> با یک ضربه خوانده‌شده می‌شود. ورودی: زنگِ کنارِ شمارنده‌ی سکه در هدرِ خانه.</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+
+    <div id="40a" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">40a</div><div style="font-size:16px;font-weight:700">فهرستِ پیام‌ها</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#dbe6e0">
+        <div style="border-radius:32px;background:#F5FBFF;overflow:hidden;height:820px;display:flex;flex-direction:column">
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;align-items:center;gap:9px">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#16221C" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+                <div style="font-size:18px;font-weight:900">پیام‌ها</div>
+              </div>
+              <div style="font-size:10px;font-weight:900;color:#0B8C57">همه خوانده شد</div>
+            </div>
+
+            <div style="display:flex;gap:5px">
+              <div style="background:#0EA968;color:#FFF;font-size:10px;font-weight:800;padding:6px 12px;border-radius:999px;box-shadow:0 3px 0 #0B8C57">همه</div>
+              <div style="display:flex;align-items:center;gap:5px;background:#FFFFFF;border:1.5px solid #E3ECE7;font-size:10px;font-weight:800;padding:6px 11px;border-radius:999px">نیازِ اقدام<div style="background:#FF4B4B;color:#FFF;font-size:8.5px;font-weight:900;min-width:15px;height:15px;border-radius:999px;display:flex;align-items:center;justify-content:center">۲</div></div>
+              <div style="background:#FFFFFF;border:1.5px solid #E3ECE7;color:#5b6a63;font-size:10px;font-weight:800;padding:6px 11px;border-radius:999px">خبرها</div>
+            </div>
+
+            <div style="font-size:10px;font-weight:900;color:#8B9A93;margin-top:2px">امروز</div>
+
+            <div style="border-radius:18px;padding:13px;background:#FFFFFF;border:2px solid #FFD79A;display:flex;flex-direction:column;gap:11px">
+              <div style="display:flex;align-items:flex-start;gap:10px">
+                <div style="width:34px;height:34px;border-radius:11px;background:#FFF1DC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B45F00" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16v11H4z"/><path d="M4 11h16"/></svg></div>
+                <div style="flex:1">
+                  <div style="display:flex;align-items:center;gap:6px"><div style="font-size:12px;font-weight:900">یک برداشتِ تازه پیدا شد</div><div style="width:7px;height:7px;border-radius:50%;background:#0EA968;flex:none"></div></div>
+                  <div style="font-size:10px;color:#5b6a63;line-height:1.8;margin-top:3px">بانکِ سامان · ۴۵۰٬۰۰۰ ریال · «فروشگاهِ رفاه» — دسته‌ی حدسی: خوراک</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:7px">
+                <div style="flex:1;border-radius:999px;padding:10px;background:#0EA968;box-shadow:0 3px 0 #0B8C57;color:#FFFFFF;text-align:center;font-size:11px;font-weight:900">ثبت کن</div>
+                <div style="border-radius:999px;padding:10px 14px;background:#FFFFFF;border:1.5px solid #DCE7E1;color:#5b6a63;text-align:center;font-size:11px;font-weight:800">ویرایش</div>
+                <div style="border-radius:999px;padding:10px 14px;background:#FFFFFF;border:1.5px solid #DCE7E1;color:#8B9A93;text-align:center;font-size:11px;font-weight:800">رد</div>
+              </div>
+            </div>
+
+            <div style="border-radius:18px;padding:13px;background:#FFFFFF;border:2px solid #FFC9C9;display:flex;flex-direction:column;gap:11px">
+              <div style="display:flex;align-items:flex-start;gap:10px">
+                <div style="width:34px;height:34px;border-radius:11px;background:#FFECEC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4B4B" stroke-width="2.4" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg></div>
+                <div style="flex:1">
+                  <div style="display:flex;align-items:center;gap:6px"><div style="font-size:12px;font-weight:900">قسطِ وامِ ازدواج، سه روزِ دیگر</div><div style="width:7px;height:7px;border-radius:50%;background:#0EA968;flex:none"></div></div>
+                  <div style="font-size:10px;color:#5b6a63;line-height:1.8;margin-top:3px">۱۱٬۷۴۰٬۰۰۰ ریال · قسطِ ۱۲ از ۳۶</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:7px">
+                <div style="flex:1;border-radius:999px;padding:10px;background:#FFFFFF;border:1.5px solid #DCE7E1;color:#16221C;text-align:center;font-size:11px;font-weight:900">پرداختش کردم</div>
+                <div style="border-radius:999px;padding:10px 14px;background:#FFFFFF;border:1.5px solid #DCE7E1;color:#5b6a63;text-align:center;font-size:11px;font-weight:800">یادم بمان</div>
+              </div>
+            </div>
+
+            <div style="border-radius:18px;padding:13px;background:#F1FBF5;border:1.5px solid #DDEFE5;display:flex;align-items:flex-start;gap:10px">
+              <div style="width:34px;height:34px;border-radius:11px;background:#FFF1DC;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:17px;height:17px;border-radius:50%;background:radial-gradient(circle,transparent 0 55%,#D9A32C 55% 61%,transparent 61%),radial-gradient(circle,#F0C356 0 79%,#B07E0C 79%)"></div></div>
+              <div style="flex:1">
+                <div style="display:flex;align-items:center;gap:6px"><div style="font-size:12px;font-weight:900">۵۰ سکه گرفتی</div><div style="width:7px;height:7px;border-radius:50%;background:#0EA968;flex:none"></div></div>
+                <div style="font-size:10px;color:#5b6a63;line-height:1.8;margin-top:3px">هفت روزِ پشتِ‌سرهم ثبت — نشانِ «هفته‌ی کامل» باز شد</div>
+              </div>
+              <div style="font-size:9px;color:#9aa8a1;font-weight:800;flex:none">۹:۱۲</div>
+            </div>
+
+            <div style="font-size:10px;font-weight:900;color:#8B9A93;margin-top:2px">این هفته</div>
+
+            <div style="border-radius:18px;padding:13px;background:#FFFFFF;border:1.5px solid #EEF3F0;display:flex;align-items:flex-start;gap:10px">
+              <div style="width:34px;height:34px;border-radius:11px;background:#EAF1FE;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1CB0F6" stroke-width="2.4" stroke-linecap="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg></div>
+              <div style="flex:1">
+                <div style="font-size:12px;font-weight:900;color:#5b6a63">بودجه‌ی خوراک از ۸۰٪ گذشت</div>
+                <div style="font-size:10px;color:#8B9A93;line-height:1.8;margin-top:3px">۱۱ روز تا آخرِ ماه مانده</div>
+              </div>
+              <div style="font-size:9px;color:#9aa8a1;font-weight:800;flex:none">سه‌شنبه</div>
+            </div>
+
+            <div style="border-radius:18px;padding:13px;background:#FFFFFF;border:1.5px solid #EEF3F0;display:flex;align-items:flex-start;gap:10px">
+              <div style="width:34px;height:34px;border-radius:11px;background:#F1F5F2;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B9A93" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg></div>
+              <div style="flex:1">
+                <div style="font-size:12px;font-weight:900;color:#5b6a63">نسخه‌ی ۳٫۲ آمد</div>
+                <div style="font-size:10px;color:#8B9A93;line-height:1.8;margin-top:3px">خواندنِ اعلانِ بلوبانک اضافه شد</div>
+              </div>
+              <div style="font-size:9px;color:#9aa8a1;font-weight:800;flex:none">شنبه</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#5b6a63;line-height:1.9">سه سطحِ بصری، نه سه رنگِ تازه: پیامِ نیازِ اقدام حاشیه‌ی ۲px رنگی و دکمه دارد؛ پیامِ جشن زمینه‌ی سبزِ خیلی رقیق؛ خبرِ ساده کارتِ سفیدِ معمولی با حاشیه‌ی ۱٫۵px. نقطه‌ی سبزِ ۷px تنها نشانه‌ی خوانده‌نشده است. زمان در خبرها هست و در پیامِ اقدام‌دار نیست — آنجا وضعیت مهم‌تر از ساعت است.</div>
+    </div>
+
+    <div id="40b" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">40b</div><div style="font-size:16px;font-weight:700">ورودی، خالی، و ژستِ کنار زدن</div></div>
+
+      <div style="border-radius:22px;background:#FFFFFF;border:2px solid #E3ECE7;padding:16px;display:flex;flex-direction:column;gap:13px">
+        <div style="font-size:11.5px;font-weight:900">زنگ در هدرِ خانه — سه حالت</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <div style="width:34px;height:34px;border-radius:11px;background:#F1F5F2;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5b6a63" stroke-width="2.2" stroke-linecap="round"><path d="M18 15V10a6 6 0 10-12 0v5l-1.5 3h15z"/><path d="M10 21h4"/></svg></div>
+            <div style="font-size:9px;font-weight:800;color:#8B9A93">خالی</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <div style="width:34px;height:34px;border-radius:11px;background:#F1F5F2;display:flex;align-items:center;justify-content:center;position:relative"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5b6a63" stroke-width="2.2" stroke-linecap="round"><path d="M18 15V10a6 6 0 10-12 0v5l-1.5 3h15z"/><path d="M10 21h4"/></svg><div style="position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:#0EA968;border:1.5px solid #F1F5F2"></div></div>
+            <div style="font-size:9px;font-weight:800;color:#8B9A93">خوانده‌نشده</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <div style="width:34px;height:34px;border-radius:11px;background:#FFECEC;display:flex;align-items:center;justify-content:center;position:relative"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF4B4B" stroke-width="2.2" stroke-linecap="round"><path d="M18 15V10a6 6 0 10-12 0v5l-1.5 3h15z"/><path d="M10 21h4"/></svg><div style="position:absolute;top:-4px;right:-4px;background:#FF4B4B;color:#FFF;font-size:8.5px;font-weight:900;min-width:16px;height:16px;border-radius:999px;display:flex;align-items:center;justify-content:center;border:1.5px solid #FFFFFF">۲</div></div>
+            <div style="font-size:9px;font-weight:800;color:#8B9A93">نیازِ اقدام</div>
+          </div>
+        </div>
+        <div style="font-size:10.5px;color:#5b6a63;line-height:1.85">شمارنده‌ی عددی <b style="font-weight:900">فقط</b> برای پیامِ اقدام‌دار است. خبرِ خوانده‌نشده نقطه می‌گیرد نه عدد — وگرنه عدد بی‌معنی بزرگ می‌شود و کاربر یاد می‌گیرد نادیده‌اش بگیرد.</div>
+      </div>
+
+      <div style="border-radius:22px;background:#FFFFFF;border:2px solid #E3ECE7;padding:16px;display:flex;flex-direction:column;gap:13px">
+        <div style="font-size:11.5px;font-weight:900">حالتِ خالی</div>
+        <div style="border-radius:18px;background:#F7FAF8;border:2px dashed #C9D6CF;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:11px">
+          <div style="width:52px;height:52px;border-radius:17px;background:#FFFFFF;border:1.5px solid #E3ECE7;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C9D6CF" stroke-width="2.2" stroke-linecap="round"><path d="M18 15V10a6 6 0 10-12 0v5l-1.5 3h15z"/><path d="M10 21h4"/></svg></div>
+          <div style="text-align:center"><div style="font-size:12.5px;font-weight:900">پیامی نیست</div><div style="font-size:10.5px;color:#5b6a63;line-height:1.85;margin-top:5px">هرچه تشخیص داده شود یا جایزه بگیری، اینجا می‌آید و می‌مانَد</div></div>
+        </div>
+      </div>
+
+      <div style="border-radius:22px;background:#FFFFFF;border:2px solid #E3ECE7;padding:16px;display:flex;flex-direction:column;gap:13px">
+        <div style="font-size:11.5px;font-weight:900">کنار زدن — فقط خبرها</div>
+        <div style="border-radius:18px;overflow:hidden;border:1.5px solid #EEF3F0;display:flex">
+          <div style="flex:1;padding:13px;background:#FFFFFF;display:flex;align-items:center;gap:10px">
+            <div style="width:30px;height:30px;border-radius:10px;background:#F1F5F2;flex:none"></div>
+            <div style="flex:1;font-size:11px;font-weight:900;color:#5b6a63">نسخه‌ی ۳٫۲ آمد</div>
+          </div>
+          <div style="width:74px;background:#F1F5F2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B9A93" stroke-width="2.4" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>
+            <div style="font-size:9px;font-weight:900;color:#8B9A93">خواندم</div>
+          </div>
+        </div>
+        <div style="font-size:10.5px;color:#5b6a63;line-height:1.85">کشیدن به چپ فقط خبر را می‌بندد. پیامِ اقدام‌دار کنار نمی‌رود — تنها راهِ بستنش دکمه‌های خودش است، از جمله «رد». این تفاوت عمدی است: تراکنشی که کاربر با کشیدنِ دست گم کند، دیگر پیدا نمی‌شود.</div>
+      </div>
+    </div>
+
+    <div id="40c" style="display:flex;flex-direction:column;gap:12px;width:404px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">40c</div><div style="font-size:16px;font-weight:700">قاعده‌ها و دیتا</div></div>
+      <div style="border-radius:22px;background:#FFFFFF;border:2px solid #E3ECE7;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:11.5px;color:#5b6a63;line-height:2"><b style="color:#16221C">دیتا:</b> <span style="direction:ltr;display:inline-block">InboxMessage(id, kind, titleKey, body, createdAt, readAt?, actionState, refId?)</span>. <span style="direction:ltr;display:inline-block">kind</span> شش‌تاست: <span style="direction:ltr;display:inline-block">DETECTED_TX · LOAN_DUE · BUDGET_ALERT · REWARD · STREAK_REMINDER · SYSTEM</span>.</div>
+        <div style="font-size:11.5px;color:#5b6a63;line-height:2"><b style="color:#16221C">اقدام‌دار کدام است:</b> <span style="direction:ltr;display:inline-block">DETECTED_TX</span> و <span style="direction:ltr;display:inline-block">LOAN_DUE</span>. بقیه خبرند. شمارنده‌ی قرمزِ زنگ = شمارِ اقدام‌دارهای بازِ همین دو نوع.</div>
+        <div style="font-size:11.5px;color:#5b6a63;line-height:2"><b style="color:#16221C">منبعِ واحد:</b> پیام اول در این جدول ساخته می‌شود، بعد اعلانِ گوشی از رویش می‌رود. برعکسش نه. پس ضربه روی اعلانِ گوشی همان ردیف را باز می‌کند و اگر کاربر پیام را در برنامه بست، اعلان هم <span style="direction:ltr;display:inline-block">cancel</span> می‌شود.</div>
+        <div style="font-size:11.5px;color:#5b6a63;line-height:2"><b style="color:#16221C">نگه‌داری:</b> خبرِ خوانده‌شده بعد از ۳۰ روز پاک می‌شود. اقدام‌دارِ باز هرگز خودبه‌خود پاک نمی‌شود. سقفِ ۲۰۰ ردیف؛ از آن بالاتر قدیمی‌ترین خبرِ خوانده‌شده می‌رود.</div>
+        <div style="font-size:11.5px;color:#5b6a63;line-height:2"><b style="color:#16221C">«همه خوانده شد»:</b> فقط <span style="direction:ltr;display:inline-block">readAt</span> خبرها را پر می‌کند. به اقدام‌دارها دست نمی‌زند و تأییدِ ضمنیِ تراکنش نیست.</div>
+        <div style="font-size:11.5px;color:#5b6a63;line-height:2"><b style="color:#16221C">گروه‌بندی:</b> امروز · این هفته · قدیمی‌تر. اگر بیش از سه تراکنشِ تشخیص‌داده‌شده‌ی بازِ هم‌روز باشد، یک کارتِ جمع‌شده «۵ تراکنشِ تازه — بررسی کن» جایشان می‌نشیند که به صفحه‌ی تأییدِ گروهی می‌رود.</div>
+        <div style="border-radius:14px;padding:12px 14px;background:#FFF1DC;border:1.5px solid #FFD79A;font-size:11px;color:#8B5A00;line-height:1.9;font-weight:700">تصمیمی که باید تأیید کنید: صفحه‌ی «تأییدِ گروهی» را در همین نوبت طراحی کنم یا کارتِ جمع‌شده فعلاً به فهرستِ تراکنش‌های تأییدنشده‌ی موجود برود؟</div>
+        <div style="border-radius:14px;padding:12px 14px;background:#F7FAF8;border:1.5px solid #EEF3F0;font-size:11px;color:#5b6a63;line-height:1.9">نسخه‌ی تیره: نقشه‌ی استانداردِ <b style="font-weight:900">DARK-MAP</b>. تنها نکته این است که زمینه‌ی رقیقِ کارتِ جشن در تیره <span style="direction:ltr;display:inline-block">#123726</span> می‌شود و حاشیه‌ی رنگیِ کارتِ اقدام‌دار همان <span style="direction:ltr;display:inline-block">#FFD79A</span> و <span style="direction:ltr;display:inline-block">#FFC9C9</span> نمی‌مانَد — به <span style="direction:ltr;display:inline-block">#5A4520</span> و <span style="direction:ltr;display:inline-block">#5A2A2A</span> می‌رود، وگرنه روی بسترِ تیره جیغ می‌زند.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<section style="display:flex;flex-direction:column;gap:26px;padding:40px;direction:rtl;color:#F3F7F5;font-family:Vazirmatn,sans-serif;background:#0C1319">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:1000px">
+    <div style="display:flex;align-items:center;gap:10px"><div style="background:#3DDC96;color:#0C1319;font-weight:900;font-size:12px;padding:5px 13px;border-radius:999px">۳۰</div><div style="font-size:13px;font-weight:800;color:#8B9A94">نسخه‌ی تیره‌ی همه‌ی صفحات</div></div>
+    <div style="font-size:27px;font-weight:900">60 فریمِ تیره — یک‌به‌یکِ صفحاتِ روشن</div>
+    <div style="font-size:13.5px;color:#8B9A94;line-height:1.9">نقشه‌ی توکن: بستر #10181F · سطح #1B2530 · سطحِ دوم #202B36 · چیپ #232E38 · خط #2A3640 · متنِ اصلی #F3F7F5 · متنِ دوم #8B9A94 · متنِ سوم #7A8A84 · سبزِ متن و آیکون #3DDC96 · سبزِ پرشده #0EA968 با سایه‌ی #07724A · قرصِ سبز rgba(61,220,150,.14) · قرمز #FF6B6B روی rgba(255,107,107,.12) · طلایی #F0D9A8 روی #2A2317. اندازه‌ها، فاصله‌ها و گوشه‌ها عیناً مثلِ نسخه‌ی روشن.</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<div id="29fd" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">29fd</div><div style="font-size:17px;font-weight:700">جزئیاتِ حساب‌کتاب — تیره</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#2A3640"><div style="border-radius:32px;background:#10181F;overflow:hidden;height:700px;display:flex;flex-direction:column;position:relative"><div style="padding:15px 16px 11px;display:flex;align-items:center;gap:10px;background:#1B2530;border-bottom:2px solid #232E38"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><div style="font-size:16px;font-weight:900;flex:1">حسابِ ملی</div><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></div><div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:11px;overflow:hidden"><div style="border-radius:22px;padding:17px;background:#1B2530;border:2px solid #2A3640;display:flex;flex-direction:column;gap:6px"><div style="display:flex;align-items:center;gap:9px"><div style="width:32px;height:32px;border-radius:10px;background:rgba(61,220,150,.14);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#3DDC96">م</div><div style="font-size:10.5px;font-weight:800;color:#8B9A94">ماندهٔ حساب · کارت ۶۰۳۷</div></div><div style="display:flex;align-items:baseline;gap:7px"><div style="font-size:24px;font-weight:900">۲۴٬۸۶۰٬۰۰۰</div><div style="font-size:10.5px;font-weight:800;color:#8B9A94">تومان</div></div><div style="height:1px;background:#232E38;margin:2px 0"></div><div style="display:flex;gap:14px"><div style="flex:1"><div style="font-size:9.5px;font-weight:800;color:#8B9A94">واریزِ مرداد</div><div style="font-size:13px;font-weight:900;color:#3DDC96;margin-top:3px">۱۸٬۰۰۰٬۰۰۰</div></div><div style="width:1px;background:#232E38"></div><div style="flex:1"><div style="font-size:9.5px;font-weight:800;color:#8B9A94">برداشتِ مرداد</div><div style="font-size:13px;font-weight:900;color:#FF6B6B;margin-top:3px">۱۲٬۳۴۰٬۰۰۰</div></div></div></div><div style="display:flex;gap:6px;align-items:center"><div style="font-size:10.5px;font-weight:800;color:#FFFFFF;padding:7px 13px;background:#0EA968;border-radius:999px;box-shadow:0 3px 0 #07724A">مرداد</div><div style="font-size:10.5px;font-weight:800;color:#8B9A94;padding:7px 12px;background:#1B2530;border:1.5px solid #2A3640;border-radius:999px">تیر</div><div style="font-size:10.5px;font-weight:800;color:#8B9A94;padding:7px 12px;background:#1B2530;border:1.5px solid #2A3640;border-radius:999px">خرداد</div><div style="flex:1"></div><div style="width:32px;height:32px;border-radius:10px;background:#1B2530;border:1.5px solid #2A3640;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M12 19V5M20 19v-6"/></svg></div></div><div style="font-size:10px;font-weight:900;color:#8B9A94">۲۹ مرداد</div><div style="border-radius:16px;padding:12px 13px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:11px"><div style="width:32px;height:32px;border-radius:10px;background:rgba(255,107,107,.12);display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v11H4zM4 11h16"/></svg></div><div style="flex:1"><div style="font-size:12px;font-weight:800">قسطِ خودرو</div><div style="font-size:9.5px;color:#8B9A94;margin-top:2px">پایا · ۱۴:۰۲</div></div><div style="font-size:12px;font-weight:900;color:#FF6B6B;text-align:left;flex:none">۳٬۵۰۰٬۰۰۰-</div></div><div style="border-radius:16px;padding:12px 13px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:11px"><div style="width:32px;height:32px;border-radius:10px;background:#232E38;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></div><div style="flex:1"><div style="font-size:12px;font-weight:800">خریدِ اینترنتی</div><div style="font-size:9.5px;color:#8B9A94;margin-top:2px">شاپرک · ۱۱:۳۰</div></div><div style="font-size:12px;font-weight:900;color:#FF6B6B;text-align:left;flex:none">۸۴۰٬۰۰۰-</div></div><div style="font-size:10px;font-weight:900;color:#8B9A94;margin-top:2px">۲۷ مرداد</div><div style="border-radius:16px;padding:12px 13px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:11px"><div style="width:32px;height:32px;border-radius:10px;background:rgba(61,220,150,.14);display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3DDC96" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg></div><div style="flex:1"><div style="font-size:12px;font-weight:800">حقوقِ مرداد</div><div style="font-size:9.5px;color:#8B9A94;margin-top:2px">پایا · ۰۸:۱۵</div></div><div style="font-size:12px;font-weight:900;color:#3DDC96;text-align:left;flex:none">۱۸٬۰۰۰٬۰۰۰+</div></div><div style="border-radius:16px;padding:12px 13px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:11px"><div style="width:32px;height:32px;border-radius:10px;background:#232E38;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v11H4zM4 11h16"/></svg></div><div style="flex:1"><div style="font-size:12px;font-weight:800">کارت به کارت</div><div style="font-size:9.5px;color:#8B9A94;margin-top:2px">به مریم · ۱۹:۴۰</div></div><div style="font-size:12px;font-weight:900;color:#FF6B6B;text-align:left;flex:none">۱٬۲۰۰٬۰۰۰-</div></div></div></div></div>
+      <div style="font-size:11px;color:#8B9A94;line-height:1.9">همان چیدمانِ <b style="font-weight:900">29f</b> با نقشه‌ی تیره: بستر #10181F، سطح #1B2530، خط #2A3640، متن #F3F7F5، سبزِ متن و آیکون #3DDC96، سایه #07724A.</div>
+    </div>
+<div id="29od" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">29od</div><div style="font-size:17px;font-weight:700">یادداشت — تیره</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#2A3640"><div style="border-radius:32px;background:#10181F;overflow:hidden;height:700px;display:flex;flex-direction:column;position:relative"><div style="padding:15px 16px 11px;display:flex;align-items:center;gap:10px;background:#1B2530;border-bottom:2px solid #232E38"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><div style="font-size:16px;font-weight:900;flex:1">یادداشت‌ها</div><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3DDC96" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></div><div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:11px;overflow:hidden"><div style="border-radius:16px;padding:12px 14px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:9px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8 10h8M8 14h5"/></svg><div style="flex:1;font-size:11.5px;font-weight:800;color:#8B9A94">جست‌وجو در یادداشت‌ها</div></div><div style="display:flex;gap:6px"><div style="font-size:10.5px;font-weight:800;color:#FFFFFF;padding:7px 13px;background:#0EA968;border-radius:999px;box-shadow:0 3px 0 #07724A">همه · ۸</div><div style="font-size:10.5px;font-weight:800;color:#8B9A94;padding:7px 12px;background:#1B2530;border:1.5px solid #2A3640;border-radius:999px">چسبیده</div><div style="font-size:10.5px;font-weight:800;color:#8B9A94;padding:7px 12px;background:#1B2530;border:1.5px solid #2A3640;border-radius:999px">وصل به تراکنش</div><div style="font-size:10.5px;font-weight:800;color:#8B9A94;padding:7px 12px;background:#1B2530;border:1.5px solid #2A3640;border-radius:999px">عکس‌دار</div></div><div style="border-radius:18px;padding:15px;background:#1B2530;border:2px solid #2A3640;display:flex;flex-direction:column;gap:9px"><div style="display:flex;align-items:center;gap:8px"><div style="width:6px;height:6px;border-radius:50%;background:#FFB44D"></div><div style="flex:1;font-size:12.5px;font-weight:900">قرضِ مریم</div><div style="font-size:9.5px;font-weight:800;color:#8B9A94">امروز</div></div><div style="font-size:11px;color:#8B9A94;line-height:1.9">۲ میلیون قرض دادم، گفت آخرِ شهریور می‌دهد. یادم باشد یادآور بگذارم.</div><div style="display:flex;gap:6px"><div style="font-size:9.5px;font-weight:800;color:#3DDC96;background:rgba(61,220,150,.14);padding:5px 9px;border-radius:999px">وصل به: کارت به کارت ۲٬۰۰۰٬۰۰۰</div></div><div style="display:flex;gap:7px"><div style="width:56px;height:56px;border-radius:12px;background:#232E38;border:1.5px solid #2A3640;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7A8A84" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="10" r="1.5"/><path d="M4 17.5l5-4 3.5 2.8 3-2.2 4.5 3.4"/></svg></div><div style="width:56px;height:56px;border-radius:12px;background:#232E38;border:1.5px solid #2A3640;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7A8A84" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="10" r="1.5"/><path d="M4 17.5l5-4 3.5 2.8 3-2.2 4.5 3.4"/></svg></div><div style="width:56px;height:56px;border-radius:12px;background:#1B2530;border:1.5px dashed #3C4A53;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.4" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg><div style="font-size:8px;font-weight:800;color:#8B9A94">عکس</div></div></div></div><div style="border-radius:18px;padding:15px;background:#1B2530;border:2px solid #232E38;display:flex;flex-direction:column;gap:11px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;font-size:12.5px;font-weight:900">لیستِ خریدِ خانه</div><div style="font-size:9.5px;font-weight:800;color:#8B9A94">دیروز</div></div><div style="display:flex;flex-direction:column;gap:7px"><div style="display:flex;align-items:center;gap:9px"><div style="width:18px;height:18px;border-radius:6px;background:#0EA968;border:none;display:flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div><div style="font-size:11.5px;font-weight:800;color:#8B9A94;text-decoration:line-through">برنج ۱۰ کیلو</div></div><div style="display:flex;align-items:center;gap:9px"><div style="width:18px;height:18px;border-radius:6px;background:#0EA968;border:none;display:flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div><div style="font-size:11.5px;font-weight:800;color:#8B9A94;text-decoration:line-through">روغن</div></div><div style="display:flex;align-items:center;gap:9px"><div style="width:18px;height:18px;border-radius:6px;background:#1B2530;border:2px solid #2A3640;display:flex;align-items:center;justify-content:center;flex:none"></div><div style="font-size:11.5px;font-weight:800;color:#F3F7F5;">چای</div></div></div></div><div style="border-radius:18px;padding:15px;background:#1B2530;border:2px solid #232E38;display:flex;flex-direction:column;gap:9px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;font-size:12.5px;font-weight:900">رمزِ کارتِ هدیه</div><div style="font-size:9.5px;font-weight:800;color:#8B9A94">۲۴ مرداد</div></div><div style="font-size:11px;color:#8B9A94;line-height:1.9">پشتِ کارت نوشته شده، عکس گرفتم.</div></div><div style="font-size:10.5px;color:#8B9A94;line-height:1.9;padding:0 2px">یادداشت می‌تواند به یک تراکنش یا چک وصل شود؛ آن‌وقت در صفحه‌ی آن هم دیده می‌شود.</div></div></div></div>
+      <div style="font-size:11px;color:#8B9A94;line-height:1.9">همان چیدمانِ <b style="font-weight:900">29o</b> با نقشه‌ی تیره: بستر #10181F، سطح #1B2530، خط #2A3640، متن #F3F7F5، سبزِ متن و آیکون #3DDC96.</div>
+    </div>
+<div id="26dd" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#55C8FF;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">26dd</div><div style="font-size:16px;font-weight:700">پرداختِ تکراری</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#2A3640">
+        <div style="border-radius:32px;background:#10181F;overflow:hidden;height:900px;display:flex;flex-direction:column">
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F3F7F5" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+              <div style="flex:1"><div style="font-size:17px;font-weight:900">پرداختِ تکراری</div><div style="font-size:10px;color:#8B9A94;font-weight:700;margin-top:2px">۷ مورد · ماهی ۶٬۲۰۰٬۰۰۰</div></div>
+              <div style="width:32px;height:32px;border-radius:10px;background:rgba(61,220,150,.14);border:1.5px solid rgba(61,220,150,.35);display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3DDC96" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            </div>
+
+            <div style="border-radius:20px;padding:16px;background:#1B2530;border:2px solid #2A3640">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:12px;font-weight:900">شهریور ۱۴۰۵</div><div style="display:flex;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c7d2cc" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></div></div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:7px">
+                <div style="text-align:center;font-size:8px;color:#7A8A84;font-weight:700">ش</div><div style="text-align:center;font-size:8px;color:#7A8A84;font-weight:700">ی</div><div style="text-align:center;font-size:8px;color:#7A8A84;font-weight:700">د</div><div style="text-align:center;font-size:8px;color:#7A8A84;font-weight:700">س</div><div style="text-align:center;font-size:8px;color:#7A8A84;font-weight:700">چ</div><div style="text-align:center;font-size:8px;color:#7A8A84;font-weight:700">پ</div><div style="text-align:center;font-size:8px;color:#7A8A84;font-weight:700">ج</div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۱</div>
+                <div style="height:32px;border-radius:10px;background:#FFB44D;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:9.5px;color:#FFF;font-weight:900">۲</div><div style="width:3px;height:3px;border-radius:50%;background:#FFF;margin-top:1px"></div></div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۳</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۴</div>
+                <div style="height:32px;border-radius:10px;background:#FFE3B8;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#B45F00;font-weight:900">۵</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۶</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۷</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۸</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۹</div>
+                <div style="height:32px;border-radius:10px;background:#FF6B6B;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:9.5px;color:#FFF;font-weight:900">۱۰</div><div style="width:3px;height:3px;border-radius:50%;background:#FFF;margin-top:1px"></div></div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۱۱</div>
+                <div style="height:32px;border-radius:10px;background:#FFE3B8;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#B45F00;font-weight:900">۱۲</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۱۳</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۱۴</div>
+                <div style="height:32px;border-radius:10px;background:#1B2530;border:2px solid #0EA968;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#3DDC96;font-weight:900">۱۵</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۱۶</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۱۷</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۱۸</div>
+                <div style="height:32px;border-radius:10px;background:#FFB44D;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:9.5px;color:#FFF;font-weight:900">۱۹</div><div style="width:3px;height:3px;border-radius:50%;background:#FFF;margin-top:1px"></div></div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۲۰</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#7A8A84;font-weight:700">۲۱</div>
+              </div>
+              <div style="display:flex;gap:11px;margin-top:12px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:3px;background:#3A2E17"></div><div style="font-size:8.5px;color:#8B9A94;font-weight:700">زیرِ ۱M</div></div>
+                <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:3px;background:#FFB44D"></div><div style="font-size:8.5px;color:#8B9A94;font-weight:700">۱ تا ۴M</div></div>
+                <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:3px;background:#FF6B6B"></div><div style="font-size:8.5px;color:#8B9A94;font-weight:700">بالای ۴M</div></div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div style="border-radius:18px;padding:13px 14px;background:#1B2530;border:2px solid #2A3640;display:flex;align-items:center;gap:11px">
+                <div style="width:36px;height:36px;border-radius:11px;background:rgba(255,107,107,.12);display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.3" stroke-linecap="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9h14v-9"/></svg></div>
+                <div style="flex:1"><div style="font-size:12px;font-weight:900">اجاره</div><div style="font-size:9px;color:#8B9A94;margin-top:2px">هر ماه، روزِ ۱۰</div></div>
+                <div style="text-align:left"><div style="font-size:12.5px;font-weight:900">۴٫۵M</div><div style="font-size:8.5px;color:#FF6B6B;font-weight:700;margin-top:1px">ثابت</div></div>
+              </div>
+              <div style="border-radius:18px;padding:13px 14px;background:#1B2530;border:2px solid #2A3640;display:flex;align-items:center;gap:11px">
+                <div style="width:36px;height:36px;border-radius:11px;background:#FFF1DC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B45F00" stroke-width="2.3" stroke-linecap="round"><rect x="3" y="6" width="18" height="14" rx="2.5"/><path d="M3 10h18"/></svg></div>
+                <div style="flex:1"><div style="font-size:12px;font-weight:900">قسطِ وامِ خودرو</div><div style="font-size:9px;color:#8B9A94;margin-top:2px">هر ماه، روزِ ۲ · ۱۲ از ۳۶</div></div>
+                <div style="text-align:left"><div style="font-size:12.5px;font-weight:900">۳٫۵M</div><div style="font-size:8.5px;color:#B45F00;font-weight:700;margin-top:1px">۲۴ قسط مانده</div></div>
+              </div>
+              <div style="border-radius:18px;padding:13px 14px;background:#1B2530;border:2px solid #2A3640;display:flex;align-items:center;gap:11px">
+                <div style="width:36px;height:36px;border-radius:11px;background:#EAF1FE;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#55C8FF" stroke-width="2.3" stroke-linecap="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></div>
+                <div style="flex:1"><div style="font-size:12px;font-weight:900">قبضِ برق</div><div style="font-size:9px;color:#8B9A94;margin-top:2px">هر دو ماه، حدودِ روزِ ۵</div></div>
+                <div style="text-align:left"><div style="font-size:12.5px;font-weight:900">۸۴۰K</div><div style="font-size:8.5px;color:#8B9A94;font-weight:700;margin-top:1px">متغیر</div></div>
+              </div>
+              <div style="border-radius:18px;padding:13px 14px;background:#FFF1DC;border:2px solid #FFD79A;display:flex;align-items:center;gap:11px">
+                <div style="width:36px;height:36px;border-radius:11px;background:#FFE3B8;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B45F00" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11.5V16"/></svg></div>
+                <div style="flex:1"><div style="font-size:11.5px;font-weight:900;color:#8B5A00">سرویسِ پخشِ ویدیو</div><div style="font-size:9px;color:#C9AE74;margin-top:2px">۸ ماه پیوسته · استفاده نکردی؟</div></div>
+                <div style="text-align:left"><div style="font-size:12px;font-weight:900;color:#8B5A00">۹۹K</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#8B9A94;line-height:1.9">همان چیدمانِ <b style="font-weight:900">26d</b> با نقشه‌ی تیره: بستر #10181F، سطح #1B2530، خط #2A3640، متن #F3F7F5، سبزِ متن و آیکون #3DDC96، سایه #07724A.</div>
+    </div>
+<div id="26ed" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#BE97FF;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">26ed</div><div style="font-size:16px;font-weight:700">حسابِ مشترکِ خانواده</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#2A3640">
+        <div style="border-radius:32px;background:#10181F;overflow:hidden;height:900px;display:flex;flex-direction:column">
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F3F7F5" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+              <div style="flex:1;font-size:17px;font-weight:900">کیفِ مشترک</div>
+              <div style="background:#F3EAFE;color:#7440C9;font-size:9px;font-weight:900;padding:4px 9px;border-radius:999px">۲ نفر</div>
+            </div>
+
+            <div style="border-radius:20px;padding:16px;background:linear-gradient(160deg,#BE97FF,#7440C9);box-shadow:0 5px 0 #5C2FA8;position:relative;overflow:hidden">
+              <div style="position:absolute;top:-22px;left:-22px;width:92px;height:92px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.17),transparent 70%)"></div>
+              <div style="display:flex;align-items:center;gap:11px">
+                <div style="display:flex">
+                  <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.28);border:2px solid #7440C9;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#FFF">س</div>
+                  <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.22);border:2px solid #7440C9;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#FFF;margin-right:-12px">ن</div>
+                </div>
+                <div style="flex:1"><div style="font-size:10px;color:rgba(255,255,255,.8);font-weight:700">خرجِ مشترکِ این ماه</div><div style="font-size:21px;font-weight:900;color:#FFFFFF;margin-top:2px">۱۴٬۶۰۰٬۰۰۰</div></div>
+              </div>
+              <div style="height:9px;border-radius:999px;background:rgba(255,255,255,.25);margin-top:14px;overflow:hidden;display:flex"><div style="width:58%;height:100%;background:#1B2530"></div><div style="width:42%;height:100%;background:rgba(255,255,255,.5)"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:8px"><div style="font-size:9.5px;color:#FFFFFF;font-weight:800">سعید ۵۸٪</div><div style="font-size:9.5px;color:rgba(255,255,255,.8);font-weight:800">نگار ۴۲٪</div></div>
+            </div>
+
+            <div style="display:flex;gap:5px">
+              <div style="background:#7440C9;color:#FFF;font-size:10px;font-weight:800;padding:6px 11px;border-radius:999px;box-shadow:0 3px 0 #5C2FA8">مشترک</div>
+              <div style="color:#8B9A94;font-size:10px;font-weight:700;padding:6px 9px">خرجِ من</div>
+              <div style="color:#8B9A94;font-size:10px;font-weight:700;padding:6px 9px">تسویه</div>
+            </div>
+
+            <div style="border-radius:20px;padding:14px 16px;background:rgba(61,220,150,.14);border:2px solid rgba(61,220,150,.35);display:flex;align-items:center;gap:11px">
+              <div style="width:36px;height:36px;border-radius:11px;background:#0EA968;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="2.6" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+              <div style="flex:1"><div style="font-size:12px;font-weight:900;color:#0B6E45">حسابتان صاف است</div><div style="font-size:9.5px;color:#6FD1A4;margin-top:2px">آخرین تسویه ۱ مرداد · اختلافِ فعلی ۲٬۳۰۰٬۰۰۰</div></div>
+              <div style="border-radius:999px;padding:7px 12px;background:#0EA968;color:#FFF;font-size:10px;font-weight:900;flex:none">تسویه</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div style="border-radius:18px;padding:12px 14px;background:#1B2530;border:2px solid #2A3640;display:flex;align-items:center;gap:11px">
+                <div style="width:32px;height:32px;border-radius:10px;background:rgba(255,107,107,.12);display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h16"/></svg></div>
+                <div style="flex:1"><div style="font-size:11.5px;font-weight:800">خریدِ خانه</div><div style="display:flex;align-items:center;gap:5px;margin-top:3px"><div style="width:16px;height:16px;border-radius:50%;background:rgba(61,220,150,.14);border:1px solid #0EA968;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#3DDC96">س</div><div style="font-size:9px;color:#8B9A94">سعید · امروز</div></div></div>
+                <div style="font-size:12px;font-weight:900;color:#FF6B6B">۱٫۸M</div>
+              </div>
+              <div style="border-radius:18px;padding:12px 14px;background:#1B2530;border:2px solid #2A3640;display:flex;align-items:center;gap:11px">
+                <div style="width:32px;height:32px;border-radius:10px;background:#F3EAFE;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#BE97FF" stroke-width="2.3" stroke-linecap="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9h14v-9"/></svg></div>
+                <div style="flex:1"><div style="font-size:11.5px;font-weight:800">اجاره</div><div style="display:flex;align-items:center;gap:5px;margin-top:3px"><div style="width:16px;height:16px;border-radius:50%;background:rgba(190,151,255,.18);border:1px solid #BE97FF;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#7440C9">ن</div><div style="font-size:9px;color:#8B9A94">نگار · ۱۰ مرداد</div></div></div>
+                <div style="font-size:12px;font-weight:900;color:#FF6B6B">۴٫۵M</div>
+              </div>
+              <div style="border-radius:18px;padding:12px 14px;background:#202B36;border:1.5px dashed #4A5A54;display:flex;align-items:center;gap:11px">
+                <div style="width:32px;height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A8A84" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11.5V16"/></svg></div>
+                <div style="flex:1;font-size:9.5px;color:#8B9A94;line-height:1.8">هر تراکنش با یک کلید «مشترک است» علامت می‌خورد؛ بقیه فقط در کیفِ خودت می‌ماند و طرفِ دیگر نمی‌بیند.</div>
+              </div>
+            </div>
+
+            <div style="border-radius:18px;padding:13px 14px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:11px">
+              <div style="width:32px;height:32px;border-radius:10px;background:rgba(61,220,150,.14);display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3DDC96" stroke-width="2.3" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5 6-5s6 1.7 6 5"/><path d="M17 8h4M19 6v4"/></svg></div>
+              <div style="flex:1"><div style="font-size:11.5px;font-weight:800">دعوتِ نفرِ سوم</div><div style="font-size:9px;color:#8B9A94;margin-top:2px">با شماره موبایل · تا ۴ نفر</div></div>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c7d2cc" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#8B9A94;line-height:1.9">همان چیدمانِ <b style="font-weight:900">26e</b> با نقشه‌ی تیره: بستر #10181F، سطح #1B2530، خط #2A3640، متن #F3F7F5، سبزِ متن و آیکون #3DDC96، سایه #07724A.</div>
+    </div>
+<div id="17ad" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">17ad</div><div style="font-size:16px;font-weight:700">ثبت / ویرایشِ تراکنش</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#2A3640">
+        <div style="border-radius:32px;background:#10181F;overflow:hidden;height:700px;display:flex;flex-direction:column;position:relative">
+          <div style="padding:16px;display:flex;flex-direction:column;gap:13px;flex:1">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:32px;height:32px;border-radius:10px;background:#1B2530;border:1.5px solid #2A3640;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+              <div style="flex:1;font-size:16px;font-weight:900">خرجِ تازه</div>
+              <div style="width:32px;height:32px;border-radius:10px;background:rgba(255,107,107,.12);display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.3" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></div>
+            </div>
+
+            <div style="display:flex;gap:6px">
+              <div style="flex:1;text-align:center;padding:10px 0;border-radius:999px;background:rgba(255,107,107,.12);border:1.5px solid #FF6B6B;color:#FF6B6B;font-size:11.5px;font-weight:900">خرج</div>
+              <div style="flex:1;text-align:center;padding:10px 0;border-radius:999px;background:#232E38;color:#8B9A94;font-size:11.5px;font-weight:800">درآمد</div>
+              <div style="flex:1;text-align:center;padding:10px 0;border-radius:999px;background:#232E38;color:#8B9A94;font-size:11.5px;font-weight:800">انتقال</div>
+            </div>
+
+            <div style="border-radius:20px;padding:18px 16px;background:#1B2530;border:2px solid #2A3640;text-align:center">
+              <div style="font-size:9.5px;color:#7A8A84;font-weight:700">مبلغ · ریال</div>
+              <div style="font-size:34px;font-weight:900;letter-spacing:-1px;margin-top:4px">۴۵۰٬۰۰۰</div>
+              <div style="font-size:10px;color:#8B9A94;font-weight:700;margin-top:4px">چهارصد و پنجاه هزار ریال</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="font-size:11px;font-weight:800;color:#8B9A94">پیشنهادِ این ساعت</div>
+              <div style="display:flex;gap:7px">
+                <div style="flex:1;border-radius:999px;padding:9px 0;background:rgba(255,107,107,.12);border:1.5px solid #FF6B6B;display:flex;align-items:center;justify-content:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h16"/></svg><div style="font-size:10.5px;font-weight:900;color:#FF6B6B">خوراک</div></div>
+                <div style="flex:1;border-radius:999px;padding:9px 0;background:#1B2530;border:1.5px solid #232E38;display:flex;align-items:center;justify-content:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#55C8FF" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 9l2-4h8l2 4"/></svg><div style="font-size:10.5px;font-weight:800">رفت‌وآمد</div></div>
+                <div style="flex:1;border-radius:999px;padding:9px 0;background:#1B2530;border:1.5px solid #232E38;display:flex;align-items:center;justify-content:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#BE97FF" stroke-width="2.4" stroke-linecap="round"><path d="M6 2h12l2 6-8 14L4 8z"/></svg><div style="font-size:10.5px;font-weight:800">خرید</div></div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px">
+              <div style="flex:1;border-radius:16px;padding:12px 13px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.3" stroke-linecap="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><div style="font-size:11px;font-weight:700">امروز</div></div>
+              <div style="flex:1;border-radius:16px;padding:12px 13px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:8px"><div style="width:16px;height:16px;border-radius:50%;background:rgba(61,220,150,.14);border:1.5px solid #0EA968;flex:none"></div><div style="font-size:11px;font-weight:700">ملی ۸۸۲۱</div></div>
+            </div>
+
+            <div style="border-radius:16px;padding:12px 14px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:9px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7A8A84" stroke-width="2.3" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+              <div style="flex:1;font-size:11px;color:#7A8A84">یادداشت (اختیاری)</div>
+              <div style="width:26px;height:26px;border-radius:8px;background:#232E38;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8B9A94" stroke-width="2.3" stroke-linecap="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+            </div>
+
+            <div style="border-radius:16px;padding:12px 14px;background:#202B36;border:1.5px dashed #4A5A54;display:flex;align-items:center;gap:9px">
+              <div style="width:28px;height:28px;border-radius:9px;background:#FFF1DC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45F00" stroke-width="2.3" stroke-linecap="round"><path d="M20 11a8 8 0 10-3 6.2"/><path d="M20 5v6h-6"/></svg></div>
+              <div style="flex:1"><div style="font-size:11px;font-weight:800">تکرارِ ماهانه</div><div style="font-size:9px;color:#8B9A94;margin-top:1px">هر ماه همین روز خودکار ثبت شود</div></div>
+              <div style="width:38px;height:22px;border-radius:999px;background:#DCE7E1;position:relative;flex:none"><div style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#FFF"></div></div>
+            </div>
+          </div>
+
+          <div style="padding:0 16px 16px;display:flex;gap:8px">
+            <div style="flex:1;border-radius:999px;padding:15px;background:#0EA968;box-shadow:0 4px 0 #07724A;color:#FFFFFF;text-align:center;font-size:13px;font-weight:900">ثبت · ۱۰ سکه</div>
+            <div style="width:56px;border-radius:999px;padding:15px 0;background:#1B2530;border:1.5px solid #DCE7E1;color:#8B9A94;text-align:center;font-size:12px;font-weight:800">+ باز</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#8B9A94;line-height:1.9">همان چیدمانِ <b style="font-weight:900">17a</b> با نقشه‌ی تیره: بستر #10181F، سطح #1B2530، خط #2A3640، متن #F3F7F5، سبزِ متن و آیکون #3DDC96، سایه #07724A.</div>
+    </div>
+<div id="17bd" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#BE97FF;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">17bd</div><div style="font-size:16px;font-weight:700">مدیریتِ دسته‌ها</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#2A3640">
+        <div style="border-radius:32px;background:#10181F;overflow:hidden;height:700px;display:flex;flex-direction:column;position:relative">
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F3F7F5" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+              <div style="flex:1;font-size:17px;font-weight:900">دسته‌ها</div>
+              <div style="border-radius:999px;padding:7px 13px;background:rgba(61,220,150,.14);border:1.5px solid rgba(61,220,150,.35);color:#3DDC96;font-size:10.5px;font-weight:900">+ تازه</div>
+            </div>
+
+            <div style="border-radius:18px;padding:12px 14px;background:#FFF1DC;border:1.5px solid #FFD79A;display:flex;align-items:center;gap:9px">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="#B45F00" style="flex:none"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/></svg>
+              <div style="flex:1;font-size:10px;color:#8B5A00;font-weight:700;line-height:1.8">«قهوه» و «کافه» شبیهِ هم‌اند — ادغام کنم؟</div>
+              <div style="border-radius:999px;padding:6px 11px;background:#FFB44D;color:#FFF;font-size:9.5px;font-weight:900;flex:none">ادغام</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="border-radius:18px;padding:12px 14px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:11px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A5A54" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M4 8h16M4 16h16"/></svg>
+                <div style="width:34px;height:34px;border-radius:11px;background:rgba(255,107,107,.12);display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h16"/></svg></div>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:800">خوراک</div><div style="font-size:9.5px;color:#8B9A94;margin-top:2px">۴۲ تراکنش · ۴٫۵M این ماه</div></div>
+                <div style="display:flex;gap:3px;flex:none">
+                  <div style="width:13px;height:13px;border-radius:50%;background:#FF6B6B;box-shadow:0 0 0 2px #1B2530,0 0 0 3.5px #FF6B6B"></div>
+                  <div style="width:13px;height:13px;border-radius:50%;background:#FFB44D"></div>
+                  <div style="width:13px;height:13px;border-radius:50%;background:#BE97FF"></div>
+                </div>
+              </div>
+              <div style="border-radius:18px;padding:12px 14px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:11px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A5A54" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M4 8h16M4 16h16"/></svg>
+                <div style="width:34px;height:34px;border-radius:11px;background:#EAF1FE;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#55C8FF" stroke-width="2.3" stroke-linecap="round"><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 9l2-4h8l2 4"/></svg></div>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:800">رفت‌وآمد</div><div style="font-size:9.5px;color:#8B9A94;margin-top:2px">۱۸ تراکنش · ۲٫۱M این ماه</div></div>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c7d2cc" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M15 6l-6 6 6 6"/></svg>
+              </div>
+              <div style="border-radius:18px;padding:12px 14px;background:#1B2530;border:2px solid #232E38;display:flex;align-items:center;gap:11px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A5A54" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M4 8h16M4 16h16"/></svg>
+                <div style="width:34px;height:34px;border-radius:11px;background:#F3EAFE;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#BE97FF" stroke-width="2.3" stroke-linecap="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9h14v-9"/></svg></div>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:800">خانه</div><div style="font-size:9.5px;color:#8B9A94;margin-top:2px">۶ تراکنش · ۲٫۶M این ماه</div></div>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c7d2cc" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M15 6l-6 6 6 6"/></svg>
+              </div>
+              <div style="border-radius:18px;padding:12px 14px;background:#202B36;border:2px solid #232E38;display:flex;align-items:center;gap:11px;opacity:.6">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A5A54" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M4 8h16M4 16h16"/></svg>
+                <div style="width:34px;height:34px;border-radius:11px;background:#232E38;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A8A84" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="9"/></svg></div>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:800">سرگرمی</div><div style="font-size:9.5px;color:#8B9A94;margin-top:2px">۰ تراکنش · بی‌استفاده</div></div>
+                <div style="background:#232E38;color:#8B9A94;font-size:8.5px;font-weight:900;padding:3px 8px;border-radius:999px;flex:none">پنهان</div>
+              </div>
+            </div>
+
+            <div style="border-radius:18px;padding:13px 15px;background:#1B2530;border:2px solid #2A3640;display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:11.5px;font-weight:900">ساختِ دسته‌ی تازه</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <div style="width:32px;height:32px;border-radius:10px;background:rgba(255,107,107,.12);display:flex;align-items:center;justify-content:center;border:1.5px solid #FF6B6B"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h16"/></svg></div>
+                <div style="width:32px;height:32px;border-radius:10px;background:#EAF1FE;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#55C8FF" stroke-width="2.3" stroke-linecap="round"><rect x="4" y="10" width="16" height="9" rx="1.5"/><path d="M8 10V6h8v4"/></svg></div>
+                <div style="width:32px;height:32px;border-radius:10px;background:#F3EAFE;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#BE97FF" stroke-width="2.3" stroke-linecap="round"><path d="M12 21s-7-4.3-9.5-9C.5 8 3 4 7 4c2 0 4 1.5 5 3.5C13 5.5 15 4 17 4c4 0 6.5 4 4.5 8-2.5 4.7-9.5 9-9.5 9z"/></svg></div>
+                <div style="width:32px;height:32px;border-radius:10px;background:#FFF1DC;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B45F00" stroke-width="2.3" stroke-linecap="round"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/></svg></div>
+                <div style="width:32px;height:32px;border-radius:10px;background:rgba(61,220,150,.14);display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3DDC96" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></div>
+                <div style="width:32px;height:32px;border-radius:10px;background:#232E38;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#8B9A94">···</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#8B9A94;line-height:1.9">همان چیدمانِ <b style="font-weight:900">17b</b> با نقشه‌ی تیره: بستر #10181F، سطح #1B2530، خط #2A3640، متن #F3F7F5، سبزِ متن و آیکون #3DDC96، سایه #07724A.</div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:26px;padding:40px;direction:rtl;color:#16221C;font-family:Vazirmatn,sans-serif;background:#EAF3EE">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:1000px">
+    <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:12px;padding:5px 13px;border-radius:999px">۲۹</div><div style="font-size:13px;font-weight:800;color:#5b6a63">صفحه‌هایی که هیچ طرحی نداشتند</div></div>
+    <div style="font-size:27px;font-weight:900">شانزده فریمِ تازه — تکمیلِ پوشش</div>
+    <div style="font-size:13.5px;color:#5b6a63;line-height:1.9">گزارشِ چک، آمارِ وام، خرید و فروشِ دارایی، نتیجه‌ی محاسبه، تاریخچه‌ی محاسبات، جزئیاتِ حساب‌کتاب و دارایی، گیتِ مجوزها، تقویمِ شمسی، سقفِ وام، دسته‌چک‌ها، جزئیات و یادآورِ چک، سپرده، یادداشت و وامِ بانکی.</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<div id="29f" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">29f</div><div style="font-size:17px;font-weight:700">جزئیاتِ حساب‌کتاب</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#dbe6e0"><div style="border-radius:32px;background:#F5FBFF;overflow:hidden;height:700px;display:flex;flex-direction:column;position:relative"><div style="padding:15px 16px 11px;display:flex;align-items:center;gap:10px;background:#FFFFFF;border-bottom:2px solid #EEF3F0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8b9a93" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><div style="font-size:16px;font-weight:900;flex:1">حسابِ ملی</div><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5b6a63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></div><div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:11px;overflow:hidden"><div style="border-radius:22px;padding:17px;background:#FFFFFF;border:2px solid #E3ECE7;display:flex;flex-direction:column;gap:6px"><div style="display:flex;align-items:center;gap:9px"><div style="width:32px;height:32px;border-radius:10px;background:#E9F7EF;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#0B8C57">م</div><div style="font-size:10.5px;font-weight:800;color:#8b9a93">ماندهٔ حساب · کارت ۶۰۳۷</div></div><div style="display:flex;align-items:baseline;gap:7px"><div style="font-size:24px;font-weight:900">۲۴٬۸۶۰٬۰۰۰</div><div style="font-size:10.5px;font-weight:800;color:#8b9a93">تومان</div></div><div style="height:1px;background:#EEF3F0;margin:2px 0"></div><div style="display:flex;gap:14px"><div style="flex:1"><div style="font-size:9.5px;font-weight:800;color:#8b9a93">واریزِ مرداد</div><div style="font-size:13px;font-weight:900;color:#0B8C57;margin-top:3px">۱۸٬۰۰۰٬۰۰۰</div></div><div style="width:1px;background:#EEF3F0"></div><div style="flex:1"><div style="font-size:9.5px;font-weight:800;color:#8b9a93">برداشتِ مرداد</div><div style="font-size:13px;font-weight:900;color:#D93838;margin-top:3px">۱۲٬۳۴۰٬۰۰۰</div></div></div></div><div style="display:flex;gap:6px;align-items:center"><div style="font-size:10.5px;font-weight:800;color:#FFFFFF;padding:7px 13px;background:#0EA968;border-radius:999px;box-shadow:0 3px 0 #0B8C57">مرداد</div><div style="font-size:10.5px;font-weight:800;color:#5b6a63;padding:7px 12px;background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px">تیر</div><div style="font-size:10.5px;font-weight:800;color:#5b6a63;padding:7px 12px;background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px">خرداد</div><div style="flex:1"></div><div style="width:32px;height:32px;border-radius:10px;background:#FFFFFF;border:1.5px solid #E3ECE7;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5b6a63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M12 19V5M20 19v-6"/></svg></div></div><div style="font-size:10px;font-weight:900;color:#8b9a93">۲۹ مرداد</div><div style="border-radius:16px;padding:12px 13px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:11px"><div style="width:32px;height:32px;border-radius:10px;background:#FFF5F5;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D93838" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v11H4zM4 11h16"/></svg></div><div style="flex:1"><div style="font-size:12px;font-weight:800">قسطِ خودرو</div><div style="font-size:9.5px;color:#8b9a93;margin-top:2px">پایا · ۱۴:۰۲</div></div><div style="font-size:12px;font-weight:900;color:#D93838;text-align:left;flex:none">۳٬۵۰۰٬۰۰۰-</div></div><div style="border-radius:16px;padding:12px 13px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:11px"><div style="width:32px;height:32px;border-radius:10px;background:#F1F5F2;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5b6a63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></div><div style="flex:1"><div style="font-size:12px;font-weight:800">خریدِ اینترنتی</div><div style="font-size:9.5px;color:#8b9a93;margin-top:2px">شاپرک · ۱۱:۳۰</div></div><div style="font-size:12px;font-weight:900;color:#D93838;text-align:left;flex:none">۸۴۰٬۰۰۰-</div></div><div style="font-size:10px;font-weight:900;color:#8b9a93;margin-top:2px">۲۷ مرداد</div><div style="border-radius:16px;padding:12px 13px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:11px"><div style="width:32px;height:32px;border-radius:10px;background:#E9F7EF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0EA968" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg></div><div style="flex:1"><div style="font-size:12px;font-weight:800">حقوقِ مرداد</div><div style="font-size:9.5px;color:#8b9a93;margin-top:2px">پایا · ۰۸:۱۵</div></div><div style="font-size:12px;font-weight:900;color:#0B8C57;text-align:left;flex:none">۱۸٬۰۰۰٬۰۰۰+</div></div><div style="border-radius:16px;padding:12px 13px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:11px"><div style="width:32px;height:32px;border-radius:10px;background:#F1F5F2;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5b6a63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v11H4zM4 11h16"/></svg></div><div style="flex:1"><div style="font-size:12px;font-weight:800">کارت به کارت</div><div style="font-size:9.5px;color:#8b9a93;margin-top:2px">به مریم · ۱۹:۴۰</div></div><div style="font-size:12px;font-weight:900;color:#D93838;text-align:left;flex:none">۱٬۲۰۰٬۰۰۰-</div></div></div></div></div>
+      <div style="font-size:11px;color:#5b6a63;line-height:1.9">تراکنش‌ها گروهِ روزانه دارند؛ سرگروه ۱۰px/۹۰۰ رنگِ #8b9a93. ردیف ۱۶px، آیکونِ ۳۲ در قابِ ۱۰px.</div>
+    </div>
+<div id="29o" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">29o</div><div style="font-size:17px;font-weight:700">یادداشت</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#dbe6e0"><div style="border-radius:32px;background:#F5FBFF;overflow:hidden;height:700px;display:flex;flex-direction:column;position:relative"><div style="padding:15px 16px 11px;display:flex;align-items:center;gap:10px;background:#FFFFFF;border-bottom:2px solid #EEF3F0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8b9a93" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><div style="font-size:16px;font-weight:900;flex:1">یادداشت‌ها</div><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0EA968" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></div><div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:11px;overflow:hidden"><div style="border-radius:16px;padding:12px 14px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:9px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b9a93" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8 10h8M8 14h5"/></svg><div style="flex:1;font-size:11.5px;font-weight:800;color:#8b9a93">جست‌وجو در یادداشت‌ها</div></div><div style="display:flex;gap:6px"><div style="font-size:10.5px;font-weight:800;color:#FFFFFF;padding:7px 13px;background:#0EA968;border-radius:999px;box-shadow:0 3px 0 #0B8C57">همه · ۸</div><div style="font-size:10.5px;font-weight:800;color:#5b6a63;padding:7px 12px;background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px">چسبیده</div><div style="font-size:10.5px;font-weight:800;color:#5b6a63;padding:7px 12px;background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px">وصل به تراکنش</div><div style="font-size:10.5px;font-weight:800;color:#5b6a63;padding:7px 12px;background:#FFFFFF;border:1.5px solid #E3ECE7;border-radius:999px">عکس‌دار</div></div><div style="border-radius:18px;padding:15px;background:#FFFFFF;border:2px solid #E3ECE7;display:flex;flex-direction:column;gap:9px"><div style="display:flex;align-items:center;gap:8px"><div style="width:6px;height:6px;border-radius:50%;background:#FF9600"></div><div style="flex:1;font-size:12.5px;font-weight:900">قرضِ مریم</div><div style="font-size:9.5px;font-weight:800;color:#8b9a93">امروز</div></div><div style="font-size:11px;color:#5b6a63;line-height:1.9">۲ میلیون قرض دادم، گفت آخرِ شهریور می‌دهد. یادم باشد یادآور بگذارم.</div><div style="display:flex;gap:6px"><div style="font-size:9.5px;font-weight:800;color:#0B8C57;background:#E9F7EF;padding:5px 9px;border-radius:999px">وصل به: کارت به کارت ۲٬۰۰۰٬۰۰۰</div></div><div style="display:flex;gap:7px"><div style="width:56px;height:56px;border-radius:12px;background:#EEF3F0;border:1.5px solid #E3ECE7;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa8a1" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="10" r="1.5"/><path d="M4 17.5l5-4 3.5 2.8 3-2.2 4.5 3.4"/></svg></div><div style="width:56px;height:56px;border-radius:12px;background:#EEF3F0;border:1.5px solid #E3ECE7;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa8a1" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="10" r="1.5"/><path d="M4 17.5l5-4 3.5 2.8 3-2.2 4.5 3.4"/></svg></div><div style="width:56px;height:56px;border-radius:12px;background:#FFFFFF;border:1.5px dashed #C9D6CF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9aa8a1" stroke-width="2.4" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg><div style="font-size:8px;font-weight:800;color:#9aa8a1">عکس</div></div></div></div><div style="border-radius:18px;padding:15px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;flex-direction:column;gap:11px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;font-size:12.5px;font-weight:900">لیستِ خریدِ خانه</div><div style="font-size:9.5px;font-weight:800;color:#8b9a93">دیروز</div></div><div style="display:flex;flex-direction:column;gap:7px"><div style="display:flex;align-items:center;gap:9px"><div style="width:18px;height:18px;border-radius:6px;background:#0EA968;border:none;display:flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div><div style="font-size:11.5px;font-weight:800;color:#8b9a93;text-decoration:line-through">برنج ۱۰ کیلو</div></div><div style="display:flex;align-items:center;gap:9px"><div style="width:18px;height:18px;border-radius:6px;background:#0EA968;border:none;display:flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div><div style="font-size:11.5px;font-weight:800;color:#8b9a93;text-decoration:line-through">روغن</div></div><div style="display:flex;align-items:center;gap:9px"><div style="width:18px;height:18px;border-radius:6px;background:#FFFFFF;border:2px solid #E3ECE7;display:flex;align-items:center;justify-content:center;flex:none"></div><div style="font-size:11.5px;font-weight:800;color:#16221C;">چای</div></div></div></div><div style="border-radius:18px;padding:15px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;flex-direction:column;gap:9px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;font-size:12.5px;font-weight:900">رمزِ کارتِ هدیه</div><div style="font-size:9.5px;font-weight:800;color:#8b9a93">۲۴ مرداد</div></div><div style="font-size:11px;color:#5b6a63;line-height:1.9">پشتِ کارت نوشته شده، عکس گرفتم.</div></div><div style="font-size:10.5px;color:#8b9a93;line-height:1.9;padding:0 2px">یادداشت می‌تواند به یک تراکنش یا چک وصل شود؛ آن‌وقت در صفحه‌ی آن هم دیده می‌شود.</div></div></div></div>
+      <div style="font-size:11px;color:#5b6a63;line-height:1.9">یادداشتِ چسبیده نقطه‌ی ۶px نارنجی دارد. یادداشتِ چک‌لیستی همان کارت است با ردیف‌های ۱۸px؛ تیک‌خورده خط روی متن.</div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:26px;padding:10px 40px 40px;direction:rtl;color:#16221C;font-family:Vazirmatn,sans-serif;background:#EEF4F0">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:1000px">
+    <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:12px;padding:5px 13px;border-radius:999px">نوبتِ ۲۶ — بازطراحیِ صفحاتِ باقی‌مانده</div></div>
+    <div style="font-size:27px;font-weight:900">گزارش، دارایی، چک، پرداختِ تکراری، حسابِ خانواده</div>
+    <div style="font-size:14px;color:#5b6a63;line-height:1.9">پنج صفحه‌ی آخر با همان دفترِ توکن‌ها، و هرکدام با یک ابتکارِ مشخص. کارت‌های هوشمندِ نوبتِ ۲۳ در جای واقعیِ خودشان نشسته‌اند.</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<div id="26d" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#1CB0F6;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">26d</div><div style="font-size:16px;font-weight:700">پرداختِ تکراری</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#dbe6e0">
+        <div style="border-radius:32px;background:#F5FBFF;overflow:hidden;height:900px;display:flex;flex-direction:column">
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16221C" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+              <div style="flex:1"><div style="font-size:17px;font-weight:900">پرداختِ تکراری</div><div style="font-size:10px;color:#5b6a63;font-weight:700;margin-top:2px">۷ مورد · ماهی ۶٬۲۰۰٬۰۰۰</div></div>
+              <div style="width:32px;height:32px;border-radius:10px;background:#E9F7EF;border:1.5px solid #9FE0BC;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0EA968" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            </div>
+
+            <div style="border-radius:20px;padding:16px;background:#FFFFFF;border:2px solid #E3ECE7">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:12px;font-weight:900">شهریور ۱۴۰۵</div><div style="display:flex;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c7d2cc" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5b6a63" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></div></div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:7px">
+                <div style="text-align:center;font-size:8px;color:#9aa8a1;font-weight:700">ش</div><div style="text-align:center;font-size:8px;color:#9aa8a1;font-weight:700">ی</div><div style="text-align:center;font-size:8px;color:#9aa8a1;font-weight:700">د</div><div style="text-align:center;font-size:8px;color:#9aa8a1;font-weight:700">س</div><div style="text-align:center;font-size:8px;color:#9aa8a1;font-weight:700">چ</div><div style="text-align:center;font-size:8px;color:#9aa8a1;font-weight:700">پ</div><div style="text-align:center;font-size:8px;color:#9aa8a1;font-weight:700">ج</div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۱</div>
+                <div style="height:32px;border-radius:10px;background:#FF9600;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:9.5px;color:#FFF;font-weight:900">۲</div><div style="width:3px;height:3px;border-radius:50%;background:#FFF;margin-top:1px"></div></div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۳</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۴</div>
+                <div style="height:32px;border-radius:10px;background:#FFE3B8;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#B45F00;font-weight:900">۵</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۶</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۷</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۸</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۹</div>
+                <div style="height:32px;border-radius:10px;background:#FF4B4B;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:9.5px;color:#FFF;font-weight:900">۱۰</div><div style="width:3px;height:3px;border-radius:50%;background:#FFF;margin-top:1px"></div></div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۱۱</div>
+                <div style="height:32px;border-radius:10px;background:#FFE3B8;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#B45F00;font-weight:900">۱۲</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۱۳</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۱۴</div>
+                <div style="height:32px;border-radius:10px;background:#FFFFFF;border:2px solid #0EA968;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#0B8C57;font-weight:900">۱۵</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۱۶</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۱۷</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۱۸</div>
+                <div style="height:32px;border-radius:10px;background:#FF9600;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:9.5px;color:#FFF;font-weight:900">۱۹</div><div style="width:3px;height:3px;border-radius:50%;background:#FFF;margin-top:1px"></div></div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۲۰</div>
+                <div style="height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#9aa8a1;font-weight:700">۲۱</div>
+              </div>
+              <div style="display:flex;gap:11px;margin-top:12px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:3px;background:#FFE3B8"></div><div style="font-size:8.5px;color:#5b6a63;font-weight:700">زیرِ ۱M</div></div>
+                <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:3px;background:#FF9600"></div><div style="font-size:8.5px;color:#5b6a63;font-weight:700">۱ تا ۴M</div></div>
+                <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:3px;background:#FF4B4B"></div><div style="font-size:8.5px;color:#5b6a63;font-weight:700">بالای ۴M</div></div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div style="border-radius:18px;padding:13px 14px;background:#FFFFFF;border:2px solid #E3ECE7;display:flex;align-items:center;gap:11px">
+                <div style="width:36px;height:36px;border-radius:11px;background:#FFECEC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4B4B" stroke-width="2.3" stroke-linecap="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9h14v-9"/></svg></div>
+                <div style="flex:1"><div style="font-size:12px;font-weight:900">اجاره</div><div style="font-size:9px;color:#5b6a63;margin-top:2px">هر ماه، روزِ ۱۰</div></div>
+                <div style="text-align:left"><div style="font-size:12.5px;font-weight:900">۴٫۵M</div><div style="font-size:8.5px;color:#D93838;font-weight:700;margin-top:1px">ثابت</div></div>
+              </div>
+              <div style="border-radius:18px;padding:13px 14px;background:#FFFFFF;border:2px solid #E3ECE7;display:flex;align-items:center;gap:11px">
+                <div style="width:36px;height:36px;border-radius:11px;background:#FFF1DC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B45F00" stroke-width="2.3" stroke-linecap="round"><rect x="3" y="6" width="18" height="14" rx="2.5"/><path d="M3 10h18"/></svg></div>
+                <div style="flex:1"><div style="font-size:12px;font-weight:900">قسطِ وامِ خودرو</div><div style="font-size:9px;color:#5b6a63;margin-top:2px">هر ماه، روزِ ۲ · ۱۲ از ۳۶</div></div>
+                <div style="text-align:left"><div style="font-size:12.5px;font-weight:900">۳٫۵M</div><div style="font-size:8.5px;color:#B45F00;font-weight:700;margin-top:1px">۲۴ قسط مانده</div></div>
+              </div>
+              <div style="border-radius:18px;padding:13px 14px;background:#FFFFFF;border:2px solid #E3ECE7;display:flex;align-items:center;gap:11px">
+                <div style="width:36px;height:36px;border-radius:11px;background:#EAF1FE;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1CB0F6" stroke-width="2.3" stroke-linecap="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></div>
+                <div style="flex:1"><div style="font-size:12px;font-weight:900">قبضِ برق</div><div style="font-size:9px;color:#5b6a63;margin-top:2px">هر دو ماه، حدودِ روزِ ۵</div></div>
+                <div style="text-align:left"><div style="font-size:12.5px;font-weight:900">۸۴۰K</div><div style="font-size:8.5px;color:#5b6a63;font-weight:700;margin-top:1px">متغیر</div></div>
+              </div>
+              <div style="border-radius:18px;padding:13px 14px;background:#FFF1DC;border:2px solid #FFD79A;display:flex;align-items:center;gap:11px">
+                <div style="width:36px;height:36px;border-radius:11px;background:#FFE3B8;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B45F00" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11.5V16"/></svg></div>
+                <div style="flex:1"><div style="font-size:11.5px;font-weight:900;color:#8B5A00">سرویسِ پخشِ ویدیو</div><div style="font-size:9px;color:#8B6F3D;margin-top:2px">۸ ماه پیوسته · استفاده نکردی؟</div></div>
+                <div style="text-align:left"><div style="font-size:12px;font-weight:900;color:#8B5A00">۹۹K</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#5b6a63;line-height:1.9">تقویمِ بالا شدتِ رنگ بر پایه‌ی مبلغِ آن روز دارد و نقطه‌ی سفیدِ ریز یعنی «چند مورد». فهرست پایین ثابت را از متغیر جدا می‌کند و اشتراکِ مشکوک کارتِ نارنجی می‌گیرد.</div>
+    </div>
+<div id="26e" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#A56EFF;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">26e</div><div style="font-size:16px;font-weight:700">حسابِ مشترکِ خانواده</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#dbe6e0">
+        <div style="border-radius:32px;background:#F5FBFF;overflow:hidden;height:900px;display:flex;flex-direction:column">
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16221C" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+              <div style="flex:1;font-size:17px;font-weight:900">کیفِ مشترک</div>
+              <div style="background:#F3EAFE;color:#7440C9;font-size:9px;font-weight:900;padding:4px 9px;border-radius:999px">۲ نفر</div>
+            </div>
+
+            <div style="border-radius:20px;padding:16px;background:linear-gradient(160deg,#A56EFF,#7440C9);box-shadow:0 5px 0 #5C2FA8;position:relative;overflow:hidden">
+              <div style="position:absolute;top:-22px;left:-22px;width:92px;height:92px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.17),transparent 70%)"></div>
+              <div style="display:flex;align-items:center;gap:11px">
+                <div style="display:flex">
+                  <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.28);border:2px solid #7440C9;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#FFF">س</div>
+                  <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.22);border:2px solid #7440C9;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#FFF;margin-right:-12px">ن</div>
+                </div>
+                <div style="flex:1"><div style="font-size:10px;color:rgba(255,255,255,.8);font-weight:700">خرجِ مشترکِ این ماه</div><div style="font-size:21px;font-weight:900;color:#FFFFFF;margin-top:2px">۱۴٬۶۰۰٬۰۰۰</div></div>
+              </div>
+              <div style="height:9px;border-radius:999px;background:rgba(255,255,255,.25);margin-top:14px;overflow:hidden;display:flex"><div style="width:58%;height:100%;background:#FFFFFF"></div><div style="width:42%;height:100%;background:rgba(255,255,255,.5)"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:8px"><div style="font-size:9.5px;color:#FFFFFF;font-weight:800">سعید ۵۸٪</div><div style="font-size:9.5px;color:rgba(255,255,255,.8);font-weight:800">نگار ۴۲٪</div></div>
+            </div>
+
+            <div style="display:flex;gap:5px">
+              <div style="background:#7440C9;color:#FFF;font-size:10px;font-weight:800;padding:6px 11px;border-radius:999px;box-shadow:0 3px 0 #5C2FA8">مشترک</div>
+              <div style="color:#5b6a63;font-size:10px;font-weight:700;padding:6px 9px">خرجِ من</div>
+              <div style="color:#5b6a63;font-size:10px;font-weight:700;padding:6px 9px">تسویه</div>
+            </div>
+
+            <div style="border-radius:20px;padding:14px 16px;background:#E9F7EF;border:2px solid #9FE0BC;display:flex;align-items:center;gap:11px">
+              <div style="width:36px;height:36px;border-radius:11px;background:#0EA968;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="2.6" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+              <div style="flex:1"><div style="font-size:12px;font-weight:900;color:#0B6E45">حسابتان صاف است</div><div style="font-size:9.5px;color:#3F8A66;margin-top:2px">آخرین تسویه ۱ مرداد · اختلافِ فعلی ۲٬۳۰۰٬۰۰۰</div></div>
+              <div style="border-radius:999px;padding:7px 12px;background:#0EA968;color:#FFF;font-size:10px;font-weight:900;flex:none">تسویه</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div style="border-radius:18px;padding:12px 14px;background:#FFFFFF;border:2px solid #E3ECE7;display:flex;align-items:center;gap:11px">
+                <div style="width:32px;height:32px;border-radius:10px;background:#FFECEC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF4B4B" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h16"/></svg></div>
+                <div style="flex:1"><div style="font-size:11.5px;font-weight:800">خریدِ خانه</div><div style="display:flex;align-items:center;gap:5px;margin-top:3px"><div style="width:16px;height:16px;border-radius:50%;background:#E9F7EF;border:1px solid #0EA968;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#0B8C57">س</div><div style="font-size:9px;color:#5b6a63">سعید · امروز</div></div></div>
+                <div style="font-size:12px;font-weight:900;color:#D93838">۱٫۸M</div>
+              </div>
+              <div style="border-radius:18px;padding:12px 14px;background:#FFFFFF;border:2px solid #E3ECE7;display:flex;align-items:center;gap:11px">
+                <div style="width:32px;height:32px;border-radius:10px;background:#F3EAFE;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A56EFF" stroke-width="2.3" stroke-linecap="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9h14v-9"/></svg></div>
+                <div style="flex:1"><div style="font-size:11.5px;font-weight:800">اجاره</div><div style="display:flex;align-items:center;gap:5px;margin-top:3px"><div style="width:16px;height:16px;border-radius:50%;background:#F3EAFE;border:1px solid #A56EFF;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#7440C9">ن</div><div style="font-size:9px;color:#5b6a63">نگار · ۱۰ مرداد</div></div></div>
+                <div style="font-size:12px;font-weight:900;color:#D93838">۴٫۵M</div>
+              </div>
+              <div style="border-radius:18px;padding:12px 14px;background:#F7FAF8;border:1.5px dashed #C9D6CF;display:flex;align-items:center;gap:11px">
+                <div style="width:32px;height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9aa8a1" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11.5V16"/></svg></div>
+                <div style="flex:1;font-size:9.5px;color:#5b6a63;line-height:1.8">هر تراکنش با یک کلید «مشترک است» علامت می‌خورد؛ بقیه فقط در کیفِ خودت می‌ماند و طرفِ دیگر نمی‌بیند.</div>
+              </div>
+            </div>
+
+            <div style="border-radius:18px;padding:13px 14px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:11px">
+              <div style="width:32px;height:32px;border-radius:10px;background:#E9F7EF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0EA968" stroke-width="2.3" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5 6-5s6 1.7 6 5"/><path d="M17 8h4M19 6v4"/></svg></div>
+              <div style="flex:1"><div style="font-size:11.5px;font-weight:800">دعوتِ نفرِ سوم</div><div style="font-size:9px;color:#5b6a63;margin-top:2px">با شماره موبایل · تا ۴ نفر</div></div>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c7d2cc" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#5b6a63;line-height:1.9">اصلِ حریمِ خصوصی: فقط تراکنشِ علامت‌خورده به مشترک می‌رود، بقیه خصوصی می‌ماند. نوارِ دورنگ سهمِ هر نفر را نشان می‌دهد و «اختلافِ فعلی» عددِ تسویه است.</div>
+    </div>
+  </div>
+
+
+  <div style="border-radius:24px;padding:20px;background:#FFFFFF;border:2px solid #E3ECE7;max-width:1450px;display:flex;flex-direction:column;gap:12px">
+    <div style="font-size:14px;font-weight:900">مشخصاتِ این پنج صفحه</div>
+    <div style="font-size:11.5px;color:#5b6a63;line-height:2"><b style="color:#16221C">گزارش:</b> سه بازه (ماه/فصل/سال). نمودارِ هفت‌ستونه ماه‌های گذشته است، ستونِ آخر سفیدِ توپُر. برچسبِ قدرتِ خرید همیشه کنارِ عددِ ماه. دو کارتِ کشفِ خودکار فقط وقتی چیزی پیدا شده نمایش داده می‌شوند.</div>
+    <div style="font-size:11.5px;color:#5b6a63;line-height:2"><b style="color:#16221C">دارایی:</b> <span style="direction:ltr;display:inline-block">Account(id, bankId, last4?, type: BANK|CASH, balance, balanceUpdatedAt, source)</span> و <span style="direction:ltr;display:inline-block">Holding(type: GOLD|FX|CRYPTO, amount, unit, buyRate, buyDate)</span>. داراییِ کل = مجموعِ حساب‌ها + ارزشِ روزِ دارایی‌ها. برداشتِ خودپرداز از پیامک به <span style="direction:ltr;display:inline-block">type=CASH</span> منتقل می‌شود، نه به خرج.</div>
+    <div style="font-size:11.5px;color:#5b6a63;line-height:2"><b style="color:#16221C">چک:</b> <span style="direction:ltr;display:inline-block">Cheque(id, serial, direction: IN|OUT, amount, dueDate, bankId, counterpartyId?, status: OPEN|PASSED|BOUNCED)</span>. هشدارِ موجودی از مقایسه‌ی مبلغِ چک با ماندهٔ همان بانک. امتیازِ ریسک = <span style="direction:ltr;display:inline-block">passed / totalClosed</span> برای همان طرفِ حساب، کمینه سه چکِ بسته.</div>
+    <div style="font-size:11.5px;color:#5b6a63;line-height:2"><b style="color:#16221C">پرداختِ تکراری (از قبل در برنامه هست — فقط ظاهر عوض می‌شود):</b> <span style="direction:ltr;display:inline-block">RecurringPayment(id, title, amount?, categoryId, cadence: MONTHLY|BIMONTHLY|YEARLY, dayOfMonth, isFixed, autoDetected)</span>. موردِ خودکارکشف‌شده با <span style="direction:ltr;display:inline-block">autoDetected=true</span> می‌آید و کاربر تایید یا رد می‌کند. رنگِ خانه‌های تقویم سه‌پله بر پایه‌ی مبلغِ همان روز.</div>
+    <div style="font-size:11.5px;color:#5b6a63;line-height:2"><b style="color:#16221C">کیفِ مشترک:</b> <span style="direction:ltr;display:inline-block">SharedWallet(id, memberIds, createdAt)</span> + <span style="direction:ltr;display:inline-block">Transaction.sharedWalletId?</span>. فقط تراکنشِ علامت‌خورده همگام می‌شود؛ بقیه هرگز به دستگاهِ عضوِ دیگر نمی‌رود. اختلاف = <span style="direction:ltr;display:inline-block">|سهمِ عادلانه − پرداختِ واقعیِ هر نفر|</span>. تسویه یک انتقالِ ثبت‌شده بینِ دو عضو است. سقف ۴ عضو.</div>
+    <div style="border-radius:14px;padding:12px 14px;background:#F7FAF8;border:1.5px solid #E3ECE7;font-size:11.5px;color:#5b6a63;line-height:1.9">همه‌ی حالت‌های خالیِ این پنج صفحه در کارت‌های ۲۱a تا ۲۱g هست. هیچ صفحه‌ای بدونِ حالتِ خالیِ طراحی‌شده پیاده نشود.</div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:26px;padding:10px 40px 40px;direction:rtl;color:#16221C;font-family:Vazirmatn,sans-serif;background:#EAF2F7">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:1000px">
+    <div style="display:flex;align-items:center;gap:10px"><div style="background:#1381B8;color:#FFFFFF;font-weight:900;font-size:12px;padding:5px 13px;border-radius:999px">نوبتِ ۲۳ — لایه‌ی هوشمند</div></div>
+    <div style="font-size:27px;font-weight:900">چیزهایی که برنامه به تو می‌گوید، نه تو به برنامه</div>
+    <div style="font-size:14px;color:#5b6a63;line-height:1.9">دوازده کارتِ تحلیلی که همه از دیتای موجود ساخته می‌شوند و هیچ ورودیِ تازه‌ای از کاربر نمی‌خواهند (جز درآمدِ ماهانه که یک‌بار پرسیده می‌شود). هر کارت جای مشخصی در برنامه دارد.</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<div id="23h" style="display:flex;flex-direction:column;gap:11px;width:340px">
+      <div style="display:flex;align-items:center;gap:9px"><div style="background:#7440C9;color:#FFFFFF;font-weight:900;font-size:12px;padding:4px 11px;border-radius:999px">23h</div><div style="font-size:14px;font-weight:700">تصمیمِ ۷۲ ساعته</div></div>
+      <div style="border-radius:22px;padding:16px;background:#FFFFFF;border:2px solid #E3ECE7;width:340px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:12.5px;font-weight:900">لیستِ انتظار</div>
+          <div style="background:#E9F7EF;color:#0B8C57;font-size:9px;font-weight:900;padding:3px 9px;border-radius:999px">۱۴ بار نه گفتی</div>
+        </div>
+        <div style="border-radius:16px;padding:13px;background:#F8F4FF;border:1.5px solid #DCC9FA;display:flex;align-items:center;gap:11px">
+          <div style="position:relative;width:44px;height:44px;flex:none">
+            <svg width="44" height="44" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="#E7DBFB" stroke-width="5"/><circle cx="20" cy="20" r="16" fill="none" stroke="#A56EFF" stroke-width="5" stroke-linecap="round" stroke-dasharray="84 100.5" transform="rotate(-90 20 20)"/></svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#7440C9">۹ﺳ</div>
+          </div>
+          <div style="flex:1"><div style="font-size:12px;font-weight:900">هدفونِ بی‌سیم</div><div style="font-size:10px;color:#7440C9;font-weight:700;margin-top:2px">۸٬۹۰۰٬۰۰۰ · ۹ ساعت مانده</div></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;border-radius:999px;padding:11px;background:#0EA968;box-shadow:0 3px 0 #0B8C57;color:#FFFFFF;text-align:center;font-size:11px;font-weight:900">هنوز می‌خواهم</div>
+          <div style="flex:1;border-radius:999px;padding:11px;background:#FFFFFF;border:1.5px solid #DCE7E1;color:#5b6a63;text-align:center;font-size:11px;font-weight:800">بی‌خیال</div>
+        </div>
+        <div style="border-radius:14px;padding:11px 13px;background:#E9F7EF;border:1px solid #9FE0BC;display:flex;align-items:center;gap:9px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0EA968" stroke-width="2.6" stroke-linecap="round" style="flex:none"><path d="M5 13l4 4L19 7"/></svg>
+          <div style="font-size:10px;color:#3F8A66;font-weight:800;line-height:1.7">با «بی‌خیال»های قبلی ۹٬۲۰۰٬۰۰۰ ریال نگه داشتی</div>
+        </div>
+      </div>
+      <div style="font-size:10.5px;color:#5b6a63;line-height:1.8">حلقه‌ی بنفش زمانِ باقی‌مانده را نشان می‌دهد. عددِ «نگه داشتی» جمعِ همه‌ی ردشده‌هاست — پاداشِ نخریدن، که هیچ برنامه‌ای نمی‌دهد.</div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:26px;padding:10px 40px 40px;direction:rtl;color:#16221C;font-family:Vazirmatn,sans-serif;background:#EDF3EF">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:1000px">
+    <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:12px;padding:5px 13px;border-radius:999px">نوبتِ ۱۷ — صفحاتِ کوچکِ باقی‌مانده</div></div>
+    <div style="font-size:27px;font-weight:900">شش صفحه‌ای که هیچ‌وقت طراحی نمی‌شوند</div>
+    <div style="font-size:14px;color:#5b6a63;line-height:1.9">ویرایشِ تراکنش، مدیریتِ دسته‌ها، جستجو، پشتیبان‌گیری، امنیت، و درباره. اینها معمولاً فرم‌های خشکِ پیش‌فرض می‌مانند؛ اینجا هرکدام یک ابتکارِ کوچک دارند که کارِ واقعی را سریع‌تر می‌کند.</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+
+    <div id="17a" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#0EA968;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">17a</div><div style="font-size:16px;font-weight:700">ثبت / ویرایشِ تراکنش</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#dbe6e0">
+        <div style="border-radius:32px;background:#F5FBFF;overflow:hidden;height:700px;display:flex;flex-direction:column;position:relative">
+          <div style="padding:16px;display:flex;flex-direction:column;gap:13px;flex:1">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:32px;height:32px;border-radius:10px;background:#FFFFFF;border:1.5px solid #E3ECE7;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5b6a63" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+              <div style="flex:1;font-size:16px;font-weight:900">خرجِ تازه</div>
+              <div style="width:32px;height:32px;border-radius:10px;background:#FFECEC;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF4B4B" stroke-width="2.3" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></div>
+            </div>
+
+            <div style="display:flex;gap:6px">
+              <div style="flex:1;text-align:center;padding:10px 0;border-radius:999px;background:#FFECEC;border:1.5px solid #FF4B4B;color:#D93838;font-size:11.5px;font-weight:900">خرج</div>
+              <div style="flex:1;text-align:center;padding:10px 0;border-radius:999px;background:#F5F8F6;color:#5b6a63;font-size:11.5px;font-weight:800">درآمد</div>
+              <div style="flex:1;text-align:center;padding:10px 0;border-radius:999px;background:#F5F8F6;color:#5b6a63;font-size:11.5px;font-weight:800">انتقال</div>
+            </div>
+
+            <div style="border-radius:20px;padding:18px 16px;background:#FFFFFF;border:2px solid #E3ECE7;text-align:center">
+              <div style="font-size:9.5px;color:#9aa8a1;font-weight:700">مبلغ · ریال</div>
+              <div style="font-size:34px;font-weight:900;letter-spacing:-1px;margin-top:4px">۴۵۰٬۰۰۰</div>
+              <div style="font-size:10px;color:#5b6a63;font-weight:700;margin-top:4px">چهارصد و پنجاه هزار ریال</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="font-size:11px;font-weight:800;color:#5b6a63">پیشنهادِ این ساعت</div>
+              <div style="display:flex;gap:7px">
+                <div style="flex:1;border-radius:999px;padding:9px 0;background:#FFECEC;border:1.5px solid #FF4B4B;display:flex;align-items:center;justify-content:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D93838" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h16"/></svg><div style="font-size:10.5px;font-weight:900;color:#D93838">خوراک</div></div>
+                <div style="flex:1;border-radius:999px;padding:9px 0;background:#FFFFFF;border:1.5px solid #EEF3F0;display:flex;align-items:center;justify-content:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1CB0F6" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 9l2-4h8l2 4"/></svg><div style="font-size:10.5px;font-weight:800">رفت‌وآمد</div></div>
+                <div style="flex:1;border-radius:999px;padding:9px 0;background:#FFFFFF;border:1.5px solid #EEF3F0;display:flex;align-items:center;justify-content:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A56EFF" stroke-width="2.4" stroke-linecap="round"><path d="M6 2h12l2 6-8 14L4 8z"/></svg><div style="font-size:10.5px;font-weight:800">خرید</div></div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px">
+              <div style="flex:1;border-radius:16px;padding:12px 13px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5b6a63" stroke-width="2.3" stroke-linecap="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><div style="font-size:11px;font-weight:700">امروز</div></div>
+              <div style="flex:1;border-radius:16px;padding:12px 13px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:8px"><div style="width:16px;height:16px;border-radius:50%;background:#E9F7EF;border:1.5px solid #0EA968;flex:none"></div><div style="font-size:11px;font-weight:700">ملی ۸۸۲۱</div></div>
+            </div>
+
+            <div style="border-radius:16px;padding:12px 14px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:9px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9aa8a1" stroke-width="2.3" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+              <div style="flex:1;font-size:11px;color:#9aa8a1">یادداشت (اختیاری)</div>
+              <div style="width:26px;height:26px;border-radius:8px;background:#F5F8F6;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5b6a63" stroke-width="2.3" stroke-linecap="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+            </div>
+
+            <div style="border-radius:16px;padding:12px 14px;background:#F7FAF8;border:1.5px dashed #C9D6CF;display:flex;align-items:center;gap:9px">
+              <div style="width:28px;height:28px;border-radius:9px;background:#FFF1DC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45F00" stroke-width="2.3" stroke-linecap="round"><path d="M20 11a8 8 0 10-3 6.2"/><path d="M20 5v6h-6"/></svg></div>
+              <div style="flex:1"><div style="font-size:11px;font-weight:800">تکرارِ ماهانه</div><div style="font-size:9px;color:#5b6a63;margin-top:1px">هر ماه همین روز خودکار ثبت شود</div></div>
+              <div style="width:38px;height:22px;border-radius:999px;background:#DCE7E1;position:relative;flex:none"><div style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#FFF"></div></div>
+            </div>
+          </div>
+
+          <div style="padding:0 16px 16px;display:flex;gap:8px">
+            <div style="flex:1;border-radius:999px;padding:15px;background:#0EA968;box-shadow:0 4px 0 #0B8C57;color:#FFFFFF;text-align:center;font-size:13px;font-weight:900">ثبت · ۱۰ سکه</div>
+            <div style="width:56px;border-radius:999px;padding:15px 0;background:#FFFFFF;border:1.5px solid #DCE7E1;color:#5b6a63;text-align:center;font-size:12px;font-weight:800">+ باز</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#5b6a63;line-height:1.9">دو ابتکار: دکمه‌ی ثبت جایزه‌ی سکه را روی خودش می‌نویسد، و دکمه‌ی «+ باز» ثبت می‌کند و فرم را برای موردِ بعدی باز نگه می‌دارد — برای وقتی چند رسید را پشتِ‌سرهم وارد می‌کنی. مبلغ همیشه با حروف هم زیرش نوشته می‌شود تا صفرِ اضافه گیر بیفتد.</div>
+    </div>
+
+    <div id="17b" style="display:flex;flex-direction:column;gap:12px;width:352px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="background:#A56EFF;color:#FFFFFF;font-weight:900;font-size:13px;padding:4px 12px;border-radius:999px">17b</div><div style="font-size:16px;font-weight:700">مدیریتِ دسته‌ها</div></div>
+      <div style="width:336px;border-radius:40px;padding:9px;background:#dbe6e0">
+        <div style="border-radius:32px;background:#F5FBFF;overflow:hidden;height:700px;display:flex;flex-direction:column;position:relative">
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16221C" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+              <div style="flex:1;font-size:17px;font-weight:900">دسته‌ها</div>
+              <div style="border-radius:999px;padding:7px 13px;background:#E9F7EF;border:1.5px solid #9FE0BC;color:#0B8C57;font-size:10.5px;font-weight:900">+ تازه</div>
+            </div>
+
+            <div style="border-radius:18px;padding:12px 14px;background:#FFF1DC;border:1.5px solid #FFD79A;display:flex;align-items:center;gap:9px">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="#B45F00" style="flex:none"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/></svg>
+              <div style="flex:1;font-size:10px;color:#8B5A00;font-weight:700;line-height:1.8">«قهوه» و «کافه» شبیهِ هم‌اند — ادغام کنم؟</div>
+              <div style="border-radius:999px;padding:6px 11px;background:#FF9600;color:#FFF;font-size:9.5px;font-weight:900;flex:none">ادغام</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="border-radius:18px;padding:12px 14px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:11px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9D6CF" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M4 8h16M4 16h16"/></svg>
+                <div style="width:34px;height:34px;border-radius:11px;background:#FFECEC;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4B4B" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h16"/></svg></div>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:800">خوراک</div><div style="font-size:9.5px;color:#5b6a63;margin-top:2px">۴۲ تراکنش · ۴٫۵M این ماه</div></div>
+                <div style="display:flex;gap:3px;flex:none">
+                  <div style="width:13px;height:13px;border-radius:50%;background:#FF4B4B;box-shadow:0 0 0 2px #FFFFFF,0 0 0 3.5px #FF4B4B"></div>
+                  <div style="width:13px;height:13px;border-radius:50%;background:#FF9600"></div>
+                  <div style="width:13px;height:13px;border-radius:50%;background:#A56EFF"></div>
+                </div>
+              </div>
+              <div style="border-radius:18px;padding:12px 14px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:11px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9D6CF" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M4 8h16M4 16h16"/></svg>
+                <div style="width:34px;height:34px;border-radius:11px;background:#EAF1FE;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1CB0F6" stroke-width="2.3" stroke-linecap="round"><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 9l2-4h8l2 4"/></svg></div>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:800">رفت‌وآمد</div><div style="font-size:9.5px;color:#5b6a63;margin-top:2px">۱۸ تراکنش · ۲٫۱M این ماه</div></div>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c7d2cc" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M15 6l-6 6 6 6"/></svg>
+              </div>
+              <div style="border-radius:18px;padding:12px 14px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:11px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9D6CF" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M4 8h16M4 16h16"/></svg>
+                <div style="width:34px;height:34px;border-radius:11px;background:#F3EAFE;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A56EFF" stroke-width="2.3" stroke-linecap="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9h14v-9"/></svg></div>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:800">خانه</div><div style="font-size:9.5px;color:#5b6a63;margin-top:2px">۶ تراکنش · ۲٫۶M این ماه</div></div>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c7d2cc" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M15 6l-6 6 6 6"/></svg>
+              </div>
+              <div style="border-radius:18px;padding:12px 14px;background:#F7FAF8;border:2px solid #EEF3F0;display:flex;align-items:center;gap:11px;opacity:.6">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9D6CF" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M4 8h16M4 16h16"/></svg>
+                <div style="width:34px;height:34px;border-radius:11px;background:#EEF3F0;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa8a1" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="9"/></svg></div>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:800">سرگرمی</div><div style="font-size:9.5px;color:#5b6a63;margin-top:2px">۰ تراکنش · بی‌استفاده</div></div>
+                <div style="background:#EEF3F0;color:#5b6a63;font-size:8.5px;font-weight:900;padding:3px 8px;border-radius:999px;flex:none">پنهان</div>
+              </div>
+              <div style="border-radius:18px;padding:12px 14px;background:#FFFFFF;border:2px solid #EEF3F0;display:flex;align-items:center;gap:11px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9D6CF" stroke-width="2.4" stroke-linecap="round" style="flex:none"><path d="M4 8h16M4 16h16"/></svg>
+                <div style="width:34px;height:34px;border-radius:11px;background:#EAF1FE;display:flex;align-items:center;justify-content:center;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1CB0F6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 15.5l19-6.2"/><path d="M11 7.2L8 4.6l1.8-.6 4.4 2"/><path d="M2.5 15.5l1.2 2.6 2.6-.9"/><path d="M6.2 11.3L3.4 9.4l1.7-.6 3.8 1.6"/></svg></div>
+                <div style="flex:1"><div style="font-size:12.5px;font-weight:800">سفر</div><div style="font-size:9.5px;color:#5b6a63;margin-top:2px">۳ تراکنش · ۶٫۸M این ماه</div></div>
+                <div style="background:#F1F5F3;color:#5b6a63;font-size:8.5px;font-weight:900;padding:3px 8px;border-radius:999px;flex:none">پیش‌فرض</div>
+              </div>
+            </div>
+
+            <div style="border-radius:18px;padding:13px 15px;background:#FFFFFF;border:2px solid #E3ECE7;display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:11.5px;font-weight:900">ساختِ دسته‌ی تازه</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <div style="width:32px;height:32px;border-radius:10px;background:#FFECEC;display:flex;align-items:center;justify-content:center;border:1.5px solid #FF4B4B"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF4B4B" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h16"/></svg></div>
+                <div style="width:32px;height:32px;border-radius:10px;background:#EAF1FE;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1CB0F6" stroke-width="2.3" stroke-linecap="round"><rect x="4" y="10" width="16" height="9" rx="1.5"/><path d="M8 10V6h8v4"/></svg></div>
+                <div style="width:32px;height:32px;border-radius:10px;background:#F3EAFE;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A56EFF" stroke-width="2.3" stroke-linecap="round"><path d="M12 21s-7-4.3-9.5-9C.5 8 3 4 7 4c2 0 4 1.5 5 3.5C13 5.5 15 4 17 4c4 0 6.5 4 4.5 8-2.5 4.7-9.5 9-9.5 9z"/></svg></div>
+                <div style="width:32px;height:32px;border-radius:10px;background:#FFF1DC;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B45F00" stroke-width="2.3" stroke-linecap="round"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/></svg></div>
+                <div style="width:32px;height:32px;border-radius:10px;background:#E9F7EF;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0EA968" stroke-width="2.3" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></div>
+                <div style="width:32px;height:32px;border-radius:10px;background:#F5F8F6;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#5b6a63">···</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#5b6a63;line-height:1.9">سه ابتکار: کارتِ نارنجیِ بالا دسته‌های شبیهِ هم را پیدا و پیشنهادِ ادغام می‌دهد؛ دسته‌ی بی‌استفاده خودش خاکستری و «پنهان» می‌شود به‌جای اینکه لیست را شلوغ کند؛ رنگِ دسته با سه نقطه‌ی درجا عوض می‌شود، بدونِ رفتن به صفحه‌ی دیگر.</div>
+    </div>
+
+    
+
+  </div>
+</section>
+
+
+</x-dc>
+</body>
+</html>

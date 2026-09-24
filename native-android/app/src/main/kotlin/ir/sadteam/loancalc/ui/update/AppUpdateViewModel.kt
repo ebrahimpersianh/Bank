@@ -5,10 +5,12 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.BuildConfig
 import ir.sadteam.loancalc.data.network.ApiService
+import ir.sadteam.loancalc.data.InboxRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 /**
@@ -22,6 +24,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AppUpdateViewModel @Inject constructor(
     private val apiService: ApiService,
+    private val inbox: InboxRepository,
+    private val authPrefs: ir.sadteam.loancalc.data.prefs.AuthPrefs,
 ) : ViewModel() {
     private val _updateUrl = MutableStateFlow<String?>(null)
     val updateUrl: StateFlow<String?> = _updateUrl.asStateFlow()
@@ -38,6 +42,13 @@ class AppUpdateViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 // بی‌صدا نادیده گرفته می‌شه
+            }
+        }
+        // «پیام‌های جیبک» هم با هر بازشدنِ اپ یک‌بار گرفته می‌شوند تا نقطه‌ی زنگ خبر بدهد.
+        viewModelScope.launch {
+            runCatching {
+                val auth = authPrefs.authToken.first()?.let { "Bearer $it" }
+                inbox.mergeAnnouncements(apiService.getAnnouncements(authHeader = auth).items)
             }
         }
     }

@@ -7,6 +7,8 @@ import android.text.StaticLayout
 import android.text.TextDirectionHeuristics
 import android.text.TextPaint
 import ir.sadteam.loancalc.core.fmt
+// خروجی هم باید با خودِ صفحه یکی باشد - وگرنه کاربر دو عددِ ده‌برابر می‌بیند.
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.data.db.LoanEntity
 import java.io.OutputStream
 
@@ -46,13 +48,13 @@ object StatsPdfExporter {
         val labelPaint = TextPaint().apply { textSize = 13f }
 
         var y = 30f
-        y += drawRtlLine(canvas, "گزارش آمار وام‌ها - وام من", titlePaint, y) + 16f
+        y += drawRtlLine(canvas, "گزارش آمار وام‌ها - جیبک", titlePaint, y) + 16f
 
         val lines = listOf(
             "تعداد وام‌ها: ${summary.loanCount}",
-            "مجموع مبلغ وام‌ها: ${fmt(summary.totalAmount)} ریال",
-            "مجموع پرداخت‌شده: ${fmt(summary.paidAmount)} ریال",
-            "مانده‌ی کل: ${fmt(summary.remainingAmount)} ریال",
+            "مجموع مبلغ وام‌ها: ${fmt(rialToToman(summary.totalAmount.toLong()).toDouble())} تومان",
+            "مجموع پرداخت‌شده: ${fmt(rialToToman(summary.paidAmount.toLong()).toDouble())} تومان",
+            "مانده‌ی کل: ${fmt(rialToToman(summary.remainingAmount.toLong()).toDouble())} تومان",
             "اقساط پرداخت‌شده: ${summary.paidInstallments} از ${summary.totalInstallments}",
             "درصد پیشرفت: ${(summary.progressRatio * 100).toInt()}٪",
         )
@@ -65,7 +67,7 @@ object StatsPdfExporter {
 
         for (loan in loans) {
             if (y > PAGE_HEIGHT - 60f) break
-            val line = "${loan.name} (${loan.bank}) — ${fmt(loan.installment)} ریال × ${loan.n} قسط، " +
+            val line = "${loan.name} (${loan.bank}) — ${fmt(rialToToman(loan.installment.toLong()).toDouble())} تومان × ${loan.n} قسط، " +
                 "${loan.paidCount} پرداخت‌شده"
             y += drawRtlLine(canvas, line, labelPaint, y) + 6f
         }

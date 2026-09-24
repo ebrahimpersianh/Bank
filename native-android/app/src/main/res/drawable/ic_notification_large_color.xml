@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  آیکونِ بزرگِ رنگیِ داخلِ اعلان (`setLargeIcon`). دقیقاً هم‌هندسه‌ی
+  `ic_notification.xml`، فقط رنگی - تا بالا و پایینِ اعلان یک‌دست باشند.
+
+  ⚠️ `ReminderChannels.largeIcon()` این را **دایره‌ای می‌بُرد**، پس دیسکِ تیره‌ی زیرین
+  لازم است (وگرنه بدنه‌ی سبز روی زمینه‌ی روشنِ اعلان شناور و بریده دیده می‌شود). کادرِ
+  نشان هم به همین خاطر تو‌تر کشیده شده: در بومِ آزمایشی، هندسه‌ی لبه‌تالبه بعدِ برشِ
+  دایره‌ای گوشه‌هایش را از دست می‌داد.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="192dp"
+    android:height="192dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- دیسکِ زمینه: بعدِ circleCrop لبه‌به‌لبه پر می‌کند. -->
+    <path
+        android:fillColor="#FF0A0F0D"
+        android:pathData="M12,0 A12,12 0 1 0 12,24 A12,12 0 1 0 12,0 Z" />
+
+    <!-- بدنه‌ی کیف - سبزِ برند (AppPrimary). -->
+    <path
+        android:fillColor="#FF0EA968"
+        android:pathData="M7,7.5 L17,7.5 A3,3 0 0 1 20,10.5 L20,15.5 A3,3 0 0 1 17,18.5 L7,18.5 A3,3 0 0 1 4,15.5 L4,10.5 A3,3 0 0 1 7,7.5 Z" />
+
+    <!-- قفل - طلاییِ برند. در تک‌رنگ سوراخ است، این‌جا جسمِ طلایی؛ جای هندسی یکی. -->
+    <path
+        android:fillColor="#FFF0C356"
+        android:pathData="M15.9,11.4 L18.1,11.4 A1.55,1.55 0 0 1 18.1,14.5 L15.9,14.5 A1.55,1.55 0 0 1 15.9,11.4 Z" />
+</vector>

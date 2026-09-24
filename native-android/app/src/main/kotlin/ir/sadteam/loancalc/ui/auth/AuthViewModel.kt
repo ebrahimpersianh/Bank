@@ -8,8 +8,15 @@ import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.AuthRepository
 import ir.sadteam.loancalc.data.AuthResult
 import ir.sadteam.loancalc.data.ChequeRepository
+import ir.sadteam.loancalc.data.DangRepository
+import ir.sadteam.loancalc.data.DebtRepository
+import ir.sadteam.loancalc.data.IncomeRepository
 import ir.sadteam.loancalc.data.LoanRepository
+import ir.sadteam.loancalc.data.GamificationRepository
+import ir.sadteam.loancalc.data.NoteRepository
+import ir.sadteam.loancalc.data.WealthSnapshotRepository
 import ir.sadteam.loancalc.data.SyncOutcome
+import ir.sadteam.loancalc.data.network.SubscriptionPurchaseDto
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -32,7 +39,28 @@ class AuthViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
     private val chequeRepository: ChequeRepository,
     private val accountRepository: AccountRepository,
+    private val incomeRepository: IncomeRepository,
+    private val debtRepository: DebtRepository,
+    private val dangRepository: DangRepository,
+    private val noteRepository: NoteRepository,
+    private val wealthSnapshotRepository: WealthSnapshotRepository,
+    private val gamification: GamificationRepository,
 ) : ViewModel() {
+    init {
+        // ⚠️ **هدیه‌ی ۵۰ سکه فقط موقعِ `verifyOtp` داده می‌شد**، یعنی کاربری که از قبل وارد
+        // شده بود هیچ‌وقت نمی‌گرفتش (گزارشِ کاربر رو بیلدِ ۴۷۱: شمارنده ۱۰ بود نه ۶۰).
+        // اینجا هر بار که اپ با توکنِ معتبر بالا میاد یه‌بار تلاش می‌شه؛ تکرارش بی‌اثره
+        // چون دفترِ سکه رو نوعِ رویداد ایندکسِ یکتا داره.
+        viewModelScope.launch {
+            if (!authPrefs.authToken.first().isNullOrEmpty()) {
+                gamification.awardOnce(
+                    GamificationRepository.Type.NEW_PHONE_GIFT,
+                    GamificationRepository.Reward.NEW_PHONE_GIFT,
+                )
+            }
+        }
+    }
+
     val gateState: StateFlow<GateState?> = combine(authPrefs.authToken, authPrefs.guestMode) { token, guest ->
         val state: GateState? = when {
             !token.isNullOrEmpty() -> GateState.LOGGED_IN
@@ -65,21 +93,67 @@ class AuthViewModel @Inject constructor(
     val phone: StateFlow<String?> = authPrefs.phone
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** نامِ اختیاریِ کاربر - null یعنی وارد نکرده (کاملاً عادی). */
+    val userId: StateFlow<Long?> = authPrefs.userId
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val userName: StateFlow<String?> = authPrefs.userName
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun updateName(name: String?) {
+        viewModelScope.launch {
+            authRepository.updateName(name)
+            // «تکمیلِ پروفایل ۵۰ سکه» (جدولِ `20e`). فقط وقتی اسمِ واقعی ثبت شده، نه وقتی
+            // کاربر اسمش رو پاک کرده.
+            if (!name.isNullOrBlank()) {
+                gamification.awardOnce(
+                    GamificationRepository.Type.COMPLETE_PROFILE,
+                    GamificationRepository.Reward.COMPLETE_PROFILE,
+                )
+            }
+        }
+    }
+
     fun refreshStatus() {
         viewModelScope.launch { authRepository.refreshSubscriptionStatus() }
     }
 
-    /** پورت گیت مجوز → [BenefitsScreen] تو AppRoot: تا اولین مقدار واقعی از DataStore نیومده null
-     * می‌مونه (همون الگوی [gateState]) که یه فلش اشتباهی صفحه‌ی امکانات دیده نشه. */
-    val benefitsSeen: StateFlow<Boolean?> = authPrefs.benefitsSeen
+    /** گیتِ مسیرِ اولین ورود ([ir.sadteam.loancalc.ui.onboarding.OnboardingFlow]) تو AppRoot: تا
+     * اولین مقدار واقعی از DataStore نیومده null می‌مونه (همون الگوی [gateState]) که یه فلشِ
+     * اشتباهیِ صفحه‌ی آنبوردینگ دیده نشه.
+     *
+     * کلیدِ DataStore عمداً همون `benefits_seen`ِ قدیمی مونده تا کسی که قبلاً صفحه‌ی امکاناتِ
+     * حذف‌شده رو دیده، حالا مسیرِ آنبوردینگ رو دوباره نبینه. */
+    val onboardingDone: StateFlow<Boolean?> = authPrefs.benefitsSeen
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    fun markBenefitsSeen() {
+    fun markOnboardingDone() {
         viewModelScope.launch { authPrefs.setBenefitsSeen(true) }
     }
 
+    /** صفحه‌ی مجوزها رد شده - هر دو مجوز اختیاری‌اند و بی این، گیت بن‌بست بود. */
+    val permissionGateSkipped: StateFlow<Boolean> = authPrefs.permissionGateSkipped
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun skipPermissionGate() {
+        viewModelScope.launch { authPrefs.setPermissionGateSkipped(true) }
+    }
+
+    /** true یعنی این شماره از قبل تو سرور بوده و ۱۵ روزِ هدیه‌ی اضافه گرفته - متنِ شیتِ هدیه
+     * ([ir.sadteam.loancalc.ui.onboarding.PostLoginSheets]) بر اساسِ همین عوض می‌شه. */
+    val legacyGift: StateFlow<Boolean> = authPrefs.legacyGift
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /** گیتِ دو شیتِ بعد از ورود - همون الگوی null-تا-لود-شدنِ [onboardingDone]. */
+    val postLoginSheetsSeen: StateFlow<Boolean?> = authPrefs.postLoginSheetsSeen
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun markPostLoginSheetsSeen() {
+        viewModelScope.launch { authPrefs.setPostLoginSheetsSeen(true) }
+    }
+
     /** پورت گیتِ تورِ راهنمای اولین ورود (TabTourOverlay تو LoanCalcApp، نه یه صفحه‌ی جدا) - همون
-     * الگوی null-تا-لود-شدنِ [benefitsSeen]. */
+     * الگوی null-تا-لود-شدنِ [onboardingDone]. */
     val tourSeen: StateFlow<Boolean?> = authPrefs.tourSeen
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
@@ -91,6 +165,8 @@ class AuthViewModel @Inject constructor(
      * تصمیم کاربر (resolveSyncConflict) می‌مونه؛ UI (LoginScreen) اینو observe می‌کنه. */
     private val _syncConflict = MutableStateFlow<List<Map<String, Any?>>?>(null)
     val syncConflict: StateFlow<List<Map<String, Any?>>?> = _syncConflict.asStateFlow()
+
+    private val _purchaseHistory = MutableStateFlow<List<SubscriptionPurchaseDto>?>(null)
 
     fun continueAsGuest() {
         viewModelScope.launch { authPrefs.setGuestMode(true) }
@@ -112,6 +188,13 @@ class AuthViewModel @Inject constructor(
             loanRepository.clearLocal()
             chequeRepository.clearLocal()
             accountRepository.clearLocal()
+            incomeRepository.clearLocal()
+            debtRepository.clearLocal()
+            dangRepository.clearLocal()
+            noteRepository.clearLocal()
+            // عکس‌های روزانه‌ی دارایی هم **کاربرمحور**ند: مانده‌ی حسابِ کاربرِ قبلی
+            // نباید در نمودارِ کاربرِ بعدی دیده شود (قاعده‌ی داده‌ی کاربرمحور در خروج).
+            wealthSnapshotRepository.clearLocal()
         }
     }
 
@@ -152,6 +235,12 @@ class AuthViewModel @Inject constructor(
                             launch { accountRepository.pushToServer(token) }
                         }
                     }
+                    // «هدیه‌ی شماره‌ی تازه ۵۰ سکه» (جدولِ `20e`). یک‌باره‌ست، پس ورودهای بعدی
+                    // دوباره سکه نمی‌دن (یگانگی رو خودِ نوعِ رویداد تو دفترِ سکه).
+                    gamification.awardOnce(
+                        GamificationRepository.Type.NEW_PHONE_GIFT,
+                        GamificationRepository.Reward.NEW_PHONE_GIFT,
+                    )
                     onSuccess()
                 }
                 is AuthResult.Error -> onError(result.code)
@@ -188,6 +277,9 @@ class AuthViewModel @Inject constructor(
                     loanRepository.clearLocal()
                     chequeRepository.clearLocal()
                     accountRepository.clearLocal()
+                    incomeRepository.clearLocal()
+                    debtRepository.clearLocal()
+                    noteRepository.clearLocal()
                     onSuccess()
                 }
                 is AuthResult.Error -> onError(result.code)
@@ -209,5 +301,30 @@ class AuthViewModel @Inject constructor(
                 is AuthResult.Error -> onError(result.code)
             }
         }
+    }
+
+    /** 🐞 ثبتِ گزارشِ مشکل - `onResult` کدِ پیگیری می‌گیرد، یا `null` اگر نشد. */
+    fun reportBug(message: String, appVersion: String?, device: String?, onResult: (String?) -> Unit) {
+        viewModelScope.launch { onResult(authRepository.reportBug(message, appVersion, device)) }
+    }
+
+    /** 🎁 خرج‌کردنِ کدِ هدیه - رجوع کن به [AuthRepository.redeemGiftCode]. */
+    fun redeemGiftCode(code: String, onSuccess: () -> Unit, onError: (String?) -> Unit) {
+        viewModelScope.launch {
+            when (val result = authRepository.redeemGiftCode(code)) {
+                is AuthResult.Success -> {
+                    refreshStatus()
+                    onSuccess()
+                }
+                is AuthResult.Error -> onError(result.code)
+            }
+        }
+    }
+
+    /** تاریخچه‌ی خریدهای اشتراک - صفحه‌ی اشتراک هر بار که باز می‌شه یه‌بار می‌خونتش. */
+    val purchaseHistory: StateFlow<List<SubscriptionPurchaseDto>?> = _purchaseHistory
+
+    fun loadPurchaseHistory() {
+        viewModelScope.launch { _purchaseHistory.value = authRepository.subscriptionHistory() }
     }
 }

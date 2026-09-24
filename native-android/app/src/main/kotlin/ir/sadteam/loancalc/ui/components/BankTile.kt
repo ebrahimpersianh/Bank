@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import ir.sadteam.loancalc.data.BankEntry
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 
@@ -52,7 +53,7 @@ fun BankTile(
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(54.dp)
-                .background(Color.White, RoundedCornerShape(15.dp)),
+                .background(Color.White, RoundedCornerShape(AppRadius.row)),
         )
         // اسم کامل نشون داده می‌شه (بدون «...»)؛ اسم‌های بلندتر فونتشون خودکار کوچیک‌تر می‌شه تا
         // تو همون عرضِ ثابتِ تایل جا بشن و نظمِ ردیف بهم نریزه (خواسته‌ی کاربر).

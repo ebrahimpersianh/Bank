@@ -3,10 +3,17 @@ package ir.sadteam.loancalc.data
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import ir.sadteam.loancalc.core.TransactionType
+import androidx.room.withTransaction
 import ir.sadteam.loancalc.data.db.AccountDao
+import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionDao
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
+import ir.sadteam.loancalc.data.db.AppDatabase
+import ir.sadteam.loancalc.data.db.BudgetDao
+import ir.sadteam.loancalc.data.db.BudgetEntity
+import ir.sadteam.loancalc.data.db.RecurringPaymentDao
+import ir.sadteam.loancalc.data.db.RecurringPaymentEntity
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.network.BackupBlobRequest
 import kotlinx.coroutines.flow.Flow
@@ -14,6 +21,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+
+/** نشانِ دو سمتِ یک جابه‌جاییِ داخلی. هر جا خرج/درآمدِ واقعی می‌شماریم باید کنار گذاشته شود. */
+const val SOURCE_TYPE_TRANSFER = "transfer"
+
+/** کلیدِ این بخش در جدولِ نسخه‌های ابری. */
+private const val CLOUD_MODULE = "accounts"
 
 /**
  * پورت مفهومی ماژول «حساب بانکی» اپ رقیب (VAMMAN) - چند حساب با موجودی اولیه، هر کدوم یه دفترچه‌ی
@@ -24,13 +37,44 @@ class AccountRepository(
     private val accountDao: AccountDao,
     private val transactionDao: AccountTransactionDao,
     private val apiService: ApiService,
+    private val budgetDao: BudgetDao,
+    private val recurringPaymentDao: RecurringPaymentDao,
+    /**
+     * گیمیفیکیشن - اختیاریه تا مسیرهایی که این ریپازیتوری رو دستی می‌سازن (تست، بکاپ) مجبور
+     * نباشن دفترِ سکه هم بسازن. `null` یعنی «سکه‌ای در کار نیست»، نه خطا.
+     */
+    private val gamification: GamificationRepository? = null,
+    /**
+     * 🚨 **برای اتمیک‌بودنِ کارهای چندجدولی** (جابه‌جایی بینِ حساب‌ها، حذفِ حساب با
+     * تراکنش‌هایش). اختیاری است تا مسیرهایی که این ریپازیتوری را دستی می‌سازند (تست،
+     * بکاپ) مجبور نباشند دیتابیس پاس بدهند؛ `null` یعنی «بدونِ تراکنشِ دیتابیس اجرا کن»،
+     * یعنی دقیقاً رفتارِ قبلی.
+     */
+    private val database: AppDatabase? = null,
+    /** برای نگه‌داشتنِ نسخه‌ی ابری (کنترلِ هم‌زمانی) - اختیاری، `null` یعنی رفتارِ قدیمی. */
+    private val uiPrefs: ir.sadteam.loancalc.data.prefs.UiPrefs? = null,
 ) {
+    /** بدنه را داخلِ یک تراکنشِ دیتابیس اجرا می‌کند - یا اگر دیتابیسی نداریم، همان‌طور. */
+    private suspend fun <T> inTransaction(block: suspend () -> T): T {
+        val db = database ?: return block()
+        return db.withTransaction { block() }
+    }
     fun observeAccounts(): Flow<List<AccountEntity>> = accountDao.observeAll()
     fun observeTransactions(): Flow<List<AccountTransactionEntity>> = transactionDao.observeAll()
     fun observeTransactionsForAccount(accountId: Long): Flow<List<AccountTransactionEntity>> =
         transactionDao.observeForAccount(accountId)
 
-    suspend fun addAccount(name: String, bankName: String, initialBalance: Double) {
+    /** [type] یکی از [ACCOUNT_TYPE_BANK] / [ACCOUNT_TYPE_OTHER]. برای نوعِ «منبعِ دیگر» (نقدی،
+     * کیفِ پول، کارتِ اعتباری…) `bankName` خالی می‌مونه و به‌جاش [iconKey] نشون داده می‌شه. */
+    suspend fun addAccount(
+        name: String,
+        bankName: String,
+        initialBalance: Double,
+        cardNumber: String? = null,
+        smsSender: String? = null,
+        type: String = ACCOUNT_TYPE_BANK,
+        iconKey: String? = null,
+    ) {
         accountDao.upsert(
             AccountEntity(
                 id = System.currentTimeMillis(),
@@ -38,6 +82,10 @@ class AccountRepository(
                 bankName = bankName,
                 initialBalance = initialBalance,
                 createdAt = isoNow(),
+                cardNumber = cardNumber,
+                smsSender = smsSender,
+                type = type,
+                iconKey = iconKey,
             ),
         )
     }
@@ -46,7 +94,9 @@ class AccountRepository(
         accountDao.upsert(account)
     }
 
-    suspend fun deleteAccount(account: AccountEntity) {
+    /** 🚨 **یک تراکنشِ دیتابیس، نه دو نوشتنِ پشتِ‌هم**: اگر بینِ حذفِ حساب و حذفِ
+     * تراکنش‌هایش کار نیمه‌کاره می‌مانْد، ردیف‌های یتیمِ بی‌حساب باقی می‌ماندند. */
+    suspend fun deleteAccount(account: AccountEntity) = inTransaction {
         accountDao.delete(account)
         transactionDao.deleteForAccount(account.id)
     }
@@ -55,6 +105,8 @@ class AccountRepository(
     suspend fun clearLocal() {
         accountDao.clear()
         transactionDao.clear()
+        budgetDao.clear()
+        recurringPaymentDao.clear()
     }
 
     suspend fun addTransaction(
@@ -65,10 +117,24 @@ class AccountRepository(
         year: Int,
         month: Int,
         day: Int,
-    ) {
+        category: String? = null,
+        sourceType: String? = null,
+        sourceId: String? = null,
+        /** ⚠️ هر جا تو یه حلقه/پشتِ‌هم چند تراکنش می‌سازی، **شمارنده‌ی صریح پاس بده**: پیش‌فرضِ
+         * `System.currentTimeMillis()` تو فراخوانی‌های سریعِ پشتِ‌هم می‌تونه یکی دربیاد و چون
+         * DAO از `@Upsert` استفاده می‌کنه، تراکنش‌ها بی‌صدا رو هم نوشته می‌شن (باگِ ثبت‌شده تو
+         * CLAUDE.md). برای ثبتِ تکیِ عادی خالی گذاشتنش امنه. */
+        id: Long? = null,
+        /** `false` فقط برای ثبتِ **خودکار** از پیامک/اعلانِ بانکی - تا تاییدِ کاربر رو موجودی
+         * اثر نمی‌ذاره. ثبتِ دستیِ خودِ کاربر همیشه تاییدشده‌ست. */
+        confirmed: Boolean = true,
+        /** «اعلانِ بلوبانک» / «پیامکِ ۲۰۰۰۱۵»؛ `null` یعنی ثبتِ دستیِ خودِ کاربر (`71a`). */
+        originLabel: String? = null,
+    ): Long {
+        val txId = id ?: System.currentTimeMillis()
         transactionDao.upsert(
             AccountTransactionEntity(
-                id = System.currentTimeMillis(),
+                id = txId,
                 accountId = accountId,
                 type = type.name,
                 amount = amount,
@@ -77,12 +143,113 @@ class AccountRepository(
                 month = month,
                 day = day,
                 createdAt = isoNow(),
+                category = category,
+                sourceType = sourceType,
+                sourceId = sourceId,
+                confirmed = confirmed,
+                originLabel = originLabel,
             ),
+        )
+        // «هر روزِ ثبتِ تراکنش ۱۰ سکه» (کارتِ `20e`). عمداً اینجاست نه تو ViewModel، تا ثبتِ
+        // خودکار از پیامک/اعلانِ بانک هم حساب بشه - اونم فعالیتِ همون روزه. تکرارِ همون روز
+        // خودبه‌خود نادیده گرفته می‌شه (ایندکسِ یکتای `(type, dateKey)`).
+        // تراکنشِ تاییدنشده هنوز «فعالیتِ کاربر» نیست - سکه‌ش موقعِ تایید داده می‌شه، نه الان.
+        // پاداش نباید ثبتِ پولیِ کاربر را زمین بزند: تراکنش از قبل ذخیره شده و خطای
+        // جانبیِ سکه (مثلاً دیتابیسِ قدیمی یا رویدادِ تکراری) نباید برنامه را ببندد.
+        if (confirmed) runCatching { gamification?.awardDailyLog() }
+        return txId
+    }
+
+    /**
+     * جابه‌جاییِ پول بینِ دو حسابِ خودِ کاربر - **هر دو سمت با هم، یا هیچ‌کدام**.
+     *
+     * 🚨 تا امروز ViewModel دو بار [addTransaction] صدا می‌زد. اگر بینِ آن دو، برنامه
+     * بسته یا پروسه کشته می‌شد، از حسابِ مبدأ کم شده بود ولی به مقصد اضافه نشده بود -
+     * یعنی پولِ کاربر روی کاغذ دود می‌شد. حالا یک تراکنشِ دیتابیس است: یا هر دو ردیف
+     * نوشته می‌شوند یا هیچ‌کدام.
+     *
+     * شناسه‌ی مشترکِ [sourceId] همان چیزی است که [transferLegsOf] با آن دو سمت را
+     * کنارِ هم پیدا می‌کند (ویرایش/حذفِ هم‌زمان و کنارگذاشتن از گزارش).
+     */
+    suspend fun addTransfer(
+        fromAccountId: Long,
+        toAccountId: Long,
+        amount: Double,
+        description: String,
+        year: Int,
+        month: Int,
+        day: Int,
+        transferId: Long = System.currentTimeMillis(),
+    ): Long = inTransaction {
+        addTransaction(
+            accountId = fromAccountId,
+            type = TransactionType.WITHDRAWAL,
+            amount = amount,
+            description = description,
+            year = year, month = month, day = day,
+            category = null,
+            sourceType = SOURCE_TYPE_TRANSFER,
+            sourceId = transferId.toString(),
+            id = transferId,
+        )
+        addTransaction(
+            accountId = toAccountId,
+            type = TransactionType.DEPOSIT,
+            amount = amount,
+            description = description,
+            year = year, month = month, day = day,
+            category = null,
+            sourceType = SOURCE_TYPE_TRANSFER,
+            sourceId = transferId.toString(),
+            id = transferId + 1,
+        )
+        transferId
+    }
+
+    /** تاییدِ یه تراکنشِ خودکار - از همین لحظه رو موجودی و گزارش‌ها اثر می‌ذاره. */
+    suspend fun confirmTransaction(id: Long) {
+        transactionDao.confirm(id)
+        gamification?.awardDailyLog()
+    }
+
+    suspend fun transactionById(id: Long) = transactionDao.byId(id)
+
+    fun observePendingTransactions() = transactionDao.observePending()
+
+    /**
+     * به‌روزرسانیِ یه تراکنشِ موجود - برای انتقالِ دسته موقعِ حذفِ یه دسته‌بندی و ویرایشِ دستی.
+     *
+     * 🚨 **جابه‌جایی دو ردیفِ به‌هم‌بسته است، نه دو تراکنشِ مستقل.** تا امروز ویرایشِ یک سمتش
+     * سمتِ دیگر را دست‌نخورده می‌گذاشت، یعنی بدونِ هیچ خرجِ واقعی جمعِ موجودیِ کاربر کم/زیاد
+     * می‌شد. حالا مبلغ و توضیحِ **هر دو** با هم می‌روند. حساب و نوعِ هر سمت عمداً دست‌نخورده
+     * می‌مانَد: عوض‌کردنشان یعنی جابه‌جاییِ دیگری.
+     */
+    suspend fun updateTransaction(transaction: AccountTransactionEntity) {
+        val legs = transferLegsOf(transaction)
+        if (legs.size < 2) {
+            transactionDao.upsert(transaction)
+            return
+        }
+        transactionDao.upsertAll(
+            legs.map { it.copy(amount = transaction.amount, description = transaction.description) },
         )
     }
 
+    /** حذفِ جابه‌جایی **هر دو سمتش** را با هم می‌برد - وگرنه یک سمتِ یتیم می‌مانْد و موجودیِ کل
+     * به‌اندازه‌ی همان مبلغ غلط می‌شد. */
     suspend fun deleteTransaction(transaction: AccountTransactionEntity) {
-        transactionDao.delete(transaction)
+        val legs = transferLegsOf(transaction)
+        if (legs.size < 2) {
+            transactionDao.delete(transaction)
+            return
+        }
+        transactionDao.deleteAll(legs)
+    }
+
+    private suspend fun transferLegsOf(transaction: AccountTransactionEntity): List<AccountTransactionEntity> {
+        if (transaction.sourceType != SOURCE_TYPE_TRANSFER) return emptyList()
+        val sourceId = transaction.sourceId ?: return emptyList()
+        return transactionDao.transferLegs(sourceId)
     }
 
     /** موجودی فعلی = موجودی اولیه + جمع واریزها - جمع برداشت‌ها. */
@@ -91,6 +258,103 @@ class AccountRepository(
         val deposits = forAccount.filter { it.type == TransactionType.DEPOSIT.name }.sumOf { it.amount }
         val withdrawals = forAccount.filter { it.type == TransactionType.WITHDRAWAL.name }.sumOf { it.amount }
         return account.initialBalance + deposits - withdrawals
+    }
+
+    // ---- بودجه‌بندی ----
+    fun observeBudgets(): Flow<List<BudgetEntity>> = budgetDao.observeAll()
+
+    /** [accountId] برابرِ null یعنی «همه‌ی حساب‌کتاب‌ها» (پیش‌فرض و رفتارِ قبلی). */
+    suspend fun setBudget(
+        categoryName: String,
+        monthlyCap: Double,
+        existingId: Long? = null,
+        accountId: Long? = null,
+    ) {
+        budgetDao.upsert(
+            BudgetEntity(
+                id = existingId ?: System.currentTimeMillis(),
+                categoryName = categoryName,
+                monthlyCap = monthlyCap,
+                accountId = accountId,
+            ),
+        )
+    }
+
+    /**
+     * 🚨 نامِ دسته کلیدِ **چهار** جدول است، نه فقط تراکنش‌ها.
+     *
+     * بخشِ ۷۴ طراح یک باگ گرفت (تغییرِ نامِ دسته تراکنش‌ها را بی‌دسته می‌کرد) و رفعش را
+     * فقط روی تراکنش‌ها گذاشت. ولی همان ریشه دو جای دیگر هم دارد و هر دو **بی‌صدا**
+     * خراب می‌کنند:
+     * - `BudgetEntity.categoryName` → بودجه به دسته‌ای اشاره می‌کند که دیگر نیست، پس
+     *   سقف دیگر هیچ خرجی را نمی‌شمارد و کاربر فکر می‌کند بودجه‌اش را رعایت کرده.
+     * - `RecurringPaymentEntity.categoryName` → پرداختِ تکراریِ بعدی بی‌دسته ثبت می‌شود.
+     *
+     * (جای چهارم `ParsingRuleEntity.category` است که مخزنِ خودش را دارد و در
+     * `CategoryViewModel` هم‌قدم به‌روز می‌شود.)
+     */
+    suspend fun renameCategoryEverywhere(oldName: String, newName: String) {
+        transactionDao.getAll()
+            .filter { it.category == oldName }
+            .forEach { transactionDao.upsert(it.copy(category = newName)) }
+        budgetDao.getAll()
+            .filter { it.categoryName == oldName }
+            .forEach { budgetDao.upsert(it.copy(categoryName = newName)) }
+        recurringPaymentDao.getAll()
+            .filter { it.categoryName == oldName }
+            .forEach { recurringPaymentDao.upsert(it.copy(categoryName = newName)) }
+    }
+
+    suspend fun deleteBudget(budget: BudgetEntity) {
+        budgetDao.delete(budget)
+    }
+
+    /** جمعِ خرجِ هر دسته تو یه ماهِ خاص (فقط برداشت‌ها) - برای مقایسه با سقفِ بودجه. */
+    fun spendByCategory(
+        transactions: List<AccountTransactionEntity>,
+        year: Int,
+        month: Int,
+        /** فقط خرجِ همین حساب‌کتاب حساب بشه؛ null یعنی همه‌ی حساب‌کتاب‌ها (رفتارِ قبلی). */
+        accountId: Long? = null,
+    ): Map<String, Double> =
+        transactions
+            .filter { accountId == null || it.accountId == accountId }
+            .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == year && it.month == month && !it.category.isNullOrBlank() }
+            .groupBy { it.category!! }
+            .mapValues { (_, list) -> list.sumOf { it.amount } }
+
+    // ---- پرداخت‌های تکراری ----
+    fun observeRecurringPayments(): Flow<List<RecurringPaymentEntity>> = recurringPaymentDao.observeAll()
+
+    /** پورت suspend (نه Flow) - برای DueDateReminderWorker، هم‌الگو با LoanRepository.getLoans(). */
+    suspend fun getRecurringPayments(): List<RecurringPaymentEntity> = recurringPaymentDao.getAll()
+
+    suspend fun addRecurringPayment(
+        name: String,
+        amount: Double,
+        type: TransactionType,
+        categoryName: String?,
+        accountId: Long?,
+        dayOfMonth: Int,
+        reminderDayOffsets: String?,
+    ) {
+        recurringPaymentDao.upsert(
+            RecurringPaymentEntity(
+                id = System.currentTimeMillis(),
+                name = name,
+                amount = amount,
+                type = type.name,
+                categoryName = categoryName,
+                accountId = accountId,
+                dayOfMonth = dayOfMonth,
+                reminderDayOffsets = reminderDayOffsets,
+                createdAt = isoNow(),
+            ),
+        )
+    }
+
+    suspend fun deleteRecurringPayment(payment: RecurringPaymentEntity) {
+        recurringPaymentDao.delete(payment)
     }
 
     /** پورت جدا از بکاپ وام/چک - یه فایل JSON مستقل برای حساب‌ها و تراکنش‌هاشون. */
@@ -115,21 +379,42 @@ class AccountRepository(
         val accounts: List<AccountEntity> = gson.fromJson(accountsJson, object : TypeToken<List<AccountEntity>>() {}.type)
         val transactions: List<AccountTransactionEntity> =
             gson.fromJson(transactionsJson, object : TypeToken<List<AccountTransactionEntity>>() {}.type)
-        accountDao.replaceAll(accounts)
-        transactionDao.replaceAll(transactions)
+        // حساب‌ها و تراکنش‌هایشان یک کارند؛ نیمه‌کاره یعنی تراکنشِ بی‌حساب.
+        inTransaction {
+            accountDao.replaceAll(accounts)
+            transactionDao.replaceAll(transactions)
+        }
         return true
     }
 
     /** پورت مفهومی pushToServer تو LoanRepository - fire-and-forget، خطاها عمداً قورت داده می‌شن. */
-    suspend fun pushToServer(token: String) {
+    suspend fun pushToServer(token: String): Boolean {
         try {
-            apiService.putAccountsBackup("Bearer $token", BackupBlobRequest(exportBackupJson()))
+            val expected = uiPrefs?.cloudRevision(CLOUD_MODULE)
+            val response = apiService.putAccountsBackup(
+                "Bearer $token",
+                BackupBlobRequest(exportBackupJson(), expected),
+            )
+            // ۴۰۹ یعنی گوشیِ دیگری جلوتر نوشته؛ داده‌ی محلی دست‌نخورده می‌مانَد و نتیجه
+            // `false` است تا وضعیتِ پشتیبان صادقانه بماند.
+            if (!response.isSuccessful) return false
+            uiPrefs?.let { prefs -> expected?.let { prefs.setCloudRevision(CLOUD_MODULE, it + 1) } }
+            return true
         } catch (e: Exception) {
-            // عمداً نادیده گرفته می‌شه
+            return false
         }
     }
 
     /** آخرین بکاپِ ابریِ حساب‌ها/تراکنش‌ها رو می‌گیره و جایگزینِ دیتای محلی می‌کنه. */
+    /** فقط می‌گیرد، چیزی نمی‌نویسد - رجوع کن به [LoanRepository.fetchServerBackupJson]. */
+    suspend fun fetchServerBackupJson(token: String): String? = try {
+        val response = apiService.getAccountsBackup("Bearer $token")
+        uiPrefs?.setCloudRevision(CLOUD_MODULE, response.revision)
+        response.data
+    } catch (e: Exception) {
+        null
+    }
+
     suspend fun restoreFromServer(token: String): Boolean {
         val blob = try {
             apiService.getAccountsBackup("Bearer $token").data

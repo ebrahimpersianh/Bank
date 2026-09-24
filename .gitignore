@@ -1,1 +1,18 @@
 node_modules/
+
+# تنظیماتِ محلیِ ابزارِ Claude Code (سلیقه‌ی هر دستگاه، نه تنظیماتِ پروژه)
+.claude/
+# استثنا: تنظیماتِ مشترکِ پروژه (مثلِ سطحِ تلاشِ مدل) باید تو ریپو بمونه
+!.claude/
+!.claude/settings.json
+
+# 🔐 تورِ ایمنیِ سراسری: هیچ فایلِ رمز/کلیدی نباید به گیت‌هاب برسه.
+# (server/.gitignore از قبل .env خودش رو داشت؛ این‌ها برای هر جای دیگه‌ی پروژه‌ست.)
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.jks
+secrets.properties
+local.properties

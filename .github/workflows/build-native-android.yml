@@ -1,15 +1,12 @@
-name: Build Native Kotlin App (در حال ساخت - فقط تب وام بانکی)
+name: Build Native Kotlin App (اجرای دستی)
 
 on:
+  # بیلدِ خودکارِ عمومی خاموش است. فقط تغییرِ فایل درخواست بیلد، آن را اجرا می‌کند.
   push:
-    branches: [main, master]
+    branches:
+      - "claude/bank-9fiumm"
     paths:
-      - "native-android/**"
-      - ".github/workflows/build-native-android.yml"
-  pull_request:
-    paths:
-      - "native-android/**"
-      - ".github/workflows/build-native-android.yml"
+      - "ci/build-request.txt"
   workflow_dispatch:
 
 jobs:
@@ -117,12 +114,15 @@ jobs:
       # ما fail می‌کنه)، هر بیلد یه GitHub Release می‌سازه و APKها رو بهش پیوست می‌کنه - Releaseها
       # سهمیه‌ی جدا و بازتری دارن، این مشکل رو ندارن. تگ بر اساسِ شماره‌ی رانه، پس هر بیلد یه ریلیزِ
       # جدا/غیرتکراری می‌سازه.
-      - name: انتشارِ APKها به‌عنوانِ GitHub Release (همیشه کار می‌کنه، سهمیه‌ی جدا از Artifact)
+
+      - name: انتشار APKها در Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: بیلد خودکار #${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          files: |
+            native-android/app/build/outputs/apk/cafebazaar/release/app-cafebazaar-release.apk
+            native-android/app/build/outputs/apk/myket/release/app-myket-release.apk
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "build-${{ github.run_number }}" \
-            --title "بیلدِ خودکار #${{ github.run_number }}" \
-            --notes "نسخه‌ی ۱.۰.${{ github.run_number }} - ساخته‌شده از کامیتِ ${{ github.sha }}" \
-            app/build/outputs/apk/cafebazaar/release/app-cafebazaar-release.apk \
-            app/build/outputs/apk/myket/release/app-myket-release.apk
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

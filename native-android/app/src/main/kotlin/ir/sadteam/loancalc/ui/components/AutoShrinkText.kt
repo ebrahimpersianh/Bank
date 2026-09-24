@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
@@ -24,12 +25,15 @@ fun AutoShrinkText(
     maxFontSize: TextUnit,
     modifier: Modifier = Modifier,
     minFontSize: TextUnit = 8.sp,
+    /** عددِ هیرو (بخشِ ۶۹) درشت و ضخیم است؛ بقیه‌ی مصرف‌ها وزنِ پیش‌فرض می‌گیرند. */
+    fontWeight: FontWeight? = null,
 ) {
     var fontSize by remember(text) { mutableStateOf(maxFontSize) }
     Text(
         text = text,
         color = color,
         fontSize = fontSize,
+        fontWeight = fontWeight,
         maxLines = 1,
         softWrap = false,
         overflow = TextOverflow.Clip,

@@ -1,6 +1,5 @@
 package ir.sadteam.loancalc.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
@@ -8,122 +7,167 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ir.sadteam.loancalc.ui.theme.AppGlassBase
-import ir.sadteam.loancalc.ui.theme.AppGlassBorder
-import ir.sadteam.loancalc.ui.theme.AppGlassGradientEnd
-import ir.sadteam.loancalc.ui.theme.AppGlassGradientStart
-import ir.sadteam.loancalc.ui.theme.AppGlassHighlight
+import ir.sadteam.loancalc.ui.theme.AppElevation
+import ir.sadteam.loancalc.ui.theme.AppGoldBorder
+import ir.sadteam.loancalc.ui.theme.AppGoldFrom
+import ir.sadteam.loancalc.ui.theme.AppGoldInk
+import ir.sadteam.loancalc.ui.theme.AppGoldInk2
+import ir.sadteam.loancalc.ui.theme.AppGoldTo
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppShadowNeutral
+import ir.sadteam.loancalc.ui.theme.AppSpacing
+import ir.sadteam.loancalc.ui.theme.AppStroke
+import ir.sadteam.loancalc.ui.background.LiveBackgroundState
+import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.LocalAppColors
+import ir.sadteam.loancalc.ui.theme.hardShadow
 
-/** پورت .card تو www/index.html - قبلاً یه `Surface` تخت‌رنگ بود. الان (خواسته‌ی صریح کاربر، با
- * پیش‌نمایشِ تاییدشده - الهام‌گرفته از باکس‌های اپِ «تقویم من») سبکِ «شیشه‌ای» داره: یه پایه‌ی
- * نیمه‌شفافِ تم‌آگاه (`AppGlassBase`) + یه گرادیانِ نورِ ظریف روش (`AppGlassGradientStart/End`) + یه
- * حاشیه‌ی نازکِ نورانی (`AppGlassBorder`) - چون Compose Material3 `Surface` فقط `Color` تخت قبول
- * می‌کنه نه `Brush`، اینجا به‌جای `Surface` مستقیم از `Modifier.shadow/clip/background/border` رو
- * یه `Column` استفاده شده. [borderColor] برای مواردی که یه کارتِ خاص واقعاً به خط دور رنگیِ خودش
- * نیاز داره (مثل کارت وام‌های پرتکرار) همچنان override می‌شه. لیبلِ بالای کارت طلایی نیست (تصمیمِ
- * قدیمی‌تر کاربر: طلایی فقط رو پس‌زمینه/حاشیه، نه رو فونت).
+/**
+ * چهار گونه‌ی کارت - از بخشِ «۵ · کارت‌ها»ی سیستمِ طراحی. هر کدوم زمینه/حاشیه/سایه‌ی خودش رو داره.
+ */
+enum class AppCardVariant {
+    /** سطحِ سفید، حاشیه‌ی ۲ پیکسل. برای هر محتوای بی‌طرف. */
+    DEFAULT,
+
+    /** کاغذِ طلایی - **فقط** کارتِ پول و دستاورد. */
+    GOLD,
+
+    /** سررسیدِ امروز و فردا. **حداکثر یکی در هر صفحه، بالای فهرست.** */
+    URGENT,
+
+    /** تسویه‌شده و خوانده‌شده - شفافیتِ ۰٫۷۲ و بدونِ سایه. */
+    DONE,
+}
+
+/**
+ * کارتِ مشترکِ کلِ اپ - **بازطراحیِ سبکِ «جیبک»** (مرداد ۱۴۰۵).
  *
- * [backgroundColor] (رنگِ زمینه‌ی صریح، نه شیشه‌ای) برای مواردی که کارت واقعاً باید رنگ زمینه‌ی خاص
- * خودش داشته باشه override می‌شه - عمداً از مسیرِ شیشه‌ای رد نمی‌شه و همون `Surface` تخت‌رنگِ قدیمی
- * می‌مونه: یه رنگِ نیمه‌شفافِ اضافه رو یه پس‌زمینه‌ی از قبل رنگی راحت دوتُنی/کثیف به‌نظر می‌رسه؛ کارتِ
- * تحلیلِ درآمد تو MyLoansScreen قبلاً دقیقاً همین مشکل رو داشت.
+ * قاعده‌ی ماندگار: **هیچ کارتی رو دستی با `clip/background/border` نساز - همیشه این.**
  *
- * **باگِ رفع‌شده (ریشه‌ای)**: `Surface` خودش خودکار `LocalContentColor` رو از رو رنگِ زمینه‌ش حساب
- * می‌کرد (`contentColorFor`)، پس `Text`های داخلِ کارت که `color` صریح نداشتن (مثلاً اسمِ بانک تو
- * `BankTile`، عنوانِ `PresetCard`) خودکار رنگِ درستِ تم‌آگاه می‌گرفتن. وقتی مسیرِ پیش‌فرض از
- * `Surface` به یه `Column` خام عوض شد (برای پشتیبانیِ گرادیانِ شیشه‌ای)، این محاسبه‌ی خودکار از دست
- * رفت و همچین `Text`هایی رو دارک‌مود مشکی/نامرئی می‌شدن. الان با `CompositionLocalProvider
- * (LocalContentColor provides AppText)` همون رفتار دستی برگردونده شده - اگه بازم جایی تو اپ متنِ
- * بدونِ `color` صریح داخلِ یه `AppCard` نامرئی بود، این همون علتشه.
+ * ⚠️ **تغییرِ بنیادی نسبت به دورِ قبل**: سبکِ «Liquid Glass» (پایه‌ی نیمه‌شفاف + گرادیانِ نوری +
+ * هایلایتِ گوشه + سایه‌ی تارِ ۱۴dp) **کاملاً حذف شد**. حالا:
+ * - سطحِ **کاملاً مات** (`#FFFFFF` روشن / `#1B2530` تیره)
+ * - حاشیه‌ی **۲ پیکسلیِ توپر** (`#E3ECE7` / `#2A3640`)
+ * - سایه‌ی **سختِ عمودیِ بدونِ تاری** (`0 3px 0 #E8EFEB`) - رجوع کن به [hardShadow]
+ * - گوشه‌ی ۲۰dp (قبلاً ۲۲) و حاشیه‌ی درونیِ ۱۶dp (قبلاً ۱۴)
  *
- * **دورِ سومِ شیشه‌ای‌شدن - «Liquid Glass» (سبکِ iOS)**: کاربر از بینِ ۴ طرحِ شیشه‌ایِ پیش‌نمایش‌شده
- * تو یه HTML جدا (فعلی/پررنگ‌تر، مات‌نرم، لبه‌دار، لیکوئید) صراحتاً طرحِ الهام‌گرفته از iOS رو انتخاب
- * کرد. گوشه‌ها گردتر شدن (۱۸dp→۲۲dp)، سایه نرم‌تر/پخش‌تر شد (elevation بیشتر، آلفای کمتر)، و یه
- * هایلایتِ نوریِ گوشه‌ی بالا-چپ ([AppGlassHighlight] + [highlightBrush]) اضافه شد - تقلیدِ همون
- * بازتابِ نوکِ‌تیزِ شیشه‌ی واقعی که رو iOS با بلورِ سنگین می‌بینی؛ چون این پروژه عمداً بدونِ بلورِ واقعی
- * پیاده شده (رجوع کن به کامنتِ AuroraBackground.kt)، این هایلایتِ ثابت جایگزینِ ارزون‌ترشه. */
+ * **باگِ تاریخیِ رفع‌شده که هنوز برقراره**: این کامپوننت `Surface` نیست، پس `LocalContentColor` رو
+ * خودکار حساب نمی‌کنه. برای همین محتوا تو `CompositionLocalProvider(LocalContentColor provides ...)`
+ * پیچیده شده - اگه جایی `Text`ِ بدونِ `color`ِ صریح نامرئی شد، **اول چک کن بیرونِ `AppCard` نباشه**.
+ *
+ * @param variant گونه‌ی کارت - رجوع کن به [AppCardVariant].
+ * @param label عنوانِ اختیاریِ بالای کارت.
+ * @param borderColor override برای کارتی که واقعاً حاشیه‌ی رنگیِ خودش رو لازم داره.
+ * @param backgroundColor override برای کارتی که واقعاً زمینه‌ی رنگیِ خودش رو لازم داره - وقتی
+ *   ست بشه [variant] نادیده گرفته می‌شه.
+ * @param accentGradient لایه‌ی گرادیانِ اختیاری برای کارتِ «قهرمانِ» صفحه (مانده‌ی کلِ خانه/دارایی).
+ *   ⚠️ تو سبکِ جدید **کم استفاده کن** - قاعده‌ی «حداکثر یک رنگِ لهجه در هر صفحه».
+ * @param contentPadding حاشیه‌ی درونی؛ برای کارتی که خودش لیستِ لبه‌به‌لبه داره `0.dp` بده.
+ */
 @Composable
 fun AppCard(
     modifier: Modifier = Modifier,
+    variant: AppCardVariant = AppCardVariant.DEFAULT,
     label: String? = null,
     borderColor: Color? = null,
     backgroundColor: Color? = null,
+    accentGradient: Brush? = null,
+    // قاعده‌ی صریحِ طراح: شفافیتِ گونه‌ی «تمام‌شده» باید رو **محتوا** بشینه نه کلِ کارت، وگرنه
+    // نشانه‌ی دستاورد (مدالِ وامِ تسویه‌شده) از خودِ کارت هم محوتر دیده می‌شه. هر جا نشانه‌ای
+    // داخلِ کارت هست `false` بده و آلفا رو خودت رو همون تکه‌ی متن/حلقه بذار.
+    dimContent: Boolean = true,
+    // پدینگِ کارت **دو مقداره‌ست**: عمودی ۱۴، افقی ۱۶ (اصلاحیه‌ی طراح - قبلاً هر دو ۱۶
+    // بود و بعد هر دو ۱۴ شد؛ هیچ‌کدوم درست نبود).
+    contentPadding: androidx.compose.ui.unit.Dp = AppSpacing.cardPaddingTight,
+    horizontalPadding: androidx.compose.ui.unit.Dp = AppSpacing.cardPadding,
+    // قاعده‌ی طراح: کارتِ **فوری** وقتی تنها عنصرِ برجسته‌ی صفحه‌ست سایه می‌گیره؛ وقتی
+    // درست زیرِ `AppHeroCard` نشسته نه - دو سایه‌ی سختِ پشتِ‌هم صفحه رو شلوغ می‌کنه.
+    shadow: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val shape = RoundedCornerShape(22.dp)
-    if (backgroundColor != null) {
-        Surface(
-            modifier = modifier.fillMaxWidth(),
-            shape = shape,
-            color = backgroundColor,
-            tonalElevation = 3.dp,
-            shadowElevation = 2.dp,
-            border = BorderStroke(1.dp, borderColor ?: Color.Transparent),
-        ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                AppCardLabelAndContent(label, content)
-            }
-        }
-    } else {
-        val glassGradient = Brush.linearGradient(listOf(AppGlassGradientStart, AppGlassGradientEnd))
-        val density = LocalDensity.current
-        val highlightRadiusPx = with(density) { 130.dp.toPx() }
-        val highlightBrush = Brush.radialGradient(
-            colors = listOf(AppGlassHighlight, Color.Transparent),
-            center = Offset(0f, 0f),
-            radius = highlightRadiusPx,
-        )
-        Column(
-            modifier = modifier
-                .fillMaxWidth()
-                .shadow(
-                    elevation = 14.dp,
-                    shape = shape,
-                    ambientColor = Color.Black.copy(alpha = 0.14f),
-                    spotColor = Color.Black.copy(alpha = 0.14f),
-                )
-                .clip(shape)
-                .background(AppGlassBase)
-                .background(glassGradient)
-                .background(highlightBrush)
-                .border(1.dp, borderColor ?: AppGlassBorder, shape)
-                .padding(14.dp),
-        ) {
-            // رجوع کن به کامنتِ «باگِ رفع‌شده (ریشه‌ای)» بالا - جایگزینِ contentColorFor خودکارِ
-            // Surface که این مسیرِ Columnِ خام دیگه نداره.
-            CompositionLocalProvider(LocalContentColor provides AppText) {
-                AppCardLabelAndContent(label, content)
-            }
-        }
-    }
-}
+    val shape = RoundedCornerShape(AppRadius.card)
+    val colors = LocalAppColors.current
 
-@Composable
-private fun AppCardLabelAndContent(label: String?, content: @Composable () -> Unit) {
-    if (label != null) {
-        Text(
-            text = label,
-            color = AppMuted,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 7.dp),
-        )
+    // زمینه: یا صریح از بیرون، یا از رو گونه‌ی کارت.
+    val fillBrush: Brush? = when {
+        backgroundColor != null -> null
+        variant == AppCardVariant.GOLD -> Brush.linearGradient(listOf(AppGoldFrom, AppGoldTo))
+        else -> null
     }
-    content()
+    // 🚨 **کارتِ سفیدِ مات، پس‌زمینه‌ی زنده را هدر می‌دهد** (بندِ ۴ی وصله‌ی بخشِ ۷۸):
+    // با کارتِ مات، لایه فقط در حاشیه‌ها دیده می‌شد و ۲۵۰ سکه بی‌نتیجه می‌ماند. پس وقتی
+    // - و **فقط** وقتی - پس‌زمینه‌ی زنده فعال است، کارتِ ساده کمی شفاف می‌شود.
+    //
+    // ⚠️ شرطی است و نباید همیشگی شود: بی پس‌زمینه، کارتِ شفاف فقط کنتراستِ متن را کم
+    // می‌کند و هیچ چیزی پشتش نیست که دیده شود.
+    val liveBg = LiveBackgroundState.active != null
+    val fillColor: Color = backgroundColor ?: when (variant) {
+        AppCardVariant.DEFAULT -> if (liveBg) AppSurface.copy(alpha = 0.72f) else AppSurface
+        AppCardVariant.GOLD -> AppGoldFrom // زیرِ گرادیان؛ برای وقتی گرادیان رسم نشه
+        AppCardVariant.URGENT -> colors.urgentBg
+        AppCardVariant.DONE -> AppSurface2
+    }
+    val strokeColor: Color = borderColor ?: when (variant) {
+        AppCardVariant.DEFAULT -> AppLine
+        AppCardVariant.GOLD -> AppGoldBorder
+        AppCardVariant.URGENT -> colors.urgentBorder
+        AppCardVariant.DONE -> AppLineRow
+    }
+    val strokeWidth = if (variant == AppCardVariant.GOLD) AppStroke.row else AppStroke.card
+    // کارتِ «تمام‌شده» عمداً بی‌سایه‌ست - قاعده‌ی صریحِ سیستمِ طراحی.
+    val shadowColor: Color = when (variant) {
+        AppCardVariant.DONE -> Color.Transparent
+        AppCardVariant.URGENT -> colors.urgentShadow
+        else -> AppShadowNeutral
+    }
+    val shadowOffset = when {
+        !shadow -> 0.dp
+        variant == AppCardVariant.URGENT -> AppElevation.raised
+        else -> AppElevation.neutral
+    }
+    // رنگِ متنِ پیش‌فرضِ داخلِ کارت - رو کاغذِ طلایی باید جوهرِ طلایی باشه نه متنِ معمولی.
+    val ink = if (variant == AppCardVariant.GOLD) AppGoldInk else AppText
+    val labelInk = if (variant == AppCardVariant.GOLD) AppGoldInk2 else AppMuted
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (variant == AppCardVariant.DONE && dimContent) Modifier.alpha(0.72f) else Modifier)
+            .hardShadow(shadowColor, shadowOffset, AppRadius.card)
+            .clip(shape)
+            .background(fillColor)
+            .then(if (fillBrush != null) Modifier.background(fillBrush) else Modifier)
+            .then(if (accentGradient != null) Modifier.background(accentGradient) else Modifier)
+            .border(strokeWidth, strokeColor, shape)
+            .padding(horizontal = horizontalPadding, vertical = contentPadding),
+    ) {
+        CompositionLocalProvider(LocalContentColor provides ink) {
+            if (label != null) {
+                Text(
+                    text = label,
+                    color = labelInk,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+            }
+            content()
+        }
+    }
 }

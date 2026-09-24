@@ -9,11 +9,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,24 +23,28 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,7 +52,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -55,27 +60,47 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.ChequeType
 import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppCardVariant
+import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
+import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
+import ir.sadteam.loancalc.ui.components.Ltr
+import ir.sadteam.loancalc.ui.components.SegmentedToggle
+import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.theme.AppAccent
+import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppInfo
+import ir.sadteam.loancalc.ui.theme.AppInfoPill
+import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
+import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppPurple
+import ir.sadteam.loancalc.ui.theme.AppPurplePill
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.Motion
+import ir.sadteam.loancalc.ui.theme.pillOverSurface
+import java.util.Calendar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Calendar
+import java.util.Locale
 
 internal data class ChequeStats(
     val total: Int,
@@ -126,23 +151,52 @@ fun chequeStatusLabel(status: String) = when (status) {
  * books) عین MyLoansScreen با یه screenKey مشتق‌شده + AnimatedContent.
  */
 @Composable
-fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel()) {
+fun ChequeScreen(
+    onBack: () -> Unit,
+    // وقتی چک به‌عنوانِ تبِ مستقلِ نوارِ پایین استفاده می‌شه (رجوع کن به CLAUDE.md - بازسازیِ
+    // تب‌بندی)، دیگه «برگشت» معنی نداره (همتای بقیه‌ی تب‌هاست، نه زیرصفحه‌ی یه تبِ دیگه) - دکمه‌ی
+    // برگشتِ ردیفِ بالای لیست مخفی می‌شه. زیرصفحه‌های داخلی (افزودن/جزئیات/گزارش/...) دست‌نخورده
+    // می‌مونن، چون اون‌ها همیشه با همون منطقِ داخلیِ خودشون به لیست برمی‌گردن، نه به بیرونِ ChequeScreen.
+    standalone: Boolean = false,
+    /** تپ روی ردیفِ چک در تبِ سررسید (و اعلانِ سررسیدِ چک) مستقیم همین چک را باز می‌کند -
+     * تا امروز هیچ راهی برای رسیدن به یک چکِ مشخص از بیرونِ این صفحه نبود. */
+    initialChequeId: Long? = null,
+    /** ورودِ مستقیم از تب گزارش؛ صفحه‌ی گزارش چک‌ها را به‌جای فهرست باز می‌کند. */
+    initialReport: Boolean = false,
+    viewModel: ChequeViewModel = hiltViewModel(),
+) {
     var showAddForm by remember { mutableStateOf(false) }
     var editingChequeId by remember { mutableStateOf<Long?>(null) }
-    var openedChequeId by remember { mutableStateOf<Long?>(null) }
+    var openedChequeId by remember { mutableStateOf(initialChequeId) }
     var showChequeBooks by remember { mutableStateOf(false) }
     var typeFilter by remember { mutableStateOf<ChequeType?>(null) }
     var menuExpanded by remember { mutableStateOf(false) }
-    var showArchived by remember { mutableStateOf(false) }
+    // سه‌حالته‌ی بالای فهرست (فریمِ بخشِ ۳۶): در جریان · پاس‌شده · بایگانی.
+    // قبلاً «بایگانی» فقط یه آیتمِ منوی سه‌خط بود و دیده نمی‌شد.
+    var chequeTab by remember { mutableIntStateOf(0) }
+    val showArchived = chequeTab == 2
     var showSayadInquiry by remember { mutableStateOf(false) }
-    var showReport by remember { mutableStateOf(false) }
+    var showReport by remember { mutableStateOf(initialReport) }
     var showReminderSettings by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     val allCheques by viewModel.cheques.collectAsState()
     val chequeBooks by viewModel.chequeBooks.collectAsState()
-    val visibleCheques = remember(allCheques, typeFilter, showArchived) {
+    val visibleCheques = remember(allCheques, typeFilter, chequeTab, searchQuery) {
         val filterName = typeFilter?.name
-        allCheques.filter { it.archived == showArchived && (filterName == null || it.type == filterName) }
+        val q = searchQuery.trim()
+        allCheques.filter {
+            it.archived == showArchived &&
+                (chequeTab != 0 || it.status == "PENDING") &&
+                (chequeTab != 1 || it.status != "PENDING") &&
+                (filterName == null || it.type == filterName) &&
+                (
+                    q.isBlank() ||
+                        it.ownerName.contains(q, ignoreCase = true) ||
+                        it.chequeNumber.contains(q, ignoreCase = true) ||
+                        it.bankName.contains(q, ignoreCase = true)
+                    )
+        }
     }
     val stats = remember(allCheques) { computeChequeStats(allCheques) }
     val openedCheque = openedChequeId?.let { id -> allCheques.firstOrNull { it.id == id } }
@@ -233,15 +287,18 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
     Box(modifier = Modifier.fillMaxSize()) {
     AnimatedContent(
         targetState = screenKey,
-        transitionSpec = { fadeIn(tween(200)).togetherWith(fadeOut(tween(150))) },
+        transitionSpec = { Motion.contentEnter togetherWith Motion.contentExit },
         label = "chequeScreen",
     ) { key ->
         when (key) {
             "books" -> ChequeBooksScreen(
                 books = chequeBooks,
                 onBack = { showChequeBooks = false },
-                onAdd = { owner, bank, start, end -> viewModel.addChequeBook(owner, bank, start, end) },
+                onAdd = { owner, bank, start, end, sayadId, last4 ->
+                    viewModel.addChequeBook(owner, bank, start, end, sayadId, last4)
+                },
                 onDelete = { viewModel.deleteChequeBook(it) },
+                onClose = { viewModel.closeChequeBook(it) },
             )
             "add" -> AddEditChequeScreen(
                 existing = editingCheque,
@@ -259,6 +316,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                 onBack = { showReport = false },
                 onDownloadPdf = { createPdfLauncher.launch("cheques.pdf") },
                 onDownloadXlsx = { createXlsxLauncher.launch("cheques.xlsx") },
+                onAddCheque = { showReport = false; showAddForm = true },
             )
             "reminders" -> ChequeReminderSettingsScreen(onBack = { showReminderSettings = false })
             "detail" -> openedCheque?.let { cheque ->
@@ -286,14 +344,18 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                        if (!standalone) {
+                            IconButton(onClick = onBack) {
+                                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                            }
                         }
                         Text(
                             if (showArchived) "بایگانی چک" else "امور چک",
                             color = AppText,
-                            fontSize = 16.sp,
-                            modifier = Modifier.padding(start = 4.dp),
+                            // ۱۵ نه ۱۸ - این صفحه یه لایه تودرتوست (از سررسید/خانه باز می‌شه).
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(start = if (standalone) 0.dp else 4.dp),
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         // تنظیمات این بخش (دسته‌چک‌ها/بایگانی/پشتیبان‌گیری/بازیابی) زیر آیکون
@@ -321,7 +383,7 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                                 )
                                 DropdownMenuItem(
                                     text = { Text(if (showArchived) "بازگشت به لیست اصلی" else "بایگانی") },
-                                    onClick = { menuExpanded = false; showArchived = !showArchived; typeFilter = null },
+                                    onClick = { menuExpanded = false; chequeTab = if (showArchived) 0 else 2; typeFilter = null },
                                 )
                                 DropdownMenuItem(
                                     text = { Text("پشتیبان‌گیری") },
@@ -343,6 +405,25 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
                             }
                         }
                     }
+                }
+
+                item {
+                    SegmentedToggle(
+                        options = listOf("در جریان", "پاس‌شده", "بایگانی"),
+                        selectedIndex = chequeTab,
+                        onSelect = { chequeTab = it; typeFilter = null },
+                    )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("جستجو تو چک‌ها (اسم/شماره/بانک)...") },
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
                 }
 
                 item {
@@ -388,18 +469,25 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
 
                 if (visibleCheques.isEmpty()) {
                     item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(top = 60.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text("هنوز چکی ثبت نشده", color = AppText, fontSize = 15.sp)
-                        }
+                        EmptyState(
+                            icon = Icons.Outlined.ReceiptLong,
+                            title = "هنوز چکی ثبت نشده",
+                            description = "چک‌های دریافتی و پرداختیت رو اینجا ثبت کن تا قبل از " +
+                                "سررسیدِ هرکدوم یادآوری بگیری و امتیازِ ریسکِ برگشتِ هر طرف‌حساب " +
+                                "رو ببینی.",
+                        )
                     }
                 } else {
                     items(visibleCheques, key = { it.id }) { cheque ->
                         ChequeCard(
                             cheque = cheque,
                             onClick = { openedChequeId = cheque.id },
+                            onDelete = { viewModel.deleteCheque(cheque.id) },
+                            onRestore = if (cheque.archived) {
+                                { viewModel.setArchived(cheque, false) }
+                            } else {
+                                null
+                            },
                             modifier = Modifier.animateItem(),
                         )
                     }
@@ -413,33 +501,133 @@ fun ChequeScreen(onBack: () -> Unit, viewModel: ChequeViewModel = hiltViewModel(
 }
 
 @Composable
-private fun ChequeCard(cheque: ChequeEntity, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    AppCard(modifier = modifier.pressScaleClickable(onClick = onClick)) {
+private fun ChequeCard(
+    cheque: ChequeEntity,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+    onRestore: (() -> Unit)? = null,
+) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    SwipeToDeleteRow(onDelete = { showDeleteConfirm = true }, confirmDismiss = false, modifier = modifier) {
+    // ⚠️ **بازطراحیِ سبکِ «جیبک»** - ردیفِ چک طبقِ بخشِ «۸ · ردیفِ فهرست»ِ سیستمِ طراحی و
+    // کارتِ `3a`: قابِ آیکونِ ۳۲ با گوشه‌ی ۱۲ و ته‌رنگِ وضعیت · عنوانِ ۱۲٫۵/۸۰۰ ·
+    // فرادادهٔ ۱۰٫۵/۷۰۰ · مبلغِ ۱۲٫۵/۸۰۰.
+    //
+    // گونه‌ی کارت از **وضعیتِ** چک میاد، نه یه کارتِ سفیدِ همیشگی:
+    //   وضع‌نشده‌ی سررسیدگذشته → فوری (زمینه‌ی صورتی، حاشیه و سایه‌ی قرمز)
+    //   پاس‌شده/برگشت‌خورده/مسترد → تمام‌شده (شفافیتِ ۰٫۷۲، بی‌سایه)
+    //   بقیه                    → پیش‌فرض
+    val statusInk = chequeStatusColor(cheque.status)
+    val settled = cheque.status != "PENDING"
+    val overdue = !settled && JalaliCalendar.daysBetween(
+        PersianDate(cheque.dueYear, cheque.dueMonth, cheque.dueDay),
+        JalaliCalendar.today(),
+    ) > 0
+    AppCard(
+        variant = when {
+            overdue -> AppCardVariant.URGENT
+            settled -> AppCardVariant.DONE
+            else -> AppCardVariant.DEFAULT
+        },
+        contentPadding = 12.dp,
+        modifier = Modifier.pressScaleClickable(onClick = onClick),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
-                Text("چک ${toFa(cheque.chequeNumber)}", color = AppText, fontSize = 15.sp)
-                Text(cheque.bankName, color = AppMuted, fontSize = 12.sp)
+            // قابِ آیکون از **نوعِ** چک رنگ می‌گیره نه وضعیتش (فریمِ بخشِ ۳۶): دریافتی بنفش،
+            // پرداختی آبی. چکِ بایگانی خاکستری می‌شه.
+            val received = cheque.type == "RECEIVED"
+            val frameFill = when {
+                cheque.archived -> AppChipBg
+                received -> AppPurplePill
+                else -> AppInfoPill
+            }
+            val frameInk = when {
+                cheque.archived -> AppLabel
+                received -> AppPurple
+                else -> AppInfo
+            }
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(frameFill),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.ReceiptLong,
+                    contentDescription = null,
+                    tint = frameInk,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                // شماره‌ی چک ذاتاً چپ‌به‌راسته - فقط همون تکه تو `Ltr` می‌ره، نه کلِ سطر.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "${cheque.bankName} · ",
+                        color = AppText,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                    Ltr {
+                        Text(
+                            toFa(cheque.chequeNumber.takeLast(4)),
+                            color = AppText,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                        )
+                    }
+                }
                 Text(
-                    "${toFa(cheque.dueDay)}/${toFa(cheque.dueMonth)}/${toFa(cheque.dueYear)}",
-                    color = AppMuted,
-                    fontSize = 11.sp,
+                    "${chequeStatusLabel(cheque.status)} · ${toFa(cheque.dueDay)}/${toFa(cheque.dueMonth)}/${toFa(cheque.dueYear)}",
+                    color = if (overdue) AppDangerInk else AppMuted,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            Column(horizontalAlignment = Alignment.End) {
-                Text("${fmt(cheque.amount)} ریال", color = AppText, fontSize = 13.sp)
+            // ردیفِ بایگانی مبلغ نداره؛ جاش چیپِ «برگردان» می‌شینه (فریمِ بخشِ ۳۶).
+            if (cheque.archived && onRestore != null) {
+                Box(modifier = Modifier.height(44.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppPrimaryPill)
+                            .border(1.dp, AppPrimaryBorder, RoundedCornerShape(999.dp))
+                            .pressScaleClickable(onClick = onRestore)
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                    ) {
+                        Text(
+                            "برگردان",
+                            color = AppPrimaryInk,
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
+                }
+            } else {
                 Text(
-                    chequeStatusLabel(cheque.status),
-                    color = chequeStatusColor(cheque.status),
-                    fontSize = 11.sp,
-                    modifier = Modifier.padding(top = 2.dp),
+                    fmt(cheque.amount),
+                    color = AppText,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
                 )
             }
         }
+    }
+    }
+    if (showDeleteConfirm) {
+        ConfirmDeleteDialog(
+            title = "حذف چک",
+            text = "چکِ شماره‌ی «${toFa(cheque.chequeNumber)}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+            onConfirm = onDelete,
+            onDismiss = { showDeleteConfirm = false },
+        )
     }
 }
 
@@ -465,40 +653,37 @@ private fun LiveDateTimeHeader() {
         JalaliCalendar.fromGregorian(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
     }
     val weekDay = faWeekDayNames[JalaliCalendar.dayOfWeekSaturdayFirst(jalali)]
-    val dateText = "${toFa(jalali.y)}/${toFa("%02d".format(jalali.m))}/${toFa("%02d".format(jalali.d))}"
+    val dateText = "${toFa(jalali.y)}/${toFa(String.format(Locale.US, "%02d", jalali.m))}/${toFa(String.format(Locale.US, "%02d", jalali.d))}"
     val timeText = toFa(
-        "%02d:%02d:%02d".format(
+        String.format(Locale.US, "%02d:%02d:%02d", 
             cal.get(Calendar.HOUR_OF_DAY),
             cal.get(Calendar.MINUTE),
             cal.get(Calendar.SECOND),
         ),
     )
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(Brush.horizontalGradient(listOf(AppPrimaryDim, AppPrimary)))
-            .padding(vertical = 16.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(weekDay, color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp)
-            Text(
-                dateText,
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            Box(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color.White.copy(alpha = 0.18f))
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-            ) {
-                Text(timeText, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+    // ⚠️ کارتِ نمایشِ تاریخ/ساعته، نه کارتِ **قهرمانِ** صفحه - طبقِ قاعده‌ی «حداکثر یک رنگِ لهجه
+    // در هر صفحه» گرادیانِ سبزش برداشته شد و کارتِ سفیدِ معمولی شد.
+    AppCard {
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(weekDay, color = AppText.copy(alpha = 0.85f), fontSize = 13.sp)
+                Text(
+                    dateText,
+                    color = AppText,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(top = 10.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(AppChipBg)
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                ) {
+                    Text(timeText, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
@@ -533,7 +718,7 @@ private fun ChequeTypeButton(
         onClick = onClick,
         modifier = modifier.height(44.dp),
         shape = RoundedCornerShape(10.dp),
-        color = if (selected) color.copy(alpha = 0.16f) else AppSurface2,
+        color = if (selected) color.pillOverSurface(0.16f) else AppSurface2,
         border = BorderStroke(1.dp, if (selected) color else Color.Transparent),
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -601,7 +786,7 @@ private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
                 .fillMaxWidth()
                 .padding(top = 12.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(netColor.copy(alpha = 0.10f))
+                .background(netColor.pillOverSurface(0.10f))
                 .padding(12.dp),
         ) {
             Row(

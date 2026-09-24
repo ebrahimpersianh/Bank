@@ -4,13 +4,12 @@
         <item name="android:windowBackground">@color/app_bg</item>
     </style>
 
-    <!-- اینترو/اسپلش‌اسکرین واقعی موقع باز شدن اپ (قبلاً اصلاً وجود نداشت). MainActivity با
-         installSplashScreen() این تم رو موقتاً فعال می‌کنه، بعدش خودکار به Theme.LoanCalc برمی‌گرده. -->
+    <!-- فریمِ اولِ اندروید باید امتدادِ همان اینتروی Compose باشد: زمینهٔ کرم،
+         نشان واقعیِ جیبک و بدونِ فلاش/صفحهٔ خالی. بعد از آماده‌شدنِ Compose، سکه می‌افتد،
+         کیف ظاهر می‌شود و متن و نوار پیشرفت وارد می‌شوند. -->
     <style name="Theme.LoanCalc.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/app_bg</item>
-        <!-- آیکونِ اسپلشِ سیستمی عمداً شفافه: ماسکِ دایره‌ای اندروید ۱۲ دونات رو زشت می‌بُرید و
-             کاربر خواست این صفحه‌ی اضافه حذف بشه؛ اینتروِ دوناتیِ واقعی تو Compose نشون داده می‌شه. -->
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_empty</item>
+        <item name="windowSplashScreenBackground">@color/splash_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_blank</item>
         <item name="postSplashScreenTheme">@style/Theme.LoanCalc</item>
     </style>
 </resources>

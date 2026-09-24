@@ -4,6 +4,8 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +28,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import ir.sadteam.loancalc.core.ChequeType
 import ir.sadteam.loancalc.core.PersianDate
 import ir.sadteam.loancalc.core.cleanNum
@@ -47,11 +51,14 @@ import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
+import ir.sadteam.loancalc.ui.components.CounterpartyPickerDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.PhotoAttachmentCard
+import ir.sadteam.loancalc.ui.components.SuccessCheckmarkOverlay
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
+import ir.sadteam.loancalc.ui.debt.DebtViewModel
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -71,6 +78,7 @@ fun AddEditChequeScreen(
     onSaved: () -> Unit,
     onCancel: () -> Unit,
     viewModel: ChequeViewModel,
+    debtViewModel: DebtViewModel = hiltViewModel(),
 ) {
     var type by remember { mutableStateOf(existing?.let { ChequeType.valueOf(it.type) } ?: ChequeType.RECEIVED) }
     var amountText by remember { mutableStateOf(existing?.amount?.toLong()?.toString() ?: "") }
@@ -86,11 +94,19 @@ fun AddEditChequeScreen(
     var chequeBookId by remember { mutableStateOf(existing?.chequeBookId) }
     var photoPath by remember { mutableStateOf(existing?.photoPath) }
     var showMoreInfo by remember { mutableStateOf(false) }
+    // بعدِ ذخیره‌ی موفق، یه تیکِ سبزِ متحرک قبل از بستنِ صفحه - رجوع کن به SuccessCheckmark.kt.
+    var savedOk by remember { mutableStateOf(false) }
     var nationalId by remember { mutableStateOf(existing?.nationalId ?: "") }
     var previousBalanceText by remember { mutableStateOf(existing?.previousBalance?.let { fmt(it) } ?: "") }
     var depositAmountText by remember { mutableStateOf(existing?.depositAmount?.let { fmt(it) } ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
     var showCalendarPicker by remember { mutableStateOf(false) }
+
+    // طرفِ‌حسابِ لینک‌شده - جوابِ سوالِ ۶: انتخاب یا ساختِ طرفِ‌حساب موقعِ ثبتِ چکِ جدید اجباریه.
+    var counterpartyId by remember { mutableStateOf(existing?.counterpartyId) }
+    var showCounterpartyPicker by remember { mutableStateOf(false) }
+    val counterparties by debtViewModel.counterparties.collectAsState()
+    val selectedCounterparty = counterparties.firstOrNull { it.id == counterpartyId }
 
     if (showCalendarPicker) {
         CalendarPickerScreen(
@@ -106,6 +122,7 @@ fun AddEditChequeScreen(
         return
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -123,6 +140,7 @@ fun AddEditChequeScreen(
                     title = "پرداختی",
                     subtitle = "چکی که شما صادر کرده‌اید",
                     selected = type == ChequeType.PAID,
+                    selectedColor = AppDanger,
                     onClick = { type = ChequeType.PAID },
                     modifier = Modifier.weight(1f),
                 )
@@ -130,6 +148,7 @@ fun AddEditChequeScreen(
                     title = "دریافتی",
                     subtitle = "چکی که به شما داده شده",
                     selected = type == ChequeType.RECEIVED,
+                    selectedColor = AppPrimary,
                     onClick = { type = ChequeType.RECEIVED },
                     modifier = Modifier.weight(1f),
                 )
@@ -260,29 +279,48 @@ fun AddEditChequeScreen(
                                 Text(fmt(remainingVal), color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             }
                         }
-                    }
-                }
-            }
-        }
-        if (chequeBooks.isNotEmpty()) {
-            item {
-                AppCard(label = "اطلاعات دسته چک") {
-                    Text(
-                        "از بین دسته‌چک‌های ثبت‌شده انتخاب کنید (اختیاری)",
-                        color = AppMuted,
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
-                    ChequeBookDropdown(
-                        chequeBooks = chequeBooks,
-                        selected = chequeBookId,
-                        onSelect = { book ->
-                            chequeBookId = book?.id
-                            if (chequeNumber.isBlank() && book != null) {
-                                chequeNumber = book.nextSerial.toString()
+                        // ⚠️ شناسه‌ی صیادی، دسته‌چک، و یادداشت عمداً اینجان نه رو صفحه‌ی اصلیِ فرم -
+                        // فریمِ ۷b فقط نوع/بانک/شماره‌چک/سررسید/مبلغ/عکس رو تو نمای پیش‌فرض می‌خواد.
+                        if (chequeBooks.isNotEmpty()) {
+                            AppCard(label = "اطلاعات دسته چک") {
+                                Text(
+                                    "از بین دسته‌چک‌های ثبت‌شده انتخاب کنید (اختیاری)",
+                                    color = AppMuted,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(bottom = 8.dp),
+                                )
+                                ChequeBookDropdown(
+                                    chequeBooks = chequeBooks,
+                                    selected = chequeBookId,
+                                    onSelect = { book ->
+                                        chequeBookId = book?.id
+                                        if (chequeNumber.isBlank() && book != null) {
+                                            chequeNumber = book.nextSerial.toString()
+                                        }
+                                    },
+                                )
                             }
-                        },
-                    )
+                        }
+                        AppCard(label = "شناسه ۱۶ رقمی صیادی (اختیاری)") {
+                            // Ltr: رجوع کن به کامنتِ Ltr.kt.
+                            Ltr {
+                                OutlinedTextField(
+                                    value = sayadId,
+                                    onValueChange = { sayadId = cleanNum(it).take(16) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                )
+                            }
+                        }
+                        AppCard(label = "بابت (اختیاری)") {
+                            OutlinedTextField(
+                                value = notes,
+                                onValueChange = { notes = it },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -293,20 +331,6 @@ fun AddEditChequeScreen(
                     OutlinedTextField(
                         value = chequeNumber,
                         onValueChange = { chequeNumber = cleanNum(it) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                    )
-                }
-            }
-        }
-        item {
-            AppCard(label = "شناسه ۱۶ رقمی صیادی (اختیاری)") {
-                // Ltr: رجوع کن به کامنتِ Ltr.kt.
-                Ltr {
-                    OutlinedTextField(
-                        value = sayadId,
-                        onValueChange = { sayadId = cleanNum(it).take(16) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
@@ -345,6 +369,16 @@ fun AddEditChequeScreen(
             }
         }
         item {
+            AppCard(label = "طرف حساب") {
+                OutlinedButton(
+                    onClick = { showCounterpartyPicker = true },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(selectedCounterparty?.name ?: "انتخاب یا ساختِ طرفِ‌حساب")
+                }
+            }
+        }
+        item {
             // هم‌الگو با تاریخِ اینلاینِ چرخونه‌ای «وام بانکی» (InlineJalaliDateRow) - قبلاً این‌جا
             // سه تا دراپ‌داون بود که با تقویمِ بقیه‌ی اپ هم‌شکل نبود.
             AppCard(label = "تاریخ سررسید") {
@@ -366,15 +400,6 @@ fun AddEditChequeScreen(
                 }
             }
         }
-        item {
-            AppCard(label = "بابت (اختیاری)") {
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
         if (error != null) {
             item {
                 Text(text = error ?: "", color = AppDanger, fontSize = 12.sp)
@@ -390,6 +415,7 @@ fun AddEditChequeScreen(
                             chequeNumber.trim().isEmpty() -> "شماره چک رو وارد کن"
                             bankName.trim().isEmpty() -> "اسم بانک رو وارد کن"
                             ownerName.trim().isEmpty() -> "این فیلد رو وارد کن"
+                            counterpartyId == null -> "طرفِ‌حساب رو انتخاب کن"
                             else -> null
                         }
                         if (error == null) {
@@ -411,7 +437,8 @@ fun AddEditChequeScreen(
                                     nationalId = nationalId.trim(),
                                     previousBalance = cleanNumDecimal(previousBalanceText).toDoubleOrNull(),
                                     depositAmount = cleanNumDecimal(depositAmountText).toDoubleOrNull(),
-                                    onSaved = onSaved,
+                                    counterpartyId = counterpartyId,
+                                    onSaved = { savedOk = true },
                                 )
                             } else {
                                 viewModel.updateCheque(
@@ -432,8 +459,9 @@ fun AddEditChequeScreen(
                                         nationalId = nationalId.trim().takeIf { it.isNotBlank() },
                                         previousBalance = cleanNumDecimal(previousBalanceText).toDoubleOrNull(),
                                         depositAmount = cleanNumDecimal(depositAmountText).toDoubleOrNull(),
+                                        counterpartyId = counterpartyId,
                                     ),
-                                    onSaved = onSaved,
+                                    onSaved = { savedOk = true },
                                 )
                             }
                         }
@@ -448,6 +476,24 @@ fun AddEditChequeScreen(
             }
         }
     }
+    }
+    if (showCounterpartyPicker) {
+        CounterpartyPickerDialog(
+            counterparties = counterparties,
+            onSelect = { counterparty ->
+                counterpartyId = counterparty.id
+                showCounterpartyPicker = false
+            },
+            onCreateNew = { name ->
+                debtViewModel.addCounterparty(name) { newId ->
+                    counterpartyId = newId
+                    showCounterpartyPicker = false
+                }
+            },
+            onDismiss = { showCounterpartyPicker = false },
+        )
+    }
+    SuccessCheckmarkOverlay(visible = savedOk, onFinished = onSaved)
 }
 
 @Composable
@@ -455,6 +501,7 @@ private fun ChequeTypeToggleCard(
     title: String,
     subtitle: String,
     selected: Boolean,
+    selectedColor: androidx.compose.ui.graphics.Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -462,13 +509,13 @@ private fun ChequeTypeToggleCard(
         onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        color = if (selected) AppPrimary.copy(alpha = 0.16f) else AppSurface,
-        border = BorderStroke(1.dp, if (selected) AppPrimary else AppLine),
+        color = if (selected) selectedColor.copy(alpha = 0.16f) else AppSurface,
+        border = BorderStroke(1.dp, if (selected) selectedColor else AppLine),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 title,
-                color = if (selected) AppPrimary else AppText,
+                color = if (selected) selectedColor else AppText,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
             )

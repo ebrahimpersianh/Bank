@@ -4,6 +4,10 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.network.RequestOtpRequest
+import ir.sadteam.loancalc.data.network.SetNameRequest
+import ir.sadteam.loancalc.data.network.SubscriptionPurchaseDto
+import ir.sadteam.loancalc.data.network.BugReportRequest
+import ir.sadteam.loancalc.data.network.RedeemGiftRequest
 import ir.sadteam.loancalc.data.network.VerifySubscriptionRequest
 import ir.sadteam.loancalc.data.network.VerifyOtpRequest
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
@@ -71,6 +75,9 @@ class AuthRepository(
             authPrefs.setTrialDaysLeft(result.trialDaysLeft)
             authPrefs.setSubscribedUntil(result.subscribedUntil)
             authPrefs.setSubscriptionTier(result.subscriptionTier)
+            authPrefs.setUserName(result.name)
+            authPrefs.setUserId(result.userId)
+            authPrefs.setLegacyGift(result.legacyGift)
         } catch (e: Exception) {
             // بی‌صدا نادیده گرفته می‌شه - این فقط یه تازه‌سازیِ پس‌زمینه‌ست؛ اگه شکست بخوره (مثلاً
             // بی‌اینترنتی)، مقدارِ محلیِ قبلی همچنان معتبر می‌مونه تا دفعه‌ی بعد.
@@ -94,6 +101,68 @@ class AuthRepository(
             AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))
         } catch (e: Exception) {
             AuthResult.Error(null)
+        }
+    }
+
+    /**
+     * 🐞 ثبتِ گزارشِ مشکل روی سرور. خروجی **کدِ پیگیری** است، یا `null` اگر نشد.
+     *
+     * ⚠️ فقط برای کاربرِ واردشده: بی `user_id` گزارش به هیچ حسابی بسته نمی‌شود و
+     * دادنِ هدیه ممکن نیست - همان دلیلی که این کار را سمتِ سرور می‌بَرَد.
+     */
+    suspend fun reportBug(message: String, appVersion: String?, device: String?): String? {
+        val token = authPrefs.authToken.first()
+        if (token.isNullOrEmpty()) return null
+        return try {
+            apiService.reportBug("Bearer $token", BugReportRequest(message, appVersion, device)).ticket
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * 🎁 خرج‌کردنِ کدِ هدیه. موفق که شد، اشتراکِ محلی هم فوراً روشن می‌شود تا کاربر
+     * برای دیدنِ نتیجه مجبور به ورود/خروج نباشد.
+     *
+     * خطاها همان کدهای سرورند: `not_found` / `already_used` / `expired`.
+     */
+    suspend fun redeemGiftCode(code: String): AuthResult {
+        val token = authPrefs.authToken.first()
+        if (token.isNullOrEmpty()) return AuthResult.Error(null)
+        return try {
+            apiService.redeemGiftCode("Bearer $token", RedeemGiftRequest(code.trim().uppercase()))
+            authPrefs.setSubscribed(true)
+            AuthResult.Success
+        } catch (e: HttpException) {
+            AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))
+        } catch (e: Exception) {
+            AuthResult.Error(null)
+        }
+    }
+
+    /** ذخیره‌ی نامِ اختیاریِ کاربر رو سرور (تا با عوض‌کردنِ گوشی هم بمونه) + محلی.
+     * رشته‌ی خالی یعنی پاک‌کردنِ اسم. اگه سرور در دسترس نباشه، حداقل محلی ذخیره می‌شه. */
+    suspend fun updateName(name: String?): Boolean {
+        val clean = name?.trim()?.ifBlank { null }
+        authPrefs.setUserName(clean)
+        val token = authPrefs.authToken.first() ?: return false
+        return try {
+            apiService.setName("Bearer $token", SetNameRequest(clean))
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /** تاریخچه‌ی خریدهای اشتراک. اگه کاربر لاگین نباشه یا سرور در دسترس نباشه لیستِ خالی برمی‌گرده
+     * (صفحه‌ی اشتراک اون‌وقت فقط پیامِ «تاریخچه‌ای نیست» نشون می‌ده، نه خطا). */
+    suspend fun subscriptionHistory(): List<SubscriptionPurchaseDto> {
+        val token = authPrefs.authToken.first()
+        if (token.isNullOrEmpty()) return emptyList()
+        return try {
+            apiService.subscriptionHistory("Bearer $token").items
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 
