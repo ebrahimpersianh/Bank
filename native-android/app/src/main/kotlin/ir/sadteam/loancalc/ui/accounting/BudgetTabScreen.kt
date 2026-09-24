@@ -628,35 +628,37 @@ private fun DailyAllowanceHero(
     // هم‌قدِ کارتِ خانه (خواسته‌ی کاربر، ۳ مهر): یک ردیفِ بالا، عدد و «تومان» در یک خط،
     // درآمد/خرج بی‌قاب مثلِ خانه، نمودارِ کوتاه‌تر و یک خطِ پایین.
     AppHeroCard {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "امروز می‌توانی خرج کنی",
-                color = Color.White.copy(alpha = 0.85f),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f),
-            )
-            HeroPillLabel(icon = Icons.Filled.Today, text = "روزِ ${toFa(dayOfMonth)} از ${toFa(daysInMonth)}")
-        }
-        Row(modifier = Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
-                PrivacyCrossfade(privacyMode) { masked ->
-                    Text(
-                        maskIfPrivate(masked, allowance.rialToFaCompact()),
-                        color = Color.White,
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                        softWrap = false,
-                    )
-                }
+        // خواسته‌ی کاربر (۳ مهر): قرصِ «روزِ X از Y» گوشه‌ی بالا-راست، «امروز می‌توانی…» زیرش،
+        // و درآمد/خرج کوچک‌تر در ستونِ چپ از بالای کارت - تا ارتفاعِ کارت کم شود.
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+            Column(modifier = Modifier.weight(1f)) {
+                HeroPillLabel(icon = Icons.Filled.Today, text = "روزِ ${toFa(dayOfMonth)} از ${toFa(daysInMonth)}")
                 Text(
-                    "تومان",
-                    color = Color.White.copy(alpha = 0.8f),
+                    "امروز می‌توانی خرج کنی",
+                    color = Color.White.copy(alpha = 0.85f),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 6.dp, bottom = 6.dp),
+                    modifier = Modifier.padding(top = 8.dp),
                 )
+                Row(verticalAlignment = Alignment.Bottom) {
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            maskIfPrivate(masked, allowance.rialToFaCompact()),
+                            color = Color.White,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Black,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
+                    Text(
+                        "تومان",
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 6.dp, bottom = 6.dp),
+                    )
+                }
             }
             Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 10.dp)) {
                 HeroMiniStat(up = true, label = "درآمدِ این ماه", value = monthIncome, privacyMode = privacyMode)
@@ -665,7 +667,7 @@ private fun DailyAllowanceHero(
                     label = "خرجِ این ماه",
                     value = monthExpense,
                     privacyMode = privacyMode,
-                    modifier = Modifier.padding(top = 7.dp),
+                    modifier = Modifier.padding(top = 5.dp),
                 )
             }
         }
@@ -736,13 +738,13 @@ private fun HeroPillLabel(icon: androidx.compose.ui.graphics.vector.ImageVector,
 private fun HeroMiniStat(up: Boolean, label: String, value: Double, privacyMode: Boolean, modifier: Modifier = Modifier) {
     val ink = if (up) HeroIncome else HeroExpense
     Column(modifier = modifier, horizontalAlignment = Alignment.End) {
-        Text(label, color = Color.White.copy(alpha = 0.75f), fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
+        Text(label, color = Color.White.copy(alpha = 0.75f), fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 1.dp)) {
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
                     (if (up) "+ " else "− ") + maskIfPrivate(masked, value.rialToFaCompact()),
                     color = ink,
-                    fontSize = 12.5.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.Black,
                     maxLines = 1,
                     softWrap = false,
