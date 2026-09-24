@@ -53,6 +53,8 @@ internal fun StyledHeroChart(
     height: Dp = 44.dp,
     slots: Int? = null,
     tooltipBackground: Color = Color.Black.copy(alpha = 0.40f),
+    /** رنگِ خط/نقطه‌ها: سفید روی کارتِ قهرمان، رنگِ روند روی کارت‌های روشن (دارایی، ۳ مهر). */
+    ink: Color = Color.White,
 ) {
     val axis = (slots ?: values.size).coerceAtLeast(values.size).coerceAtLeast(2)
     val lead = axis - values.size
@@ -99,11 +101,11 @@ internal fun StyledHeroChart(
             val k = (size.height / 40.dp.toPx()).coerceIn(0.6f, 1f)
             if (values.size < 2) {
                 val y = size.height / 2f
-                drawLine(white(0.35f), Offset(0f, y), Offset(size.width, y), 2.dp.toPx() * k, StrokeCap.Round)
+                drawLine(ink.copy(alpha = 0.35f), Offset(0f, y), Offset(size.width, y), 2.dp.toPx() * k, StrokeCap.Round)
                 return@Canvas
             }
             val points = pointsOf(values, axis, lead, padY = 10.dp.toPx() * k)
-            val s = ChartScale(k, today)
+            val s = ChartScale(k, today, ink)
             when (style) {
                 HeroChartStyle.SOFT_WAVE -> softWave(points, s)
                 HeroChartStyle.STEPPED -> stepped(points, s)
@@ -115,13 +117,13 @@ internal fun StyledHeroChart(
             }
             if (style != HeroChartStyle.BUBBLES) {
                 val p = points[today]
-                drawCircle(white(0.98f), 5.dp.toPx() * k, p)
-                drawCircle(white(0.34f), 9.dp.toPx() * k, p, style = Stroke(2.dp.toPx() * k))
+                drawCircle(ink.copy(alpha = 0.98f), 5.dp.toPx() * k, p)
+                drawCircle(ink.copy(alpha = 0.34f), 9.dp.toPx() * k, p, style = Stroke(2.dp.toPx() * k))
             }
             touchedIndex?.let { i ->
                 val p = points[i]
-                drawLine(white(0.22f), Offset(p.x, 0f), Offset(p.x, size.height), 1.dp.toPx())
-                drawCircle(white(0.95f), 6.dp.toPx() * k, p)
+                drawLine(ink.copy(alpha = 0.22f), Offset(p.x, 0f), Offset(p.x, size.height), 1.dp.toPx())
+                drawCircle(ink.copy(alpha = 0.95f), 6.dp.toPx() * k, p)
             }
         }
         ChartTooltipHost(visible = touchedIndex != null, modifier = Modifier.align(AbsoluteAlignment.TopLeft)) {
@@ -139,9 +141,8 @@ internal fun StyledHeroChart(
     }
 }
 
-private class ChartScale(val k: Float, val today: Int)
+private class ChartScale(val k: Float, val today: Int, val ink: Color)
 
-private fun white(alpha: Float) = Color.White.copy(alpha = alpha)
 
 private fun nearest(x: Float, width: Float, axis: Int, lead: Int): Int {
     if (axis < 2 || width <= 0f) return 0
@@ -165,14 +166,14 @@ private fun DrawScope.pointsOf(values: List<Double>, axis: Int, lead: Int, padY:
 
 private fun DrawScope.stroke(path: Path, s: ChartScale) = drawPath(
     path,
-    white(0.90f),
+    s.ink.copy(alpha = 0.90f),
     style = Stroke(width = 3.dp.toPx() * s.k, cap = StrokeCap.Round, join = StrokeJoin.Round),
 )
 
 /** نقطه‌ی کوچکِ هر داده - وقتی نقاط خیلی نزدیک‌اند کشیده نمی‌شود تا خط تسبیح نشود. */
 private fun DrawScope.smallDots(points: List<Offset>, s: ChartScale, radius: Dp, alpha: Float) {
     if (points.size > 1 && points[1].x - points[0].x < 6.dp.toPx()) return
-    points.forEach { drawCircle(white(alpha), radius.toPx() * s.k, it) }
+    points.forEach { drawCircle(s.ink.copy(alpha = alpha), radius.toPx() * s.k, it) }
 }
 
 private fun DrawScope.softWave(points: List<Offset>, s: ChartScale) {
@@ -198,7 +199,7 @@ private fun DrawScope.stepped(points: List<Offset>, s: ChartScale) {
 
 private fun DrawScope.dots(points: List<Offset>, s: ChartScale) {
     val r = if (points.size > 1 && points[1].x - points[0].x < 8.dp.toPx()) 2.dp else 3.5.dp
-    points.forEach { drawCircle(white(0.76f), r.toPx() * s.k, it) }
+    points.forEach { drawCircle(s.ink.copy(alpha = 0.76f), r.toPx() * s.k, it) }
 }
 
 private fun DrawScope.gradientColumns(points: List<Offset>, s: ChartScale) {
@@ -207,7 +208,7 @@ private fun DrawScope.gradientColumns(points: List<Offset>, s: ChartScale) {
     points.forEachIndexed { i, p ->
         val top = if (i == s.today) 0.92f else 0.46f
         drawRoundRect(
-            brush = Brush.verticalGradient(listOf(white(top), white(0f)), startY = p.y, endY = size.height),
+            brush = Brush.verticalGradient(listOf(s.ink.copy(alpha = top), s.ink.copy(alpha = 0f)), startY = p.y, endY = size.height),
             topLeft = Offset(p.x - colW / 2f, p.y),
             size = Size(colW, size.height - p.y),
             cornerRadius = corner,
@@ -223,7 +224,7 @@ private fun DrawScope.areaWave(points: List<Offset>, s: ChartScale) {
         lineTo(points.first().x, size.height)
         close()
     }
-    drawPath(area, Brush.verticalGradient(listOf(white(0.24f), white(0.02f))))
+    drawPath(area, Brush.verticalGradient(listOf(s.ink.copy(alpha = 0.24f), s.ink.copy(alpha = 0.02f))))
     stroke(curve, s)
     smallDots(points, s, 3.dp, 0.70f)
 }
@@ -236,12 +237,12 @@ private fun DrawScope.bubbles(points: List<Offset>, s: ChartScale) {
         val isToday = i == s.today
         val radius = min(cap, (if (isToday) 7.dp.toPx() else (4.dp.toPx() + (i % 3) * 1.dp.toPx())) * s.k)
         drawLine(
-            white(if (isToday) 0.42f else 0.22f),
+            s.ink.copy(alpha = if (isToday) 0.42f else 0.22f),
             Offset(p.x, p.y + radius),
             Offset(p.x, size.height),
             1.dp.toPx(),
         )
-        drawCircle(white(if (isToday) 0.95f else 0.38f), radius, p)
+        drawCircle(s.ink.copy(alpha = if (isToday) 0.95f else 0.38f), radius, p)
     }
 }
 

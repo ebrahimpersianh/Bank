@@ -56,6 +56,8 @@ fun HeroChart(
     /** فقط برای شکلِ خطی: طولِ کاملِ محور (مثلاً ۳۰ روز) وقتی داده کمتر است. */
     slots: Int? = null,
     tooltipBackground: Color = Color.Black.copy(alpha = 0.40f),
+    /** رنگِ نمودار؛ پیش‌فرض سفید (کارتِ قهرمان). کارت‌های روشن رنگِ سبز/قرمزِ روند می‌دهند. */
+    ink: Color = Color.White,
 ) {
     val style = LocalHeroChartStyle.current ?: natural
     when (style) {
@@ -64,8 +66,8 @@ fun HeroChart(
             labels = labels,
             valueLabel = valueLabel,
             currentIndex = currentIndex,
-            barColor = Color.White.copy(alpha = 0.30f),
-            currentBarColor = Color.White,
+            barColor = ink.copy(alpha = 0.30f),
+            currentBarColor = ink,
             tooltipBackground = tooltipBackground,
             tooltipTitleColor = Color.White.copy(alpha = 0.75f),
             tooltipValueColor = Color.White,
@@ -76,9 +78,9 @@ fun HeroChart(
         )
         HeroChartStyle.LINE -> TrendLineChart(
             values = values,
-            lineColor = Color.White,
-            fillTop = Color.White.copy(alpha = 0.32f),
-            dotColor = Color.White,
+            lineColor = ink,
+            fillTop = ink.copy(alpha = 0.32f),
+            dotColor = ink,
             modifier = modifier,
             height = height,
             labels = labels,
@@ -97,6 +99,7 @@ fun HeroChart(
             height = height,
             slots = slots,
             tooltipBackground = tooltipBackground,
+            ink = ink,
         )
     }
 }
