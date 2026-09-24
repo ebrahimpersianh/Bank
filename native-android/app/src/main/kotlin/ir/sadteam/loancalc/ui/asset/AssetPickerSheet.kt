@@ -36,6 +36,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -111,8 +113,11 @@ fun AssetPickerSheet(
         }
     }
 
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 120.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -211,6 +216,16 @@ fun AssetPickerSheet(
                         if (category == ASSET_CATEGORY_CUSTOM) return@forEach
                         FilterPill(title, filter == category, icon = { _ -> CategoryGlyph(category, 18.dp) }) {
                             filter = if (filter == category) null else category
+                        }
+                    }
+                    // کارتِ «عنوانِ دلخواه» تهِ فهرست است (قیمت ندارد)؛ این قرص تا آن‌جا می‌بَرد
+                    // تا کسی که ملک/خودرو می‌خواهد از بالای صفحه هم پیدایش کند (بازخوردِ کاربر، ۳ مهر).
+                    FilterPill("عنوانِ دلخواه", false, icon = {
+                        Icon(Icons.Filled.Add, contentDescription = null, tint = it, modifier = Modifier.size(16.dp))
+                    }) {
+                        scope.launch {
+                            val index = listState.layoutInfo.totalItemsCount - 1
+                            if (index >= 0) listState.animateScrollToItem(index)
                         }
                     }
                 }
