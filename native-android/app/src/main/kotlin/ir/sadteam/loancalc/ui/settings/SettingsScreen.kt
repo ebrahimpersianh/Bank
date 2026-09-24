@@ -2686,7 +2686,7 @@ private fun AboutSettings(banner: InAppBannerState, onOpenBugReport: () -> Unit)
             tone = SettingsTone.NEUTRAL,
             onClick = { showPrivacy = true },
         )
-        // منبعِ قیمت (شرطِ servix) فقط پای صفحه‌ی «قیمتِ روز» می‌ماند؛ از این‌جا به‌خواستِ کاربر (۳ مهر) برداشته شد.
+        // ذکرِ منبعِ قیمت (Servix) به تصمیمِ صریحِ کاربر (۳ مهر) از کلِ برنامه حذف شد.
     }
 
     Text(

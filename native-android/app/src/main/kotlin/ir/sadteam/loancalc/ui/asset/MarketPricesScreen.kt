@@ -268,20 +268,7 @@ fun MarketPricesScreen(
                     }
                 }
             }
-            // 🚨 **ذکرِ منبع - شرطِ قراردادیِ سرویس.** یک دور کاملاً حذف شد و با راهِ
-            // میانیِ طراح برگشت: ردیفِ اصلی در «درباره‌ی برنامه» است و این‌جا فقط یک خطِ
-            // ریز، چون داده‌ی همین صفحه واقعاً مالِ آن سرویس است. نادیده‌گرفتنِ
-            // `attributionRequired` یعنی ریسکِ قطعِ دسترسی، و آن یعنی خوابیدنِ قیمت‌ها
-            // برای همه‌ی کاربران. **بی تاییدِ صریحِ کاربر دوباره حذفش نکن.**
-            item(key = "attribution") {
-                Text(
-                    "منبعِ قیمت‌ها: Servix.cc",
-                    color = AppMuted,
-                    fontSize = 9.sp,
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 10.dp),
-                    textAlign = TextAlign.Center,
-                )
-            }
+            // ذکرِ منبع (Servix) به تصمیمِ صریحِ کاربر (۳ مهر) کاملاً حذف شد؛ ریسکِ قطعِ دسترسی را پذیرفت.
         }
 
         if (openAssetEntity != null) {
