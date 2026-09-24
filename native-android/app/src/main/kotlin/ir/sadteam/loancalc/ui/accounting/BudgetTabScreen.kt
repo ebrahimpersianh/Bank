@@ -625,36 +625,48 @@ private fun DailyAllowanceHero(
     // چیدمانِ طرحِ ChatGPT (۲ مهر): دو قرصِ بالا، عددِ درشت راست و دو باکسِ درآمد/خرج چپ،
     // نمودارِ روزهای ماه با «امروز»، و دو خطِ پایین. `week`/`weekSpent` دیگر نمایش داده
     // نمی‌شوند - نمودارِ ماه همان خبر را کامل‌تر می‌دهد.
+    // هم‌قدِ کارتِ خانه (خواسته‌ی کاربر، ۳ مهر): یک ردیفِ بالا، عدد و «تومان» در یک خط،
+    // درآمد/خرج بی‌قاب مثلِ خانه، نمودارِ کوتاه‌تر و یک خطِ پایین.
     AppHeroCard {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            HeroPillLabel(icon = Icons.Filled.CalendarMonth, text = "ماهِ جاری")
-            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                "امروز می‌توانی خرج کنی",
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f),
+            )
             HeroPillLabel(icon = Icons.Filled.Today, text = "روزِ ${toFa(dayOfMonth)} از ${toFa(daysInMonth)}")
         }
-        Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.Top) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "امروز می‌توانی خرج کنی",
-                    color = Color.White.copy(alpha = 0.85f),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                )
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         maskIfPrivate(masked, allowance.rialToFaCompact()),
                         color = Color.White,
-                        fontSize = 34.sp,
+                        fontSize = 30.sp,
                         fontWeight = FontWeight.Black,
                         maxLines = 1,
                         softWrap = false,
-                        modifier = Modifier.padding(top = 2.dp),
                     )
                 }
-                Text("تومان", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "تومان",
+                    color = Color.White.copy(alpha = 0.8f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 6.dp, bottom = 6.dp),
+                )
             }
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(start = 10.dp)) {
+            Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 10.dp)) {
                 HeroMiniStat(up = true, label = "درآمدِ این ماه", value = monthIncome, privacyMode = privacyMode)
-                HeroMiniStat(up = false, label = "خرجِ این ماه", value = monthExpense, privacyMode = privacyMode)
+                HeroMiniStat(
+                    up = false,
+                    label = "خرجِ این ماه",
+                    value = monthExpense,
+                    privacyMode = privacyMode,
+                    modifier = Modifier.padding(top = 7.dp),
+                )
             }
         }
         if (monthDaily.isNotEmpty()) {
@@ -664,43 +676,35 @@ private fun DailyAllowanceHero(
                 valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
                 currentIndex = (dayOfMonth - 1).coerceIn(0, monthDaily.lastIndex),
                 natural = HeroChartStyle.BARS,
-                modifier = Modifier.padding(top = 14.dp),
+                height = 34.dp,
+                modifier = Modifier.padding(top = 10.dp),
             )
         }
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "${toFa(dayOfMonth)} روز از ${toFa(daysInMonth)} روز گذشته",
-                color = Color.White.copy(alpha = 0.85f),
-                fontSize = 10.sp,
+                "${toFa(daysLeft)} روز تا پایانِ ماه",
+                color = Color.White.copy(alpha = 0.75f),
+                fontSize = 9.5.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f),
             )
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    "تا پایانِ ماه ${toFa(daysLeft)} روز مانده",
-                    color = Color.White.copy(alpha = 0.85f),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
+            if (saved > 0) {
+                Icon(
+                    Icons.Filled.Savings,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(13.dp),
                 )
-                if (saved > 0) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 3.dp)) {
-                        Text(
-                            "+${saved.rialToFaCompact()} ذخیره",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Black,
-                        )
-                        Icon(
-                            Icons.Filled.Savings,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.padding(start = 5.dp).size(16.dp),
-                        )
-                    }
-                }
+                Text(
+                    "+${saved.rialToFaCompact()} ذخیره",
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
             }
         }
     }
@@ -727,40 +731,29 @@ private fun HeroPillLabel(icon: androidx.compose.ui.graphics.vector.ImageVector,
     }
 }
 
-/** باکسِ کوچکِ درآمد/خرج روی کارتِ بالا - فلشِ رنگی + عدد. */
+/** خطِ درآمد/خرجِ کارتِ بالا - **بی‌قاب**، دقیقاً مثلِ جفتِ «درآمد/خرجِ امروز»ِ کارتِ خانه. */
 @Composable
-private fun HeroMiniStat(up: Boolean, label: String, value: Double, privacyMode: Boolean) {
+private fun HeroMiniStat(up: Boolean, label: String, value: Double, privacyMode: Boolean, modifier: Modifier = Modifier) {
     val ink = if (up) HeroIncome else HeroExpense
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(Color.White.copy(alpha = 0.12f))
-            .padding(horizontal = 9.dp, vertical = 7.dp),
-    ) {
-        Box(
-            modifier = Modifier.size(26.dp).clip(RoundedCornerShape(9.dp)).background(Color.White.copy(alpha = 0.14f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                if (up) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
-                contentDescription = null,
-                tint = ink,
-                modifier = Modifier.size(15.dp),
-            )
-        }
-        Column(modifier = Modifier.padding(start = 7.dp)) {
-            Text(label, color = Color.White.copy(alpha = 0.8f), fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+    Column(modifier = modifier, horizontalAlignment = Alignment.End) {
+        Text(label, color = Color.White.copy(alpha = 0.75f), fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    maskIfPrivate(masked, value.rialToFaCompact()) + " تومان",
+                    (if (up) "+ " else "− ") + maskIfPrivate(masked, value.rialToFaCompact()),
                     color = ink,
-                    fontSize = 11.sp,
+                    fontSize = 12.5.sp,
                     fontWeight = FontWeight.Black,
                     maxLines = 1,
                     softWrap = false,
                 )
             }
+            Icon(
+                if (up) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
+                contentDescription = null,
+                tint = ink,
+                modifier = Modifier.padding(start = 3.dp).size(11.dp),
+            )
         }
     }
 }
