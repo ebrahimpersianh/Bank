@@ -147,7 +147,7 @@ import android.content.ComponentName
  */
 @Composable
 private fun StarryNightCollectionCard(owned: Set<String>, earned: Boolean, onView: () -> Unit) {
-    val required = setOf("theme:vangogh", "bg_night_swirl")
+    val required = STARRY_IDS.toSet()
     val collected = required.count(owned::contains)
     val gold = Color(0xFFF2C14E)
     AppCard(
@@ -199,6 +199,139 @@ private fun StarryNightCollectionCard(owned: Set<String>, earned: Boolean, onVie
     }
 }
 
+/** تکه‌های کالکشنِ «شب پرستاره» - همان دو قلمی که `ShopViewModel` برای نشان می‌شمارد. */
+private val STARRY_IDS = listOf("theme:vangogh", "bg_night_swirl")
+
+/**
+ * صفحه‌ی کالکشن (بسته‌ی طراحیِ ChatGPT، ۳ مهر): تصویرِ جعبه، پیشرفت، کارتِ نشانِ ویژه و
+ * فهرستِ تکه‌ها. تپ روی هر تکه صفحه‌ی همان محصول را باز می‌کند؛ خرید همان مسیرِ قبلی است.
+ */
+@Composable
+private fun StarryCollectionSheet(
+    items: List<ShopItem>,
+    owned: Set<String>,
+    earned: Boolean,
+    balance: Int,
+    stateOf: (ShopItem) -> RowState,
+    onDismiss: () -> Unit,
+    onOpen: (ShopItem) -> Unit,
+) {
+    val collected = items.count { it.id in owned }
+    val total = items.size.coerceAtLeast(1)
+    val gold = Color(0xFFF2C14E)
+    FullScreenDialog(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.fillMaxSize().background(AppBg)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
+                }
+                Text(
+                    "مجموعه‌ی شب پرستاره",
+                    color = AppText,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
+            }
+            LazyColumn(
+                contentPadding = PaddingValues(start = 10.dp, end = 16.dp, top = 6.dp, bottom = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.weight(1f),
+            ) {
+                item {
+                    AppCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        accentGradient = Brush.linearGradient(listOf(Color(0xFF1B3A7A), Color(0xFF0B1A3A))),
+                        contentPadding = 16.dp,
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Image(
+                                painter = painterResource(R.drawable.banner_starry_gift),
+                                contentDescription = null,
+                                modifier = Modifier.size(132.dp),
+                            )
+                            Text(
+                                "کالکشن شب پرستاره",
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Black,
+                                modifier = Modifier.padding(top = 6.dp),
+                            )
+                            Text(
+                                "${toFa(collected)} از ${toFa(items.size)} تکه را داری",
+                                color = Color.White.copy(alpha = 0.78f),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 3.dp),
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 12.dp)
+                                    .fillMaxWidth()
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(Color.White.copy(alpha = 0.15f)),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(collected.toFloat() / total)
+                                        .height(8.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(gold),
+                                )
+                            }
+                        }
+                    }
+                }
+                item {
+                    AppCard(modifier = Modifier.fillMaxWidth()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier.size(44.dp).clip(CircleShape).background(gold.copy(alpha = 0.18f)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(Icons.Filled.WorkspacePremium, contentDescription = null, tint = gold, modifier = Modifier.size(26.dp))
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    if (earned) "نشانِ ویژه را گرفتی" else "نشانِ ویژه",
+                                    color = AppText,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Black,
+                                )
+                                Text(
+                                    if (earned) "این مجموعه کامل است." else "با کامل‌کردنِ این مجموعه، نشانِ اختصاصی می‌گیری.",
+                                    color = AppLabel,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+                items(items.size) { index ->
+                    val item = items[index]
+                    CompositionLocalProvider(LocalOpenProduct provides onOpen) {
+                        ShopRow(
+                            item = item,
+                            state = stateOf(item),
+                            balance = balance,
+                            onActivate = onOpen,
+                            onConfirm = onOpen,
+                            leading = { previewFor(item) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 /** حالتِ یک ردیف. از موجودی و مالکیت و نشان‌ها مشتق می‌شود، جایی ذخیره نمی‌شود. */
 /**
  * بازکردنِ صفحه‌ی اختصاصیِ محصول (تصمیمِ ۵ِ فروشگاه). از ردیف و کارت خوانده می‌شود تا
@@ -231,6 +364,7 @@ fun ShopScreen(
     val catalog by viewModel.catalog.collectAsState()
     var confirming by remember { mutableStateOf<ShopItem?>(null) }
     var detail by remember { mutableStateOf<ShopItem?>(null) }
+    var showCollection by remember { mutableStateOf(false) }
     var freshExpanded by rememberSaveable { mutableStateOf(false) }
     /** `null` یعنی تبِ «همه». */
     var tab by rememberSaveable { mutableStateOf<ShopCategory?>(null) }
@@ -335,7 +469,7 @@ fun ShopScreen(
             StarryNightCollectionCard(
                 owned = owned,
                 earned = Badge.COLLECTION_STARRY_NIGHT.code in earnedBadges,
-                onView = { detail = catalog.firstOrNull { it.id == "theme:vangogh" } },
+                onView = { showCollection = true },
             )
         }
         stickyHeader {
@@ -518,6 +652,18 @@ fun ShopScreen(
     }
     }
         InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
+    }
+
+    if (showCollection) {
+        StarryCollectionSheet(
+            items = STARRY_IDS.mapNotNull { id -> catalog.firstOrNull { it.id == id } },
+            owned = owned,
+            earned = Badge.COLLECTION_STARRY_NIGHT.code in earnedBadges,
+            balance = balance,
+            stateOf = ::stateOf,
+            onDismiss = { showCollection = false },
+            onOpen = { detail = it },
+        )
     }
 
     detail?.let { item ->
