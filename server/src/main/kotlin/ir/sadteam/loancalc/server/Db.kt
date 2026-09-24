@@ -244,6 +244,9 @@ object Db {
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN name TEXT")
             // هدیه‌ی «کاربرِ قدیمی» - رجوع کن به grantLegacyGift پایین‌تر.
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN legacy_gift_granted INTEGER NOT NULL DEFAULT 0")
+            // ۳ مهر: کرش به حسابِ کاربر وصل می‌شود (اگر وارد بود) و پیام می‌تواند اختصاصی باشد.
+            addColumnIfMissing(conn, "ALTER TABLE crash_reports ADD COLUMN user_id INTEGER")
+            addColumnIfMissing(conn, "ALTER TABLE announcements ADD COLUMN target_user_id INTEGER")
             // نسخه‌ی نشست - رجوع کن به Auth.kt. بالا رفتنش یعنی «همه‌ی توکن‌های قبلی باطل».
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN session_version INTEGER NOT NULL DEFAULT 0")
             // شماره‌ی نسخه‌ی هر اسنپ‌شاتِ ابری - پایه‌ی کنترلِ هم‌زمانی (رجوع کن به BackupRoutes).

@@ -21,6 +21,10 @@ on:
         type: choice
         default: info
         options: [info, update, outage, feature]
+      target:
+        description: "(اختیاری) فقط برای یک نفر: شماره‌ی کاربری (مثلاً 739) یا موبایل (09...). خالی = همه"
+        required: false
+        default: ""
       remove_id:
         description: "(اختیاری) شماره‌ی اطلاعیه‌ای که باید برداشته بشه"
         required: false
@@ -37,6 +41,7 @@ jobs:
           BODY: ${{ inputs.body }}
           KIND: ${{ inputs.kind }}
           REMOVE_ID: ${{ inputs.remove_id }}
+          TARGET: ${{ inputs.target }}
         run: |
           # jq متن رو امن به JSON تبدیل می‌کنه (نقل‌قول و خطِ تازه خرابش نمی‌کنن).
           if [ -n "$REMOVE_ID" ]; then
@@ -48,7 +53,11 @@ jobs:
               exit 1
             fi
             echo "path=create" >> "$GITHUB_OUTPUT"
-            echo "json=$(jq -cn --arg t "$TITLE" --arg b "$BODY" --arg k "$KIND" '{title:$t,body:$b,kind:$k}')" >> "$GITHUB_OUTPUT"
+            # گیرنده: با ۰ شروع شود یعنی موبایل، وگرنه شماره‌ی کاربری.
+            if [ -z "$TARGET" ]; then TGT='{}'
+            elif [[ "$TARGET" == 0* ]]; then TGT=$(jq -cn --arg p "$TARGET" '{targetPhone:$p}')
+            else TGT=$(jq -cn --argjson u "$TARGET" '{targetUserId:$u}'); fi
+            echo "json=$(jq -cn --arg t "$TITLE" --arg b "$BODY" --arg k "$KIND" --argjson x "$TGT" '{title:$t,body:$b,kind:$k} + $x')" >> "$GITHUB_OUTPUT"
           fi
 
       - name: فرستادن از طریقِ خودِ سرور
