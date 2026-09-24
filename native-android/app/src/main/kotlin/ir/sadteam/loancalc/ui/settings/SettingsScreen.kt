@@ -878,7 +878,7 @@ private fun AccountSettings(
             ) {
                 Box {
                     Box(
-                        modifier = Modifier.size(80.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.18f)),
+                        modifier = Modifier.size(74.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.18f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         FramedAvatar(avatar, size = 68.dp, frame = avatarFrame)
