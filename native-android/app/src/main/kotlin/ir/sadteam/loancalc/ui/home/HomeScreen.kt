@@ -684,9 +684,10 @@ private fun HomeHeader(
         // قابِ خریداری‌شده دورِ همین آواتار می‌نشیند - جایی که خرید نتیجه می‌دهد (`72a`).
         // ⚠️ قطرِ بیرونی همان ۳۰ می‌مانَد؛ خودِ آدمک کوچک‌تر می‌شود، پس ارتفاعِ ردیف
         // عوض نمی‌شود.
+        // «خوش آمدی» کمی به راست (خواسته‌ی کاربر، ۳ مهر): جعبه‌ی آدمک ۴۴ → ۳۴.
         Box(
             modifier = Modifier
-                .size(44.dp)
+                .size(34.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -696,7 +697,7 @@ private fun HomeHeader(
         ) {
             FramedAvatar(avatar = avatar, size = 30.dp, frame = avatarFrame)
         }
-        Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
+        Column(modifier = Modifier.weight(1f).padding(start = 6.dp)) {
             // تاریخ **دومین چیزی است که در تنگنا می‌رود** (بعدِ عددِ سکه، قبلِ نام).
             // `Row`ِ بیرونی `SpaceBetween` است و ستون `weight(1f)` دارد، پس خودِ Compose
             // نام را کوتاه می‌کند؛ `maxLines`/`Ellipsis` اجباری است وگرنه نامِ بلند قرص‌ها
@@ -729,7 +730,8 @@ private fun HomeHeader(
                 Text("🌱", fontSize = 14.sp, modifier = Modifier.padding(start = 5.dp))
             }
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+        // خواسته‌ی کاربر (۳ مهر): سکه و زنگ کمی به چپ و به هم نزدیک‌تر.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy((-4).dp)) {
             // ⚠️ **قرصِ «فعال» از هدر رفت** - فریمِ `55a`.
             //
             // شمارنده‌ی روزهای پیاپی است: کنش نیست، مقصد ندارد، و هر روز همان عدد

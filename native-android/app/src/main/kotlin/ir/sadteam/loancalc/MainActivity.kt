@@ -970,9 +970,9 @@ private fun LoanCalcApp(
                             .navigationBarsPadding()
                             .padding(start = 12.dp, end = 12.dp, bottom = 6.dp),
                     ) {
-                        // دستگیره‌ی کشوی میان‌بُر - کشیدنِ به بالا یا تپ بازش می‌کند (`31c`).
-                        ShortcutDrawerHandle(onOpen = { shortcutDrawerOpen = true })
                         val navShape = RoundedCornerShape(28.dp)
+                        // خواسته‌ی کاربر (۳ مهر): خطِ آبی **روی خودِ نوار** بنشیند، نه شناور بالایش.
+                        Box(modifier = Modifier.fillMaxWidth()) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -980,7 +980,7 @@ private fun LoanCalcApp(
                                 .clip(navShape)
                                 .background(AppSurface)
                                 .border(1.dp, AppLine, navShape)
-                                .padding(horizontal = 6.dp, vertical = 7.dp),
+                                .padding(start = 6.dp, end = 6.dp, top = 12.dp, bottom = 7.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                         // **بخشِ ۴۱**: دیگه `BottomTab.entries` نیست - چیدمان از [NavSlotsViewModel]
@@ -1001,6 +1001,13 @@ private fun LoanCalcApp(
                                 },
                             )
                         }
+                        }
+                        // دستگیره‌ی کشوی میان‌بُر - کشیدنِ به بالا یا تپ بازش می‌کند (`31c`). باریک است
+                        // (۱۲۰dp) تا لمسِ بالای تب‌ها را نگیرد.
+                        ShortcutDrawerHandle(
+                            onOpen = { shortcutDrawerOpen = true },
+                            modifier = Modifier.align(Alignment.TopCenter).width(120.dp),
+                        )
                         }
                     }
                 }
