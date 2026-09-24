@@ -9,6 +9,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.Db
 import ir.sadteam.loancalc.server.Log
+import ir.sadteam.loancalc.server.Mail
 import ir.sadteam.loancalc.server.execute
 import ir.sadteam.loancalc.server.maskPhone
 import ir.sadteam.loancalc.server.queryOne
@@ -24,9 +25,13 @@ import java.security.SecureRandom
  * **کدام حساب** آمده. ایمیل این را نمی‌گوید (کاربر ممکن است از ایمیلِ شخصی‌اش بفرستد)،
  * ولی `user_id`ِ همین جدول دقیقاً همان چیزی است که کدِ هدیه به آن تعلق می‌گیرد.
  *
- * ⚠️ خودِ ایمیل را **گوشیِ کاربر** می‌فرستد (اپ صندوقِ ایمیل را با موضوعِ آماده باز
- * می‌کند). فرستادنِ ایمیل از سرور به یک حسابِ SMTP و نگه‌داشتنِ رمزش نیاز داشت؛ تا وقتی
- * آن حساب ساخته نشده، این راه بی‌وابستگی کار می‌کند و گزارش در هر حال روی سرور می‌مانَد.
+ * ✉️ **ایمیل حالا از خودِ سرور می‌رود** (`Mail`). گوشی هم همچنان صندوقِ ایمیل را با
+ * موضوعِ آماده باز می‌کند، و این عمدی است: کاربر می‌خواهد چیزی را که فرستاده در
+ * «ارسال‌شده‌ها»ی خودش ببیند، و اگر SMTP روزی از کار بیفتد راهِ دوم سرِ جایش است.
+ *
+ * 🚨 **ثبت در دیتابیس بر ارسالِ ایمیل مقدم است و ارسال هیچ‌وقت درخواست را نمی‌شکند.**
+ * کدِ پیگیری چیزی است که هدیه به آن بسته می‌شود؛ اگر به‌خاطرِ یک SMTPِ خراب پاسخِ ۵۰۰
+ * برگردد، کاربر گزارشش را از دست می‌دهد در حالی که همین حالا در جدول نشسته.
  */
 
 @Serializable
@@ -79,6 +84,24 @@ fun Route.supportRoutes() {
             }
             // شماره ماسک می‌شود - قاعده‌ی ثبتِ لاگِ پروژه.
             Log.info("bug_report", "گزارشِ مشکلِ تازه", "ticket" to ticket, "uid" to authed.uid, "phone" to maskPhone(authed.phone))
+            // ✉️ ارسال **بعد از** ثبت و بی‌اثر روی پاسخ - رجوع کن به کامنتِ بالای فایل.
+            // `Mail.send` خودش استثنا نمی‌دهد و بی تنظیماتِ SMTP بی‌صدا `false` برمی‌گرداند.
+            val mailed = Mail.send(
+                to = Mail.supportTo,
+                subject = "مشکل برنامه - $ticket",
+                body = buildString {
+                    appendLine("کدِ پیگیری: $ticket")
+                    appendLine("شناسه‌ی کاربر: ${authed.uid}")
+                    appendLine("شماره: ${maskPhone(authed.phone)}")
+                    appendLine("نسخه: ${body.appVersion ?: "-"}")
+                    appendLine("دستگاه: ${body.device ?: "-"}")
+                    appendLine()
+                    appendLine(message.take(4000))
+                },
+            )
+            if (Mail.configured && !mailed) {
+                Log.warn("bug_report_mail", "گزارش ثبت شد ولی ایمیلش نرفت", "ticket" to ticket)
+            }
             call.respond(ReportResponse(ticket = ticket))
         }
     }

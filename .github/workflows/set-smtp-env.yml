@@ -1,0 +1,67 @@
+name: تنظیمِ ایمیلِ پشتیبانی رو VPS (ارسالِ گزارشِ مشکل از سرور)
+
+# اجرای دستی - بعد از ساختنِ حسابِ ایمیلِ برنامه یک‌بار زده می‌شود، و هر بار که رمزش
+# عوض شد دوباره. بدونِ این، گزارشِ مشکل همچنان روی سرور ثبت می‌شود ولی ایمیلی نمی‌رود
+# (`Mail.configured` خاموش می‌ماند) - یعنی اجرا نکردنش چیزی را خراب نمی‌کند.
+#
+# 🚨 **رمز فقط در GitHub Secrets و `~/VameMan/.env` است، هیچ‌وقت در کد.**
+on:
+  workflow_dispatch:
+
+jobs:
+  set-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: چک کردنِ سکرت‌های لازم
+        run: |
+          missing=""
+          [ -z "${{ secrets.VPS_HOST }}" ] && missing="$missing VPS_HOST"
+          [ -z "${{ secrets.VPS_USER }}" ] && missing="$missing VPS_USER"
+          [ -z "${{ secrets.VPS_SSH_KEY }}" ] && missing="$missing VPS_SSH_KEY"
+          [ -z "${{ secrets.SMTP_HOST }}" ] && missing="$missing SMTP_HOST"
+          [ -z "${{ secrets.SMTP_USER }}" ] && missing="$missing SMTP_USER"
+          [ -z "${{ secrets.SMTP_PASSWORD }}" ] && missing="$missing SMTP_PASSWORD"
+          [ -z "${{ secrets.SUPPORT_EMAIL_TO }}" ] && missing="$missing SUPPORT_EMAIL_TO"
+          if [ -n "$missing" ]; then
+            echo "::error::این سکرت‌ها ست نشدن:$missing"
+            exit 1
+          fi
+
+      - name: نوشتنِ تنظیماتِ SMTP تو .env رو VPS + ری‌استارت
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASSWORD,SMTP_FROM,SUPPORT_EMAIL_TO
+          script: |
+            set -e
+            cd ~/VameMan
+            touch .env
+            set_env_line() {
+              key="$1"; value="$2"
+              [ -z "$value" ] && return 0
+              # عمداً بدونِ sed - رمزِ ایمیل می‌تونه `/` و `&` داشته باشه (همون درسِ ورک‌فلوی ملی‌پیامک).
+              if [ -f .env ]; then
+                grep -v "^${key}=" .env > .env.tmp || true
+                mv .env.tmp .env
+              fi
+              printf '%s=%s\n' "$key" "$value" >> .env
+              chmod 600 .env
+            }
+            set_env_line "SMTP_HOST" "$SMTP_HOST"
+            set_env_line "SMTP_PORT" "${SMTP_PORT:-587}"
+            set_env_line "SMTP_USER" "$SMTP_USER"
+            set_env_line "SMTP_PASSWORD" "$SMTP_PASSWORD"
+            set_env_line "SMTP_FROM" "$SMTP_FROM"
+            set_env_line "SUPPORT_EMAIL_TO" "$SUPPORT_EMAIL_TO"
+            pm2 restart loan-calc-api
+            sleep 3
+            pm2 describe loan-calc-api | grep -q "online" && echo "OK: سرویس با تنظیماتِ ایمیل بالاست" || (echo "سرویس بالا نیومد!"; exit 1)
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          SUPPORT_EMAIL_TO: ${{ secrets.SUPPORT_EMAIL_TO }}
