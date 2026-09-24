@@ -400,7 +400,7 @@ fun ShopScreen(
 
         // خواسته‌ی کاربر (۳ مهر): همه‌ی دسته‌ها هم مثلِ «پیشنهادهای ویژه» دوتایی کنارِ هم،
         // تا فضای کمتری بگیرند (تصمیمِ قبلیِ «فقط دو بخش دوتایی» را خودش عوض کرد).
-        fun grid(list: List<ShopItem>) {
+        fun grid(list: List<ShopItem>, compact: Boolean = false) {
             val rows = list.chunked(2)
             items(rows.size) { rowIndex ->
                 ProductCardRow(
@@ -408,6 +408,7 @@ fun ShopScreen(
                     stateOf = ::stateOf,
                     onActivate = activateItem,
                     onConfirm = { confirming = it },
+                    compact = compact,
                     leadingOf = { previewFor(it) },
                 )
             }
@@ -444,9 +445,9 @@ fun ShopScreen(
             val colorful = themes - base.toSet()
 
             item { GroupHeader("تمِ پایه", "${toFa(base.size)} تمِ اولِ برنامه") }
-            grid(base.map(::themeDisplay))
+            grid(base.map(::themeDisplay), compact = true)
             item { GroupHeader("تمِ رنگی", "${toFa(CoinSpend.THEME_PALETTE.price)} سکه هرکدام") }
-            grid(colorful.map(::themeDisplay))
+            grid(colorful.map(::themeDisplay), compact = true)
         }
 
         if (tab == null || tab == ShopCategory.ICON) {
@@ -919,6 +920,7 @@ private fun ProductCardRow(
     stateOf: (ShopItem) -> RowState,
     onActivate: (ShopItem) -> Unit,
     onConfirm: (ShopItem) -> Unit,
+    compact: Boolean = false,
     leadingOf: @Composable (ShopItem) -> Unit,
 ) {
     Row(
@@ -927,7 +929,11 @@ private fun ProductCardRow(
     ) {
         pair.forEach { item ->
             Box(modifier = Modifier.weight(1f)) {
-                ProductCard(item, stateOf(item), onActivate, onConfirm) { leadingOf(item) }
+                if (compact) {
+                    CompactProductCard(item, stateOf(item), onActivate, onConfirm) { leadingOf(item) }
+                } else {
+                    ProductCard(item, stateOf(item), onActivate, onConfirm) { leadingOf(item) }
+                }
             }
         }
         if (pair.size == 1) Spacer(modifier = Modifier.weight(1f))
@@ -1013,6 +1019,67 @@ private fun ProductCard(
                         .pressScaleClickable(scale = 0.95f) { onConfirm(item) }
                         .padding(horizontal = 14.dp, vertical = 7.dp),
                 )
+            }
+        }
+    }
+}
+
+/**
+ * کارتِ دوتاییِ **کوتاه** (بسته‌ی ChatGPT، ۳ مهر): پیش‌نمایش کنارِ متن نه بالای آن، تا در
+ * هر صفحه قلمِ بیشتری جا شود. فعلاً فقط تم‌ها (خواسته‌ی کاربر: «فعلاً بخشِ تم‌ها»).
+ */
+@Composable
+private fun CompactProductCard(
+    item: ShopItem,
+    state: RowState,
+    onActivate: (ShopItem) -> Unit,
+    onConfirm: (ShopItem) -> Unit,
+    preview: @Composable () -> Unit,
+) {
+    val open = LocalOpenProduct.current
+    val tap: (() -> Unit)? = if (open != null) ({ open(item) }) else when (state) {
+        RowState.OWNED -> ({ onActivate(item) })
+        RowState.BUY, RowState.POOR -> ({ onConfirm(item) })
+        else -> null
+    }
+    AppCard(
+        contentPadding = 10.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(if (state == RowState.BADGE_LOCKED || state == RowState.SOON) 0.62f else 1f)
+            .then(if (tap != null) Modifier.pressScaleClickable(scale = 0.98f, onClick = tap) else Modifier),
+    ) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            preview()
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    item.label,
+                    color = AppText,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    item.blurb,
+                    color = AppLabel,
+                    fontSize = 8.5.sp,
+                    lineHeight = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 1.dp),
+                )
+                Box(modifier = Modifier.padding(top = 7.dp)) {
+                    when (state) {
+                        RowState.ACTIVE -> Pill("فعال است", AppPrimaryPill, AppPrimaryInk)
+                        RowState.OWNED -> Pill("فعال‌سازی", AppPrimaryPill, AppPrimaryInk)
+                        RowState.SOON -> Pill("به‌زودی", AppIconFrame, AppMuted)
+                        RowState.BADGE_LOCKED -> Pill("نشان لازم است", AppIconFrame, AppMuted)
+                        else -> CoinPrice(item.price)
+                    }
+                }
             }
         }
     }
