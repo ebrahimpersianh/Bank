@@ -45,6 +45,12 @@ fun CategoryDonut(
     strokeWidth: Dp = 22.dp,
     trackColor: Color = AppLine,
     gapDegrees: Float = 2f,
+    /**
+     * سبکِ «درخشان» (طرحِ مرجعِ کاربر، ۳ مهر): سرِ گرد، هاله‌ی نورِ دورِ هر تکه، شیبِ روشن‌تر
+     * روی تکه، و قرصِ تیره‌ی وسط با لبه‌ی نازکِ هم‌رنگ. بلورِ واقعی نیست (قاعده‌ی پروژه) -
+     * هاله با چند خطِ پهن‌ترِ کم‌رنگ ساخته می‌شود.
+     */
+    glow: Boolean = false,
     content: (@Composable BoxScope.() -> Unit)? = null,
 ) {
     val total = slices.sumOf { it.value }.takeIf { it > 0.0 } ?: 0.0
@@ -74,21 +80,68 @@ fun CategoryDonut(
 
             if (total <= 0.0) return@Canvas
 
+            val strokePx = strokeWidth.toPx()
+            val radius = arcSize.width / 2f
+            // سرِ گرد به اندازه‌ی نصفِ ضخامت از هر طرف بیرون می‌زند؛ از زاویه کم می‌شود تا
+            // فاصله‌ی بینِ تکه‌ها همان [gapDegrees] بماند.
+            val capDeg = if (glow) Math.toDegrees((strokePx / 2f / radius).toDouble()).toFloat() else 0f
+            val center = Offset(this.size.width / 2f, this.size.height / 2f)
+
+            if (glow) {
+                // قرصِ تیره‌ی وسط با لبه‌ی نازکِ رنگِ تکه‌ی اول.
+                val innerR = radius - strokePx / 2f - strokePx * 0.28f
+                drawCircle(color = Color(0xFF0B1020).copy(alpha = 0.55f), radius = innerR, center = center)
+                drawCircle(
+                    color = slices.first { it.value > 0.0 }.color.copy(alpha = 0.45f),
+                    radius = innerR,
+                    center = center,
+                    style = Stroke(width = strokePx * 0.08f),
+                )
+            }
+
             var startAngle = -90f // از بالای دایره
             slices.forEach { slice ->
                 if (slice.value <= 0.0) return@forEach
                 val full = (slice.value / total).toFloat() * 360f
                 // حداقلِ عرض تا تکه‌های ریز کاملاً محو نشن
-                val sweep = ((full - gapDegrees).coerceAtLeast(1.5f)) * grow
+                val sweep = ((full - gapDegrees - capDeg * 2f).coerceAtLeast(1.5f)) * grow
+                val arcStart = startAngle + capDeg * grow
+                if (glow) {
+                    // هاله: سه خطِ پهن‌تر و کم‌رنگ‌تر زیرِ تکه.
+                    listOf(2.6f to 0.07f, 1.9f to 0.11f, 1.4f to 0.16f).forEach { (widthMul, alpha) ->
+                        drawArc(
+                            color = slice.color.copy(alpha = alpha),
+                            startAngle = arcStart,
+                            sweepAngle = sweep,
+                            useCenter = false,
+                            topLeft = topLeft,
+                            size = arcSize,
+                            style = Stroke(width = strokePx * widthMul, cap = StrokeCap.Round),
+                        )
+                    }
+                }
                 drawArc(
                     color = slice.color,
-                    startAngle = startAngle,
+                    startAngle = arcStart,
                     sweepAngle = sweep,
                     useCenter = false,
                     topLeft = topLeft,
                     size = arcSize,
-                    style = stroke,
+                    style = if (glow) Stroke(width = strokePx, cap = StrokeCap.Round) else stroke,
                 )
+                if (glow) {
+                    // برقِ شیشه‌ای: یک خطِ باریکِ روشن روی لبه‌ی بیرونیِ تکه.
+                    val shineInset = inset - strokePx * 0.22f
+                    drawArc(
+                        color = Color.White.copy(alpha = 0.22f),
+                        startAngle = arcStart,
+                        sweepAngle = sweep,
+                        useCenter = false,
+                        topLeft = Offset(shineInset, shineInset),
+                        size = Size(this.size.width - shineInset * 2, this.size.height - shineInset * 2),
+                        style = Stroke(width = strokePx * 0.18f, cap = StrokeCap.Round),
+                    )
+                }
                 startAngle += full * grow
             }
         }
