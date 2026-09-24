@@ -4,6 +4,19 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.ui.layout.ContentScale
+import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppSurface2
+import java.io.File
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -66,6 +79,7 @@ import ir.sadteam.loancalc.core.toFa
 const val SUPPORT_EMAIL = "jibak.support@gmail.com"
 
 private const val MAX_REPORT = 1000
+private const val MAX_SHOTS = 3
 
 /**
  * 🐞 **گزارشِ مشکل** - خواسته‌ی کاربر (۳۱ شهریور).
@@ -90,6 +104,23 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
     var sending by remember { mutableStateOf(false) }
     var ticket by rememberSaveable { mutableStateOf<String?>(null) }
 
+    // عکس‌ها به پوشه‌ی موقتِ خودِ برنامه کپی می‌شوند تا بشود با FileProvider به ایمیل داد؛
+    // هیچ‌کدام به سرورِ ما نمی‌رود.
+    var shots by remember { mutableStateOf<List<File>>(emptyList()) }
+    val picker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(MAX_SHOTS),
+    ) { uris ->
+        val dir = File(context.cacheDir, "bug_shots").apply { mkdirs() }
+        val copied = uris.take(MAX_SHOTS - shots.size).mapNotNull { uri ->
+            runCatching {
+                val out = File(dir, "shot_${System.nanoTime()}.jpg")
+                context.contentResolver.openInputStream(uri)!!.use { input -> out.outputStream().use { input.copyTo(it) } }
+                out
+            }.getOrNull()
+        }
+        shots = shots + copied
+    }
+
     val device = remember { "${Build.MANUFACTURER} ${Build.MODEL} · اندروید ${Build.VERSION.RELEASE}" }
 
     fun openEmail(withTicket: String?) {
@@ -108,7 +139,24 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                 "&body=" + Uri.encode(body),
         )
         try {
-            context.startActivity(Intent(Intent.ACTION_SENDTO, uri))
+            if (shots.isEmpty()) {
+                context.startActivity(Intent(Intent.ACTION_SENDTO, uri))
+            } else {
+                // ضمیمه با SENDTO نمی‌رود؛ SEND_MULTIPLE + selectorِ mailto تا فقط اپ‌های ایمیل بیایند.
+                val uris = arrayListOf<Uri>().apply {
+                    shots.forEach { add(FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", it)) }
+                }
+                val send = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                    type = "image/*"
+                    putExtra(Intent.EXTRA_EMAIL, arrayOf(SUPPORT_EMAIL))
+                    putExtra(Intent.EXTRA_SUBJECT, "مشکل برنامه")
+                    putExtra(Intent.EXTRA_TEXT, body)
+                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    selector = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"))
+                }
+                context.startActivity(send)
+            }
         } catch (e: ActivityNotFoundException) {
             banner.show("اپ ایمیلی پیدا نشد؛ کدِ پیگیری را نگه دار و از راهِ دیگری بفرست")
         }
@@ -173,6 +221,57 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                             fontSize = 9.5.sp,
                             fontWeight = FontWeight.Bold,
                         )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        shots.forEach { file ->
+                            Box(modifier = Modifier.padding(end = 8.dp).size(56.dp)) {
+                                AsyncImage(
+                                    model = file,
+                                    contentDescription = "عکسِ پیوست",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp)),
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .size(20.dp)
+                                        .clip(RoundedCornerShape(999.dp))
+                                        .background(AppBg.copy(alpha = 0.8f))
+                                        .pressScaleClickable {
+                                            file.delete()
+                                            shots = shots - file
+                                        },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(Icons.Filled.Close, contentDescription = "حذف", tint = AppText, modifier = Modifier.size(13.dp))
+                                }
+                            }
+                        }
+                        if (shots.size < MAX_SHOTS) {
+                            Row(
+                                modifier = Modifier
+                                    .heightIn(min = 44.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(AppSurface2)
+                                    .pressScaleClickable {
+                                        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                    }
+                                    .padding(horizontal = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(Icons.Filled.AddPhotoAlternate, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    if (shots.isEmpty()) "افزودنِ عکس (تا ${toFa(MAX_SHOTS)})" else "عکسِ دیگر",
+                                    color = AppPrimaryInk,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Black,
+                                )
+                            }
+                        }
                     }
                 }
             }
