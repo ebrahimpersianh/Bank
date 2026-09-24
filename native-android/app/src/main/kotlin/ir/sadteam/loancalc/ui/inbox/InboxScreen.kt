@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.inbox
 
+import ir.sadteam.loancalc.ui.theme.AppWarningPill
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.ColumnScope
@@ -811,13 +813,28 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
                     fontWeight = FontWeight.Black,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
                 )
+            }
+            Text(
+                message.body,
+                color = AppMuted,
+                fontSize = 11.5.sp,
+                lineHeight = 19.sp,
+                modifier = Modifier.padding(top = 5.dp),
+            )
+        }
+        // ستونِ کناری (طرحِ ChatGPT): زمان بالا؛ پایین نامِ برنامه/فرستنده به آبی **بالای** قرصِ نوع
+        // (خواسته‌ی کاربر، ۳ مهر: «blu» دقیقاً بالای «اعلان»).
+        Column(
+            modifier = Modifier.padding(start = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     if (isDue) Icons.Filled.Event else Icons.Filled.Schedule,
                     contentDescription = null,
                     tint = AppMuted,
-                    modifier = Modifier.padding(start = 6.dp).size(14.dp),
+                    modifier = Modifier.size(14.dp),
                 )
                 Text(
                     timeLabel(message.createdAt),
@@ -828,37 +845,34 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
                     modifier = Modifier.padding(start = 4.dp),
                 )
             }
-            Text(
-                message.body,
-                color = AppMuted,
-                fontSize = 11.5.sp,
-                lineHeight = 19.sp,
-                modifier = Modifier.padding(top = 5.dp),
-            )
-            // منبع: نامِ برنامه/فرستنده **بالای** قرصِ نوع (خواسته‌ی کاربر، ۳ مهر) - «blu» روی «اعلان».
-            message.sourceLabel?.let { label ->
-                val (type, origin) = splitSource(label)
-                Column(modifier = Modifier.padding(top = 8.dp)) {
-                    if (origin != null) {
+            val source = message.sourceLabel?.let { splitSource(it) }
+            val chipText = source?.first ?: if (isDue) "یادآوری" else null
+            if (chipText != null) {
+                val warm = source == null && isDue
+                Column(
+                    modifier = Modifier.padding(top = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    source?.second?.let { origin ->
                         Text(
                             origin,
-                            color = AppText,
+                            color = AppPrimary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Black,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.widthIn(max = 90.dp).padding(bottom = 3.dp),
                         )
                     }
                     Text(
-                        type,
-                        color = AppPrimaryDim,
-                        fontSize = 10.sp,
+                        chipText,
+                        color = if (warm) AppWarningInk else AppPrimary,
+                        fontSize = 10.5.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier
-                            .padding(top = 3.dp)
                             .clip(RoundedCornerShape(999.dp))
-                            .background(AppSurface2)
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                            .background(if (warm) AppWarningPill else AppPrimaryPill)
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
                     )
                 }
             }
