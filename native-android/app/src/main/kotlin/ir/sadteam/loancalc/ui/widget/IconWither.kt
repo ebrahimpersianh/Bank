@@ -50,7 +50,7 @@ class IconWither @Inject constructor() {
      * پله‌ی متناظر با آخرین روزِ ثبت‌شده در دفترِ سکه (`DAILY_LOG`) را اعمال می‌کند.
      *
      * [activeIcon] آیکونِ خریداری‌شده‌ی فعال (`icon:piggy`…) یا `null` برای پیش‌فرض.
-     * پنج طرحِ وکتوری چهار حالت دارند؛ نه طرحِ تصویری همیشه حالتِ سالم می‌مانند.
+     * پنج طرحِ وکتوری و نه طرحِ تصویری هر کدام چهار حالت دارند.
      */
     fun applyFromDateKeys(context: Context, dateKeys: Collection<String>, activeIcon: String? = null) {
         apply(context, stepFor(lastDay(dateKeys)), activeIcon)
@@ -125,6 +125,16 @@ class IconWither @Inject constructor() {
                 "icon:letter" to intArrayOf(10, 21, 23, 25),
                 "icon:piggy" to intArrayOf(11, 29, 31, 33),
                 "icon:shop" to intArrayOf(36, 38, 40, 42),
+                // ۹ طرحِ تصویری (بسته‌ی ChatGPT، ۴ حالتِ آماده): s0 الیاسِ قبلی، s1..s3 الیاس‌های ۵۴..۸۰.
+                "icon:aqua" to intArrayOf(45, 54, 55, 56),
+                "icon:calligraphy" to intArrayOf(46, 57, 58, 59),
+                "icon:fox" to intArrayOf(47, 60, 61, 62),
+                "icon:emerald" to intArrayOf(48, 63, 64, 65),
+                "icon:leaf" to intArrayOf(49, 66, 67, 68),
+                "icon:orbit" to intArrayOf(50, 69, 70, 71),
+                "icon:growth" to intArrayOf(51, 72, 73, 74),
+                "icon:sprout" to intArrayOf(52, 75, 76, 77),
+                "icon:neon" to intArrayOf(53, 78, 79, 80),
             )
 
         /** کلیدِ داخلیِ طرحِ پیش‌فرض - `activeIcon`ِ `null` به این نگاشت می‌شود. */
@@ -134,8 +144,7 @@ class IconWither @Inject constructor() {
          * آیکونِ خریدنی → الیاسِ پله‌ی صفرش. `LoanCalcApplication` با همین تشخیص می‌دهد
          * ترجیحِ ذخیره‌شده‌ی کاربر هنوز وجود دارد یا باید پاک شود.
          *
-         * نه طرحِ تصویریِ بخشِ ۸۰ پله‌ی پژمردگی ندارند (فایلشان رستری است) و همیشه
-         * تازه می‌مانند.
+         * نه طرحِ تصویریِ بخشِ ۸۰ حالا چهار حالتِ رستریِ آماده دارند (بالاتر در [STAGES]).
          */
         val ICON_ALIAS =
             mapOf(
@@ -154,7 +163,7 @@ class IconWither @Inject constructor() {
                 "icon:neon" to 53,
             )
 
-        private const val LAST_ALIAS = 53
+        private const val LAST_ALIAS = 80
 
         /** این طرح چهار حالتِ کهنگی دارد؟ صفحه‌ی محصول همین را به خریدار می‌گوید. */
         fun hasAgingStages(iconId: String): Boolean = STAGES.containsKey(iconId)

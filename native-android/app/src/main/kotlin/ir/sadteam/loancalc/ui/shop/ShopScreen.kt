@@ -1163,15 +1163,15 @@ private fun AppIconPreview(itemId: String) {
         // نه طرحِ تصویریِ بخشِ ۸۰ - هر کدام پس‌زمینه‌ی **پُرِ** خودش را دارد (رنگ از
         // تیره‌ترین ناحیه‌ی خودِ فایلِ هنری)، چون لایه‌ی شفاف روی بعضی لانچرها
         // صفحه‌ی مشکی می‌گیرد.
-        "icon:aqua" -> R.drawable.ic_launcher_aqua_background to R.drawable.jibak_ic_aqua
-        "icon:calligraphy" -> R.drawable.ic_launcher_calligraphy_background to R.drawable.jibak_ic_calligraphy
-        "icon:fox" -> R.drawable.ic_launcher_fox_background to R.drawable.jibak_ic_fox
-        "icon:emerald" -> R.drawable.ic_launcher_emerald_background to R.drawable.jibak_ic_emerald
-        "icon:leaf" -> R.drawable.ic_launcher_leaf_background to R.drawable.jibak_ic_leaf
-        "icon:orbit" -> R.drawable.ic_launcher_orbit_background to R.drawable.jibak_ic_orbit
-        "icon:growth" -> R.drawable.ic_launcher_growth_background to R.drawable.jibak_ic_growth
-        "icon:sprout" -> R.drawable.ic_launcher_sprout_background to R.drawable.jibak_ic_sprout
-        "icon:neon" -> R.drawable.ic_launcher_neon_background to R.drawable.jibak_ic_neon
+        "icon:aqua" -> R.drawable.jibak_ic_aqua_bg to R.drawable.jibak_ic_aqua
+        "icon:calligraphy" -> R.drawable.jibak_ic_calligraphy_bg to R.drawable.jibak_ic_calligraphy
+        "icon:fox" -> R.drawable.jibak_ic_fox_bg to R.drawable.jibak_ic_fox
+        "icon:emerald" -> R.drawable.jibak_ic_emerald_bg to R.drawable.jibak_ic_emerald
+        "icon:leaf" -> R.drawable.jibak_ic_leaf_bg to R.drawable.jibak_ic_leaf
+        "icon:orbit" -> R.drawable.jibak_ic_orbit_bg to R.drawable.jibak_ic_orbit
+        "icon:growth" -> R.drawable.jibak_ic_growth_bg to R.drawable.jibak_ic_growth
+        "icon:sprout" -> R.drawable.jibak_ic_sprout_bg to R.drawable.jibak_ic_sprout
+        "icon:neon" -> R.drawable.jibak_ic_neon_bg to R.drawable.jibak_ic_neon
         // پیش‌فرض «کیفِ پول» است؛ پیش‌زمینه‌اش PNGِ mipmap است نه وکتورِ drawable.
         else -> R.drawable.ic_launcher_background to R.mipmap.ic_launcher_foreground
     }
