@@ -504,10 +504,10 @@ private fun HeaderRoundAction(
         modifier = Modifier.pressScaleClickable(onClick = onClick),
     ) {
         Box(
-            modifier = Modifier.size(44.dp).clip(CircleShape).background(fill),
+            modifier = Modifier.size(40.dp).clip(CircleShape).background(fill),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = description, tint = ink, modifier = Modifier.size(21.dp))
+            Icon(icon, contentDescription = description, tint = ink, modifier = Modifier.size(19.dp))
         }
         Text(
             label,
@@ -630,13 +630,13 @@ private fun StarterAssetTiles(onPick: () -> Unit) {
         SectionHeader(title = "دارایی‌ها را ثبت کنید", actionLabel = "مشاهده‌ی همه", onAction = onPick)
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             StarterTile("طلا", "طلای آب‌شده، سکه و …", AppWarningPill, modifier = Modifier.weight(1f), onClick = onPick) {
-                CoinIcon(26.dp)
+                CoinIcon(22.dp)
             }
             StarterTile("ارز", "دلار، یورو و …", AppPrimaryPill, modifier = Modifier.weight(1f), onClick = onPick) {
-                AssetBadge("USD", ASSET_CATEGORY_FIAT, 30.dp)
+                AssetBadge("USD", ASSET_CATEGORY_FIAT, 26.dp)
             }
             StarterTile("رمز ارز", "بیت‌کوین، تتر و …", AppWarningPill, modifier = Modifier.weight(1f), onClick = onPick) {
-                AssetBadge("BTC", ASSET_CATEGORY_CRYPTO, 30.dp)
+                AssetBadge("BTC", ASSET_CATEGORY_CRYPTO, 26.dp)
             }
         }
     }
@@ -651,7 +651,7 @@ private fun StarterTile(
     onClick: () -> Unit,
     icon: @Composable () -> Unit,
 ) {
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(18.dp)
     Column(
         modifier = modifier
             .shadow(1.dp, shape, clip = false)
@@ -659,19 +659,19 @@ private fun StarterTile(
             .background(AppSurface)
             .border(1.dp, AppLine, shape)
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 16.dp),
+            .padding(horizontal = 8.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            modifier = Modifier.size(52.dp).clip(CircleShape).background(iconBg),
+            modifier = Modifier.size(42.dp).clip(CircleShape).background(iconBg),
             contentAlignment = Alignment.Center,
         ) { icon() }
         Text(
             label,
             color = AppText,
-            fontSize = 14.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Black,
-            modifier = Modifier.padding(top = 10.dp),
+            modifier = Modifier.padding(top = 7.dp),
         )
         Text(
             hint,
@@ -874,10 +874,10 @@ private fun AccountRow(
     privacyMode: Boolean,
     onClick: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(18.dp)
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
             .shadow(1.dp, shape, clip = false)
@@ -885,13 +885,13 @@ private fun AccountRow(
             .background(AppSurface)
             .border(1.dp, AppLine, shape)
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 14.dp),
+            .padding(horizontal = 12.dp, vertical = 11.dp),
     ) {
         if (account.type == ACCOUNT_TYPE_BANK) {
-            BankBadge(bankName = account.bankName, size = 46.dp)
+            BankBadge(bankName = account.bankName, size = 40.dp)
         } else {
             Box(
-                modifier = Modifier.size(46.dp).clip(CircleShape).background(AppIconFrame),
+                modifier = Modifier.size(40.dp).clip(CircleShape).background(AppIconFrame),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -906,7 +906,7 @@ private fun AccountRow(
             Text(
                 account.name,
                 color = AppText,
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Black,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -930,7 +930,7 @@ private fun AccountRow(
                     maskIfPrivate(masked, balance.rialToFaCompact()) + " تومان",
                     // موجودیِ منفیِ کارتِ اعتباری وضعِ عادیه نه خطا: فقط عدد قرمز می‌شه.
                     color = if (balance < 0) AppDangerInk else AppText,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Black,
                     maxLines = 1,
                     softWrap = false,
@@ -950,7 +950,7 @@ private fun AccountRow(
             }
         }
         Box(
-            modifier = Modifier.size(30.dp).clip(CircleShape).background(AppIconFrame),
+            modifier = Modifier.size(26.dp).clip(CircleShape).background(AppIconFrame),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -978,18 +978,18 @@ private fun SectionHeader(
     ) {
         if (icon != null) {
             Box(
-                modifier = Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(AppPrimaryPill),
+                modifier = Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(AppPrimaryPill),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(18.dp))
+                Icon(icon, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(16.dp))
             }
         }
         Text(
             title,
             color = AppText,
-            fontSize = 15.sp,
+            fontSize = 13.5.sp,
             fontWeight = FontWeight.Black,
-            modifier = Modifier.padding(start = if (icon != null) 9.dp else 0.dp),
+            modifier = Modifier.padding(start = if (icon != null) 8.dp else 0.dp),
         )
         if (count != null) {
             Text(
@@ -1012,9 +1012,9 @@ private fun SectionHeader(
                     .clip(RoundedCornerShape(999.dp))
                     .background(AppIconFrame)
                     .pressScaleClickable(onClick = onAction)
-                    .padding(start = 14.dp, end = 8.dp, top = 7.dp, bottom = 7.dp),
+                    .padding(start = 11.dp, end = 6.dp, top = 5.dp, bottom = 5.dp),
             ) {
-                Text(actionLabel, color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(actionLabel, color = AppText, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                 Icon(
                     Icons.Filled.ChevronLeft,
                     contentDescription = null,
