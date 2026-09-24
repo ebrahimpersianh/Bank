@@ -306,9 +306,9 @@ fun AccountDetailScreen(
         } else {
             // قاعده‌ی ۴ِ `71c`: تاریخ یک‌بار بالای گروه، نه روی تک‌تکِ ردیف‌ها.
             monthTransactions.groupBy { it.day }.forEach { (day, rows) ->
-                item(key = "day-${'$'}shownYear-${'$'}shownMonth-${'$'}day") {
+                item(key = "day-$shownYear-$shownMonth-$day") {
                     Text(
-                        "${'$'}{toFa(day)} ${'$'}{persianMonthName(shownMonth)}",
+                        "${toFa(day)} ${persianMonthName(shownMonth)}",
                         color = AppMuted,
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.Black,
