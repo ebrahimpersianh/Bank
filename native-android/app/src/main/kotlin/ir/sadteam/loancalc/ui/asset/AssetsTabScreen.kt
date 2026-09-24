@@ -751,25 +751,27 @@ private fun TotalWealthHero(
                     }
                 }
             }
-            PrivacyCrossfade(privacyMode) { masked ->
+            // مبلغ و «تومان» در یک خط (خواسته‌ی کاربر: کارت هم‌قدِ کارتِ خانه، نه کشیده).
+            Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.Bottom) {
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        maskIfPrivate(masked, total.rialToFaCompact()),
+                        color = Color.White,
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                }
+                // واحد تو کارتِ خلاصه میاد - قاعده‌ی عددِ TOKENS.md، مثلِ AccountsTotalHero.
                 Text(
-                    maskIfPrivate(masked, total.rialToFaCompact()),
-                    color = Color.White,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Black,
-                    maxLines = 1,
-                    softWrap = false,
-                    modifier = Modifier.padding(top = 10.dp),
+                    "تومان",
+                    color = HeroMuted,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 6.dp, bottom = 6.dp),
                 )
             }
-            // واحد تو کارتِ خلاصه میاد - قاعده‌ی عددِ TOKENS.md، مثلِ AccountsTotalHero.
-            Text(
-                "تومان",
-                color = HeroMuted,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 2.dp),
-            )
             // نمودارِ روندِ نقدی - فقط وقتی داده‌ی واقعی هست. در حالتِ خصوصی هم می‌مانَد:
             // شکلِ روند مبلغ لو نمی‌دهد، و همان چیزی است که کارت برایش ساخته شده.
             if (trend.size >= 2 && trend.any { it != trend.first() }) {
@@ -779,43 +781,30 @@ private fun TotalWealthHero(
                     slots = 30,
                     natural = HeroChartStyle.LINE,
                     currentIndex = trend.lastIndex,
-                    height = 56.dp,
-                    modifier = Modifier.padding(top = 10.dp),
+                    height = 38.dp,
+                    modifier = Modifier.padding(top = 6.dp),
                     labels = trend.indices.map { index ->
                         val ago = trend.lastIndex - index
                         if (ago == 0) "امروز" else "${ago.toFa()} روز پیش"
                     },
                     valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
                 )
-                // قرصِ بازه‌ی نمودار با نشانِ تقویم (طرحِ ChatGPT).
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(Color.White.copy(alpha = 0.16f))
-                        .padding(horizontal = 11.dp, vertical = 6.dp),
-                ) {
-                    Icon(
-                        Icons.Filled.CalendarMonth,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(13.dp),
-                    )
+                // برچسبِ دو سرِ محور، مثلِ کارتِ خانه - جای قرصِ بزرگِ قبلی که کارت را بلند می‌کرد.
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                    Text("امروز", color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                    Box(modifier = Modifier.weight(1f))
                     Text(
                         // صادقانه: تا وقتی عکسِ روزانه جمع نشده، نمودار فقط نقد را می‌گوید.
-                        if (trendIsReal) "روندِ ۳۰ روزِ گذشته" else "روندِ نقدیِ ۳۰ روزِ گذشته",
-                        color = Color.White,
-                        fontSize = 10.sp,
+                        if (trendIsReal) "۳۰ روزِ گذشته" else "نقدِ ۳۰ روزِ گذشته",
+                        color = HeroMuted,
+                        fontSize = 9.5.sp,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        modifier = Modifier.padding(start = 6.dp),
                     )
                 }
             }
             // پنج قرص تو یه ردیفِ عادی جا نمی‌شن؛ FlowRow خطِ دوم می‌سازه.
             FlowRow(
-                modifier = Modifier.padding(top = 12.dp),
+                modifier = Modifier.padding(top = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {

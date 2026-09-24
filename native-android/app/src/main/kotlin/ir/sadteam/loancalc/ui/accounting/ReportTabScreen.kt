@@ -111,6 +111,7 @@ import ir.sadteam.loancalc.ui.theme.AppUrgentShadow
 import ir.sadteam.loancalc.ui.theme.AppWarningInk
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import ir.sadteam.loancalc.ui.theme.hardShadow
+import ir.sadteam.loancalc.ui.components.AppHeroCard
 
 /**
  * تبِ **گزارش** - بازسازیِ کاملِ فریمِ `26a`.
@@ -645,17 +646,9 @@ private fun PeriodSpendHero(
     /** برچسبِ هر میله برای حبابِ لمس. خالی یعنی نمودار لمس‌پذیر نیست. */
     barLabels: List<String> = emptyList(),
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .hardShadow(PurpleShadow, 5.dp, AppRadius.card)
-            .clip(RoundedCornerShape(AppRadius.card))
-            .background(Brush.linearGradient(listOf(AppPurple, PurpleDeep)))
-            // این کارت `AppHeroCard` نیست (گرادیانِ بنفشِ خودش را دارد)، پس نقشِ برگ را
-            // باید صریح بگیرد - وگرنه تنها کارتِ قهرمانِ برنامه بود که نداشت.
-            .drawBehind { drawHeroLeaves(bothSides = true) }
-            .padding(16.dp),
-    ) {
+    // خواسته‌ی کاربر (۳ مهر): مثلِ بقیه‌ی صفحه‌ها با تم عوض شود و همان موجِ نرم را داشته
+    // باشد - پس همان `AppHeroCard` است، نه گرادیانِ بنفشِ ثابتِ قبلی.
+    AppHeroCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -714,7 +707,6 @@ private fun PeriodSpendHero(
                 valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
                 currentIndex = currentBarIndex,
                 natural = HeroChartStyle.BARS,
-                tooltipBackground = PurpleDeep,
                 modifier = Modifier.padding(top = 12.dp),
             )
             // هم‌جهتِ میله‌ها (فیزیکی چپ‌به‌راست): اولِ دوره چپ، امروز راست.
