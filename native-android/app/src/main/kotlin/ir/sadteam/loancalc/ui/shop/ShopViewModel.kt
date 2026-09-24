@@ -99,9 +99,28 @@ class ShopViewModel @Inject constructor(
     val catalog: StateFlow<List<ShopItem>> = owned
         .map { ownedNow ->
             val today = LocalDate.now()
-            SHOP_CATALOG.filter { it.isOpen(today) || it.id in ownedNow }
+            val open = SHOP_CATALOG.filter { it.isOpen(today) || it.id in ownedNow }
+            // 🏷 تخفیفِ روزانه: قلمِ امروز با `priceOverride` ارزان‌تر می‌شود، پس خرید، دیالوگِ
+            // تایید و حالتِ «کم داری» همه خودبه‌خود قیمتِ تخفیفی را می‌بینند.
+            val deal = pickDailyDeal(open, today)
+            open.map { if (it.id == deal?.id) it.copy(priceOverride = dealPrice(it.price)) else it }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SHOP_CATALOG)
+
+    /** تخفیفِ امروز (قلمِ ارزان‌شده + قیمتِ اصلی)، یا `null` اگر کاربر مالکش است. */
+    val dailyDeal: StateFlow<DailyDeal?> = combine(catalog, owned) { items, ownedNow ->
+        val deal = pickDailyDeal(SHOP_CATALOG, LocalDate.now()) ?: return@combine null
+        if (deal.id in ownedNow) return@combine null
+        items.firstOrNull { it.id == deal.id }?.let { DailyDeal(it, deal.price) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    /** «هدفِ سکه» - یک قلمِ نشان‌شده. */
+    val coinGoal: StateFlow<String?> = uiPrefs.coinGoal
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun setCoinGoal(itemId: String?) {
+        viewModelScope.launch { uiPrefs.setCoinGoal(itemId) }
+    }
 
     init {
         // بسته‌ی پس‌زمینه «همه‌ی طرح‌ها» است: کسی که پیش از افزوده‌شدنِ طرحِ تازه
@@ -150,6 +169,8 @@ class ShopViewModel @Inject constructor(
             repository.spend(item.price, item.id, GamificationRepository.Type.SPEND_THEME)
         }
         uiPrefs.addOwnedItem(item.id)
+        // هدفی که رسید، دیگر هدف نیست.
+        if (uiPrefs.coinGoal.first() == item.id) uiPrefs.setCoinGoal(null)
         // 🚨 **بسته‌ی پس‌زمینه یک خرید است و چهار مالکیت** (بخشِ ۷۸): یک ردیفِ دفتر
         // نوشته می‌شود (بالاتر، با `refId`ِ همان ردیفی که زده شده) ولی هر چهار شناسه
         // مالکِ کاربر می‌شوند - وگرنه کاربر یکی می‌خرید و سه طرحِ دیگر را هیچ‌وقت

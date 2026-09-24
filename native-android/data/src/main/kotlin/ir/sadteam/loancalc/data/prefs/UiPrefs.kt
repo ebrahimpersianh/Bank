@@ -69,6 +69,7 @@ class UiPrefs(private val context: Context) {
         val ACTIVE_FRAME = stringPreferencesKey("active_frame")
         val ACTIVE_SYMBOL_SET = stringPreferencesKey("active_symbol_set")
         val ACTIVE_CHART_STYLE = stringPreferencesKey("selected_chart_style")
+        val COIN_GOAL = stringPreferencesKey("shop_coin_goal")
         val ACTIVE_FONT = stringPreferencesKey("active_font")
         val ACTIVE_BACKDROP = stringPreferencesKey("active_backdrop")
         val REORDER_HINT_SHOWN = intPreferencesKey("reorder_hint_shown_count")
@@ -369,6 +370,15 @@ class UiPrefs(private val context: Context) {
      * شکلِ پیش‌فرضِ خودِ هر صفحه.
      */
     val activeChartStyle: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.ACTIVE_CHART_STYLE] }
+
+    /** «هدفِ سکه»ی فروشگاه: شناسه‌ی قلمی که کاربر نشان کرده. سکه رزرو نمی‌شود. */
+    val coinGoal: Flow<String?> = context.uiPrefsDataStore.data.map { it[Keys.COIN_GOAL] }
+
+    suspend fun setCoinGoal(itemId: String?) {
+        context.uiPrefsDataStore.edit { prefs ->
+            if (itemId == null) prefs.remove(Keys.COIN_GOAL) else prefs[Keys.COIN_GOAL] = itemId
+        }
+    }
 
     suspend fun setActiveChartStyle(key: String?) {
         context.uiPrefsDataStore.edit { prefs ->

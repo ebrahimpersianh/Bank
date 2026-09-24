@@ -241,6 +241,8 @@ import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.hardShadow
 import ir.sadteam.loancalc.ui.theme.ColorTheme
+import ir.sadteam.loancalc.ui.shop.ShopTrial
+import ir.sadteam.loancalc.data.coin.themeById
 import ir.sadteam.loancalc.ui.theme.LoanCalcTheme
 import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
 import ir.sadteam.loancalc.ui.theme.Motion
@@ -507,7 +509,13 @@ class MainActivity : FragmentActivity() {
             // عمداً بیرونِ LoanCalcTheme: این state باید از تعویضِ خودِ تم جونِ سالم به‌در ببره،
             // چون دقیقاً وسطِ همون تعویض داره کار می‌کنه (رجوع کن به ThemeReveal.kt).
             val themeReveal = remember { ThemeRevealState() }
-            LoanCalcTheme(themeMode = themeMode, colorTheme = colorTheme, catalogTheme = catalogTheme) {
+            // «امتحان کن»ِ فروشگاه: تمِ امتحانی فقط در حافظه جای تمِ ذخیره‌شده می‌نشیند.
+            val trialTheme = ShopTrial.themeId
+            LoanCalcTheme(
+                themeMode = themeMode,
+                colorTheme = if (trialTheme != null) ColorTheme.fromId(trialTheme) else colorTheme,
+                catalogTheme = if (trialTheme != null) themeById(trialTheme) else catalogTheme,
+            ) {
                 CompositionLocalProvider(
                     LocalLayoutDirection provides LayoutDirection.Rtl,
                     LocalSubscriptionManager provides subscriptionManager,

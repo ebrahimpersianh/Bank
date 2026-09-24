@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Close
+import ir.sadteam.loancalc.ui.components.AppButtonVariant
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.Category
@@ -199,6 +201,144 @@ private fun StarryNightCollectionCard(owned: Set<String>, earned: Boolean, onVie
     }
 }
 
+/** کارتِ «تخفیفِ امروز» - قیمتِ اصلیِ خط‌خورده، قیمتِ تازه و زمانِ باقی‌مانده تا نیمه‌شب. */
+@Composable
+private fun DailyDealCard(deal: DailyDeal, onOpen: () -> Unit) {
+    var now by remember { mutableStateOf(java.time.LocalTime.now()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(30_000)
+            now = java.time.LocalTime.now()
+        }
+    }
+    val minutesLeft = 24 * 60 - (now.hour * 60 + now.minute)
+    AppCard(modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.98f, onClick = onOpen), contentPadding = 12.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(14.dp)).background(AppSurface2),
+                contentAlignment = Alignment.Center,
+            ) { previewFor(deal.item) }
+            Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("تخفیفِ امروز", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Pill("${toFa(DEAL_PERCENT)}٪", AppGoldPillSoft, AppGoldInk)
+                }
+                Text(
+                    deal.item.label,
+                    color = AppLabel,
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+                Text(
+                    "${toFa(minutesLeft / 60)} ساعت و ${toFa(minutesLeft % 60)} دقیقه مانده",
+                    color = AppMuted,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    toFa(deal.originalPrice),
+                    color = AppMuted,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough,
+                )
+                CoinPrice(deal.item.price)
+            }
+        }
+    }
+}
+
+/** کارتِ «هدفِ سکه» - پیشرفتِ موجودی تا قیمتِ قلمِ نشان‌شده. سکه رزرو نمی‌شود. */
+@Composable
+private fun CoinGoalCard(item: ShopItem, balance: Int, onOpen: () -> Unit, onClear: () -> Unit) {
+    val price = item.price.coerceAtLeast(1)
+    val fraction = (balance.toFloat() / price).coerceIn(0f, 1f)
+    val left = item.price - balance
+    AppCard(modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.98f, onClick = onOpen), contentPadding = 12.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(AppSurface2),
+                contentAlignment = Alignment.Center,
+            ) { previewFor(item) }
+            Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                Text(
+                    "هدفِ سکه · ${item.label}",
+                    color = AppText,
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(top = 6.dp)
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(AppIconFrame),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(fraction)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(AppPrimary),
+                    )
+                }
+                Text(
+                    if (left > 0) "${toFa(left)} سکه‌ی دیگر مانده" else "سکه‌ات کافی است - می‌توانی بخری!",
+                    color = if (left > 0) AppMuted else AppPrimaryInk,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+            IconButton(onClick = onClear) {
+                Icon(Icons.Filled.Close, contentDescription = "برداشتنِ هدف", tint = AppMuted, modifier = Modifier.size(16.dp))
+            }
+        }
+    }
+}
+
+/** نوارِ شناورِ «امتحان کن»: شمارشِ معکوس + «بخر» + «برگرد». */
+@Composable
+private fun TrialBar(item: ShopItem, secondsLeft: Int, modifier: Modifier, onBuy: () -> Unit, onBack: () -> Unit) {
+    AppCard(modifier = modifier.padding(horizontal = 14.dp, vertical = 14.dp), contentPadding = 12.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "در حالِ امتحانِ «${item.label}»",
+                    color = AppText,
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    "${toFa(secondsLeft)} ثانیه · بعدش خودش برمی‌گردد",
+                    color = AppMuted,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            GradientButton(onClick = onBuy, modifier = Modifier.padding(start = 8.dp)) {
+                Text("بخر", fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+            }
+            GradientButton(onClick = onBack, variant = AppButtonVariant.SECONDARY, modifier = Modifier.padding(start = 6.dp)) {
+                Text("برگرد", fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+            }
+        }
+    }
+}
+
 /** تکه‌های کالکشنِ «شب پرستاره» - همان دو قلمی که `ShopViewModel` برای نشان می‌شمارد. */
 private val STARRY_IDS = listOf("theme:vangogh", "bg_night_swirl")
 
@@ -362,6 +502,8 @@ fun ShopScreen(
     val earnedBadges by viewModel.earnedBadges.collectAsState()
     val result by viewModel.lastResult.collectAsState()
     val catalog by viewModel.catalog.collectAsState()
+    val dailyDeal by viewModel.dailyDeal.collectAsState()
+    val coinGoalId by viewModel.coinGoal.collectAsState()
     var confirming by remember { mutableStateOf<ShopItem?>(null) }
     var detail by remember { mutableStateOf<ShopItem?>(null) }
     var showCollection by remember { mutableStateOf(false) }
@@ -471,6 +613,14 @@ fun ShopScreen(
                 earned = Badge.COLLECTION_STARRY_NIGHT.code in earnedBadges,
                 onView = { showCollection = true },
             )
+        }
+        dailyDeal?.let { deal ->
+            item(key = "deal") { DailyDealCard(deal) { detail = deal.item } }
+        }
+        catalog.firstOrNull { it.id == coinGoalId && it.id !in owned }?.let { goal ->
+            item(key = "goal") {
+                CoinGoalCard(goal, balance, onOpen = { detail = goal }, onClear = { viewModel.setCoinGoal(null) })
+            }
         }
         stickyHeader {
             Box(modifier = Modifier.fillMaxWidth().background(AppBg).padding(vertical = 4.dp)) {
@@ -651,6 +801,18 @@ fun ShopScreen(
     }
     }
     }
+        ShopTrial.item?.let { trialItem ->
+            TrialBar(
+                item = trialItem,
+                secondsLeft = ShopTrial.secondsLeft,
+                modifier = Modifier.align(Alignment.BottomCenter),
+                onBuy = {
+                    ShopTrial.stop()
+                    confirming = catalog.firstOrNull { it.id == trialItem.id } ?: trialItem
+                },
+                onBack = { ShopTrial.stop() },
+            )
+        }
         InAppBannerHost(banner, modifier = Modifier.align(Alignment.BottomCenter))
     }
 
@@ -666,6 +828,18 @@ fun ShopScreen(
         )
     }
 
+    // شمارشِ معکوسِ امتحان؛ بیرون‌رفتن از فروشگاه هم امتحان را تمام می‌کند.
+    val trialId = ShopTrial.item?.id
+    LaunchedEffect(trialId) {
+        if (trialId == null) return@LaunchedEffect
+        while (ShopTrial.secondsLeft > 0) {
+            kotlinx.coroutines.delay(1_000)
+            ShopTrial.secondsLeft -= 1
+        }
+        ShopTrial.stop()
+    }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { ShopTrial.stop() } }
+
     detail?.let { item ->
         ProductDetailSheet(
             item = item,
@@ -674,6 +848,12 @@ fun ShopScreen(
             onDismiss = { detail = null },
             onActivate = activateItem,
             onBuy = { confirming = it },
+            onTry = {
+                detail = null
+                ShopTrial.start(it)
+            },
+            isGoal = item.id == coinGoalId,
+            onToggleGoal = { viewModel.setCoinGoal(if (item.id == coinGoalId) null else item.id) },
         )
     }
 
@@ -1570,6 +1750,9 @@ private fun ProductDetailSheet(
     onDismiss: () -> Unit,
     onActivate: (ShopItem) -> Unit,
     onBuy: (ShopItem) -> Unit,
+    onTry: (ShopItem) -> Unit,
+    isGoal: Boolean,
+    onToggleGoal: () -> Unit,
 ) {
     FullScreenDialog(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.fillMaxSize().background(AppBg)) {
@@ -1628,7 +1811,31 @@ private fun ProductDetailSheet(
                 if (item.id.startsWith("symbolset:")) item { SymbolSetSample(item.id) }
                 if (item.id.startsWith("chart:")) item { ChartStyleSample(item.id) }
             }
-            Box(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 18.dp, top = 6.dp)) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 18.dp, top = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val notMine = state == RowState.BUY || state == RowState.POOR
+                if (notMine) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (canTry(item)) {
+                            GradientButton(
+                                onClick = { onTry(item) },
+                                variant = AppButtonVariant.SECONDARY,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text("امتحان کن · ${toFa(TRIAL_SECONDS)} ثانیه", fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+                            }
+                        }
+                        GradientButton(
+                            onClick = onToggleGoal,
+                            variant = AppButtonVariant.SECONDARY,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(if (isGoal) "برداشتنِ هدف" else "هدفِ سکه‌ام کن", fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+                        }
+                    }
+                }
                 DetailAction(item, state, balance, onActivate, onBuy)
             }
         }
