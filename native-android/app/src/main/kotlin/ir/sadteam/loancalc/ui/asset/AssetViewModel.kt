@@ -139,9 +139,11 @@ class AssetViewModel @Inject constructor(
             assetRepository.refreshPrices()
             // قیمتِ کلِ بازار **یک درخواسته**، پس حلقه روی نمادها لازم نیست.
             // شکستِ شبکه = قیمتِ قبلی می‌مونه، نه فهرستِ خالی.
-            _marketPrices.value = runCatching { assetRepository.marketPrices() }
-                .getOrDefault(_marketPrices.value)
-            _pricesUpdatedAt.value = System.currentTimeMillis()
+            // ساعت از خودِ سرور (زمانِ آخرین دریافت از سرویس)، نه لحظه‌ی باز شدنِ اپ.
+            assetRepository.marketSnapshot()?.let { (prices, at) ->
+                if (prices.isNotEmpty()) _marketPrices.value = prices
+                if (at != null) _pricesUpdatedAt.value = at
+            }
             // ifEmpty چون تو فراخوانیِ init هنوز StateFlowِ assets پر نشده.
             val current = assets.value.ifEmpty { assetRepository.observeAssets().first() }
             _monthChange.value = current
