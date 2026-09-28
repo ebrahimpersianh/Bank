@@ -41,6 +41,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -162,6 +164,20 @@ object PriceService {
                 }
             }
         }
+
+    /**
+     * زمان‌بندِ سمتِ سرور: هر دقیقه نگاه می‌کند و فقط وقتی ۲۹ دقیقه گذشته باشد می‌پرسد.
+     * 🚨 قبلاً تازه‌سازی فقط با درخواستِ یک کاربر رخ می‌داد؛ وقتی کسی اپ را باز نمی‌کرد
+     * (مثلاً شب) هیچ درخواستی نمی‌رفت و داشبوردِ Servix «۰ از ۵۰» نشان می‌داد.
+     */
+    fun startScheduler(scope: kotlinx.coroutines.CoroutineScope) {
+        scope.launch {
+            while (true) {
+                runCatching { refreshIfStale() }
+                delay(60_000)
+            }
+        }
+    }
 
     private suspend fun refreshIfStale() {
         if (PRICE_API_KEY.isEmpty()) return // کلید ست نشده - endpoint خالی برمی‌گرده، خطا نه
