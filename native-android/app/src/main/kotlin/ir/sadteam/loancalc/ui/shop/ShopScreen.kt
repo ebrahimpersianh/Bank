@@ -624,7 +624,7 @@ fun ShopScreen(
         }
         stickyHeader {
             Box(modifier = Modifier.fillMaxWidth().background(AppBg).padding(vertical = 4.dp)) {
-                ShopTabs(tab, onlyMine, { tab = it }) { onlyMine = !onlyMine }
+                ShopTabs(tab, onlyMine, { tab = it; if (it == null) onlyMine = false }) { onlyMine = !onlyMine }
             }
         }
 
@@ -828,17 +828,13 @@ fun ShopScreen(
         )
     }
 
-    // شمارشِ معکوسِ امتحان؛ بیرون‌رفتن از فروشگاه هم امتحان را تمام می‌کند.
-    val trialId = ShopTrial.item?.id
-    LaunchedEffect(trialId) {
-        if (trialId == null) return@LaunchedEffect
-        while (ShopTrial.secondsLeft > 0) {
-            kotlinx.coroutines.delay(1_000)
-            ShopTrial.secondsLeft -= 1
-        }
-        ShopTrial.stop()
+    // شمارشِ معکوس سراسری است (`TrialHost` در MainActivity) تا بیرون‌رفتن از فروشگاه تمِ
+    // امتحانی را نیمه‌کاره گیر نیندازد. این‌جا فقط «خرید» از پرسشِ پایانی را می‌گیریم.
+    val pendingBuy = ShopTrial.pendingBuyId
+    LaunchedEffect(pendingBuy, catalog) {
+        val id = pendingBuy ?: return@LaunchedEffect
+        catalog.firstOrNull { it.id == id }?.let { confirming = it; ShopTrial.pendingBuyId = null }
     }
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { ShopTrial.stop() } }
 
     detail?.let { item ->
         ProductDetailSheet(
@@ -2032,6 +2028,40 @@ private fun DetailAction(
             fontWeight = FontWeight.Black,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        )
+    }
+}
+
+/**
+ * شمارشِ معکوسِ «امتحان کن» + پرسشِ پایانی، **هر جای برنامه**. بیرونِ فروشگاه زندگی می‌کند تا
+ * رفتن به صفحه‌ی دیگر امتحان را قطع نکند و کاربر در تمِ نخریده گیر نیفتد.
+ */
+@Composable
+fun TrialHost(onOpenShop: () -> Unit) {
+    val trialId = ShopTrial.item?.id
+    LaunchedEffect(trialId) {
+        if (trialId == null) return@LaunchedEffect
+        while (ShopTrial.secondsLeft > 0) {
+            kotlinx.coroutines.delay(1_000)
+            ShopTrial.secondsLeft -= 1
+        }
+        ShopTrial.finish()
+    }
+    ShopTrial.askBuy?.let { item ->
+        ir.sadteam.loancalc.ui.components.JibakAlertDialog(
+            onDismissRequest = { ShopTrial.askBuy = null },
+            title = { Text("از «${item.label}» خوشت اومد؟") },
+            text = { Text("امتحان تمام شد و همه‌چیز به حالتِ قبل برگشت. اگر بخواهی همین حالا می‌توانی بخری‌اش.") },
+            confirmButton = {
+                GradientButton(onClick = {
+                    ShopTrial.askBuy = null
+                    ShopTrial.pendingBuyId = item.id
+                    onOpenShop()
+                }) { Text("خرید") }
+            },
+            dismissButton = {
+                GradientButton(onClick = { ShopTrial.askBuy = null }, variant = AppButtonVariant.SECONDARY) { Text("نه، ممنون") }
+            },
         )
     }
 }

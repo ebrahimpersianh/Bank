@@ -42,7 +42,7 @@ data class DailyDeal(val item: ShopItem, val originalPrice: Int)
 fun canTry(item: ShopItem): Boolean =
     item.kind.category in setOf(ShopCategory.THEME, ShopCategory.BACKDROP, ShopCategory.FONT)
 
-const val TRIAL_SECONDS = 10
+const val TRIAL_SECONDS = 30
 
 /**
  * «امتحان کن، بعد بخر» - **فقط در حافظه**، هیچ‌وقت در تنظیماتِ ذخیره‌شده.
@@ -63,8 +63,22 @@ object ShopTrial {
     private var prevBackdrop: LiveBackground? = null
     private var touchedBackdrop = false
 
+    /** قلمی که امتحانش تمام شد - `MainActivity` هر جا که کاربر باشد «می‌خری؟» می‌پرسد. */
+    var askBuy: ShopItem? by mutableStateOf(null)
+
+    /** «خرید» از همان پرسش - فروشگاه با دیدنش دیالوگِ تاییدِ خرید را باز می‌کند. */
+    var pendingBuyId: String? by mutableStateOf(null)
+
+    /** پایانِ خودکارِ شمارش: برگرداندن + پرسیدنِ خرید. */
+    fun finish() {
+        val done = item
+        stop()
+        askBuy = done
+    }
+
     fun start(target: ShopItem) {
         stop()
+        askBuy = null
         item = target
         secondsLeft = TRIAL_SECONDS
         when (target.kind.category) {

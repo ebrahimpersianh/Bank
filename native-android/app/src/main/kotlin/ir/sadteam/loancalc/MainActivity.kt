@@ -782,6 +782,8 @@ private fun LoanCalcApp(
     // زدنِ نوتیفیکیشنِ یادآوریِ قسط (مورد ۵) - رجوع کن به کامنتِ DeepLinkTarget. اگه رو تبِ «وام»
     // نیستیم، اول باید بریم اونجا و زیرصفحه‌ی «وام‌های من» رو باز کنیم؛ خودِ بازکردنِ وامِ خاص تو
     // MyLoansScreen انجام می‌شه (پارامترِ deepLinkLoanId پایین‌تر).
+    ir.sadteam.loancalc.ui.shop.TrialHost(onOpenShop = { navigateTo(SHOP_ROUTE) })
+
     val deepLinkLoanId by deepLinkViewModel.pendingLoanId.collectAsState()
     LaunchedEffect(deepLinkLoanId) {
         if (deepLinkLoanId != null) {
