@@ -226,7 +226,7 @@ class UiPrefs(private val context: Context) {
 
     companion object {
         /** ساعتِ پیش‌فرضِ یادآور - صبح، وقتی کاربر هنوز فرصتِ کاری کردن دارد. */
-        const val DEFAULT_REMINDER_HOUR = 9
+        const val DEFAULT_REMINDER_HOUR = 10
 
         /** پنجره‌ی تشخیصِ ثبتِ تکراریِ خودکار - شش ساعت. */
         const val IMPORT_DEDUPE_WINDOW_MS = 6L * 60 * 60 * 1000

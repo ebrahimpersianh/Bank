@@ -458,6 +458,7 @@ class DueDateReminderWorker @AssistedInject constructor(
     private fun isStaleCatchUpRun(reminderHour: Int): Boolean {
         val now = java.util.Calendar.getInstance()
         val hoursSinceTarget = now.get(java.util.Calendar.HOUR_OF_DAY) - reminderHour
-        return hoursSinceTarget > STALE_RUN_HOURS
+        // اجرای قبل از ساعتِ مقرر (مثلاً ۱ بامداد) هم نابه‌جاست - همان باگِ «پیام ساعتِ ۱ صبح».
+        return hoursSinceTarget < 0 || hoursSinceTarget > STALE_RUN_HOURS
     }
 }
