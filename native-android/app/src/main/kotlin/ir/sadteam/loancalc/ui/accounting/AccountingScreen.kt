@@ -289,6 +289,11 @@ private fun MainSection(
     val allCategoryEntries = remember(expenseCategories, incomeCategories) { expenseCategories + incomeCategories }
 
     var searchQuery by remember { mutableStateOf("") }
+    // جستجوی پیشرفته (پیشنهادِ گزارشِ مقایسه با پولکی): نوع، حساب، بازه‌ی مبلغ (تومان).
+    var typeFilter by remember { mutableStateOf<String?>(null) } // WITHDRAWAL / DEPOSIT / transfer
+    var accountFilter by remember { mutableStateOf<Long?>(null) }
+    var minToman by remember { mutableStateOf("") }
+    var maxToman by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
     var showAddForm by remember { mutableStateOf(false) }
     var deletingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
@@ -328,14 +333,20 @@ private fun MainSection(
         debtRows.filter { !it.settled && it.type == DebtType.I_OWE.name }.sumOf { it.amount }
     }
 
-    val filtered = remember(allTransactions, searchQuery) {
-        if (searchQuery.isBlank()) {
-            allTransactions
-        } else {
-            val q = searchQuery.trim()
-            allTransactions.filter {
-                it.description.contains(q, ignoreCase = true) || (it.category?.contains(q, ignoreCase = true) == true)
-            }
+    val filtered = remember(allTransactions, searchQuery, typeFilter, accountFilter, minToman, maxToman) {
+        val q = searchQuery.trim()
+        val minRial = minToman.toLongOrNull()?.let { it * 10.0 }
+        val maxRial = maxToman.toLongOrNull()?.let { it * 10.0 }
+        allTransactions.filter {
+            (q.isEmpty() || it.description.contains(q, ignoreCase = true) || (it.category?.contains(q, ignoreCase = true) == true)) &&
+                when (typeFilter) {
+                    null -> true
+                    ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER -> it.sourceType == ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER
+                    else -> it.type == typeFilter && it.sourceType != ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER
+                } &&
+                (accountFilter == null || it.accountId == accountFilter) &&
+                (minRial == null || it.amount >= minRial) &&
+                (maxRial == null || it.amount <= maxRial)
         }
     }
 
@@ -412,6 +423,56 @@ private fun MainSection(
                         singleLine = true,
                         colors = appFieldColors(),
                     )
+                }
+            }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        listOf(
+                            null to "همه",
+                            TransactionType.WITHDRAWAL.name to "خرج",
+                            TransactionType.DEPOSIT.name to "درآمد",
+                            ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER to "جابه‌جایی",
+                        ).forEach { (key, label) ->
+                            AppChip(label, typeFilter == key, onClick = { typeFilter = key })
+                        }
+                    }
+                    if (accounts.size > 1) {
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            AppChip("همه‌ی حساب‌ها", accountFilter == null, onClick = { accountFilter = null })
+                            accounts.forEach { acc ->
+                                AppChip(acc.name, accountFilter == acc.id, onClick = { accountFilter = acc.id })
+                            }
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = minToman,
+                            onValueChange = { minToman = cleanNum(it).take(13) },
+                            placeholder = { Text("از مبلغ (تومان)") },
+                            visualTransformation = ThousandsSeparatorTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = appFieldColors(),
+                        )
+                        OutlinedTextField(
+                            value = maxToman,
+                            onValueChange = { maxToman = cleanNum(it).take(13) },
+                            placeholder = { Text("تا مبلغ (تومان)") },
+                            visualTransformation = ThousandsSeparatorTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = appFieldColors(),
+                        )
+                    }
                 }
             }
         }
