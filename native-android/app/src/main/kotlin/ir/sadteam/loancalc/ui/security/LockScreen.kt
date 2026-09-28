@@ -110,7 +110,23 @@ fun LockScreen(
             modifier = Modifier.padding(top = 6.dp, bottom = 28.dp),
         )
 
-        if (pinHash != null) {
+        if (pinHash != null && LockType.isPattern(context)) {
+            val lockedOut = secondsLeft > 0
+            if (!lockedOut) {
+                PatternPad(onComplete = { seq ->
+                    when (val result = attemptPin(seq)) {
+                        is PinAttemptResult.Success -> { error = null; onUnlock() }
+                        is PinAttemptResult.WrongPin -> error = "الگو اشتباهه (${toFa(result.attemptsLeft)} تلاش دیگه مونده)"
+                        is PinAttemptResult.LockedOut -> {
+                            error = "به دلیل تلاش‌های ناموفق زیاد، موقتاً قفل شدی"
+                            lockedOutUntil = System.currentTimeMillis() + result.secondsLeft * 1000
+                        }
+                    }
+                })
+            } else {
+                Text("امتحان دوباره بعد از ${toFa(secondsLeft.toInt())} ثانیه", color = AppMuted, fontSize = 13.sp)
+            }
+        } else if (pinHash != null) {
             val lockedOut = secondsLeft > 0
             // Ltr: بدونش، تایپِ PIN تو ambientِ RTLِ کلِ اپ از سمتِ راست جا می‌گرفت - همون باگی که
             // فیلدِ شماره‌موبایل/کدِ تاییدِ LoginScreen داشتن (رجوع کن به کامنتِ Ltr.kt).

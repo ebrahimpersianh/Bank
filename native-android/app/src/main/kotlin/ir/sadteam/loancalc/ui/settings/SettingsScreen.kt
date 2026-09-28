@@ -2847,6 +2847,8 @@ private fun SecuritySettings(
     val autoLockTimeoutMinutes by appLockViewModel.autoLockTimeoutMinutes.collectAsState()
     val privacyMode = LocalPrivacyMode.current
     var showPinDialog by remember { mutableStateOf(false) }
+    var showPatternDialog by remember { mutableStateOf(false) }
+    var isPattern by remember { mutableStateOf(ir.sadteam.loancalc.ui.security.LockType.isPattern(context)) }
     val hasLock = pinHash != null || biometricEnabled
 
     if (showPinDialog) {
@@ -2854,7 +2856,20 @@ private fun SecuritySettings(
             onDismiss = { showPinDialog = false },
             onConfirm = { pin ->
                 appLockViewModel.setPin(pin)
+                ir.sadteam.loancalc.ui.security.LockType.setPattern(context, false)
+                isPattern = false
                 showPinDialog = false
+            },
+        )
+    }
+    if (showPatternDialog) {
+        PatternSetupDialog(
+            onDismiss = { showPatternDialog = false },
+            onConfirm = { seq ->
+                appLockViewModel.setPin(seq)
+                ir.sadteam.loancalc.ui.security.LockType.setPattern(context, true)
+                isPattern = true
+                showPatternDialog = false
             },
         )
     }
@@ -2874,20 +2889,39 @@ private fun SecuritySettings(
             title = "قفل با رمزِ عددی",
             icon = Icons.Filled.Lock,
             tone = SettingsTone.BLUE,
-            status = if (pinHash != null) "فعال است" else "خاموش",
-            statusTone = if (pinHash != null) StatusTone.HEALTHY else StatusTone.NEUTRAL,
-            checked = pinHash != null,
+            status = if (pinHash != null && !isPattern) "فعال است" else "خاموش",
+            statusTone = if (pinHash != null && !isPattern) StatusTone.HEALTHY else StatusTone.NEUTRAL,
+            checked = pinHash != null && !isPattern,
             onCheckedChange = { checked ->
                 if (checked) showPinDialog = true else appLockViewModel.clearPin()
+            },
+        )
+        SettingsDivider()
+        // قفلِ الگویی - همان جای PIN ذخیره می‌شود، پس روشن‌کردنِ یکی دیگری را جایگزین می‌کند.
+        SettingsRowItem(
+            title = "قفل با الگو",
+            icon = Icons.Filled.Lock,
+            tone = SettingsTone.BLUE,
+            status = if (pinHash != null && isPattern) "فعال است" else "خاموش",
+            statusTone = if (pinHash != null && isPattern) StatusTone.HEALTHY else StatusTone.NEUTRAL,
+            checked = pinHash != null && isPattern,
+            onCheckedChange = { checked ->
+                if (checked) {
+                    showPatternDialog = true
+                } else {
+                    appLockViewModel.clearPin()
+                    ir.sadteam.loancalc.ui.security.LockType.setPattern(context, false)
+                    isPattern = false
+                }
             },
         )
         if (pinHash != null) {
             SettingsDivider()
             SettingsRowItem(
-                title = "تغییرِ رمزِ عددی",
+                title = if (isPattern) "تغییرِ الگو" else "تغییرِ رمزِ عددی",
                 icon = Icons.Filled.Password,
                 tone = SettingsTone.NEUTRAL,
-                onClick = { showPinDialog = true },
+                onClick = { if (isPattern) showPatternDialog = true else showPinDialog = true },
             )
         }
         if (pinHash != null) SettingsDivider()
@@ -2997,6 +3031,34 @@ private fun SecuritySettings(
 }
 
 private val autoLockTimeoutOptions = listOf(0 to "بی‌درنگ", 1 to "۱ دقیقه", 5 to "۵ دقیقه", 15 to "۱۵ دقیقه")
+
+@Composable
+private fun PatternSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    var first by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+    JibakAlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (first == null) "الگو را بکش" else "دوباره همان الگو را بکش") },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("دست‌کم ۴ نقطه را به هم وصل کن.", color = AppMuted, fontSize = 12.sp)
+                ir.sadteam.loancalc.ui.security.PatternPad(
+                    onComplete = { seq ->
+                        val f = first
+                        when {
+                            f == null -> { first = seq; error = null }
+                            f == seq -> onConfirm(seq)
+                            else -> { first = null; error = "دو الگو یکی نبود؛ از اول بکش." }
+                        }
+                    },
+                    modifier = Modifier.padding(top = 12.dp),
+                )
+                error?.let { Text(it, color = AppDanger, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)) }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("انصراف") } },
+    )
+}
 
 @Composable
 private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
