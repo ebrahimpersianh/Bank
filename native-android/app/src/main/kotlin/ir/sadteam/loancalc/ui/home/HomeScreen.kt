@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.home
 
+import androidx.compose.material.icons.filled.Storefront
 import androidx.activity.compose.BackHandler
 import ir.sadteam.loancalc.ui.profile.BadgesScreen
 import androidx.compose.material3.IconButton
@@ -305,6 +306,7 @@ fun HomeScreen(
                     userName = userName,
                     activeDays = activeDays,
                     onOpenCoins = { showCoinWallet = true },
+                    onOpenShop = { onNavigateToRoute("shop") },
                     onOpenProfile = { showProfile = true },
                     coins = coins,
                     onOpenSettings = onOpenSettings,
@@ -639,6 +641,7 @@ private fun HomeHeader(
     inboxUnreadNews: Int,
     onOpenInbox: () -> Unit,
     onOpenCoins: () -> Unit,
+    onOpenShop: () -> Unit,
     onOpenProfile: () -> Unit,
     /** امروز تراکنشی ثبت شده یا نه - شرطِ برگشتنِ قرصِ «فعال» به هدر (فریمِ `55a`). */
     todayHasEntry: Boolean,
@@ -737,8 +740,10 @@ private fun HomeHeader(
             val streakAtRisk = activeDays >= 7 && !todayHasEntry
             if (streakAtRisk) {
                 ActiveChip(days = activeDays, onClick = onOpenCoins)
-            } else if (coins > 0) {
-                CoinChip(coins = coins, onClick = onOpenCoins, compact = compactChips, modifier = Modifier.offset(x = 6.dp))
+            } else {
+                // به‌جای عددِ سکه، درِ اختصاصیِ فروشگاه (خواسته‌ی کاربر، ۶ مهر). موجودیِ سکه بالای
+                // خودِ فروشگاه نشان داده می‌شود.
+                PrivacyEyeButton(icon = Icons.Filled.Storefront, active = false, onClick = onOpenShop)
             }
             // زنگِ مرکزِ پیام‌ها (بخشِ ۴۰). **عدد فقط برای اقدام‌دارهای بازه**؛ خبرِ
             // خوانده‌نشده فقط یه نقطه‌ی سبز می‌گیره، نه عدد (قاعده‌ی صریحِ طرح).

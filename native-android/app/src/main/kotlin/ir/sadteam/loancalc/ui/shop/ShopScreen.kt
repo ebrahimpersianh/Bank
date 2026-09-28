@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.shop
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -505,6 +506,13 @@ fun ShopScreen(
     val dailyDeal by viewModel.dailyDeal.collectAsState()
     val coinGoalId by viewModel.coinGoal.collectAsState()
     var confirming by remember { mutableStateOf<ShopItem?>(null) }
+    var showWallet by remember { mutableStateOf(false) }
+    if (showWallet && !embedded) {
+        androidx.activity.compose.BackHandler { showWallet = false }
+        val gam: ir.sadteam.loancalc.ui.profile.GamificationViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+        ir.sadteam.loancalc.ui.coin.CoinHubScreen(onBack = { showWallet = false }, todayHasEntry = gam.todayLogged.collectAsState().value)
+        return
+    }
     var detail by remember { mutableStateOf<ShopItem?>(null) }
     var showCollection by remember { mutableStateOf(false) }
     var freshExpanded by rememberSaveable { mutableStateOf(false) }
@@ -602,7 +610,7 @@ fun ShopScreen(
         contentPadding = PaddingValues(start = 10.dp, end = 16.dp, top = 10.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        if (!embedded) item { BalanceCard(balance) }
+        if (!embedded) item { BalanceCard(balance, onClick = { showWallet = true }) }
 
         // 🚨 بنر و نوارِ تب **داخلِ فهرست** آمدند (خواسته‌ی کاربر، ۱ مهر: «وقتی به بالا
         // می‌کشم، بالا محو شود و آیکون‌ها دیده شوند؛ الان دو-سه تا بیشتر پیدا نیست»).
@@ -872,10 +880,11 @@ fun ShopScreen(
 }
 
 @Composable
-private fun BalanceCard(balance: Int) {
+private fun BalanceCard(balance: Int, onClick: () -> Unit = {}) {
     // کارتِ **فشرده**ی یک‌خطی (تصمیمِ فروشگاه): موجودی مهم است ولی ویترین اصل است؛
     // نسخه‌ی سه‌خطیِ قبلی نصفِ صفحه‌ی اول را پیش از رسیدن به هر محصولی می‌گرفت.
-    AppCard(modifier = Modifier.fillMaxWidth(), contentPadding = 12.dp) {
+    // تپ ← کیفِ سکه (زنجیره، نشان‌ها، راه‌های گرفتنِ سکه) - درِ سکه از هدرِ خانه به این‌جا آمد.
+    AppCard(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick), contentPadding = 12.dp) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             CoinIcon(size = 20.dp)
             Text(
