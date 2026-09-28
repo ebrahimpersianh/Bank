@@ -519,7 +519,7 @@ fun HomeScreen(
         }
         if (showProfile) {
             // آدمکِ سربرگ → صفحه‌ی «حسابِ کاربری» (خواسته‌ی کاربر، ۳ مهر). نشان‌ها از تنظیمات در دسترس‌اند.
-            ir.sadteam.loancalc.ui.settings.SettingsScreen(onBack = { showProfile = false }, startAtAccount = true)
+            ir.sadteam.loancalc.ui.settings.SettingsScreen(onBack = { showProfile = false })
         }
         if (showTodaySpend) {
             TodaySpendSheet(
@@ -735,8 +735,8 @@ private fun HomeHeader(
                 hasUnreadNews = inboxUnreadNews > 0,
                 onClick = onOpenInbox,
             )
-            // ⚠️ **تنها درِ تنظیمات.** آدمک دیگر این کار را نمی‌کند.
-            PrivacyEyeButton(icon = Icons.Filled.Settings, active = false, onClick = onOpenSettings)
+            // چرخ‌دنده برداشته شد (۶ مهر): آدمک و چرخ‌دنده هر دو به تنظیمات می‌رفتند. حالا
+            // **تنها درِ تنظیمات خودِ آدمک است** و کارتِ حساب بالای همان صفحه است.
         }
     }
     }
