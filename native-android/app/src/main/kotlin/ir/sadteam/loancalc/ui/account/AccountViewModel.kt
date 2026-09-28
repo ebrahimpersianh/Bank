@@ -129,11 +129,7 @@ class AccountViewModel @Inject constructor(
                     year = year, month = month, day = day,
                 )
                 syncIfLoggedIn()
-            }.onSuccess {
-                // فقط ثبتِ دستیِ خودِ کاربر، و فقط بعد از ذخیره‌ی موفق - بی مبلغ و بی عنوان.
-                if (originLabel == null && (sourceType == null || sourceType == "split")) ir.sadteam.loancalc.data.UsageStats.track(ir.sadteam.loancalc.data.UsageStats.TRANSACTION_CREATED)
-                onSuccess()
-            }.onFailure(onFailure)
+            }.onSuccess { onSuccess() }.onFailure(onFailure)
         }
     }
 
@@ -167,7 +163,11 @@ class AccountViewModel @Inject constructor(
                     reimbursable = reimbursable,
                 )
                 syncIfLoggedIn()
-            }.onSuccess { onSuccess() }.onFailure(onFailure)
+            }.onSuccess {
+                // فقط ثبتِ دستیِ خودِ کاربر، و فقط بعد از ذخیره‌ی موفق - بی مبلغ و بی عنوان.
+                if (originLabel == null && (sourceType == null || sourceType == "split")) ir.sadteam.loancalc.data.UsageStats.track(ir.sadteam.loancalc.data.UsageStats.TRANSACTION_CREATED)
+                onSuccess()
+            }.onFailure(onFailure)
         }
     }
 

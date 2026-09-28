@@ -38,11 +38,6 @@ class DeepLinkViewModel @Inject constructor(
 
     val pendingLoanId: StateFlow<Long?> = deepLinkTarget.pendingLoanId
 
-    /** بازکردنِ یک وامِ مشخص از داخلِ اپ (کارتِ قسطِ عقب‌افتاده‌ی خانه). */
-    fun openLoan(id: Long) {
-        deepLinkTarget.setLoanId(id)
-    }
-
     fun consume() {
         deepLinkTarget.consume()
     }

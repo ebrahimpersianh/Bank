@@ -320,8 +320,8 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
             // قاعده‌ی صریحِ فریمِ `36b` که باید به کاربر گفته بشه، وگرنه دنبالِ عمقِ دوم می‌گرده.
             AppCard(backgroundColor = AppSurface2, borderColor = AppLineRow, shadow = false) {
                 Text(
-                    "فقط یک پله عمق داریم - زیرمجموعه‌ی زیرمجموعه نمی‌شه ساخت. مبلغ‌های " +
-                        "کنارِ هر دسته مالِ ماهِ جاری‌ان.",
+                    "زیرِ هر دسته فقط یک سطح زیردسته می‌شه ساخت (زیرِ زیردسته نه). عددِ کنارِ " +
+                        "هر دسته، خرجِ همین ماهه.",
                     color = AppMuted,
                     fontSize = 10.5.sp,
                     lineHeight = 20.sp,

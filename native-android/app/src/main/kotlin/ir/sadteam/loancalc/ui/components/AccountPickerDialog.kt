@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -31,11 +33,21 @@ fun AccountPickerDialog(
         text = {
             Column {
                 accounts.forEach { account ->
-                    TextButton(
-                        onClick = { onSelect(account) },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    // لوگوی بانک + نام؛ حسابِ نقدی «()»ِ خالی نشان نمی‌داد (گزارشِ کاربر، ۶ مهر).
+                    androidx.compose.foundation.layout.Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(account) }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                     ) {
-                        Text("${account.name} (${account.bankName})", modifier = Modifier.fillMaxWidth())
+                        BankBadge(bankName = account.bankName, size = 36.dp)
+                        Column(modifier = Modifier.padding(start = 10.dp)) {
+                            Text(account.name, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                            if (account.bankName.isNotBlank() && account.bankName != account.name) {
+                                Text(account.bankName, fontSize = 11.sp, color = ir.sadteam.loancalc.ui.theme.AppMuted)
+                            }
+                        }
                     }
                 }
             }

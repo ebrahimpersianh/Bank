@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
