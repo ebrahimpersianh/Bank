@@ -645,7 +645,10 @@ private fun AppRoot(
     // این‌جا `onboardingDone`/`gateState` قطعاً non-nullن (گیتِ اسپلشِ بالا تضمینش می‌کنه)، پس دیگه
     // شاخه‌ی «هنوز لود نشده» با صفحه‌ی خالیِ سفید لازم نیست.
     if (onboardingDone != true) {
-        OnboardingFlow(onFinished = { authViewModel.markOnboardingDone() })
+        OnboardingFlow(onFinished = {
+            ir.sadteam.loancalc.data.UsageStats.track(ir.sadteam.loancalc.data.UsageStats.ONBOARDING_COMPLETED)
+            authViewModel.markOnboardingDone()
+        })
         return
     }
 

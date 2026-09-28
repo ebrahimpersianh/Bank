@@ -76,6 +76,7 @@ class AccountViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             accountRepository.addAccount(name, bankName, initialBalance, cardNumber, smsSender, type, iconKey, accountNumber, sheba)
+            ir.sadteam.loancalc.data.UsageStats.track(ir.sadteam.loancalc.data.UsageStats.ACCOUNT_CREATED)
             syncIfLoggedIn()
         }
     }
@@ -128,7 +129,11 @@ class AccountViewModel @Inject constructor(
                     year = year, month = month, day = day,
                 )
                 syncIfLoggedIn()
-            }.onSuccess { onSuccess() }.onFailure(onFailure)
+            }.onSuccess {
+                // فقط ثبتِ دستیِ خودِ کاربر، و فقط بعد از ذخیره‌ی موفق - بی مبلغ و بی عنوان.
+                if (originLabel == null && sourceType == null) ir.sadteam.loancalc.data.UsageStats.track(ir.sadteam.loancalc.data.UsageStats.TRANSACTION_CREATED)
+                onSuccess()
+            }.onFailure(onFailure)
         }
     }
 

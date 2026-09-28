@@ -142,6 +142,9 @@ fun ReportTabScreen(
     loansViewModel: MyLoansViewModel = hiltViewModel(),
     chequeViewModel: ChequeViewModel = hiltViewModel(),
 ) {
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        ir.sadteam.loancalc.data.UsageStats.track(ir.sadteam.loancalc.data.UsageStats.REPORT_VIEWED)
+    }
     val transactions by accountViewModel.transactions.collectAsState()
     val recurring by accountViewModel.recurringPayments.collectAsState()
     val privacyMode = LocalPrivacyMode.current

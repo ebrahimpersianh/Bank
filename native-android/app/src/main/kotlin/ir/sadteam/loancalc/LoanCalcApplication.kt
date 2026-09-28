@@ -53,6 +53,7 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
     override fun onCreate() {
         super.onCreate()
         crashReporter.install()
+        ir.sadteam.loancalc.data.UsageStats.init(this)
         preloadLogoAssets()
         // برای هماهنگ‌کردنِ پترنِ پیامکِ OTP با SMS Retriever API - رجوع کن به کامنتِ
         // SmsRetrieverHash.kt. فقط لاگ می‌کنه (Log.i)، هیچ اثرِ دیگه‌ای رو رفتارِ اپ نداره.

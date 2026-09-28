@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.settings
 
+import androidx.compose.material.icons.filled.BarChart
 import ir.sadteam.loancalc.ui.support.ContactSupportContent
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.text.TextStyle
@@ -2969,6 +2970,19 @@ private fun SecuritySettings(
                 }
             }
         }
+        // آمارِ بی‌نام (سرورِ خودمان، نه Firebase) - رجوع کن به data.UsageStats.
+        var usageOn by remember { mutableStateOf(ir.sadteam.loancalc.data.UsageStats.isEnabled()) }
+        SettingsRowItem(
+            title = "ارسالِ آمارِ بی‌نامِ استفاده",
+            icon = Icons.Filled.BarChart,
+            tone = SettingsTone.NEUTRAL,
+            status = "فقط «چه کاری انجام شد»، بدونِ مبلغ، اسم، شماره یا هیچ اطلاعاتِ شخصی",
+            checked = usageOn,
+            onCheckedChange = {
+                usageOn = it
+                ir.sadteam.loancalc.data.UsageStats.setEnabled(it)
+            },
+        )
     }
 
     // ── کارتِ توضیحِ ته صفحه ──────────────────────────────────────────────────

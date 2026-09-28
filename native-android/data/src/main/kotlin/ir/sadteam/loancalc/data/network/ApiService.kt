@@ -78,6 +78,10 @@ interface ApiService {
         @Header("Authorization") authHeader: String,
     ): SubscriptionHistoryResponse
 
+    /** آمارِ بی‌نام - رجوع کن به [ir.sadteam.loancalc.data.UsageStats]. عمداً بدونِ توکن. */
+    @POST("api/events")
+    suspend fun trackEvent(@Body body: UsageEventRequest): Response<Unit>
+
     @POST("api/crash")
     suspend fun reportCrash(
         @Body body: CrashReportRequest,
@@ -264,3 +268,5 @@ data class AnnouncementDto(
 )
 
 data class AnnouncementsResponse(val items: List<AnnouncementDto>)
+
+data class UsageEventRequest(val name: String)
