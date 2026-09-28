@@ -184,6 +184,7 @@ fun HomeScreen(
     onNavigateToRoute: (String) -> Unit,
     onOpenSettings: () -> Unit = {},
     onOpenInbox: () -> Unit = {},
+    onOpenLoan: (Long) -> Unit = { onNavigateToRoute("loan") },
     /**
      * کارتِ پیشنهادِ نوارِ پایین (`41a`) - به‌صورتِ یه اسلاتِ آماده‌ی رندر پاس داده می‌شه، نه
      * داده‌ی خام. دلیل: چیدمانِ نوار و `ViewModel`ش تو `MainActivity` زندگی می‌کنن (همون‌جا که
@@ -455,7 +456,7 @@ fun HomeScreen(
                         daysOverdue = due.daysOverdue,
                         privacyMode = privacyMode,
                         onPay = { confirmPayDue = due },
-                        onOpen = { onNavigateToRoute("loan") },
+                        onOpen = { onOpenLoan(due.loan.id) },
                     )
                 }
             }

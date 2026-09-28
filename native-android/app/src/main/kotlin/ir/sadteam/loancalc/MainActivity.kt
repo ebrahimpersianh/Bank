@@ -1072,6 +1072,7 @@ private fun LoanCalcApp(
                             onNavigateToRoute = ::navigateTo,
                             onOpenSettings = { showSettings = true },
                             onOpenInbox = { showInbox = true },
+                            onOpenLoan = { deepLinkViewModel.openLoan(it) },
                             // نوعِ صریح عمدیه: بدونش `let` لامبدا رو `() -> Unit`ِ ساده حساب
                             // می‌کنه و به `@Composable () -> Unit` نمی‌خوره.
                             navSuggestionSlot = navSuggestion?.let { suggestion ->
