@@ -36,6 +36,7 @@ class MyLoansViewModel @Inject constructor(
     private val incomeRepository: IncomeRepository,
     private val attachmentStorage: AttachmentStorage,
     private val debtRepository: DebtRepository,
+    private val accountRepository: ir.sadteam.loancalc.data.AccountRepository,
 ) : ViewModel() {
     init {
         // ترمیمِ یک‌بارِ وام‌هایی که پیشرفتشون قبلاً صفر شده بود (باگِ گزارش‌شده‌ی کاربر: بعد از
@@ -374,6 +375,10 @@ class MyLoansViewModel @Inject constructor(
     /** پورت handlePayButton برای برگردوندن قسط به حالت پرداخت‌نشده. */
     fun setRowUnpaid(loan: LoanEntity, m: Int) {
         viewModelScope.launch {
+            // برداشتنِ پرداخت = پس‌گرفتنِ همان مبلغ از حساب (وگرنه موجودی برای همیشه کم می‌ماند).
+            val part = loanRepository.getRows(loan).firstOrNull { (it["m"] as? Number)?.toInt() == m }
+                ?.let { (it["installment"] as? Number)?.toDouble() } ?: loan.installment
+            accountRepository.removeLinkedPayment("loan", loan.id.toString(), m, part)
             loanRepository.setRowUnpaid(loan, m)
             syncIfLoggedIn()
         }

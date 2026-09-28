@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.home
 
+import ir.sadteam.loancalc.core.toFa
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,6 +28,7 @@ import javax.inject.Inject
 @HiltViewModel
 class UrgentDueViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
+    private val accountRepository: ir.sadteam.loancalc.data.AccountRepository,
 ) : ViewModel() {
 
     /** یه قسطِ سررسیدشده‌ی پرداخت‌نشده - `null` یعنی کارتِ فوری اصلاً نشون داده نمی‌شه. */
@@ -79,9 +81,17 @@ class UrgentDueViewModel @Inject constructor(
     }
 
     /** «پرداخت شد» - قسط رو سرِ وقت تسویه می‌کنه و کارت رو تازه می‌کنه. */
-    fun markPaid(row: UrgentRow) {
+    fun markPaid(row: UrgentRow, accountId: Long?) {
         viewModelScope.launch {
             loanRepository.setRowPaidOnTime(row.loan, row.installmentNumber)
+            // همان تراکنشی که صفحه‌ی وام می‌سازد - تا پرداخت از کارتِ خانه هم از حساب کم شود.
+            accountRepository.recordLinkedPayment(
+                accountId = accountId,
+                sourceType = "loan",
+                sourceId = "${row.loan.id}:${row.installmentNumber}",
+                amount = row.amount,
+                description = "قسط ${toFa(row.installmentNumber)} - ${row.loan.name}",
+            )
             refresh()
         }
     }

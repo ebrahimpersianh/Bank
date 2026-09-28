@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.notifications
 
+import ir.sadteam.loancalc.core.toFa
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -79,11 +80,44 @@ class NotificationActionReceiver : BroadcastReceiver() {
             loanId > 0 && installment > 0 -> {
                 loanRepository.getLoans().firstOrNull { it.id == loanId }?.let { loan ->
                     loanRepository.setRowPaidOnTime(loan, installment)
+                    val amount = loanRepository.getRows(loan).firstOrNull { (it["m"] as? Number)?.toInt() == installment }
+                        ?.let { (it["installment"] as? Number)?.toDouble() } ?: loan.installment
+                    // از اعلان نمی‌شود حساب پرسید: فقط اگر یک حساب داری از همان کم می‌شود؛ وگرنه
+                    // در پیام‌ها می‌گوییم تا کاربر خودش ثبت کند (بی‌صدا ثبت‌نشدن ممنوع).
+                    val recorded = accountRepository.recordLinkedPayment(
+                        accountId = null,
+                        sourceType = "loan",
+                        sourceId = "${loan.id}:$installment",
+                        amount = amount,
+                        description = "قسط ${toFa(installment)} - ${loan.name}",
+                    )
+                    if (!recorded) {
+                        inboxRepository.post(
+                            kind = ir.sadteam.loancalc.data.db.InboxMessageEntity.Kind.SYSTEM,
+                            title = "قسط پرداخت‌شده علامت خورد",
+                            body = "قسط ${toFa(installment)} «${loan.name}» از حسابی کم نشد، چون چند حساب داری. از صفحه‌ی تراکنش‌ها یک برداشت با همین مبلغ ثبت کن.",
+                        )
+                    }
                 }
             }
             chequeId > 0 -> {
                 chequeRepository.getAllCheques().firstOrNull { it.id == chequeId }?.let { cheque ->
                     chequeRepository.setStatus(cheque, ChequeStatus.PASSED)
+                    val recorded = accountRepository.recordLinkedPayment(
+                        accountId = null,
+                        sourceType = "cheque",
+                        sourceId = cheque.id.toString(),
+                        amount = cheque.amount,
+                        description = "چک - ${cheque.ownerName}",
+                        deposit = cheque.type == "RECEIVED",
+                    )
+                    if (!recorded) {
+                        inboxRepository.post(
+                            kind = ir.sadteam.loancalc.data.db.InboxMessageEntity.Kind.SYSTEM,
+                            title = "چک پاس‌شده علامت خورد",
+                            body = "مبلغِ چکِ «${cheque.ownerName}» در حسابی ثبت نشد، چون چند حساب داری. از صفحه‌ی تراکنش‌ها ثبتش کن.",
+                        )
+                    }
                 }
             }
         }

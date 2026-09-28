@@ -373,7 +373,8 @@ fun LoanDetailScreen(
                 (rows.firstOrNull { (it["m"] as? Number)?.toInt() == m }?.get("installment") as? Number)?.toDouble()
                     ?: loan.installment
             }
-            val today = JalaliCalendar.today()
+            // تاریخِ تراکنش = تاریخِ واقعیِ پرداخت اگر «با تأخیر» ثبت شد، وگرنه امروز.
+            val today = payment.paidDate ?: JalaliCalendar.today()
             val description = if (payment.ms.size == 1) {
                 "قسط ${toFa(payment.ms.first())} - ${loan.name}"
             } else {

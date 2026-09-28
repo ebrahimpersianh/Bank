@@ -333,6 +333,70 @@ class AccountRepository(
         )
     }
 
+    /**
+     * 🚨 **اتصالِ پرداخت‌ها به حساب** (خواسته‌ی کاربر، ۶ مهر: «وامی که پرداخت می‌کنم باید از
+     * حسابم کم بشه»). هر مسیری که چیزی را «پرداخت‌شده» می‌کند (صفحه‌ی وام، کارتِ خانه، دکمه‌ی
+     * اعلان، چک، قبض، طلب‌وبدهی، خریدِ دارایی) از همین یک تابع تراکنش می‌سازد.
+     *
+     * [accountId] = `null` یعنی «خودت حدس بزن»: اگر کاربر **فقط یک** حساب دارد همان؛ وگرنه
+     * چیزی ثبت نمی‌شود و `false` برمی‌گردد تا فراخوان به کاربر بگوید.
+     */
+    suspend fun recordLinkedPayment(
+        accountId: Long?,
+        sourceType: String,
+        sourceId: String,
+        amount: Double,
+        description: String,
+        deposit: Boolean = false,
+        date: ir.sadteam.loancalc.core.PersianDate? = null,
+        category: String = "قسط/چک",
+    ): Boolean {
+        if (amount <= 0) return false
+        val target = accountId ?: observeAccounts().first().singleOrNull()?.id ?: return false
+        val d = date ?: ir.sadteam.loancalc.core.JalaliCalendar.today()
+        addTransaction(
+            accountId = target,
+            type = if (deposit) TransactionType.DEPOSIT else TransactionType.WITHDRAWAL,
+            amount = amount,
+            description = description,
+            year = d.y, month = d.m, day = d.d,
+            category = category,
+            sourceType = sourceType,
+            sourceId = sourceId,
+        )
+        return true
+    }
+
+    /**
+     * برگرداندنِ پرداخت (قسطِ «پرداخت‌نشده» شد، چکِ پاس‌شده برگشت…): تراکنشِ مربوط حذف می‌شود.
+     * برای وام، [sourceId] = «loanId:m1,m2» است؛ اگر قسطِ [rowM] جزئی از یک پرداختِ
+     * گروهی بود، فقط سهمِ همان ([partAmount]) از آن کم می‌شود.
+     */
+    suspend fun removeLinkedPayment(
+        sourceType: String,
+        sourceIdPrefix: String,
+        rowM: Int? = null,
+        partAmount: Double = 0.0,
+    ) {
+        val all = observeTransactions().first().filter { it.sourceType == sourceType }
+        if (rowM == null) {
+            all.filter { it.sourceId == sourceIdPrefix }.forEach { transactionDao.delete(it) }
+            return
+        }
+        all.filter { it.sourceId?.startsWith("$sourceIdPrefix:") == true }.forEach { tx ->
+            val ms = tx.sourceId!!.substringAfter(':').split(',').mapNotNull { it.toIntOrNull() }
+            if (rowM !in ms) return@forEach
+            val rest = ms - rowM
+            if (rest.isEmpty() || partAmount <= 0 || partAmount >= tx.amount) {
+                transactionDao.delete(tx)
+            } else {
+                transactionDao.upsert(
+                    tx.copy(amount = tx.amount - partAmount, sourceId = "$sourceIdPrefix:${rest.joinToString(",")}"),
+                )
+            }
+        }
+    }
+
     /** تاییدِ یه تراکنشِ خودکار - از همین لحظه رو موجودی و گزارش‌ها اثر می‌ذاره. */
     suspend fun confirmTransaction(id: Long) {
         transactionDao.confirm(id)

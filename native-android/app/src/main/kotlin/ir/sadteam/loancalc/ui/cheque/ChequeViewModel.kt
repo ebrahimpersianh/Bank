@@ -26,6 +26,7 @@ class ChequeViewModel @Inject constructor(
     private val attachmentStorage: AttachmentStorage,
     private val authPrefs: AuthPrefs,
     private val debtRepository: DebtRepository,
+    private val accountRepository: ir.sadteam.loancalc.data.AccountRepository,
 ) : ViewModel() {
     init {
         // حدسِ خودکارِ طرفِ‌حساب برای چک‌های قدیمی‌ای که قبل از فیچرِ طلب‌وبدهی ثبت شدن (سوالِ ۶ی
@@ -105,6 +106,10 @@ class ChequeViewModel @Inject constructor(
 
     fun setStatus(cheque: ChequeEntity, status: ChequeStatus) {
         viewModelScope.launch {
+            // پاس‌شده ← هر وضعیتِ دیگر: تراکنشی که موقعِ پاس‌شدن ساخته شد برگردانده می‌شود.
+            if (cheque.status == ChequeStatus.PASSED.name && status != ChequeStatus.PASSED) {
+                accountRepository.removeLinkedPayment("cheque", cheque.id.toString())
+            }
             chequeRepository.setStatus(cheque, status)
             syncIfLoggedIn()
         }

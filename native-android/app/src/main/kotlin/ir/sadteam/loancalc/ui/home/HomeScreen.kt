@@ -234,6 +234,7 @@ fun HomeScreen(
     // ⚠️ این تایید یک‌بار اضافه شده بود و بسته‌ی بازطراحیِ خانه رویش را نوشت - اگر دوباره
     // فایل را از طراح گرفتید، همین‌جا را چک کنید.
     var confirmPayDue by remember { mutableStateOf<UrgentDueViewModel.UrgentRow?>(null) }
+    var pickPayAccountFor by remember { mutableStateOf<UrgentDueViewModel.UrgentRow?>(null) }
 
     // ⚠️ هر دو شیت قبلاً با `return` صدا زده می‌شدند و کلِ Box از کامپوزیشن بیرون می‌رفت:
     // پشتِ شیت سفیدِ خالی بود و اسکرولِ صفحه‌ی اول با بستنش صفر می‌شد. حالا **روی** صفحه
@@ -528,11 +529,22 @@ fun HomeScreen(
                 onDismiss = { showTodaySpend = false },
             )
         }
+        pickPayAccountFor?.let { due ->
+            ir.sadteam.loancalc.ui.components.AccountPickerDialog(
+                accounts = accounts,
+                onSelect = { acc -> urgentDueViewModel.markPaid(due, acc.id); pickPayAccountFor = null },
+                onDismiss = { pickPayAccountFor = null },
+            )
+        }
         confirmPayDue?.let { due ->
             ConfirmPayDialog(
                 title = "تاییدِ پرداخت",
                 text = "این قسط پرداخت‌شده علامت بخوره؟",
-                onConfirm = { urgentDueViewModel.markPaid(due); confirmPayDue = null },
+                onConfirm = {
+                    // بیش از یک حساب ← بپرس از کدام؛ یکی ← همان؛ هیچ ← فقط علامت می‌خورد.
+                    if (accounts.size > 1) pickPayAccountFor = due else urgentDueViewModel.markPaid(due, null)
+                    confirmPayDue = null
+                },
                 onDismiss = { confirmPayDue = null },
             )
         }
