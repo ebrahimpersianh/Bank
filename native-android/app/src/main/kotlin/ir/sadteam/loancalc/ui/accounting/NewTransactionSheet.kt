@@ -1,5 +1,10 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import kotlinx.coroutines.launch
+import ir.sadteam.loancalc.ui.components.GradientButton
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.combinedClickable
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -77,6 +82,7 @@ import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.jibak.tomanToRial
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppChipBg
@@ -117,13 +123,27 @@ private fun accentOf(kind: NewTxKind): Color = when (kind) {
  * ⚠️ تو حالتِ جابجایی عمداً **دسته‌بندی گرفته نمی‌شه** - پول از جیبی به جیبِ دیگه رفته، نه خرج
  * شده؛ اگه دسته می‌گرفت، تو گزارشِ خرج دوباره‌حسابی می‌شد.
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun NewTransactionSheet(
     onDismiss: () -> Unit,
     initialKind: NewTxKind = NewTxKind.EXPENSE,
     accountViewModel: AccountViewModel = hiltViewModel(),
+    extrasViewModel: ir.sadteam.loancalc.ui.extras.ExtrasViewModel = hiltViewModel(),
 ) {
     val accounts by accountViewModel.accounts.collectAsState()
+    val templates by extrasViewModel.templates.collectAsState()
+    // قابلیت‌های برگرفته از مقایسه با پارمیس/پولکس (۶ مهر): برچسب، بازپرداخت، رسید، تقسیم، الگو.
+    var tagsText by remember { mutableStateOf("") }
+    var reimbursable by remember { mutableStateOf(false) }
+    var receiptPath by remember { mutableStateOf<String?>(null) }
+    var splitMode by remember { mutableStateOf(false) }
+    val splits = remember { androidx.compose.runtime.mutableStateListOf<Pair<String?, String>>() }
+    var showSaveTemplate by remember { mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val pickReceipt = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.GetContent(),
+    ) { uri -> if (uri != null) scope.launch { receiptPath = extrasViewModel.importReceipt(uri) } }
 
     var kind by remember { mutableStateOf(initialKind) }
     var amountText by remember { mutableStateOf("") }
@@ -426,6 +446,39 @@ fun NewTransactionSheet(
         }
 
         if (kind != NewTxKind.TRANSFER) {
+            val kindType = if (kind == NewTxKind.INCOME) TransactionType.DEPOSIT.name else TransactionType.WITHDRAWAL.name
+            val mine = templates.filter { it.type == kindType }
+            if (mine.isNotEmpty()) {
+                // الگوها: یک تپ همه‌ی فیلدها را پر می‌کند؛ نگه‌داشتن = حذفِ الگو.
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    mine.forEach { t ->
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(AppSurface)
+                                .border(1.dp, AppLine, RoundedCornerShape(999.dp))
+                                .combinedClickable(
+                                    onClick = {
+                                        if (t.amount > 0) amountText = rialToToman(t.amount.toLong()).toString()
+                                        category = t.category
+                                        if (t.accountId != null && accounts.any { it.id == t.accountId }) accountId = t.accountId
+                                        description = t.name
+                                    },
+                                    onLongClick = { extrasViewModel.deleteTemplate(t) },
+                                )
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                        ) {
+                            Text(t.name, color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+
+        if (kind != NewTxKind.TRANSFER) {
             AppCard {
                 SheetRow(
                     icon = Icons.Filled.Category,
@@ -450,6 +503,114 @@ fun NewTransactionSheet(
             }
         }
 
+        if (kind != NewTxKind.TRANSFER) {
+            AppCard {
+                // تقسیمِ یک خرید بینِ چند دسته - هر ردیف یک تراکنشِ جدا با شناسه‌ی مشترک.
+                if (kind == NewTxKind.EXPENSE) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Text("تقسیم بینِ چند دسته", color = AppText, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                        ir.sadteam.loancalc.ui.settings.AppSwitch(checked = splitMode, onCheckedChange = {
+                            splitMode = it
+                            if (it && splits.isEmpty()) { splits.add(null to ""); splits.add(null to "") }
+                        })
+                    }
+                    if (splitMode) {
+                        splits.forEachIndexed { i, (cat, amt) ->
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
+                                Box(modifier = Modifier.weight(1f)) {
+                                    var open by remember { mutableStateOf(false) }
+                                    Text(
+                                        cat ?: "دسته",
+                                        color = if (cat == null) AppMuted else AppText,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.clickable { open = true }.padding(vertical = 10.dp),
+                                    )
+                                    androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                                        categories.forEach { c ->
+                                            androidx.compose.material3.DropdownMenuItem(
+                                                text = { Text(c.name) },
+                                                onClick = { splits[i] = c.name to amt; open = false },
+                                            )
+                                        }
+                                    }
+                                }
+                                OutlinedTextField(
+                                    value = amt,
+                                    onValueChange = { v -> splits[i] = cat to cleanNum(v).take(13) },
+                                    placeholder = { Text("مبلغ (تومان)", fontSize = 11.sp) },
+                                    visualTransformation = ThousandsSeparatorTransformation(),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                        Text(
+                            "+ ردیفِ دیگر",
+                            color = accent,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 6.dp).clickable { splits.add(null to "") }.padding(vertical = 8.dp),
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = tagsText,
+                    onValueChange = { tagsText = it.take(80) },
+                    placeholder = { Text("برچسب (مثلاً سفرِ شمال، عروسی) - با «،» جدا کن", fontSize = 11.sp) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                )
+                if (kind == NewTxKind.EXPENSE) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                        Text("بازپرداخت می‌شود (خرجِ کاری و…)", color = AppText, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                        ir.sadteam.loancalc.ui.settings.AppSwitch(checked = reimbursable, onCheckedChange = { reimbursable = it })
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                    Text(
+                        if (receiptPath == null) "📎 افزودنِ عکسِ رسید" else "✓ رسید پیوست شد",
+                        color = accent,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f).clickable { pickReceipt.launch("image/*") }.padding(vertical = 10.dp),
+                    )
+                    Text(
+                        "ذخیره به‌عنوانِ الگو",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                        modifier = Modifier.clickable { showSaveTemplate = true }.padding(vertical = 10.dp),
+                    )
+                }
+            }
+        }
+
+        if (showSaveTemplate) {
+            var tName by remember { mutableStateOf(description.ifBlank { category ?: "" }) }
+            ir.sadteam.loancalc.ui.components.JibakAlertDialog(
+                onDismissRequest = { showSaveTemplate = false },
+                title = { Text("ذخیره به‌عنوانِ الگو") },
+                text = {
+                    OutlinedTextField(value = tName, onValueChange = { tName = it.take(30) }, singleLine = true, placeholder = { Text("مثلاً نون، بنزین") })
+                },
+                confirmButton = {
+                    GradientButton(onClick = {
+                        if (tName.isNotBlank()) {
+                            extrasViewModel.saveTemplate(
+                                tName,
+                                if (kind == NewTxKind.INCOME) TransactionType.DEPOSIT.name else TransactionType.WITHDRAWAL.name,
+                                tomanToRial(amountText.toLongOrNull() ?: 0L).toDouble(),
+                                category,
+                                accountId,
+                            )
+                        }
+                        showSaveTemplate = false
+                    }) { Text("ذخیره") }
+                },
+                dismissButton = { androidx.compose.material3.TextButton(onClick = { showSaveTemplate = false }) { Text("انصراف") } },
+            )
+        }
+
         if (error != null) {
             Text(error ?: "", color = AppDanger, fontSize = 12.sp)
         }
@@ -467,9 +628,13 @@ fun NewTransactionSheet(
         // چه کند.
         val submit: (andClose: Boolean) -> Unit = { andClose ->
             // فیلد تومان است، ستونِ دیتابیس ریال - تبدیل فقط همین‌جا، در لبه.
+            val splitRows = if (splitMode && kind == NewTxKind.EXPENSE) {
+                splits.mapNotNull { (c, a) -> a.toLongOrNull()?.takeIf { it > 0 }?.let { c to tomanToRial(it).toDouble() } }
+            } else emptyList()
             val toman = amountText.toLongOrNull() ?: 0L
-            val amount = tomanToRial(toman).toDouble()
+            val amount = if (splitRows.isNotEmpty()) splitRows.sumOf { it.second } else tomanToRial(toman).toDouble()
             error = validate(kind, amount, accountId, fromAccountId, toAccountId)
+            val tags = tagsText.split('،', ',').map { it.trim() }.filter { it.isNotEmpty() }.joinToString(",").ifBlank { null }
             if (error == null) {
                 val onSaved = {
                     if (andClose) {
@@ -479,6 +644,9 @@ fun NewTransactionSheet(
                         // تراکنش‌های پشتِ‌هم همان حساب و همان روزند.
                         amountText = ""
                         description = ""
+                        receiptPath = null
+                        splits.clear()
+                        splitMode = false
                     }
                 }
                 // ثبتِ مالی نباید با یک exceptionِ پس‌زمینه‌ای برنامه را ببندد. تا وقتی DAO
@@ -499,6 +667,29 @@ fun NewTransactionSheet(
                         onSuccess = onSaved,
                         onFailure = onSaveFailure,
                     )
+                } else if (splitRows.isNotEmpty()) {
+                    // هر ردیف یک تراکنش؛ شناسه‌ی صریح و پشتِ‌هم (قاعده‌ی حلقه در CLAUDE.md).
+                    val base = System.currentTimeMillis()
+                    splitRows.forEachIndexed { i, (c, a) ->
+                        accountViewModel.addTransaction(
+                            accountId = accountId!!,
+                            type = TransactionType.WITHDRAWAL,
+                            amount = a,
+                            description = description.trim(),
+                            year = date.y,
+                            month = date.m,
+                            day = date.d,
+                            category = c ?: category,
+                            sourceType = "split",
+                            sourceId = base.toString(),
+                            id = base + i,
+                            receiptPath = receiptPath,
+                            tags = tags,
+                            reimbursable = reimbursable,
+                            onSuccess = if (i == splitRows.lastIndex) onSaved else ({}),
+                            onFailure = onSaveFailure,
+                        )
+                    }
                 } else {
                     accountViewModel.addTransaction(
                         accountId = accountId!!,
@@ -509,6 +700,9 @@ fun NewTransactionSheet(
                         month = date.m,
                         day = date.d,
                         category = category,
+                        receiptPath = receiptPath,
+                        tags = tags,
+                        reimbursable = reimbursable && kind == NewTxKind.EXPENSE,
                         onSuccess = onSaved,
                         onFailure = onSaveFailure,
                     )

@@ -131,7 +131,7 @@ class AccountViewModel @Inject constructor(
                 syncIfLoggedIn()
             }.onSuccess {
                 // فقط ثبتِ دستیِ خودِ کاربر، و فقط بعد از ذخیره‌ی موفق - بی مبلغ و بی عنوان.
-                if (originLabel == null && sourceType == null) ir.sadteam.loancalc.data.UsageStats.track(ir.sadteam.loancalc.data.UsageStats.TRANSACTION_CREATED)
+                if (originLabel == null && (sourceType == null || sourceType == "split")) ir.sadteam.loancalc.data.UsageStats.track(ir.sadteam.loancalc.data.UsageStats.TRANSACTION_CREATED)
                 onSuccess()
             }.onFailure(onFailure)
         }
@@ -151,6 +151,9 @@ class AccountViewModel @Inject constructor(
         id: Long? = null,
         /** `71a`: منبعِ نمایشی - `null` یعنی ثبتِ دستیِ خودِ کاربر. */
         originLabel: String? = null,
+        receiptPath: String? = null,
+        tags: String? = null,
+        reimbursable: Boolean = false,
         onSuccess: () -> Unit = {},
         onFailure: (Throwable) -> Unit = {},
     ) {
@@ -159,6 +162,9 @@ class AccountViewModel @Inject constructor(
                 accountRepository.addTransaction(
                     accountId, type, amount, description, year, month, day, category, sourceType, sourceId, id,
                     originLabel = originLabel,
+                    receiptPath = receiptPath,
+                    tags = tags,
+                    reimbursable = reimbursable,
                 )
                 syncIfLoggedIn()
             }.onSuccess { onSuccess() }.onFailure(onFailure)

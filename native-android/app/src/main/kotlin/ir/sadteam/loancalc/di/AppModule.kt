@@ -283,6 +283,12 @@ object AppModule {
     fun provideSavingsGoalDao(database: AppDatabase): SavingsGoalDao = database.savingsGoalDao()
 
     @Provides
+    fun provideTxTemplateDao(database: AppDatabase): ir.sadteam.loancalc.data.db.TxTemplateDao = database.txTemplateDao()
+
+    @Provides
+    fun provideBillDao(database: AppDatabase): ir.sadteam.loancalc.data.db.BillDao = database.billDao()
+
+    @Provides
     @Singleton
     fun provideSavingsGoalRepository(dao: SavingsGoalDao): SavingsGoalRepository =
         SavingsGoalRepository(dao)

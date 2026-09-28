@@ -40,4 +40,10 @@ data class AccountTransactionEntity(
      * روی خودِ تراکنش یک `description`ِ عمومی می‌رفت، پس منبع بعدِ تایید گم می‌شد.
      */
     val originLabel: String? = null,
+    /** مسیرِ عکسِ رسید در حافظه‌ی داخلیِ برنامه (نسخه‌ی ۳۴). `null` یعنی رسید ندارد. */
+    val receiptPath: String? = null,
+    /** برچسب‌ها با «,» جدا («سفرِ شمال,عروسی») - مستقل از دسته، برای گزارشِ یک رویداد. */
+    val tags: String? = null,
+    /** خرجی که قرار است پس گرفته شود (خرجِ کاری و…) - در گزارشِ خرج جدا نشان داده می‌شود. */
+    val reimbursable: Boolean = false,
 )

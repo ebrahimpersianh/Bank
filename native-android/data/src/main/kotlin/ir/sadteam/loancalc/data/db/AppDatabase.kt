@@ -38,6 +38,8 @@ import net.sqlcipher.database.SupportFactory
         DangItemEntity::class,
         DangItemShareEntity::class,
         SavingsGoalEntity::class,
+        TxTemplateEntity::class,
+        BillEntity::class,
     ],
     version = 34,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
@@ -49,6 +51,8 @@ import net.sqlcipher.database.SupportFactory
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
+    abstract fun txTemplateDao(): TxTemplateDao
+    abstract fun billDao(): BillDao
     abstract fun coinDao(): CoinDao
     abstract fun achievementDao(): AchievementDao
     abstract fun inboxDao(): InboxMessageDao
@@ -521,6 +525,18 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE accounts ADD COLUMN accountNumber TEXT")
                 db.execSQL("ALTER TABLE accounts ADD COLUMN sheba TEXT")
+                // رسید/برچسب/بازپرداخت روی تراکنش + الگوها + قبض‌ها (همان نسخه، قبل از هر انتشار).
+                db.execSQL("ALTER TABLE account_transactions ADD COLUMN receiptPath TEXT")
+                db.execSQL("ALTER TABLE account_transactions ADD COLUMN tags TEXT")
+                db.execSQL("ALTER TABLE account_transactions ADD COLUMN reimbursable INTEGER NOT NULL DEFAULT 0")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS tx_templates (id INTEGER NOT NULL PRIMARY KEY, name TEXT NOT NULL, " +
+                        "type TEXT NOT NULL, amount REAL NOT NULL, category TEXT, accountId INTEGER, sortOrder INTEGER NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS bills (id INTEGER NOT NULL PRIMARY KEY, name TEXT NOT NULL, kind TEXT NOT NULL, " +
+                        "billId TEXT, dueDay INTEGER NOT NULL, periodMonths INTEGER NOT NULL, lastAmount REAL NOT NULL, lastPaidKey TEXT)",
+                )
             }
         }
 

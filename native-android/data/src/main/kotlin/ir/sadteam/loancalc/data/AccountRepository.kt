@@ -141,6 +141,9 @@ class AccountRepository(
         confirmed: Boolean = true,
         /** «اعلانِ بلوبانک» / «پیامکِ ۲۰۰۰۱۵»؛ `null` یعنی ثبتِ دستیِ خودِ کاربر (`71a`). */
         originLabel: String? = null,
+        receiptPath: String? = null,
+        tags: String? = null,
+        reimbursable: Boolean = false,
     ): Long {
         val txId = id ?: System.currentTimeMillis()
         transactionDao.upsert(
@@ -159,6 +162,9 @@ class AccountRepository(
                 sourceId = sourceId,
                 confirmed = confirmed,
                 originLabel = originLabel,
+                receiptPath = receiptPath,
+                tags = tags,
+                reimbursable = reimbursable,
             ),
         )
         // «هر روزِ ثبتِ تراکنش ۱۰ سکه» (کارتِ `20e`). عمداً اینجاست نه تو ViewModel، تا ثبتِ
