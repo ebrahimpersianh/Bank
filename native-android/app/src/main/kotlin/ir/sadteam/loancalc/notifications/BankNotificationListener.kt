@@ -129,6 +129,8 @@ class BankNotificationListener : NotificationListenerService() {
                 // `71a`: منبع روی خودِ تراکنش می‌نشیند، نه فقط در مرکزِ پیام‌ها.
                 originLabel = "اعلانِ ${appLabelOf(packageName)}",
             )
+            // برداشت از یک حسابِ خودت + واریزِ همان مبلغ به حسابِ دیگرت = جابه‌جایی، نه خرج و درآمد.
+            runCatching { accountRepository.pairAutoTransfer(txId) }
             // منبعِ واحد: پیام اول اینجا ساخته می‌شه؛ اعلانِ گوشی از رو همین ردیف ساخته
             // می‌شه، نه مستقل.
             // واحد **تومان** و رقمِ فارسی (بندِ ۲ی README + لایه‌ی ارقام) - قبلاً «ریال»ِ

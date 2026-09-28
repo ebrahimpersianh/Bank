@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.data
 
+import kotlinx.coroutines.flow.first
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import ir.sadteam.loancalc.core.TransactionType
@@ -24,6 +25,9 @@ import java.util.TimeZone
 
 /** نشانِ دو سمتِ یک جابه‌جاییِ داخلی. هر جا خرج/درآمدِ واقعی می‌شماریم باید کنار گذاشته شود. */
 const val SOURCE_TYPE_TRANSFER = "transfer"
+
+/** دو پیامکِ یک جابه‌جایی معمولاً چند ثانیه تا چند دقیقه فاصله دارند؛ دو ساعت حاشیه‌ی امن است. */
+const val TRANSFER_PAIR_WINDOW_MS = 2 * 60 * 60 * 1000L
 
 /** کلیدِ این بخش در جدولِ نسخه‌های ابری. */
 private const val CLOUD_MODULE = "accounts"
@@ -204,6 +208,44 @@ class AccountRepository(
             id = transferId + 1,
         )
         transferId
+    }
+
+    /**
+     * **تشخیصِ جابه‌جایی بینِ حساب‌های خودِ کاربر** (خواسته‌ی کاربر، ۶ مهر: حقوق به کارتِ
+     * تجارت می‌آید و بعد به بلو منتقل می‌شود؛ دو پیامک = یک خرج + یک درآمدِ الکی).
+     *
+     * وقتی تراکنشِ خودکارِ تازه‌ای ثبت شد، اگر در [TRANSFER_PAIR_WINDOW_MS] گذشته یک تراکنشِ
+     * خودکارِ **مخالف** (برداشت ↔ واریز) با **همان مبلغ** روی **حسابِ دیگری** از خودِ کاربر
+     * باشد، هر دو یک جابه‌جایی می‌شوند: موجودیِ هر حساب درست می‌ماند ولی در گزارشِ خرج و
+     * درآمد دیگر شمرده نمی‌شوند. فقط تراکنش‌های خودکار (پیامک/اعلان) جفت می‌شوند، نه دستی.
+     */
+    suspend fun pairAutoTransfer(txId: Long): Boolean = inTransaction {
+        val tx = transactionDao.byId(txId) ?: return@inTransaction false
+        if (tx.originLabel == null || tx.sourceType == SOURCE_TYPE_TRANSFER) return@inTransaction false
+        val match = observeTransactions().first()
+            .filter {
+                it.id != tx.id &&
+                    it.accountId != tx.accountId &&
+                    it.originLabel != null &&
+                    it.sourceType != SOURCE_TYPE_TRANSFER &&
+                    it.type != tx.type &&
+                    it.amount == tx.amount &&
+                    kotlin.math.abs(it.id - tx.id) <= TRANSFER_PAIR_WINDOW_MS
+            }
+            .minByOrNull { kotlin.math.abs(it.id - tx.id) }
+            ?: return@inTransaction false
+        val pairId = minOf(tx.id, match.id).toString()
+        transactionDao.upsertAll(
+            listOf(tx, match).map {
+                it.copy(
+                    sourceType = SOURCE_TYPE_TRANSFER,
+                    sourceId = pairId,
+                    category = null,
+                    description = "جابه‌جایی بینِ حساب‌های خودت (تشخیصِ خودکار)",
+                )
+            },
+        )
+        true
     }
 
     /** تاییدِ یه تراکنشِ خودکار - از همین لحظه رو موجودی و گزارش‌ها اثر می‌ذاره. */
