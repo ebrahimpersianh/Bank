@@ -931,6 +931,15 @@ private fun BudgetSection(
     val expenseCats by categoryViewModel.expenseCategories.collectAsState()
 
     var editingCategory by remember { mutableStateOf<CategoryEntry?>(null) }
+    var deletingBudget by remember { mutableStateOf<ir.sadteam.loancalc.data.db.BudgetEntity?>(null) }
+    deletingBudget?.let { b ->
+        ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog(
+            title = "حذفِ بودجه",
+            text = "سقفِ بودجه‌ی این دسته برداشته شود؟ تراکنش‌ها دست نمی‌خورند.",
+            onConfirm = { viewModel.deleteBudget(b); deletingBudget = null },
+            onDismiss = { deletingBudget = null },
+        )
+    }
     var capText by remember { mutableStateOf("") }
     var showAddBudgetDialog by remember { mutableStateOf(false) }
     var budgetSuggestion by remember { mutableStateOf<CategoryEntry?>(null) }
@@ -1192,7 +1201,7 @@ private fun BudgetSection(
                                     if (budget != null) {
                                         OutlinedButton(
                                             onClick = {
-                                                viewModel.deleteBudget(budget)
+                                                deletingBudget = budget
                                                 editingCategory = null
                                             },
                                             modifier = Modifier.weight(1f),

@@ -73,6 +73,15 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
     var editing by remember { mutableStateOf<BillEntity?>(null) }
     var adding by remember { mutableStateOf(false) }
     var paying by remember { mutableStateOf<BillEntity?>(null) }
+    var deleting by remember { mutableStateOf<BillEntity?>(null) }
+    deleting?.let { b ->
+        ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog(
+            title = "حذفِ قبض",
+            text = "«${b.name}» و یادآورهایش پاک می‌شود. پرداخت‌های ثبت‌شده در حساب‌ها سرِ جایشان می‌مانند.",
+            onConfirm = { viewModel.deleteBill(b); deleting = null },
+            onDismiss = { deleting = null },
+        )
+    }
     val accounts by viewModel.accounts.collectAsState()
 
     LazyColumn(
@@ -220,7 +229,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
             },
             dismissButton = {
                 if (base != null) {
-                    IconButton(onClick = { viewModel.deleteBill(base); close() }) {
+                    IconButton(onClick = { deleting = base; close() }) {
                         Icon(Icons.Filled.Delete, contentDescription = "حذف", tint = AppDanger)
                     }
                 } else {

@@ -140,6 +140,15 @@ fun NewTransactionSheet(
     var splitMode by remember { mutableStateOf(false) }
     val splits = remember { androidx.compose.runtime.mutableStateListOf<Pair<String?, String>>() }
     var showSaveTemplate by remember { mutableStateOf(false) }
+    var deletingTemplate by remember { mutableStateOf<ir.sadteam.loancalc.data.db.TxTemplateEntity?>(null) }
+    deletingTemplate?.let { t ->
+        ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog(
+            title = "حذفِ الگو",
+            text = "الگوی «${t.name}» پاک شود؟ تراکنش‌هایی که قبلاً با آن ثبت کردی دست نمی‌خورند.",
+            onConfirm = { extrasViewModel.deleteTemplate(t); deletingTemplate = null },
+            onDismiss = { deletingTemplate = null },
+        )
+    }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val pickReceipt = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.GetContent(),
@@ -467,7 +476,7 @@ fun NewTransactionSheet(
                                         if (t.accountId != null && accounts.any { it.id == t.accountId }) accountId = t.accountId
                                         description = t.name
                                     },
-                                    onLongClick = { extrasViewModel.deleteTemplate(t) },
+                                    onLongClick = { deletingTemplate = t },
                                 )
                                 .padding(horizontal = 14.dp, vertical = 10.dp),
                         ) {

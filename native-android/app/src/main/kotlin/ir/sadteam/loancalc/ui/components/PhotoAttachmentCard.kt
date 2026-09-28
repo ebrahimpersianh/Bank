@@ -40,6 +40,17 @@ fun PhotoAttachmentCard(
         ActivityResultContracts.PickVisualMedia(),
     ) { uri -> if (uri != null) onPick(uri) }
 
+    // حذفِ عکس قابلِ برگشت نیست - اول می‌پرسیم (قاعده‌ی کاربر: «هر چیزی که پاک می‌شه هشدار بده»).
+    var confirmRemove by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    if (confirmRemove) {
+        ConfirmDeleteDialog(
+            title = "حذفِ عکس",
+            text = "این عکس برای همیشه پاک می‌شود.",
+            onConfirm = { confirmRemove = false; onRemove() },
+            onDismiss = { confirmRemove = false },
+        )
+    }
+
     fun launchPicker() {
         launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
     }
@@ -67,7 +78,7 @@ fun PhotoAttachmentCard(
                     Text("تعویض عکس")
                 }
                 OutlinedButton(
-                    onClick = onRemove,
+                    onClick = { confirmRemove = true },
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
                     modifier = Modifier.weight(1f),
                 ) {
