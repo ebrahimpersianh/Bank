@@ -60,11 +60,22 @@ class IconWither @Inject constructor() {
     fun apply(context: Context, step: Int, activeIcon: String? = null) {
         val target = aliasFor(activeIcon, step)
         val pm = context.packageManager
-        enable(pm, context, target)
+        // 🚨 فقط چیزی که واقعاً عوض می‌شود. قبلاً هر بار ۸۵ فراخوانی می‌رفت و هرکدام لانچر را
+        // وادار به بازسازی می‌کرد - گزارشِ کاربر: «بعدِ عوض‌کردنِ آیکون برنامه بسته شد و
+        // ۳۰ ثانیه روی اسپلش ماند». حالا معمولاً فقط دو تغییر (روشنِ تازه، خاموشِ قبلی).
+        if (!isEnabled(pm, context, target)) enable(pm, context, target)
         for (n in 0..LAST_ALIAS) {
-            if (n != target) disable(pm, context, n)
+            if (n != target && isEnabled(pm, context, n)) disable(pm, context, n)
         }
     }
+
+    /** «پیش‌فرض» یعنی مقدارِ مانیفست - فقط الیاسِ ۰ در مانیفست روشن است. */
+    private fun isEnabled(pm: PackageManager, context: Context, n: Int): Boolean =
+        when (pm.getComponentEnabledSetting(aliasName(context, n))) {
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED -> true
+            PackageManager.COMPONENT_ENABLED_STATE_DEFAULT -> n == 0
+            else -> false
+        }
 
     private fun enable(pm: PackageManager, context: Context, n: Int) {
         pm.setComponentEnabledSetting(
