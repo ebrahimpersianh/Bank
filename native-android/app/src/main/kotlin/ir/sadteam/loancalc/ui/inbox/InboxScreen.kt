@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.inbox
 
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import androidx.compose.foundation.clickable
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import androidx.compose.foundation.layout.widthIn
@@ -240,7 +241,7 @@ fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel())
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         (if (item.tx.type == "DEPOSIT") "واریز " else "برداشت ") +
-                                            ir.sadteam.loancalc.ui.jibak.rialToToman(item.tx.amount.toLong()).let { toFa(it) } + " تومان",
+                                            rialToToman(item.tx.amount.toLong()).let { toFa(it) } + " تومان",
                                         color = AppText,
                                         fontSize = 13.sp,
                                     )
