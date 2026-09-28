@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.asset
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -112,6 +113,9 @@ fun AssetTradeSheet(
     var manualQty by remember { mutableStateOf(false) }
     var date by remember { mutableStateOf(JalaliCalendar.today()) }
     var description by remember { mutableStateOf("") }
+    val payAccounts by viewModel.payAccounts.collectAsState()
+    // پیش‌فرض: اگر فقط یک حساب داری همان؛ «بدونِ حساب» هم هست (مثلاً طلای هدیه).
+    var payAccountId by remember(payAccounts.size) { mutableStateOf(payAccounts.singleOrNull()?.id) }
     var picked by remember {
         mutableStateOf(
             if (presetSymbol != null && presetName != null && presetCategory != null) {
@@ -272,6 +276,25 @@ fun AssetTradeSheet(
                 )
             }
 
+            if (payAccounts.isNotEmpty()) {
+                AppCard {
+                    Text(
+                        if (isBuy) "پولش از کدام حساب رفت؟" else "پولش به کدام حساب آمد؟",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp).horizontalScroll(rememberScrollState()),
+                    ) {
+                        payAccounts.forEach { a ->
+                            ir.sadteam.loancalc.ui.components.AppChip(a.name, payAccountId == a.id, onClick = { payAccountId = a.id })
+                        }
+                        ir.sadteam.loancalc.ui.components.AppChip("بدونِ حساب", payAccountId == null, onClick = { payAccountId = null })
+                    }
+                }
+            }
+
             if (error != null) Text(error ?: "", color = AppDangerInk, fontSize = 12.sp)
 
             GradientButton(
@@ -297,6 +320,7 @@ fun AssetTradeSheet(
                             month = date.m,
                             day = date.d,
                             description = description.trim(),
+                            accountId = payAccountId,
                             // قیمتِ خریدِ خودِ کاربر ثبت می‌شود، نه همیشه قیمتِ امروز.
                             // این پارامتر از قبل وجود داشت و هیچ‌وقت پر نمی‌شد.
                             unitPriceRial = recordedUnitRial,

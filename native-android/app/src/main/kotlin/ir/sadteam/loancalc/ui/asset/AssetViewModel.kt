@@ -30,7 +30,11 @@ import javax.inject.Inject
 class AssetViewModel @Inject constructor(
     private val assetRepository: AssetRepository,
     private val wealthSnapshots: WealthSnapshotRepository,
+    private val accountRepository: ir.sadteam.loancalc.data.AccountRepository,
 ) : ViewModel() {
+    val payAccounts = accountRepository.observeAccounts()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     /**
      * عکس‌های روزانه‌ی دارایی - پایه‌ی نمودارِ **واقعیِ** روند.
      *
@@ -189,12 +193,26 @@ class AssetViewModel @Inject constructor(
         day: Int,
         description: String = "",
         unitPriceRial: Double? = null,
+        /** حسابی که پولِ خرید از آن رفت / پولِ فروش به آن آمد؛ `null` = به حسابی وصل نشود. */
+        accountId: Long? = null,
     ) {
         viewModelScope.launch {
             assetRepository.recordTrade(
                 symbol, name, category, isBuy, quantity, totalRial,
                 year, month, day, description, unitPriceRial,
             )
+            if (accountId != null) {
+                accountRepository.recordLinkedPayment(
+                    accountId = accountId,
+                    sourceType = "asset",
+                    sourceId = "$symbol:${System.currentTimeMillis()}",
+                    amount = totalRial,
+                    description = (if (isBuy) "خریدِ " else "فروشِ ") + name,
+                    deposit = !isBuy,
+                    date = ir.sadteam.loancalc.core.PersianDate(year, month, day),
+                    category = "دارایی",
+                )
+            }
             // ستونِ unitPriceRial این دارایی را همین حالا پر می‌کند تا ردیفش با عدد
             // بیاید، نه با «—» تا دورِ بعدیِ نیم‌ساعته.
             refreshPrices()
