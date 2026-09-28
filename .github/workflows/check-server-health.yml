@@ -68,3 +68,7 @@ jobs:
             echo "=== قیمت‌ها: جوابِ خودمون (/api/prices) ==="
             curl -s --max-time 20 http://localhost:3000/api/prices | head -c 2500
             echo ""
+            echo "=== آمارِ استفاده‌ی بی‌نام (۳۰ روزِ اخیر) ==="
+            AT=$(grep '^ADMIN_TOKEN=' ~/VameMan/.env | cut -d= -f2-)
+            curl -s --max-time 10 -H "X-Admin-Token: $AT" http://localhost:3000/api/events/summary | head -c 4000
+            echo ""

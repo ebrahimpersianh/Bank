@@ -207,6 +207,18 @@ object Db {
                 // تاریخچه‌ی روزانه‌ی قیمت - یه ردیف در روز برای هر نماد، از رو همون fetchهای
                 // ساعتی ساخته می‌شه (سهمیه‌ی اضافه نمی‌خواد). مبنای «نسبت به ماهِ قبل» تو تبِ
                 // دارایی. کلیدِ مرکب یعنی fetchهای بعدیِ همون روز به‌روزرسانی می‌کنن نه تکرار.
+                // آمارِ استفاده‌ی **بی‌نام** (جایگزینِ Firebase، تصمیمِ کاربر ۶ مهر): فقط «این رویداد
+                // امروز چند بار رخ داد». هیچ شناسه، مبلغ یا متنی ذخیره نمی‌شود.
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS usage_events (
+                        day TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        count INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY (day, name)
+                    )
+                    """.trimIndent()
+                )
                 // اطلاعیه‌های عمومیِ «پیام‌های جیبک» (نسخه‌ی جدید، اختلال، قابلیتِ تازه) - رجوع کن به
                 // routes/AnnouncementRoutes.kt. فقط صاحبِ برنامه با ADMIN_TOKEN می‌نویسد.
                 st.executeUpdate(
