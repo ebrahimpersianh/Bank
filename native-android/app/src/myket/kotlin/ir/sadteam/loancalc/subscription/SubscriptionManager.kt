@@ -23,6 +23,12 @@ val subscriptionTiers = listOf(
     "unlimited_loans_1y" to "اشتراک ۱ ساله",
 )
 
+/** «همیشگی» - خریدِ یک‌باره (برگرفته از پولکس، ۶ مهر). جدا از فهرستِ بالا چون در شبکه‌ی چهارتایی
+ * نمی‌نشیند؛ صفحه‌ی اشتراک فقط وقتی نشانش می‌دهد که استور برایش قیمت برگرداند (یعنی در پنل ساخته شده). */
+const val LIFETIME_PRODUCT_ID = "unlimited_loans_lifetime"
+
+val allProductIds: List<String> get() = subscriptionTiers.map { it.first } + LIFETIME_PRODUCT_ID
+
 /**
  * پوششی رو SDK بومیِ رسمیِ مایکت (`myket-billing-client`، پورتِ خودِ مایکت از Android In-app
  * Billing v3 - همون الگوی کلاسیکِ Google، نه AIDL جدید). معادلِ همون امضای عمومیِ SubscriptionManager
@@ -46,7 +52,7 @@ class SubscriptionManager(private val activity: ComponentActivity) {
                 return@startSetup
             }
             connected = true
-            helper.queryInventoryAsync(true, subscriptionTiers.map { it.first }) { queryResult, inventory ->
+            helper.queryInventoryAsync(true, allProductIds) { queryResult, inventory ->
                 if (queryResult.isSuccess) latestInventory = inventory
                 onStateChange(true)
             }
@@ -66,7 +72,7 @@ class SubscriptionManager(private val activity: ComponentActivity) {
      * اشتراک بی‌صدا دوباره به سرور بفرستشون - بدونِ نیازِ خریدِ دوباره یا تماس با پشتیبانی. */
     fun restorePurchases(): List<Pair<String, String>> {
         val inventory = latestInventory ?: return emptyList()
-        return subscriptionTiers.mapNotNull { (productId, _) ->
+        return allProductIds.mapNotNull { productId ->
             inventory.getPurchase(productId)?.let { productId to it.token }
         }
     }
