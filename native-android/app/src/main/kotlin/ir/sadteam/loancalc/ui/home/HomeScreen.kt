@@ -663,7 +663,7 @@ private fun HomeHeader(
         // «خوش آمدی» کمی به راست (خواسته‌ی کاربر، ۳ مهر): جعبه‌ی آدمک ۴۴ → ۳۴.
         Box(
             modifier = Modifier
-                .size(34.dp)
+                .size(40.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -671,7 +671,8 @@ private fun HomeHeader(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            FramedAvatar(avatar = avatar, size = 30.dp, frame = avatarFrame)
+            // کمی بزرگ‌تر (خواسته‌ی کاربر، ۶ مهر).
+            FramedAvatar(avatar = avatar, size = 37.dp, frame = avatarFrame)
         }
         Column(modifier = Modifier.weight(1f).padding(start = 6.dp)) {
             // تاریخ **دومین چیزی است که در تنگنا می‌رود** (بعدِ عددِ سکه، قبلِ نام).
