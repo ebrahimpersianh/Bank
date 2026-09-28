@@ -163,6 +163,7 @@ fun AssetsTabScreen(
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     var buyEntry by remember { mutableStateOf<AssetCatalogEntry?>(null) }
     val changes by assetViewModel.monthChange.collectAsState()
+    val updatedClock by assetViewModel.pricesUpdatedClock.collectAsState()
     val openAsset = assets.firstOrNull { it.id == detailAsset }
     val openAccount = accounts.firstOrNull { it.id == detailAccount }
     val openEditAccount = accounts.firstOrNull { it.id == editAccount }
@@ -334,7 +335,7 @@ fun AssetsTabScreen(
 
             if (browsing) {
                 item {
-                    MarketOverviewSection(marketPrices, assetViewModel, onOpen = ::openEntry)
+                    MarketOverviewSection(marketPrices, assetViewModel, updatedClock, onOpen = ::openEntry)
                 }
             }
 
@@ -1230,6 +1231,7 @@ private fun MarketSectionTitle(title: String, onSeeAll: (() -> Unit)?) {
 private fun MarketOverviewSection(
     prices: Map<String, Double>,
     viewModel: AssetViewModel,
+    updatedClock: String?,
     onOpen: (AssetCatalogEntry) -> Unit,
 ) {
     val all = remember { assetCatalogGroups.flatMap { it.second } }
@@ -1237,7 +1239,12 @@ private fun MarketOverviewSection(
     var expanded by rememberSaveable { mutableStateOf(false) }
     AppCard(contentPadding = 12.dp) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("نمای کلیِ بازار", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+            Column(modifier = Modifier.weight(1f)) {
+                Text("نمای کلیِ بازار", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
+                if (updatedClock != null) {
+                    Text("به‌روزرسانی در ساعتِ $updatedClock", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                }
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.heightIn(min = 44.dp).pressScaleClickable { expanded = !expanded }.padding(horizontal = 4.dp),
