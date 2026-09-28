@@ -27,7 +27,11 @@ class ExtrasViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val templateDao: TxTemplateDao,
     private val billDao: BillDao,
+    private val accountRepository: ir.sadteam.loancalc.data.AccountRepository,
 ) : ViewModel() {
+    val accounts = accountRepository.observeAccounts()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val templates: StateFlow<List<TxTemplateEntity>> = templateDao.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -62,9 +66,18 @@ class ExtrasViewModel @Inject constructor(
     }
 
     /** «پرداخت شد» برای دوره‌ی جاری - یادآورِ همین دوره دیگر نمی‌آید. */
-    fun markBillPaid(bill: BillEntity, year: Int, month: Int, amountRial: Double) {
+    fun markBillPaid(bill: BillEntity, year: Int, month: Int, amountRial: Double, accountId: Long?) {
         viewModelScope.launch {
             billDao.upsert(bill.copy(lastPaidKey = "$year-$month", lastAmount = amountRial))
+            // پرداختِ قبض هم مثلِ قسط از حساب کم می‌شود (بخشِ «اتصالِ پرداخت‌ها»).
+            accountRepository.recordLinkedPayment(
+                accountId = accountId,
+                sourceType = "bill",
+                sourceId = "${bill.id}:$year-$month",
+                amount = amountRial,
+                description = "قبض ${billKindLabel(bill.kind)} - ${bill.name}",
+                category = "قبض",
+            )
         }
     }
 

@@ -1,6 +1,8 @@
 package ir.sadteam.loancalc.ui.extras
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -70,6 +72,8 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
     val today = remember { JalaliCalendar.today() }
     var editing by remember { mutableStateOf<BillEntity?>(null) }
     var adding by remember { mutableStateOf(false) }
+    var paying by remember { mutableStateOf<BillEntity?>(null) }
+    val accounts by viewModel.accounts.collectAsState()
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -111,13 +115,48 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         )
                     }
                     if (due) {
-                        TextButton(onClick = { viewModel.markBillPaid(bill, today.y, today.m, bill.lastAmount) }) {
+                        TextButton(onClick = { paying = bill }) {
                             Text("پرداخت شد", color = AppPrimary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
         }
+    }
+
+    paying?.let { bill ->
+        var amountText by remember(bill) { mutableStateOf(if (bill.lastAmount > 0) (bill.lastAmount.toLong() / 10).toString() else "") }
+        var accountId by remember(bill) { mutableStateOf(accounts.singleOrNull()?.id) }
+        JibakAlertDialog(
+            onDismissRequest = { paying = null },
+            title = { Text("پرداختِ قبضِ ${bill.name}") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = amountText,
+                        onValueChange = { amountText = cleanNum(it).take(12) },
+                        singleLine = true,
+                        placeholder = { Text("مبلغ (تومان)") },
+                        visualTransformation = ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    )
+                    if (accounts.size > 1) {
+                        Text("از کدام حساب؟", color = AppMuted, fontSize = 12.sp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+                            accounts.forEach { a -> AppChip(a.name, accountId == a.id, onClick = { accountId = a.id }) }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                GradientButton(onClick = {
+                    val rial = (amountText.toLongOrNull() ?: 0L) * 10.0
+                    viewModel.markBillPaid(bill, today.y, today.m, rial, accountId)
+                    paying = null
+                }) { Text("پرداخت شد") }
+            },
+            dismissButton = { TextButton(onClick = { paying = null }) { Text("انصراف") } },
+        )
     }
 
     if (adding || editing != null) {
