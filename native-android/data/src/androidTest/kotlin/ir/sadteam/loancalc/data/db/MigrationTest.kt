@@ -56,6 +56,13 @@ class MigrationTest {
         const val TEST_DB = "migration-test"
     }
 
+    /** ستون‌های شماره‌حساب و شبا - اولین migration با اسکیمای «قبلِ» ثبت‌شده (`33.json`). */
+    @Test
+    fun migrate33To34() {
+        helper.createDatabase(TEST_DB, 33).close()
+        helper.runMigrationsAndValidate(TEST_DB, 34, true, AppDatabase.MIGRATION_33_34)
+    }
+
     /** تاییدِ اینکه SQLCipher رو یه محیطِ واقعیِ اندروید (نه JVMِ خام) درست کار می‌کنه - دقیقاً همون
      * راه‌اندازیِ تولیدی (AppDatabase.getInstance) رو یه فایلِ موقتِ جدا امتحان می‌کنه. */
     @Test

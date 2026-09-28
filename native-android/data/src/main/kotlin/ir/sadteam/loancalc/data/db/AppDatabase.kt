@@ -517,7 +517,7 @@ abstract class AppDatabase : RoomDatabase() {
          * شماره‌حساب و شبای هر حساب (خواسته‌ی کاربر، ۶ مهر) - تا انتقال به حسابِ **خودِ کاربر**
          * از روی شماره‌ی مقصد در پیامک شناخته شود. فقط دو ستونِ nullable، بی ایندکس.
          */
-        private val MIGRATION_33_34 = object : Migration(33, 34) {
+        internal val MIGRATION_33_34 = object : Migration(33, 34) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE accounts ADD COLUMN accountNumber TEXT")
                 db.execSQL("ALTER TABLE accounts ADD COLUMN sheba TEXT")
