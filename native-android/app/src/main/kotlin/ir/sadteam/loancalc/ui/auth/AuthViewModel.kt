@@ -97,6 +97,9 @@ class AuthViewModel @Inject constructor(
     val userId: StateFlow<Long?> = authPrefs.userId
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    val userCode: StateFlow<String?> = authPrefs.userCode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val userName: StateFlow<String?> = authPrefs.userName
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 

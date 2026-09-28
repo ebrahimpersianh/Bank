@@ -862,6 +862,7 @@ private fun AccountSettings(
     val subscriptionTier by authViewModel.subscriptionTier.collectAsState()
     val savedName by authViewModel.userName.collectAsState()
     val userId by authViewModel.userId.collectAsState()
+    val userCode by authViewModel.userCode.collectAsState()
     val idClipboard = LocalClipboardManager.current
     var showDeleteAccountConfirm by remember { mutableStateOf(false) }
     var deleteAccountInProgress by remember { mutableStateOf(false) }
@@ -968,16 +969,16 @@ private fun AccountSettings(
                 value = "تأییدشده",
             )
             // شماره‌ی کاربری برای پشتیبانی (پیام/هدیه‌ی اختصاصی). تپ = کپی.
-            userId?.let { id ->
+            (userCode ?: userId?.toString())?.let { id ->
                 SettingsDivider()
                 SettingsRowItem(
                     title = "شماره‌ی کاربری",
                     icon = Icons.Filled.Tag,
                     tone = SettingsTone.NEUTRAL,
-                    status = toFa(id),
+                    status = id,
                     value = "کپی",
                     onClick = {
-                        idClipboard.setText(androidx.compose.ui.text.AnnotatedString(id.toString()))
+                        idClipboard.setText(androidx.compose.ui.text.AnnotatedString(id))
                         banner.show("شماره‌ی کاربری کپی شد", isSuccess = true)
                     },
                 )

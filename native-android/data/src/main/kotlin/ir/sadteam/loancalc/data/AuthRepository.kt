@@ -75,8 +75,17 @@ class AuthRepository(
             authPrefs.setTrialDaysLeft(result.trialDaysLeft)
             authPrefs.setSubscribedUntil(result.subscribedUntil)
             authPrefs.setSubscriptionTier(result.subscriptionTier)
-            authPrefs.setUserName(result.name)
+            // 🚨 سرور تا امروز `name` را در `/me` نمی‌فرستاد و این خط اسمِ ذخیره‌شده را هر بار
+            // پاک می‌کرد (گزارشِ کاربر: «چند بار اسمم رو ذخیره کردم ولی سیو نشد»). اگر سرور
+            // خالی داد ولی گوشی اسم دارد، اسمِ گوشی را دوباره به سرور می‌فرستیم.
+            val localName = authPrefs.userName.first()
+            if (result.name.isNullOrBlank() && !localName.isNullOrBlank()) {
+                runCatching { apiService.setName("Bearer $token", SetNameRequest(localName)) }
+            } else {
+                authPrefs.setUserName(result.name)
+            }
             authPrefs.setUserId(result.userId)
+            authPrefs.setUserCode(result.userCode)
             authPrefs.setLegacyGift(result.legacyGift)
         } catch (e: Exception) {
             // بی‌صدا نادیده گرفته می‌شه - این فقط یه تازه‌سازیِ پس‌زمینه‌ست؛ اگه شکست بخوره (مثلاً

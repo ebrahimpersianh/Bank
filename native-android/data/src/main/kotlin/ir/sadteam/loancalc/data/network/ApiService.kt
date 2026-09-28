@@ -158,6 +158,7 @@ data class MeResponse(
     val phone: String,
     /** شماره‌ی کاربریِ یکتا (۳ مهر)؛ سرورِ قدیمی نمی‌فرستد → ۰. */
     val userId: Long = 0,
+    val userCode: String? = null,
     val subscribed: Boolean,
     val subscribedUntil: String?,
     val subscriptionTier: String? = null,

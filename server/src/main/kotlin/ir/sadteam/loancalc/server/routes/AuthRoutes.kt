@@ -82,6 +82,8 @@ private data class MeResponse(
     val phone: String,
     /** شماره‌ی کاربریِ یکتا - در صفحه‌ی «حساب کاربری» برای پشتیبانی نشان داده می‌شود. */
     val userId: Long = 0,
+    /** شماره‌ی کاربریِ نمایشی، مثلِ `Uid:7405024` - رجوع کن به [UserCode]. */
+    val userCode: String? = null,
     val subscribed: Boolean,
     val subscribedUntil: String?,
     val subscriptionTier: String?,
@@ -192,7 +194,7 @@ fun Route.authRoutes() {
 
             var user = Db.withConnection { conn ->
                 conn.queryOne(
-                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE phone = ?", phone
+                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at, name, legacy_gift_granted FROM users WHERE phone = ?", phone
                 ) { it.toUserRow() }
             }
             if (user == null) {
@@ -202,7 +204,7 @@ fun Route.authRoutes() {
                 // واقعی (لازم برای محاسبه‌ی دوره‌ی آزمایشی ۷ روزه‌ی isSubscribed) رو داشته باشیم.
                 user = Db.withConnection { conn ->
                     conn.queryOne(
-                        "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE id = ?", newId
+                        "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at, name, legacy_gift_granted FROM users WHERE id = ?", newId
                     ) { it.toUserRow() }
                 }!!
             }
@@ -236,7 +238,7 @@ fun Route.authRoutes() {
             val authed = call.requireAuth() ?: return@get
             val user = Db.withConnection { conn ->
                 conn.queryOne(
-                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE id = ?", authed.uid
+                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at, name, legacy_gift_granted FROM users WHERE id = ?", authed.uid
                 ) { it.toUserRow() }
             }
             if (user == null) {
@@ -247,6 +249,7 @@ fun Route.authRoutes() {
                 MeResponse(
                     phone = user.phone,
                     userId = authed.uid,
+                    userCode = runCatching { ir.sadteam.loancalc.server.UserCode.of(authed.uid, user.createdAt) }.getOrNull(),
                     subscribed = isSubscribed(user),
                     legacyGift = user.legacyGift,
                     name = user.name,
