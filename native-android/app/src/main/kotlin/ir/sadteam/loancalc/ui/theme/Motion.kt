@@ -10,6 +10,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.ui.unit.IntOffset
 
 /**
@@ -72,4 +74,27 @@ object Motion {
     val contentExit: ExitTransition
         get() = fadeOut(tween(FADE_OUT_MS)) +
             scaleOut(animationSpec = standard(), targetScale = 0.98f)
+
+    // ── تعویضِ صفحه (بخشِ حرکت، ۶ مهر) ──────────────────────────────────────────
+    // یک زبان برای همه‌ی صفحه‌ها: ورود با فنرِ سنگینِ بی‌سرریز + محوشدن، خروج کوتاه‌تر و
+    // کم‌دامنه‌تر تا دو صفحه هم‌زمان «دعوا» نکنند. سرعتِ همه با تنظیمِ «مقیاسِ انیمیشن»ِ
+    // گوشی خودکار کم/زیاد می‌شود (Compose خودش رعایت می‌کند)، پس «کاهشِ حرکت» هم پوشیده است.
+
+    /** ورودِ صفحه از سمتِ [dir] (۱ = از راست، −۱ = از چپ). */
+    fun screenEnter(dir: Int): EnterTransition =
+        slideInHorizontally(animationSpec = offset()) { dir * it / 4 } +
+            fadeIn(tween(FADE_IN_MS)) +
+            scaleIn(animationSpec = heavy(), initialScale = 0.985f)
+
+    fun screenExit(dir: Int): ExitTransition =
+        slideOutHorizontally(animationSpec = tween(200)) { -dir * it / 6 } +
+            fadeOut(tween(FADE_OUT_MS)) +
+            scaleOut(animationSpec = tween(200), targetScale = 0.985f)
+
+    /** زیرصفحه‌ای که روی تب می‌نشیند (جزئیاتِ دارایی/حساب/وام): از لبه‌ی شروع (راست در RTL). */
+    val subScreenEnter: EnterTransition
+        get() = slideInHorizontally(animationSpec = offset()) { -it / 3 } + fadeIn(tween(FADE_IN_MS))
+
+    val subScreenExit: ExitTransition
+        get() = slideOutHorizontally(animationSpec = tween(220)) { -it / 4 } + fadeOut(tween(FADE_OUT_MS))
 }

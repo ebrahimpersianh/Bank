@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.asset
 
+import ir.sadteam.loancalc.ui.components.SubScreen
 import ir.sadteam.loancalc.ui.components.AppFab
 import androidx.compose.animation.animateContentSize
 import androidx.compose.material.icons.filled.ExpandMore
@@ -386,78 +387,62 @@ fun AssetsTabScreen(
                 .align(Alignment.BottomStart)
                 .padding(start = 16.dp, bottom = 16.dp),
         )
-        buyEntry?.let { e ->
-            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
-                AssetTradeSheet(
-                    onDismiss = { buyEntry = null },
-                    viewModel = assetViewModel,
-                    presetSymbol = e.symbol,
-                    presetName = e.name,
-                    presetCategory = e.category,
-                )
-            }
+        SubScreen(buyEntry) { e ->
+            AssetTradeSheet(
+                onDismiss = { buyEntry = null },
+                viewModel = assetViewModel,
+                presetSymbol = e.symbol,
+                presetName = e.name,
+                presetCategory = e.category,
+            )
         }
 
         // زیرصفحه‌ها **روی** تب می‌نشینند، نه به‌جایش.
-        if (openAsset != null) {
-            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+        SubScreen(openAsset) { a ->
                 AssetDetailScreen(
-                    asset = openAsset,
+                    asset = a,
                     onBack = { detailAsset = null },
                     viewModel = assetViewModel,
                 )
-            }
         }
-        if (openAccount != null) {
-            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+        SubScreen(openAccount) { acc ->
                 AccountDetailScreen(
-                    account = openAccount,
+                    account = acc,
                     onBack = { detailAccount = null },
                     // ویرایش هست، حذف نیست: کاربر همین‌جا می‌بینه اسم/فرستنده‌ی پیامک غلطه و
                     // باید بتونه درستش کنه، ولی حذف از مسیرِ تماشا جای درستی نیست.
-                    onEdit = { editAccount = openAccount.id },
+                    onEdit = { editAccount = acc.id },
                     onDelete = null,
                     viewModel = accountViewModel,
                 )
-            }
         }
-        if (openEditAccount != null) {
-            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+        SubScreen(openEditAccount) { ed ->
                 AddEditAccountScreen(
-                    existing = openEditAccount,
+                    existing = ed,
                     onSaved = { editAccount = null },
                     onCancel = { editAccount = null },
                     viewModel = accountViewModel,
                 )
-            }
         }
-        if (showAccountList) {
-            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+        SubScreen(if (showAccountList) Unit else null) { _ ->
                 AccountsScreen(
                     onBack = { showAccountList = false },
                     startInAddMode = false,
                     viewModel = accountViewModel,
                 )
-            }
         }
-        if (showAddAccount) {
-            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+        SubScreen(if (showAddAccount) Unit else null) { _ ->
                 AccountsScreen(
                     onBack = { showAddAccount = false },
                     startInAddMode = true,
                     viewModel = accountViewModel,
                 )
-            }
         }
-        if (showAddAsset) {
-            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+        SubScreen(if (showAddAsset) Unit else null) { _ ->
                 AssetTradeSheet(onDismiss = { showAddAsset = false }, viewModel = assetViewModel)
-            }
         }
-        if (showPrices) {
-            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+        SubScreen(if (showPrices) Unit else null) { _ ->
                 MarketPricesScreen(onBack = { showPrices = false }, viewModel = assetViewModel)
-            }
         }
     }
 }
@@ -730,9 +715,10 @@ private fun TotalWealthHero(
             }
             // مبلغ و «تومان» در یک خط (خواسته‌ی کاربر: کارت هم‌قدِ کارتِ خانه، نه کشیده).
             Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.Bottom) {
+                val shownTotal = ir.sadteam.loancalc.ui.components.countUpDouble(total)
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        maskIfPrivate(masked, total.rialToFaCompact()),
+                        maskIfPrivate(masked, shownTotal.rialToFaCompact()),
                         color = Color.White,
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Black,

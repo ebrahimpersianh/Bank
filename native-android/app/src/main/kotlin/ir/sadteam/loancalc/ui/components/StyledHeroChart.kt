@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -63,11 +65,19 @@ internal fun StyledHeroChart(
     var widthPx by remember { mutableFloatStateOf(0f) }
     val today = currentIndex.coerceIn(0, (values.size - 1).coerceAtLeast(0))
 
+    // خط از چپ به راست «کشیده» می‌شود، فقط بارِ اول (بخشِ حرکت، ۶ مهر).
+    val reveal = remember { androidx.compose.animation.core.Animatable(0f) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        reveal.animateTo(1f, androidx.compose.animation.core.tween(900, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+    }
     Box(modifier = modifier.fillMaxWidth()) {
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(height)
+                .drawWithContent {
+                    clipRect(right = size.width * reveal.value) { this@drawWithContent.drawContent() }
+                }
                 .then(
                     if (!interactive) {
                         Modifier

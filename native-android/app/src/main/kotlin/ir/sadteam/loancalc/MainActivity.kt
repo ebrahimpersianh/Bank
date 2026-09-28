@@ -1044,25 +1044,18 @@ private fun LoanCalcApp(
                 // پورت کاملِ اسلاید جهت‌دار بین ۴ تب اصلی وب (switchTab: slide-l/slide-r): جهت از
                 // رو فاصله‌ی ایندکس تب قبلی/جدید تو ترتیب تب‌ها حساب می‌شه و صفحه‌ی جدید با یه
                 // اسلاید فنری از همون سمتِ حرکت میاد تو - حس «پریمیوم»تر از fade+scale قبلی.
+                // زبانِ حرکتِ مشترک - رجوع کن به Motion.screenEnter/screenExit.
                 enterTransition = {
-                    val dir = slideDirection(initialState.destination.route, targetState.destination.route)
-                    slideInHorizontally(
-                        animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
-                    ) { dir * it / 3 } + fadeIn(tween(220))
+                    Motion.screenEnter(slideDirection(initialState.destination.route, targetState.destination.route))
                 },
                 exitTransition = {
-                    val dir = slideDirection(initialState.destination.route, targetState.destination.route)
-                    slideOutHorizontally(animationSpec = tween(180)) { -dir * it / 4 } + fadeOut(tween(150))
+                    Motion.screenExit(slideDirection(initialState.destination.route, targetState.destination.route))
                 },
                 popEnterTransition = {
-                    val dir = slideDirection(initialState.destination.route, targetState.destination.route)
-                    slideInHorizontally(
-                        animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
-                    ) { dir * it / 3 } + fadeIn(tween(220))
+                    Motion.screenEnter(slideDirection(initialState.destination.route, targetState.destination.route))
                 },
                 popExitTransition = {
-                    val dir = slideDirection(initialState.destination.route, targetState.destination.route)
-                    slideOutHorizontally(animationSpec = tween(180)) { -dir * it / 4 } + fadeOut(tween(150))
+                    Motion.screenExit(slideDirection(initialState.destination.route, targetState.destination.route))
                 },
             ) {
                 composable(BottomTab.HOME.route) {
