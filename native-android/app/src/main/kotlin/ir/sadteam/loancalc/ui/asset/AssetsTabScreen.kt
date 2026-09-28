@@ -108,6 +108,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
@@ -143,8 +144,18 @@ fun AssetsTabScreen(
     accountViewModel: AccountViewModel = hiltViewModel(),
     assetViewModel: AssetViewModel = hiltViewModel(),
     privacyViewModel: PrivacyModeViewModel = hiltViewModel(),
+    statsViewModel: ir.sadteam.loancalc.ui.stats.StatsViewModel = hiltViewModel(),
+    debtViewModel: ir.sadteam.loancalc.ui.debt.DebtViewModel = hiltViewModel(),
 ) {
     val accounts by accountViewModel.accounts.collectAsState()
+    // بدهی‌ها (پیشنهادِ گزارشِ پولکی): اقساطِ پرداخت‌نشده‌ی وام‌ها + بدهی‌های تسویه‌نشده به دیگران.
+    // «کلِ دارایی» دست نمی‌خورد؛ «خالص» جدا زیرش می‌آید.
+    val loans by statsViewModel.loans.collectAsState()
+    val debts by debtViewModel.debts.collectAsState()
+    var loanRemaining by remember { mutableStateOf(0.0) }
+    LaunchedEffect(loans) { loanRemaining = statsViewModel.summarize(loans).remainingAmount }
+    val iOwe = debts.filter { !it.settled && it.type == ir.sadteam.loancalc.core.DebtType.I_OWE.name }.sumOf { it.amount }
+    val liabilities = loanRemaining + iOwe
     val transactions by accountViewModel.transactions.collectAsState()
     val assets by assetViewModel.assets.collectAsState()
     val trades by assetViewModel.trades.collectAsState()
@@ -322,6 +333,9 @@ fun AssetsTabScreen(
                 )
             }
 
+            if (liabilities > 0.0) {
+                item { NetWorthCard(grandTotal, liabilities, loanRemaining, iOwe, privacyMode) }
+            }
             item { AssetSearchBar(query) { query = it } }
 
             val q = query.trim()
@@ -1387,3 +1401,37 @@ private fun MyAssetsSection(
     }
 }
 
+
+/** «خالص پس از بدهی‌ها» - دارایی منهای اقساطِ باقی‌مانده و بدهی به دیگران. */
+@Composable
+private fun NetWorthCard(total: Double, liabilities: Double, loans: Double, owe: Double, privacyMode: Boolean) {
+    val net = total - liabilities
+    AppCard(contentPadding = 12.dp) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("خالص پس از بدهی‌ها", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        buildString {
+                            if (loans > 0) append("اقساطِ مانده ").append(maskIfPrivate(masked, loans.rialToFaCompact()))
+                            if (loans > 0 && owe > 0) append(" · ")
+                            if (owe > 0) append("بدهی ").append(maskIfPrivate(masked, owe.rialToFaCompact()))
+                        },
+                        color = AppMuted,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+            PrivacyCrossfade(privacyMode) { masked ->
+                Text(
+                    maskIfPrivate(masked, (if (net < 0) "−" else "") + kotlin.math.abs(net).rialToFaCompact()) + " تومان",
+                    color = if (net < 0) AppDanger else AppPrimaryInk,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Black,
+                )
+            }
+        }
+    }
+}
