@@ -351,6 +351,9 @@ fun ReportTabScreen(
         } else {
             visibleDiscoveries.forEach { d -> item(key = d.kind) { d.render() } }
         }
+        // ── مقایسه‌ی ماه‌به‌ماه، برچسب‌ها، بازپرداختی‌ها (۶ مهر، از مقایسه با پارمیس/پولکس) ──
+        item { MonthCompareCard(transactions, privacyMode) }
+        item { TagsAndReimbursableCard(transactions, privacyMode) }
         item { ExportRow(onClick = onOpenExport) }
     }
 
@@ -1271,6 +1274,81 @@ private fun ExportRow(onClick: () -> Unit) {
                 )
             }
             Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = ChevronInk, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+/** خرجِ هر دسته در ماهِ جاری در برابرِ ماهِ قبل - پنج دسته با بیشترین تغییر. */
+@Composable
+private fun MonthCompareCard(all: List<ir.sadteam.loancalc.data.db.AccountTransactionEntity>, privacyMode: Boolean) {
+    val today = remember { ir.sadteam.loancalc.core.JalaliCalendar.today() }
+    val (py, pm) = if (today.m == 1) (today.y - 1) to 12 else today.y to (today.m - 1)
+    fun spend(y: Int, m: Int) = all.filter {
+        it.confirmed && it.year == y && it.month == m && it.type == "WITHDRAWAL" &&
+            it.sourceType != ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER
+    }.groupBy { it.category ?: "بی‌دسته" }.mapValues { e -> e.value.sumOf { it.amount } }
+    val now = spend(today.y, today.m)
+    val prev = spend(py, pm)
+    if (now.isEmpty() && prev.isEmpty()) return
+    val rows = (now.keys + prev.keys).map { k -> Triple(k, now[k] ?: 0.0, prev[k] ?: 0.0) }
+        .sortedByDescending { kotlin.math.abs(it.second - it.third) }.take(5)
+    val totalNow = now.values.sum()
+    val totalPrev = prev.values.sum()
+    AppCard(contentPadding = 14.dp) {
+        Text("مقایسه با ماهِ قبل", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text(
+                "این ماه ${maskIfPrivate(masked, totalNow.rialToFaCompact())} · ماهِ قبل ${maskIfPrivate(masked, totalPrev.rialToFaCompact())} تومان",
+                color = AppMuted,
+                fontSize = 11.sp,
+                modifier = Modifier.padding(top = 2.dp, bottom = 6.dp),
+            )
+        }
+        rows.forEach { (cat, a, b) ->
+            val diff = a - b
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(cat, color = AppText, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        (if (diff > 0) "▲ " else if (diff < 0) "▼ " else "") + maskIfPrivate(masked, kotlin.math.abs(diff).rialToFaCompact()),
+                        color = if (diff > 0) AppDanger else AppPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** جمعِ خرجِ هر برچسب (کلِ زمان) + خرج‌های بازپرداختی. */
+@Composable
+private fun TagsAndReimbursableCard(all: List<ir.sadteam.loancalc.data.db.AccountTransactionEntity>, privacyMode: Boolean) {
+    val spends = all.filter { it.confirmed && it.type == "WITHDRAWAL" }
+    val byTag = spends.flatMap { tx -> tx.tags?.split(',')?.filter { it.isNotBlank() }?.map { it to tx.amount } ?: emptyList() }
+        .groupBy({ it.first }, { it.second }).mapValues { it.value.sum() }
+        .entries.sortedByDescending { it.value }.take(6)
+    val reimb = spends.filter { it.reimbursable }.sumOf { it.amount }
+    if (byTag.isEmpty() && reimb == 0.0) return
+    AppCard(contentPadding = 14.dp) {
+        if (byTag.isNotEmpty()) {
+            Text("برچسب‌ها", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
+            byTag.forEach { (tag, sum) ->
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    Text("#$tag", color = AppText, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(maskIfPrivate(masked, sum.rialToFaCompact()) + " تومان", color = AppMuted, fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+        if (reimb > 0) {
+            Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                Text("↩ خرج‌های بازپرداختی (قرار است پس بگیری)", color = AppText, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(maskIfPrivate(masked, reimb.rialToFaCompact()) + " تومان", color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }
