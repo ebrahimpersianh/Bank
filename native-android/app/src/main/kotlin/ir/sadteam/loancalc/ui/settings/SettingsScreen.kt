@@ -1002,7 +1002,7 @@ private fun AccountSettings(
                     TextButton(
                         onClick = { authViewModel.updateName(nameDraft); showNameSheet = false },
                     ) {
-                        Text(if (nameDraft.isBlank()) "حذفِ نام" else "ذخیره")
+                        Text("ذخیره")
                     }
                 },
                 dismissButton = { TextButton(onClick = { showNameSheet = false }) { Text("بی‌خیال") } },
