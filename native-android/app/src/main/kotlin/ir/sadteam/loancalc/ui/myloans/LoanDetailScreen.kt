@@ -933,7 +933,13 @@ fun LoanDetailScreen(
                     showEditMetaDialog = true
                 }
             }) {
-                Icon(Icons.Filled.Edit, contentDescription = "ویرایش مشخصات وام", tint = AppMuted)
+                // کاربر فکر می‌کرد ویرایش حذف شده (۶ مهر) - مدادِ خاکستری دیده نمی‌شد.
+                Box(
+                    modifier = Modifier.size(38.dp).clip(CircleShape).background(AppPrimaryPill),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.Edit, contentDescription = "ویرایش مشخصات وام", tint = AppPrimaryInk, modifier = Modifier.size(19.dp))
+                }
             }
         }
 
