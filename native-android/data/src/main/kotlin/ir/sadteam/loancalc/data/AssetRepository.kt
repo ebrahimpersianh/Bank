@@ -145,17 +145,17 @@ class AssetRepository(
      * همان قیمت‌ها + **ساعتِ واقعیِ به‌روزرسانیِ سرور** (میلی‌ثانیه). کاربر نمی‌تواند
      * تازه‌سازی را جلو بیندازد؛ فقط زمان‌بندیِ سرور مهم است، پس ساعت هم از سرور می‌آید.
      */
-    suspend fun marketSnapshot(): Pair<Map<String, Double>, Long?>? =
+    suspend fun marketSnapshot(): Triple<Map<String, Double>, Long?, Map<String, Double>>? =
         runCatching {
             val r = apiService.getPrices()
-            r.prices to r.updatedAt?.let { iso ->
+            Triple(r.prices, r.updatedAt?.let { iso ->
                 // ⚠️ نه `java.time` - minSdk ۲۴ است و بدونِ desugaring روی اندروید ۷ کرش می‌کند.
                 runCatching {
                     java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
                         .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
                         .parse(iso.take(19))?.time
                 }.getOrNull()
-            }
+            }, r.pricesUsd)
         }.getOrNull()
 
     /**

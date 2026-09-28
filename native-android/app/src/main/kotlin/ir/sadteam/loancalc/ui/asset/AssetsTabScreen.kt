@@ -1314,11 +1314,33 @@ private fun MarketMiniCard(
             modifier = Modifier.padding(top = 6.dp),
         )
         Text("تومان", color = AppMuted, fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
+        // جفتِ دلاریِ رمزارز (مثلاً BTC_USD) - فقط اگر سرور داده باشد.
+        val usd by viewModel.usdPrices.collectAsState()
+        usd[e.symbol]?.takeIf { e.category == ASSET_CATEGORY_CRYPTO }?.let { v ->
+            Text(
+                "$" + formatUsd(v),
+                color = AppMuted,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
             change?.let { PriceChangeBadge(it) }
             MiniTrend(e.symbol, change, viewModel, modifier = Modifier.weight(1f).padding(start = 4.dp), height = 20.dp)
         }
     }
+}
+
+/** دلار با ارقامِ فارسی: بزرگ‌ها با جداکننده، ریزها (مثلِ PEPE) با رقم‌های معنادار. */
+private fun formatUsd(v: Double): String {
+    val raw = when {
+        v >= 1000 -> String.format(java.util.Locale.US, "%,.0f", v).replace(',', '٬')
+        v >= 1 -> String.format(java.util.Locale.US, "%.2f", v)
+        else -> java.math.BigDecimal(v).round(java.math.MathContext(3)).stripTrailingZeros().toPlainString()
+    }
+    return raw.replace('.', '٫').map { if (it in '0'..'9') '۰' + (it - '0') else it }.joinToString("")
 }
 
 /** «دارایی‌های من» - ردیفِ فشرده: نشان | نام و نماد | نمودار | ارزش و تغییر | فلش. */

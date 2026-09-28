@@ -79,6 +79,11 @@ class AssetViewModel @Inject constructor(
     /** لحظه‌ی آخرین به‌روزرسانیِ موفق. null یعنی هنوز یک‌بار هم نگرفته‌ایم. */
     private val _pricesUpdatedAt = MutableStateFlow<Long?>(null)
 
+    private val _usdPrices = MutableStateFlow<Map<String, Double>>(emptyMap())
+
+    /** قیمتِ دلاریِ رمزارزها - فقط نمایشی؛ ارزشِ دارایی همچنان ریالی حساب می‌شود. */
+    val usdPrices: StateFlow<Map<String, Double>> = _usdPrices
+
     /**
      * **ساعتِ** آخرین به‌روزرسانی («۱۲:۳۰»)، برای زیرنویسِ سرصفحه‌ی `43a`.
      *
@@ -140,8 +145,9 @@ class AssetViewModel @Inject constructor(
             // قیمتِ کلِ بازار **یک درخواسته**، پس حلقه روی نمادها لازم نیست.
             // شکستِ شبکه = قیمتِ قبلی می‌مونه، نه فهرستِ خالی.
             // ساعت از خودِ سرور (زمانِ آخرین دریافت از سرویس)، نه لحظه‌ی باز شدنِ اپ.
-            assetRepository.marketSnapshot()?.let { (prices, at) ->
+            assetRepository.marketSnapshot()?.let { (prices, at, usd) ->
                 if (prices.isNotEmpty()) _marketPrices.value = prices
+                if (usd.isNotEmpty()) _usdPrices.value = usd
                 if (at != null) _pricesUpdatedAt.value = at
             }
             // ifEmpty چون تو فراخوانیِ init هنوز StateFlowِ assets پر نشده.

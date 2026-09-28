@@ -226,6 +226,8 @@ data class CreditRatesResponse(val rates: List<CreditRateDto>)
 data class PricesResponse(
     val updatedAt: String? = null,
     val prices: Map<String, Double> = emptyMap(),
+    /** قیمتِ دلاریِ رمزارزها (کلید نمادِ کاتالوگ، مقدار دلار). سرورِ قدیمی خالی می‌دهد. */
+    val pricesUsd: Map<String, Double> = emptyMap(),
 )
 
 data class PricePointDto(val date: String, val price: Double)

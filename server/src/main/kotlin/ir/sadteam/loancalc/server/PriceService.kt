@@ -133,6 +133,11 @@ object PriceService {
         val prices: Map<String, Double>,
         /** همون چیزی که سرویس داد، دست‌نخورده - فقط برای دیباگِ اسمِ نمادها. */
         val raw: Map<String, Double>,
+        /**
+         * قیمتِ **دلاریِ** رمزارزها (`BTC` → قیمتِ `BTC_USD`). جدا از [prices] تا هیچ نمادی
+         * دو بار در کاتالوگ نیاید و دارایی‌های ثبت‌شده (که ریالی‌اند) دست نخورند.
+         */
+        val usd: Map<String, Double> = emptyMap(),
     )
 
     suspend fun currentPrices(): Snapshot {
@@ -144,9 +149,9 @@ object PriceService {
                 }
             }
         }
-        if (rawJson == null) return Snapshot(null, emptyMap(), emptyMap())
+        if (rawJson == null) return Snapshot(null, emptyMap(), emptyMap(), emptyMap())
         val quotes = parseQuotes(rawJson)
-        return Snapshot(fetchedAt, mapToCatalog(quotes), debugRaw(quotes))
+        return Snapshot(fetchedAt, mapToCatalog(quotes), debugRaw(quotes), mapUsd(quotes))
     }
 
     /** تاریخچه‌ی یه نماد - از **اسنپ‌شاتِ روزانه‌ی خودمون**، نه سرویس (سهمیه‌ی اضافه نمی‌خواد). */
@@ -284,6 +289,19 @@ object PriceService {
             out[catalogSymbol] = row.value
         }
         return out
+    }
+
+    /** رمزارزهای کاتالوگ → قیمتِ جفتِ `_USD` همان نماد، اگر سرویس داده باشد. */
+    internal fun mapUsd(quotes: List<Quote>): Map<String, Double> {
+        val byCode = quotes.associateBy { it.code }
+        return CATALOG_TO_CODE.values
+            .filter { it.endsWith("_RLS") }
+            .mapNotNull { code ->
+                val sym = code.removeSuffix("_RLS")
+                val catalog = CATALOG_TO_CODE.entries.first { it.value == code }.key
+                byCode["${sym}_USD"]?.let { catalog to it.value }
+            }
+            .toMap()
     }
 
     /** چیزی که `GET /api/prices` تو فیلدِ `raw` برمی‌گردونه - **فقط برای دیباگ**. */
