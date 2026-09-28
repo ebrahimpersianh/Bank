@@ -23,6 +23,7 @@ fun ReminderOverrideCard(
     currentOffsets: String?,
     onChange: (String?) -> Unit,
     modifier: Modifier = Modifier,
+    title: String = "یادآوری این مورد",
 ) {
     val mode = when {
         currentOffsets == null -> Mode.DEFAULT
@@ -31,13 +32,13 @@ fun ReminderOverrideCard(
     }
     val customSet = if (mode == Mode.CUSTOM) parseReminderOffsets(currentOffsets!!) else emptySet()
 
-    AppCard(label = "یادآوری این مورد", modifier = modifier) {
+    AppCard(label = title, modifier = modifier) {
         Column {
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 AppChip(label = "پیش‌فرض", selected = mode == Mode.DEFAULT, onClick = { onChange(null) })
                 AppChip(label = "خاموش", selected = mode == Mode.OFF, onClick = { onChange("") })
                 AppChip(
-                    label = "اختصاصی",
+                    label = "پیشرفته",
                     selected = mode == Mode.CUSTOM,
                     onClick = {
                         if (mode != Mode.CUSTOM) onChange(formatReminderOffsets(setOf(REMINDER_OFFSET_OPTIONS.first())))

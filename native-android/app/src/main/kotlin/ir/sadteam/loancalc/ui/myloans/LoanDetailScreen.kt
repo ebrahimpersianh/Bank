@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import android.Manifest
@@ -1199,6 +1200,7 @@ fun LoanDetailScreen(
                 currentOffsets = loan.reminderDayOffsets,
                 onChange = { viewModel.setLoanReminderOffsets(loan, it) },
                 modifier = Modifier.padding(horizontal = 14.dp),
+                title = "یادآوری قسط وام",
             )
         }
     }
@@ -1306,7 +1308,7 @@ fun LoanDetailScreen(
         ConfirmDialog(
             tone = ConfirmTone.DESTRUCTIVE,
             title = "حذف وام",
-            consequence = "وامِ «${loan.name}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+            consequence = "وامِ «${loan.name}» و همه‌ی قسط‌ها و عکس‌هایش حذف بشه؟ این کار قابلِ‌برگشت نیست. پرداخت‌هایی که قبلاً از حسابت کم شده، در تراکنش‌ها می‌مانند.",
             actionLabel = "حذف وام",
             onConfirm = { showDeleteConfirm = false; onDelete() },
             onDismiss = { showDeleteConfirm = false },
@@ -2232,37 +2234,48 @@ private fun AttachmentToggleButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(12.dp)
-    val borderColor = if (expanded) AppPrimary else AppMuted.copy(alpha = 0.35f)
-    val bg = if (expanded) AppPrimary.pillOverSurface(0.10f) else AppSurface2
+    // طرحِ ChatGPT (۶ مهر): کارتِ سفید · کاشیِ آبیِ کم‌رنگِ آیکون · عنوانِ پررنگ · خطِ جداکننده · فلش.
+    val shape = RoundedCornerShape(20.dp)
+    val chevronTurn by animateFloatAsState(if (expanded) -90f else 0f, label = "attChevron")
     Row(
         modifier = modifier
             .pressScaleClickable(goldBorderShape = shape, onClick = onClick)
-            .background(bg, shape)
-            .border(1.dp, borderColor, shape)
-            .padding(horizontal = 8.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.Center,
+            .background(AppSurface, shape)
+            .border(1.dp, if (expanded) AppPrimary else AppLine, shape)
+            .padding(horizontal = 10.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = if (expanded) AppPrimary else AppMuted,
-            modifier = Modifier.size(18.dp),
-        )
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(AppPrimary.pillOverSurface(0.10f), RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
+            if (filled) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                        .size(7.dp)
+                        .background(AppPrimary, androidx.compose.foundation.shape.CircleShape),
+                )
+            }
+        }
         Text(
             label,
-            color = if (expanded) AppPrimary else AppText,
-            fontSize = 13.sp,
-            modifier = Modifier.padding(start = 6.dp),
+            color = AppPrimaryInk,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            modifier = Modifier.weight(1f).padding(start = 10.dp),
         )
-        if (filled) {
-            Box(
-                modifier = Modifier
-                    .padding(start = 6.dp)
-                    .size(6.dp)
-                    .background(AppPrimary, androidx.compose.foundation.shape.CircleShape),
-            )
-        }
+        Box(modifier = Modifier.padding(horizontal = 8.dp).width(1.dp).height(24.dp).background(AppLine))
+        Icon(
+            Icons.Filled.ChevronLeft,
+            contentDescription = null,
+            tint = AppPrimaryInk,
+            modifier = Modifier.size(20.dp).graphicsLayer { rotationZ = chevronTurn },
+        )
     }
 }

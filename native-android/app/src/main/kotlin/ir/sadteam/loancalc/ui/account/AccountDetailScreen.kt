@@ -351,7 +351,7 @@ fun AccountDetailScreen(
         if (showDeleteConfirm) {
             ConfirmDeleteDialog(
                 title = "حذف حساب",
-                text = "حسابِ «${account.name} - ${account.bankName}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+                text = "حسابِ «${account.name} - ${account.bankName}» حذف بشه؟ ⚠️ همه‌ی تراکنش‌های این حساب هم پاک می‌شوند و این کار قابلِ‌برگشت نیست.",
                 // پرچم را خودش پایین می‌آورد - وابسته‌بودن به این‌که onDelete صفحه را ببندد
                 // یک وابستگیِ نامرئی بود.
                 onConfirm = { showDeleteConfirm = false; onDelete?.invoke() },
