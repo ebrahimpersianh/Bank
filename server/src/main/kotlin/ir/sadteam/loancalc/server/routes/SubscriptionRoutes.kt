@@ -29,7 +29,9 @@ private val TIER_DURATION_DAYS = mapOf(
     "unlimited_loans_1m" to 30,
     "unlimited_loans_3m" to 90,
     "unlimited_loans_6m" to 180,
-    "unlimited_loans_1y" to 365
+    "unlimited_loans_1y" to 365,
+    // «همیشگی» (۶ مهر): صد سال - در عمل بی‌پایان، بی نیاز به منطقِ جدا.
+    "unlimited_loans_lifetime" to 36500
 )
 
 /* کدِ کوتاهِ پلن که تو دیتابیس (users.subscription_tier) ذخیره و به کلاینت برگردونده می‌شه - برای
@@ -38,7 +40,8 @@ private val PRODUCT_TIER_CODE = mapOf(
     "unlimited_loans_1m" to "1m",
     "unlimited_loans_3m" to "3m",
     "unlimited_loans_6m" to "6m",
-    "unlimited_loans_1y" to "1y"
+    "unlimited_loans_1y" to "1y",
+    "unlimited_loans_lifetime" to "life"
 )
 
 /* store رو نسخه‌های قدیمی‌ترِ اپ (قبل از اضافه‌شدنِ فلیورِ مایکت) اصلاً نمی‌فرستن - پیش‌فرضش
