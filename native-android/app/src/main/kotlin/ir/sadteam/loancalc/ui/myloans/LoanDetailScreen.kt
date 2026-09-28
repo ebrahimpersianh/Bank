@@ -776,6 +776,7 @@ fun LoanDetailScreen(
     val today = remember { JalaliCalendar.today() }
     val nextRow = remember(rows) { rows.firstOrNull { it["paid"] != true } }
     var detailTab by rememberSaveable { mutableStateOf(0) }
+    if (detailTab > 1) detailTab = 0
     // کشیدنِ افقی روی صفحه تب را عوض می‌کند، مثلِ ورق‌زدنِ گالری (خواسته‌ی کاربر): محتوای تب
     // دنبالِ انگشت می‌آید، اگر از یک‌چهارمِ عرض رد شد بیرون می‌رود و تبِ کناری از سمتِ دیگر
     // می‌آید، وگرنه برمی‌گردد. در RTL تبِ بعدی سمتِ چپ است، پس کشیدن به راست = تبِ بعدی.
@@ -792,7 +793,7 @@ fun LoanDetailScreen(
                 onDragEnd = {
                     val x = tabSwipe.value
                     val target = when {
-                        x > swipeWidth / 4 && detailTab < 2 -> detailTab + 1
+                        x > swipeWidth / 4 && detailTab < 1 -> detailTab + 1
                         x < -swipeWidth / 4 && detailTab > 0 -> detailTab - 1
                         else -> null
                     }
@@ -812,7 +813,7 @@ fun LoanDetailScreen(
             ) { change, dx ->
                 change.consume()
                 // لبه‌ها مقاومت دارند: بعد از تبِ آخر فقط کمی جلو می‌آید.
-                val atEdge = (tabSwipe.value + dx > 0 && detailTab == 2) || (tabSwipe.value + dx < 0 && detailTab == 0)
+                val atEdge = (tabSwipe.value + dx > 0 && detailTab == 1) || (tabSwipe.value + dx < 0 && detailTab == 0)
                 scope.launch { tabSwipe.snapTo(tabSwipe.value + if (atEdge) dx * 0.25f else dx) }
             }
         }
@@ -967,7 +968,8 @@ fun LoanDetailScreen(
             privacyMode = privacyMode,
         )
         SegmentedToggle(
-            options = listOf("جدولِ اقساط", "جزئیاتِ وام", "پرداخت‌ها"),
+            // «پرداخت‌ها» حذف شد (۶ مهر): همان جدولِ اقساط بود، فقط فیلترشده.
+            options = listOf("جدولِ اقساط", "جزئیاتِ وام"),
             selectedIndex = detailTab,
             onSelect = { detailTab = it },
             modifier = Modifier.padding(horizontal = 14.dp),
@@ -1191,7 +1193,7 @@ fun LoanDetailScreen(
             )
         }
 
-        item {
+        if (detailTab == 1) item {
             ReminderOverrideCard(
                 currentOffsets = loan.reminderDayOffsets,
                 onChange = { viewModel.setLoanReminderOffsets(loan, it) },
