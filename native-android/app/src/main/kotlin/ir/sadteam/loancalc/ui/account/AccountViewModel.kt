@@ -71,9 +71,11 @@ class AccountViewModel @Inject constructor(
         smsSender: String? = null,
         type: String = ACCOUNT_TYPE_BANK,
         iconKey: String? = null,
+        accountNumber: String? = null,
+        sheba: String? = null,
     ) {
         viewModelScope.launch {
-            accountRepository.addAccount(name, bankName, initialBalance, cardNumber, smsSender, type, iconKey)
+            accountRepository.addAccount(name, bankName, initialBalance, cardNumber, smsSender, type, iconKey, accountNumber, sheba)
             syncIfLoggedIn()
         }
     }
@@ -174,6 +176,14 @@ class AccountViewModel @Inject constructor(
             )
             // ویرایش هم مثلِ افزودن و حذف باید به ابر برود، وگرنه اصلاحِ مبلغ فقط روی
             // همین گوشی می‌مانْد و اولین بازگردانی برش می‌گردانْد به مقدارِ غلط.
+            syncIfLoggedIn()
+        }
+    }
+
+    /** «نه، این جابه‌جایی نبود» - برگرداندنِ جابه‌جاییِ تشخیصِ خودکار. */
+    fun unpairTransfer(transaction: AccountTransactionEntity) {
+        viewModelScope.launch {
+            accountRepository.unpairTransfer(transaction)
             syncIfLoggedIn()
         }
     }

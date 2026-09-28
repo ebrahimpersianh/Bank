@@ -111,7 +111,11 @@ class BankSmsReceiver : BroadcastReceiver() {
                     originLabel = "پیامکِ $sender",
                 )
                 // برداشت از یک حسابِ خودت + واریزِ همان مبلغ به حسابِ دیگرت = جابه‌جایی، نه خرج و درآمد.
-                runCatching { accountRepository.pairAutoTransfer(txId) }
+                // اول: اگر مقصدِ برداشت شماره‌کارت/حساب/شبای یکی از حساب‌های خودت است، همین حالا جابه‌جایی.
+                runCatching {
+                    val dest = if (parsed.type == TransactionType.WITHDRAWAL) accountRepository.ownDestinationOf(body, account.id) else null
+                    if (dest != null) accountRepository.markOwnTransfer(txId, dest.id) else accountRepository.pairAutoTransfer(txId)
+                }
                 // واحد **تومان** و رقمِ فارسی - قبلاً «ریال»ِ لاتین بود (بندِ ۹ی تحویلِ اعلان‌ها).
                 val amountToman = fmt(rialToToman(parsed.amountRial.toLong()).toDouble()).faDigits()
                 inboxRepository.post(

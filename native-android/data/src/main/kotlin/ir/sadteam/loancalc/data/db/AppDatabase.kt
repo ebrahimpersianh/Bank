@@ -39,7 +39,7 @@ import net.sqlcipher.database.SupportFactory
         DangItemShareEntity::class,
         SavingsGoalEntity::class,
     ],
-    version = 33,
+    version = 34,
     // برای اینکه بشه تستِ خودکارِ migration (Room.testing.MigrationTestHelper، رجوع کن به
     // data/src/androidTest/.../MigrationTest.kt و CLAUDE.md) نوشت، Room باید اسکیمای هر نسخه رو
     // به‌عنوانِ JSON خروجی بده - این فایل‌ها تو data/schemas/ کامیت می‌شن (مسیرش تو build.gradle.kts
@@ -513,6 +513,17 @@ abstract class AppDatabase : RoomDatabase() {
          * مهاجرت. هیچ ایندکسِ دستی هم ندارد، پس قاعده‌ی «هر CREATE INDEX باید در
          * `indices` انتیتی هم باشد» این‌جا موضوعیت ندارد.
          */
+        /**
+         * شماره‌حساب و شبای هر حساب (خواسته‌ی کاربر، ۶ مهر) - تا انتقال به حسابِ **خودِ کاربر**
+         * از روی شماره‌ی مقصد در پیامک شناخته شود. فقط دو ستونِ nullable، بی ایندکس.
+         */
+        private val MIGRATION_33_34 = object : Migration(33, 34) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE accounts ADD COLUMN accountNumber TEXT")
+                db.execSQL("ALTER TABLE accounts ADD COLUMN sheba TEXT")
+            }
+        }
+
         private val MIGRATION_32_33 = object : Migration(32, 33) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -687,6 +698,7 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_30_31,
                             MIGRATION_31_32,
                             MIGRATION_32_33,
+                            MIGRATION_33_34,
                         )
                         .fallbackToDestructiveMigration()
                         .build()

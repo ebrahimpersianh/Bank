@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -620,6 +622,7 @@ private fun MainSection(
                         accountName = accountName,
                         privacyMode = privacyMode,
                         categories = allCategoryEntries,
+                        onUnpair = { viewModel.unpairTransfer(tx) },
                     )
                 }
             }
@@ -644,6 +647,7 @@ private fun AccountingTransactionRow(
     accountName: String,
     privacyMode: Boolean,
     categories: List<CategoryEntry>,
+    onUnpair: () -> Unit = {},
 ) {
     val category = categories.find { it.name == tx.category } ?: findCategory(tx.category)
     val isIncome = tx.type == TransactionType.DEPOSIT.name
@@ -679,6 +683,19 @@ private fun AccountingTransactionRow(
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 2.dp),
                     )
+                    // جابه‌جاییِ تشخیصِ خودکار اشتباه‌پذیر است؛ یک تپ برای برگرداندنش.
+                    if (tx.sourceType == ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER && tx.description.contains("تشخیصِ خودکار")) {
+                        Text(
+                            "نه، این جابه‌جایی نبود",
+                            color = AppPrimary,
+                            fontSize = 11.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .heightIn(min = 32.dp)
+                                .clickable(onClick = onUnpair),
+                        )
+                    }
                 }
             }
             PrivacyCrossfade(privacyMode) { masked ->

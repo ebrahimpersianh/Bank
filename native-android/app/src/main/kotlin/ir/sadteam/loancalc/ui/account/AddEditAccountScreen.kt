@@ -80,6 +80,8 @@ fun AddEditAccountScreen(
     var bankName by remember { mutableStateOf(existing?.bankName ?: "") }
     var cardNumberText by remember { mutableStateOf(existing?.cardNumber ?: "") }
     var smsSenderText by remember { mutableStateOf(existing?.smsSender ?: "") }
+    var accountNumberText by remember { mutableStateOf(existing?.accountNumber ?: "") }
+    var shebaText by remember { mutableStateOf(existing?.sheba ?: "") }
     var initialBalanceText by remember {
         mutableStateOf(existing?.initialBalance?.toLong()?.let { rialToToman(it) }?.toString() ?: "")
     }
@@ -218,6 +220,41 @@ fun AddEditAccountScreen(
                         singleLine = true,
                     )
                 }
+            }
+        }
+        // شماره‌حساب و شبا (خواسته‌ی کاربر، ۶ مهر): هر دو اختیاری‌اند و فقط برای این‌که انتقال به
+        // حسابِ **خودت** از روی شماره‌ی مقصدِ پیامک شناخته شود و خرج حساب نشود.
+        item {
+            AppCard(label = "شماره حساب (اختیاری)") {
+                Ltr {
+                    OutlinedTextField(
+                        value = accountNumberText,
+                        onValueChange = { accountNumberText = cleanNum(it).take(26) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                }
+            }
+        }
+        item {
+            AppCard(label = "شبا (اختیاری)") {
+                Ltr {
+                    OutlinedTextField(
+                        value = shebaText,
+                        onValueChange = { shebaText = cleanNum(it).take(24) },
+                        prefix = { Text("IR") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                }
+                Text(
+                    "با این دو، انتقال به حساب‌های خودت خودکار «جابه‌جایی» حساب می‌شود، نه خرج.",
+                    color = AppMuted,
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
         }
         item {
@@ -361,12 +398,14 @@ fun AddEditAccountScreen(
                             // یتیم رو حسابِ نقدی بمونه (و بدتر: BankSmsReceiver باهاش مچ کنه).
                             val cardNumber = if (isBank) cardNumberText.trim().ifBlank { null } else null
                             val smsSender = if (isBank) smsSenderText.trim().ifBlank { null } else null
+                            val accountNumber = if (isBank) accountNumberText.trim().ifBlank { null } else null
+                            val sheba = if (isBank) shebaText.trim().ifBlank { null } else null
                             val finalBank = if (isBank) bankName.trim() else ""
                             val finalIcon = if (isBank) null else iconKey
                             if (existing == null) {
                                 viewModel.addAccount(
                                     name.trim(), finalBank, initialBalance, cardNumber, smsSender,
-                                    accountType, finalIcon,
+                                    accountType, finalIcon, accountNumber, sheba,
                                 )
                             } else {
                                 viewModel.updateAccount(
@@ -378,6 +417,8 @@ fun AddEditAccountScreen(
                                         smsSender = smsSender,
                                         type = accountType,
                                         iconKey = finalIcon,
+                                        accountNumber = accountNumber,
+                                        sheba = sheba,
                                     ),
                                 )
                             }

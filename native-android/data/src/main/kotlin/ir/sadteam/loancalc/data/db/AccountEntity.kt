@@ -43,6 +43,10 @@ data class AccountEntity(
      * جدول یا شمارنده. صفحه‌ی تنظیماتِ پیامک زیرنویسِ هر بانک رو از همین می‌سازه.
      */
     val lastSmsAt: Long? = null,
+    /** شماره‌حساب (اختیاری) - برای شناختنِ انتقال به حسابِ خودت از روی پیامک. فقط رقم. */
+    val accountNumber: String? = null,
+    /** شبا بدونِ «IR» (اختیاری) - همان کاربرد. */
+    val sheba: String? = null,
 )
 
 const val ACCOUNT_TYPE_BANK = "bank"

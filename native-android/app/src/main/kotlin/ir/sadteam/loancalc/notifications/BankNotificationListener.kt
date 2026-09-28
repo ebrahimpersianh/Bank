@@ -130,7 +130,11 @@ class BankNotificationListener : NotificationListenerService() {
                 originLabel = "اعلانِ ${appLabelOf(packageName)}",
             )
             // برداشت از یک حسابِ خودت + واریزِ همان مبلغ به حسابِ دیگرت = جابه‌جایی، نه خرج و درآمد.
-            runCatching { accountRepository.pairAutoTransfer(txId) }
+            // اول: اگر مقصدِ برداشت شماره‌کارت/حساب/شبای یکی از حساب‌های خودت است، همین حالا جابه‌جایی.
+            runCatching {
+                val dest = if (parsed.type == TransactionType.WITHDRAWAL) accountRepository.ownDestinationOf(body, account.id) else null
+                if (dest != null) accountRepository.markOwnTransfer(txId, dest.id) else accountRepository.pairAutoTransfer(txId)
+            }
             // منبعِ واحد: پیام اول اینجا ساخته می‌شه؛ اعلانِ گوشی از رو همین ردیف ساخته
             // می‌شه، نه مستقل.
             // واحد **تومان** و رقمِ فارسی (بندِ ۲ی README + لایه‌ی ارقام) - قبلاً «ریال»ِ

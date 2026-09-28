@@ -27,6 +27,9 @@ import java.util.TimeZone
 const val SOURCE_TYPE_TRANSFER = "transfer"
 
 /** دو پیامکِ یک جابه‌جایی معمولاً چند ثانیه تا چند دقیقه فاصله دارند؛ دو ساعت حاشیه‌ی امن است. */
+/** برچسبِ سمتِ واریزی که از روی شماره‌ی مقصدِ پیامکِ برداشت ساخته شده. */
+const val AUTO_DEST_LEG_LABEL = "تشخیصِ مقصدِ پیامک"
+
 const val TRANSFER_PAIR_WINDOW_MS = 2 * 60 * 60 * 1000L
 
 /** کلیدِ این بخش در جدولِ نسخه‌های ابری. */
@@ -78,6 +81,8 @@ class AccountRepository(
         smsSender: String? = null,
         type: String = ACCOUNT_TYPE_BANK,
         iconKey: String? = null,
+        accountNumber: String? = null,
+        sheba: String? = null,
     ) {
         accountDao.upsert(
             AccountEntity(
@@ -90,6 +95,8 @@ class AccountRepository(
                 smsSender = smsSender,
                 type = type,
                 iconKey = iconKey,
+                accountNumber = accountNumber,
+                sheba = sheba,
             ),
         )
     }
@@ -222,7 +229,18 @@ class AccountRepository(
     suspend fun pairAutoTransfer(txId: Long): Boolean = inTransaction {
         val tx = transactionDao.byId(txId) ?: return@inTransaction false
         if (tx.originLabel == null || tx.sourceType == SOURCE_TYPE_TRANSFER) return@inTransaction false
-        val match = observeTransactions().first()
+        // پیامکِ واریزِ حسابِ مقصد، بعد از این‌که سمتِ واریز از روی پیامکِ برداشت ساخته شده بود:
+        // تکراری است، پس حذف.
+        val all = observeTransactions().first()
+        if (tx.type == TransactionType.DEPOSIT.name && all.any {
+                it.originLabel == AUTO_DEST_LEG_LABEL && it.accountId == tx.accountId &&
+                    it.amount == tx.amount && kotlin.math.abs(it.id - tx.id) <= TRANSFER_PAIR_WINDOW_MS
+            }
+        ) {
+            transactionDao.delete(tx)
+            return@inTransaction true
+        }
+        val match = all
             .filter {
                 it.id != tx.id &&
                     it.accountId != tx.accountId &&
@@ -246,6 +264,67 @@ class AccountRepository(
             },
         )
         true
+    }
+
+    /**
+     * حسابِ **خودِ کاربر** که در متنِ پیامکِ برداشت به‌عنوانِ مقصد آمده - از روی شماره‌کارتِ
+     * کامل، شماره‌حساب یا شبا (رقم‌های فارسی هم پذیرفته می‌شوند). فقط شماره‌ی **کامل** ملاک است:
+     * چهار رقمِ آخر ممکن است مالِ خودِ کارتِ مبدأ باشد.
+     */
+    suspend fun ownDestinationOf(body: String, sourceAccountId: Long): AccountEntity? {
+        val digits = body.map { c -> if (c in '۰'..'۹') '0' + (c - '۰') else c }
+            .joinToString("")
+            .let { Regex("\\d[\\d\\-\\s]{7,40}\\d").findAll(it) }
+            .map { m -> m.value.filter(Char::isDigit) }
+            .toList()
+        if (digits.isEmpty()) return null
+        return observeAccounts().first().firstOrNull { acc ->
+            acc.id != sourceAccountId && listOfNotNull(acc.cardNumber, acc.accountNumber, acc.sheba)
+                .filter { it.length >= 8 }
+                .any { own -> digits.any { d -> d == own || d.endsWith(own) } }
+        }
+    }
+
+    /**
+     * برداشتِ خودکار که مقصدش حسابِ خودِ کاربر است → جابه‌جایی. سمتِ واریز هم همین‌جا ساخته
+     * می‌شود تا موجودیِ حسابِ مقصد درست باشد حتی اگر پیامکِ آن بانک هرگز نیاید.
+     */
+    suspend fun markOwnTransfer(txId: Long, toAccountId: Long) = inTransaction {
+        val tx = transactionDao.byId(txId) ?: return@inTransaction
+        if (tx.sourceType == SOURCE_TYPE_TRANSFER) return@inTransaction
+        val desc = "جابه‌جایی بینِ حساب‌های خودت (تشخیصِ خودکار)"
+        transactionDao.upsertAll(
+            listOf(
+                tx.copy(sourceType = SOURCE_TYPE_TRANSFER, sourceId = tx.id.toString(), category = null, description = desc),
+                tx.copy(
+                    id = tx.id + 1,
+                    accountId = toAccountId,
+                    type = TransactionType.DEPOSIT.name,
+                    sourceType = SOURCE_TYPE_TRANSFER,
+                    sourceId = tx.id.toString(),
+                    category = null,
+                    description = desc,
+                    originLabel = AUTO_DEST_LEG_LABEL,
+                ),
+            ),
+        )
+    }
+
+    /** «نه، این جابه‌جایی نبود» - هر دو سمت به تراکنشِ معمولی برمی‌گردند (سمتِ ساختگی حذف). */
+    suspend fun unpairTransfer(transaction: AccountTransactionEntity) = inTransaction {
+        val legs = transferLegsOf(transaction)
+        legs.filter { it.originLabel == AUTO_DEST_LEG_LABEL }.let { if (it.isNotEmpty()) transactionDao.deleteAll(it) }
+        transactionDao.upsertAll(
+            legs.filter { it.originLabel != AUTO_DEST_LEG_LABEL }.map {
+                val out = it.type == TransactionType.WITHDRAWAL.name
+                it.copy(
+                    sourceType = null,
+                    sourceId = null,
+                    category = if (out) "سایر هزینه" else "سایر درآمد",
+                    description = if (out) "برداشت" else "واریز",
+                )
+            },
+        )
     }
 
     /** تاییدِ یه تراکنشِ خودکار - از همین لحظه رو موجودی و گزارش‌ها اثر می‌ذاره. */
