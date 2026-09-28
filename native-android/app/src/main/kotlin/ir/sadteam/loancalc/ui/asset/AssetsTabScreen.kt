@@ -1,5 +1,9 @@
 package ir.sadteam.loancalc.ui.asset
 
+import ir.sadteam.loancalc.ui.components.AppFab
+import androidx.compose.animation.animateContentSize
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ExpandLess
 import ir.sadteam.loancalc.ui.components.AppCard
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
@@ -285,7 +289,6 @@ fun AssetsTabScreen(
             }
             if (nothingYet) {
                 item { NoAccountCard(onAddAccount = { showAddAccount = true }) }
-                item { StarterAssetTiles(onPick = { showAddAsset = true }) }
                 return@LazyColumn
             }
             item {
@@ -310,8 +313,7 @@ fun AssetsTabScreen(
                                 else -> showAccountList = true              // انتخاب لازمه
                             }
                         } else {
-                            // قرصِ دسته = فیلترِ همان دسته + رفتن به قرص‌ها (سرصفحه، هیرو، جست‌وجو، قرص‌ها).
-                            filter = key
+                            // قرص‌های دسته حذف شدند (خواسته‌ی کاربر، ۶ مهر)؛ فقط می‌رویم پایین سراغِ دارایی‌ها.
                             scope.launch { listState.animateScrollToItem(3) }
                         }
                     },
@@ -319,7 +321,6 @@ fun AssetsTabScreen(
             }
 
             item { AssetSearchBar(query) { query = it } }
-            item { AssetCategoryChips(filter) { filter = it } }
 
             val q = query.trim()
             val browsing = filter == null && q.isEmpty()
@@ -333,7 +334,7 @@ fun AssetsTabScreen(
 
             if (browsing) {
                 item {
-                    MarketOverviewSection(marketPrices, changes, assetViewModel, onSeeAll = { showPrices = true }, onOpen = ::openEntry)
+                    MarketOverviewSection(marketPrices, assetViewModel, onOpen = ::openEntry)
                 }
             }
 
@@ -349,8 +350,6 @@ fun AssetsTabScreen(
                         onOpen = { asset -> detailAsset = asset.id },
                     )
                 }
-            } else if (holdings.isEmpty() && browsing) {
-                item { StarterAssetTiles(onPick = { showAddAsset = true }) }
             }
 
             // حساب‌های بانکی می‌مانند (خواسته‌ی کاربر، ۳ مهر) - فقط وقتی فیلتر/جست‌وجو فعال نیست.
@@ -375,32 +374,17 @@ fun AssetsTabScreen(
                 }
             }
 
-            val market = assetCatalogGroups.flatMap { it.second }
-                .filter { it.category != ASSET_CATEGORY_CUSTOM && marketPrices[it.symbol] != null }
-                .filter { matches(it.name, it.symbol, it.category) }
-                .let { if (browsing) it.take(8) else it }
-            if (market.isNotEmpty()) {
-                item {
-                    MarketGridSection(market, marketPrices, assetViewModel, onSeeAll = { showPrices = true }, onOpen = ::openEntry)
-                }
-            }
         }
 
         // دکمه‌ی «+» شناور (طرحِ ChatGPT) - بالای نوارِ پایین.
-        if (!nothingYet) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 18.dp, bottom = 104.dp)
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(AppPrimary)
-                    .pressScaleClickable { showAddAsset = true },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = "افزودنِ دارایی", tint = Color.White, modifier = Modifier.size(26.dp))
-            }
-        }
+        // همان FABِ خانه - همان شکل و همان گوشه (خواسته‌ی کاربر، ۶ مهر).
+        if (!nothingYet) AppFab(
+            onClick = { showAddAsset = true },
+            contentDescription = "افزودنِ دارایی",
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 16.dp, bottom = 16.dp),
+        )
         buyEntry?.let { e ->
             Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
                 AssetTradeSheet(
@@ -672,71 +656,6 @@ private fun NoAccountCard(onAddAccount: () -> Unit) {
                 .background(AppPrimary)
                 .pressScaleClickable(onClick = onAddAccount)
                 .padding(vertical = 15.dp),
-        )
-    }
-}
-
-/** «یا اینها را ثبت کن» - سه کاشیِ طلا / ارز / رمز ارز. «نقد» رفت: کارتِ «افزودنِ حساب» بالایش
- * همون کار رو می‌کنه - دو راهِ هم‌معنی تو یه صفحه لازم نبود. */
-@Composable
-private fun StarterAssetTiles(onPick: () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
-        SectionHeader(title = "دارایی‌ها را ثبت کنید", actionLabel = "مشاهده‌ی همه", onAction = onPick)
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            StarterTile("طلا", "طلای آب‌شده، سکه و …", AppWarningPill, modifier = Modifier.weight(1f), onClick = onPick) {
-                CoinIcon(22.dp)
-            }
-            StarterTile("ارز", "دلار، یورو و …", AppPrimaryPill, modifier = Modifier.weight(1f), onClick = onPick) {
-                AssetBadge("USD", ASSET_CATEGORY_FIAT, 26.dp)
-            }
-            StarterTile("رمز ارز", "بیت‌کوین، تتر و …", AppWarningPill, modifier = Modifier.weight(1f), onClick = onPick) {
-                AssetBadge("BTC", ASSET_CATEGORY_CRYPTO, 26.dp)
-            }
-        }
-    }
-}
-
-@Composable
-private fun StarterTile(
-    label: String,
-    hint: String,
-    iconBg: Color,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-    icon: @Composable () -> Unit,
-) {
-    val shape = RoundedCornerShape(18.dp)
-    Column(
-        modifier = modifier
-            .shadow(1.dp, shape, clip = false)
-            .clip(shape)
-            .background(AppSurface)
-            .border(1.dp, AppLine, shape)
-            .pressScaleClickable(onClick = onClick)
-            // تقریباً مربع (خواسته‌ی کاربر، ۳ مهر): کاشی‌ها بلند بودند.
-            .aspectRatio(0.95f)
-            .padding(horizontal = 8.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Box(
-            modifier = Modifier.size(36.dp).clip(CircleShape).background(iconBg),
-            contentAlignment = Alignment.Center,
-        ) { icon() }
-        Text(
-            label,
-            color = AppText,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Black,
-            modifier = Modifier.padding(top = 5.dp),
-        )
-        Text(
-            hint,
-            color = AppMuted,
-            fontSize = 9.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 1.dp),
         )
     }
 }
@@ -1286,45 +1205,6 @@ private fun AssetSearchBar(value: String, onChange: (String) -> Unit) {
     }
 }
 
-@Composable
-private fun AssetCategoryChips(selected: String?, onSelect: (String?) -> Unit) {
-    val chips = listOf(
-        Triple<String?, String, String?>(null, "همه", null),
-        Triple(ASSET_CATEGORY_GOLD, "طلا", "GOLD_18"),
-        Triple(ASSET_CATEGORY_FIAT, "ارز", "USD"),
-        Triple(ASSET_CATEGORY_CRYPTO, "رمز ارز", "BTC"),
-    )
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-    ) {
-        chips.forEach { (cat, label, symbol) ->
-            val on = selected == cat
-            val shape = RoundedCornerShape(999.dp)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .heightIn(min = 44.dp)
-                    .clip(shape)
-                    .background(if (on) AppPrimary else AppSurface)
-                    .border(1.dp, if (on) AppPrimary else AppLine, shape)
-                    .pressScaleClickable { onSelect(cat) }
-                    .padding(horizontal = 16.dp),
-            ) {
-                if (symbol == null) {
-                    Icon(Icons.Filled.GridView, contentDescription = null, tint = if (on) Color.White else AppMuted, modifier = Modifier.size(18.dp))
-                } else if (cat == ASSET_CATEGORY_GOLD) {
-                    CoinIcon(22.dp)
-                } else {
-                    AssetBadge(symbol, cat!!, 24.dp)
-                }
-                Text(label, color = if (on) Color.White else AppText, fontSize = 12.sp, fontWeight = FontWeight.Black)
-            }
-        }
-    }
-}
-
 /** سرگروهِ «نمای کلیِ بازار» / «دارایی‌های من» / «بازار» با «مشاهده‌ی همه». */
 @Composable
 private fun MarketSectionTitle(title: String, onSeeAll: (() -> Unit)?) {
@@ -1342,58 +1222,94 @@ private fun MarketSectionTitle(title: String, onSeeAll: (() -> Unit)?) {
     }
 }
 
-/** سه کارتِ طلا/دلار/بیت‌کوین - قیمت، تغییرِ ۳۰روزه و نمودارِ کوچک. */
+/**
+ * سه کارتِ طلا/دلار/بیت‌کوین. «مشاهده‌ی همه» همین‌جا باز می‌شود: زیرِ طلا بقیه‌ی طلا و سکه،
+ * زیرِ دلار بقیه‌ی ارزها، زیرِ بیت‌کوین بقیه‌ی رمزارزها (خواسته‌ی کاربر، ۶ مهر). پیش‌فرض بسته.
+ */
 @Composable
 private fun MarketOverviewSection(
     prices: Map<String, Double>,
-    changes: Map<String, Double>,
     viewModel: AssetViewModel,
-    onSeeAll: () -> Unit,
     onOpen: (AssetCatalogEntry) -> Unit,
 ) {
     val all = remember { assetCatalogGroups.flatMap { it.second } }
     val picks = listOf("GOLD_18", "USD", "BTC").mapNotNull { s -> all.firstOrNull { it.symbol == s } }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     AppCard(contentPadding = 12.dp) {
-        MarketSectionTitle("نمای کلیِ بازار", onSeeAll)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-            picks.forEach { e ->
-                val change = rememberDailyChange(e.symbol, viewModel)
-                val shape = RoundedCornerShape(16.dp)
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(shape)
-                        .border(1.dp, AppLine, shape)
-                        .pressScaleClickable { onOpen(e) }
-                        .padding(8.dp),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        AssetBadge(e.symbol, e.category, 30.dp)
-                        Text(
-                            e.name,
-                            color = AppText,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Black,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(start = 6.dp),
-                        )
-                    }
-                    Text(
-                        prices[e.symbol]?.rialToFaCompact() ?: "—",
-                        color = AppText,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
-                    Text("تومان", color = AppMuted, fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                        change?.let { PriceChangeBadge(it) }
-                        MiniTrend(e.symbol, change, viewModel, modifier = Modifier.weight(1f).padding(start = 4.dp), height = 20.dp)
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("نمای کلیِ بازار", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.heightIn(min = 44.dp).pressScaleClickable { expanded = !expanded }.padding(horizontal = 4.dp),
+            ) {
+                Text(if (expanded) "بستن" else "مشاهده‌ی همه", color = AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                Icon(
+                    if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = null,
+                    tint = AppPrimaryInk,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.Top,
+            modifier = Modifier.padding(top = 8.dp).animateContentSize(),
+        ) {
+            picks.forEach { pick ->
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MarketMiniCard(pick, prices, viewModel, onOpen)
+                    if (expanded) {
+                        all.filter { it.category == pick.category && it.symbol != pick.symbol && prices[it.symbol] != null }
+                            .forEach { MarketMiniCard(it, prices, viewModel, onOpen) }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun MarketMiniCard(
+    e: AssetCatalogEntry,
+    prices: Map<String, Double>,
+    viewModel: AssetViewModel,
+    onOpen: (AssetCatalogEntry) -> Unit,
+) {
+    val change = rememberDailyChange(e.symbol, viewModel)
+    val shape = RoundedCornerShape(16.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .border(1.dp, AppLine, shape)
+            .pressScaleClickable { onOpen(e) }
+            .padding(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AssetBadge(e.symbol, e.category, 30.dp)
+            Text(
+                e.name,
+                color = AppText,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 6.dp),
+            )
+        }
+        Text(
+            prices[e.symbol]?.rialToFaCompact() ?: "—",
+            color = AppText,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        Text("تومان", color = AppMuted, fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+            change?.let { PriceChangeBadge(it) }
+            MiniTrend(e.symbol, change, viewModel, modifier = Modifier.weight(1f).padding(start = 4.dp), height = 20.dp)
         }
     }
 }
@@ -1456,45 +1372,3 @@ private fun MyAssetsSection(
     }
 }
 
-/** «بازار» - کاشی‌های دوتایی: نشان، نام، نماد، قیمت و تغییر. */
-@Composable
-private fun MarketGridSection(
-    entries: List<AssetCatalogEntry>,
-    prices: Map<String, Double>,
-    viewModel: AssetViewModel,
-    onSeeAll: () -> Unit,
-    onOpen: (AssetCatalogEntry) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        MarketSectionTitle("بازار", onSeeAll)
-        entries.chunked(2).forEach { pair ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                pair.forEach { e ->
-                    val shape = RoundedCornerShape(18.dp)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(shape)
-                            .background(AppSurface)
-                            .border(1.dp, AppLine, shape)
-                            .pressScaleClickable { onOpen(e) }
-                            .padding(horizontal = 10.dp, vertical = 10.dp),
-                    ) {
-                        AssetBadge(e.symbol, e.category, 34.dp)
-                        Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                            Text(e.name, color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Ltr { Text(e.symbol, color = AppMuted, fontSize = 8.5.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(prices[e.symbol]?.rialToFaCompact() ?: "—", color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
-                            Text("تومان", color = AppMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                            rememberDailyChange(e.symbol, viewModel)?.let { PriceChangeBadge(it, modifier = Modifier.padding(top = 2.dp)) }
-                        }
-                    }
-                }
-                if (pair.size == 1) Spacer(modifier = Modifier.weight(1f))
-            }
-        }
-    }
-}
