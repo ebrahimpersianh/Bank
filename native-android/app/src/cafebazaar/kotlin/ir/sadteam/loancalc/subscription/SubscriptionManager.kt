@@ -24,12 +24,6 @@ val subscriptionTiers = listOf(
     "unlimited_loans_1y" to "اشتراک ۱ ساله",
 )
 
-/** «همیشگی» - خریدِ یک‌باره (برگرفته از پولکس، ۶ مهر). جدا از فهرستِ بالا چون در شبکه‌ی چهارتایی
- * نمی‌نشیند؛ صفحه‌ی اشتراک فقط وقتی نشانش می‌دهد که استور برایش قیمت برگرداند (یعنی در پنل ساخته شده). */
-const val LIFETIME_PRODUCT_ID = "unlimited_loans_lifetime"
-
-val allProductIds: List<String> get() = subscriptionTiers.map { it.first } + LIFETIME_PRODUCT_ID
-
 /**
  * پوششی رو SDK بومی Poolakey (نه پلاگین Capacitor نسخه‌ی وب - همون کتابخونه‌ی زیرینش، ولی
  * مستقیم). عمداً Hilt-managed نیست چون `Payment`/`activityResultRegistry` به خودِ Activity

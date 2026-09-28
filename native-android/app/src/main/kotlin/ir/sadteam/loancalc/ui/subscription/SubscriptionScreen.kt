@@ -36,7 +36,6 @@ import ir.sadteam.loancalc.ui.settings.SettingsTone
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -146,7 +145,7 @@ fun SubscriptionScreen(
 
     LaunchedEffect(subscriptionManager) {
         subscriptionManager?.getPrices(
-            productIds = ir.sadteam.loancalc.subscription.allProductIds,
+            productIds = subscriptionTiers.map { it.first },
             onResult = { prices = it },
             onError = { },
         )
@@ -266,7 +265,6 @@ fun SubscriptionScreen(
                             "3m" -> "سه‌ماهه"
                             "6m" -> "شش‌ماهه"
                             "1y" -> "یک‌ساله"
-                            "life" -> "همیشگی"
                             else -> null
                         }
                         Text(
@@ -381,23 +379,6 @@ fun SubscriptionScreen(
                                     }
                                 }
                             }
-                            val lifetimePrice = prices[ir.sadteam.loancalc.subscription.LIFETIME_PRODUCT_ID]
-                            if (lifetimePrice != null) {
-                                val lifeSelected = selectedProductId == ir.sadteam.loancalc.subscription.LIFETIME_PRODUCT_ID
-                                ir.sadteam.loancalc.ui.components.AppCard(
-                                    modifier = Modifier.clickable { selectedProductId = ir.sadteam.loancalc.subscription.LIFETIME_PRODUCT_ID },
-                                    borderColor = if (lifeSelected) AppPrimary else null,
-                                    contentPadding = 12.dp,
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text("همیشگی", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
-                                            Text("یک بار بپرداز، برای همیشه - بی تمدید", color = AppMuted, fontSize = 11.sp)
-                                        }
-                                        Text(lifetimePrice, color = AppPrimary, fontSize = 13.sp, fontWeight = FontWeight.Black)
-                                    }
-                                }
-                            }
                         }
                     }
                 }
@@ -407,8 +388,7 @@ fun SubscriptionScreen(
         // ── دکمه‌ی خرید - به پلنِ انتخاب‌شده وصل است ─────────────────────────────────────
         if (subscriptionManager != null) {
             item {
-                val label = subscriptionTiers.firstOrNull { it.first == selectedProductId }?.second
-                    ?: if (selectedProductId == ir.sadteam.loancalc.subscription.LIFETIME_PRODUCT_ID) "اشتراک همیشگی" else ""
+                val label = subscriptionTiers.firstOrNull { it.first == selectedProductId }?.second ?: ""
                 val busy = purchasingProductId != null
                 Row(
                     modifier = Modifier

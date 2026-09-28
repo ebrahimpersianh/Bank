@@ -38,7 +38,6 @@ fun tierDisplayName(tier: String?): String = when (tier) {
     "3m" -> "اشتراک سه‌ماهه"
     "6m" -> "اشتراک شش‌ماهه"
     "1y" -> "اشتراک یک‌ساله"
-    "life" -> "اشتراک همیشگی"
     else -> "اشتراک"
 }
 
