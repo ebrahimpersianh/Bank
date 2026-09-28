@@ -16,7 +16,22 @@ import javax.inject.Inject
 @HiltViewModel
 class DebtViewModel @Inject constructor(
     private val debtRepository: DebtRepository,
+    private val accountRepository: ir.sadteam.loancalc.data.AccountRepository,
 ) : ViewModel() {
+    val accounts = accountRepository.observeAccounts()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** پولی که واقعاً جابه‌جا شد (تسویه یا پرداختِ بخشی) - از/به حساب (بخشِ «اتصالِ پرداخت‌ها»). */
+    fun recordMoney(accountId: Long, sourceId: String, amount: Double, deposit: Boolean, description: String) {
+        viewModelScope.launch {
+            accountRepository.recordLinkedPayment(accountId, "debt", sourceId, amount, description, deposit, category = "طلب و بدهی")
+        }
+    }
+
+    fun unrecordMoney(sourceId: String) {
+        viewModelScope.launch { accountRepository.removeLinkedPayment("debt", sourceId) }
+    }
+
     val counterparties: StateFlow<List<CounterpartyEntity>> = debtRepository.observeCounterparties()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

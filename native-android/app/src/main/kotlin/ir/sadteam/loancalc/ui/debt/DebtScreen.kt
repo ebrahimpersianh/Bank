@@ -90,6 +90,18 @@ fun DebtScreen(
 ) {
     val counterparties by viewModel.counterparties.collectAsState()
     val debts by viewModel.debts.collectAsState()
+    val accounts by viewModel.accounts.collectAsState()
+    // «این پول از/به کدام حساب رفت؟» - بعد از تسویه یا پرداختِ بخشی. رد کردن = ثبت نشود.
+    data class MoneyPrompt(val sourceId: String, val amount: Double, val deposit: Boolean, val description: String)
+    var moneyPrompt by remember { mutableStateOf<MoneyPrompt?>(null) }
+    moneyPrompt?.let { p ->
+        ir.sadteam.loancalc.ui.components.AccountPickerDialog(
+            accounts = accounts,
+            title = if (p.deposit) "این پول به کدام حساب آمد؟" else "این پول از کدام حساب رفت؟",
+            onSelect = { acc -> viewModel.recordMoney(acc.id, p.sourceId, p.amount, p.deposit, p.description); moneyPrompt = null },
+            onDismiss = { moneyPrompt = null },
+        )
+    }
     var openedCounterpartyId by rememberSaveable { mutableStateOf(initialCounterpartyId) }
     var showAddCounterparty by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<CounterpartyEntity?>(null) }
@@ -167,9 +179,28 @@ fun DebtScreen(
                     onUpdate = { viewModel.updateCounterparty(it) },
                     onAddDebt = { amount, type, description, y, m, d ->
                         viewModel.addDebt(counterparty.id, amount, type, description, y, m, d)
+                        // پرداخت/دریافتِ بخشی یعنی پول واقعاً جابه‌جا شد.
+                        if (accounts.isNotEmpty() && (description.startsWith("دریافتِ بخشی") || description.startsWith("پرداختِ بخشی"))) {
+                            moneyPrompt = MoneyPrompt(
+                                "p:${counterparty.id}:${System.currentTimeMillis()}",
+                                amount,
+                                deposit = description.startsWith("دریافتِ بخشی"),
+                                description = "$description - ${counterparty.name}",
+                            )
+                        }
                     },
                     onToggleSettled = { debt, settled ->
                         viewModel.setSettled(debt, settled)
+                        if (settled && accounts.isNotEmpty()) {
+                            moneyPrompt = MoneyPrompt(
+                                debt.id.toString(),
+                                debt.amount,
+                                deposit = debt.type == DebtType.OWED_TO_ME.name,
+                                description = "تسویه با ${counterparty.name}",
+                            )
+                        } else if (!settled) {
+                            viewModel.unrecordMoney(debt.id.toString())
+                        }
                         // اگه این تسویه، آخرین ردیفِ بازِ این طرف‌حساب رو ببنده → جشن.
                         if (settled) {
                             val stillOpen = debts.any {
