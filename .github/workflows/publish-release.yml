@@ -42,7 +42,7 @@ jobs:
         run: |
           gh release create "${{ inputs.tag }}" \
             --repo ${{ github.repository }} \
-            --title "وام من - نسخه‌ی ${{ inputs.tag }}" \
+            --title "حسابدار من - نسخه‌ی ${{ inputs.tag }}" \
             --notes "منتشرشده از رانِ build-native-android.yml شماره‌ی #${{ inputs.run_id }}." \
             "release-apks/loan-calculator-native-release-apk/app-cafebazaar-release.apk#وام-من-کافه‌بازار-${{ inputs.tag }}.apk" \
             "release-apks/loan-calculator-native-myket-release-apk/app-myket-release.apk#وام-من-مایکت-${{ inputs.tag }}.apk"

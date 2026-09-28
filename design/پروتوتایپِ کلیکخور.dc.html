@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EFEAE2}
+a{color:#0EA968}a:hover{color:#0B8C57}
+[data-theme="light"]{--bg:#F5FBFF;--surf:#FFFFFF;--surf2:#F7FAF8;--line:#E3ECE7;--line2:#EEF3F0;--txt:#16221C;--txt2:#5b6a63;--txt3:#8b9a93;--chip:#F1F5F2;--green:#0EA968;--greenD:#0B8C57;--greenSoft:#E9F7EF;--red:#FF4B4B;--redD:#D93838;--redSoft:#FFF5F5;--redLine:#FFC9C9;--orange:#FF9600;--purple:#A56EFF;--blue:#1CB0F6;--gold1:#FFFCF4;--gold2:#F3E7CE;--goldLine:#EBD9B4;--goldTxt:#8B6F3D;--shell:#dbe6e0;--nsh:#E8EFEB;--off:#DDE7E2;--offTxt:#94A5A0}
+[data-theme="dark"]{--bg:#10181F;--surf:#1B2530;--surf2:#161F28;--line:#2A3640;--line2:#232E38;--txt:#F3F7F5;--txt2:#9FB0AA;--txt3:#7F8F89;--chip:#232E38;--green:#17C57D;--greenD:#0B8C57;--greenSoft:#16302A;--red:#FF6B6B;--redD:#FF4B4B;--redSoft:#2A1D22;--redLine:#4A2C31;--orange:#FFA733;--purple:#B98CFF;--blue:#4FC3FF;--gold1:#242018;--gold2:#1B1712;--goldLine:#3A3226;--goldTxt:#D9C79B;--shell:#05090c;--nsh:#0C1319;--off:#232E38;--offTxt:#6C7B75}
+@keyframes jibakFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes jibakCoinFeed{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-7px) rotate(4deg)}}
+@keyframes jibakPopIn{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes jibakFadeUp{0%{transform:translateY(10px);opacity:0}100%{transform:translateY(0);opacity:1}}
+@keyframes jibakSheetUp{0%{transform:translateY(100%)}100%{transform:translateY(0)}}
+@keyframes jibakToast{0%{transform:translateY(14px);opacity:0}12%{transform:translateY(0);opacity:1}82%{transform:translateY(0);opacity:1}100%{transform:translateY(-6px);opacity:0}}
+</style>
+</helmet>
+
+<div style="direction:rtl;font-family:Vazirmatn,sans-serif;color:#16221C;background:#EFEAE2;min-height:100vh;padding:34px 34px 60px;display:flex;flex-direction:column;gap:22px;align-items:center;box-sizing:border-box">
+
+  <div style="width:100%;max-width:960px;display:flex;flex-wrap:wrap;align-items:center;gap:14px">
+    <div style="display:flex;flex-direction:column;gap:7px;flex:1;min-width:280px">
+      <div style="background:#16221C;color:#FFFFFF;font-weight:900;font-size:11.5px;padding:5px 13px;border-radius:999px;align-self:flex-start">پروتوتایپِ کلیک‌خور</div>
+      <div style="font-size:25px;font-weight:900">جیبک — واقعاً کار می‌کند</div>
+      <div style="font-size:12.5px;color:#5b6a63;line-height:1.9;max-width:660px;text-wrap:pretty">ورود با شماره و کدِ پنج‌رقمی، ثبتِ تراکنش با صفحه‌کلیدِ عددی، پرداختِ قسط، جابه‌جایی بین پنج تب. کلیدِ ماه/خورشید همان فرمولِ تمِ تیره را زنده روی همه‌ی صفحه‌ها اعمال می‌کند.</div>
+    </div>
+    <div style="display:flex;gap:9px;align-items:center">
+      <div onClick="{{ toggleTheme }}" style="border-radius:999px;padding:11px 15px;background:#FFFFFF;border:2px solid #E3ECE7;box-shadow:0 3px 0 #E1E7E2;font-size:12px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:8px" style-hover="background:#F7FAF8">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16221C" stroke-width="2.3" stroke-linecap="round"><path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"/></svg>
+        <span>{{ themeLabel }}</span>
+      </div>
+      <div onClick="{{ reset }}" style="border-radius:999px;padding:11px 15px;background:#FFFFFF;border:2px solid #E3ECE7;box-shadow:0 3px 0 #E1E7E2;font-size:12px;font-weight:900;cursor:pointer" style-hover="background:#F7FAF8">از اول</div>
+    </div>
+  </div>
+
+  <div data-theme="{{ theme }}" style="width:336px;border-radius:40px;padding:9px;background:var(--shell);flex:none">
+    <div style="border-radius:32px;background:var(--bg);overflow:hidden;height:748px;display:flex;flex-direction:column;position:relative;color:var(--txt)">
+
+      <sc-if value="{{ isSplash }}" hint-placeholder-val="{{ true }}">
+        <div onClick="{{ goLogin }}" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:radial-gradient(circle at 50% 42%,#17C57D,#0EA968 68%);cursor:pointer">
+          <div style="width:110px;height:110px;border-radius:30px;background:radial-gradient(circle at 35% 25%,#17C57D,#0EA968 65%);display:flex;align-items:center;justify-content:center;box-shadow:0 7px 0 rgba(0,0,0,.2);animation:jibakPopIn .7s cubic-bezier(.34,1.56,.64,1) both,jibakFloat 3.2s ease-in-out infinite .7s">
+            <div style="width:76px;height:58px;position:relative;margin-top:13px">
+              <div style="position:absolute;bottom:0;width:76px;height:46px;border-radius:8px 8px 18px 18px;background:linear-gradient(165deg,#3DDC96,#0EA968 62%,#0B8C57);box-shadow:inset 0 2px 0 rgba(255,255,255,.9),inset 0 -4px 0 rgba(0,0,0,.12)"></div>
+              <div style="position:absolute;bottom:5px;left:5px;right:5px;top:22px;border-radius:5px 5px 13px 13px;border:1.5px dashed rgba(255,255,255,.4)"></div>
+              <div style="position:absolute;top:1px;left:4px;width:54px;height:29px;border-radius:10px 10px 21px 21px;background:linear-gradient(165deg,#2FBF83,#0B8C57);transform:rotate(-3deg);transform-origin:bottom left;box-shadow:0 3px 5px rgba(0,0,0,.15)"><div style="position:absolute;top:16px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#FFF6DE,#FFC64D 50%,#B96A00)"></div></div>
+              <div style="position:absolute;top:-12px;left:1px;width:28px;height:17px;border-radius:3px;background:linear-gradient(135deg,#FFFDF8,#EFE3C6);transform:rotate(-14deg);box-shadow:0 3px 5px rgba(0,0,0,.18);z-index:1"><div style="position:absolute;top:5px;left:4px;right:4px;height:1.4px;background:rgba(139,111,61,.4)"></div></div>
+              <div style="position:absolute;top:-9px;right:1px;width:21px;height:21px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#FFF6DE 0%,#FFDD8A 22%,#FFC64D 50%,#E8940A 78%,#B96A00 93%);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.35),0 2px 4px rgba(0,0,0,.22);z-index:2;animation:jibakCoinFeed 2.2s ease-in-out infinite"></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:7px;animation:jibakFadeUp .6s ease-out .4s both">
+            <div style="font-size:26px;font-weight:900;color:#FFFFFF">جیبک</div>
+            <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">حسابدارِ جیبیِ تو</div>
+          </div>
+          <div style="position:absolute;bottom:34px;font-size:11.5px;font-weight:800;color:rgba(255,255,255,.8);animation:jibakFadeUp .6s ease-out .9s both">برای شروع بزن</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;padding:20px 18px 16px;box-sizing:border-box">
+          <div onClick="{{ goSplash }}" style="cursor:pointer;width:26px;height:26px;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="2.6" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+          <div style="font-size:20px;font-weight:900;margin-top:12px">شماره‌ی موبایلت را وارد کن</div>
+          <div style="font-size:11.5px;color:var(--txt2);line-height:1.9;margin-top:7px">یک کدِ پنج‌رقمی می‌فرستیم. داده‌هایت روی همین گوشی می‌ماند؛ شماره فقط برای پشتیبان‌گیری است.</div>
+          <div style="border-radius:16px;padding:15px;background:var(--surf);border:2px solid {{ phoneBorder }};display:flex;align-items:center;gap:10px;margin-top:16px">
+            <div style="font-size:15px;font-weight:900;direction:ltr;letter-spacing:.5px;color:{{ phoneColor }}">{{ phoneDisplay }}</div>
+            <div style="flex:1"></div>
+            <sc-if value="{{ phoneDone }}" hint-placeholder-val="{{ false }}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.6" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></sc-if>
+          </div>
+          <div onClick="{{ sendCode }}" style="border-radius:999px;padding:15px;background:{{ sendBg }};box-shadow:{{ sendShadow }};color:{{ sendColor }};font-size:14px;font-weight:900;text-align:center;margin-top:14px;cursor:pointer">فرستادنِ کد</div>
+          <div style="margin-top:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:9px;direction:ltr">
+            <sc-for list="{{ keys }}" as="k" hint-placeholder-count="12">
+              <div onClick="{{ k.press }}" style="height:54px;border-radius:16px;background:var(--surf);border:2px solid var(--line);box-shadow:0 3px 0 var(--nsh);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:900;cursor:pointer;user-select:none;color:var(--txt)" style-active="transform:translateY(2px);box-shadow:0 1px 0 var(--nsh)">{{ k.label }}</div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isOtp }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;padding:20px 18px 16px;box-sizing:border-box">
+          <div onClick="{{ goLogin }}" style="cursor:pointer;width:26px;height:26px;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="2.6" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></div>
+          <div style="font-size:19px;font-weight:900;margin-top:12px;text-align:center">کدِ پنج‌رقمی را بزن</div>
+          <div style="font-size:11px;color:var(--txt2);text-align:center;margin-top:7px">به {{ phoneDisplay }} · <span onClick="{{ goLogin }}" style="color:var(--green);font-weight:800;cursor:pointer">تغییرِ شماره</span></div>
+          <div style="display:flex;gap:6px;direction:ltr;margin-top:18px">
+            <sc-for list="{{ otpBoxes }}" as="b" hint-placeholder-count="5">
+              <div style="flex:1;height:56px;border-radius:14px;background:var(--surf);border:2px {{ b.border }};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:var(--txt)">{{ b.d }}</div>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:14px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+            <div style="font-size:11px;color:var(--txt2);font-weight:700">ارسالِ دوباره تا {{ countdown }}</div>
+          </div>
+          <div style="margin-top:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:9px;direction:ltr">
+            <sc-for list="{{ keys }}" as="k" hint-placeholder-count="12">
+              <div onClick="{{ k.press }}" style="height:54px;border-radius:16px;background:var(--surf);border:2px solid var(--line);box-shadow:0 3px 0 var(--nsh);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:900;cursor:pointer;user-select:none;color:var(--txt)" style-active="transform:translateY(2px);box-shadow:0 1px 0 var(--nsh)">{{ k.label }}</div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isApp }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+
+          <div style="padding:15px 16px 11px;display:flex;align-items:center;gap:10px;flex:none;background:var(--surf);border-bottom:2px solid var(--line2)">
+            <div style="font-size:17px;font-weight:900;flex:1">{{ tabTitle }}</div>
+            <div onClick="{{ goSearch }}" style="width:34px;height:34px;border-radius:11px;background:var(--chip);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--txt2)" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg></div>
+            <div onClick="{{ goNotif }}" style="width:34px;height:34px;border-radius:11px;background:var(--chip);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--txt2)" stroke-width="2.4" stroke-linecap="round"><path d="M18 15V10a6 6 0 10-12 0v5l-2 3h16z"/><path d="M10 21h4"/></svg><sc-if value="{{ hasUnread }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--red);border:1.5px solid var(--surf)"></div></sc-if></div>
+            <div onClick="{{ goMe }}" style="width:34px;height:34px;border-radius:11px;background:var(--greenSoft);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;font-weight:900;color:var(--green)">ا</div>
+          </div>
+
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+
+            <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+              <div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+                <div style="border-radius:22px;padding:17px;background:linear-gradient(165deg,var(--gold1),var(--gold2));border:1.5px solid var(--goldLine)">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div style="font-size:10.5px;font-weight:800;color:var(--goldTxt)">ماندهٔ کل · شهریور</div>
+                    <div onClick="{{ toggleHide }}" style="cursor:pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--goldTxt)" stroke-width="2.2" stroke-linecap="round"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="2.6"/></svg></div>
+                  </div>
+                  <div style="font-size:27px;font-weight:900;margin-top:8px;color:{{ goldTextColor }}">{{ balanceText }}</div>
+                  <div style="height:1px;background:rgba(139,111,61,.32);margin:13px 0"></div>
+                  <div style="display:flex;gap:14px">
+                    <div style="flex:1"><div style="font-size:9.5px;font-weight:800;color:var(--goldTxt)">درآمدِ ماه</div><div style="font-size:13px;font-weight:900;color:var(--green);margin-top:3px">{{ incomeText }}</div></div>
+                    <div style="width:1px;background:rgba(139,111,61,.32)"></div>
+                    <div style="flex:1"><div style="font-size:9.5px;font-weight:800;color:var(--goldTxt)">خرجِ ماه</div><div style="font-size:13px;font-weight:900;color:var(--red);margin-top:3px">{{ expenseText }}</div></div>
+                  </div>
+                </div>
+
+                <div style="display:flex;gap:10px">
+                  <div onClick="{{ openSheetOut }}" style="flex:1;border-radius:18px;padding:14px;background:var(--green);box-shadow:0 4px 0 var(--greenD);color:#FFFFFF;font-size:13px;font-weight:900;text-align:center;cursor:pointer" style-active="transform:translateY(2px);box-shadow:0 2px 0 var(--greenD)">ثبتِ خرج</div>
+                  <div onClick="{{ openSheetIn }}" style="flex:1;border-radius:18px;padding:14px;background:var(--surf);border:2px solid var(--green);color:var(--green);font-size:13px;font-weight:900;text-align:center;cursor:pointer;box-sizing:border-box" style-active="transform:translateY(2px)">ثبتِ درآمد</div>
+                </div>
+
+                <div style="border-radius:18px;padding:13px 14px;background:var(--surf);border:2px solid var(--line);display:flex;align-items:center;gap:12px">
+                  <div style="width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#FFF6DE 0%,#FFDD8A 22%,#FFC64D 50%,#E8940A 78%,#B96A00 93%);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.35);flex:none;animation:jibakCoinFeed 2.4s ease-in-out infinite"></div>
+                  <div style="flex:1"><div style="font-size:12.5px;font-weight:900">{{ streakText }} روز فعال</div><div style="font-size:10px;color:var(--txt2);margin-top:2px">امروز هم ثبت کردی. ادامه بده.</div></div>
+                  <div style="font-size:11px;font-weight:900;color:var(--goldTxt)">+۵۰</div>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px">
+                  <div style="font-size:10.5px;font-weight:900;color:var(--txt3)">تراکنش‌های اخیر</div>
+                  <div style="font-size:10.5px;font-weight:800;color:var(--green)">{{ txnCountText }}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:9px;overflow:hidden">
+                  <sc-for list="{{ txns }}" as="t" hint-placeholder-count="4">
+                    <div style="border-radius:16px;padding:12px 13px;background:var(--surf);border:2px solid var(--line2);display:flex;align-items:center;gap:11px;animation:{{ t.anim }}">
+                      <div style="width:32px;height:32px;border-radius:10px;background:{{ t.tint }};display:flex;align-items:center;justify-content:center;flex:none;font-size:14px;font-weight:900;color:{{ t.iconColor }}">{{ t.initial }}</div>
+                      <div style="flex:1"><div style="font-size:12px;font-weight:800">{{ t.title }}</div><div style="font-size:9.5px;color:var(--txt2);margin-top:2px">{{ t.meta }}</div></div>
+                      <div style="font-size:11.5px;font-weight:900;color:{{ t.color }};flex:none">{{ t.amountText }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isBudget }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+                <div style="border-radius:22px;padding:17px;background:var(--surf);border:2px solid var(--line);display:flex;align-items:center;gap:16px">
+                  <div style="position:relative;width:74px;height:74px;flex:none">
+                    <svg width="74" height="74" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="var(--line)" stroke-width="5"/><circle cx="20" cy="20" r="16" fill="none" stroke="var(--purple)" stroke-width="5" stroke-linecap="round" stroke-dasharray="{{ budgetDash }}" transform="rotate(-90 20 20)"/></svg>
+                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--purple)">{{ budgetPctText }}</div>
+                  </div>
+                  <div style="flex:1"><div style="font-size:13px;font-weight:900">بودجه‌ی شهریور</div><div style="font-size:10.5px;color:var(--txt2);line-height:1.8;margin-top:5px">{{ budgetSpentText }} از {{ budgetTotalText }} مصرف شد. ۹ روز مانده؛ سهمِ روزانه {{ dailyText }}.</div></div>
+                </div>
+                <div style="font-size:10.5px;font-weight:900;color:var(--txt3);margin-top:2px">دسته‌ها — برای دیدنِ جزئیات بزن</div>
+                <div style="display:flex;flex-direction:column;gap:10px;overflow:hidden">
+                  <sc-for list="{{ budgets }}" as="b" hint-placeholder-count="5">
+                    <div onClick="{{ b.press }}" style="border-radius:18px;padding:13px;background:{{ b.bg }};border:2px solid {{ b.border }};cursor:pointer">
+                      <div style="display:flex;align-items:center;gap:10px">
+                        <div style="width:30px;height:30px;border-radius:10px;background:{{ b.tint }};display:flex;align-items:center;justify-content:center;flex:none;font-size:13px;font-weight:900;color:{{ b.color }}">{{ b.initial }}</div>
+                        <div style="flex:1;font-size:12.5px;font-weight:900">{{ b.name }}</div>
+                        <div style="font-size:11px;font-weight:900;color:{{ b.color }}">{{ b.pctText }}</div>
+                      </div>
+                      <div style="height:8px;border-radius:999px;background:var(--chip);margin-top:10px;overflow:hidden"><div style="width:{{ b.width }};height:8px;border-radius:999px;background:{{ b.color }}"></div></div>
+                      <sc-if value="{{ b.open }}" hint-placeholder-val="{{ false }}">
+                        <div style="font-size:10.5px;color:var(--txt2);line-height:1.9;margin-top:10px;border-top:1px dashed var(--line);padding-top:9px">{{ b.detail }}</div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isDue }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+                <div style="font-size:10.5px;font-weight:900;color:var(--txt3)">{{ dueSummary }}</div>
+                <sc-for list="{{ dues }}" as="d" hint-placeholder-count="4">
+                  <div style="border-radius:20px;padding:14px;background:{{ d.bg }};border:2px solid {{ d.border }};box-shadow:{{ d.shadow }};display:flex;align-items:center;gap:11px;opacity:{{ d.opacity }}">
+                    <div style="width:38px;height:38px;border-radius:12px;background:var(--surf);display:flex;align-items:center;justify-content:center;flex:none;font-size:12px;font-weight:900;color:{{ d.color }}">{{ d.badge }}</div>
+                    <div style="flex:1"><div style="font-size:12.5px;font-weight:900">{{ d.title }}</div><div style="font-size:9.5px;color:{{ d.metaColor }};font-weight:700;margin-top:3px">{{ d.meta }}</div></div>
+                    <div onClick="{{ d.press }}" style="border-radius:999px;padding:9px 13px;background:{{ d.btnBg }};box-shadow:{{ d.btnShadow }};color:{{ d.btnColor }};font-size:10.5px;font-weight:900;flex:none;cursor:{{ d.cursor }}">{{ d.btnLabel }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isAsset }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+                <div style="border-radius:22px;padding:17px;background:var(--surf);border:2px solid var(--line);display:flex;flex-direction:column;gap:4px">
+                  <div style="font-size:10.5px;font-weight:800;color:var(--txt3)">ارزشِ کلِ دارایی</div>
+                  <div style="display:flex;align-items:baseline;gap:7px"><div style="font-size:26px;font-weight:900">۴۸۲٬۳۰۰٬۰۰۰</div><div style="font-size:11px;font-weight:800;color:var(--txt3)">تومان</div></div>
+                  <div style="font-size:11px;font-weight:800;color:var(--green)">۱۲٬۴۰۰٬۰۰۰+ این ماه · ۲٫۶٪</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:9px;overflow:hidden">
+                  <div style="border-radius:16px;padding:12px 13px;background:var(--surf);border:2px solid var(--line2);display:flex;align-items:center;gap:11px">
+                    <div style="width:34px;height:34px;border-radius:11px;background:var(--gold1);display:flex;align-items:center;justify-content:center;flex:none;font-size:13px;font-weight:900;color:var(--goldTxt)">ط</div>
+                    <div style="flex:1"><div style="font-size:12px;font-weight:800">طلای ۱۸ عیار</div><div style="font-size:9.5px;color:var(--txt2);margin-top:2px">۱۲٫۵ گرم · میانگینِ خرید ۳٬۹۲۰٬۰۰۰</div></div>
+                    <div style="text-align:left;flex:none"><div style="font-size:12px;font-weight:900">۵۲٬۷۵۰٬۰۰۰</div><div style="font-size:9.5px;font-weight:800;color:var(--green);margin-top:2px">۷٬۱۰۰٬۰۰۰+</div></div>
+                  </div>
+                  <div style="border-radius:16px;padding:12px 13px;background:var(--surf);border:2px solid var(--line2);display:flex;align-items:center;gap:11px">
+                    <div style="width:34px;height:34px;border-radius:11px;background:var(--chip);display:flex;align-items:center;justify-content:center;flex:none;font-size:13px;font-weight:900;color:var(--txt2)">س</div>
+                    <div style="flex:1"><div style="font-size:12px;font-weight:800">سکه‌ی تمام</div><div style="font-size:9.5px;color:var(--txt2);margin-top:2px">۳ عدد · میانگینِ خرید ۷۹٬۰۰۰٬۰۰۰</div></div>
+                    <div style="text-align:left;flex:none"><div style="font-size:12px;font-weight:900">۲۵۵٬۰۰۰٬۰۰۰</div><div style="font-size:9.5px;font-weight:800;color:var(--green);margin-top:2px">۱۸٬۰۰۰٬۰۰۰+</div></div>
+                  </div>
+                  <div style="border-radius:16px;padding:12px 13px;background:var(--surf);border:2px solid var(--line2);display:flex;align-items:center;gap:11px">
+                    <div style="width:34px;height:34px;border-radius:11px;background:var(--chip);display:flex;align-items:center;justify-content:center;flex:none;font-size:13px;font-weight:900;color:var(--txt2)">$</div>
+                    <div style="flex:1"><div style="font-size:12px;font-weight:800">دلار</div><div style="font-size:9.5px;color:var(--txt2);margin-top:2px">۲٬۰۰۰ عدد · میانگینِ خرید ۸۲٬۵۰۰</div></div>
+                    <div style="text-align:left;flex:none"><div style="font-size:12px;font-weight:900">۱۶۴٬۰۰۰٬۰۰۰</div><div style="font-size:9.5px;font-weight:800;color:var(--redD);margin-top:2px">۱٬۰۰۰٬۰۰۰-</div></div>
+                  </div>
+                  <div style="border-radius:16px;padding:12px 13px;background:var(--surf);border:2px solid var(--line2);display:flex;align-items:center;gap:11px">
+                    <div style="width:34px;height:34px;border-radius:11px;background:var(--chip);display:flex;align-items:center;justify-content:center;flex:none;font-size:12px;font-weight:900;color:var(--txt2)">₮</div>
+                    <div style="flex:1"><div style="font-size:12px;font-weight:800">تتر</div><div style="font-size:9.5px;color:var(--txt2);margin-top:2px">۱۲۰ عدد · میانگینِ خرید ۸۳٬۰۰۰</div></div>
+                    <div style="text-align:left;flex:none"><div style="font-size:12px;font-weight:900">۱۰٬۵۵۰٬۰۰۰</div><div style="font-size:9.5px;font-weight:800;color:var(--green);margin-top:2px">۵۵۰٬۰۰۰+</div></div>
+                  </div>
+                </div>
+                <div onClick="{{ openSheetOut }}" style="margin-top:auto;border-radius:999px;padding:14px;background:var(--green);box-shadow:0 4px 0 var(--greenD);color:#FFFFFF;font-size:13px;font-weight:900;text-align:center;cursor:pointer">ثبتِ خرید یا فروش</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isReport }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+                <div style="display:flex;gap:9px">
+                  <div style="flex:1;border-radius:18px;padding:13px;background:var(--surf);border:2px solid var(--line);text-align:center"><div style="font-size:9.5px;font-weight:800;color:var(--txt3)">درآمدِ مرداد</div><div style="font-size:14px;font-weight:900;color:var(--green);margin-top:4px">{{ incomeText }}</div></div>
+                  <div style="flex:1;border-radius:18px;padding:13px;background:var(--surf);border:2px solid var(--line);text-align:center"><div style="font-size:9.5px;font-weight:800;color:var(--txt3)">خرجِ مرداد</div><div style="font-size:14px;font-weight:900;color:var(--redD);margin-top:4px">{{ expenseText }}</div></div>
+                </div>
+                <div style="border-radius:22px;padding:16px;background:var(--surf);border:2px solid var(--line);display:flex;flex-direction:column;gap:12px">
+                  <div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:12px;font-weight:900">شش ماهِ گذشته</div><div style="font-size:9.5px;font-weight:800;color:var(--txt3)">خرج / درآمد</div></div>
+                  <div style="display:flex;align-items:flex-end;justify-content:space-between;height:104px">
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="display:flex;align-items:flex-end;gap:3px"><div style="width:9px;height:44px;border-radius:4px;background:var(--redSoft)"></div><div style="width:9px;height:58px;border-radius:4px;background:var(--greenSoft)"></div></div><div style="font-size:9px;font-weight:800;color:var(--txt3)">اسفند</div></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="display:flex;align-items:flex-end;gap:3px"><div style="width:9px;height:52px;border-radius:4px;background:var(--redSoft)"></div><div style="width:9px;height:60px;border-radius:4px;background:var(--greenSoft)"></div></div><div style="font-size:9px;font-weight:800;color:var(--txt3)">فروردین</div></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="display:flex;align-items:flex-end;gap:3px"><div style="width:9px;height:38px;border-radius:4px;background:var(--redSoft)"></div><div style="width:9px;height:60px;border-radius:4px;background:var(--greenSoft)"></div></div><div style="font-size:9px;font-weight:800;color:var(--txt3)">اردیبهشت</div></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="display:flex;align-items:flex-end;gap:3px"><div style="width:9px;height:61px;border-radius:4px;background:var(--redSoft)"></div><div style="width:9px;height:60px;border-radius:4px;background:var(--greenSoft)"></div></div><div style="font-size:9px;font-weight:800;color:var(--txt3)">خرداد</div></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="display:flex;align-items:flex-end;gap:3px"><div style="width:9px;height:47px;border-radius:4px;background:var(--redSoft)"></div><div style="width:9px;height:60px;border-radius:4px;background:var(--greenSoft)"></div></div><div style="font-size:9px;font-weight:800;color:var(--txt3)">تیر</div></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="display:flex;align-items:flex-end;gap:3px"><div style="width:9px;height:40px;border-radius:4px;background:var(--red)"></div><div style="width:9px;height:60px;border-radius:4px;background:var(--green)"></div></div><div style="font-size:9px;font-weight:900">مرداد</div></div>
+                  </div>
+                </div>
+                <div style="border-radius:22px;padding:16px;background:var(--surf);border:2px solid var(--line);display:flex;flex-direction:column;gap:11px">
+                  <div style="font-size:12px;font-weight:900">بیشترین خرج</div>
+                  <div style="display:flex;flex-direction:column;gap:9px">
+                    <div style="display:flex;flex-direction:column;gap:5px"><div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:11px;font-weight:800">خوراک</div><div style="font-size:11px;font-weight:900">۴٬۲۰۰٬۰۰۰ · ۳۴٪</div></div><div style="height:7px;border-radius:999px;background:var(--line2)"><div style="width:34%;height:7px;border-radius:999px;background:var(--green)"></div></div></div>
+                    <div style="display:flex;flex-direction:column;gap:5px"><div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:11px;font-weight:800">قسط و وام</div><div style="font-size:11px;font-weight:900">۳٬۱۰۰٬۰۰۰ · ۲۵٪</div></div><div style="height:7px;border-radius:999px;background:var(--line2)"><div style="width:25%;height:7px;border-radius:999px;background:var(--green)"></div></div></div>
+                    <div style="display:flex;flex-direction:column;gap:5px"><div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:11px;font-weight:800">حمل‌ونقل</div><div style="font-size:11px;font-weight:900">۱٬۸۰۰٬۰۰۰ · ۱۵٪</div></div><div style="height:7px;border-radius:999px;background:var(--line2)"><div style="width:15%;height:7px;border-radius:999px;background:var(--green)"></div></div></div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isLoan }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+                <div style="border-radius:22px;padding:17px;background:var(--surf);border:2px solid var(--line)">
+                  <div style="display:flex;align-items:center;gap:14px">
+                    <div style="position:relative;width:66px;height:66px;flex:none">
+                      <svg width="66" height="66" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="var(--redSoft)" stroke-width="5"/><circle cx="20" cy="20" r="16" fill="none" stroke="var(--red)" stroke-width="5" stroke-linecap="round" stroke-dasharray="33.5 100.5" transform="rotate(-90 20 20)"/></svg>
+                      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:var(--redD)">۳۳٪</div>
+                    </div>
+                    <div style="flex:1"><div style="font-size:13px;font-weight:900">وامِ خودرو</div><div style="font-size:10.5px;color:var(--txt2);line-height:1.8;margin-top:5px">۱۲ قسط از ۳۶ پرداخت شده. ماندهٔ اصل ۸۴٬۰۰۰٬۰۰۰.</div></div>
+                  </div>
+                  <div style="height:1px;background:var(--line);margin:14px 0"></div>
+                  <div style="display:flex;gap:12px">
+                    <div style="flex:1"><div style="font-size:9.5px;font-weight:800;color:var(--txt3)">قسطِ بعدی</div><div style="font-size:12.5px;font-weight:900;margin-top:3px">۳٬۵۰۰٬۰۰۰</div></div>
+                    <div style="width:1px;background:var(--line)"></div>
+                    <div style="flex:1"><div style="font-size:9.5px;font-weight:800;color:var(--txt3)">سررسید</div><div style="font-size:12.5px;font-weight:900;margin-top:3px;color:var(--redD)">فردا</div></div>
+                    <div style="width:1px;background:var(--line)"></div>
+                    <div style="flex:1"><div style="font-size:9.5px;font-weight:800;color:var(--txt3)">پایان</div><div style="font-size:12.5px;font-weight:900;margin-top:3px">مرداد ۰۸</div></div>
+                  </div>
+                </div>
+                <div style="font-size:10.5px;font-weight:900;color:var(--txt3);margin-top:2px">جدولِ اقساط</div>
+                <div style="display:flex;flex-direction:column;gap:8px;overflow:hidden">
+                  <sc-for list="{{ installments }}" as="i" hint-placeholder-count="6">
+                    <div style="border-radius:15px;padding:11px 13px;background:var(--surf);border:2px solid var(--line2);display:flex;align-items:center;gap:11px;opacity:{{ i.opacity }}">
+                      <div style="width:28px;height:28px;border-radius:9px;background:{{ i.tint }};display:flex;align-items:center;justify-content:center;flex:none;font-size:11px;font-weight:900;color:{{ i.color }}">{{ i.n }}</div>
+                      <div style="flex:1"><div style="font-size:11.5px;font-weight:800">{{ i.date }}</div></div>
+                      <div style="font-size:11px;font-weight:900;color:{{ i.color }}">{{ i.state }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isMe }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+                <div style="border-radius:22px;padding:17px;background:var(--surf);border:2px solid var(--line);display:flex;align-items:center;gap:13px">
+                  <div style="width:52px;height:52px;border-radius:17px;background:var(--greenSoft);display:flex;align-items:center;justify-content:center;flex:none;font-size:19px;font-weight:900;color:var(--green)">ا</div>
+                  <div style="flex:1"><div style="font-size:14px;font-weight:900">ابراهیم</div><div style="font-size:10.5px;color:var(--txt2);margin-top:3px;direction:ltr;text-align:right">{{ phoneDisplay }}</div></div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <div style="flex:1;border-radius:18px;padding:14px;background:linear-gradient(165deg,var(--gold1),var(--gold2));border:1.5px solid var(--goldLine);text-align:center"><div style="font-size:19px;font-weight:900;color:{{ goldTextColor }}">{{ streakText }}</div><div style="font-size:9.5px;font-weight:800;color:var(--goldTxt);margin-top:3px">روز فعال</div></div>
+                  <div style="flex:1;border-radius:18px;padding:14px;background:var(--surf);border:2px solid var(--line);text-align:center"><div style="font-size:19px;font-weight:900">۷</div><div style="font-size:9.5px;font-weight:800;color:var(--txt3);margin-top:3px">دستاورد</div></div>
+                  <div style="flex:1;border-radius:18px;padding:14px;background:var(--surf);border:2px solid var(--line);text-align:center"><div style="font-size:19px;font-weight:900">{{ txnCount }}</div><div style="font-size:9.5px;font-weight:800;color:var(--txt3);margin-top:3px">تراکنش</div></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:9px;overflow:hidden">
+                  <div onClick="{{ goLoan }}" style="border-radius:16px;padding:13px;background:var(--surf);border:2px solid var(--line);display:flex;align-items:center;gap:11px;cursor:pointer">
+                    <div style="width:32px;height:32px;border-radius:10px;background:var(--chip);display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--txt2)" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16v11H4zM4 11h16"/></svg></div>
+                    <div style="flex:1"><div style="font-size:12px;font-weight:800">وام‌های من</div><div style="font-size:9.5px;color:var(--txt2);margin-top:2px">۲ وامِ فعال · قسطِ بعدی ۱۵ شهریور</div></div>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+                  </div>
+                  <div onClick="{{ toggleTheme }}" style="border-radius:16px;padding:13px;background:var(--surf);border:2px solid var(--line);display:flex;align-items:center;gap:11px;cursor:pointer">
+                    <div style="width:32px;height:32px;border-radius:10px;background:var(--chip);display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--txt2)" stroke-width="2.3" stroke-linecap="round"><path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"/></svg></div>
+                    <div style="flex:1;font-size:12px;font-weight:800">تمِ برنامه</div>
+                    <div style="font-size:11px;font-weight:900;color:var(--green)">{{ themeName }}</div>
+                  </div>
+                  <div onClick="{{ toggleHide }}" style="border-radius:16px;padding:13px;background:var(--surf);border:2px solid var(--line);display:flex;align-items:center;gap:11px;cursor:pointer">
+                    <div style="width:32px;height:32px;border-radius:10px;background:var(--chip);display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--txt2)" stroke-width="2.3" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 018 0v3"/></svg></div>
+                    <div style="flex:1;font-size:12px;font-weight:800">پنهان‌کردنِ مبلغ‌ها</div>
+                    <div style="width:42px;height:24px;border-radius:999px;background:{{ hideTrack }};display:flex;align-items:center;padding:3px;box-sizing:border-box;justify-content:{{ hideAlign }}"><div style="width:18px;height:18px;border-radius:50%;background:#FFFFFF"></div></div>
+                  </div>
+                  <div style="border-radius:16px;padding:13px;background:var(--surf);border:2px solid var(--line);display:flex;align-items:center;gap:11px">
+                    <div style="width:32px;height:32px;border-radius:10px;background:var(--chip);display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--txt2)" stroke-width="2.3" stroke-linecap="round"><path d="M4 6a2 2 0 012-2h4l2 3h6a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2z"/></svg></div>
+                    <div style="flex:1"><div style="font-size:12px;font-weight:800">پشتیبان‌گیری</div><div style="font-size:9.5px;color:var(--txt2);margin-top:2px">آخرین: دیشب ۲۳:۰۰</div></div>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+                  </div>
+                  <div onClick="{{ reset }}" style="border-radius:16px;padding:13px;background:var(--surf);border:2px solid var(--line);display:flex;align-items:center;gap:11px;cursor:pointer">
+                    <div style="width:32px;height:32px;border-radius:10px;background:var(--redSoft);display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--redD)" stroke-width="2.3" stroke-linecap="round"><path d="M9 6V4h6v2M5 6h14l-1 14H6z"/></svg></div>
+                    <div style="flex:1;font-size:12px;font-weight:800;color:var(--redD)">خروج و پاک‌کردنِ نشست</div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+                <div style="border-radius:16px;padding:12px 13px;background:var(--surf);border:2px solid var(--green);display:flex;align-items:center;gap:9px">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+                  <div style="font-size:13px;font-weight:800;color:{{ queryColor }}">{{ queryText }}</div>
+                  <div style="flex:1"></div>
+                  <div onClick="{{ clearQuery }}" style="cursor:pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="2.6" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="5">
+                    <div onClick="{{ s.press }}" style="font-size:10.5px;font-weight:800;color:{{ s.color }};padding:7px 12px;background:{{ s.bg }};border:1.5px solid {{ s.border }};border-radius:999px;cursor:pointer">{{ s.label }}</div>
+                  </sc-for>
+                </div>
+                <div style="font-size:10.5px;font-weight:900;color:var(--txt3);margin-top:2px">{{ searchSummary }}</div>
+                <div style="display:flex;flex-direction:column;gap:9px;overflow:hidden">
+                  <sc-for list="{{ results }}" as="r" hint-placeholder-count="3">
+                    <div style="border-radius:16px;padding:12px 13px;background:var(--surf);border:2px solid var(--line2);display:flex;align-items:center;gap:11px">
+                      <div style="width:32px;height:32px;border-radius:10px;background:{{ r.tint }};display:flex;align-items:center;justify-content:center;flex:none;font-size:13px;font-weight:900;color:{{ r.iconColor }}">{{ r.initial }}</div>
+                      <div style="flex:1"><div style="font-size:12px;font-weight:800">{{ r.title }}</div><div style="font-size:9.5px;color:var(--txt2);margin-top:2px">{{ r.meta }}</div></div>
+                      <div style="font-size:11.5px;font-weight:900;color:{{ r.color }};flex:none">{{ r.amountText }}</div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+                    <div style="border-radius:18px;padding:22px 16px;background:var(--surf2);border:2px dashed var(--line);display:flex;flex-direction:column;align-items:center;gap:9px">
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--txt3)" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+                      <div style="font-size:12px;font-weight:900">چیزی پیدا نشد</div>
+                      <div style="font-size:10.5px;color:var(--txt2);text-align:center;line-height:1.8">یکی از پیشنهادهای بالا را بزن یا عبارتِ دیگری امتحان کن.</div>
+                    </div>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isNotif }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div style="font-size:10.5px;font-weight:900;color:var(--txt3)">{{ notifSummary }}</div>
+                  <div onClick="{{ markAllRead }}" style="font-size:10.5px;font-weight:800;color:var(--green);cursor:pointer">همه را خواندم</div>
+                </div>
+                <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="4">
+                  <div onClick="{{ n.press }}" style="border-radius:20px;padding:14px;background:{{ n.bg }};border:2px solid {{ n.border }};display:flex;gap:11px;opacity:{{ n.opacity }};cursor:pointer">
+                    <div style="width:36px;height:36px;border-radius:12px;background:var(--surf);display:flex;align-items:center;justify-content:center;flex:none;font-size:14px;font-weight:900;color:{{ n.color }}">{{ n.initial }}</div>
+                    <div style="flex:1">
+                      <div style="display:flex;align-items:center;gap:6px"><div style="font-size:12.5px;font-weight:900">{{ n.title }}</div><sc-if value="{{ n.unread }}" hint-placeholder-val="{{ true }}"><div style="width:7px;height:7px;border-radius:50%;background:var(--red);flex:none"></div></sc-if></div>
+                      <div style="font-size:10px;color:var(--txt2);line-height:1.8;margin-top:3px">{{ n.body }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+          </div>
+
+          <div style="flex:none;background:var(--surf);border-top:2px solid var(--line2);padding:10px 6px;display:flex;justify-content:space-between">
+            <div onClick="{{ goHome }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ nav.home }}" stroke-width="{{ navW.home }}" stroke-linecap="round"><path d="M4 11l8-7 8 7v9H4z"/></svg>
+              <div style="font-size:9px;font-weight:900;color:{{ nav.home }}">خانه</div>
+            </div>
+            <div onClick="{{ goAsset }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ nav.asset }}" stroke-width="{{ navW.asset }}" stroke-linecap="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              <div style="font-size:9px;font-weight:900;color:{{ nav.asset }}">دارایی</div>
+            </div>
+            <div onClick="{{ goReport }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ nav.report }}" stroke-width="{{ navW.report }}" stroke-linecap="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>
+              <div style="font-size:9px;font-weight:900;color:{{ nav.report }}">گزارش</div>
+            </div>
+            <div onClick="{{ goBudget }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ nav.budget }}" stroke-width="{{ navW.budget }}" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg>
+              <div style="font-size:9px;font-weight:900;color:{{ nav.budget }}">بودجه</div>
+            </div>
+            <div onClick="{{ goDue }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;position:relative">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ nav.due }}" stroke-width="{{ navW.due }}" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>
+              <div style="font-size:9px;font-weight:900;color:{{ nav.due }}">سررسید</div>
+              <sc-if value="{{ hasDue }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;top:-1px;right:20px;width:7px;height:7px;border-radius:50%;background:var(--red)"></div></sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(6,14,10,.46);cursor:pointer"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;border-radius:28px 28px 32px 32px;background:var(--surf);padding:16px 16px 20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -8px 24px rgba(6,14,10,.24);animation:jibakSheetUp .26s cubic-bezier(.2,.9,.3,1) both">
+          <div style="width:44px;height:5px;border-radius:999px;background:var(--line);align-self:center"></div>
+          <div style="display:flex;gap:8px">
+            <div onClick="{{ setOut }}" style="flex:1;border-radius:999px;padding:11px;text-align:center;font-size:12px;font-weight:900;background:{{ outBg }};color:{{ outColor }};box-shadow:{{ outShadow }};cursor:pointer">خرج</div>
+            <div onClick="{{ setIn }}" style="flex:1;border-radius:999px;padding:11px;text-align:center;font-size:12px;font-weight:900;background:{{ inBg }};color:{{ inColor }};box-shadow:{{ inShadow }};cursor:pointer">درآمد</div>
+          </div>
+          <div style="border-radius:18px;padding:15px;background:var(--bg);border:2px solid var(--line);display:flex;align-items:baseline;justify-content:center;gap:7px">
+            <div style="font-size:26px;font-weight:900;color:{{ amountColor }}">{{ amountDisplay }}</div>
+            <div style="font-size:11px;font-weight:800;color:var(--txt3)">تومان</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <sc-for list="{{ cats }}" as="c" hint-placeholder-count="5">
+              <div onClick="{{ c.press }}" style="font-size:10.5px;font-weight:800;color:{{ c.color }};padding:8px 12px;background:{{ c.bg }};border:1.5px solid {{ c.border }};border-radius:999px;cursor:pointer">{{ c.label }}</div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;direction:ltr">
+            <sc-for list="{{ amountKeys }}" as="k" hint-placeholder-count="12">
+              <div onClick="{{ k.press }}" style="height:46px;border-radius:14px;background:var(--bg);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;cursor:pointer;user-select:none;color:var(--txt)" style-active="transform:translateY(2px)">{{ k.label }}</div>
+            </sc-for>
+          </div>
+          <div onClick="{{ saveTxn }}" style="border-radius:999px;padding:15px;background:{{ saveBg }};box-shadow:{{ saveShadow }};color:{{ saveColor }};font-size:14px;font-weight:900;text-align:center;cursor:pointer">{{ saveLabel }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:16px;right:16px;bottom:82px;border-radius:16px;padding:13px 15px;background:#16221C;color:#FFFFFF;font-size:12px;font-weight:800;display:flex;align-items:center;gap:9px;animation:jibakToast 2.4s ease-out both">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#17C57D" stroke-width="2.8" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>
+          <div>{{ toast }}</div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <div style="width:100%;max-width:960px;display:flex;flex-wrap:wrap;gap:12px">
+    <div style="flex:1;min-width:280px;border-radius:18px;padding:15px;background:#FFFFFF;border:2px solid #E3ECE7;font-size:11.5px;line-height:1.95;color:#5b6a63">
+      <div style="font-size:12.5px;font-weight:900;color:#16221C;margin-bottom:6px">چه چیزی واقعاً کار می‌کند</div>
+      شماره‌ی موبایل و کدِ پنج‌رقمی با صفحه‌کلیدِ خودِ برنامه · ثبتِ خرج و درآمد که به فهرست و ماندهٔ کل اضافه می‌شود · پرداختِ قسط که ردیف را تسویه می‌کند · دسته‌های بودجه که باز و بسته می‌شوند · جست‌وجو با پیشنهادها و حالتِ بی‌نتیجه · خواندنِ اعلان‌ها · پنج تبِ پایین.
+    </div>
+    <div style="flex:1;min-width:280px;border-radius:18px;padding:15px;background:#FFFFFF;border:2px solid #E3ECE7;font-size:11.5px;line-height:1.95;color:#5b6a63">
+      <div style="font-size:12.5px;font-weight:900;color:#16221C;margin-bottom:6px">تمِ تیره — فرمول، نه صفحه‌به‌صفحه</div>
+      کلیدِ ماه بالا (یا ردیفِ «تمِ برنامه» در تبِ من) کلِ درخت را با یک نگاشتِ توکن عوض می‌کند: پایه <span style="direction:ltr;display:inline-block">#10181F</span>، سطح <span style="direction:ltr;display:inline-block">#1B2530</span>، حاشیه <span style="direction:ltr;display:inline-block">#2A3640</span>، متن <span style="direction:ltr;display:inline-block">#F3F7F5</span>، سبز به <span style="direction:ltr;display:inline-block">#17C57D</span> برای کنتراست. هیچ چیدمانی دو بار نوشته نشده — همین کار در اندروید با یک ColorScheme انجام می‌شود.
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1040,&quot;height&quot;:980},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;ظاهر&quot;},&quot;hideAmounts&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;ظاهر&quot;},&quot;streakDays&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:14,&quot;min&quot;:0,&quot;max&quot;:365,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;داده&quot;}}">
+const FA = n => Number(n).toLocaleString('fa-IR');
+const faDigits = s => String(s).replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+
+class Component extends DCLogic {
+  state = {
+    screen: 'splash', tab: 'home', phone: '', otp: '', sheet: false,
+    kind: 'out', amount: '', cat: 'خوراک', toast: '',
+    theme: null, hide: null, openBudget: null, query: 'قسط',
+    paid: {}, read: {},
+    txns: [
+      { title: 'خریدِ هفتگی', meta: '۵ شهریور · ملی', amount: -840000, cat: 'خوراک' },
+      { title: 'حقوقِ شهریور', meta: '۱ شهریور · سامان', amount: 42000000, cat: 'حقوق' },
+      { title: 'قسطِ خودرو — مرداد', meta: '۵ مرداد · ملی', amount: -3500000, cat: 'قسط' },
+      { title: 'اجاره', meta: '۳ مرداد · ملت', amount: -18000000, cat: 'مسکن' }
+    ]
+  };
+
+  get theme() { return this.state.theme ?? (this.props.theme || 'light'); }
+  get hide() { return this.state.hide ?? !!this.props.hideAmounts; }
+
+  money(n) {
+    if (this.hide) return '••••••';
+    return (n < 0 ? '−' : '+') + FA(Math.abs(n));
+  }
+
+  press = (field, ch) => this.setState(s => {
+    const max = field === 'phone' ? 11 : field === 'otp' ? 5 : 12;
+    let v = s[field];
+    if (ch === 'del') v = v.slice(0, -1);
+    else if (v.length + ch.length <= max) v += ch;
+    const next = { [field]: v };
+    if (field === 'otp' && v.length === 5) { next.screen = 'app'; next.tab = 'home'; next.toast = 'خوش آمدی!'; }
+    return next;
+  });
+
+  keypad(field) {
+    const k = l => ({ label: l, press: () => this.press(field, l === '⌫' ? 'del' : String('۰۱۲۳۴۵۶۷۸۹'.indexOf(l))) });
+    const rows = ['۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'].map(k);
+    if (field === 'amount') {
+      rows.push({ label: '۰۰۰', press: () => this.press('amount', '000') });
+      rows.push(k('۰'), { label: '⌫', press: () => this.press('amount', 'del') });
+    } else {
+      rows.push({ label: '', press: () => {} }, k('۰'), { label: '⌫', press: () => this.press(field, 'del') });
+    }
+    return rows;
+  }
+
+  toast(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: '' }), 2300);
+  }
+
+  componentWillUnmount() { clearTimeout(this._t); }
+
+  save = () => {
+    const raw = Number(this.state.amount);
+    if (!raw) return;
+    const kind = this.state.kind;
+    this.setState(s => ({
+      sheet: false, amount: '',
+      txns: [{ title: s.cat, meta: 'امروز · دستی', amount: kind === 'out' ? -raw : raw, cat: s.cat, fresh: true }, ...s.txns]
+    }));
+    this.toast(kind === 'out' ? 'خرج ثبت شد' : 'درآمد ثبت شد');
+  };
+
+  renderVals() {
+    const s = this.state, th = this.theme;
+    const dark = th === 'dark';
+    const V = {
+      green: dark ? '#17C57D' : '#0EA968', greenD: '#0B8C57', red: dark ? '#FF6B6B' : '#FF4B4B',
+      redD: dark ? '#FF4B4B' : '#D93838', txt: dark ? '#F3F7F5' : '#16221C',
+      txt2: dark ? '#9FB0AA' : '#5b6a63', txt3: dark ? '#7F8F89' : '#8b9a93',
+      surf: dark ? '#1B2530' : '#FFFFFF', line: dark ? '#2A3640' : '#E3ECE7',
+      chip: dark ? '#232E38' : '#F1F5F2', off: dark ? '#232E38' : '#DDE7E2',
+      offTxt: dark ? '#6C7B75' : '#94A5A0', purple: dark ? '#B98CFF' : '#A56EFF',
+      orange: dark ? '#FFA733' : '#FF9600', greenSoft: dark ? '#16302A' : '#E9F7EF',
+      redSoft: dark ? '#2A1D22' : '#FFF5F5', redLine: dark ? '#4A2C31' : '#FFC9C9',
+      goldTxt: dark ? '#D9C79B' : '#8B6F3D'
+    };
+    const income = s.txns.filter(t => t.amount > 0).reduce((a, t) => a + t.amount, 0);
+    const expense = s.txns.filter(t => t.amount < 0).reduce((a, t) => a - t.amount, 0);
+    const streak = this.props.streakDays ?? 14;
+
+    const catList = s.kind === 'out'
+      ? ['خوراک', 'حمل‌ونقل', 'مسکن', 'قسط', 'سلامت', 'تفریح']
+      : ['حقوق', 'فروش', 'هدیه', 'سود'];
+
+    const budgetData = [
+      { name: 'خوراک', pct: 78, color: V.orange, spent: '۳٬۹۰۰٬۰۰۰', total: '۵٬۰۰۰٬۰۰۰' },
+      { name: 'حمل‌ونقل', pct: 45, color: V.green, spent: '۹۰۰٬۰۰۰', total: '۲٬۰۰۰٬۰۰۰' },
+      { name: 'مسکن', pct: 100, color: V.red, spent: '۱۸٬۰۰۰٬۰۰۰', total: '۱۸٬۰۰۰٬۰۰۰' },
+      { name: 'تفریح', pct: 22, color: V.purple, spent: '۴۴۰٬۰۰۰', total: '۲٬۰۰۰٬۰۰۰' },
+      { name: 'سلامت', pct: 60, color: V.green, spent: '۱٬۲۰۰٬۰۰۰', total: '۲٬۰۰۰٬۰۰۰' }
+    ];
+
+    const dueData = [
+      { id: 'car', title: 'قسطِ وامِ خودرو', meta: 'فردا سررسید · ۳٬۵۰۰٬۰۰۰', badge: '۱ روز', urgent: true },
+      { id: 'sayad', title: 'چکِ صیاد — ۴٬۲۰۰٬۰۰۰', meta: '۲۸ شهریور · ملت', badge: '۷ روز', urgent: false },
+      { id: 'wed', title: 'قسطِ وامِ ازدواج', meta: '۲۸ شهریور · ۹۵۰٬۰۰۰', badge: '۷ روز', urgent: false },
+      { id: 'ins', title: 'بیمه‌ی شخصِ ثالث', meta: '۱۲ مهر · ۶٬۱۰۰٬۰۰۰', badge: '۲۱ روز', urgent: false }
+    ];
+
+    const notifData = [
+      { id: 'n1', initial: '!', title: 'قسطِ خودرو فردا سررسید است', body: '۳٬۵۰۰٬۰۰۰ از حسابِ ملی. موجودیِ فعلی کافی است.', color: V.redD, urgent: true },
+      { id: 'n2', initial: '۱۴', title: faDigits(streak) + ' روز فعال!', body: 'دو هفته است هر روز ثبت می‌کنی. ۵۰ سکه گرفتی.', color: V.goldTxt, urgent: false },
+      { id: 'n3', initial: '٪', title: '۷۸٪ بودجه‌ی خوراک مصرف شد', body: '۹ روز به آخرِ ماه مانده. سهمِ روزانه: ۱۸۰٬۰۰۰', color: V.purple, urgent: false },
+      { id: 'n4', initial: '✓', title: 'پشتیبانِ خودکار ساخته شد', body: '۲۳:۰۰ · حجم ۱٬۸ مگابایت', color: V.txt2, urgent: false }
+    ];
+
+    const allTxns = s.txns.map((t, i) => ({
+      title: t.title, meta: t.meta, initial: t.title.slice(0, 1),
+      amountText: this.money(t.amount),
+      color: t.amount < 0 ? V.redD : V.greenD,
+      tint: t.amount < 0 ? V.redSoft : V.greenSoft,
+      iconColor: t.amount < 0 ? V.redD : V.green,
+      anim: t.fresh && i === 0 ? 'jibakFadeUp .3s ease-out both' : 'none'
+    }));
+
+    const q = s.query.trim();
+    const hits = q ? s.txns.filter(t => t.title.includes(q) || t.cat.includes(q) || t.meta.includes(q)) : [];
+    const unread = notifData.filter(n => !s.read[n.id]).length;
+    const tabTitles = { home: 'خانه', asset: 'دارایی', report: 'گزارش', budget: 'بودجه', due: 'سررسید', loan: 'وام‌های من', me: 'من', search: 'جست‌وجو', notif: 'اعلان‌ها' };
+
+    return {
+      theme: th, themeLabel: dark ? 'روشن' : 'تیره', themeName: dark ? 'تیره' : 'روشن',
+      toggleTheme: () => this.setState({ theme: dark ? 'light' : 'dark' }),
+      reset: () => this.setState({ screen: 'splash', tab: 'home', phone: '', otp: '', sheet: false, amount: '', paid: {}, read: {}, query: 'قسط', openBudget: null, toast: '' }),
+      isSplash: s.screen === 'splash', isLogin: s.screen === 'login', isOtp: s.screen === 'otp', isApp: s.screen === 'app',
+      goSplash: () => this.setState({ screen: 'splash' }),
+      goLogin: () => this.setState({ screen: 'login', otp: '' }),
+      sendCode: () => s.phone.length === 11 && this.setState({ screen: 'otp' }),
+      keys: this.keypad(s.screen === 'otp' ? 'otp' : 'phone'),
+      amountKeys: this.keypad('amount'),
+
+      phoneDisplay: s.phone.length ? faDigits(s.phone.replace(/(\d{4})(\d{0,3})(\d{0,4})/, (m, a, b, c) => [a, b, c].filter(Boolean).join(' '))) : '۰۹—— ——— ————',
+      phoneBorder: s.phone.length === 11 ? V.green : V.line,
+      phoneColor: s.phone.length ? V.txt : V.offTxt,
+      phoneDone: s.phone.length === 11,
+      sendBg: s.phone.length === 11 ? V.green : V.off,
+      sendShadow: s.phone.length === 11 ? '0 4px 0 ' + V.greenD : 'none',
+      sendColor: s.phone.length === 11 ? '#FFFFFF' : V.offTxt,
+
+      otpBoxes: Array.from({ length: 5 }, (_, i) => ({
+        d: s.otp[i] ? faDigits(s.otp[i]) : '',
+        border: s.otp.length === i ? 'solid ' + V.green : s.otp[i] ? 'solid ' + V.green : 'dashed ' + V.line
+      })),
+      countdown: '۰۰:۴۲',
+
+      tab: s.tab, tabTitle: tabTitles[s.tab] || 'خانه',
+      isHome: s.tab === 'home', isAsset: s.tab === 'asset', isReport: s.tab === 'report',
+      isBudget: s.tab === 'budget', isDue: s.tab === 'due',
+      isLoan: s.tab === 'loan', isMe: s.tab === 'me', isSearch: s.tab === 'search', isNotif: s.tab === 'notif',
+      goHome: () => this.setState({ tab: 'home' }), goBudget: () => this.setState({ tab: 'budget' }),
+      goAsset: () => this.setState({ tab: 'asset' }), goReport: () => this.setState({ tab: 'report' }),
+      goDue: () => this.setState({ tab: 'due' }), goLoan: () => this.setState({ tab: 'loan' }),
+      goMe: () => this.setState({ tab: 'me' }), goSearch: () => this.setState({ tab: 'search' }),
+      goNotif: () => this.setState({ tab: 'notif' }),
+      nav: {
+        home: s.tab === 'home' ? V.green : V.offTxt, asset: s.tab === 'asset' ? V.green : V.offTxt,
+        report: s.tab === 'report' ? V.green : V.offTxt, budget: s.tab === 'budget' ? V.green : V.offTxt,
+        due: s.tab === 'due' ? V.green : V.offTxt
+      },
+      navW: {
+        home: s.tab === 'home' ? 2.6 : 2.3, asset: s.tab === 'asset' ? 2.6 : 2.3,
+        report: s.tab === 'report' ? 2.6 : 2.3, budget: s.tab === 'budget' ? 2.6 : 2.3,
+        due: s.tab === 'due' ? 2.6 : 2.3
+      },
+      hasDue: dueData.some(d => !s.paid[d.id]),
+      hasUnread: unread > 0,
+
+      balanceText: this.hide ? '••••••••' : FA(income - expense),
+      incomeText: this.hide ? '••••' : FA(income),
+      expenseText: this.hide ? '••••' : FA(expense),
+      goldTextColor: dark ? '#F0E5CB' : '#5A3E12',
+      streakText: faDigits(streak),
+      txnCount: faDigits(s.txns.length),
+      txnCountText: faDigits(s.txns.length) + ' مورد',
+      txns: allTxns.slice(0, 5),
+      toggleHide: () => this.setState({ hide: !this.hide }),
+      hideTrack: this.hide ? V.green : V.off,
+      hideAlign: this.hide ? 'flex-end' : 'flex-start',
+
+      openSheetOut: () => this.setState({ sheet: true, kind: 'out', cat: 'خوراک', amount: '' }),
+      openSheetIn: () => this.setState({ sheet: true, kind: 'in', cat: 'حقوق', amount: '' }),
+      closeSheet: () => this.setState({ sheet: false, amount: '' }),
+      sheetOpen: s.sheet,
+      setOut: () => this.setState({ kind: 'out', cat: 'خوراک' }),
+      setIn: () => this.setState({ kind: 'in', cat: 'حقوق' }),
+      outBg: s.kind === 'out' ? V.red : V.chip, outColor: s.kind === 'out' ? '#FFFFFF' : V.txt2,
+      outShadow: s.kind === 'out' ? '0 3px 0 ' + V.redD : 'none',
+      inBg: s.kind === 'in' ? V.green : V.chip, inColor: s.kind === 'in' ? '#FFFFFF' : V.txt2,
+      inShadow: s.kind === 'in' ? '0 3px 0 ' + V.greenD : 'none',
+      amountDisplay: s.amount ? FA(s.amount) : '۰',
+      amountColor: s.amount ? (s.kind === 'out' ? V.redD : V.greenD) : V.offTxt,
+      cats: catList.map(c => ({
+        label: c, press: () => this.setState({ cat: c }),
+        bg: s.cat === c ? V.greenSoft : V.surf,
+        border: s.cat === c ? V.green : V.line,
+        color: s.cat === c ? V.green : V.txt2
+      })),
+      saveTxn: this.save,
+      saveLabel: s.amount ? 'ذخیره · ' + s.cat : 'مبلغ را بزن',
+      saveBg: s.amount ? V.green : V.off,
+      saveShadow: s.amount ? '0 4px 0 ' + V.greenD : 'none',
+      saveColor: s.amount ? '#FFFFFF' : V.offTxt,
+      toast: s.toast,
+
+      budgetPctText: '۶۴٪', budgetDash: '64.3 100.5',
+      budgetSpentText: '۲۴٬۴۴۰٬۰۰۰', budgetTotalText: '۳۸٬۰۰۰٬۰۰۰', dailyText: '۱٬۵۰۰٬۰۰۰',
+      budgets: budgetData.map(b => ({
+        name: b.name, initial: b.name.slice(0, 1), color: b.color,
+        pctText: faDigits(b.pct) + '٪', width: b.pct + '%',
+        tint: b.color === V.red ? V.redSoft : V.chip,
+        bg: s.openBudget === b.name ? V.chip : V.surf,
+        border: s.openBudget === b.name ? b.color : V.line,
+        open: s.openBudget === b.name,
+        detail: b.spent + ' از ' + b.total + ' مصرف شده. ' + (b.pct >= 100 ? 'سقف پر شده — خرجِ بعدی از دسته‌ی دیگر کم می‌شود.' : 'باقی‌مانده تا آخرِ ماه کافی است.'),
+        press: () => this.setState({ openBudget: s.openBudget === b.name ? null : b.name })
+      })),
+
+      dueSummary: faDigits(dueData.filter(d => !s.paid[d.id]).length) + ' موردِ باز · ' + faDigits(Object.keys(s.paid).length) + ' تسویه‌شده',
+      dues: dueData.map(d => {
+        const paid = !!s.paid[d.id];
+        const hot = d.urgent && !paid;
+        return {
+          title: d.title, meta: paid ? 'تسویه شد' : d.meta, badge: d.badge,
+          bg: paid ? V.chip : hot ? V.redSoft : V.surf,
+          border: paid ? V.line : hot ? V.redLine : V.line,
+          shadow: hot ? '0 4px 0 ' + V.redLine : 'none',
+          opacity: paid ? 0.66 : 1,
+          color: paid ? V.green : hot ? V.redD : V.txt2,
+          metaColor: paid ? V.green : hot ? V.redD : V.txt2,
+          btnLabel: paid ? 'پرداخت شد' : 'پرداخت',
+          btnBg: paid ? V.chip : V.green,
+          btnShadow: paid ? 'none' : '0 3px 0 ' + V.greenD,
+          btnColor: paid ? V.offTxt : '#FFFFFF',
+          cursor: paid ? 'default' : 'pointer',
+          press: () => { if (!paid) { this.setState(st => ({ paid: { ...st.paid, [d.id]: true } })); this.toast('پرداخت ثبت شد'); } }
+        };
+      }),
+
+      installments: [
+        { n: '۱۳', date: '۵ شهریور ۰۵', state: 'سررسید فردا', done: false },
+        { n: '۱۲', date: '۵ مرداد ۰۵', state: 'پرداخت شد', done: true },
+        { n: '۱۱', date: '۵ تیر ۰۵', state: 'پرداخت شد', done: true },
+        { n: '۱۰', date: '۵ خرداد ۰۵', state: 'پرداخت شد', done: true },
+        { n: '۹', date: '۵ اردیبهشت ۰۵', state: 'پرداخت شد', done: true },
+        { n: '۸', date: '۵ فروردین ۰۵', state: 'پرداخت شد', done: true }
+      ].map(i => ({
+        n: i.n, date: i.date, state: i.state,
+        color: i.done ? V.green : V.redD,
+        tint: i.done ? V.greenSoft : V.redSoft,
+        opacity: i.done ? 0.72 : 1
+      })),
+
+      queryText: q || 'چه چیزی را می‌جویی؟',
+      queryColor: q ? V.txt : V.offTxt,
+      clearQuery: () => this.setState({ query: '' }),
+      suggestions: ['قسط', 'اجاره', 'حقوق', 'خوراک', 'چک'].map(x => ({
+        label: x, press: () => this.setState({ query: x }),
+        bg: q === x ? V.greenSoft : V.surf, border: q === x ? V.green : V.line,
+        color: q === x ? V.green : V.txt2
+      })),
+      searchSummary: q ? faDigits(hits.length) + ' نتیجه برای «' + q + '»' : 'یکی از پیشنهادها را بزن',
+      results: hits.map(t => ({
+        title: t.title, meta: t.meta, initial: t.title.slice(0, 1),
+        amountText: this.money(t.amount),
+        color: t.amount < 0 ? V.redD : V.greenD,
+        tint: t.amount < 0 ? V.redSoft : V.greenSoft,
+        iconColor: t.amount < 0 ? V.redD : V.green
+      })),
+      noResults: !!q && hits.length === 0,
+
+      notifSummary: unread ? faDigits(unread) + ' خوانده‌نشده' : 'همه خوانده شد',
+      markAllRead: () => this.setState({ read: Object.fromEntries(notifData.map(n => [n.id, true])) }),
+      notifs: notifData.map(n => {
+        const read = !!s.read[n.id];
+        return {
+          initial: n.initial, title: n.title, body: n.body, color: n.color,
+          unread: !read, opacity: read ? 0.68 : 1,
+          bg: read ? V.chip : n.urgent ? V.redSoft : V.surf,
+          border: read ? V.line : n.urgent ? V.redLine : V.line,
+          press: () => this.setState(st => ({ read: { ...st.read, [n.id]: true } }))
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

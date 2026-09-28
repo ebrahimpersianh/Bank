@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  فقط **سکه**، وسطِ بومِ خودش — تا بشود جداگانه از بالا پایین آوردش.
+  همان سه مسیرِ `jibak_launcher_mark.xml`، منتقل‌شده به مرکزِ یک بومِ ۵۴تایی.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="54dp"
+    android:height="54dp"
+    android:viewportWidth="54"
+    android:viewportHeight="54">
+    <path android:fillColor="#D99717"
+        android:pathData="M14,27 A13,13 0,1 0,40,27 A13,13 0,1 0,14,27 Z"/>
+    <path android:fillColor="#F7C743"
+        android:pathData="M16,27 A11,11 0,1 0,38,27 A11,11 0,1 0,16,27 Z"/>
+    <path android:fillColor="#FFE8A3"
+        android:pathData="M20,23 A7,7 0,1 0,34,23 A7,7 0,1 0,20,23 Z"/>
+</vector>

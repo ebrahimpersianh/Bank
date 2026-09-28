@@ -6,7 +6,11 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -19,16 +23,34 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,58 +61,167 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.core.LoanCalculator
 import ir.sadteam.loancalc.core.LoanMethod
 import ir.sadteam.loancalc.core.PersianCalendar
+import ir.sadteam.loancalc.core.PersianDate
+import ir.sadteam.loancalc.core.cleanNum
+import ir.sadteam.loancalc.core.cleanNumDecimal
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.core.ordinalFa
 import ir.sadteam.loancalc.core.toFa
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.sadteam.loancalc.data.banks
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
+import ir.sadteam.loancalc.ui.components.StaggerIn
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.BankTile
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.components.LottieSpinner
+import ir.sadteam.loancalc.ui.components.SlimSlider
+import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import ir.sadteam.loancalc.ui.components.amountSliderSteps
+import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.components.lazyColumnScrollbar
+import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.history.CalculationHistoryViewModel
 import ir.sadteam.loancalc.ui.myloans.MyLoansViewModel
+import ir.sadteam.loancalc.ui.jibak.faDigits
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
+import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
+import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppSurface2
+import ir.sadteam.loancalc.ui.theme.AppText
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToLong
 import kotlin.math.sin
+import java.util.Locale
 import kotlinx.coroutines.delay
 
-private val faMonthNamesResult = listOf(
-    "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
-    "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
-)
+// نامِ ماه از `persianMonthName`ِ مشترک میاد - این لیستِ محلی یه کپیِ دیگه‌ش بود.
+// ذخیره/محاسبه ریال است و نمایش تومان (بندِ ۲ی README): تنها نقطه‌ی تبدیلِ نمایشِ این فایل.
+private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
+
+/** بازه‌ی اسلایدرِ مبلغ، **تومان**. قبلاً ریال بود و ÷۱۰ شد، وگرنه اسلایدر تا ده میلیارد تومان می‌رفت. */
+private const val AMOUNT_MIN_TOMAN = 10_000_000f
+private const val AMOUNT_MAX_TOMAN = 1_000_000_000f
 
 @Composable
-fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryViewModel = hiltViewModel()) {
-    val result = outcome.result
+fun ResultScreen(
+    outcome: BankLoanOutcome,
+    /**
+     * کدام محاسبه‌گر به این نتیجه رسیده - فریمِ `68b` بندِ ۴.
+     *
+     * سه ورودیِ متفاوت (سرویسِ اعتباری، وامِ بانکی، توانِ بازپرداخت) به همین یک صفحه
+     * می‌رسند و صفحه نمی‌گفت کدام؛ کاربری که «توانِ بازپرداخت» زده و سرصفحه‌ی «نتیجه
+     * محاسبه» می‌بیند فکر می‌کند اشتباه شده.
+     *
+     * ⚠️ مقدارش را **میزبان** می‌دهد (`CalculatorHostScreen` / مسیرِ ناوبری) - حدس نزدم.
+     * `null` یعنی قرص نمی‌آید، پس فراخوان‌های فعلی بی تغییر کار می‌کنند.
+     */
+    sourceLabel: String? = null,
+    // بعدِ ذخیره‌ی موفقِ وام، «ویرایش» دیگه معنی نداره (وام از قبل با همین اطلاعات ذخیره شده) -
+    // این callback به‌جاش صدا زده می‌شه و باید فرم رو کاملاً خالی/ریست کنه (نه فقط نگه‌داشتنِ
+    // مقادیرِ قبلی) تا کاربر بتونه بدونِ باقی‌موندنِ اعداد/بانکِ وامِ قبلی، وامِ بعدی رو وارد کنه -
+    // رجوع کن به BankLoanTab تو MainActivity.kt (formStateHolder.removeState).
+    onNewCalculation: () -> Unit = {},
+    historyViewModel: CalculationHistoryViewModel = hiltViewModel(),
+) {
     val privacyMode = LocalPrivacyMode.current
 
     // هر محاسبه‌ی وامی که تا نتیجه می‌رسه (نه فقط اونایی که کاربر صریحاً «ذخیره» می‌زنه) تو تاریخچه‌ی
-    // محاسبات هم ثبت می‌شه - رجوع کن به ui/history/. فقط یه‌بار به‌ازای هر outcome (نه هر recomposition).
+    // محاسبات هم ثبت می‌شه - رجوع کن به ui/history/. فقط یه‌بار به‌ازای هر outcome *اصلی* (خودِ محاسبه‌ی
+    // ورودی از فرم، نه هر تغییرِ زنده‌ی ویرایشِ درجا پایین‌تر) ثبت می‌شه.
     LaunchedEffect(outcome) {
         historyViewModel.log(
             kind = "LOAN",
             title = if (outcome.borrower != "—") "وام ${outcome.borrower} (${outcome.bankName})" else outcome.bankName,
-            summary = "قسط ${fmt(result.installment)} ریال × ${toFa(outcome.n)} ماه، نرخ ${toFa(outcome.ratePct)}٪",
-            amount = result.principal,
+            summary = "قسط ${amountToman(outcome.result.installment)} تومان × ${toFa(outcome.n)} ماه، نرخ ${toFa(outcome.ratePct)}٪",
+            amount = outcome.result.principal,
         )
     }
+
+    // ویرایشِ زنده/درجا (مورد ۴): قبلاً «ویرایش» به فرمِ محاسبه‌گر برمی‌گشت (onEdit، حذف شد) - الان
+    // خودِ همین صفحه با فیلدهای اینلاین ویرایش می‌شه و نتیجه با هر تغییر بلافاصله دوباره محاسبه/
+    // انیمیت می‌شه (رجوع کن به liveOutcome پایین‌تر). فیلدها با remember(outcome) از رو
+    // outcome*ِ ورودی* دوباره مقداردهی می‌شن - یعنی هر بار یه محاسبه‌ی *جدید* از فرم میاد (outcome
+    // عوض می‌شه)، ویرایشِ قبلی خودکار پاک/بازنشانی می‌شه.
+    var editMode by remember { mutableStateOf(false) }
+    // فیلدِ مبلغ و اسلایدرش **تومان**ن (بندِ ۲ی README)؛ تبدیل به ریال فقط تو liveOutcome.
+    var editAmountText by remember(outcome) {
+        mutableStateOf(rialToToman(outcome.result.originalPrincipal.toLong()).toString())
+    }
+    var editAmountSlider by remember(outcome) {
+        mutableFloatStateOf(
+            rialToToman(outcome.result.originalPrincipal.toLong()).toFloat()
+                .coerceIn(AMOUNT_MIN_TOMAN, AMOUNT_MAX_TOMAN),
+        )
+    }
+    var editRateText by remember(outcome) { mutableStateOf(trimRateResult(outcome.ratePct)) }
+    var editRateSlider by remember(outcome) { mutableFloatStateOf(outcome.ratePct.toFloat().coerceIn(0f, 50f)) }
+    var editNText by remember(outcome) { mutableStateOf(outcome.n.toString()) }
+    var editStartYear by remember(outcome) { mutableIntStateOf(outcome.startDate.y) }
+    var editStartMonth by remember(outcome) { mutableIntStateOf(outcome.startDate.m) }
+    var editStartDay by remember(outcome) { mutableIntStateOf(outcome.startDate.d) }
+    var editGraceOn by remember(outcome) { mutableStateOf(outcome.result.graceMonths > 0) }
+    var editGraceMonths by remember(outcome) {
+        mutableFloatStateOf(if (outcome.result.graceMonths > 0) outcome.result.graceMonths.toFloat() else 6f)
+    }
+    var editBankName by remember(outcome) { mutableStateOf(outcome.bankName) }
+    var editBorrower by remember(outcome) { mutableStateOf(outcome.borrower) }
+
+    // نتیجه‌ی زنده - همیشه از رو فیلدهای بالا دوباره محاسبه می‌شه (چه editMode روشن باشه چه نه؛
+    // وقتی خاموشه فیلدها همون مقادیرِ outcome*ِ اصلی*ان، پس نتیجه هم دقیقاً همونه). این یعنی هیچ‌جای
+    // دیگه‌ی این کامپوزیبل دیگه مستقیم از رو `outcome` نمی‌خونه، همه‌جا از رو همین liveOutcome.
+    val liveOutcome = remember(
+        editAmountText, editRateText, editNText,
+        editStartYear, editStartMonth, editStartDay,
+        editGraceOn, editGraceMonths, editBankName, editBorrower,
+    ) {
+        // ورودی تومانه و موتورِ محاسبه ریال می‌خواد - تبدیل فقط همین یک نقطه.
+        val amount = cleanNum(editAmountText).toLongOrNull()?.takeIf { it > 0 }
+            ?.let { tomanToRial(it).toDouble() } ?: outcome.result.originalPrincipal
+        val rate = editRateText.toDoubleOrNull() ?: outcome.ratePct
+        val n = editNText.toIntOrNull()?.coerceAtLeast(1) ?: outcome.n
+        // نرخِ صفر یعنی خریدِ اقساطیِ بی‌سود، نه قرض‌الحسنه - هم‌الگو با BankLoanScreen.
+        val method = if (rate > 0.0 && rate <= 4.0) LoanMethod.QARZ else LoanMethod.STANDARD
+        val grace = if (editGraceOn) editGraceMonths.toInt() else 0
+        val startDate = PersianDate(editStartYear, editStartMonth, editStartDay)
+        val result = LoanCalculator.compute(amount, rate, n, method, grace, outcome.result.intervalDays)
+        outcome.copy(
+            result = result,
+            startDate = startDate,
+            ratePct = rate,
+            n = n,
+            method = method,
+            bankName = editBankName.ifBlank { outcome.bankName },
+            borrower = editBorrower.ifBlank { "—" },
+        )
+    }
+    val outcome = liveOutcome
+    val result = outcome.result
 
     // اول گریس‌پیریود بعد فاصله‌ی هر قسط اضافه می‌شه. هم‌راستا با LoanRepository.getRows (که منبعِ
     // حقیقتِ سررسیدِ وام‌های ذخیره‌شده‌ست): فاصله‌های مضربِ ۳۰ ماهِ تقویمیِ واقعی جلو می‌رن (روزِ
@@ -121,11 +252,11 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
 
     // شمارش صعودی اعداد (پورت animateNumber وب) - رو Double تا برای مبالغ میلیاردی خطای گردکردن
     // Float (که تا چند صد ریال می‌رسید) پیش نیاد.
-    var animatedInstallment by remember { mutableStateOf(0.0) }
+    var animatedInstallment by remember { mutableDoubleStateOf(0.0) }
     LaunchedEffect(result.installment) {
         animateValue(0.0, result.installment) { animatedInstallment = it }
     }
-    var animatedTotal by remember { mutableStateOf(0.0) }
+    var animatedTotal by remember { mutableDoubleStateOf(0.0) }
     LaunchedEffect(result.totalPaid) {
         animateValue(0.0, result.totalPaid) { animatedTotal = it }
     }
@@ -150,6 +281,9 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
     // توش هست)، دکمه هنوز دیده می‌شد و قابلِ تپِ دوباره بود - با تاخیرِ شبکه، چندبار زدن می‌تونست
     // چندتا وامِ تکراری بسازه.
     var saving by remember { mutableStateOf(false) }
+    // برای وامی که تازه واقعاً وجود داره و کاربر داره از رو محاسبه‌گر واردش می‌کنه (نه یه وامِ
+    // کاملاً جدید) - هم‌الگو با فیلدِ «تعداد اقساط پرداخت‌شده» تو فرمِ افزودنِ وامِ دستی.
+    var paidCountText by remember { mutableStateOf("") }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -157,12 +291,217 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         item {
-            Text(
-                text = if (outcome.borrower != "—") "وام ${outcome.borrower}" else "نتیجه محاسبه",
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                modifier = Modifier.padding(bottom = 10.dp),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (sourceLabel != null) {
+                    Text(
+                        sourceLabel,
+                        color = AppPrimaryInk,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AppPrimaryPill)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    )
+                }
+                Text(
+                    text = if (outcome.borrower != "—") "وام ${outcome.borrower}" else "نتیجه محاسبه",
+                    color = AppText,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                )
+                if (saved) {
+                    // بعدِ ذخیره‌ی موفق، به‌جای «ویرایش» (که مقادیرِ قبلی رو نگه می‌داشت) یه دکمه‌ی
+                    // «محاسبه‌ی جدید» میاد که فرم رو کاملاً خالی می‌کنه.
+                    TextButton(onClick = onNewCalculation) {
+                        Icon(Icons.Filled.Add, contentDescription = null, tint = AppPrimary, modifier = Modifier.padding(end = 4.dp))
+                        Text("محاسبه‌ی جدید", color = AppPrimary, fontSize = 13.sp)
+                    }
+                } else if (!editMode) {
+                    // مورد ۴: قبلاً این دکمه برمی‌گشت به فرمِ محاسبه‌گر (صفحه‌ی قبل)؛ الان همینجا
+                    // یه پنلِ ویرایشِ اینلاین باز می‌کنه - رجوع کن به liveOutcome بالاتر.
+                    TextButton(onClick = { editMode = true }) {
+                        Icon(Icons.Filled.Edit, contentDescription = null, tint = AppPrimary, modifier = Modifier.padding(end = 4.dp))
+                        Text("ویرایش", color = AppPrimary, fontSize = 13.sp)
+                    }
+                } else {
+                    TextButton(onClick = { editMode = false }) {
+                        Icon(Icons.Filled.Check, contentDescription = null, tint = AppPrimary, modifier = Modifier.padding(end = 4.dp))
+                        Text("پایانِ ویرایش", color = AppPrimary, fontSize = 13.sp)
+                    }
+                }
+            }
+        }
+
+        item {
+            // پنلِ ویرایشِ اینلاین (مورد ۴) - با محو+گسترشِ نرم باز/بسته می‌شه؛ هر تغییرِ فیلد بلافاصله
+            // liveOutcome رو دوباره حساب می‌کنه و کلِ نتیجه (دایره/اعداد/جدول) با همون انیمیشنِ
+            // موجودشون (countUp، sweep حلقه) خودش رو به‌روز می‌کنه - نیازی به انیمیشنِ اضافه نیست.
+            AnimatedVisibility(
+                visible = editMode,
+                enter = fadeIn(tween(Motion.FADE_IN_MS)) + expandVertically(Motion.standard()),
+                exit = fadeOut(tween(Motion.FADE_OUT_MS)) + shrinkVertically(tween(200)),
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                ) {
+                    AppCard(label = "مبلغ وام") {
+                        OutlinedTextField(
+                            value = editAmountText,
+                            onValueChange = { raw ->
+                                val digits = cleanNum(raw)
+                                editAmountText = digits
+                                val n = digits.toLongOrNull() ?: 0L
+                                if (n in AMOUNT_MIN_TOMAN.toLong()..AMOUNT_MAX_TOMAN.toLong()) {
+                                    editAmountSlider = n.toFloat()
+                                }
+                            },
+                            visualTransformation = ThousandsSeparatorTransformation(),
+                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = appFieldColors(),
+                        )
+                        // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد.
+                        (cleanNum(editAmountText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
+                            Text(
+                                "${numberToWordsFa(t.toDouble())} تومان",
+                                color = AppMuted,
+                                fontSize = 11.5.sp,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
+                        SlimSlider(
+                            value = editAmountSlider,
+                            onValueChange = { v ->
+                                editAmountSlider = v
+                                editAmountText = v.toLong().toString()
+                            },
+                            valueRange = AMOUNT_MIN_TOMAN..AMOUNT_MAX_TOMAN,
+                            steps = amountSliderSteps(AMOUNT_MIN_TOMAN..AMOUNT_MAX_TOMAN),
+                        )
+                    }
+                    AppCard(label = "نرخ سود سالانه") {
+                        OutlinedTextField(
+                            value = editRateText,
+                            onValueChange = { raw ->
+                                val filtered = cleanNumDecimal(raw)
+                                editRateText = filtered
+                                val num = filtered.toDoubleOrNull()
+                                if (num != null && num in 0.0..50.0) editRateSlider = num.toFloat()
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = appFieldColors(),
+                            suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
+                        )
+                        SlimSlider(
+                            value = editRateSlider,
+                            onValueChange = { v ->
+                                editRateSlider = v
+                                editRateText = trimRateResult(v.toDouble())
+                            },
+                            valueRange = 0f..50f,
+                            steps = 99,
+                        )
+                    }
+                    AppCard(label = "تعداد اقساط (ماه)") {
+                        OutlinedTextField(
+                            value = editNText,
+                            onValueChange = { editNText = cleanNum(it) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = appFieldColors(),
+                        )
+                    }
+                    AppCard(
+                        label = if (editGraceOn && editGraceMonths.toInt() > 0) {
+                            "تاریخ دریافت وام (قسطِ اول ${toFa(editGraceMonths.toInt())} ماه بعد، به‌خاطرِ دوره‌ی تنفس)"
+                        } else {
+                            "تاریخ دریافت وام (سررسیدِ قسطِ اول)"
+                        },
+                    ) {
+                        InlineJalaliDateRow(
+                            year = editStartYear,
+                            month = editStartMonth,
+                            day = editStartDay,
+                            onDateChange = { y, m, d -> editStartYear = y; editStartMonth = m; editStartDay = d },
+                        )
+                    }
+                    AppCard {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("دوره تنفس", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Switch(
+                                checked = editGraceOn,
+                                onCheckedChange = { editGraceOn = it },
+                                colors = SwitchDefaults.colors(checkedTrackColor = AppPrimaryDim, checkedThumbColor = AppPrimary),
+                            )
+                        }
+                        if (editGraceOn) {
+                            SlimSlider(
+                                value = editGraceMonths,
+                                onValueChange = { editGraceMonths = it },
+                                valueRange = 1f..24f,
+                                steps = 22,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                            Text(
+                                "${toFa(editGraceMonths.toInt())} ماه",
+                                fontSize = 12.5.sp,
+                                color = AppMuted,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+                    AppCard(label = "اسم بانک یا فروشنده") {
+                        OutlinedTextField(
+                            value = editBankName,
+                            onValueChange = { editBankName = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = appFieldColors(),
+                        )
+                        // انتخابِ لوگو - همون الگویی که رو دیالوگِ ویرایشِ مشخصاتِ LoanDetailScreen
+                        // پیاده شده؛ لمسِ یه لوگو اسمِ دقیقش رو تو فیلدِ بالا می‌ذاره، فیلد همچنان
+                        // برای بانک/فروشنده‌ی خارج از لیست دستی باز می‌مونه.
+                        LazyRow(
+                            modifier = Modifier.padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            items(banks, key = { it.name }) { b ->
+                                BankTile(
+                                    bank = b,
+                                    selected = editBankName == b.name,
+                                    onClick = { editBankName = b.name },
+                                )
+                            }
+                        }
+                    }
+                    AppCard(label = "وام‌گیرنده (اختیاری)") {
+                        OutlinedTextField(
+                            value = editBorrower.let { if (it == "—") "" else it },
+                            onValueChange = { editBorrower = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = appFieldColors(),
+                        )
+                    }
+                }
+            }
         }
 
         item {
@@ -176,9 +515,39 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                     )
                     MoneyParticleBurst(trigger = result, modifier = Modifier.size(220.dp))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(maskIfPrivate(privacyMode, fmt(animatedInstallment)), fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Text("قسط ماهانه (ریال)", fontSize = 12.5.sp, color = AppMuted)
+                        PrivacyCrossfade(privacyMode) { masked ->
+                            Text(
+                                maskIfPrivate(masked, amountToman(animatedInstallment)),
+                                color = AppText,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                            )
+                        }
+                        Text("قسط ماهانه (تومان)", fontSize = 12.5.sp, color = AppMuted)
                     }
+                }
+            }
+        }
+
+        // فریمِ `68b` بندِ ۲: افسانه‌ی حلقه.
+        //
+        // `LoanRing` از قبل دورنگ است (اصل/سود) ولی هیچ‌جا نمی‌گفت کدام رنگ چیست - و
+        // نسبتِ سود تنها چیزی است که کاربر برای **مقایسه‌ی دو وام** لازم دارد. پیش از
+        // این همان عدد در جعبه‌ی «سود نسبت به اصل وام» بود و در فهرستِ اعداد گم می‌شد.
+        item {
+            StaggerIn(0) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                ) {
+                    val interestShare = if (result.principal + result.totalInterest > 0) {
+                        result.totalInterest / (result.principal + result.totalInterest) * 100
+                    } else {
+                        0.0
+                    }
+                    RingLegend(AppPrimary, "اصل", 100.0 - interestShare)
+                    RingLegend(AppAccent, "سود", interestShare)
                 }
             }
         }
@@ -186,7 +555,7 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
         item {
             StaggerIn(1) {
                 Text(
-                    text = "${numberToWordsFa(result.installment / 10)} تومان",
+                    text = "${numberToWordsFa(rialToToman(result.installment.toLong()).toDouble())} تومان",
                     color = AppMuted,
                     fontSize = 13.5.sp,
                     textAlign = TextAlign.Center,
@@ -196,7 +565,13 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
         }
 
         item {
-            if (saved) {
+            // این صفحه بعدِ ذخیره جایی نمی‌ره (برخلافِ فرمِ افزودنِ دستی/چک که می‌بندن) - همینجا
+            // دکمه با این متنِ تاییدی عوض می‌شه. قبلاً این تعویض یهویی بود؛ الان با AnimatedVisibility
+            // یه ورودِ فنریِ کوچیک (بزرگ‌شدن از ۰.۸ + محو) داره.
+            AnimatedVisibility(
+                visible = saved,
+                enter = fadeIn(tween(Motion.FADE_IN_MS)) + scaleIn(animationSpec = Motion.snappy(), initialScale = 0.8f),
+            ) {
                 Text(
                     "✓ وام تو «وام‌های من» ذخیره شد",
                     color = AppPrimary,
@@ -205,15 +580,33 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
                 )
-            } else {
+            }
+            if (!saved) {
+                AppCard(label = "تعداد اقساط پرداخت‌شده (اختیاری)", modifier = Modifier.padding(bottom = 10.dp)) {
+                    Text(
+                        "اگه این وام از قبل هست و چندتا قسطش رو پرداخت کردی، اینجا بنویس",
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                    OutlinedTextField(
+                        value = paidCountText,
+                        onValueChange = { paidCountText = cleanNum(it) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = appFieldColors(),
+                    )
+                }
                 GradientButton(
                     enabled = !saving,
                     onClick = {
                         if (saving) return@GradientButton
+                        val paidCount = (paidCountText.toIntOrNull() ?: 0).coerceIn(0, outcome.n)
                         when {
                             canSaveAnotherLoan -> {
                                 saving = true
-                                myLoansViewModel.saveComputedLoan(outcome) {
+                                myLoansViewModel.saveComputedLoan(outcome, paidCount) {
                                     saving = false
                                     saved = true
                                     saveMessage = null
@@ -246,52 +639,89 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
             }
         }
 
+        // 🚨 فریمِ `68b` بندِ ۱: هفت جعبه‌ی هم‌اندازه → یک فهرستِ برچسب/مقدار.
+        //
+        // `StatBox`های هم‌عرض «کلِ بازپرداخت» را هم‌وزنِ «سررسید هر ماه» نشان می‌دادند، و
+        // جعبه‌ی هم‌اندازه یعنی اهمیتِ هم‌اندازه. فهرست سلسله‌مراتب دارد: ردیفِ اول درشت‌تر
+        // است و بقیه خطِ عادی.
+        //
+        // کارمزدِ قرض‌الحسنه هم ردیف شد نه جعبه‌ی تمام‌عرضِ شرطی - آن جعبه وقتی نبود یک
+        // حفره در چیدمان می‌گذاشت (بندِ ۵).
         item {
             StaggerIn(2) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    StatBox("کل بازپرداخت (ریال)", maskIfPrivate(privacyMode, fmt(animatedTotal)), Modifier.weight(1.3f))
-                    StatBox("سررسید هر ماه", ordinalFa(outcome.startDate.d), Modifier.weight(1f))
-                    StatBox("مدت وام", "${toFa(outcome.n)} ماه", Modifier.weight(1f))
-                }
-            }
-        }
-
-        item {
-            StaggerIn(3) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val pctText = if (interestPct < 10) {
-                        toFa(String.format("%.1f", interestPct))
-                    } else {
-                        toFa(interestPct.roundToLong().toString())
+                AppCard {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        PrivacyCrossfade(privacyMode, modifier = Modifier.fillMaxWidth()) { masked ->
+                            SummaryRow(
+                                label = "کلِ بازپرداخت",
+                                value = "${maskIfPrivate(masked, amountToman(animatedTotal))} تومان",
+                                emphasis = true,
+                            )
+                        }
+                        HorizontalDivider(color = AppLine)
+                        val pctText = if (interestPct < 10) {
+                            toFa(String.format(Locale.US, "%.1f", interestPct))
+                        } else {
+                            toFa(interestPct.roundToLong().toString())
+                        }
+                        SummaryRow("سود نسبت به اصلِ وام", "$pctText٪")
+                        HorizontalDivider(color = AppLine)
+                        SummaryRow("سررسیدِ هر ماه", ordinalFa(outcome.startDate.d))
+                        HorizontalDivider(color = AppLine)
+                        SummaryRow("مدتِ وام", "${toFa(outcome.n)} ماه")
+                        HorizontalDivider(color = AppLine)
+                        SummaryRow(
+                            "پایانِ وام",
+                            "${toFa(endDate.d)} ${persianMonthName(endDate.m)} ${toFa(endDate.y)}",
+                        )
+                        if (feeAmount > 0) {
+                            HorizontalDivider(color = AppLine)
+                            // `toString()`ِ خام می‌تونست «۴٫۰۰۰۰۰۰۰۰۱» بده - همون تابعی که
+                            // فیلدِ نرخ ازش استفاده می‌کنه، اینجا هم.
+                            val rateLabel = trimRateResult(outcome.ratePct)
+                            PrivacyCrossfade(privacyMode, modifier = Modifier.fillMaxWidth()) { masked ->
+                                SummaryRow(
+                                    "کارمزدِ سالانه (قرض‌الحسنه)",
+                                    "${maskIfPrivate(masked, amountToman(feeAmount))} تومان · ${toFa(rateLabel)}٪",
+                                )
+                            }
+                        }
                     }
-                    StatBox("سود نسبت به اصل وام", "$pctText٪", Modifier.weight(1f))
-                    StatBox(
-                        "تاریخ پایان وام",
-                        "${toFa(endDate.d)} ${faMonthNamesResult[endDate.m - 1]} ${toFa(endDate.y)}",
-                        Modifier.weight(1f),
-                    )
                 }
-            }
-        }
-
-        if (feeAmount > 0) {
-            item {
-                val rateLabel = if (outcome.ratePct == outcome.ratePct.toLong().toDouble()) {
-                    outcome.ratePct.toLong().toString()
-                } else {
-                    outcome.ratePct.toString()
-                }
-                StatBox(
-                    "کارمزد سالانه (قرض‌الحسنه)",
-                    "${maskIfPrivate(privacyMode, fmt(feeAmount))} ریال (${toFa(rateLabel)}٪ سالانه)",
-                    Modifier.fillMaxWidth(),
-                )
             }
         }
 
         item {
             StaggerIn(4) {
-            AppCard(label = "جدول کامل اقساط") {
+            AppCard {
+                // فریمِ `68b` بندِ ۳: جدول **خلاصه** می‌گیرد - همان گپی که در فرمِ افزودن
+                // هم بود. کاربر جدولِ دوازده‌ردیفی را اسکرول می‌کرد تا جمع و تاریخِ پایان
+                // را پیدا کند، و هیچ‌کدام در جدول نبودند.
+                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+                    Text("جدولِ کاملِ اقساط", color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            "${toFa(outcome.n)} قسط · جمعِ ${maskIfPrivate(masked, amountToman(result.totalPaid))} تومان · تا ${toFa(endDate.d)} ${persianMonthName(endDate.m)} ${toFa(endDate.y)}",
+                            color = AppMuted,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                }
+
+                // و **سرستون** می‌گیرد: سه ستونِ بی‌برچسب یعنی کاربر باید حدس بزند عددِ
+                // سمتِ چپ مبلغِ قسط است یا ماندهٔ بدهی.
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(start = 10.dp, bottom = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text("شماره", color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Black)
+                    Text("سررسید", color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Black)
+                    Text("مبلغِ قسط", color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Black)
+                }
+                HorizontalDivider(color = AppLine)
+
                 // حداکثر ۵ قسط تو صفحه جا می‌شه، بقیه با اسکرول - کنارش یه اسکرول‌بار سبز نشون می‌ده
                 // چقدر پایین رفتیم (خواسته‌ی کاربر).
                 val tableState = rememberLazyListState()
@@ -311,9 +741,9 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                     itemsIndexed(result.rows, key = { _, row -> row.month }) { idx, row ->
                         val due = dueDates[idx]
                         val dateLabel = if (interval >= 28) {
-                            "${faMonthNamesResult[due.m - 1]} ${toFa(due.y)}"
+                            "${persianMonthName(due.m)} ${toFa(due.y)}"
                         } else {
-                            "${toFa(due.d)} ${faMonthNamesResult[due.m - 1]}"
+                            "${toFa(due.d)} ${persianMonthName(due.m)}"
                         }
                         Column(Modifier.fillMaxWidth().height(rowH)) {
                             Row(
@@ -323,7 +753,13 @@ fun ResultScreen(outcome: BankLoanOutcome, historyViewModel: CalculationHistoryV
                             ) {
                                 Text("قسط ${toFa(row.month)}", fontSize = 12.sp)
                                 Text(dateLabel, fontSize = 12.sp)
-                                Text("${maskIfPrivate(privacyMode, fmt(row.installment))} ریال", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                                PrivacyCrossfade(privacyMode) { masked ->
+                                    Text(
+                                        "${maskIfPrivate(masked, amountToman(row.installment))} تومان",
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
                             }
                             if (idx != result.rows.lastIndex) HorizontalDivider(color = AppLine)
                         }
@@ -365,20 +801,6 @@ private fun MoneyParticleBurst(trigger: Any, modifier: Modifier = Modifier) {
                 center = Offset(x, y),
             )
         }
-    }
-}
-
-/** ورود پلکانی آیتم‌های صفحه‌ی نتیجه: هر بخش با یه تاخیر کوچیک بعد از قبلی fade+slide میاد بالا -
- * حس «چیده شدن» نتیجه، به‌جای ظاهر شدن یهویی همه‌چیز. فقط یه‌بار موقع ساخته‌شدن صفحه اجرا می‌شه. */
-@Composable
-private fun StaggerIn(index: Int, content: @Composable () -> Unit) {
-    val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
-    AnimatedVisibility(
-        visibleState = visibleState,
-        enter = fadeIn(tween(340, delayMillis = index * 55)) +
-            slideInVertically(tween(340, delayMillis = index * 55)) { it / 8 },
-    ) {
-        content()
     }
 }
 
@@ -437,6 +859,18 @@ private fun LoanRing(principal: Double, interest: Double, progress: Float, modif
     }
 }
 
+/** نمایشِ حداکثر دو رقمِ اعشار - هم‌الگو با trimRate تو BankLoanScreen.kt (خصوصیِ همون فایله، برای
+ * همین نسخه‌ی جداگانه‌ی خودِ این فایل). */
+private fun trimRateResult(v: Double): String {
+    // `Locale.US` اجباریه: خروجی مستقیم تو `editRateText` می‌شینه که بعد `toDoubleOrNull()`
+    // می‌شه؛ روی گوشیِ فارسی رقمِ فارسی می‌داد و نرخ بی‌صدا صفر می‌شد (یعنی QARZ و محاسبه‌ی غلط).
+    return if (v == v.toLong().toDouble()) {
+        v.toLong().toString()
+    } else {
+        String.format(Locale.US, "%.2f", v)
+    }
+}
+
 private suspend fun animateValue(from: Double, to: Double, durationMs: Long = 500, onUpdate: (Double) -> Unit) {
     val start = System.currentTimeMillis()
     while (true) {
@@ -446,5 +880,47 @@ private suspend fun animateValue(from: Double, to: Double, durationMs: Long = 50
         onUpdate(from + (to - from) * eased)
         if (p >= 1.0) break
         delay(16)
+    }
+}
+
+/**
+ * ردیفِ برچسب/مقدارِ کارتِ خلاصه - فریمِ `68a`.
+ *
+ * جای `StatBox` آمد: جعبه‌های هم‌عرض سلسله‌مراتب نداشتند و «کلِ بازپرداخت» هم‌وزنِ
+ * «سررسید هر ماه» دیده می‌شد. [emphasis] فقط برای ردیفِ اول.
+ */
+@Composable
+private fun SummaryRow(label: String, value: String, emphasis: Boolean = false) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            color = AppMuted,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            value,
+            color = AppText,
+            fontSize = if (emphasis) 12.5.sp else 11.sp,
+            fontWeight = FontWeight.Black,
+        )
+    }
+}
+
+/** یک قلمِ افسانه‌ی حلقه - نقطه‌ی هم‌رنگِ کمان + برچسب + درصد. */
+@Composable
+private fun RingLegend(color: Color, label: String, percent: Double) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(color))
+        Text(
+            "$label ${toFa(percent.roundToLong().toString())}٪",
+            color = AppMuted,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Black,
+        )
     }
 }

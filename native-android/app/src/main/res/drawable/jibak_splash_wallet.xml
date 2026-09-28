@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  فقط **کیف**، بی سکه — برای اینتروی اسپلش (خواسته‌ی کاربر، ۳۱ شهریور: «سکه از بالا بیاید
+  به سمت کیف، کیف تکان نخورد»).
+
+  مسیرها عیناً از `jibak_launcher_mark.xml` برداشته شدند؛ فقط سه مسیرِ سکه حذف شده‌اند.
+  پشتِ کیف (`#0A7454`) از y=51 شروع می‌شود، پس سکه‌ای که پشتِ این تصویر پایین می‌آید
+  خودبه‌خود «داخلِ» کیف می‌افتد و نیمه‌اش بیرون می‌مانَد - بی هیچ ماسکِ اضافه.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#0A7454"
+        android:pathData="M31,51 L77,51 A9,9 0,0 1,86,60 L86,78 A9,9 0,0 1,77,87 L31,87 A9,9 0,0 1,22,78 L22,60 A9,9 0,0 1,31,51 Z"/>
+    <path android:fillColor="#16AE78"
+        android:pathData="M22,65 L86,65 L86,78 A9,9 0,0 1,77,87 L31,87 A9,9 0,0 1,22,78 Z"/>
+    <path android:fillColor="#075D43"
+        android:pathData="M22,65 L86,65 L86,71 L22,71 Z"/>
+    <path android:fillColor="#087754"
+        android:pathData="M65,71 L86,71 L86,78 A9,9 0,0 1,77,87 L65,87 Z"/>
+    <path android:fillColor="#69E9B8"
+        android:pathData="M70,78 A5,5 0,1 0,80,78 A5,5 0,1 0,70,78 Z"/>
+</vector>

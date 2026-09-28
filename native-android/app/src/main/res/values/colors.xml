@@ -1,3 +1,7 @@
 <resources>
-    <color name="app_bg">#0D1321</color>
+    <!-- پس‌زمینه‌ی پنجره‌ی اپ - تمِ واقعی با Compose ست می‌شه، این فقط برای لحظه‌ی قبل از
+         اولین فریمه. -->
+    <color name="app_bg">#F5FBFF</color>
+    <!-- دقیقاً رنگِ پس‌زمینه‌ی SplashIntroScreen: فریمِ سیستم و فریمِ Compose یک صحنه‌اند. -->
+    <color name="splash_bg">#013D1F</color>
 </resources>

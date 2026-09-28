@@ -90,6 +90,26 @@ class LoanCalculatorTest {
     }
 
     @Test
+    fun persianDateAddDaysHandlesNegativeOffsets() {
+        // باگِ واقعیِ کشف‌شده (رجوع کن به CLAUDE.md): repeat(n)ِ Kotlin با n منفی هیچ کاری نمی‌کنه -
+        // addDays(date, -1) قبل از رفعِ باگ همون تاریخِ ورودی رو بدونِ تغییر برمی‌گردوند.
+        assertTrue(PersianCalendar.addDays(PersianDate(1405, 5, 17), -1) == PersianDate(1405, 5, 16))
+        assertTrue(PersianCalendar.addDays(PersianDate(1405, 5, 17), -6) == PersianDate(1405, 5, 11))
+        // عبور از اولِ ماه به عقب
+        assertTrue(PersianCalendar.addDays(PersianDate(1405, 5, 1), -1) == PersianDate(1405, 4, 31))
+        // عبور از اولِ سال به عقب
+        assertTrue(PersianCalendar.addDays(PersianDate(1405, 1, 1), -1) == PersianDate(1404, 12, 29))
+        // days == 0 باید بی‌اثر بمونه
+        assertTrue(PersianCalendar.addDays(PersianDate(1405, 5, 17), 0) == PersianDate(1405, 5, 17))
+    }
+
+    @Test
+    fun persianDateAddMonthsHandlesNegativeOffsets() {
+        assertTrue(PersianCalendar.addMonths(PersianDate(1405, 5, 4), -1) == PersianDate(1405, 4, 4))
+        assertTrue(PersianCalendar.addMonths(PersianDate(1405, 1, 4), -1) == PersianDate(1404, 12, 4))
+    }
+
+    @Test
     fun persianDateAddMonthsClampsDay() {
         // اگه روز مبدا (۳۱) تو ماه مقصد (۳۰ یا ۲۹ روزه) وجود نداشته باشه، باید clamp بشه
         val result = PersianCalendar.addMonths(PersianDate(1404, 6, 31), 1)
@@ -115,8 +135,8 @@ class LoanCalculatorTest {
 
     @Test
     fun fmtMatchesJsReference() {
-        assertTrue(fmt(9392433.0) == "۹,۳۹۲,۴۳۳")
-        assertTrue(fmt(112709199.0) == "۱۱۲,۷۰۹,۱۹۹")
+        assertTrue(fmt(9392433.0) == "۹٬۳۹۲٬۴۳۳")
+        assertTrue(fmt(112709199.0) == "۱۱۲٬۷۰۹٬۱۹۹")
     }
 
     @Test

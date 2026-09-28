@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  پیش‌زمینه عمداً `jibak_stage_0` است، نه `jibak_brand_mark`.
+
+  `jibak_brand_mark` لبه‌به‌لبه است و برای نشانِ **داخلِ** برنامه (اسپلش و لوگو)
+  درست است، ولی روی لانچر بیرونِ ناحیه‌ی امنِ ۶۶dp می‌افتد و ماسکِ گوشی کیف را
+  نصفه می‌بُرد (گزارشِ کاربر روی MIUI). `jibak_stage_0` همان تصویر است با
+  حاشیه‌ی امن، و هم‌قد و هم‌مرکزِ هشت پله‌ی پژمردگی - پس روزی که آیکون می‌پژمرد
+  کیف جابه‌جا نمی‌شود.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_wallet_background" />
+    <foreground android:drawable="@drawable/jibak_stage_0" />
+    <monochrome android:drawable="@drawable/jibak_stage_0" />
+</adaptive-icon>

@@ -42,7 +42,6 @@ val banks: List<BankEntry> = listOf(
     BankEntry("بلوبانک", Color(0xFF0091EA), "banks/blubank.png"),
     BankEntry("بانک مرکزی", Color(0xFF283593), "banks/markazi.png"),
     BankEntry("بانک انصار", Color(0xFFB71C1C), "banks/ansar.png"),
-    BankEntry("بانک آینده", Color(0xFF3E2723), "banks/ayandeh.png"),
     BankEntry("بانک حکمت ایرانیان", Color(0xFF1976D2), "banks/hekmat.png"),
     BankEntry("موسسه اعتباری آرمان", Color(0xFF8D6E63), "banks/arman.png"),
     BankEntry("موسسه اعتباری ملل", Color(0xFF1565C0), "banks/melal.png"),

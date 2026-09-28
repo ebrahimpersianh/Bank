@@ -20,7 +20,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
-import ir.sadteam.loancalc.ui.theme.AppAccent
+import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.Motion
 
 /**
  * پورت افکت لمسی وب (`.chip`, `.preset-card`, `.bank-item`, `.loan-card`, `.cta` همه یه
@@ -30,8 +31,13 @@ import ir.sadteam.loancalc.ui.theme.AppAccent
  *
  * علاوه بر press-scale، حالا دو تا چیز جدید هم اضافه شده (به‌درخواست کاربر «برنامه خیلی خشکه»):
  *  - **هپتیک**: موقع فشردن یه tick ظریف حس می‌شه.
- *  - **قاب طلایی روی تپ**: اگه [goldBorderShape] داده بشه، تا وقتی انگشت روی المانه یه حاشیه‌ی
- *    طلایی (AppAccent) دورش می‌افته و با رها کردن محو می‌شه.
+ *  - **قابِ رنگی روی تپ**: اگه [goldBorderShape] داده بشه، تا وقتی انگشت روی المانه یه حاشیه‌ی
+ *    سبز دورش می‌افته و با رها کردن محو می‌شه.
+ *
+ * ⚠️ **بازطراحیِ سبکِ «جیبک»**: این حاشیه قبلاً **طلایی** بود؛ به سبزِ اصلی عوض شد چون قاعده‌ی
+ * ماندگارِ پروژه می‌گه **طلایی فقط نشانه‌ی پرمیوم/اشتراکه** و نباید رو المانِ معمولی بیاد -
+ * سیستمِ طراحیِ جدید هم صریحاً همینو تکرار می‌کنه. نامِ پارامتر (`goldBorderShape`) عمداً عوض
+ * نشد تا دیفِ سه فایلِ صداکننده بی‌خودی شلوغ نشه.
  */
 @Composable
 fun Modifier.pressScaleClickable(
@@ -49,16 +55,18 @@ fun Modifier.pressScaleClickable(
             buzz()
         }
     }
+    // فنری به‌جای خطی: موقعِ رها کردن یه برگشتِ خیلی ریزِ کِش‌مانند داره، دقیقاً همون حسی که
+    // دکمه‌های iOS می‌دن - رجوع کن به Motion.kt برای دلیلِ کاملِ فنر در برابر tween.
     val animatedScale by animateFloatAsState(
         targetValue = if (pressed) scale else 1f,
-        animationSpec = tween(100),
+        animationSpec = Motion.snappy(),
         label = "pressScale",
     )
-    val gold = AppAccent
+    val pressBorder = AppPrimary
     val borderColor by animateColorAsState(
-        targetValue = if (pressed && goldBorderShape != null) gold else Color.Transparent,
+        targetValue = if (pressed && goldBorderShape != null) pressBorder else Color.Transparent,
         animationSpec = tween(120),
-        label = "pressGoldBorder",
+        label = "pressBorder",
     )
     return this
         .graphicsLayer { scaleX = animatedScale; scaleY = animatedScale }

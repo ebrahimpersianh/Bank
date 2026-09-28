@@ -3,8 +3,13 @@ package ir.sadteam.loancalc.data
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import ir.sadteam.loancalc.core.JalaliCalendar
+import ir.sadteam.loancalc.core.LoanCalculator
+import ir.sadteam.loancalc.core.LoanMethod
 import ir.sadteam.loancalc.core.PersianCalendar
 import ir.sadteam.loancalc.core.PersianDate
+import androidx.room.withTransaction
+import ir.sadteam.loancalc.data.db.AppDatabase
 import ir.sadteam.loancalc.data.db.LoanDao
 import ir.sadteam.loancalc.data.db.LoanEntity
 import ir.sadteam.loancalc.data.db.LoanRowDao
@@ -41,18 +46,39 @@ sealed class SyncOutcome {
  * برابر بازسازی می‌شه و همون‌جا هم persist می‌شه - یعنی تاریخچه‌ی پرداختِ هیچ کاربری با این تغییر
  * گم نمی‌شه.
  */
+/** کلیدِ این بخش در جدولِ نسخه‌های ابری. */
+private const val LOAN_CLOUD_MODULE = "loans"
+
 class LoanRepository(
     private val loanDao: LoanDao,
     private val loanRowDao: LoanRowDao,
     private val apiService: ApiService,
+    /** اختیاری - برای اتمیک‌بودنِ جایگزینیِ وام‌ها و ردیف‌های قسطشان با هم. */
+    private val database: AppDatabase? = null,
+    private val uiPrefs: ir.sadteam.loancalc.data.prefs.UiPrefs? = null,
 ) {
     private val gson = Gson()
+    /** بدنه را داخلِ یک تراکنشِ دیتابیس اجرا می‌کند - یا اگر دیتابیسی نداریم، همان‌طور.
+     * تودرتو امن است: Room تراکنشِ داخلی را به همان تراکنشِ بیرونی می‌چسبانَد. */
+    private suspend fun <T> inTransaction(block: suspend () -> T): T {
+        val db = database ?: return block()
+        return db.withTransaction { block() }
+    }
+
 
     fun observeLoans(): Flow<List<LoanEntity>> = loanDao.observeAll()
 
     suspend fun getLoans(): List<LoanEntity> = loanDao.getAll()
 
     suspend fun saveLoan(loan: LoanEntity) = loanDao.upsert(loan)
+
+    /** وام‌هایی که هنوز به طرفِ‌حساب وصل نشدن - برای حدسِ خودکارِ یه‌بارِ دیتای قدیمی (سوالِ ۶ی
+     * design/ANSWERS-chequecounterpartydang.md، هم‌الگو با [ir.sadteam.loancalc.data.ChequeRepository.chequesWithoutCounterparty]). */
+    suspend fun loansWithoutCounterparty(): List<LoanEntity> = loanDao.getAll().filter { it.counterpartyId == null }
+
+    suspend fun setLoanCounterparty(loan: LoanEntity, counterpartyId: Long) {
+        loanDao.upsert(loan.copy(counterpartyId = counterpartyId))
+    }
 
     suspend fun deleteLoan(id: Long) {
         loanDao.deleteById(id)
@@ -137,6 +163,76 @@ class LoanRepository(
      * (addManualLoan همیشه graceMonths=0 ذخیره می‌کنه)، وامِ محاسبه‌شده هرچی موقعِ محاسبه بوده. */
     fun getGraceMonths(loan: LoanEntity): Int = (parseData(loan)["graceMonths"] as? Number)?.toInt() ?: 0
 
+    /** نرخِ سالانه‌ی وام (درصد) - فریمِ `27b` تو خلاصه‌ی بالای صفحه نشونش می‌ده. صفر یعنی
+     * بدونِ سود یا وامِ دستی‌ای که نرخ براش ثبت نشده؛ اون‌وقت UI ردیفِ «سود» رو نشون نمی‌ده. */
+    fun getRatePct(loan: LoanEntity): Double = (parseData(loan)["rate"] as? Number)?.toDouble() ?: 0.0
+
+    /**
+     * **سودی که با تسویه‌ی یک‌جای همین حالا حذف می‌شه** - کارتِ «تسویه‌ی زودتر» تو فریمِ `27b`.
+     *
+     * = (جمعِ اقساطِ پرداخت‌نشده) − (اصلِ باقی‌مونده). اصلِ باقی‌مونده از `balance`ِ همون ردیفِ
+     * جدولِ محاسبه‌شده میاد، چون جدولِ ذخیره‌شده‌ی `loan_rows` فقط مبلغِ قسط رو نگه می‌داره نه
+     * تفکیکِ اصل/سود رو.
+     *
+     * `null` یعنی کارت اصلاً نشون داده نمی‌شه: وامِ بی‌سود (قرض‌الحسنه‌ی بدونِ کارمزد یا وامِ
+     * دستی)، وامِ تسویه‌شده، یا هر حالتی که عددِ معناداری در نمیاد.
+     *
+     * ⚠️ **تقریبی‌ست**: کاربر می‌تونه مبلغِ تکِ اقساط رو دستی ویرایش کنه، ولی `balance` از رو
+     * فرمولِ اولیه حساب می‌شه. برای همین UI باید با لحنِ تخمینی نشونش بده، نه یه رقمِ قطعی.
+     */
+    fun earlySettlementSaving(loan: LoanEntity, unpaidTotal: Double): Double? {
+        if (loan.n <= 0 || loan.paidCount >= loan.n) return null
+        val data = parseData(loan)
+        val ratePct = (data["rate"] as? Number)?.toDouble() ?: 0.0
+        if (ratePct <= 0.0) return null
+        val method = when (data["method"] as? String) {
+            "qarz" -> LoanMethod.QARZ
+            "flat" -> LoanMethod.FLAT
+            else -> LoanMethod.STANDARD
+        }
+        val graceMonths = (data["graceMonths"] as? Number)?.toInt() ?: 0
+        val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
+        val principal = (data["amount"] as? Number)?.toDouble() ?: loan.amount
+        val result = runCatching {
+            LoanCalculator.compute(principal, ratePct, loan.n, method, graceMonths, intervalDays)
+        }.getOrNull() ?: return null
+        // مانده‌ی اصل بعد از آخرین قسطِ پرداخت‌شده؛ قسطِ صفر یعنی هنوز کلِ اصل باقیه.
+        val outstanding = if (loan.paidCount == 0) {
+            result.originalPrincipal
+        } else {
+            result.rows.getOrNull(loan.paidCount - 1)?.balance ?: return null
+        }
+        val saving = unpaidTotal - outstanding
+        return if (saving > 0) saving else null
+    }
+
+    /** یادداشتِ آزادِ کاربر رو این وام (مثلاً شماره حساب/کارت) - تو dataJson ذخیره می‌شه، نیازی به
+     * تغییرِ schema نداره. پیش‌فرض رشته‌ی خالی، نه هیچ‌کدومِ وام‌های قدیمی‌تر این کلید رو ندارن. */
+    fun getNotes(loan: LoanEntity): String = (parseData(loan)["notes"] as? String) ?: ""
+
+    /** ترتیبِ دلخواهِ کاربر (کشیدن‌ورهاکردنِ کارتِ وام تو MyLoansScreen) - تو dataJson ذخیره می‌شه
+     * (`sortOrder`)، نیازی به تغییرِ schema نداره. null یعنی این وام هنوز هیچ‌وقت دستی جابه‌جا نشده -
+     * تو مرتب‌سازیِ CUSTOM همیشه آخر می‌افته. */
+    fun getSortOrder(loan: LoanEntity): Long? = (parseData(loan)["sortOrder"] as? Number)?.toLong()
+
+    /** بعدِ رهاکردنِ کارتِ یه وامِ کشیده‌شده - همه‌ی وام‌های [orderedLoans] رو به همون ترتیب
+     * عددگذاری (۰..n-۱) و ذخیره می‌کنه؛ از این به بعد مرتب‌سازیِ CUSTOM از رو همین عدد کار می‌کنه. */
+    suspend fun reorderLoans(orderedLoans: List<LoanEntity>) {
+        orderedLoans.forEachIndexed { index, loan ->
+            val data = parseDataMutable(loan)
+            data["sortOrder"] = index
+            loanDao.upsert(loan.copy(dataJson = gson.toJson(data)))
+        }
+    }
+
+    /** ذخیره‌ی یادداشتِ وام - رو هر نوع وامی (دستی یا محاسبه‌شده) امنه، چون فقط dataJson رو دست
+     * می‌زنه، نه مبلغ/نرخ/ردیف‌ها. */
+    suspend fun updateNotes(loan: LoanEntity, notes: String) {
+        val data = parseDataMutable(loan)
+        data["notes"] = notes
+        loanDao.upsert(loan.copy(dataJson = gson.toJson(data)))
+    }
+
     /**
      * ویرایشِ مشخصاتِ *غیرمالیِ* هر وامی (دستی یا محاسبه‌شده) - فقط اسم/بانک/وام‌گیرنده/تاریخِ شروع،
      * بدون دست‌زدن به مبلغ/نرخ/تعدادِ اقساط/ردیف‌ها. برخلافِ [updateManualLoan] که مخصوصِ وام‌های
@@ -150,14 +246,30 @@ class LoanRepository(
         bank: String,
         borrower: String,
         startDate: Map<String, Int>,
+        category: String? = null,
     ) {
         val data = parseDataMutable(loan)
         data["name"] = name
         data["bank"] = bank
         data["borrower"] = borrower
         data["startDate"] = startDate
+        if (category != null) data["category"] = category
         loanDao.upsert(loan.copy(name = name, bank = bank, dataJson = gson.toJson(data)))
     }
+
+    /**
+     * نوعِ وام (`home`/`car`/…) - نشانِ ردیفِ فهرست از این می‌آید.
+     *
+     * 🚨 **ستونِ تازه نگرفت، داخلِ [LoanEntity.dataJson] نشست.** دو دلیل، هر دو ثبت‌شده در
+     * قواعدِ پروژه: مهاجرتِ دیتابیس پرریسک‌ترین کارِ این برنامه است و برای یک برچسب صرف
+     * نمی‌کند؛ و مهم‌تر، `dataJson` همان چیزی است که به **سرور و فایلِ پشتیبان** می‌رود، پس
+     * نوعِ وام بی هیچ کارِ اضافه‌ای سینک و بکاپ می‌شود. یک ستونِ تازه باید جداگانه به
+     * `toWebMap`/`fromWebMap` هم اضافه می‌شد و جا ماندنش یعنی نوعِ وام بعدِ بازیابی می‌پرید.
+     *
+     * `null` یعنی کاربر نوعی انتخاب نکرده - آن‌وقت نشان از **نامِ وام** حدس زده می‌شود.
+     */
+    fun categoryOf(loan: LoanEntity): String? =
+        (parseDataMutable(loan)["category"] as? String)?.takeIf { it.isNotBlank() }
 
     /**
      * ویرایشِ مشخصاتِ کلیِ یه وامِ دستیِ ازقبل‌ذخیره‌شده (اسم/بانک/مبلغِ هر قسط/تعدادِ کل/تاریخِ
@@ -209,6 +321,69 @@ class LoanRepository(
     }
 
     /**
+     * ویرایشِ مبلغ/تعدادِ اقساطِ یه وامِ *محاسبه‌شده* (غیردستی، method != "manual") - برخلافِ
+     * [updateManualLoan] که فقط یه ضرب ساده‌ست، اینجا باید کلِ فرمولِ [LoanCalculator] با نرخ/روش/
+     * دوره‌ی تنفسِ همین وام دوباره اجرا بشه (چون قسط‌ها لزوماً مساوی نیستن - قرض‌الحسنه). برای همین
+     * **فقط وقتی هنوز هیچ قسطی پرداخت نشده** ([loan.paidCount] == 0) صدا زده بشه - وگرنه چون همه‌ی
+     * ردیف‌های قبلی با ردیف‌های تازه‌محاسبه‌شده جایگزین می‌شن، تاریخچه‌ی پرداخت/تاخیر/عکسِ رسیدِ
+     * قسط‌های قبلاً پرداخت‌شده گم می‌شه. این محدودیت با `require` هم اینجا اجباری شده (نه فقط سمتِ UI)
+     * تا اشتباهاً صدا زدنش رو یه وامِ نیمه‌پرداخت‌شده به‌جای پاک‌کردنِ بی‌صدا، کرش کنه.
+     */
+    suspend fun updateComputedLoanAmount(
+        loan: LoanEntity,
+        name: String,
+        bank: String,
+        borrower: String,
+        principalAmount: Double,
+        n: Int,
+        startDate: Map<String, Int>,
+        category: String? = null,
+    ) {
+        require(loan.paidCount == 0) {
+            "updateComputedLoanAmount فقط رو وامی که هنوز هیچ قسطی پرداخت نشده مجازه"
+        }
+        val data = parseData(loan)
+        val ratePct = (data["rate"] as? Number)?.toDouble() ?: 0.0
+        val method = if ((data["method"] as? String) == "qarz") LoanMethod.QARZ else LoanMethod.STANDARD
+        val graceMonths = (data["graceMonths"] as? Number)?.toInt() ?: 0
+        val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
+        val result = LoanCalculator.compute(principalAmount, ratePct, n, method, graceMonths, intervalDays)
+
+        val newData = parseDataMutable(loan)
+        newData["name"] = name
+        newData["bank"] = bank
+        newData["borrower"] = borrower
+        // ⚠️ نوعِ وام همین‌جا نوشته می‌شود، نه با یک فراخوانیِ جدا بعدش: آن فراخوانی
+        // `dataJson`ِ **کهنه** را می‌خواند (شیءِ `loan` هنوز نسخه‌ی قبلِ این تابع است) و
+        // همه‌ی مبالغِ تازه‌نوشته را دوباره با مقادیرِ قدیمی رویِ هم می‌نوشت.
+        if (category != null) newData["category"] = category
+        newData["amount"] = result.principal
+        newData["n"] = n
+        newData["installment"] = result.installment
+        newData["totalPaid"] = result.totalPaid
+        newData["totalInterest"] = result.totalInterest
+        newData["startDate"] = startDate
+        newData["paidCount"] = 0
+        newData.remove("rows")
+        loanDao.upsert(
+            loan.copy(
+                name = name,
+                bank = bank,
+                amount = result.principal,
+                installment = result.installment,
+                totalPaid = result.totalPaid,
+                n = n,
+                paidCount = 0,
+                dataJson = gson.toJson(newData),
+            ),
+        )
+        loanRowDao.replaceForLoan(
+            loan.id,
+            result.rows.map { LoanRowEntity(loanId = loan.id, m = it.month, installment = it.installment, paid = false) },
+        )
+    }
+
+    /**
      * پورت saveLoan تو www/index.html (ذخیره‌ی نتیجه‌ی یه محاسبه‌ی وام بانکی، نه ورود دستی). برخلاف
      * [addManualLoan] که اقساط رو یکسان فرض می‌کنه، اینجا خودِ ردیف‌های محاسبه‌شده ([rows] = جفت
      * (شماره‌ی قسط، مبلغ)) ذخیره می‌شن تا وام‌های قرض‌الحسنه که اقساط نامساوی دارن درست بازسازی بشن.
@@ -229,6 +404,9 @@ class LoanRepository(
         startDate: Map<String, Int>,
         intervalDays: Int,
         rows: List<Pair<Int, Double>>,
+        // برای وامی که تازه (نه از امروز) واقعاً وجود داره و کاربر داره از رو محاسبه‌گر واردش
+        // می‌کنه - همون قابلیتِ فرمِ افزودنِ دستی (addManualLoan)، این‌جا هم برای وامِ محاسبه‌شده.
+        paidCount: Int = 0,
     ): Long {
         val id = System.currentTimeMillis()
         val createdAt = isoNow()
@@ -247,7 +425,7 @@ class LoanRepository(
             "totalInterest" to totalInterest,
             "startDate" to startDate,
             "intervalDays" to intervalDays,
-            "paidCount" to 0,
+            "paidCount" to paidCount,
             "createdAt" to createdAt,
         )
         loanDao.upsert(
@@ -259,13 +437,13 @@ class LoanRepository(
                 installment = installment,
                 totalPaid = totalPaid,
                 n = n,
-                paidCount = 0,
+                paidCount = paidCount,
                 createdAt = createdAt,
                 dataJson = gson.toJson(webShape),
             ),
         )
         loanRowDao.upsertAll(
-            rows.map { (m, inst) -> LoanRowEntity(loanId = id, m = m, installment = inst, paid = false) },
+            rows.map { (m, inst) -> LoanRowEntity(loanId = id, m = m, installment = inst, paid = m <= paidCount) },
         )
         return id
     }
@@ -304,6 +482,110 @@ class LoanRepository(
         }
     }
 
+    /** سررسیدِ اولین قسطِ پرداخت‌نشده - برای مرتب‌سازیِ «نزدیک‌ترین سررسید» تو MyLoansScreen. عمداً
+     * کاملاً سینکرونه (فقط از رو dataJson/paidCountِ خودِ [loan]، بدونِ کوئریِ loan_rows) چون این
+     * تابع باید رو کلِ لیستِ وام‌ها (مرتب‌سازیِ محلی) بدونِ suspend/کوروتین اجرا بشه - همون فرمولِ
+     * تاریخِ [getRows] رو تکرار می‌کنه، فقط برای شماره‌قسطِ `paidCount + 1`. اگه وام تسویه شده
+     * (paidCount >= n) یا اصلاً قسطی نداره، null برمی‌گردونه (تو مرتب‌سازی همیشه آخر می‌افته). */
+    fun getNextDueDate(loan: LoanEntity): PersianDate? {
+        if (loan.n <= 0 || loan.paidCount >= loan.n) return null
+        val data = parseData(loan)
+        val startDate = parseStartDate(data)
+        val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
+        val graceMonths = (data["graceMonths"] as? Number)?.toInt() ?: 0
+        val base = if (graceMonths > 0) PersianCalendar.addMonths(startDate, graceMonths) else startDate
+        // ⚠️ شماره‌ی قسطِ بعدی از `paidCount + 1` گرفته می‌شود، یعنی فرض بر پرداختِ **ترتیبی**
+        // است. در این اپ کاربر می‌تواند هر قسطی را جدا پرداخت کند، پس اگر فقط قسطِ دوم پرداخت
+        // شده باشد این تابع سررسیدِ قسطِ دوم را برمی‌گرداند و عقب‌افتادگیِ قسطِ اول را نمی‌بیند.
+        // اصلاحِ درست، خواندنِ اولین ردیفِ واقعاً پرداخت‌نشده از `loan_rows` است -
+        // رجوع کن به [nextUnpaidDueDate] که همین کار را می‌کند؛ این نسخه‌ی همگام برای جاهایی
+        // مانده که داخلِ محاسبه‌ی Compose صدا زده می‌شوند و suspend نیستند.
+        val m = loan.paidCount + 1
+        return if (intervalDays % 30 == 0) {
+            PersianCalendar.addMonths(base, (m - 1) * (intervalDays / 30))
+        } else {
+            PersianCalendar.addDays(base, (m - 1) * intervalDays)
+        }
+    }
+
+    /**
+     * سررسیدِ **اولین قسطِ واقعاً پرداخت‌نشده** - برخلافِ [getNextDueDate] به `paidCount` تکیه
+     * نمی‌کند، پس با پرداختِ غیرترتیبی هم درست است (فقط قسطِ دوم پرداخت شده → همچنان قسطِ اول).
+     */
+    suspend fun nextUnpaidDueDate(loan: LoanEntity): PersianDate? {
+        if (loan.n <= 0) return null
+        val firstUnpaid = getOrMigrateRows(loan).sortedBy { it.m }.firstOrNull { !it.paid } ?: return null
+        val data = parseData(loan)
+        val startDate = parseStartDate(data)
+        val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
+        val graceMonths = (data["graceMonths"] as? Number)?.toInt() ?: 0
+        val base = if (graceMonths > 0) PersianCalendar.addMonths(startDate, graceMonths) else startDate
+        val step = firstUnpaid.m - 1
+        return if (intervalDays % 30 == 0) {
+            PersianCalendar.addMonths(base, step * (intervalDays / 30))
+        } else {
+            PersianCalendar.addDays(base, step * intervalDays)
+        }
+    }
+
+    /** آیا سررسیدِ اولین قسطِ پرداخت‌نشده از امروز گذشته (بازپرداخت عقب‌افتاده)؟ - برای بجِ هشدارِ
+     * قرمز رو کارتِ وام تو MyLoansScreen. وامِ تسویه‌شده (getNextDueDate == null) هیچ‌وقت عقب‌افتاده
+     * نیست. */
+    fun isOverdue(loan: LoanEntity): Boolean {
+        val next = getNextDueDate(loan) ?: return false
+        val today = JalaliCalendar.today()
+        val nextCode = next.y * 10000 + next.m * 100 + next.d
+        val todayCode = today.y * 10000 + today.m * 100 + today.d
+        return nextCode < todayCode
+    }
+
+    /** مبلغِ قسطِ همینِ الان (اولین قسطِ پرداخت‌نشده‌ی این وام، بر اساسِ ردیفِ واقعی نه
+     * loan.installmentِ کهنه) - برای مورد ۱۴/۳۵: بعدِ ویرایشِ تکیِ یه قسط، loan.installment دیگه
+     * نماینده‌ی «همه‌ی اقساط» نیست (رجوع کن به همون منطقِ displayInstallment تو LoanDetailScreen،
+     * اینجا فقط تعمیمِ همون برای مصرفِ داشبورد/جای دیگه‌ست). اگه وام تسویه شده صفر برمی‌گردونه. */
+    suspend fun currentInstallmentAmount(loan: LoanEntity): Double {
+        val firstUnpaid = getRows(loan).firstOrNull { it["paid"] != true } ?: return 0.0
+        return (firstUnpaid["installment"] as? Number)?.toDouble() ?: 0.0
+    }
+
+    /** جمعِ مبلغِ همه‌ی اقساطِ پرداخت‌نشده‌ای که سررسیدشون از امروز گذشته - برای مورد ۱۹ («جمعِ
+     * اقساطِ معوق» تو داشبورد). برخلافِ [isOverdue] (که فقط بولین/اولین قسطِ پرداخت‌نشده رو چک
+     * می‌کنه)، این همه‌ی ردیف‌های واقعاً معوق رو (اگه کاربر چندین ماهه پرداخت نکرده) با مبلغِ
+     * واقعیِ خودِ همون ردیف (نه loan.installmentِ کهنه) جمع می‌زنه - برای همین به [getRows] که
+     * suspendه نیاز داره. */
+    /**
+     * **تعدادِ** قسط‌های عقب‌افتاده‌ی یک وام - خواسته‌ی کاربر (دورِ ۹): «بگو ۲۰ تا اقساطِ معوق».
+     *
+     * مبلغِ تنها نمی‌گوید مشکل یک قسطِ بزرگ است یا بیست قسطِ کوچک، و این دو تصمیمِ متفاوتی
+     * می‌خواهند. همان شرطِ [overdueInstallmentsTotal] است، فقط شمارش به‌جای جمع.
+     */
+    suspend fun overdueInstallmentsCount(loan: LoanEntity): Int {
+        val today = JalaliCalendar.today()
+        val todayCode = today.y * 10000 + today.m * 100 + today.d
+        return getRows(loan).count { row ->
+            if (row["paid"] == true) return@count false
+            val due = row["dueDate"] as? Map<*, *> ?: return@count false
+            val y = (due["y"] as? Number)?.toInt() ?: return@count false
+            val mo = (due["m"] as? Number)?.toInt() ?: return@count false
+            val d = (due["d"] as? Number)?.toInt() ?: return@count false
+            y * 10000 + mo * 100 + d < todayCode
+        }
+    }
+
+    suspend fun overdueInstallmentsTotal(loan: LoanEntity): Double {
+        val today = JalaliCalendar.today()
+        val todayCode = today.y * 10000 + today.m * 100 + today.d
+        return getRows(loan).sumOf { row ->
+            if (row["paid"] == true) return@sumOf 0.0
+            val due = row["dueDate"] as? Map<*, *> ?: return@sumOf 0.0
+            val y = (due["y"] as? Number)?.toInt() ?: return@sumOf 0.0
+            val mo = (due["m"] as? Number)?.toInt() ?: return@sumOf 0.0
+            val d = (due["d"] as? Number)?.toInt() ?: return@sumOf 0.0
+            val dueCode = y * 10000 + mo * 100 + d
+            if (dueCode < todayCode) (row["installment"] as? Number)?.toDouble() ?: 0.0 else 0.0
+        }
+    }
+
     private fun parseStartDate(data: Map<String, Any?>): PersianDate {
         val sd = data["startDate"] as? Map<*, *>
         val y = (sd?.get("y") as? Number)?.toInt() ?: 1404
@@ -331,20 +613,72 @@ class LoanRepository(
      * برای کدوم وام و کدوم قسطه» که چون این تابع همیشه با یه [loan] و یه [m] مشخص صدا زده می‌شه،
      * به‌طور طبیعی تضمین می‌شه. */
     suspend fun setRowPhoto(loan: LoanEntity, m: Int, photoPath: String) = updateRowPayment(loan, m) { row ->
-        row.copy(photoPath = photoPath)
+        // ⚠️ **اضافه‌** می‌کنه، جایگزین نمی‌کنه - طرح (کارتِ `36d`) چند عکسِ رسید برای هر قسط
+        // می‌خواد. نوشتن فقط از راهِ `withPhotoPaths()` (تنها نقطه‌ی نوشتنِ واحد).
+        row.withPhotoPaths(row.photoPaths + photoPath)
     }
 
     suspend fun removeRowPhoto(loan: LoanEntity, m: Int) = updateRowPayment(loan, m) { row ->
         row.copy(photoPath = null)
     }
 
+    /** حذفِ **یک** عکس از بینِ عکس‌های رسیدِ همون قسط. */
+    suspend fun removeRowPhoto(loan: LoanEntity, m: Int, photoPath: String) = updateRowPayment(loan, m) { row ->
+        row.withPhotoPaths(row.photoPaths - photoPath)
+    }
+
+    /** یادداشت و شماره‌ی پیگیریِ یه قسط - کارتِ `36d`. رشته‌ی خالی یعنی «پاک کن». */
+    suspend fun setRowDetails(loan: LoanEntity, m: Int, note: String?, trackingNumber: String?) =
+        updateRowPayment(loan, m) { row ->
+            row.copy(
+                note = note?.trim()?.ifBlank { null },
+                trackingNumber = trackingNumber?.trim()?.ifBlank { null },
+            )
+        }
+
+    /** پرداختِ گروهیِ چندتا قسط باهم (خواسته‌ی کاربر: به‌جای تک‌تک زدنِ هرکدوم، چندتا رو انتخاب کنه
+     * و یه‌جا «به‌موقع» علامت بزنه) - رجوع کن به [ir.sadteam.loancalc.ui.myloans.LoanDetailScreen]. */
+    suspend fun setRowsPaidOnTime(loan: LoanEntity, ms: List<Int>) = updateRowsPayment(loan, ms) { row ->
+        row.copy(paid = true, paidLate = false, paidDateY = null, paidDateM = null, paidDateD = null)
+    }
+
+    /** معادلِ گروهیِ [setRowPaidLate] - همون [paidDate] برای همه‌ی [ms] اعمال می‌شه. */
+    suspend fun setRowsPaidLate(loan: LoanEntity, ms: List<Int>, paidDate: Map<String, Int>) = updateRowsPayment(loan, ms) { row ->
+        row.copy(paid = true, paidLate = true, paidDateY = paidDate["y"], paidDateM = paidDate["m"], paidDateD = paidDate["d"])
+    }
+
     private suspend fun updateRowPayment(loan: LoanEntity, m: Int, transform: (LoanRowEntity) -> LoanRowEntity) {
         val rows = getOrMigrateRows(loan)
         val current = rows.firstOrNull { it.m == m }
             ?: LoanRowEntity(loanId = loan.id, m = m, installment = loan.installment, paid = false)
-        loanRowDao.upsertAll(listOf(transform(current)))
-        val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
-        loanDao.upsert(loan.copy(paidCount = newPaidCount))
+        // 🚨 **ردیفِ قسط و شمارنده‌ی وام یک کارند.** اگر بینشان کار نیمه می‌مانْد، ردیف
+        // «پرداخت‌شده» می‌شد ولی `paidCount` کهنه می‌مانْد - دقیقاً همان دوگانگیِ منبعِ
+        // حقیقت که یک‌بار پیشرفتِ همه‌ی وام‌ها را صفر کرد.
+        inTransaction {
+            loanRowDao.upsertAll(listOf(transform(current)))
+            val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
+            loanDao.upsert(loan.withPaidCount(newPaidCount))
+        }
+        // ویجت هر شش ساعت یک‌بار خودش تازه می‌شود؛ بی این خط، کاربر قسط را پرداخت‌شده
+        // علامت می‌زند و ویجت تا شش ساعت همان قسط را نشان می‌دهد.
+        LoanDataChange.notifyChanged()
+    }
+
+    /** هم‌الگو با [updateRowPayment] ولی رو چندتا قسط باهم - یه upsertAll/یه محاسبه‌ی paidCount
+     * برای کلِ دسته، نه یکی جدا به‌ازای هر قسط (کارآمدتر + یه سینکِ سرور به‌جای N تا). */
+    private suspend fun updateRowsPayment(loan: LoanEntity, ms: List<Int>, transform: (LoanRowEntity) -> LoanRowEntity) {
+        if (ms.isEmpty()) return
+        val rows = getOrMigrateRows(loan).associateBy { it.m }
+        val updated = ms.map { m ->
+            val current = rows[m] ?: LoanRowEntity(loanId = loan.id, m = m, installment = loan.installment, paid = false)
+            transform(current)
+        }
+        inTransaction {
+            loanRowDao.upsertAll(updated)
+            val newPaidCount = loanRowDao.getForLoan(loan.id).count { it.paid }
+            loanDao.upsert(loan.withPaidCount(newPaidCount))
+        }
+        LoanDataChange.notifyChanged()
     }
 
     /** ویرایش دستی مبلغ یه قسط (کارمزد/جریمه‌ی بانکی که نمی‌تونیم حدس بزنیم) - پورت
@@ -366,11 +700,30 @@ class LoanRepository(
         saveRows(loan, rows, installment = newAmount)
     }
 
+    /**
+     * ذخیره‌ی ردیف‌ها + هم‌قدم‌کردنِ خلاصه‌ها.
+     *
+     * 🚨 دو اصلاح نسبت به نسخه‌ی قبلی:
+     * - `amount` (اصلِ وام) دیگر با جمعِ بازپرداخت جایگزین **نمی‌شود**. این دو مفهومِ متفاوت‌اند
+     *   و یکی‌کردنشان یعنی هر ویرایشِ مبلغِ قسط، اصلِ وامِ ثبت‌شده را هم عوض می‌کرد. برای وامِ
+     *   دستی که کاربر خودش جمعِ کل را وارد کرده، همان مقدار سرِ جایش می‌ماند.
+     * - `installment`/`totalPaid` علاوه بر ستون، در کپیِ `dataJson` هم نوشته می‌شوند - همان
+     *   قاعده‌ی «یک عدد، یک نقطه‌ی نوشتن» که برای `paidCount` در [withPaidCount] رعایت شده بود.
+     *   بی این، پشتیبان و سرور خلاصه‌ی کهنه می‌گرفتند و بازیابی مبلغ‌های قدیمی را برمی‌گرداند.
+     */
     private suspend fun saveRows(loan: LoanEntity, rows: List<LoanRowEntity>, installment: Double? = null) {
         loanRowDao.upsertAll(rows)
         val newTotal = rows.sumOf { it.installment }
-        val updated = loan.copy(amount = newTotal, totalPaid = newTotal)
-        loanDao.upsert(if (installment != null) updated.copy(installment = installment) else updated)
+        val data = parseDataMutable(loan)
+        data["totalPaid"] = newTotal
+        if (installment != null) data["installment"] = installment
+        loanDao.upsert(
+            loan.copy(
+                totalPaid = newTotal,
+                installment = installment ?: loan.installment,
+                dataJson = gson.toJson(data),
+            ),
+        )
     }
 
     /** ردیف‌های این وام رو از `loan_rows` می‌خونه؛ اگه خالی بود (لبه‌ی نادرِ مهاجرت یا وامِ خیلی
@@ -382,6 +735,42 @@ class LoanRepository(
         val legacy = legacyRowsFromDataJson(loan).map { it.toLoanRowEntity(loan.id) }
         if (legacy.isNotEmpty()) loanRowDao.upsertAll(legacy)
         return legacy
+    }
+
+    /**
+     * ستونِ `paidCount` و کپیِ همون عدد تو `dataJson` رو **با هم** به‌روز می‌کنه.
+     *
+     * قبلاً فقط ستون به‌روز می‌شد و کپیِ dataJson کهنه می‌موند؛ چون [toWebMap] (چیزی که به سرور و
+     * فایلِ پشتیبان می‌ره) metaـش رو از dataJson می‌سازه، عددِ کهنه بیرون می‌رفت و بعدِ خروج/ورودِ
+     * دوباره پیشرفتِ وام‌ها صفر می‌شد - رجوع کن به کامنتِ کاملِ باگ تو [toWebMap].
+     */
+    private fun LoanEntity.withPaidCount(newPaidCount: Int): LoanEntity {
+        val data = parseDataMutable(this)
+        data["paidCount"] = newPaidCount
+        return copy(paidCount = newPaidCount, dataJson = gson.toJson(data))
+    }
+
+    /**
+     * ترمیمِ خودکارِ وام‌هایی که پیشرفتشون قبلاً به‌خاطرِ همون باگ صفر شده.
+     *
+     * ردیف‌های قسط (`loan_rows`) سالم موندن - فقط عددِ خلاصه‌ی `paidCount` گم شده بود. پس هرجا این
+     * عدد با تعدادِ واقعیِ ردیف‌های پرداخت‌شده نخونه، از رو خودِ ردیف‌ها بازسازی می‌شه. برای وامی که
+     * ردیفی نداره کاری نمی‌کنه (نباید عددِ درست رو با ۰ خراب کنه).
+     *
+     * تعدادِ وام‌های ترمیم‌شده رو برمی‌گردونه. اجرای دوباره‌ش بی‌ضرره (بارِ دوم چیزی برای اصلاح نیست).
+     */
+    suspend fun repairPaidCounts(): Int {
+        var repaired = 0
+        loanDao.getAll().forEach { loan ->
+            val rows = loanRowDao.getForLoan(loan.id)
+            if (rows.isEmpty()) return@forEach
+            val actual = rows.count { it.paid }
+            if (actual != loan.paidCount) {
+                loanDao.upsert(loan.withPaidCount(actual))
+                repaired++
+            }
+        }
+        return repaired
     }
 
     private fun buildInitialRowEntities(loanId: Long, installment: Double, n: Int, paidCount: Int): List<LoanRowEntity> =
@@ -411,6 +800,10 @@ class LoanRepository(
             map["paidDate"] = mapOf("y" to paidDateY, "m" to paidDateM, "d" to paidDateD)
         }
         if (photoPath != null) map["photoPath"] = photoPath
+        // ⚠️ یادداشت و شماره‌ی پیگیری هم باید تو بکاپ/سینک بره، وگرنه بعدِ خروج و ورودِ دوباره
+        // گم می‌شه - همون درسِ «دو منبعِ حقیقت» که یه‌بار پیشرفتِ همه‌ی وام‌ها رو صفر کرد.
+        if (note != null) map["note"] = note
+        if (trackingNumber != null) map["trackingNumber"] = trackingNumber
         return map
     }
 
@@ -431,6 +824,8 @@ class LoanRepository(
             paidDateM = (paidDate?.get("m") as? Number)?.toInt(),
             paidDateD = (paidDate?.get("d") as? Number)?.toInt(),
             photoPath = photoPath,
+            note = this["note"] as? String,
+            trackingNumber = this["trackingNumber"] as? String,
         )
     }
 
@@ -446,12 +841,19 @@ class LoanRepository(
 
     /** پورت syncLoansToServer: fire-and-forget، خطاها رو قورت می‌ده (دقیقاً مثل `.catch(()=>{})`
      * تو وب) چون این یه سینک پس‌زمینه‌ست، نه یه عملیات که کاربر منتظرش بمونه. */
-    suspend fun pushToServer(token: String) {
+    suspend fun pushToServer(token: String): Boolean {
         try {
             val loans = loanDao.getAll().map { toWebMap(it) }
-            apiService.putLoans("Bearer $token", PutLoansRequest(loans))
+            val expected = uiPrefs?.cloudRevision(LOAN_CLOUD_MODULE)
+            val response = apiService.putLoans("Bearer $token", PutLoansRequest(loans, expected))
+            if (!response.isSuccessful) return false
+            uiPrefs?.let { prefs -> expected?.let { prefs.setCloudRevision(LOAN_CLOUD_MODULE, it + 1) } }
+            return true
         } catch (e: Exception) {
-            // عمداً نادیده گرفته می‌شه
+            // 🚨 خطا دیگر **بی‌صدا** نیست: `false` برمی‌گردد تا مصرف‌کننده (کارگرِ
+            // پشتیبان‌گیری) بتواند به کاربر بگوید نسخه‌ی ابری ساخته نشد. بالا رفتنِ خطا
+            // عمداً نه - قطعیِ اینترنت نباید کارِ پشتیبانِ محلی را هم زمین بزند.
+            return false
         }
     }
 
@@ -483,14 +885,28 @@ class LoanRepository(
 
     suspend fun replaceAllWithServerData(serverLoans: List<Map<String, Any?>>) {
         val parsed = serverLoans.mapNotNull { fromWebMap(it) }
-        loanDao.replaceAll(parsed.map { it.first })
-        loanRowDao.clearAll()
-        parsed.forEach { (entity, rows) -> if (rows.isNotEmpty()) loanRowDao.upsertAll(rows) }
+        // 🚨 **وام و ردیف‌های قسطش یک کارند**: قطعِ کار بینِ `clearAll` و درجِ دوباره،
+        // وام‌هایی بی هیچ قسطی به‌جا می‌گذاشت - یعنی پیشرفتِ پرداختِ همه صفر.
+        inTransaction {
+            loanDao.replaceAll(parsed.map { it.first })
+            loanRowDao.clearAll()
+            parsed.forEach { (_, rows) -> if (rows.isNotEmpty()) loanRowDao.upsertAll(rows) }
+        }
     }
 
     /** پورت مفهومی restoreFromServer تو ChequeRepository/AccountRepository - برای «بازیابی از سرور
      * ابری» دستی تو تنظیمات، برخلاف syncAfterLogin که یه‌بار خودکار بعد از ورود صدا زده می‌شه و
      * برخورد داده‌ی محلی/سرور رو مدیریت می‌کنه، این همیشه بی‌قیدوشرط با نسخه‌ی سرور جایگزین می‌کنه. */
+    /** فقط **می‌گیرد**، چیزی نمی‌نویسد - تا بازیابیِ چندبخشی بتواند اول همه را دانلود کند
+     * و بعد یک‌جا بنویسد. `null` یعنی نیامد. */
+    suspend fun fetchServerBackupJson(token: String): String? = try {
+        val response = apiService.getLoans("Bearer $token")
+        uiPrefs?.setCloudRevision(LOAN_CLOUD_MODULE, response.revision)
+        gson.toJson(response.loans)
+    } catch (e: Exception) {
+        null
+    }
+
     suspend fun restoreFromServer(token: String): Boolean {
         val serverLoans = try {
             apiService.getLoans("Bearer $token").loans
@@ -517,6 +933,11 @@ class LoanRepository(
         } catch (e: Exception) {
             return false
         }
+        // 🚨 قبلاً فقط «آرایه‌ی JSON بودن» بررسی می‌شد و ردیف‌های نامعتبر در [fromWebMap] بی‌صدا
+        // با `mapNotNull` می‌افتادند - یعنی فایلِ خرابی مثلِ `[{}]` هیچ وامی نمی‌ساخت ولی
+        // **همه‌ی وام‌های موجود را پاک می‌کرد** و `true` هم برمی‌گرداند. حالا اول همه‌چیز
+        // اعتبارسنجی می‌شود و یک ردیفِ نامعتبر کلِ بازیابی را بی‌اثر رد می‌کند.
+        if (imported.any { fromWebMap(it) == null }) return false
         replaceAllWithServerData(imported)
         return true
     }
@@ -524,23 +945,52 @@ class LoanRepository(
     /** مقایسه‌ی «فرق دارن یا نه» - نه یه‌به‌یه مثل JSON.stringify تو وب (چون Gson اعداد رو موقع
      * رفت‌وبرگشت به Double تبدیل می‌کنه و ترتیب کلیدها تضمین‌شده نیست)، بلکه بر اساس شناسه‌ها و
      * تعداد قسط پرداخت‌شده‌ی هر وام - برای تشخیص «واقعاً فرق دارن» به همون اندازه قابل‌اعتماده. */
-    private fun sameLoans(local: List<LoanEntity>, server: List<Map<String, Any?>>): Boolean {
+    private suspend fun sameLoans(local: List<LoanEntity>, server: List<Map<String, Any?>>): Boolean {
         if (local.size != server.size) return false
-        val localSig = local.map { it.id to it.paidCount }.toSet()
+        // 🚨 قبلاً فقط شناسه و **تعدادِ** اقساطِ پرداخت‌شده مقایسه می‌شد. دو نسخه‌ای که هر دو یک
+        // قسط پرداخت‌شده داشتند - در یکی قسطِ اول، در دیگری قسطِ دوم - «یکسان» دیده می‌شدند و
+        // نسخه‌ی محلی بی‌سؤال روی سرور می‌رفت، یعنی تغییرِ گوشیِ دیگر بی‌صدا پاک می‌شد. حالا
+        // مبلغِ قسط و **کدام ردیف‌ها** پرداخت شده‌اند هم وارد مقایسه می‌شوند، پس اختلافِ واقعی
+        // به همان مسیرِ «انتخابِ نسخه» می‌رود که برای همین ساخته شده.
+        val localSig = local.map { loan ->
+            val paidRows = getOrMigrateRows(loan).filter { it.paid }.map { it.m }.sorted()
+            LoanSignature(loan.id, loan.installment.roundToCents(), paidRows)
+        }.toSet()
         val serverSig = server.mapNotNull { m ->
             val id = (m["id"] as? Number)?.toLong() ?: return@mapNotNull null
-            val paidCount = (m["paidCount"] as? Number)?.toInt() ?: 0
-            id to paidCount
+            val installment = (m["installment"] as? Number)?.toDouble() ?: 0.0
+            @Suppress("UNCHECKED_CAST")
+            val rows = m["rows"] as? List<Map<String, Any?>>
+            val paidRows = rows.orEmpty()
+                .filter { it["paid"] == true }
+                .mapNotNull { (it["m"] as? Number)?.toInt() }
+                .sorted()
+            LoanSignature(id, installment.roundToCents(), paidRows)
         }.toSet()
         return localSig == serverSig
     }
+
+    /** ارقامِ اعشاریِ رفت‌وبرگشتِ JSON نباید دو نسخه‌ی یکسان را «متفاوت» نشان دهند. */
+    private fun Double.roundToCents(): Long = Math.round(this * 100)
+
+    private data class LoanSignature(val id: Long, val installment: Long, val paidRows: List<Int>)
 
     /** شکلِ کاملِ وب (meta + rows) - ردیف‌ها همیشه تازه از رو `loan_rows` بازسازی می‌شن (نه از رو
      * کپیِ احتمالاً روبه‌زوالِ dataJson) تا سرور/بک‌آپ همیشه آخرین وضعیتِ واقعیِ پرداخت رو بگیره. */
     private suspend fun toWebMap(entity: LoanEntity): Map<String, Any?> {
         val meta = parseDataMutable(entity)
-        val rows = getOrMigrateRows(entity).sortedBy { it.m }.map { it.toRowMap() }
-        meta["rows"] = rows
+        val rows = getOrMigrateRows(entity).sortedBy { it.m }
+        // 🚨 باگِ از دست رفتنِ پیشرفتِ وام (گزارشِ واقعیِ کاربر، ۲۰ مرداد):
+        // [updateRowPayment] موقعِ «پرداخت‌شده» زدنِ یه قسط فقط ستونِ paidCountِ جدولِ loans رو
+        // به‌روز می‌کنه و به کپیِ قدیمیِ همون عدد تو dataJson دست نمی‌زنه. چون این تابع metaـش رو
+        // از همون dataJson می‌سازه، عددی که به سرور می‌رفت **کهنه** بود (معمولاً همون ۰ لحظه‌ی
+        // ساختِ وام). محلی مشکلی دیده نمی‌شد چون UI ستون رو می‌خونه؛ ولی به‌محضِ خروج از حساب
+        // (که محلی رو پاک می‌کنه) و ورودِ دوباره، [replaceAllWithServerData] همون ۰ رو برمی‌گردوند
+        // و پیشرفتِ همه‌ی وام‌ها صفر می‌شد + همه «عقب‌افتاده» می‌شدن (چون قسطِ اولِ پرداخت‌نشده
+        // سررسیدش گذشته بود).
+        // رفع: عددِ ارسالی همیشه از خودِ ردیف‌ها (منبعِ حقیقت) شمرده می‌شه، نه از کپیِ dataJson.
+        meta["paidCount"] = rows.count { it.paid }
+        meta["rows"] = rows.map { it.toRowMap() }
         return meta
     }
 
@@ -554,13 +1004,21 @@ class LoanRepository(
         val installment = (map["installment"] as? Number)?.toDouble() ?: 0.0
         val totalPaid = (map["totalPaid"] as? Number)?.toDouble() ?: amount
         val n = (map["n"] as? Number)?.toInt() ?: 0
-        val paidCount = (map["paidCount"] as? Number)?.toInt() ?: 0
         val createdAt = map["createdAt"] as? String ?: isoNow()
         val rows = (map["rows"] as? List<*>)
             ?.mapNotNull { it as? Map<*, *> }
             ?.map { row -> row.entries.associate { it.key.toString() to it.value }.toLoanRowEntity(id) }
             ?: emptyList()
-        val metaOnly = map.toMutableMap().apply { remove("rows") }
+        // اگه ردیف‌ها اومده باشن خودشون منبعِ حقیقتن - کپیِ paidCountِ توی نسخه‌های قدیمیِ سرور
+        // می‌تونه کهنه/صفر باشه (رجوع کن به کامنتِ باگ تو [toWebMap]). این‌جوری داده‌ی خرابی که
+        // از قبل رو سرور نشسته هم موقعِ بازیابی خودبه‌خود ترمیم می‌شه.
+        val paidCount = if (rows.isNotEmpty()) rows.count { it.paid } else ((map["paidCount"] as? Number)?.toInt() ?: 0)
+        // کپیِ dataJson هم با همون عددِ درست نوشته می‌شه، وگرنه دوباره از ستون فاصله می‌گیره و
+        // دفعه‌ی بعد که این وام به سرور پوش می‌شه همون باگ برمی‌گرده.
+        val metaOnly = map.toMutableMap().apply {
+            remove("rows")
+            put("paidCount", paidCount)
+        }
         val entity = LoanEntity(
             id = id,
             name = name,

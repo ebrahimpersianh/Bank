@@ -1,131 +1,167 @@
 package ir.sadteam.loancalc.ui.components
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
-import ir.sadteam.loancalc.ui.theme.AppAccent
-import ir.sadteam.loancalc.ui.theme.AppGlassBase
+import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppDisabledFill
+import ir.sadteam.loancalc.ui.theme.AppDisabledText
+import ir.sadteam.loancalc.ui.theme.AppElevation
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
+import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppSpacing
+import ir.sadteam.loancalc.ui.theme.AppStroke
+import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.hardShadow
 
 /**
- * پورت افکت گرادینت رو دکمه‌های اصلی CTA (به‌جای رنگ صاف تخت `Button` معمولی) برای حس «امروزی‌تر» -
- * جایگزین `Button(colors = ButtonDefaults.buttonColors(containerColor = AppPrimary))` تو همه‌ی
- * دکمه‌های اصلی اپ. ظاهر/رفتار (ripple، enabled/disabled، شکل گرد) مثل `Button` معمولیه، فقط
- * محتوای هر call site (معمولاً یه `Text`) بدون تغییر کار می‌کنه چون [content] هم مثل `Button` یه
- * `RowScope.() -> Unit` هست.
+ * پنج گونه‌ی دکمه - از بخشِ «۴ · دکمه‌ها»ی سیستمِ طراحی.
+ */
+enum class AppButtonVariant {
+    /** اقدامِ اصلیِ صفحه. **فقط یکی در هر صفحه.** سبزِ پرشده با سایه‌ی سخت. */
+    PRIMARY,
+
+    /** جایگزینِ هم‌ارز - حاشیه‌ی سبز، **بدونِ سایه**. */
+    SECONDARY,
+
+    /** انصراف، بعداً، رد کردن - خنثی و بی‌سایه. */
+    NEUTRAL,
+
+    /** حذف. **همیشه با تاییدِ دوم.** */
+    DESTRUCTIVE,
+
+    /** دکمه‌ی کوچیکِ درونِ ردیفِ فهرست - سایه‌ی ۳ پیکسل. */
+    IN_ROW,
+}
+
+/**
+ * دکمه‌ی اصلیِ اپ - **بازطراحیِ سبکِ «جیبک»** (مرداد ۱۴۰۵).
  *
- * **سبکِ شیشه‌ای** (خواسته‌ی صریح کاربر، هم‌زمان با شیشه‌ای‌شدنِ [AppCard]، با پیش‌نمایشِ تاییدشده):
- * پس‌زمینه دیگه یه گرادینتِ تخت‌رنگِ [AppPrimary]→primaryDim نیست - یه گرادینتِ فیروزه‌ایِ نیمه‌شفاف
- * (برای حفظِ هویتِ CTA) رو یه پایه‌ی شیشه‌ای‌ِ تم‌آگاه (همون [AppGlassBase]ی AppCard) نشسته، تا هم
- * زبونِ باکس‌ها رو داشته باشه هم رنگِ اصلیِ دکمه گم نشه. رنگِ متن از سیاهِ ثابتِ قبلی
- * (`Color(0xFF04211C)`، مخصوصِ زمینه‌ی تخت‌رنگِ روشن) به [AppText] عوض شد چون [AppText] خودش
- * تم‌آگاهه و رو زمینه‌ی شیشه‌ایِ تیره‌ترِ جدید (چه تمِ روشن چه تیره) خوانا می‌مونه.
+ * ⚠️ اسمِ `GradientButton` **تاریخیه و دیگه گرادیانی در کار نیست** - عمداً عوض نشد چون ده‌ها فایل
+ * صداش می‌زنن و تغییرِ اسم فقط سروصدای بی‌خودیِ دیف می‌سازه. تو سبکِ جدید:
+ * - پرشدنِ **تخت و مات** (`#0EA968`)، نه گرادیانِ نیمه‌شفاف
+ * - کپسولِ کامل (گوشه‌ی ۹۹۹)، نه گوشه‌ی ۱۴dp
+ * - سایه‌ی **سختِ `0 4px 0 #0B8C57`**، نه سایه‌ی تارِ Material
+ * - **فشرده‌شدن**: سایه به ۱ پیکسل جمع می‌شه و خودِ دکمه به همون اندازه پایین می‌ره - همون حسِ
+ *   «کلیدِ فیزیکی» که امضای این سبکه
+ * - نوارِ شیمرِ طلاییِ دورِ قبل **حذف شد** (قاعده: طلایی فقط نشانه‌ی پرمیوم/اشتراکه)
  *
- * **افکتِ شیمر (باگِ رفع‌شده)**: قبلاً بازه‌ی حرکتِ نوارِ نور یه عددِ ثابت/حدسی بود (`shimmerX * 300f`)،
- * بدونِ توجه به عرضِ واقعیِ دکمه - رو دکمه‌های پهن‌تر، نوار وسطِ راه از این‌ور به اون‌ور «می‌پرید» چون
- * چرخه‌ی بعدی (`RepeatMode.Restart`) وقتی نوار هنوز داخلِ دکمه (نه کاملاً بیرون از لبه‌ش) بود ریست
- * می‌شد. الان با `Modifier.onSizeChanged` عرضِ واقعیِ دکمه اندازه‌گیری می‌شه و بازه‌ی حرکت طوری حساب
- * می‌شه که نوار همیشه **کاملاً بیرون از لبه‌ی راست شروع** و **کاملاً بیرون از لبه‌ی چپ تموم** بشه (و
- * برعکس) - یعنی لحظه‌ی ریست‌شدنِ چرخه دقیقاً وقتیه که نوار نامرئیه، پس هیچ پرشی حس نمی‌شه.
- * آلفای نوار هم به‌خواستِ کاربر («خیلی ظریف باشه، انگار یک سایه‌ست») از ۰.۶ به ۰.۱۴ کم شد - دیگه یه
- * نوارِ طلاییِ پررنگ نیست، فقط یه هایلایتِ ظریفِ عبوریه.
- *
- * شکلِ گوشه‌ها از یه عددِ ثابتِ جداگانه (۱۰dp) به `MaterialTheme.shapes.small` عوض شد - خواسته‌ی
- * کاربر: «اندازه‌ی گوشه‌ش بشه مثلِ دکمه‌ی محاسبه نرخ سود» (یه `OutlinedButton` معمولی که شکلش رو از
- * همین توکن می‌گیره) - این‌جوری هر دو نوع دکمه (اصلی/گرادینتی و ثانویه/outline) تو کل اپ همیشه
- * دقیقاً هم‌شکل می‌مونن، حتی اگه بعداً AppShapes تو Theme.kt عوض بشه.
+ * @param variant گونه‌ی دکمه - رجوع کن به [AppButtonVariant].
+ * @param fullWidth دکمه‌ی اصلی معمولاً تمامِ عرض رو می‌گیره؛ برای دکمه‌ی درونِ ردیف `false`.
  */
 @Composable
 fun GradientButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    variant: AppButtonVariant = AppButtonVariant.PRIMARY,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val shape = MaterialTheme.shapes.small
-    val glassGradient = Brush.linearGradient(
-        listOf(AppPrimary.copy(alpha = 0.38f), AppPrimary.copy(alpha = 0.10f)),
-    )
+    val shape = RoundedCornerShape(AppRadius.button)
     val buzz = rememberBuzz()
-    val shimmerTransition = rememberInfiniteTransition(label = "buttonShimmer")
-    // ۰→۱ (نه یه بازه‌ی حدسیِ منفی/مثبت) - محاسبه‌ی واقعیِ مختصات از رو عرضِ اندازه‌گیری‌شده انجام می‌شه.
-    val shimmerT by shimmerTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart),
-        label = "shimmerT",
-    )
-    var widthPx by remember { mutableFloatStateOf(0f) }
-    Surface(
-        onClick = { buzz(); onClick() },
-        enabled = enabled,
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+
+    val fill: Color = when {
+        !enabled -> AppDisabledFill
+        variant == AppButtonVariant.PRIMARY || variant == AppButtonVariant.IN_ROW -> AppPrimary
+        variant == AppButtonVariant.DESTRUCTIVE -> AppDanger
+        else -> AppSurface
+    }
+    val ink: Color = when {
+        !enabled -> AppDisabledText
+        variant == AppButtonVariant.PRIMARY ||
+            variant == AppButtonVariant.IN_ROW ||
+            variant == AppButtonVariant.DESTRUCTIVE -> Color.White
+        variant == AppButtonVariant.SECONDARY -> AppPrimaryInk
+        else -> AppMuted
+    }
+    val stroke: BorderStroke? = when {
+        !enabled -> null
+        variant == AppButtonVariant.SECONDARY -> BorderStroke(AppStroke.card, AppPrimary)
+        variant == AppButtonVariant.NEUTRAL -> BorderStroke(AppStroke.card, AppLine)
+        else -> null
+    }
+    // دکمه‌ی خاموش و دکمه‌ی «دومین/خنثی» عمداً بی‌سایه‌ان - قاعده‌ی صریحِ سیستمِ طراحی.
+    val restingShadow = when {
+        !enabled -> 0.dp
+        variant == AppButtonVariant.SECONDARY || variant == AppButtonVariant.NEUTRAL -> 0.dp
+        variant == AppButtonVariant.IN_ROW -> AppElevation.inRow
+        else -> AppElevation.raised
+    }
+    val shadowColor: Color = when {
+        restingShadow == 0.dp -> Color.Transparent
+        variant == AppButtonVariant.DESTRUCTIVE -> Color(0xFFB32B2B)
+        else -> AppPrimaryDim
+    }
+
+    // فشرده‌شدن: سایه جمع می‌شه و دکمه دقیقاً به همون اندازه پایین می‌ره، پس لبه‌ی بالاییِ دکمه
+    // ثابت می‌مونه و فقط ضخامتِ «کلید» کم می‌شه - همون حسِ فشردنِ کلیدِ فیزیکی.
+    val targetShadow = if (pressed && restingShadow > AppElevation.pressed) AppElevation.pressed else restingShadow
+    val shadow by animateDpAsState(targetShadow, tween(70), label = "btnShadow")
+    val sink by animateDpAsState(restingShadow - shadow, tween(70), label = "btnSink")
+
+    val minHeight = if (variant == AppButtonVariant.IN_ROW) 34.dp else AppSpacing.minTouchTarget
+    val hPad = if (variant == AppButtonVariant.IN_ROW) 14.dp else 22.dp
+
+    Box(
         modifier = modifier
-            .height(48.dp)
-            .onSizeChanged { widthPx = it.width.toFloat() },
-        shape = shape,
-        color = Color.Transparent,
-        contentColor = AppText,
-        border = BorderStroke(1.dp, AppAccent.copy(alpha = 0.45f)),
+            .offset(y = sink)
+            .hardShadow(shadowColor, shadow, AppRadius.button)
+            .clip(shape)
+            .background(fill)
+            .then(if (stroke != null) Modifier.border(stroke, shape) else Modifier)
+            .clickable(
+                interactionSource = interaction,
+                indication = null,
+                enabled = enabled,
+                onClick = { buzz(); onClick() },
+            )
+            .defaultMinSize(minHeight = minHeight)
+            .padding(horizontal = hPad, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(shape)
-                .background(AppGlassBase)
-                .background(glassGradient)
-                .alpha(if (enabled) 1f else 0.5f),
-            contentAlignment = Alignment.Center,
+        CompositionLocalProvider(
+            LocalContentColor provides ink,
+            LocalTextStyle provides LocalTextStyle.current.copy(
+                color = ink,
+                fontSize = if (variant == AppButtonVariant.IN_ROW) 10.5.sp else 14.sp,
+                fontWeight = FontWeight.Black,
+            ),
         ) {
-            if (enabled && widthPx > 0f) {
-                // نوار (streak) ۳۴٪ از عرضِ دکمه‌ست؛ مرکزش از -(نصفِ عرض + نصفِ عرضِ نوار) تا
-                // +(نصفِ عرض + نصفِ عرضِ نوار) حرکت می‌کنه - یعنی هر دو سرِ حرکت کاملاً بیرون از دکمه‌ست.
-                val halfStreak = widthPx * 0.17f
-                val centerX = (shimmerT * 2f - 1f) * (widthPx / 2f + halfStreak)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(Color.Transparent, AppAccent.copy(alpha = 0.14f), Color.Transparent),
-                                start = Offset(centerX - halfStreak, 0f),
-                                end = Offset(centerX + halfStreak, widthPx * 0.25f),
-                            ),
-                        ),
-                )
-            }
             Row(
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.Center,
+                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
                 content = content,
             )

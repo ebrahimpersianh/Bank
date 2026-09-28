@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  چهار لایه‌ی رویه‌ی پژمردگی — نسخه‌ی **زمینه‌ی روشن** (طرحِ ب و پ)
+
+  ═══ چرا دو فایل، نه چهار ═══
+  `45c` می‌گوید چهار لایه‌ی رویه **مشترک**اند و همین درست است: غبار و تار و عنکبوت و
+  ترک به هندسه‌ی نشان کاری ندارند، پس یک‌بار کشیده می‌شوند. ولی به **روشناییِ زمینه**
+  کار دارند — غبارِ تیره روی `#12261E` دیده نمی‌شود. پس تقسیم روی همان محورِ `58a`
+  است، نه روی طرح:
+
+      نسخه‌ی dark → الف (#0B3A2A) و ت (#12261E)   ... جوهرِ روشن
+      این فایل    → ب (#E8C25A) و پ (#F4EFE2)    ... جوهرِ تیره
+
+  ⚠️ آلفاها اینجا **۰٫۷۸ برابرِ** نسخه‌ی تیره‌اند، نه یکسان: مشکی روی زمینه‌ی روشن
+  پرقدرت‌تر از سفید روی زمینه‌ی تیره دیده می‌شود (کنتراستِ نامتقارن)، پس با عددِ یکسان
+  طرحِ ب و پ در همان پله کهنه‌تر به نظر می‌رسیدند. جدولِ آستانه‌های بالا برای همین فایل
+  هم همان است؛ فقط ضریبِ سرِ بازه فرق دارد.
+
+  چهار فایل یعنی چهار بار نگه‌داریِ همان هندسه.
+
+  ═══ شفافیتِ هر پله ═══
+  اسکریپت `generate-wither.py` شفافیتِ هر گروه را خودش حساب می‌کند. گروه‌ها با
+  `android:name` پیدا می‌شوند، پس نام‌ها را عوض نکنید.
+
+  آستانه‌های `45c` (فاصله‌ی نامساوی — روزهای ۲‑۷ و ۱۴ و ۳۰):
+
+      dust   از پله‌ی ۱   آلفا 0.06 → 0.34
+      web    از پله‌ی ۳   آلفا 0.00 → 0.22
+      spider از پله‌ی ۵   آلفا 0.00 → 0.55
+      crack  از پله‌ی ۷   آلفا 0.00 → 0.70
+
+  `fillAlpha`های زیر مقدارِ **پله‌ی ۸** (سرِ بازه)اند؛ اسکریپت خطی تا صفر پایین
+  می‌آورد. ترتیبِ گروه‌ها هم ترتیبِ رسم است: غبار زیر، ترک رو.
+
+  ⚠️ عنکبوت و ترک روی **کل** می‌مانند، نه بیرونِ `immune` — رویه‌اند نه رنگ (`49b`).
+  پس این فایل **رویِ** هر دو گروهِ آیکون می‌نشیند و خودش گروهِ `immune` ندارد.
+
+  ⚠️ گوشه‌ی بومِ تطبیقی روی لانچرِ دایره‌ای **بریده می‌شود**. برای همین تارِ عنکبوت
+  شعاعِ بزرگ دارد (۴۰..۷۲) و از دایره‌ی امنِ ۶۶ رد می‌شود؛ اگر کمانش کوچک بود، روی
+  گوشیِ دایره‌ای‌آیکون کاملاً غیب می‌شد.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- ═══ غبار ═══ لکه‌های ریزِ نامنظم روی کلِ بوم. پراکندگی عمداً نامساوی است؛
+         شبکه‌ی منظم «بافت» خوانده می‌شود نه «خاک». -->
+    <group android:name="dust">
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.23" android:pathData="M14,22 A2.1,2.1 0 1 0 18.2,22 A2.1,2.1 0 1 0 14,22 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.17" android:pathData="M31,13 A1.4,1.4 0 1 0 33.8,13 A1.4,1.4 0 1 0 31,13 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.27" android:pathData="M77,19 A2.6,2.6 0 1 0 82.2,19 A2.6,2.6 0 1 0 77,19 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.14" android:pathData="M94,34 A1.7,1.7 0 1 0 97.4,34 A1.7,1.7 0 1 0 94,34 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.22" android:pathData="M20,58 A1.9,1.9 0 1 0 23.8,58 A1.9,1.9 0 1 0 20,58 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.16" android:pathData="M47,31 A1.3,1.3 0 1 0 49.6,31 A1.3,1.3 0 1 0 47,31 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.25" android:pathData="M66,47 A2.2,2.2 0 1 0 70.4,47 A2.2,2.2 0 1 0 66,47 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.19" android:pathData="M37,72 A1.8,1.8 0 1 0 40.6,72 A1.8,1.8 0 1 0 37,72 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.23" android:pathData="M88,68 A2.4,2.4 0 1 0 92.8,68 A2.4,2.4 0 1 0 88,68 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.12" android:pathData="M58,88 A1.5,1.5 0 1 0 61,88 A1.5,1.5 0 1 0 58,88 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.2" android:pathData="M25,93 A2,2 0 1 0 29,93 A2,2 0 1 0 25,93 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.16" android:pathData="M79,96 A1.6,1.6 0 1 0 82.2,96 A1.6,1.6 0 1 0 79,96 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.11" android:pathData="M53,60 A1.2,1.2 0 1 0 55.4,60 A1.2,1.2 0 1 0 53,60 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.17" android:pathData="M12,76 A1.7,1.7 0 1 0 15.4,76 A1.7,1.7 0 1 0 12,76 Z" />
+    </group>
+
+    <!-- ═══ تار ═══ پرده‌ی یک‌دستِ کم‌رنگ روی کلِ بوم. «تارشدن» در وکتور بلور نیست
+         (VectorDrawable فیلترِ بلور ندارد)، پس کم‌جان‌شدنِ یک‌دست جایش می‌نشیند. -->
+    <group android:name="web">
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.17" android:pathData="M0,0h108v108h-108z" />
+    </group>
+
+    <!-- ═══ تارِ عنکبوت ═══ گوشه‌ی بالا-چپ، با کمان‌هایی که تا وسط می‌آیند تا روی
+         لانچرِ دایره‌ای بریده نشوند. -->
+    <group android:name="spider">
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.5" android:pathData="M0,0 L54,54" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.5" android:pathData="M0,0 L0,62" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.5" android:pathData="M0,0 L62,0" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.5" android:pathData="M0,0 L26,58" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.5" android:pathData="M0,0 L58,26" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.35" android:strokeWidth="1.3" android:pathData="M0,26 Q14,14 26,0" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.35" android:strokeWidth="1.3" android:pathData="M0,44 Q23,23 44,0" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.35" android:strokeWidth="1.3" android:pathData="M0,62 Q33,33 62,0" />
+    </group>
+
+    <!-- ═══ ترک ═══ یک شکافِ اصلی از بالا-راست به پایین-چپ که از وسط رد می‌شود، با دو
+         شاخه‌ی کوتاه. از وسط رد می‌شود تا روی هر چهار طرح دیده شود — طرحی که ترکش
+         گوشه بیفتد، در پله‌ی ۸ سالم به نظر می‌رسد. -->
+    <group android:name="crack">
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.55" android:strokeWidth="1.9" android:strokeLineCap="round" android:pathData="M84,11 L72,31 L79,40 L61,57 L66,68 L49,79 L52,92 L38,101" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.4" android:strokeLineCap="round" android:pathData="M79,40 L94,46" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.43" android:strokeWidth="1.4" android:strokeLineCap="round" android:pathData="M61,57 L44,54" />
+        <path android:strokeColor="#0A0F0D" android:strokeAlpha="0.35" android:strokeWidth="1.2" android:strokeLineCap="round" android:pathData="M49,79 L33,84" />
+    </group>
+
+</vector>

@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.data.db
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
@@ -8,7 +9,7 @@ import androidx.room.PrimaryKey
  * (تو :core) رو نگه می‌دارن - Room مستقیم enum نمی‌گیره، برای همین تبدیل تو ChequeRepository انجام
  * می‌شه. [chequeBookId] اختیاریه (چک می‌تونه بدون دسته‌چک هم ثبت بشه).
  */
-@Entity(tableName = "cheques")
+@Entity(tableName = "cheques", indices = [Index("counterpartyId")])
 data class ChequeEntity(
     @PrimaryKey val id: Long,
     val type: String,
@@ -45,4 +46,7 @@ data class ChequeEntity(
      * تنظیماتِ سراسری استفاده کن؛ رشته‌ی خالی یعنی یادآوری برای این چک کاملاً خاموشه - رجوع کن به
      * توضیحِ مشابه رو [ir.sadteam.loancalc.data.db.LoanEntity.reminderDayOffsets]. */
     val reminderDayOffsets: String? = null,
+    /** لینک به [CounterpartyEntity] - طبقِ جوابِ سوالِ ۶ی MESSAGE-round4: چکِ **تازه** الزاماً یکی
+     * می‌گیره (اجباری تو UI، نه تو دیتابیس - چون چکِ قدیمی باید بتونه null بمونه/حدسی وصل بشه). */
+    val counterpartyId: Long? = null,
 )

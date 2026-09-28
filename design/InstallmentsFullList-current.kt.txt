@@ -1,0 +1,598 @@
+// InstallmentsFullList — بریده‌ی «فهرستِ کاملِ اقساط» از LoanDetailScreen.kt
+// (نسخه‌ی به‌روز، شاملِ بخشِ ۶۴ و سبزشدنِ برچسبِ «پرداخت شد»)
+//
+// ۱) بلوکِ if (showAllInstallments) — خطوطِ ۱۰۱۲..۱۲۹۶
+// ۲) InstallmentRow — خطوطِ ۱۷۸۲..۱۹۳۷
+// ۳) InstallmentsPreviewCard (کارتِ 27b، برای مقایسه) — خطوطِ ۱۶۳۶..۱۷۸۰
+
+// ═══════════ ۱ · بلوکِ فهرستِ کامل ═══════════
+        if (showAllInstallments) {
+        item {
+            // جعبه‌ی اقساط - حالا «هوشمند»: کوچیک وقتی داری از کنارش رد می‌شی، ولی وقتی واقعاً بهش
+            // رسیدی (لبه‌ی بالاش نزدیکِ بالای صفحه‌ست) به‌آرومی تا نزدیکِ تمام‌صفحه بزرگ می‌شه تا
+            // چندتا ردیفِ بیشتر (به‌جای ۵ تا) هم‌زمان دیده بشن، و وقتی ازش دور می‌شی دوباره کوچیک
+            // می‌شه - خواسته‌ی کاربر: «میام روی اقساط، بزرگ تمام صفحه رو بگیره، گوشه‌ها کوچیک‌تر بشه».
+            //
+            // فرقِ کلیدی با نسخه‌ی باگ‌دارِ خیلی قبل (که برگردونده شده بود به حالتِ ساده‌ی ثابت):
+            // اونجا یه آستانه‌ی تکی داشت (بالاتر/پایین‌تر از یه نقطه = عوضِ حالت) که دقیقاً رو مرز
+            // می‌لرزید (رفت‌وبرگشتی) و چون خودِ اسکرول با انیمیشن هم‌زمان بود، محتوا زیرِ انگشت
+            // می‌پرید. اینجا: (۱) هیسترزیس بر اساسِ درصدِ دیده‌شدنِ خودِ جعبه (نه موقعیتِ مطلقش رو
+            // صفحه) - آستانه‌ی ورود ۴۵٪، خروج ۲۰٪، پس هم رو مرز نمی‌لرزه هم نیازی به رد کردنِ کاملِ
+            // هدر نیست، (۲) عوضِ حالت با [snapshotFlow] فقط رو مقدارِ واقعیِ اسکرول واکنش نشون می‌ده
+            // (نه یه انیمیشنِ مستقلِ رقیب)، (۳) وقتی جعبه بزرگه، اسکرولِ سریعِ «رد شو» غیرفعاله (چون
+            // دیگه معنی نداره - کاربر دقیقاً اومده تو همین جعبه).
+            val innerListState = rememberLazyListState()
+            var expanded by remember { mutableStateOf(false) }
+            // باگِ رفع‌شده: نسخه‌ی قبلی با آستانه‌ی «offset ≤ 40px از بالای صفحه» فعال می‌شد - یعنی
+            // کاربر باید کلِ هدر (دکمه‌ی بازگشت + دونات + کارتِ بانک + کارتِ عکس، معمولاً ۵۰۰-۷۰۰dp)
+            // رو کامل از رو صفحه رد می‌کرد تا لبه‌ی جعبه دقیقاً به بالای صفحه برسه - این خیلی بیشتر از
+            // یه اسکرولِ معمولیه، برای همین کاربر گزارش داد اصلاً فول‌اسکرین نمی‌شه. الان به‌جای
+            // موقعیتِ مطلق، بر اساسِ چند درصد از خودِ جعبه رو صفحه دیده می‌شه تصمیم می‌گیره - با یه
+            // اسکرولِ معمولی (نه یه اسکرولِ خیلی طولانی) هم قابلِ رسیدنه.
+            LaunchedEffect(detailListState) {
+                snapshotFlow {
+                    val info = detailListState.layoutInfo
+                    val itemInfo = info.visibleItemsInfo.firstOrNull { it.index == 1 }
+                    if (itemInfo == null || itemInfo.size <= 0) {
+                        0f
+                    } else {
+                        val viewportHeight = info.viewportEndOffset - info.viewportStartOffset
+                        val visibleTop = itemInfo.offset.coerceAtLeast(0)
+                        val visibleBottom = (itemInfo.offset + itemInfo.size).coerceAtMost(viewportHeight)
+                        (visibleBottom - visibleTop).coerceAtLeast(0).toFloat() / itemInfo.size
+                    }
+                }.collect { visibleFraction ->
+                    expanded = when {
+                        !expanded && visibleFraction >= 0.45f -> true
+                        expanded && visibleFraction <= 0.2f -> false
+                        else -> expanded
+                    }
+                }
+            }
+            // اولین بار که وامی رو باز می‌کنی، به‌جای شروع از قسطِ ۱، مستقیم می‌ره رو مرزِ آخرین
+            // قسطِ پرداخت‌شده (خواسته‌ی کاربر: «اگه ده تا رفتم، از اول نیاد، بیاد از رو ده») - با
+            // یکی قبلش هم دیده بشه که معلوم باشه آخری چی پرداخت شد.
+            // **باگِ رفع‌شده**: قبلاً کلیدِ این افکت خودِ `rows` بود - چون `rows` با هر تغییرِ
+            // وضعیتِ پرداختِ یه قسط (حتی همینجا، وسطِ کارِ کاربر) یه لیستِ *جدید* می‌شه، هر بار که
+            // کاربر رو همین صفحه یه قسط رو «پرداخت» می‌زد، این افکت دوباره اجرا و صفحه به‌زورِ
+            // اسکرول به مرزِ بعدی می‌پرید - دقیقاً همون چیزی که کاربر نمی‌خواستش.
+            // چون `rows` الان از رو Room (loan_rows) به‌صورتِ async لود می‌شه (رجوع کن به
+            // CLAUDE.md)، اولین مقدارش همیشه یه لیستِ خالیه - کلیدِ ثابتِ `Unit` باعث می‌شد این
+            // افکت دقیقاً همون لحظه‌ی خالی‌بودن اجرا بشه و اسکرول هیچ‌وقت کار نکنه. الان کلید دوباره
+            // `rows`ه، ولی با یه پرچمِ «یه‌بار مصرف» (`hasAutoScrolled`) محافظت شده - همون‌قدر
+            // «فقط یه‌بار، موقعِ اولین باردیدنِ دادهٔ واقعی» هست، فقط دیگه رو دادهٔ خالیِ لحظه‌ی اول
+            // گیر نمی‌کنه.
+            var hasAutoScrolled by remember { mutableStateOf(false) }
+            LaunchedEffect(rows) {
+                if (hasAutoScrolled || rows.isEmpty()) return@LaunchedEffect
+                hasAutoScrolled = true
+                val firstUnpaid = rows.indexOfFirst { it["paid"] != true }
+                val target = (firstUnpaid - 1).coerceAtLeast(0)
+                if (firstUnpaid > 0) innerListState.scrollToItem(target)
+            }
+            val flingConnection = remember(detailListState) {
+                installmentsFlingPassthrough(
+                    outerListState = detailListState,
+                    scope = scope,
+                    beforeBoxIndex = 0,
+                    afterBoxIndex = 2,
+                    isExpanded = { expanded },
+                )
+            }
+            val density = LocalDensity.current
+            val compactHeight = installmentRowHeight * 5 + 8.dp * 4
+            val viewportHeightPx = detailListState.layoutInfo.viewportEndOffset - detailListState.layoutInfo.viewportStartOffset
+            val expandedHeight = with(density) { (viewportHeightPx * 0.92f).toDp() }
+            val boxHeight by animateDpAsState(
+                targetValue = if (expanded) expandedHeight else compactHeight,
+                animationSpec = tween(280, easing = FastOutSlowInEasing),
+                label = "installmentsBoxHeight",
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .height(boxHeight)
+                    .nestedScroll(flingConnection),
+            ) {
+                // contentPadding(start): بدونش ردیف‌ها دقیقاً تا لبه‌ی همین Box کشیده می‌شدن - همون
+                // لبه‌ای که lazyColumnScrollbar خطش رو روش رسم می‌کنه (چون drawWithContent مستقیم
+                // از رو size.width رسم می‌کنه، همیشه لبه‌ی فیزیکیِ راستِ همون Box، صرف‌نظر از
+                // جهت)، پس خط دقیقاً رو حاشیه‌ی باکسِ هر ردیف می‌افتاد (گزارشِ کاربر: «اسکرول رفته
+                // تو شکمِ باکس‌ها»).
+                // **باگِ رفع‌شده (اشتباهِ RTL)**: نسخه‌ی قبلی این‌جا `end = 10.dp` بود - ولی چون کلِ
+                // اپ RTL ئه، `end` تو PaddingValues یعنی سمتِ چپِ فیزیکی (نه راست)! یعنی اون فاصله
+                // اصلاً رو سمتِ درستی (راست، جایی که خط واقعاً رسم می‌شه) اضافه نمی‌شد - برای همین
+                // با اینکه کد قبلاً هم همین‌جوری بود، باگ همچنان دیده می‌شد. تو RTL، `start` سمتِ
+                // راستِ فیزیکیه - این همون سمتیه که لازم داریم.
+                LazyColumn(
+                    state = innerListState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .lazyColumnScrollbar(innerListState, AppPrimary),
+                    contentPadding = PaddingValues(start = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(rows, key = { (it["m"] as? Number)?.toInt() ?: 0 }) { row ->
+                        val m = (row["m"] as? Number)?.toInt() ?: 0
+                        InstallmentRow(
+                            // وقتی تعدادِ اقساطِ یه وام ویرایش می‌شه، ردیف‌های اضافه/کم‌شده
+                            // به‌جای پرشِ ناگهانی نرم میان و می‌رن.
+                            modifier = Modifier.animateItem(),
+                            row = row,
+                            loan = loan,
+                            privacyMode = privacyMode,
+                            bulkPayMode = bulkPayMode,
+                            selected = m in selectedBulkMs,
+                            dueInDays = (row["dueDate"] as? Map<*, *>)?.let { due ->
+                                val y = (due["y"] as? Number)?.toInt()
+                                val mm = (due["m"] as? Number)?.toInt()
+                                val d = (due["d"] as? Number)?.toInt()
+                                if (y != null && mm != null && d != null) {
+                                    viewModel.daysUntilToday(PersianDate(y, mm, d))
+                                } else {
+                                    null
+                                }
+                            },
+                            isNext = row === rows.firstOrNull { it["paid"] != true },
+                            onTogglePaid = { rowM, paid ->
+                                if (bulkPayMode) {
+                                    if (row["paid"] != true) {
+                                        selectedBulkMs = if (rowM in selectedBulkMs) {
+                                            selectedBulkMs - rowM
+                                        } else {
+                                            selectedBulkMs + rowM
+                                        }
+                                    }
+                                } else if (!paid) {
+                                    // 🚨 تپ **فقط می‌زند، برنمی‌دارد** (فریمِ `64c`): در فهرستِ
+                                    // متراکمِ دوازده‌ردیفی یک تپِ اشتباه یعنی یک قسطِ پرداخت‌شده‌ی
+                                    // ازدست‌رفته، و برداشتن هیچ تاییدی نداشت. برداشتن به منویِ
+                                    // سه‌نقطه رفت - تفکیکِ `46c`: کنشِ سازنده تپ، ویرانگر نه.
+                                    payChoiceM = rowM
+                                }
+                            },
+                            onUnmark = { rowM -> viewModel.setRowUnpaid(loan, rowM) },
+                            onOpenPhoto = { rowM -> photoRowM = rowM },
+                            onEditAmount = { rowM, installment ->
+                                editingRowM = rowM
+                                editAmountText = rialToToman(installment.toLong()).toString()
+                            },
+                        )
+                    }
+                    // جا برای نوارِ چسبانِ پایین، وگرنه آخرین ردیف زیرش گم می‌شود.
+                    if (bulkPayMode && selectedBulkMs.isNotEmpty()) {
+                        item { Spacer(modifier = Modifier.height(64.dp)) }
+                    }
+                }
+                // **تنها جایی که جعبه‌ی اقساط دکمه‌ی چسبان می‌گیرد** (فریمِ `64b`): بی آن،
+                // کاربر انتخاب می‌کند و بعد باید دنبالِ دکمه بگردد.
+                if (bulkPayMode && selectedBulkMs.isNotEmpty()) {
+                    val bulkSum = rows.filter { (it["m"] as? Number)?.toInt() in selectedBulkMs }
+                        .sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .background(AppSurface, RoundedCornerShape(AppRadius.card))
+                            .border(2.dp, AppLineRow, RoundedCornerShape(AppRadius.card))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column {
+                            Text("جمعِ انتخاب‌شده", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            PrivacyCrossfade(privacyMode) { masked ->
+                                Text(
+                                    maskIfPrivate(masked, amountToman(bulkSum)),
+                                    color = AppText,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Black,
+                                )
+                            }
+                        }
+                        GradientButton(onClick = { bulkPayChoiceOpen = true }) {
+                            Text("پرداختِ ${toFa(selectedBulkMs.size)} قسط", fontSize = 13.sp)
+                        }
+                    }
+                }
+            }
+        }
+        }
+
+        item {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ReminderOverrideCard(
+                currentOffsets = loan.reminderDayOffsets,
+                onChange = { viewModel.setLoanReminderOffsets(loan, it) },
+            )
+            OutlinedButton(
+                enabled = !isExportingCalendar,
+                onClick = {
+                    if (loan.calendarExported) {
+                        // دیگه دوباره درج نمی‌کنیم (جلوگیری از رویدادهای تکراری تو تقویم گوشی با
+                        // هر بار کلیک) - فقط یادآوری می‌کنیم قبلاً اضافه شده.
+                        calendarMessage = "سررسیدهای این وام قبلاً به تقویم گوشی اضافه شده‌اند"
+                        return@OutlinedButton
+                    }
+                    isExportingCalendar = true
+                    val perms = arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)
+                    val allGranted = perms.all {
+                        ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+                    }
+                    if (allGranted) runCalendarExport() else calendarPermissionLauncher.launch(perms)
+                },
+                colors = if (loan.calendarExported) {
+                    ButtonDefaults.outlinedButtonColors(contentColor = AppMuted)
+                } else {
+                    ButtonDefaults.outlinedButtonColors()
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    Icons.Filled.CalendarMonth,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 6.dp),
+                )
+                Text(if (isExportingCalendar) "در حال افزودن..." else "افزودن سررسیدها به تقویم گوشی")
+            }
+            OutlinedButton(
+                onClick = { showDeleteConfirm = true },
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+            ) {
+                Text("حذف وام")
+            }
+            if (showDeleteConfirm) {
+                // قالبِ واحدِ بخشِ ۴۶: حذفِ وام بازگشت‌پذیر نیست، پس دیالوگ می‌گیره
+                // (نه واگردِ نواری) و لحنش DESTRUCTIVE ئه.
+                ConfirmDialog(
+                    tone = ConfirmTone.DESTRUCTIVE,
+                    title = "حذف وام",
+                    consequence = "وامِ «${loan.name}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+                    actionLabel = "حذف وام",
+                    onConfirm = { showDeleteConfirm = false; onDelete() },
+                    onDismiss = { showDeleteConfirm = false },
+                )
+            }
+        }
+        }
+    }
+
+        AnimatedVisibility(
+            visible = calendarMessage != null,
+            enter = fadeIn(tween(Motion.FADE_IN_MS)) + slideInVertically(Motion.offset()) { it / 2 },
+            exit = fadeOut(tween(Motion.FADE_OUT_MS)) + slideOutVertically(Motion.offset()) { it / 2 },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(AppText.copy(alpha = 0.92f), RoundedCornerShape(AppRadius.button))
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+            ) {
+                Text(calendarMessage ?: "", color = AppSurface, fontSize = 13.sp)
+            }
+        }
+
+        // رو همه‌چیزِ صفحه (آخرین بچه‌ی Box) - لمس رو مصرف نمی‌کنه، فقط ~۳ ثانیه سکه می‌باره.
+        if (celebrate) {
+            CoinCelebration(
+                modifier = Modifier.fillMaxSize(),
+                onFinished = { celebrate = false },
+            )
+        }
+    }
+}
+
+
+// ═══════════ ۲ · InstallmentRow ═══════════
+private fun InstallmentRow(
+    row: Map<String, Any?>,
+    loan: LoanEntity,
+    privacyMode: Boolean,
+    onTogglePaid: (m: Int, paid: Boolean) -> Unit,
+    onUnmark: (m: Int) -> Unit,
+    onOpenPhoto: (m: Int) -> Unit,
+    onEditAmount: (m: Int, installment: Double) -> Unit,
+    modifier: Modifier = Modifier,
+    dueInDays: Int? = null,
+    isNext: Boolean = false,
+    bulkPayMode: Boolean = false,
+    selected: Boolean = false,
+) {
+    val m = (row["m"] as? Number)?.toInt() ?: 0
+    val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
+    val paid = row["paid"] == true
+    val paidLate = paid && row["paidLate"] == true
+    val hasPhoto = (row["photoPath"] as? String) != null
+    val due = row["dueDate"] as? Map<*, *>
+    val dueLabel = due?.let {
+        "${toFa(it["y"].toString())}/${toFa(it["m"].toString())}/${toFa(it["d"].toString())}"
+    } ?: ""
+    val overdue = !paid && dueInDays != null && dueInDays < 0
+
+    // 🚨 بجِ «پرداخت نشده» حذف شد (فریمِ `64a`): در فهرستی که بیشترش پرداخت‌نشده است، آن بج
+    // روی ده ردیف تکرار می‌شود و خبری نمی‌دهد. جایش **مهلت** نشسته - همان زبانِ `27b`.
+    // ردیفِ آینده‌ی دور عمداً هیچ برچسبی نمی‌گیرد.
+    val statusLabel = when {
+        paidLate -> "با تأخیر"
+        paid -> "پرداخت شد"
+        overdue -> "${toFa(-(dueInDays ?: 0))} روز گذشته"
+        dueInDays == 0 -> "امروز"
+        dueInDays != null && dueInDays in 1..7 -> "${toFa(dueInDays)} روز مانده"
+        isNext -> "بعدی"
+        else -> null
+    }
+    // «پرداخت شد» **سبز** است (خواسته‌ی کاربر، ۲۵ شهریور) - تنها خبرِ خوبِ این ستون، و
+    // خاکستری‌بودنش آن را هم‌سطحِ «هیچ» نشان می‌داد.
+    // ⚠️ فقط **همین برچسب** سبز می‌شود؛ مبلغ و تاریخِ ردیفِ پرداخت‌شده خاکستری می‌مانند
+    // (`inkColor`) وگرنه فهرستِ بیشتر-پرداخت‌شده یک دیوارِ سبز می‌شود.
+    // «با تأخیر» عمداً سبز **نمی‌شود** - پرداخت شده ولی سرِ وقت نه، و همین تفاوت تنها
+    // چیزی است که آن دو حالت را از هم جدا می‌کند.
+    val statusColor = when {
+        paidLate -> AppDanger
+        paid -> AppPrimaryInk
+        overdue || dueInDays == 0 -> AppDanger
+        isNext || (dueInDays != null && dueInDays in 1..7) -> AppGoldInk
+        else -> AppMuted
+    }
+    val rowShape = RoundedCornerShape(14.dp)
+    // 🚨 حاشیه‌ی سبزِ همه‌ی ردیف‌ها رفت (فریمِ `64a`): وقتی هر ردیف حاشیه‌ی سبز دارد، حاشیه
+    // هیچ چیزی نمی‌گوید. حالا فقط **دو حالتِ فوری** حاشیه‌ی رنگی می‌گیرند - قاعده‌ی `51a`:
+    // رنگ از فوریت می‌آید.
+    val bulkSelectable = bulkPayMode && !paid
+    val borderColor = when {
+        selected -> AppPrimary
+        overdue -> AppDanger
+        !paid && isNext -> AppGoldBorder
+        else -> AppLineRow
+    }
+    // متنِ ردیفِ پرداخت‌شده خاکستری می‌شود ولی ردیف **محو نمی‌شود** - تفکیکِ پرداخت‌شده کارِ
+    // جوهر است نه alpha؛ محوکردنِ کلِ ردیف مبلغ و تاریخ را هم ناخوانا می‌کند. تنها استثنا
+    // حالتِ گروهی است که آن ردیف واقعاً بی‌کار است.
+    val inkColor = if (paid) AppMuted else AppText
+    var menuOpen by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(installmentRowHeight)
+            .alpha(if (bulkPayMode && paid) 0.5f else 1f)
+            .background(if (selected) AppPrimary.pillOverSurface(0.10f) else AppSurface, rowShape)
+            .border(if (selected || overdue) 1.5.dp else 1.dp, borderColor, rowShape)
+            // پرتپ‌ترین المانِ کلِ اپ - فشرده می‌شه و یه tick هپتیک می‌ده. کشفِ لمس‌پذیری کارِ
+            // همین فشردگیه، نه پالسِ بج (که طبقِ `64a` برداشته شد: ده ردیفِ هم‌زمان
+            // نفس‌کشنده نویز است نه راهنما).
+            .pressScaleClickable(scale = 0.975f) { onTogglePaid(m, paid) }
+            .padding(start = 12.dp, end = if (bulkPayMode) 12.dp else 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (bulkPayMode) {
+            Checkbox(checked = selected, onCheckedChange = null, enabled = bulkSelectable)
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("قسط ${toFa(m)}", color = inkColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                // گیره‌ی ریز یعنی «رسید دارد» - قبلاً فقط از رنگِ آیکونِ دوربین فهمیده می‌شد
+                // که هم نامرئی بود هم با حذفِ آن آیکون از دست می‌رفت.
+                if (hasPhoto) {
+                    Icon(
+                        Icons.Filled.AttachFile,
+                        contentDescription = "رسید دارد",
+                        tint = AppMuted,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
+            }
+            Text(dueLabel, color = AppMuted, fontSize = 12.sp)
+        }
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text("${maskIfPrivate(masked, amountToman(installment))} تومان", color = inkColor, fontSize = 13.sp)
+        }
+        if (statusLabel != null) {
+            Text(
+                statusLabel,
+                color = statusColor,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 8.dp),
+            )
+        }
+        if (!bulkPayMode) {
+            // 🚨 دو آیکونِ لختِ ۲۴پیکسلی (دوربین و مداد) هر دو زیرِ هدفِ لمسیِ ۴۴ بودند و کنارِ
+            // بجِ لمس‌پذیر می‌نشستند - سه هدفِ چسبیده. یک سه‌نقطه‌ی ۴۴ جای هر دو (فریمِ `64c`).
+            Box {
+                IconButton(onClick = { menuOpen = true }) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = "کارهای این قسط", tint = AppMuted)
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    // منو شماره‌ی قسط را در سرش می‌گوید - در فهرستِ دوازده‌ردیفی کاربر باید
+                    // بداند منو مالِ کدام ردیف است.
+                    Text(
+                        "قسط ${toFa(m)} · $dueLabel",
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    )
+                    if (paid) {
+                        DropdownMenuItem(
+                            text = { Text("پیوستِ عکسِ رسید", fontSize = 13.sp) },
+                            onClick = { menuOpen = false; onOpenPhoto(m) },
+                        )
+                    }
+                    DropdownMenuItem(
+                        text = { Text("ویرایشِ مبلغِ این قسط", fontSize = 13.sp) },
+                        onClick = { menuOpen = false; onEditAmount(m, installment) },
+                    )
+                    if (paid) {
+                        DropdownMenuItem(
+                            text = { Text("برداشتنِ پرداخت", color = AppDanger, fontSize = 13.sp) },
+                            onClick = { menuOpen = false; onUnmark(m) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// `LoanDonut` حذف شد - از وقتی `LoanSummaryCard` (حلقه‌ی ۸۸ی فریمِ `27b`) جاش رو
+// گرفت، هیچ‌جا صدا زده نمی‌شد؛ توکنِ `AppAccent` هم فقط همین‌جا استفاده می‌شد.
+
+@OptIn(ExperimentalMaterial3Api::class)
+
+// ═══════════ ۳ · InstallmentsPreviewCard (مرجعِ سبک) ═══════════
+private fun InstallmentsPreviewCard(
+    rows: List<Map<String, Any?>>,
+    loan: LoanEntity,
+    privacyMode: Boolean,
+    overdueRow: Map<String, Any?>?,
+    onSeeAll: () -> Unit,
+) {
+    val muted = AppMuted
+    val text = AppText
+    val danger = AppDanger
+
+    // انتخابِ سه ردیف: آخرین پرداخت‌شده، اولین پرداخت‌نشده، و بعدیش.
+    val nextIndex = rows.indexOfFirst { it["paid"] != true }
+    val preview = remember(rows, nextIndex) {
+        when {
+            rows.isEmpty() -> emptyList()
+            nextIndex < 0 -> rows.takeLast(3)
+            else -> listOfNotNull(
+                rows.getOrNull(nextIndex - 1),
+                rows.getOrNull(nextIndex),
+                rows.getOrNull(nextIndex + 1),
+            )
+        }
+    }
+
+    Column(
+        modifier = Modifier.padding(horizontal = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp),
+    ) {
+        // نوارِ قرمزِ قسطِ عقب‌افتاده - استثنای بندِ ۳۶i.
+        if (overdueRow != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(AppDangerPill)
+                    .border(2.dp, AppDanger, RoundedCornerShape(16.dp))
+                    .pressScaleClickable(onClick = onSeeAll)
+                    .padding(horizontal = 13.dp, vertical = 11.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Icon(Icons.Filled.PriorityHigh, contentDescription = null, tint = danger, modifier = Modifier.size(18.dp))
+                Text(
+                    "قسطِ ${toFa((overdueRow["m"] as? Number)?.toInt() ?: 0)} عقب افتاده",
+                    color = danger,
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.weight(1f),
+                )
+                Text("پرداختِ قسطِ عقب‌افتاده", color = danger, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+            }
+        }
+
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            Text("جدولِ اقساط", color = text, fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold)
+            Spacer(modifier = Modifier.height(10.dp))
+            preview.forEachIndexed { index, row ->
+                if (index > 0) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(AppLineRow),
+                    )
+                }
+                PreviewInstallmentRow(row, loan, privacyMode, isNext = row === rows.getOrNull(nextIndex))
+            }
+            Text(
+                if (rows.isEmpty()) "دیدنِ اقساط" else "دیدنِ همه‌ی ${toFa(rows.size)} قسط",
+                color = AppPrimaryInk,
+                fontSize = 9.5.sp,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pressScaleClickable(onClick = onSeeAll)
+                    .padding(top = 8.dp),
+            )
+        }
+    }
+}
+
+/** یه ردیفِ پیش‌نمایش - سه حالتِ فریم: پرداخت‌شده (تیکِ سبز) · بعدی (نقطه‌ی قرمز) · آینده (کم‌رنگ). */
+@Composable
+private fun PreviewInstallmentRow(
+    row: Map<String, Any?>,
+    loan: LoanEntity,
+    privacyMode: Boolean,
+    isNext: Boolean,
+) {
+    val paid = row["paid"] == true
+    val m = (row["m"] as? Number)?.toInt() ?: 0
+    val installment = (row["installment"] as? Number)?.toDouble() ?: loan.installment
+    val due = row["dueDate"] as? Map<*, *>
+    val dueLabel = due?.let {
+        "${toFa(it["d"].toString())} ${persianMonthName((it["m"] as? Number)?.toInt() ?: 1)}"
+    } ?: ""
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(if (!paid && !isNext) 0.6f else 1f)
+            .padding(vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(26.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (paid) AppPrimaryPill else if (isNext) AppDangerPill else AppSurface2),
+            contentAlignment = Alignment.Center,
+        ) {
+            when {
+                paid -> Icon(Icons.Filled.Check, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(14.dp))
+                isNext -> Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(AppDanger))
+                else -> Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .border(1.5.dp, AppLine, CircleShape),
+                )
+            }
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text("قسطِ ${toFa(m)}", color = AppText, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+            Text(
+                dueLabel,
+                color = if (isNext) AppDanger else AppMuted,
+                fontSize = 8.5.sp,
+                fontWeight = if (isNext) FontWeight.Bold else FontWeight.Normal,
+            )
+        }
+        PrivacyCrossfade(privacyMode) { masked ->
+            Text(
+                maskIfPrivate(masked, amountToman(installment)),
+                color = if (paid) AppMuted else AppText,
+                fontSize = 10.5.sp,
+                fontWeight = if (isNext) FontWeight.ExtraBold else FontWeight.Bold,
+            )
+        }
+    }
+}
+

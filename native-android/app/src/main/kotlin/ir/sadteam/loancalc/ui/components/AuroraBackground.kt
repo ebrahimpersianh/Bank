@@ -43,9 +43,10 @@ fun AuroraBackground(modifier: Modifier = Modifier) {
     val isDark = bg.luminance() < 0.5f
     // نسخه‌ی اول (۰.۰۹/۰.۰۶ رو تمِ روشن) اون‌قدر محو بود که کاربر اصلاً متوجهش نشد؛ دورِ دوم «بیشتر
     // بشه بد نیست» گفت؛ دورِ سوم از بینِ ۴ سطحِ پیش‌نمایش‌شده تو یه HTML، پررنگ‌ترین (سطحِ ۴) انتخاب
-    // شد؛ دورِ چهارم کاربر خواستِ «دو شماره کم» - یعنی سطحِ ۲.
-    val primaryAlpha = if (isDark) 0.52f else 0.39f
-    val accentAlpha = if (isDark) 0.40f else 0.29f
+    // شد؛ دورِ چهارم کاربر خواستِ «دو شماره کم» - یعنی سطحِ ۲. دورِ پنجم (کاربر: «کل اپ مینیمال‌تر
+    // باشه») یه پله‌ی دیگه هم کم شد تا هاله‌ها کمتر روی صحنه رو بگیرن، فقط یه پس‌زمینه‌ی ظریف بمونن.
+    val primaryAlpha = if (isDark) 0.38f else 0.28f
+    val accentAlpha = if (isDark) 0.28f else 0.20f
 
     val transition = rememberInfiniteTransition(label = "aurora")
     // یه دورِ کامل ~۱۲ ثانیه (دورِ دومِ بازخورد کاربر: ۲۲ثانیه هم هنوز «انگار حرکت نداره» بود) -

@@ -99,6 +99,12 @@ class SubscriptionManager(private val activity: ComponentActivity) {
      * این متد فقط برای یکسان‌بودنِ امضا با فلیورِ myket (که واقعاً بهش نیاز داره) اینجاست، رجوع کن
      * به MainActivity.onActivityResult. */
     fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {}
+
+    /** رجوع کن به معادلش تو فلیورِ myket (بازیابیِ خریدهای تاییدنشده) - اینجا یه no-opِ بی‌ضرره،
+     * چون کافه‌بازار اون باگِ خاصِ گم‌شدنِ callbackِ purchase() رو نداره (Poolakey از
+     * ActivityResultRegistry استفاده می‌کنه، نه onActivityResultِ خام)، پس هیچ خریدی نمی‌تونه اونجا
+     * گیر کنه. فقط برای یکسان‌بودنِ امضا با فلیورِ myket اینجاست. */
+    fun restorePurchases(): List<Pair<String, String>> = emptyList()
 }
 
 /** null یعنی هنوز وصل نشده/در دسترس نیست (مثلاً کافه‌بازار رو گوشی نصب نیست) - صفحه‌ی اشتراک

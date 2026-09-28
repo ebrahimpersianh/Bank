@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.data
 
+import kotlinx.coroutines.flow.first
+
 import ir.sadteam.loancalc.data.network.ApiService
 import ir.sadteam.loancalc.data.network.CrashReportRequest
 
@@ -10,10 +12,17 @@ import ir.sadteam.loancalc.data.network.CrashReportRequest
  * AuthRepository هم به همین دلیل ساخته شدن). خطاهای شبکه عمداً قورت داده می‌شن - گزارش کرش نباید
  * خودش باعث یه کرش/تاخیر دیگه بشه.
  */
-class CrashRepository(private val apiService: ApiService) {
+class CrashRepository(
+    private val apiService: ApiService,
+    private val authPrefs: ir.sadteam.loancalc.data.prefs.AuthPrefs,
+) {
     suspend fun reportCrash(message: String, stack: String?, context: String?, appVersion: String?) {
         try {
-            apiService.reportCrash(CrashReportRequest(message, stack, context, appVersion))
+            val token = runCatching { authPrefs.authToken.first() }.getOrNull()
+            apiService.reportCrash(
+                CrashReportRequest(message, stack, context, appVersion),
+                token?.let { "Bearer $it" },
+            )
         } catch (e: Exception) {
             // عمداً نادیده گرفته می‌شه
         }

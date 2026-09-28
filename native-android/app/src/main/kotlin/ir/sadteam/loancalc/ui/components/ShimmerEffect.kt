@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppMuted
 
 /**
@@ -69,7 +70,7 @@ fun BankTileShimmer(modifier: Modifier = Modifier) {
         Box(
             modifier = Modifier
                 .size(54.dp)
-                .clip(RoundedCornerShape(15.dp))
+                .clip(RoundedCornerShape(AppRadius.row))
                 .shimmerEffect(),
         )
         Box(

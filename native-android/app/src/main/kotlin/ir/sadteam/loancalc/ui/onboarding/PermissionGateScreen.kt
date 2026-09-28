@@ -20,10 +20,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +53,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.components.JibakBrandMark
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -54,10 +65,35 @@ private fun notificationsGranted(context: Context): Boolean =
     Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
+/**
+ * سازنده‌هایی که علاوه بر معافیتِ باتریِ استاندارد، یه **کشندهِ‌ی پس‌زمینه‌ی اختصاصی** هم دارند -
+ * قاعده‌ی `35e`ی فایلِ طراحی («بی این‌ها سرویس روی شیائومی و سامسونگ بی‌صدا می‌میرد»).
+ *
+ * این مورد **شرطِ گیت نیست و نمی‌تواند باشد**: «اجرای خودکار» (Autostart) هیچ API عمومی برای
+ * خواندن ندارد، پس اگر شرطش می‌کردیم کاربر برای همیشه در گیت حبس می‌شد. پس فقط یه ردیفِ
+ * راهنماست، و فقط روی همین سازنده‌ها نشان داده می‌شود تا برای کاربرِ پیکسل/نوکیا شلوغی نکند.
+ */
+private val AGGRESSIVE_OEMS = setOf(
+    "xiaomi", "redmi", "poco", "samsung", "huawei", "honor", "oppo", "vivo", "realme", "meizu",
+)
+
+private fun hasAggressiveBackgroundKiller(): Boolean =
+    Build.MANUFACTURER.lowercase() in AGGRESSIVE_OEMS || Build.BRAND.lowercase() in AGGRESSIVE_OEMS
+
 private fun batteryUnrestricted(context: Context): Boolean {
     val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
     return pm.isIgnoringBatteryOptimizations(context.packageName)
 }
+
+/**
+ * هر دو شرطِ گیت از قبل برقرارن؟ - **هم‌زمان (بدونِ رندر)** حساب می‌شه.
+ *
+ * باگی که با این رفع شد: `AppRoot` گیت رو با مقدارِ اولیه‌ی `false` شروع می‌کرد، پس حتی وقتی
+ * کاربر هر دو مجوز رو از قبل داده بود یه فریم از صفحه‌ی مجوز رندر می‌شد و بعد `LaunchedEffect`
+ * ردش می‌کرد - کاربر این رو به‌عنوانِ «هر بار بعدِ اسپلش یه صفحه سریع میاد» گزارش داد.
+ */
+fun permissionGateSatisfied(context: Context): Boolean =
+    notificationsGranted(context) && batteryUnrestricted(context)
 
 /**
  * پورت گیت مجوز اولیه‌ی اپ رقیب (VAMMAN) - قبل از هر چیز دیگه‌ای (حتی گیت ورود/مهمان) نشون داده
@@ -69,7 +105,26 @@ private fun batteryUnrestricted(context: Context): Boolean {
  * دستی خاموش کنه.
  */
 @Composable
-fun PermissionGateScreen(onAllGranted: () -> Unit) {
+fun PermissionGateScreen(
+    onAllGranted: () -> Unit,
+    /**
+     * 🚨 **بزرگ‌ترین موردِ این فایل.** README می‌گوید «همه اختیاری‌اند و رد کردنشان نباید
+     * بن‌بست بسازد» - ولی کد هیچ راهِ ردکردن نداشت. تنها خروجی‌اش
+     * `if (notifOk && batteryOk) onAllGranted()` بود و متنِ صفحه هم صریح می‌گفت «تا
+     * وقتی هر دو مورد فعال نشن، ورود انجام نمی‌شه».
+     *
+     * یعنی کاربری که «اجازه نمی‌دهم» را دو بار زده (اندروید بعدِ دو رد، دیالوگ را
+     * برای همیشه خاموش می‌کند) **قابلِ ورود به برنامه نیست** - نه با تپ، نه با
+     * بازگشت. تنها راهش پاک‌کردن و نصبِ دوباره است.
+     *
+     * و این گیت `هر بار` باز شدنِ اپ ارزیابی می‌شود، پس کاربری که ماه‌ها استفاده کرده و
+     * بعد از تنظیماتِ گوشی اعلان را خاموش کرده هم از داده‌ی خودش بیرون می‌مانَد.
+     *
+     * پس `onSkip` اجباری است. اگر جای فراخوان راهی برای ردشدن ندارد، **بگویید** تا
+     * راهش را بنویسم؛ خالی نگذارید.
+     */
+    onSkip: () -> Unit,
+) {
     val context = LocalContext.current
     var notifOk by remember { mutableStateOf(notificationsGranted(context)) }
     var batteryOk by remember { mutableStateOf(batteryUnrestricted(context)) }
@@ -96,15 +151,25 @@ fun PermissionGateScreen(onAllGranted: () -> Unit) {
     LaunchedEffect(notifOk, batteryOk) {
         if (notifOk && batteryOk) onAllGranted()
     }
+    // بدونِ این، لحظه‌ی گرفتنِ آخرین مجوز یه فریمِ اضافه از خودِ صفحه دیده می‌شه.
+    if (notifOk && batteryOk) return
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AppBg)
+            // ⚠️ روی شیائومی/سامسونگ کارتِ «یک قدمِ اختیاری» هم رندر می‌شود و صفحه از
+            // گوشیِ کوتاه بیرون می‌زد: دکمه‌ی «بررسی دوباره» و «بعداً» زیرِ لبه می‌ماندند،
+            // یعنی همان کاربری که این کارت را می‌بیند راهِ خروج را نمی‌دید.
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(40.dp))
+        // نشانِ برند: این گیت **هر بار** باز شدنِ اپ ارزیابی می‌شود، پس صفحه‌ای است که کاربر
+        // زیاد می‌بیند - و تا الان تنها صفحه‌ی مسیرِ ورود بود که شبیهِ دیالوگِ سیستمی بود.
+        JibakBrandMark(width = 48.dp)
+        Spacer(Modifier.height(24.dp))
         Text(
             "برای کارکرد درست یادآوری‌ها",
             color = AppText,
@@ -127,9 +192,11 @@ fun PermissionGateScreen(onAllGranted: () -> Unit) {
                 .border(1.dp, AppLine, RoundedCornerShape(14.dp)),
         ) {
             PermissionRow(
-                title = "اجازه نوتیفیکیشن",
+                title = "اجازه‌ی اعلان",
                 granted = notifOk,
-                actionLabel = "Allow",
+                // ⚠️ قبلاً "Allow" بود - انگلیسیِ خام در برنامه‌ای که سراسر فارسی است، و کاربرِ
+                // هدفِ ما (فارسی‌زبانِ ایرانی) لازم نیست بداند دکمه‌ی سیستمی چه اسمی دارد.
+                actionLabel = "اجازه می‌دهم",
                 onClick = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -138,9 +205,11 @@ fun PermissionGateScreen(onAllGranted: () -> Unit) {
             )
             HorizontalDivider(color = AppLine)
             PermissionRow(
-                title = "باتری: نامحدود / بدون بهینه‌سازی",
+                title = "باتری بدونِ محدودیت",
                 granted = batteryOk,
-                actionLabel = "Open",
+                // ⚠️ قبلاً "Open" بود. عنوان هم از «باتری: نامحدود / بدون بهینه‌سازی» ساده شد -
+                // دو اصطلاحِ فنیِ هم‌معنی با یه اسلش بینشان.
+                actionLabel = "تنظیمات",
                 onClick = {
                     val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                         data = Uri.parse("package:${context.packageName}")
@@ -151,22 +220,88 @@ fun PermissionGateScreen(onAllGranted: () -> Unit) {
         }
 
         Text(
-            "تا وقتی هر دو مورد ✅ نشن، ورود به برنامه انجام نمی‌شه.",
+            // ⚠️ متنِ قبلی («تا وقتی هر دو مورد فعال نشن، ورود انجام نمی‌شه») هم تهدید بود
+            // و هم توصیفِ باگ. حالا می‌گوید چه چیزی از دست می‌رود، که تنها چیزِ درستی است
+            // که می‌شود گفت: مجوزها اختیاری‌اند و پیامد دارند، نه شرطِ ورود.
+            "بی این دسترسی‌ها یادآوریِ سررسید نمی‌رسد. بقیه‌ی برنامه کار می‌کند.",
             color = AppMuted,
             fontSize = 12.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 20.dp),
         )
 
-        OutlinedButton(
-            onClick = {
-                notifOk = notificationsGranted(context)
-                batteryOk = batteryUnrestricted(context)
-            },
-            modifier = Modifier.padding(top = 16.dp),
-        ) {
-            Text("بررسی دوباره")
+        // ── تله‌ی دومِ قاعده‌ی `35e` ──
+        // اختیاری و بی‌گیت (بالا توضیح داده شد چرا نمی‌تواند شرط باشد). عمداً `ACTION_APPLICATION`
+        // `_DETAILS_SETTINGS`ِ استاندارد را باز می‌کند و نه Intentِ اختصاصیِ برند (`miui.intent`,
+        // `com.samsung...`): آن‌ها روی نسخه‌های مختلفِ همان سازنده هم ثابت نیستند و
+        // `ActivityNotFoundException` می‌دهند. صفحه‌ی استاندارد همه‌جا هست و «باتری» و «اجرای
+        // خودکار» هر دو یک تپ داخلش‌اند.
+        if (hasAggressiveBackgroundKiller()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+                    // ⚠️ `AppGoldFrom` بود. قاعده‌ی ۸ی README: «طلایی فقط نشانه‌ی
+                    // اشتراک/پرمیوم است». راهنمای اجرای خودکار نه پرمیوم است و نه
+                    // فروشی - کارتِ خنثی با حاشیه.
+                    .background(AppSurface, RoundedCornerShape(14.dp))
+                    .border(1.dp, AppLine, RoundedCornerShape(14.dp))
+                    .padding(14.dp),
+            ) {
+                Text(
+                    "یک قدمِ اختیاری",
+                    color = AppText,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    "گوشیِ تو علاوه بر بهینه‌سازیِ باتری، یک «اجرای خودکار» جدا هم دارد. اگر خاموش " +
+                        "باشد یادآوری‌ها می‌رسند ولی خواندنِ خودکارِ پیامک و اعلانِ بانک بعد از چند " +
+                        "ساعت قطع می‌شود. از صفحه‌ی تنظیماتِ برنامه روشنش کن.",
+                    color = AppText,
+                    fontSize = 12.sp,
+                    lineHeight = 20.sp,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+                OutlinedButton(
+                    onClick = {
+                        runCatching {
+                            context.startActivity(
+                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.parse("package:${context.packageName}")
+                                },
+                            )
+                        }
+                    },
+                    modifier = Modifier.padding(top = 10.dp),
+                ) {
+                    Text("تنظیماتِ برنامه")
+                }
+            }
         }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedButton(
+                onClick = {
+                    notifOk = notificationsGranted(context)
+                    batteryOk = batteryUnrestricted(context)
+                },
+                modifier = Modifier.weight(1f),
+            ) {
+                Text("بررسی دوباره")
+            }
+            // «بعداً» - راهِ خروج. `TextButton` است نه دکمه‌ی هم‌وزنِ اصلی، همان الگویی که
+            // فریمِ `35b` برای «بعداً»ِ مجوزِ اعلان دارد: پیدا، ولی نه تشویق‌کننده.
+            TextButton(onClick = onSkip, modifier = Modifier.weight(1f)) {
+                Text("بعداً")
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
     }
 }
 
@@ -182,13 +317,30 @@ private fun PermissionRow(title: String, granted: Boolean, actionLabel: String, 
         Column {
             Text(title, color = AppText, fontSize = 14.sp)
             Text(
-                if (granted) "فعال است ✅" else "باید فعال شود",
+                // ⚠️ قبلاً «فعال است ✅» بود - ایموجی به‌جای وضعیت. حالا تیکِ واقعی سمتِ دیگرِ
+                // ردیف می‌نشیند (جای دکمه)، پس چشم یک ستونِ وضعیت می‌بیند نه دو نشانه‌ی پراکنده.
+                if (granted) "فعال است" else "باید فعال شود",
                 color = if (granted) AppPrimary else AppMuted,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
-        if (!granted) {
+        if (granted) {
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(AppPrimary),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = AppBg,
+                    modifier = Modifier.size(15.dp),
+                )
+            }
+        } else {
             GradientButton(onClick = onClick) {
                 Text(actionLabel)
             }

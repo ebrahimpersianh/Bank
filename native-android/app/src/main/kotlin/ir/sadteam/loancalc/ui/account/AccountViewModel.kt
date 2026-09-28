@@ -5,12 +5,18 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER
+import ir.sadteam.loancalc.data.GamificationRepository
+import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
+import ir.sadteam.loancalc.data.db.BudgetEntity
+import ir.sadteam.loancalc.data.db.RecurringPaymentEntity
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -19,11 +25,31 @@ import javax.inject.Inject
 class AccountViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val authPrefs: AuthPrefs,
+    private val gamification: GamificationRepository,
 ) : ViewModel() {
     val accounts: StateFlow<List<AccountEntity>> = accountRepository.observeAccounts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val transactions: StateFlow<List<AccountTransactionEntity>> = accountRepository.observeTransactions()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /**
+     * 🚨 آیا اولین خواندنِ دیتابیس برگشته؟
+     *
+     * [transactions] با `emptyList()` شروع می‌شود و دیتابیس رمزنگاری‌شده است، پس بازشدنش چند
+     * فریم طول می‌کشد. در آن فاصله «هنوز نمی‌دانم» از «هیچ تراکنشی نیست» قابلِ تشخیص نبود و
+     * صفحه‌ی خانه **حالتِ خالی** را رندر می‌کرد: یک کارتِ خط‌چینِ بلند که کاربر باید از رویش
+     * رد می‌شد تا محتوای واقعی را ببیند - همان چیزی که کاربر «انگار سه صفحه شده» گزارش کرد.
+     * تپ روی «ترمیم» فقط اتفاقی هم‌زمان شد؛ علتش نبود.
+     */
+    val transactionsLoaded: StateFlow<Boolean> = accountRepository.observeTransactions()
+        .map { true }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val budgets: StateFlow<List<BudgetEntity>> = accountRepository.observeBudgets()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val recurringPayments: StateFlow<List<RecurringPaymentEntity>> = accountRepository.observeRecurringPayments()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /** پورت syncIfLoggedIn تو MyLoansViewModel - حساب‌ها/تراکنش‌ها قبلاً فقط با AutoBackupWorkerِ
@@ -37,9 +63,17 @@ class AccountViewModel @Inject constructor(
     fun balanceOf(account: AccountEntity, allTransactions: List<AccountTransactionEntity>): Double =
         accountRepository.currentBalance(account, allTransactions)
 
-    fun addAccount(name: String, bankName: String, initialBalance: Double) {
+    fun addAccount(
+        name: String,
+        bankName: String,
+        initialBalance: Double,
+        cardNumber: String? = null,
+        smsSender: String? = null,
+        type: String = ACCOUNT_TYPE_BANK,
+        iconKey: String? = null,
+    ) {
         viewModelScope.launch {
-            accountRepository.addAccount(name, bankName, initialBalance)
+            accountRepository.addAccount(name, bankName, initialBalance, cardNumber, smsSender, type, iconKey)
             syncIfLoggedIn()
         }
     }
@@ -58,6 +92,44 @@ class AccountViewModel @Inject constructor(
         }
     }
 
+    /**
+     * جابجاییِ پول بینِ دو حساب‌کتاب - یه «برداشت» از مبدا و یه «واریز» به مقصد.
+     *
+     * عمداً جدول/نوعِ تراکنشِ جدیدی اضافه نشده: از دیدِ موجودیِ حساب‌ها، انتقال دقیقاً همینه.
+     * هر دو ردیف `sourceType = "transfer"` و یه `sourceId`ِ مشترک می‌گیرن تا بعداً بشه جفتشون رو
+     * به‌هم ربط داد.
+     *
+     * ⚠️ به `addTransaction` **idِ صریح** پاس داده می‌شه (`transferId` و `transferId + 1`): پیش‌فرضِ
+     * `System.currentTimeMillis()` تو دو فراخوانیِ پشتِ‌هم می‌تونه یکی دربیاد و `@Upsert` بی‌صدا
+     * یکی رو رو اون یکی بنویسه - همون باگی که قبلاً تو حلقه‌های ساختِ تراکنش پیش اومد (CLAUDE.md).
+     */
+    fun addTransfer(
+        fromAccountId: Long,
+        toAccountId: Long,
+        amount: Double,
+        description: String,
+        year: Int,
+        month: Int,
+        day: Int,
+        onSuccess: () -> Unit = {},
+        onFailure: (Throwable) -> Unit = {},
+    ) {
+        viewModelScope.launch {
+            runCatching {
+                // 🚨 **هر دو سمت با هم یا هیچ‌کدام** - منطقش رفت داخلِ ریپازیتوری تا یک
+                // تراکنشِ واقعیِ دیتابیس باشد. سینک **بعد از** موفقیتِ نوشتن است، نه داخلش.
+                accountRepository.addTransfer(
+                    fromAccountId = fromAccountId,
+                    toAccountId = toAccountId,
+                    amount = amount,
+                    description = description,
+                    year = year, month = month, day = day,
+                )
+                syncIfLoggedIn()
+            }.onSuccess { onSuccess() }.onFailure(onFailure)
+        }
+    }
+
     fun addTransaction(
         accountId: Long,
         type: TransactionType,
@@ -66,9 +138,42 @@ class AccountViewModel @Inject constructor(
         year: Int,
         month: Int,
         day: Int,
+        category: String? = null,
+        sourceType: String? = null,
+        sourceId: String? = null,
+        id: Long? = null,
+        /** `71a`: منبعِ نمایشی - `null` یعنی ثبتِ دستیِ خودِ کاربر. */
+        originLabel: String? = null,
+        onSuccess: () -> Unit = {},
+        onFailure: (Throwable) -> Unit = {},
     ) {
         viewModelScope.launch {
-            accountRepository.addTransaction(accountId, type, amount, description, year, month, day)
+            runCatching {
+                accountRepository.addTransaction(
+                    accountId, type, amount, description, year, month, day, category, sourceType, sourceId, id,
+                    originLabel = originLabel,
+                )
+                syncIfLoggedIn()
+            }.onSuccess { onSuccess() }.onFailure(onFailure)
+        }
+    }
+
+    /**
+     * اصلاحِ مبلغ و توضیحِ یک تراکنشِ ثبت‌شده. کاربر گزارش کرد گاهی اشتباه ثبت می‌شود و
+     * تنها راهِ موجود حذفِ کامل بود.
+     *
+     * ⚠️ [amountRial] **ریال** است، مثلِ ستونِ دیتابیس - تبدیل در لایه‌ی UI انجام می‌شود
+     * نه اینجا، تا مثلِ بقیه‌ی برنامه یک نقطه‌ی تبدیل بیشتر نداشته باشیم.
+     * نوع (واریز/برداشت)، حساب و تاریخ عمداً دست‌نخورده می‌مانند: عوض‌کردنشان یعنی
+     * تراکنشِ دیگری، و حذف‌وثبتِ دوباره صادقانه‌تر است.
+     */
+    fun updateTransaction(transaction: AccountTransactionEntity, amountRial: Double, description: String) {
+        viewModelScope.launch {
+            accountRepository.updateTransaction(
+                transaction.copy(amount = amountRial, description = description.trim()),
+            )
+            // ویرایش هم مثلِ افزودن و حذف باید به ابر برود، وگرنه اصلاحِ مبلغ فقط روی
+            // همین گوشی می‌مانْد و اولین بازگردانی برش می‌گردانْد به مقدارِ غلط.
             syncIfLoggedIn()
         }
     }
@@ -76,6 +181,67 @@ class AccountViewModel @Inject constructor(
     fun deleteTransaction(transaction: AccountTransactionEntity) {
         viewModelScope.launch {
             accountRepository.deleteTransaction(transaction)
+            syncIfLoggedIn()
+        }
+    }
+
+    /** جمعِ درآمد/هزینه‌ی یه ماهِ خاص، رو همه‌ی حساب‌ها - برای کارتِ گزارشِ ماهانه. */
+    fun monthlyTotals(allTransactions: List<AccountTransactionEntity>, year: Int, month: Int): Pair<Double, Double> {
+        // 🚨 **جابه‌جاییِ داخلی نه درآمد است نه خرج.** انتقالِ ۱۰ میلیون از حسابِ الف به ب
+        // دو ردیف می‌سازد (برداشت + واریز) و بی این فیلتر، گزارشِ ماه هم ۱۰ میلیون درآمد
+        // نشان می‌داد هم ۱۰ میلیون هزینه - در حالی که هیچ پولی وارد یا خارج نشده.
+        val forMonth = allTransactions.filter {
+            it.year == year && it.month == month && it.sourceType != SOURCE_TYPE_TRANSFER
+        }
+        val income = forMonth.filter { it.type == TransactionType.DEPOSIT.name }.sumOf { it.amount }
+        val expense = forMonth.filter { it.type == TransactionType.WITHDRAWAL.name }.sumOf { it.amount }
+        return income to expense
+    }
+
+    fun spendByCategory(
+        allTransactions: List<AccountTransactionEntity>,
+        year: Int,
+        month: Int,
+        accountId: Long? = null,
+    ): Map<String, Double> = accountRepository.spendByCategory(allTransactions, year, month, accountId)
+
+    fun setBudget(categoryName: String, monthlyCap: Double, existingId: Long? = null, accountId: Long? = null) {
+        viewModelScope.launch {
+            accountRepository.setBudget(categoryName, monthlyCap, existingId, accountId)
+            // «اولین بودجه ۲۵ سکه» (جدولِ `20e`) - یک‌باره؛ بودجه‌ی دومی سکه نمی‌ده.
+            gamification.awardOnce(
+                GamificationRepository.Type.FIRST_BUDGET,
+                GamificationRepository.Reward.FIRST_BUDGET,
+            )
+            syncIfLoggedIn()
+        }
+    }
+
+    fun deleteBudget(budget: BudgetEntity) {
+        viewModelScope.launch {
+            accountRepository.deleteBudget(budget)
+            syncIfLoggedIn()
+        }
+    }
+
+    fun addRecurringPayment(
+        name: String,
+        amount: Double,
+        type: TransactionType,
+        categoryName: String?,
+        accountId: Long?,
+        dayOfMonth: Int,
+        reminderDayOffsets: String?,
+    ) {
+        viewModelScope.launch {
+            accountRepository.addRecurringPayment(name, amount, type, categoryName, accountId, dayOfMonth, reminderDayOffsets)
+            syncIfLoggedIn()
+        }
+    }
+
+    fun deleteRecurringPayment(payment: RecurringPaymentEntity) {
+        viewModelScope.launch {
+            accountRepository.deleteRecurringPayment(payment)
             syncIfLoggedIn()
         }
     }

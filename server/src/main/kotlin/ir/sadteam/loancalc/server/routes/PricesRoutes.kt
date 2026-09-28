@@ -20,6 +20,8 @@ private data class PricesResponse(
     val prices: Map<String, Double>,
     /** نمادهای خامِ سرویس - فقط برای دیباگ/تنظیمِ نگاشت، اپ ازش استفاده نمی‌کنه. */
     val raw: Map<String, Double>,
+    /** قیمتِ دلاریِ رمزارزها - کلید نمادِ کاتالوگ (`BTC`)، مقدار **دلار**. */
+    val pricesUsd: Map<String, Double> = emptyMap(),
 )
 
 @Serializable
@@ -31,7 +33,7 @@ private data class PriceHistoryResponse(val symbol: String, val points: List<Pri
 fun Route.pricesRoutes() {
     get("/api/prices") {
         val snapshot = PriceService.currentPrices()
-        call.respond(PricesResponse(snapshot.updatedAt, snapshot.prices, snapshot.raw))
+        call.respond(PricesResponse(snapshot.updatedAt, snapshot.prices, snapshot.raw, snapshot.usd))
     }
 
     // تاریخچه‌ی یه نماد - `?symbol=BTC&days=30`. مبنای «نسبت به ماهِ قبل» و نمودارِ صفحه‌ی

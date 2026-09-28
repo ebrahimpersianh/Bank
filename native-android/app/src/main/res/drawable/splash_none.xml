@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  نشانِ اسپلشِ سیستمی - **عمداً کاملاً شفاف**.
+
+  خواسته‌ی صریحِ کاربر (۳۱ شهریور): «کلِ اسپلش را حذف کن». اندروید ۱۲ به بعد خودش یک
+  فریمِ اسپلش می‌سازد و حذفِ کاملش ممکن نیست؛ تنها کاری که می‌شود کرد این است که نشانش
+  چیزی نباشد، پس کاربر فقط یک زمینه‌ی یکدست می‌بیند نه تصویرِ بریده‌ی کیف.
+
+  ⚠️ خالی گذاشتنِ خودِ `windowSplashScreenAnimatedIcon` جواب نمی‌دهد - آن‌وقت سیستم
+  آیکونِ لانچر را می‌گذارد.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#00000000" android:pathData="M0,0h108v108h-108z" />
+</vector>

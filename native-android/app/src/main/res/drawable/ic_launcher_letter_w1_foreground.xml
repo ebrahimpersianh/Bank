@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  آیکونِ تطبیقی، طرحِ «پ — نشانِ حرفی» · پیش‌زمینه · فریمِ 58a
+
+  حرف از Vazirmatn ۹۰۰ به مسیر تبدیل شده - رجوع کن به کامنتِ طرحِ «ب».
+
+  ⚠️ **قابِ دورِ حرف عمدی است**: طراح گفت اگر کلِ پیش‌زمینه فقط حرف باشد، `immune` و
+  `body` یکی می‌شوند و این طرح **پژمردگیِ رنگی نمی‌گیرد** (فقط عنکبوت و ترک). قاب همان
+  «بدنه»ای است که کم داشت، پس این طرح هم مثلِ بقیه پژمرده می‌شود.
+-->
+<!-- ساختهٔ generate-wither.py - پلهٔ 1. دستی ویرایشش نکن. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group android:name="body">
+        <path
+            android:strokeColor="#0B3A2A"
+            android:strokeWidth="4"
+            android:fillColor="#00000000"
+            android:pathData="M24,36 A12,12 0 0 1 36,24 L72,24 A12,12 0 0 1 84,36 L84,72 A12,12 0 0 1 72,84 L36,84 A12,12 0 0 1 24,72 Z" />
+    </group>
+
+    <group android:name="immune">
+        <path
+            android:fillColor="#0B3829"
+            android:pathData="M72.65 36.79 72.62 44.99Q69.12 45.29 65.12 46.09Q61.12 46.90 57.28 48.23Q53.45 49.57 50.30 51.49Q47.15 53.41 45.28 55.90Q43.40 58.40 43.40 61.55Q43.40 64.32 45.11 66.22Q46.82 68.12 49.67 69.09Q52.53 70.05 55.95 70.05Q60.29 70.05 64.15 69.23Q68.02 68.42 71.02 67.29L73.63 75.91Q69.47 77.54 65.06 78.27Q60.64 79.00 56.42 79.00Q52.08 79.00 48.28 78.05Q44.47 77.10 41.57 75.03Q38.68 72.97 37.03 69.68Q35.38 66.40 35.38 61.73Q35.38 57.33 37.03 53.82Q38.68 50.31 41.47 47.67Q44.26 45.02 47.73 43.18Q51.19 41.34 54.82 40.24Q52.20 39.11 50.51 38.50Q48.81 37.89 48.04 37.89Q46.46 37.89 45.19 38.88Q43.91 39.88 43.13 40.89L41.41 43.06L34.37 39.61L35.85 37.17Q37.96 33.70 40.99 31.35Q44.03 29.00 48.07 29.00Q49.76 29.00 51.99 29.77Q54.22 30.55 56.81 31.71Q59.40 32.86 62.13 34.02Q64.87 35.18 67.54 35.97Q70.22 36.76 72.65 36.79Z" />
+
+        <path
+            android:fillColor="#0B3829"
+            android:pathData="M58.47 52.96 64.03 58.52 58.47 64.05 52.94 58.52Z" />
+    </group>
+
+    <group android:name="dust">
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.029" android:pathData="M14,22 A2.1,2.1 0 1 0 18.2,22 A2.1,2.1 0 1 0 14,22 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.021" android:pathData="M31,13 A1.4,1.4 0 1 0 33.8,13 A1.4,1.4 0 1 0 31,13 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.034" android:pathData="M77,19 A2.6,2.6 0 1 0 82.2,19 A2.6,2.6 0 1 0 77,19 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.018" android:pathData="M94,34 A1.7,1.7 0 1 0 97.4,34 A1.7,1.7 0 1 0 94,34 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.028" android:pathData="M20,58 A1.9,1.9 0 1 0 23.8,58 A1.9,1.9 0 1 0 20,58 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.020" android:pathData="M47,31 A1.3,1.3 0 1 0 49.6,31 A1.3,1.3 0 1 0 47,31 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.031" android:pathData="M66,47 A2.2,2.2 0 1 0 70.4,47 A2.2,2.2 0 1 0 66,47 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.024" android:pathData="M37,72 A1.8,1.8 0 1 0 40.6,72 A1.8,1.8 0 1 0 37,72 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.029" android:pathData="M88,68 A2.4,2.4 0 1 0 92.8,68 A2.4,2.4 0 1 0 88,68 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.015" android:pathData="M58,88 A1.5,1.5 0 1 0 61,88 A1.5,1.5 0 1 0 58,88 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.025" android:pathData="M25,93 A2,2 0 1 0 29,93 A2,2 0 1 0 25,93 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.020" android:pathData="M79,96 A1.6,1.6 0 1 0 82.2,96 A1.6,1.6 0 1 0 79,96 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.014" android:pathData="M53,60 A1.2,1.2 0 1 0 55.4,60 A1.2,1.2 0 1 0 53,60 Z" />
+        <path android:fillColor="#0A0F0D" android:fillAlpha="0.021" android:pathData="M12,76 A1.7,1.7 0 1 0 15.4,76 A1.7,1.7 0 1 0 12,76 Z" />
+    </group>
+</vector>

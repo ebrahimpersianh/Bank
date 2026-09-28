@@ -15,6 +15,11 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // برای `BuildConfig.DEBUG` در ApiClient - لاگِ شبکه فقط در بیلدِ دیباگ نصب می‌شود.
+    buildFeatures {
+        buildConfig = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

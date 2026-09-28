@@ -37,6 +37,24 @@ data class LoanRowEntity(
     val paidDateY: Int? = null,
     val paidDateM: Int? = null,
     val paidDateD: Int? = null,
-    /** مسیرِ عکسِ رسیدِ همین قسطِ خاص (نه عکسِ کلیِ رو خودِ وام - رجوع کن به LoanEntity.photoPath). */
+    /**
+     * مسیرِ عکسِ رسیدِ همین قسطِ خاص (نه عکسِ کلیِ رو خودِ وام - رجوع کن به LoanEntity.photoPath).
+     *
+     * ⚠️ طرح (کارتِ `36d`) **چند عکس** می‌خواد. برای اینکه ستونِ موجود و داده‌ی کاربرهای فعلی
+     * دست‌نخورده بمونه، چندعکسی با **جداکننده‌ی `|`** تو همین ستون نگه داشته می‌شه؛
+     * `LoanRowEntity.photoPaths` و `withPhotoPaths()` تنها راهِ خوندن/نوشتنشن.
+     */
     val photoPath: String? = null,
-)
+    /** یادداشتِ آزادِ همین قسط - کارتِ `36d`. */
+    val note: String? = null,
+    /** شماره‌ی پیگیریِ پرداخت - کارتِ `36d` (تو UI دکمه‌ی کپی داره). */
+    val trackingNumber: String? = null,
+) {
+    /** لیستِ عکس‌های رسید (ممکنه خالی باشه). */
+    val photoPaths: List<String>
+        get() = photoPath?.split('|')?.filter { it.isNotBlank() } ?: emptyList()
+
+    /** تنها نقطه‌ی نوشتنِ عکس‌ها - قاعده‌ی «یک نقطه‌ی نوشتنِ واحد» برای هر داده‌ی کدگذاری‌شده. */
+    fun withPhotoPaths(paths: List<String>): LoanRowEntity =
+        copy(photoPath = paths.filter { it.isNotBlank() }.joinToString("|").ifBlank { null })
+}

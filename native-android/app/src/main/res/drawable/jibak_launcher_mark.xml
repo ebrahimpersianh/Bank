@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  نشانِ لانچر جیبک. برای Adaptive Icon طراحی شده:
+  تمامِ اجزا داخل ناحیهٔ امن 66dp مرکزی‌اند (x/y=21..87).
+  بنابراین ماسک دایره/گردگوشهٔ MIUI هیچ بخشِ سکه یا کیف را نمی‌بُرد.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- سکه کامل است؛ هیچ قسمت از آن بیرونِ حاشیهٔ امن یا پشتِ لبهٔ قاب نیست. -->
+    <path android:fillColor="#D99717"
+        android:pathData="M41,45 A13,13 0,1 0,67,45 A13,13 0,1 0,41,45 Z"/>
+    <path android:fillColor="#F7C743"
+        android:pathData="M43,45 A11,11 0,1 0,65,45 A11,11 0,1 0,43,45 Z"/>
+    <path android:fillColor="#FFE8A3"
+        android:pathData="M47,41 A7,7 0,1 0,61,41 A7,7 0,1 0,47,41 Z"/>
+    <!-- کیف با حاشیهٔ کافی از تمام ماسک‌های لانچر. -->
+    <path android:fillColor="#0A7454"
+        android:pathData="M31,51 L77,51 A9,9 0,0 1,86,60 L86,78 A9,9 0,0 1,77,87 L31,87 A9,9 0,0 1,22,78 L22,60 A9,9 0,0 1,31,51 Z"/>
+    <path android:fillColor="#16AE78"
+        android:pathData="M22,65 L86,65 L86,78 A9,9 0,0 1,77,87 L31,87 A9,9 0,0 1,22,78 Z"/>
+    <path android:fillColor="#075D43"
+        android:pathData="M22,65 L86,65 L86,71 L22,71 Z"/>
+    <path android:fillColor="#087754"
+        android:pathData="M65,71 L86,71 L86,78 A9,9 0,0 1,77,87 L65,87 Z"/>
+    <path android:fillColor="#69E9B8"
+        android:pathData="M70,78 A5,5 0,1 0,80,78 A5,5 0,1 0,70,78 Z"/>
+</vector>

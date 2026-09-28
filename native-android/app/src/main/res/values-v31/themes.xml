@@ -1,0 +1,10 @@
+<resources>
+    <!-- اندروید ۱۲+: اگر برنامه از یکی از الیاس‌های آیکون باز شود، بعضی لانچرها (MIUI)
+         صفحه‌ی آغاز را از تمِ خودِ برنامه می‌سازند نه از تمِ اسپلش - و آن‌وقت کیفِ تنها روی
+         زمینه‌ی خاکستری می‌آمد (گزارشِ کاربر). همین دو مقدار این‌جا هم تکرار می‌شوند. -->
+    <style name="Theme.LoanCalc" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/app_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/splash_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_blank</item>
+    </style>
+</resources>

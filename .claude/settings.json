@@ -1,0 +1,22 @@
+{
+  "effortLevel": "low",
+  "permissions": {
+    "deny": [
+      "Read(./native-android/.gradle/**)",
+      "Read(./server/.gradle/**)",
+      "Read(./native-android/**/build/**)",
+      "Read(./server/build/**)",
+      "Read(./native-android/gradle/wrapper/gradle-wrapper.jar)",
+      "Read(./server/gradle/wrapper/gradle-wrapper.jar)",
+      "Read(./**/*.apk)",
+      "Read(./**/*.jar)",
+      "Read(./**/*.keystore)",
+      "Read(./**/*.jks)",
+      "Read(./**/local.properties)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
+      "Read(./**/*.log)",
+      "Read(./node_modules/**)"
+    ]
+  }
+}

@@ -30,11 +30,19 @@ fun cleanNum(value: String): String = toEnDigits(value).filter { it in '0'..'9' 
 /** پورت cleanNumDecimal تو www/index.html: مثل cleanNum ولی ممیز اعشاری رو هم نگه می‌داره */
 fun cleanNumDecimal(value: String): String = toEnDigits(value).filter { it in '0'..'9' || it == '.' }
 
-/** پورت fmt تو www/index.html: عدد رو با جداکننده‌ی هزارگان (کاما) و ارقام فارسی نشون می‌ده */
+/**
+ * جداکننده‌ی هزارگانِ **فارسی** (U+066C) - نه کاما.
+ *
+ * سیستمِ طراحی صریحاً می‌گه «عددها فارسی با جداکننده‌ی `٬`»، و هر ۷۱۶ عددِ فایلِ فریم‌ها هم
+ * همینه. قبلاً کامای لاتین بود و کنارِ ارقامِ فارسی ناجور می‌نشست.
+ */
+const val FA_THOUSANDS_SEPARATOR = '٬'
+
+/** عدد رو با جداکننده‌ی هزارگانِ فارسی و ارقامِ فارسی نشون می‌ده. */
 fun fmt(n: Double): String {
     val rounded = n.roundToLong()
     val grouped = String.format(Locale.US, "%,d", rounded)
-    return toFa(grouped)
+    return toFa(grouped).replace(',', FA_THOUSANDS_SEPARATOR)
 }
 
 private val ordinalDays = listOf(

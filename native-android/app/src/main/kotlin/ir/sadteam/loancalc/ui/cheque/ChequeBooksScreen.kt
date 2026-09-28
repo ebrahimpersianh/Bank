@@ -31,32 +31,42 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.Ltr
+import ir.sadteam.loancalc.ui.subscription.parseServerDate
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.components.EmptyState
+import androidx.compose.material.icons.outlined.MenuBook
 
 /**
  * لیست دسته‌چک‌ها (برای پیشنهاد خودکار شماره‌ی سریال بعدی تو فرم افزودن چک) + یه فرم ساده‌ی افزودن
- * دسته‌چک جدید (مالک، بانک، بازه‌ی سریال). حذف مستقیمه، بدون مودال تایید - هم‌الگو با حذف وام/چک تو
- * بقیه‌ی صفحات این پروژه.
+ * دسته‌چک جدید (مالک، بانک، بازه‌ی سریال). حذف قبلاً مستقیم/بدون مودالِ تایید بود - رجوع کن به مورد ۹
+ * تو CLAUDE.md، الان قبلش تاییدِ صریح می‌گیره (هم‌الگو با حذف وام/چک/حساب/درآمد).
  */
 @Composable
 fun ChequeBooksScreen(
     books: List<ChequeBookEntity>,
     onBack: () -> Unit,
-    onAdd: (owner: String, bank: String, start: Long, end: Long) -> Unit,
+    onAdd: (owner: String, bank: String, start: Long, end: Long, sayadId: String?, last4: String?) -> Unit,
     onDelete: (ChequeBookEntity) -> Unit,
+    onClose: (ChequeBookEntity) -> Unit = {},
 ) {
     var showAddForm by remember { mutableStateOf(false) }
     var owner by remember { mutableStateOf("") }
     var bank by remember { mutableStateOf("") }
     var startText by remember { mutableStateOf("") }
     var endText by remember { mutableStateOf("") }
+    var sayadIdText by remember { mutableStateOf("") }
+    var last4Text by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var bookPendingDelete by remember { mutableStateOf<ChequeBookEntity?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -77,13 +87,20 @@ fun ChequeBooksScreen(
 
         if (books.isEmpty() && !showAddForm) {
             item {
-                Box(modifier = Modifier.fillMaxWidth().padding(top = 60.dp), contentAlignment = Alignment.Center) {
-                    Text("هنوز دسته‌چکی ثبت نشده", color = AppText, fontSize = 15.sp)
-                }
+                // بخشِ ۳۳ فایلِ طراحی (جدولِ `33d`): متنِ لختِ وسطِ صفحه جاش رو به کارتِ
+                // خط‌چینِ استانداردِ حالتِ خالی داد.
+                EmptyState(
+                    icon = Icons.Outlined.MenuBook,
+                    title = "دسته‌چکی ثبت نشده",
+                    description = "با ثبتِ دسته‌چک، شماره‌ی برگه‌ها و شناسه‌ی صیادی خودکار پر می‌شود.",
+                    actionLabel = "ثبتِ دسته‌چک",
+                    onAction = { showAddForm = true },
+                    modifier = Modifier.padding(top = 12.dp),
+                )
             }
         } else {
             items(books, key = { it.id }) { book ->
-                AppCard {
+                AppCard(modifier = Modifier.animateItem()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -97,17 +114,47 @@ fun ChequeBooksScreen(
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(top = 2.dp),
                             )
-                            Text(
-                                "سریال بعدی: ${toFa(book.nextSerial)}",
-                                color = AppMuted,
-                                fontSize = 11.sp,
-                            )
+                            // smart-cast مستقیم رو یه property از یه ماژول دیگه (:data) مجاز نیست، برای
+                            // همین اول تو یه val محلی می‌ریزیمش (رجوع کن به همین کامنت تو ChequeDetailScreen.kt).
+                            val last4 = book.last4
+                            if (last4 != null) {
+                                Text("۴ رقم آخرِ حساب: ${toFa(last4)}", color = AppMuted, fontSize = 11.sp)
+                            }
+                            val sayadId = book.sayadId
+                            if (sayadId != null) {
+                                Text("شناسه صیادی: ${toFa(sayadId)}", color = AppMuted, fontSize = 11.sp)
+                            }
+                            val closedDate = book.closedAt?.let { parseServerDate(it) }
+                            if (closedDate != null) {
+                                Text(
+                                    "بسته‌شده در ${persianMonthName(closedDate.m)} ${toFa(closedDate.y)}",
+                                    color = AppDanger,
+                                    fontSize = 11.sp,
+                                )
+                            } else {
+                                Text(
+                                    "سریال بعدی: ${toFa(book.nextSerial)}",
+                                    color = AppMuted,
+                                    fontSize = 11.sp,
+                                )
+                            }
                         }
-                        OutlinedButton(
-                            onClick = { onDelete(book) },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
-                        ) {
-                            Text("حذف", fontSize = 12.sp)
+                        Column(horizontalAlignment = Alignment.End) {
+                            OutlinedButton(
+                                onClick = { bookPendingDelete = book },
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
+                            ) {
+                                Text("حذف", fontSize = 12.sp)
+                            }
+                            if (book.closedAt == null) {
+                                OutlinedButton(
+                                    onClick = { onClose(book) },
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
+                                    modifier = Modifier.padding(top = 6.dp),
+                                ) {
+                                    Text("بستنِ دسته‌چک", fontSize = 12.sp)
+                                }
+                            }
                         }
                     }
                 }
@@ -158,6 +205,28 @@ fun ChequeBooksScreen(
                             }
                         }
                     }
+                    AppCard(label = "شناسه ۱۶ رقمی صیادی (اختیاری)") {
+                        Ltr {
+                            OutlinedTextField(
+                                value = sayadIdText,
+                                onValueChange = { sayadIdText = cleanNum(it).take(16) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                            )
+                        }
+                    }
+                    AppCard(label = "۴ رقم آخرِ حساب (اختیاری)") {
+                        Ltr {
+                            OutlinedTextField(
+                                value = last4Text,
+                                onValueChange = { last4Text = cleanNum(it).take(4) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                            )
+                        }
+                    }
                     if (error != null) {
                         Text(text = error ?: "", color = AppDanger, fontSize = 12.sp)
                     }
@@ -174,11 +243,20 @@ fun ChequeBooksScreen(
                                     else -> null
                                 }
                                 if (error == null) {
-                                    onAdd(owner.trim(), bank.trim(), startText.toLong(), endText.toLong())
+                                    onAdd(
+                                        owner.trim(),
+                                        bank.trim(),
+                                        startText.toLong(),
+                                        endText.toLong(),
+                                        sayadIdText.trim().takeIf { it.isNotBlank() },
+                                        last4Text.trim().takeIf { it.isNotBlank() },
+                                    )
                                     owner = ""
                                     bank = ""
                                     startText = ""
                                     endText = ""
+                                    sayadIdText = ""
+                                    last4Text = ""
                                     showAddForm = false
                                 }
                             },
@@ -197,5 +275,13 @@ fun ChequeBooksScreen(
                 }
             }
         }
+    }
+    bookPendingDelete?.let { book ->
+        ConfirmDeleteDialog(
+            title = "حذف دسته‌چک",
+            text = "دسته‌چکِ «${book.ownerName} - ${book.bankName}» حذف بشه؟",
+            onConfirm = { onDelete(book) },
+            onDismiss = { bookPendingDelete = null },
+        )
     }
 }
