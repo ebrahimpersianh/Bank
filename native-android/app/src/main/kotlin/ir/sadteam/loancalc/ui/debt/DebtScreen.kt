@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.debt
 
+import ir.sadteam.loancalc.ui.components.AppButtonVariant
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
@@ -462,6 +463,23 @@ private fun CounterpartyDetail(
             } else {
                 GradientButton(onClick = { showAddDebt = true }, modifier = Modifier.fillMaxWidth()) {
                     Text("افزودنِ ردیفِ طلب/بدهی")
+                }
+                // پرداختِ تکه‌تکه (پیشنهادِ گزارشِ پولکی): یک ردیفِ مخالف با مانده ثبت می‌شود، پس
+                // مانده‌ی خالص کم می‌شود و خودِ فهرستِ ردیف‌ها تاریخچه‌ی پرداخت‌هاست.
+                val net = debts.filter { !it.settled }
+                    .sumOf { if (it.type == DebtType.OWED_TO_ME.name) it.amount else -it.amount }
+                if (net != 0.0) {
+                    GradientButton(
+                        onClick = {
+                            type = if (net > 0) DebtType.I_OWE else DebtType.OWED_TO_ME
+                            description = if (net > 0) "دریافتِ بخشی" else "پرداختِ بخشی"
+                            showAddDebt = true
+                        },
+                        variant = AppButtonVariant.SECONDARY,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    ) {
+                        Text(if (net > 0) "ثبتِ دریافتِ بخشی" else "ثبتِ پرداختِ بخشی")
+                    }
                 }
             }
         }

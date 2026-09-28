@@ -154,7 +154,10 @@ fun AssetsTabScreen(
     val debts by debtViewModel.debts.collectAsState()
     var loanRemaining by remember { mutableStateOf(0.0) }
     LaunchedEffect(loans) { loanRemaining = statsViewModel.summarize(loans).remainingAmount }
-    val iOwe = debts.filter { !it.settled && it.type == ir.sadteam.loancalc.core.DebtType.I_OWE.name }.sumOf { it.amount }
+    // خالصِ هر طرف‌حساب (با پرداخت‌های بخشی)، فقط آن‌هایی که من بدهکارم.
+    val iOwe = debts.filter { !it.settled }.groupBy { it.counterpartyId }.values.sumOf { rows ->
+        (-rows.sumOf { if (it.type == ir.sadteam.loancalc.core.DebtType.OWED_TO_ME.name) it.amount else -it.amount }).coerceAtLeast(0.0)
+    }
     val liabilities = loanRemaining + iOwe
     val transactions by accountViewModel.transactions.collectAsState()
     val assets by assetViewModel.assets.collectAsState()
