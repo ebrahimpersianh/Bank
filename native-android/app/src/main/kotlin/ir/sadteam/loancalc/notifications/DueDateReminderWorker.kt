@@ -57,6 +57,7 @@ class DueDateReminderWorker @AssistedInject constructor(
      * تصمیمِ کاربر باز می‌مانَد، ولی یادآور کارِ باز نمی‌سازد - کارش در صفحه‌ی خودِ قسط است.
      */
     private val inboxRepository: InboxRepository,
+    private val billDao: ir.sadteam.loancalc.data.db.BillDao,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -160,6 +161,18 @@ class DueDateReminderWorker @AssistedInject constructor(
                 "recurring_${payment.id}" !in snoozedToday
             ) {
                 notifyRecurringPayment(payment, daysLeft, privacyMode)
+                dueCount++
+            }
+        }
+
+        // قبض‌ها (۶ مهر): سه روز مانده، یک روز مانده و روزِ موعد - تا وقتی «پرداخت شد» نخورده.
+        runCatching { billDao.getAll() }.getOrDefault(emptyList()).forEach { bill ->
+            val left = bill.dueDay - today.d
+            val periodOk = bill.periodMonths <= 1 || (today.m - 1) % bill.periodMonths == 0
+            if (periodOk && bill.lastPaidKey != "${today.y}-${today.m}" && left in setOf(3, 1, 0) &&
+                (!staleRun || left == 0) && "bill_${bill.id}" !in snoozedToday
+            ) {
+                notifyBill(bill, left)
                 dueCount++
             }
         }
@@ -410,6 +423,26 @@ class DueDateReminderWorker @AssistedInject constructor(
             title = "یادآوریِ پرداختِ تکراری",
             body = "«${payment.name}» $whenLabel سررسید می‌شه",
         )
+    }
+
+    private suspend fun notifyBill(bill: ir.sadteam.loancalc.data.db.BillEntity, daysLeft: Int) {
+        val whenLabel = dayLabel(daysLeft)
+        val notificationId = "bill_${bill.id}".hashCode()
+        val kind = ir.sadteam.loancalc.ui.extras.billKindLabel(bill.kind)
+        val text = "قبضِ $kind «${bill.name}» $whenLabel موعدِ پرداخته"
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
+            .setContentTitle("یادآوریِ قبض")
+            .setContentText(text)
+            .setContentIntent(openAppIntent(notificationId))
+            .addAction(snoozeAction(notificationId, "bill_${bill.id}"))
+            .setGroup(GROUP_DUE_DATES)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+        NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
+        inboxRepository.post(kind = InboxMessageEntity.Kind.SYSTEM, title = "یادآوریِ قبض", body = text)
     }
 
     private suspend fun notifyDailyExpenseReminder() {

@@ -338,7 +338,7 @@ private fun MainSection(
         val minRial = minToman.toLongOrNull()?.let { it * 10.0 }
         val maxRial = maxToman.toLongOrNull()?.let { it * 10.0 }
         allTransactions.filter {
-            (q.isEmpty() || it.description.contains(q, ignoreCase = true) || (it.category?.contains(q, ignoreCase = true) == true)) &&
+            (q.isEmpty() || it.description.contains(q, ignoreCase = true) || (it.category?.contains(q, ignoreCase = true) == true) || (it.tags?.contains(q.removePrefix("#"), ignoreCase = true) == true)) &&
                 when (typeFilter) {
                     null -> true
                     ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER -> it.sourceType == ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER
@@ -744,6 +744,15 @@ private fun AccountingTransactionRow(
                         fontSize = 11.sp,
                         modifier = Modifier.padding(top = 2.dp),
                     )
+                    // برچسب‌ها، رسید و بازپرداخت (قابلیت‌های ۶ مهر).
+                    val extras = buildList {
+                        tx.tags?.split(',')?.filter { it.isNotBlank() }?.forEach { add("#$it") }
+                        if (tx.receiptPath != null) add("📎 رسید")
+                        if (tx.reimbursable) add("↩ بازپرداختی")
+                    }
+                    if (extras.isNotEmpty()) {
+                        Text(extras.joinToString("  "), color = AppPrimary, fontSize = 10.5.sp, modifier = Modifier.padding(top = 3.dp))
+                    }
                     // جابه‌جاییِ تشخیصِ خودکار اشتباه‌پذیر است؛ یک تپ برای برگرداندنش.
                     if (tx.sourceType == ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER && tx.description.contains("تشخیصِ خودکار")) {
                         Text(

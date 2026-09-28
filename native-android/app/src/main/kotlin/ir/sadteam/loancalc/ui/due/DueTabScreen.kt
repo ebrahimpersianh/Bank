@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.due
 
+import ir.sadteam.loancalc.ui.extras.isDueSoon
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -127,6 +129,17 @@ fun DueTabScreen(
 
     fun List<DueListViewModel.DueRow>.filtered() = filter { row -> filter == null || row.kind == filter }
 
+    // قبض‌ها (۶ مهر): کارتِ کوچک بالای صفحه + صفحه‌ی مدیریت.
+    var showBills by remember { mutableStateOf(false) }
+    val extrasViewModel: ir.sadteam.loancalc.ui.extras.ExtrasViewModel = hiltViewModel()
+    val bills by extrasViewModel.bills.collectAsState()
+    if (showBills) {
+        androidx.activity.compose.BackHandler { showBills = false }
+        ir.sadteam.loancalc.ui.extras.BillsScreen(onBack = { showBills = false }, viewModel = extrasViewModel)
+        return
+    }
+    val dueBills = bills.filter { it.isDueSoon(today.y, today.m, today.d) }
+
     val overdue = all.overdue.filtered()
     val thisWeek = all.thisWeek.filtered()
     val later = all.later.filtered()
@@ -137,6 +150,20 @@ fun DueTabScreen(
         verticalArrangement = Arrangement.spacedBy(if (all.isEmpty) 13.dp else 9.dp),
     ) {
         item { Text("سررسید", color = AppText, fontSize = if (all.isEmpty) 18.sp else 17.sp, fontWeight = FontWeight.Black) }
+        item {
+            ir.sadteam.loancalc.ui.components.AppCard(
+                modifier = Modifier.clickable { showBills = true },
+                contentPadding = 12.dp,
+            ) {
+                Text(
+                    if (dueBills.isEmpty()) "قبض‌ها · ${if (bills.isEmpty()) "افزودنِ آب، برق، گاز…" else "همه پرداخت شده"}"
+                    else "قبض‌ها · ${dueBills.joinToString("، ") { it.name }} نزدیکِ موعد",
+                    color = if (dueBills.isEmpty()) AppMuted else AppText,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
         if (all.isEmpty) {
             // کاربرِ تازه یا کسی که همه را پرداخت کرده - فریمِ `21e`/`51b`.
             item { MonthStripCard(dueDays = emptySet()) }
