@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.inbox
 
+import androidx.compose.foundation.clickable
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.horizontalScroll
@@ -110,6 +111,8 @@ import ir.sadteam.loancalc.ui.theme.AppText
 @Composable
 fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel()) {
     val messages by viewModel.messages.collectAsState()
+    val bin by viewModel.recycleBin.collectAsState()
+    var binOpen by remember { mutableStateOf(false) }
     val sourceAccount by viewModel.sourceAccount.collectAsState()
     // اعلان و صفحهٔ «دارایی» باید دقیقاً از همان مسیرِ داده و ViewModel استفاده کنند؛
     // ساختنِ ViewModel تازه در دلِ دیالوگِ اعلان روی بعضی گوشی‌ها موقع بازشدنِ جزئیات کرش می‌کرد.
@@ -216,6 +219,37 @@ fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel())
                         onReject = { viewModel.rejectTransaction(message) },
                         onShowSource = { sourceOf = message },
                     )
+                }
+            }
+
+            // ── سطل‌زباله‌ی تراکنش‌های ردشده (۳۰ روز) ──────────────────────────────
+            if (bin.isNotEmpty()) {
+                item {
+                    Text(
+                        (if (binOpen) "▾ " else "▸ ") + "سطل‌زباله‌ی ردشده‌ها · ${toFa(bin.size)}",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.fillMaxWidth().clickable { binOpen = !binOpen }.padding(vertical = 10.dp),
+                    )
+                }
+                if (binOpen) {
+                    items(bin, key = { "bin_" + it.tx.id }) { item ->
+                        ir.sadteam.loancalc.ui.components.AppCard(contentPadding = 12.dp) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        (if (item.tx.type == "DEPOSIT") "واریز " else "برداشت ") +
+                                            ir.sadteam.loancalc.ui.jibak.rialToToman(item.tx.amount.toLong()).let { toFa(it) } + " تومان",
+                                        color = AppText,
+                                        fontSize = 13.sp,
+                                    )
+                                    Text(item.tx.originLabel ?: "", color = AppMuted, fontSize = 10.sp)
+                                }
+                                androidx.compose.material3.TextButton(onClick = { viewModel.restore(item) }) { Text("برگردون") }
+                            }
+                        }
+                    }
                 }
             }
 

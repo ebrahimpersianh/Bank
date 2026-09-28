@@ -20,6 +20,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class InboxViewModel @Inject constructor(
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
     private val inbox: InboxRepository,
     private val accounts: AccountRepository,
     private val api: ApiService,
@@ -81,9 +82,33 @@ class InboxViewModel @Inject constructor(
     /** ردِ تراکنش - خودِ تراکنشِ تاییدنشده هم پاک می‌شه، وگرنه برای همیشه معلق می‌مونه. */
     fun rejectTransaction(message: InboxMessageEntity) = viewModelScope.launch {
         message.refId?.toLongOrNull()?.let { id ->
-            accounts.transactionById(id)?.let { accounts.deleteTransaction(it) }
+            accounts.transactionById(id)?.let {
+                SmsRecycleBin.add(context, it)
+                accounts.deleteTransaction(it)
+            }
         }
         inbox.resolve(message.id, done = false)
+        _bin.value = SmsRecycleBin.all(context)
+    }
+
+    private val _bin = MutableStateFlow(SmsRecycleBin.all(context))
+    val recycleBin: StateFlow<List<SmsRecycleBin.Item>> = _bin.asStateFlow()
+
+    /** برگرداندن از سطل‌زباله - این بار **تأییدشده**، چون کاربر خودش صریحاً برش گرداند. */
+    fun restore(item: SmsRecycleBin.Item) = viewModelScope.launch {
+        val t = item.tx
+        accounts.addTransaction(
+            accountId = t.accountId,
+            type = ir.sadteam.loancalc.core.TransactionType.valueOf(t.type),
+            amount = t.amount,
+            description = t.description,
+            year = t.year, month = t.month, day = t.day,
+            category = t.category,
+            id = t.id,
+            originLabel = t.originLabel,
+        )
+        SmsRecycleBin.remove(context, t.id)
+        _bin.value = SmsRecycleBin.all(context)
     }
 
     fun dismiss(message: InboxMessageEntity) = viewModelScope.launch {
