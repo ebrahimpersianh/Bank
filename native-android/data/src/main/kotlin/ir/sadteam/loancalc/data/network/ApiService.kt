@@ -82,6 +82,12 @@ interface ApiService {
         @Body body: AdminSupportReplyRequest,
     ): Response<Unit>
 
+    @POST("api/admin/support/gift")
+    suspend fun adminSupportGift(
+        @Header("Authorization") authHeader: String,
+        @Body body: AdminSupportGiftRequest,
+    ): Response<Unit>
+
     @POST("api/admin/support/status")
     suspend fun adminSupportStatus(
         @Header("Authorization") authHeader: String,
@@ -264,6 +270,7 @@ data class BugReportRequest(
     val appVersion: String?,
     val device: String?,
     val attachments: List<String> = emptyList(),
+    val category: String = "bug",
 )
 
 data class SupportUploadResponse(val ok: Boolean, val id: String, val kind: String)
@@ -278,7 +285,10 @@ data class SupportMessage(
     val status: String,
     val createdAt: String,
     val attachments: List<SupportAttachment> = emptyList(),
+    val category: String = "bug",
+    val rewardedDays: Int = 0,
 )
+data class AdminSupportGiftRequest(val id: Long, val days: Int, val text: String)
 data class AdminSupportResponse(val items: List<SupportMessage> = emptyList(), val openCount: Int = 0)
 data class AdminSupportReplyRequest(val id: Long, val text: String, val close: Boolean = true)
 data class AdminSupportStatusRequest(val id: Long, val status: String)

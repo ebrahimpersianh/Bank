@@ -78,6 +78,9 @@ private const val MAX_REPORT = 1000
 private const val MAX_SHOTS = 4
 private const val MAX_VIDEO_BYTES = 20L * 1024 * 1024
 
+/** نوعِ پیام - همان مقادیرِ سمتِ سرور. */
+internal val SUPPORT_CATEGORIES = listOf("bug" to "مشکل", "design" to "طراحی", "idea" to "پیشنهاد", "question" to "سؤال")
+
 /** پیوستِ انتخاب‌شده: نشانی در گوشی + آیا فیلم است. */
 private data class Attachment(val uri: Uri, val isVideo: Boolean)
 
@@ -97,6 +100,7 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
     var message by rememberSaveable { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     var ticket by rememberSaveable { mutableStateOf<String?>(null) }
+    var category by rememberSaveable { mutableStateOf("bug") }
 
     var shots by remember { mutableStateOf<List<Attachment>>(emptyList()) }
     val picker = rememberLauncherForActivityResult(
@@ -157,9 +161,22 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
             item {
                 SettingsHero(
                     icon = Icons.Filled.BugReport,
-                    title = "یه مشکل دیدی؟",
-                    subtitle = "جزئیاتش را بنویس؛ اگر به رفعش کمک کند هدیه‌ی اشتراک می‌گیری.",
+                    title = "حرفت رو بزن",
+                    subtitle = "مشکل، ایده‌ی طراحی یا پیشنهاد - اگه به بهتر شدنِ جیبک کمک کنه، هدیه‌ی اشتراک می‌گیری.",
                 )
+            }
+
+            item {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SUPPORT_CATEGORIES.forEach { (key, label) ->
+                        ir.sadteam.loancalc.ui.components.AppChip(
+                            label = label,
+                            selected = category == key,
+                            onClick = { category = key },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
             }
 
             item {
@@ -265,6 +282,7 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                                 appVersion = BuildConfig.VERSION_NAME,
                                 device = device,
                                 attachments = prepared.filterNotNull(),
+                                category = category,
                             ) { code ->
                                 sending = false
                                 ticket = code
@@ -272,7 +290,6 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                                     code == null -> banner.show("فرستاده نشد؛ اینترنت را چک کن و دوباره بزن")
                                     skipped > 0 -> banner.show("پیام رفت؛ ${toFa(skipped)} فیلمِ بزرگ‌تر از ۲۰ مگ جا ماند")
                                     else -> {
-                                        banner.show("پیامت رسید؛ جواب در «پیام‌های جیبک» می‌آید", isSuccess = true)
                                         message = ""
                                         shots = emptyList()
                                     }
@@ -323,8 +340,8 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                             }
                         }
                         Text(
-                            "این کد روی سرور به حسابِ تو وصل است؛ اگر گزارشت به رفعِ مشکل کمک کند، " +
-                                "هدیه‌ی اشتراک به همین حساب داده می‌شود.",
+                            "💚 ممنون که وقت گذاشتی! پیامت به دستمون رسید و به‌زودی نتیجه‌اش توی «پیام‌های جیبک» " +
+                                "بهت اطلاع داده می‌شه. اگه به بهتر شدنِ جیبک کمک کنه، هدیه‌ی اشتراک هم می‌گیری.",
                             color = AppMuted,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,

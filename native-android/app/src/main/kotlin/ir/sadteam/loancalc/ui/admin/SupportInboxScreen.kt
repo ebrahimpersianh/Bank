@@ -107,9 +107,27 @@ class SupportInboxViewModel @Inject constructor(
         done(ok)
     }
 
+    fun gift(id: Long, days: Int, text: String, done: (String?) -> Unit) = viewModelScope.launch {
+        val err = repo.adminSupportGift(id, days, text)
+        if (err == null) load()
+        done(err)
+    }
+
     fun close(id: Long) = viewModelScope.launch { if (repo.adminSupportStatus(id, "closed")) load() }
 
     suspend fun file(id: String): ByteArray? = repo.adminSupportFile(id)
+}
+
+private val CATEGORY_LABEL = ir.sadteam.loancalc.ui.support.SUPPORT_CATEGORIES.toMap()
+private val GIFT_DAYS = listOf(1, 3, 7, 10)
+
+private fun defaultGiftText(category: String, days: Int): String {
+    val what = when (category) {
+        "design" -> "ایده‌ی طراحی‌ات"
+        "idea" -> "پیشنهادت"
+        else -> "گزارشت"
+    }
+    return "ممنون بابتِ $what! به پاسِ کمکت به بهتر شدنِ جیبک، ${toFa(days)} روز اشتراکِ هدیه برات فعال شد 💚"
 }
 
 private val STATUS_LABEL = mapOf("open" to "باز", "answered" to "جواب داده شد", "closed" to "بسته")
@@ -144,7 +162,16 @@ fun SupportInboxScreen(onBack: () -> Unit, viewModel: SupportInboxViewModel = hi
                 items == null -> item { Text("در حالِ گرفتن…", color = AppMuted) }
                 items!!.isEmpty() -> item { Text("هنوز پیامی نیامده.", color = AppMuted) }
                 else -> items(items!!, key = { it.id }) { msg ->
-                    SupportMessageCard(msg, viewModel) { ok ->
+                    SupportMessageCard(msg, viewModel, onGiftResult = { err ->
+                        banner.show(
+                            when (err) {
+                                null -> "هدیه و پیامش فرستاده شد"
+                                "already_rewarded" -> "این پیام قبلاً هدیه گرفته"
+                                else -> "نشد؛ دوباره بزن"
+                            },
+                            isSuccess = err == null,
+                        )
+                    }) { ok ->
                         banner.show(if (ok) "جواب فرستاده شد" else "نشد؛ دوباره بزن", isSuccess = ok)
                     }
                 }
@@ -155,13 +182,21 @@ fun SupportInboxScreen(onBack: () -> Unit, viewModel: SupportInboxViewModel = hi
 }
 
 @Composable
-private fun SupportMessageCard(msg: SupportMessage, viewModel: SupportInboxViewModel, onReplied: (Boolean) -> Unit) {
+private fun SupportMessageCard(
+    msg: SupportMessage,
+    viewModel: SupportInboxViewModel,
+    onGiftResult: (String?) -> Unit,
+    onReplied: (Boolean) -> Unit,
+) {
     var replying by remember { mutableStateOf(false) }
     var text by remember { mutableStateOf("") }
+    var gifting by remember { mutableStateOf(false) }
+    var giftDays by remember { mutableStateOf(3) }
+    var giftText by remember { mutableStateOf(defaultGiftText(msg.category, 3)) }
     AppCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "کاربرِ ${toFa(msg.userId ?: 0)} · ${msg.ticket}",
+                "${CATEGORY_LABEL[msg.category] ?: "پیام"} · کاربرِ ${toFa(msg.userId ?: 0)} · ${msg.ticket}",
                 color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f),
             )
             Text(
@@ -179,6 +214,40 @@ private fun SupportMessageCard(msg: SupportMessage, viewModel: SupportInboxViewM
             Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 msg.attachments.forEach { AttachmentThumb(it, viewModel) }
             }
+        }
+        if (msg.rewardedDays > 0) {
+            Text("🎁 ${toFa(msg.rewardedDays)} روز هدیه داده شد", color = AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 6.dp))
+        }
+        if (gifting) {
+            Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                GIFT_DAYS.forEach { d ->
+                    ir.sadteam.loancalc.ui.components.AppChip(
+                        label = "${toFa(d)} روز",
+                        selected = giftDays == d,
+                        onClick = {
+                            // متن فقط اگر دست نخورده باشد با روزِ تازه به‌روز می‌شود.
+                            if (giftText == defaultGiftText(msg.category, giftDays)) giftText = defaultGiftText(msg.category, d)
+                            giftDays = d
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            OutlinedTextField(
+                value = giftText,
+                onValueChange = { if (it.length <= 1000) giftText = it },
+                label = { Text("متنی که همراهِ هدیه می‌رود", fontSize = 11.sp) },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
+            GradientButton(
+                onClick = {
+                    if (giftText.isNotBlank()) viewModel.gift(msg.id, giftDays, giftText.trim()) { err ->
+                        if (err == null) gifting = false
+                        onGiftResult(err)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) { Text("فرستادنِ ${toFa(giftDays)} روز هدیه") }
         }
         if (replying) {
             OutlinedTextField(
@@ -199,6 +268,9 @@ private fun SupportMessageCard(msg: SupportMessage, viewModel: SupportInboxViewM
                 },
                 modifier = Modifier.weight(1f),
             ) { Text(if (replying) "فرستادنِ جواب" else "جواب") }
+            if (msg.rewardedDays == 0) {
+                GradientButton(onClick = { gifting = !gifting }, variant = AppButtonVariant.SECONDARY) { Text("🎁 هدیه") }
+            }
             if (msg.status != "closed") {
                 GradientButton(onClick = { viewModel.close(msg.id) }, variant = AppButtonVariant.SECONDARY) { Text("بستن") }
             }

@@ -291,6 +291,8 @@ object Db {
             addColumnIfMissing(conn, "ALTER TABLE announcements ADD COLUMN target_user_id INTEGER")
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN launch_gift_granted INTEGER NOT NULL DEFAULT 0")
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN cloud_warn_for TEXT")
+            addColumnIfMissing(conn, "ALTER TABLE bug_reports ADD COLUMN category TEXT NOT NULL DEFAULT 'bug'")
+            addColumnIfMissing(conn, "ALTER TABLE bug_reports ADD COLUMN rewarded_days INTEGER NOT NULL DEFAULT 0")
             conn.createStatement().use {
                 it.executeUpdate(
                     """

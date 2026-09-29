@@ -138,6 +138,7 @@ class AuthRepository(
         appVersion: String?,
         device: String?,
         attachments: List<Pair<ByteArray, String>> = emptyList(),
+        category: String = "bug",
     ): String? {
         val token = authPrefs.authToken.first()
         if (token.isNullOrEmpty()) return null
@@ -149,7 +150,7 @@ class AuthRepository(
                     apiService.uploadSupportFile("Bearer $token", body).id
                 }.getOrNull()
             }
-            apiService.reportBug("Bearer $token", BugReportRequest(message, appVersion, device, ids)).ticket
+            apiService.reportBug("Bearer $token", BugReportRequest(message, appVersion, device, ids, category)).ticket
         } catch (e: Exception) {
             null
         }
@@ -170,6 +171,15 @@ class AuthRepository(
         return runCatching {
             apiService.adminSupportReply("Bearer $token", ir.sadteam.loancalc.data.network.AdminSupportReplyRequest(id, text)).isSuccessful
         }.getOrDefault(false)
+    }
+
+    /** نتیجه: `null` = موفق، وگرنه کدِ خطا (`already_rewarded` و…). */
+    suspend fun adminSupportGift(id: Long, days: Int, text: String): String? {
+        val token = authPrefs.authToken.first() ?: return "no_auth"
+        return runCatching {
+            val r = apiService.adminSupportGift("Bearer $token", ir.sadteam.loancalc.data.network.AdminSupportGiftRequest(id, days, text))
+            if (r.isSuccessful) null else if (r.code() == 409) "already_rewarded" else "failed"
+        }.getOrDefault("network")
     }
 
     suspend fun adminSupportStatus(id: Long, status: String): Boolean {

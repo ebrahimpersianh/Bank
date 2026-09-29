@@ -50,7 +50,15 @@ private data class ReportBody(
     val device: String? = null,
     /** شناسه‌ی پیوست‌هایی که پیش‌تر با `/upload` فرستاده شده‌اند (حداکثر ۴). */
     val attachments: List<String> = emptyList(),
+    /** bug = مشکل، design = طراحی، idea = پیشنهاد، question = سؤال. */
+    val category: String = "bug",
 )
+
+private val CATEGORIES = setOf("bug", "design", "idea", "question")
+private val GIFT_DAYS = setOf(1, 3, 7, 10)
+
+@Serializable
+private data class SupportGiftBody(val id: Long, val days: Int, val text: String)
 
 @Serializable
 private data class UploadResponse(val ok: Boolean = true, val id: String, val kind: String)
@@ -68,6 +76,8 @@ data class SupportMessageDto(
     val device: String?,
     val status: String,
     val createdAt: String,
+    val category: String = "bug",
+    val rewardedDays: Int = 0,
     val attachments: List<SupportAttachmentDto>,
 )
 
@@ -121,8 +131,8 @@ fun Route.supportRoutes() {
             Db.withConnection { conn ->
                 val reportId = conn.insertReturningId(
                     """
-                    INSERT INTO bug_reports (ticket, user_id, phone, message, app_version, device)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO bug_reports (ticket, user_id, phone, message, app_version, device, category)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                     """.trimIndent(),
                     ticket,
                     authed.uid,
@@ -131,6 +141,7 @@ fun Route.supportRoutes() {
                     message.take(4000),
                     body.appVersion?.take(40),
                     body.device?.take(80),
+                    body.category.takeIf { it in CATEGORIES } ?: "bug",
                 )
                 // فقط پیوست‌های **خودِ همین کاربر** که هنوز به گزارشی وصل نشده‌اند.
                 attachIds.forEach { fid ->
@@ -212,7 +223,7 @@ fun Route.supportRoutes() {
                     }
                 }
                 val items = conn.prepareStatement(
-                    "SELECT id, ticket, user_id, message, app_version, device, status, created_at FROM bug_reports ORDER BY id DESC LIMIT 200",
+                    "SELECT id, ticket, user_id, message, app_version, device, status, created_at, category, rewarded_days FROM bug_reports ORDER BY id DESC LIMIT 200",
                 ).use { ps ->
                     ps.executeQuery().use { rs ->
                         buildList {
@@ -223,6 +234,7 @@ fun Route.supportRoutes() {
                                         id = id, ticket = rs.getString(2), userId = rs.getLong(3).takeIf { !rs.wasNull() },
                                         message = rs.getString(4), appVersion = rs.getString(5), device = rs.getString(6),
                                         status = rs.getString(7), createdAt = rs.getString(8), attachments = files[id].orEmpty(),
+                                        category = rs.getString(9) ?: "bug", rewardedDays = rs.getInt(10),
                                     ),
                                 )
                             }
@@ -269,6 +281,40 @@ fun Route.supportRoutes() {
             }
             if (ok) call.respond(mapOf("ok" to true)) else call.respond(HttpStatusCode.NotFound, mapOf("error" to "not_found"))
         }
+        // 🎁 هدیه‌ی اشتراک برای یک پیام (۱/۳/۷/۱۰ روز) + متنِ دلخواه در «پیام‌های جیبک»ِ همان کاربر.
+        // هر پیام فقط یک بار هدیه می‌گیرد؛ اشتراکِ فعال از تاریخِ انقضایش جلو می‌رود.
+        post("/gift") {
+            if (!call.requireSupportAdmin()) return@post
+            val body = runCatching { call.receive<SupportGiftBody>() }.getOrNull()
+            val text = body?.text?.trim()
+            if (body == null || body.days !in GIFT_DAYS || text.isNullOrBlank() || text.length > 1000) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid_request"))
+                return@post
+            }
+            val result = Db.withConnection { conn ->
+                val row = conn.queryOne("SELECT user_id, ticket, rewarded_days FROM bug_reports WHERE id = ?", body.id) {
+                    Triple(it.getLong(1), it.getString(2), it.getInt(3))
+                } ?: return@withConnection "not_found"
+                if (row.third > 0) return@withConnection "already_rewarded"
+                val currentUntil = conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", row.first) { it.getString(1) }
+                val now = System.currentTimeMillis()
+                val current = currentUntil?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
+                val expiry = java.time.Instant.ofEpochMilli(maxOf(current, now) + body.days * 24L * 60 * 60 * 1000).toString()
+                conn.execute("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, row.first)
+                conn.execute("UPDATE bug_reports SET rewarded_days = ?, status = 'answered' WHERE id = ?", body.days, body.id)
+                conn.insertReturningId(
+                    "INSERT INTO announcements (title, body, kind, target_user_id) VALUES (?, ?, ?, ?)",
+                    "🎁 هدیه‌ی اشتراک (${row.second})", text, "info", row.first,
+                )
+                "ok"
+            }
+            when (result) {
+                "ok" -> call.respond(mapOf("ok" to true))
+                "already_rewarded" -> call.respond(HttpStatusCode.Conflict, mapOf("error" to "already_rewarded"))
+                else -> call.respond(HttpStatusCode.NotFound, mapOf("error" to "not_found"))
+            }
+        }
+
         post("/status") {
             if (!call.requireSupportAdmin()) return@post
             val body = runCatching { call.receive<StatusBody>() }.getOrNull()
