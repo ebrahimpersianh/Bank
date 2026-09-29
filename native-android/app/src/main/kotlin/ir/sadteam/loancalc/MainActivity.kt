@@ -957,11 +957,6 @@ private fun LoanCalcApp(
     ir.sadteam.loancalc.ui.subscription.PremiumPaywallHost()
     val subUntil by authViewModel.subscribedUntil.collectAsState()
     val trialLeft by authViewModel.trialDaysLeft.collectAsState()
-    if (isPremium) {
-        ir.sadteam.loancalc.ui.subscription.SubscriptionExpiryReminder(
-            ir.sadteam.loancalc.ui.subscription.parseSubscribedUntil(subUntil)?.daysLeft ?: trialLeft,
-        )
-    }
     Box(modifier = Modifier.fillMaxSize()) {
         // ⚠️ **بازطراحیِ سبکِ «جیبک»**: پس‌زمینه‌ی زنده‌ی «شفق» (`AuroraBackground` - دو هاله‌ی
         // گرادیانیِ سبزآبی/طلایی که آروم نفس می‌کشیدن) **حذف شد**. سبکِ جدید یه زمینه‌ی
@@ -1408,6 +1403,13 @@ private fun LoanCalcApp(
             },
             onDismiss = { appUpdateViewModel.dismiss() },
         )
+        // هشدارِ پایانِ اشتراک: اگر برگه‌ی آپدیت باز است، اول آن؛ هشدار بعد از بستنش می‌آید
+        // (روزی یک بار شمرده می‌شود فقط وقتی واقعاً دیده شد).
+        if (isPremium && updateUrl == null && tourSeen != false) {
+            ir.sadteam.loancalc.ui.subscription.SubscriptionExpiryReminder(
+                ir.sadteam.loancalc.ui.subscription.parseSubscribedUntil(subUntil)?.daysLeft ?: trialLeft,
+            )
+        }
 
         // تورِ راهنمای اولین ورود - «تو خود برنامه بگه کجا بری» (خواسته‌ی صریح کاربر، به‌جای صفحه‌ی
         // جدای قبلی) - رجوع کن به AppTourOverlay پایین‌تر. آخرین بچه‌ی Box تا رو همه‌چیز دیگه بشینه.
