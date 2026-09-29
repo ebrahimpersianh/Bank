@@ -219,6 +219,34 @@ object Db {
                     )
                     """.trimIndent()
                 )
+                // آمارِ کاملِ استفاده (۷ مهر) - به‌ازای هر **نصبِ بی‌نام** (شناسه‌ی تصادفیِ خودِ اپ، نه
+                // شماره/حساب)، هر روز، هر رویداد یک شمارش. پایه‌ی کاربرِ فعال، ماندگاری و صفحه‌های پرکاربرد.
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS installs (
+                        install_id TEXT PRIMARY KEY,
+                        first_day TEXT NOT NULL,
+                        last_day TEXT NOT NULL,
+                        active_days INTEGER NOT NULL DEFAULT 1,
+                        app_version INTEGER,
+                        store TEXT,
+                        sdk INTEGER,
+                        logged_in INTEGER NOT NULL DEFAULT 0
+                    )
+                    """.trimIndent()
+                )
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS usage_daily (
+                        day TEXT NOT NULL,
+                        install_id TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        count INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY (day, install_id, name)
+                    )
+                    """.trimIndent()
+                )
+                st.executeUpdate("CREATE INDEX IF NOT EXISTS idx_usage_daily_name ON usage_daily(name, day)")
                 // اطلاعیه‌های عمومیِ «پیام‌های جیبک» (نسخه‌ی جدید، اختلال، قابلیتِ تازه) - رجوع کن به
                 // routes/AnnouncementRoutes.kt. فقط صاحبِ برنامه با ADMIN_TOKEN می‌نویسد.
                 st.executeUpdate(
@@ -268,6 +296,8 @@ object Db {
             addColumnIfMissing(conn, "ALTER TABLE loans ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")
             addColumnIfMissing(conn, "ALTER TABLE cheques_backup ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")
             addColumnIfMissing(conn, "ALTER TABLE accounts_backup ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")
+            // دسترسیِ صفحه‌ی «آمارِ جیبک» داخلِ اپ - فقط با ورک‌فلوی make-admin روشن می‌شود.
+            addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
             grantLegacyGift(conn)
         }
     }

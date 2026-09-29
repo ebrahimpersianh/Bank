@@ -329,4 +329,51 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.BadRequest, tooShort.status)
     }
 
+
+    @Test
+    fun `usage batch feeds admin stats and only admins can read them`() = testApplication {
+        val dbFile = File.createTempFile("loan-calc-test-usage", ".sqlite")
+        dbFile.deleteOnExit()
+        System.setProperty("DB_PATH", dbFile.absolutePath)
+        System.setProperty("JWT_SECRET", "test-secret-for-unit-tests-only-usage")
+
+        application { module() }
+
+        val install = "abcdef0123456789-install"
+        val batch = client.post("/api/events/batch") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                """{"installId":"$install","appVersion":651,"store":"myket","sdk":34,"loggedIn":true,
+                   "events":[{"name":"session_start"},{"name":"screen:home","count":3},
+                             {"name":"action:loan_added"},{"name":"transaction_created","count":2},
+                             {"name":"BAD NAME"}]}""",
+            )
+        }
+        assertEquals(HttpStatusCode.OK, batch.status)
+        // شناسه‌ی نامعتبر رد می‌شود.
+        val bad = client.post("/api/events/batch") {
+            contentType(ContentType.Application.Json)
+            setBody("""{"installId":"x","events":[{"name":"screen:home"}]}""")
+        }
+        assertEquals(HttpStatusCode.BadRequest, bad.status)
+
+        val uid = Db.withConnection { conn -> conn.insertReturningId("INSERT INTO users (phone) VALUES (?)", "09120009988") }
+        val token = signToken(uid, "09120009988")
+        val check = client.get("/api/admin/check") { header("Authorization", "Bearer $token") }
+        assertTrue(check.bodyAsText().contains("false"))
+        val forbidden = client.get("/api/admin/stats") { header("Authorization", "Bearer $token") }
+        assertEquals(HttpStatusCode.Forbidden, forbidden.status)
+
+        Db.withConnection { conn -> conn.execute("UPDATE users SET is_admin = 1 WHERE id = ?", uid) }
+        val stats = client.get("/api/admin/stats") { header("Authorization", "Bearer $token") }
+        assertEquals(HttpStatusCode.OK, stats.status)
+        val json = Json.parseToJsonElement(stats.bodyAsText()).jsonObject
+        assertEquals("1", json["activeToday"]!!.jsonPrimitive.content)
+        assertEquals("1", json["loggedInActive30"]!!.jsonPrimitive.content)
+        val screens = json["screens"]!!.jsonArray
+        assertEquals("home", screens[0].jsonObject["name"]!!.jsonPrimitive.content)
+        assertEquals("3", screens[0].jsonObject["total"]!!.jsonPrimitive.content)
+        assertEquals("loan_added", json["actions"]!!.jsonArray[0].jsonObject["name"]!!.jsonPrimitive.content)
+        assertTrue(!stats.bodyAsText().contains("BAD NAME"))
+    }
 }

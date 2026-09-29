@@ -23,6 +23,7 @@ import ir.sadteam.loancalc.server.routes.loansRoutes
 import ir.sadteam.loancalc.server.routes.pricesRoutes
 import ir.sadteam.loancalc.server.routes.announcementRoutes
 import ir.sadteam.loancalc.server.routes.usageRoutes
+import ir.sadteam.loancalc.server.routes.adminRoutes
 import ir.sadteam.loancalc.server.routes.giftCodeRoutes
 import ir.sadteam.loancalc.server.routes.subscriptionRoutes
 import ir.sadteam.loancalc.server.routes.supportRoutes
@@ -72,6 +73,7 @@ fun Application.module() {
         pricesRoutes()
         announcementRoutes()
         usageRoutes()
+        adminRoutes()
     }
 }
 
