@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -47,8 +48,19 @@ fun JibakAlertDialog(
     containerColor: Color = Color.Unspecified,
 ) {
     BasicAlertDialog(onDismissRequest = onDismissRequest, modifier = modifier) {
+        // ورودِ «پاپ»ِ فنری - همه‌ی پنجره‌های برنامه یک حس (۷ مهر).
+        val appear = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(0f) }
+        androidx.compose.runtime.LaunchedEffect(Unit) {
+            appear.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = 500f))
+        }
         Column(
             modifier = Modifier
+                .graphicsLayer {
+                    val v = appear.value
+                    scaleX = 0.9f + 0.1f * v
+                    scaleY = 0.9f + 0.1f * v
+                    alpha = v.coerceIn(0f, 1f)
+                }
                 .clip(RoundedCornerShape(24.dp))
                 .background(AppSurface)
                 .border(1.5.dp, AppLine, RoundedCornerShape(24.dp))

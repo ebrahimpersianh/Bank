@@ -346,6 +346,15 @@ private val allShortcutPool = defaultShortcuts + listOf(
 )
 
 private const val LOAN_ROUTE = "loan"
+
+/** نگاشتِ مسیر به حسِ حرکتِ بخشش - هر بخش حسِ خودش، درونِ بخش یکدست. */
+private fun feelOf(route: String?): Motion.Feel = when (route) {
+    "home", "shop" -> Motion.Feel.PLAYFUL
+    "assets", "accounts" -> Motion.Feel.FLOW
+    "report", "budget", "loan-stats", "cheque-report", "categories", "savings-goal", "annual-archive" -> Motion.Feel.INSIGHT
+    "loan", "cheque", "due", "debt", "financial-calendar", "sayad-inquiry" -> Motion.Feel.SOLID
+    else -> Motion.Feel.CALM
+}
 private const val CHEQUE_ROUTE = "cheque"
 private const val LOAN_STATS_ROUTE = "loan-stats"
 private const val CHEQUE_REPORT_ROUTE = "cheque-report"
@@ -1047,18 +1056,18 @@ private fun LoanCalcApp(
                 // پورت کاملِ اسلاید جهت‌دار بین ۴ تب اصلی وب (switchTab: slide-l/slide-r): جهت از
                 // رو فاصله‌ی ایندکس تب قبلی/جدید تو ترتیب تب‌ها حساب می‌شه و صفحه‌ی جدید با یه
                 // اسلاید فنری از همون سمتِ حرکت میاد تو - حس «پریمیوم»تر از fade+scale قبلی.
-                // زبانِ حرکتِ مشترک - رجوع کن به Motion.screenEnter/screenExit.
+                // حسِ هر بخش - رجوع کن به Motion.Feel. مقصد تعیین می‌کند (ورود) و مبدأ (خروج).
                 enterTransition = {
-                    Motion.screenEnter(slideDirection(initialState.destination.route, targetState.destination.route))
+                    Motion.enterFor(feelOf(targetState.destination.route), slideDirection(initialState.destination.route, targetState.destination.route))
                 },
                 exitTransition = {
-                    Motion.screenExit(slideDirection(initialState.destination.route, targetState.destination.route))
+                    Motion.exitFor(feelOf(initialState.destination.route), slideDirection(initialState.destination.route, targetState.destination.route))
                 },
                 popEnterTransition = {
-                    Motion.screenEnter(slideDirection(initialState.destination.route, targetState.destination.route))
+                    Motion.enterFor(feelOf(targetState.destination.route), slideDirection(initialState.destination.route, targetState.destination.route))
                 },
                 popExitTransition = {
-                    Motion.screenExit(slideDirection(initialState.destination.route, targetState.destination.route))
+                    Motion.exitFor(feelOf(initialState.destination.route), slideDirection(initialState.destination.route, targetState.destination.route))
                 },
             ) {
                 composable(BottomTab.HOME.route) {

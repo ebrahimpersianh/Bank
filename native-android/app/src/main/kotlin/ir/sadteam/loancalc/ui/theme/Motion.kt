@@ -97,4 +97,34 @@ object Motion {
 
     val subScreenExit: ExitTransition
         get() = slideOutHorizontally(animationSpec = tween(220)) { -it / 4 } + fadeOut(tween(FADE_OUT_MS))
+
+    // ── حسِ هر بخش (۷ مهر، خواسته‌ی کاربر: «هر بخش حسِ خودش؛ درونِ هر بخش یکدست») ────────────
+    /**
+     * - [PLAYFUL] خانه، سکه، فروشگاه: فنرِ پرانرژی با کمی جهش - شاد.
+     * - [FLOW]    دارایی، حساب‌ها: لغزشِ نرم و بلند - «جریانِ پول».
+     * - [INSIGHT] گزارش، بودجه، آمار: محوشدن + بزرگ‌شدنِ آرام - تمرکز روی عدد.
+     * - [SOLID]   وام، چک، سررسید، طلب‌وبدهی: سنگین و بی‌سرریز - جدی و مطمئن.
+     * - [CALM]    تنظیمات، پیام‌ها، ابزارها: محوشدنِ کوتاه - آرام.
+     */
+    enum class Feel { PLAYFUL, FLOW, INSIGHT, SOLID, CALM }
+
+    private fun <T> bouncy(): FiniteAnimationSpec<T> = spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow)
+
+    fun enterFor(feel: Feel, dir: Int): EnterTransition = when (feel) {
+        Feel.PLAYFUL -> scaleIn(animationSpec = bouncy(), initialScale = 0.92f) + fadeIn(tween(180)) +
+            slideInHorizontally(animationSpec = offset()) { dir * it / 6 }
+        Feel.FLOW -> slideInHorizontally(animationSpec = spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessLow)) { dir * it / 2 } +
+            fadeIn(tween(260))
+        Feel.INSIGHT -> fadeIn(tween(320)) + scaleIn(animationSpec = heavy(), initialScale = 0.96f)
+        Feel.SOLID -> slideInHorizontally(animationSpec = heavy<IntOffset>()) { dir * it / 5 } + fadeIn(tween(FADE_IN_MS))
+        Feel.CALM -> fadeIn(tween(200))
+    }
+
+    fun exitFor(feel: Feel, dir: Int): ExitTransition = when (feel) {
+        Feel.PLAYFUL -> scaleOut(animationSpec = tween(160), targetScale = 0.96f) + fadeOut(tween(140))
+        Feel.FLOW -> slideOutHorizontally(animationSpec = tween(240)) { -dir * it / 3 } + fadeOut(tween(180))
+        Feel.INSIGHT -> fadeOut(tween(160))
+        Feel.SOLID -> slideOutHorizontally(animationSpec = tween(220)) { -dir * it / 6 } + fadeOut(tween(FADE_OUT_MS))
+        Feel.CALM -> fadeOut(tween(140))
+    }
 }
