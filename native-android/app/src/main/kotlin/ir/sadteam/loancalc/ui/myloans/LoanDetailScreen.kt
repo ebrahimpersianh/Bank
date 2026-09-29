@@ -2097,13 +2097,27 @@ private fun InstallmentRow(
             Checkbox(checked = selected, onCheckedChange = null, enabled = bulkSelectable)
         } else {
             Box {
-                IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(36.dp)) {
-                    Icon(
-                        Icons.Filled.ChevronLeft,
-                        contentDescription = "کارهای این قسط",
-                        tint = if (overdue) AppDangerInk else AppMuted,
-                        modifier = Modifier.size(20.dp),
-                    )
+                // فلش در یک دایره‌ی پُر تا «قابلِ لمس» خوانده شود؛ با باز شدنِ منو به پایین می‌چرخد
+                // و پس‌زمینه‌اش پررنگ‌تر می‌شود (خواسته‌ی کاربر).
+                val arrowTurn by animateFloatAsState(if (menuOpen) -90f else 0f, spring(stiffness = Spring.StiffnessMediumLow), label = "rowArrow")
+                val arrowScale by animateFloatAsState(if (menuOpen) 1.12f else 1f, spring(dampingRatio = 0.5f), label = "rowArrowScale")
+                val arrowTint = if (overdue) AppDangerInk else AppPrimaryInk
+                IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(44.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .scale(arrowScale)
+                            .clip(CircleShape)
+                            .background(arrowTint.copy(alpha = if (menuOpen) 0.28f else 0.14f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Filled.ChevronLeft,
+                            contentDescription = "کارهای این قسط",
+                            tint = arrowTint,
+                            modifier = Modifier.size(20.dp).graphicsLayer { rotationZ = arrowTurn },
+                        )
+                    }
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     Text(
