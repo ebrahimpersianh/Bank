@@ -434,6 +434,8 @@ data class AdminStatsResponse(
     val perf: List<AdminFeatureUsage>? = null,
     val crashes30: Int = 0,
     val nonFatal30: Int = 0,
+    val multiAccountDevices: Int = 0,
+    val trialBlockedUsers: Int = 0,
     val crashesByVersion: List<AdminNamedCount>? = null,
     val topCrashes: List<AdminNamedCount>? = null,
     val activeByVersion: List<AdminNamedCount>? = null,

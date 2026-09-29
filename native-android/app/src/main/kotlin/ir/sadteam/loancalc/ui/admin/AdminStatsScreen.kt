@@ -962,6 +962,10 @@ private fun HealthCard(st: AdminStatsResponse) {
             StatTile("کرش در هر ۱۰۰ نفر", toFa(if (st.active30 == 0) 0 else Math.round(st.crashes30 * 100f / st.active30)), "", Modifier.weight(1f))
             StatTile("خطای همگام‌سازی", toFa(st.nonFatal30), "بار", Modifier.weight(1f))
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+            StatTile("گوشی با ۳+ حساب", toFa(st.multiAccountDevices), "گوشی", Modifier.weight(1f))
+            StatTile("بی ماهِ مجانی (گوشیِ تکراری)", toFa(st.trialBlockedUsers), "حساب", Modifier.weight(1f))
+        }
         SplitRow("کرش به‌تفکیکِ نسخه", st.crashesByVersion.orEmpty()) { it.faDigitsAscii() }
         val top = st.topCrashes.orEmpty()
         if (top.isNotEmpty()) {

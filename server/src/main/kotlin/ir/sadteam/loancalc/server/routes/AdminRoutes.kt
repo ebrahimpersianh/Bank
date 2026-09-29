@@ -128,6 +128,10 @@ data class StatsResponse(
     val perf: List<FeatureUsage> = emptyList(),
     val crashes30: Int = 0,
     val nonFatal30: Int = 0,
+    /** گوشی‌هایی که ۳ حساب یا بیشتر رویشان ساخته شده (شکِ سوءاستفاده از ماهِ مجانی). */
+    val multiAccountDevices: Int = 0,
+    /** حساب‌هایی که چون گوشی تکراری بود ماهِ مجانی نگرفتند. */
+    val trialBlockedUsers: Int = 0,
     val crashesByVersion: List<NamedCount> = emptyList(),
     val topCrashes: List<NamedCount> = emptyList(),
     val activeByVersion: List<NamedCount> = emptyList(),
@@ -348,6 +352,10 @@ internal fun buildStats(conn: Connection): StatsResponse {
     // 💥 کرش‌ها - `context = 'sync'` خطای بی‌سروصدای همگام‌سازی است، نه کرش.
     val crashes30 = conn.int("SELECT COUNT(*) FROM crash_reports WHERE created_at >= ? AND coalesce(context, '') <> 'sync'", d30)
     val nonFatal30 = conn.int("SELECT COUNT(*) FROM crash_reports WHERE created_at >= ? AND context = 'sync'", d30)
+    val multiAccountDevices = runCatching {
+        conn.int("SELECT COUNT(*) FROM (SELECT device_hash FROM device_users GROUP BY device_hash HAVING COUNT(*) >= 3)")
+    }.getOrDefault(0)
+    val trialBlockedUsers = runCatching { conn.int("SELECT COUNT(*) FROM users WHERE trial_blocked = 1") }.getOrDefault(0)
     val crashesByVersion = buildList {
         conn.list(
             "SELECT coalesce(app_version, '?'), COUNT(*) FROM crash_reports WHERE created_at >= ? AND coalesce(context, '') <> 'sync' GROUP BY 1 ORDER BY 2 DESC LIMIT 12",
@@ -406,6 +414,8 @@ internal fun buildStats(conn: Connection): StatsResponse {
         perf = features("perf:"),
         crashes30 = crashes30,
         nonFatal30 = nonFatal30,
+        multiAccountDevices = multiAccountDevices,
+        trialBlockedUsers = trialBlockedUsers,
         crashesByVersion = crashesByVersion,
         topCrashes = topCrashes,
         activeByVersion = split("app_version"),
