@@ -326,8 +326,14 @@ class AuthViewModel @Inject constructor(
     }
 
     /** 🐞 ثبتِ گزارشِ مشکل - `onResult` کدِ پیگیری می‌گیرد، یا `null` اگر نشد. */
-    fun reportBug(message: String, appVersion: String?, device: String?, onResult: (String?) -> Unit) {
-        viewModelScope.launch { onResult(authRepository.reportBug(message, appVersion, device)) }
+    fun reportBug(
+        message: String,
+        appVersion: String?,
+        device: String?,
+        attachments: List<Pair<ByteArray, String>> = emptyList(),
+        onResult: (String?) -> Unit,
+    ) {
+        viewModelScope.launch { onResult(authRepository.reportBug(message, appVersion, device, attachments)) }
     }
 
     /** 🎁 خرج‌کردنِ کدِ هدیه - رجوع کن به [AuthRepository.redeemGiftCode]. */

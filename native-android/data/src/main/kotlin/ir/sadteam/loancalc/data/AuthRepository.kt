@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.data
 
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import ir.sadteam.loancalc.data.network.ApiService
@@ -131,14 +133,50 @@ class AuthRepository(
      * ⚠️ فقط برای کاربرِ واردشده: بی `user_id` گزارش به هیچ حسابی بسته نمی‌شود و
      * دادنِ هدیه ممکن نیست - همان دلیلی که این کار را سمتِ سرور می‌بَرَد.
      */
-    suspend fun reportBug(message: String, appVersion: String?, device: String?): String? {
+    suspend fun reportBug(
+        message: String,
+        appVersion: String?,
+        device: String?,
+        attachments: List<Pair<ByteArray, String>> = emptyList(),
+    ): String? {
         val token = authPrefs.authToken.first()
         if (token.isNullOrEmpty()) return null
         return try {
-            apiService.reportBug("Bearer $token", BugReportRequest(message, appVersion, device)).ticket
+            // پیوستِ ردشده (نوعِ نامجاز/بزرگ) کلِ پیام را نمی‌شکند؛ فقط همان جا می‌ماند.
+            val ids = attachments.mapNotNull { (bytes, mime) ->
+                runCatching {
+                    val body = bytes.toRequestBody(mime.toMediaType())
+                    apiService.uploadSupportFile("Bearer $token", body).id
+                }.getOrNull()
+            }
+            apiService.reportBug("Bearer $token", BugReportRequest(message, appVersion, device, ids)).ticket
         } catch (e: Exception) {
             null
         }
+    }
+
+    suspend fun adminSupport(): ir.sadteam.loancalc.data.network.AdminSupportResponse? {
+        val token = authPrefs.authToken.first() ?: return null
+        return runCatching { apiService.adminSupport("Bearer $token") }.getOrNull()
+    }
+
+    suspend fun adminSupportFile(id: String): ByteArray? {
+        val token = authPrefs.authToken.first() ?: return null
+        return runCatching { apiService.adminSupportFile("Bearer $token", id).bytes() }.getOrNull()
+    }
+
+    suspend fun adminSupportReply(id: Long, text: String): Boolean {
+        val token = authPrefs.authToken.first() ?: return false
+        return runCatching {
+            apiService.adminSupportReply("Bearer $token", ir.sadteam.loancalc.data.network.AdminSupportReplyRequest(id, text)).isSuccessful
+        }.getOrDefault(false)
+    }
+
+    suspend fun adminSupportStatus(id: Long, status: String): Boolean {
+        val token = authPrefs.authToken.first() ?: return false
+        return runCatching {
+            apiService.adminSupportStatus("Bearer $token", ir.sadteam.loancalc.data.network.AdminSupportStatusRequest(id, status)).isSuccessful
+        }.getOrDefault(false)
     }
 
     /**

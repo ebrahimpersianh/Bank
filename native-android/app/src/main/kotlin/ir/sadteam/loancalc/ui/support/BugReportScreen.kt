@@ -1,7 +1,5 @@
 package ir.sadteam.loancalc.ui.support
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -11,12 +9,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.launch
 import androidx.compose.ui.layout.ContentScale
-import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppSurface2
-import java.io.File
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -75,91 +74,61 @@ import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.settings.SettingsHero
 import ir.sadteam.loancalc.core.toFa
 
-/** همان صندوقی که «تماس با ما» هم به آن می‌فرستد - یک نشانی، نه دو تا. */
-const val SUPPORT_EMAIL = "jibak.support@gmail.com"
-
 private const val MAX_REPORT = 1000
-private const val MAX_SHOTS = 3
+private const val MAX_SHOTS = 4
+private const val MAX_VIDEO_BYTES = 20L * 1024 * 1024
+
+/** پیوستِ انتخاب‌شده: نشانی در گوشی + آیا فیلم است. */
+private data class Attachment(val uri: Uri, val isVideo: Boolean)
 
 /**
- * 🐞 **گزارشِ مشکل** - خواسته‌ی کاربر (۳۱ شهریور).
- *
- * دو کار پشتِ‌هم انجام می‌شود و **ترتیبش عمدی است**:
- *
- * ۱. گزارش روی **سرور** ثبت می‌شود و یک **کدِ پیگیری** می‌گیرد. این قدم است که گزارش را
- *    به حسابِ کاربر می‌چسباند - بی آن، هدیه‌دادن ممکن نیست چون ایمیل نمی‌گوید فرستنده
- *    کدام حسابِ برنامه است (کاربر از ایمیلِ شخصی‌اش می‌فرستد).
- * ۲. بعد صندوقِ ایمیلِ گوشی با **موضوعِ آماده‌ی «مشکل برنامه»** و متنِ پرشده باز می‌شود.
- *
- * ⚠️ اگر ثبتِ سرور نشد (اینترنت قطع)، باز هم ایمیل باز می‌شود ولی **بی کدِ پیگیری** و با
- * یک هشدارِ صریح؛ چیزی بی‌صدا از دست نمی‌رود.
+ * 🐞 **پشتیبانی** - پیام **مستقیم به سرور** می‌رود (۷ مهر: ایمیل به خواسته‌ی کاربر کاملاً حذف شد).
+ * صاحبِ برنامه آن را در «گزارشِ برنامه ← پیام‌های کاربران» می‌بیند و جوابش در «پیام‌های جیبک»ِ
+ * همین کاربر می‌نشیند. پیوست فقط عکس یا فیلم؛ عکس روی گوشی کوچک و به JPEG تبدیل می‌شود و
+ * سرور هم دوباره می‌سازدش (رجوع کن به `server/SupportFiles.kt`).
  */
 @Composable
 fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val clipboard: ClipboardManager = LocalClipboardManager.current
     val banner = rememberInAppBanner()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     val gateState by authViewModel.gateState.collectAsState()
     var message by rememberSaveable { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     var ticket by rememberSaveable { mutableStateOf<String?>(null) }
 
-    // عکس‌ها به پوشه‌ی موقتِ خودِ برنامه کپی می‌شوند تا بشود با FileProvider به ایمیل داد؛
-    // هیچ‌کدام به سرورِ ما نمی‌رود.
-    var shots by remember { mutableStateOf<List<File>>(emptyList()) }
+    var shots by remember { mutableStateOf<List<Attachment>>(emptyList()) }
     val picker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(MAX_SHOTS),
     ) { uris ->
-        val dir = File(context.cacheDir, "bug_shots").apply { mkdirs() }
-        val copied = uris.take(MAX_SHOTS - shots.size).mapNotNull { uri ->
-            runCatching {
-                val out = File(dir, "shot_${System.nanoTime()}.jpg")
-                context.contentResolver.openInputStream(uri)!!.use { input -> out.outputStream().use { input.copyTo(it) } }
-                out
-            }.getOrNull()
+        val added = uris.take(MAX_SHOTS - shots.size).map { uri ->
+            Attachment(uri, context.contentResolver.getType(uri)?.startsWith("video/") == true)
         }
-        shots = shots + copied
+        shots = shots + added
     }
 
     val device = remember { "${Build.MANUFACTURER} ${Build.MODEL} · اندروید ${Build.VERSION.RELEASE}" }
 
-    fun openEmail(withTicket: String?) {
-        val body = buildString {
-            append(message.trim())
-            append("\n\n---\n")
-            if (withTicket != null) append("کدِ پیگیری: ").append(withTicket).append("\n")
-            append("نسخه: ").append(BuildConfig.VERSION_NAME).append("\n")
-            append("دستگاه: ").append(device)
-        }
-        // 🚨 موضوع **همیشه** «مشکل برنامه» است (خواسته‌ی صریحِ کاربر): صندوقِ پشتیبانی
-        // با یک موضوعِ ثابت قابلِ فیلترکردن است، ولی با موضوعِ دست‌نوشته نه.
-        val uri = Uri.parse(
-            "mailto:" + Uri.encode(SUPPORT_EMAIL) +
-                "?subject=" + Uri.encode("مشکل برنامه") +
-                "&body=" + Uri.encode(body),
-        )
-        try {
-            if (shots.isEmpty()) {
-                context.startActivity(Intent(Intent.ACTION_SENDTO, uri))
+    /** عکس → کوچک + JPEG (متادیتا و مکان هم دور ریخته می‌شود)؛ فیلم → همان بایت‌ها با سقفِ حجم. */
+    suspend fun prepare(a: Attachment): Pair<ByteArray, String>? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        runCatching {
+            if (a.isVideo) {
+                val size = context.contentResolver.openAssetFileDescriptor(a.uri, "r")?.use { it.length } ?: -1L
+                if (size <= 0 || size > MAX_VIDEO_BYTES) return@runCatching null
+                context.contentResolver.openInputStream(a.uri)!!.use { it.readBytes() } to "video/mp4"
             } else {
-                // ضمیمه با SENDTO نمی‌رود؛ SEND_MULTIPLE + selectorِ mailto تا فقط اپ‌های ایمیل بیایند.
-                val uris = arrayListOf<Uri>().apply {
-                    shots.forEach { add(FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", it)) }
-                }
-                val send = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-                    type = "image/*"
-                    putExtra(Intent.EXTRA_EMAIL, arrayOf(SUPPORT_EMAIL))
-                    putExtra(Intent.EXTRA_SUBJECT, "مشکل برنامه")
-                    putExtra(Intent.EXTRA_TEXT, body)
-                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    selector = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"))
-                }
-                context.startActivity(send)
+                val bmp = context.contentResolver.openInputStream(a.uri)!!.use { android.graphics.BitmapFactory.decodeStream(it) }
+                    ?: return@runCatching null
+                val scale = minOf(1f, 1600f / maxOf(bmp.width, bmp.height))
+                val scaled = android.graphics.Bitmap.createScaledBitmap(
+                    bmp, (bmp.width * scale).toInt().coerceAtLeast(1), (bmp.height * scale).toInt().coerceAtLeast(1), true,
+                )
+                val out = java.io.ByteArrayOutputStream()
+                scaled.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, out)
+                out.toByteArray() to "image/jpeg"
             }
-        } catch (e: ActivityNotFoundException) {
-            banner.show("اپ ایمیلی پیدا نشد؛ کدِ پیگیری را نگه دار و از راهِ دیگری بفرست")
-        }
+        }.getOrNull()
     }
 
     BackHandler(onBack = onBack)
@@ -174,7 +143,7 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                         Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
                     }
                     Column(modifier = Modifier.padding(start = 4.dp)) {
-                        Text("گزارشِ مشکل", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Black)
+                        Text("پشتیبانی", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Black)
                         Text(
                             "چی درست کار نکرد؟ هرچه دقیق‌تر، زودتر درست می‌شود.",
                             color = AppMuted,
@@ -229,7 +198,7 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                         shots.forEach { file ->
                             Box(modifier = Modifier.padding(end = 8.dp).size(56.dp)) {
                                 AsyncImage(
-                                    model = file,
+                                    model = file.uri,
                                     contentDescription = "عکسِ پیوست",
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp)),
@@ -240,13 +209,16 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                                         .size(20.dp)
                                         .clip(RoundedCornerShape(999.dp))
                                         .background(AppBg.copy(alpha = 0.8f))
-                                        .pressScaleClickable {
-                                            file.delete()
-                                            shots = shots - file
-                                        },
+                                        .pressScaleClickable { shots = shots - file },
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Icon(Icons.Filled.Close, contentDescription = "حذف", tint = AppText, modifier = Modifier.size(13.dp))
+                                }
+                                if (file.isVideo) {
+                                    Icon(
+                                        Icons.Filled.PlayCircle, contentDescription = "فیلم", tint = Color.White,
+                                        modifier = Modifier.align(Alignment.Center).size(22.dp),
+                                    )
                                 }
                             }
                         }
@@ -257,7 +229,7 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(AppSurface2)
                                     .pressScaleClickable {
-                                        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
                                     }
                                     .padding(horizontal = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -265,7 +237,7 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                                 Icon(Icons.Filled.AddPhotoAlternate, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    if (shots.isEmpty()) "افزودنِ عکس (تا ${toFa(MAX_SHOTS)})" else "عکسِ دیگر",
+                                    if (shots.isEmpty()) "عکس یا فیلم (تا ${toFa(MAX_SHOTS)})" else "یکی دیگر",
                                     color = AppPrimaryInk,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Black,
@@ -281,24 +253,31 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                     enabled = message.trim().length >= 5 && !sending,
                     onClick = {
                         if (gateState != GateState.LOGGED_IN) {
-                            // بی ورود، گزارش به هیچ حسابی بسته نمی‌شود؛ ایمیل باز می‌شود
-                            // ولی صادقانه گفته می‌شود که هدیه‌ای در کار نیست.
-                            banner.show("برای گرفتنِ کدِ پیگیری و هدیه باید وارد حساب شوی")
-                            openEmail(null)
+                            banner.show("برای فرستادنِ پیام اول وارد حسابت شو")
                             return@GradientButton
                         }
                         sending = true
-                        authViewModel.reportBug(
-                            message = message.trim(),
-                            appVersion = BuildConfig.VERSION_NAME,
-                            device = device,
-                        ) { code ->
-                            sending = false
-                            ticket = code
-                            if (code == null) {
-                                banner.show("ثبت روی سرور نشد؛ ایمیل بی کدِ پیگیری باز می‌شود")
+                        scope.launch {
+                            val prepared = shots.map { prepare(it) }
+                            val skipped = prepared.count { it == null }
+                            authViewModel.reportBug(
+                                message = message.trim(),
+                                appVersion = BuildConfig.VERSION_NAME,
+                                device = device,
+                                attachments = prepared.filterNotNull(),
+                            ) { code ->
+                                sending = false
+                                ticket = code
+                                when {
+                                    code == null -> banner.show("فرستاده نشد؛ اینترنت را چک کن و دوباره بزن")
+                                    skipped > 0 -> banner.show("پیام رفت؛ ${toFa(skipped)} فیلمِ بزرگ‌تر از ۲۰ مگ جا ماند")
+                                    else -> {
+                                        banner.show("پیامت رسید؛ جواب در «پیام‌های جیبک» می‌آید", isSuccess = true)
+                                        message = ""
+                                        shots = emptyList()
+                                    }
+                                }
                             }
-                            openEmail(code)
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -306,7 +285,7 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.BugReport, contentDescription = null, modifier = Modifier.size(16.dp))
                         Text(
-                            if (sending) "در حالِ ثبت…" else "ثبت و ارسالِ ایمیل",
+                            if (sending) "در حالِ ارسال…" else "ارسال",
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(start = 6.dp),
@@ -358,7 +337,7 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
             if (gateState != GateState.LOGGED_IN) {
                 item {
                     Text(
-                        "برای ثبتِ گزارش روی سرور (و گرفتنِ هدیه) باید وارد حسابت باشی.",
+                        "برای فرستادنِ پیام باید وارد حسابت باشی.",
                         color = AppDangerInk,
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold,

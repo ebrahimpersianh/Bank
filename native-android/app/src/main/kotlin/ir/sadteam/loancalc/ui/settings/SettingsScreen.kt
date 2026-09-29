@@ -211,7 +211,6 @@ import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.biometricAvailable
 import ir.sadteam.loancalc.ui.subscription.SubscriptionScreen
 import ir.sadteam.loancalc.ui.support.BugReportScreen
-import ir.sadteam.loancalc.ui.support.SUPPORT_EMAIL
 import ir.sadteam.loancalc.ui.subscription.parseSubscribedUntil
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppBg
@@ -274,6 +273,7 @@ fun SettingsScreen(
     var showBugReport by remember { mutableStateOf(false) }
     // «آمارِ جیبک» - فقط برای حسابِ صاحبِ برنامه (ورک‌فلوی make-admin).
     var showAdminStats by remember { mutableStateOf(false) }
+    var showAdminSupport by remember { mutableStateOf(false) }
     LaunchedEffect(route) {
         if (route != SettingsRoute.MAIN) ir.sadteam.loancalc.data.UsageStats.screen("settings_" + route.name.lowercase())
     }
@@ -284,6 +284,7 @@ fun SettingsScreen(
         showReminderSettings -> "reminderSettings"
         showBugReport -> "bugReport"
         showAdminStats -> "adminStats"
+        showAdminSupport -> "adminSupport"
         tool != null -> "tool"
         route != SettingsRoute.MAIN -> "sub"
         else -> "main"
@@ -315,6 +316,9 @@ fun SettingsScreen(
             }
             "adminStats" -> FullScreenDialog(onDismissRequest = { showAdminStats = false }) {
                 ir.sadteam.loancalc.ui.admin.AdminStatsScreen(onBack = { showAdminStats = false })
+            }
+            "adminSupport" -> FullScreenDialog(onDismissRequest = { showAdminSupport = false }) {
+                ir.sadteam.loancalc.ui.admin.SupportInboxScreen(onBack = { showAdminSupport = false })
             }
             "tool" -> FullScreenDialog(onDismissRequest = { tool = null }) {
                 when (tool) {
@@ -356,6 +360,7 @@ fun SettingsScreen(
                 onOpen = { route = it },
                 onShowSubscription = { showSubscription = true },
                 onOpenAdminStats = { showAdminStats = true },
+                onOpenAdminSupport = { showAdminSupport = true },
             )
         }
     }
@@ -395,6 +400,7 @@ private fun SettingsMainContent(
     onOpen: (SettingsRoute) -> Unit,
     onShowSubscription: () -> Unit,
     onOpenAdminStats: () -> Unit = {},
+    onOpenAdminSupport: () -> Unit = {},
     adminViewModel: ir.sadteam.loancalc.ui.admin.AdminStatsViewModel = hiltViewModel(),
 ) {
     val isAdmin by adminViewModel.isAdmin.collectAsState()
@@ -692,6 +698,13 @@ private fun SettingsMainContent(
                         icon = Icons.Filled.BarChart,
                         tone = SettingsTone.NEUTRAL,
                         onClick = onOpenAdminStats,
+                    )
+                    SettingsDivider()
+                    SettingsRowItem(
+                        title = "پیام‌های کاربران",
+                        icon = Icons.Filled.SupportAgent,
+                        tone = SettingsTone.GREEN,
+                        onClick = onOpenAdminSupport,
                     )
                 }
             }
@@ -2723,19 +2736,13 @@ private fun AboutSettings(banner: InAppBannerState, onOpenBugReport: () -> Unit)
     SettingsGroup(modifier = Modifier.padding(top = 28.dp)) {
         // 🐞 **بالای «تماس با ما»** و نه زیرش: کسی که مشکل دارد اول این را می‌خواهد،
         // و این مسیر گزارش را روی سرور هم ثبت می‌کند (شرطِ هدیه‌ی اشتراک).
+        // ۷ مهر: «گزارشِ مشکل» و «تماس با ما» یکی شدند - یک راه: پیامِ مستقیم به سرور.
         SettingsRowItem(
-            title = "گزارشِ مشکل",
-            icon = Icons.Filled.BugReport,
-            tone = SettingsTone.ORANGE,
-            status = "ثبت می‌شود و کدِ پیگیری می‌گیری",
-            onClick = { onOpenBugReport() },
-        )
-        SettingsDivider()
-        SettingsRowItem(
-            title = "تماس با ما",
+            title = "پشتیبانی",
             icon = Icons.Filled.SupportAgent,
             tone = SettingsTone.GREEN,
-            onClick = { showContact = true },
+            status = "پیام، مشکل یا پیشنهاد - با عکس یا فیلم",
+            onClick = { onOpenBugReport() },
         )
         SettingsDivider()
         SettingsRowItem(
@@ -2849,39 +2856,6 @@ internal fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable
 
 // ⚠️ نشانی **یک‌جا** تعریف شده (`ui/support`)؛ دو کپی یعنی روزی که یکی عوض می‌شود و
 // نیمی از پیام‌ها به صندوقِ قدیمی می‌روند.
-
-/** پشتیبانی فقط با ایمیل - با تپ مستقیم Gmail (نه یه چوزر عمومی) با گیرنده‌ی از قبل پرشده باز
- * می‌شه تا کاربر فقط متن رو بنویسه و بزنه ارسال؛ اگه Gmail نصب نباشه mailto عادی (هر اپ ایمیلی)
- * جایگزین می‌شه. چون هیچ callback مستقیمی برای «کاربر واقعاً ایمیل رو فرستاد» وجود نداره، این با
- * ActivityResultContracts.StartActivityForResult پیاده شده: هر بار که کاربر از صفحه‌ی
- * ارسال/کامپوز برگرده (چه با زدنِ ارسال، چه با دکمه‌ی برگشت)، یه بنرِ تشکر نشون داده می‌شه. */
-@Composable
-private fun SupportContacts(banner: InAppBannerState) {
-    val context = LocalContext.current
-    val emailLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) {
-        banner.show("ممنون از پیامت! در اسرع وقت جوابت رو می‌دیم", isSuccess = true)
-    }
-    Column {
-        SupportRow(label = "ایمیل", value = SUPPORT_EMAIL) {
-            val gmailIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "message/rfc822"
-                putExtra(Intent.EXTRA_EMAIL, arrayOf(SUPPORT_EMAIL))
-                setPackage("com.google.android.gm")
-            }
-            try {
-                emailLauncher.launch(gmailIntent)
-            } catch (e: ActivityNotFoundException) {
-                try {
-                    emailLauncher.launch(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$SUPPORT_EMAIL")))
-                } catch (e: ActivityNotFoundException) {
-                    banner.show("اپ مناسبی برای ارسال ایمیل پیدا نشد")
-                }
-            }
-        }
-    }
-}
 
 /**
  * پورت قفل امنیتی PIN+اثر انگشت اپ رقیب (VAMMAN) - برگردوندن تصمیم قبلی حذف بایومتریک، با درخواست

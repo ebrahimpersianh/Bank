@@ -60,6 +60,34 @@ interface ApiService {
         @Body body: BugReportRequest,
     ): BugReportResponse
 
+    // 🔒 پیوستِ پیامِ پشتیبانی: فقط عکس/فیلم؛ سرور نوع را از بایت‌ها می‌سنجد و عکس را بازسازی می‌کند.
+    @POST("api/support/upload")
+    suspend fun uploadSupportFile(
+        @Header("Authorization") authHeader: String,
+        @Body body: okhttp3.RequestBody,
+    ): SupportUploadResponse
+
+    @GET("api/admin/support")
+    suspend fun adminSupport(@Header("Authorization") authHeader: String): AdminSupportResponse
+
+    @GET("api/admin/support/file/{id}")
+    suspend fun adminSupportFile(
+        @Header("Authorization") authHeader: String,
+        @Path("id") id: String,
+    ): okhttp3.ResponseBody
+
+    @POST("api/admin/support/reply")
+    suspend fun adminSupportReply(
+        @Header("Authorization") authHeader: String,
+        @Body body: AdminSupportReplyRequest,
+    ): Response<Unit>
+
+    @POST("api/admin/support/status")
+    suspend fun adminSupportStatus(
+        @Header("Authorization") authHeader: String,
+        @Body body: AdminSupportStatusRequest,
+    ): Response<Unit>
+
     @POST("api/gift/redeem")
     suspend fun redeemGiftCode(
         @Header("Authorization") authHeader: String,
@@ -231,7 +259,29 @@ data class SubscriptionHistoryResponse(val ok: Boolean, val items: List<Subscrip
 
 data class SetNameRequest(val name: String?)
 
-data class BugReportRequest(val message: String, val appVersion: String?, val device: String?)
+data class BugReportRequest(
+    val message: String,
+    val appVersion: String?,
+    val device: String?,
+    val attachments: List<String> = emptyList(),
+)
+
+data class SupportUploadResponse(val ok: Boolean, val id: String, val kind: String)
+data class SupportAttachment(val id: String, val kind: String)
+data class SupportMessage(
+    val id: Long,
+    val ticket: String,
+    val userId: Long?,
+    val message: String,
+    val appVersion: String?,
+    val device: String?,
+    val status: String,
+    val createdAt: String,
+    val attachments: List<SupportAttachment> = emptyList(),
+)
+data class AdminSupportResponse(val items: List<SupportMessage> = emptyList(), val openCount: Int = 0)
+data class AdminSupportReplyRequest(val id: Long, val text: String, val close: Boolean = true)
+data class AdminSupportStatusRequest(val id: Long, val status: String)
 
 data class BugReportResponse(val ok: Boolean, val ticket: String)
 

@@ -955,6 +955,9 @@ private fun LoanCalcApp(
         ir.sadteam.loancalc.ui.subscription.LocalIsPremium provides isPremium,
     ) {
     ir.sadteam.loancalc.ui.subscription.PremiumPaywallHost()
+    // صاحبِ برنامه: خبرِ پیامِ تازه‌ی کاربران (برای بقیه همان اولِ کار بی‌صدا تمام می‌شود).
+    val supportInboxVm: ir.sadteam.loancalc.ui.admin.SupportInboxViewModel = hiltViewModel()
+    LaunchedEffect(Unit) { supportInboxVm.watch() }
     val subUntil by authViewModel.subscribedUntil.collectAsState()
     val trialLeft by authViewModel.trialDaysLeft.collectAsState()
     Box(modifier = Modifier.fillMaxSize()) {

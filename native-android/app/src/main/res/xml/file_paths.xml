@@ -2,4 +2,5 @@
 <!-- فقط پوشه‌ی موقتِ عکس‌های گزارشِ مشکل به برنامه‌ی ایمیل داده می‌شود، نه جای دیگری. -->
 <paths>
     <cache-path name="bug_shots" path="bug_shots/" />
+    <cache-path name="support_view" path="support_view/" />
 </paths>
