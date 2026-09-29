@@ -711,6 +711,7 @@ private fun LoanCalcApp(
     var showSettings by remember { mutableStateOf(false) }
     var showInbox by remember { mutableStateOf(false) }
     val updateUrl by appUpdateViewModel.updateUrl.collectAsState()
+    val appUpdateChanges by appUpdateViewModel.changelog.collectAsState()
     // تورِ راهنمای اولین ورود (پایین‌تر) - رجوع کن به رفعِ تداخلِ بنرِ آپدیت/تور: بنر فقط بعدِ تمومِ
     // تور نشون داده می‌شه، وگرنه هم‌زمان با اسپاتلایتِ تور بالای صفحه شلوغ/رو هم می‌افتادن.
     val tourSeen by authViewModel.tourSeen.collectAsState()
@@ -1355,6 +1356,7 @@ private fun LoanCalcApp(
         // برگه‌ی پایینِ آپدیت (هم‌شکلِ برگه‌ی بازار) - جای بنرِ باریکِ قبلی. رجوع کن به UpdateSheet.
         ir.sadteam.loancalc.ui.update.UpdateSheet(
             visible = updateUrl != null && tourSeen != false,
+            changes = appUpdateChanges,
             onUpdate = {
                 updateUrl?.let { url -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } }
                 appUpdateViewModel.dismiss()

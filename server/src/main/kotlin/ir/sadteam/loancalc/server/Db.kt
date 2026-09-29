@@ -256,6 +256,8 @@ object Db {
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN name TEXT")
             // هدیه‌ی «کاربرِ قدیمی» - رجوع کن به grantLegacyGift پایین‌تر.
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN legacy_gift_granted INTEGER NOT NULL DEFAULT 0")
+            // متنِ «تغییراتِ این نسخه» برای برگه‌ی آپدیتِ اپ - هر خط یک بند؛ خالی = متنِ پیش‌فرضِ اپ.
+            addColumnIfMissing(conn, "ALTER TABLE app_version ADD COLUMN changelog TEXT")
             // ۳ مهر: کرش به حسابِ کاربر وصل می‌شود (اگر وارد بود) و پیام می‌تواند اختصاصی باشد.
             addColumnIfMissing(conn, "ALTER TABLE crash_reports ADD COLUMN user_id INTEGER")
             addColumnIfMissing(conn, "ALTER TABLE announcements ADD COLUMN target_user_id INTEGER")

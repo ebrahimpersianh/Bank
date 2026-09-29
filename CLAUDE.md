@@ -90,7 +90,8 @@ versionCode + لینکِ هر استور. **دستیه** - بعدِ هر انت�
 sqlite3 ~/VameMan/data.sqlite \
   "UPDATE app_version SET latest_version_code = <شماره‌نسخه>,
    cafebazaar_url = 'https://cafebazaar.ir/app/ir.sadteam.loancalc',
-   myket_url = 'https://myket.ir/app/ir.sadteam.loancalc' WHERE id = 1;"
+   myket_url = 'https://myket.ir/app/ir.sadteam.loancalc',
+   changelog = 'بندِ اول' || char(10) || 'بندِ دوم' WHERE id = 1;"
 ```
 
 ---

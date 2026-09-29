@@ -50,7 +50,7 @@ import ir.sadteam.loancalc.ui.theme.AppText
  * منبعِ «آپدیت آمده» همان [AppUpdateViewModel] و سرورِ خودمان است.
  */
 @Composable
-fun BoxScope.UpdateSheet(visible: Boolean, onUpdate: () -> Unit, onDismiss: () -> Unit) {
+fun BoxScope.UpdateSheet(visible: Boolean, changes: List<String>, onUpdate: () -> Unit, onDismiss: () -> Unit) {
     val storeName = if (BuildConfig.FLAVOR == "myket") "مایکت" else "کافه‌بازار"
     AnimatedVisibility(visible = visible, enter = fadeIn(tween(200)), exit = fadeOut(tween(150)), modifier = Modifier.matchParentSize()) {
         Box(
@@ -104,12 +104,9 @@ fun BoxScope.UpdateSheet(visible: Boolean, onUpdate: () -> Unit, onDismiss: () -
                     .padding(horizontal = 14.dp, vertical = 12.dp),
             ) {
                 Text("تغییراتِ نسخه‌ی جدید", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
-                Text(
-                    "• بهبودِ کارایی، رفعِ اشکال و قابلیت‌های تازه",
-                    color = AppMuted,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(top = 6.dp),
-                )
+                (changes.ifEmpty { listOf("بهبودِ کارایی، رفعِ اشکال و قابلیت‌های تازه") }).forEach { line ->
+                    Text("• $line", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                }
             }
             GradientButton(
                 onClick = onUpdate,

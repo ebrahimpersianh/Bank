@@ -29,12 +29,15 @@ class AppUpdateViewModel @Inject constructor(
 ) : ViewModel() {
     private val _updateUrl = MutableStateFlow<String?>(null)
     val updateUrl: StateFlow<String?> = _updateUrl.asStateFlow()
+    private val _changelog = MutableStateFlow<List<String>>(emptyList())
+    val changelog: StateFlow<List<String>> = _changelog.asStateFlow()
 
     init {
         viewModelScope.launch {
             try {
                 val result = apiService.getAppVersion()
                 if (result.latestVersionCode > BuildConfig.VERSION_CODE) {
+                    _changelog.value = result.changelog.orEmpty().lines().map { it.trim().removePrefix("•").trim() }.filter { it.isNotEmpty() }
                     _updateUrl.value = when (BuildConfig.FLAVOR) {
                         "myket" -> result.myketUrl
                         else -> result.cafebazaarUrl

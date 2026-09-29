@@ -256,6 +256,8 @@ data class AppVersionResponse(
     val latestVersionCode: Int,
     val cafebazaarUrl: String?,
     val myketUrl: String?,
+    /** «تغییراتِ این نسخه» - هر خط یک بند؛ null/خالی یعنی متنِ پیش‌فرض. */
+    val changelog: String? = null,
 )
 
 /** یک اطلاعیه‌ی عمومی؛ [kind] یکی از update/outage/feature/info. [createdAt] زمانِ UTCِ سرور. */

@@ -19,6 +19,7 @@ import kotlinx.serialization.Serializable
  *     "UPDATE app_version SET latest_version_code = <شماره‌ی run_number همون بیلد>,
  *      cafebazaar_url = 'https://cafebazaar.ir/app/ir.sadteam.loancalc',
  *      myket_url = 'https://myket.ir/app/ir.sadteam.loancalc',
+ *      changelog = 'قابلیتِ تازه‌ی فلان' || char(10) || 'رفعِ اشکالِ بهمان',   -- هر خط یک بند
  *      updated_at = datetime('now') WHERE id = 1;"
  *   pm2 restart loan-calc-api نیازی نیست - این یه UPDATE ساده‌ست، سرور بلافاصله ردیفِ جدید رو می‌بینه.
  */
@@ -27,18 +28,20 @@ private data class AppVersionResponse(
     val latestVersionCode: Int,
     val cafebazaarUrl: String?,
     val myketUrl: String?,
+    val changelog: String? = null,
 )
 
 fun Route.appVersionRoutes() {
     get("/api/app-version") {
         val result = Db.withConnection { conn ->
             conn.createStatement().use { st ->
-                st.executeQuery("SELECT latest_version_code, cafebazaar_url, myket_url FROM app_version WHERE id = 1").use { rs ->
+                st.executeQuery("SELECT latest_version_code, cafebazaar_url, myket_url, changelog FROM app_version WHERE id = 1").use { rs ->
                     if (rs.next()) {
                         AppVersionResponse(
                             latestVersionCode = rs.getInt("latest_version_code"),
                             cafebazaarUrl = rs.getString("cafebazaar_url"),
                             myketUrl = rs.getString("myket_url"),
+                            changelog = rs.getString("changelog"),
                         )
                     } else {
                         null
