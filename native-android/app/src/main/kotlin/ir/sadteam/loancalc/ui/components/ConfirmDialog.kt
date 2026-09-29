@@ -228,7 +228,8 @@ fun ConfirmDeleteDialog(
     consequence = text,
     actionLabel = confirmLabel,
     tone = ConfirmTone.DESTRUCTIVE,
-    onConfirm = onConfirm,
+    // بعد از تأیید همیشه بسته شود؛ چند صفحه (مثلِ طلب‌وبدهی) فقط حذف می‌کردند و پنجره می‌ماند.
+    onConfirm = { onConfirm(); onDismiss() },
     onDismiss = onDismiss,
 )
 
@@ -244,6 +245,6 @@ fun ConfirmPayDialog(
     consequence = text,
     actionLabel = confirmLabel,
     tone = ConfirmTone.PAYMENT,
-    onConfirm = onConfirm,
+    onConfirm = { onConfirm(); onDismiss() },
     onDismiss = onDismiss,
 )
