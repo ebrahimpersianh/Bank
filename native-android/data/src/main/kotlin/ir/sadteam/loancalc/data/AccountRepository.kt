@@ -657,6 +657,8 @@ class AccountRepository(
             // 🚨 گوشی‌ای که هنوز هیچ‌وقت نسخه‌ی سرور را ندیده، کورکورانه نمی‌نویسد (همان باگِ ۷ مهر:
             // گوشیِ پاک‌شده پشتیبانِ ابری را خالی کرد). اولین نوشتن فقط از `syncAfterLogin`.
             if (expected == null && !allowUnknownRevision && uiPrefs != null) return false
+            // گوشیِ خالی هیچ‌وقت پشتیبانِ ابری را بازنویسی نمی‌کند.
+            if (!hasLocalData()) return false
             val response = apiService.putAccountsBackup(
                 "Bearer $token",
                 BackupBlobRequest(exportBackupJson(), expected),
@@ -687,10 +689,13 @@ class AccountRepository(
      * خالی روی پشتیبانِ ابری می‌نشست و همه‌چیز پاک می‌شد. حالا: گوشی خالی ← از سرور بیاور؛
      * سرور خالی ← بفرست؛ هر دو پر ← دست نزن (پشتیبانِ دوره‌ای بعداً با کنترلِ نسخه می‌فرستد).
      */
+    private suspend fun hasLocalData(): Boolean =
+        transactionDao.getAll().isNotEmpty() || accountDao.getAll().size > 1
+
     suspend fun syncAfterLogin(token: String) {
         val blob = fetchServerBackupJson(token) ?: return
         val serverHasData = blob.contains("\"id\"")
-        val localHasData = transactionDao.getAll().isNotEmpty() || accountDao.getAll().size > 1
+        val localHasData = hasLocalData()
         when {
             !localHasData && serverHasData -> importBackupJson(blob)
             localHasData && !serverHasData -> pushToServer(token, allowUnknownRevision = true)
@@ -702,9 +707,12 @@ class AccountRepository(
      * همان را بیاور. گوشیِ هرگز-همگام‌نشده (`null`) کاری نمی‌کند - آن را ورود مدیریت می‌کند.
      */
     suspend fun pullIfNewer(token: String) {
-        val known = uiPrefs?.cloudRevision(CLOUD_MODULE) ?: return
+        val known = uiPrefs?.cloudRevision(CLOUD_MODULE)
         val resp = try { apiService.getAccountsBackup("Bearer $token") } catch (e: Exception) { return }
-        if (resp.revision > known && resp.data.contains("\"id\"")) {
+        if (!resp.data.contains("\"id\"")) return
+        // گوشیِ خالی همیشه نسخه‌ی سرور را می‌گیرد، حتی اگر شماره‌ی نسخه را نداند یا از آن جلوتر باشد.
+        val localEmpty = !hasLocalData()
+        if (localEmpty || (known != null && resp.revision > known)) {
             if (importBackupJson(resp.data)) uiPrefs?.setCloudRevision(CLOUD_MODULE, resp.revision)
         }
     }
