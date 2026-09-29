@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.ui.graphics.graphicsLayer
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.theme.AppTxOut
 import ir.sadteam.loancalc.ui.theme.AppTxIn
@@ -520,6 +521,25 @@ fun NewTransactionSheet(
 
         if (kind != NewTxKind.TRANSFER) {
             AppCard {
+                // فریمِ `40`: گزینه‌های اختیاری پشتِ «گزینه‌های بیشتر» - فرمِ اصلی سبک می‌ماند.
+                // اگر یکی از آن‌ها از قبل پر است (مثلاً الگو)، باز شروع می‌شود تا پنهان نماند.
+                var moreOpen by remember { mutableStateOf(splitMode || reimbursable || receiptPath != null || tagsText.isNotBlank()) }
+                val moreTurn by androidx.compose.animation.core.animateFloatAsState(if (moreOpen) 180f else 0f, label = "moreArrow")
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().clickable { moreOpen = !moreOpen }.padding(vertical = 6.dp),
+                ) {
+                    Text("گزینه‌های بیشتر", color = AppText, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text("تقسیم · برچسب · رسید", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(end = 6.dp))
+                    Icon(
+                        Icons.Filled.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = AppMuted,
+                        modifier = Modifier.size(20.dp).graphicsLayer { rotationZ = moreTurn },
+                    )
+                }
+                androidx.compose.animation.AnimatedVisibility(visible = moreOpen) {
+                Column {
                 // تقسیمِ یک خرید بینِ چند دسته - هر ردیف یک تراکنشِ جدا با شناسه‌ی مشترک.
                 if (kind == NewTxKind.EXPENSE) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -675,6 +695,8 @@ fun NewTransactionSheet(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f).clickable { pickReceipt.launch("image/*") }.padding(vertical = 10.dp),
                     )
+                }
+                }
                 }
             }
         }

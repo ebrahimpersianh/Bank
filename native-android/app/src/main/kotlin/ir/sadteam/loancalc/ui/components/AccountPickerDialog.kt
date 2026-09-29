@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.components
 
+import ir.sadteam.loancalc.ui.jibak.faCardTail
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -44,8 +45,14 @@ fun AccountPickerDialog(
                         BankBadge(bankName = account.bankName, size = 36.dp)
                         Column(modifier = Modifier.padding(start = 10.dp)) {
                             Text(account.name, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                            if (account.bankName.isNotBlank() && account.bankName != account.name) {
-                                Text(account.bankName, fontSize = 11.sp, color = ir.sadteam.loancalc.ui.theme.AppMuted)
+                            // فریمِ `18`: بانک + ۴ رقمِ آخرِ کارت، تا دو حسابِ یک بانک از هم شناخته شوند.
+                            val last4 = account.cardNumber?.takeLast(4)?.takeIf { it.length == 4 }
+                            val sub = listOfNotNull(
+                                account.bankName.takeIf { it.isNotBlank() && it != account.name },
+                                last4?.let { faCardTail(it) },
+                            ).joinToString(" · ")
+                            if (sub.isNotEmpty()) {
+                                Text(sub, fontSize = 11.sp, color = ir.sadteam.loancalc.ui.theme.AppMuted)
                             }
                         }
                     }
