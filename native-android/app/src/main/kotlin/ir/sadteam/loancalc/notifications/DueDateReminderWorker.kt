@@ -185,6 +185,28 @@ class DueDateReminderWorker @AssistedInject constructor(
         // ساعتِ یادآورِ سررسید (پیش‌فرض ۹ صبح) هر روز و بی‌معنا می‌آمد. حالا فقط از
         // [DAILY_NUDGE_FROM_HOUR] به بعد فرستاده می‌شود - «تا شب چیزی ثبت نکردی» یعنی شب.
         // و اگر امروز اعلانِ «برگشت» رفته، این یکی ساکت می‌ماند (نه برعکس).
+        // 🧠 خلاصه‌ی هفتگی (۷ مهر): جمعه‌ها، یک بار در هفته، فقط اگر این هفته خرجی ثبت شده.
+        runCatching {
+            val cal = java.util.Calendar.getInstance()
+            val prefs = applicationContext.getSharedPreferences("weekly_summary", android.content.Context.MODE_PRIVATE)
+            val weekKey = cal.get(java.util.Calendar.YEAR) * 100 + cal.get(java.util.Calendar.WEEK_OF_YEAR)
+            if (cal.get(java.util.Calendar.DAY_OF_WEEK) == java.util.Calendar.FRIDAY && prefs.getInt("sent", 0) != weekKey) {
+                val txs = accountRepository.observeTransactions().first()
+                    .filter { it.sourceType != ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER && it.confirmed }
+                    .map {
+                        ir.sadteam.loancalc.core.SmartInsights.Tx(
+                            it.type == ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL.name, it.amount,
+                            it.year, it.month, it.day, it.category, it.description,
+                        )
+                    }
+                val w = ir.sadteam.loancalc.core.SmartInsights.week(txs, today)
+                if (w.spend > 0) {
+                    prefs.edit().putInt("sent", weekKey).apply()
+                    notifyWeeklySummary(w, privacyMode)
+                }
+            }
+        }
+
         val hourNow = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         if (uiPrefs.dailyExpenseReminderEnabled.first() &&
             !comeBackSentToday &&
@@ -471,7 +493,37 @@ class DueDateReminderWorker @AssistedInject constructor(
         )
     }
 
+    private suspend fun notifyWeeklySummary(w: ir.sadteam.loancalc.core.SmartInsights.Week, privacyMode: Boolean) {
+        fun t(rial: Double) = ir.sadteam.loancalc.core.toFa(ir.sadteam.loancalc.core.fmt(Math.round(rial / 10).toDouble()))
+        val title = "خلاصه‌ی هفته‌ی تو"
+        val body = if (privacyMode) {
+            "خلاصه‌ی خرج‌های این هفته آماده‌ست - یه سر بزن."
+        } else buildString {
+            append("این هفته ${t(w.spend)} تومان خرج کردی")
+            if (w.prevSpend > 0) {
+                val diff = ((w.spend / w.prevSpend - 1) * 100).toInt()
+                append(if (diff >= 0) " (${ir.sadteam.loancalc.core.toFa(diff)}٪ بیشتر از هفته‌ی قبل)" else " (${ir.sadteam.loancalc.core.toFa(-diff)}٪ کمتر از هفته‌ی قبل)")
+            }
+            w.topCategory?.let { append(". بیشترینش: «$it»") }
+            append(".")
+        }
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_NUDGES)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(openAppIntent(WEEKLY_SUMMARY_ID))
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_weekly")
+        runCatching { NotificationManagerCompat.from(applicationContext).notify(WEEKLY_SUMMARY_ID, notification) }
+        inboxRepository.post(kind = InboxMessageEntity.Kind.STREAK_REMINDER, title = title, body = body)
+    }
+
     private companion object {
+        const val WEEKLY_SUMMARY_ID = 990013
+
         /** یادآورِ روزانه از این ساعت به بعد - «تا شب چیزی ثبت نکردی» یعنی شب، نه صبح. */
         const val DAILY_NUDGE_FROM_HOUR = 20
 

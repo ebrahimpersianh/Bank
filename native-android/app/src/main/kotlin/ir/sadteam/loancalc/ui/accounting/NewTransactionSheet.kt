@@ -180,6 +180,10 @@ fun NewTransactionSheet(
     var fromAccountId by remember { mutableStateOf<Long?>(null) }
     var toAccountId by remember { mutableStateOf<Long?>(null) }
     var category by remember { mutableStateOf<String?>(null) }
+    // 🧠 دسته‌ی پیشنهادی از تاریخچه (۷ مهر): همان شرح قبلاً با چه دسته‌ای ثبت شده؛ فقط وقتی
+    // کاربر خودش دسته‌ای نزده - انتخابِ دستی هیچ‌وقت بازنویسی نمی‌شود.
+    var categoryAuto by remember { mutableStateOf(false) }
+    val historyForSuggest = accountViewModel.transactions.collectAsState().value
     var showCalendar by remember { mutableStateOf(false) }
     var picking by remember { mutableStateOf<AccountSlot?>(null) }
     var showCategoryPicker by remember { mutableStateOf(false) }
@@ -220,7 +224,7 @@ fun NewTransactionSheet(
         CategoryPickerSheet(
             categories = categories,
             isIncome = kind == NewTxKind.INCOME,
-            onPick = { category = it; showCategoryPicker = false },
+            onPick = { category = it; categoryAuto = false; showCategoryPicker = false },
             onDismiss = { showCategoryPicker = false },
         )
     }
@@ -516,7 +520,20 @@ fun NewTransactionSheet(
                 Icon(Icons.Filled.Notes, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
                 OutlinedTextField(
                     value = description,
-                    onValueChange = { description = it },
+                    onValueChange = {
+                        description = it
+                        if (kind != NewTxKind.TRANSFER && (category == null || categoryAuto)) {
+                            val hist = historyForSuggest.map { t ->
+                                ir.sadteam.loancalc.core.SmartInsights.Tx(
+                                    t.type == ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL.name, t.amount,
+                                    t.year, t.month, t.day, t.category, t.description,
+                                )
+                            }
+                            val sug = ir.sadteam.loancalc.core.SmartInsights.suggestCategory(hist, it, kind == NewTxKind.EXPENSE)
+                            if (sug != null) { category = sug; categoryAuto = true }
+                            else if (categoryAuto) { category = null; categoryAuto = false }
+                        }
+                    },
                     modifier = Modifier.weight(1f).padding(start = 8.dp),
                     singleLine = true,
                     placeholder = { Text("توضیحات", color = AppMuted, fontSize = 13.sp) },
@@ -528,7 +545,7 @@ fun NewTransactionSheet(
             AppCard {
                 SheetRow(
                     icon = Icons.Filled.Category,
-                    text = category ?: "دسته‌بندی",
+                    text = category?.let { if (categoryAuto) "$it · پیشنهادِ جیبک" else it } ?: "دسته‌بندی",
                     filled = category != null,
                     onClick = { showCategoryPicker = true },
                 )
@@ -541,7 +558,7 @@ fun NewTransactionSheet(
                         SuggestedCategoryChip(
                             entry = entry,
                             selected = category == entry.name,
-                            onClick = { category = entry.name },
+                            onClick = { category = entry.name; categoryAuto = false },
                             modifier = Modifier.weight(1f),
                         )
                     }

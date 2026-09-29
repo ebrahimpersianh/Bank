@@ -217,6 +217,8 @@ fun HomeScreen(
     val inboxUnreadNews by inboxViewModel.unreadNews.collectAsState()
     val userName by authViewModel.userName.collectAsState()
     val urgentDue by urgentDueViewModel.urgent.collectAsState()
+    val upcoming7d by urgentDueViewModel.upcoming7d.collectAsState()
+    val recurringForInsights by accountViewModel.recurringPayments.collectAsState()
     val transactions by accountViewModel.transactions.collectAsState()
     val transactionsLoaded by accountViewModel.transactionsLoaded.collectAsState()
     val budgets by accountViewModel.budgets.collectAsState()
@@ -290,6 +292,22 @@ fun HomeScreen(
     // پیش‌بینیِ «تا آخرِ ماه کم میاری» - رجوع کن به MonthForecast تو :core.
     // موجودی = جمعِ موجودیِ همه‌ی حساب‌کتاب‌ها (همون تعریفی که تبِ دارایی نشون می‌ده).
     val accounts by accountViewModel.accounts.collectAsState()
+    val smartInsights = remember(transactions, accounts, upcoming7d, recurringForInsights) {
+        val today = ir.sadteam.loancalc.core.JalaliCalendar.today()
+        val txs = transactions.filter { it.sourceType != ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER && it.confirmed }.map {
+            ir.sadteam.loancalc.core.SmartInsights.Tx(
+                isExpense = it.type == ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL.name,
+                amountRial = it.amount, y = it.year, m = it.month, d = it.day,
+                category = it.category, description = it.description,
+            )
+        }
+        ir.sadteam.loancalc.core.SmartInsights.compute(
+            txs, today, ir.sadteam.loancalc.core.JalaliCalendar.daysInMonth(today.y, today.m),
+            upcomingDues7d = upcoming7d,
+            totalBalance = if (accounts.isEmpty()) null else accounts.sumOf { accountViewModel.balanceOf(it, transactions) },
+            existingRecurringNames = recurringForInsights.map { it.name }.toSet(),
+        )
+    }
     val cheques by chequeViewModel.cheques.collectAsState()
     /** چکِ «باز» = بایگانی‌نشده و هنوز وصول/برگشت نخورده. */
     val openChequeCount = remember(cheques) {
@@ -473,6 +491,19 @@ fun HomeScreen(
                         onPay = { confirmPayDue = due },
                         onOpen = { onOpenLoan(due.loan.id) },
                     )
+                }
+            }
+            if (smartInsights.isNotEmpty()) {
+                item {
+                    SmartInsightsCard(smartInsights) { ins ->
+                        when (ins.kind) {
+                            ir.sadteam.loancalc.core.SmartInsights.Kind.RECURRING,
+                            ir.sadteam.loancalc.core.SmartInsights.Kind.SAVE_SURPLUS -> onNavigateToRoute("budget")
+                            ir.sadteam.loancalc.core.SmartInsights.Kind.DUES_OVER_BALANCE -> onNavigateToRoute("due")
+                            ir.sadteam.loancalc.core.SmartInsights.Kind.SALARY_MISSING -> onNavigateToRoute("assets")
+                            else -> onNavigateToRoute("report")
+                        }
+                    }
                 }
             }
             if (dueBills.isNotEmpty()) {

@@ -44,6 +44,10 @@ class UrgentDueViewModel @Inject constructor(
     private val _urgent = MutableStateFlow<UrgentRow?>(null)
     val urgent: StateFlow<UrgentRow?> = _urgent.asStateFlow()
 
+    /** جمعِ قسط‌های پرداخت‌نشده‌ی ۷ روزِ آینده (ریال) - برای پیشنهادِ «هفته‌ی بعد پولت کم میاد». */
+    private val _upcoming7d = MutableStateFlow(0.0)
+    val upcoming7d: StateFlow<Double> = _upcoming7d.asStateFlow()
+
     init {
         refresh()
     }
@@ -52,6 +56,7 @@ class UrgentDueViewModel @Inject constructor(
         viewModelScope.launch {
             val today = JalaliCalendar.today()
             var best: UrgentRow? = null
+            var upcoming = 0.0
 
             for (loan in loanRepository.getLoans()) {
                 for (row in loanRepository.getRows(loan)) {
@@ -64,8 +69,9 @@ class UrgentDueViewModel @Inject constructor(
                     // `daysBetween(from, to)` مثبته وقتی `to` بعدِ `from`ه؛ پس فاصله‌ی
                     // سررسید→امروز مثبت یعنی سررسید گذشته.
                     val overdue = JalaliCalendar.daysBetween(PersianDate(y, m, d), today)
-                    if (overdue < 0) continue // هنوز نرسیده - فوری نیست
                     val amount = (row["installment"] as? Number)?.toDouble() ?: continue
+                    if (overdue in -7..-1) upcoming += amount
+                    if (overdue < 0) continue // هنوز نرسیده - فوری نیست
                     val candidate = UrgentRow(
                         loan = loan,
                         installmentNumber = (row["m"] as? Number)?.toInt() ?: 0,
@@ -77,6 +83,7 @@ class UrgentDueViewModel @Inject constructor(
                 }
             }
             _urgent.value = best
+            _upcoming7d.value = upcoming
         }
     }
 
