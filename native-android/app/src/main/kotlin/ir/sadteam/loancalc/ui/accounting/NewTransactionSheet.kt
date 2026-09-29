@@ -327,6 +327,58 @@ fun NewTransactionSheet(
             }
         }
 
+        // فریمِ `40`: «الگوهای من» بالای فرم (زیرِ خرج/درآمد/انتقال) - هر الگو با آیکونِ دسته،
+        // اسم و مبلغ؛ لمس = پر شدنِ فرم، نگه‌داشتن = حذفِ الگو.
+        if (kind != NewTxKind.TRANSFER) {
+            val kindType = if (kind == NewTxKind.INCOME) TransactionType.DEPOSIT.name else TransactionType.WITHDRAWAL.name
+            val mine = templates.filter { it.type == kindType }
+            if (mine.isNotEmpty()) {
+                Text("الگوهای من", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    mine.forEach { t ->
+                        val catEntry = categories.firstOrNull { it.name == t.category }
+                        val applied = description == t.name && category == t.category
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(if (applied) accent.copy(alpha = 0.14f) else AppSurface)
+                                .border(if (applied) 1.5.dp else 1.dp, if (applied) accent else AppLine, RoundedCornerShape(14.dp))
+                                .combinedClickable(
+                                    onClick = {
+                                        if (t.amount > 0) amountText = rialToToman(t.amount.toLong()).toString()
+                                        category = t.category
+                                        if (t.accountId != null && accounts.any { it.id == t.accountId }) accountId = t.accountId
+                                        description = t.name
+                                    },
+                                    onLongClick = { deletingTemplate = t },
+                                )
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                        ) {
+                            if (catEntry != null) {
+                                Icon(catEntry.icon, contentDescription = null, tint = catEntry.color, modifier = Modifier.size(18.dp))
+                            }
+                            Column {
+                                Text(t.name, color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                if (t.amount > 0) {
+                                    Text(
+                                        rialToToman(t.amount.toLong()).toFaMoney() + " تومان",
+                                        color = AppMuted,
+                                        fontSize = 10.sp,
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // ── کارتِ مبلغ - فریمِ `17a` ────────────────────────────────────────────────────
         // فریم یه کارتِ **وسط‌چینِ بدونِ کادرِ ورودی** می‌خواد: برچسبِ ریزِ «مبلغ · ریال»، عددِ
         // ۳۴یِ درشت، و زیرش حروفیِ همون عدد. کادرِ `OutlinedTextField` عمداً حذف شد (فریم
@@ -458,39 +510,6 @@ fun NewTransactionSheet(
                     singleLine = true,
                     placeholder = { Text("توضیحات", color = AppMuted, fontSize = 13.sp) },
                 )
-            }
-        }
-
-        if (kind != NewTxKind.TRANSFER) {
-            val kindType = if (kind == NewTxKind.INCOME) TransactionType.DEPOSIT.name else TransactionType.WITHDRAWAL.name
-            val mine = templates.filter { it.type == kindType }
-            if (mine.isNotEmpty()) {
-                // الگوها: یک تپ همه‌ی فیلدها را پر می‌کند؛ نگه‌داشتن = حذفِ الگو.
-                Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    mine.forEach { t ->
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(999.dp))
-                                .background(AppSurface)
-                                .border(1.dp, AppLine, RoundedCornerShape(999.dp))
-                                .combinedClickable(
-                                    onClick = {
-                                        if (t.amount > 0) amountText = rialToToman(t.amount.toLong()).toString()
-                                        category = t.category
-                                        if (t.accountId != null && accounts.any { it.id == t.accountId }) accountId = t.accountId
-                                        description = t.name
-                                    },
-                                    onLongClick = { deletingTemplate = t },
-                                )
-                                .padding(horizontal = 14.dp, vertical = 10.dp),
-                        ) {
-                            Text(t.name, color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
             }
         }
 
