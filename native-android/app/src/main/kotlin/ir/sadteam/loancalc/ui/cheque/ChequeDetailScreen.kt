@@ -114,6 +114,7 @@ fun ChequeDetailScreen(
     if (pendingPassStatus && accounts.isNotEmpty()) {
         AccountPickerDialog(
             accounts = accounts,
+            title = if (cheque.type == "RECEIVED") "به کدوم حساب واریز شد؟" else "از کدوم حساب پرداخت کردی؟",
             onSelect = { account -> commitPass(account); pendingPassStatus = false },
             onDismiss = { pendingPassStatus = false },
         )

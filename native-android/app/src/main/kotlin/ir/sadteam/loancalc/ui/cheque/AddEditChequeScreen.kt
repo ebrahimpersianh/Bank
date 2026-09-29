@@ -88,9 +88,11 @@ fun AddEditChequeScreen(
     var branchName by remember { mutableStateOf(existing?.branchName ?: "") }
     var ownerName by remember { mutableStateOf(existing?.ownerName ?: "") }
     var notes by remember { mutableStateOf(existing?.notes ?: "") }
-    var dueYear by remember { mutableStateOf(existing?.dueYear ?: 1404) }
-    var dueMonth by remember { mutableStateOf(existing?.dueMonth ?: 1) }
-    var dueDay by remember { mutableStateOf(existing?.dueDay ?: 1) }
+    // چکِ تازه پیش‌فرض امروز است (قبلاً ۱ فروردین ۱۴۰۴ ثابت بود).
+    val todayJ = remember { ir.sadteam.loancalc.core.JalaliCalendar.today() }
+    var dueYear by remember { mutableStateOf(existing?.dueYear ?: todayJ.y) }
+    var dueMonth by remember { mutableStateOf(existing?.dueMonth ?: todayJ.m) }
+    var dueDay by remember { mutableStateOf(existing?.dueDay ?: todayJ.d) }
     var chequeBookId by remember { mutableStateOf(existing?.chequeBookId) }
     var photoPath by remember { mutableStateOf(existing?.photoPath) }
     var showMoreInfo by remember { mutableStateOf(false) }
