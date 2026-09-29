@@ -90,14 +90,16 @@ fun Long.toFaMoney(): String {
     val digits = kotlin.math.abs(this).toString()
     val grouped = digits.reversed().chunked(3).joinToString(FA_GROUP_SEPARATOR.toString()).reversed()
     val fa = buildString { grouped.forEach { append(if (it.isDigit()) faDigits[it - '0'] else it) } }
-    return if (negative) "$FA_MINUS$fa" else fa
+    // 🚨 عددِ علامت‌دار در متنِ راست‌به‌چپ: بی «جداسازِ چپ‌به‌راست» (U+2066…U+2069) منفی به
+    // انتهای عدد می‌پرید و عدد وسطِ خط دو تکه می‌شد (گزارشِ کاربر با اسکرین‌شات، ۷ مهر).
+    return if (negative) "\u2066$FA_MINUS$fa\u2069" else fa
 }
 
 fun Int.toFaMoney(): String = toLong().toFaMoney()
 
 /** مبلغِ ردیفِ فهرست — با علامتِ + برای درآمد، − برای خرج. */
 fun Long.toFaSignedMoney(): String =
-    if (this >= 0) "+${kotlin.math.abs(this).toFaMoney()}" else toFaMoney()
+    if (this >= 0) "\u2066+${kotlin.math.abs(this).toFaMoney()}\u2069" else toFaMoney()
 
 /**
  * فرمِ فشرده با علامت — «+۹٫۲M» / «−۸۴۰K». سودِ هر ردیف و سودِ هر گروه در تبِ

@@ -90,7 +90,10 @@ class BankNotificationListener : NotificationListenerService() {
             // هر دو، موجودی دو برابر جابه‌جا می‌شد.
             val importKey = "notif|$packageName|${parsed.type}|${parsed.amountRial}|${parsed.cardSuffix.orEmpty()}|${smsDedupeFingerprint(body)}"
             if (!uiPrefs.claimAutoImportKey(importKey)) return@launch
+            // 🚨 اعلانِ بانک هیچ‌وقت روی حسابِ «نقدی/غیربانکی» نمی‌نشیند (گزارشِ کاربر، ۷ مهر: واریزهای
+            // بلو در حسابِ نقدی ثبت شده بود چون تنها حسابِ کاربر بود).
             val accounts = accountRepository.observeAccounts().first()
+                .filter { it.type == ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK }
             // ⚠️ بستهٔ فرستنده اول **مجموعه‌ی نامزدها** را محدود می‌کند و بعد شماره‌ی کارت بینِ
             // همان‌ها تصمیم می‌گیرد - با دو حسابِ یک بانک، «اولین تطبیق» می‌توانست حسابِ اشتباه
             // را بردارد در حالی که چهار رقمِ آخرِ کارت صریحاً در متن آمده بود.

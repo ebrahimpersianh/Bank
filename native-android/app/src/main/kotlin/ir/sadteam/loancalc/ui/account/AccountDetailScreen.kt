@@ -434,6 +434,8 @@ private fun MonthSumPill(
                 ),
                 color = Color.White,
                 fontSize = 12.sp,
+                maxLines = 1,
+                softWrap = false,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.padding(top = 2.dp),
             )
