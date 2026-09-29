@@ -3053,19 +3053,8 @@ private fun SecuritySettings(
                 }
             }
         }
-        // آمارِ بی‌نام (سرورِ خودمان، نه Firebase) - رجوع کن به data.UsageStats.
-        var usageOn by remember { mutableStateOf(ir.sadteam.loancalc.data.UsageStats.isEnabled()) }
-        SettingsRowItem(
-            title = "ارسالِ آمارِ بی‌نامِ استفاده",
-            icon = Icons.Filled.BarChart,
-            tone = SettingsTone.NEUTRAL,
-            status = "فقط «کدام صفحه و چه کاری»، بدونِ مبلغ، اسم، شماره یا هیچ اطلاعاتِ شخصی",
-            checked = usageOn,
-            onCheckedChange = {
-                usageOn = it
-                ir.sadteam.loancalc.data.UsageStats.setEnabled(it)
-            },
-        )
+        // کلیدِ «ارسالِ آمار» به خواسته‌ی صاحبِ برنامه (۷ مهر) از تنظیمات برداشته شد؛ آمار بی‌نام است و
+        // در سیاستِ حریمِ خصوصیِ استور اعلام می‌شود. `UsageStats.setEnabled` برای برگرداندنش مانده.
     }
 
     // ── کارتِ توضیحِ ته صفحه ──────────────────────────────────────────────────
