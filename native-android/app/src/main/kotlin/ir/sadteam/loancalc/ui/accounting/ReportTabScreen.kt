@@ -1,5 +1,19 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.foundation.layout.heightIn
+import ir.sadteam.loancalc.ui.theme.AppBg
+import ir.sadteam.loancalc.ui.components.AppButtonVariant
+import ir.sadteam.loancalc.ui.components.GradientButton
+import androidx.compose.animation.AnimatedVisibility
+import ir.sadteam.loancalc.ui.components.InAppBannerHost
+import ir.sadteam.loancalc.ui.components.rememberInAppBanner
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
 import ir.sadteam.loancalc.ui.components.HeroChart
 import ir.sadteam.loancalc.ui.components.HeroChartStyle
 import androidx.compose.ui.unit.LayoutDirection
@@ -185,6 +199,41 @@ fun ReportTabScreen(
     var showNewTransaction by remember { mutableStateOf(false) }
     var showSubscriptionFinder by remember { mutableStateOf(false) }
 
+    // خروجیِ همین ماه (بسته‌ی ChatGPT، ۷ مهر): دو دکمه‌ی جدا به‌جای ردیفی که به جایی وصل نبود.
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val banner = rememberInAppBanner()
+    val monthTx = remember(transactions, today) {
+        transactions.filter { it.year == today.y && it.month == today.m }.sortedWith(compareBy({ it.day }, { it.id }))
+    }
+    val monthIncome = monthTx.filter { it.type == "DEPOSIT" }.sumOf { it.amount }
+    val monthExpense = monthTx.filter { it.type == "WITHDRAWAL" }.sumOf { it.amount }
+    val monthBreakdown = monthTx.groupBy { it.category ?: "بدونِ دسته" }
+        .map { (name, txs) -> name to txs.sumOf { it.amount } }
+        .sortedByDescending { it.second }
+    val monthRangeLabel = "${persianMonthName(today.m)} ${today.y.toFa()}"
+    fun runExport(uri: android.net.Uri?, pdf: Boolean) {
+        if (uri == null) return
+        scope.launch(Dispatchers.IO) {
+            val ok = runCatching {
+                context.contentResolver.openOutputStream(uri)?.use { out ->
+                    if (pdf) AccountingPdfExporter.export(monthRangeLabel, "همه‌ی حساب‌ها", monthIncome, monthExpense, monthBreakdown, monthTx, out)
+                    else AccountingXlsxExporter.export(monthIncome, monthExpense, monthBreakdown, monthTx, out)
+                }
+            }.isSuccess
+            withContext(Dispatchers.Main) {
+                banner.show(
+                    if (ok) (if (pdf) "PDF ذخیره شد" else "اکسل ذخیره شد") else "ذخیره‌ی فایل ناموفق بود",
+                    isSuccess = ok,
+                )
+            }
+        }
+    }
+    val pdfLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { runExport(it, true) }
+    val xlsxLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+    ) { runExport(it, false) }
+
     // کلیدِ نادیده‌گرفتن = «نوع + ماهِ شمسی». **خاموشیِ دائمی نه**: کشفی که برای همیشه
     // خاموش می‌شود یعنی باگی که هیچ‌وقت گزارش نمی‌شود. ماهِ بعد دوباره می‌آید.
     // ماندگاری از `UiPrefs.dismissedDiscoveries` می‌آید - رجوع کن به [DiscoveryDismissViewModel].
@@ -278,8 +327,15 @@ fun ReportTabScreen(
         // دوم، اطلاعاتی سوم. قبلاً اشتراک‌یاب همیشه بالای «۳۰٪ بیشتر از معمول» می‌نشست.
         val discoveries = buildList {
             stats.overspentCategory?.let { over ->
+                fun catSpend(y: Int, m: Int) = realExpenses.filter { it.year == y && it.month == m && (it.category ?: "") == over.name }.sumOf { it.amount }
+                var py = today.y
+                var pm = today.m
+                val prevThree = (1..3).map { pm -= 1; if (pm == 0) { pm = 12; py -= 1 }; catSpend(py, pm) }
+                val nowSpend = catSpend(today.y, today.m)
+                val avgSpend = prevThree.average()
                 add(
                     Discovery("overspent", 1) {
+                        // «ببین چرا»: همین ماه در برابرِ میانگینِ سه ماهِ قبلِ همان دسته، درجا.
                         DiscoveryCard(
                             icon = Icons.Filled.BarChart,
                             title = "${over.name} ${(over.percent).toFa()}٪ بیشتر از معمول",
@@ -290,6 +346,10 @@ fun ReportTabScreen(
                             ink = AppText,
                             subInk = AppMuted,
                             iconInk = AppDanger,
+                            bigValue = "${(over.percent).toFa()}٪ بیشتر",
+                            bigInk = AppDangerInk,
+                            whyText = "این ماه ${maskIfPrivate(privacyMode, nowSpend.rialToFaCompact())} تومان · " +
+                                "میانگینِ سه ماهِ قبل ${maskIfPrivate(privacyMode, avgSpend.rialToFaCompact())} تومان",
                             onDismiss = { discoveryDismissViewModel.dismiss("overspent@$monthKey", monthKey) },
                         )
                     },
@@ -354,7 +414,12 @@ fun ReportTabScreen(
         // ── مقایسه‌ی ماه‌به‌ماه، برچسب‌ها، بازپرداختی‌ها (۶ مهر، از مقایسه با پارمیس/پولکس) ──
         item { MonthCompareCard(transactions, privacyMode) }
         item { TagsAndReimbursableCard(transactions, privacyMode) }
-        item { ExportRow(onClick = onOpenExport) }
+        item {
+            ExportCard(
+                onExcel = { xlsxLauncher.launch("jibak-${today.y}-${today.m}.xlsx") },
+                onPdf = { pdfLauncher.launch("jibak-${today.y}-${today.m}.pdf") },
+            )
+        }
     }
 
         if (showSubscriptionFinder) {
@@ -368,6 +433,7 @@ fun ReportTabScreen(
         if (showNewTransaction) {
             NewTransactionSheet(onDismiss = { showNewTransaction = false })
         }
+        InAppBannerHost(banner)
     }
 }
 
@@ -1129,16 +1195,25 @@ private fun DiscoveryCard(
     // واقعاً یه صفحه باز می‌کنه، پس onClick اختیاری اضافه شد نه اجباری.
     onClick: (() -> Unit)? = null,
     onDismiss: (() -> Unit)? = null,
+    /** بسته‌ی ChatGPT (۷ مهر): عددِ درشت + «ببین چرا» که توضیح را درجا باز می‌کند. */
+    bigValue: String? = null,
+    bigInk: Color = ink,
+    whyText: String? = null,
 ) {
     val shape = RoundedCornerShape(AppRadius.card)
+    var whyOpen by remember { mutableStateOf(false) }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(bg)
+            .border(2.dp, border, shape),
+    ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(11.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(bg)
-            .border(2.dp, border, shape)
             .then(if (onClick != null) Modifier.pressScaleClickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
@@ -1177,6 +1252,46 @@ private fun DiscoveryCard(
                 )
             }
         }
+    }
+    if (bigValue != null) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 12.dp),
+        ) {
+            Text(bigValue, color = bigInk, fontSize = 18.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+            if (whyText != null) {
+                Box(
+                    modifier = Modifier
+                        .heightIn(min = 44.dp)
+                        .clip(RoundedCornerShape(13.dp))
+                        .background(AppSurface)
+                        .border(1.dp, border, RoundedCornerShape(13.dp))
+                        .pressScaleClickable { whyOpen = !whyOpen }
+                        .padding(horizontal = 14.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(if (whyOpen) "بستن" else "ببین چرا", color = bigInk, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+                }
+            }
+        }
+        AnimatedVisibility(visible = whyOpen && whyText != null) {
+            Text(
+                whyText.orEmpty(),
+                color = subInk,
+                fontSize = 11.sp,
+                lineHeight = 19.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 14.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(AppSurface)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+            )
+        }
+    }
     }
 }
 
@@ -1245,35 +1360,34 @@ private val DiscoverDangerPill: Color
     @Composable get() = AppUrgentShadow
 private val ChevronInk: Color
     @Composable get() = AppMarkOff
-// ═══ ۷ · خروجی ═════════════════════════════════════════════════════════════════
+// ═══ ۷ · خروجی (بسته‌ی ChatGPT، ۷ مهر: دو دکمه‌ی جدا) ═══════════════════════════════════
 @Composable
-private fun ExportRow(onClick: () -> Unit) {
-    AppCard(
-        contentPadding = 10.dp,
-        horizontalPadding = 12.dp,
-        modifier = Modifier.pressScaleClickable(onClick = onClick),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp),
-        ) {
+private fun ExportCard(onExcel: () -> Unit, onPdf: () -> Unit) {
+    AppCard(contentPadding = 14.dp, horizontalPadding = 14.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
-                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimaryPill),
+                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimaryPill),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Filled.Download, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(21.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text("خروجیِ اکسل و PDF", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+                Text("خروجیِ اکسل و PDF", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
                 Text(
-                    "گزارشِ مالی را برای ذخیره یا اشتراک آماده کن",
+                    "گزارشِ این ماه را برای ذخیره یا اشتراک آماده کن",
                     color = AppMuted,
-                    fontSize = 9.5.sp,
+                    fontSize = 10.sp,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = ChevronInk, modifier = Modifier.size(18.dp))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+            GradientButton(onClick = onExcel, variant = AppButtonVariant.SECONDARY, modifier = Modifier.weight(1f)) {
+                Text("اکسل", fontWeight = FontWeight.Black)
+            }
+            GradientButton(onClick = onPdf, variant = AppButtonVariant.SECONDARY, modifier = Modifier.weight(1f)) {
+                Text("PDF", fontWeight = FontWeight.Black)
+            }
         }
     }
 }
@@ -1297,27 +1411,75 @@ private fun MonthCompareCard(all: List<ir.sadteam.loancalc.data.db.AccountTransa
     AppCard(contentPadding = 14.dp) {
         Text("مقایسه با ماهِ قبل", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
         PrivacyCrossfade(privacyMode) { masked ->
-            Text(
-                "این ماه ${maskIfPrivate(masked, totalNow.rialToFaCompact())} · ماهِ قبل ${maskIfPrivate(masked, totalPrev.rialToFaCompact())} تومان",
-                color = AppMuted,
-                fontSize = 11.sp,
-                modifier = Modifier.padding(top = 2.dp, bottom = 6.dp),
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 4.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(AppBg)
+                    .border(1.dp, AppLine, RoundedCornerShape(14.dp))
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("این ماه", color = AppMuted, fontSize = 10.sp)
+                    Text("${maskIfPrivate(masked, totalNow.rialToFaCompact())} تومان", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("ماهِ قبل", color = AppMuted, fontSize = 10.sp)
+                    Text("${maskIfPrivate(masked, totalPrev.rialToFaCompact())} تومان", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                }
+            }
         }
         rows.forEach { (cat, a, b) ->
             val diff = a - b
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(cat, color = AppText, fontSize = 12.sp, modifier = Modifier.weight(1f))
-                PrivacyCrossfade(privacyMode) { masked ->
-                    Text(
-                        (if (diff > 0) "▲ " else if (diff < 0) "▼ " else "") + maskIfPrivate(masked, kotlin.math.abs(diff).rialToFaCompact()),
-                        color = if (diff > 0) AppDanger else AppPrimary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
+            val up = diff > 0
+            val ink = if (diff == 0.0) AppMuted else if (up) AppDangerInk else AppPrimaryInk
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(cat, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            maskIfPrivate(masked, kotlin.math.abs(diff).rialToFaCompact()) +
+                                (if (up) "  ↑ بیشتر" else if (diff < 0) "  ↓ کمتر" else ""),
+                            color = ink,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
+                }
+                // طولِ نوار = این ماه نسبت به بیشترینِ دو ماه؛ خطِ نازکِ کم‌رنگ = ماهِ قبل.
+                val maxV = maxOf(a, b).coerceAtLeast(1.0)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                        .height(7.dp)
+                        .clip(RoundedCornerShape(99.dp))
+                        .background(AppLine),
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth((b / maxV).toFloat().coerceIn(0f, 1f))
+                            .height(7.dp)
+                            .clip(RoundedCornerShape(99.dp))
+                            .background(AppMuted.copy(alpha = 0.35f)),
+                    )
+                    Box(
+                        Modifier
+                            .fillMaxWidth((a / maxV).toFloat().coerceIn(0f, 1f))
+                            .height(7.dp)
+                            .clip(RoundedCornerShape(99.dp))
+                            .background(ink.copy(alpha = 0.85f)),
                     )
                 }
             }
         }
+        Text(
+            "نوارِ رنگی این ماه · نوارِ کم‌رنگ ماهِ قبل",
+            color = AppLabel,
+            fontSize = 9.5.sp,
+            modifier = Modifier.padding(top = 4.dp),
+        )
     }
 }
 
