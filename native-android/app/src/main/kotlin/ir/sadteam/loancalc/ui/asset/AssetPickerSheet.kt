@@ -120,7 +120,7 @@ fun AssetPickerSheet(
             state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 120.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             item(key = "head") {
                 Row(
@@ -463,59 +463,44 @@ private fun PickerRow(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(20.dp)
+    // هم‌شکلِ `MarketWideRow`ِ تبِ دارایی: مستطیلِ کم‌ارتفاع و تک‌خطی (خواسته‌ی کاربر).
+    val shape = RoundedCornerShape(14.dp)
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
             .background(AppSurface)
             .border(if (selected) 1.5.dp else 1.dp, if (selected) AppPrimary else AppLine, shape)
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
     ) {
-        AssetBadge(entry.symbol, entry.category, 42.dp)
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                entry.name,
-                color = AppText,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Black,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            // نمادِ لاتین عمداً لاتین می‌ماند — جزوِ هفت استثنای `Numerals-global-handoff.md`.
-            Text(
-                entry.symbol.removePrefix("CUSTOM_"),
-                color = AppMuted,
-                fontSize = 10.5.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 3.dp),
-            )
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                // «—» یعنی سرور قیمت نداده؛ جای عدد سرِ جایش می‌ماند.
-                priceRial?.rialToFaCompact() ?: "—",
-                color = if (priceRial == null) AppMuted else AppText,
-                fontSize = 14.sp,
-                maxLines = 1,
-                softWrap = false,
-                fontWeight = FontWeight.Black,
-            )
-            if (changePercent != null) {
-                PriceChangeBadge(changePercent, modifier = Modifier.padding(top = 3.dp))
-            }
-            // ⚠️ اسنادِ منبع عمداً این‌جا هم نیست - رجوع کن به کامنتِ `AssetDetailScreen`.
-        }
+        AssetBadge(entry.symbol, entry.category, 30.dp)
+        Text(
+            entry.name,
+            color = AppText,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            // «—» یعنی سرور قیمت نداده؛ جای عدد سرِ جایش می‌ماند.
+            priceRial?.let { it.rialToFaCompact() + " تومان" } ?: "—",
+            color = if (priceRial == null) AppMuted else AppText,
+            fontSize = 11.5.sp,
+            maxLines = 1,
+            softWrap = false,
+            fontWeight = FontWeight.Black,
+        )
+        if (changePercent != null) PriceChangeBadge(changePercent)
         Icon(
             if (selected) Icons.Filled.Check else Icons.Filled.ChevronLeft,
             contentDescription = if (selected) "انتخاب‌شده" else null,
             tint = if (selected) AppPrimaryInk else AppMuted,
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(16.dp),
         )
     }
 }
