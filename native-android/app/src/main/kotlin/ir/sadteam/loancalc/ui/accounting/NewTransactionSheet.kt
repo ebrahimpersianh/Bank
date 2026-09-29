@@ -1,5 +1,9 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import ir.sadteam.loancalc.ui.jibak.toFaMoney
+import ir.sadteam.loancalc.ui.theme.AppTxOut
+import ir.sadteam.loancalc.ui.theme.AppTxIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import kotlinx.coroutines.launch
@@ -526,34 +530,89 @@ fun NewTransactionSheet(
                         })
                     }
                     if (splitMode) {
+                        // فریمِ `41`ِ ChatGPT: خلاصه‌ی «جمع / باقی‌مانده» بالای ردیف‌ها + نوارِ پیشرفت،
+                        // هر ردیف = دسته (آیکون و رنگِ خودش) + مبلغ + حذف.
+                        val totalToman = amountText.toLongOrNull() ?: 0L
+                        val splitSum = splits.sumOf { it.second.toLongOrNull() ?: 0L }
+                        val remaining = totalToman - splitSum
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(AppChipBg)
+                                .padding(12.dp),
+                        ) {
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                Text("جمعِ ردیف‌ها", color = AppMuted, fontSize = 11.sp, modifier = Modifier.weight(1f))
+                                Text("باقی‌مانده برای تقسیم", color = AppMuted, fontSize = 11.sp)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                                Text(
+                                    splitSum.toFaMoney() + " تومان",
+                                    color = AppText,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Black,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Text(
+                                    if (totalToman == 0L) "—" else remaining.toFaMoney() + " تومان",
+                                    color = when {
+                                        totalToman == 0L -> AppMuted
+                                        remaining == 0L -> AppTxIn
+                                        remaining < 0 -> AppTxOut
+                                        else -> accent
+                                    },
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Black,
+                                )
+                            }
+                            if (totalToman > 0) {
+                                androidx.compose.material3.LinearProgressIndicator(
+                                    progress = { (splitSum.toFloat() / totalToman).coerceIn(0f, 1f) },
+                                    color = if (remaining < 0) AppTxOut else AppTxIn,
+                                    trackColor = AppLine,
+                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).height(6.dp).clip(RoundedCornerShape(3.dp)),
+                                )
+                            } else {
+                                Text("مبلغِ کل را بالا بنویس تا باقی‌مانده حساب شود.", color = AppMuted, fontSize = 10.5.sp, modifier = Modifier.padding(top = 6.dp))
+                            }
+                        }
                         splits.forEachIndexed { i, (cat, amt) ->
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
-                                Box(modifier = Modifier.weight(1f)) {
+                            val entry = categories.firstOrNull { it.name == cat }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(top = 8.dp),
+                            ) {
+                                Box(modifier = Modifier.weight(1.15f)) {
                                     var open by remember { mutableStateOf(false) }
-                                    // قرصِ حاشیه‌دار + فلشِ پایین تا معلوم باشد انتخاب‌کردنی است (خواسته‌ی کاربر).
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier
-                                            .padding(end = 8.dp)
                                             .fillMaxWidth()
                                             .clip(RoundedCornerShape(12.dp))
                                             .border(1.dp, if (cat == null) accent.copy(alpha = 0.6f) else AppLine, RoundedCornerShape(12.dp))
                                             .clickable { open = true }
-                                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                                            .padding(horizontal = 10.dp, vertical = 14.dp),
                                     ) {
+                                        if (entry != null) {
+                                            Icon(entry.icon, contentDescription = null, tint = entry.color, modifier = Modifier.size(18.dp).padding(end = 2.dp))
+                                        }
                                         Text(
                                             cat ?: "انتخابِ دسته",
                                             color = if (cat == null) accent else AppText,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
                                             maxLines = 1,
-                                            modifier = Modifier.weight(1f),
+                                            modifier = Modifier.weight(1f).padding(start = 4.dp),
                                         )
                                         Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
                                     }
                                     androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                                         categories.forEach { c ->
                                             androidx.compose.material3.DropdownMenuItem(
+                                                leadingIcon = { Icon(c.icon, contentDescription = null, tint = c.color) },
                                                 text = { Text(c.name) },
                                                 onClick = { splits[i] = c.name to amt; open = false },
                                             )
@@ -563,12 +622,22 @@ fun NewTransactionSheet(
                                 OutlinedTextField(
                                     value = amt,
                                     onValueChange = { v -> splits[i] = cat to cleanNum(v).take(13) },
-                                    placeholder = { Text("مبلغ (تومان)", fontSize = 11.sp) },
+                                    placeholder = { Text("تومان", fontSize = 11.sp) },
                                     visualTransformation = ThousandsSeparatorTransformation(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     singleLine = true,
                                     modifier = Modifier.weight(1f),
                                 )
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(AppTxOut.copy(alpha = 0.14f))
+                                        .clickable { splits.removeAt(i); if (splits.isEmpty()) splitMode = false },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(Icons.Filled.Close, contentDescription = "حذفِ ردیف", tint = AppTxOut, modifier = Modifier.size(18.dp))
+                                }
                             }
                         }
                         Text(
@@ -576,7 +645,12 @@ fun NewTransactionSheet(
                             color = accent,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(top = 6.dp).clickable { splits.add(null to "") }.padding(vertical = 8.dp),
+                            modifier = Modifier
+                                .padding(top = 8.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .border(1.dp, accent.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                                .clickable { splits.add(null to "") }
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
                         )
                     }
                 }
