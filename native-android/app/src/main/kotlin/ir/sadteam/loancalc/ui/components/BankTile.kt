@@ -12,12 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import ir.sadteam.loancalc.data.BankEntry
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -47,14 +45,7 @@ fun BankTile(
             .border(1.dp, border, shape)
             .padding(horizontal = 2.dp, vertical = 4.dp),
     ) {
-        AsyncImage(
-            model = "file:///android_asset/${bank.logoAsset}",
-            contentDescription = bank.name,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(54.dp)
-                .background(Color.White, RoundedCornerShape(AppRadius.row)),
-        )
+        BankBadge(bankName = bank.name, size = 54.dp)
         // اسم کامل نشون داده می‌شه (بدون «...»)؛ اسم‌های بلندتر فونتشون خودکار کوچیک‌تر می‌شه تا
         // تو همون عرضِ ثابتِ تایل جا بشن و نظمِ ردیف بهم نریزه (خواسته‌ی کاربر).
         val nameFontSize = when {

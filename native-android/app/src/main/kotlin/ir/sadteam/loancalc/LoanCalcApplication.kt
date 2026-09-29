@@ -7,18 +7,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
-import coil.Coil
 import coil.ImageLoader
 import coil.ImageLoaderFactory
-import coil.request.ImageRequest
 import dagger.hilt.android.HiltAndroidApp
 import ir.sadteam.loancalc.core.ActiveStreak
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.crash.CrashReporter
 import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.LoanDataChange
-import ir.sadteam.loancalc.data.banks
-import ir.sadteam.loancalc.data.creditServices
 import ir.sadteam.loancalc.data.prefs.AuthPrefs
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import ir.sadteam.loancalc.notifications.ComeBackScheduler
@@ -65,7 +61,6 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         CoroutineScope(Dispatchers.IO).launch {
             authPrefs.authToken.collect { ir.sadteam.loancalc.data.UsageStats.loggedIn = it != null }
         }
-        preloadLogoAssets()
         // برای هماهنگ‌کردنِ پترنِ پیامکِ OTP با SMS Retriever API - رجوع کن به کامنتِ
         // SmsRetrieverHash.kt. فقط لاگ می‌کنه (Log.i)، هیچ اثرِ دیگه‌ای رو رفتارِ اپ نداره.
         SmsRetrieverHash.logForDebugging(this)
@@ -126,26 +121,6 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         )
         LoanDataChange.onChanged = {
             CoroutineScope(Dispatchers.Main).launch { LoanWidget.updateAll(this@LoanCalcApplication) }
-        }
-    }
-
-    // خواسته‌ی کاربر: لوگوهای بانک/خدمات اعتباری (assets/banks, assets/services - فایل‌های چندکیلوبایتی)
-    // «خیلی اوقات چند ثانیه دیر لود می‌شن». چون این فایل‌ها محلی و کوچیکن، تاخیر از شبکه نیست - از اینه
-    // که Coil اولین باری که هر لوگو رو تو BankLoanScreen می‌بینه، تازه شروع به decode می‌کنه. اینجا همه‌ی
-    // لوگوها همون لحظه‌ی باز شدنِ اپ (هم‌زمان با اسپلش، قبل از این‌که کاربر به تبِ «وام بانکی» برسه) با
-    // enqueue تو کشِ حافظه‌ی Coil گرم می‌شن، پس وقتی واقعاً رو صفحه نشون داده می‌شن دیگه چیزی برای
-    // decode‌کردن نمونده - رجوع کن به CLAUDE.md.
-    private fun preloadLogoAssets() {
-        // عمداً Coil.imageLoader(this) (نه newImageLoader() مستقیم) - وگرنه یه ImageLoaderِ جدا و
-        // بی‌ربط به singletonِ واقعی می‌سازه که کشش رو AsyncImageهای بقیه‌ی اپ به اشتراک گذاشته
-        // نمی‌شه و کل هدفِ پیش‌گرم‌کردن بی‌اثر می‌مونه.
-        val imageLoader = Coil.imageLoader(this)
-        (banks + creditServices).forEach { entry ->
-            imageLoader.enqueue(
-                ImageRequest.Builder(this)
-                    .data("file:///android_asset/${entry.logoAsset}")
-                    .build(),
-            )
         }
     }
 
