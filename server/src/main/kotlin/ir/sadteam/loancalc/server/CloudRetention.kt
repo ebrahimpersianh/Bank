@@ -27,6 +27,7 @@ object CloudRetention {
             delay(5 * 60_000)
             while (true) {
                 runCatching { runOnce(System.currentTimeMillis()) }
+                runCatching { SupportFiles.sweep() }
                 delay(6 * 60 * 60_000L)
             }
         }

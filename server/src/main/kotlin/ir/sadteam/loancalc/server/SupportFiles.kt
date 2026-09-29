@@ -34,6 +34,33 @@ object SupportFiles {
         return b.joinToString("") { "%02x".format(it) }
     }
 
+    /**
+     * پیوست‌های یک گزارش را پاک می‌کند (خواسته‌ی کاربر: «بعد از رسیدگی فقط لاگ بماند»).
+     * متنِ پیام و ردیفِ گزارش سرِ جایش می‌ماند؛ فقط فایل‌ها و ردیفِ پیوست می‌روند.
+     */
+    fun deleteForReport(conn: java.sql.Connection, reportId: Long) {
+        val ids = conn.prepareStatement("SELECT id FROM support_files WHERE report_id = ?").use { ps ->
+            ps.setLong(1, reportId)
+            ps.executeQuery().use { rs -> buildList { while (rs.next()) add(rs.getString(1)) } }
+        }
+        ids.forEach { fileFor(it)?.delete() }
+        conn.execute("DELETE FROM support_files WHERE report_id = ?", reportId)
+    }
+
+    /** پیوستِ یتیم (آپلود شد ولی پیامی نفرستاده شد) بعد از یک روز، و هر پیوستی بعد از ۳۰ روز. */
+    fun sweep() {
+        Db.withConnection { conn ->
+            val ids = conn.prepareStatement(
+                "SELECT id FROM support_files WHERE (report_id IS NULL AND created_at < datetime('now','-1 day')) " +
+                    "OR created_at < datetime('now','-30 day')",
+            ).use { ps -> ps.executeQuery().use { rs -> buildList { while (rs.next()) add(rs.getString(1)) } } }
+            ids.forEach { id ->
+                fileFor(id)?.delete()
+                conn.execute("DELETE FROM support_files WHERE id = ?", id)
+            }
+        }
+    }
+
     sealed interface Result {
         data class Ok(val kind: String, val mime: String, val bytes: ByteArray) : Result
         data class Rejected(val reason: String) : Result
