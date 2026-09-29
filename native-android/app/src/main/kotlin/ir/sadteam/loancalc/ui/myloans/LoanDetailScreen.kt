@@ -1,5 +1,12 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import ir.sadteam.loancalc.ui.theme.AppBg
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
@@ -442,12 +449,27 @@ fun LoanDetailScreen(
     var editMetaAmountText by remember { mutableStateOf("") }
     var editMetaNText by remember { mutableStateOf("") }
 
+    // **فریمِ `36b`**: ویرایشِ مشخصاتِ وام صفحه‌ی کامل است نه پنجره‌ی شلوغ - محتوا اسکرول
+    // می‌خورد و «ذخیره‌ی تغییرات» پایینِ صفحه ثابت می‌ماند.
     if (showEditMetaDialog) {
-        JibakAlertDialog(
-            onDismissRequest = { showEditMetaDialog = false },
-            title = { Text("ویرایش مشخصات وام") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        FullScreenDialog(onDismissRequest = { showEditMetaDialog = false }) {
+            Column(modifier = Modifier.fillMaxSize().background(AppBg).imePadding()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 6.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = { showEditMetaDialog = false }) {
+                        Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
+                    }
+                    Text("ویرایش مشخصات وام", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Black)
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
                     OutlinedTextField(
                         value = editMetaName,
                         onValueChange = { editMetaName = it },
@@ -469,16 +491,22 @@ fun LoanDetailScreen(
                     // «وام ۹۵ میلیونی» هیچ کلیدواژه‌ای ندارد و همیشه نشانِ پیش‌فرض می‌گرفت.
                     // این ردیف همان حدس را به انتخاب تبدیل می‌کند.
                     Text("نوعِ وام", color = AppMuted, fontSize = 11.sp)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(LoanCategory.entries, key = { it.id }) { category ->
-                            val selected = editMetaCategory == category.id
-                            AppChip(
-                                label = category.label,
-                                selected = selected,
-                                // دوباره‌زدنِ نوعِ انتخاب‌شده آن را برمی‌دارد و به حدسِ
-                                // خودکار برمی‌گرداند - وگرنه راهی برای بازگشت نبود.
-                                onClick = { editMetaCategory = if (selected) null else category.id },
-                            )
+                    // نوعِ وام با آیکون (فریمِ `36b`)، سه‌تایی در هر ردیف - نه نوارِ اسکرولیِ بی‌آیکون.
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        LoanCategory.entries.chunked(3).forEach { rowCats ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                rowCats.forEach { category ->
+                                    val selected = editMetaCategory == category.id
+                                    LoanTypeOption(
+                                        category = category,
+                                        selected = selected,
+                                        // دوباره‌زدنِ نوعِ انتخاب‌شده آن را برمی‌دارد و به حدسِ خودکار برمی‌گرداند.
+                                        onClick = { editMetaCategory = if (selected) null else category.id },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
+                                repeat(3 - rowCats.size) { Spacer(Modifier.weight(1f)) }
+                            }
                         }
                     }
                     // برچسب + توضیحِ دینامیک قبلاً دو تیکه‌ی جدا بودن - همون رفعِ مورد ۳ که تو
@@ -510,10 +538,14 @@ fun LoanDetailScreen(
                             onValueChange = { editMetaAmountText = cleanNum(it) },
                             visualTransformation = ThousandsSeparatorTransformation(),
                             label = { Text("مبلغ وام") },
+                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),
                         )
+                        editMetaAmountText.toLongOrNull()?.takeIf { it > 0 }?.let {
+                            Text("${ir.sadteam.loancalc.core.numberToWordsFa(it.toDouble())} تومان", color = AppMuted, fontSize = 11.sp)
+                        }
                         OutlinedTextField(
                             value = editMetaNText,
                             onValueChange = { editMetaNText = cleanNum(it) },
@@ -535,16 +567,15 @@ fun LoanDetailScreen(
                         )
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = {
+                GradientButton(
+                    onClick = {
                     if (canEditComputedAmount) {
                         viewModel.updateComputedLoanAmount(
                             loan = loan,
                             name = editMetaName.trim().ifEmpty { loan.name },
                             bank = editMetaBank.trim(),
                             borrower = editMetaBorrower.trim().ifEmpty { "—" },
-                            principalAmount = editMetaAmountText.toDoubleOrNull() ?: loan.amount,
+                            principalAmount = editMetaAmountText.toLongOrNull()?.let { tomanToRial(it).toDouble() } ?: loan.amount,
                             n = editMetaNText.toIntOrNull()?.takeIf { it > 0 } ?: loan.n,
                             startDate = PersianDate(editMetaYear, editMetaMonth, editMetaDay),
                             onSaved = {},
@@ -562,12 +593,16 @@ fun LoanDetailScreen(
                         )
                     }
                     showEditMetaDialog = false
-                }) { Text("ذخیره") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showEditMetaDialog = false }) { Text("انصراف") }
-            },
-        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                ) {
+                    Text("ذخیره‌ی تغییرات", fontWeight = FontWeight.Black)
+                }
+            }
+        }
     }
 
     // **کارتِ `36d`**: تپ رو هر ردیفِ قسط یه **صفحه‌ی کامل** باز می‌کنه (یادداشت + چند عکسِ
@@ -963,7 +998,7 @@ fun LoanDetailScreen(
                     editMetaMonth = sd.m
                     editMetaDay = sd.d
                     editMetaGraceMonths = viewModel.getLoanGraceMonths(loan)
-                    editMetaAmountText = loan.amount.toLong().toString()
+                    editMetaAmountText = rialToToman(loan.amount.toLong()).toString()
                     editMetaNText = loan.n.toString()
                     showEditMetaDialog = true
                 }
@@ -2324,6 +2359,33 @@ private fun AttachmentToggleButton(
             contentDescription = null,
             tint = AppPrimaryInk,
             modifier = Modifier.size(20.dp).graphicsLayer { rotationZ = chevronTurn },
+        )
+    }
+}
+
+
+/** دکمه‌ی نوعِ وام با آیکون - فریمِ `36b`. */
+@Composable
+private fun LoanTypeOption(category: LoanCategory, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(12.dp)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .heightIn(min = 60.dp)
+            .clip(shape)
+            .background(if (selected) AppPrimaryPill else AppSurface2)
+            .border(1.dp, if (selected) AppPrimary else AppLine, shape)
+            .pressScaleClickable(onClick = onClick)
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+    ) {
+        Icon(category.glyph, contentDescription = null, tint = if (selected) AppPrimary else AppMuted, modifier = Modifier.size(20.dp))
+        Text(
+            category.label,
+            color = if (selected) AppPrimaryInk else AppText,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.ExtraBold,
+            maxLines = 1,
+            modifier = Modifier.padding(top = 4.dp),
         )
     }
 }
