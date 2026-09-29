@@ -92,7 +92,8 @@ fun CategoryDonut(
                     center = c,
                 )
                 rotate(haloTurn, c) {
-                    listOf(7f to 0.18f, 4f to 0.35f, 2f to 1f).forEach { (w, a) ->
+                    // هاله‌ی نرم، نه خط (خواسته‌ی کاربر ۷ مهر): چند لایه‌ی کم‌رنگ، بی لبه‌ی تیز.
+                    listOf(9f to 0.05f, 6f to 0.08f, 4f to 0.11f, 2.5f to 0.14f).forEach { (w, a) ->
                         drawCircle(brush = brush, radius = r, center = c, alpha = a * grow, style = Stroke(width = w.dp.toPx()))
                     }
                 }

@@ -1,12 +1,7 @@
 name: Build Native Kotlin App (اجرای دستی)
 
 on:
-  # بیلدِ خودکارِ عمومی خاموش است. فقط تغییرِ فایل درخواست بیلد، آن را اجرا می‌کند.
-  push:
-    branches:
-      - "claude/bank-9fiumm"
-    paths:
-      - "ci/build-request.txt"
+  # فقط اجرای دستی (سهمیه‌ی ماهانه‌ی Actions). مسیرِ قدیمیِ «ci/build-request.txt» برداشته شد.
   workflow_dispatch:
 
 jobs:

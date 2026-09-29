@@ -39,7 +39,12 @@ object SmartInsights {
         return (v / 12) to (v % 12 + 1)
     }
 
-    private fun toman(rial: Double): String = toFa(fmt((rial / 10).roundToLong().toDouble()))
+    /** منفی با «−»ِ جلوی عدد (قاعده‌ی طرح) - قبلاً «۴٬۰۹۵٬۰۶۰-» چاپ می‌شد. */
+    private fun toman(rial: Double): String {
+        val v = (rial / 10).roundToLong()
+        val s = toFa(fmt(abs(v).toDouble()))
+        return if (v < 0) "−$s" else s
+    }
 
     fun compute(
         txs: List<Tx>,
