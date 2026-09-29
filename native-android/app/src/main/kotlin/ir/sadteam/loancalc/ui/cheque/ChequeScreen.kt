@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.cheque
 
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -612,7 +613,7 @@ private fun ChequeCard(
                 }
             } else {
                 Text(
-                    fmt(cheque.amount),
+                    fmt(rialToToman((cheque.amount).toLong()).toDouble()),
                     color = AppText,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Black,
@@ -761,7 +762,7 @@ private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
             Column {
                 Text("دریافتی پاس‌شده", color = AppMuted, fontSize = 11.sp)
                 Text(
-                    "${fmt(stats.receivedPassedSum)} ریال",
+                    "${fmt(rialToToman((stats.receivedPassedSum).toLong()).toDouble())} تومان",
                     color = AppPrimary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -771,7 +772,7 @@ private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
             Column(horizontalAlignment = Alignment.End) {
                 Text("پرداختی پاس‌شده", color = AppMuted, fontSize = 11.sp)
                 Text(
-                    "${fmt(stats.paidPassedSum)} ریال",
+                    "${fmt(rialToToman((stats.paidPassedSum).toLong()).toDouble())} تومان",
                     color = AppDanger,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -796,7 +797,7 @@ private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
             ) {
                 Text("مانده خالص", color = AppText, fontSize = 13.sp)
                 Text(
-                    "${if (stats.netBalance >= 0) "+" else ""}${fmt(stats.netBalance)} ریال",
+                    "${if (stats.netBalance >= 0) "+" else ""}${fmt(rialToToman((stats.netBalance).toLong()).toDouble())} تومان",
                     color = netColor,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,

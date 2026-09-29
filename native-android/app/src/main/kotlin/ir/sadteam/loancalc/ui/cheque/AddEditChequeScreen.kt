@@ -49,6 +49,8 @@ import ir.sadteam.loancalc.core.numberToWordsFa
 import ir.sadteam.loancalc.data.db.ChequeBookEntity
 import ir.sadteam.loancalc.data.db.ChequeEntity
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.CalendarPickerScreen
 import ir.sadteam.loancalc.ui.components.CounterpartyPickerDialog
@@ -81,7 +83,7 @@ fun AddEditChequeScreen(
     debtViewModel: DebtViewModel = hiltViewModel(),
 ) {
     var type by remember { mutableStateOf(existing?.let { ChequeType.valueOf(it.type) } ?: ChequeType.RECEIVED) }
-    var amountText by remember { mutableStateOf(existing?.amount?.toLong()?.toString() ?: "") }
+    var amountText by remember { mutableStateOf(existing?.amount?.toLong()?.let { rialToToman(it).toString() } ?: "") }
     var chequeNumber by remember { mutableStateOf(existing?.chequeNumber ?: "") }
     var sayadId by remember { mutableStateOf(existing?.sayadId ?: "") }
     var bankName by remember { mutableStateOf(existing?.bankName ?: "") }
@@ -95,7 +97,7 @@ fun AddEditChequeScreen(
     var dueDay by remember { mutableStateOf(existing?.dueDay ?: todayJ.d) }
     var chequeBookId by remember { mutableStateOf(existing?.chequeBookId) }
     var photoPath by remember { mutableStateOf(existing?.photoPath) }
-    var showMoreInfo by remember { mutableStateOf(false) }
+    var showMoreInfo by remember { mutableStateOf(existing != null) }
     // بعدِ ذخیره‌ی موفق، یه تیکِ سبزِ متحرک قبل از بستنِ صفحه - رجوع کن به SuccessCheckmark.kt.
     var savedOk by remember { mutableStateOf(false) }
     var nationalId by remember { mutableStateOf(existing?.nationalId ?: "") }
@@ -157,7 +159,7 @@ fun AddEditChequeScreen(
             }
         }
         item {
-            AppCard(label = "مبلغ") {
+            AppCard(label = "مبلغ (تومان)") {
                 // هم‌الگو با بقیه‌ی فیلدهای مبلغِ اپ (وام/درآمد): جداکننده‌ی هزارگان تو خودِ فیلد +
                 // معادلِ حروفی تومانی زیرش - قبلاً این یکی فرمتِ ساده‌ی بدونِ کاما داشت. واحدِ «ریال»
                 // به‌جای این‌که تو لیبلِ بالای باکس باشه، حالا هم‌الگو با بقیه‌ی فیلدهای مبلغِ اپ،
@@ -169,12 +171,12 @@ fun AddEditChequeScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                 )
                 val amountVal = amountText.toLongOrNull() ?: 0L
                 if (amountVal > 0) {
                     AutoShrinkText(
-                        text = "${numberToWordsFa((amountVal / 10).toDouble())} تومان",
+                        text = "${numberToWordsFa(amountVal.toDouble())} تومان",
                         color = AppMuted,
                         maxFontSize = 11.5.sp,
                         modifier = Modifier.padding(top = 4.dp),
@@ -204,20 +206,41 @@ fun AddEditChequeScreen(
             )
         }
         item {
+            // هم‌الگو با تاریخِ اینلاینِ چرخونه‌ای «وام بانکی» (InlineJalaliDateRow) - قبلاً این‌جا
+            // سه تا دراپ‌داون بود که با تقویمِ بقیه‌ی اپ هم‌شکل نبود.
+            AppCard(label = "تاریخ سررسید") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    InlineJalaliDateRow(
+                        year = dueYear,
+                        month = dueMonth,
+                        day = dueDay,
+                        onDateChange = { y, m, d -> dueYear = y; dueMonth = m; dueDay = d },
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = { showCalendarPicker = true }) {
+                        Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
+                    }
+                }
+            }
+        }
+        item {
             // بخشِ اختیاریِ «اطلاعات بیشتر» (شناسه/کد ملی + مانده‌ی قبلی/واریزی حساب) - جمع/مانده از
             // رو همین دو مقدار محاسبه می‌شه، فیلدِ جدا برای اون‌ها نیست.
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { showMoreInfo = !showMoreInfo }
                     .animateContentSize(),
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { showMoreInfo = !showMoreInfo }.padding(vertical = 6.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("اطلاعات بیشتر", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text("اطلاعاتِ بیشتر", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     Icon(
                         if (showMoreInfo) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                         contentDescription = null,
@@ -230,6 +253,46 @@ fun AddEditChequeScreen(
                     val sumVal = previousBalanceVal + depositAmountVal
                     val remainingVal = sumVal - (amountText.toLongOrNull()?.toDouble() ?: 0.0)
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        AppCard(label = "شماره چک") {
+                            // Ltr: رجوع کن به کامنتِ Ltr.kt.
+                            Ltr {
+                                OutlinedTextField(
+                                    value = chequeNumber,
+                                    onValueChange = { chequeNumber = cleanNum(it) },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                )
+                            }
+                        }
+                        AppCard(label = "بانک") {
+                            ir.sadteam.loancalc.ui.components.BankPickerField(value = bankName, onValueChange = { bankName = it })
+                        }
+                        AppCard(label = "شعبه (اختیاری)") {
+                            OutlinedTextField(
+                                value = branchName,
+                                onValueChange = { branchName = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                            )
+                        }
+                        AppCard(label = if (type == ChequeType.RECEIVED) "نام پرداخت‌کننده" else "نام دریافت‌کننده") {
+                            OutlinedTextField(
+                                value = ownerName,
+                                onValueChange = { ownerName = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                            )
+                        }
+                        AppCard(label = "طرف حساب") {
+                            OutlinedButton(
+                                onClick = { showCounterpartyPicker = true },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(selectedCounterparty?.name ?: "انتخاب یا ساختِ طرفِ‌حساب")
+                            }
+                        }
+
                         AppCard(label = "شناسه ملی / کد ملی") {
                             // Ltr: بدونش، تایپِ عدد زیرِ RTLِ کلِ اپ از سمتِ راست جا می‌گرفت - رجوع
                             // کن به کامنتِ Ltr.kt.
@@ -326,77 +389,6 @@ fun AddEditChequeScreen(
                 }
             }
         }
-        item {
-            AppCard(label = "شماره چک") {
-                // Ltr: رجوع کن به کامنتِ Ltr.kt.
-                Ltr {
-                    OutlinedTextField(
-                        value = chequeNumber,
-                        onValueChange = { chequeNumber = cleanNum(it) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                    )
-                }
-            }
-        }
-        item {
-            AppCard(label = "بانک") {
-                ir.sadteam.loancalc.ui.components.BankPickerField(value = bankName, onValueChange = { bankName = it })
-            }
-        }
-        item {
-            AppCard(label = "شعبه (اختیاری)") {
-                OutlinedTextField(
-                    value = branchName,
-                    onValueChange = { branchName = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-            }
-        }
-        item {
-            AppCard(label = if (type == ChequeType.RECEIVED) "نام پرداخت‌کننده" else "نام دریافت‌کننده") {
-                OutlinedTextField(
-                    value = ownerName,
-                    onValueChange = { ownerName = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-            }
-        }
-        item {
-            AppCard(label = "طرف حساب") {
-                OutlinedButton(
-                    onClick = { showCounterpartyPicker = true },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(selectedCounterparty?.name ?: "انتخاب یا ساختِ طرفِ‌حساب")
-                }
-            }
-        }
-        item {
-            // هم‌الگو با تاریخِ اینلاینِ چرخونه‌ای «وام بانکی» (InlineJalaliDateRow) - قبلاً این‌جا
-            // سه تا دراپ‌داون بود که با تقویمِ بقیه‌ی اپ هم‌شکل نبود.
-            AppCard(label = "تاریخ سررسید") {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    InlineJalaliDateRow(
-                        year = dueYear,
-                        month = dueMonth,
-                        day = dueDay,
-                        onDateChange = { y, m, d -> dueYear = y; dueMonth = m; dueDay = d },
-                        modifier = Modifier.weight(1f),
-                    )
-                    IconButton(onClick = { showCalendarPicker = true }) {
-                        Icon(Icons.Filled.CalendarMonth, contentDescription = "انتخاب از تقویم")
-                    }
-                }
-            }
-        }
         if (error != null) {
             item {
                 Text(text = error ?: "", color = AppDanger, fontSize = 12.sp)
@@ -406,7 +398,7 @@ fun AddEditChequeScreen(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 GradientButton(
                     onClick = {
-                        val amount = amountText.toDoubleOrNull() ?: 0.0
+                        val amount = tomanToRial(amountText.toLongOrNull() ?: 0L).toDouble()
                         error = when {
                             amount <= 0 -> "مبلغ چک رو وارد کن"
                             chequeNumber.trim().isEmpty() -> "شماره چک رو وارد کن"
@@ -415,6 +407,7 @@ fun AddEditChequeScreen(
                             counterpartyId == null -> "طرفِ‌حساب رو انتخاب کن"
                             else -> null
                         }
+                        if (error != null && amount > 0) showMoreInfo = true
                         if (error == null) {
                             if (existing == null) {
                                 viewModel.addCheque(

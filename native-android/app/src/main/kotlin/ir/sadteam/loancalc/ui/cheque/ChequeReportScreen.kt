@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.cheque
 
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -132,14 +133,14 @@ internal fun ChequeReportScreen(
                     Column(modifier = Modifier.weight(1f).padding(start = 15.dp)) {
                         Text("مانده‌ی خالص", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                         Text(
-                            "${fmt(stats.netBalance)}",
+                            "${fmt(rialToToman((stats.netBalance).toLong()).toDouble())}",
                             color = Color.White,
                             fontSize = 21.sp,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.padding(top = 2.dp),
                         )
                         Text(
-                            "ریال — دریافتیِ پاس‌شده منهای پرداختیِ پاس‌شده",
+                            "تومان — دریافتیِ پاس‌شده منهای پرداختیِ پاس‌شده",
                             color = HeroMuted,
                             fontSize = 9.5.sp,
                             modifier = Modifier.padding(top = 4.dp),

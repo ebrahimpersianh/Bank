@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.cheque
 
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -142,7 +143,7 @@ fun ChequeDetailScreen(
             AppCard {
                 Column {
                     DetailRow("نوع", typeLabel)
-                    DetailRow("مبلغ", "${fmt(cheque.amount)} ریال")
+                    DetailRow("مبلغ", "${fmt(rialToToman((cheque.amount).toLong()).toDouble())} تومان")
                     DetailRow("شماره چک", toFa(cheque.chequeNumber))
                     // smart-cast مستقیم رو یه property از یه ماژول دیگه (:data) مجاز نیست، برای
                     // همین اول تو یه val محلی می‌ریزیمش.
