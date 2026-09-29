@@ -582,38 +582,12 @@ private fun NoChartCard(onAddTransaction: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        // چهار میله‌ی خط‌چینِ خالی که یکی‌شون سبزِ توپره - «شکلِ نمودارِ پیشاپیش».
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(
-                modifier = Modifier.height(92.dp),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(9.dp),
-            ) {
-                listOf(30.dp to false, 51.dp to false, 39.dp to true, 69.dp to false).forEach { (h, filled) ->
-                    val shape = RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
-                    Box(
-                        modifier = Modifier
-                            .width(23.dp)
-                            .height(h)
-                            .clip(shape)
-                            .background(if (filled) SkeletonBarFill else SkeletonBarBg)
-                            .then(
-                                if (filled) {
-                                    Modifier.border(1.5.dp, AppPrimary, shape)
-                                } else {
-                                    Modifier.dashedBorder(6.dp, width = 1.5.dp)
-                                }
-                            ),
-                    )
-                }
-            }
-            Box(
-                modifier = Modifier
-                    .width(150.dp)
-                    .height(2.dp)
-                    .background(SkeletonBaseline),
-            )
-        }
+        // تصویرِ سه‌بعدیِ ChatGPT (۷ مهر) به‌جای میله‌های خط‌چین.
+        androidx.compose.foundation.Image(
+            androidx.compose.ui.res.painterResource(ir.sadteam.loancalc.R.drawable.empty_illu_report),
+            contentDescription = null,
+            modifier = Modifier.size(112.dp),
+        )
         // ⚠️ عنوان و توضیح **یه بلوکِ واحد**ن با فاصله‌ی ۶ (مثلِ `margin-top`ی فریم)، نه دو
         // آیتمِ جدا با فاصله‌ی منفی - `Modifier.padding` عددِ منفی رو قبول نمی‌کنه و همون
         // لحظه‌ی رسم کرش می‌ده (کرشِ نسخه‌ی ۱.۰.۴۷۷: «Padding must be non-negative»).
