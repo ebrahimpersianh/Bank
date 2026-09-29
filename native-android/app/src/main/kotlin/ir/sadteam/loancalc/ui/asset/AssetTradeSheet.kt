@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.asset
 
+import ir.sadteam.loancalc.ui.jibak.faCardTail
 import androidx.compose.foundation.horizontalScroll
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -288,7 +289,13 @@ fun AssetTradeSheet(
                         modifier = Modifier.fillMaxWidth().padding(top = 6.dp).horizontalScroll(rememberScrollState()),
                     ) {
                         payAccounts.forEach { a ->
-                            ir.sadteam.loancalc.ui.components.AppChip(a.name, payAccountId == a.id, onClick = { payAccountId = a.id })
+                            // تهِ شماره‌کارت (فریمِ `22a`) - دو حسابِ هم‌نام از هم جدا شوند.
+                            val last4 = a.cardNumber?.filter { it.isDigit() }?.takeLast(4)?.takeIf { it.length == 4 }
+                            ir.sadteam.loancalc.ui.components.AppChip(
+                                listOfNotNull(a.name, last4?.let { faCardTail(it) }).joinToString(" · "),
+                                payAccountId == a.id,
+                                onClick = { payAccountId = a.id },
+                            )
                         }
                         ir.sadteam.loancalc.ui.components.AppChip("بدونِ حساب", payAccountId == null, onClick = { payAccountId = null })
                     }

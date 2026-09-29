@@ -52,6 +52,7 @@ import ir.sadteam.loancalc.ui.components.HeroPillBg
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
+import ir.sadteam.loancalc.ui.jibak.faCardTail
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.toFa
@@ -328,7 +329,14 @@ private fun AccountCard(
                     )
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(account.bankName.ifBlank { "منبعِ نقدی" }, color = AppMuted, fontSize = 11.sp)
+                    // تهِ شماره‌کارت (فریمِ `24`) - دو کارتِ یک بانک از هم تشخیص داده شوند.
+                    val last4 = account.cardNumber?.filter { it.isDigit() }?.takeLast(4)?.takeIf { it.length == 4 }
+                    Text(
+                        listOfNotNull(account.bankName.ifBlank { "منبعِ نقدی" }, last4?.let { faCardTail(it) }).joinToString(" · "),
+                        color = AppMuted,
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                    )
                     // «٪» **بعد** از عدد می‌آید نه قبلش (قاعده‌ی toFaPercent). و حسابِ منفی
                     // سهم ندارد: «٪−۱۲ از دارایی» بی‌معنا بود.
                     Text(

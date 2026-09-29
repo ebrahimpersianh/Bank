@@ -65,6 +65,7 @@ import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.jibak.faCardTail
 import ir.sadteam.loancalc.ui.jibak.toFaDate
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
@@ -154,7 +155,12 @@ fun AccountDetailScreen(
                 }
                 Column(modifier = Modifier.padding(start = 4.dp)) {
                     Text(account.name, color = AppText, fontSize = 16.sp)
-                    Text(account.bankName, color = AppMuted, fontSize = 12.sp)
+                    val last4 = account.cardNumber?.filter { it.isDigit() }?.takeLast(4)?.takeIf { it.length == 4 }
+                    Text(
+                        listOfNotNull(account.bankName.takeIf { it.isNotBlank() }, last4?.let { faCardTail(it) }).joinToString(" · "),
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                    )
                 }
             }
         }
