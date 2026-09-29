@@ -293,13 +293,14 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                     // هدفِ لمسیِ ۴۴ را می‌شکند.
                     if (!isChild) {
                         IconButton(onClick = { viewModel.moveUp(type, cat.name) }, enabled = index > 0) {
-                            Icon(Icons.Filled.ArrowUpward, contentDescription = "جابه‌جایی به بالا", tint = if (index > 0) AppText else AppMuted)
+                            Icon(Icons.Filled.ArrowUpward, contentDescription = "جابه‌جایی به بالا", tint = if (index > 0) AppText else AppMuted, modifier = Modifier.size(18.dp))
                         }
                         IconButton(onClick = { viewModel.moveDown(type, cat.name) }, enabled = index < categories.lastIndex) {
                             Icon(
                                 Icons.Filled.ArrowDownward,
                                 contentDescription = "جابه‌جایی به پایین",
                                 tint = if (index < categories.lastIndex) AppText else AppMuted,
+                                modifier = Modifier.size(18.dp),
                             )
                         }
                     }
