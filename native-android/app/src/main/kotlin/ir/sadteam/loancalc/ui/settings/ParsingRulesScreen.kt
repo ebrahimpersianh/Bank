@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Science
+import androidx.compose.material.icons.outlined.Sms
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import ir.sadteam.loancalc.ui.components.AppButtonVariant
@@ -92,6 +93,10 @@ fun ParsingRulesScreen(viewModel: ParsingRulesViewModel = hiltViewModel()) {
     var editing by remember { mutableStateOf<ParsingRuleEntity?>(null) }
     var creating by remember { mutableStateOf(false) }
     var testing by remember { mutableStateOf(false) }
+    var pickingSms by remember { mutableStateOf(false) }
+    // متنِ پیامکی که از صندوق انتخاب شد - هم آزمایش با آن پر می‌شود هم شیتِ قاعده نمونه‌اش را نشان می‌دهد.
+    var sampleBody by remember { mutableStateOf<String?>(null) }
+    var presetType by remember { mutableStateOf(0) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -115,6 +120,15 @@ fun ParsingRulesScreen(viewModel: ParsingRulesViewModel = hiltViewModel()) {
             Icon(Icons.Outlined.Science, contentDescription = null, modifier = Modifier.size(18.dp))
             Text("آزمایشِ تشخیص با یه پیامک", fontWeight = FontWeight.Black)
         }
+        // فریمِ `29d`: قاعده از روی پیامکِ واقعیِ صندوقِ گوشی - بانکی‌ها اولِ فهرست.
+        GradientButton(
+            onClick = { pickingSms = true },
+            variant = AppButtonVariant.SECONDARY,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        ) {
+            Icon(Icons.Outlined.Sms, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text("افزودن از پیامک‌ها", fontWeight = FontWeight.Black)
+        }
 
         if (rules.isEmpty()) {
             EmptyState(
@@ -135,8 +149,30 @@ fun ParsingRulesScreen(viewModel: ParsingRulesViewModel = hiltViewModel()) {
         }
     }
 
+    if (pickingSms) {
+        ir.sadteam.loancalc.ui.account.SmsSenderPickerDialog(
+            onDismiss = { pickingSms = false },
+            onPick = {},
+            subtitle = "پیامکِ بانکی را انتخاب کن تا از رویش قاعده بسازی",
+            onPickMessage = { msg ->
+                sampleBody = msg.body
+                pickingSms = false
+                testing = true
+            },
+        )
+    }
     if (testing) {
-        SmsTestDialog(onDismiss = { testing = false }, runTest = { viewModel.testSms(it) })
+        SmsTestDialog(
+            initialBody = sampleBody.orEmpty(),
+            onDismiss = { testing = false; sampleBody = null },
+            runTest = { viewModel.testSms(it) },
+            onCreateRule = { body, result ->
+                sampleBody = body
+                presetType = when (result?.isWithdrawal) { true -> 1; false -> 2; null -> 0 }
+                testing = false
+                creating = true
+            },
+        )
     }
 
     if (creating || editing != null) {
@@ -144,11 +180,15 @@ fun ParsingRulesScreen(viewModel: ParsingRulesViewModel = hiltViewModel()) {
             rule = editing,
             expenseCategories = expenseCategories,
             incomeCategories = incomeCategories,
-            onDismiss = { creating = false; editing = null },
+            sampleBody = if (editing == null) sampleBody else null,
+            initialType = presetType,
+            onDismiss = { creating = false; editing = null; sampleBody = null; presetType = 0 },
             onSave = { pattern, category, type ->
                 viewModel.save(editing, pattern, category, type, rules.size)
                 creating = false
                 editing = null
+                sampleBody = null
+                presetType = 0
             },
             previewCount = { pattern -> viewModel.previewMatchCount(pattern) },
         )
@@ -272,6 +312,8 @@ private fun RuleSheet(
     rule: ParsingRuleEntity?,
     expenseCategories: List<CategoryEntry>,
     incomeCategories: List<CategoryEntry>,
+    sampleBody: String? = null,
+    initialType: Int = 0,
     onDismiss: () -> Unit,
     onSave: (pattern: String, category: String, type: String?) -> Unit,
     previewCount: suspend (String) -> Int,
@@ -283,7 +325,7 @@ private fun RuleSheet(
             when (rule?.txType) {
                 TransactionType.WITHDRAWAL.name -> 1
                 TransactionType.DEPOSIT.name -> 2
-                else -> 0
+                else -> if (rule == null) initialType else 0
             },
         )
     }
@@ -333,6 +375,22 @@ private fun RuleSheet(
                     fontSize = 9.sp,
                     modifier = Modifier.padding(top = 4.dp),
                 )
+                if (!sampleBody.isNullOrBlank()) {
+                    // نمونه‌ی پیامکِ انتخاب‌شده - کلمه‌ی الگو را از رویش بردار.
+                    Text(
+                        sampleBody.replace('\n', ' '),
+                        color = AppMuted,
+                        fontSize = 10.sp,
+                        lineHeight = 17.sp,
+                        maxLines = 5,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(AppSurface2)
+                            .padding(10.dp),
+                    )
+                }
                 SegmentedToggle(
                     options = listOf("مهم نیست", "خرج", "دخل"),
                     selectedIndex = typeIndex,
@@ -436,11 +494,20 @@ private fun CategoryOption(entry: CategoryEntry, selected: Boolean, onClick: () 
 
 /** آزمایشِ تشخیص (فریمِ `29c`): نتیجه در کارتِ چهارخانه، نه متنِ خام. */
 @Composable
-private fun SmsTestDialog(onDismiss: () -> Unit, runTest: suspend (String) -> SmsTestResult?) {
-    var body by remember { mutableStateOf("") }
+private fun SmsTestDialog(
+    onDismiss: () -> Unit,
+    runTest: suspend (String) -> SmsTestResult?,
+    initialBody: String = "",
+    onCreateRule: (body: String, result: SmsTestResult?) -> Unit = { _, _ -> },
+) {
+    var body by remember { mutableStateOf(initialBody) }
     var result by remember { mutableStateOf<SmsTestResult?>(null) }
     var tested by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    // پیامکِ انتخاب‌شده از صندوق همان لحظه آزمایش می‌شود.
+    LaunchedEffect(Unit) {
+        if (initialBody.isNotBlank()) { result = runTest(initialBody); tested = true }
+    }
     JibakAlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -507,6 +574,9 @@ private fun SmsTestDialog(onDismiss: () -> Unit, runTest: suspend (String) -> Sm
                                     else -> "${r.category} (حدسِ خودکار)"
                                 },
                             )
+                            TextButton(onClick = { onCreateRule(body, r) }, modifier = Modifier.fillMaxWidth()) {
+                                Text("ساختِ قاعده از این پیامک", fontWeight = FontWeight.Black)
+                            }
                         }
                     }
                 }

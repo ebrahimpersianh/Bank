@@ -111,7 +111,13 @@ suspend fun readSmsSenders(context: Context, limit: Int = 400): List<SmsSenderIn
  * هیچ پیامکی از گوشی بیرون نمی‌رود.
  */
 @Composable
-fun SmsSenderPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
+fun SmsSenderPickerDialog(
+    onDismiss: () -> Unit,
+    onPick: (String) -> Unit,
+    subtitle: String = "روی پیامکِ بانکت بزن تا شماره‌اش برداشته شود",
+    /** اگر پر باشد، خودِ پیامک برمی‌گردد نه فقط شماره، و پیامک‌های بانکی اولِ فهرست می‌آیند (فریمِ `29d`). */
+    onPickMessage: ((SmsInboxMessage) -> Unit)? = null,
+) {
     val context = LocalContext.current
     var permissionGranted by remember {
         mutableStateOf(
@@ -148,7 +154,7 @@ fun SmsSenderPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
                 Column(modifier = Modifier.padding(start = 4.dp)) {
                     Text("انتخاب از پیامک‌ها", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black)
                     Text(
-                        "روی پیامکِ بانکت بزن تا شماره‌اش برداشته شود",
+                        subtitle,
                         color = AppMuted,
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold,
@@ -170,14 +176,15 @@ fun SmsSenderPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
                 list.isEmpty() -> CenterNote("پیامکی تو صندوقِ گوشیت پیدا نشد")
                 else -> {
                     val q = query.trim()
-                    val shown = if (q.isEmpty()) list else list.filter { it.address.contains(q, true) || it.body.contains(q) }
+                    val filtered = if (q.isEmpty()) list else list.filter { it.address.contains(q, true) || it.body.contains(q) }
+                    val shown = if (onPickMessage != null) filtered.sortedByDescending { it.parsed != null } else filtered
                     LazyColumn(
                         contentPadding = PaddingValues(start = 10.dp, end = 14.dp, top = 4.dp, bottom = 28.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.weight(1f),
                     ) {
                         items(shown, key = { it.id }) { msg ->
-                            AppCard(modifier = Modifier.pressScaleClickable(scale = 0.99f) { onPick(msg.address) }) {
+                            AppCard(modifier = Modifier.pressScaleClickable(scale = 0.99f) { if (onPickMessage != null) onPickMessage(msg) else onPick(msg.address) }) {
                                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                     Ltr {
                                         Text(msg.address, color = AppText, fontSize = 13.5.sp, fontWeight = FontWeight.Black)
