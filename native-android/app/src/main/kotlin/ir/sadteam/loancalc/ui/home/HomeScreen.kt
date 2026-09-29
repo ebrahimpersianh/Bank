@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.home
 
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.material.icons.filled.Storefront
 import androidx.activity.compose.BackHandler
 import ir.sadteam.loancalc.ui.profile.BadgesScreen
@@ -743,7 +744,7 @@ private fun HomeHeader(
             } else {
                 // به‌جای عددِ سکه، درِ اختصاصیِ فروشگاه (خواسته‌ی کاربر، ۶ مهر). موجودیِ سکه بالای
                 // خودِ فروشگاه نشان داده می‌شود.
-                PrivacyEyeButton(icon = Icons.Filled.Storefront, active = false, onClick = onOpenShop)
+                PrivacyEyeButton(icon = androidx.compose.ui.graphics.vector.ImageVector.vectorResource(ir.sadteam.loancalc.R.drawable.ic_shop_bag), active = false, onClick = onOpenShop, contentDescription = "فروشگاه")
             }
             // زنگِ مرکزِ پیام‌ها (بخشِ ۴۰). **عدد فقط برای اقدام‌دارهای بازه**؛ خبرِ
             // خوانده‌نشده فقط یه نقطه‌ی سبز می‌گیره، نه عدد (قاعده‌ی صریحِ طرح).
