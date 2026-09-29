@@ -264,7 +264,8 @@ fun ChequeBooksScreen(
                         }
                     }
                 }
-            } else {
+            } else if (books.isNotEmpty()) {
+                // حالتِ خالی خودش دکمه‌ی «ثبتِ دسته‌چک» دارد - دکمه‌ی دوم فقط وقتی فهرست پر است.
                 GradientButton(onClick = { showAddForm = true }, modifier = Modifier.fillMaxWidth()) {
                     Text("+ افزودن دسته‌چک")
                 }

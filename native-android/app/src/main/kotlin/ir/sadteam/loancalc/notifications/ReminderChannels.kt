@@ -118,21 +118,27 @@ object ReminderChannels {
      * بعد عوض می‌شوند. جایگزینِ انتخابگرِ صدای داخلِ برنامه.
      */
     fun openChannelSettings(context: Context, channelId: String = CHANNEL_DUE_DATES) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startActivity(
-                Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
-                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        // بعضی گوشی‌ها (شیائومی) اگر کانال هنوز ساخته نشده باشد یا صفحه‌ی کانال را نشناسند، بی‌صدا
+        // هیچ کاری نمی‌کنند - پس اول کانال‌ها ساخته می‌شوند و بعد به‌ترتیب سه راه امتحان می‌شود.
+        ensureAll(context)
+        val pkg = context.packageName
+        val attempts = buildList {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                add(Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
+                    putExtra(Settings.EXTRA_APP_PACKAGE, pkg)
                     putExtra(Settings.EXTRA_CHANNEL_ID, channelId)
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                },
-            )
-        } else {
-            context.startActivity(
-                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = android.net.Uri.fromParts("package", context.packageName, null)
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                },
-            )
+                })
+                add(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(Settings.EXTRA_APP_PACKAGE, pkg)
+                })
+            }
+            add(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = android.net.Uri.fromParts("package", pkg, null)
+            })
+        }
+        for (intent in attempts) {
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            if (runCatching { context.startActivity(intent) }.isSuccess) return
         }
     }
 

@@ -169,10 +169,17 @@ internal fun ChequeReportScreen(
                             .height(8.dp)
                             .clip(RoundedCornerShape(999.dp)),
                     ) {
-                        val total = stats.total.coerceAtLeast(1)
-                        Box(modifier = Modifier.weight(stats.passed.toFloat().coerceAtLeast(0.001f) / total).fillMaxSize().background(AppPrimary))
-                        Box(modifier = Modifier.weight(stats.bounced.toFloat().coerceAtLeast(0.001f) / total).fillMaxSize().background(AppDanger))
-                        Box(modifier = Modifier.weight(stats.pending.toFloat().coerceAtLeast(0.001f) / total).fillMaxSize().background(AppPrimaryPill))
+                        // فقط سهم‌های واقعی کشیده می‌شوند؛ قبلاً سهمِ صفر هم ۰٫۰۰۱ می‌گرفت و با یک
+                        // چکِ بایگانی‌شده نوار سه تکه‌ی مساوی (سبز/قرمز/خاکستری) نشان می‌داد.
+                        val parts = listOf(stats.passed to AppPrimary, stats.bounced to AppDanger, stats.pending to AppPrimaryPill)
+                            .filter { it.first > 0 }
+                        if (parts.isEmpty()) {
+                            Box(modifier = Modifier.fillMaxSize().background(AppPrimaryPill))
+                        } else {
+                            parts.forEach { (count, color) ->
+                                Box(modifier = Modifier.weight(count.toFloat()).fillMaxSize().background(color))
+                            }
+                        }
                     }
                 }
             }
