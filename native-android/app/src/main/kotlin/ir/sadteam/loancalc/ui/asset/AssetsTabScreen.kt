@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.asset
 
+import androidx.compose.foundation.layout.width
 import ir.sadteam.loancalc.ui.components.SubScreen
 import ir.sadteam.loancalc.ui.components.AppFab
 import androidx.compose.animation.animateContentSize
@@ -339,6 +340,28 @@ fun AssetsTabScreen(
             if (liabilities > 0.0) {
                 item { NetWorthCard(grandTotal, liabilities, loanRemaining, iOwe, privacyMode) }
             }
+            // حساب‌های بانکی بالای بازار (خواسته‌ی کاربر، ۷ مهر: «حساب بانکی بره بالا بعد نمودار»).
+            if (accounts.isNotEmpty() && query.isBlank()) {
+                item {
+                    SectionHeader(
+                        title = "حساب‌های بانکی",
+                        icon = Icons.Filled.AccountBalance,
+                        count = accounts.size,
+                        actionLabel = "مدیریتِ حساب‌ها",
+                        onAction = { showAccountList = true },
+                    )
+                }
+                items(accounts.size) { index ->
+                    val account = accounts[index]
+                    AccountRow(
+                        account = account,
+                        balance = accountViewModel.balanceOf(account, transactions),
+                        privacyMode = privacyMode,
+                        onClick = { detailAccount = account.id },
+                    )
+                }
+            }
+
             item { AssetSearchBar(query) { query = it } }
 
             val q = query.trim()
@@ -371,27 +394,6 @@ fun AssetsTabScreen(
                 }
             }
 
-            // حساب‌های بانکی می‌مانند (خواسته‌ی کاربر، ۳ مهر) - فقط وقتی فیلتر/جست‌وجو فعال نیست.
-            if (accounts.isNotEmpty() && browsing) {
-                item {
-                    SectionHeader(
-                        title = "حساب‌های بانکی",
-                        icon = Icons.Filled.AccountBalance,
-                        count = accounts.size,
-                        actionLabel = "مدیریتِ حساب‌ها",
-                        onAction = { showAccountList = true },
-                    )
-                }
-                items(accounts.size) { index ->
-                    val account = accounts[index]
-                    AccountRow(
-                        account = account,
-                        balance = accountViewModel.balanceOf(account, transactions),
-                        privacyMode = privacyMode,
-                        onClick = { detailAccount = account.id },
-                    )
-                }
-            }
 
         }
 
@@ -1267,11 +1269,24 @@ private fun MarketOverviewSection(
             modifier = Modifier.padding(top = 8.dp).animateContentSize(),
         ) {
             picks.forEach { pick ->
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MarketMiniCard(pick, prices, viewModel, onOpen)
-                    if (expanded) {
-                        all.filter { it.category == pick.category && it.symbol != pick.symbol && prices[it.symbol] != null }
-                            .forEach { MarketMiniCard(it, prices, viewModel, onOpen) }
+                Box(modifier = Modifier.weight(1f)) { MarketMiniCard(pick, prices, viewModel, onOpen) }
+            }
+        }
+        // «مشاهده‌ی همه»: به‌جای سه ستونِ ناهم‌قد، ردیف‌های مستطیلیِ تمام‌عرض، گروه‌به‌گروه
+        // (خواسته‌ی کاربر، ۷ مهر: «به‌جای مربع مستطیل»).
+        if (expanded) {
+            Column(modifier = Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                picks.forEach { pick ->
+                    val rest = all.filter { it.category == pick.category && it.symbol != pick.symbol && prices[it.symbol] != null }
+                    if (rest.isNotEmpty()) {
+                        Text(
+                            when (pick.symbol) { "GOLD_18" -> "طلا و سکه"; "USD" -> "ارز"; else -> "رمزارز" },
+                            color = AppMuted,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                        rest.forEach { MarketWideRow(it, prices, viewModel, onOpen) }
                     }
                 }
             }
@@ -1436,5 +1451,52 @@ private fun NetWorthCard(total: Double, liabilities: Double, loans: Double, owe:
                 )
             }
         }
+    }
+}
+
+/** ردیفِ مستطیلیِ بازار: نشان · نام · نمودار · قیمت (و دلار برای رمزارز) · درصد. */
+@Composable
+private fun MarketWideRow(
+    e: AssetCatalogEntry,
+    prices: Map<String, Double>,
+    viewModel: AssetViewModel,
+    onOpen: (AssetCatalogEntry) -> Unit,
+) {
+    val change = rememberDailyChange(e.symbol, viewModel)
+    val usd by viewModel.usdPrices.collectAsState()
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .border(1.dp, AppLine, shape)
+            .pressScaleClickable { onOpen(e) }
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AssetBadge(e.symbol, e.category, 30.dp)
+        Text(
+            e.name,
+            color = AppText,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f).padding(start = 8.dp),
+        )
+        MiniTrend(e.symbol, change, viewModel, modifier = Modifier.width(56.dp).padding(horizontal = 6.dp), height = 20.dp)
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                (prices[e.symbol]?.rialToFaCompact() ?: "—") + " تومان",
+                color = AppText,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+            )
+            usd[e.symbol]?.takeIf { e.category == ASSET_CATEGORY_CRYPTO }?.let {
+                Text("$" + formatUsd(it), color = AppMuted, fontSize = 9.sp, maxLines = 1)
+            }
+        }
+        change?.let { Box(modifier = Modifier.padding(start = 6.dp)) { PriceChangeBadge(it) } }
     }
 }
