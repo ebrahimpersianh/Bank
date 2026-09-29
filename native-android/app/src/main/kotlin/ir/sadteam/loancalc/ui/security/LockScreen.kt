@@ -103,7 +103,7 @@ fun LockScreen(
             textAlign = TextAlign.Center,
         )
         Text(
-            "برای دیدن وام‌هات هویتت رو تایید کن",
+            "برای ورود به جیبک هویتت رو تایید کن",
             color = AppMuted,
             fontSize = 13.sp,
             textAlign = TextAlign.Center,
