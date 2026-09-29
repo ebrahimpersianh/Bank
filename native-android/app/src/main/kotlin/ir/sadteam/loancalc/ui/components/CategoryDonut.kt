@@ -1,6 +1,11 @@
 package ir.sadteam.loancalc.ui.components
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -13,12 +18,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 
 /** یه تکه از نمودارِ دوناتِ [CategoryDonut] - مقدار و رنگش. */
 data class DonutSlice(val value: Double, val color: Color)
@@ -51,6 +59,8 @@ fun CategoryDonut(
      * هاله با چند خطِ پهن‌ترِ کم‌رنگ ساخته می‌شود.
      */
     glow: Boolean = false,
+    /** هاله‌ی نورانیِ چرخانِ دورِ دونات (خواسته‌ی کاربر ۷ مهر، الهام از کادرِ Claude Code). */
+    halo: Boolean = true,
     content: (@Composable BoxScope.() -> Unit)? = null,
 ) {
     val total = slices.sumOf { it.value }.takeIf { it > 0.0 } ?: 0.0
@@ -60,8 +70,33 @@ fun CategoryDonut(
         label = "donutGrow",
     )
 
+    val haloColor = AppPrimary
+    val haloTurn by rememberInfiniteTransition(label = "donutHalo").animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing), RepeatMode.Restart),
+        label = "donutHaloTurn",
+    )
+
     Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.size(size)) {
+            if (halo && total > 0.0) {
+                // هاله: حلقه‌ی بیرونی با شیبِ چرخان (پررنگ→محو)، چند لایه‌ی پهن‌تر برای نرمی.
+                val r = this.size.width / 2f + 3.dp.toPx()
+                val c = Offset(this.size.width / 2f, this.size.height / 2f)
+                val brush = Brush.sweepGradient(
+                    0f to haloColor.copy(alpha = 0f),
+                    0.55f to haloColor.copy(alpha = 0.15f),
+                    0.9f to haloColor.copy(alpha = 0.9f),
+                    1f to haloColor.copy(alpha = 0f),
+                    center = c,
+                )
+                rotate(haloTurn, c) {
+                    listOf(7f to 0.18f, 4f to 0.35f, 2f to 1f).forEach { (w, a) ->
+                        drawCircle(brush = brush, radius = r, center = c, alpha = a * grow, style = Stroke(width = w.dp.toPx()))
+                    }
+                }
+            }
             val stroke = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Butt)
             val inset = strokeWidth.toPx() / 2f
             val arcSize = Size(this.size.width - inset * 2, this.size.height - inset * 2)
