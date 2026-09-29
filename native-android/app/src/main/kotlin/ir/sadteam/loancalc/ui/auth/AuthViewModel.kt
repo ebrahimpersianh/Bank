@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.auth
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.BuildConfig
@@ -236,9 +237,17 @@ class AuthViewModel @Inject constructor(
                             else -> Unit
                         }
                         // گوشیِ خالی از سرور پر می‌شود؛ هرگز خالی روی سرور نوشته نمی‌شود.
-                        launch { chequeRepository.syncAfterLogin(token) }
-                        launch { accountRepository.syncAfterLogin(token) }
-                        launch { ir.sadteam.loancalc.data.PhotoSync.sync(appContext, token) }
+                        // 🚨 منتظر می‌مانیم: با رفتن از صفحه‌ی ورود این ViewModel پاک و کارِ نیمه‌تمام لغو
+                        // می‌شد - برای همین حساب‌ها/تراکنش‌ها بعدِ ورود نمی‌آمدند.
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                            kotlinx.coroutines.coroutineScope {
+                                launch { runCatching { chequeRepository.syncAfterLogin(token) } }
+                                launch { runCatching { accountRepository.syncAfterLogin(token) } }
+                            }
+                        }
+                        androidx.lifecycle.ProcessLifecycleOwner.get().lifecycleScope.launch {
+                            ir.sadteam.loancalc.data.PhotoSync.sync(appContext, token)
+                        }
                     }
                     // «هدیه‌ی شماره‌ی تازه ۵۰ سکه» (جدولِ `20e`). یک‌باره‌ست، پس ورودهای بعدی
                     // دوباره سکه نمی‌دن (یگانگی رو خودِ نوعِ رویداد تو دفترِ سکه).

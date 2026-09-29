@@ -559,16 +559,28 @@ class AccountRepository(
         return GsonBuilder().setPrettyPrinting().create().toJson(data)
     }
 
-    suspend fun importBackupJson(json: String): Boolean {
+    suspend fun importBackupJson(json: String): Boolean = try {
+        importBackupJsonOrThrow(json)
+    } catch (e: Exception) {
+        // گزارشِ تشخیصی (فقط نوع و متنِ خطا، بدونِ داده) - ۷ مهر حساب‌ها بی‌صدا برنمی‌گشتند.
+        runCatching {
+            apiService.reportCrash(
+                ir.sadteam.loancalc.data.network.CrashReportRequest(
+                    "accounts_import_failed: ${e.javaClass.simpleName}: ${e.message?.take(300)}",
+                    e.stackTraceToString().take(3000), "sync", null,
+                ),
+                null,
+            )
+        }
+        false
+    }
+
+    private suspend fun importBackupJsonOrThrow(json: String): Boolean {
         val type = object : TypeToken<Map<String, Any?>>() {}.type
         val gson = GsonBuilder().create()
-        val parsed: Map<String, Any?> = try {
-            gson.fromJson(json, type) ?: return false
-        } catch (e: Exception) {
-            return false
-        }
-        val accountsJson = gson.toJson(parsed["accounts"] ?: return false)
-        val transactionsJson = gson.toJson(parsed["transactions"] ?: return false)
+        val parsed: Map<String, Any?> = gson.fromJson(json, type) ?: error("empty json")
+        val accountsJson = gson.toJson(parsed["accounts"] ?: error("no accounts key"))
+        val transactionsJson = gson.toJson(parsed["transactions"] ?: error("no transactions key"))
         val accounts: List<AccountEntity> = gson.fromJson(accountsJson, object : TypeToken<List<AccountEntity>>() {}.type)
         val transactions: List<AccountTransactionEntity> =
             gson.fromJson(transactionsJson, object : TypeToken<List<AccountTransactionEntity>>() {}.type)
