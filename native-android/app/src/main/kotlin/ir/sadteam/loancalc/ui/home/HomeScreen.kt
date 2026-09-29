@@ -1184,13 +1184,32 @@ private fun ShortfallForecastCard(
                 Icon(Icons.Filled.TrendingDown, contentDescription = null, tint = AppGoldInk, modifier = Modifier.size(17.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
+                // پولِ مانده منفی یعنی «تمام شده»، نه «تمام می‌شود»؛ «روزی ۰ می‌رساند» هم بی‌معناست.
+                val overspent = balance <= 0.0
                 Text(
-                    "با این سرعت، ${runsOutOnDay.toFa()} روز قبلِ آخرِ ماه تمام می‌شود",
+                    if (overspent) "بودجه‌ی این ماه تمام شده" else "با این سرعت، ${runsOutOnDay.toFa()} روز قبلِ آخرِ ماه تمام می‌شود",
                     color = AppText,
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.ExtraBold,
                 )
-                PrivacyCrossfade(privacyMode) { masked ->
+                if (overspent) PrivacyCrossfade(privacyMode) { masked ->
+                    Column {
+                        Text(
+                            "${maskIfPrivate(masked, (-balance).rialToFaCompact())} بیشتر از بودجه خرج کرده‌ای.",
+                            color = AppGoldInk,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                        Text(
+                            "${daysLeft.toFa()} روز تا آخرِ ماه مانده - هر خرجِ تازه روی همین اضافه می‌شود.",
+                            color = AppText,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.padding(top = 3.dp),
+                        )
+                    }
+                } else PrivacyCrossfade(privacyMode) { masked ->
                     Column {
                         Text(
                             "روزی ${maskIfPrivate(masked, perDaySpend.rialToFaCompact())} خرج کرده‌ای و " +
