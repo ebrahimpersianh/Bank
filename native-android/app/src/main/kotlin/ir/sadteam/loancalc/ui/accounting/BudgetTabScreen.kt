@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.material.icons.filled.ReceiptLong
+import ir.sadteam.loancalc.ui.extras.isDueSoon
 import ir.sadteam.loancalc.ui.components.HeroChart
 import ir.sadteam.loancalc.ui.components.HeroChartStyle
 import androidx.compose.material.icons.filled.ChevronLeft
@@ -136,6 +138,16 @@ fun BudgetTabScreen(
     val expenseCats by categoryViewModel.expenseCategories.collectAsState()
     val privacyMode = LocalPrivacyMode.current
     val today = remember { JalaliCalendar.today() }
+
+    // قبض‌ها (۷ مهر): قبلاً فقط در صفحه‌ی «سررسید» بود که دیگر در نوارِ پایین نیست.
+    var showBills by remember { mutableStateOf(false) }
+    val extrasViewModel: ir.sadteam.loancalc.ui.extras.ExtrasViewModel = hiltViewModel()
+    val bills by extrasViewModel.bills.collectAsState()
+    if (showBills) {
+        androidx.activity.compose.BackHandler { showBills = false }
+        ir.sadteam.loancalc.ui.extras.BillsScreen(onBack = { showBills = false }, viewModel = extrasViewModel)
+        return
+    }
 
     var showAddBudget by remember { mutableStateOf(false) }
     var suggestionCategory by remember { mutableStateOf<CategoryEntry?>(null) }
@@ -319,6 +331,20 @@ fun BudgetTabScreen(
                         modifier = Modifier.weight(1f),
                     )
                 }
+            }
+            item {
+                val dueSoon = bills.count { it.isDueSoon(today.y, today.m, today.d) }
+                BudgetToolCard(
+                    icon = Icons.Filled.ReceiptLong,
+                    title = "قبض‌ها",
+                    subtitle = when {
+                        bills.isEmpty() -> "آب، برق، گاز، موبایل…"
+                        dueSoon > 0 -> "${toFa(dueSoon)} قبض نزدیکِ موعد"
+                        else -> "${toFa(bills.size)} قبض · همه پرداخت شده"
+                    },
+                    onClick = { showBills = true },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
 
