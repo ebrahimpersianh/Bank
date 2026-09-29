@@ -15,9 +15,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 
 /**
@@ -38,6 +40,7 @@ fun PatternPad(onComplete: (String) -> Unit, modifier: Modifier = Modifier) {
     var finger by remember { mutableStateOf<Offset?>(null) }
     val dot = AppLine
     val ink = AppPrimary
+    val ring = AppMuted
     var cell by remember { mutableStateOf(0f) }
     fun centerOf(i: Int) = Offset((i % 3) * cell + cell / 2, (i / 3) * cell + cell / 2)
     fun hit(p: Offset): Int? = (0 until 9).firstOrNull { (centerOf(it) - p).getDistance() < cell * 0.32f }
@@ -75,7 +78,14 @@ fun PatternPad(onComplete: (String) -> Unit, modifier: Modifier = Modifier) {
         if (last != null && f != null) drawLine(ink.copy(alpha = 0.5f), centerOf(last), f, strokeWidth = 6.dp.toPx(), cap = StrokeCap.Round)
         for (i in 0 until 9) {
             val on = i in selected
-            drawCircle(if (on) ink else dot, radius = if (on) 14.dp.toPx() else 10.dp.toPx(), center = centerOf(i))
+            // فریمِ `26b`/`48`: نقطه‌ی حلقه‌دار و پرکنتراست؛ نقطه‌ی وصل‌شده هاله می‌گیرد.
+            if (on) {
+                drawCircle(ink.copy(alpha = 0.22f), radius = 22.dp.toPx(), center = centerOf(i))
+                drawCircle(ink, radius = 11.dp.toPx(), center = centerOf(i))
+            } else {
+                drawCircle(dot, radius = 10.dp.toPx(), center = centerOf(i))
+                drawCircle(ring, radius = 10.dp.toPx(), center = centerOf(i), style = Stroke(width = 2.dp.toPx()))
+            }
         }
     }
 }

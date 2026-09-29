@@ -7,12 +7,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,17 +23,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
-import ir.sadteam.loancalc.core.cleanNum
 import ir.sadteam.loancalc.core.toFa
-import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.JibakBrandMark
-import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -128,52 +121,32 @@ fun LockScreen(
             }
         } else if (pinHash != null) {
             val lockedOut = secondsLeft > 0
-            // Ltr: بدونش، تایپِ PIN تو ambientِ RTLِ کلِ اپ از سمتِ راست جا می‌گرفت - همون باگی که
-            // فیلدِ شماره‌موبایل/کدِ تاییدِ LoginScreen داشتن (رجوع کن به کامنتِ Ltr.kt).
-            Ltr {
-                OutlinedTextField(
-                    value = pin,
-                    onValueChange = {
-                        val cleaned = cleanNum(it)
-                        if (cleaned.length <= 8) {
-                            pin = cleaned
-                            error = null
-                        }
-                    },
-                    enabled = !lockedOut,
-                    label = { Text("PIN") },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            GradientButton(
-                onClick = {
-                    when (val result = attemptPin(pin)) {
-                        is PinAttemptResult.Success -> {
-                            error = null
-                            onUnlock()
-                        }
-                        is PinAttemptResult.WrongPin -> {
-                            // ⚠️ رقمِ لاتین بود - لایه‌ی ارقامِ فارسی (JibakFormat) می‌گوید
-                            // هر عددی که کاربر می‌خواند فارسی است؛ PIN خودش استثناست (فیلدِ
-                            // ورودی)، ولی شمارشِ تلاش‌ها متنِ خواندنی است.
-                            error = "PIN اشتباهه (${toFa(result.attemptsLeft)} تلاش دیگه مونده)"
-                        }
-                        is PinAttemptResult.LockedOut -> {
-                            error = "به دلیل تلاش‌های ناموفق زیاد، موقتاً قفل شدی"
-                            lockedOutUntil = System.currentTimeMillis() + result.secondsLeft * 1000
-                        }
+            // فریمِ `26c`: خانه‌های PIN + صفحه‌کلیدِ عددیِ خودِ اپ (جای فیلدِ متنی + کیبوردِ سیستم).
+            fun submit() {
+                if (pin.length < 4 || lockedOut) return
+                when (val result = attemptPin(pin)) {
+                    is PinAttemptResult.Success -> { error = null; onUnlock() }
+                    is PinAttemptResult.WrongPin -> {
+                        pin = ""
+                        error = "PIN اشتباهه (${toFa(result.attemptsLeft)} تلاش دیگه مونده)"
                     }
-                },
-                enabled = !lockedOut,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-            ) {
-                // ⚠️ رقمِ لاتین بود. `secondsLeft` هم Long است، پس `toInt()` تا امضای toFa جور بشود.
-                Text(if (lockedOut) "امتحان دوباره بعد از ${toFa(secondsLeft.toInt())} ثانیه" else "ورود")
+                    is PinAttemptResult.LockedOut -> {
+                        pin = ""
+                        error = "به دلیل تلاش‌های ناموفق زیاد، موقتاً قفل شدی"
+                        lockedOutUntil = System.currentTimeMillis() + result.secondsLeft * 1000
+                    }
+                }
+            }
+            PinBoxes(length = pin.length, error = error != null && pin.isEmpty())
+            Spacer(Modifier.height(24.dp))
+            if (lockedOut) {
+                Text("امتحان دوباره بعد از ${toFa(secondsLeft.toInt())} ثانیه", color = AppMuted, fontSize = 13.sp)
+            } else {
+                NumberPad(
+                    onDigit = { c -> if (pin.length < PIN_MAX) { pin += c; error = null } },
+                    onBackspace = { pin = pin.dropLast(1) },
+                    onDone = { submit() },
+                )
             }
         }
 

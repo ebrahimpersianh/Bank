@@ -3041,7 +3041,11 @@ private fun PatternSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Uni
         title = { Text(if (first == null) "الگو را بکش" else "دوباره همان الگو را بکش") },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("دست‌کم ۴ نقطه را به هم وصل کن.", color = AppMuted, fontSize = 12.sp)
+                Text(
+                    if (first == null) "مرحله ۱ از ۲ · دست‌کم ۴ نقطه را به هم وصل کن" else "مرحله ۲ از ۲ · برای تأیید دوباره بکش",
+                    color = AppMuted,
+                    fontSize = 12.sp,
+                )
                 ir.sadteam.loancalc.ui.security.PatternPad(
                     onComplete = { seq ->
                         val f = first
@@ -3060,54 +3064,50 @@ private fun PatternSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Uni
     )
 }
 
+/**
+ * فریمِ `26a`ِ ChatGPT: دو مرحله («PIN جدید» ← «تکرارش») با خانه‌های PIN و صفحه‌کلیدِ خودِ اپ،
+ * هم‌شکلِ صفحه‌ی قفل - جای دو فیلدِ متنی.
+ */
 @Composable
 private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    var first by remember { mutableStateOf<String?>(null) }
     var pin by remember { mutableStateOf("") }
-    var confirmPin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+
+    fun next() {
+        val f = first
+        when {
+            pin.length < 4 -> error = "PIN باید حداقل ۴ رقم باشه"
+            f == null -> { first = pin; pin = ""; error = null }
+            f == pin -> onConfirm(pin)
+            else -> { first = null; pin = ""; error = "دو PIN یکی نبود؛ از اول بزن." }
+        }
+    }
 
     JibakAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("تنظیم PIN") },
         text = {
-            Column {
-                // Ltr: همون باگِ فیلدهای شماره‌موبایل/کدِ تاییدِ LoginScreen (تایپِ عدد زیرِ RTL از
-                // سمتِ راست جا می‌گرفت) - رجوع کن به کامنتِ Ltr.kt.
-                Ltr {
-                    OutlinedTextField(
-                        value = pin,
-                        onValueChange = { val cleaned = cleanNum(it); if (cleaned.length <= 8) pin = cleaned },
-                        label = { Text("PIN جدید") },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    if (first == null) "مرحله ۱ از ۲ · PIN جدید (۴ تا ۸ رقم)" else "مرحله ۲ از ۲ · همان PIN را تکرار کن",
+                    color = AppMuted,
+                    fontSize = 12.sp,
+                )
+                Box(Modifier.padding(vertical = 14.dp)) {
+                    ir.sadteam.loancalc.ui.security.PinBoxes(length = pin.length, error = error != null && pin.isEmpty(), boxWidth = 28)
                 }
-                Ltr {
-                    OutlinedTextField(
-                        value = confirmPin,
-                        onValueChange = { val cleaned = cleanNum(it); if (cleaned.length <= 8) confirmPin = cleaned },
-                        label = { Text("تکرار PIN") },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    )
-                }
-                if (error != null) {
-                    Text(error ?: "", color = AppDanger, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
-                }
+                ir.sadteam.loancalc.ui.security.NumberPad(
+                    onDigit = { c -> if (pin.length < ir.sadteam.loancalc.ui.security.PIN_MAX) { pin += c; error = null } },
+                    onBackspace = { pin = pin.dropLast(1) },
+                    onDone = { next() },
+                    keyWidth = 70,
+                )
+                error?.let { Text(it, color = AppDanger, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp)) }
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                when {
-                    pin.length < 4 -> error = "PIN باید حداقل ۴ رقم باشه"
-                    pin != confirmPin -> error = "دو PIN یکی نیستن"
-                    else -> onConfirm(pin)
-                }
-            }) { Text("ذخیره") }
+            TextButton(onClick = { next() }) { Text(if (first == null) "بعدی" else "ذخیره") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("انصراف") }
