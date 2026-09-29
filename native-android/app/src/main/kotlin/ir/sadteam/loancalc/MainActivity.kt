@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc
 
+import ir.sadteam.loancalc.ui.subscription.SubscriptionExpiryReminder
 import ir.sadteam.loancalc.ui.theme.AppLine
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.animation.animateColorAsState
@@ -1409,7 +1410,7 @@ private fun LoanCalcApp(
         // هشدارِ پایانِ اشتراک: اگر برگه‌ی آپدیت باز است، اول آن؛ هشدار بعد از بستنش می‌آید
         // (روزی یک بار شمرده می‌شود فقط وقتی واقعاً دیده شد).
         if (isPremium && updateUrl == null && tourSeen != false) {
-            ir.sadteam.loancalc.ui.subscription.SubscriptionExpiryReminder(
+            SubscriptionExpiryReminder(
                 ir.sadteam.loancalc.ui.subscription.parseSubscribedUntil(subUntil)?.daysLeft ?: trialLeft,
             )
         }

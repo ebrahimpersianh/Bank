@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.subscription
 
+import ir.sadteam.loancalc.ui.update.ExpirySheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -75,7 +76,7 @@ fun androidx.compose.foundation.layout.BoxScope.SubscriptionExpiryReminder(daysL
         prefs.edit().putInt("last_day", today).apply()
         show = false
     }
-    ir.sadteam.loancalc.ui.update.ExpirySheet(
+    ExpirySheet(
         visible = show,
         daysLeft = daysLeft,
         onRenew = {
