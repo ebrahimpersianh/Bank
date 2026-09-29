@@ -1,5 +1,32 @@
 package ir.sadteam.loancalc.ui.debt
 
+import ir.sadteam.loancalc.ui.theme.AppTxOut
+import ir.sadteam.loancalc.ui.theme.AppTxIn
+import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppChipBg
+import ir.sadteam.loancalc.ui.jibak.toFaSignedMoney
+import ir.sadteam.loancalc.ui.jibak.toFaMoney
+import ir.sadteam.loancalc.ui.jibak.tomanToRial
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.components.persianMonthName
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import ir.sadteam.loancalc.ui.components.AppButtonVariant
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
@@ -219,7 +246,13 @@ fun DebtScreen(
                 onOpen = { openedCounterpartyId = it.id },
                 showAddCounterparty = showAddCounterparty,
                 onShowAddCounterpartyChange = { showAddCounterparty = it },
-                onAddCounterparty = { name, phone -> viewModel.addCounterparty(name, phone) },
+                onAddCounterparty = { n ->
+                    viewModel.addCounterparty(n.name, n.phone) { id ->
+                        if (n.amountRial > 0) {
+                            viewModel.addDebt(id, n.amountRial, n.type, n.note, n.year, n.month, n.day)
+                        }
+                    }
+                },
                 netBalance = { id -> viewModel.netBalance(id, debts) },
                 onOpenDang = { dangScreen = "list" },
             )
@@ -236,6 +269,14 @@ fun DebtScreen(
     }
 }
 
+/** فیلترِ فهرست - فریمِ `25a`. */
+private enum class DebtFilter(val label: String) { ALL("همه"), OWED("طلب‌ها"), OWE("بدهی‌ها"), SETTLED("تسویه‌شده") }
+
+/**
+ * فهرستِ طرف‌حساب‌ها - بازطراحیِ فریمِ `25a`ِ ChatGPT: سه کاشیِ «طلب دارم / بدهکارم / خالص»،
+ * قرص‌های فیلتر، ردیفِ طرف‌حساب با تاریخِ آخرین ردیف و مبلغِ رنگی، و دکمه‌ی اصلیِ «افزودن» که
+ * برگه‌ی پایینِ `25b` را باز می‌کند (جای کارتِ ثابتِ وسطِ فهرست).
+ */
 @Composable
 private fun DebtList(
     counterparties: List<CounterpartyEntity>,
@@ -244,22 +285,35 @@ private fun DebtList(
     onOpen: (CounterpartyEntity) -> Unit,
     showAddCounterparty: Boolean,
     onShowAddCounterpartyChange: (Boolean) -> Unit,
-    onAddCounterparty: (name: String, phone: String?) -> Unit,
+    onAddCounterparty: (NewCounterparty) -> Unit,
     netBalance: (Long) -> Double,
     onOpenDang: () -> Unit,
 ) {
     val privacyMode = LocalPrivacyMode.current
-    var newName by rememberSaveable { mutableStateOf("") }
-    var newPhone by rememberSaveable { mutableStateOf("") }
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    val visibleCounterparties = remember(counterparties, searchQuery) {
+    var filter by rememberSaveable { mutableStateOf(DebtFilter.ALL) }
+    val balances = remember(counterparties, debts) { counterparties.associate { it.id to netBalance(it.id) } }
+    val totalOwed = balances.values.filter { it > 0 }.sum()
+    val totalOwe = -balances.values.filter { it < 0 }.sum()
+    val visibleCounterparties = remember(counterparties, searchQuery, filter, balances) {
         val q = searchQuery.trim()
-        if (q.isBlank()) counterparties else counterparties.filter { it.name.contains(q, ignoreCase = true) }
+        counterparties
+            .filter { q.isBlank() || it.name.contains(q, ignoreCase = true) }
+            .filter {
+                val bal = balances[it.id] ?: 0.0
+                when (filter) {
+                    DebtFilter.ALL -> true
+                    DebtFilter.OWED -> bal > 0
+                    DebtFilter.OWE -> bal < 0
+                    DebtFilter.SETTLED -> bal == 0.0
+                }
+            }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 24.dp),
+        contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 96.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
@@ -267,16 +321,30 @@ private fun DebtList(
                 IconButton(onClick = onBack) {
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                 }
-                Text("طلب و بدهی", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("طلب و بدهی", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         }
         item {
-            // «دنگ» - فریمِ `22c`، درِ ورودی از همینجا (تقسیمِ یه هزینه بینِ چند طرف‌حساب).
-            OutlinedButton(onClick = onOpenDang, modifier = Modifier.fillMaxWidth()) {
-                Text("دنگ‌ها (تقسیمِ هزینه بینِ چند نفر)")
+            // «دنگ» - کاشیِ واضح، نه دکمه‌ی خطیِ کم‌رنگ (بریفِ ۲۵).
+            AppCard(modifier = Modifier.pressScaleClickable(onClick = onOpenDang)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Filled.Groups, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
+                    Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+                        Text("دنگ‌ها", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text("تقسیمِ هزینه بینِ چند نفر", color = AppMuted, fontSize = 11.sp)
+                    }
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted)
+                }
             }
         }
         if (counterparties.isNotEmpty()) {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                    SummaryTile("طلب دارم", totalOwed, AppTxIn, privacyMode, Modifier.weight(1f))
+                    SummaryTile("بدهکارم", totalOwe, AppTxOut, privacyMode, Modifier.weight(1f))
+                    SummaryTile("خالص", totalOwed - totalOwe, if (totalOwed >= totalOwe) AppTxIn else AppTxOut, privacyMode, Modifier.weight(1f), signed = true)
+                }
+            }
             item {
                 OutlinedTextField(
                     value = searchQuery,
@@ -287,46 +355,12 @@ private fun DebtList(
                     singleLine = true,
                 )
             }
-        }
-        if (showAddCounterparty) {
             item {
-                AppCard(label = "طرفِ‌حسابِ جدید") {
-                    OutlinedTextField(
-                        value = newName,
-                        onValueChange = { newName = it },
-                        label = { Text("اسم") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                    )
-                    Ltr {
-                        OutlinedTextField(
-                            value = newPhone,
-                            onValueChange = { newPhone = cleanNum(it) },
-                            label = { Text("موبایل (اختیاری)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                            singleLine = true,
-                        )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                    DebtFilter.entries.forEach { f ->
+                        DebtTypeChip(label = f.label, selected = filter == f, modifier = Modifier.weight(1f)) { filter = f }
                     }
-                    GradientButton(
-                        onClick = {
-                            if (newName.isNotBlank()) {
-                                onAddCounterparty(newName.trim(), newPhone.trim().takeIf { it.isNotBlank() })
-                                newName = ""
-                                newPhone = ""
-                                onShowAddCounterpartyChange(false)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                    ) { Text("افزودن") }
                 }
-            }
-        } else {
-            item {
-                GradientButton(
-                    onClick = { onShowAddCounterpartyChange(true) },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("افزودنِ طرفِ‌حساب") }
             }
         }
         if (visibleCounterparties.isEmpty()) {
@@ -337,42 +371,215 @@ private fun DebtList(
                     description = if (counterparties.isEmpty()) {
                         "طلب یا بدهیِ خودت با یه شخص رو اینجا ثبت کن تا فراموش نشه."
                     } else {
-                        "طرفِ‌حسابی با این اسم پیدا نشد."
+                        "طرفِ‌حسابی با این شرط پیدا نشد."
                     },
                 )
             }
         } else {
             items(visibleCounterparties, key = { it.id }) { counterparty ->
-                val balance = netBalance(counterparty.id)
+                val balance = balances[counterparty.id] ?: 0.0
+                val last = debts.filter { it.counterpartyId == counterparty.id }.maxByOrNull { it.year * 10000 + it.month * 100 + it.day }
+                val ink = when {
+                    balance > 0 -> AppTxIn
+                    balance < 0 -> AppTxOut
+                    else -> AppMuted
+                }
                 AppCard(modifier = Modifier.pressScaleClickable { onOpen(counterparty) }) {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        AvatarView(avatar = counterparty.toAvatar(), size = 38.dp, modifier = Modifier.padding(end = 10.dp))
+                        AvatarView(avatar = counterparty.toAvatar(), size = 40.dp, modifier = Modifier.padding(end = 10.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(counterparty.name, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             Text(
-                                when {
-                                    balance > 0 -> "طلبِ تو"
-                                    balance < 0 -> "بدهیِ تو"
-                                    else -> "بی‌حساب"
-                                },
+                                listOfNotNull(
+                                    when {
+                                        balance > 0 -> "طلبِ تو"
+                                        balance < 0 -> "بدهیِ تو"
+                                        else -> "تسویه"
+                                    },
+                                    last?.let { "آخرین: ${toFa(it.day)} ${persianMonthName(it.month)}" },
+                                ).joinToString(" · "),
                                 color = AppMuted,
-                                fontSize = 12.sp,
+                                fontSize = 11.5.sp,
+                                modifier = Modifier.padding(top = 3.dp),
                             )
                         }
                         Text(
-                            maskIfPrivate(privacyMode, "${fmt(kotlin.math.abs(balance))} ریال"),
-                            color = when {
-                                balance > 0 -> AppPrimary
-                                balance < 0 -> AppDanger
-                                else -> AppMuted
-                            },
+                            maskIfPrivate(privacyMode, rialToToman(kotlin.math.abs(balance).toLong()).toFaMoney() + " تومان"),
+                            color = ink,
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Black,
                         )
                     }
                 }
             }
         }
+    }
+
+    // دکمه‌ی اصلیِ پایینِ صفحه (فریمِ `25a`).
+    GradientButton(
+        onClick = { onShowAddCounterpartyChange(true) },
+        modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 14.dp, vertical = 16.dp),
+    ) {
+        Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+        Text("افزودنِ طرفِ‌حساب", modifier = Modifier.padding(start = 6.dp))
+    }
+
+    AddCounterpartySheet(
+        visible = showAddCounterparty,
+        onDismiss = { onShowAddCounterpartyChange(false) },
+        onSave = { onAddCounterparty(it); onShowAddCounterpartyChange(false) },
+    )
+    }
+}
+
+@Composable
+private fun SummaryTile(label: String, rial: Double, ink: androidx.compose.ui.graphics.Color, privacyMode: Boolean, modifier: Modifier, signed: Boolean = false) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(ink.copy(alpha = 0.12f))
+            .border(1.dp, ink.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+            .padding(vertical = 10.dp, horizontal = 4.dp),
+    ) {
+        Text(label, color = ink, fontSize = 11.sp)
+        val toman = rialToToman(rial.toLong())
+        Text(
+            maskIfPrivate(privacyMode, (if (signed) toman.toFaSignedMoney() else toman.toFaMoney())),
+            color = ink,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.padding(top = 3.dp),
+        )
+        Text("تومان", color = AppMuted, fontSize = 9.5.sp)
+    }
+}
+
+/** داده‌ی برگه‌ی `25b`: مبلغ صفر یعنی فقط طرف‌حساب ساخته شود، بی ردیفِ طلب/بدهی. */
+data class NewCounterparty(
+    val name: String,
+    val phone: String?,
+    val amountRial: Double,
+    val type: DebtType,
+    val note: String,
+    val year: Int,
+    val month: Int,
+    val day: Int,
+)
+
+/** برگه‌ی پایینِ «طرف‌حسابِ جدید» - فریمِ `25b`؛ اسکرول‌پذیر تا دکمه‌ی «افزودن» هرگز بریده نشود. */
+@Composable
+private fun BoxScope.AddCounterpartySheet(visible: Boolean, onDismiss: () -> Unit, onSave: (NewCounterparty) -> Unit) {
+    androidx.compose.animation.AnimatedVisibility(visible = visible, enter = androidx.compose.animation.fadeIn(), exit = androidx.compose.animation.fadeOut(), modifier = Modifier.matchParentSize()) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.45f))
+                .clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null, onClick = onDismiss),
+        )
+    }
+    androidx.compose.animation.AnimatedVisibility(
+        visible = visible,
+        enter = androidx.compose.animation.slideInVertically { it },
+        exit = androidx.compose.animation.slideOutVertically { it },
+        modifier = Modifier.align(Alignment.BottomCenter),
+    ) {
+        var name by rememberSaveable { mutableStateOf("") }
+        var phone by rememberSaveable { mutableStateOf("") }
+        var type by rememberSaveable { mutableStateOf(DebtType.OWED_TO_ME) }
+        var amount by rememberSaveable { mutableStateOf("") }
+        var note by rememberSaveable { mutableStateOf("") }
+        val today = remember { JalaliCalendar.today() }
+        var y by rememberSaveable { mutableStateOf(today.y) }
+        var m by rememberSaveable { mutableStateOf(today.m) }
+        var d by rememberSaveable { mutableStateOf(today.d) }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 620.dp)
+                .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
+                .background(AppSurface)
+                .clickable(interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null) {}
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(16.dp),
+        ) {
+            Box(Modifier.align(Alignment.CenterHorizontally).size(width = 42.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(AppLine))
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                Text("طرفِ‌حسابِ جدید", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = "بستن", tint = AppMuted) }
+            }
+            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("اسم") }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(top = 6.dp))
+            Ltr {
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = cleanNum(it) },
+                    label = { Text("موبایل (اختیاری)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
+                DirectionButton("من طلب دارم", type == DebtType.OWED_TO_ME, AppTxIn, Modifier.weight(1f)) { type = DebtType.OWED_TO_ME }
+                DirectionButton("من بدهکارم", type == DebtType.I_OWE, AppTxOut, Modifier.weight(1f)) { type = DebtType.I_OWE }
+            }
+            OutlinedTextField(
+                value = amount,
+                onValueChange = { amount = cleanNum(it).take(13) },
+                label = { Text("مبلغ (اختیاری)") },
+                suffix = { Text("تومان") },
+                visualTransformation = ThousandsSeparatorTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            )
+            amount.toLongOrNull()?.takeIf { it > 0 }?.let {
+                Text("${numberToWordsFa(it.toDouble())} تومان", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+            }
+            if ((amount.toLongOrNull() ?: 0L) > 0) {
+                Text("تاریخ", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 12.dp))
+                InlineJalaliDateRow(year = y, month = m, day = d, onDateChange = { yy, mm, dd -> y = yy; m = mm; d = dd })
+                OutlinedTextField(value = note, onValueChange = { note = it.take(120) }, label = { Text("یادداشت (اختیاری)") }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(top = 10.dp))
+            }
+            GradientButton(
+                onClick = {
+                    if (name.isNotBlank()) {
+                        onSave(
+                            NewCounterparty(
+                                name = name.trim(),
+                                phone = phone.trim().ifBlank { null },
+                                amountRial = tomanToRial(amount.toLongOrNull() ?: 0L).toDouble(),
+                                type = type,
+                                note = note.trim(),
+                                year = y, month = m, day = d,
+                            ),
+                        )
+                        name = ""; phone = ""; amount = ""; note = ""
+                    }
+                },
+                enabled = name.isNotBlank(),
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            ) { Text("افزودن") }
+        }
+    }
+}
+
+@Composable
+private fun DirectionButton(label: String, selected: Boolean, ink: androidx.compose.ui.graphics.Color, modifier: Modifier, onClick: () -> Unit) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .height(46.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (selected) ink.copy(alpha = 0.16f) else AppChipBg)
+            .border(if (selected) 1.5.dp else 1.dp, if (selected) ink else AppLine, RoundedCornerShape(12.dp))
+            .pressScaleClickable(onClick = onClick),
+    ) {
+        Text(label, color = if (selected) ink else AppMuted, fontSize = 13.sp, fontWeight = FontWeight.Bold)
     }
 }
 
