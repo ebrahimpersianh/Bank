@@ -16,3 +16,4 @@ node_modules/
 *.jks
 secrets.properties
 local.properties
+design-batches/
