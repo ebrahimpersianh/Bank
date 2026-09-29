@@ -735,25 +735,40 @@ fun LoanDetailScreen(
             onDismissRequest = { lateDateM = null },
             title = { Text("تاریخ واقعی پرداخت قسط ${toFa(m)}") },
             text = {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    DetailDateDropdown(
-                        options = (1350..1410).map { it to toFa(it) },
-                        selected = lateYear,
-                        onSelect = { lateYear = it },
-                        modifier = Modifier.weight(1f),
+                // فریمِ `30c`: چرخِ تاریخ (همان کامپوننتِ فرمِ وام/چک) جای سه منوی کشویی، و زیرش
+                // «چند روز دیرتر از سررسید» که زنده عوض می‌شود - با رنگِ هشدار، نه سبز.
+                val dueMap = rows.firstOrNull { (it["m"] as? Number)?.toInt() == m }?.get("dueDate") as? Map<*, *>
+                val dueDate = dueMap?.let {
+                    val y = (it["y"] as? Number)?.toInt(); val mo = (it["m"] as? Number)?.toInt(); val d = (it["d"] as? Number)?.toInt()
+                    if (y != null && mo != null && d != null) PersianDate(y, mo, d) else null
+                }
+                Column {
+                    ir.sadteam.loancalc.ui.components.InlineJalaliDateRow(
+                        year = lateYear,
+                        month = lateMonth,
+                        day = lateDay,
+                        onDateChange = { y, mo, d -> lateYear = y; lateMonth = mo; lateDay = d },
                     )
-                    DetailDateDropdown(
-                        options = (1..12).map { it to persianMonthName(it) },
-                        selected = lateMonth,
-                        onSelect = { lateMonth = it },
-                        modifier = Modifier.weight(1f),
-                    )
-                    DetailDateDropdown(
-                        options = (1..31).map { it to toFa(it) },
-                        selected = lateDay,
-                        onSelect = { lateDay = it },
-                        modifier = Modifier.weight(1f),
-                    )
+                    if (dueDate != null) {
+                        val late = JalaliCalendar.daysBetween(dueDate, PersianDate(lateYear, lateMonth, lateDay))
+                        val (label, ink) = when {
+                            late > 0 -> "${toFa(late)} روز دیرتر از سررسید" to AppDangerInk
+                            late == 0 -> "همان روزِ سررسید" to AppMuted
+                            else -> "${toFa(-late)} روز زودتر از سررسید" to AppMuted
+                        }
+                        Text(
+                            label,
+                            color = ink,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(ink.copy(alpha = 0.12f))
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                        )
+                    }
                 }
             },
             confirmButton = {
