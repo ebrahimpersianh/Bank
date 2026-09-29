@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.server.routes
 
+import ir.sadteam.loancalc.server.RateLimit
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
@@ -39,8 +40,10 @@ private const val MAX_VERIFY_ATTEMPTS = 5
    بالاتر از نیازِ یه کاربرِ واقعی‌ان (یه آدم عادی روزی چند بار لاگین نمی‌کنه)، ولی جلوی اسکریپتی
    که می‌خواد اعتبارِ پیامک رو بسوزونه رو کاملاً می‌گیرن. */
 private const val HOUR_MS = 60 * 60 * 1000L
-private const val OTP_REQUESTS_PER_IP_PER_HOUR = 8
-private const val OTP_REQUESTS_PER_IP_PER_DAY = 25
+// ۷ مهر: اپراتورهای موبایلِ ایران کاربران را پشتِ IPِ مشترک (CGNAT/VPN) می‌برند؛ ۸ در ساعت برای
+// «هر IP» عملاً سقفِ جمعیِ صدها کاربر بود و ورودِ واقعی رد می‌شد. سقفِ اصلی کول‌داون + سقفِ روزانه‌ی هر شماره است.
+private const val OTP_REQUESTS_PER_IP_PER_HOUR = 40
+private const val OTP_REQUESTS_PER_IP_PER_DAY = 200
 private const val VERIFY_ATTEMPTS_PER_IP_PER_HOUR = 30
 
 private val secureRandom = SecureRandom()
@@ -113,6 +116,11 @@ fun Route.authRoutes() {
                 return@post
             }
 
+            // سقفِ هر **شماره** (جایگزینِ سقفِ سخت‌گیرانه‌ی IP): ۶ پیامک در ساعت، ۱۵ در روز.
+            if (!RateLimit.allow("otp_phone_h:$phone", 6, HOUR_MS) || !RateLimit.allow("otp_phone_d:$phone", 15, 24 * HOUR_MS)) {
+                call.respond(HttpStatusCode.TooManyRequests, mapOf("error" to "rate_limited"))
+                return@post
+            }
             val recentCreatedAt = Db.withConnection { conn ->
                 conn.queryOne("SELECT created_at FROM otps WHERE phone = ? ORDER BY id DESC LIMIT 1", phone) { rs ->
                     rs.getString("created_at")

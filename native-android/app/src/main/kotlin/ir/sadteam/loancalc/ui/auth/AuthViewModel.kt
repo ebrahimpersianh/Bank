@@ -234,10 +234,9 @@ class AuthViewModel @Inject constructor(
                             is SyncOutcome.ConflictNeedsChoice -> _syncConflict.value = outcome.serverLoans
                             else -> Unit
                         }
-                        if (authPrefs.subscribed.first()) {
-                            launch { chequeRepository.pushToServer(token) }
-                            launch { accountRepository.pushToServer(token) }
-                        }
+                        // گوشیِ خالی از سرور پر می‌شود؛ هرگز خالی روی سرور نوشته نمی‌شود.
+                        launch { chequeRepository.syncAfterLogin(token) }
+                        launch { accountRepository.syncAfterLogin(token) }
                     }
                     // «هدیه‌ی شماره‌ی تازه ۵۰ سکه» (جدولِ `20e`). یک‌باره‌ست، پس ورودهای بعدی
                     // دوباره سکه نمی‌دن (یگانگی رو خودِ نوعِ رویداد تو دفترِ سکه).

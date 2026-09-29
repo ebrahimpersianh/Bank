@@ -69,7 +69,12 @@ private const val OTP_LENGTH = 5
 // مجدد» فعال می‌شه، سرور هم واقعاً درخواستِ جدید رو قبول می‌کنه (نه یه شمارش‌معکوسِ حدسی/جدا).
 private const val RESEND_COOLDOWN_SECONDS = 60
 
-private val requestOtpErrors = mapOf("too_soon" to "کمی صبر کن، کد قبلی هنوز معتبره")
+private val requestOtpErrors = mapOf(
+    "too_soon" to "کمی صبر کن، کد قبلی هنوز معتبره",
+    "rate_limited" to "درخواستِ زیادی از این اینترنت رسیده؛ چند دقیقه‌ی دیگه دوباره بزن",
+    "sms_send_failed" to "پیامک ارسال نشد؛ چند لحظه‌ی دیگه دوباره امتحان کن",
+    "invalid_phone" to "شماره‌ی موبایل درست نیست",
+)
 private val verifyOtpErrors = mapOf(
     "wrong_code" to "کد اشتباهه",
     "code_expired" to "کد منقضی شده، دوباره درخواست بده",

@@ -1,0 +1,57 @@
+name: برگرداندنِ پشتیبانِ ابریِ یک حساب از بکاپِ شبانه
+
+# اجرای دستی. حالتِ «inspect» فقط اندازه‌ها را در بکاپ نشان می‌دهد. حالتِ «restore» ردیفِ چک‌ها و
+# حساب‌های همان کاربر را از بکاپِ شبانه برمی‌گرداند (قبلش از دیتابیسِ زنده یک کپی می‌گیرد).
+on:
+  workflow_dispatch:
+    inputs:
+      user_id:
+        description: "شماره‌ی کاربری"
+        required: true
+      backup_file:
+        description: "اسمِ فایلِ بکاپ، مثلاً data-20260929-012116.sqlite.gz"
+        required: true
+      mode:
+        description: "inspect یا restore"
+        required: true
+        default: inspect
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        env:
+          UID_IN: ${{ inputs.user_id }}
+          FILE_IN: ${{ inputs.backup_file }}
+          MODE_IN: ${{ inputs.mode }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: UID_IN,FILE_IN,MODE_IN
+          script: |
+            set -e
+            case "$UID_IN" in (*[!0-9]*|'') echo "فقط عدد"; exit 1;; esac
+            case "$FILE_IN" in (data-*.sqlite.gz) ;; (*) echo "اسمِ فایل نامعتبر"; exit 1;; esac
+            SRC=~/VameMan/backups/$FILE_IN
+            [ -f "$SRC" ] || { echo "فایل نیست"; exit 1; }
+            TMP=$(mktemp /tmp/bk-XXXX.sqlite)
+            gunzip -c "$SRC" > "$TMP"
+            echo "=== در بکاپ ==="
+            sqlite3 "$TMP" "SELECT 'cheques', length(data), updated_at FROM cheques_backup WHERE user_id=$UID_IN;"
+            sqlite3 "$TMP" "SELECT 'accounts', length(data), (length(data)-length(replace(data,'\"amount\"','')))/8, updated_at FROM accounts_backup WHERE user_id=$UID_IN;"
+            DB=~/VameMan/data.sqlite
+            echo "=== الان روی سرور ==="
+            sqlite3 "$DB" "SELECT 'cheques', length(data), revision FROM cheques_backup WHERE user_id=$UID_IN;"
+            sqlite3 "$DB" "SELECT 'accounts', length(data), revision FROM accounts_backup WHERE user_id=$UID_IN;"
+            if [ "$MODE_IN" = "restore" ]; then
+              cp "$DB" ~/VameMan/backups/before-restore-$(date +%Y%m%d-%H%M%S).sqlite
+              sqlite3 "$DB" "ATTACH '$TMP' AS b;
+                UPDATE cheques_backup SET data=(SELECT data FROM b.cheques_backup WHERE user_id=$UID_IN), revision=revision+1, updated_at=datetime('now') WHERE user_id=$UID_IN AND EXISTS (SELECT 1 FROM b.cheques_backup WHERE user_id=$UID_IN);
+                UPDATE accounts_backup SET data=(SELECT data FROM b.accounts_backup WHERE user_id=$UID_IN), revision=revision+1, updated_at=datetime('now') WHERE user_id=$UID_IN AND EXISTS (SELECT 1 FROM b.accounts_backup WHERE user_id=$UID_IN);"
+              echo "=== بعد از برگرداندن ==="
+              sqlite3 "$DB" "SELECT 'cheques', length(data), revision FROM cheques_backup WHERE user_id=$UID_IN;"
+              sqlite3 "$DB" "SELECT 'accounts', length(data), revision FROM accounts_backup WHERE user_id=$UID_IN;"
+            fi
+            rm -f "$TMP"

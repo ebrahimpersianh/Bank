@@ -606,6 +606,22 @@ class AccountRepository(
         null
     }
 
+
+    /**
+     * 🚨 بعد از ورود (۷ مهر): قبلاً اینجا **بی‌قید push** می‌شد - گوشیِ تازه/پاک‌شده یعنی داده‌ی
+     * خالی روی پشتیبانِ ابری می‌نشست و همه‌چیز پاک می‌شد. حالا: گوشی خالی ← از سرور بیاور؛
+     * سرور خالی ← بفرست؛ هر دو پر ← دست نزن (پشتیبانِ دوره‌ای بعداً با کنترلِ نسخه می‌فرستد).
+     */
+    suspend fun syncAfterLogin(token: String) {
+        val blob = fetchServerBackupJson(token) ?: return
+        val serverHasData = blob.contains("\"id\"")
+        val localHasData = transactionDao.getAll().isNotEmpty() || accountDao.getAll().size > 1
+        when {
+            !localHasData && serverHasData -> importBackupJson(blob)
+            localHasData && !serverHasData -> pushToServer(token)
+        }
+    }
+
     suspend fun restoreFromServer(token: String): Boolean {
         val blob = try {
             apiService.getAccountsBackup("Bearer $token").data
