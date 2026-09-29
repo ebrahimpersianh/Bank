@@ -120,6 +120,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
     val actions = st.actions.orEmpty()
     val funnel = st.funnel.orEmpty()
 
+    item { LiveCard(st) }
+
     item { Insights(st) }
 
     item { SalesCard(st) }
@@ -196,6 +198,30 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
             )
         }
     }
+
+    val cohorts = st.cohorts.orEmpty()
+    if (cohorts.any { it.size > 0 }) {
+        item { CohortCard(cohorts) }
+    }
+
+    item { OnboardingCard(actions) }
+
+    item { NotificationCard(actions) }
+
+    val flows = st.flows.orEmpty().sortedByDescending { it.total }
+    if (flows.isNotEmpty()) {
+        item {
+            AppCard(label = "مسیرِ حرکت بینِ صفحه‌ها (۳۰ روز)") {
+                val max = flows.first().total.coerceAtLeast(1)
+                flows.take(25).forEach { f ->
+                    val (from, to) = f.name.split("--", limit = 2).let { it[0] to it.getOrElse(1) { "" } }
+                    BarRow("${screenLabel(from)} ← ${screenLabel(to)}", f.total.toFloat() / max, "${toFa(f.total)} بار · ${toFa(f.users)} نفر")
+                }
+            }
+        }
+    }
+
+    item { HealthCard(st) }
 
     if (funnel.isNotEmpty()) {
         item {
@@ -506,6 +532,12 @@ private fun actionLabel(key: String): String = ACTION_LABELS[key]
         key.startsWith("purchase_failed_") -> "خریدِ ناموفقِ اشتراکِ ${key.removePrefix("purchase_failed_")}"
         key.startsWith("purchase_cancel_") -> "انصراف از خریدِ اشتراکِ ${key.removePrefix("purchase_cancel_")}"
         key == "paywall_view" -> "دیدنِ صفحه‌ی اشتراک"
+        key.startsWith("notif_shown_") -> "اعلانِ فرستاده‌شده: ${key.removePrefix("notif_shown_")}"
+        key.startsWith("notif_open_") -> "باز کردنِ اعلان: ${key.removePrefix("notif_open_")}"
+        key.startsWith("notif_button_") -> "دکمه‌ی اعلان: ${NOTIF_BUTTON_LABELS[key.removePrefix("notif_button_")] ?: key}"
+        key.startsWith("onboarding_step_") -> "معرفی: مرحله‌ی ${toFa((key.removePrefix("onboarding_step_").toIntOrNull() ?: 0) + 1)}"
+        key.startsWith("shortcut_") -> "میان‌برِ آیکون: ${key.removePrefix("shortcut_")}"
+        key == "widget_open" -> "باز کردن از ویجت"
         key == "purchase_verify_failed" -> "پول رفت ولی تأیید نشد (پیگیری کن!)"
         else -> key
     }
@@ -825,3 +857,141 @@ private fun SalesCard(st: AdminStatsResponse) {
         )
     }
 }
+
+/** ⏱ لحظه‌ای + چسبندگی (DAU/MAU) + ازدست‌رفته‌ها. */
+@Composable
+private fun LiveCard(st: AdminStatsResponse) {
+    AppCard(label = "همین حالا") {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatTile("داخلِ برنامه", toFa(st.activeNow), "نفر", Modifier.weight(1f))
+            StatTile("یک ساعتِ اخیر", toFa(st.activeLastHour), "نفر", Modifier.weight(1f))
+            StatTile("میانگینِ روزانه", faDecimal(st.avgDau30), "نفر", Modifier.weight(1f))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+            StatTile("چسبندگی", toFa(percent(Math.round(st.avgDau30 * 10).toInt(), st.active30 * 10)), "٪", Modifier.weight(1f))
+            StatTile("فعالِ هفته", toFa(st.active7), "نفر", Modifier.weight(1f))
+            StatTile("ازدست‌رفته", toFa(st.churned), "نصب", Modifier.weight(1f))
+        }
+        Text(
+            "«داخلِ برنامه» یعنی در ۵ دقیقه‌ی اخیر. «چسبندگی» = میانگینِ کاربرِ روزانه تقسیم بر کاربرِ ماه " +
+                "(اپ‌های خوب ۲۰٪ به بالا). «ازدست‌رفته» = نصب‌هایی که ۱۴ روز است نیامده‌اند.",
+            color = AppMuted,
+            fontSize = 10.sp,
+            lineHeight = 17.sp,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+    }
+}
+
+/** 📅 جدولِ ماندگاریِ هفتگی - هر ردیف نصب‌های یک هفته، هر ستون درصدِ برگشته در هفته‌ی بعد. */
+@Composable
+private fun CohortCard(cohorts: List<ir.sadteam.loancalc.data.network.AdminCohortRow>) {
+    AppCard(label = "ماندگاریِ هفتگی (گروهِ نصب)") {
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+            Text("هفته‌ی نصب", color = AppLabel, fontSize = 9.sp, modifier = Modifier.width(78.dp))
+            (0..7).forEach { k -> Text(if (k == 0) "هفته‌ی ۰" else toFa(k), color = AppLabel, fontSize = 9.sp, modifier = Modifier.weight(1f)) }
+        }
+        cohorts.filter { it.size > 0 }.forEach { c ->
+            Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("${c.weekStart.faDigitsAscii()} (${toFa(c.size)})", color = AppText, fontSize = 9.5.sp, maxLines = 1, modifier = Modifier.width(78.dp))
+                val weeks = c.weeks.orEmpty()
+                (0..7).forEach { k ->
+                    val v = weeks.getOrNull(k)
+                    val pct = if (v == null) null else percent(v, c.size)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(1.dp)
+                            .height(22.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(if (pct == null) AppSurface2 else AppPrimary.copy(alpha = 0.12f + 0.8f * pct / 100f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (pct != null) Text(toFa(pct), color = if (pct > 55) Color.White else AppText, fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+        Text("عددِ هر خانه درصدِ کسانی است که آن هفته هنوز برنامه را باز کرده‌اند.", color = AppMuted, fontSize = 10.sp, modifier = Modifier.padding(top = 8.dp))
+    }
+}
+
+/** 👋 کاربرِ تازه در کدام مرحله‌ی معرفی ول می‌کند. */
+@Composable
+private fun OnboardingCard(actions: List<ir.sadteam.loancalc.data.network.AdminFeatureUsage>) {
+    val steps = (0..4).map { i -> actions.firstOrNull { it.name == "onboarding_step_$i" }?.users ?: 0 }
+    if (steps.all { it == 0 }) return
+    AppCard(label = "معرفیِ اولِ برنامه - تا کجا جلو رفتند") {
+        val base = steps.first().coerceAtLeast(1)
+        steps.forEachIndexed { i, n -> BarRow("مرحله‌ی ${toFa(i + 1)}", n.toFloat() / base, "${toFa(n)} نفر · ${toFa(percent(n, base))}٪") }
+    }
+}
+
+/** 🔔 اعلان‌ها: چندتا فرستاده شد، چندتا باز شد، چندتا دکمه‌اش زده شد. */
+@Composable
+private fun NotificationCard(actions: List<ir.sadteam.loancalc.data.network.AdminFeatureUsage>) {
+    val types = listOf("loan" to "قسطِ وام", "cheque" to "چک", "bill" to "قبض", "recurring" to "پرداختِ تکراری", "autotx" to "تراکنشِ خودکار", "daily" to "یادآورِ روزانه", "comeback" to "دلمون تنگ شده")
+    fun total(name: String) = actions.firstOrNull { it.name == name }?.total ?: 0
+    val rows = types.map { (key, label) -> Triple(label, total("notif_shown_$key"), total("notif_open_$key")) }.filter { it.second > 0 || it.third > 0 }
+    val buttons = actions.filter { it.name.startsWith("notif_button_") }
+    if (rows.isEmpty() && buttons.isEmpty()) return
+    AppCard(label = "اعلان‌ها (۳۰ روز)") {
+        rows.forEach { (label, shown, opened) ->
+            BarRow(label, if (shown == 0) 0f else opened.toFloat() / shown, "${toFa(shown)} فرستاده · ${toFa(opened)} باز شد", sub = if (shown > 0) "نرخِ باز شدن ${toFa(percent(opened, shown))}٪" else null)
+        }
+        if (buttons.isNotEmpty()) {
+            Text(
+                "دکمه‌های داخلِ اعلان: " + buttons.joinToString("، ") { "${NOTIF_BUTTON_LABELS[it.name.removePrefix("notif_button_")] ?: it.name} ${toFa(it.total)}" },
+                color = AppMuted,
+                fontSize = 10.sp,
+                lineHeight = 17.sp,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+    }
+}
+
+private val NOTIF_BUTTON_LABELS = mapOf("mark_paid" to "«پرداخت شد»", "snooze" to "«فردا یادم بنداز»", "confirm_tx" to "«تأیید»", "reject_tx" to "«رد»")
+
+/** 🩺 سلامتِ برنامه: کرش، خطاهای بی‌صدا و سرعتِ بالا آمدن. */
+@Composable
+private fun HealthCard(st: AdminStatsResponse) {
+    AppCard(label = "سلامتِ برنامه (۳۰ روز)") {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatTile("کرش", toFa(st.crashes30), "بار", Modifier.weight(1f))
+            StatTile("کرش در هر ۱۰۰ نفر", toFa(if (st.active30 == 0) 0 else Math.round(st.crashes30 * 100f / st.active30)), "", Modifier.weight(1f))
+            StatTile("خطای همگام‌سازی", toFa(st.nonFatal30), "بار", Modifier.weight(1f))
+        }
+        SplitRow("کرش به‌تفکیکِ نسخه", st.crashesByVersion.orEmpty()) { it.faDigitsAscii() }
+        val top = st.topCrashes.orEmpty()
+        if (top.isNotEmpty()) {
+            Text("پرتکرارترین کرش‌ها", color = AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
+            top.forEach { Text("${toFa(it.count)}× ${it.name}", color = AppMuted, fontSize = 9.5.sp, lineHeight = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp)) }
+        }
+        val errors = st.errors.orEmpty()
+        if (errors.isNotEmpty()) {
+            Text("خطاهای بی‌صدا", color = AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
+            val max = errors.maxOf { it.total }.coerceAtLeast(1)
+            errors.forEach { BarRow(ERROR_LABELS[it.name] ?: it.name, it.total.toFloat() / max, "${toFa(it.total)} بار · ${toFa(it.users)} نفر") }
+        }
+        val perf = st.perf.orEmpty()
+        if (perf.isNotEmpty()) {
+            Text("سرعتِ باز شدنِ برنامه", color = AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
+            val total = perf.sumOf { it.total }.coerceAtLeast(1)
+            listOf("start_0_800" to "زیرِ ۰٫۸ ثانیه", "start_800_1500" to "۰٫۸ تا ۱٫۵ ثانیه", "start_1500_3000" to "۱٫۵ تا ۳ ثانیه", "start_3000_6000" to "۳ تا ۶ ثانیه", "start_6000_plus" to "بیش از ۶ ثانیه").forEach { (k, label) ->
+                val n = perf.firstOrNull { it.name == k }?.total ?: 0
+                if (n > 0) BarRow(label, n.toFloat() / total, "${toFa(n)} بار · ${toFa(percent(n, total))}٪")
+            }
+        }
+    }
+}
+
+private val ERROR_LABELS = mapOf(
+    "accounts_import" to "برنگشتنِ حساب‌ها از سرور",
+    "sync_conflict" to "تداخلِ دو گوشی",
+    "sync_push_http" to "نرسیدنِ پشتیبان به سرور",
+    "otp_rate_limited" to "کدِ ورود: درخواستِ زیاد",
+    "otp_sms_send_failed" to "کدِ ورود: پیامک نرفت",
+    "otp_invalid_phone" to "کدِ ورود: شماره‌ی اشتباه",
+    "otp_unknown" to "کدِ ورود: خطای نامشخص",
+)

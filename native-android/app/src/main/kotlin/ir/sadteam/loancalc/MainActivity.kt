@@ -472,25 +472,36 @@ class MainActivity : FragmentActivity() {
         }
 
         val loanId = intent?.getLongExtra(EXTRA_OPEN_LOAN_ID, -1L) ?: -1L
-        if (loanId > 0) deepLinkTarget.setLoanId(loanId)
+        if (loanId > 0) {
+            deepLinkTarget.setLoanId(loanId)
+            ir.sadteam.loancalc.data.UsageStats.action("notif_open_loan")
+        }
         // اعلانِ چک تا امروز هیچ مقصدی نداشت (نه باز می‌شد نه بسته) - رجوع کن به
         // PendingChequeDeepLink. جدا از وام نگه داشته شده چون اعلانِ گروه‌شده می‌تواند
         // هم‌زمان یکی از هر کدام داشته باشد.
         val chequeId = intent?.getLongExtra(EXTRA_OPEN_CHEQUE_ID, -1L) ?: -1L
-        if (chequeId > 0) pendingChequeDeepLink.setChequeId(chequeId)
+        if (chequeId > 0) {
+            pendingChequeDeepLink.setChequeId(chequeId)
+            ir.sadteam.loancalc.data.UsageStats.action("notif_open_cheque")
+        }
         // اعلانِ تراکنشِ خودکار (فریمِ `50b`) - هم تپ روی بدنه، هم دکمه‌ی دسته.
         val txId = intent?.getLongExtra(EXTRA_OPEN_TX_ID, -1L) ?: -1L
         if (txId > 0) {
+            ir.sadteam.loancalc.data.UsageStats.action("notif_open_autotx")
             pendingTxDeepLink.set(txId, intent?.getBooleanExtra(EXTRA_PICK_CATEGORY, false) == true)
         }
         // تپ روی ویجت → تبِ سررسید (قاعده‌ی ۳ی فریمِ `57c`: ویجت درباره‌ی سررسید حرف
         // می‌زند، پس بردنِ کاربر به خانه یک قدم عقب است). پلِ تازه لازم نبود - همان
         // میان‌برِ «سررسید» دقیقاً همین کار را می‌کند.
         if (intent?.getBooleanExtra(EXTRA_OPEN_DUE_TAB, false) == true) {
+            ir.sadteam.loancalc.data.UsageStats.action("widget_open")
             deepLinkTarget.setShortcut(DeepLinkTarget.SHORTCUT_DUE)
         }
         // میان‌برِ فشارِ طولانی رو آیکونِ اپ - رجوع کن به res/xml/shortcuts.xml
-        intent?.getStringExtra("jibak_shortcut")?.let { deepLinkTarget.setShortcut(it) }
+        intent?.getStringExtra("jibak_shortcut")?.let {
+            ir.sadteam.loancalc.data.UsageStats.action("shortcut_" + it.lowercase())
+            deepLinkTarget.setShortcut(it)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -500,6 +511,20 @@ class MainActivity : FragmentActivity() {
         handleDeepLinkIntent(intent)
         subscriptionManager = SubscriptionManager(this)
         subscriptionManager.connect { }
+        // زمانِ بالا آمدنِ برنامه (از شروعِ پروسه تا اولین فریم) - فقط بازه، نه عددِ دقیق.
+        if (savedInstanceState == null) {
+            window.decorView.post {
+                val ms = android.os.SystemClock.uptimeMillis() - android.os.Process.getStartUptimeMillis()
+                val bucket = when {
+                    ms < 800 -> "0_800"
+                    ms < 1500 -> "800_1500"
+                    ms < 3000 -> "1500_3000"
+                    ms < 6000 -> "3000_6000"
+                    else -> "6000_plus"
+                }
+                ir.sadteam.loancalc.data.UsageStats.track("perf:start_$bucket")
+            }
+        }
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val themeMode by themeViewModel.themeMode.collectAsState()

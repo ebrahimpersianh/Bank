@@ -96,6 +96,7 @@ object AutoTxNotifier {
         builder.addAction(confirmAction(context, notificationId, txId, confident))
         builder.addAction(rejectAction(context, notificationId, txId))
 
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_autotx")
         NotificationManagerCompat.from(context).notify(notificationId, builder.build())
     }
 
@@ -159,6 +160,7 @@ object AutoTxNotifier {
             .addAction(
                 NotificationCompat.Action.Builder(0, "انتخابِ دسته", pickCategoryIntent(context, txId)).build(),
             )
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_autotx")
         NotificationManagerCompat.from(context).notify(notificationId, builder.build())
     }
 

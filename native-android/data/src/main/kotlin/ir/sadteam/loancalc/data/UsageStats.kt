@@ -108,9 +108,17 @@ object UsageStats {
         // بازسازیِ همان صفحه (چرخشِ گوشی، برگشت از پنجره) دوباره شمرده نمی‌شود.
         if (clean == lastScreen) return
         addScreenTime()
+        // مسیرِ حرکت بینِ صفحه‌ها در همان بارِ استفاده («از خانه رفت به جزئیاتِ وام»).
+        lastScreen?.let { from -> track("flow:$from--$clean".take(64)) }
         lastScreen = clean
         screenSince = System.currentTimeMillis()
         track("screen:$clean")
+    }
+
+    /** یک خطای بی‌سروصدا (شبکه، همگام‌سازی…) - فقط نوعش، نه متنِ خطا. */
+    fun error(kind: String) {
+        val clean = clean(kind) ?: return
+        track("error:$clean")
     }
 
     /** یک کارِ مشخص (مثلاً `loan_added`، `backup_restored`). */

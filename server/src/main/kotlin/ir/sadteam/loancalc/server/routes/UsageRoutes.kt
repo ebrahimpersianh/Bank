@@ -126,8 +126,8 @@ fun Route.usageRoutes() {
                     // last_dayِ قدیمی را می‌بینند.
                     conn.execute(
                         """
-                        INSERT INTO installs (install_id, first_day, last_day, active_days, app_version, store, sdk, logged_in, profile)
-                        VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?)
+                        INSERT INTO installs (install_id, first_day, last_day, active_days, app_version, store, sdk, logged_in, profile, last_seen_at)
+                        VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?, datetime('now'))
                         ON CONFLICT(install_id) DO UPDATE SET
                             active_days = active_days + (CASE WHEN excluded.last_day > installs.last_day THEN 1 ELSE 0 END),
                             first_day = min(installs.first_day, excluded.first_day),
@@ -136,7 +136,8 @@ fun Route.usageRoutes() {
                             store = coalesce(excluded.store, installs.store),
                             sdk = coalesce(excluded.sdk, installs.sdk),
                             logged_in = excluded.logged_in,
-                            profile = coalesce(excluded.profile, installs.profile)
+                            profile = coalesce(excluded.profile, installs.profile),
+                            last_seen_at = datetime('now')
                         """.trimIndent(),
                         body.installId, firstDay, lastDay,
                         body.appVersion?.takeIf { it in 1..1_000_000 },

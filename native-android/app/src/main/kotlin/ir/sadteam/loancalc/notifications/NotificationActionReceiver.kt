@@ -52,6 +52,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                ir.sadteam.loancalc.data.UsageStats.action("notif_button_" + (intent.action ?: "?").substringAfterLast('.').lowercase())
                 when (intent.action) {
                     ACTION_MARK_PAID -> markPaid(intent)
                     ACTION_SNOOZE -> snooze(intent)

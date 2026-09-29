@@ -562,6 +562,7 @@ class AccountRepository(
     suspend fun importBackupJson(json: String): Boolean = try {
         importBackupJsonOrThrow(json)
     } catch (e: Exception) {
+        UsageStats.error("accounts_import")
         // گزارشِ تشخیصی (فقط نوع و متنِ خطا، بدونِ داده) - ۷ مهر حساب‌ها بی‌صدا برنمی‌گشتند.
         runCatching {
             apiService.reportCrash(
@@ -677,7 +678,10 @@ class AccountRepository(
             )
             // ۴۰۹ یعنی گوشیِ دیگری جلوتر نوشته؛ داده‌ی محلی دست‌نخورده می‌مانَد و نتیجه
             // `false` است تا وضعیتِ پشتیبان صادقانه بماند.
-            if (!response.isSuccessful) return false
+            if (!response.isSuccessful) {
+                UsageStats.error(if (response.code() == 409) "sync_conflict" else "sync_push_http")
+                return false
+            }
             uiPrefs?.let { prefs -> expected?.let { prefs.setCloudRevision(CLOUD_MODULE, it + 1) } }
             return true
         } catch (e: Exception) {

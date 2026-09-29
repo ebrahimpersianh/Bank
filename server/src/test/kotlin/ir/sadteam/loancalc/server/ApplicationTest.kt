@@ -347,7 +347,9 @@ class ApplicationTest {
                 """{"installId":"$install","appVersion":651,"store":"myket","sdk":34,"loggedIn":true,
                    "events":[{"name":"session_start"},{"name":"screen:home","count":3},
                              {"name":"action:loan_added"},{"name":"transaction_created","count":2},
-                             {"name":"BAD NAME"}]}""",
+                             {"name":"time:app","count":5400},{"name":"flow:home--loan_detail"},
+                             {"name":"BAD NAME"}],
+                   "profile":{"device_brand":"xiaomi","n_loans":"3","BAD KEY":"x"}}""",
             )
         }
         assertEquals(HttpStatusCode.OK, batch.status)
@@ -376,6 +378,14 @@ class ApplicationTest {
         assertEquals("3", screens[0].jsonObject["total"]!!.jsonPrimitive.content)
         assertEquals("loan_added", json["actions"]!!.jsonArray[0].jsonObject["name"]!!.jsonPrimitive.content)
         assertTrue(!stats.bodyAsText().contains("BAD NAME"))
+        // ۷ مهر - جزئیاتِ بیشتر: «الان»، ثانیه‌ها بیش از ۱۰۰۰، مشخصات، تعدادها و مسیرِ صفحه‌ها.
+        assertEquals("1", json["activeNow"]!!.jsonPrimitive.content)
+        assertEquals("90", json["totalMinutes30"]!!.jsonPrimitive.content)
+        assertTrue(stats.bodyAsText().contains("xiaomi"))
+        assertTrue(!stats.bodyAsText().contains("BAD KEY"))
+        assertEquals("loans", json["adoption"]!!.jsonArray[0].jsonObject["key"]!!.jsonPrimitive.content)
+        assertEquals("home--loan_detail", json["flows"]!!.jsonArray[0].jsonObject["name"]!!.jsonPrimitive.content)
+        assertEquals(8, json["cohorts"]!!.jsonArray.size)
     }
 
     @Test

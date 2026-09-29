@@ -111,6 +111,7 @@ class ComeBackWorker @AssistedInject constructor(
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_comeback")
         NotificationManagerCompat.from(applicationContext).notify(NOTIFICATION_ID, notification)
         inboxRepository.post(
             kind = InboxMessageEntity.Kind.STREAK_REMINDER,

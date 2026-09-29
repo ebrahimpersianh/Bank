@@ -209,7 +209,10 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = authRepository.requestOtp(phone)) {
                 is AuthResult.Success -> onSuccess()
-                is AuthResult.Error -> onError(result.code)
+                is AuthResult.Error -> {
+                    ir.sadteam.loancalc.data.UsageStats.error("otp_" + (result.code ?: "unknown"))
+                    onError(result.code)
+                }
             }
         }
     }

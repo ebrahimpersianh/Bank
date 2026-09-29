@@ -364,7 +364,22 @@ data class AdminStatsResponse(
     val activeSubscribers: Int = 0,
     val activeByTier: List<AdminNamedCount>? = null,
     val giftsUsed30: Int = 0,
+    val activeNow: Int = 0,
+    val activeLastHour: Int = 0,
+    val avgDau30: Double = 0.0,
+    val cohorts: List<AdminCohortRow>? = null,
+    val churned: Int = 0,
+    val flows: List<AdminFeatureUsage>? = null,
+    val errors: List<AdminFeatureUsage>? = null,
+    val perf: List<AdminFeatureUsage>? = null,
+    val crashes30: Int = 0,
+    val nonFatal30: Int = 0,
+    val crashesByVersion: List<AdminNamedCount>? = null,
+    val topCrashes: List<AdminNamedCount>? = null,
+    val activeByVersion: List<AdminNamedCount>? = null,
 )
+
+data class AdminCohortRow(val weekStart: String = "", val size: Int = 0, val weeks: List<Int>? = null)
 
 data class AdminSaleRow(
     val product: String = "",

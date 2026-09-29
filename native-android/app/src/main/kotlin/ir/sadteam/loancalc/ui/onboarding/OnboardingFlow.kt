@@ -117,6 +117,8 @@ fun OnboardingFlow(
 ) {
     var step by remember { mutableIntStateOf(0) }
     val lastStep = 4
+    // هر مرحله‌ای که دیده شد - برای «کاربرِ تازه کجای معرفی ول می‌کند».
+    androidx.compose.runtime.LaunchedEffect(step) { ir.sadteam.loancalc.data.UsageStats.action("onboarding_step_$step") }
 
     Column(
         modifier = Modifier

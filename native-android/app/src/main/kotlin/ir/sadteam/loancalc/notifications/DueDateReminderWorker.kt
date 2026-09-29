@@ -332,6 +332,7 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_loan")
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
         inboxRepository.post(
             kind = InboxMessageEntity.Kind.SYSTEM,
@@ -376,6 +377,7 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_cheque")
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
         inboxRepository.post(
             kind = InboxMessageEntity.Kind.SYSTEM,
@@ -417,6 +419,7 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_recurring")
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
         inboxRepository.post(
             kind = InboxMessageEntity.Kind.SYSTEM,
@@ -441,6 +444,7 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_bill")
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
         inboxRepository.post(kind = InboxMessageEntity.Kind.SYSTEM, title = "یادآوریِ قبض", body = text)
     }
@@ -458,6 +462,7 @@ class DueDateReminderWorker @AssistedInject constructor(
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
+        ir.sadteam.loancalc.data.UsageStats.action("notif_shown_daily")
         NotificationManagerCompat.from(applicationContext).notify(DAILY_EXPENSE_REMINDER_NOTIFICATION_ID, notification)
         inboxRepository.post(
             kind = InboxMessageEntity.Kind.STREAK_REMINDER,

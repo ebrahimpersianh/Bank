@@ -77,6 +77,10 @@ private val PLAN_PRICE_TOMAN = mapOf(
     "unlimited_loans_1y" to 252_000L,
 )
 
+/** گروهِ هفتگیِ نصب: چند نفر در هفته‌ی k بعد از نصب هنوز برنامه را باز کرده‌اند. */
+@Serializable
+data class CohortRow(val weekStart: String, val size: Int, val weeks: List<Int>)
+
 @Serializable
 data class StatsResponse(
     val today: String,
@@ -114,6 +118,19 @@ data class StatsResponse(
     val activeSubscribers: Int = 0,
     val activeByTier: List<NamedCount> = emptyList(),
     val giftsUsed30: Int = 0,
+    val activeNow: Int = 0,
+    val activeLastHour: Int = 0,
+    val avgDau30: Double = 0.0,
+    val cohorts: List<CohortRow> = emptyList(),
+    val churned: Int = 0,
+    val flows: List<FeatureUsage> = emptyList(),
+    val errors: List<FeatureUsage> = emptyList(),
+    val perf: List<FeatureUsage> = emptyList(),
+    val crashes30: Int = 0,
+    val nonFatal30: Int = 0,
+    val crashesByVersion: List<NamedCount> = emptyList(),
+    val topCrashes: List<NamedCount> = emptyList(),
+    val activeByVersion: List<NamedCount> = emptyList(),
 )
 
 /** ترتیبِ نمایشِ مشخصات؛ کلیدِ ناشناخته آخرِ فهرست می‌آید. */
@@ -304,6 +321,46 @@ internal fun buildStats(conn: Connection): StatsResponse {
     val activeByTier = activeTiers.groupingBy { it }.eachCount().entries.sortedByDescending { it.value }.map { NamedCount(it.key, it.value) }
     val giftsUsed30 = conn.int("SELECT COUNT(*) FROM gift_codes WHERE used_at IS NOT NULL AND used_at >= ?", d30)
 
+    // ⏱ «الان» - از آخرین بسته‌ی هر نصب (هر ۳ دقیقه یا رفتن به پس‌زمینه).
+    val activeNow = conn.int("SELECT COUNT(*) FROM installs WHERE last_seen_at >= datetime('now', '-5 minutes')")
+    val activeLastHour = conn.int("SELECT COUNT(*) FROM installs WHERE last_seen_at >= datetime('now', '-60 minutes')")
+    val avgDau30 = Math.round(daily.map { it.active }.average().takeIf { !it.isNaN() }?.times(10) ?: 0.0) / 10.0
+
+    // 📅 ماندگاریِ گروهی: ۸ هفته‌ی اخیر، هر ردیف = نصب‌های آن هفته.
+    val cohorts = (7 downTo 0).map { back ->
+        val start = iranDay(-7L * back - 6)
+        val end = iranDay(-7L * back)
+        val size = conn.int("SELECT COUNT(*) FROM installs WHERE first_day BETWEEN ? AND ?", start, end)
+        val weeks = (0..(7 - back)).map { k ->
+            val ws = java.time.LocalDate.parse(start).plusDays(7L * k).toString()
+            val we = java.time.LocalDate.parse(start).plusDays(7L * k + 6).toString()
+            conn.int(
+                "SELECT COUNT(DISTINCT u.install_id) FROM usage_daily u JOIN installs i ON i.install_id = u.install_id " +
+                    "WHERE i.first_day BETWEEN ? AND ? AND u.day BETWEEN ? AND ?",
+                start, end, ws, we,
+            )
+        }
+        CohortRow(start, size, weeks)
+    }
+    val churnCut = iranDay(-14)
+    val churned = conn.int("SELECT COUNT(*) FROM installs WHERE last_day < ?", churnCut)
+
+    // 💥 کرش‌ها - `context = 'sync'` خطای بی‌سروصدای همگام‌سازی است، نه کرش.
+    val crashes30 = conn.int("SELECT COUNT(*) FROM crash_reports WHERE created_at >= ? AND coalesce(context, '') <> 'sync'", d30)
+    val nonFatal30 = conn.int("SELECT COUNT(*) FROM crash_reports WHERE created_at >= ? AND context = 'sync'", d30)
+    val crashesByVersion = buildList {
+        conn.list(
+            "SELECT coalesce(app_version, '?'), COUNT(*) FROM crash_reports WHERE created_at >= ? AND coalesce(context, '') <> 'sync' GROUP BY 1 ORDER BY 2 DESC LIMIT 12",
+            d30,
+        ) { add(NamedCount(it.getString(1), it.getInt(2))) }
+    }
+    val topCrashes = buildList {
+        conn.list(
+            "SELECT substr(message, 1, 90), COUNT(*) FROM crash_reports WHERE created_at >= ? AND coalesce(context, '') <> 'sync' GROUP BY 1 ORDER BY 2 DESC LIMIT 6",
+            d30,
+        ) { add(NamedCount(it.getString(1), it.getInt(2))) }
+    }
+
     return StatsResponse(
         today = today,
         totalInstalls = totalInstalls,
@@ -339,6 +396,19 @@ internal fun buildStats(conn: Connection): StatsResponse {
         activeSubscribers = activeTiers.size,
         activeByTier = activeByTier,
         giftsUsed30 = giftsUsed30,
+        activeNow = activeNow,
+        activeLastHour = activeLastHour,
+        avgDau30 = avgDau30,
+        cohorts = cohorts,
+        churned = churned,
+        flows = features("flow:"),
+        errors = features("error:"),
+        perf = features("perf:"),
+        crashes30 = crashes30,
+        nonFatal30 = nonFatal30,
+        crashesByVersion = crashesByVersion,
+        topCrashes = topCrashes,
+        activeByVersion = split("app_version"),
     )
 }
 
