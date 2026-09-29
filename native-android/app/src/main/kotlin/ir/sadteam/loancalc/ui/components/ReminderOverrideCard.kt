@@ -4,7 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppText
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ir.sadteam.loancalc.core.REMINDER_OFFSET_OPTIONS
@@ -45,9 +50,28 @@ fun ReminderOverrideCard(
                     },
                 )
             }
+            // خطِ خلاصه (طرحِ ChatGPT، پایینِ جزئیاتِ وام): کاربر بی‌فکر می‌بیند الان چه می‌شود.
+            Text(
+                when (mode) {
+                    Mode.DEFAULT -> "طبقِ تنظیماتِ کلیِ یادآوری"
+                    Mode.OFF -> "برای این مورد یادآوری نمی‌آید"
+                    Mode.CUSTOM -> if (customSet.isEmpty()) "هیچ روزی انتخاب نشده" else
+                        "یادآوری " + customSet.sorted().joinToString("، ") { reminderOffsetLabel(it) } + " از سررسید"
+                },
+                color = AppMuted,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 8.dp),
+            )
             if (mode == Mode.CUSTOM) {
+                Text(
+                    "چند روز قبل از سررسید؟",
+                    color = AppText,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
                 Row(
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
                     REMINDER_OFFSET_OPTIONS.forEach { offset ->

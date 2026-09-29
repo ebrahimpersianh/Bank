@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.components
 
+import ir.sadteam.loancalc.ui.theme.AppMuted
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import android.net.Uri
@@ -37,6 +40,8 @@ fun PhotoAttachmentCard(
     onPick: (Uri) -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
+    /** false یعنی بدونِ کارتِ دورش - وقتی خودش داخلِ کارتِ دیگری (تبِ یادداشت/رسید) می‌نشیند. */
+    withCard: Boolean = true,
 ) {
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
@@ -59,7 +64,7 @@ fun PhotoAttachmentCard(
 
     val photoFile = remember(photoPath) { photoPath?.let { File(it) }?.takeIf { it.exists() } }
 
-    AppCard(label = "عکس رسید", modifier = modifier) {
+    val content: @Composable () -> Unit = {
         if (photoFile != null) {
             AsyncImage(
                 model = photoFile,
@@ -91,6 +96,14 @@ fun PhotoAttachmentCard(
             OutlinedButton(onClick = { launchPicker() }, modifier = Modifier.fillMaxWidth()) {
                 Text("+ افزودن عکس رسید")
             }
+        }
+    }
+    if (withCard) {
+        AppCard(label = "عکس رسید", modifier = modifier) { content() }
+    } else {
+        Column(modifier = modifier) {
+            Text("عکس رسیدهای مربوط به این مورد را اضافه کنید.", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+            content()
         }
     }
 }

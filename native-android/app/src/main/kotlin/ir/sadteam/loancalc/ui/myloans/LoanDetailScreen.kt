@@ -228,6 +228,7 @@ private data class PendingLoanPayment(val ms: List<Int>, val paidDate: PersianDa
  * دستی مبلغ هر قسط هم هست (پورت confirmEditInstallment)، همراه سوال «رو همه‌ی اقساط هم اعمال
  * کنم؟» بعد از ذخیره.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun LoanDetailScreen(
     loan: LoanEntity,
@@ -1118,46 +1119,32 @@ fun LoanDetailScreen(
             } }
             item { Box(swipeShift) {
                 run {
-                    var expandedAttachment by remember(loan.id) { mutableStateOf<String?>(null) }
+                    var attachmentTab by remember(loan.id) { mutableStateOf(0) }
                     var noteText by remember(loan.id) { mutableStateOf(viewModel.getLoanNotes(loan)) }
                     var noteDirty by remember(loan.id) { mutableStateOf(false) }
 
-                    Column(modifier = Modifier.padding(horizontal = 14.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                            AttachmentToggleButton(
-                                label = "عکس رسید",
-                                icon = Icons.Filled.PhotoCamera,
-                                filled = loan.photoPath != null,
-                                expanded = expandedAttachment == "photo",
-                                onClick = { expandedAttachment = if (expandedAttachment == "photo") null else "photo" },
-                                modifier = Modifier.weight(1f),
+                    // طرحِ ChatGPT (۷ مهر، پایینِ جزئیاتِ وام): یک کارت با دو تبِ «یادداشت / عکس رسید» -
+                    // به‌جای دو دکمه‌ی بازشونده که محتوایشان پایین‌ترِ صفحه گم می‌شد.
+                    AppCard(modifier = Modifier.padding(horizontal = 14.dp).fillMaxWidth()) {
+                        Column {
+                            SegmentedToggle(
+                                options = listOf("یادداشت", "عکس رسید"),
+                                selectedIndex = attachmentTab,
+                                onSelect = { attachmentTab = it },
+                                icons = listOf(Icons.Filled.EditNote, Icons.Filled.PhotoCamera),
                             )
-                            AttachmentToggleButton(
-                                label = "یادداشت",
-                                icon = Icons.Filled.EditNote,
-                                filled = noteText.isNotBlank(),
-                                expanded = expandedAttachment == "note",
-                                onClick = { expandedAttachment = if (expandedAttachment == "note") null else "note" },
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                        AnimatedVisibility(visible = expandedAttachment == "photo") {
-                            PhotoAttachmentCard(
-                                photoPath = loan.photoPath,
-                                onPick = { uri -> viewModel.setLoanPhoto(loan, uri) },
-                                onRemove = { viewModel.removeLoanPhoto(loan) },
-                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                            )
-                        }
-                        AnimatedVisibility(visible = expandedAttachment == "note") {
-                            AppCard(label = "یادداشت", modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                            if (attachmentTab == 0) {
                                 Text(
-                                    "مثلاً شماره حساب یا شماره کارتِ مربوط به این وام",
+                                    "برای افزودن عنوان، یکی از موارد زیر را انتخاب کنید.",
                                     color = AppMuted,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.padding(bottom = 8.dp),
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(top = 12.dp, bottom = 8.dp),
                                 )
-                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 8.dp)) {
+                                androidx.compose.foundation.layout.FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.padding(bottom = 10.dp),
+                                ) {
                                     listOf("شماره حساب", "شماره کارت", "شماره پیگیری", "توضیحات").forEach { preset ->
                                         AppChip(
                                             label = preset,
@@ -1174,6 +1161,7 @@ fun LoanDetailScreen(
                                     onValueChange = { noteText = it; noteDirty = true },
                                     modifier = Modifier.fillMaxWidth(),
                                     minLines = 3,
+                                    shape = RoundedCornerShape(14.dp),
                                     trailingIcon = {
                                         if (noteText.isNotEmpty()) {
                                             IconButton(onClick = { noteText = ""; noteDirty = true }) {
@@ -1182,17 +1170,24 @@ fun LoanDetailScreen(
                                         }
                                     },
                                 )
-                                if (noteDirty) {
-                                    GradientButton(
-                                        onClick = {
-                                            viewModel.updateLoanNotes(loan, noteText)
-                                            noteDirty = false
-                                        },
-                                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                                    ) {
-                                        Text("ذخیره یادداشت")
-                                    }
+                                GradientButton(
+                                    onClick = {
+                                        viewModel.updateLoanNotes(loan, noteText)
+                                        noteDirty = false
+                                    },
+                                    enabled = noteDirty,
+                                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                                ) {
+                                    Text(if (noteDirty) "ذخیره" else "ذخیره شد")
                                 }
+                            } else {
+                                PhotoAttachmentCard(
+                                    photoPath = loan.photoPath,
+                                    onPick = { uri -> viewModel.setLoanPhoto(loan, uri) },
+                                    onRemove = { viewModel.removeLoanPhoto(loan) },
+                                    withCard = false,
+                                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                                )
                             }
                         }
                     }
@@ -2306,63 +2301,6 @@ private fun DetailDateDropdown(
         }
     }
 }
-
-/** دکمه‌ی فشرده‌ی toggle برای «عکس رسید»/«یادداشت» - نقطه‌ی کوچیکِ [filled] یعنی محتوا از قبل داره. */
-@Composable
-private fun AttachmentToggleButton(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    filled: Boolean,
-    expanded: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    // طرحِ ChatGPT (۶ مهر): کارتِ سفید · کاشیِ آبیِ کم‌رنگِ آیکون · عنوانِ پررنگ · خطِ جداکننده · فلش.
-    val shape = RoundedCornerShape(20.dp)
-    val chevronTurn by animateFloatAsState(if (expanded) -90f else 0f, label = "attChevron")
-    Row(
-        modifier = modifier
-            .pressScaleClickable(goldBorderShape = shape, onClick = onClick)
-            .background(AppSurface, shape)
-            .border(1.dp, if (expanded) AppPrimary else AppLine, shape)
-            .padding(horizontal = 10.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(AppPrimary.pillOverSurface(0.10f), RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
-            if (filled) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp)
-                        .size(7.dp)
-                        .background(AppPrimary, androidx.compose.foundation.shape.CircleShape),
-                )
-            }
-        }
-        Text(
-            label,
-            color = AppPrimaryInk,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Black,
-            maxLines = 1,
-            modifier = Modifier.weight(1f).padding(start = 10.dp),
-        )
-        Box(modifier = Modifier.padding(horizontal = 8.dp).width(1.dp).height(24.dp).background(AppLine))
-        Icon(
-            Icons.Filled.ChevronLeft,
-            contentDescription = null,
-            tint = AppPrimaryInk,
-            modifier = Modifier.size(20.dp).graphicsLayer { rotationZ = chevronTurn },
-        )
-    }
-}
-
 
 /** دکمه‌ی نوعِ وام با آیکون - فریمِ `36b`. */
 @Composable
