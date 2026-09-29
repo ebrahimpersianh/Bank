@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import kotlinx.coroutines.launch
 import ir.sadteam.loancalc.ui.components.GradientButton
 import androidx.compose.ui.text.input.KeyboardType
@@ -528,12 +529,27 @@ fun NewTransactionSheet(
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
                                 Box(modifier = Modifier.weight(1f)) {
                                     var open by remember { mutableStateOf(false) }
-                                    Text(
-                                        cat ?: "دسته",
-                                        color = if (cat == null) AppMuted else AppText,
-                                        fontSize = 12.sp,
-                                        modifier = Modifier.clickable { open = true }.padding(vertical = 10.dp),
-                                    )
+                                    // قرصِ حاشیه‌دار + فلشِ پایین تا معلوم باشد انتخاب‌کردنی است (خواسته‌ی کاربر).
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .padding(end = 8.dp)
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .border(1.dp, if (cat == null) accent.copy(alpha = 0.6f) else AppLine, RoundedCornerShape(12.dp))
+                                            .clickable { open = true }
+                                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                                    ) {
+                                        Text(
+                                            cat ?: "انتخابِ دسته",
+                                            color = if (cat == null) accent else AppText,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
+                                    }
                                     androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                                         categories.forEach { c ->
                                             androidx.compose.material3.DropdownMenuItem(
