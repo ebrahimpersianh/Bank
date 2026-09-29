@@ -144,6 +144,11 @@ object ReminderChannels {
      * سکه روی بدنه فقط با رنگ جدا می‌شد و در تک‌رنگ سیلوئتِ آدم می‌داد. جزئیاتش در کامنتِ
      * خودِ دو XML.
      */
+    /** تصویرِ کناریِ اختصاصیِ هر نوع اعلان (دسته‌ی ۷ِ ChatGPT: قسط، چک، قبض، پیامک، خرجِ ثبت‌نشده) -
+     *  PNGِ شفاف، بی‌برشِ دایره‌ای. شکست = همان نشانِ عمومی. */
+    fun largeIcon(context: Context, res: Int): Bitmap? =
+        runCatching { android.graphics.BitmapFactory.decodeResource(context.resources, res) }.getOrNull() ?: largeIcon(context)
+
     fun largeIcon(context: Context): Bitmap? = runCatching {
         val drawable = ContextCompat.getDrawable(context, R.drawable.ic_notification_large_color)
             ?: return@runCatching null

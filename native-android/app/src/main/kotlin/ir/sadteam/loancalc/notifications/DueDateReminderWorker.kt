@@ -275,7 +275,7 @@ class DueDateReminderWorker @AssistedInject constructor(
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        return NotificationCompat.Action.Builder(0, "پرداخت شد", pending).build()
+        return NotificationCompat.Action.Builder(0, if (chequeId != null) "پاس شد" else "پرداخت شد", pending).build()
     }
 
     /** نزدیک‌ترین تاریخی که [dayOfMonth] رخ می‌ده (امروز یا بعدش) - اگه امسال/همین‌ماه گذشته باشه
@@ -314,7 +314,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         )
         val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
             .setSmallIcon(R.drawable.ic_notification)
-            .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext, R.drawable.notif_loan))
             // در حالتِ خصوصی نامِ وام هم نمی‌آید؛ «وامِ مسکنِ ۱۲ میلیونی» روی صفحه‌ی قفل
             // همان‌قدر افشاست که مبلغ.
             .setContentTitle(if (privacyMode) "یادآوریِ قسط" else "یادآوری قسط ${loan.name}")
@@ -358,7 +358,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         )
         val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
             .setSmallIcon(R.drawable.ic_notification)
-            .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext, R.drawable.notif_cheque))
             .setContentTitle("یادآوری سررسید چک")
             // شماره‌ی چک و نامِ بانک در حالتِ خصوصی نمی‌آیند. شماره‌ی چک استثنای ارقام است
             // (لاتین می‌ماند) ولی این‌جا اصلاً نشان داده نمی‌شود.
@@ -399,7 +399,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         // این هم `setContentIntent` نداشت - همان باگِ اعلانِ چک.
         val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
             .setSmallIcon(R.drawable.ic_notification)
-            .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext, R.drawable.notif_bill))
             .setContentTitle("یادآوریِ پرداختِ تکراری")
             .setContentText(
                 if (privacyMode) {
@@ -432,7 +432,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         val text = "قبضِ $kind «${bill.name}» $whenLabel موعدِ پرداخته"
         val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_DUE_DATES)
             .setSmallIcon(R.drawable.ic_notification)
-            .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext, R.drawable.notif_bill))
             .setContentTitle("یادآوریِ قبض")
             .setContentText(text)
             .setContentIntent(openAppIntent(notificationId))
@@ -451,7 +451,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         // بتواند جدا خاموشش کند بی این‌که یادآورِ قسط را از دست بدهد.
         val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_NUDGES)
             .setSmallIcon(R.drawable.ic_notification)
-            .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
+            .setLargeIcon(ReminderChannels.largeIcon(applicationContext, R.drawable.notif_no_spend))
             .setContentTitle("دخل‌وخرج امروز یادت نره")
             .setContentText("امروز هنوز هیچ تراکنشی ثبت نکردی - یه سر بزن به «جیبک»")
             .setContentIntent(pendingIntent)

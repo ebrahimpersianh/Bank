@@ -65,7 +65,7 @@ object AutoTxNotifier {
 
         val builder = NotificationCompat.Builder(context, ReminderChannels.CHANNEL_AUTO_TX)
             .setSmallIcon(R.drawable.ic_notification)
-            .setLargeIcon(ReminderChannels.largeIcon(context))
+            .setLargeIcon(ReminderChannels.largeIcon(context, R.drawable.notif_sms))
             .setContentTitle(
                 if (privacyMode) {
                     if (isWithdrawal) "برداشتِ تازه" else "واریزِ تازه"
