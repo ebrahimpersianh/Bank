@@ -2118,11 +2118,13 @@ private fun InstallmentRow(
                             text = { Text("برداشتنِ پرداخت", color = AppDangerInk, fontSize = 13.sp) },
                             onClick = { menuOpen = false; onUnmark(m) },
                         )
-                        DropdownMenuItem(
-                            text = { Text("پیوستِ عکسِ رسید", fontSize = 13.sp) },
-                            onClick = { menuOpen = false; onOpenPhoto(m) },
-                        )
                     }
+                    // صفحه‌ی جزئیات (یادداشت/رسید) برای قسطِ پرداخت‌نشده هم باز می‌شود - یادداشت
+                    // پیش از پرداخت هم معنا دارد و کاربر راهی برای رسیدن به آن پیدا نمی‌کرد.
+                    DropdownMenuItem(
+                        text = { Text(if (paid) "جزئیات، یادداشت و رسید" else "جزئیات و یادداشت", fontSize = 13.sp) },
+                        onClick = { menuOpen = false; onOpenPhoto(m) },
+                    )
                     DropdownMenuItem(
                         text = { Text("ویرایشِ مبلغِ این قسط", fontSize = 13.sp) },
                         onClick = { menuOpen = false; onEditAmount(m, installment) },
