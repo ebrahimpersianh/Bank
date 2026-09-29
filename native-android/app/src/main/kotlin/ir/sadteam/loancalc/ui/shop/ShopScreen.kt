@@ -863,7 +863,29 @@ fun ShopScreen(
 
     // خرید دیالوگِ تایید می‌گیرد (`46a`)؛ فعال‌کردنِ چیزی که داری نه - اولی واگرد ندارد،
     // دومی یک تپ برمی‌گردد.
-    confirming?.let { item ->
+    confirming?.takeIf { balance < it.price }?.let { item ->
+        // سکه کم است: به‌جای تاییدِ خرید (که موجودیِ منفی نشان می‌داد) پیشنهادِ هدف‌گذاری.
+        ir.sadteam.loancalc.ui.components.JibakAlertDialog(
+            onDismissRequest = { confirming = null },
+            title = { Text("سکه‌ات کافی نیست") },
+            text = {
+                Text(
+                    "«${item.label}» ${toFa(item.price)} سکه است و تو ${toFa(balance)} سکه داری - " +
+                        "${toFa(item.price - balance)} سکه‌ی دیگر لازم است.",
+                )
+            },
+            confirmButton = {
+                GradientButton(onClick = {
+                    confirming = null
+                    viewModel.setCoinGoal(item.id)
+                }) { Text("هدفِ سکه‌ام کن") }
+            },
+            dismissButton = {
+                GradientButton(onClick = { confirming = null }, variant = AppButtonVariant.SECONDARY) { Text("باشه") }
+            },
+        )
+    }
+    confirming?.takeIf { balance >= it.price }?.let { item ->
         ConfirmDialog(
             title = "«${item.label}» را بخرم؟",
             consequence = "${toFa(item.price)} سکه کم می‌شود و برگشت ندارد. " +
