@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.due
 
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import ir.sadteam.loancalc.ui.extras.isDueSoon
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
@@ -227,20 +230,20 @@ private fun DueHero(
     privacyMode: Boolean,
 ) {
     AppHeroCard(tone = if (overdueCount > 0) HeroTone.RED else HeroTone.GREEN) {
-        Text("تا آخرِ ماه باید بدهی", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+        Text("تا آخرِ ماه باید بدهی", color = HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         PrivacyCrossfade(privacyMode) { masked ->
             Text(
                 maskIfPrivate(masked, amountToman(total)),
                 color = Color.White,
-                fontSize = 26.sp,
+                fontSize = 30.sp,
                 fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(top = 2.dp),
+                modifier = Modifier.padding(top = 8.dp),
             )
         }
-        Text("تومان", color = HeroMuted, fontSize = 10.sp, modifier = Modifier.padding(top = 1.dp))
+        Text("تومان", color = HeroMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 1.dp))
         Row(
-            modifier = Modifier.padding(top = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            modifier = Modifier.padding(top = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // قرص‌ها فقط شمارش‌اند و کلیک‌پذیر نیستند (قاعده‌ی `51c`).
             if (overdueCount > 0) HeroCountPill("${toFa(overdueCount)} عقب‌افتاده")
@@ -254,12 +257,12 @@ private fun HeroCountPill(label: String) {
     Text(
         label,
         color = Color.White,
-        fontSize = 10.sp,
-        fontWeight = FontWeight.Bold,
+        fontSize = 11.5.sp,
+        fontWeight = FontWeight.ExtraBold,
         modifier = Modifier
             .clip(RoundedCornerShape(999.dp))
             .background(HeroPillBg)
-            .padding(horizontal = 10.dp, vertical = 5.dp),
+            .padding(horizontal = 13.dp, vertical = 7.dp),
     )
 }
 
@@ -269,7 +272,10 @@ private fun DueFilterRow(
     selected: DueListViewModel.DueSource?,
     onSelect: (DueListViewModel.DueSource?) -> Unit,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+    ) {
         DueFilterChip("همه", selected == null) { onSelect(null) }
         DueListViewModel.DueSource.entries.forEach { kind ->
             DueFilterChip(kind.label, selected == kind) { onSelect(kind) }
@@ -357,50 +363,54 @@ private fun DueRowCard(
         // تفاوتِ نوعِ تعهد از **آیکون** می‌آید نه از رنگ - همان تصمیمِ نشان‌ها.
         Box(
             modifier = Modifier
-                .size(34.dp)
-                .clip(RoundedCornerShape(11.dp))
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
                 .background(dayBg),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = dayInk, modifier = Modifier.size(16.dp))
+            Icon(icon, contentDescription = null, tint = dayInk, modifier = Modifier.size(19.dp))
         }
         Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    row.title,
-                    color = AppText,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    maxLines = 1,
-                )
-                Text(
-                    dayLabel,
-                    color = dayInk,
-                    fontSize = 9.5.sp,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(dayBg)
-                        .border(1.dp, dayBorder, RoundedCornerShape(999.dp))
-                        .padding(horizontal = 7.dp, vertical = 2.dp),
-                )
-            }
+            Text(
+                row.title,
+                color = AppText,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Text(
                 "سررسید ${toFa(row.date.d)} ${persianMonthName(row.date.m)} · ${row.subtitle}",
                 color = AppMuted,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
-                modifier = Modifier.padding(top = 3.dp),
+                modifier = Modifier.padding(top = 4.dp),
             )
         }
-        PrivacyCrossfade(privacyMode) { masked ->
+        // ستونِ چپ (فریمِ `33`): قرصِ روز بالای مبلغ - کنارِ عنوان جا کم می‌آورد.
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(
-                maskIfPrivate(masked, amountToman(row.amount)),
-                color = AppText,
-                fontSize = 13.sp,
+                dayLabel,
+                color = dayInk,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Black,
+                maxLines = 1,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(dayBg)
+                    .border(1.dp, dayBorder, RoundedCornerShape(999.dp))
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
             )
+            PrivacyCrossfade(privacyMode) { masked ->
+                Text(
+                    maskIfPrivate(masked, amountToman(row.amount)),
+                    color = AppText,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
@@ -595,9 +605,9 @@ private fun GroupLabel(text: String, color: Color) {
     Text(
         text,
         color = color,
-        fontSize = 11.sp,
+        fontSize = 12.5.sp,
         fontWeight = FontWeight.ExtraBold,
-        modifier = Modifier.padding(start = 2.dp, end = 2.dp, top = 2.dp),
+        modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 6.dp, bottom = 2.dp),
     )
 }
 

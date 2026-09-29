@@ -44,8 +44,6 @@ import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.ui.components.persianMonthName
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
-import ir.sadteam.loancalc.ui.theme.AppInfo
-import ir.sadteam.loancalc.ui.theme.AppInfoPill
 import ir.sadteam.loancalc.ui.theme.AppTxIn
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppLabel
@@ -804,7 +802,7 @@ private fun timeLabel(millis: Long): String {
 }
 
 /**
- * کارتِ خبر (طرحِ ChatGPT): نشانِ نوع (برداشت قرمز، واریز سبز، یادآوریِ قسط آبی)، عنوان و
+ * کارتِ خبر (طرحِ ChatGPT): نشانِ نوع (برداشت قرمز، واریز سبز، یادآوریِ قسط زرد)، عنوان و
  * متن، قرصِ منبع، زمان و فلش. نقطه‌ی کنارِ عنوان یعنی خوانده‌نشده.
  */
 @Composable
@@ -815,7 +813,8 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
     val (tint, fill, icon) = when {
         isDeposit -> Triple(AppTxIn, AppTxIn.copy(alpha = 0.14f), Icons.Filled.AddCircle)
         isTx -> Triple(AppDanger, AppDangerPill, Icons.Filled.RemoveCircle)
-        isDue -> Triple(AppInfo, AppInfoPill, Icons.Filled.CalendarMonth)
+        // یادآوری زرد (فریمِ `32`) - جدا از قرمز/سبزِ پیام‌های مالی.
+        isDue -> Triple(AppWarningInk, AppWarningPill, Icons.Filled.CalendarMonth)
         else -> Triple(AppPrimary, AppPrimaryPill, Icons.Filled.NotificationsNone)
     }
     val shape = RoundedCornerShape(22.dp)
@@ -883,7 +882,7 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
             val source = message.sourceLabel?.let { splitSource(it) }
             val chipText = source?.first ?: if (isDue) "یادآوری" else null
             if (chipText != null) {
-                val warm = source == null && isDue
+                val warm = isDue
                 Column(
                     modifier = Modifier.padding(top = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
