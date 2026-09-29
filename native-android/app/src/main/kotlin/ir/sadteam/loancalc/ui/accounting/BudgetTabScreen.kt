@@ -462,78 +462,24 @@ private fun BudgetHeader(onAdd: () -> Unit, showAdd: Boolean = true) {
 // ═══ ۱ب · کارتِ خط‌چینِ «بودجه‌ای تعیین نشده» (فریمِ `21d`) ═════════════════════════
 @Composable
 private fun NoBudgetCard(onCreate: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(AppSurface)
-            .dashedBorder(20.dp)
-            .padding(horizontal = 16.dp, vertical = 22.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        // سه نوارِ خط‌چینِ خالی با یه سکه‌ی طلایی رو سرِ نوارِ اول - «شکلِ نمودارِ پیشاپیش».
-        Column(
-            modifier = Modifier.fillMaxWidth(0.55f),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            repeat(3) { index ->
-                Box(
-                    modifier = Modifier.fillMaxWidth().height(20.dp),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(15.dp)
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(RailTrack)
-                            .dashedBorder(999.dp, width = 1.5.dp),
-                    )
-                    // تو RTL «سرِ نوار» سمتِ راسته - سکه نصفش بیرونِ نوار می‌شینه.
-                    if (index == 0) {
-                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                            CoinIcon(20.dp)
-                        }
-                    }
-                }
-            }
-        }
-        // ⚠️ عنوان و توضیح **یه بلوکِ واحد**ن با فاصله‌ی ۶ (مثلِ `margin-top`ی فریم)، نه دو
-        // آیتمِ جدا با فاصله‌ی منفی - `Modifier.padding` عددِ منفی رو قبول نمی‌کنه و همون
-        // لحظه‌ی رسم کرش می‌ده (کرشِ نسخه‌ی ۱.۰.۴۷۷: «Padding must be non-negative»).
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text(
-                "بودجه‌ای تعیین نشده",
-                color = AppText,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Black,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                "یک سقفِ ماهانه بگذار تا جیبک بگوید امروز چقدر می‌توانی خرج کنی.",
-                color = AppMuted,
-                fontSize = 12.5.sp,
-                lineHeight = 23.sp,
-                textAlign = TextAlign.Center,
-            )
-        }
-        Text(
-            "ساختنِ بودجه",
-            color = Color.White,
-            fontSize = 14.5.sp,
-            fontWeight = FontWeight.Black,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .hardShadow(BudgetGreenDeep, 4.dp, 999.dp)
-                .clip(RoundedCornerShape(999.dp))
-                .background(BudgetGreen)
-                .pressScaleClickable(onClick = onCreate)
-                .padding(vertical = 15.dp),
+    // بازطراحیِ ChatGPT (۷ مهر، دورِ دوم): تصویرِ نمودارِ دایره‌ای، زمینه‌ی کرمیِ ملایم + فهرستِ فایده‌ها.
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        ir.sadteam.loancalc.ui.components.EmptyHeroCard(
+            illustration = ir.sadteam.loancalc.R.drawable.empty_illu_budget,
+            tint = ir.sadteam.loancalc.ui.theme.AppWarningPill.copy(alpha = 0.6f),
+            title = "هنوز بودجه‌ای تعیین نشده",
+            description = "برای دسته‌های مهمت سقفِ ماهانه بذار و از خرج‌هات بهتر باخبر باش.",
+            action = "ساختنِ بودجه",
+            onAction = onCreate,
+        )
+        ir.sadteam.loancalc.ui.components.EmptyFeatureList(
+            "با بودجه‌بندی چه می‌تونی؟",
+            listOf(
+                ir.sadteam.loancalc.R.drawable.empty_icon_budget_control to "هزینه‌ها رو کنترل کنی",
+                ir.sadteam.loancalc.R.drawable.empty_icon_budget_prevent to "از خرجِ بیشتر جلوگیری کنی",
+                ir.sadteam.loancalc.R.drawable.empty_icon_budget_goals to "هدفِ مالی تعیین کنی",
+                ir.sadteam.loancalc.R.drawable.empty_icon_budget_progress to "پیشرفتت رو ببینی",
+            ),
         )
     }
 }

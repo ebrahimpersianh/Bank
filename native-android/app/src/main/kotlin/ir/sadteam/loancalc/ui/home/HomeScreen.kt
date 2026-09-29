@@ -378,7 +378,7 @@ fun HomeScreen(
                 }
                 item {
                     Text(
-                        "یا از اینجا شروع کن",
+                        "با این ۳ تا شروع کن",
                         color = AppMuted,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.ExtraBold,
@@ -387,24 +387,21 @@ fun HomeScreen(
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         StarterTile(
-                            icon = Icons.Outlined.BarChart,
-                            tint = AppInfo,
-                            pill = AppInfoPill,
+                            iconRes = ir.sadteam.loancalc.R.drawable.empty_icon_shortcut_budget,
                             label = "ساختِ بودجه",
+                            subtitle = "هزینه‌ها رو مدیریت کن",
                             onClick = { onNavigateToRoute("budget") },
                         )
                         StarterTile(
-                            icon = Icons.Outlined.CreditCard,
-                            tint = AppDanger,
-                            pill = AppDangerPill,
+                            iconRes = ir.sadteam.loancalc.R.drawable.empty_icon_shortcut_check,
                             label = "افزودنِ چک",
+                            subtitle = "چک‌ها رو پیگیری کن",
                             onClick = { onNavigateToRoute("cheque") },
                         )
                         StarterTile(
-                            icon = Icons.Filled.ArrowUpward,
-                            tint = AppPrimary,
-                            pill = AppPrimaryPill,
+                            iconRes = ir.sadteam.loancalc.R.drawable.empty_icon_shortcut_loan,
                             label = "ثبتِ وام",
+                            subtitle = "قسط‌ها رو دنبال کن",
                             onClick = { onNavigateToRoute("loan") },
                         )
                     }
@@ -1754,40 +1751,15 @@ private fun WeekCell(
 /** کارتِ خط‌چینِ «کیفت خالیه» با مسکاتِ جیبک و دکمه‌ی تمام‌عرض. */
 @Composable
 private fun HomeEmptyHero(onAddFirst: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(AppRadius.card))
-            .background(AppSurface)
-            .dashedCardBorder()
-            .padding(horizontal = 16.dp, vertical = 22.dp),
-    ) {
-        JibakMascotFrame()
-        Text(
-            "کیفت خالیه",
-            color = AppText,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Black,
-            modifier = Modifier.padding(top = 12.dp),
-        )
-        Text(
-            "اولین خرجت رو ثبت کن. ده ثانیه وقت می‌بره و از فردا نمودارت شکل می‌گیره.",
-            color = AppMuted,
-            fontSize = 11.5.sp,
-            lineHeight = 21.sp,
-            textAlign = TextAlign.Center,
-            // ⚠️ `max-width:230px`ِ صریحِ فریم. بدونش رو گوشیِ واقعی (که از قابِ ۳۳۶ پیکسلیِ
-            // ماک‌آپ عریض‌تره) خط‌ها دراز می‌شن و صفحه «پهن» دیده می‌شه - گزارشِ کاربر.
-            modifier = Modifier.widthIn(max = 230.dp).padding(top = 5.dp),
-        )
-        GradientButton(
-            onClick = onAddFirst,
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-        ) {
-            Text("ثبتِ اولین خرج")
-        }
-    }
+    // بازطراحیِ ChatGPT (۷ مهر، دورِ دوم) - تصویرِ تختِ کیفِ پول، زمینه‌ی سبزِ ملایم.
+    ir.sadteam.loancalc.ui.components.EmptyHeroCard(
+        illustration = ir.sadteam.loancalc.R.drawable.empty_illu_wallet,
+        tint = ir.sadteam.loancalc.ui.theme.AppPrimaryPill.copy(alpha = 0.55f),
+        title = "شروعِ مدیریتِ مالی",
+        description = "اولین ثبتت رو انجام بده تا جیبک کم‌کم الگوی خرج‌هات رو بشناسه.",
+        action = "ثبتِ اولین خرج",
+        onAction = onAddFirst,
+    )
 }
 
 /**
@@ -1810,20 +1782,19 @@ private fun FirstRewardNote() {
             .clip(shape)
             .background(RewardNoteBg)
             .border(1.5.dp, RewardNoteBorder, shape)
-            .padding(horizontal = 15.dp, vertical = 13.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
-        Icon(
-            Icons.Filled.AutoAwesome,
+        androidx.compose.foundation.Image(
+            androidx.compose.ui.res.painterResource(ir.sadteam.loancalc.R.drawable.empty_illu_coins),
             contentDescription = null,
-            tint = RewardNoteInk,
-            modifier = Modifier.size(12.dp),
+            modifier = Modifier.size(40.dp),
         )
         Text(
             "با اولین ثبت ۱۰ سکه می‌گیری و روزهای فعالت روشن می‌شه",
             color = RewardNoteInk,
-            fontSize = 10.5.sp,
-            fontWeight = FontWeight.Bold,
-            lineHeight = 19.sp,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Black,
+            lineHeight = 20.sp,
             modifier = Modifier.padding(start = 10.dp),
         )
     }
@@ -1838,10 +1809,9 @@ private val RewardNoteInk: Color
 /** یکی از سه کاشیِ «یا از اینجا شروع کن». */
 @Composable
 private fun RowScope.StarterTile(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    tint: Color,
-    pill: Color,
+    iconRes: Int,
     label: String,
+    subtitle: String,
     onClick: () -> Unit,
 ) {
     Column(
@@ -1852,24 +1822,27 @@ private fun RowScope.StarterTile(
             .background(AppSurface)
             .rowBorder()
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 13.dp),
+            .padding(horizontal = 8.dp, vertical = 12.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(30.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(pill),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(15.dp))
-        }
+        androidx.compose.foundation.Image(
+            androidx.compose.ui.res.painterResource(iconRes),
+            contentDescription = null,
+            modifier = Modifier.size(36.dp),
+        )
         Text(
             label,
             color = AppText,
-            fontSize = 10.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.ExtraBold,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 7.dp),
+        )
+        Text(
+            subtitle,
+            color = AppMuted,
+            fontSize = 9.5.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 2.dp),
         )
     }
 }

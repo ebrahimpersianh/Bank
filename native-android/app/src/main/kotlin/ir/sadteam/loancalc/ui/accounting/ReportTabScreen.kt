@@ -685,40 +685,15 @@ private fun BankSmsHintCard() {
 /** «وقتی داده داشته باشی اینها را می‌بینی» - سه نقطه‌ی رنگیِ فریم. */
 @Composable
 private fun ComingSoonCard() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(AppSurface)
-            .border(2.dp, AppLineRow, RoundedCornerShape(18.dp))
-            .padding(15.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Text(
-            "وقتی داده داشته باشی اینها را می‌بینی",
-            color = AppMuted,
-            fontSize = 12.5.sp,
-            fontWeight = FontWeight.ExtraBold,
-        )
+    // بازطراحیِ ChatGPT (۷ مهر، دورِ دوم): آیکون‌های رنگیِ تخت به‌جای نقطه.
+    ir.sadteam.loancalc.ui.components.EmptyFeatureList(
+        "وقتی داده داشته باشی این‌ها رو می‌بینی",
         listOf(
-            AppDanger to "سهمِ هر دسته از خرجِ ماه",
-            AppInfo to "مقایسه‌ی این ماه با ماهِ قبل و پارسال",
-            AppPurple to "تفکیکِ خرجِ ثابت از متغیر",
-        ).forEach { (dot, label) ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(9.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(dot),
-                )
-                Text(label, color = AppMuted, fontSize = 11.5.sp)
-            }
-        }
-    }
+            ir.sadteam.loancalc.R.drawable.empty_icon_report_breakdown to "سهمِ هر دسته از خرجِ ماه",
+            ir.sadteam.loancalc.R.drawable.empty_icon_report_compare to "مقایسه‌ی این ماه با ماهِ قبل و پارسال",
+            ir.sadteam.loancalc.R.drawable.empty_icon_report_trend to "تفکیکِ خرجِ ثابت از متغیر",
+        ),
+    )
 }
 
 private val SkeletonBarBg: Color
