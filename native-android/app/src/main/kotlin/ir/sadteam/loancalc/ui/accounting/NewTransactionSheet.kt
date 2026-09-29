@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import kotlinx.coroutines.launch
 import ir.sadteam.loancalc.ui.components.GradientButton
@@ -600,12 +601,6 @@ fun NewTransactionSheet(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f).clickable { pickReceipt.launch("image/*") }.padding(vertical = 10.dp),
                     )
-                    Text(
-                        "ذخیره به‌عنوانِ الگو",
-                        color = AppMuted,
-                        fontSize = 12.sp,
-                        modifier = Modifier.clickable { showSaveTemplate = true }.padding(vertical = 10.dp),
-                    )
                 }
             }
         }
@@ -742,6 +737,19 @@ fun NewTransactionSheet(
             modifier = Modifier.weight(1f),
         )
 
+            // «ذخیره به‌عنوانِ الگو» کنارِ دکمه‌ی ثبت - قبلاً ته کارتِ گزینه‌ها گم بود (خواسته‌ی کاربر).
+            Box(
+                modifier = Modifier
+                    .width(56.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AppSurface)
+                    .border(1.5.dp, AppLine, RoundedCornerShape(999.dp))
+                    .pressScaleClickable { showSaveTemplate = true }
+                    .padding(vertical = 13.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.BookmarkAdd, contentDescription = "ذخیره به‌عنوانِ الگو", tint = AppMuted, modifier = Modifier.size(22.dp))
+            }
             // «+ باز» - ثبت می‌کنه و فرم رو برای واردکردنِ تراکنشِ بعدی خالی می‌کنه.
             Box(
                 modifier = Modifier
