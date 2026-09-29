@@ -153,4 +153,10 @@ class BankSmsParserTest {
         assertEquals(smsDedupeFingerprint(once), smsDedupeFingerprint(again))
     }
 
+
+    @Test
+    fun digipayCreditRefundIsNotADeposit() {
+        val body = "پرداخت بدهی و شارژ اعتبار دیجی‌پی\nاعتبار قابل مصرف: ۳۵،۰۰۰،۰۰۰ ریال\nبازگشت به اعتبار: ۷۸،۷۲۱،۰۰۰ ریال\nواریز به کیف دیجی‌پی (بابت پرداخت از کارت بانکی): ۲۸،۷۳۹،۰۰۰ ریال"
+        assertNull(BankSmsParser.parse(body))
+    }
 }
