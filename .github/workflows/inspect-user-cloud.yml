@@ -38,7 +38,7 @@ jobs:
                 except Exception:
                     print(t, ": unparsable"); continue
                 if isinstance(d, dict):
-                    extra = d.get("extraTables") or {}
+                    extra = d.get("tables") or d.get("extraTables") or {}
                     print(t, "updated:", row[1], "keys:", sorted(d.keys()))
                     print("  extraTables:", {k: len(v) for k, v in extra.items()} if isinstance(extra, dict) else type(extra).__name__)
                 else:
