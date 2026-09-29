@@ -64,7 +64,9 @@ fun SwipeToDeleteRow(
         state = dismissState,
         modifier = modifier,
         backgroundContent = {
-            Box(
+            // 🚨 لایه‌ی قرمز فقط هنگامِ کشیدن. قبلاً همیشه زیرِ کارت بود و گوشه‌هایش از زیرِ کارت
+            // بیرون می‌زد - کاربر فکر کرد همه‌ی تراکنش‌ها «قرمز»ند (۷ مهر).
+            if (dismissState.dismissDirection != SwipeToDismissBoxValue.Settled) Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(AppDanger, shape)

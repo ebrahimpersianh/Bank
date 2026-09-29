@@ -122,6 +122,8 @@ fun CompactTransactionRow(
                     color = ink,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    softWrap = false,
                 )
             }
         }
