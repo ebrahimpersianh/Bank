@@ -131,6 +131,7 @@ fun DebtScreen(
     }
     var openedCounterpartyId by rememberSaveable { mutableStateOf(initialCounterpartyId) }
     var showAddCounterparty by rememberSaveable { mutableStateOf(false) }
+    val isPremium = ir.sadteam.loancalc.ui.subscription.LocalIsPremium.current
     var pendingDelete by remember { mutableStateOf<CounterpartyEntity?>(null) }
 
     // «دنگ» - فریمِ `22c`، ناوبریِ داخلیِ خودش (لیست/فرمِ ساخت/جزئیات) کنارِ همون
@@ -245,7 +246,10 @@ fun DebtScreen(
                 onBack = onBack,
                 onOpen = { openedCounterpartyId = it.id },
                 showAddCounterparty = showAddCounterparty,
-                onShowAddCounterpartyChange = { showAddCounterparty = it },
+                onShowAddCounterpartyChange = {
+                    if (it && !isPremium) ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("debts", "طلب و بدهی")
+                    else showAddCounterparty = it
+                },
                 onAddCounterparty = { n ->
                     viewModel.addCounterparty(n.name, n.phone) { id ->
                         if (n.amountRial > 0) {

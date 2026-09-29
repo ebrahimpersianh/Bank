@@ -93,7 +93,8 @@ fun PhotoAttachmentCard(
                 }
             }
         } else {
-            OutlinedButton(onClick = { launchPicker() }, modifier = Modifier.fillMaxWidth()) {
+            val guard = ir.sadteam.loancalc.ui.subscription.premiumGuard()
+            OutlinedButton(onClick = { guard("receipt_photo", "عکسِ رسید") { launchPicker() } }, modifier = Modifier.fillMaxWidth()) {
                 Text("+ افزودن عکس رسید")
             }
         }

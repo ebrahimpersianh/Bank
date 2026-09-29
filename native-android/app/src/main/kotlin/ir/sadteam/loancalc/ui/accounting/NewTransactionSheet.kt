@@ -139,6 +139,17 @@ fun NewTransactionSheet(
     extrasViewModel: ir.sadteam.loancalc.ui.extras.ExtrasViewModel = hiltViewModel(),
 ) {
     val accounts by accountViewModel.accounts.collectAsState()
+    val monthTxCount = accountViewModel.transactions.collectAsState().value.let { all ->
+        val today = remember { ir.sadteam.loancalc.core.JalaliCalendar.today() }
+        all.count { it.year == today.y && it.month == today.m }
+    }
+    ir.sadteam.loancalc.ui.subscription.PremiumBlock(
+        blocked = monthTxCount >= ir.sadteam.loancalc.ui.subscription.FreeLimits.TX_PER_MONTH,
+        key = "tx_month",
+        label = "ثبتِ بیش از ${ir.sadteam.loancalc.core.toFa(ir.sadteam.loancalc.ui.subscription.FreeLimits.TX_PER_MONTH)} تراکنش در ماه",
+        onBlocked = onDismiss,
+    )
+    val txPremium = ir.sadteam.loancalc.ui.subscription.LocalIsPremium.current
     val templates by extrasViewModel.templates.collectAsState()
     // قابلیت‌های برگرفته از مقایسه با پارمیس/پولکس (۶ مهر): برچسب، بازپرداخت، رسید، تقسیم، الگو.
     var tagsText by remember { mutableStateOf("") }
@@ -564,6 +575,10 @@ fun NewTransactionSheet(
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Text("تقسیم بینِ چند دسته", color = AppText, fontSize = 13.sp, modifier = Modifier.weight(1f))
                         ir.sadteam.loancalc.ui.settings.AppSwitch(checked = splitMode, onCheckedChange = {
+                            if (it && !txPremium) {
+                                ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("split", "تقسیمِ خرید")
+                                return@AppSwitch
+                            }
                             splitMode = it
                             if (it && splits.isEmpty()) { splits.add(null to ""); splits.add(null to "") }
                         })
@@ -695,7 +710,10 @@ fun NewTransactionSheet(
                 }
                 OutlinedTextField(
                     value = tagsText,
-                    onValueChange = { tagsText = it.take(80) },
+                    onValueChange = {
+                        if (txPremium) tagsText = it.take(80)
+                        else ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("tags", "برچسب")
+                    },
                     placeholder = { Text("برچسب (مثلاً سفرِ شمال، عروسی) - با «،» جدا کن", fontSize = 11.sp) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),

@@ -948,10 +948,13 @@ private fun LoanCalcApp(
     }
 
     val reducedMotion by themeViewModel.reducedMotion.collectAsState()
+    val isPremium by authViewModel.subscribed.collectAsState()
     CompositionLocalProvider(
         LocalPrivacyMode provides privacyMode,
         LocalReducedMotion provides reducedMotion,
+        ir.sadteam.loancalc.ui.subscription.LocalIsPremium provides isPremium,
     ) {
+    ir.sadteam.loancalc.ui.subscription.PremiumPaywallHost()
     Box(modifier = Modifier.fillMaxSize()) {
         // ⚠️ **بازطراحیِ سبکِ «جیبک»**: پس‌زمینه‌ی زنده‌ی «شفق» (`AuroraBackground` - دو هاله‌ی
         // گرادیانیِ سبزآبی/طلایی که آروم نفس می‌کشیدن) **حذف شد**. سبکِ جدید یه زمینه‌ی

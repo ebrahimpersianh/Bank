@@ -156,6 +156,7 @@ fun ReportTabScreen(
     loansViewModel: MyLoansViewModel = hiltViewModel(),
     chequeViewModel: ChequeViewModel = hiltViewModel(),
 ) {
+    val isPremium = ir.sadteam.loancalc.ui.subscription.LocalIsPremium.current
     androidx.compose.runtime.LaunchedEffect(Unit) {
         ir.sadteam.loancalc.data.UsageStats.track(ir.sadteam.loancalc.data.UsageStats.REPORT_VIEWED)
     }
@@ -256,7 +257,10 @@ fun ReportTabScreen(
         item {
             ReportHeader(
                 period = period,
-                onPeriod = { period = it },
+                onPeriod = {
+                    if (isPremium || it == ReportPeriod.MONTH) period = it
+                    else ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("report_period", "گزارشِ فصل و سال")
+                },
                 privacyMode = privacyMode,
                 onTogglePrivacy = { privacyViewModel.toggle() },
                 showControls = transactions.isNotEmpty(),
@@ -283,6 +287,36 @@ fun ReportTabScreen(
                 currentBarIndex = if (period == ReportPeriod.MONTH) today.d - 1 else stats.monthlyBars.lastIndex,
                 barLabels = stats.barLabels,
             )
+        }
+        // بی اشتراک: فقط خلاصه (خرج/درآمد/تعداد)؛ بقیه‌ی گزارش پشتِ یک کارتِ اشتراک.
+        if (!isPremium) {
+            item {
+                PeriodStatRow(
+                    income = stats.periodIncome,
+                    incomeChangePercent = stats.incomeDeltaPercent,
+                    spend = stats.periodSpend,
+                    spendChangePercent = stats.deltaPercent,
+                    count = stats.transactionCount,
+                    countDelta = stats.transactionCountDelta,
+                    privacyMode = privacyMode,
+                )
+            }
+            item {
+                ir.sadteam.loancalc.ui.components.AppCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("گزارشِ کامل با اشتراک", fontWeight = FontWeight.Black, fontSize = 15.sp)
+                        Text(
+                            "سهمِ هر دسته، خرجِ ثابت و متغیر، مقایسه‌ی ماه‌ها، ماه‌ها و سال‌های قبل و خروجیِ PDF و اکسل.",
+                            color = AppMuted, fontSize = 12.5.sp, lineHeight = 22.sp,
+                        )
+                        ir.sadteam.loancalc.ui.components.GradientButton(
+                            onClick = { ir.sadteam.loancalc.ui.subscription.PremiumPaywall.showPlans = true },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("دیدنِ اشتراک‌ها") }
+                    }
+                }
+            }
+            return@LazyColumn
         }
         if (stats.fixedShare != null) {
             // ردیفِ سه‌تاییِ آمارِ دوره (طرحِ مرجعِ کاربر). زیرِ هیرو می‌نشیند چون هیرو

@@ -1780,13 +1780,16 @@ private fun SmsSettings(
     var senderPickerFor by remember { mutableStateOf<AccountEntity?>(null) }
     val listed = accounts.filter { it.type == ACCOUNT_TYPE_BANK }
     val activeCount = listed.count { it.smsEnabled && !it.smsSender.isNullOrBlank() }
+    val smsPremium = ir.sadteam.loancalc.ui.subscription.LocalIsPremium.current
     SmsStatusCard(
         enabled = enabled,
         permissionGranted = permissionGranted,
         activeCount = activeCount,
         totalCount = listed.size,
         onToggle = { checked ->
-            if (!checked) {
+            if (checked && !smsPremium) {
+                ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("sms_auto", "خوندنِ خودکارِ پیامکِ بانک")
+            } else if (!checked) {
                 smsAutoImportViewModel.disable()
             } else if (permissionGranted) {
                 smsAutoImportViewModel.enable()
@@ -2912,6 +2915,9 @@ private fun SecuritySettings(
         )
     }
     if (showPatternDialog) {
+        ir.sadteam.loancalc.ui.subscription.PremiumBlock(
+            blocked = true, key = "pattern_lock", label = "قفلِ الگویی", onBlocked = { showPatternDialog = false },
+        )
         PatternSetupDialog(
             onDismiss = { showPatternDialog = false },
             onConfirm = { seq ->

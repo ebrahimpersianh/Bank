@@ -176,6 +176,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
         var dayText by remember(base) { mutableStateOf(base?.dueDay?.toString() ?: "") }
         var period by remember(base) { mutableStateOf(base?.periodMonths ?: 1) }
         val close = { adding = false; editing = null }
+        ir.sadteam.loancalc.ui.subscription.PremiumBlock(blocked = base == null, key = "bills", label = "قبض‌ها", onBlocked = close)
         JibakAlertDialog(
             onDismissRequest = close,
             title = { Text(if (base == null) "قبضِ جدید" else "ویرایشِ قبض") },

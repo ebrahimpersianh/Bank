@@ -44,6 +44,8 @@ class BankSmsReceiver : BroadcastReceiver() {
 
     @Inject lateinit var uiPrefs: UiPrefs
 
+    @Inject lateinit var authPrefs: ir.sadteam.loancalc.data.prefs.AuthPrefs
+
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
@@ -56,6 +58,8 @@ class BankSmsReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (!uiPrefs.smsAutoImportEnabled.first()) return@launch
+                // خوندنِ خودکار مالِ اشتراک است (۷ مهر)؛ بعدِ پایانش بی‌صدا متوقف می‌شود.
+                if (!authPrefs.subscribed.first()) return@launch
                 val parsed = BankSmsParser.parse(body) ?: return@launch
                 val accounts = accountRepository.observeAccounts().first()
                 // ترتیبِ تشخیصِ حساب، از مطمئن‌ترین به ضعیف‌ترین:

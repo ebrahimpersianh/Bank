@@ -219,6 +219,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
             }
         }
 
+        val exportGuard = ir.sadteam.loancalc.ui.subscription.premiumGuard()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -228,13 +229,13 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
             StatsExportTile(
                 icon = Icons.Outlined.Description,
                 label = "دانلود PDF",
-                onClick = { createDocumentLauncher.launch("gozaresh-vamha.pdf") },
+                onClick = { exportGuard("export", "خروجیِ PDF و اکسل") { createDocumentLauncher.launch("gozaresh-vamha.pdf") } },
                 modifier = Modifier.weight(1f),
             )
             StatsExportTile(
                 icon = Icons.Outlined.GridOn,
                 label = "دانلود اکسل",
-                onClick = { createXlsxLauncher.launch("gozaresh-vamha.xlsx") },
+                onClick = { exportGuard("export", "خروجیِ PDF و اکسل") { createXlsxLauncher.launch("gozaresh-vamha.xlsx") } },
                 modifier = Modifier.weight(1f),
             )
         }

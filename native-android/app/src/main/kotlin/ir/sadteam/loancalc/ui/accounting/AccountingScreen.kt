@@ -1266,6 +1266,7 @@ private fun AddBudgetDialog(
     onDismiss: () -> Unit,
     onSave: (CategoryEntry, Double) -> Unit,
 ) {
+    ir.sadteam.loancalc.ui.subscription.PremiumBlock(blocked = true, key = "budget", label = "بودجه", onBlocked = onDismiss)
     var selected by remember { mutableStateOf<CategoryEntry?>(null) }
     var capText by remember { mutableStateOf("") }
     val cat = selected
@@ -2280,15 +2281,16 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
             }
         }
         item {
+            val guard = ir.sadteam.loancalc.ui.subscription.premiumGuard()
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
-                    onClick = { createPdfLauncher.launch("gozaresh-hesabdari.pdf") },
+                    onClick = { guard("export", "خروجیِ PDF و اکسل") { createPdfLauncher.launch("gozaresh-hesabdari.pdf") } },
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
                     enabled = filtered.isNotEmpty(),
                     modifier = Modifier.weight(1f),
                 ) { Text("دانلود PDF", fontSize = 12.sp) }
                 OutlinedButton(
-                    onClick = { createXlsxLauncher.launch("gozaresh-hesabdari.xlsx") },
+                    onClick = { guard("export", "خروجیِ PDF و اکسل") { createXlsxLauncher.launch("gozaresh-hesabdari.xlsx") } },
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = AppPrimary),
                     enabled = filtered.isNotEmpty(),
                     modifier = Modifier.weight(1f),
@@ -2360,6 +2362,7 @@ internal fun NewBudgetSheet(
     onSave: (CategoryEntry, Double, Long?) -> Unit,
     initialCategory: CategoryEntry? = null,
 ) {
+    ir.sadteam.loancalc.ui.subscription.PremiumBlock(blocked = true, key = "budget", label = "بودجه", onBlocked = onDismiss)
     var capText by remember { mutableStateOf("") }
     var selectedCat by remember { mutableStateOf(initialCategory) }
     var selectedAccountId by remember { mutableStateOf<Long?>(null) }

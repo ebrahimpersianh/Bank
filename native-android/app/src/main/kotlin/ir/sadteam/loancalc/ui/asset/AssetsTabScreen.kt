@@ -459,6 +459,9 @@ fun AssetsTabScreen(
                 )
         }
         SubScreen(if (showAddAsset) Unit else null) { _ ->
+                ir.sadteam.loancalc.ui.subscription.PremiumBlock(
+                    blocked = true, key = "assets", label = "ثبتِ دارایی", onBlocked = { showAddAsset = false },
+                )
                 AssetTradeSheet(onDismiss = { showAddAsset = false }, viewModel = assetViewModel)
         }
         SubScreen(if (showPrices) Unit else null) { _ ->

@@ -82,6 +82,11 @@ fun AddEditChequeScreen(
     viewModel: ChequeViewModel,
     debtViewModel: DebtViewModel = hiltViewModel(),
 ) {
+    val chequeCount = viewModel.cheques.collectAsState().value.size
+    ir.sadteam.loancalc.ui.subscription.PremiumBlock(
+        blocked = existing == null && chequeCount >= ir.sadteam.loancalc.ui.subscription.FreeLimits.CHEQUES,
+        key = "cheques", label = "ثبتِ بیش از یک چک", onBlocked = onCancel,
+    )
     var type by remember { mutableStateOf(existing?.let { ChequeType.valueOf(it.type) } ?: ChequeType.RECEIVED) }
     var amountText by remember { mutableStateOf(existing?.amount?.toLong()?.let { rialToToman(it).toString() } ?: "") }
     var chequeNumber by remember { mutableStateOf(existing?.chequeNumber ?: "") }

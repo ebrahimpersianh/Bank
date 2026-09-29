@@ -89,6 +89,10 @@ fun AddEditAccountScreen(
     // همه‌ی حساب‌های دیگر - برای چکِ یکتاییِ سرشماره و شماره‌ی کارت. خودِ حسابِ در حالِ
     // ویرایش بیرون می‌ماند، وگرنه ویرایشِ بی‌تغییر خطا می‌دهد.
     val otherAccounts = viewModel.accounts.collectAsState().value.filter { it.id != existing?.id }
+    ir.sadteam.loancalc.ui.subscription.PremiumBlock(
+        blocked = existing == null && otherAccounts.size >= ir.sadteam.loancalc.ui.subscription.FreeLimits.ACCOUNTS,
+        key = "accounts", label = "بیش از یک حساب", onBlocked = onCancel,
+    )
     var showSmsSenderPicker by remember { mutableStateOf(false) }
 
     // ⚠️ فرم هیچ راهِ خروجی در دسترس نداشت: «انصراف» تهِ یک فرمِ هفت‌کارتی بود و بازگشتِ

@@ -209,6 +209,7 @@ internal fun ChequeReportScreen(
             }
         }
         item {
+            val exportGuard = ir.sadteam.loancalc.ui.subscription.premiumGuard()
             AppCard {
                 Column {
                     Text("خروجی گزارش", color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -216,13 +217,13 @@ internal fun ChequeReportScreen(
                         ChequeReportExportTile(
                             icon = Icons.Outlined.Description,
                             label = "دانلود PDF",
-                            onClick = onDownloadPdf,
+                            onClick = { exportGuard("export", "خروجیِ PDF و اکسل", onDownloadPdf) },
                             modifier = Modifier.weight(1f),
                         )
                         ChequeReportExportTile(
                             icon = Icons.Outlined.GridOn,
                             label = "دانلود اکسل",
-                            onClick = onDownloadXlsx,
+                            onClick = { exportGuard("export", "خروجیِ PDF و اکسل", onDownloadXlsx) },
                             modifier = Modifier.weight(1f),
                         )
                     }
