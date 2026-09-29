@@ -1,0 +1,28 @@
+name: اجازه‌ی حجمِ پیوستِ پشتیبانی در nginx (یک‌باره)
+
+# nginx پیش‌فرض فقط ۱ مگابایت بدنه قبول می‌کند؛ فیلمِ پیامِ پشتیبانی تا ۲۰ مگ است.
+# سقفِ واقعیِ هر مسیر را خودِ سرورِ Ktor نگه می‌دارد (بقیه‌ی مسیرها همان ۲ مگ).
+on:
+  workflow_dispatch:
+
+jobs:
+  nginx:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            CONF=/etc/nginx/sites-available/loan-api
+            sudo cp "$CONF" "$CONF.bak-$(date +%s)"
+            if sudo grep -q "client_max_body_size" "$CONF"; then
+              sudo sed -i 's/client_max_body_size[^;]*;/client_max_body_size 25m;/' "$CONF"
+            else
+              sudo sed -i '0,/server_name/s//client_max_body_size 25m;\n    server_name/' "$CONF"
+            fi
+            sudo nginx -t
+            sudo systemctl reload nginx
+            sudo grep -n "client_max_body_size" "$CONF"

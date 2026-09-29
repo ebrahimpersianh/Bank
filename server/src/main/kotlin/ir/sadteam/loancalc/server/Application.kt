@@ -46,7 +46,9 @@ fun Application.module() {
     // بزرگ‌ترین پشتیبانِ واقعی هم فراوان است.
     intercept(ApplicationCallPipeline.Plugins) {
         val declared = call.request.headers[HttpHeaders.ContentLength]?.toLongOrNull()
-        if (declared != null && declared > MAX_BODY_BYTES) {
+        // پیوستِ پشتیبانی (عکس/فیلم) سقفِ جدای خودش را دارد - رجوع کن به SupportFiles.
+        val limit = if (call.request.local.uri.startsWith("/api/support/upload")) SupportFiles.MAX_VIDEO_BYTES else MAX_BODY_BYTES
+        if (declared != null && declared > limit) {
             call.respond(HttpStatusCode.PayloadTooLarge, mapOf("error" to "body_too_large"))
             finish()
         }

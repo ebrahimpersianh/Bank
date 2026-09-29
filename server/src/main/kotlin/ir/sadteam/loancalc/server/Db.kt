@@ -291,6 +291,21 @@ object Db {
             addColumnIfMissing(conn, "ALTER TABLE announcements ADD COLUMN target_user_id INTEGER")
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN launch_gift_granted INTEGER NOT NULL DEFAULT 0")
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN cloud_warn_for TEXT")
+            conn.createStatement().use {
+                it.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS support_files (
+                        id TEXT PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        report_id INTEGER,
+                        kind TEXT NOT NULL,
+                        mime TEXT NOT NULL,
+                        size INTEGER NOT NULL,
+                        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                    """.trimIndent(),
+                )
+            }
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN cloud_warn_stage INTEGER NOT NULL DEFAULT 0")
             // نسخه‌ی نشست - رجوع کن به Auth.kt. بالا رفتنش یعنی «همه‌ی توکن‌های قبلی باطل».
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN session_version INTEGER NOT NULL DEFAULT 0")
