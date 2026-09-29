@@ -955,6 +955,13 @@ private fun LoanCalcApp(
         ir.sadteam.loancalc.ui.subscription.LocalIsPremium provides isPremium,
     ) {
     ir.sadteam.loancalc.ui.subscription.PremiumPaywallHost()
+    val subUntil by authViewModel.subscribedUntil.collectAsState()
+    val trialLeft by authViewModel.trialDaysLeft.collectAsState()
+    if (isPremium) {
+        ir.sadteam.loancalc.ui.subscription.SubscriptionExpiryReminder(
+            ir.sadteam.loancalc.ui.subscription.parseSubscribedUntil(subUntil)?.daysLeft ?: trialLeft,
+        )
+    }
     Box(modifier = Modifier.fillMaxSize()) {
         // ⚠️ **بازطراحیِ سبکِ «جیبک»**: پس‌زمینه‌ی زنده‌ی «شفق» (`AuroraBackground` - دو هاله‌ی
         // گرادیانیِ سبزآبی/طلایی که آروم نفس می‌کشیدن) **حذف شد**. سبکِ جدید یه زمینه‌ی

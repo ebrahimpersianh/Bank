@@ -4,6 +4,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import ir.sadteam.loancalc.data.UsageStats
@@ -57,6 +58,44 @@ fun PremiumBlock(blocked: Boolean, key: String, label: String, onBlocked: () -> 
             onBlocked()
         }
     }
+}
+
+/**
+ * هشدارِ نزدیکیِ پایانِ اشتراک (خواسته‌ی کاربر، ۷ مهر): از ۳ روز مانده، روزی یک بار یک پنجره.
+ * [daysLeft] = روزهای باقی‌مانده از اشتراک یا دوره‌ی هدیه؛ `null` = نامعلوم/بی‌انقضا.
+ */
+@Composable
+fun SubscriptionExpiryReminder(daysLeft: Int?) {
+    if (daysLeft == null || daysLeft !in 0..3) return
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = remember { context.getSharedPreferences("sub_expiry_reminder", android.content.Context.MODE_PRIVATE) }
+    val today = remember { (System.currentTimeMillis() / 86_400_000L).toInt() }
+    var show by remember { mutableStateOf(prefs.getInt("last_day", -1) != today) }
+    if (!show) return
+    val close = {
+        prefs.edit().putInt("last_day", today).apply()
+        show = false
+    }
+    JibakAlertDialog(
+        onDismissRequest = close,
+        title = { Text(if (daysLeft == 0) "اشتراکت امروز تموم می‌شه" else "${ir.sadteam.loancalc.core.toFa(daysLeft)} روز تا پایانِ اشتراک") },
+        text = {
+            Text(
+                "بعدش اطلاعاتت سرِ جاش می‌مونه، ولی پیامکِ خودکار، پشتیبانِ سرور، گزارشِ کامل، بودجه و " +
+                    "بقیه‌ی بخش‌های اشتراکی قفل می‌شن. برای اینکه وقفه نیفته، از همین حالا تمدید کن.",
+            )
+        },
+        confirmButton = {
+            GradientButton(onClick = {
+                close()
+                UsageStats.action("expiry_reminder_renew")
+                PremiumPaywall.showPlans = true
+            }) { Text("تمدید") }
+        },
+        dismissButton = {
+            GradientButton(onClick = close, variant = AppButtonVariant.SECONDARY) { Text("بعداً") }
+        },
+    )
 }
 
 @Composable
