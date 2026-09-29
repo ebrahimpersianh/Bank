@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.settings
 
+import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import androidx.compose.material.icons.filled.BarChart
 import ir.sadteam.loancalc.ui.support.ContactSupportContent
 import androidx.compose.foundation.text.BasicTextField
@@ -1640,12 +1641,35 @@ private fun DataSettings(
             onDismissRequest = { pendingRestore = null },
             title = { Text(if (source == "cloud") "بازیابی از سرورِ ابری؟" else "بازیابی از پشتیبانِ گوشی؟", fontWeight = FontWeight.Black) },
             text = {
-                Text(
-                    "اطلاعاتِ فعلیِ برنامه با " +
-                        (if (source == "cloud") "آخرین نسخه‌ی روی سرور" else "نسخه‌ی ${lastBackupLabel ?: "ذخیره‌شده"}") +
-                        " جایگزین می‌شه. هر چیزی که بعد از اون نسخه ثبت کردی از بین می‌ره.",
-                    lineHeight = 21.sp,
-                )
+                Column {
+                    Text(
+                        "اطلاعاتِ فعلیِ برنامه با " +
+                            (if (source == "cloud") "آخرین نسخه‌ی روی سرور" else "نسخه‌ی ${lastBackupLabel ?: "ذخیره‌شده"}") +
+                            " جایگزین می‌شه.",
+                        lineHeight = 21.sp,
+                    )
+                    // کادرِ هشدارِ نارنجی (فریمِ `19`) - پیامدِ برگشت‌ناپذیر از متنِ عادی جدا دیده شود.
+                    Row(
+                        verticalAlignment = Alignment.Top,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(AppWarningPill)
+                            .border(1.dp, AppWarningInk.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
+                            .padding(10.dp),
+                    ) {
+                        Icon(Icons.Filled.Warning, contentDescription = null, tint = AppWarningInk, modifier = Modifier.size(18.dp))
+                        Text(
+                            "هر چیزی که بعد از اون نسخه ثبت کردی از بین می‌ره و برنمی‌گرده.",
+                            color = AppWarningInk,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = 19.sp,
+                        )
+                    }
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
