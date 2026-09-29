@@ -206,7 +206,10 @@ class AuthViewModel @Inject constructor(
     fun requestOtp(phone: String, onSuccess: () -> Unit, onError: (String?) -> Unit) {
         viewModelScope.launch {
             when (val result = authRepository.requestOtp(phone)) {
-                is AuthResult.Success -> onSuccess()
+                is AuthResult.Success -> {
+                    ir.sadteam.loancalc.data.UsageStats.action("purchase_done_" + productId.substringAfterLast('_'))
+                    onSuccess()
+                }
                 is AuthResult.Error -> onError(result.code)
             }
         }
@@ -227,6 +230,7 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = authRepository.verifyOtp(phone, code)) {
                 is AuthResult.Success -> {
+                    ir.sadteam.loancalc.data.UsageStats.action("login")
                     val token = authPrefs.authToken.first()
                     if (!token.isNullOrEmpty()) {
                         when (val outcome = loanRepository.syncAfterLogin(token)) {

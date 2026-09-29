@@ -82,6 +82,7 @@ class UrgentDueViewModel @Inject constructor(
 
     /** «پرداخت شد» - قسط رو سرِ وقت تسویه می‌کنه و کارت رو تازه می‌کنه. */
     fun markPaid(row: UrgentRow, accountId: Long?) {
+        ir.sadteam.loancalc.data.UsageStats.action("home_mark_paid")
         viewModelScope.launch {
             loanRepository.setRowPaidOnTime(row.loan, row.installmentNumber)
             // همان تراکنشی که صفحه‌ی وام می‌سازد - تا پرداخت از کارتِ خانه هم از حساب کم شود.

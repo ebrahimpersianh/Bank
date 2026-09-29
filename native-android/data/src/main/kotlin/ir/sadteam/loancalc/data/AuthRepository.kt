@@ -63,6 +63,18 @@ class AuthRepository(
         }
     }
 
+    /** آیا حسابِ واردشده صفحه‌ی «آمارِ جیبک» را می‌بیند - بی‌اینترنت/واردنشده = نه. */
+    suspend fun isAdmin(): Boolean {
+        val token = authPrefs.authToken.first() ?: return false
+        return runCatching { apiService.adminCheck("Bearer $token").admin }.getOrDefault(false)
+    }
+
+    /** گزارشِ کاملِ آمار (فقط ادمین)؛ `null` یعنی نشد (شبکه یا دسترسی). */
+    suspend fun adminStats(): ir.sadteam.loancalc.data.network.AdminStatsResponse? {
+        val token = authPrefs.authToken.first() ?: return null
+        return runCatching { apiService.adminStats("Bearer $token") }.getOrNull()
+    }
+
     /** پورت «refreshSubscriptionStatus» که تو کامنتِ قبلیِ AuthViewModel «فاز بعد» علامت خورده بود -
      * چون قبلاً هیچ‌جا GET /api/auth/me واقعاً صدا زده نمی‌شد، وضعیتِ اشتراک/دوره‌ی آزمایشیِ محلی
      * می‌تونست کهنه بمونه (مثلاً دقیقاً روز هشتم که آزمایشی تموم می‌شه، بدون خروج/ورودِ دوباره تا

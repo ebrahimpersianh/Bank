@@ -117,6 +117,7 @@ class AccountViewModel @Inject constructor(
         onSuccess: () -> Unit = {},
         onFailure: (Throwable) -> Unit = {},
     ) {
+        ir.sadteam.loancalc.data.UsageStats.action("transfer_added")
         viewModelScope.launch {
             runCatching {
                 // 🚨 **هر دو سمت با هم یا هیچ‌کدام** - منطقش رفت داخلِ ریپازیتوری تا یک
@@ -227,6 +228,7 @@ class AccountViewModel @Inject constructor(
     ): Map<String, Double> = accountRepository.spendByCategory(allTransactions, year, month, accountId)
 
     fun setBudget(categoryName: String, monthlyCap: Double, existingId: Long? = null, accountId: Long? = null) {
+        ir.sadteam.loancalc.data.UsageStats.action("budget_set")
         viewModelScope.launch {
             accountRepository.setBudget(categoryName, monthlyCap, existingId, accountId)
             // «اولین بودجه ۲۵ سکه» (جدولِ `20e`) - یک‌باره؛ بودجه‌ی دومی سکه نمی‌ده.
@@ -254,6 +256,7 @@ class AccountViewModel @Inject constructor(
         dayOfMonth: Int,
         reminderDayOffsets: String?,
     ) {
+        ir.sadteam.loancalc.data.UsageStats.action("recurring_added")
         viewModelScope.launch {
             accountRepository.addRecurringPayment(name, amount, type, categoryName, accountId, dayOfMonth, reminderDayOffsets)
             syncIfLoggedIn()
@@ -268,6 +271,7 @@ class AccountViewModel @Inject constructor(
     }
 
     fun exportBackup(onResult: (String) -> Unit) {
+        ir.sadteam.loancalc.data.UsageStats.action("backup_exported")
         viewModelScope.launch { onResult(accountRepository.exportBackupJson()) }
     }
 

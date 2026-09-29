@@ -11,6 +11,7 @@ import java.util.zip.ZipOutputStream
  */
 object ChequeXlsxExporter {
     fun export(cheques: List<ChequeEntity>, out: OutputStream) {
+        ir.sadteam.loancalc.data.UsageStats.action("export_cheques_excel")
         val active = cheques.filter { !it.archived }
         val rows = buildList<List<Any>> {
             add(listOf("صاحب چک", "بانک", "نوع", "مبلغ", "شماره چک", "تاریخ سررسید", "وضعیت", "بابت"))

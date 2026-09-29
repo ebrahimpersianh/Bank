@@ -737,6 +737,8 @@ private fun LoanCalcApp(
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: BottomTab.HOME.route
+    // آمارِ بی‌نام: کدام صفحه‌ها واقعاً دیده می‌شوند (۷ مهر) - فقط الگوی مسیر، بی شناسه.
+    LaunchedEffect(currentRoute) { ir.sadteam.loancalc.data.UsageStats.screen(currentRoute) }
 
     // **شخصی‌سازیِ نوارِ پایین** (بخشِ ۴۱). عمداً از کشوی میان‌بُرِ بالا **جداست**: «یک فهرست،
     // دو نمایش» - مخزنِ مقصدها مشترکه ولی ترتیبِ ذخیره‌شده نه، پس تغییرِ نوار کشو رو دست نمی‌زنه.

@@ -19,6 +19,7 @@ class NoteViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun addNote(text: String, year: Int, month: Int, day: Int, reminderDayOffsets: String?) {
+        ir.sadteam.loancalc.data.UsageStats.action("note_added")
         viewModelScope.launch { noteRepository.addNote(text, year, month, day, reminderDayOffsets) }
     }
 

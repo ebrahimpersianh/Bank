@@ -35,6 +35,7 @@ object ChequePdfExporter {
     }
 
     fun export(cheques: List<ChequeEntity>, out: OutputStream) {
+        ir.sadteam.loancalc.data.UsageStats.action("export_cheques_pdf")
         val document = PdfDocument()
         var pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, document.pages.size + 1).create()
         var page = document.startPage(pageInfo)

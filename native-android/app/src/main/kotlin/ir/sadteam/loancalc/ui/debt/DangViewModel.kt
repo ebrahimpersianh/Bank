@@ -39,6 +39,7 @@ class DangViewModel @Inject constructor(
         items: List<DangItemInput> = emptyList(),
         onSaved: () -> Unit,
     ) {
+        ir.sadteam.loancalc.data.UsageStats.action("dang_created")
         viewModelScope.launch {
             dangRepository.createEvent(title, method, totalAmount, year, month, day, isEventMode, participants, items)
             onSaved()

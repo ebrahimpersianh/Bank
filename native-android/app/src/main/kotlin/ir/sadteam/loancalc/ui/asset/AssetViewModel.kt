@@ -196,6 +196,7 @@ class AssetViewModel @Inject constructor(
         /** حسابی که پولِ خرید از آن رفت / پولِ فروش به آن آمد؛ `null` = به حسابی وصل نشود. */
         accountId: Long? = null,
     ) {
+        ir.sadteam.loancalc.data.UsageStats.action("asset_trade")
         viewModelScope.launch {
             assetRepository.recordTrade(
                 symbol, name, category, isBuy, quantity, totalRial,

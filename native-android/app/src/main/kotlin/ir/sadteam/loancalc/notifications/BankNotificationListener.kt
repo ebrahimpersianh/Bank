@@ -119,6 +119,7 @@ class BankNotificationListener : NotificationListenerService() {
             val category = guessedCategory ?: if (isWithdrawal) "سایر هزینه" else "سایر درآمد"
             // ⚠️ **تاییدنشده** ثبت می‌شه (تصمیمِ صریحِ کاربر): تا وقتی خودش تاییدش نکرده رو
             // موجودی اثر نمی‌ذاره. کارتِ اقدام‌دارِ مرکزِ پیام‌ها ازش ساخته می‌شه.
+            ir.sadteam.loancalc.data.UsageStats.action("notif_auto_tx")
             val txId = accountRepository.addTransaction(
                 accountId = account.id,
                 type = parsed.type,

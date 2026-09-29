@@ -108,6 +108,7 @@ class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewMod
     }
 
     fun setThemeMode(mode: ThemeMode) {
+        ir.sadteam.loancalc.data.UsageStats.action("theme_mode_changed")
         viewModelScope.launch { uiPrefs.setThemeMode(mode.name.lowercase()) }
     }
 
@@ -116,6 +117,7 @@ class ThemeViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewMod
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1f)
 
     fun setFontScale(value: Float) {
+        ir.sadteam.loancalc.data.UsageStats.action("font_scale_changed")
         viewModelScope.launch { uiPrefs.setFontScale(value) }
     }
 }

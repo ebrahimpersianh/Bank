@@ -82,6 +82,7 @@ class SmsAutoImportViewModel @Inject constructor(
     }
 
     fun setNotifEnabled(value: Boolean) {
+        ir.sadteam.loancalc.data.UsageStats.action("notif_import_toggled")
         viewModelScope.launch {
             uiPrefs.setNotifAutoImportEnabled(value)
             if (value) {

@@ -19,6 +19,7 @@ import ir.sadteam.loancalc.data.GamificationRepository
 import ir.sadteam.loancalc.data.LoanDataChange
 import ir.sadteam.loancalc.data.banks
 import ir.sadteam.loancalc.data.creditServices
+import ir.sadteam.loancalc.data.prefs.AuthPrefs
 import ir.sadteam.loancalc.data.prefs.UiPrefs
 import ir.sadteam.loancalc.notifications.ComeBackScheduler
 import ir.sadteam.loancalc.ui.auth.SmsRetrieverHash
@@ -50,10 +51,17 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
     @Inject
     lateinit var uiPrefs: UiPrefs
 
+    @Inject
+    lateinit var authPrefs: AuthPrefs
+
     override fun onCreate() {
         super.onCreate()
         crashReporter.install()
-        ir.sadteam.loancalc.data.UsageStats.init(this)
+        ir.sadteam.loancalc.data.UsageStats.init(this, BuildConfig.FLAVOR)
+        // آمار فقط «واردشده یا نه» را می‌خواهد، نه اینکه چه کسی.
+        CoroutineScope(Dispatchers.IO).launch {
+            authPrefs.authToken.collect { ir.sadteam.loancalc.data.UsageStats.loggedIn = it != null }
+        }
         preloadLogoAssets()
         // برای هماهنگ‌کردنِ پترنِ پیامکِ OTP با SMS Retriever API - رجوع کن به کامنتِ
         // SmsRetrieverHash.kt. فقط لاگ می‌کنه (Log.i)، هیچ اثرِ دیگه‌ای رو رفتارِ اپ نداره.
@@ -70,7 +78,9 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         // دیده می‌شود (قاعده‌ی صریحِ `49`).
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_START) ir.sadteam.loancalc.data.UsageStats.onForeground()
                 if (event == Lifecycle.Event.ON_STOP) {
+                    ir.sadteam.loancalc.data.UsageStats.onBackground()
                     CoroutineScope(Dispatchers.IO).launch {
                         runCatching {
                             // 🚨 **آیکونِ ناشناخته پاک می‌شود، نه اینکه اعمال شود.**

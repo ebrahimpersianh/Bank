@@ -41,6 +41,7 @@ class ReminderSettingsViewModel @Inject constructor(
     }
 
     fun setAutoTxEnabled(value: Boolean) {
+        ir.sadteam.loancalc.data.UsageStats.action("auto_tx_toggled")
         viewModelScope.launch { uiPrefs.setAutoTxNotifyEnabled(value) }
     }
 

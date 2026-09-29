@@ -271,12 +271,18 @@ fun SettingsScreen(
     var showReminderSettings by remember { mutableStateOf(false) }
     // 🐞 گزارشِ مشکل - زیرصفحه‌ی تمام‌صفحه، مثلِ بقیه‌ی زیرصفحه‌های تنظیمات.
     var showBugReport by remember { mutableStateOf(false) }
+    // «آمارِ جیبک» - فقط برای حسابِ صاحبِ برنامه (ورک‌فلوی make-admin).
+    var showAdminStats by remember { mutableStateOf(false) }
+    LaunchedEffect(route) {
+        if (route != SettingsRoute.MAIN) ir.sadteam.loancalc.data.UsageStats.screen("settings_" + route.name.lowercase())
+    }
 
     val screenKey = when {
         showLoginPrompt -> "login"
         showSubscription -> "subscription"
         showReminderSettings -> "reminderSettings"
         showBugReport -> "bugReport"
+        showAdminStats -> "adminStats"
         tool != null -> "tool"
         route != SettingsRoute.MAIN -> "sub"
         else -> "main"
@@ -305,6 +311,9 @@ fun SettingsScreen(
             }
             "bugReport" -> FullScreenDialog(onDismissRequest = { showBugReport = false }) {
                 BugReportScreen(onBack = { showBugReport = false })
+            }
+            "adminStats" -> FullScreenDialog(onDismissRequest = { showAdminStats = false }) {
+                ir.sadteam.loancalc.ui.admin.AdminStatsScreen(onBack = { showAdminStats = false })
             }
             "tool" -> FullScreenDialog(onDismissRequest = { tool = null }) {
                 when (tool) {
@@ -345,6 +354,7 @@ fun SettingsScreen(
                 hapticsViewModel = hapticsViewModel,
                 onOpen = { route = it },
                 onShowSubscription = { showSubscription = true },
+                onOpenAdminStats = { showAdminStats = true },
             )
         }
     }
@@ -383,7 +393,10 @@ private fun SettingsMainContent(
     hapticsViewModel: HapticsViewModel,
     onOpen: (SettingsRoute) -> Unit,
     onShowSubscription: () -> Unit,
+    onOpenAdminStats: () -> Unit = {},
+    adminViewModel: ir.sadteam.loancalc.ui.admin.AdminStatsViewModel = hiltViewModel(),
 ) {
+    val isAdmin by adminViewModel.isAdmin.collectAsState()
     val gateState by authViewModel.gateState.collectAsState()
     val phone by authViewModel.phone.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
@@ -670,6 +683,18 @@ private fun SettingsMainContent(
                 }
             }
 
+            // فقط صاحبِ برنامه می‌بیند؛ برای بقیه این ردیف اصلاً ساخته نمی‌شود.
+            if (isAdmin && searchQuery.isBlank()) {
+                SettingsGroup(modifier = Modifier.padding(top = AppSpacing.betweenCards)) {
+                    SettingsRowItem(
+                        title = "آمارِ جیبک",
+                        icon = Icons.Filled.BarChart,
+                        tone = SettingsTone.NEUTRAL,
+                        status = "چند نفر، کدام صفحه‌ها، چه کارهایی - فقط برای تو",
+                        onClick = onOpenAdminStats,
+                    )
+                }
+            }
             if (matches(SettingsRoute.ABOUT)) {
                 SettingsGroup(modifier = Modifier.padding(top = AppSpacing.betweenCards)) {
                     SettingsRow(
@@ -3034,7 +3059,7 @@ private fun SecuritySettings(
             title = "ارسالِ آمارِ بی‌نامِ استفاده",
             icon = Icons.Filled.BarChart,
             tone = SettingsTone.NEUTRAL,
-            status = "فقط «چه کاری انجام شد»، بدونِ مبلغ، اسم، شماره یا هیچ اطلاعاتِ شخصی",
+            status = "فقط «کدام صفحه و چه کاری»، بدونِ مبلغ، اسم، شماره یا هیچ اطلاعاتِ شخصی",
             checked = usageOn,
             onCheckedChange = {
                 usageOn = it

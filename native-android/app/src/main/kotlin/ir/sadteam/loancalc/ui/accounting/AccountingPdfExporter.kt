@@ -55,6 +55,7 @@ object AccountingPdfExporter {
         transactions: List<AccountTransactionEntity>,
         out: OutputStream,
     ) {
+        ir.sadteam.loancalc.data.UsageStats.action("export_accounting_pdf")
         val document = PdfDocument()
         var pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create()
         var page = document.startPage(pageInfo)

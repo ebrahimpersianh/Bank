@@ -14,6 +14,7 @@ import java.util.zip.ZipOutputStream
  */
 object StatsXlsxExporter {
     fun export(summary: StatsSummary, loans: List<LoanEntity>, out: OutputStream) {
+        ir.sadteam.loancalc.data.UsageStats.action("export_loans_excel")
         val rows = buildList<List<Any>> {
             add(listOf("نام وام", "بانک", "مبلغ قسط", "تعداد اقساط", "پرداخت‌شده", "مانده"))
             loans.forEach { loan ->

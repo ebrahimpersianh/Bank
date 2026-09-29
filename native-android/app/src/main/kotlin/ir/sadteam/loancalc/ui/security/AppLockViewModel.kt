@@ -115,6 +115,7 @@ class AppLockViewModel @Inject constructor(
     }
 
     fun setPin(pin: String) {
+        ir.sadteam.loancalc.data.UsageStats.action("pin_set")
         viewModelScope.launch { securityPrefs.setPinHash(sha256Hex(pin)) }
     }
 
@@ -123,6 +124,7 @@ class AppLockViewModel @Inject constructor(
     }
 
     fun setBiometricEnabled(value: Boolean) {
+        ir.sadteam.loancalc.data.UsageStats.action("biometric_toggled")
         viewModelScope.launch { securityPrefs.setBiometricEnabled(value) }
     }
 

@@ -119,6 +119,7 @@ class ShopViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun setCoinGoal(itemId: String?) {
+        ir.sadteam.loancalc.data.UsageStats.action("coin_goal_set")
         viewModelScope.launch { uiPrefs.setCoinGoal(itemId) }
     }
 
@@ -145,6 +146,7 @@ class ShopViewModel @Inject constructor(
     }
 
     fun buy(item: ShopItem) {
+        ir.sadteam.loancalc.data.UsageStats.action("shop_buy")
         viewModelScope.launch {
             _lastResult.value = attemptBuy(item)
         }

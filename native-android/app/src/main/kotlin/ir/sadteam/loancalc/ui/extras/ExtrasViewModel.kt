@@ -39,6 +39,7 @@ class ExtrasViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveTemplate(name: String, type: String, amountRial: Double, category: String?, accountId: Long?) {
+        ir.sadteam.loancalc.data.UsageStats.action("template_saved")
         viewModelScope.launch {
             templateDao.upsert(
                 TxTemplateEntity(
@@ -58,6 +59,7 @@ class ExtrasViewModel @Inject constructor(
     }
 
     fun saveBill(bill: BillEntity) {
+        ir.sadteam.loancalc.data.UsageStats.action("bill_saved")
         viewModelScope.launch { billDao.upsert(bill) }
     }
 
@@ -67,6 +69,7 @@ class ExtrasViewModel @Inject constructor(
 
     /** «پرداخت شد» برای دوره‌ی جاری - یادآورِ همین دوره دیگر نمی‌آید. */
     fun markBillPaid(bill: BillEntity, year: Int, month: Int, amountRial: Double, accountId: Long?) {
+        ir.sadteam.loancalc.data.UsageStats.action("bill_paid")
         viewModelScope.launch {
             billDao.upsert(bill.copy(lastPaidKey = "$year-$month", lastAmount = amountRial))
             // پرداختِ قبض هم مثلِ قسط از حساب کم می‌شود (بخشِ «اتصالِ پرداخت‌ها»).

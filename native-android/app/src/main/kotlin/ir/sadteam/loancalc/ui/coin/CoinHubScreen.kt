@@ -227,14 +227,14 @@ private fun CoinHero(coins: Int, activeDays: Int, earnedToday: Int) {
                 Text(
                     "امروز +${toFa(earnedToday)} از ${toFa(CoinReason.DAILY_COIN_CAP)}" +
                         if (activeDays > 0) " · ${toFa(activeDays)} روز" else "",
-                    color = Color(0xFF0B8C57),
+                    color = AppPrimaryInk,
                     fontSize = 8.5.sp,
                     fontWeight = FontWeight.Black,
                     maxLines = 1,
                     modifier = Modifier
                         .padding(top = 3.dp)
                         .clip(RoundedCornerShape(999.dp))
-                        .background(Color(0xFF0EA968).copy(alpha = 0.14f))
+                        .background(AppPrimary.copy(alpha = 0.14f))
                         .padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }

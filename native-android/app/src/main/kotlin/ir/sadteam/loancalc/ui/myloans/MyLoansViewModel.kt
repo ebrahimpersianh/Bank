@@ -66,6 +66,7 @@ class MyLoansViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun addIncome(label: String, amount: Double, type: IncomeType) {
+        ir.sadteam.loancalc.data.UsageStats.action("income_added")
         viewModelScope.launch { incomeRepository.addIncome(label, amount, type) }
     }
 
@@ -82,6 +83,7 @@ class MyLoansViewModel @Inject constructor(
         startDate: PersianDate,
         onSaved: () -> Unit,
     ) {
+        ir.sadteam.loancalc.data.UsageStats.action("loan_added_manual")
         viewModelScope.launch {
             loanRepository.addManualLoan(
                 name = name,
@@ -266,6 +268,7 @@ class MyLoansViewModel @Inject constructor(
      * می‌کنه (با نگه‌داشتن ردیف‌های واقعیِ محاسبه‌شده). محدودیتِ «۱ وام رایگان» باید قبلِ صدا زدن
      * این، سمتِ UI چک بشه (مثل onAddLoanClick تو MyLoansScreen). */
     fun saveComputedLoan(outcome: BankLoanOutcome, paidCount: Int = 0, onSaved: () -> Unit) {
+        ir.sadteam.loancalc.data.UsageStats.action("loan_saved_from_calc")
         viewModelScope.launch {
             val r = outcome.result
             val loanName = outcome.borrower.takeIf { it != "—" && it.isNotBlank() } ?: outcome.bankName
@@ -301,6 +304,7 @@ class MyLoansViewModel @Inject constructor(
     /** پورت «پیوست عکس رسید» اپ رقیب - عکس انتخابی رو به فضای داخلی اپ کپی می‌کنه، عکس قبلی (اگه بود)
      * رو پاک می‌کنه، و مسیر جدید رو رو خودِ وام ذخیره می‌کنه. */
     fun setLoanPhoto(loan: LoanEntity, uri: Uri) {
+        ir.sadteam.loancalc.data.UsageStats.action("loan_photo")
         viewModelScope.launch {
             val newPath = attachmentStorage.copyToInternalStorage(uri) ?: return@launch
             attachmentStorage.delete(loan.photoPath)
@@ -320,6 +324,7 @@ class MyLoansViewModel @Inject constructor(
     /** بعد از یه درجِ موفقِ سررسیدها تو تقویم گوشی صدا زده می‌شه - persist می‌کنه تا دکمه‌ی «افزودن
      * سررسیدها» تو LoanDetailScreen دیگه هیچ‌وقت (نه فقط تو همین session) دوباره درج نکنه. */
     fun markCalendarExported(loan: LoanEntity) {
+        ir.sadteam.loancalc.data.UsageStats.action("calendar_export")
         viewModelScope.launch {
             loanRepository.saveLoan(loan.copy(calendarExported = true))
             syncIfLoggedIn()
@@ -386,6 +391,7 @@ class MyLoansViewModel @Inject constructor(
 
     /** پورت payOnTime تو www/index.html. */
     fun setRowPaidOnTime(loan: LoanEntity, m: Int) {
+        ir.sadteam.loancalc.data.UsageStats.action("installment_paid")
         viewModelScope.launch {
             loanRepository.setRowPaidOnTime(loan, m)
             syncIfLoggedIn()
@@ -394,6 +400,7 @@ class MyLoansViewModel @Inject constructor(
 
     /** پورت confirmLatePayment تو www/index.html - [paidDate] تاریخ واقعیِ پرداخته، نه سررسید. */
     fun setRowPaidLate(loan: LoanEntity, m: Int, paidDate: PersianDate) {
+        ir.sadteam.loancalc.data.UsageStats.action("installment_paid_late")
         viewModelScope.launch {
             loanRepository.setRowPaidLate(
                 loan,
@@ -406,6 +413,7 @@ class MyLoansViewModel @Inject constructor(
 
     /** پرداختِ گروهیِ چندتا قسطِ پرداخت‌نشده به‌موقع - رجوع کن به [LoanRepository.setRowsPaidOnTime]. */
     fun setRowsPaidOnTime(loan: LoanEntity, ms: List<Int>) {
+        ir.sadteam.loancalc.data.UsageStats.action("installments_paid_bulk")
         viewModelScope.launch {
             loanRepository.setRowsPaidOnTime(loan, ms)
             syncIfLoggedIn()
@@ -414,6 +422,7 @@ class MyLoansViewModel @Inject constructor(
 
     /** پرداختِ گروهیِ چندتا قسط با تاخیر - رجوع کن به [LoanRepository.setRowsPaidLate]. */
     fun setRowsPaidLate(loan: LoanEntity, ms: List<Int>, paidDate: PersianDate) {
+        ir.sadteam.loancalc.data.UsageStats.action("installments_paid_bulk_late")
         viewModelScope.launch {
             loanRepository.setRowsPaidLate(
                 loan,
@@ -433,6 +442,7 @@ class MyLoansViewModel @Inject constructor(
      * [removeRowPhoto] استفاده کن.
      */
     fun setRowPhoto(loan: LoanEntity, m: Int, uri: Uri, previousPath: String? = null) {
+        ir.sadteam.loancalc.data.UsageStats.action("installment_receipt")
         viewModelScope.launch {
             val newPath = attachmentStorage.copyToInternalStorage(uri) ?: return@launch
             loanRepository.setRowPhoto(loan, m, newPath)
@@ -455,6 +465,7 @@ class MyLoansViewModel @Inject constructor(
 
     /** یادداشت و شماره‌ی پیگیریِ یه قسط - کارتِ `36d`. */
     fun setRowDetails(loan: LoanEntity, m: Int, note: String?, trackingNumber: String?) {
+        ir.sadteam.loancalc.data.UsageStats.action("installment_note")
         viewModelScope.launch {
             loanRepository.setRowDetails(loan, m, note, trackingNumber)
             syncIfLoggedIn()
@@ -464,6 +475,7 @@ class MyLoansViewModel @Inject constructor(
     /** پورت confirmEditInstallment تو www/index.html - ویرایش دستی مبلغ یه قسط. [onSaved] بعد از
      * ذخیره صدا زده می‌شه تا UI بتونه سوال «رو همه اعمال کنم؟» رو نشون بده. */
     fun setRowInstallment(loan: LoanEntity, m: Int, newAmount: Double, onSaved: () -> Unit = {}) {
+        ir.sadteam.loancalc.data.UsageStats.action("installment_amount_edited")
         viewModelScope.launch {
             loanRepository.setRowInstallment(loan, m, newAmount)
             syncIfLoggedIn()

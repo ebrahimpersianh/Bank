@@ -17,6 +17,7 @@ object AccountingXlsxExporter {
         transactions: List<AccountTransactionEntity>,
         out: OutputStream,
     ) {
+        ir.sadteam.loancalc.data.UsageStats.action("export_accounting_excel")
         // ستونِ مبلغ **تومان** می‌شود، مثلِ همه‌جای برنامه. عددِ ریالِ خام در فایلِ
         // اکسل، عددی ده‌برابر بود که کاربر بی هیچ برچسبی جمعش می‌زد.
         val toman = { rial: Double -> rialToToman(rial.toLong()) }

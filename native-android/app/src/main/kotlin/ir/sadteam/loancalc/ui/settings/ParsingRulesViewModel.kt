@@ -34,6 +34,7 @@ class ParsingRulesViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun save(existing: ParsingRuleEntity?, pattern: String, category: String, txType: String?, count: Int) {
+        ir.sadteam.loancalc.data.UsageStats.action("sms_rule_saved")
         viewModelScope.launch {
             repository.save(
                 existing?.copy(

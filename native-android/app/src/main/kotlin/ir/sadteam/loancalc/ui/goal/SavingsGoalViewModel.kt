@@ -40,6 +40,7 @@ class SavingsGoalViewModel @Inject constructor(
         deadlineMonth: Int? = null,
         deadlineDay: Int? = null,
     ) {
+        ir.sadteam.loancalc.data.UsageStats.action("goal_added")
         viewModelScope.launch {
             repository.addGoal(title, targetRial, iconKey, deadlineYear, deadlineMonth, deadlineDay)
         }

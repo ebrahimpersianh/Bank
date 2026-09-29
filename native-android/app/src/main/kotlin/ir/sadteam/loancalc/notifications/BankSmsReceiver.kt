@@ -97,6 +97,7 @@ class BankSmsReceiver : BroadcastReceiver() {
                 val confident = guessedCategory != null
                 val category = guessedCategory ?: if (isWithdrawal) "سایر هزینه" else "سایر درآمد"
                 // ⚠️ **تاییدنشده** (تصمیمِ صریحِ کاربر) - تا تاییدِ خودش رو موجودی اثر نمی‌ذاره.
+                ir.sadteam.loancalc.data.UsageStats.action("sms_auto_tx")
                 val txId = accountRepository.addTransaction(
                     accountId = account.id,
                     type = parsed.type,

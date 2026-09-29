@@ -72,6 +72,7 @@ class ChequeViewModel @Inject constructor(
         counterpartyId: Long? = null,
         onSaved: () -> Unit,
     ) {
+        ir.sadteam.loancalc.data.UsageStats.action("cheque_added")
         viewModelScope.launch {
             chequeRepository.addCheque(
                 type, amount, chequeNumber, sayadId, bankName, branchName, ownerName,
@@ -105,6 +106,7 @@ class ChequeViewModel @Inject constructor(
     }
 
     fun setStatus(cheque: ChequeEntity, status: ChequeStatus) {
+        ir.sadteam.loancalc.data.UsageStats.action("cheque_status_changed")
         viewModelScope.launch {
             // پاس‌شده ← هر وضعیتِ دیگر: تراکنشی که موقعِ پاس‌شدن ساخته شد برگردانده می‌شود.
             if (cheque.status == ChequeStatus.PASSED.name && status != ChequeStatus.PASSED) {
@@ -132,6 +134,7 @@ class ChequeViewModel @Inject constructor(
     /** پورت «پیوست عکس رسید» اپ رقیب - عکس انتخابی رو به فضای داخلی اپ کپی می‌کنه، عکس قبلی (اگه بود)
      * رو پاک می‌کنه، و مسیر جدید رو رو خودِ چک ذخیره می‌کنه. */
     fun setChequePhoto(cheque: ChequeEntity, uri: Uri) {
+        ir.sadteam.loancalc.data.UsageStats.action("cheque_photo")
         viewModelScope.launch {
             val newPath = attachmentStorage.copyToInternalStorage(uri) ?: return@launch
             attachmentStorage.delete(cheque.photoPath)

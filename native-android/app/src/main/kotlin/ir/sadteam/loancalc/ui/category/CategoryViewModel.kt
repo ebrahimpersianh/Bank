@@ -70,6 +70,7 @@ class CategoryViewModel @Inject constructor(
         type: TransactionType,
         parentName: String? = null,
     ) {
+        ir.sadteam.loancalc.data.UsageStats.action("category_added")
         viewModelScope.launch { categoryRepository.addCustomCategory(name, color, iconKey, type, parentName) }
     }
 
@@ -146,6 +147,7 @@ class CategoryViewModel @Inject constructor(
     }
 
     fun saveOrder(type: TransactionType, orderedNames: List<String>) {
+        ir.sadteam.loancalc.data.UsageStats.action("categories_reordered")
         viewModelScope.launch { categoryRepository.saveOrder(type, orderedNames) }
     }
 

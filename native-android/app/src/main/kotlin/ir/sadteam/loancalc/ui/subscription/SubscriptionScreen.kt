@@ -174,6 +174,7 @@ fun SubscriptionScreen(
     var showGift by remember { mutableStateOf(false) }
 
     fun startPurchase(productId: String) {
+        ir.sadteam.loancalc.data.UsageStats.action("purchase_start_" + productId.substringAfterLast('_'))
         if (gateState != GateState.LOGGED_IN) {
             onNeedsLogin()
             return

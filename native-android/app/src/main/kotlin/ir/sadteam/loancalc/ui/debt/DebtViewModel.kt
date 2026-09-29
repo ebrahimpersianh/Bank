@@ -42,6 +42,7 @@ class DebtViewModel @Inject constructor(
         debtRepository.netBalance(counterpartyId, allDebts)
 
     fun addCounterparty(name: String, phone: String? = null, onResult: (Long) -> Unit = {}) {
+        ir.sadteam.loancalc.data.UsageStats.action("counterparty_added")
         viewModelScope.launch { onResult(debtRepository.addCounterparty(name, phone)) }
     }
 
@@ -62,12 +63,14 @@ class DebtViewModel @Inject constructor(
         month: Int,
         day: Int,
     ) {
+        ir.sadteam.loancalc.data.UsageStats.action("debt_added")
         viewModelScope.launch {
             debtRepository.addDebt(counterpartyId, amount, type, description, year, month, day)
         }
     }
 
     fun setSettled(debt: DebtEntity, settled: Boolean) {
+        ir.sadteam.loancalc.data.UsageStats.action("debt_settled")
         viewModelScope.launch { debtRepository.setSettled(debt, settled) }
     }
 

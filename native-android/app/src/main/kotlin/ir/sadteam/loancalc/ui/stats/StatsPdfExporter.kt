@@ -38,6 +38,7 @@ object StatsPdfExporter {
     }
 
     fun export(summary: StatsSummary, loans: List<LoanEntity>, out: OutputStream) {
+        ir.sadteam.loancalc.data.UsageStats.action("export_loans_pdf")
         val document = PdfDocument()
         val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create()
         val page = document.startPage(pageInfo)

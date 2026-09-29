@@ -82,6 +82,16 @@ interface ApiService {
     @POST("api/events")
     suspend fun trackEvent(@Body body: UsageEventRequest): Response<Unit>
 
+    @POST("api/events/batch")
+    suspend fun trackBatch(@Body body: UsageBatchRequest): Response<Unit>
+
+    /** آیا این حساب صفحه‌ی «آمارِ جیبک» را می‌بیند (ورک‌فلوی make-admin). */
+    @GET("api/admin/check")
+    suspend fun adminCheck(@Header("Authorization") authHeader: String): AdminCheckResponse
+
+    @GET("api/admin/stats")
+    suspend fun adminStats(@Header("Authorization") authHeader: String): AdminStatsResponse
+
     @POST("api/crash")
     suspend fun reportCrash(
         @Body body: CrashReportRequest,
@@ -272,3 +282,46 @@ data class AnnouncementDto(
 data class AnnouncementsResponse(val items: List<AnnouncementDto>)
 
 data class UsageEventRequest(val name: String)
+
+data class UsageBatchEvent(val name: String, val count: Int, val day: String)
+
+data class UsageBatchRequest(
+    val installId: String,
+    val appVersion: Int?,
+    val store: String?,
+    val sdk: Int,
+    val loggedIn: Boolean,
+    val events: List<UsageBatchEvent>,
+)
+
+data class AdminCheckResponse(val admin: Boolean = false)
+
+data class AdminDayPoint(val day: String = "", val active: Int = 0, val new: Int = 0)
+
+data class AdminNamedCount(val name: String = "", val count: Int = 0)
+
+data class AdminFeatureUsage(val name: String = "", val users: Int = 0, val total: Int = 0)
+
+data class AdminRetentionPoint(val afterDays: Int = 0, val base: Int = 0, val returned: Int = 0)
+
+/** گزارشِ «آمارِ جیبک» - رجوع کن به `server/.../AdminRoutes.kt`. فهرست‌ها با Gson ممکن است null بیایند. */
+data class AdminStatsResponse(
+    val today: String = "",
+    val totalInstalls: Int = 0,
+    val activeToday: Int = 0,
+    val active7: Int = 0,
+    val active30: Int = 0,
+    val new7: Int = 0,
+    val new30: Int = 0,
+    val loggedInActive30: Int = 0,
+    val avgActiveDays30: Double = 0.0,
+    val sessions7: Int = 0,
+    val daily: List<AdminDayPoint>? = null,
+    val retention: List<AdminRetentionPoint>? = null,
+    val funnel: List<AdminNamedCount>? = null,
+    val screens: List<AdminFeatureUsage>? = null,
+    val actions: List<AdminFeatureUsage>? = null,
+    val versions: List<AdminNamedCount>? = null,
+    val stores: List<AdminNamedCount>? = null,
+    val sdks: List<AdminNamedCount>? = null,
+)

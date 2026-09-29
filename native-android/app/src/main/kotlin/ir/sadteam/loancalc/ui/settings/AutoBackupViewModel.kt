@@ -74,6 +74,7 @@ class AutoBackupViewModel @Inject constructor(
      * برمی‌گردانَد سرِ جای اولش.
      */
     fun restoreFromAutoBackup(onResult: (Boolean) -> Unit) {
+        ir.sadteam.loancalc.data.UsageStats.action("restore_local")
         viewModelScope.launch {
             val dir = File(context.filesDir, AutoBackupWorker.BACKUP_DIR_NAME)
             val loansJson = File(dir, "loans.json").takeIf { it.exists() }?.readText()
@@ -96,6 +97,7 @@ class AutoBackupViewModel @Inject constructor(
      * «موفق» اعلام می‌شد. حالا یا همه یا هیچ.
      */
     fun restoreFromCloud(onResult: (Boolean) -> Unit) {
+        ir.sadteam.loancalc.data.UsageStats.action("restore_cloud")
         viewModelScope.launch {
             val token = authPrefs.authToken.first()
             if (token.isNullOrEmpty()) {
