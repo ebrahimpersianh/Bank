@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui
 
+import ir.sadteam.loancalc.ui.components.HeroPillBg
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -329,14 +330,21 @@ fun BankLoanScreen(
                                     modifier = Modifier.padding(start = 5.dp, bottom = 2.dp),
                                 )
                             }
-                            PrivacyCrossfade(privacyMode) { masked ->
-                                Text(
-                                    "${toFa(heroN)} قسط · کلِ بازپرداخت ${maskIfPrivate(masked, amountToman(heroResult.totalPaid))}",
-                                    color = HeroMuted,
-                                    fontSize = 9.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(top = 4.dp),
-                                )
+                            Text(
+                                "${toFa(heroN)} قسط",
+                                color = HeroMuted,
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                            // کارتِ نتیجه‌ی برجسته (فریمِ `35`): کلِ بازپرداخت و سود هر کدام خانه‌ی خودشان را
+                            // دارند، نه یک خطِ ریزِ زیرِ قسط.
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                            ) {
+                                HeroResultCell("کلِ بازپرداخت", heroResult.totalPaid, privacyMode, Modifier.weight(1f))
+                                HeroResultCell("سودِ کل", heroResult.totalInterest, privacyMode, Modifier.weight(1f))
                             }
                         }
                     }
@@ -940,6 +948,27 @@ private val loanTypePresets: List<Pair<String, Double?>> = listOf(
 )
 
 /** ذخیره/محاسبه ریال است و نمایش تومان (بندِ ۲ی README) - تنها نقطه‌ی تبدیلِ نمایشِ این فایل. */
+@Composable
+private fun HeroResultCell(label: String, rial: Double, privacyMode: Boolean, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(HeroPillBg)
+            .padding(horizontal = 11.dp, vertical = 8.dp),
+    ) {
+        Text(label, color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+        PrivacyCrossfade(privacyMode) { masked ->
+            AutoShrinkText(
+                text = "${maskIfPrivate(masked, amountToman(rial))} تومان",
+                color = Color.White,
+                maxFontSize = 13.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+    }
+}
+
 private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
 
 private fun trimRate(v: Double): String {
