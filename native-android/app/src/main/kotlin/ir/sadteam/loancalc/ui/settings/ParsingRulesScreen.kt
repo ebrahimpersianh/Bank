@@ -33,6 +33,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.text.style.TextOverflow
+import ir.sadteam.loancalc.data.CategoryEntry
+import ir.sadteam.loancalc.ui.components.GradientButton
+import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.db.ParsingRuleEntity
@@ -43,18 +51,15 @@ import ir.sadteam.loancalc.ui.components.SegmentedToggle
 import ir.sadteam.loancalc.ui.components.SwipeToDeleteRow
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
-import ir.sadteam.loancalc.ui.theme.AppElevation
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppInfoPill
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
-import ir.sadteam.loancalc.ui.theme.hardShadow
 
 /**
  * **قاعده‌های تشخیص** - زیرصفحه‌ی ۸ از بخشِ ج.
@@ -71,38 +76,24 @@ import ir.sadteam.loancalc.ui.theme.hardShadow
 @Composable
 fun ParsingRulesScreen(viewModel: ParsingRulesViewModel = hiltViewModel()) {
     val rules by viewModel.rules.collectAsState()
+    val expenseCategories by viewModel.expenseCategories.collectAsState()
+    val incomeCategories by viewModel.incomeCategories.collectAsState()
     var editing by remember { mutableStateOf<ParsingRuleEntity?>(null) }
     var creating by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
+        Text(
+            "قاعده‌ها از بالا به پایین بررسی می‌شن و اولین تطبیق برنده‌ست.",
+            color = AppMuted,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            lineHeight = 18.sp,
             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "قاعده‌ها از بالا به پایین بررسی می‌شن و اولین تطبیق برنده‌ست.",
-                color = AppMuted,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                lineHeight = 18.sp,
-                modifier = Modifier.weight(1f),
-            )
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .hardShadow(AppPrimaryDim, AppElevation.inRow, 999.dp)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(AppPrimary)
-                    .pressScaleClickable { creating = true },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Filled.Add,
-                    contentDescription = "افزودنِ قاعده",
-                    tint = androidx.compose.ui.graphics.Color.White,
-                    modifier = Modifier.size(16.dp),
-                )
-            }
+        )
+        // دکمه‌ی اصلیِ واضح (فریمِ `29a`) به‌جای دایره‌ی ۳۲dpِ گوشه که دیده نمی‌شد.
+        GradientButton(onClick = { creating = true }, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text("قاعده‌ی تازه", fontWeight = FontWeight.Black)
         }
 
         if (rules.isEmpty()) {
@@ -127,6 +118,8 @@ fun ParsingRulesScreen(viewModel: ParsingRulesViewModel = hiltViewModel()) {
     if (creating || editing != null) {
         RuleSheet(
             rule = editing,
+            expenseCategories = expenseCategories,
+            incomeCategories = incomeCategories,
             onDismiss = { creating = false; editing = null },
             onSave = { pattern, category, type ->
                 viewModel.save(editing, pattern, category, type, rules.size)
@@ -253,6 +246,8 @@ private fun RuleCard(
 @Composable
 private fun RuleSheet(
     rule: ParsingRuleEntity?,
+    expenseCategories: List<CategoryEntry>,
+    incomeCategories: List<CategoryEntry>,
     onDismiss: () -> Unit,
     onSave: (pattern: String, category: String, type: String?) -> Unit,
     previewCount: suspend (String) -> Int,
@@ -300,7 +295,7 @@ private fun RuleSheet(
         dismissButton = { TextButton(onClick = onDismiss) { Text("بی‌خیال") } },
         title = { Text(if (rule == null) "قاعده‌ی تازه" else "ویرایشِ قاعده", fontWeight = FontWeight.Black) },
         text = {
-            Column {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
                     value = pattern,
                     onValueChange = { pattern = it },
@@ -314,19 +309,44 @@ private fun RuleSheet(
                     fontSize = 9.sp,
                     modifier = Modifier.padding(top = 4.dp),
                 )
-                OutlinedTextField(
-                    value = category,
-                    onValueChange = { category = it },
-                    label = { Text("دسته‌ی مقصد") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                )
                 SegmentedToggle(
                     options = listOf("مهم نیست", "خرج", "دخل"),
                     selectedIndex = typeIndex,
                     onSelect = { typeIndex = it },
                     modifier = Modifier.padding(top = 10.dp),
                 )
+                Text(
+                    "دسته‌ی مقصد",
+                    color = AppLabel,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.padding(top = 12.dp, bottom = 6.dp),
+                )
+                // انتخابگرِ آیکون‌دار (فریمِ `29b`) به‌جای فیلدِ متنی - اسمِ تایپی با هیچ دسته‌ای
+                // جور درنمی‌اومد و قاعده بی‌صدا بی‌اثر می‌شد.
+                val shownCats = when (typeIndex) {
+                    1 -> expenseCategories
+                    2 -> incomeCategories
+                    else -> expenseCategories + incomeCategories
+                }
+                val options = if (category.isNotBlank() && shownCats.none { it.name == category }) {
+                    shownCats + CategoryEntry(category, AppMutedColorFallback, "other", TransactionType.WITHDRAWAL)
+                } else shownCats
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    options.chunked(3).forEach { row ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            row.forEach { c ->
+                                CategoryOption(
+                                    entry = c,
+                                    selected = c.name == category,
+                                    onClick = { category = c.name },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                        }
+                    }
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -355,4 +375,37 @@ private fun RuleSheet(
             }
         },
     )
+}
+
+private val AppMutedColorFallback = androidx.compose.ui.graphics.Color(0xFF757575)
+
+@Composable
+private fun CategoryOption(entry: CategoryEntry, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        modifier = modifier
+            .heightIn(min = 44.dp)
+            .clip(shape)
+            .background(if (selected) AppPrimaryPill else AppSurface2)
+            .border(1.dp, if (selected) AppPrimary else AppLine, shape)
+            .pressScaleClickable(onClick = onClick)
+            .padding(horizontal = 7.dp, vertical = 6.dp),
+    ) {
+        Box(
+            modifier = Modifier.size(24.dp).clip(RoundedCornerShape(8.dp)).background(entry.color.copy(alpha = 0.16f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(entry.icon, contentDescription = null, tint = entry.color, modifier = Modifier.size(15.dp))
+        }
+        Text(
+            entry.name,
+            color = if (selected) AppPrimaryInk else AppText,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.ExtraBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }

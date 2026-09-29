@@ -3,7 +3,10 @@ package ir.sadteam.loancalc.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.AccountRepository
+import ir.sadteam.loancalc.data.CategoryEntry
+import ir.sadteam.loancalc.data.CategoryRepository
 import ir.sadteam.loancalc.data.ParsingRuleRepository
 import ir.sadteam.loancalc.data.db.ParsingRuleEntity
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,7 +20,14 @@ import javax.inject.Inject
 class ParsingRulesViewModel @Inject constructor(
     private val repository: ParsingRuleRepository,
     private val accountRepository: AccountRepository,
+    categoryRepository: CategoryRepository,
 ) : ViewModel() {
+    /** دسته‌ها برای انتخابگرِ آیکون‌دارِ شیتِ قاعده (فریمِ `29b`) - دلخواه‌ها هم. */
+    val expenseCategories: StateFlow<List<CategoryEntry>> = categoryRepository.orderedCategories(TransactionType.WITHDRAWAL)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val incomeCategories: StateFlow<List<CategoryEntry>> = categoryRepository.orderedCategories(TransactionType.DEPOSIT)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val rules: StateFlow<List<ParsingRuleEntity>> = repository.observeRules()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
