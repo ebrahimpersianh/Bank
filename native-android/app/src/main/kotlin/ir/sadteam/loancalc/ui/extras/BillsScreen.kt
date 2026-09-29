@@ -65,6 +65,11 @@ fun BillEntity.isDueSoon(y: Int, m: Int, d: Int): Boolean {
     return d >= dueDay - 3
 }
 
+/** دسترسیِ بی‌ایمپورت به [isDueSoon] از فایل‌های دیگر. */
+object BillsDue {
+    fun BillEntity.dueSoon(y: Int, m: Int, d: Int) = isDueSoon(y, m, d)
+}
+
 /** فهرست و افزودنِ قبض‌ها (برگرفته از پولکس، ۶ مهر). */
 @Composable
 fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()) {
@@ -136,11 +141,27 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
     paying?.let { bill ->
         var amountText by remember(bill) { mutableStateOf(if (bill.lastAmount > 0) (bill.lastAmount.toLong() / 10).toString() else "") }
         var accountId by remember(bill) { mutableStateOf(accounts.singleOrNull()?.id) }
+        var payId by remember(bill) { mutableStateOf("") }
         JibakAlertDialog(
             onDismissRequest = { paying = null },
             title = { Text("پرداختِ قبضِ ${bill.name}") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // مبلغ داخلِ شناسه‌ی پرداخت است؛ با واردکردنش مبلغ خودش پر می‌شود.
+                    Ltr {
+                        OutlinedTextField(
+                            value = payId,
+                            onValueChange = {
+                                payId = cleanNum(it).take(13)
+                                ir.sadteam.loancalc.core.BillCodes.parsePaymentId(payId, bill.billId)?.let { p ->
+                                    amountText = (p.amountRial / 10).toString()
+                                }
+                            },
+                            singleLine = true,
+                            placeholder = { Text("شناسه‌ی پرداخت (اختیاری)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        )
+                    }
                     OutlinedTextField(
                         value = amountText,
                         onValueChange = { amountText = cleanNum(it).take(12) },
@@ -175,6 +196,8 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
         var billId by remember(base) { mutableStateOf(base?.billId ?: "") }
         var dayText by remember(base) { mutableStateOf(base?.dueDay?.toString() ?: "") }
         var period by remember(base) { mutableStateOf(base?.periodMonths ?: 1) }
+        val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+        var pasteNote by remember(base) { mutableStateOf<String?>(null) }
         val close = { adding = false; editing = null }
         ir.sadteam.loancalc.ui.subscription.PremiumBlock(blocked = base == null, key = "bills", label = "قبض‌ها", onBlocked = close)
         JibakAlertDialog(
@@ -188,14 +211,42 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                         BILL_KINDS.drop(4).forEach { (k, l) -> AppChip(l, kind == k, onClick = { kind = k }) }
                     }
+                    // 📋 پیامکِ قبض (آب/برق/گاز/…) را کپی کن و اینجا بزن: شناسه و نوع خودکار پر می‌شوند.
+                    TextButton(onClick = {
+                        val text = clipboard.getText()?.text.orEmpty()
+                        val r = ir.sadteam.loancalc.core.BillCodes.parseBillSms(text)
+                        if (r == null) {
+                            pasteNote = "در متنِ کپی‌شده شناسه‌ی قبضی پیدا نشد"
+                        } else {
+                            r.billId?.let { billId = it }
+                            r.kind?.let { kind = it }
+                            pasteNote = buildString {
+                                append("از پیامک خوانده شد")
+                                r.amountRial?.let { append(" · مبلغِ این دوره ${toFa(it / 10)} تومان") }
+                            }
+                        }
+                    }) { Text("📋 چسباندنِ پیامکِ قبض") }
+                    pasteNote?.let { Text(it, color = AppMuted, fontSize = 11.sp) }
                     OutlinedTextField(value = name, onValueChange = { name = it.take(30) }, singleLine = true, placeholder = { Text("نام (مثلاً خانه)") })
                     Ltr {
                         OutlinedTextField(
                             value = billId,
-                            onValueChange = { billId = cleanNum(it).take(18) },
+                            onValueChange = {
+                                billId = cleanNum(it).take(18)
+                                // نوعِ قبض از خودِ شناسه (رقمِ یکی‌مانده‌به‌آخر) - کاربر لازم نیست بداند.
+                                ir.sadteam.loancalc.core.BillCodes.billIdKind(billId)?.let { k -> kind = k }
+                            },
                             singleLine = true,
                             placeholder = { Text("شناسه‌ی قبض (اختیاری)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        )
+                    }
+                    if (billId.length >= 6) {
+                        val k = ir.sadteam.loancalc.core.BillCodes.billIdKind(billId)
+                        Text(
+                            if (k != null) "✓ شناسه درست است · قبضِ ${billKindLabel(k)}" else "این شناسه درست نیست؛ یک بار دیگر نگاه کن",
+                            color = if (k != null) AppPrimary else AppDanger,
+                            fontSize = 11.sp,
                         )
                     }
                     OutlinedTextField(

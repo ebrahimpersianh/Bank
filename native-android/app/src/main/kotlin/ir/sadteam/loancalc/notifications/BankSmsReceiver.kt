@@ -46,6 +46,8 @@ class BankSmsReceiver : BroadcastReceiver() {
 
     @Inject lateinit var authPrefs: ir.sadteam.loancalc.data.prefs.AuthPrefs
 
+    @Inject lateinit var billDao: ir.sadteam.loancalc.data.db.BillDao
+
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
@@ -115,6 +117,17 @@ class BankSmsReceiver : BroadcastReceiver() {
                     // `71a`: منبع روی خودِ تراکنش می‌نشیند، نه فقط در مرکزِ پیام‌ها.
                     originLabel = "پیامکِ $sender",
                 )
+                // 🧾 پرداختِ قبض: اگر برداشت و متن «قبض» دارد، قبضِ منطبق را برای این دوره
+                // «پرداخت‌شده» می‌زنیم (تراکنش همین بالا ساخته شد؛ دوباره ثبت نمی‌شود).
+                if (isWithdrawal && "قبض" in body) runCatching {
+                    val text = ir.sadteam.loancalc.core.BillCodes.normalizeDigits(body)
+                    val key = "${today.y}-${today.m}"
+                    val bills = billDao.getAll().filter { it.lastPaidKey != key }
+                    val kind = ir.sadteam.loancalc.core.BillCodes.guessKind(text)
+                    val match = bills.firstOrNull { b -> !b.billId.isNullOrBlank() && b.billId!! in text }
+                        ?: bills.filter { it.kind == kind }.singleOrNull()
+                    if (match != null) billDao.upsert(match.copy(lastPaidKey = key, lastAmount = parsed.amountRial))
+                }
                 // برداشت از یک حسابِ خودت + واریزِ همان مبلغ به حسابِ دیگرت = جابه‌جایی، نه خرج و درآمد.
                 // اول: اگر مقصدِ برداشت شماره‌کارت/حساب/شبای یکی از حساب‌های خودت است، همین حالا جابه‌جایی.
                 runCatching {

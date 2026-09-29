@@ -202,6 +202,17 @@ fun HomeScreen(
     // فقط برای شمارنده‌ی کارتِ «چک‌ها»ی ردیفِ میان‌بر - همان ViewModelی که تبِ گزارش دارد.
     chequeViewModel: ChequeViewModel = hiltViewModel(),
 ) {
+    // 🧾 قبض‌های نزدیکِ موعد (۷ مهر): کارتِ کوچک فقط وقتی چیزی نزدیک است؛ صفحه‌ی خالی شلوغ نمی‌شود.
+    val homeExtrasVm: ir.sadteam.loancalc.ui.extras.ExtrasViewModel = hiltViewModel()
+    val homeBills by homeExtrasVm.bills.collectAsState()
+    var showHomeBills by remember { mutableStateOf(false) }
+    if (showHomeBills) {
+        androidx.activity.compose.BackHandler { showHomeBills = false }
+        ir.sadteam.loancalc.ui.extras.BillsScreen(onBack = { showHomeBills = false }, viewModel = homeExtrasVm)
+        return
+    }
+    val billsToday = remember { ir.sadteam.loancalc.core.JalaliCalendar.today() }
+    val dueBills = homeBills.filter { with(ir.sadteam.loancalc.ui.extras.BillsDue) { it.dueSoon(billsToday.y, billsToday.m, billsToday.d) } }
     val inboxCount by inboxViewModel.actionableCount.collectAsState()
     val inboxUnreadNews by inboxViewModel.unreadNews.collectAsState()
     val userName by authViewModel.userName.collectAsState()
@@ -462,6 +473,23 @@ fun HomeScreen(
                         onPay = { confirmPayDue = due },
                         onOpen = { onOpenLoan(due.loan.id) },
                     )
+                }
+            }
+            if (dueBills.isNotEmpty()) {
+                item {
+                    ir.sadteam.loancalc.ui.components.AppCard(modifier = Modifier.clickable { showHomeBills = true }) {
+                        Text(
+                            "🧾 " + if (dueBills.size == 1) "قبضِ ${ir.sadteam.loancalc.ui.extras.billKindLabel(dueBills[0].kind)} نزدیکِ موعده"
+                            else "${dueBills.size.toFa()} قبض نزدیکِ موعدن",
+                            fontWeight = FontWeight.Black,
+                            fontSize = 14.sp,
+                        )
+                        Text(
+                            dueBills.joinToString("، ") { it.name } + " · لمس کن و پرداخت‌شده بزن",
+                            color = ir.sadteam.loancalc.ui.theme.AppMuted,
+                            fontSize = 11.5.sp,
+                        )
+                    }
                 }
             }
             if (monthSpend > 0.0) {
