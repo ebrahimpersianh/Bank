@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.ui.settings
 
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Storefront
 import ir.sadteam.loancalc.ui.support.ContactSupportContent
 import androidx.compose.foundation.text.BasicTextField
@@ -315,7 +316,7 @@ fun SettingsScreen(
                 BugReportScreen(onBack = { showBugReport = false })
             }
             "adminStats" -> FullScreenDialog(onDismissRequest = { showAdminStats = false }) {
-                ir.sadteam.loancalc.ui.admin.AdminStatsScreen(onBack = { showAdminStats = false })
+                ir.sadteam.loancalc.ui.admin.AdminHubScreen(onBack = { showAdminStats = false })
             }
             "adminSupport" -> FullScreenDialog(onDismissRequest = { showAdminSupport = false }) {
                 ir.sadteam.loancalc.ui.admin.SupportInboxScreen(onBack = { showAdminSupport = false })
@@ -694,17 +695,11 @@ private fun SettingsMainContent(
             if (isAdmin && searchQuery.isBlank()) {
                 SettingsGroup(modifier = Modifier.padding(top = AppSpacing.betweenCards)) {
                     SettingsRowItem(
-                        title = "گزارشِ برنامه",
-                        icon = Icons.Filled.BarChart,
+                        title = "ادمین",
+                        icon = Icons.Filled.AdminPanelSettings,
                         tone = SettingsTone.NEUTRAL,
+                        status = "پیام‌های کاربران، گزارشِ برنامه",
                         onClick = onOpenAdminStats,
-                    )
-                    SettingsDivider()
-                    SettingsRowItem(
-                        title = "پیام‌های کاربران",
-                        icon = Icons.Filled.SupportAgent,
-                        tone = SettingsTone.GREEN,
-                        onClick = onOpenAdminSupport,
                     )
                 }
             }
