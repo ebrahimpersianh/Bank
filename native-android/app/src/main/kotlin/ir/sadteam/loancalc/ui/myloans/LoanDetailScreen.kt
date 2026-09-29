@@ -357,6 +357,8 @@ fun LoanDetailScreen(
     var bulkPayMode by remember { mutableStateOf(false) }
     var selectedBulkMs by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var bulkPayChoiceOpen by remember { mutableStateOf(false) }
+    // پرداختِ گروهی با تأخیر: قبلاً فقط «امروز» ثبت می‌شد؛ حالا تاریخِ واقعی انتخاب می‌شود (فریمِ `11b`).
+    var bulkLateMs by remember { mutableStateOf<List<Int>?>(null) }
 
     // سینکِ خودکارِ پرداختِ وام ↔ حسابداری (تصمیمِ صریحِ کاربر، رجوع کن به CLAUDE.md): بعدِ انتخابِ
     // «به‌موقع»/«با تاخیر»، قبلِ ثبتِ واقعیِ پرداخت، باید حساب/کارتِ پرداخت‌کننده مشخص بشه - فقط
@@ -701,11 +703,11 @@ fun LoanDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = {
-                    applyPayment(PendingLoanPayment(selectedBulkMs.toList(), JalaliCalendar.today()))
-                    selectedBulkMs = emptySet()
+                    val t = JalaliCalendar.today()
+                    lateYear = t.y; lateMonth = t.m; lateDay = t.d
+                    bulkLateMs = selectedBulkMs.sorted()
                     bulkPayChoiceOpen = false
-                    bulkPayMode = false
-                }) { Text("امروز (با تاخیر)") }
+                }) { Text("پرداخت با تاخیر") }
             },
         )
     }
@@ -760,6 +762,40 @@ fun LoanDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { lateDateM = null }) { Text("انصراف") }
+            },
+        )
+    }
+
+    bulkLateMs?.let { ms ->
+        JibakAlertDialog(
+            onDismissRequest = { bulkLateMs = null },
+            title = { Text("تاریخ واقعی پرداختِ ${toFa(ms.size)} قسط") },
+            text = {
+                Column {
+                    Text(
+                        "همه‌ی اقساطِ انتخاب‌شده با همین تاریخ ثبت می‌شوند.",
+                        color = AppMuted,
+                        fontSize = 11.5.sp,
+                        modifier = Modifier.padding(bottom = 10.dp),
+                    )
+                    ir.sadteam.loancalc.ui.components.InlineJalaliDateRow(
+                        year = lateYear,
+                        month = lateMonth,
+                        day = lateDay,
+                        onDateChange = { y, mo, d -> lateYear = y; lateMonth = mo; lateDay = d },
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    applyPayment(PendingLoanPayment(ms, PersianDate(lateYear, lateMonth, lateDay)))
+                    selectedBulkMs = emptySet()
+                    bulkPayMode = false
+                    bulkLateMs = null
+                }) { Text("ثبت") }
+            },
+            dismissButton = {
+                TextButton(onClick = { bulkLateMs = null }) { Text("انصراف") }
             },
         )
     }
