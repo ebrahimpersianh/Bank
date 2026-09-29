@@ -251,6 +251,7 @@ import ir.sadteam.loancalc.ui.theme.ThemeRevealHost
 import ir.sadteam.loancalc.ui.theme.ThemeRevealState
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
 import ir.sadteam.loancalc.ui.update.AppUpdateViewModel
+import ir.sadteam.loancalc.ui.update.UpdateSheet
 import ir.sadteam.loancalc.data.SymbolStyle
 import ir.sadteam.loancalc.data.SymbolTheme
 import ir.sadteam.loancalc.data.prefs.UiPrefs
@@ -1354,7 +1355,7 @@ private fun LoanCalcApp(
         // بنرِ آپدیتِ خودکار - رجوع کن به AppUpdateViewModel. برخلافِ هینتِ خروج، خودش محو نمی‌شه؛
         // تا کاربر یا بزنه «بروزرسانی» (بازکردنِ صفحه‌ی استور) یا خودش با ضربدر ببندتش.
         // برگه‌ی پایینِ آپدیت (هم‌شکلِ برگه‌ی بازار) - جای بنرِ باریکِ قبلی. رجوع کن به UpdateSheet.
-        ir.sadteam.loancalc.ui.update.UpdateSheet(
+        UpdateSheet(
             visible = updateUrl != null && tourSeen != false,
             changes = appUpdateChanges,
             onUpdate = {
