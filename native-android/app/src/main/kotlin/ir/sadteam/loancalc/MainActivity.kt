@@ -1352,47 +1352,15 @@ private fun LoanCalcApp(
 
         // بنرِ آپدیتِ خودکار - رجوع کن به AppUpdateViewModel. برخلافِ هینتِ خروج، خودش محو نمی‌شه؛
         // تا کاربر یا بزنه «بروزرسانی» (بازکردنِ صفحه‌ی استور) یا خودش با ضربدر ببندتش.
-        AnimatedVisibility(
+        // برگه‌ی پایینِ آپدیت (هم‌شکلِ برگه‌ی بازار) - جای بنرِ باریکِ قبلی. رجوع کن به UpdateSheet.
+        ir.sadteam.loancalc.ui.update.UpdateSheet(
             visible = updateUrl != null && tourSeen != false,
-            enter = fadeIn(tween(200)) + slideInVertically(tween(200)) { -it },
-            exit = fadeOut(tween(150)) + slideOutVertically(tween(150)) { -it },
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .padding(top = 8.dp, start = 14.dp, end = 14.dp),
-        ) {
-            Surface(
-                color = AppPrimary,
-                shape = RoundedCornerShape(14.dp),
-                shadowElevation = 6.dp,
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "نسخه‌ی جدیدِ برنامه‌ی جیبک موجوده",
-                        color = Color.White,
-                        fontSize = 13.sp,
-                        modifier = Modifier.weight(1f),
-                    )
-                    TextButton(onClick = {
-                        updateUrl?.let { url ->
-                            runCatching {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                            }
-                        }
-                    }) {
-                        Text("بروزرسانی", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                    }
-                    IconButton(onClick = { appUpdateViewModel.dismiss() }, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.Close, contentDescription = "بستن", tint = Color.White)
-                    }
-                }
-            }
-        }
+            onUpdate = {
+                updateUrl?.let { url -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } }
+                appUpdateViewModel.dismiss()
+            },
+            onDismiss = { appUpdateViewModel.dismiss() },
+        )
 
         // تورِ راهنمای اولین ورود - «تو خود برنامه بگه کجا بری» (خواسته‌ی صریح کاربر، به‌جای صفحه‌ی
         // جدای قبلی) - رجوع کن به AppTourOverlay پایین‌تر. آخرین بچه‌ی Box تا رو همه‌چیز دیگه بشینه.
