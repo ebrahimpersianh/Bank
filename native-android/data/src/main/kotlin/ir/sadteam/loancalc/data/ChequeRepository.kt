@@ -209,9 +209,12 @@ class ChequeRepository(
 
     /** پورت مفهومی pushToServer تو LoanRepository - fire-and-forget، خطاها (اینترنت قطع، اشتراک
      * منقضی و ...) عمداً قورت داده می‌شن چون این یه سینک پس‌زمینه‌ست. */
-    suspend fun pushToServer(token: String): Boolean {
+    suspend fun pushToServer(token: String, allowUnknownRevision: Boolean = false): Boolean {
         try {
             val expected = uiPrefs?.cloudRevision(CHEQUE_CLOUD_MODULE)
+            // 🚨 گوشی‌ای که هنوز هیچ‌وقت نسخه‌ی سرور را ندیده، کورکورانه نمی‌نویسد (همان باگِ ۷ مهر:
+            // گوشیِ پاک‌شده پشتیبانِ ابری را خالی کرد). اولین نوشتن فقط از `syncAfterLogin`.
+            if (expected == null && !allowUnknownRevision && uiPrefs != null) return false
             val response = apiService.putChequesBackup(
                 "Bearer $token",
                 BackupBlobRequest(exportBackupJson(), expected),
@@ -246,7 +249,7 @@ class ChequeRepository(
         val localHasData = chequeDao.getAll().isNotEmpty() || chequeBookDao.getAll().isNotEmpty()
         when {
             !localHasData && serverHasData -> importBackupJson(blob)
-            localHasData && !serverHasData -> pushToServer(token)
+            localHasData && !serverHasData -> pushToServer(token, allowUnknownRevision = true)
         }
     }
 

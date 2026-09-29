@@ -54,6 +54,9 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
     @Inject
     lateinit var authPrefs: AuthPrefs
 
+    @Inject
+    lateinit var accountRepository: ir.sadteam.loancalc.data.AccountRepository
+
     override fun onCreate() {
         super.onCreate()
         crashReporter.install()
@@ -78,7 +81,19 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         // دیده می‌شود (قاعده‌ی صریحِ `49`).
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_START) ir.sadteam.loancalc.data.UsageStats.onForeground()
+                if (event == Lifecycle.Event.ON_START) {
+                    ir.sadteam.loancalc.data.UsageStats.onForeground()
+                    // دو گوشی: تازه‌ترین نسخه‌ی ابری (اگر گوشیِ دیگری نوشته) بیاید.
+                    CoroutineScope(Dispatchers.IO).launch {
+                        runCatching { authPrefs.authToken.first()?.let { accountRepository.pullIfNewer(it) } }
+                    }
+                }
+                if (event == Lifecycle.Event.ON_STOP) {
+                    // همه‌ی تغییرها (یادداشت، بودجه، دارایی…) با رفتن به پس‌زمینه روی سرور می‌روند.
+                    CoroutineScope(Dispatchers.IO).launch {
+                        runCatching { authPrefs.authToken.first()?.let { accountRepository.pushToServer(it) } }
+                    }
+                }
                 if (event == Lifecycle.Event.ON_STOP) {
                     ir.sadteam.loancalc.data.UsageStats.onBackground()
                     CoroutineScope(Dispatchers.IO).launch {

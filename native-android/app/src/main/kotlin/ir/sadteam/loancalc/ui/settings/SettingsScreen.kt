@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.ui.settings
 
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Storefront
 import ir.sadteam.loancalc.ui.support.ContactSupportContent
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.text.TextStyle
@@ -367,10 +368,10 @@ private enum class SettingsRoute(val title: String, val keywords: List<String>) 
     ACCOUNT("حساب کاربری", listOf("حساب", "اشتراک", "خروج", "شماره موبایل")),
     APPEARANCE("ظاهر برنامه", listOf("تم", "رنگ", "اندازه فونت", "روشن", "تاریک")),
     REMINDERS("یادآورها", listOf("یادآوری سررسید", "یادآوری روزانه", "نوتیف")),
-    DATA("مدیریت داده‌های من", listOf("پشتیبان", "بکاپ", "بازیابی")),
+    DATA("مدیریت داده‌ها", listOf("پشتیبان", "بکاپ", "بازیابی")),
     SMS("پیامک‌های بانکی", listOf("پیامک", "بانک", "خواندن خودکار")),
     BACKGROUND(
-        "اجرا در پس‌زمینه",
+        "اجرای پس‌زمینه",
         listOf("پس زمینه", "همیشه روشن", "اجرای خودکار", "autostart", "باتری", "ری استارت", "بسته شدن"),
     ),
     TOOLS("ابزارها", listOf("تقویم مالی", "آمار", "گزارش", "تاریخچه محاسبات")),
@@ -380,10 +381,10 @@ private enum class SettingsRoute(val title: String, val keywords: List<String>) 
     // برنامه» در تنظیمات می‌ماند چون سه چیز دارد و فقط یکی‌اش خریدنی است - اندازه‌ی
     // متن و انیمیشنِ کم دسترس‌پذیری‌اند و کاربری که متن برایش ریز است نباید برای
     // بزرگ‌کردنش وارد ویترین شود.
-    COLOR_THEME("تمِ رنگی", listOf("تم", "رنگ", "پوسته", "سکه", "فروشگاه", "آیکون", "قلم", "فونت")),
+    COLOR_THEME("فروشگاه", listOf("تم", "رنگ", "پوسته", "سکه", "فروشگاه", "آیکون", "قلم", "فونت")),
     BADGES("نشان‌ها", listOf("نشان", "دستاورد", "مدال", "سکه")),
     PARSING_RULES("قاعده‌های تشخیص", listOf("قاعده", "دسته‌بندی خودکار", "تشخیص")),
-    ABOUT("درباره‌ی برنامه", listOf("درباره", "پشتیبانی", "حریم خصوصی", "نسخه")),
+    ABOUT("درباره‌ی جیبک", listOf("درباره", "پشتیبانی", "حریم خصوصی", "نسخه")),
 }
 
 @Composable
@@ -583,7 +584,7 @@ private fun SettingsMainContent(
             if ((!subscribed || onlyTrialSubscribed) && searchQuery.isBlank()) {
                 AppHeroRow(
                     icon = Icons.Filled.Star,
-                    title = "ارتقا به نسخه اشتراکی",
+                    title = "اشتراکِ ویژه",
                     subtitle = "وام و چکِ نامحدود، همگام‌سازیِ چند دستگاه و بیشتر",
                     actionLabel = "مشاهده پلن‌ها",
                     onAction = onShowSubscription,
@@ -647,10 +648,10 @@ private fun SettingsMainContent(
                 }
                 if (matches(SettingsRoute.COLOR_THEME)) {
                     SettingsRow(
-                        Icons.Filled.ColorLens,
+                        Icons.Filled.Storefront,
                         SettingsRoute.COLOR_THEME,
                         tone = SettingsTone.PURPLE,
-                        status = "در فروشگاهِ سکه",
+                        status = "تم، آیکون، قلم و نمادها",
                     ) { onOpen(SettingsRoute.COLOR_THEME) }
                     SettingsDivider()
                 }
@@ -658,7 +659,7 @@ private fun SettingsMainContent(
                 // براش یه تپِ اضافه می‌شد.
                 if (searchQuery.isBlank() || "ویبره".contains(searchQuery.trim()) || "هپتیک".contains(searchQuery.trim())) {
                     SettingsRowItem(
-                        title = "ویبره‌ی لمسی",
+                        title = "لرزشِ لمسی",
                         icon = Icons.Filled.Vibration,
                         tone = SettingsTone.PURPLE,
                         status = "موقعِ لمسِ دکمه‌ها یه لرزشِ کوتاه",

@@ -553,6 +553,8 @@ class AccountRepository(
         val data = mapOf(
             "accounts" to accountDao.getAll(),
             "transactions" to transactionDao.getAll(),
+            // ۷ مهر: «همه‌چیز روی سرور» - بقیه‌ی جدول‌های کاربر هم همین‌جا می‌روند.
+            "tables" to kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { dumpExtraTables() },
         )
         return GsonBuilder().setPrettyPrinting().create().toJson(data)
     }
@@ -571,17 +573,90 @@ class AccountRepository(
         val transactions: List<AccountTransactionEntity> =
             gson.fromJson(transactionsJson, object : TypeToken<List<AccountTransactionEntity>>() {}.type)
         // حساب‌ها و تراکنش‌هایشان یک کارند؛ نیمه‌کاره یعنی تراکنشِ بی‌حساب.
+        @Suppress("UNCHECKED_CAST")
+        val tables = parsed["tables"] as? Map<String, List<Map<String, Any?>>>
         inTransaction {
             accountDao.replaceAll(accounts)
             transactionDao.replaceAll(transactions)
+            // پشتیبانِ قدیمی «tables» ندارد - آن‌وقت بقیه‌ی جدول‌ها دست نمی‌خورند.
+            if (tables != null) restoreExtraTables(tables)
         }
         return true
     }
 
+    /**
+     * جدول‌هایی که جز وام/چک/حساب باید بینِ گوشی‌ها بیایند. عمداً **فهرستِ سفید** است:
+     * `inbox_messages` (مالِ همین گوشی) و جدول‌های ماژول‌های دیگر این‌جا نیستند.
+     * عکس‌ها فایل‌اند و این‌جا نمی‌آیند - فقط مسیرشان.
+     */
+    private val extraTables = listOf(
+        "budgets", "recurring_payments", "counterparties", "debts", "notes",
+        "custom_categories", "category_order", "assets", "asset_trades", "savings_goals",
+        "parsing_rules", "incomes", "tx_templates", "bills", "wealth_snapshots",
+        "dang_events", "dang_participants", "dang_items", "dang_item_shares",
+        "coin_events", "achievements", "calculation_history",
+    )
+
+    private fun dumpExtraTables(): Map<String, List<Map<String, Any?>>> {
+        val db = database?.openHelper?.writableDatabase ?: return emptyMap()
+        val out = LinkedHashMap<String, List<Map<String, Any?>>>()
+        for (table in extraTables) {
+            val rows = runCatching {
+                db.query("SELECT * FROM `$table`").use { c ->
+                    buildList {
+                        while (c.moveToNext()) {
+                            val row = LinkedHashMap<String, Any?>()
+                            for (i in 0 until c.columnCount) {
+                                row[c.getColumnName(i)] = when (c.getType(i)) {
+                                    android.database.Cursor.FIELD_TYPE_INTEGER -> c.getLong(i)
+                                    android.database.Cursor.FIELD_TYPE_FLOAT -> c.getDouble(i)
+                                    android.database.Cursor.FIELD_TYPE_STRING -> c.getString(i)
+                                    else -> null
+                                }
+                            }
+                            add(row)
+                        }
+                    }
+                }
+            }.getOrNull() ?: continue
+            out[table] = rows
+        }
+        return out
+    }
+
+    private fun restoreExtraTables(tables: Map<String, List<Map<String, Any?>>>) {
+        val db = database?.openHelper?.writableDatabase ?: return
+        for (table in extraTables) {
+            val rows = tables[table] ?: continue
+            // فقط ستون‌هایی که همین نسخه‌ی اپ دارد - پشتیبانِ نسخه‌ی دیگر خرابش نکند.
+            val columns = db.query("PRAGMA table_info(`$table`)").use { c ->
+                buildSet { while (c.moveToNext()) add(c.getString(c.getColumnIndexOrThrow("name"))) }
+            }
+            if (columns.isEmpty()) continue
+            db.execSQL("DELETE FROM `$table`")
+            rows.forEach { row ->
+                val values = android.content.ContentValues()
+                row.forEach { (k, v) ->
+                    if (k !in columns) return@forEach
+                    when (v) {
+                        null -> values.putNull(k)
+                        is Number -> if (v.toDouble() % 1.0 == 0.0 && kotlin.math.abs(v.toDouble()) < 9e15) values.put(k, v.toLong()) else values.put(k, v.toDouble())
+                        is Boolean -> values.put(k, if (v) 1 else 0)
+                        else -> values.put(k, v.toString())
+                    }
+                }
+                runCatching { db.insert(table, android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE, values) }
+            }
+        }
+    }
+
     /** پورت مفهومی pushToServer تو LoanRepository - fire-and-forget، خطاها عمداً قورت داده می‌شن. */
-    suspend fun pushToServer(token: String): Boolean {
+    suspend fun pushToServer(token: String, allowUnknownRevision: Boolean = false): Boolean {
         try {
             val expected = uiPrefs?.cloudRevision(CLOUD_MODULE)
+            // 🚨 گوشی‌ای که هنوز هیچ‌وقت نسخه‌ی سرور را ندیده، کورکورانه نمی‌نویسد (همان باگِ ۷ مهر:
+            // گوشیِ پاک‌شده پشتیبانِ ابری را خالی کرد). اولین نوشتن فقط از `syncAfterLogin`.
+            if (expected == null && !allowUnknownRevision && uiPrefs != null) return false
             val response = apiService.putAccountsBackup(
                 "Bearer $token",
                 BackupBlobRequest(exportBackupJson(), expected),
@@ -618,7 +693,19 @@ class AccountRepository(
         val localHasData = transactionDao.getAll().isNotEmpty() || accountDao.getAll().size > 1
         when {
             !localHasData && serverHasData -> importBackupJson(blob)
-            localHasData && !serverHasData -> pushToServer(token)
+            localHasData && !serverHasData -> pushToServer(token, allowUnknownRevision = true)
+        }
+    }
+
+    /**
+     * دو گوشی (۷ مهر): وقتی اپ باز می‌شود، اگر گوشیِ دیگری نسخه‌ی تازه‌تری روی سرور نوشته،
+     * همان را بیاور. گوشیِ هرگز-همگام‌نشده (`null`) کاری نمی‌کند - آن را ورود مدیریت می‌کند.
+     */
+    suspend fun pullIfNewer(token: String) {
+        val known = uiPrefs?.cloudRevision(CLOUD_MODULE) ?: return
+        val resp = try { apiService.getAccountsBackup("Bearer $token") } catch (e: Exception) { return }
+        if (resp.revision > known && resp.data.contains("\"id\"")) {
+            if (importBackupJson(resp.data)) uiPrefs?.setCloudRevision(CLOUD_MODULE, resp.revision)
         }
     }
 
