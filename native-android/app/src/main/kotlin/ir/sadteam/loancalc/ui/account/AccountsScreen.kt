@@ -226,7 +226,7 @@ private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accoun
     AppHeroCard {
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(13.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text("جمعِ موجودی", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                     Text(
                         // ⚠️ `total` **ریال** است و زیرش «تومان» نوشته می‌شد: عدد ده برابر
@@ -235,6 +235,8 @@ private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accoun
                         color = Color.White,
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        softWrap = false,
                         modifier = Modifier.padding(top = 3.dp),
                     )
                     Text("تومان · ${accounts.size.toFa()} حساب", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
