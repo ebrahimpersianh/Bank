@@ -290,6 +290,8 @@ object Db {
             addColumnIfMissing(conn, "ALTER TABLE crash_reports ADD COLUMN user_id INTEGER")
             addColumnIfMissing(conn, "ALTER TABLE announcements ADD COLUMN target_user_id INTEGER")
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN launch_gift_granted INTEGER NOT NULL DEFAULT 0")
+            addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN cloud_warn_for TEXT")
+            addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN cloud_warn_stage INTEGER NOT NULL DEFAULT 0")
             // نسخه‌ی نشست - رجوع کن به Auth.kt. بالا رفتنش یعنی «همه‌ی توکن‌های قبلی باطل».
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN session_version INTEGER NOT NULL DEFAULT 0")
             // مشخصاتِ بی‌نامِ هر نصب (JSONِ کلید→مقدار: مدلِ گوشی، تنظیمات، تعدادِ موارد) - UsageRoutes.

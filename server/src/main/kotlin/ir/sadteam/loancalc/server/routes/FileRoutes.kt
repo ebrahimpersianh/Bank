@@ -1,5 +1,9 @@
 package ir.sadteam.loancalc.server.routes
 
+import ir.sadteam.loancalc.server.toUserRow
+import ir.sadteam.loancalc.server.isSubscribed
+import ir.sadteam.loancalc.server.queryOne
+import ir.sadteam.loancalc.server.Db
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -51,6 +55,15 @@ fun Route.fileRoutes() {
             val file = safeFile(authed.uid, call.parameters["dir"], call.parameters["name"])
             if (file == null) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to "bad_name"))
+                return@put
+            }
+            val user = Db.withConnection { conn ->
+                conn.queryOne(
+                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE id = ?", authed.uid,
+                ) { it.toUserRow() }
+            }
+            if (!isSubscribed(user)) {
+                call.respond(HttpStatusCode.Forbidden, mapOf("error" to "subscription_required"))
                 return@put
             }
             val bytes = call.receive<ByteArray>()

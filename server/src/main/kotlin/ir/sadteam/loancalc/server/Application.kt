@@ -40,6 +40,7 @@ fun main() {
 
 fun Application.module() {
     PriceService.startScheduler(this)
+    CloudRetention.start(this)
     // 🚨 سقفِ حجمِ بدنه. بدونِ این، یک حسابِ واردشده می‌توانست با چند `PUT /api/loans`ِ
     // چندصدمگابایتی دیسکِ VPS را پر کند - مسیرهای بکاپ هیچ کرانی نداشتند. دو مگابایت برای
     // بزرگ‌ترین پشتیبانِ واقعی هم فراوان است.

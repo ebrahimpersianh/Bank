@@ -52,6 +52,50 @@ import ir.sadteam.loancalc.ui.theme.AppText
 @Composable
 fun BoxScope.UpdateSheet(visible: Boolean, changes: List<String>, onUpdate: () -> Unit, onDismiss: () -> Unit) {
     val storeName = if (BuildConfig.FLAVOR == "myket") "مایکت" else "کافه‌بازار"
+    BottomNoticeSheet(
+        visible = visible,
+        header = "به‌روزرسانی از $storeName",
+        subtitle = "نسخه‌ی جدید آماده است",
+        boxTitle = "تغییراتِ نسخه‌ی جدید",
+        lines = changes.ifEmpty { listOf("بهبودِ کارایی، رفعِ اشکال و قابلیت‌های تازه") },
+        action = "به‌روزرسانی",
+        onAction = onUpdate,
+        onDismiss = onDismiss,
+    )
+}
+
+/**
+ * هشدارِ نزدیکیِ پایانِ اشتراک - **هم‌شکلِ برگه‌ی آپدیت** (خواسته‌ی کاربر، ۷ مهر).
+ */
+@Composable
+fun BoxScope.ExpirySheet(visible: Boolean, daysLeft: Int, onRenew: () -> Unit, onDismiss: () -> Unit) {
+    BottomNoticeSheet(
+        visible = visible,
+        header = "اشتراکِ جیبک",
+        subtitle = if (daysLeft <= 0) "اشتراکت امروز تموم می‌شه" else "${ir.sadteam.loancalc.core.toFa(daysLeft)} روز تا پایانِ اشتراک",
+        boxTitle = "بعد از پایانِ اشتراک",
+        lines = listOf(
+            "اطلاعاتت روی گوشی سرِ جاش می‌مونه",
+            "پیامکِ خودکار، پشتیبانِ سرور، بودجه و گزارشِ کامل قفل می‌شن",
+            "اطلاعاتِ ابری تا ۹۰ روز نگه داشته می‌شه",
+        ),
+        action = "تمدیدِ اشتراک",
+        onAction = onRenew,
+        onDismiss = onDismiss,
+    )
+}
+
+@Composable
+private fun BoxScope.BottomNoticeSheet(
+    visible: Boolean,
+    header: String,
+    subtitle: String,
+    boxTitle: String,
+    lines: List<String>,
+    action: String,
+    onAction: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     AnimatedVisibility(visible = visible, enter = fadeIn(tween(200)), exit = fadeOut(tween(150)), modifier = Modifier.matchParentSize()) {
         Box(
             modifier = Modifier
@@ -76,7 +120,7 @@ fun BoxScope.UpdateSheet(visible: Boolean, changes: List<String>, onUpdate: () -
                 .padding(horizontal = 18.dp, vertical = 14.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text("به‌روزرسانی از $storeName", color = AppMuted, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text(header, color = AppMuted, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 IconButton(onClick = onDismiss, modifier = Modifier.size(44.dp)) {
                     Icon(Icons.Filled.Close, contentDescription = "بستن", tint = AppMuted)
                 }
@@ -92,7 +136,7 @@ fun BoxScope.UpdateSheet(visible: Boolean, changes: List<String>, onUpdate: () -
                 ) { JibakLogo(width = 44.dp) }
                 Column(modifier = Modifier.weight(1f)) {
                     Text("جیبک | حسابداری شخصی", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black)
-                    Text("نسخه‌ی جدید آماده است", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                    Text(subtitle, color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
                 }
             }
             Column(
@@ -103,17 +147,17 @@ fun BoxScope.UpdateSheet(visible: Boolean, changes: List<String>, onUpdate: () -
                     .background(AppChipBg)
                     .padding(horizontal = 14.dp, vertical = 12.dp),
             ) {
-                Text("تغییراتِ نسخه‌ی جدید", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
-                (changes.ifEmpty { listOf("بهبودِ کارایی، رفعِ اشکال و قابلیت‌های تازه") }).forEach { line ->
+                Text(boxTitle, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+                lines.forEach { line ->
                     Text("• $line", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
                 }
             }
             GradientButton(
-                onClick = onUpdate,
+                onClick = onAction,
                 variant = AppButtonVariant.PRIMARY,
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp),
             ) {
-                Text("به‌روزرسانی", fontSize = 15.sp, fontWeight = FontWeight.Black)
+                Text(action, fontSize = 15.sp, fontWeight = FontWeight.Black)
             }
         }
     }
