@@ -80,9 +80,9 @@ fun AdminStatsScreen(onBack: () -> Unit, viewModel: AdminStatsViewModel = hiltVi
                         Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
                     }
                     Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
-                        Text("آمارِ جیبک", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Black)
+                        Text("گزارشِ برنامه", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Black)
                         Text(
-                            "بی‌نام · به‌ازای هر نصب، نه هر آدم · فقط تو می‌بینی",
+                            "بی‌نام · به‌ازای هر نصب، نه هر آدم",
                             color = AppMuted,
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,

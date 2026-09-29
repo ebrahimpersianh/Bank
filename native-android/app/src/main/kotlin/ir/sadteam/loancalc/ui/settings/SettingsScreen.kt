@@ -687,10 +687,9 @@ private fun SettingsMainContent(
             if (isAdmin && searchQuery.isBlank()) {
                 SettingsGroup(modifier = Modifier.padding(top = AppSpacing.betweenCards)) {
                     SettingsRowItem(
-                        title = "آمارِ جیبک",
+                        title = "گزارشِ برنامه",
                         icon = Icons.Filled.BarChart,
                         tone = SettingsTone.NEUTRAL,
-                        status = "چند نفر، کدام صفحه‌ها، چه کارهایی - فقط برای تو",
                         onClick = onOpenAdminStats,
                     )
                 }
