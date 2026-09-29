@@ -21,7 +21,8 @@ jobs:
             if sudo grep -q "client_max_body_size" "$CONF"; then
               sudo sed -i 's/client_max_body_size[^;]*;/client_max_body_size 25m;/' "$CONF"
             else
-              sudo sed -i '0,/server_name/s//client_max_body_size 25m;\n    server_name/' "$CONF"
+              # فایلِ sites-available داخلِ بلوکِ http خوانده می‌شود، پس یک خط در ابتدایش برای همه‌ی serverها کافی است.
+              sudo sed -i '1i client_max_body_size 25m;' "$CONF"
             fi
             sudo nginx -t
             sudo systemctl reload nginx
