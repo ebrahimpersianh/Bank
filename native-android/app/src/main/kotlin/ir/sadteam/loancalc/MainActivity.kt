@@ -668,13 +668,15 @@ private fun AppRoot(
     // کاربر اصلاً نمی‌توانست وارد برنامه‌ی خودش شود. ردکردن ذخیره می‌شود، وگرنه چون گیت هر
     // بار باز شدنِ اپ ارزیابی می‌شود دوباره سرِ راه می‌آمد.
     val permissionGateSkipped by authViewModel.permissionGateSkipped.collectAsState()
-    if (!permissionsOk && !permissionGateSkipped) {
+    if (!permissionsOk && permissionGateSkipped == false) {
         PermissionGateScreen(
             onAllGranted = { permissionsOk = true },
             onSkip = { authViewModel.skipPermissionGate() },
         )
         return
     }
+    // تا وقتی معلوم نیست کاربر این صفحه را قبلاً رد کرده، هیچ‌چیز نشان نده (چند میلی‌ثانیه).
+    if (!permissionsOk && permissionGateSkipped == null) return
 
     // این‌جا `onboardingDone`/`gateState` قطعاً non-nullن (گیتِ اسپلشِ بالا تضمینش می‌کنه)، پس دیگه
     // شاخه‌ی «هنوز لود نشده» با صفحه‌ی خالیِ سفید لازم نیست.

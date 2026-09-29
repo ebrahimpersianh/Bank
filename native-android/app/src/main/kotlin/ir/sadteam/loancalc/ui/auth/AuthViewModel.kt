@@ -137,8 +137,10 @@ class AuthViewModel @Inject constructor(
     }
 
     /** صفحه‌ی مجوزها رد شده - هر دو مجوز اختیاری‌اند و بی این، گیت بن‌بست بود. */
-    val permissionGateSkipped: StateFlow<Boolean> = authPrefs.permissionGateSkipped
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    // `null` = هنوز از حافظه خوانده نشده. قبلاً پیش‌فرض `false` بود و صفحه‌ی اجازه‌ها هر بار
+    // نیم‌ثانیه چشمک می‌زد تا مقدارِ واقعی («رد شده») برسد.
+    val permissionGateSkipped: StateFlow<Boolean?> = authPrefs.permissionGateSkipped
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun skipPermissionGate() {
         viewModelScope.launch { authPrefs.setPermissionGateSkipped(true) }
