@@ -262,15 +262,7 @@ fun AddEditAccountScreen(
             // فیلد دیده بشه، نه فقط اسمِ متنی - رجوع کن به BankBadge (همون کامپوننتِ مشترکی که
             // BankLoanScreen/LoanDetailScreen هم استفاده می‌کنن).
             AppCard(label = "بانک") {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    BankBadge(bankName = bankName, size = 42.dp)
-                    OutlinedTextField(
-                        value = bankName,
-                        onValueChange = { bankName = it },
-                        modifier = Modifier.weight(1f).padding(start = 10.dp),
-                        singleLine = true,
-                    )
-                }
+                ir.sadteam.loancalc.ui.components.BankPickerField(value = bankName, onValueChange = { bankName = it })
                 // فریمِ `74c` بندِ ۳: تشخیصِ خودکار کارِ برنامه است و باید **دیده شود** که
                 // کار کرده. بی این، کاربر نمی‌داند اسمی که در فیلد نشسته را خودش زده یا
                 // برنامه از شماره‌ی کارت حدس زده - و اگر حدس غلط بود، نمی‌داند که

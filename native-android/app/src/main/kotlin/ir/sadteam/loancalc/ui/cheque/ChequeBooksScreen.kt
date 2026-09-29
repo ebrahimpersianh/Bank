@@ -173,12 +173,7 @@ fun ChequeBooksScreen(
                         )
                     }
                     AppCard(label = "بانک") {
-                        OutlinedTextField(
-                            value = bank,
-                            onValueChange = { bank = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                        )
+                        ir.sadteam.loancalc.ui.components.BankPickerField(value = bank, onValueChange = { bank = it })
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         AppCard(label = "شماره شروع", modifier = Modifier.weight(1f)) {

@@ -340,12 +340,7 @@ fun AddEditChequeScreen(
         }
         item {
             AppCard(label = "بانک") {
-                OutlinedTextField(
-                    value = bankName,
-                    onValueChange = { bankName = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
+                ir.sadteam.loancalc.ui.components.BankPickerField(value = bankName, onValueChange = { bankName = it })
             }
         }
         item {

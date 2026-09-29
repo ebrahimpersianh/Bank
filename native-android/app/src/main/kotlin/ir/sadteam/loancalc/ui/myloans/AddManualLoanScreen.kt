@@ -249,13 +249,7 @@ fun AddManualLoanScreen(
                         colors = appFieldColors(),
                     )
                     FieldLabel("بانک یا فروشنده")
-                    OutlinedTextField(
-                        value = bank,
-                        onValueChange = { bank = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        colors = appFieldColors(),
-                    )
+                    ir.sadteam.loancalc.ui.components.BankPickerField(value = bank, onValueChange = { bank = it }, includeCreditServices = true)
                 }
             }
         }

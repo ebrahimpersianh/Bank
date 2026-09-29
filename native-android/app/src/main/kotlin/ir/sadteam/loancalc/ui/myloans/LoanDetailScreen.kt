@@ -453,27 +453,8 @@ fun LoanDetailScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    OutlinedTextField(
-                        value = editMetaBank,
-                        onValueChange = { editMetaBank = it },
-                        label = { Text("اسم بانک یا فروشنده") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    // انتخابِ لوگو - مورد ۱۷: قبلاً فقط یه فیلدِ متنیِ خام بود، کاربر باید اسمِ بانک
-                    // رو دقیقاً درست تایپ می‌کرد تا لوگوش تو LoanDetailScreen/MyLoansScreen پیدا
-                    // بشه (که با BankBadge از رو تطبیقِ اسم لوگو رو نشون می‌ده). این ردیف همون
-                    // BankTileیِ BankLoanScreen رو استفاده می‌کنه - لمسِ یه لوگو اسمِ دقیقش رو تو
-                    // فیلدِ بالا می‌ذاره؛ فیلد همچنان برای بانک/فروشنده‌ی خارج از لیست دستی باز می‌مونه.
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(banks, key = { it.name }) { b ->
-                            BankTile(
-                                bank = b,
-                                selected = editMetaBank == b.name,
-                                onClick = { editMetaBank = b.name },
-                            )
-                        }
-                    }
+                    // بانک فقط از فهرستِ جستجودار با لوگو (خواسته‌ی کاربر، ۷ مهر) - جای فیلدِ متنی + نوارِ لوگوها.
+                    ir.sadteam.loancalc.ui.components.BankPickerField(value = editMetaBank, onValueChange = { editMetaBank = it }, includeCreditServices = true)
                     OutlinedTextField(
                         value = editMetaBorrower,
                         onValueChange = { editMetaBorrower = it },
