@@ -122,7 +122,8 @@ object Mail {
         val date = ZonedDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME)
         val encodedBody = Base64.getMimeEncoder().encodeToString(body.toByteArray(StandardCharsets.UTF_8))
         return buildString {
-            append("From: $from\r\n")
+            // اسمِ نمایشیِ فرستنده؛ آدرس همان جی‌میل است ولی گیرنده «پشتیبانی جیبک» می‌بیند.
+            append("From: =?UTF-8?B?${base64("پشتیبانی جیبک")}?= <$from>\r\n")
             append("To: $to\r\n")
             append("Subject: =?UTF-8?B?${base64(subject)}?=\r\n")
             append("Date: $date\r\n")
