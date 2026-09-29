@@ -358,6 +358,20 @@ data class AdminStatsResponse(
     val profileSplits: List<AdminProfileSplit>? = null,
     val adoption: List<AdminAdoption>? = null,
     val installsList: List<AdminInstallRow>? = null,
+    val sales: List<AdminSaleRow>? = null,
+    val salesByStore: List<AdminNamedCount>? = null,
+    val salesDaily: List<AdminNamedCount>? = null,
+    val activeSubscribers: Int = 0,
+    val activeByTier: List<AdminNamedCount>? = null,
+    val giftsUsed30: Int = 0,
+)
+
+data class AdminSaleRow(
+    val product: String = "",
+    val count30: Int = 0,
+    val countAll: Int = 0,
+    val tomans30: Long = 0,
+    val tomansAll: Long = 0,
 )
 
 data class AdminProfileSplit(val key: String = "", val values: List<AdminNamedCount>? = null)

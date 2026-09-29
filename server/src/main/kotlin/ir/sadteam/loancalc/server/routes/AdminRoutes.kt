@@ -65,6 +65,18 @@ data class InstallRow(
     val loggedIn: Boolean = false,
 )
 
+/** فروشِ واقعی از جدولِ `subscription_purchases` (خرید‌های تأییدشده‌ی سرور). مبلغ به تومان. */
+@Serializable
+data class SaleRow(val product: String, val count30: Int, val countAll: Int, val tomans30: Long, val tomansAll: Long)
+
+/** قیمتِ هر پلن به تومان - همان قیمتِ پنلِ کافه‌بازار/مایکت (رجوع کن به CLAUDE.md). */
+private val PLAN_PRICE_TOMAN = mapOf(
+    "unlimited_loans_1m" to 30_000L,
+    "unlimited_loans_3m" to 81_000L,
+    "unlimited_loans_6m" to 144_000L,
+    "unlimited_loans_1y" to 252_000L,
+)
+
 @Serializable
 data class StatsResponse(
     val today: String,
@@ -96,6 +108,12 @@ data class StatsResponse(
     val profileSplits: List<ProfileSplit> = emptyList(),
     val adoption: List<FeatureAdoption> = emptyList(),
     val installsList: List<InstallRow> = emptyList(),
+    val sales: List<SaleRow> = emptyList(),
+    val salesByStore: List<NamedCount> = emptyList(),
+    val salesDaily: List<NamedCount> = emptyList(),
+    val activeSubscribers: Int = 0,
+    val activeByTier: List<NamedCount> = emptyList(),
+    val giftsUsed30: Int = 0,
 )
 
 /** ترتیبِ نمایشِ مشخصات؛ کلیدِ ناشناخته آخرِ فهرست می‌آید. */
@@ -255,6 +273,37 @@ internal fun buildStats(conn: Connection): StatsResponse {
         )
     }
 
+    // 💰 فروش - فقط از خرید‌هایی که سرور خودش تأیید کرده.
+    val sales = buildList {
+        conn.list(
+            "SELECT product_id, SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END), COUNT(*) FROM subscription_purchases GROUP BY product_id ORDER BY 3 DESC",
+            d30,
+        ) {
+            val product = it.getString(1)
+            val price = PLAN_PRICE_TOMAN[product] ?: 0L
+            add(SaleRow(product.substringAfterLast('_'), it.getInt(2), it.getInt(3), price * it.getInt(2), price * it.getInt(3)))
+        }
+    }
+    val salesByStore = buildList {
+        conn.list("SELECT store, COUNT(*) FROM subscription_purchases WHERE created_at >= ? GROUP BY store ORDER BY 2 DESC", d30) {
+            add(NamedCount(it.getString(1), it.getInt(2)))
+        }
+    }
+    val salesByDay = HashMap<String, Int>()
+    conn.list("SELECT substr(created_at, 1, 10), COUNT(*) FROM subscription_purchases WHERE created_at >= ? GROUP BY 1", d30) {
+        salesByDay[it.getString(1)] = it.getInt(2)
+    }
+    val salesDaily = (29 downTo 0).map { back -> iranDay(-back.toLong()).let { d -> NamedCount(d, salesByDay[d] ?: 0) } }
+    val now = java.time.Instant.now()
+    val activeTiers = buildList {
+        conn.list("SELECT coalesce(subscription_tier, '?'), subscribed_until FROM users WHERE subscribed_until IS NOT NULL") {
+            val until = runCatching { java.time.Instant.parse(it.getString(2)) }.getOrNull()
+            if (until != null && until.isAfter(now)) add(it.getString(1))
+        }
+    }
+    val activeByTier = activeTiers.groupingBy { it }.eachCount().entries.sortedByDescending { it.value }.map { NamedCount(it.key, it.value) }
+    val giftsUsed30 = conn.int("SELECT COUNT(*) FROM gift_codes WHERE used_at IS NOT NULL AND used_at >= ?", d30)
+
     return StatsResponse(
         today = today,
         totalInstalls = totalInstalls,
@@ -284,6 +333,12 @@ internal fun buildStats(conn: Connection): StatsResponse {
         profileSplits = profileSplits,
         adoption = adoption,
         installsList = installsList,
+        sales = sales,
+        salesByStore = salesByStore,
+        salesDaily = salesDaily,
+        activeSubscribers = activeTiers.size,
+        activeByTier = activeByTier,
+        giftsUsed30 = giftsUsed30,
     )
 }
 

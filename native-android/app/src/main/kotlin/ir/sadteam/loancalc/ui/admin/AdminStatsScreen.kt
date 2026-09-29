@@ -47,6 +47,7 @@ import ir.sadteam.loancalc.data.network.AdminFeatureUsage
 import ir.sadteam.loancalc.data.network.AdminNamedCount
 import ir.sadteam.loancalc.data.network.AdminStatsResponse
 import ir.sadteam.loancalc.data.network.AdminInstallRow
+import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.theme.AppInfo
@@ -120,6 +121,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
     val funnel = st.funnel.orEmpty()
 
     item { Insights(st) }
+
+    item { SalesCard(st) }
 
     item {
         AppCard(label = "کاربرها") {
@@ -500,6 +503,10 @@ private fun actionLabel(key: String): String = ACTION_LABELS[key]
     ?: when {
         key.startsWith("purchase_start_") -> "شروعِ خریدِ اشتراکِ ${key.removePrefix("purchase_start_")}"
         key.startsWith("purchase_done_") -> "خریدِ موفقِ اشتراکِ ${key.removePrefix("purchase_done_")}"
+        key.startsWith("purchase_failed_") -> "خریدِ ناموفقِ اشتراکِ ${key.removePrefix("purchase_failed_")}"
+        key.startsWith("purchase_cancel_") -> "انصراف از خریدِ اشتراکِ ${key.removePrefix("purchase_cancel_")}"
+        key == "paywall_view" -> "دیدنِ صفحه‌ی اشتراک"
+        key == "purchase_verify_failed" -> "پول رفت ولی تأیید نشد (پیگیری کن!)"
         else -> key
     }
 
@@ -760,3 +767,61 @@ private val ADOPTION_LABELS = mapOf(
     "calculation_history" to "محاسبه‌ی ذخیره‌شده",
     "achievements" to "نشان",
 )
+
+private val PLAN_LABELS = mapOf("1m" to "یک‌ماهه", "3m" to "سه‌ماهه", "6m" to "شش‌ماهه", "1y" to "یک‌ساله")
+
+/** 💰 فروشِ واقعی (تأییدشده‌ی سرور) + مسیرِ خرید از روی رویدادها. */
+@Composable
+private fun SalesCard(st: AdminStatsResponse) {
+    val sales = st.sales.orEmpty()
+    val actions = st.actions.orEmpty()
+    fun actionSum(prefix: String) = actions.filter { it.name.startsWith(prefix) }.sumOf { it.total }
+    fun actionUsers(prefix: String) = actions.filter { it.name.startsWith(prefix) }.sumOf { it.users }
+    AppCard(label = "فروش و اشتراک") {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatTile("مشترکِ فعال", toFa(st.activeSubscribers), "نفر", Modifier.weight(1f))
+            StatTile("فروشِ ۳۰ روز", toFa(sales.sumOf { it.count30 }), "خرید", Modifier.weight(1f))
+            StatTile("کلِ فروش", toFa(sales.sumOf { it.countAll }), "خرید", Modifier.weight(1f))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+            StatTile("درآمدِ ۳۰ روز", fmt(sales.sumOf { it.tomans30 }.toDouble()).let { toFa(it) }, "تومان", Modifier.weight(1f))
+            StatTile("کلِ درآمد", fmt(sales.sumOf { it.tomansAll }.toDouble()).let { toFa(it) }, "تومان", Modifier.weight(1f))
+        }
+        if (sales.isNotEmpty()) {
+            Text("به‌تفکیکِ پلن", color = AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
+            val max = sales.maxOf { it.countAll }.coerceAtLeast(1)
+            sales.forEach { r ->
+                BarRow(
+                    label = PLAN_LABELS[r.product] ?: r.product,
+                    fraction = r.countAll.toFloat() / max,
+                    trailing = "${toFa(r.count30)} در ماه · ${toFa(r.countAll)} کل",
+                    sub = "درآمدِ کل ${toFa(fmt(r.tomansAll.toDouble()))} تومان",
+                )
+            }
+        }
+        SplitRow("استورِ فروش‌های ماه", st.salesByStore.orEmpty()) { STORE_LABELS[it] ?: it }
+        SplitRow("مشترک‌های فعال به‌تفکیکِ پلن", st.activeByTier.orEmpty()) { PLAN_LABELS[it] ?: it }
+        val daily = st.salesDaily.orEmpty()
+        if (daily.any { it.count > 0 }) {
+            Text("فروشِ روزانه (۳۰ روز)", color = AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
+            DailyChart(daily.map { it.count }, emptyList())
+        }
+        Text("مسیرِ خرید (۳۰ روز)", color = AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
+        val steps = listOf(
+            "صفحه‌ی اشتراک را دیدند" to actionUsers("paywall_view"),
+            "روی خرید زدند" to actionUsers("purchase_start_"),
+            "خریدشان موفق شد" to actionUsers("purchase_done_"),
+        )
+        val base = steps.first().second.coerceAtLeast(1)
+        steps.forEach { (label, n) -> BarRow(label, n.toFloat() / base, "${toFa(n)} نفر · ${toFa(percent(n, base))}٪") }
+        Text(
+            "انصراف: ${toFa(actionSum("purchase_cancel_"))} بار · ناموفق: ${toFa(actionSum("purchase_failed_"))} بار" +
+                (actionSum("purchase_verify_failed").takeIf { it > 0 }?.let { " · ⚠️ پول رفته ولی تأیید نشده: ${toFa(it)} بار" } ?: "") +
+                " · کدِ هدیه‌ی استفاده‌شده: ${toFa(st.giftsUsed30)}",
+            color = AppMuted,
+            fontSize = 10.sp,
+            lineHeight = 17.sp,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+    }
+}

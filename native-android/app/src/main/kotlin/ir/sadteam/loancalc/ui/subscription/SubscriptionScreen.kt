@@ -173,6 +173,9 @@ fun SubscriptionScreen(
     var showExpiryInfo by remember { mutableStateOf(false) }
     var showGift by remember { mutableStateOf(false) }
 
+    // صفحه‌ی اشتراک مسیرِ ناوبری نیست (پنجره است)، پس دیدنش جدا شمرده می‌شود - اولین پله‌ی مسیرِ خرید.
+    androidx.compose.runtime.LaunchedEffect(Unit) { ir.sadteam.loancalc.data.UsageStats.action("paywall_view") }
+
     fun startPurchase(productId: String) {
         ir.sadteam.loancalc.data.UsageStats.action("purchase_start_" + productId.substringAfterLast('_'))
         if (gateState != GateState.LOGGED_IN) {
@@ -189,13 +192,21 @@ fun SubscriptionScreen(
                     purchaseToken = purchaseToken,
                     onSuccess = { purchasingProductId = null; onSubscribed() },
                     onError = {
+                        ir.sadteam.loancalc.data.UsageStats.action("purchase_verify_failed")
                         purchasingProductId = null
                         error = "تایید خرید ناموفق بود؛ اگه پول کم شده با پشتیبانی تماس بگیر"
                     },
                 )
             },
-            onFailed = { purchasingProductId = null; error = "خرید ناموفق بود" },
-            onCanceled = { purchasingProductId = null },
+            onFailed = {
+                ir.sadteam.loancalc.data.UsageStats.action("purchase_failed_" + productId.substringAfterLast('_'))
+                purchasingProductId = null
+                error = "خرید ناموفق بود"
+            },
+            onCanceled = {
+                ir.sadteam.loancalc.data.UsageStats.action("purchase_cancel_" + productId.substringAfterLast('_'))
+                purchasingProductId = null
+            },
         )
     }
 
