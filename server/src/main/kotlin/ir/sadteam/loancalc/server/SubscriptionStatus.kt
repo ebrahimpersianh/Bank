@@ -49,6 +49,7 @@ fun isSubscribed(user: UserRow?): Boolean {
         val untilMs = runCatching { Instant.parse(until).toEpochMilli() }.getOrNull()
         if (untilMs != null && untilMs > System.currentTimeMillis()) return true
     }
+    if (user.trialBlocked) return false
     val trialEnds = trialEndsAtMs(user.createdAt)
     if (trialEnds != null && trialEnds > System.currentTimeMillis()) return true
     return false
@@ -61,7 +62,7 @@ fun isSubscribed(user: UserRow?): Boolean {
  * واقعاً *دلیلِ* مشترک‌بودنه (نه یه اشتراکِ دستی یا خریدِ واقعیِ زمان‌دار) عددی برمی‌گردونه؛ کلاینت
  * (SettingsScreen) از رو null-بودنش بجِ آزمایشی رو نشون نمی‌ده. */
 fun trialDaysLeftIfApplicable(user: UserRow): Int? {
-    if (user.subscribed) return null
+    if (user.subscribed || user.trialBlocked) return null
     val until = user.subscribedUntil
     if (until != null) {
         val untilMs = runCatching { Instant.parse(until).toEpochMilli() }.getOrNull()

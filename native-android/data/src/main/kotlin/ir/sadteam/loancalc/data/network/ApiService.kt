@@ -207,7 +207,7 @@ interface ApiService {
 
 data class RequestOtpRequest(val phone: String)
 
-data class VerifyOtpRequest(val phone: String, val code: String)
+data class VerifyOtpRequest(val phone: String, val code: String, val deviceHash: String? = null)
 
 data class VerifyOtpResponse(
     val token: String,

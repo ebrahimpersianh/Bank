@@ -30,6 +30,8 @@ sealed class AuthResult {
 class AuthRepository(
     private val apiService: ApiService,
     private val authPrefs: AuthPrefs,
+    /** کدِ یک‌طرفه‌ی شناسه‌ی گوشی - «ماهِ مجانی یک بار برای هر گوشی» (سرور). */
+    private val deviceHash: () -> String? = { null },
 ) {
     private val gson = Gson()
 
@@ -48,7 +50,7 @@ class AuthRepository(
 
     suspend fun verifyOtp(phone: String, code: String): AuthResult {
         return try {
-            val result = apiService.verifyOtp(VerifyOtpRequest(phone, code))
+            val result = apiService.verifyOtp(VerifyOtpRequest(phone, code, runCatching { deviceHash() }.getOrNull()))
             authPrefs.saveSession(
                 result.token,
                 result.phone,

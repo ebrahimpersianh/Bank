@@ -97,8 +97,20 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthRepository(apiService: ApiService, authPrefs: AuthPrefs): AuthRepository =
-        AuthRepository(apiService, authPrefs)
+    fun provideAuthRepository(
+        apiService: ApiService,
+        authPrefs: AuthPrefs,
+        @dagger.hilt.android.qualifiers.ApplicationContext context: android.content.Context,
+    ): AuthRepository = AuthRepository(apiService, authPrefs) {
+        // ANDROID_ID با نصبِ دوباره عوض نمی‌شود؛ فقط SHA-256ِ نمک‌خورده‌اش می‌رود، خودش هرگز.
+        val id = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
+            ?.takeIf { it.isNotBlank() && it != "9774d56d682e549c" }
+        id?.let { raw ->
+            java.security.MessageDigest.getInstance("SHA-256")
+                .digest(("jibak-device:" + raw).toByteArray())
+                .joinToString("") { "%02x".format(it) }
+        }
+    }
 
     @Provides
     @Singleton

@@ -68,7 +68,14 @@ private fun hashCode(code: String): String {
 private data class RequestOtpBody(val phone: String? = null)
 
 @Serializable
-private data class VerifyOtpBody(val phone: String? = null, val code: String? = null)
+private data class VerifyOtpBody(
+    val phone: String? = null,
+    val code: String? = null,
+    /** کدِ یک‌طرفه‌ی شناسه‌ی گوشی (SHA-256؛ خودِ شناسه هرگز نمی‌آید) - برای «ماهِ مجانی یک بار برای هر گوشی». */
+    val deviceHash: String? = null,
+)
+
+private val DEVICE_HASH_RE = Regex("^[0-9a-f]{64}$")
 
 @Serializable
 private data class VerifyOtpResponse(
@@ -202,9 +209,10 @@ fun Route.authRoutes() {
 
             var user = Db.withConnection { conn ->
                 conn.queryOne(
-                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at, name, legacy_gift_granted FROM users WHERE phone = ?", phone
+                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at, trial_blocked, name, legacy_gift_granted FROM users WHERE phone = ?", phone
                 ) { it.toUserRow() }
             }
+            val isNewUser = user == null
             if (user == null) {
                 val newId = Db.withConnection { conn -> conn.insertReturningId("INSERT INTO users (phone) VALUES (?)", phone) }
                 Db.withConnection { conn -> conn.execute("INSERT INTO loans (user_id, data) VALUES (?, '[]')", newId) }
@@ -212,9 +220,32 @@ fun Route.authRoutes() {
                 // واقعی (لازم برای محاسبه‌ی دوره‌ی آزمایشی ۷ روزه‌ی isSubscribed) رو داشته باشیم.
                 user = Db.withConnection { conn ->
                     conn.queryOne(
-                        "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at, name, legacy_gift_granted FROM users WHERE id = ?", newId
+                        "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at, trial_blocked, name, legacy_gift_granted FROM users WHERE id = ?", newId
                     ) { it.toUserRow() }
                 }!!
+            }
+
+            // 🔒 ماهِ مجانی یک بار برای هر گوشی (۷ مهر): حسابِ **تازه** روی گوشی‌ای که حسابِ
+            // دیگری از قبل رویش بوده، ماهِ مجانی نمی‌گیرد. حسابِ قدیمی و خریدِ واقعی دست نمی‌خورند.
+            val deviceHash = body?.deviceHash?.lowercase()?.takeIf { DEVICE_HASH_RE.matches(it) }
+            if (deviceHash != null) {
+                val uid = user!!.id
+                val blocked = Db.withConnection { conn ->
+                    val others = conn.queryOne(
+                        "SELECT COUNT(*) FROM device_users WHERE device_hash = ? AND user_id != ?", deviceHash, uid,
+                    ) { it.getInt(1) } ?: 0
+                    conn.execute("INSERT OR IGNORE INTO device_users (device_hash, user_id) VALUES (?, ?)", deviceHash, uid)
+                    if (isNewUser && others > 0) {
+                        conn.execute("UPDATE users SET trial_blocked = 1 WHERE id = ?", uid)
+                        true
+                    } else {
+                        false
+                    }
+                }
+                if (blocked) {
+                    user = user!!.copy(trialBlocked = true)
+                    Log.info("trial_blocked", "حسابِ تازه روی گوشیِ تکراری - بی ماهِ مجانی", "uid" to uid)
+                }
             }
 
             Log.info(
@@ -246,7 +277,7 @@ fun Route.authRoutes() {
             val authed = call.requireAuth() ?: return@get
             val user = Db.withConnection { conn ->
                 conn.queryOne(
-                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at, name, legacy_gift_granted FROM users WHERE id = ?", authed.uid
+                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at, trial_blocked, name, legacy_gift_granted FROM users WHERE id = ?", authed.uid
                 ) { it.toUserRow() }
             }
             if (user == null) {

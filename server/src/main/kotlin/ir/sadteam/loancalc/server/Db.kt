@@ -291,6 +291,13 @@ object Db {
             addColumnIfMissing(conn, "ALTER TABLE announcements ADD COLUMN target_user_id INTEGER")
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN launch_gift_granted INTEGER NOT NULL DEFAULT 0")
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN cloud_warn_for TEXT")
+            addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN trial_blocked INTEGER NOT NULL DEFAULT 0")
+            conn.createStatement().use {
+                it.executeUpdate(
+                    "CREATE TABLE IF NOT EXISTS device_users (device_hash TEXT NOT NULL, user_id INTEGER NOT NULL, " +
+                        "first_seen TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (device_hash, user_id))",
+                )
+            }
             addColumnIfMissing(conn, "ALTER TABLE bug_reports ADD COLUMN category TEXT NOT NULL DEFAULT 'bug'")
             addColumnIfMissing(conn, "ALTER TABLE bug_reports ADD COLUMN rewarded_days INTEGER NOT NULL DEFAULT 0")
             conn.createStatement().use {
@@ -434,7 +441,9 @@ data class UserRow(
     /** آیا این کاربر جزو «کاربرانِ قدیمی» بود که ۱۵ روزِ هدیه‌ی اضافه گرفت؟ اپ ازش برای نشون‌دادنِ
      * جمله‌ی «چون از قبل وارد برنامه شده بودی...» استفاده می‌کنه - رجوع کن به grantLegacyGift. */
     val legacyGift: Boolean,
-    val createdAt: String
+    val createdAt: String,
+    /** ماهِ مجانی نمی‌گیرد: روی گوشی‌ای ساخته شد که حسابِ دیگری قبلاً ماهِ مجانی گرفته بود. */
+    val trialBlocked: Boolean = false,
 )
 
 fun ResultSet.toUserRow(): UserRow = UserRow(
@@ -446,5 +455,6 @@ fun ResultSet.toUserRow(): UserRow = UserRow(
     name = runCatching { getString("name") }.getOrNull(),
     // runCatching چون دیتابیس‌های خیلی قدیمی ممکنه هنوز این ستون رو نداشته باشن (قبل از migration).
     legacyGift = runCatching { getInt("legacy_gift_granted") != 0 }.getOrDefault(false),
-    createdAt = getString("created_at")
+    createdAt = getString("created_at"),
+    trialBlocked = runCatching { getInt("trial_blocked") != 0 }.getOrDefault(false),
 )

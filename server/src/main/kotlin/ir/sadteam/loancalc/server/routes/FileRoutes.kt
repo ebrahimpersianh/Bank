@@ -59,7 +59,7 @@ fun Route.fileRoutes() {
             }
             val user = Db.withConnection { conn ->
                 conn.queryOne(
-                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at FROM users WHERE id = ?", authed.uid,
+                    "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at, trial_blocked FROM users WHERE id = ?", authed.uid,
                 ) { it.toUserRow() }
             }
             if (!isSubscribed(user)) {
