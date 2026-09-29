@@ -1532,13 +1532,13 @@ internal fun MarketGridRow(
                 .background(AppPrimary.copy(alpha = 0.06f))
                 .padding(horizontal = 4.dp, vertical = 6.dp),
         ) {
-            Text(
-                price?.let { "$it تومان" } ?: "—",
+            // «۶۹۰٫۹ میلیون تو…» نصفه می‌شد - حالا فونت کوچک می‌شود تا کلِ قیمت جا شود.
+            ir.sadteam.loancalc.ui.components.AutoShrinkText(
+                text = price?.let { "$it تومان" } ?: "—",
                 color = if (price == null) AppMuted else AppText,
-                fontSize = 11.sp,
+                maxFontSize = 11.sp,
+                minFontSize = 7.sp,
                 fontWeight = FontWeight.Black,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
             if (secondLine != null) Text(secondLine, color = AppMuted, fontSize = 8.5.sp, maxLines = 1)
         }
