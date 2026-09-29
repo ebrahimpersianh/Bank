@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.asset
 
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import ir.sadteam.loancalc.ui.components.SubScreen
 import ir.sadteam.loancalc.ui.components.AppFab
@@ -1149,7 +1150,7 @@ private fun String.faNum(): String = map { if (it in '0'..'9') '۰' + (it - '0')
  * از تاریخچه‌ی روزانه‌ی سرور + قیمتِ همین لحظه ساخته می‌شود؛ بی تاریخچه = `null` («—»).
  */
 @Composable
-private fun rememberDailyChange(symbol: String, viewModel: AssetViewModel): Double? {
+internal fun rememberDailyChange(symbol: String, viewModel: AssetViewModel): Double? {
     val history by remember(symbol) { viewModel.historyOf(symbol) }.collectAsState(initial = emptyList())
     val prices by viewModel.marketPrices.collectAsState()
     val today = remember { JalaliCalendar.today() }
@@ -1160,7 +1161,7 @@ private fun rememberDailyChange(symbol: String, viewModel: AssetViewModel): Doub
 
 /** نمودارِ کوچکِ روندِ یک نماد - هرچقدر تاریخچه هست؛ کمتر از ۲ نقطه = خطِ صاف. */
 @Composable
-private fun MiniTrend(symbol: String, change: Double?, viewModel: AssetViewModel, modifier: Modifier = Modifier, height: androidx.compose.ui.unit.Dp = 26.dp) {
+internal fun MiniTrend(symbol: String, change: Double?, viewModel: AssetViewModel, modifier: Modifier = Modifier, height: androidx.compose.ui.unit.Dp = 26.dp) {
     val history by remember(symbol) { viewModel.historyOf(symbol) }.collectAsState(initial = emptyList())
     val ink = if ((change ?: 0.0) < 0.0) AppDangerInk else AppPrimaryInk
     HeroChart(
@@ -1303,56 +1304,55 @@ private fun MarketMiniCard(
 ) {
     val change = rememberDailyChange(e.symbol, viewModel)
     val shape = RoundedCornerShape(16.dp)
+    val usd by viewModel.usdPrices.collectAsState()
+    // هر سه کارت **هم‌قد** (بسته‌ی ChatGPT، ۷ مهر): ارتفاعِ ثابت و جای خطِ دوم (دلارِ رمزارز)
+    // همیشه نگه داشته می‌شود، حتی خالی - وگرنه بیت‌کوین از دو کارتِ دیگر بلندتر می‌شد.
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .height(150.dp)
             .clip(shape)
             .border(1.dp, AppLine, shape)
             .pressScaleClickable { onOpen(e) }
-            .padding(8.dp),
+            .padding(9.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            AssetBadge(e.symbol, e.category, 30.dp)
-            Text(
-                e.name,
-                color = AppText,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Black,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(start = 6.dp),
-            )
-        }
+        AssetBadge(e.symbol, e.category, 30.dp)
         Text(
-            prices[e.symbol]?.rialToFaCompact() ?: "—",
+            e.name,
+            color = AppText,
+            fontSize = 10.5.sp,
+            fontWeight = FontWeight.Black,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        Text(
+            (prices[e.symbol]?.rialToFaCompact() ?: "—") + " تومان",
             color = AppText,
             fontSize = 12.sp,
             fontWeight = FontWeight.Black,
             maxLines = 1,
-            modifier = Modifier.padding(top = 6.dp),
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 4.dp),
         )
-        Text("تومان", color = AppMuted, fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
-        // جفتِ دلاریِ رمزارز (مثلاً BTC_USD) - فقط اگر سرور داده باشد.
-        val usd by viewModel.usdPrices.collectAsState()
-        usd[e.symbol]?.takeIf { e.category == ASSET_CATEGORY_CRYPTO }?.let { v ->
-            Text(
-                "$" + formatUsd(v),
-                color = AppMuted,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+        Text(
+            usd[e.symbol]?.takeIf { e.category == ASSET_CATEGORY_CRYPTO }?.let { "$" + formatUsd(it) } ?: "",
+            color = AppMuted,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            modifier = Modifier.height(14.dp),
+        )
+        Spacer(Modifier.weight(1f))
+        MiniTrend(e.symbol, change, viewModel, modifier = Modifier.fillMaxWidth(), height = 22.dp)
+        Box(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), contentAlignment = Alignment.CenterEnd) {
             change?.let { PriceChangeBadge(it) }
-            MiniTrend(e.symbol, change, viewModel, modifier = Modifier.weight(1f).padding(start = 4.dp), height = 20.dp)
         }
     }
 }
 
 /** دلار با ارقامِ فارسی: بزرگ‌ها با جداکننده، ریزها (مثلِ PEPE) با رقم‌های معنادار. */
-private fun formatUsd(v: Double): String {
+internal fun formatUsd(v: Double): String {
     val raw = when {
         v >= 1000 -> String.format(java.util.Locale.US, "%,.0f", v).replace(',', '٬')
         v >= 1 -> String.format(java.util.Locale.US, "%.2f", v)
@@ -1454,7 +1454,7 @@ private fun NetWorthCard(total: Double, liabilities: Double, loans: Double, owe:
     }
 }
 
-/** ردیفِ مستطیلیِ بازار: نشان · نام · نمودار · قیمت (و دلار برای رمزارز) · درصد. */
+/** ردیفِ مستطیلیِ بازار - همان [MarketGridRow]ِ صفحه‌ی «قیمتِ روز». */
 @Composable
 private fun MarketWideRow(
     e: AssetCatalogEntry,
@@ -1464,39 +1464,84 @@ private fun MarketWideRow(
 ) {
     val change = rememberDailyChange(e.symbol, viewModel)
     val usd by viewModel.usdPrices.collectAsState()
-    val shape = RoundedCornerShape(14.dp)
+    MarketGridRow(
+        symbol = e.symbol,
+        category = e.category,
+        name = e.name,
+        price = prices[e.symbol]?.rialToFaCompact(),
+        secondLine = usd[e.symbol]?.takeIf { e.category == ASSET_CATEGORY_CRYPTO }?.let { "$" + formatUsd(it) },
+        trend = { MiniTrend(e.symbol, change, viewModel, modifier = Modifier.fillMaxWidth(), height = 22.dp) },
+        trailing = { change?.let { PriceChangeBadge(it) } },
+        onClick = { onOpen(e) },
+    )
+}
+
+/**
+ * ردیفِ هم‌ترازِ بازار (بسته‌ی ChatGPT، ۷ مهر) - **ستون‌های ثابت**: نشان · نام/نماد · نمودار ·
+ * قیمت در قابِ ملایم · درصد. عرضِ ثابتِ سه ستونِ آخر یعنی همه‌ی نمودارها و قیمت‌ها زیرِ هم.
+ */
+@Composable
+internal fun MarketGridRow(
+    symbol: String,
+    category: String,
+    name: String,
+    price: String?,
+    onClick: () -> Unit,
+    subtitle: String? = null,
+    secondLine: String? = null,
+    owned: Boolean = false,
+    trend: @Composable () -> Unit,
+    trailing: @Composable () -> Unit,
+) {
+    val shape = RoundedCornerShape(16.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 64.dp)
             .clip(shape)
+            .background(AppSurface)
             .border(1.dp, AppLine, shape)
-            .pressScaleClickable { onOpen(e) }
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .pressScaleClickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        AssetBadge(e.symbol, e.category, 30.dp)
-        Text(
-            e.name,
-            color = AppText,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Black,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f).padding(start = 8.dp),
-        )
-        MiniTrend(e.symbol, change, viewModel, modifier = Modifier.width(56.dp).padding(horizontal = 6.dp), height = 20.dp)
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                (prices[e.symbol]?.rialToFaCompact() ?: "—") + " تومان",
-                color = AppText,
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Black,
-                maxLines = 1,
-            )
-            usd[e.symbol]?.takeIf { e.category == ASSET_CATEGORY_CRYPTO }?.let {
-                Text("$" + formatUsd(it), color = AppMuted, fontSize = 9.sp, maxLines = 1)
+        AssetBadge(symbol, category, 32.dp)
+        Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    name,
+                    color = AppText,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (owned) Box(modifier = Modifier.padding(start = 4.dp).size(6.dp).clip(CircleShape).background(AppPrimary))
+            }
+            if (subtitle != null) {
+                Ltr { Text(subtitle, color = AppMuted, fontSize = 8.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.padding(top = 2.dp)) }
             }
         }
-        change?.let { Box(modifier = Modifier.padding(start = 6.dp)) { PriceChangeBadge(it) } }
+        Box(modifier = Modifier.width(58.dp).padding(horizontal = 4.dp), contentAlignment = Alignment.Center) { trend() }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .width(92.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(AppPrimary.copy(alpha = 0.06f))
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+        ) {
+            Text(
+                price?.let { "$it تومان" } ?: "—",
+                color = if (price == null) AppMuted else AppText,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (secondLine != null) Text(secondLine, color = AppMuted, fontSize = 8.5.sp, maxLines = 1)
+        }
+        Box(modifier = Modifier.width(62.dp).padding(start = 6.dp), contentAlignment = Alignment.Center) { trailing() }
     }
 }

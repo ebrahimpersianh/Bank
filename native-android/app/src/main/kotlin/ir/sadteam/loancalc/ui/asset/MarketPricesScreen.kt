@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.asset
 
+import androidx.compose.foundation.layout.height
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -219,6 +220,7 @@ fun MarketPricesScreen(
                         changePercent = changes[entry.symbol],
                         owned = entry.symbol in ownedSymbols,
                         onClick = { openRow(entry) },
+                        viewModel = viewModel,
                     )
                 }
                 if (onlyMine && !searching) {
@@ -256,6 +258,7 @@ fun MarketPricesScreen(
                             changePercent = changes[entry.symbol],
                             owned = entry.symbol in ownedSymbols,
                             onClick = { openRow(entry) },
+                        viewModel = viewModel,
                         )
                     }
                     if (isCollapsed && rows.size > shown.size) {
@@ -435,82 +438,32 @@ private fun PriceRow(
     changePercent: Double?,
     owned: Boolean,
     onClick: () -> Unit,
+    viewModel: AssetViewModel,
 ) {
-    val shape = RoundedCornerShape(AppRadius.row)
-    val dot = AppPrimary
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(AppSurface)
-            .border(2.dp, AppLineRow, shape)
-            .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-    ) {
-        AssetBadge(entry.symbol, entry.category, 30.dp)
-        Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(
-                    entry.name,
-                    color = AppText,
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Black,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                // نقطه‌ی سبز یعنی «داری» - در حالتِ خاموشِ قرص تنها راهِ تشخیصِ
-                // دارایی‌های خودت در فهرستِ بلند است.
-                if (owned) {
-                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(dot))
-                }
+    // همان ردیفِ هم‌ترازِ «نمای کلیِ بازار» (بسته‌ی ChatGPT، ۷ مهر) - ستون‌های ثابت.
+    MarketGridRow(
+        symbol = entry.symbol,
+        category = entry.category,
+        name = entry.name,
+        subtitle = entry.symbol,
+        price = price?.rialToFaCompact(),
+        owned = owned,
+        onClick = onClick,
+        trend = {
+            if (entry.hasLivePrice && price != null) {
+                MiniTrend(entry.symbol, changePercent, viewModel, modifier = Modifier.fillMaxWidth(), height = 22.dp)
+            } else {
+                Box(Modifier.fillMaxWidth().height(2.dp).clip(RoundedCornerShape(99.dp)).background(AppLine))
             }
-            // نمادِ لاتین عمداً لاتین می‌مونه - جزوِ هفت استثنای `Numerals-global-handoff.md`.
-            Ltr {
-                Text(
-                    entry.symbol,
-                    color = AppMuted,
-                    fontSize = 8.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-        }
-        Column(horizontalAlignment = Alignment.Start) {
-            Text(
-                price?.rialToFaCompact() ?: "—",
-                color = if (price == null) AppMuted else AppText,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Black,
-            )
-            // 🚨 ستونِ تغییر **یک واژگانِ رنگی** دارد: سبز بالا، قرمز پایین، خاکستری
-            // بی‌تغییر. هر رنگِ پنجمی در همان ستون یک معنیِ پنجم خوانده می‌شود - به همین
-            // دلیل بجِ بنفشِ «تازه» برداشته شد (بنفش رنگِ «جدید/تبلیغ» است و خوانده
-            // می‌شد «این نماد تازه اضافه شده»، نه «داده نداریم»). جایش متنِ خاکستری در
-            // همان جای درصد است، بی بج و بی فلش: نبودِ فلش خودش پیام است.
+        },
+        trailing = {
             when {
-                changePercent != null ->
-                    PriceChangeBadge(changePercent, modifier = Modifier.padding(top = 3.dp))
-                !entry.hasLivePrice ->
-                    PriceStateBadge(
-                        label = "قیمتِ دستی",
-                        fill = AppIconFrame,
-                        border = AppLine,
-                        ink = AppMuted,
-                        modifier = Modifier.padding(top = 3.dp),
-                    )
-                price != null ->
-                    Text(
-                        "تازه — هنوز داده نداریم",
-                        color = AppMuted,
-                        fontSize = 8.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 3.dp),
-                    )
+                changePercent != null -> PriceChangeBadge(changePercent)
+                !entry.hasLivePrice -> PriceStateBadge(label = "قیمتِ دستی", fill = AppIconFrame, border = AppLine, ink = AppMuted)
+                price != null -> PriceStateBadge(label = "تازه", fill = AppIconFrame, border = AppLine, ink = AppMuted)
             }
-        }
-    }
+        },
+    )
 }
 
 /**
