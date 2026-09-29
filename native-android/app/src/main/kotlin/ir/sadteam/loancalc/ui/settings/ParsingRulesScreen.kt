@@ -33,6 +33,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.Science
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import ir.sadteam.loancalc.ui.components.AppButtonVariant
+import ir.sadteam.loancalc.ui.jibak.faCardTail
+import ir.sadteam.loancalc.ui.jibak.rialToToman
+import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -80,6 +91,7 @@ fun ParsingRulesScreen(viewModel: ParsingRulesViewModel = hiltViewModel()) {
     val incomeCategories by viewModel.incomeCategories.collectAsState()
     var editing by remember { mutableStateOf<ParsingRuleEntity?>(null) }
     var creating by remember { mutableStateOf(false) }
+    var testing by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -94,6 +106,14 @@ fun ParsingRulesScreen(viewModel: ParsingRulesViewModel = hiltViewModel()) {
         GradientButton(onClick = { creating = true }, modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
             Text("قاعده‌ی تازه", fontWeight = FontWeight.Black)
+        }
+        GradientButton(
+            onClick = { testing = true },
+            variant = AppButtonVariant.SECONDARY,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        ) {
+            Icon(Icons.Outlined.Science, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text("آزمایشِ تشخیص با یه پیامک", fontWeight = FontWeight.Black)
         }
 
         if (rules.isEmpty()) {
@@ -113,6 +133,10 @@ fun ParsingRulesScreen(viewModel: ParsingRulesViewModel = hiltViewModel()) {
                 )
             }
         }
+    }
+
+    if (testing) {
+        SmsTestDialog(onDismiss = { testing = false }, runTest = { viewModel.testSms(it) })
     }
 
     if (creating || editing != null) {
@@ -407,5 +431,94 @@ private fun CategoryOption(entry: CategoryEntry, selected: Boolean, onClick: () 
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+/** آزمایشِ تشخیص (فریمِ `29c`): نتیجه در کارتِ چهارخانه، نه متنِ خام. */
+@Composable
+private fun SmsTestDialog(onDismiss: () -> Unit, runTest: suspend (String) -> SmsTestResult?) {
+    var body by remember { mutableStateOf("") }
+    var result by remember { mutableStateOf<SmsTestResult?>(null) }
+    var tested by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    JibakAlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                enabled = body.isNotBlank(),
+                onClick = { scope.launch { result = runTest(body); tested = true } },
+            ) { Text("آزمایش") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("بستن") } },
+        title = { Text("آزمایشِ تشخیص", fontWeight = FontWeight.Black) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                OutlinedTextField(
+                    value = body,
+                    onValueChange = { body = it; tested = false },
+                    label = { Text("متنِ پیامکِ بانکی رو اینجا بچسبون") },
+                    minLines = 3,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    "فقط آزمایشه - هیچ تراکنشی ثبت نمی‌شه.",
+                    color = AppLabel,
+                    fontSize = 9.sp,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                AnimatedVisibility(visible = tested) {
+                    val r = result
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(AppSurface2)
+                            .border(1.dp, if (r != null) AppPrimary else AppDangerInk, RoundedCornerShape(14.dp))
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(
+                                if (r != null) Icons.Filled.CheckCircle else Icons.Outlined.ErrorOutline,
+                                contentDescription = null,
+                                tint = if (r != null) AppPrimary else AppDangerInk,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Text(
+                                if (r != null) "نتیجه‌ی تشخیص" else "این پیامک تراکنش شناخته نشد",
+                                color = AppText,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black,
+                            )
+                        }
+                        if (r != null) {
+                            TestResultRow("مبلغ", "${rialToToman(r.amountRial).toFaMoney()} تومان")
+                            TestResultRow("نوع", if (r.isWithdrawal) "خرج" else "دخل", if (r.isWithdrawal) AppDangerInk else AppPrimaryInk)
+                            TestResultRow(
+                                "حساب",
+                                r.accountName ?: r.cardSuffix?.let { "کارتِ ${faCardTail(it)} (ثبت‌نشده)" } ?: "نامشخص",
+                            )
+                            TestResultRow(
+                                "دسته",
+                                when {
+                                    r.category == null -> "نامشخص - خودت انتخاب می‌کنی"
+                                    r.byRule != null -> "${r.category} (قاعده‌ی «${r.byRule}»)"
+                                    else -> "${r.category} (حدسِ خودکار)"
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun TestResultRow(label: String, value: String, valueColor: androidx.compose.ui.graphics.Color = AppText) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(52.dp))
+        Text(value, color = valueColor, fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
     }
 }

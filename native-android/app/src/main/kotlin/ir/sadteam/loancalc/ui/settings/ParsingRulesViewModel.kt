@@ -3,6 +3,8 @@ package ir.sadteam.loancalc.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ir.sadteam.loancalc.core.BankSmsParser
+import ir.sadteam.loancalc.core.MerchantCategoryGuesser
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.AccountRepository
 import ir.sadteam.loancalc.data.CategoryEntry
@@ -65,4 +67,38 @@ class ParsingRulesViewModel @Inject constructor(
         return accountRepository.observeTransactions().first()
             .count { it.description.contains(q, ignoreCase = true) }
     }
+
+    /**
+     * آزمایشِ تشخیص (فریمِ `29c`): متنِ نمونه همان مسیرِ گیرنده‌ی پیامک را می‌رود - پارسر، بعد
+     * قاعده‌ها، بعد حدسِ کلیدواژه‌ای - ولی **شمارنده‌ی قاعده را بالا نمی‌برد** و چیزی ثبت نمی‌کند.
+     * `null` یعنی پارسر این متن را تراکنش نشناخت.
+     */
+    suspend fun testSms(body: String): SmsTestResult? {
+        val parsed = BankSmsParser.parse(body) ?: return null
+        val isWithdrawal = parsed.type == TransactionType.WITHDRAWAL
+        val rule = rules.value.firstOrNull { r ->
+            body.contains(r.pattern, ignoreCase = true) &&
+                (r.txType == null || (r.txType == TransactionType.WITHDRAWAL.name) == isWithdrawal)
+        }
+        val account = parsed.cardSuffix?.let { suffix ->
+            accountRepository.observeAccounts().first().firstOrNull { it.cardNumber?.takeLast(4) == suffix }
+        }
+        return SmsTestResult(
+            amountRial = parsed.amountRial.toLong(),
+            isWithdrawal = isWithdrawal,
+            cardSuffix = parsed.cardSuffix,
+            accountName = account?.let { listOfNotNull(it.name, it.bankName.takeIf { b -> b.isNotBlank() && b != it.name }).joinToString(" · ") },
+            category = rule?.category ?: MerchantCategoryGuesser.guess(body, isWithdrawal),
+            byRule = rule?.pattern,
+        )
+    }
 }
+
+data class SmsTestResult(
+    val amountRial: Long,
+    val isWithdrawal: Boolean,
+    val cardSuffix: String?,
+    val accountName: String?,
+    val category: String?,
+    val byRule: String?,
+)
