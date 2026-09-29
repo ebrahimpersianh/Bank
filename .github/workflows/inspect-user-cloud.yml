@@ -1,0 +1,48 @@
+name: بررسیِ داده‌ی ابریِ یک کاربر (فقط خواندن)
+
+# فقط شمارش و نامِ کلیدها را چاپ می‌کند - هیچ مبلغ، متن یا شماره‌ای.
+on:
+  workflow_dispatch:
+    inputs:
+      user_id:
+        description: "شماره‌ی کاربری (فقط عدد)"
+        required: true
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: بررسی روی سرور
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: UID_IN
+          script: |
+            set -e
+            [[ "$UID_IN" =~ ^[0-9]+$ ]] || { echo "bad id"; exit 1; }
+            cd ~/VameMan
+            python3 - "$UID_IN" <<'PY'
+            import sqlite3, json, sys
+            uid = int(sys.argv[1])
+            c = sqlite3.connect("data.sqlite")
+            r = c.execute("SELECT name IS NOT NULL AND name != '', created_at FROM users WHERE id=?", (uid,)).fetchone()
+            print("has_name:", bool(r and r[0]), "created:", r and r[1])
+            for t in ("accounts_backup", "cheques_backup", "loans"):
+                row = c.execute(f"SELECT data, updated_at FROM {t} WHERE user_id=?", (uid,)).fetchone()
+                if not row:
+                    print(t, ": none"); continue
+                try:
+                    d = json.loads(row[0])
+                except Exception:
+                    print(t, ": unparsable"); continue
+                if isinstance(d, dict):
+                    extra = d.get("extraTables") or {}
+                    print(t, "updated:", row[1], "keys:", sorted(d.keys()))
+                    print("  extraTables:", {k: len(v) for k, v in extra.items()} if isinstance(extra, dict) else type(extra).__name__)
+                else:
+                    print(t, "updated:", row[1], "items:", len(d))
+            PY
+        env:
+          UID_IN: ${{ inputs.user_id }}
