@@ -85,13 +85,13 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
                     ir.sadteam.loancalc.data.UsageStats.onForeground()
                     // دو گوشی: تازه‌ترین نسخه‌ی ابری (اگر گوشیِ دیگری نوشته) بیاید.
                     CoroutineScope(Dispatchers.IO).launch {
-                        runCatching { authPrefs.authToken.first()?.let { accountRepository.pullIfNewer(it) } }
+                        runCatching { authPrefs.authToken.first()?.let { accountRepository.pullIfNewer(it); ir.sadteam.loancalc.data.PhotoSync.sync(this@LoanCalcApplication, it) } }
                     }
                 }
                 if (event == Lifecycle.Event.ON_STOP) {
                     // همه‌ی تغییرها (یادداشت، بودجه، دارایی…) با رفتن به پس‌زمینه روی سرور می‌روند.
                     CoroutineScope(Dispatchers.IO).launch {
-                        runCatching { authPrefs.authToken.first()?.let { accountRepository.pushToServer(it) } }
+                        runCatching { authPrefs.authToken.first()?.let { accountRepository.pushToServer(it); ir.sadteam.loancalc.data.PhotoSync.sync(this@LoanCalcApplication, it) } }
                     }
                 }
                 if (event == Lifecycle.Event.ON_STOP) {

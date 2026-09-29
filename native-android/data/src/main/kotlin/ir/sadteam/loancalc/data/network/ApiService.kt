@@ -8,6 +8,7 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Query
 import retrofit2.http.PUT
+import retrofit2.http.Path
 
 /**
  * قرارداد دقیق API طبق server/src/routes/{auth,loans,subscription,crash}.js — بدون هیچ حدسی،
@@ -81,6 +82,25 @@ interface ApiService {
     /** آمارِ بی‌نام - رجوع کن به [ir.sadteam.loancalc.data.UsageStats]. عمداً بدونِ توکن. */
     @POST("api/events")
     suspend fun trackEvent(@Body body: UsageEventRequest): Response<Unit>
+
+    /** عکس‌های کاربر روی سرور (۷ مهر) - رجوع کن به `server/.../FileRoutes.kt` و [ir.sadteam.loancalc.data.PhotoSync]. */
+    @GET("api/files")
+    suspend fun listFiles(@Header("Authorization") authHeader: String): FileListResponse
+
+    @PUT("api/files/{dir}/{name}")
+    suspend fun putFile(
+        @Header("Authorization") authHeader: String,
+        @Path("dir") dir: String,
+        @Path("name") name: String,
+        @Body body: okhttp3.RequestBody,
+    ): Response<Unit>
+
+    @GET("api/files/{dir}/{name}")
+    suspend fun getFile(
+        @Header("Authorization") authHeader: String,
+        @Path("dir") dir: String,
+        @Path("name") name: String,
+    ): okhttp3.ResponseBody
 
     @POST("api/events/batch")
     suspend fun trackBatch(@Body body: UsageBatchRequest): Response<Unit>
@@ -282,6 +302,8 @@ data class AnnouncementDto(
 data class AnnouncementsResponse(val items: List<AnnouncementDto>)
 
 data class UsageEventRequest(val name: String)
+
+data class FileListResponse(val files: List<String>? = null)
 
 data class UsageBatchEvent(val name: String, val count: Int, val day: String)
 

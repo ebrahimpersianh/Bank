@@ -6,6 +6,7 @@ import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
+import io.ktor.client.statement.readBytes
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -375,5 +376,29 @@ class ApplicationTest {
         assertEquals("3", screens[0].jsonObject["total"]!!.jsonPrimitive.content)
         assertEquals("loan_added", json["actions"]!!.jsonArray[0].jsonObject["name"]!!.jsonPrimitive.content)
         assertTrue(!stats.bodyAsText().contains("BAD NAME"))
+    }
+
+    @Test
+    fun `photos upload list and download per user`() = testApplication {
+        val dbFile = File.createTempFile("loan-calc-test-files", ".sqlite")
+        dbFile.deleteOnExit()
+        val dir = kotlin.io.path.createTempDirectory("files").toFile()
+        System.setProperty("DB_PATH", dbFile.absolutePath)
+        System.setProperty("JWT_SECRET", "test-secret-for-unit-tests-only-files")
+        System.setProperty("FILES_DIR", dir.absolutePath)
+        application { module() }
+        val uid = Db.withConnection { conn -> conn.insertReturningId("INSERT INTO users (phone) VALUES (?)", "09120003344") }
+        val token = signToken(uid, "09120003344")
+        val put = client.put("/api/files/receipts/r_1.jpg") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.OctetStream)
+            setBody(byteArrayOf(1, 2, 3))
+        }
+        assertEquals(HttpStatusCode.OK, put.status)
+        val bad = client.put("/api/files/receipts/..%2Fx") { header("Authorization", "Bearer $token"); setBody(byteArrayOf(1)) }
+        assertTrue(bad.status != HttpStatusCode.OK)
+        assertTrue(client.get("/api/files") { header("Authorization", "Bearer $token") }.bodyAsText().contains("receipts/r_1.jpg"))
+        val got = client.get("/api/files/receipts/r_1.jpg") { header("Authorization", "Bearer $token") }
+        assertEquals(3, got.readBytes().size)
     }
 }

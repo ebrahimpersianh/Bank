@@ -34,6 +34,7 @@ enum class GateState { NEEDS_LOGIN, GUEST, LOGGED_IN }
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
+    @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: android.content.Context,
     private val authPrefs: AuthPrefs,
     private val authRepository: AuthRepository,
     private val loanRepository: LoanRepository,
@@ -237,6 +238,7 @@ class AuthViewModel @Inject constructor(
                         // گوشیِ خالی از سرور پر می‌شود؛ هرگز خالی روی سرور نوشته نمی‌شود.
                         launch { chequeRepository.syncAfterLogin(token) }
                         launch { accountRepository.syncAfterLogin(token) }
+                        launch { ir.sadteam.loancalc.data.PhotoSync.sync(appContext, token) }
                     }
                     // «هدیه‌ی شماره‌ی تازه ۵۰ سکه» (جدولِ `20e`). یک‌باره‌ست، پس ورودهای بعدی
                     // دوباره سکه نمی‌دن (یگانگی رو خودِ نوعِ رویداد تو دفترِ سکه).
