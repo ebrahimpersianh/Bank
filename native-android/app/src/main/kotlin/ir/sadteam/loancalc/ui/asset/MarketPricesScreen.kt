@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -400,11 +402,13 @@ private fun PriceGroupHeader(title: String, count: Int, collapsed: Boolean, onTo
                 .padding(horizontal = 6.dp, vertical = 1.dp),
         )
         Spacer(modifier = Modifier.weight(1f))
-        Text(
-            if (collapsed) "همه را ببین" else "جمع کن",
-            color = AppPrimaryInk,
-            fontSize = 9.5.sp,
-            fontWeight = FontWeight.Black,
+        // فلش به‌جای «همه را ببین / جمع کن» (خواسته‌ی کاربر، ۷ مهر).
+        androidx.compose.material3.Icon(
+            if (collapsed) androidx.compose.material.icons.Icons.Filled.KeyboardArrowDown
+            else androidx.compose.material.icons.Icons.Filled.KeyboardArrowUp,
+            contentDescription = if (collapsed) "همه را ببین" else "جمع کن",
+            tint = AppPrimaryInk,
+            modifier = Modifier.size(22.dp),
         )
     }
 }
