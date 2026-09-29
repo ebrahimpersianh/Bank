@@ -291,6 +291,8 @@ object Db {
             addColumnIfMissing(conn, "ALTER TABLE announcements ADD COLUMN target_user_id INTEGER")
             // نسخه‌ی نشست - رجوع کن به Auth.kt. بالا رفتنش یعنی «همه‌ی توکن‌های قبلی باطل».
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN session_version INTEGER NOT NULL DEFAULT 0")
+            // مشخصاتِ بی‌نامِ هر نصب (JSONِ کلید→مقدار: مدلِ گوشی، تنظیمات، تعدادِ موارد) - UsageRoutes.
+            addColumnIfMissing(conn, "ALTER TABLE installs ADD COLUMN profile TEXT")
             // شماره‌ی نسخه‌ی هر اسنپ‌شاتِ ابری - پایه‌ی کنترلِ هم‌زمانی (رجوع کن به BackupRoutes).
             // کلاینتِ کهنه که `expectedRevision` نمی‌فرستد، رفتارِ قبلی را می‌گیرد.
             addColumnIfMissing(conn, "ALTER TABLE loans ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")

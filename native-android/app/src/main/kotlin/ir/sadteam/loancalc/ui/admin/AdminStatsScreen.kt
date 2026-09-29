@@ -46,6 +46,7 @@ import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.network.AdminFeatureUsage
 import ir.sadteam.loancalc.data.network.AdminNamedCount
 import ir.sadteam.loancalc.data.network.AdminStatsResponse
+import ir.sadteam.loancalc.data.network.AdminInstallRow
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.theme.AppInfo
@@ -208,8 +209,95 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
         }
     }
 
+    item {
+        AppCard(label = "زمانِ استفاده (۳۰ روز)") {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatTile("هر بار استفاده", faDecimal(st.avgSessionMinutes), "دقیقه", Modifier.weight(1f))
+                StatTile("صفحه در هر بار", faDecimal(st.avgScreensPerSession), "صفحه", Modifier.weight(1f))
+                StatTile("جمعِ زمان", toFa(st.totalMinutes30), "دقیقه", Modifier.weight(1f))
+            }
+            val hours = st.hours.orEmpty()
+            if (hours.isNotEmpty()) {
+                Text("ساعتِ باز کردنِ برنامه (به وقتِ ایران)", color = AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 12.dp))
+                HourChart((0..23).map { h -> hours.firstOrNull { it.name.toIntOrNull() == h }?.count ?: 0 })
+                val peak = hours.maxByOrNull { it.count }
+                if (peak != null) {
+                    Text("پرکارترین ساعت: ${toFa(peak.name.toIntOrNull() ?: 0)}", color = AppMuted, fontSize = 10.sp, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
+            val days = st.weekdays.orEmpty()
+            if (days.isNotEmpty()) {
+                Text("روزِ هفته", color = AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 12.dp))
+                val total = days.sumOf { it.count }.coerceAtLeast(1)
+                // Calendar: ۱=یکشنبه … ۷=شنبه؛ نمایش از شنبه.
+                listOf(7, 1, 2, 3, 4, 5, 6).forEach { d ->
+                    val c = days.firstOrNull { it.name == d.toString() }?.count ?: 0
+                    BarRow(WEEKDAY_LABELS[d] ?: d.toString(), c.toFloat() / total, "${toFa(c)} · ${toFa(percent(c, total))}٪")
+                }
+            }
+        }
+    }
+
+    val screenTime = st.screenTime.orEmpty().sortedByDescending { it.total }
+    if (screenTime.isNotEmpty()) {
+        item {
+            AppCard(label = "بیشترین زمان روی کدام صفحه (۳۰ روز)") {
+                val max = screenTime.first().total.coerceAtLeast(1)
+                screenTime.take(20).forEach { f ->
+                    BarRow(
+                        label = screenLabel(f.name),
+                        fraction = f.total.toFloat() / max,
+                        trailing = "${formatDuration(f.total)} · ${toFa(f.users)} نفر",
+                        sub = if (f.users > 0) "میانگینِ هر نفر ${formatDuration(f.total / f.users)}" else null,
+                    )
+                }
+            }
+        }
+    }
+
     item { FeatureCard("صفحه‌ها (۳۰ روز)", screens, st.active30, ::screenLabel, SCREEN_LABELS.keys) }
     item { FeatureCard("کارها (۳۰ روز)", actions, st.active30, ::actionLabel, ACTION_LABELS.keys) }
+
+    val adoption = st.adoption.orEmpty()
+    if (adoption.isNotEmpty()) {
+        item {
+            AppCard(label = "از هر بخش چند نفر واقعاً استفاده می‌کنند") {
+                val base = st.profiledInstalls.coerceAtLeast(1)
+                adoption.forEach { a ->
+                    BarRow(
+                        label = ADOPTION_LABELS[a.key] ?: a.key,
+                        fraction = a.installs.toFloat() / base,
+                        trailing = "${toFa(a.installs)} نفر · ${toFa(percent(a.installs, base))}٪",
+                        sub = if (a.installs > 0) "میانگینِ هر نفر: ${faDecimal(a.avg)} مورد" else null,
+                    )
+                }
+                Text(
+                    "از روی ${toFa(st.profiledInstalls)} نصبِ فعالِ ماه - فقط تعداد، نه محتوا.",
+                    color = AppMuted,
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+        }
+    }
+
+    val splits = st.profileSplits.orEmpty()
+    if (splits.isNotEmpty()) {
+        item {
+            AppCard(label = "گوشی‌ها و تنظیماتِ کاربرها") {
+                splits.forEach { sp -> SplitRow(PROFILE_LABELS[sp.key] ?: sp.key, sp.values.orEmpty()) { profileValue(it) } }
+            }
+        }
+    }
+
+    val installs = st.installsList.orEmpty()
+    if (installs.isNotEmpty()) {
+        item {
+            AppCard(label = "آخرین نصب‌ها (هر ردیف = یک گوشیِ بی‌نام)") {
+                installs.forEach { r -> InstallRowView(r) }
+            }
+        }
+    }
 
     item {
         AppCard(label = "نسخه، استور و اندروید (فعال‌های ماه)") {
@@ -530,4 +618,145 @@ private val ACTION_LABELS = linkedMapOf(
     "font_scale_changed" to "اندازه‌ی متن",
     "shop_buy" to "خرید از فروشگاهِ سکه",
     "coin_goal_set" to "هدفِ سکه",
+)
+
+@Composable
+private fun HourChart(counts: List<Int>) {
+    val primary = AppPrimary
+    val track = AppSurface2
+    val max = counts.maxOrNull()?.coerceAtLeast(1) ?: 1
+    Canvas(modifier = Modifier.fillMaxWidth().height(70.dp).padding(top = 6.dp)) {
+        val slot = size.width / 24
+        val barW = slot * 0.6f
+        // RTL: ساعتِ ۰ راست، ۲۳ چپ.
+        counts.forEachIndexed { i, c ->
+            val x = size.width - (i + 1) * slot + (slot - barW) / 2
+            drawRoundRect(track, Offset(x, 0f), Size(barW, size.height), CornerRadius(3f, 3f))
+            val h = size.height * c / max
+            if (h > 0f) drawRoundRect(primary, Offset(x, size.height - h), Size(barW, h), CornerRadius(3f, 3f))
+        }
+    }
+    Row(modifier = Modifier.fillMaxWidth()) {
+        listOf("۰", "۶", "۱۲", "۱۸", "۲۳").forEach { Text(it, color = AppLabel, fontSize = 9.sp, modifier = Modifier.weight(1f)) }
+    }
+}
+
+@Composable
+private fun InstallRowView(r: AdminInstallRow) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(AppSurface2)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(r.device ?: "گوشیِ نامشخص", color = AppText, fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            Text("#${r.id}", color = AppLabel, fontSize = 9.sp)
+        }
+        Text(
+            listOfNotNull(
+                "نصب ${r.firstDay.faDigitsAscii()}",
+                "آخرین بار ${r.lastDay.faDigitsAscii()}",
+                "${toFa(r.activeDays)} روزِ فعال",
+            ).joinToString(" · "),
+            color = AppMuted,
+            fontSize = 10.sp,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+        Text(
+            listOfNotNull(
+                "${toFa(r.sessions30)} بار در ماه",
+                "${toFa(r.minutes30)} دقیقه",
+                r.topScreen?.let { "بیشتر: ${screenLabel(it)}" },
+                r.version?.let { "نسخه ${toFa(it)}" },
+                r.store?.let { STORE_LABELS[it] ?: it },
+                r.android?.let { "اندروید ${it.faDigitsAscii()}" },
+                if (r.loggedIn) "وارد شده" else "مهمان",
+            ).joinToString(" · "),
+            color = AppLabel,
+            fontSize = 9.5.sp,
+            lineHeight = 15.sp,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+    }
+}
+
+private fun formatDuration(seconds: Int): String = when {
+    seconds < 60 -> "${toFa(seconds)} ثانیه"
+    seconds < 3600 -> "${toFa(seconds / 60)} دقیقه"
+    else -> "${toFa(seconds / 3600)} ساعت و ${toFa((seconds % 3600) / 60)} دقیقه"
+}
+
+private fun profileValue(v: String): String = when (v) {
+    "true" -> "بله"
+    "false" -> "خیر"
+    "none" -> "ندارد"
+    "dark" -> "تیره"
+    "light" -> "روشن"
+    "system" -> "مطابقِ گوشی"
+    "default" -> "پیش‌فرض"
+    "?" -> "نامشخص"
+    else -> v.faDigitsAscii()
+}
+
+private val WEEKDAY_LABELS = mapOf(7 to "شنبه", 1 to "یکشنبه", 2 to "دوشنبه", 3 to "سه‌شنبه", 4 to "چهارشنبه", 5 to "پنجشنبه", 6 to "جمعه")
+
+private val PROFILE_LABELS = mapOf(
+    "subscription" to "اشتراک",
+    "device_brand" to "برندِ گوشی",
+    "device_model" to "مدلِ گوشی",
+    "android" to "نسخه‌ی اندروید",
+    "screen_dp" to "اندازه‌ی صفحه",
+    "lang" to "زبانِ گوشی",
+    "system_dark" to "گوشی در حالتِ تیره",
+    "theme_mode" to "تمِ برنامه",
+    "color_theme" to "رنگِ تم",
+    "font_scale_app" to "اندازه‌ی متنِ برنامه",
+    "font_scale_sys" to "اندازه‌ی متنِ گوشی",
+    "lock" to "قفلِ برنامه",
+    "biometric" to "اثرِ انگشت",
+    "privacy_mode" to "پنهان‌کردنِ مبلغ‌ها",
+    "perm_notifications" to "اجازه‌ی اعلان",
+    "perm_sms" to "اجازه‌ی پیامک",
+    "perm_calendar" to "اجازه‌ی تقویم",
+    "notif_listener" to "خواندنِ اعلانِ بانک",
+    "battery_unrestricted" to "باتریِ بدونِ محدودیت",
+    "sms_import" to "ثبتِ خودکار از پیامک",
+    "notif_import" to "ثبتِ خودکار از اعلان",
+    "reminders" to "یادآوری‌ها",
+    "reminder_hour" to "ساعتِ یادآوری",
+    "daily_reminder" to "یادآورِ روزانه",
+    "auto_backup" to "پشتیبانِ خودکار",
+    "vibration" to "لرزش",
+    "reduced_motion" to "انیمیشنِ کم",
+    "owned_themes" to "تعدادِ تمِ خریده‌شده",
+    "owned_items" to "تعدادِ آیتمِ فروشگاه",
+)
+
+private val ADOPTION_LABELS = mapOf(
+    "loans" to "وام",
+    "cheques" to "چک",
+    "cheque_books" to "دسته‌چک",
+    "accounts" to "حساب",
+    "account_transactions" to "تراکنش",
+    "tx_auto" to "تراکنشِ خودکار (پیامک/اعلان)",
+    "budgets" to "بودجه",
+    "assets" to "دارایی",
+    "asset_trades" to "خرید و فروشِ دارایی",
+    "debts" to "طلب و بدهی",
+    "counterparties" to "طرف‌حساب",
+    "notes" to "یادداشت",
+    "incomes" to "درآمد",
+    "recurring_payments" to "پرداختِ تکراری",
+    "savings_goals" to "هدفِ پس‌انداز",
+    "tx_templates" to "الگوی تراکنش",
+    "bills" to "قبض",
+    "parsing_rules" to "قانونِ پیامک",
+    "custom_categories" to "دسته‌ی دلخواه",
+    "dang_events" to "دنگ",
+    "inbox_messages" to "پیامِ مرکزِ پیام‌ها",
+    "calculation_history" to "محاسبه‌ی ذخیره‌شده",
+    "achievements" to "نشان",
 )

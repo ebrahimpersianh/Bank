@@ -24,7 +24,7 @@ import java.util.UUID
  * (`screen:…`)، نامِ کار (`action:…`)، تعداد در هر روز، شماره‌ی نسخه، استور، نسخه‌ی اندروید، و
  * اینکه وارد حساب شده یا نه. **هیچ مبلغ، عنوان، نامِ حساب، شماره‌کارت، موجودی، شماره‌ی موبایل یا
  * متنِ پیامکی** فرستاده نمی‌شود. رویدادها روی گوشی جمع و هر چند دقیقه یک‌جا فرستاده می‌شوند؛
- * شکستِ شبکه یعنی دفعه‌ی بعد. کلیدِ خاموش در تنظیمات.
+ * شکستِ شبکه یعنی دفعه‌ی بعد. زمانِ ماندن در هر صفحه و ساعتِ استفاده هم (به ثانیه/ساعت) شمرده می‌شود.
  */
 object UsageStats {
     const val FIRST_OPEN = "first_open"
@@ -39,6 +39,7 @@ object UsageStats {
     private const val KEY_FIRST_OPEN_SENT = "first_open_sent"
     private const val KEY_INSTALL_ID = "install_id"
     private const val KEY_PENDING = "pending"
+    private const val KEY_PROFILE_DAY = "profile_day"
     private const val FLUSH_EVERY_MS = 3 * 60 * 1000L
     private const val SESSION_GAP_MS = 30 * 60 * 1000L
 
@@ -51,9 +52,19 @@ object UsageStats {
     @Volatile
     var loggedIn: Boolean = false
 
+    /**
+     * مشخصاتِ بی‌نامِ این نصب (مدلِ گوشی، تم، کلیدهای روشن، تعدادِ وام/حساب/…) - از خودِ اپ پُر
+     * می‌شود چون `:data` به تنظیمات و دیتابیس دسترسیِ کامل ندارد. روزی یک بار فرستاده می‌شود.
+     * 🚨 فقط شمارش و نام/حالت؛ هیچ مبلغ، متن یا شماره‌ای.
+     */
+    @Volatile
+    var profileProvider: (suspend () -> Map<String, String>)? = null
+
     /** کلید `روز|نام` → تعداد. */
     private val pending = LinkedHashMap<String, Int>()
     private var lastScreen: String? = null
+    private var screenSince = 0L
+    private var foregroundSince = 0L
     private var backgroundAt = 0L
     private var flushing = false
 
@@ -96,7 +107,9 @@ object UsageStats {
         val clean = clean(route ?: return) ?: return
         // بازسازیِ همان صفحه (چرخشِ گوشی، برگشت از پنجره) دوباره شمرده نمی‌شود.
         if (clean == lastScreen) return
+        addScreenTime()
         lastScreen = clean
+        screenSince = System.currentTimeMillis()
         track("screen:$clean")
     }
 
@@ -111,13 +124,35 @@ object UsageStats {
         val now = System.currentTimeMillis()
         if (backgroundAt == 0L || now - backgroundAt > SESSION_GAP_MS) {
             track(SESSION_START)
+            // ساعت و روزِ هفته‌ی استفاده (به وقتِ ایران) - برای «کاربرها کِی سراغِ برنامه می‌آیند».
+            val cal = java.util.Calendar.getInstance(TimeZone.getTimeZone("GMT+03:30"))
+            track(String.format(Locale.US, "hour:%02d", cal.get(java.util.Calendar.HOUR_OF_DAY)))
+            track("dow:${cal.get(java.util.Calendar.DAY_OF_WEEK)}")
             lastScreen = null
         }
+        foregroundSince = now
+        if (lastScreen != null) screenSince = now
     }
 
     fun onBackground() {
-        backgroundAt = System.currentTimeMillis()
+        val now = System.currentTimeMillis()
+        addScreenTime()
+        if (foregroundSince > 0) {
+            val secs = ((now - foregroundSince) / 1000).toInt().coerceIn(0, 4 * 3600)
+            if (secs > 0) track("time:app", secs)
+            foregroundSince = 0
+        }
+        backgroundAt = now
         scope.launch { flush() }
+    }
+
+    /** ثانیه‌هایی که روی صفحه‌ی فعلی گذشت (سقفِ یک ساعت، تا گوشیِ رهاشده عدد را خراب نکند). */
+    private fun addScreenTime() {
+        val name = lastScreen ?: return
+        if (screenSince <= 0) return
+        val secs = ((System.currentTimeMillis() - screenSince) / 1000).toInt().coerceIn(0, 3600)
+        screenSince = 0
+        if (secs > 0) track("time:screen:$name", secs)
     }
 
     private suspend fun flush() {
@@ -131,6 +166,12 @@ object UsageStats {
             copy
         }
         persist()
+        val p = prefs()
+        val profile = if (p?.getString(KEY_PROFILE_DAY, null) != today()) {
+            runCatching { profileProvider?.invoke() }.getOrNull()
+        } else {
+            null
+        }
         val ok = runCatching {
             api.trackBatch(
                 UsageBatchRequest(
@@ -143,9 +184,11 @@ object UsageStats {
                         val (day, name) = key.split('|', limit = 2)
                         UsageBatchEvent(name = name, count = count, day = day)
                     },
+                    profile = profile,
                 ),
             ).isSuccessful
         }.getOrDefault(false)
+        if (ok && profile != null) p?.edit()?.putString(KEY_PROFILE_DAY, today())?.apply()
         synchronized(pending) {
             if (!ok) snapshot.forEach { (k, v) -> pending[k] = (pending[k] ?: 0) + v }
             flushing = false

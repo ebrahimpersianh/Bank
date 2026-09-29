@@ -42,6 +42,30 @@ data class FeatureUsage(val name: String, val users: Int, val total: Int)
 data class RetentionPoint(val afterDays: Int, val base: Int, val returned: Int)
 
 @Serializable
+data class ProfileSplit(val key: String, val values: List<NamedCount>)
+
+/** «چند نصب این بخش را دارند» + میانگینِ تعداد در همان نصب‌ها (مثلاً ۳ وام). */
+@Serializable
+data class FeatureAdoption(val key: String, val installs: Int, val avg: Double)
+
+/** یک ردیف برای هر نصبِ بی‌نام - شناسه فقط ۶ حرفِ اولِ شناسه‌ی تصادفیِ خودِ اپ است. */
+@Serializable
+data class InstallRow(
+    val id: String,
+    val firstDay: String,
+    val lastDay: String,
+    val activeDays: Int,
+    val version: Int? = null,
+    val store: String? = null,
+    val device: String? = null,
+    val android: String? = null,
+    val sessions30: Int = 0,
+    val minutes30: Int = 0,
+    val topScreen: String? = null,
+    val loggedIn: Boolean = false,
+)
+
+@Serializable
 data class StatsResponse(
     val today: String,
     val totalInstalls: Int,
@@ -61,7 +85,35 @@ data class StatsResponse(
     val versions: List<NamedCount>,
     val stores: List<NamedCount>,
     val sdks: List<NamedCount>,
+    // ۷ مهر - جزئیاتِ بیشتر (خواسته‌ی کاربر). همه پیش‌فرض دارند تا اپِ قدیمی نشکند.
+    val hours: List<NamedCount> = emptyList(),
+    val weekdays: List<NamedCount> = emptyList(),
+    val avgSessionMinutes: Double = 0.0,
+    val totalMinutes30: Int = 0,
+    val avgScreensPerSession: Double = 0.0,
+    val screenTime: List<FeatureUsage> = emptyList(),
+    val profiledInstalls: Int = 0,
+    val profileSplits: List<ProfileSplit> = emptyList(),
+    val adoption: List<FeatureAdoption> = emptyList(),
+    val installsList: List<InstallRow> = emptyList(),
 )
+
+/** ترتیبِ نمایشِ مشخصات؛ کلیدِ ناشناخته آخرِ فهرست می‌آید. */
+private val PROFILE_ORDER = listOf(
+    "subscription", "device_brand", "device_model", "android", "screen_dp", "lang", "system_dark",
+    "theme_mode", "color_theme", "font_scale_app", "font_scale_sys", "lock", "biometric", "privacy_mode",
+    "perm_notifications", "perm_sms", "perm_calendar", "notif_listener", "battery_unrestricted",
+    "sms_import", "notif_import", "reminders", "reminder_hour", "daily_reminder", "auto_backup",
+    "vibration", "reduced_motion", "owned_themes", "owned_items",
+)
+
+private fun parseProfile(raw: String?): Map<String, String> = runCatching {
+    kotlinx.serialization.json.Json.parseToJsonElement(raw ?: return emptyMap()).let { el ->
+        (el as kotlinx.serialization.json.JsonObject).mapValues { (_, v) ->
+            (v as? kotlinx.serialization.json.JsonPrimitive)?.content.orEmpty()
+        }
+    }
+}.getOrDefault(emptyMap())
 
 @Serializable
 private data class GrantBody(val userId: Long? = null, val phone: String? = null, val revoke: Boolean = false)
@@ -139,6 +191,70 @@ internal fun buildStats(conn: Connection): StatsResponse {
         "SELECT AVG(c) FROM (SELECT COUNT(DISTINCT day) AS c FROM usage_daily WHERE day >= ? GROUP BY install_id)", d30,
     ) { it.getDouble(1) } ?: 0.0
 
+    fun sumOf(name: String, since: String) =
+        conn.int("SELECT coalesce(SUM(count), 0) FROM usage_daily WHERE day >= ? AND name = ?", since, name)
+    fun grouped(prefix: String): List<NamedCount> = buildList {
+        conn.list(
+            "SELECT name, SUM(count) FROM usage_daily WHERE day >= ? AND name LIKE ? GROUP BY name ORDER BY name",
+            d30, "$prefix%",
+        ) { add(NamedCount(it.getString(1).removePrefix(prefix), it.getInt(2))) }
+    }
+    val sessions30 = sumOf("session_start", d30)
+    val appSeconds30 = sumOf("time:app", d30)
+    val screens30 = conn.int("SELECT coalesce(SUM(count), 0) FROM usage_daily WHERE day >= ? AND name LIKE 'screen:%'", d30)
+
+    // مشخصاتِ نصب‌های فعالِ ۳۰ روزِ اخیر.
+    val profiles = buildList {
+        conn.list("SELECT profile FROM installs WHERE last_day >= ? AND profile IS NOT NULL", d30) {
+            add(parseProfile(it.getString(1)))
+        }
+    }.filter { it.isNotEmpty() }
+    val splitKeys = profiles.flatMap { it.keys }.filter { !it.startsWith("n_") }.distinct()
+        .sortedBy { k -> PROFILE_ORDER.indexOf(k).let { if (it < 0) 999 else it } }
+    val profileSplits = splitKeys.map { key ->
+        ProfileSplit(
+            key,
+            profiles.mapNotNull { it[key] }.groupingBy { it }.eachCount()
+                .entries.sortedByDescending { it.value }.take(12).map { NamedCount(it.key, it.value) },
+        )
+    }
+    val adoption = profiles.flatMap { it.keys }.filter { it.startsWith("n_") }.distinct().map { key ->
+        val counts = profiles.mapNotNull { it[key]?.toLongOrNull() }.filter { it > 0 }
+        FeatureAdoption(key.removePrefix("n_"), counts.size, if (counts.isEmpty()) 0.0 else Math.round(counts.average() * 10) / 10.0)
+    }.sortedByDescending { it.installs }
+
+    val installsList = buildList {
+        conn.list(
+            "SELECT install_id, first_day, last_day, active_days, app_version, store, profile, logged_in FROM installs " +
+                "ORDER BY last_day DESC, first_day DESC LIMIT 60",
+        ) { rs ->
+            val id = rs.getString(1)
+            val prof = parseProfile(rs.getString(7))
+            add(
+                id to InstallRow(
+                    id = id.take(6),
+                    firstDay = rs.getString(2),
+                    lastDay = rs.getString(3),
+                    activeDays = rs.getInt(4),
+                    version = rs.getInt(5).takeIf { !rs.wasNull() },
+                    store = rs.getString(6),
+                    device = listOfNotNull(prof["device_brand"], prof["device_model"]).joinToString(" ").ifBlank { null },
+                    android = prof["android"],
+                    loggedIn = rs.getInt(8) == 1,
+                ),
+            )
+        }
+    }.map { (full, row) ->
+        row.copy(
+            sessions30 = conn.int("SELECT coalesce(SUM(count),0) FROM usage_daily WHERE install_id = ? AND day >= ? AND name = 'session_start'", full, d30),
+            minutes30 = conn.int("SELECT coalesce(SUM(count),0) FROM usage_daily WHERE install_id = ? AND day >= ? AND name = 'time:app'", full, d30) / 60,
+            topScreen = conn.queryOne(
+                "SELECT name FROM usage_daily WHERE install_id = ? AND day >= ? AND name LIKE 'screen:%' GROUP BY name ORDER BY SUM(count) DESC LIMIT 1",
+                full, d30,
+            ) { it.getString(1).removePrefix("screen:") },
+        )
+    }
+
     return StatsResponse(
         today = today,
         totalInstalls = totalInstalls,
@@ -158,6 +274,16 @@ internal fun buildStats(conn: Connection): StatsResponse {
         versions = split("app_version"),
         stores = split("store"),
         sdks = split("sdk"),
+        hours = grouped("hour:"),
+        weekdays = grouped("dow:"),
+        avgSessionMinutes = if (sessions30 == 0) 0.0 else Math.round(appSeconds30 / 60.0 / sessions30 * 10) / 10.0,
+        totalMinutes30 = appSeconds30 / 60,
+        avgScreensPerSession = if (sessions30 == 0) 0.0 else Math.round(screens30.toDouble() / sessions30 * 10) / 10.0,
+        screenTime = features("time:screen:"),
+        profiledInstalls = profiles.size,
+        profileSplits = profileSplits,
+        adoption = adoption,
+        installsList = installsList,
     )
 }
 

@@ -47,7 +47,25 @@ private data class EventBatch(
     val sdk: Int? = null,
     val loggedIn: Boolean = false,
     val events: List<BatchEvent> = emptyList(),
+    /** روزی یک بار - مشخصاتِ بی‌نام (مدل، تنظیمات، تعدادها). ذخیره در `installs.profile`. */
+    val profile: Map<String, String>? = null,
 )
+
+private val PROFILE_KEY = Regex("^[a-z0-9_]{1,32}$")
+
+/** فقط کلید/مقدارِ کوتاه و امن - تا کسی نتواند چیزِ بزرگ یا دلخواه در جدول بریزد. */
+private fun cleanProfile(raw: Map<String, String>?): String? {
+    if (raw.isNullOrEmpty()) return null
+    val clean = raw.entries.asSequence()
+        .filter { PROFILE_KEY.matches(it.key) }
+        .take(80)
+        .associate { it.key to it.value.take(48) }
+    if (clean.isEmpty()) return null
+    return kotlinx.serialization.json.Json.encodeToString(
+        kotlinx.serialization.json.JsonObject.serializer(),
+        kotlinx.serialization.json.JsonObject(clean.mapValues { kotlinx.serialization.json.JsonPrimitive(it.value) }),
+    )
+}
 
 private val INSTALL_ID = Regex("^[A-Za-z0-9-]{16,64}$")
 
@@ -91,7 +109,9 @@ fun Route.usageRoutes() {
                 .filter { EVENT_NAME.matches(it.name) }
                 .map { e ->
                     val day = e.day?.takeIf { d -> Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(d) && d in oldest..today } ?: today
-                    Triple(day, e.name, e.count.coerceIn(1, 1000))
+                    // «time:…» ثانیه است نه تعداد - سقفش یک شبانه‌روز.
+                    val cap = if (e.name.startsWith("time:")) 86_400 else 1000
+                    Triple(day, e.name, e.count.coerceIn(1, cap))
                 }
             if (events.isEmpty()) {
                 call.respond(mapOf("ok" to true))
@@ -106,8 +126,8 @@ fun Route.usageRoutes() {
                     // last_dayِ قدیمی را می‌بینند.
                     conn.execute(
                         """
-                        INSERT INTO installs (install_id, first_day, last_day, active_days, app_version, store, sdk, logged_in)
-                        VALUES (?, ?, ?, 1, ?, ?, ?, ?)
+                        INSERT INTO installs (install_id, first_day, last_day, active_days, app_version, store, sdk, logged_in, profile)
+                        VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?)
                         ON CONFLICT(install_id) DO UPDATE SET
                             active_days = active_days + (CASE WHEN excluded.last_day > installs.last_day THEN 1 ELSE 0 END),
                             first_day = min(installs.first_day, excluded.first_day),
@@ -115,13 +135,15 @@ fun Route.usageRoutes() {
                             app_version = coalesce(excluded.app_version, installs.app_version),
                             store = coalesce(excluded.store, installs.store),
                             sdk = coalesce(excluded.sdk, installs.sdk),
-                            logged_in = excluded.logged_in
+                            logged_in = excluded.logged_in,
+                            profile = coalesce(excluded.profile, installs.profile)
                         """.trimIndent(),
                         body.installId, firstDay, lastDay,
                         body.appVersion?.takeIf { it in 1..1_000_000 },
                         body.store?.takeIf { STORE_NAME.matches(it) },
                         body.sdk?.takeIf { it in 1..100 },
                         if (body.loggedIn) 1 else 0,
+                        cleanProfile(body.profile),
                     )
                     events.forEach { (day, name, count) ->
                         conn.execute(

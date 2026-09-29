@@ -314,6 +314,8 @@ data class UsageBatchRequest(
     val sdk: Int,
     val loggedIn: Boolean,
     val events: List<UsageBatchEvent>,
+    /** روزی یک بار: مشخصاتِ بی‌نامِ گوشی و برنامه (مدل، تنظیمات، تعدادِ موارد) - بدونِ هیچ مبلغ/متن/شماره. */
+    val profile: Map<String, String>? = null,
 )
 
 data class AdminCheckResponse(val admin: Boolean = false)
@@ -346,4 +348,33 @@ data class AdminStatsResponse(
     val versions: List<AdminNamedCount>? = null,
     val stores: List<AdminNamedCount>? = null,
     val sdks: List<AdminNamedCount>? = null,
+    val hours: List<AdminNamedCount>? = null,
+    val weekdays: List<AdminNamedCount>? = null,
+    val avgSessionMinutes: Double = 0.0,
+    val totalMinutes30: Int = 0,
+    val avgScreensPerSession: Double = 0.0,
+    val screenTime: List<AdminFeatureUsage>? = null,
+    val profiledInstalls: Int = 0,
+    val profileSplits: List<AdminProfileSplit>? = null,
+    val adoption: List<AdminAdoption>? = null,
+    val installsList: List<AdminInstallRow>? = null,
+)
+
+data class AdminProfileSplit(val key: String = "", val values: List<AdminNamedCount>? = null)
+
+data class AdminAdoption(val key: String = "", val installs: Int = 0, val avg: Double = 0.0)
+
+data class AdminInstallRow(
+    val id: String = "",
+    val firstDay: String = "",
+    val lastDay: String = "",
+    val activeDays: Int = 0,
+    val version: Int? = null,
+    val store: String? = null,
+    val device: String? = null,
+    val android: String? = null,
+    val sessions30: Int = 0,
+    val minutes30: Int = 0,
+    val topScreen: String? = null,
+    val loggedIn: Boolean = false,
 )

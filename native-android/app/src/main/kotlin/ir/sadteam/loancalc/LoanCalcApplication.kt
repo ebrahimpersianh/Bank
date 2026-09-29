@@ -53,10 +53,14 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
     @Inject
     lateinit var accountRepository: ir.sadteam.loancalc.data.AccountRepository
 
+    @Inject
+    lateinit var database: ir.sadteam.loancalc.data.db.AppDatabase
+
     override fun onCreate() {
         super.onCreate()
         crashReporter.install()
         ir.sadteam.loancalc.data.UsageStats.init(this, BuildConfig.FLAVOR)
+        ir.sadteam.loancalc.data.UsageStats.profileProvider = { buildUsageProfile() }
         // آمار فقط «واردشده یا نه» را می‌خواهد، نه اینکه چه کسی.
         CoroutineScope(Dispatchers.IO).launch {
             authPrefs.authToken.collect { ir.sadteam.loancalc.data.UsageStats.loggedIn = it != null }
@@ -126,6 +130,76 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
 
     // کراس‌فیدِ سراسری (۲۰۰ms) رو همه‌ی AsyncImageهای اپ (لوگوی بانک/خدمات، عکسِ رسیدِ چک/وام) - قبلاً
     // تنظیمِ خاصی نبود، پس تصویر یهو «پاپ» می‌کرد؛ الان حتی اگه یه لحظه دیر برسه، محو ظاهر می‌شه، نه یهو.
+    /**
+     * مشخصاتِ بی‌نامِ این نصب برای «گزارشِ برنامه» - روزی یک بار. **فقط** مدل/نسخه/حالت و
+     * **تعدادِ** موارد؛ هیچ مبلغ، اسم، متن، شماره یا شناسه‌ی گوشی (قاعده‌ی کاربر، ۷ مهر).
+     */
+    private suspend fun buildUsageProfile(): Map<String, String> {
+        val out = LinkedHashMap<String, String>()
+        val ctx = this
+        out["device_brand"] = android.os.Build.MANUFACTURER.orEmpty().lowercase().take(30)
+        out["device_model"] = android.os.Build.MODEL.orEmpty().take(40)
+        out["android"] = android.os.Build.VERSION.RELEASE.orEmpty().take(10)
+        val cfg = resources.configuration
+        out["screen_dp"] = "${cfg.screenWidthDp}x${cfg.screenHeightDp}"
+        out["lang"] = cfg.locales[0]?.language.orEmpty().take(8)
+        out["font_scale_sys"] = String.format(java.util.Locale.US, "%.2f", cfg.fontScale)
+        out["system_dark"] = ((cfg.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES).toString()
+        fun granted(perm: String) = androidx.core.content.ContextCompat.checkSelfPermission(ctx, perm) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        out["perm_notifications"] = androidx.core.app.NotificationManagerCompat.from(ctx).areNotificationsEnabled().toString()
+        out["perm_sms"] = granted(android.Manifest.permission.RECEIVE_SMS).toString()
+        out["perm_calendar"] = granted(android.Manifest.permission.WRITE_CALENDAR).toString()
+        out["notif_listener"] = androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(ctx)
+            .contains(packageName).toString()
+        out["battery_unrestricted"] = (getSystemService(POWER_SERVICE) as? android.os.PowerManager)
+            ?.isIgnoringBatteryOptimizations(packageName)?.toString() ?: "?"
+        runCatching {
+            out["theme_mode"] = uiPrefs.themeMode.first()
+            out["color_theme"] = uiPrefs.colorTheme.first() ?: "default"
+            out["font_scale_app"] = uiPrefs.fontScale.first().toString()
+            out["privacy_mode"] = uiPrefs.privacyModeEnabled.first().toString()
+            out["sms_import"] = uiPrefs.smsAutoImportEnabled.first().toString()
+            out["notif_import"] = uiPrefs.notifAutoImportEnabled.first().toString()
+            out["reminders"] = uiPrefs.notificationsEnabled.first().toString()
+            out["reminder_hour"] = uiPrefs.reminderHour.first().toString()
+            out["daily_reminder"] = uiPrefs.dailyExpenseReminderEnabled.first().toString()
+            out["auto_backup"] = uiPrefs.autoBackupEnabled.first().toString()
+            out["vibration"] = uiPrefs.vibrationEnabled.first().toString()
+            out["reduced_motion"] = uiPrefs.reducedMotion.first().toString()
+            out["owned_themes"] = uiPrefs.ownedThemes.first().size.toString()
+            out["owned_items"] = uiPrefs.ownedItems.first().size.toString()
+        }
+        runCatching {
+            val sec = ir.sadteam.loancalc.data.prefs.SecurityPrefs(ctx)
+            out["lock"] = (sec.pinHash.first() != null).toString()
+            out["biometric"] = sec.biometricEnabled.first().toString()
+        }
+        runCatching { out["subscription"] = authPrefs.subscriptionTier.first() ?: "none" }
+        // فقط **تعداد** ردیف‌ها - برای «کدام بخش واقعاً استفاده می‌شود».
+        val tables = listOf(
+            "loans", "cheques", "cheque_books", "accounts", "account_transactions", "budgets", "assets",
+            "asset_trades", "debts", "counterparties", "notes", "incomes", "recurring_payments",
+            "savings_goals", "tx_templates", "bills", "parsing_rules", "custom_categories", "dang_events",
+            "inbox_messages", "calculation_history", "achievements",
+        )
+        runCatching {
+            val db = database.openHelper.readableDatabase
+            tables.forEach { t ->
+                runCatching {
+                    db.query("SELECT COUNT(*) FROM `$t`").use { c -> if (c.moveToFirst()) out["n_$t"] = c.getLong(0).toString() }
+                }
+            }
+            runCatching {
+                // ثبت‌شده‌ی خودکار از پیامک/اعلانِ بانک (برچسبِ منبع دارد).
+                db.query("SELECT COUNT(*) FROM account_transactions WHERE originLabel IS NOT NULL")
+                    .use { c -> if (c.moveToFirst()) out["n_tx_auto"] = c.getLong(0).toString() }
+            }
+        }
+        return out
+    }
+
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
         .crossfade(200)
         .build()
