@@ -55,7 +55,7 @@ private data class ReportBody(
 )
 
 private val CATEGORIES = setOf("bug", "design", "idea", "question")
-private val GIFT_DAYS = setOf(1, 3, 7, 10)
+private val GIFT_DAYS = 1..10
 
 @Serializable
 private data class SupportGiftBody(val id: Long, val days: Int, val text: String)

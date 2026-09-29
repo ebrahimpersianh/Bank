@@ -119,7 +119,7 @@ class SupportInboxViewModel @Inject constructor(
 }
 
 private val CATEGORY_LABEL = ir.sadteam.loancalc.ui.support.SUPPORT_CATEGORIES.toMap()
-private val GIFT_DAYS = listOf(1, 3, 7, 10)
+private val GIFT_DAYS = (1..10).toList()
 
 private fun defaultGiftText(category: String, days: Int): String {
     val what = when (category) {
@@ -219,10 +219,12 @@ private fun SupportMessageCard(
             Text("🎁 ${toFa(msg.rewardedDays)} روز هدیه داده شد", color = AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 6.dp))
         }
         if (gifting) {
-            Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                GIFT_DAYS.forEach { d ->
+            // ۱ تا ۱۰ روز، در دو ردیفِ پنج‌تایی.
+            GIFT_DAYS.chunked(5).forEach { rowDays ->
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                rowDays.forEach { d ->
                     ir.sadteam.loancalc.ui.components.AppChip(
-                        label = "${toFa(d)} روز",
+                        label = toFa(d),
                         selected = giftDays == d,
                         onClick = {
                             // متن فقط اگر دست نخورده باشد با روزِ تازه به‌روز می‌شود.
@@ -232,6 +234,7 @@ private fun SupportMessageCard(
                         modifier = Modifier.weight(1f),
                     )
                 }
+            }
             }
             OutlinedTextField(
                 value = giftText,
