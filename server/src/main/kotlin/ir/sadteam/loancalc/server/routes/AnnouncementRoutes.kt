@@ -63,6 +63,23 @@ private fun resolveUser(conn: java.sql.Connection, userId: Long?, phone: String?
     else -> null
 }
 
+/** هدیه‌ی روزِ انتشارِ جیبک برای همه‌ی کاربرانِ قدیمی (یک بار برای هر نفر). */
+@Serializable
+private data class LaunchGiftBody(
+    val days: Int = 30,
+    /** فقط کسانی که قبل از این لحظه ثبت‌نام کرده‌اند (ISO)؛ خالی = همه‌ی کاربرانِ فعلی. */
+    val createdBefore: String? = null,
+    val paidTitle: String,
+    val paidMessage: String,
+    val oldTitle: String,
+    val oldMessage: String,
+    /** true = فقط شمارش، بی هیچ تغییری. */
+    val dryRun: Boolean = true,
+)
+
+@Serializable
+private data class LaunchGiftResponse(val ok: Boolean = true, val dryRun: Boolean, val paid: Int, val old: Int, val skipped: Int)
+
 @Serializable
 private data class DeactivateBody(val id: Long)
 
@@ -168,6 +185,56 @@ fun Route.announcementRoutes() {
             if (result == null) {
                 call.respond(HttpStatusCode.NotFound, mapOf("error" to "user_not_found"))
                 return@post
+            }
+            call.respond(result)
+        }
+
+        // 🎉 هدیه‌ی انتشار: به هر کاربرِ قدیمی [days] روز (اشتراکِ فعال از انقضایش جلو می‌رود) و یک
+        // پیامِ تشکرِ جدا - خریداران یک متن، بقیه متنِ دیگر. ستونِ launch_gift_granted ضدِتکرار است.
+        post("/launch-gift") {
+            if (!call.isAdmin()) return@post
+            val body = runCatching { call.receive<LaunchGiftBody>() }.getOrNull()
+            if (body == null || body.days !in 1..366 ||
+                listOf(body.paidTitle, body.paidMessage, body.oldTitle, body.oldMessage).any { it.isBlank() } ||
+                body.paidMessage.length > 1000 || body.oldMessage.length > 1000
+            ) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid_request"))
+                return@post
+            }
+            val result = Db.withConnection { conn ->
+                val rows = conn.prepareStatement(
+                    "SELECT u.id, u.subscribed_until, u.launch_gift_granted, " +
+                        "(u.subscription_tier IS NOT NULL OR EXISTS (SELECT 1 FROM subscription_purchases p WHERE p.user_id = u.id)) AS paid " +
+                        "FROM users u WHERE (? IS NULL OR u.created_at < ?)",
+                ).use { ps ->
+                    ps.setString(1, body.createdBefore)
+                    ps.setString(2, body.createdBefore)
+                    ps.executeQuery().use { rs ->
+                        buildList {
+                            while (rs.next()) add(listOf(rs.getLong(1), rs.getString(2), rs.getInt(3), rs.getInt(4)))
+                        }
+                    }
+                }
+                var paid = 0; var old = 0; var skipped = 0
+                val now = System.currentTimeMillis()
+                val addMs = body.days * 24L * 60 * 60 * 1000
+                for (r in rows) {
+                    val uid = r[0] as Long
+                    if ((r[2] as Int) != 0) { skipped++; continue }
+                    val isPaid = (r[3] as Int) != 0
+                    if (isPaid) paid++ else old++
+                    if (body.dryRun) continue
+                    val current = (r[1] as String?)?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
+                    val expiry = java.time.Instant.ofEpochMilli(maxOf(current, now) + addMs).toString()
+                    conn.execute("UPDATE users SET subscribed_until = ?, launch_gift_granted = 1 WHERE id = ?", expiry, uid)
+                    conn.insertReturningId(
+                        "INSERT INTO announcements (title, body, kind, target_user_id) VALUES (?, ?, ?, ?)",
+                        (if (isPaid) body.paidTitle else body.oldTitle).trim(),
+                        (if (isPaid) body.paidMessage else body.oldMessage).trim(),
+                        "info", uid,
+                    )
+                }
+                LaunchGiftResponse(dryRun = body.dryRun, paid = paid, old = old, skipped = skipped)
             }
             call.respond(result)
         }
