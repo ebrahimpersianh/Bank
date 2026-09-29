@@ -1,0 +1,36 @@
+name: بررسیِ داده‌ی ابریِ یک حساب (فقط خواندنی)
+
+# اجرای دستی. فقط اندازه و زمانِ آخرین تغییرِ پشتیبانِ ابریِ وام/چک/حساب‌ها را نشان می‌دهد -
+# هیچ محتوایی (مبلغ، اسم) چاپ نمی‌شود و چیزی عوض نمی‌شود.
+on:
+  workflow_dispatch:
+    inputs:
+      user_id:
+        description: "شماره‌ی کاربری"
+        required: true
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: خواندن از دیتابیس
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          UID_IN: ${{ inputs.user_id }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: UID_IN
+          script: |
+            set -e
+            case "$UID_IN" in (*[!0-9]*|'') echo "فقط عدد"; exit 1;; esac
+            DB=~/VameMan/data.sqlite
+            echo "=== وام‌ها: طولِ داده، تعدادِ تقریبیِ وام، نسخه، آخرین تغییر ==="
+            sqlite3 "$DB" "SELECT length(data), (length(data)-length(replace(data,'\"name\"','')))/6, revision, updated_at FROM loans WHERE user_id=$UID_IN;"
+            echo "=== چک‌ها ==="
+            sqlite3 "$DB" "SELECT length(data), revision, updated_at FROM cheques_backup WHERE user_id=$UID_IN;"
+            echo "=== حساب‌ها و تراکنش‌ها ==="
+            sqlite3 "$DB" "SELECT length(data), (length(data)-length(replace(data,'\"amount\"','')))/8, revision, updated_at FROM accounts_backup WHERE user_id=$UID_IN;"
+            echo "=== پشتیبان‌های شبانه‌ی موجود روی سرور ==="
+            ls -la ~/VameMan/backups 2>/dev/null | tail -5 || echo "پوشه‌ی بکاپِ محلی نیست"
