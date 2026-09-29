@@ -215,7 +215,6 @@ import ir.sadteam.loancalc.ui.inbox.InboxScreen
 import ir.sadteam.loancalc.ui.goal.SavingsGoalScreen
 import ir.sadteam.loancalc.ui.category.CategoryManagementScreen
 import ir.sadteam.loancalc.ui.history.CalculationHistoryScreen
-import ir.sadteam.loancalc.ui.shop.ShopScreen
 import ir.sadteam.loancalc.ui.account.AccountsScreen
 import ir.sadteam.loancalc.ui.cheque.SayadInquiryScreen
 import ir.sadteam.loancalc.ui.tools.ToolsHubScreen
@@ -1212,7 +1211,13 @@ private fun LoanCalcApp(
                     AccountsScreen(onBack = { navigateTo(BottomTab.ASSETS.route) })
                 }
                 composable(SHOP_ROUTE) {
-                    ShopScreen(onBack = { navigateTo(BottomTab.HOME.route) })
+                    // همان صفحه‌ی «فروشگاه/کیف» که از تنظیمات باز می‌شود (خواسته‌ی کاربر، ۷ مهر).
+                    val gamificationVm: ir.sadteam.loancalc.ui.profile.GamificationViewModel = hiltViewModel()
+                    ir.sadteam.loancalc.ui.coin.CoinHubScreen(
+                        onBack = { navigateTo(BottomTab.HOME.route) },
+                        todayHasEntry = gamificationVm.todayLogged.collectAsState().value,
+                        viewModel = gamificationVm,
+                    )
                 }
                 composable(INBOX_ROUTE) {
                     InboxScreen(onBack = { navigateTo(BottomTab.HOME.route) })
