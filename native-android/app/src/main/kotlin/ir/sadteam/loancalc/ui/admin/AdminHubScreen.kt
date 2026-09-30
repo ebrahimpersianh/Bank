@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.ChevronLeft
@@ -78,6 +79,7 @@ fun AdminHubScreen(
         "money" -> { AdminMoneyScreen(onBack = { page = null }); return }
         "user" -> { AdminUserScreen(onBack = { page = null }); return }
         "broadcast" -> { AdminBroadcastScreen(onBack = { page = null }); return }
+        "shop" -> { AdminShopScreen(onBack = { page = null }); return }
     }
     val items by supportVm.items.collectAsState()
     val digest by digestVm.data.collectAsState()
@@ -106,6 +108,9 @@ fun AdminHubScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             HubTile(Icons.Filled.WorkspacePremium, "هدیه‌ی اشتراک", "روز به یک Uid", AppGoldPillSoft, AppGoldInkSoft, Modifier.weight(1f)) { gift = "sub" }
             HubTile(Icons.Filled.MonetizationOn, "هدیه‌ی سکه", "سکه به یک Uid", AppPurplePill, AppPurple, Modifier.weight(1f)) { gift = "coins" }
+        }
+        AppCard(contentPadding = 2.dp) {
+            AdminListRow(Icons.Filled.Storefront, "مدیریتِ فروشگاه", "قیمت، پنهان کردن، تمِ تازه، تخفیف", AppPrimaryPill, AppPrimaryInk, divider = false) { page = "shop" }
         }
 
         val recent = items.orEmpty().take(4)

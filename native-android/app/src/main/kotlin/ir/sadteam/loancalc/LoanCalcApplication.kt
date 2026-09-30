@@ -56,6 +56,9 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
     @Inject
     lateinit var database: ir.sadteam.loancalc.data.db.AppDatabase
 
+    @Inject
+    lateinit var authRepository: ir.sadteam.loancalc.data.AuthRepository
+
     override fun onCreate() {
         super.onCreate()
         crashReporter.install()
@@ -75,6 +78,11 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         comeBackScheduler.schedule()
         ir.sadteam.loancalc.notifications.AdminAlertWorker.schedule(this)
         ir.sadteam.loancalc.notifications.WeeklySummaryWorker.schedule(this)
+        // 🛍 فروشگاه از سرور: اول نسخه‌ی ذخیره‌شده (بی‌اینترنت هم درست)، بعد تازه‌اش.
+        ir.sadteam.loancalc.data.coin.RemoteShop.loadCached(this)
+        CoroutineScope(Dispatchers.IO).launch {
+            authRepository.remoteConfig("shop")?.let { ir.sadteam.loancalc.data.coin.RemoteShop.update(this@LoanCalcApplication, it) }
+        }
         ir.sadteam.loancalc.notifications.BudgetAlerts.start(this, accountRepository)
         // قلابِ «داده‌ی وام عوض شد» → تازه‌کردنِ ویجت. `:data` خودِ ویجت را نمی‌بیند، پس
         // این‌جا پُر می‌شود - رجوع کن به [LoanDataChange]. بی این، ویجت تا شش ساعت عددِ

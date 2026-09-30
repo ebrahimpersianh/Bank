@@ -214,7 +214,7 @@ val ART_PALETTES = listOf(
 
 /** نگاشتِ شناسه به پالت. `null` یعنی تمِ پیش‌فرضِ برند. */
 fun themeById(id: String?): ThemePalette? =
-    (THEME_CATALOG + SEASONAL_PALETTES + ART_PALETTES).firstOrNull { it.id == id }
+    (THEME_CATALOG + SEASONAL_PALETTES + ART_PALETTES + RemoteShop.remotePalettes).firstOrNull { it.id == id }
 
 /**
  * کلِ کاتالوگ.

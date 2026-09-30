@@ -96,20 +96,31 @@ class ShopViewModel @Inject constructor(
      * ⚠️ خریدار ردیفش را نگه می‌دارد تا بتواند دوباره فعالش کند؛ بی این، تمی که پول
      * داده برایش بعدِ نوروز غیبش می‌زد.
      */
-    val catalog: StateFlow<List<ShopItem>> = owned
-        .map { ownedNow ->
+    // 🛍 کاتالوگ از سرور (۸ مهر): هر تغییرِ `RemoteShop.config` ویترین را دوباره می‌سازد.
+    private val remoteConfig = androidx.compose.runtime.snapshotFlow { ir.sadteam.loancalc.data.coin.RemoteShop.config }
+
+    val catalog: StateFlow<List<ShopItem>> = combine(owned, remoteConfig) { ownedNow, cfg ->
             val today = LocalDate.now()
-            val open = SHOP_CATALOG.filter { it.isOpen(today) || it.id in ownedNow }
+            val shown = ir.sadteam.loancalc.data.coin.RemoteShop.catalog()
+            val shownIds = shown.map { it.id }.toSet()
+            // پنهان‌شده از سرور ولی خریده‌شده: در «مجموعه‌ی من» می‌ماند.
+            val open = ir.sadteam.loancalc.data.coin.RemoteShop.catalogWithHidden()
+                .filter { (it.id in shownIds && it.isOpen(today)) || it.id in ownedNow }
             // 🏷 تخفیفِ روزانه: قلمِ امروز با `priceOverride` ارزان‌تر می‌شود، پس خرید، دیالوگِ
-            // تایید و حالتِ «کم داری» همه خودبه‌خود قیمتِ تخفیفی را می‌بینند.
-            val deal = pickDailyDeal(open, today)
-            open.map { if (it.id == deal?.id) it.copy(priceOverride = dealPrice(it.price)) else it }
+            // تایید و حالتِ «کم داری» همه خودبه‌خود قیمتِ تخفیفی را می‌بینند. ادمین می‌تواند قلم و درصد را تعیین کند.
+            val deal = cfg.dealId?.let { id -> open.firstOrNull { it.id == id } } ?: pickDailyDeal(open.filter { it.id in shownIds }, today)
+            val pct = cfg.dealPercent?.coerceIn(5, 90)
+            open.map {
+                if (it.id == deal?.id) it.copy(priceOverride = if (pct != null) (it.price * (100 - pct) / 100) / 5 * 5 else dealPrice(it.price)) else it
+            }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SHOP_CATALOG)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ir.sadteam.loancalc.data.coin.RemoteShop.catalog())
 
     /** تخفیفِ امروز (قلمِ ارزان‌شده + قیمتِ اصلی)، یا `null` اگر کاربر مالکش است. */
     val dailyDeal: StateFlow<DailyDeal?> = combine(catalog, owned) { items, ownedNow ->
-        val deal = pickDailyDeal(SHOP_CATALOG, LocalDate.now()) ?: return@combine null
+        val cfg = ir.sadteam.loancalc.data.coin.RemoteShop.config
+        val all = ir.sadteam.loancalc.data.coin.RemoteShop.catalog()
+        val deal = cfg.dealId?.let { id -> all.firstOrNull { it.id == id } } ?: pickDailyDeal(all, LocalDate.now()) ?: return@combine null
         if (deal.id in ownedNow) return@combine null
         items.firstOrNull { it.id == deal.id }?.let { DailyDeal(it, deal.price) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)

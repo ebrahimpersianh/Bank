@@ -163,6 +163,17 @@ interface ApiService {
     @GET("api/admin/user")
     suspend fun adminUser(@Header("Authorization") authHeader: String, @retrofit2.http.Query("code") code: String): AdminUserTimeline
 
+    /** تنظیمِ از-راه-دور (۸ مهر): JSONِ خامِ یک کلید (مثلاً `shop`). عمومی، بی‌ورود. */
+    @GET("api/config/{key}")
+    suspend fun getRemoteConfig(@retrofit2.http.Path("key") key: String): okhttp3.ResponseBody
+
+    @POST("api/admin/config/{key}")
+    suspend fun adminSetRemoteConfig(
+        @Header("Authorization") authHeader: String,
+        @retrofit2.http.Path("key") key: String,
+        @Body body: okhttp3.RequestBody,
+    ): okhttp3.ResponseBody
+
     @POST("api/admin/broadcast")
     suspend fun adminBroadcast(@Header("Authorization") authHeader: String, @Body body: AdminBroadcastRequest): AdminBroadcastResult
 

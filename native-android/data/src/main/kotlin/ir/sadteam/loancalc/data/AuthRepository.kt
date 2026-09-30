@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.data
 
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import com.google.gson.Gson
@@ -94,6 +95,21 @@ class AuthRepository(
         return runCatching {
             apiService.adminBroadcast("Bearer $token", ir.sadteam.loancalc.data.network.AdminBroadcastRequest(segment, title, body, dryRun))
         }.getOrNull()
+    }
+
+    /** JSONِ خامِ یک کلیدِ تنظیمِ از-راه-دور؛ `null` = نرسید (صدازننده نسخه‌ی ذخیره‌شده را نگه دارد). */
+    suspend fun remoteConfig(key: String): String? =
+        runCatching { apiService.getRemoteConfig(key).string() }.getOrNull()
+
+    suspend fun adminSetRemoteConfig(key: String, json: String): Boolean {
+        val token = authPrefs.authToken.first() ?: return false
+        return runCatching {
+            apiService.adminSetRemoteConfig(
+                "Bearer $token", key,
+                json.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull()),
+            )
+            true
+        }.getOrDefault(false)
     }
 
     suspend fun adminStats(): ir.sadteam.loancalc.data.network.AdminStatsResponse? {
