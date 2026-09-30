@@ -230,7 +230,12 @@ fun SubscriptionScreen(
                 }
                 Column(modifier = Modifier.padding(start = 12.dp)) {
                     Text("اشتراک", color = AppText, fontSize = 22.sp, fontWeight = FontWeight.Black)
-                    Text("امکاناتِ بیشتر، تجربه‌ی کامل‌تر", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                    // آزمایشِ A/B روی جمله‌ی زیرِ عنوان (۸ مهر) - نتیجه در ادمین ← پول.
+                    val abPaywall = androidx.compose.runtime.remember { ir.sadteam.loancalc.data.UsageStats.abVariant("paywall") }
+                    Text(
+                        if (abPaywall == "a") "امکاناتِ بیشتر، تجربه‌ی کامل‌تر" else "همه‌ی امکانات، بدونِ هیچ محدودیتی",
+                        color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold,
+                    )
                 }
             }
         }

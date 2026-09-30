@@ -215,6 +215,16 @@ object UsageStats {
         return safe.ifEmpty { null }
     }
 
+    /**
+     * آزمایشِ A/B (۸ مهر): هر نصب همیشه در یک گروهِ ثابت («a» یا «b») - از روی شناسه‌ی نصب.
+     * نمایشِ گروه با `action("ab_<name>_<v>")` ثبت می‌شود تا ادمین نرخِ خریدِ هر گروه را ببیند.
+     */
+    fun abVariant(name: String): String {
+        val v = if ((installId() + name).hashCode() and 1 == 0) "a" else "b"
+        action("ab_${name}_$v")
+        return v
+    }
+
     private fun installId(): String {
         val p = prefs() ?: return "unknown-install-id"
         p.getString(KEY_INSTALL_ID, null)?.let { return it }

@@ -649,6 +649,9 @@ private val SCREEN_LABELS = linkedMapOf(
 
 private val ACTION_LABELS = linkedMapOf(
     "transaction_added" to "ثبتِ تراکنش",
+    "anr" to "هنگ‌کردنِ برنامه (ANR)",
+    "ab_paywall_a" to "آزمایشِ اشتراک - گروهِ A",
+    "ab_paywall_b" to "آزمایشِ اشتراک - گروهِ B",
     "login" to "ورود به حساب",
     "onboarding_first_account" to "اولین حساب در شروع",
     "loan_added_manual" to "ثبتِ وامِ دستی",
@@ -776,6 +779,10 @@ private fun formatDuration(seconds: Int): String = when {
 private fun profileValue(v: String): String = when (v) {
     "true" -> "بله"
     "false" -> "خیر"
+    "com.farsitel.bazaar" -> "کافه‌بازار"
+    "ir.mservices.market" -> "مایکت"
+    "com.android.vending" -> "گوگل‌پلی"
+    "unknown" -> "نامعلوم (فایلِ مستقیم)"
     "none" -> "ندارد"
     "dark" -> "تیره"
     "light" -> "روشن"
@@ -788,6 +795,7 @@ private fun profileValue(v: String): String = when (v) {
 private val WEEKDAY_LABELS = mapOf(7 to "شنبه", 1 to "یکشنبه", 2 to "دوشنبه", 3 to "سه‌شنبه", 4 to "چهارشنبه", 5 to "پنجشنبه", 6 to "جمعه")
 
 private val PROFILE_LABELS = mapOf(
+    "installer" to "منبعِ نصب",
     "subscription" to "اشتراک",
     "device_brand" to "برندِ گوشی",
     "device_model" to "مدلِ گوشی",

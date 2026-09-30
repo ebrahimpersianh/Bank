@@ -133,7 +133,7 @@ internal fun buildTimeline(conn: Connection, input: String): UserTimeline {
     }
     val installs = buildList {
         conn.list("SELECT install_id, first_day, last_day, active_days, app_version, store, profile FROM installs WHERE user_id = ? ORDER BY last_day DESC LIMIT 5", uid) {
-            val model = it.getString(7)?.let { p -> Regex("\"model\"\\s*:\\s*\"([^\"]*)\"").find(p)?.groupValues?.get(1) }
+            val model = it.getString(7)?.let { p -> Regex("\"device_model\"\\s*:\\s*\"([^\"]*)\"").find(p)?.groupValues?.get(1) }
             add(TimelineInstall(it.getString(1).take(8), it.getString(2), it.getString(3), it.getInt(4), it.getObject(5) as? Int, it.getString(6), model))
         }
     }

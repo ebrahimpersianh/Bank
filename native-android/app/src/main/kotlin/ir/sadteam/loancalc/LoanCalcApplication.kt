@@ -61,6 +61,7 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         crashReporter.install()
         ir.sadteam.loancalc.data.UsageStats.init(this, BuildConfig.FLAVOR)
         ir.sadteam.loancalc.data.UsageStats.profileProvider = { buildUsageProfile() }
+        recordPastAnrs()
         // آمار فقط «واردشده یا نه» را می‌خواهد، نه اینکه چه کسی.
         CoroutineScope(Dispatchers.IO).launch {
             authPrefs.authToken.collect { ir.sadteam.loancalc.data.UsageStats.loggedIn = it != null; ir.sadteam.loancalc.data.UsageStats.authToken = it }
@@ -134,12 +135,34 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
      * مشخصاتِ بی‌نامِ این نصب برای «گزارشِ برنامه» - روزی یک بار. **فقط** مدل/نسخه/حالت و
      * **تعدادِ** موارد؛ هیچ مبلغ، اسم، متن، شماره یا شناسه‌ی گوشی (قاعده‌ی کاربر، ۷ مهر).
      */
+    /**
+     * 🧊 **هنگ‌کردن (ANR)** - ۸ مهر: اندروید دلیلِ بسته‌شدن‌های قبلی را نگه می‌دارد. هر ANRِ تازه
+     * (بعد از آخرین بررسی) یک رویدادِ `anr` می‌شود تا ادمین کنارِ کرش‌ها ببیند. فقط اندروید ۱۱+.
+     */
+    private fun recordPastAnrs() {
+        if (android.os.Build.VERSION.SDK_INT < 30) return
+        runCatching {
+            val prefs = getSharedPreferences("anr_watch", MODE_PRIVATE)
+            val last = prefs.getLong("last_ts", 0L)
+            val am = getSystemService(android.app.ActivityManager::class.java) ?: return
+            val exits = am.getHistoricalProcessExitReasons(packageName, 0, 20)
+            val fresh = exits.filter { it.reason == android.app.ApplicationExitInfo.REASON_ANR && it.timestamp > last }
+            fresh.forEach { _ -> ir.sadteam.loancalc.data.UsageStats.action("anr") }
+            exits.maxOfOrNull { it.timestamp }?.let { prefs.edit().putLong("last_ts", maxOf(it, last)).apply() }
+        }
+    }
+
     private suspend fun buildUsageProfile(): Map<String, String> {
         val out = LinkedHashMap<String, String>()
         val ctx = this
         out["device_brand"] = android.os.Build.MANUFACTURER.orEmpty().lowercase().take(30)
         out["device_model"] = android.os.Build.MODEL.orEmpty().take(40)
         out["android"] = android.os.Build.VERSION.RELEASE.orEmpty().take(10)
+        // منبعِ نصب (۸ مهر): کدام فروشگاه/برنامه نصبش کرده.
+        out["installer"] = runCatching {
+            if (android.os.Build.VERSION.SDK_INT >= 30) packageManager.getInstallSourceInfo(packageName).installingPackageName
+            else @Suppress("DEPRECATION") packageManager.getInstallerPackageName(packageName)
+        }.getOrNull().orEmpty().ifEmpty { "unknown" }.take(40)
         val cfg = resources.configuration
         out["screen_dp"] = "${cfg.screenWidthDp}x${cfg.screenHeightDp}"
         out["lang"] = cfg.locales[0]?.language.orEmpty().take(8)
