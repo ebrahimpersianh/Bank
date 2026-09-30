@@ -612,13 +612,10 @@ fun MyLoansScreen(
 
                     if (loans.isNotEmpty() && searchOpen) {
                         item {
-                            OutlinedTextField(
+                            ir.sadteam.loancalc.ui.components.PillSearchField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
-                                placeholder = { Text("جستجو تو وام‌ها (اسم/بانک)...") },
-                                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
+                                placeholder = "جستجو تو وام‌ها (اسم/بانک)...",
                             )
                         }
                     }

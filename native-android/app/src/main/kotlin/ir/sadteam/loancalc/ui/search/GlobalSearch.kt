@@ -247,26 +247,12 @@ fun GlobalSearchScreen(
             Text("جستجو", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
         }
         // کادرِ جستجو هم‌سبکِ جستجوی «وام‌های من»: حاشیه‌ی سبز، نه طلایی (طلایی فقط نشانِ اشتراک است).
-        OutlinedTextField(
+        ir.sadteam.loancalc.ui.components.PillSearchField(
             value = query,
             onValueChange = { query = it },
-            placeholder = { Text("جستجو در همه‌ی برنامه…", color = AppMuted, fontSize = 13.sp) },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = AppPrimary) },
-            trailingIcon = if (query.isNotEmpty()) {
-                { IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Close, contentDescription = "پاک کردن", tint = AppMuted) } }
-            } else null,
-            singleLine = true,
-            shape = RoundedCornerShape(18.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AppPrimary,
-                unfocusedBorderColor = AppLine,
-                focusedContainerColor = AppSurface,
-                unfocusedContainerColor = AppSurface,
-                cursorColor = AppPrimary,
-                focusedTextColor = AppText,
-                unfocusedTextColor = AppText,
-            ),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).focusRequester(focus),
+            placeholder = "جستجو در همه‌ی برنامه…",
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+            textFieldModifier = Modifier.focusRequester(focus),
         )
         if (kindsFound.size > 1) {
             Row(
