@@ -1,5 +1,10 @@
 package ir.sadteam.loancalc.ui.debt
 
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhoneIphone
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.theme.AppTxOut
 import ir.sadteam.loancalc.ui.theme.AppTxIn
 import ir.sadteam.loancalc.ui.theme.AppSurface
@@ -510,23 +515,39 @@ private fun BoxScope.AddCounterpartySheet(visible: Boolean, onDismiss: () -> Uni
         ) {
             Box(Modifier.align(Alignment.CenterHorizontally).size(width = 42.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(AppLine))
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Text("طرفِ‌حسابِ جدید", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Box(
+                    Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimary.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Filled.Handshake, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp)) }
+                Text("طرفِ‌حسابِ جدید", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f).padding(start = 10.dp))
                 IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = "بستن", tint = AppMuted) }
             }
-            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("اسم") }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(top = 6.dp))
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("اسم") },
+                leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null, tint = AppMuted) },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                colors = appFieldColors(),
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            )
             Ltr {
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = cleanNum(it) },
                     label = { Text("موبایل (اختیاری)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    trailingIcon = { Icon(Icons.Filled.PhoneIphone, contentDescription = null, tint = AppMuted) },
                     singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = appFieldColors(),
                     modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
-                DirectionButton("من طلب دارم", type == DebtType.OWED_TO_ME, AppTxIn, Modifier.weight(1f)) { type = DebtType.OWED_TO_ME }
-                DirectionButton("من بدهکارم", type == DebtType.I_OWE, AppTxOut, Modifier.weight(1f)) { type = DebtType.I_OWE }
+                DirectionButton("من طلب دارم", type == DebtType.OWED_TO_ME, AppTxIn, Modifier.weight(1f), Icons.Filled.ArrowDownward) { type = DebtType.OWED_TO_ME }
+                DirectionButton("من بدهکارم", type == DebtType.I_OWE, AppTxOut, Modifier.weight(1f), Icons.Filled.ArrowUpward) { type = DebtType.I_OWE }
             }
             OutlinedTextField(
                 value = amount,
@@ -536,6 +557,8 @@ private fun BoxScope.AddCounterpartySheet(visible: Boolean, onDismiss: () -> Uni
                 visualTransformation = ThousandsSeparatorTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                colors = appFieldColors(),
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             )
             amount.toLongOrNull()?.takeIf { it > 0 }?.let {
@@ -570,17 +593,26 @@ private fun BoxScope.AddCounterpartySheet(visible: Boolean, onDismiss: () -> Uni
 }
 
 @Composable
-private fun DirectionButton(label: String, selected: Boolean, ink: androidx.compose.ui.graphics.Color, modifier: Modifier, onClick: () -> Unit) {
-    Box(
-        contentAlignment = Alignment.Center,
+private fun DirectionButton(
+    label: String,
+    selected: Boolean,
+    ink: androidx.compose.ui.graphics.Color,
+    modifier: Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    onClick: () -> Unit,
+) {
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .height(46.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .height(52.dp)
+            .clip(RoundedCornerShape(16.dp))
             .background(if (selected) ink.copy(alpha = 0.16f) else AppChipBg)
-            .border(if (selected) 1.5.dp else 1.dp, if (selected) ink else AppLine, RoundedCornerShape(12.dp))
+            .border(if (selected) 1.5.dp else 1.dp, if (selected) ink else AppLine, RoundedCornerShape(16.dp))
             .pressScaleClickable(onClick = onClick),
     ) {
-        Text(label, color = if (selected) ink else AppMuted, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        if (icon != null) Icon(icon, contentDescription = null, tint = if (selected) ink else AppMuted, modifier = Modifier.size(18.dp).padding(end = 2.dp))
+        Text(label, color = if (selected) ink else AppMuted, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp))
     }
 }
 
