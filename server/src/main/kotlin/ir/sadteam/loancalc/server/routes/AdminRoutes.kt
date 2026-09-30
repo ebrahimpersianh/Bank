@@ -76,8 +76,9 @@ data class SaleRow(val product: String, val count30: Int, val countAll: Int, val
  * سهمِ هر استور از فروش (درصد). ⚠️ تقریبی: عددِ دقیق را از قراردادِ پنلِ کافه‌بازار/مایکت چک کن
  * و همین‌جا اصلاح کن - «خالص» در گزارشِ ادمین از همین حساب می‌شود.
  */
-// کاربر (۸ مهر): «از ۳۰ هزار تومان ۲۳ هزار به من می‌رسد» → سهمِ استور ۷/۳۰ ≈ ۲۳٫۳٪ (به‌ازای هزار).
-private val STORE_SHARE_PERMILLE = mapOf("cafebazaar" to 233L, "myket" to 233L)
+// سهمِ **توسعه‌دهنده** از فروش (صورت/مخرج). مایکت دقیق از پنل (۸ مهر): ۳۰۰٬۰۰۰ ریال → ۲۳۰٬۷۹۸ ریال.
+// کافه‌بازار هنوز تأیید نشده؛ فعلاً «۲۳ از ۳۰» که کاربر گفت.
+private val STORE_PAYOUT = mapOf("cafebazaar" to (23_000L to 30_000L), "myket" to (230_798L to 300_000L))
 
 /** قیمتِ هر پلن به تومان - همان قیمتِ پنلِ کافه‌بازار/مایکت (رجوع کن به CLAUDE.md). */
 private val PLAN_PRICE_TOMAN = mapOf(
@@ -594,7 +595,7 @@ internal fun buildDigest(conn: Connection, period: String): DigestResponse {
         ) { sum += (PLAN_PRICE_TOMAN[it.getString(1)] ?: 0L) * it.getInt(2) }
         return sum
     }
-    fun net(x: String, y: String) = STORE_SHARE_PERMILLE.entries.sumOf { (st, pm) -> revenue(x, y, st) * (1000 - pm) / 1000 }
+    fun net(x: String, y: String) = STORE_PAYOUT.entries.sumOf { (st, r) -> revenue(x, y, st) * r.first / r.second }
     m += DigestMetric("revenue", revenue(a, b, null), revenue(pa, a, null))
     m += DigestMetric("revenue_cafebazaar", revenue(a, b, "cafebazaar"), revenue(pa, a, "cafebazaar"))
     m += DigestMetric("revenue_myket", revenue(a, b, "myket"), revenue(pa, a, "myket"))
