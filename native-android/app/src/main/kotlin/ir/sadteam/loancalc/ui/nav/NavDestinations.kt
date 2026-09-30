@@ -58,7 +58,8 @@ enum class NavDestination(
          */
         val DEFAULT_SLOTS = listOf(HOME.id, ASSETS.id, REPORT.id, BUDGET.id, LOAN.id)
 
-        const val SLOT_COUNT = 5
+        /** چهار خانه‌ی قابلِ‌چیدن؛ خانه‌ی پنجم «بیشتر» ثابت است (۸ مهر: اول و آخر جابه‌جا نمی‌شوند). */
+        const val SLOT_COUNT = 4
 
         fun byId(id: String): NavDestination? = entries.firstOrNull { it.id == id }
 

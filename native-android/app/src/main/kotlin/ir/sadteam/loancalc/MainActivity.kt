@@ -32,6 +32,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.filled.Search
@@ -86,6 +87,8 @@ import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.ManageSearch
 import androidx.compose.material.icons.outlined.ReceiptLong
@@ -1075,6 +1078,11 @@ private fun LoanCalcApp(
                                 },
                             )
                         }
+                        // تبِ آخرِ ثابت (۸ مهر، خواسته‌ی کاربر): تنظیمات و تیره/روشن این‌جاست.
+                        MoreNavItem(
+                            onOpenSettings = { showSettings = true },
+                            onOpenShortcuts = { shortcutDrawerOpen = true },
+                        )
                         }
                         // دستگیره‌ی کشوی میان‌بُر - کشیدنِ به بالا یا تپ بازش می‌کند (`31c`). باریک است
                         // (۱۲۰dp) تا لمسِ بالای تب‌ها را نگیرد.
@@ -1857,6 +1865,48 @@ private fun LoanHeaderIcon(
                 contentDescription = label,
                 tint = if (active) AppPrimaryInk else AppMuted,
                 modifier = Modifier.size(15.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.MoreNavItem(onOpenSettings: () -> Unit, onOpenShortcuts: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val themeVm: ThemeViewModel = hiltViewModel()
+    val mode by themeVm.themeMode.collectAsState()
+    val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = mode == ThemeMode.DARK || (mode == ThemeMode.SYSTEM && systemDark)
+    val buzz = rememberBuzz()
+    Box(Modifier.weight(1f)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 3.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .clickable { buzz(); open = true }
+                .padding(top = 7.dp, bottom = 3.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(Icons.Outlined.Menu, contentDescription = "بیشتر", tint = AppLabel, modifier = Modifier.size(22.dp))
+            Text("بیشتر", color = AppLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false, modifier = Modifier.padding(top = 4.dp))
+            Spacer(Modifier.padding(top = 2.dp).size(4.dp))
+        }
+        androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text("تنظیمات", fontWeight = FontWeight.Bold) },
+                leadingIcon = { Icon(Icons.Outlined.Settings, null, tint = AppMuted) },
+                onClick = { open = false; onOpenSettings() },
+            )
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text(if (isDark) "حالتِ روشن" else "حالتِ تیره", fontWeight = FontWeight.Bold) },
+                leadingIcon = { Icon(if (isDark) Icons.Filled.LightMode else Icons.Filled.DarkMode, null, tint = AppMuted) },
+                onClick = { open = false; themeVm.setThemeMode(if (isDark) ThemeMode.LIGHT else ThemeMode.DARK) },
+            )
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text("دسترسیِ سریع", fontWeight = FontWeight.Bold) },
+                leadingIcon = { Icon(Icons.Outlined.Apps, null, tint = AppMuted) },
+                onClick = { open = false; onOpenShortcuts() },
             )
         }
     }

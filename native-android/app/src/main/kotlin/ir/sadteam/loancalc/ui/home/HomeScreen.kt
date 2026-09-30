@@ -765,30 +765,12 @@ private fun HomeHeader(
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = { menuOpen = true },
+                    onClick = onOpenProfile,
                 ),
             contentAlignment = Alignment.Center,
         ) {
             // کمی بزرگ‌تر (خواسته‌ی کاربر، ۶ مهر).
             FramedAvatar(avatar = avatar, size = 37.dp, frame = avatarFrame)
-            // ۸ مهر: هدر خلوت شد - فروشگاه و تنظیمات به منوی آدمک رفتند.
-            androidx.compose.material3.DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                listOf(
-                    Triple("حسابِ کاربری", Icons.Filled.Person, onOpenProfile),
-                    Triple("تنظیمات", Icons.Filled.Settings, onOpenSettings),
-                    Triple(
-                        if (isDark) "حالتِ روشن" else "حالتِ تیره",
-                        if (isDark) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                        { themeVm.setThemeMode(if (isDark) ir.sadteam.loancalc.ui.theme.ThemeMode.LIGHT else ir.sadteam.loancalc.ui.theme.ThemeMode.DARK) },
-                    ),
-                ).forEach { (label, icon, action) ->
-                    androidx.compose.material3.DropdownMenuItem(
-                        text = { Text(label, fontWeight = FontWeight.Bold) },
-                        leadingIcon = { Icon(icon, null, tint = AppMuted) },
-                        onClick = { menuOpen = false; action() },
-                    )
-                }
-            }
         }
         Column(modifier = Modifier.weight(1f).padding(start = 6.dp)) {
             // تاریخ **دومین چیزی است که در تنگنا می‌رود** (بعدِ عددِ سکه، قبلِ نام).
