@@ -77,11 +77,9 @@ fun String.parseFaAmount(): Long? =
 // ─── مبلغ و درصد ──────────────────────────────────────────────────────────────
 
 fun Int.toFa(): String = toLong().toFa()
-fun Long.toFa(): String = buildString {
-    val negative = this@toFa < 0
-    val digits = kotlin.math.abs(this@toFa).toString()
-    if (negative) append(FA_MINUS)
-    digits.forEach { append(faDigits[it - '0']) }
+fun Long.toFa(): String {
+    val digits = buildString { kotlin.math.abs(this@toFa).toString().forEach { append(faDigits[it - '0']) } }
+    return if (this < 0) "\u2066$FA_MINUS$digits\u2069" else digits
 }
 
 /** ۸۴۰۰۰۰ → «۸۴۰٬۰۰۰» · ‎-۸۴۰۰۰۰ → «−۸۴۰٬۰۰۰» */
@@ -142,7 +140,7 @@ fun Long.toFaCompact(): String {
         // «هزار و هفتصد» نمی‌خواند و ممیز گیج می‌کرد؛ «۱٬۶۶۷» حداکثر هفت نویسه است و جا می‌شود.
         else -> faGrouped(v)
     }
-    return if (negative) "$FA_MINUS$body" else body
+    return if (negative) "\u2066$FA_MINUS$body\u2069" else body
 }
 
 /** عددِ کامل با ارقامِ فارسی و جداکننده‌ی هزارگانِ «٬». */

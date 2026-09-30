@@ -15,8 +15,15 @@ fun toFa(value: Any): String {
     for (c in s) {
         if (c in '0'..'9') sb.append(faDigits[c - '0']) else sb.append(c)
     }
-    return sb.toString()
+    return ltrNegative(sb.toString())
 }
+
+/**
+ * عددِ منفی در متنِ راست‌به‌چپ: «-۱۲۳» منفی را به تهِ عدد می‌برد (گزارشِ کاربر، ۸ مهر:
+ * «۶٬۰۹۵٬۰۶۰-»). با «−» و جداسازِ چپ‌به‌راست (U+2066…U+2069) منفی همیشه جلوی عدد می‌ماند.
+ */
+fun ltrNegative(s: String): String =
+    if (s.length > 1 && (s[0] == '-' || s[0] == '\u2212') && s[1] !in listOf(' ')) "\u2066\u2212${s.substring(1)}\u2069" else s
 
 /** پورت toEnDigits تو www/index.html: ارقام فارسی/عربی رو (از هر کیبوردی اومده باشن) به انگلیسی تبدیل می‌کنه */
 fun toEnDigits(value: String): String = buildString {
@@ -42,7 +49,7 @@ const val FA_THOUSANDS_SEPARATOR = '٬'
 fun fmt(n: Double): String {
     val rounded = n.roundToLong()
     val grouped = String.format(Locale.US, "%,d", rounded)
-    return toFa(grouped).replace(',', FA_THOUSANDS_SEPARATOR)
+    return toFa(grouped).replace(',', FA_THOUSANDS_SEPARATOR).let(::ltrNegative)
 }
 
 private val ordinalDays = listOf(
