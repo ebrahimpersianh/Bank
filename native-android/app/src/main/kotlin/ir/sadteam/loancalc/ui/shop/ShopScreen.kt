@@ -1837,9 +1837,10 @@ private fun ProductDetailSheet(
                 if (item.id.startsWith("icon:")) item { IconUsageSample(item.id) }
                 if (item.id.startsWith("symbolset:")) item { SymbolSetSample(item.id) }
                 if (item.id.startsWith("chart:")) item { ChartStyleSample(item.id) }
-            }
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 18.dp, top = 6.dp),
+                // بازطراحیِ ۸ مهر: دکمه‌ها زیرِ کارت‌ها (نه تهِ صفحه با فضای خالیِ وسط)؛ «امتحان کن» پُر.
+                item {
+                Column(
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val notMine = state == RowState.BUY || state == RowState.POOR
@@ -1848,7 +1849,6 @@ private fun ProductDetailSheet(
                         if (canTry(item)) {
                             GradientButton(
                                 onClick = { onTry(item) },
-                                variant = AppButtonVariant.SECONDARY,
                                 modifier = Modifier.weight(1f),
                             ) {
                                 Text("امتحان کن · ${toFa(TRIAL_SECONDS)} ثانیه", fontSize = 11.5.sp, fontWeight = FontWeight.Black)
@@ -1864,6 +1864,8 @@ private fun ProductDetailSheet(
                     }
                 }
                 DetailAction(item, state, balance, onActivate, onBuy)
+            }
+                }
             }
         }
     }
@@ -2046,6 +2048,19 @@ private fun DetailAction(
         }
         RowState.OWNED -> GradientButton(onClick = { onActivate(item) }, modifier = Modifier.fillMaxWidth()) {
             Text("خریداری شده · فعال‌سازی", fontWeight = FontWeight.Black)
+        }
+        RowState.POOR -> AppCard(modifier = Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("${toFa(balance)} از ${toFa(item.price)} سکه", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+                Text("${toFa(item.price - balance)} سکه کم داری", color = AppDangerInk, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { (balance.toFloat() / item.price.coerceAtLeast(1)).coerceIn(0f, 1f) },
+                color = AppPrimary,
+                trackColor = AppPrimary.copy(alpha = 0.15f),
+                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp).height(8.dp),
+            )
         }
         else -> Text(
             when (state) {
