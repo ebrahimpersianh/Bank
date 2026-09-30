@@ -1,5 +1,11 @@
 package ir.sadteam.loancalc.ui.stats
 
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.HourglassBottom
+import androidx.compose.material.icons.filled.EventAvailable
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
@@ -167,7 +173,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
             IconButton(onClick = onBack) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
             }
-            Text("آمار و گزارشات", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+            Text("آمار و گزارشات", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 4.dp))
         }
 
         if (loans.isEmpty()) {
@@ -241,12 +247,12 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
         }
 
         val statItems = listOf(
-            StatItem("تعداد وام‌ها", toFa(summary.loanCount), null),
-            StatItem("مجموع مبلغ وام‌ها", fmt(rialToToman(summary.totalAmount.toLong()).toDouble()), "تومان"),
-            StatItem("مجموع پرداخت‌شده", fmt(rialToToman(summary.paidAmount.toLong()).toDouble()), "تومان"),
-            StatItem("مانده‌ی کل", fmt(rialToToman(summary.remainingAmount.toLong()).toDouble()), "تومان"),
-            StatItem("اقساط پرداخت‌شده", toFa(summary.paidInstallments), "از ${toFa(summary.totalInstallments)}"),
-            StatItem("درصد پیشرفت", toFa((summary.progressRatio * 100).toInt()), "٪"),
+            StatItem("تعداد وام‌ها", toFa(summary.loanCount), null, Icons.Filled.Payments),
+            StatItem("مجموع مبلغ وام‌ها", fmt(rialToToman(summary.totalAmount.toLong()).toDouble()), "تومان", Icons.Filled.AccountBalance),
+            StatItem("مجموع پرداخت‌شده", fmt(rialToToman(summary.paidAmount.toLong()).toDouble()), "تومان", Icons.Filled.CheckCircle),
+            StatItem("مانده‌ی کل", fmt(rialToToman(summary.remainingAmount.toLong()).toDouble()), "تومان", Icons.Filled.HourglassBottom),
+            StatItem("اقساط پرداخت‌شده", toFa(summary.paidInstallments), "از ${toFa(summary.totalInstallments)}", Icons.Filled.EventAvailable),
+            StatItem("درصد پیشرفت", toFa((summary.progressRatio * 100).toInt()), "٪", Icons.Filled.TrendingUp),
         )
         Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
@@ -352,7 +358,13 @@ private fun StatsExportTile(
     }
 }
 
-private data class StatItem(val title: String, val value: String, val unit: String?)
+private data class StatItem(
+    val title: String,
+    val value: String,
+    val unit: String?,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Filled.Payments,
+    val tint: Color? = null,
+)
 
 @Composable
 private fun StatTile(item: StatItem, modifier: Modifier = Modifier) {
@@ -361,10 +373,12 @@ private fun StatTile(item: StatItem, modifier: Modifier = Modifier) {
     val big = item.value.length <= 3
     AppCard(modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // ⚠️ دایره‌ی آیکون خالی بود (گزارشِ کاربر، ۸ مهر).
+            val tint = item.tint ?: AppPrimary
             Box(
-                modifier = Modifier.size(26.dp).background(AppPrimaryPill, CircleShape),
+                modifier = Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(tint.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
-            ) {}
+            ) { Icon(item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp)) }
             Text(item.title, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(start = 8.dp))
         }
         Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.Bottom) {
