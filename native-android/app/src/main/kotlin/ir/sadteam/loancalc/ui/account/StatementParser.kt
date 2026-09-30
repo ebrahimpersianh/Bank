@@ -156,8 +156,10 @@ object StatementParser {
         }
     }
 
-    private fun money(s: String?): Double? =
-        toEnDigits(s ?: return null).filter { it.isDigit() || it == '.' }.toDoubleOrNull()
+    private fun money(s: String?): Double? {
+        if (s == null) return null
+        return toEnDigits(s).filter { it.isDigit() || it == '.' }.toDoubleOrNull()
+    }
 
     private fun parseDate(raw: String): PersianDate? {
         val nums = Regex("\\d+").findAll(toEnDigits(raw)).map { it.value.toInt() }.toList()
