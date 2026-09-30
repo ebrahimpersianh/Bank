@@ -79,13 +79,13 @@ fun EmptyState(
                     ),
                 )
             }
-            .padding(horizontal = 16.dp, vertical = 22.dp),
+            .padding(horizontal = 18.dp, vertical = 28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
             modifier = Modifier
-                .size(64.dp)
-                .clip(RoundedCornerShape(cardRadius))
+                .size(68.dp)
+                .clip(RoundedCornerShape(22.dp))
                 .background(AppPrimaryPill),
             contentAlignment = Alignment.Center,
         ) {
@@ -93,13 +93,13 @@ fun EmptyState(
                 imageVector = icon,
                 contentDescription = null,
                 tint = AppPrimaryInk,
-                modifier = Modifier.size(30.dp),
+                modifier = Modifier.size(36.dp),
             )
         }
         Text(
             text = title,
             color = AppText,
-            fontSize = 14.sp,
+            fontSize = 17.sp,
             fontWeight = FontWeight.Black,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 12.dp),
@@ -107,9 +107,9 @@ fun EmptyState(
         Text(
             text = description,
             color = AppMuted,
-            fontSize = 11.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
-            lineHeight = 19.sp,
+            lineHeight = 23.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 6.dp),
         )
@@ -118,7 +118,7 @@ fun EmptyState(
                 onClick = onAction,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 14.dp),
+                    .padding(top = 16.dp),
             ) {
                 Text(actionLabel)
             }
