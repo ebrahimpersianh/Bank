@@ -75,13 +75,15 @@ enum class NavDestination(
          */
         fun sanitize(ids: List<String>): List<NavDestination> {
             val valid = ids.mapNotNull { byId(it) }.distinct().toMutableList()
+            // خانه همیشه اول و وام همیشه آخر (۸ مهر، خواسته‌ی کاربر).
             valid.remove(HOME)
-            valid.add(0, HOME)
+            valid.remove(LOAN)
+            val middle = valid.take(SLOT_COUNT - 2).toMutableList()
             DEFAULT_SLOTS.mapNotNull { byId(it) }.forEach { fallback ->
-                if (valid.size >= SLOT_COUNT) return@forEach
-                if (fallback !in valid) valid.add(fallback)
+                if (middle.size >= SLOT_COUNT - 2) return@forEach
+                if (fallback !in middle && fallback != HOME && fallback != LOAN) middle.add(fallback)
             }
-            return valid.take(SLOT_COUNT)
+            return listOf(HOME) + middle + LOAN
         }
     }
 }

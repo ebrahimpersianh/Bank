@@ -98,11 +98,13 @@ fun NavEditorSheet(
     val slotBounds = remember { mutableStateMapOf<Int, Rect>() }
 
     fun assign(slotIndex: Int, dest: NavDestination) {
-        if (slotIndex <= 0) return // اسلاتِ ۰ قفله
+        // اولی (خانه) و آخری (وام) قفل‌اند (۸ مهر، خواسته‌ی کاربر).
+        if (slotIndex <= 0 || slotIndex >= slots.lastIndex) return
+        if (dest == NavDestination.HOME || dest == NavDestination.LOAN) return
         val next = slots.map { it.id }.toMutableList()
         // اگه مقصد از قبل جای دیگه‌ای تو نواره، جای اون دو تا عوض می‌شه (نه تکراری‌شدن).
         val existing = next.indexOf(dest.id)
-        if (existing == 0) return // خانه از جاش تکون نمی‌خوره
+        if (existing == 0 || existing == next.lastIndex) return
         if (existing > 0) next[existing] = next[slotIndex]
         next[slotIndex] = dest.id
         onSlotsChange(next)
@@ -171,7 +173,7 @@ fun NavEditorSheet(
             )
 
             Spacer(Modifier.height(14.dp))
-            Text("پنج جای نوار", color = AppLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text("پنج جای نوار · خانه و وام ثابت‌اند", color = AppLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -180,7 +182,7 @@ fun NavEditorSheet(
                 slots.forEachIndexed { index, dest ->
                     SlotCell(
                         dest = dest,
-                        locked = index == 0,
+                        locked = index == 0 || index == slots.lastIndex,
                         armed = index == armedSlot,
                         modifier = Modifier
                             .weight(1f)
