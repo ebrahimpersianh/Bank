@@ -213,22 +213,22 @@ private fun DailyDealCard(deal: DailyDeal, onOpen: () -> Unit) {
         }
     }
     val minutesLeft = 24 * 60 - (now.hour * 60 + now.minute)
-    AppCard(modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.98f, onClick = onOpen), contentPadding = 12.dp) {
+    AppCard(modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.98f, onClick = onOpen), contentPadding = 14.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(14.dp)).background(AppSurface2),
+                modifier = Modifier.size(54.dp).clip(RoundedCornerShape(18.dp)).background(AppSurface2),
                 contentAlignment = Alignment.Center,
             ) { previewFor(deal.item) }
             Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("تخفیفِ امروز", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+                    Text("تخفیفِ امروز", color = AppText, fontSize = 14.5.sp, fontWeight = FontWeight.Black)
                     Spacer(modifier = Modifier.width(6.dp))
                     Pill("${toFa(DEAL_PERCENT)}٪", AppGoldPillSoft, AppGoldInk)
                 }
                 Text(
                     deal.item.label,
                     color = AppLabel,
-                    fontSize = 10.5.sp,
+                    fontSize = 12.5.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -237,7 +237,7 @@ private fun DailyDealCard(deal: DailyDeal, onOpen: () -> Unit) {
                 Text(
                     "${toFa(minutesLeft / 60)} ساعت و ${toFa(minutesLeft % 60)} دقیقه مانده",
                     color = AppMuted,
-                    fontSize = 9.5.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 2.dp),
                 )
@@ -246,7 +246,7 @@ private fun DailyDealCard(deal: DailyDeal, onOpen: () -> Unit) {
                 Text(
                     toFa(deal.originalPrice),
                     color = AppMuted,
-                    fontSize = 10.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough,
                 )
@@ -262,17 +262,17 @@ private fun CoinGoalCard(item: ShopItem, balance: Int, onOpen: () -> Unit, onCle
     val price = item.price.coerceAtLeast(1)
     val fraction = (balance.toFloat() / price).coerceIn(0f, 1f)
     val left = item.price - balance
-    AppCard(modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.98f, onClick = onOpen), contentPadding = 12.dp) {
+    AppCard(modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.98f, onClick = onOpen), contentPadding = 14.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(AppSurface2),
+                modifier = Modifier.size(54.dp).clip(RoundedCornerShape(16.dp)).background(AppSurface2),
                 contentAlignment = Alignment.Center,
             ) { previewFor(item) }
             Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
                 Text(
                     "هدفِ سکه · ${item.label}",
                     color = AppText,
-                    fontSize = 11.5.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Black,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -281,22 +281,22 @@ private fun CoinGoalCard(item: ShopItem, balance: Int, onOpen: () -> Unit, onCle
                     modifier = Modifier
                         .padding(top = 6.dp)
                         .fillMaxWidth()
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp))
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(999.dp))
                         .background(AppIconFrame),
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(fraction)
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp))
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(999.dp))
                             .background(AppPrimary),
                     )
                 }
                 Text(
                     if (left > 0) "${toFa(left)} سکه‌ی دیگر مانده" else "سکه‌ات کافی است - می‌توانی بخری!",
                     color = if (left > 0) AppMuted else AppPrimaryInk,
-                    fontSize = 9.5.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 4.dp),
                 )
@@ -311,13 +311,13 @@ private fun CoinGoalCard(item: ShopItem, balance: Int, onOpen: () -> Unit, onCle
 /** نوارِ شناورِ «امتحان کن»: شمارشِ معکوس + «بخر» + «برگرد». */
 @Composable
 private fun TrialBar(item: ShopItem, secondsLeft: Int, modifier: Modifier, onBuy: () -> Unit, onBack: () -> Unit) {
-    AppCard(modifier = modifier.padding(horizontal = 14.dp, vertical = 14.dp), contentPadding = 12.dp) {
+    AppCard(modifier = modifier.padding(horizontal = 14.dp, vertical = 14.dp), contentPadding = 14.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     "در حالِ امتحانِ «${item.label}»",
                     color = AppText,
-                    fontSize = 11.5.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Black,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -325,16 +325,16 @@ private fun TrialBar(item: ShopItem, secondsLeft: Int, modifier: Modifier, onBuy
                 Text(
                     "${toFa(secondsLeft)} ثانیه · بعدش خودش برمی‌گردد",
                     color = AppMuted,
-                    fontSize = 9.5.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
             GradientButton(onClick = onBuy, modifier = Modifier.padding(start = 8.dp)) {
-                Text("بخر", fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+                Text("بخر", fontSize = 14.sp, fontWeight = FontWeight.Black)
             }
             GradientButton(onClick = onBack, variant = AppButtonVariant.SECONDARY, modifier = Modifier.padding(start = 6.dp)) {
-                Text("برگرد", fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+                Text("برگرد", fontSize = 14.sp, fontWeight = FontWeight.Black)
             }
         }
     }
