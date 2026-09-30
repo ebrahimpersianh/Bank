@@ -16,6 +16,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.draggable
@@ -299,10 +300,15 @@ fun ShortcutDrawer(
                             order = order.toMutableList().apply { add(to, removeAt(from)) }
                         },
                         onOpen = saveAndOpen,
+                        onDemote = { idx ->
+                            // در حالتِ جابه‌جایی، تپ روی کارت آن را به «همه ابزارها» می‌برد.
+                            val item = order[idx]
+                            order = order.toMutableList().apply { removeAt(idx); add(minOf(8, size), item) }
+                        },
                     )
                     if (!reorderMode) {
                         Text(
-                            "روی هر کارت نگه‌دار تا جابه‌جایش کنی",
+                            "روی کارت نگه‌دار تا جابه‌جا شود · روی ابزارِ پایین نگه‌دار تا بالا بیاید",
                             color = AppLabel,
                             fontSize = 9.5.sp,
                             fontWeight = FontWeight.Bold,
@@ -335,7 +341,14 @@ fun ShortcutDrawer(
                                         if (isCustomize) {
                                             AllToolTile(Icons.Filled.Tune, "سفارشی‌سازی", Modifier.weight(1f)) { editMode = true; timerKey++ }
                                         } else if (sc != null) {
-                                            AllToolTile(sc.icon, sc.label, Modifier.weight(1f)) { saveAndOpen(sc.route) }
+                                            AllToolTile(sc.icon, sc.label, Modifier.weight(1f), onLongClick = {
+                                                // نگه‌داشتن = آوردن به بالا (۸ مهر): کارتِ هشتم پایین می‌رود.
+                                                val rest0 = order.filter { it.id != sc.id }
+                                                order = rest0.take(7) + sc + rest0.drop(7)
+                                                if (sc.id !in selectedIds) { selectedIds = selectedIds + sc.id; onSelectionChanged(selectedIds) }
+                                                onOrderChanged(order.map { it.id })
+                                                timerKey++
+                                            }) { saveAndOpen(sc.route) }
                                         }
                                     }
                                     repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
@@ -367,6 +380,7 @@ private fun ShortcutGrid(
     onEnterReorder: () -> Unit,
     onMove: (Int, Int) -> Unit,
     onOpen: (String) -> Unit,
+    onDemote: (Int) -> Unit = {},
 ) {
     val haptics = LocalHapticFeedback.current
     var draggingIndex by remember { mutableIntStateOf(-1) }
@@ -433,7 +447,7 @@ private fun ShortcutGrid(
                             shortcut = item,
                             wiggling = reorderMode && !dragging,
                             seed = index,
-                            onClick = { if (!reorderMode) onOpen(item.route) },
+                            onClick = { if (!reorderMode) onOpen(item.route) else if (!item.locked) onDemote(index) },
                         ) else ShortcutTile(
                             shortcut = item,
                             wiggling = reorderMode && !dragging,
@@ -478,6 +492,10 @@ private fun shortcutBlurb(id: String): String = when (id) {
     "shop" -> "تم و آیکون با سکه"
     "inbox" -> "پیام‌های جیبک"
     "calc-history" -> "محاسبه‌های قبلی"
+    "add-account" -> "کارت یا حسابِ تازه"
+    "bills" -> "قبض‌ها و یادآوری"
+    "search" -> "گشتن در همه‌ی برنامه"
+    "settings" -> "شخصی‌سازیِ برنامه"
     else -> ""
 }
 
@@ -518,14 +536,15 @@ private fun ShortcutCard(shortcut: Shortcut, wiggling: Boolean, seed: Int, onCli
 
 /** کاشیِ «همه ابزارها» - سه‌ستونه، کوچک‌تر و خنثی. */
 @Composable
-private fun AllToolTile(icon: ImageVector, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+private fun AllToolTile(icon: ImageVector, label: String, modifier: Modifier = Modifier, onLongClick: (() -> Unit)? = null, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
             .background(AppSurface2)
             .border(1.dp, AppLine, RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(vertical = 12.dp, horizontal = 4.dp),
     ) {
         Icon(icon, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(22.dp))

@@ -86,6 +86,10 @@ import androidx.compose.material.icons.outlined.Assessment
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.ManageSearch
+import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.outlined.AddCard
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.MarkEmailUnread
@@ -344,6 +348,11 @@ private val allShortcutPool = defaultShortcuts + listOf(
     Shortcut("shop", "فروشگاهِ سکه", Icons.Outlined.Storefront, SHOP_ROUTE),
     Shortcut("inbox", "پیام‌ها", Icons.Outlined.MarkEmailUnread, INBOX_ROUTE),
     Shortcut("calc-history", "تاریخچه‌ی محاسبات", Icons.Outlined.History, CALC_HISTORY_ROUTE),
+    // ۸ مهر (خواسته‌ی کاربر: «هر قابلیتی یک میان‌بر داشته باشد»).
+    Shortcut("add-account", "افزودنِ حساب", Icons.Outlined.AddCard, ADD_ACCOUNT_ROUTE),
+    Shortcut("bills", "قبض‌ها", Icons.Outlined.ReceiptLong, BILLS_ROUTE),
+    Shortcut("search", "جستجوی کلی", Icons.Outlined.ManageSearch, "search"),
+    Shortcut("settings", "تنظیمات", Icons.Outlined.Settings, "settings"),
 )
 
 private const val LOAN_ROUTE = "loan"
@@ -372,6 +381,8 @@ private const val ACCOUNTS_ROUTE = "accounts"
 private const val SHOP_ROUTE = "shop"
 private const val INBOX_ROUTE = "inbox"
 private const val CALC_HISTORY_ROUTE = "calc-history"
+private const val ADD_ACCOUNT_ROUTE = "accounts-add"
+private const val BILLS_ROUTE = "bills"
 
 /** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
 private enum class LoanSubTab(val label: String) {
@@ -1250,6 +1261,12 @@ private fun LoanCalcApp(
                 composable(ACCOUNTS_ROUTE) {
                     AccountsScreen(onBack = { navigateTo(BottomTab.ASSETS.route) })
                 }
+                composable(ADD_ACCOUNT_ROUTE) {
+                    AccountsScreen(onBack = { navigateTo(BottomTab.ASSETS.route) }, startInAddMode = true)
+                }
+                composable(BILLS_ROUTE) {
+                    ir.sadteam.loancalc.ui.extras.BillsScreen(onBack = { navigateTo(BottomTab.BUDGET.route) })
+                }
                 composable(SHOP_ROUTE) {
                     // همان صفحه‌ی «فروشگاه/کیف» که از تنظیمات باز می‌شود (خواسته‌ی کاربر، ۷ مهر).
                     val gamificationVm: ir.sadteam.loancalc.ui.profile.GamificationViewModel = hiltViewModel()
@@ -1414,7 +1431,13 @@ private fun LoanCalcApp(
             shortcuts = shortcuts,
             visible = shortcutDrawerOpen,
             onDismiss = { shortcutDrawerOpen = false },
-            onOpenRoute = { route -> navigateTo(route) },
+            onOpenRoute = { route ->
+                when (route) {
+                    "settings" -> showSettings = true
+                    "search" -> showGlobalSearch = true
+                    else -> navigateTo(route)
+                }
+            },
             onOrderChanged = { ids -> shortcutViewModel.save(ids) },
             allShortcuts = allShortcutPool,
             onSelectionChanged = { ids -> shortcutViewModel.saveSelection(ids) },
