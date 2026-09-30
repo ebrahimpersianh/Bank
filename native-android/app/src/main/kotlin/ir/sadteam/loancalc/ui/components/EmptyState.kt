@@ -53,6 +53,8 @@ fun EmptyState(
     modifier: Modifier = Modifier,
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
+    /** تصویرِ سه‌بعدیِ اختیاری (drawable) به‌جای کاشیِ آیکون. */
+    @androidx.annotation.DrawableRes image: Int? = null,
 ) {
     // ⚠️ توکن‌های رنگ `@Composable`ان و داخلِ `drawBehind` (که `DrawScope`ه) صدا زده نمی‌شن -
     // قاعده‌ی ماندگارِ پروژه. برای همین اینجا تو یه `val` محلی خونده می‌شن.
@@ -82,7 +84,13 @@ fun EmptyState(
             .padding(horizontal = 18.dp, vertical = 28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
+        if (image != null) {
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(image),
+                contentDescription = null,
+                modifier = Modifier.size(width = 150.dp, height = 104.dp),
+            )
+        } else Box(
             modifier = Modifier
                 .size(68.dp)
                 .clip(RoundedCornerShape(22.dp))

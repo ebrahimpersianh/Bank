@@ -494,6 +494,7 @@ fun ChequeScreen(
                     item {
                         EmptyState(
                             icon = Icons.Outlined.ReceiptLong,
+                            image = ir.sadteam.loancalc.R.drawable.empty_illu_cheque,
                             title = "هنوز چکی ثبت نشده",
                             description = "چک‌های دریافتی و پرداختیت رو اینجا ثبت کن تا قبل از " +
                                 "سررسیدِ هرکدوم یادآوری بگیری و امتیازِ ریسکِ برگشتِ هر طرف‌حساب " +
