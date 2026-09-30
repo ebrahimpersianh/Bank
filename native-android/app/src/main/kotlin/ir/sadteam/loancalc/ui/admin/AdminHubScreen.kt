@@ -23,6 +23,9 @@ import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.PersonSearch
+import androidx.compose.material.icons.filled.Campaign
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppPurple
@@ -66,6 +69,9 @@ fun AdminHubScreen(onBack: () -> Unit, supportVm: SupportInboxViewModel = hiltVi
         "stats" -> { AdminStatsScreen(onBack = { page = null }); return }
         "support" -> { SupportInboxScreen(onBack = { page = null }, viewModel = supportVm); return }
         "digest" -> { AdminDigestScreen(onBack = { page = null }); return }
+        "money" -> { AdminMoneyScreen(onBack = { page = null }); return }
+        "user" -> { AdminUserScreen(onBack = { page = null }); return }
+        "broadcast" -> { AdminBroadcastScreen(onBack = { page = null }); return }
     }
     val items by supportVm.items.collectAsState()
     LaunchedEffect(Unit) { supportVm.load() }
@@ -92,6 +98,11 @@ fun AdminHubScreen(onBack: () -> Unit, supportVm: SupportInboxViewModel = hiltVi
             HubTile(Icons.Filled.WorkspacePremium, "هدیه‌ی اشتراک", "روز به یک Uid", AppWarning, Modifier.weight(1f)) { gift = "sub" }
             HubTile(Icons.Filled.MonetizationOn, "هدیه‌ی سکه", "سکه به یک Uid", AppPurple, Modifier.weight(1f)) { gift = "coins" }
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HubTile(Icons.Filled.Payments, "پول و فروش", "تبدیل، تمدید، A/B", AppPrimary, Modifier.weight(1f)) { page = "money" }
+            HubTile(Icons.Filled.PersonSearch, "تاریخچه‌ی کاربر", "با شماره‌ی کاربری", AppInfo, Modifier.weight(1f)) { page = "user" }
+        }
+        HubTile(Icons.Filled.Campaign, "پیامِ گروهی", "مثلاً به نیامده‌ها یا کسانی که مجانی‌شان تمام می‌شود", AppWarning, Modifier.fillMaxWidth()) { page = "broadcast" }
         val recent = items.orEmpty().take(4)
         if (recent.isNotEmpty()) {
             AppCard(label = "پیام‌های اخیرِ کاربران") {

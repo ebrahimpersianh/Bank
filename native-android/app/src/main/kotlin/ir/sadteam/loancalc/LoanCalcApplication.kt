@@ -73,6 +73,7 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         // تنظیمات) چون نباید به بازکردنِ اون صفحه وابسته باشه. خودِ Worker قبل از هر اعلان
         // پرچمِ comeBackReminderEnabled رو چک می‌کنه، پس زمان‌بندیِ بی‌قیدش بی‌ضرره.
         comeBackScheduler.schedule()
+        ir.sadteam.loancalc.notifications.AdminAlertWorker.schedule(this)
         // قلابِ «داده‌ی وام عوض شد» → تازه‌کردنِ ویجت. `:data` خودِ ویجت را نمی‌بیند، پس
         // این‌جا پُر می‌شود - رجوع کن به [LoanDataChange]. بی این، ویجت تا شش ساعت عددِ
         // کهنه نشان می‌دهد.

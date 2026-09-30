@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.ui.admin
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,9 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class AdminDigestViewModel @Inject constructor(private val repo: AuthRepository) : ViewModel() {
+    private val _store = MutableStateFlow<String?>(null)
+    val store: StateFlow<String?> = _store
+    fun setStore(s: String?) { _store.value = s; load() }
     private val _period = MutableStateFlow("day")
     val period: StateFlow<String> = _period
     private val _data = MutableStateFlow<AdminDigestResponse?>(null)
@@ -65,7 +69,7 @@ class AdminDigestViewModel @Inject constructor(private val repo: AuthRepository)
         _data.value = null
         _failed.value = false
         viewModelScope.launch {
-            val r = repo.adminDigest(p)
+            val r = repo.adminDigest(p, _store.value)
             _data.value = r
             _failed.value = r == null
         }
@@ -117,7 +121,22 @@ fun AdminDigestScreen(onBack: () -> Unit, vm: AdminDigestViewModel = hiltViewMod
             selectedIndex = periods.indexOf(period).coerceAtLeast(0),
             onSelect = { vm.load(periods[it]) },
         )
+        // تفکیک بر اساسِ استور (۸ مهر).
+        val store by vm.store.collectAsState()
+        val stores = listOf(null, "cafebazaar", "myket")
+        SegmentedToggle(
+            options = listOf("همه", "کافه‌بازار", "مایکت"),
+            selectedIndex = stores.indexOf(store).coerceAtLeast(0),
+            onSelect = { vm.setStore(stores[it]) },
+        )
         val d = data
+        val ctx = androidx.compose.ui.platform.LocalContext.current
+        if (d != null) Text(
+            "⤓ خروجیِ اکسل (CSV)",
+            color = AppPrimary, fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(AppPrimary.copy(alpha = 0.10f))
+                .clickable { shareCsv(ctx, d) }.padding(horizontal = 12.dp, vertical = 8.dp),
+        )
         when {
             failed -> Text("گزارش نرسید؛ اینترنت را چک کن.", color = AppDanger, fontSize = 13.sp)
             d == null -> Box(Modifier.fillMaxWidth().padding(30.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = AppPrimary) }
@@ -188,3 +207,22 @@ private fun MetricTile(m: AdminDigestMetric, modifier: Modifier) {
 }
 
 private fun fmtNum(v: Long): String = ir.sadteam.loancalc.core.fmt(v.toDouble())
+
+/** خروجیِ ساده‌ی CSV (با BOM تا اکسل فارسی را درست نشان دهد) از طریقِ «اشتراک‌گذاری». */
+private fun shareCsv(ctx: android.content.Context, d: AdminDigestResponse) {
+    val csv = buildString {
+        append('\uFEFF')
+        append("شاخص,این دوره,دوره‌ی قبل\n")
+        d.metrics.forEach { append("${METRIC_LABELS[it.key] ?: it.key},${it.now},${it.prev}\n") }
+        append("\nکار,تعداد\n")
+        d.topActions.forEach { append("${actionLabel(it.name)},${it.count}\n") }
+        append("\nصفحه,تعداد\n")
+        d.topScreens.forEach { append("${screenLabel(it.name)},${it.count}\n") }
+    }
+    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+        type = "text/csv"
+        putExtra(android.content.Intent.EXTRA_SUBJECT, "گزارشِ جیبک ${d.fromIran}")
+        putExtra(android.content.Intent.EXTRA_TEXT, csv)
+    }
+    runCatching { ctx.startActivity(android.content.Intent.createChooser(send, "خروجیِ گزارش")) }
+}

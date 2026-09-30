@@ -151,7 +151,20 @@ interface ApiService {
     suspend fun adminCheck(@Header("Authorization") authHeader: String): AdminCheckResponse
 
     @GET("api/admin/digest")
-    suspend fun adminDigest(@Header("Authorization") authHeader: String, @retrofit2.http.Query("period") period: String): AdminDigestResponse
+    suspend fun adminDigest(
+        @Header("Authorization") authHeader: String,
+        @retrofit2.http.Query("period") period: String,
+        @retrofit2.http.Query("store") store: String? = null,
+    ): AdminDigestResponse
+
+    @GET("api/admin/money")
+    suspend fun adminMoney(@Header("Authorization") authHeader: String): AdminMoneyResponse
+
+    @GET("api/admin/user")
+    suspend fun adminUser(@Header("Authorization") authHeader: String, @retrofit2.http.Query("code") code: String): AdminUserTimeline
+
+    @POST("api/admin/broadcast")
+    suspend fun adminBroadcast(@Header("Authorization") authHeader: String, @Body body: AdminBroadcastRequest): AdminBroadcastResult
 
     @GET("api/admin/stats")
     suspend fun adminStats(@Header("Authorization") authHeader: String): AdminStatsResponse
@@ -498,3 +511,21 @@ data class AdminDigestResponse(
     val topScreens: List<AdminNamedCount> = emptyList(),
     val notes: List<String> = emptyList(),
 )
+
+data class AdminAbGroup(val installs: Int = 0, val paywallViews: Int = 0, val purchases: Int = 0)
+data class AdminMoneyResponse(
+    val trialEnded: Int = 0, val converted: Int = 0, val payers: Int = 0, val expiredPayers: Int = 0,
+    val renewed: Int = 0, val users: Int = 0, val grossTotal: Long = 0, val netTotal: Long = 0,
+    val abA: AdminAbGroup = AdminAbGroup(), val abB: AdminAbGroup = AdminAbGroup(),
+)
+data class AdminTimelinePurchase(val product: String = "", val store: String = "", val at: String = "", val until: String = "")
+data class AdminTimelineInstall(val id: String = "", val firstDay: String = "", val lastDay: String = "", val activeDays: Int = 0, val version: Int? = null, val store: String? = null, val model: String? = null)
+data class AdminTimelineDay(val day: String = "", val events: Int = 0, val screens: Int = 0)
+data class AdminUserTimeline(
+    val found: Boolean = false, val code: String = "", val createdAt: String = "", val subscribedUntil: String? = null,
+    val purchases: List<AdminTimelinePurchase> = emptyList(), val supportCount: Int = 0, val lastSupport: String? = null,
+    val installs: List<AdminTimelineInstall> = emptyList(), val topScreens: List<AdminNamedCount> = emptyList(),
+    val days: List<AdminTimelineDay> = emptyList(),
+)
+data class AdminBroadcastRequest(val segment: String, val title: String, val body: String, val dryRun: Boolean)
+data class AdminBroadcastResult(val segment: String = "", val count: Int = 0, val sent: Boolean = false)

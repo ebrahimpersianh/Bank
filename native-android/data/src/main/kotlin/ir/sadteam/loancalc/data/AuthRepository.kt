@@ -74,9 +74,26 @@ class AuthRepository(
     }
 
     /** گزارشِ کاملِ آمار (فقط ادمین)؛ `null` یعنی نشد (شبکه یا دسترسی). */
-    suspend fun adminDigest(period: String): ir.sadteam.loancalc.data.network.AdminDigestResponse? {
+    suspend fun adminDigest(period: String, store: String? = null): ir.sadteam.loancalc.data.network.AdminDigestResponse? {
         val token = authPrefs.authToken.first() ?: return null
-        return runCatching { apiService.adminDigest("Bearer $token", period) }.getOrNull()
+        return runCatching { apiService.adminDigest("Bearer $token", period, store) }.getOrNull()
+    }
+
+    suspend fun adminMoney(): ir.sadteam.loancalc.data.network.AdminMoneyResponse? {
+        val token = authPrefs.authToken.first() ?: return null
+        return runCatching { apiService.adminMoney("Bearer $token") }.getOrNull()
+    }
+
+    suspend fun adminUser(code: String): ir.sadteam.loancalc.data.network.AdminUserTimeline? {
+        val token = authPrefs.authToken.first() ?: return null
+        return runCatching { apiService.adminUser("Bearer $token", code) }.getOrNull()
+    }
+
+    suspend fun adminBroadcast(segment: String, title: String, body: String, dryRun: Boolean): ir.sadteam.loancalc.data.network.AdminBroadcastResult? {
+        val token = authPrefs.authToken.first() ?: return null
+        return runCatching {
+            apiService.adminBroadcast("Bearer $token", ir.sadteam.loancalc.data.network.AdminBroadcastRequest(segment, title, body, dryRun))
+        }.getOrNull()
     }
 
     suspend fun adminStats(): ir.sadteam.loancalc.data.network.AdminStatsResponse? {
