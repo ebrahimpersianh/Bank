@@ -2172,7 +2172,8 @@ private fun BackgroundRunSettings() {
         badge = if (batteryOk) "آماده" else "نیازمندِ اقدام",
     )
     SettingsGroupLabel("مراحل")
-
+    // طرحِ Claude Design (۸ مهر): هر سه مرحله در یک کارت با خطِ جداکننده.
+    AppCard(modifier = Modifier.padding(top = 10.dp)) {
     BackgroundStepCard(
         step = 1,
         title = "معافیت از بهینه‌سازیِ باتری",
@@ -2183,12 +2184,14 @@ private fun BackgroundRunSettings() {
     )
 
     if (BackgroundRunHelp.needsAutostartSetting()) {
+        SettingsDivider()
         BackgroundStepCard(
             step = 2,
             title = "اجرای خودکار بعد از روشن‌شدنِ گوشی",
             body = "سازنده‌ی این گوشی «اجرای خودکار» را پیش‌فرض خاموش می‌گذارد؛ تا روشن نشود، " +
                 "بعد از خاموش‌وروشن‌کردنِ گوشی پیامکِ بانکی خودکار ثبت نمی‌شود.\n" +
                 BackgroundRunHelp.autostartHint(),
+            hintBox = true,
             // وضعیتش از بیرون خواندنی نیست (هر سازنده جای خودش را دارد)، پس ادعای
             // «انجام شده» نمی‌کنیم - قرص خاکستریِ «باز کن» می‌مانَد.
             done = false,
@@ -2202,6 +2205,7 @@ private fun BackgroundRunSettings() {
         )
     }
 
+    SettingsDivider()
     // بندِ ۷ِ دورِ ۹: این مرحله از داخلِ هیچ برنامه‌ای شدنی نیست، پس مقصد ندارد - ولی
     // کارتی که تپ نمی‌گیرد باید **بگوید** دستورالعمل است، وگرنه کاربر تپ می‌زند و فکر
     // می‌کند خراب است. پس بجِ «دستی»، و متن با **فعل** شروع می‌شود.
@@ -2214,6 +2218,7 @@ private fun BackgroundRunSettings() {
         onClick = null,
         manualBadge = true,
     )
+    }
 }
 
 /**
@@ -2231,63 +2236,70 @@ private fun BackgroundStepCard(
     onClick: (() -> Unit)?,
     /** مرحله‌ای که خودِ کاربر باید بیرونِ برنامه انجامش بدهد - بجِ «دستی» می‌گیرد. */
     manualBadge: Boolean = false,
+    /** خطِ آخرِ [body] (مسیرِ تنظیمات) در جعبه‌ی خاکستریِ جدا. */
+    hintBox: Boolean = false,
 ) {
-    AppCard(
+    val mainBody = if (hintBox) body.substringBeforeLast('\n') else body
+    val hint = if (hintBox && body.contains('\n')) body.substringAfterLast('\n') else null
+    Row(
         modifier = Modifier
-            .padding(top = 10.dp)
-            .then(
-                if (onClick != null) Modifier.pressScaleClickable(scale = 0.99f, onClick = onClick) else Modifier,
-            ),
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.pressScaleClickable(scale = 0.99f, onClick = onClick) else Modifier)
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(if (done) AppPrimaryPill else AppIconFrame),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (done) {
-                    Icon(Icons.Filled.Check, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(15.dp))
-                } else {
-                    Text(toFa(step), color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Black)
-                }
+        Box(
+            modifier = Modifier
+                .align(Alignment.Top)
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(if (done) AppPrimary else AppIconFrame),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (done) {
+                Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+            } else {
+                Text(toFa(step), color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
             }
-            Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+        }
+        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+            Text(title, color = if (done) AppPrimaryInk else AppText, fontSize = 13.5.sp, fontWeight = FontWeight.Black)
+            Text(mainBody, color = AppMuted, fontSize = 11.5.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 4.dp))
+            if (hint != null) {
                 Text(
-                    title,
-                    color = if (done) AppPrimaryInk else AppText,
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Black,
-                )
-                Text(
-                    body,
-                    color = AppMuted,
+                    hint,
+                    color = AppText,
                     fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
                     lineHeight = 19.sp,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            }
-            if (onClick != null) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowForwardIos,
-                    contentDescription = null,
-                    tint = AppMuted,
-                    modifier = Modifier.padding(start = 8.dp).size(13.dp),
-                )
-            } else if (manualBadge) {
-                Text(
-                    "دستی",
-                    color = AppMuted,
-                    fontSize = 9.5.sp,
-                    fontWeight = FontWeight.Bold,
                     modifier = Modifier
-                        .padding(start = 8.dp)
-                        .clip(RoundedCornerShape(999.dp))
+                        .padding(top = 8.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
                         .background(AppIconFrame)
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                        .padding(horizontal = 12.dp, vertical = 9.dp),
                 )
             }
+        }
+        if (onClick != null) {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowForwardIos,
+                contentDescription = null,
+                tint = AppMuted,
+                modifier = Modifier.padding(start = 8.dp).size(13.dp),
+            )
+        } else if (manualBadge) {
+            Text(
+                "دستی",
+                color = AppMuted,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AppIconFrame)
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+            )
         }
     }
 }
