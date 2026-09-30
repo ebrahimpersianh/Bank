@@ -1,5 +1,10 @@
 package ir.sadteam.loancalc.ui.note
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -83,7 +88,7 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                 IconButton(onClick = onBack) {
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                 }
-                Text("یادداشت‌ها", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("یادداشت‌ها", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
             }
         }
         // فیلدِ جست‌وجو از سه یادداشت به بالا می‌آید. با یک یادداشت، فیلد از خودِ لیست
@@ -141,9 +146,10 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                         ) { Text("ثبت") }
                     }
                 }
-            } else {
+            } else if (notes.isNotEmpty()) {
+                // وقتی خالی است، دکمه داخلِ کارتِ خالی است (هم‌سبکِ Claude Design).
                 GradientButton(onClick = { showAdd = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text("افزودنِ یادداشت")
+                    Text("+ افزودنِ یادداشت")
                 }
             }
         }
@@ -153,6 +159,8 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                     icon = Icons.Filled.EditNote,
                     title = "هنوز یادداشتی نداری",
                     description = "پرداخت‌های مهم مثلِ اجاره و قسط رو یادداشت کن تا سرِ موعد یادآوری کنیم.",
+                    actionLabel = if (showAdd) null else "+ افزودنِ یادداشت",
+                    onAction = { showAdd = true },
                 )
             }
         } else if (visibleNotes.isEmpty()) {
@@ -174,16 +182,21 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
             items(visibleNotes, key = { it.id }) { note ->
                 AppCard {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(note.text, color = AppText, fontSize = 14.sp)
+                        // کاشیِ آیکونِ کهربایی (هم‌سبکِ Claude Design).
+                        Box(
+                            Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(NoteAmber.copy(alpha = 0.14f)),
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(Icons.Filled.EditNote, contentDescription = null, tint = NoteAmber, modifier = Modifier.size(22.dp)) }
+                        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                            Text(note.text, color = AppText, fontSize = 14.5.sp, fontWeight = FontWeight.Bold)
                             // ⚠️ قبلاً `۱۴۰۵/۷/۹` بود: قالبِ پنجم، بی صفرِ ابتدایی و
                             // بیرونِ چهار قالبِ مصوب. `۹ مهر ۱۴۰۵` همان قالبی است که
                             // ردیفِ سررسید و تقویمِ مالی هم می‌نویسند.
                             Text(
                                 "${toFa(note.day)} ${faMonthName(note.month)} ${toFa(note.year)}",
                                 color = AppLabel,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(top = 2.dp),
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 3.dp),
                             )
                         }
                         IconButton(onClick = { pendingDelete = note }) {
@@ -195,3 +208,5 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
         }
     }
 }
+
+private val NoteAmber = androidx.compose.ui.graphics.Color(0xFFB7791F)
