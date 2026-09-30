@@ -1,5 +1,11 @@
 package ir.sadteam.loancalc.ui.cheque
 
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -85,8 +91,14 @@ fun SayadInquiryScreen(sayadId: String?, onBack: () -> Unit) {
             }
 
             item {
-                AppCard(label = "استعلام از طریق سایت") {
-                    Text(SAYAD_WEB_URL.removePrefix("https://"), color = AppMuted, fontSize = 13.sp)
+                SayadCard(Icons.Filled.Language, Color(0xFF2B7BD6), "استعلام از طریق سایت") {
+                    ir.sadteam.loancalc.ui.components.Ltr {
+                        Text(
+                            SAYAD_WEB_URL.removePrefix("https://"),
+                            color = AppMuted, fontSize = 13.sp,
+                            modifier = Modifier.fillMaxWidth().background(AppSurface2, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 9.dp),
+                        )
+                    }
                     GradientButton(
                         onClick = {
                             runCatching {
@@ -101,24 +113,27 @@ fun SayadInquiryScreen(sayadId: String?, onBack: () -> Unit) {
             }
 
             item {
-                AppCard(label = "استعلام از طریق پیامک") {
+                SayadCard(Icons.Filled.Sms, AppPrimary, "استعلام از طریق پیامک") {
                     val smsBody = "*1*1*${sayadId.orEmpty()}#"
-                    Column(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(AppSurface2, RoundedCornerShape(10.dp))
-                            .padding(12.dp),
+                            .background(AppSurface2, RoundedCornerShape(16.dp))
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(smsBody, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                        Text("ارسال به شماره $SAYAD_SMS_NUMBER", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                        Text("ارسال به شماره $SAYAD_SMS_NUMBER", color = AppMuted, fontSize = 12.5.sp, modifier = Modifier.weight(1f))
+                        ir.sadteam.loancalc.ui.components.Ltr {
+                            Text(smsBody, color = AppText, fontSize = 19.sp, fontWeight = FontWeight.Black)
+                        }
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        SmsInfoStat(label = "هزینه", value = "۳۵۰۰ ریال")
-                        SmsInfoStat(label = "سقف روزانه", value = "۴ استعلام")
-                        SmsInfoStat(label = "زمان پاسخ", value = "حداکثر ۱۵ دقیقه")
+                        SmsInfoStat(label = "هزینه", value = "۳۵۰۰ ریال", modifier = Modifier.weight(1f))
+                        SmsInfoStat(label = "سقف روزانه", value = "۴ استعلام", modifier = Modifier.weight(1f))
+                        SmsInfoStat(label = "زمان پاسخ", value = "حداکثر ۱۵ دقیقه", modifier = Modifier.weight(1f))
                     }
                     GradientButton(
                         onClick = {
@@ -140,7 +155,7 @@ fun SayadInquiryScreen(sayadId: String?, onBack: () -> Unit) {
                 // اسم اپ‌ها از رو عکسِ کاربر (تاپ/آپ/ساد۲۴) - چون شناسه‌ی واقعی پکیج/دیپ‌لینک هرکدوم
                 // رو نداریم، دکمه‌ها فقط جستجوی اسمِ اپ رو کافه‌بازار/گوگل‌پلی رو باز می‌کنن (بدون
                 // هیچ پکیج‌نیم حدسی)، نه یه Intent مستقیم به اپ مشخص.
-                AppCard(label = "استعلام از طریق اپلیکیشن") {
+                SayadCard(Icons.Filled.QrCodeScanner, Color(0xFF7C4DDB), "استعلام از طریق اپلیکیشن") {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("تاپ", "آپ", "ساد ۲۴").forEach { appName ->
                             OutlinedButton(
@@ -167,13 +182,13 @@ fun SayadInquiryScreen(sayadId: String?, onBack: () -> Unit) {
             }
 
             item {
-                AppCard(label = "معنی رنگ‌های وضعیت چک") {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                SayadCard(null, AppPrimary, "معنی رنگ‌های وضعیت چک") {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         chequeColorLegend.forEach { legend ->
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 LegendSwatch(legend.color)
-                                Text(legend.name, color = AppText, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
-                                Text(legend.meaning, color = AppMuted, fontSize = 10.sp)
+                                Text(legend.name, color = AppText, fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(start = 10.dp).width(60.dp))
+                                Text(legend.meaning, color = AppMuted, fontSize = 13.sp)
                             }
                         }
                     }
@@ -186,9 +201,12 @@ fun SayadInquiryScreen(sayadId: String?, onBack: () -> Unit) {
 }
 
 @Composable
-private fun SmsInfoStat(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+private fun SmsInfoStat(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.border(1.5.dp, AppLine, RoundedCornerShape(14.dp)).padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(value, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
         Text(label, color = AppMuted, fontSize = 10.sp, modifier = Modifier.padding(top = 2.dp))
     }
 }
@@ -202,4 +220,30 @@ private fun LegendSwatch(color: Color) {
             .background(color)
             .border(1.dp, AppLine, RoundedCornerShape(6.dp)),
     )
+}
+
+
+/** کارتِ هر روشِ استعلام با کاشیِ آیکونِ رنگی کنارِ عنوان (طرحِ Claude Design، ۸ مهر). */
+@Composable
+private fun SayadCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector?,
+    color: Color,
+    title: String,
+    content: @Composable () -> Unit,
+) {
+    AppCard {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
+                if (icon != null) {
+                    Box(
+                        Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(color.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(21.dp)) }
+                    Spacer(Modifier.width(10.dp))
+                }
+                Text(title, color = AppText, fontSize = 14.5.sp, fontWeight = FontWeight.ExtraBold)
+            }
+            content()
+        }
+    }
 }
