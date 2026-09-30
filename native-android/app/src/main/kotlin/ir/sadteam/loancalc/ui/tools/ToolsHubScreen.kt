@@ -13,6 +13,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppInfo
+import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppPurple
+import ir.sadteam.loancalc.ui.theme.AppWarning
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.EditNote
@@ -90,7 +103,7 @@ fun ToolsHubScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
                     }
-                    Text("ابزارها", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                    Text("ابزارها", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
                 }
             }
             item {
@@ -105,8 +118,10 @@ fun ToolsHubScreen(
             item {
                 ToolCard(
                     icon = Icons.Outlined.Autorenew,
-                    title = "اشتراک‌یاب",
-                    text = "خرج‌های ماهانهٔ تکراری را از روی تراکنش‌ها پیدا می‌کند.",
+                    title = "اشتراک‌های فراموش‌شده",
+                    text = if (subscriptions.isEmpty()) "خرج‌های ماهانهٔ تکراری را از روی تراکنش‌ها پیدا می‌کند."
+                    else "${ir.sadteam.loancalc.core.toFa(subscriptions.size)} خرجِ تکراری پیدا شد - ببین کدام را لازم نداری.",
+                    tint = AppDanger,
                     action = "دیدن اشتراک‌ها",
                     onClick = { openSubscriptions.value = true },
                 )
@@ -115,6 +130,7 @@ fun ToolsHubScreen(
                 ToolCard(
                     icon = Icons.Outlined.Groups,
                     title = "دنگ",
+                    tint = AppPurple,
                     // متنِ قبلی توضیحِ «طلب و بدهی» بود نه دنگ (گزارشِ خودِ بازبینی).
                     text = "یک هزینه را بینِ چند نفر تقسیم کن و سهمِ هرکس را پیگیری کن.",
                     action = "رفتن به دنگ",
@@ -128,6 +144,7 @@ fun ToolsHubScreen(
                 ToolCard(
                     icon = Icons.Outlined.EditNote,
                     title = "یادداشت‌ها",
+                    tint = AppWarning,
                     text = "یادداشتِ تاریخ‌دار با یادآور - مستقل از وام و چک.",
                     action = "رفتن به یادداشت‌ها",
                     onClick = onOpenNotes,
@@ -137,6 +154,7 @@ fun ToolsHubScreen(
                 ToolCard(
                     icon = Icons.Outlined.Description,
                     title = "استعلام صیادی",
+                    tint = AppInfo,
                     text = "راهنمای استعلام اعتبار چک صیادی از سایت یا پیامک.",
                     action = "استعلام چک",
                     onClick = onOpenSayad,
@@ -152,18 +170,22 @@ private fun ToolCard(
     title: String,
     text: String,
     action: String,
+    tint: Color = AppPrimary,
     onClick: () -> Unit,
 ) {
-    AppCard {
+    // بازطراحیِ ۸ مهر: ردیفِ قابل‌لمس با کاشیِ رنگی و فلش، به‌جای دکمه‌ی سبزِ بزرگ در هر کارت
+    // (هم‌سبکِ منوی «محاسبه‌گر»). `action` برای خواننده‌ی صفحه می‌ماند.
+    AppCard(modifier = Modifier.pressScaleClickable(onClick = onClick).semantics { contentDescription = action }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = AppMuted)
-            Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                Text(title, color = AppText, fontWeight = FontWeight.Black, fontSize = 14.sp)
-                Text(text, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 3.dp))
+            Box(
+                Modifier.size(46.dp).clip(RoundedCornerShape(15.dp)).background(tint.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp)) }
+            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                Text(title, color = AppText, fontWeight = FontWeight.Black, fontSize = 15.sp)
+                Text(text, color = AppMuted, fontSize = 12.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 3.dp))
             }
-        }
-        GradientButton(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-            Text(action)
+            Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.padding(start = 6.dp).size(22.dp))
         }
     }
 }
