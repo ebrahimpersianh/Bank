@@ -1120,6 +1120,14 @@ private fun MonthBudgetCard(
     val leftover = cap - projected
 
     AppCard(contentPadding = 15.dp, modifier = Modifier.pressScaleClickable(onClick = onClick)) {
+      // تصویرِ سه‌بعدیِ کوچک کنارِ کارت (۸ مهر، طرحِ ChatGPT).
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(ir.sadteam.loancalc.R.drawable.jibak_home_budget),
+                    contentDescription = null,
+                    modifier = Modifier.size(44.dp),
+                )
+        Column(Modifier.weight(1f).padding(start = 10.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -1158,6 +1166,8 @@ private fun MonthBudgetCard(
                 )
             }
         }
+        }
+      }
     }
 }
 
@@ -1230,17 +1240,11 @@ private fun UrgentDueCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(9.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(AppRadius.icon))
-                    // قابِ آیکون مقدارِ محلیِ خودشه (#FFECEC)، نه `AppDangerPill` که
-                    // روشن‌تره (#FFF5F5) - همون تفکیکی که طراح تو فایلِ آدمک هم تاکید کرد.
-                    .background(UrgentIconBg),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.PriorityHigh, contentDescription = null, tint = AppDanger, modifier = Modifier.size(15.dp))
-            }
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(ir.sadteam.loancalc.R.drawable.jibak_home_overdue),
+                contentDescription = null,
+                modifier = Modifier.size(40.dp),
+            )
             Column(modifier = Modifier.weight(1f)) {
                 Text(title, color = AppText, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 PrivacyCrossfade(privacyMode) { masked ->
