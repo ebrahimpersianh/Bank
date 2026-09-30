@@ -537,6 +537,11 @@ fun NewTransactionSheet(
                     modifier = Modifier.weight(1f).padding(start = 8.dp),
                     singleLine = true,
                     placeholder = { Text("توضیحات", color = AppMuted, fontSize = 13.sp) },
+                    // ⚠️ حاشیه‌ی خاکستریِ قدیمی داخلِ کارت؛ حالا بی‌قاب مثلِ ردیف‌های دیگر.
+                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                        unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                    ),
                 )
             }
         }

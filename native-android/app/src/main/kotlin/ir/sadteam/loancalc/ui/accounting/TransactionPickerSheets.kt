@@ -1,5 +1,10 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.material.icons.filled.ChevronLeft
+import ir.sadteam.loancalc.ui.theme.AppDanger
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -43,7 +48,11 @@ fun AccountPickerSheet(
     accounts: List<AccountEntity>,
     onPick: (AccountEntity) -> Unit,
     onDismiss: () -> Unit,
+    accountViewModel: ir.sadteam.loancalc.ui.account.AccountViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
 ) {
+    // ⚠️ «۰ تومان» نشان می‌داد: موجودیِ **روزِ شروع** بود، نه موجودیِ فعلی.
+    val allTx by accountViewModel.transactions.collectAsState()
+    val privacy = ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current
     JibakAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("حساب‌کتاب‌ها", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
@@ -63,20 +72,23 @@ fun AccountPickerSheet(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(AppSurface2, RoundedCornerShape(12.dp))
+                                .background(AppSurface2, RoundedCornerShape(16.dp))
                                 .pressScaleClickable(onClick = { onPick(account) })
-                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                                .padding(horizontal = 12.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            AccountBadge(account = account, size = 32.dp)
-                            Column(modifier = Modifier.padding(start = 10.dp)) {
-                                Text(account.name, color = AppText, fontSize = 13.sp)
+                            AccountBadge(account = account, size = 40.dp)
+                            val bal = remember(account, allTx) { accountViewModel.balanceOf(account, allTx) }
+                            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                                Text(account.name, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "${fmt((account.initialBalance) / 10)} تومان",
-                                    color = AppMuted,
-                                    fontSize = 11.sp,
+                                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(privacy, fmt(bal / 10)) + " تومان",
+                                    color = if (bal < 0) AppDanger else AppMuted,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(top = 2.dp),
                                 )
                             }
+                            Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
@@ -113,7 +125,7 @@ fun CategoryPickerSheet(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(AppSurface2, RoundedCornerShape(12.dp))
+                            .background(AppSurface2, RoundedCornerShape(16.dp))
                             .pressScaleClickable(onClick = { onPick(entry.name) })
                             .padding(horizontal = 10.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
