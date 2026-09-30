@@ -27,6 +27,11 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.StickyNote2
+import androidx.compose.material.icons.filled.Autorenew
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Handshake
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -101,6 +106,11 @@ enum class SearchKind(val label: String, val icon: ImageVector) {
     PERSON("طرف‌حساب", Icons.Filled.Person),
     BILL("قبض", Icons.Filled.Receipt),
     NOTE("یادداشت", Icons.Filled.StickyNote2),
+    DEBT("طلب/بدهی", Icons.Filled.Handshake),
+    ASSET("دارایی", Icons.Filled.Savings),
+    GOAL("هدفِ پس‌انداز", Icons.Filled.Flag),
+    DANG("دنگ", Icons.Filled.Groups),
+    RECURRING("پرداختِ تکراری", Icons.Filled.Autorenew),
 }
 
 data class SearchHit(
@@ -138,6 +148,9 @@ class GlobalSearchViewModel @Inject constructor(
     debtRepository: DebtRepository,
     noteRepository: NoteRepository,
     billDao: BillDao,
+    assetRepository: ir.sadteam.loancalc.data.AssetRepository,
+    dangRepository: ir.sadteam.loancalc.data.DangRepository,
+    goalRepository: ir.sadteam.loancalc.data.SavingsGoalRepository,
 ) : ViewModel() {
     val accounts: StateFlow<List<AccountEntity>> = accountRepository.observeAccounts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -195,7 +208,45 @@ class GlobalSearchViewModel @Inject constructor(
         }
     }
 
-    val index: StateFlow<List<SearchHit>> = combine(finance, others) { a, b -> a + b }
+    // بقیه‌ی بخش‌ها (بررسیِ ۸ مهر: «ببین تو کلِ برنامه چک می‌شه») - تکِ ردیف‌های طلب/بدهی،
+    // دارایی، هدفِ پس‌انداز، دنگ و پرداختِ تکراری هم قابلِ جستجو شدند.
+    private val extras = combine(
+        combine(debtRepository.observeDebts(), debtRepository.observeCounterparties()) { d, p -> d to p },
+        assetRepository.observeAssets(),
+        goalRepository.observeGoals(),
+        dangRepository.observeEvents(),
+        accountRepository.observeRecurringPayments(),
+    ) { (debts, people), assets, goals, dangs, recurring ->
+        val personName = people.associate { it.id to it.name }
+        buildList {
+            debts.forEach { d ->
+                val who = personName[d.counterpartyId].orEmpty()
+                add(SearchHit(SearchKind.DEBT, d.id, d.description.ifBlank { who.ifBlank { "طلب/بدهی" } },
+                    "$who · ${toFa(d.year)}/${toFa(d.month)}/${toFa(d.day)}" + if (d.settled) " · تسویه‌شده" else "",
+                    d.amount,
+                    normalizeForSearch("${d.description} $who ${d.amount.toLong()} ${(d.amount / 10).toLong()}"),
+                    accountId = d.counterpartyId))
+            }
+            assets.forEach { a ->
+                add(SearchHit(SearchKind.ASSET, a.id, a.name, a.symbol, null,
+                    normalizeForSearch("${a.name} ${a.symbol} ${a.category}")))
+            }
+            goals.forEach { g ->
+                add(SearchHit(SearchKind.GOAL, g.id, g.title, "پس‌انداز شده ${toFa(fmt(g.savedRial / 10))} تومان", g.targetRial,
+                    normalizeForSearch("${g.title} ${g.targetRial.toLong()} ${(g.targetRial / 10).toLong()}")))
+            }
+            dangs.forEach { e ->
+                add(SearchHit(SearchKind.DANG, e.id, e.title, "${toFa(e.year)}/${toFa(e.month)}/${toFa(e.day)}", e.totalAmount,
+                    normalizeForSearch("${e.title} ${e.totalAmount.toLong()} ${(e.totalAmount / 10).toLong()}")))
+            }
+            recurring.forEach { r ->
+                add(SearchHit(SearchKind.RECURRING, r.id, r.name, "هر ماه روزِ ${toFa(r.dayOfMonth)}", r.amount,
+                    normalizeForSearch("${r.name} ${r.categoryName.orEmpty()} ${r.amount.toLong()} ${(r.amount / 10).toLong()}")))
+            }
+        }
+    }
+
+    val index: StateFlow<List<SearchHit>> = combine(finance, others, extras) { a, b, c -> a + b + c }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 }
 
@@ -207,6 +258,8 @@ fun GlobalSearchScreen(
     onOpenPerson: (Long) -> Unit,
     onOpenBills: () -> Unit,
     onOpenNotes: () -> Unit,
+    /** کلیدهای «assets»/«goal»/«debt»/«budget» - نگاشت به مسیرِ واقعی در MainActivity. */
+    onOpenRoute: (String) -> Unit = {},
     viewModel: GlobalSearchViewModel = hiltViewModel(),
 ) {
     val index by viewModel.index.collectAsState()
@@ -273,7 +326,7 @@ fun GlobalSearchScreen(
             hits.isEmpty() -> SearchMessage(
                 icon = Icons.Filled.SearchOff,
                 title = "چیزی پیدا نشد",
-                body = "با «${query.trim()}» هیچ تراکنش، وام، چک یا حسابی پیدا نکردیم. املای دیگری را امتحان کن.",
+                body = "با «${query.trim()}» در هیچ بخشی از برنامه چیزی پیدا نکردیم. املای دیگری را امتحان کن.",
             )
             else -> LazyColumn(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 24.dp),
@@ -291,6 +344,11 @@ fun GlobalSearchScreen(
                                 SearchKind.PERSON -> onOpenPerson(hit.id)
                                 SearchKind.BILL -> onOpenBills()
                                 SearchKind.NOTE -> onOpenNotes()
+                                SearchKind.DEBT -> onOpenPerson(hit.accountId ?: 0L)
+                                SearchKind.ASSET -> onOpenRoute("assets")
+                                SearchKind.GOAL -> onOpenRoute("goal")
+                                SearchKind.DANG -> onOpenRoute("debt")
+                                SearchKind.RECURRING -> onOpenRoute("budget")
                             }
                         },
                     ) {
@@ -345,6 +403,11 @@ private fun SearchKind.tint(): Color = when (this) {
     SearchKind.PERSON -> AppWarning
     SearchKind.BILL -> AppDanger
     SearchKind.NOTE -> AppWarning
+    SearchKind.DEBT -> AppWarning
+    SearchKind.ASSET -> AppInfo
+    SearchKind.GOAL -> AppPrimary
+    SearchKind.DANG -> AppPurple
+    SearchKind.RECURRING -> AppDanger
 }
 
 /** حالتِ پیش از تایپ: کارتِ خط‌چینِ سبکِ حالت‌های خالیِ برنامه + این‌که کجاها را می‌گردد. */
@@ -354,7 +417,7 @@ private fun SearchIntro() {
         SearchMessage(
             icon = Icons.Filled.Search,
             title = "دنبالِ چی می‌گردی؟",
-            body = "اسمِ بانک، طرف‌حساب، شرحِ تراکنش، مبلغ، شماره‌ی چک یا کارت را بنویس.",
+            body = "اسم، بانک، طرف‌حساب، شرح، مبلغ، شماره‌ی چک یا کارت را بنویس.",
             padded = false,
         )
         Text(

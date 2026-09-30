@@ -1393,6 +1393,17 @@ private fun LoanCalcApp(
                         showGlobalSearch = false
                         navigateTo(NOTES_ROUTE)
                     },
+                    onOpenRoute = { key ->
+                        showGlobalSearch = false
+                        navigateTo(
+                            when (key) {
+                                "assets" -> BottomTab.ASSETS.route
+                                "goal" -> SAVINGS_GOAL_ROUTE
+                                "debt" -> DEBT_ROUTE
+                                else -> BottomTab.BUDGET.route
+                            },
+                        )
+                    },
                 )
             }
         }
