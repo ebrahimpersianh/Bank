@@ -775,8 +775,12 @@ private fun HomeHeader(
             androidx.compose.material3.DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 listOf(
                     Triple("حسابِ کاربری", Icons.Filled.Person, onOpenProfile),
-                    Triple("فروشگاه", androidx.compose.ui.graphics.vector.ImageVector.vectorResource(ir.sadteam.loancalc.R.drawable.ic_shop_bag), onOpenShop),
                     Triple("تنظیمات", Icons.Filled.Settings, onOpenSettings),
+                    Triple(
+                        if (isDark) "حالتِ روشن" else "حالتِ تیره",
+                        if (isDark) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                        { themeVm.setThemeMode(if (isDark) ir.sadteam.loancalc.ui.theme.ThemeMode.LIGHT else ir.sadteam.loancalc.ui.theme.ThemeMode.DARK) },
+                    ),
                 ).forEach { (label, icon, action) ->
                     androidx.compose.material3.DropdownMenuItem(
                         text = { Text(label, fontWeight = FontWeight.Bold) },
@@ -835,28 +839,16 @@ private fun HomeHeader(
             // می‌آید که `notifyDailyExpenseReminder` استفاده می‌کند: «امروز تراکنشی ثبت
             // شده یا نه». امضایش را حدس نزدم.
             // جستجوی کلی (۸ مهر، خواسته‌ی کاربر) - اولین دکمه‌ی ردیف.
-            PrivacyEyeButton(icon = Icons.Filled.Search, active = false, onClick = onOpenSearch, contentDescription = "جستجو")
+            // ترتیبِ کاربر (۸ مهر): فروشگاه، زنگ، جستجو. تنظیمات و تیره/روشن در منوی آدمک.
             val streakAtRisk = activeDays >= 7 && !todayHasEntry
-            if (streakAtRisk) {
-                ActiveChip(days = activeDays, onClick = onOpenCoins)
-            } else {
-                // کلیدِ سریعِ تیره/روشن (۸ مهر، خواسته‌ی کاربر: «دمِ دست مثلِ حالتِ خصوصی»).
-                PrivacyEyeButton(
-                    icon = if (isDark) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                    active = false,
-                    onClick = {
-                        themeVm.setThemeMode(if (isDark) ir.sadteam.loancalc.ui.theme.ThemeMode.LIGHT else ir.sadteam.loancalc.ui.theme.ThemeMode.DARK)
-                    },
-                    contentDescription = if (isDark) "حالتِ روشن" else "حالتِ تیره",
-                )
-            }
-            // زنگِ مرکزِ پیام‌ها (بخشِ ۴۰). **عدد فقط برای اقدام‌دارهای بازه**؛ خبرِ
-            // خوانده‌نشده فقط یه نقطه‌ی سبز می‌گیره، نه عدد (قاعده‌ی صریحِ طرح).
+            if (streakAtRisk) ActiveChip(days = activeDays, onClick = onOpenCoins)
+            PrivacyEyeButton(icon = androidx.compose.ui.graphics.vector.ImageVector.vectorResource(ir.sadteam.loancalc.R.drawable.ic_shop_bag), active = false, onClick = onOpenShop, contentDescription = "فروشگاه")
             InboxBell(
                 count = inboxCount,
                 hasUnreadNews = inboxUnreadNews > 0,
                 onClick = onOpenInbox,
             )
+            PrivacyEyeButton(icon = Icons.Filled.Search, active = false, onClick = onOpenSearch, contentDescription = "جستجو")
         }
     }
     }
