@@ -1791,6 +1791,12 @@ private fun SmsSettings(
     val listed = accounts.filter { it.type == ACCOUNT_TYPE_BANK }
     val activeCount = listed.count { it.smsEnabled && !it.smsSender.isNullOrBlank() }
     val smsPremium = ir.sadteam.loancalc.ui.subscription.LocalIsPremium.current
+    SmsHero(
+        ir.sadteam.loancalc.R.drawable.sms_illu_phone,
+        "ثبتِ خودکار از پیامک",
+        "با روشن کردنش، پیامک‌های بانکی‌ات خودکار در جیبک ثبت می‌شوند.",
+        AppPrimaryPill,
+    )
     SmsStatusCard(
         enabled = enabled,
         permissionGranted = permissionGranted,
@@ -1915,6 +1921,29 @@ private fun smsStatusTone(account: AccountEntity): StatusTone {
     val last = account.lastSmsAt ?: return StatusTone.BROKEN
     val days = (System.currentTimeMillis() - last) / 86_400_000L
     return if (days > 30) StatusTone.BROKEN else StatusTone.NEUTRAL
+}
+
+/** سرِ کارتِ پیامک/اعلان با تصویرِ سه‌بعدی (طرحِ ChatGPT، ۸ مهر). */
+@Composable
+private fun SmsHero(@androidx.annotation.DrawableRes image: Int, title: String, body: String, tint: Color) {
+    AppCard(backgroundColor = tint, modifier = Modifier.padding(top = 12.dp)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            androidx.compose.foundation.Image(
+                androidx.compose.ui.res.painterResource(image),
+                contentDescription = null,
+                modifier = Modifier.size(110.dp),
+            )
+            Text(title, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 6.dp))
+            Text(
+                body,
+                color = AppMuted,
+                fontSize = 11.5.sp,
+                lineHeight = 19.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+    }
 }
 
 @Composable
@@ -2320,6 +2349,12 @@ private fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
     // حالتِ سومِ کارتِ `35f`: کاربر روشنش کرده ولی اندروید مجوز رو نداره/پس گرفته.
     val revoked = notifEnabled && !listenerGranted
 
+    SmsHero(
+        ir.sadteam.loancalc.R.drawable.sms_illu_bell,
+        "خواندنِ خودکارِ اعلانِ بانکی",
+        "برای بانک‌هایی که پیامک نمی‌فرستند و فقط اعلان می‌دهند.",
+        AppChipBg,
+    )
     SettingsSwitchRow(
         icon = Icons.Filled.NotificationsActive,
         title = "خوندنِ خودکارِ اعلانِ بانکی",
