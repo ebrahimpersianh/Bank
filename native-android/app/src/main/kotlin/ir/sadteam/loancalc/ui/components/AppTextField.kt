@@ -28,4 +28,4 @@ fun appFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
 )
 
 /** گوشه‌ی گردِ همه‌ی کادرها - مثلِ کادرِ جستجو. */
-val AppFieldShape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+val AppFieldShape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)

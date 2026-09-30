@@ -125,7 +125,7 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                         label = { Text("عنوان") },
                         placeholder = { Text("مثلاً اجاره‌ی خونه", color = AppMuted) },
                         singleLine = true,
-                        shape = RoundedCornerShape(16.dp),
+                        shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                         colors = appFieldColors(),
                         modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
                     )
@@ -134,7 +134,7 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                         onValueChange = { text = it },
                         label = { Text("توضیح (اختیاری)") },
                         minLines = 3,
-                        shape = RoundedCornerShape(16.dp),
+                        shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                         colors = appFieldColors(),
                         modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                     )

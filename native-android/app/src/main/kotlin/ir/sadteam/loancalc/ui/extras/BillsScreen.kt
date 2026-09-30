@@ -312,7 +312,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         label = { Text("نام") },
                         placeholder = { Text("مثلاً خانه") },
                         leadingIcon = { Icon(Icons.Filled.Home, contentDescription = null, tint = AppMuted) },
-                        shape = RoundedCornerShape(16.dp),
+                        shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                         colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -327,7 +327,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                             singleLine = true,
                             label = { Text("شناسه‌ی قبض (اختیاری)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            shape = RoundedCornerShape(16.dp),
+                            shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                             colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -348,7 +348,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         placeholder = { Text("۱ تا ۳۰") },
                         leadingIcon = { Icon(Icons.Filled.Event, contentDescription = null, tint = AppMuted) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                         colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )

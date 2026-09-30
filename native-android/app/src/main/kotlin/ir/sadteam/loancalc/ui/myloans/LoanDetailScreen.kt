@@ -1156,7 +1156,7 @@ fun LoanDetailScreen(
                                     onValueChange = { noteText = it; noteDirty = true },
                                     modifier = Modifier.fillMaxWidth(),
                                     minLines = 3,
-                                    shape = RoundedCornerShape(14.dp),
+                                    shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                                     trailingIcon = {
                                         if (noteText.isNotEmpty()) {
                                             IconButton(onClick = { noteText = ""; noteDirty = true }) {

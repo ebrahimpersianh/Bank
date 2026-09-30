@@ -166,7 +166,7 @@ fun SmsSenderPickerDialog(
                 onValueChange = { query = it },
                 singleLine = true,
                 placeholder = { Text("جست‌وجو در شماره یا متن", color = AppMuted, fontSize = 12.sp) },
-                shape = RoundedCornerShape(AppRadius.button),
+                shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(),)
             val list = messages
             when {

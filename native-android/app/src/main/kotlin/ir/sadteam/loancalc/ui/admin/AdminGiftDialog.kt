@@ -87,7 +87,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                         placeholder = { Text("7405024") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(999.dp),
+                        shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                         colors = appFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -119,7 +119,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                     label = { Text(if (coinsMode) "تعدادِ سکه" else "تعدادِ روز") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(999.dp),
+                    shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                     colors = appFieldColors(),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -128,7 +128,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                     onValueChange = { text = it.take(300) },
                     label = { Text("پیام برای کاربر (اختیاری)") },
                     minLines = 2,
-                    shape = RoundedCornerShape(22.dp),
+                    shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                     colors = appFieldColors(),
                     modifier = Modifier.fillMaxWidth(),
                 )

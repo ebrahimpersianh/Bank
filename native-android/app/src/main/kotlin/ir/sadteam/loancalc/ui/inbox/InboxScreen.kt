@@ -189,7 +189,7 @@ fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel())
                 onValueChange = { query = it },
                 placeholder = { Text("جستجو در پیام‌ها…") },
                 singleLine = true,
-                shape = RoundedCornerShape(18.dp),
+                shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(),)
         }
         // تب‌های نوع - همان فیلترِ منو، همیشه دیده می‌شوند.

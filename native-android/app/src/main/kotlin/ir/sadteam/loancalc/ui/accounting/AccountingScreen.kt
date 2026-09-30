@@ -442,7 +442,7 @@ private fun MainSection(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                             colors = appFieldColors(),
                         )
                         OutlinedTextField(
@@ -453,7 +453,7 @@ private fun MainSection(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                             colors = appFieldColors(),
                         )
                     }

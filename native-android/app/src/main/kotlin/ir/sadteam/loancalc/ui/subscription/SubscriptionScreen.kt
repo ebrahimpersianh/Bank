@@ -542,7 +542,7 @@ fun SubscriptionScreen(
                                     onValueChange = { giftCode = it.uppercase() },
                                     placeholder = { Text("JIBAK-XXXXX-XXXXX", fontSize = 11.sp) },
                                     singleLine = true,
-                                    shape = RoundedCornerShape(16.dp),
+                                    shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                                     modifier = Modifier.weight(1f), colors = ir.sadteam.loancalc.ui.components.appFieldColors(),)
                             }
                             GradientButton(

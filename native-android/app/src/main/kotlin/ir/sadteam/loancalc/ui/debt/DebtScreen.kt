@@ -528,7 +528,7 @@ private fun BoxScope.AddCounterpartySheet(visible: Boolean, onDismiss: () -> Uni
                 label = { Text("اسم") },
                 leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null, tint = AppMuted) },
                 singleLine = true,
-                shape = RoundedCornerShape(16.dp),
+                shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                 colors = appFieldColors(),
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
             )
@@ -540,7 +540,7 @@ private fun BoxScope.AddCounterpartySheet(visible: Boolean, onDismiss: () -> Uni
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     trailingIcon = { Icon(Icons.Filled.PhoneIphone, contentDescription = null, tint = AppMuted) },
                     singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
+                    shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                     colors = appFieldColors(),
                     modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                 )
@@ -557,7 +557,7 @@ private fun BoxScope.AddCounterpartySheet(visible: Boolean, onDismiss: () -> Uni
                 visualTransformation = ThousandsSeparatorTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
-                shape = RoundedCornerShape(16.dp),
+                shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                 colors = appFieldColors(),
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             )

@@ -290,7 +290,7 @@ fun AssetPickerSheet(
                         onValueChange = { customName = it },
                         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                         singleLine = true,
-                        shape = RoundedCornerShape(AppRadius.button),
+                        shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                         placeholder = { Text("اسمِ دارایی", color = AppMuted, fontSize = 12.5.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(),)
                     val trimmed = customName.trim()
                     Text(
