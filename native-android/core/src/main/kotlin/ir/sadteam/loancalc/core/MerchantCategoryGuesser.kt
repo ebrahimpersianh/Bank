@@ -77,7 +77,13 @@ object MerchantCategoryGuesser {
     )
 
     /** دسته‌ی حدس‌زده‌شده، یا `null` اگه هیچ کلیدواژه‌ای تو متن نبود (نامطمئن). */
+    /** 🌐 کلیدواژه → دسته از سرور (۸ مهر)؛ **اول** این‌ها چک می‌شوند تا بتوانند داخلی‌ها را اصلاح کنند. */
+    @Volatile var remoteWithdrawal: Map<String, String> = emptyMap()
+    @Volatile var remoteDeposit: Map<String, String> = emptyMap()
+
     fun guess(text: String, isWithdrawal: Boolean): String? {
+        val remote = if (isWithdrawal) remoteWithdrawal else remoteDeposit
+        remote.entries.firstOrNull { text.contains(it.key, ignoreCase = true) }?.let { return it.value }
         val keywords = if (isWithdrawal) withdrawalKeywords else depositKeywords
         return keywords.firstOrNull { text.contains(it.keyword, ignoreCase = true) }?.category
     }

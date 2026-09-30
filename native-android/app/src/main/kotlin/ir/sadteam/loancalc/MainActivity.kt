@@ -322,7 +322,7 @@ private val defaultShortcuts = listOf(
 // کیفِ پول، نمودار، تقویم، سند، گروه) و کاربر دو خانه‌ی هم‌شکل می‌دید که از هم
 // تشخیص‌پذیر نبودند - فقط برچسبِ ریزِ زیرشان فرق داشت. ردیفِ تازه هم باید آیکونی
 // بردارد که در این فهرست نیست.
-private val allShortcutPool = defaultShortcuts + listOf(
+internal val allShortcutPool = defaultShortcuts + listOf(
     Shortcut("gold", "طلا", Icons.Outlined.MonetizationOn, "assets"),
     Shortcut("budget", "بودجه", Icons.Outlined.Savings, "budget"),
     // مقصدش «سررسید» بود و اشتباه: «دنگ» زیرصفحه‌ی `DebtScreen` است، پس تپ روی این
@@ -896,6 +896,30 @@ private fun LoanCalcApp(
     val ratePromptViewModel: RatePromptViewModel = hiltViewModel()
     val showRatePrompt by ratePromptViewModel.shouldShow.collectAsState()
     LaunchedEffect(Unit) { ratePromptViewModel.onAppOpened() }
+    // 🗳 نظرسنجیِ یک‌سؤاله از سرور (۸ مهر) - آخرِ صفِ پنجره‌ها، هر نظرسنجی یک بار.
+    ir.sadteam.loancalc.data.RemoteApp.config.survey?.takeIf { it.id.isNotBlank() && it.options.isNotEmpty() }?.let { sv ->
+        val prefs = remember { context.getSharedPreferences("survey", android.content.Context.MODE_PRIVATE) }
+        var done by remember(sv.id) { mutableStateOf(prefs.getBoolean(sv.id, false)) }
+        val scope = rememberCoroutineScope()
+        if (!done && !showRatePrompt && ir.sadteam.loancalc.ui.components.StartupPopups.canShowRate) {
+            val close = { prefs.edit().putBoolean(sv.id, true).apply(); done = true }
+            ir.sadteam.loancalc.ui.components.JibakAlertDialog(
+                onDismissRequest = close,
+                title = { Text(sv.question) },
+                text = {
+                    androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                        sv.options.forEach { opt ->
+                            ir.sadteam.loancalc.ui.components.AppChip(label = opt, selected = false, onClick = {
+                                scope.launch { authViewModel.sendSurvey(sv.id, opt) }
+                                close()
+                            }, modifier = Modifier.fillMaxWidth())
+                        }
+                    }
+                },
+                confirmButton = { androidx.compose.material3.TextButton(onClick = close) { Text("بعداً نه") } },
+            )
+        }
+    }
     if (showRatePrompt && ir.sadteam.loancalc.ui.components.StartupPopups.canShowRate) {
         RatePromptDialog(
             onRateNow = {
@@ -1444,7 +1468,8 @@ private fun LoanCalcApp(
         // کشوی میان‌بُر رو کلِ صفحه می‌شینه (پرده‌ی تیره + خودِ کشو) ولی **زیرِ** نوارِ پایین
         // نمی‌ره - طرح صریحاً می‌خواد نوار همیشه دیده بشه.
         ShortcutDrawer(
-            shortcuts = shortcuts,
+            // خاموش کردنِ اضطراری از سرور (۸ مهر).
+            shortcuts = shortcuts.filterNot { ir.sadteam.loancalc.data.RemoteApp.isDisabled(it.id) },
             visible = shortcutDrawerOpen,
             onDismiss = { shortcutDrawerOpen = false },
             onOpenRoute = { route ->
@@ -1455,7 +1480,7 @@ private fun LoanCalcApp(
                 }
             },
             onOrderChanged = { ids -> shortcutViewModel.save(ids) },
-            allShortcuts = allShortcutPool,
+            allShortcuts = allShortcutPool.filterNot { ir.sadteam.loancalc.data.RemoteApp.isDisabled(it.id) },
             onSelectionChanged = { ids -> shortcutViewModel.saveSelection(ids) },
             inBottomBarIds = navSlots.map { it.id }.toSet(),
         )
@@ -1500,6 +1525,18 @@ private fun LoanCalcApp(
         // بنرِ آپدیتِ خودکار - رجوع کن به AppUpdateViewModel. برخلافِ هینتِ خروج، خودش محو نمی‌شه؛
         // تا کاربر یا بزنه «بروزرسانی» (بازکردنِ صفحه‌ی استور) یا خودش با ضربدر ببندتش.
         // برگه‌ی پایینِ آپدیت (هم‌شکلِ برگه‌ی بازار) - جای بنرِ باریکِ قبلی. رجوع کن به UpdateSheet.
+        // ⛔ حداقل نسخه‌ی مجاز از سرور (۸ مهر): پنجره‌ای که بسته نمی‌شود تا آپدیت شود.
+        ir.sadteam.loancalc.data.RemoteApp.config.minVersion?.takeIf { BuildConfig.VERSION_CODE < it }?.let {
+            val storeUrl = if (BuildConfig.FLAVOR == "myket") "https://myket.ir/app/ir.sadteam.loancalc" else "https://cafebazaar.ir/app/ir.sadteam.loancalc"
+            ir.sadteam.loancalc.ui.components.JibakAlertDialog(
+                onDismissRequest = {},
+                title = { Text("نسخه‌ی تازه لازم است") },
+                text = { Text(ir.sadteam.loancalc.data.RemoteApp.config.minVersionText ?: "این نسخه دیگر پشتیبانی نمی‌شود. برای ادامه، برنامه را از استور به‌روز کن.") },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(storeUrl))) } }) { Text("به‌روزرسانی") }
+                },
+            )
+        }
         // اگر پنجره‌ی سکه‌ی روزانه زودتر باز شده، برگه‌ی آپدیت بعد از بستنش می‌آید (نه رویش).
         val updateVisible = updateUrl != null && tourSeen != false && !ir.sadteam.loancalc.ui.components.StartupPopups.checkInOpen
         ir.sadteam.loancalc.ui.components.StartupPopups.tourOrUpdate = tourSeen == false || updateVisible

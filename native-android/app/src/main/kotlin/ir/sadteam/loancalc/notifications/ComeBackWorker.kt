@@ -100,8 +100,9 @@ class ComeBackWorker @AssistedInject constructor(
         val notification = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
-            .setContentTitle("${toFa(days)} روزه رفتی، وقتشه برگردی")
-            .setContentText("${toFa(days)} روزه تراکنش ثبت نکردی و نظمِ مالی‌ت در خطره. دخل‌وخرجت رو ثبت کن و ادامه بده.")
+            // متن از سرور قابلِ تغییر؛ «{days}» جای تعدادِ روز می‌نشیند.
+            .setContentTitle(ir.sadteam.loancalc.data.RemoteApp.config.comeBackTitle?.replace("{days}", toFa(days)) ?: "${toFa(days)} روزه رفتی، وقتشه برگردی")
+            .setContentText(ir.sadteam.loancalc.data.RemoteApp.config.comeBackText?.replace("{days}", toFa(days)) ?: "${toFa(days)} روزه تراکنش ثبت نکردی و نظمِ مالی‌ت در خطره. دخل‌وخرجت رو ثبت کن و ادامه بده.")
             .setStyle(
                 NotificationCompat.BigTextStyle().bigText(
                     "${toFa(days)} روزه تراکنش ثبت نکردی و نظمِ مالی‌ت در خطره. دخل‌وخرجت رو ثبت کن و ادامه بده.",

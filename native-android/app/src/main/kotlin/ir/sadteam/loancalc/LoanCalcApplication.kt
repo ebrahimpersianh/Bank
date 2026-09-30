@@ -80,8 +80,10 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         ir.sadteam.loancalc.notifications.WeeklySummaryWorker.schedule(this)
         // 🛍 فروشگاه از سرور: اول نسخه‌ی ذخیره‌شده (بی‌اینترنت هم درست)، بعد تازه‌اش.
         ir.sadteam.loancalc.data.coin.RemoteShop.loadCached(this)
+        ir.sadteam.loancalc.data.RemoteApp.loadCached(this)
         CoroutineScope(Dispatchers.IO).launch {
             authRepository.remoteConfig("shop")?.let { ir.sadteam.loancalc.data.coin.RemoteShop.update(this@LoanCalcApplication, it) }
+            authRepository.remoteConfig("app")?.let { ir.sadteam.loancalc.data.RemoteApp.update(this@LoanCalcApplication, it) }
         }
         ir.sadteam.loancalc.notifications.BudgetAlerts.start(this, accountRepository)
         // قلابِ «داده‌ی وام عوض شد» → تازه‌کردنِ ویجت. `:data` خودِ ویجت را نمی‌بیند، پس

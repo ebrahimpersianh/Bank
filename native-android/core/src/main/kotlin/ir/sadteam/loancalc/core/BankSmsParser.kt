@@ -88,6 +88,14 @@ object BankSmsParser {
         "واریز شد", "برداشت شد", "کسر شد", "پرداخت شد", "خرید شد", "انجام شد",
     )
 
+    /**
+     * 🌐 **کلیدواژه‌های اضافه از سرور** (۸ مهر): بانکی که متنش را عوض کرد، بی‌آپدیتِ برنامه درست می‌شود.
+     * فقط **اضافه** می‌کنند؛ فهرستِ داخلی سرِ جایش می‌ماند.
+     */
+    @Volatile var remoteDeposit: List<String> = emptyList()
+    @Volatile var remoteWithdrawal: List<String> = emptyList()
+    @Volatile var remoteIgnore: List<String> = emptyList()
+
     fun parse(body: String): ParsedBankSms? {
         val amountMatch = amountRegex.find(body) ?: return null
         val digitsOnly = toEnDigits(amountMatch.groupValues[1]).replace(",", "").replace("٬", "")
@@ -96,13 +104,13 @@ object BankSmsParser {
         val amountRial = if (amountMatch.groupValues[2] == "تومان") amount * 10 else amount
 
         val type = when {
-            depositKeywords.any { body.contains(it) } -> TransactionType.DEPOSIT
-            withdrawalKeywords.any { body.contains(it) } -> TransactionType.WITHDRAWAL
+            (depositKeywords + remoteDeposit).any { body.contains(it) } -> TransactionType.DEPOSIT
+            (withdrawalKeywords + remoteWithdrawal).any { body.contains(it) } -> TransactionType.WITHDRAWAL
             else -> return null
         }
 
         // تبلیغ/رمزِ پویا بی‌قیدوشرط رد می‌شود - حتی اگر کلمه‌ی «حساب» هم تویش باشد.
-        if (adKeywords.any { body.contains(it) }) return null
+        if ((adKeywords + remoteIgnore).any { body.contains(it) }) return null
 
         // دعوت‌نامه‌ی پرداخت را تراکنش حساب نکن (توضیحِ کاملش بالای notATransactionKeywords).
         if (notATransactionKeywords.any { body.contains(it) } &&

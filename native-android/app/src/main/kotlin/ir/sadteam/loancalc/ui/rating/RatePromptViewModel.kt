@@ -35,9 +35,9 @@ class RatePromptViewModel @Inject constructor(
             val opens = uiPrefs.incrementRateDialogOpens()
             val lastShown = uiPrefs.rateDialogLastShownAtOpens.first()
             val due = if (lastShown == null) {
-                opens >= FIRST_THRESHOLD
+                opens >= (ir.sadteam.loancalc.data.RemoteApp.config.rateFirst ?: FIRST_THRESHOLD)
             } else {
-                opens - lastShown >= REPEAT_INTERVAL
+                opens - lastShown >= (ir.sadteam.loancalc.data.RemoteApp.config.rateEvery ?: REPEAT_INTERVAL)
             }
             if (due) {
                 uiPrefs.setRateDialogLastShownAtOpens(opens)

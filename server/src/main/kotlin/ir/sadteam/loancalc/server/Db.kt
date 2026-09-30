@@ -248,6 +248,7 @@ object Db {
                 )
                 st.executeUpdate("CREATE INDEX IF NOT EXISTS idx_usage_daily_name ON usage_daily(name, day)")
                 // تنظیمِ از-راه-دور (۸ مهر): هر کلید یک JSON (مثلاً `shop`) - routes/RemoteConfigRoutes.kt.
+                st.executeUpdate("CREATE TABLE IF NOT EXISTS survey_answers (survey_id TEXT NOT NULL, install_id TEXT NOT NULL, answer TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (survey_id, install_id))")
                 st.executeUpdate("CREATE TABLE IF NOT EXISTS app_config (key TEXT PRIMARY KEY, json TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now')))")
                 // اطلاعیه‌های عمومیِ «پیام‌های جیبک» (نسخه‌ی جدید، اختلال، قابلیتِ تازه) - رجوع کن به
                 // routes/AnnouncementRoutes.kt. فقط صاحبِ برنامه با ADMIN_TOKEN می‌نویسد.

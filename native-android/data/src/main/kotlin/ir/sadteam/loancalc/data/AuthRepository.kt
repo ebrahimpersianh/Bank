@@ -101,6 +101,25 @@ class AuthRepository(
     suspend fun remoteConfig(key: String): String? =
         runCatching { apiService.getRemoteConfig(key).string() }.getOrNull()
 
+    suspend fun sendSurvey(id: String, answer: String): Boolean = runCatching {
+        apiService.postSurvey(ir.sadteam.loancalc.data.network.SurveyAnswerRequest(id, answer, UsageStats.publicInstallId())); true
+    }.getOrDefault(false)
+
+    suspend fun adminSurvey(id: String): List<ir.sadteam.loancalc.data.network.AdminNamedCount>? {
+        val token = authPrefs.authToken.first() ?: return null
+        return runCatching { apiService.adminSurvey("Bearer $token", id) }.getOrNull()
+    }
+
+    suspend fun adminAppVersion(): ir.sadteam.loancalc.data.network.AdminAppVersion? {
+        val token = authPrefs.authToken.first() ?: return null
+        return runCatching { apiService.adminAppVersion("Bearer $token") }.getOrNull()
+    }
+
+    suspend fun adminSetAppVersion(code: Int, changelog: String): Boolean {
+        val token = authPrefs.authToken.first() ?: return false
+        return runCatching { apiService.adminSetAppVersion("Bearer $token", ir.sadteam.loancalc.data.network.AdminAppVersion(code, changelog)); true }.getOrDefault(false)
+    }
+
     suspend fun adminSetRemoteConfig(key: String, json: String): Boolean {
         val token = authPrefs.authToken.first() ?: return false
         return runCatching {

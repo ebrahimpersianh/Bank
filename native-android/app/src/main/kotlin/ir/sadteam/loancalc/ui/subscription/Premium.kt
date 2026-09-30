@@ -30,10 +30,11 @@ import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 val LocalIsPremium = staticCompositionLocalOf { true }
 
 object FreeLimits {
-    const val ACCOUNTS = 1
-    const val TX_PER_MONTH = 30
-    const val LOANS = 1
-    const val CHEQUES = 1
+    // از سرور قابلِ تغییر (ادمین ← تنظیماتِ از راهِ دور)؛ پیش‌فرض همان جدولِ تأییدشده‌ی ۷ مهر.
+    val ACCOUNTS get() = ir.sadteam.loancalc.data.RemoteApp.config.freeAccounts ?: 1
+    val TX_PER_MONTH get() = ir.sadteam.loancalc.data.RemoteApp.config.freeTx ?: 30
+    val LOANS get() = ir.sadteam.loancalc.data.RemoteApp.config.freeLoans ?: 1
+    val CHEQUES get() = ir.sadteam.loancalc.data.RemoteApp.config.freeCheques ?: 1
 }
 
 /** درخواستِ بازکردنِ پنجره‌ی «این بخش مالِ اشتراک است» از هر جای برنامه. */

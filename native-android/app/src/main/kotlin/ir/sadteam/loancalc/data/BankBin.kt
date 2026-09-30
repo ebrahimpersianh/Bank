@@ -37,7 +37,7 @@ private val bankBins: Map<String, String> = mapOf(
 fun detectBankByCardNumber(cardNumber: String): String? {
     val digits = cardNumber.filter { it.isDigit() }
     if (digits.length < 6) return null
-    return bankBins[digits.take(6)]
+    return RemoteApp.config.bins[digits.take(6)] ?: bankBins[digits.take(6)]
 }
 
 /** کدِ سه‌رقمیِ بانک در شبا (رقم‌های ۵ تا ۷ِ «IRkk bbb…») - جدولِ عمومیِ بانکِ مرکزی (۸ مهر). */

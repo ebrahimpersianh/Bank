@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -169,6 +170,25 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                     title = "حرفت رو بزن",
                     subtitle = "مشکل، ایده‌ی طراحی یا پیشنهاد - اگه به بهتر شدنِ جیبک کمک کنه، هدیه‌ی اشتراک می‌گیری.",
                 )
+            }
+
+            // ❓ پرسش‌های پرتکرار از سرور (۸ مهر) - شاید جواب همین‌جا باشد و پیام لازم نشود.
+            val faq = ir.sadteam.loancalc.data.RemoteApp.config.faq.filter { it.q.isNotBlank() }
+            if (faq.isNotEmpty()) {
+                item {
+                    AppCard {
+                        Text("پرسش‌های پرتکرار", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                        faq.forEach { f ->
+                            var open by androidx.compose.runtime.remember(f.q) { androidx.compose.runtime.mutableStateOf(false) }
+                            Text(
+                                (if (open) "▾ " else "◂ ") + f.q,
+                                color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                                modifier = Modifier.fillMaxWidth().clickable { open = !open }.padding(vertical = 8.dp),
+                            )
+                            if (open) Text(f.a, color = ir.sadteam.loancalc.ui.theme.AppMuted, fontSize = 12.5.sp, modifier = Modifier.padding(bottom = 6.dp))
+                        }
+                    }
+                }
             }
 
             item {

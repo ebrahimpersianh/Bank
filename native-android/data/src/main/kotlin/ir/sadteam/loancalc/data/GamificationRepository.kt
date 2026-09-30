@@ -38,8 +38,9 @@ class GamificationRepository(
         const val COMPLETE_PROFILE = 50
         const val FIRST_BUDGET = 25
         const val FIRST_BACKUP = 25
-        const val DAILY_OPEN = 5
-        const val DAILY_OPEN_WEEK = 30
+        /** از سرور قابلِ تغییر (`RemoteApp.dailyCoins`). */
+        @Volatile @JvmStatic var DAILY_OPEN = 5
+        @Volatile @JvmStatic var DAILY_OPEN_WEEK = 30
 
         /** ترمیمِ زنجیرِ «فعال» - خرج، نه جایزه. */
         const val STREAK_REPAIR = 100

@@ -360,4 +360,7 @@ class AuthViewModel @Inject constructor(
     fun loadPurchaseHistory() {
         viewModelScope.launch { _purchaseHistory.value = authRepository.subscriptionHistory() }
     }
+
+    /** جوابِ نظرسنجیِ سرور (۸ مهر). */
+    suspend fun sendSurvey(id: String, answer: String) = authRepository.sendSurvey(id, answer)
 }

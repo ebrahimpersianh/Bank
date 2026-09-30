@@ -233,13 +233,25 @@ fun SubscriptionScreen(
                     // آزمایشِ A/B روی جمله‌ی زیرِ عنوان (۸ مهر) - نتیجه در ادمین ← پول.
                     val abPaywall = androidx.compose.runtime.remember { ir.sadteam.loancalc.data.UsageStats.abVariant("paywall") }
                     Text(
-                        if (abPaywall == "a") "امکاناتِ بیشتر، تجربه‌ی کامل‌تر" else "همه‌ی امکانات، بدونِ هیچ محدودیتی",
+                        if (abPaywall == "a") ir.sadteam.loancalc.data.RemoteApp.config.paywallA ?: "امکاناتِ بیشتر، تجربه‌ی کامل‌تر"
+                        else ir.sadteam.loancalc.data.RemoteApp.config.paywallB ?: "همه‌ی امکانات، بدونِ هیچ محدودیتی",
                         color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold,
                     )
                 }
             }
         }
 
+        // 🏷 نوارِ تخفیفِ مناسبتی از سرور (۸ مهر) - بعد از `until` خودش پنهان می‌شود.
+        ir.sadteam.loancalc.data.RemoteApp.config.promo?.takeIf { p ->
+            p.title.isNotBlank() && (p.until == null || p.until >= ir.sadteam.loancalc.core.JalaliCalendar.today().let { "%04d-%02d-%02d".format(java.util.Locale.US, it.y, it.m, it.d) })
+        }?.let { p ->
+            item {
+                ir.sadteam.loancalc.ui.components.AppCard(variant = ir.sadteam.loancalc.ui.components.AppCardVariant.GOLD) {
+                    Text(p.title, color = ir.sadteam.loancalc.ui.theme.AppGoldInk, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                    if (p.text.isNotBlank()) Text(p.text, color = ir.sadteam.loancalc.ui.theme.AppGoldInk2, fontSize = 12.5.sp)
+                }
+            }
+        }
         // ── کارتِ «جیبک پلاس» - همان کارتِ رنگیِ بالای بقیه‌ی صفحه‌ها (با تم عوض می‌شود) ──
         item {
             val expiry = remember(subscribedUntil) { parseSubscribedUntil(subscribedUntil) }

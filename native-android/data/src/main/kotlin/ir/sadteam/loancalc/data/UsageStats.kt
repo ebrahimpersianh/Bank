@@ -225,6 +225,9 @@ object UsageStats {
         return v
     }
 
+    /** شناسه‌ی تصادفیِ همین نصب (نه حساب) - برای نظرسنجی. */
+    fun publicInstallId(): String = installId()
+
     private fun installId(): String {
         val p = prefs() ?: return "unknown-install-id"
         p.getString(KEY_INSTALL_ID, null)?.let { return it }

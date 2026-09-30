@@ -167,6 +167,18 @@ interface ApiService {
     @GET("api/config/{key}")
     suspend fun getRemoteConfig(@retrofit2.http.Path("key") key: String): okhttp3.ResponseBody
 
+    @POST("api/survey")
+    suspend fun postSurvey(@Body body: SurveyAnswerRequest): okhttp3.ResponseBody
+
+    @GET("api/admin/survey")
+    suspend fun adminSurvey(@Header("Authorization") authHeader: String, @retrofit2.http.Query("id") id: String): List<AdminNamedCount>
+
+    @GET("api/admin/app-version")
+    suspend fun adminAppVersion(@Header("Authorization") authHeader: String): AdminAppVersion
+
+    @POST("api/admin/app-version")
+    suspend fun adminSetAppVersion(@Header("Authorization") authHeader: String, @Body body: AdminAppVersion): okhttp3.ResponseBody
+
     @POST("api/admin/config/{key}")
     suspend fun adminSetRemoteConfig(
         @Header("Authorization") authHeader: String,
@@ -544,3 +556,6 @@ data class AdminUserTimeline(
 )
 data class AdminBroadcastRequest(val segment: String, val title: String, val body: String, val dryRun: Boolean)
 data class AdminBroadcastResult(val segment: String = "", val count: Int = 0, val sent: Boolean = false)
+
+data class SurveyAnswerRequest(val id: String, val answer: String, val install: String)
+data class AdminAppVersion(val code: Int = 0, val changelog: String = "")

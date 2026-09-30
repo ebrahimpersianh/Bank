@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.ChevronLeft
@@ -80,6 +81,7 @@ fun AdminHubScreen(
         "user" -> { AdminUserScreen(onBack = { page = null }); return }
         "broadcast" -> { AdminBroadcastScreen(onBack = { page = null }); return }
         "shop" -> { AdminShopScreen(onBack = { page = null }); return }
+        "remote" -> { AdminRemoteScreen(onBack = { page = null }); return }
     }
     val items by supportVm.items.collectAsState()
     val digest by digestVm.data.collectAsState()
@@ -111,6 +113,7 @@ fun AdminHubScreen(
         }
         AppCard(contentPadding = 2.dp) {
             AdminListRow(Icons.Filled.Storefront, "مدیریتِ فروشگاه", "قیمت، پنهان کردن، تمِ تازه، تخفیف", AppPrimaryPill, AppPrimaryInk, divider = false) { page = "shop" }
+            AdminListRow(Icons.Filled.Tune, "تنظیماتِ از راهِ دور", "رایگان، پیامکِ بانک، تخفیف، نسخه، نظرسنجی…", AppInfoPill, AppInfo, divider = true) { page = "remote" }
         }
 
         val recent = items.orEmpty().take(4)
