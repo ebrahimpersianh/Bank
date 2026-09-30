@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0">
+<style>body{margin:0;background:#E9EEEB;font-family:Vazirmatn,sans-serif}a{color:#15803D}a:hover{color:#0E7A35}</style>
+</helmet>
+<div dir="rtl" style="display:flex;flex-wrap:wrap;gap:40px;padding:48px;align-items:flex-start;font-family:Vazirmatn,sans-serif;color:#14201A;">
+  <div id="15a" style="display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:13px;font-weight:700;color:#5B6B62;">15a · افزودن حساب‌کتاب (کلِ فرم)</div>
+    <div style="width:360px;min-height:780px;background:#F4F8F6;border-radius:36px;border:1.5px solid #D5DED8;box-shadow:0 6px 0 #D5DED8;overflow:hidden;display:flex;flex-direction:column;">
+      <div style="padding:26px 16px 8px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:10px;"><span style="font-family:'Material Symbols Rounded';font-size:26px;">arrow_forward</span><div style="font-size:21px;font-weight:900;">افزودن حساب‌کتاب</div></div>
+        <div style="background:#fff;border:1.5px solid #E3EBE6;border-radius:24px;box-shadow:0 3px 0 #E3EBE6;padding:16px;display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:12.5px;font-weight:700;color:#5B6B62;">نوع حساب‌کتاب</div>
+            <div style="display:flex;background:#E6EDE8;border-radius:999px;padding:4px;"><div style="flex:1;height:40px;border-radius:999px;background:#16A34A;box-shadow:0 3px 0 #0E7A35;color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px;"><span style="font-family:'Material Symbols Rounded';font-size:19px;">credit_card</span>کارت بانکی</div><div style="flex:1;height:40px;color:#5B6B62;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;">منبع دیگر</div></div>
+          </div>
+          <sc-for list="{{ top }}" as="f" hint-placeholder-count="3">
+            <div style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:12.5px;font-weight:700;color:#5B6B62;">{{ f }}</div><div style="height:50px;border-radius:14px;border:1.5px solid #CFDDD4;"></div></div>
+          </sc-for>
+          <div style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:12.5px;font-weight:700;color:#5B6B62;">شبا (اختیاری)</div><div dir="ltr" style="height:50px;border-radius:14px;border:1.5px solid #CFDDD4;display:flex;align-items:center;padding:0 14px;font-size:15px;font-weight:700;color:#7A8A81;">IR</div><div style="font-size:11.5px;line-height:1.8;color:#7A8A81;">با این دو، انتقال به حساب‌های خودت خودکار «جابه‌جایی» حساب می‌شود، نه خرج.</div></div>
+        </div>
+        <div style="background:#fff;border:1.5px solid #E3EBE6;border-radius:24px;box-shadow:0 3px 0 #E3EBE6;padding:16px;display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:12.5px;font-weight:700;color:#5B6B62;">بانک</div><div style="display:flex;gap:8px;"><div style="width:50px;height:50px;border-radius:14px;background:#E8F5EC;color:#16A34A;font-weight:900;font-size:20px;display:flex;align-items:center;justify-content:center;">؟</div><div style="flex:1;height:50px;border-radius:14px;border:1.5px solid #CFDDD4;"></div></div></div>
+          <div style="display:flex;flex-direction:column;gap:8px;"><div style="font-size:12.5px;font-weight:700;color:#5B6B62;">شماره‌ی پیامکِ بانک</div><div style="height:50px;border-radius:14px;border:1.5px solid #CFDDD4;display:flex;align-items:center;padding:0 14px;font-size:13.5px;color:#9AA8A0;">مثلاً 100011111 یا BANKMELLAT</div><div style="height:44px;border-radius:999px;border:1.5px dashed #9FD3B2;color:#15803D;font-size:13.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px;"><span style="font-family:'Material Symbols Rounded';font-size:19px;">sms</span>انتخاب از پیامک‌های گوشی</div></div>
+        </div>
+        <div style="background:#fff;border:1.5px solid #E3EBE6;border-radius:24px;box-shadow:0 3px 0 #E3EBE6;padding:16px;display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:12.5px;font-weight:700;color:#5B6B62;">موجودیِ روزِ شروع</div>
+          <div style="height:50px;border-radius:14px;border:1.5px solid #CFDDD4;display:flex;align-items:center;justify-content:flex-end;padding:0 14px;font-size:13.5px;color:#9AA8A0;">تومان</div>
+          <div style="display:flex;gap:6px;background:#FDF6E6;border-radius:14px;padding:10px 12px;margin-top:4px;"><span style="font-family:'Material Symbols Rounded';font-size:18px;color:#B7791F;">info</span><div style="font-size:11.5px;line-height:1.9;color:#6B4A0E;text-wrap:pretty;">موجودیِ روزی که این حساب را شروع می‌کنی. موجودیِ امروز از این رقم به‌علاوه‌ی تراکنش‌ها حساب می‌شود - پس اگر رقمِ امروز را بزنی، تراکنش‌های گذشته دوباره روی آن سوار می‌شوند.</div></div>
+        </div>
+        <div style="height:54px;border-radius:999px;background:#16A34A;box-shadow:0 4px 0 #0E7A35;color:#fff;font-weight:800;font-size:15.5px;display:flex;align-items:center;justify-content:center;">ذخیره حساب‌کتاب</div>
+      </div>
+      <div style="margin-top:auto;"><dc-import name="JibakNav" active="asset" hint-size="100%,90px"></dc-import></div>
+    </div>
+  </div>
+  <div id="15b" style="display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:13px;font-weight:700;color:#5B6B62;">15b · افزودن حساب (نسخه‌ی مرحله‌ای)</div>
+    <div style="width:360px;height:780px;background:#F4F8F6;border-radius:36px;border:1.5px solid #D5DED8;box-shadow:0 6px 0 #D5DED8;overflow:hidden;display:flex;flex-direction:column;padding:26px 16px 22px;box-sizing:border-box;gap:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;"><div style="font-size:21px;font-weight:900;">افزودن حساب</div><div style="width:44px;height:44px;border-radius:14px;background:#fff;border:1.5px solid #E3EBE6;display:flex;align-items:center;justify-content:center;"><span style="font-family:'Material Symbols Rounded';font-size:22px;">close</span></div></div>
+      <div style="background:#fff;border:1.5px solid #E3EBE6;border-radius:24px;box-shadow:0 3px 0 #E3EBE6;padding:16px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:12.5px;font-weight:700;color:#5B6B62;">نوع حساب</div><div style="height:50px;border-radius:14px;border:1.5px solid #CFDDD4;display:flex;align-items:center;gap:10px;padding:0 14px;"><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#16A34A;font-variation-settings:'FILL' 1;">credit_card</span><div style="flex:1;font-size:14.5px;font-weight:700;">کارت بانکی</div><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#7A8A81;">expand_more</span></div></div>
+        <div style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:12.5px;font-weight:700;color:#5B6B62;">شماره کارت ۱۶ رقمی <span style="color:#C53030;">*</span></div><div dir="ltr" style="height:50px;border-radius:14px;border:1.5px solid #CFDDD4;display:flex;align-items:center;justify-content:center;gap:18px;font-size:15px;color:#C9D3CD;letter-spacing:2px;"><span>----</span><span>----</span><span>----</span><span>----</span></div></div>
+        <div style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:12.5px;font-weight:700;color:#5B6B62;">شماره حساب (اختیاری)</div><div style="height:50px;border-radius:14px;border:1.5px solid #CFDDD4;display:flex;align-items:center;padding:0 14px;font-size:13.5px;color:#9AA8A0;">شماره حسابت را وارد کن.</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:12.5px;font-weight:700;color:#5B6B62;">نام کارت</div><div style="height:50px;border-radius:14px;border:1.5px solid #CFDDD4;display:flex;align-items:center;padding:0 14px;font-size:13.5px;color:#9AA8A0;">یک نام برای کارتت بذار</div></div>
+        <div style="height:1.5px;background:#EEF3EF;"></div>
+        <div style="display:flex;align-items:center;gap:12px;"><div style="width:40px;height:40px;border-radius:13px;background:#E8F5EC;color:#16A34A;display:flex;align-items:center;justify-content:center;"><span style="font-family:'Material Symbols Rounded';font-size:21px;font-variation-settings:'FILL' 1;">sms</span></div><div style="flex:1;"><div style="font-size:14px;font-weight:800;">خواندن پیامک های بانکی</div><div style="font-size:12px;color:#7A8A81;display:flex;align-items:center;gap:4px;"><span style="width:7px;height:7px;border-radius:999px;background:#9AA8A0;"></span>غیر فعال</div></div><span style="font-family:'Material Symbols Rounded';font-size:22px;color:#9AA8A0;">chevron_left</span></div>
+        <div style="display:flex;align-items:center;gap:12px;"><div style="flex:1;font-size:14px;font-weight:800;">موجودی اولیه کارت</div><div style="width:48px;height:28px;border-radius:999px;background:#DCE5DF;padding:3px;box-sizing:border-box;"><div style="width:22px;height:22px;border-radius:999px;background:#fff;"></div></div></div>
+      </div>
+      <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:800;"><span>مرحله ۱ از ۲</span><span style="color:#15803D;">۵۰٪</span></div>
+        <div style="height:8px;border-radius:999px;background:#E3EBE6;"><div style="width:50%;height:8px;border-radius:999px;background:#16A34A;"></div></div>
+        <div style="height:54px;border-radius:999px;background:#DCE5DF;color:#8A9A91;font-weight:800;font-size:15.5px;display:flex;align-items:center;justify-content:center;margin-top:6px;">ایجاد حساب</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() { return { top: ['اسم حساب‌کتاب','شماره کارت','شماره حساب (اختیاری)'] }; }
+}
+</script>
+</body>
+</html>

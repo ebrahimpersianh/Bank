@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0">
+<style>body{margin:0;background:#E9EEEB;font-family:Vazirmatn,sans-serif}a{color:#15803D}a:hover{color:#0E7A35}</style>
+</helmet>
+<div dir="rtl" style="display:flex;flex-wrap:wrap;gap:40px;padding:48px;align-items:flex-start;font-family:Vazirmatn,sans-serif;color:#14201A;">
+  <div id="21a" style="display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:13px;font-weight:700;color:#5B6B62;">21a · افزودن از پیامک‌ها</div>
+    <div style="width:360px;min-height:780px;background:#F4F8F6;border-radius:36px;border:1.5px solid #D5DED8;box-shadow:0 6px 0 #D5DED8;overflow:hidden;display:flex;flex-direction:column;padding:26px 16px 20px;box-sizing:border-box;gap:12px;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="font-family:'Material Symbols Rounded';font-size:26px;">arrow_forward</span><div style="font-size:21px;font-weight:900;">افزودن از پیامک‌ها</div></div>
+      <div style="font-size:13px;color:#5B6B62;">فرستنده را انتخاب کن تا پیامک‌هایش را ببینی.</div>
+      <sc-for list="{{ list }}" as="s" hint-placeholder-count="8">
+        <div style="{{ s.box }}">
+          <div style="{{ s.av }}"><span style="font-family:'Material Symbols Rounded';font-size:20px;font-variation-settings:'FILL' 1;">{{ s.icon }}</span></div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div dir="ltr" style="font-size:14.5px;font-weight:900;">{{ s.from }}</div>
+              <sc-if value="{{ s.bank }}" hint-placeholder-val="{{ false }}"><div style="background:#E8F5EC;color:#15803D;font-size:10.5px;font-weight:900;padding:1px 8px;border-radius:999px;">بانکی</div></sc-if>
+              <div style="margin-right:auto;font-size:11px;color:#7A8A81;white-space:nowrap;">{{ s.n }}</div>
+            </div>
+            <div style="font-size:12px;line-height:1.8;color:#5B6B62;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ s.t }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const L = [
+      ['98200035','۷ پیام','*بانک شهر* انتقال وجه کارتي برداشت از:7001007357079 مبلغ:1,209,000ريال موجودي:157,964 ريال',true],
+      ['DIVAR','۱ پیام','نسخه دیوار شما آسیب‌پذیری امنیتی مهمی دارد. فوراً نسخه جدید را از سایت رسمی دیوار یا کافه'],
+      ['+989114523800','۲۲۳ پیام','صادق جانم❤️ امروز که حالم خوب نبود و واقعاً بی‌حال بودم، بیشتر از همیشه کنارم بودی و نذاشت'],
+      ['+9850003004002','۱ پیام','یادآوری تسویه بدهی دیجی‌پی محمد نوبهارکچائي عزیز، بدهی اقساط اعتباری دیجی‌پی شما پرداخت ن'],
+      ['+9890007198','۱ پیام','بروزرسانی گپ جی‌پی‌تی - مدل‌های جدید Gemini-3.8، Grok-4.7، GPT-6 و Opus 5.5 - نسخه جدید ب'],
+      ['MCI Modem','۱ پیام','🛜فرصت محدود خرید مودم‌های طرح گیمینگ با ۵ میلیون تومان تخفیف❗ کال‌آف‌دیوتی یا دوتا۲؟ رو'],
+      ['+989998760356','۱ پیام','09357595986❤️جذابه ؟قسطی بخر👇 irancell-agent.com/i/ 09357595986 لغو11'],
+      ['DK Sellers','۱۰ پیام','']
+    ];
+    return { list: L.map(([from,n,t,bank]) => ({ from,n,t,bank:!!bank, icon: bank?'account_balance':'sms',
+      box:{background:'#fff',border:`1.5px solid ${bank?'#9FD3B2':'#E3EBE6'}`,borderRadius:'22px',boxShadow:`0 3px 0 ${bank?'#BFE3CB':'#E3EBE6'}`,padding:'12px 14px',display:'flex',gap:'12px',alignItems:'flex-start'},
+      av:{width:'40px',height:'40px',borderRadius:'13px',background:bank?'#E8F5EC':'#F4F8F6',color:bank?'#16A34A':'#7A8A81',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0} })) };
+  }
+}
+</script>
+</body>
+</html>
