@@ -569,7 +569,12 @@ fun ShopScreen(
             IconButton(onClick = onBack) {
                 Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText)
             }
-            Column(modifier = Modifier.padding(start = 4.dp).weight(1f)) {
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(ir.sadteam.loancalc.R.drawable.jibak_shop_store_3d),
+                contentDescription = null,
+                modifier = Modifier.size(40.dp),
+            )
+            Column(modifier = Modifier.padding(start = 8.dp).weight(1f)) {
                 Text("فروشگاه", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
                 Text(
                     "با سکه‌ها، امکاناتِ بیشتری باز کن",

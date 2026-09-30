@@ -46,6 +46,9 @@ import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.outlined.BarChart
@@ -721,6 +724,12 @@ private fun HomeHeader(
     val avatarViewModel: AvatarViewModel = hiltViewModel()
     val avatar by avatarViewModel.avatar.collectAsState()
     val avatarFrame by avatarViewModel.frame.collectAsState()
+    var menuOpen by remember { mutableStateOf(false) }
+    val themeVm: ir.sadteam.loancalc.ui.theme.ThemeViewModel = hiltViewModel()
+    val themeMode by themeVm.themeMode.collectAsState()
+    val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = themeMode == ir.sadteam.loancalc.ui.theme.ThemeMode.DARK ||
+        (themeMode == ir.sadteam.loancalc.ui.theme.ThemeMode.SYSTEM && systemDark)
     // آستانه‌ی حالتِ باریک که طراح نگذاشته بود چون عددش دستِ ماست: زیرِ این عرض، عددِ
     // سکه برداشته می‌شود و فقط خودِ سکه می‌مانَد (ترتیبِ `55b`: عددِ سکه ← تاریخ ← نام).
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -754,12 +763,26 @@ private fun HomeHeader(
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = onOpenProfile,
+                    onClick = { menuOpen = true },
                 ),
             contentAlignment = Alignment.Center,
         ) {
             // کمی بزرگ‌تر (خواسته‌ی کاربر، ۶ مهر).
             FramedAvatar(avatar = avatar, size = 37.dp, frame = avatarFrame)
+            // ۸ مهر: هدر خلوت شد - فروشگاه و تنظیمات به منوی آدمک رفتند.
+            androidx.compose.material3.DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                listOf(
+                    Triple("حسابِ کاربری", Icons.Filled.Person, onOpenProfile),
+                    Triple("فروشگاه", androidx.compose.ui.graphics.vector.ImageVector.vectorResource(ir.sadteam.loancalc.R.drawable.ic_shop_bag), onOpenShop),
+                    Triple("تنظیمات", Icons.Filled.Settings, onOpenSettings),
+                ).forEach { (label, icon, action) ->
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text(label, fontWeight = FontWeight.Bold) },
+                        leadingIcon = { Icon(icon, null, tint = AppMuted) },
+                        onClick = { menuOpen = false; action() },
+                    )
+                }
+            }
         }
         Column(modifier = Modifier.weight(1f).padding(start = 6.dp)) {
             // تاریخ **دومین چیزی است که در تنگنا می‌رود** (بعدِ عددِ سکه، قبلِ نام).
@@ -815,9 +838,15 @@ private fun HomeHeader(
             if (streakAtRisk) {
                 ActiveChip(days = activeDays, onClick = onOpenCoins)
             } else {
-                // به‌جای عددِ سکه، درِ اختصاصیِ فروشگاه (خواسته‌ی کاربر، ۶ مهر). موجودیِ سکه بالای
-                // خودِ فروشگاه نشان داده می‌شود.
-                PrivacyEyeButton(icon = androidx.compose.ui.graphics.vector.ImageVector.vectorResource(ir.sadteam.loancalc.R.drawable.ic_shop_bag), active = false, onClick = onOpenShop, contentDescription = "فروشگاه")
+                // کلیدِ سریعِ تیره/روشن (۸ مهر، خواسته‌ی کاربر: «دمِ دست مثلِ حالتِ خصوصی»).
+                PrivacyEyeButton(
+                    icon = if (isDark) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                    active = false,
+                    onClick = {
+                        themeVm.setThemeMode(if (isDark) ir.sadteam.loancalc.ui.theme.ThemeMode.LIGHT else ir.sadteam.loancalc.ui.theme.ThemeMode.DARK)
+                    },
+                    contentDescription = if (isDark) "حالتِ روشن" else "حالتِ تیره",
+                )
             }
             // زنگِ مرکزِ پیام‌ها (بخشِ ۴۰). **عدد فقط برای اقدام‌دارهای بازه**؛ خبرِ
             // خوانده‌نشده فقط یه نقطه‌ی سبز می‌گیره، نه عدد (قاعده‌ی صریحِ طرح).
@@ -826,8 +855,6 @@ private fun HomeHeader(
                 hasUnreadNews = inboxUnreadNews > 0,
                 onClick = onOpenInbox,
             )
-            // چرخ‌دنده برگشت (۶ مهر، خواسته‌ی کاربر: «فعلاً همون‌جا، بعداً تغییر بدیم»).
-            PrivacyEyeButton(icon = Icons.Filled.Settings, active = false, onClick = onOpenSettings)
         }
     }
     }
