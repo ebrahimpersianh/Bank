@@ -9,8 +9,6 @@ import androidx.compose.ui.unit.dp
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 
-/** شکل گوشه‌گرد مینیمال مشترک برای فیلدهای ورودی (هماهنگ با shapes.extraSmall تو تم). */
-val AppFieldShape: Shape = RoundedCornerShape(14.dp)
 
 /**
  * رنگ‌های مشترک فیلدهای ورودی: حاشیه‌ی سبز کم‌رنگ در حالت عادی، و طلایی (AppAccent) موقع فوکوس/تپ -
@@ -28,4 +26,4 @@ fun appFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
 )
 
 /** گوشه‌ی گردِ همه‌ی کادرها - مثلِ کادرِ جستجو. */
-val AppFieldShape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
+val AppFieldShape: Shape = RoundedCornerShape(28.dp)

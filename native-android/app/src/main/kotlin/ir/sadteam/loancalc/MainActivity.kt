@@ -354,6 +354,7 @@ private val allShortcutPool = defaultShortcuts + listOf(
     // ۸ مهر (خواسته‌ی کاربر: «هر قابلیتی یک میان‌بر داشته باشد»).
     Shortcut("add-account", "افزودنِ حساب", Icons.Outlined.AddCard, ADD_ACCOUNT_ROUTE),
     Shortcut("bills", "قبض‌ها", Icons.Outlined.ReceiptLong, BILLS_ROUTE),
+    Shortcut("payoff", "تسویه‌ی بدهی‌ها", Icons.Outlined.Flag, PAYOFF_ROUTE),
     Shortcut("search", "جستجوی کلی", Icons.Outlined.ManageSearch, "search"),
     Shortcut("settings", "تنظیمات", Icons.Outlined.Settings, "settings"),
 )
@@ -386,6 +387,7 @@ private const val INBOX_ROUTE = "inbox"
 private const val CALC_HISTORY_ROUTE = "calc-history"
 private const val ADD_ACCOUNT_ROUTE = "accounts-add"
 private const val BILLS_ROUTE = "bills"
+private const val PAYOFF_ROUTE = "debt-payoff"
 
 /** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
 private enum class LoanSubTab(val label: String) {
@@ -1268,6 +1270,9 @@ private fun LoanCalcApp(
                 }
                 composable(ADD_ACCOUNT_ROUTE) {
                     AccountsScreen(onBack = { navigateTo(BottomTab.ASSETS.route) }, startInAddMode = true)
+                }
+                composable(PAYOFF_ROUTE) {
+                    ir.sadteam.loancalc.ui.debt.DebtPayoffScreen(onBack = { navigateTo(LOAN_ROUTE) })
                 }
                 composable(BILLS_ROUTE) {
                     ir.sadteam.loancalc.ui.extras.BillsScreen(onBack = { navigateTo(BottomTab.BUDGET.route) })
