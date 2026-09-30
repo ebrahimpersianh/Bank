@@ -46,6 +46,8 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EventRepeat
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.PieChart
 import ir.sadteam.loancalc.ui.components.JibakAlertDialog
@@ -377,99 +379,60 @@ private fun MainSection(
         contentPadding = PaddingValues(14.dp, 14.dp, 14.dp, 100.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        // کارتِ بزرگِ موجودیِ کل - هم‌الگو با کارتِ خانه، به‌علاوه‌ی آیکونِ جستجو که فیلدِ جستجو
-        // رو باز/بسته می‌کنه (خواسته‌ی کاربر: «کلا شبیهِ اون بشه» - عکسِ مرجعش دقیقاً همین ترکیب رو
-        // داشت: مانده‌ی کل بزرگ بالا + آیکونِ جستجو کنارش).
+        // بازطراحیِ ۸ مهر: این بخش حالا فقط صفحه‌ی «همه‌ی تراکنش‌ها» است - کارت‌های حساب، طلب/بدهی
+        // و موجودیِ کل جایشان در تبِ دارایی است. ⚠️ عددِ هیرو قبلاً **ریال** بود (۱۰ برابر).
         item {
             StaggerIn(0) {
-                // کارتِ قهرمانِ **تبِ دارایی** - سبزِ توپر طبقِ کارتِ `26b`ی طرح.
-                // (یه دور اشتباهاً بنفش شد چون فکر کردم این بخش تبِ گزارشه؛ `MainSection`
-                // در واقع نمای «حساب‌کتاب‌ها»ی تبِ داراییه - رجوع کن به `AssetsScreen`.)
                 AppHeroCard {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        Column {
-                            Text("داراییِ کل", color = HeroMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                            // شمارشِ بالارونده - تو حالتِ خصوصی خاموشه (عدد پشتِ ••• مخفیه).
-                            val shownBalance = countUpAmount(totalBalance, enabled = !privacyMode)
-                            // فریمِ دورِ ۱۱: تپ روی همین یک عدد، ۴ ثانیه نشانش می‌دهد -
-                            // بی اینکه بقیه‌ی صفحه از پرده بیرون بیاید.
-                            RevealOnTap(privacyMode) { masked ->
-                                Text(
-                                    maskIfPrivate(masked, fmt(shownBalance)),
-                                    color = Color.White,
-                                    fontSize = 27.sp,
-                                    fontWeight = FontWeight.Black,
-                                    modifier = Modifier.padding(top = 3.dp),
-                                )
-                            }
-                        }
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .background(HeroPillBg, CircleShape)
-                                .pressScaleClickable(onClick = { showSearch = !showSearch }),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(Icons.Filled.Search, contentDescription = "جستجو", tint = Color.White, modifier = Modifier.size(17.dp))
+                    Text("خرجِ ${faMonthNamesAccounting[today.m - 1]}", color = HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    RevealOnTap(privacyMode) { masked ->
+                        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp)) {
+                            Text(maskIfPrivate(masked, fmt(expense / 10)), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black, maxLines = 1)
+                            Text("تومان", color = HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp, bottom = 5.dp))
                         }
                     }
-                    // قرص‌های تفکیکِ زیرِ عدد - طرح سه‌تا داره (نقد/طلا/ارز). اینجا تفکیکِ واقعیِ
-                    // دمِ‌دستی «تعدادِ حساب‌کتاب»ه؛ تفکیکِ دسته‌های دارایی تو نمای «دارایی‌ها»ی
-                    // همین تب (AssetSection) هست.
-                    Row(
-                        modifier = Modifier.padding(top = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(7.dp),
-                    ) {
-                        HeroSmallPill("${toFa(accounts.size)} حساب‌کتاب")
+                    Row(modifier = Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                        HeroSmallPill("درآمد ${if (privacyMode) "•••" else toFa(fmt(income / 10))}")
+                        HeroSmallPill("${toFa(allTransactions.count { it.year == today.y && it.month == today.m })} تراکنش این ماه")
                     }
                 }
             }
         }
-
-        if (showSearch) {
-            item {
-                StaggerIn(1) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text("جستجو تو تراکنش‌ها...") },
-                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        colors = appFieldColors(),
-                    )
+        item {
+            ir.sadteam.loancalc.ui.components.PillSearchField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = "جستجو تو تراکنش‌ها…",
+            )
+        }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    listOf(
+                        null to "همه",
+                        TransactionType.WITHDRAWAL.name to "خرج",
+                        TransactionType.DEPOSIT.name to "درآمد",
+                        ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER to "جابه‌جایی",
+                    ).forEach { (key, label) ->
+                        AppChip(label, typeFilter == key, onClick = { typeFilter = key })
+                    }
+                    AppChip("فیلترِ مبلغ", showSearch || minToman.isNotEmpty() || maxToman.isNotEmpty(), onClick = { showSearch = !showSearch })
                 }
-            }
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (accounts.size > 1) {
                     Row(
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        listOf(
-                            null to "همه",
-                            TransactionType.WITHDRAWAL.name to "خرج",
-                            TransactionType.DEPOSIT.name to "درآمد",
-                            ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER to "جابه‌جایی",
-                        ).forEach { (key, label) ->
-                            AppChip(label, typeFilter == key, onClick = { typeFilter = key })
+                        AppChip("همه‌ی حساب‌ها", accountFilter == null, onClick = { accountFilter = null })
+                        accounts.forEach { acc ->
+                            AppChip(acc.name, accountFilter == acc.id, onClick = { accountFilter = acc.id })
                         }
                     }
-                    if (accounts.size > 1) {
-                        Row(
-                            modifier = Modifier.horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            AppChip("همه‌ی حساب‌ها", accountFilter == null, onClick = { accountFilter = null })
-                            accounts.forEach { acc ->
-                                AppChip(acc.name, accountFilter == acc.id, onClick = { accountFilter = acc.id })
-                            }
-                        }
-                    }
+                }
+                if (showSearch) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
                             value = minToman,
@@ -479,6 +442,7 @@ private fun MainSection(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
                             colors = appFieldColors(),
                         )
                         OutlinedTextField(
@@ -489,166 +453,9 @@ private fun MainSection(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
                             colors = appFieldColors(),
                         )
-                    }
-                }
-            }
-        }
-
-        // خواسته‌ی صریحِ کاربر: مدیریت/افزودنِ حساب مستقیم همینجا (نه فقط تنظیمات)، به‌شکلِ کارت
-        // (نه چیپِ ساده) با بجِ بانک/لوگو و مانده‌ی رنگیِ خودِ همون حساب - عیناً هم‌الگو با عکسِ
-        // مرجعِ کاربر. یه ردیفِ افقیِ اسکرول‌شونده: اول دکمه‌ی «+ حساب جدید»، بعد کارتِ هر حساب.
-        item {
-            StaggerIn(1) {
-                // هر دو نوعِ کارت (افزودن/حساب) از همون AppCardِ مشترک ساخته می‌شن و ارتفاعِ ثابتِ
-                // یکسان دارن، تا با هم و با بقیه‌ی کارت‌های صفحه کاملاً یک‌دست باشن.
-                val accountCardHeight = 116.dp
-                Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    AppCard(
-                        modifier = Modifier
-                            .width(126.dp)
-                            .height(accountCardHeight)
-                            .pressScaleClickable(onClick = { accountsAddMode = true; showAccountsScreen = true }),
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Box(
-                                modifier = Modifier.size(32.dp).background(AppPrimaryPill, CircleShape),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(Icons.Filled.Add, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
-                            }
-                            Text(
-                                "حساب جدید",
-                                color = AppText,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(top = 8.dp),
-                            )
-                        }
-                    }
-                    accounts.forEach { acc ->
-                        val accBalance = remember(acc, allTransactions) { viewModel.balanceOf(acc, allTransactions) }
-                        AppCard(
-                            modifier = Modifier
-                                .width(158.dp)
-                                .height(accountCardHeight)
-                                .pressScaleClickable(onClick = { showAccountsScreen = true }),
-                        ) {
-                            // ⚠️ `BankBadge` مستقیم صدا زده می‌شد و `bankName`ِ حسابِ نقدی
-                            // **رشته‌ی خالی** است نه null، پس فال‌بکِ «حرفِ اول» یک بجِ خالی
-                            // می‌ساخت و `iconKey`ی که کاربر انتخاب کرده دور ریخته می‌شد.
-                            // `AccountBadge` همین را درست می‌کند و همه‌جا باید همان باشد.
-                            AccountBadge(account = acc, size = 32.dp)
-                            Text(
-                                acc.name,
-                                color = AppText,
-                                fontSize = 12.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(top = 8.dp),
-                            )
-                            PrivacyCrossfade(privacyMode) { masked ->
-                                Text(
-                                    "${maskIfPrivate(masked, fmt((accBalance) / 10))} تومان",
-                                    color = if (accBalance < 0) AppDanger else AppPrimary,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(top = 4.dp),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        item {
-            StaggerIn(2) {
-                AppCard(label = "گزارشِ ${faMonthNamesAccounting[today.m - 1]}") {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column {
-                            Text("درآمد", color = AppMuted, fontSize = 12.sp)
-                            PrivacyCrossfade(privacyMode) { masked ->
-                                Text("${maskIfPrivate(masked, fmt((income) / 10))} تومان", color = AppPrimary, fontSize = 15.sp)
-                            }
-                        }
-                        Column {
-                            Text("هزینه", color = AppMuted, fontSize = 12.sp)
-                            PrivacyCrossfade(privacyMode) { masked ->
-                                Text("${maskIfPrivate(masked, fmt((expense) / 10))} تومان", color = AppDanger, fontSize = 15.sp)
-                            }
-                        }
-                        Column {
-                            Text("مانده", color = AppMuted, fontSize = 12.sp)
-                            PrivacyCrossfade(privacyMode) { masked ->
-                                Text(
-                                    "${maskIfPrivate(masked, fmt((income - expense) / 10))} تومان",
-                                    color = if (income - expense >= 0) AppText else AppDanger,
-                                    fontSize = 15.sp,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // ورودیِ «طلب و بدهی» - به‌جای یه کاشیِ صرفاً لینک، خودِ عددها رو هم نشون می‌ده تا با یه
-        // نگاه معلوم باشه چقدر طلبکاری و چقدر بدهکار. تپ روش صفحه‌ی کاملش رو باز می‌کنه.
-        item {
-            StaggerIn(3) {
-                AppCard(modifier = Modifier.pressScaleClickable(onClick = { showDebtScreen = true })) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier.size(30.dp).background(AppPrimaryPill, CircleShape),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(Icons.Filled.Handshake, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(17.dp))
-                            }
-                            Text("طلب و بدهی", color = AppText, fontSize = 13.sp, modifier = Modifier.padding(start = 10.dp))
-                        }
-                        Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Column {
-                            Text("ازم طلبکارن", color = AppMuted, fontSize = 11.sp)
-                            PrivacyCrossfade(privacyMode) { masked ->
-                                Text(
-                                    "${maskIfPrivate(masked, fmt((iOwe) / 10))} تومان",
-                                    color = if (iOwe > 0) AppDanger else AppMuted,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("ازشون طلبکارم", color = AppMuted, fontSize = 11.sp)
-                            PrivacyCrossfade(privacyMode) { masked ->
-                                Text(
-                                    "${maskIfPrivate(masked, fmt((owedToMe) / 10))} تومان",
-                                    color = if (owedToMe > 0) AppPrimary else AppMuted,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -732,67 +539,67 @@ private fun AccountingTransactionRow(
     val category = categories.find { it.name == tx.category } ?: findCategory(tx.category)
     val isIncome = tx.type == TransactionType.DEPOSIT.name
     AppCard {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (category != null) {
-                    // قابِ ۳۴ با پدِ ۷ یعنی خودِ نماد ۲۰ پیکسل می‌شد - همان اندازه‌ای که
-                    // تفاوتِ ست‌های نماد در آن گم می‌شد. حالا ۳۸ با پدِ ۷، یعنی نماد ۲۴.
-                    Icon(
-                        category.icon,
-                        contentDescription = null,
-                        tint = category.color,
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(category.color.copy(alpha = 0.14f))
-                            .padding(7.dp),
-                    )
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            val tint = category?.color ?: if (isIncome) AppPrimary else AppDanger
+            Box(
+                Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(tint.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    category?.icon ?: if (isIncome) Icons.Filled.ArrowDownward else Icons.Filled.ArrowUpward,
+                    contentDescription = null,
+                    tint = tint,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                Text(category?.name ?: (if (isIncome) "واریز" else "برداشت"), color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (tx.description.isNotBlank()) {
+                    Text(tx.description, color = AppMuted, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
                 }
-                Column(modifier = Modifier.padding(start = 10.dp)) {
-                    Text(category?.name ?: (if (isIncome) "واریز" else "برداشت"), color = AppText, fontSize = 13.sp)
-                    if (tx.description.isNotBlank()) {
-                        Text(tx.description, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
-                    }
+                Text(
+                    "${toFa(tx.day)} ${faMonthNamesAccounting[tx.month - 1]} · $accountName",
+                    color = AppLabel,
+                    fontSize = 11.sp,
+                    maxLines = 1,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+                // برچسب‌ها، رسید و بازپرداخت (قابلیت‌های ۶ مهر).
+                val extras = buildList {
+                    tx.tags?.split(',')?.filter { it.isNotBlank() }?.forEach { add("#$it") }
+                    if (tx.receiptPath != null) add("📎 رسید")
+                    if (tx.reimbursable) add("↩ بازپرداختی")
+                }
+                if (extras.isNotEmpty()) {
+                    Text(extras.joinToString("  "), color = AppPrimary, fontSize = 10.5.sp, modifier = Modifier.padding(top = 3.dp))
+                }
+                // جابه‌جاییِ تشخیصِ خودکار اشتباه‌پذیر است؛ یک تپ برای برگرداندنش.
+                if (tx.sourceType == ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER && tx.description.contains("تشخیصِ خودکار")) {
                     Text(
-                        "$accountName — ${toFa(tx.day)}/${toFa(tx.month)}/${toFa(tx.year)}",
-                        color = AppMuted,
+                        "نه، این جابه‌جایی نبود",
+                        color = AppPrimary,
                         fontSize = 11.sp,
-                        modifier = Modifier.padding(top = 2.dp),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .heightIn(min = 32.dp)
+                            .clickable(onClick = onUnpair),
                     )
-                    // برچسب‌ها، رسید و بازپرداخت (قابلیت‌های ۶ مهر).
-                    val extras = buildList {
-                        tx.tags?.split(',')?.filter { it.isNotBlank() }?.forEach { add("#$it") }
-                        if (tx.receiptPath != null) add("📎 رسید")
-                        if (tx.reimbursable) add("↩ بازپرداختی")
-                    }
-                    if (extras.isNotEmpty()) {
-                        Text(extras.joinToString("  "), color = AppPrimary, fontSize = 10.5.sp, modifier = Modifier.padding(top = 3.dp))
-                    }
-                    // جابه‌جاییِ تشخیصِ خودکار اشتباه‌پذیر است؛ یک تپ برای برگرداندنش.
-                    if (tx.sourceType == ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER && tx.description.contains("تشخیصِ خودکار")) {
-                        Text(
-                            "نه، این جابه‌جایی نبود",
-                            color = AppPrimary,
-                            fontSize = 11.sp,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                            modifier = Modifier
-                                .padding(top = 4.dp)
-                                .heightIn(min = 32.dp)
-                                .clickable(onClick = onUnpair),
-                        )
-                    }
                 }
             }
+            // ⚠️ مبلغ قبلاً **ریال** و بی‌واحد بود و در دو خط می‌شکست.
             PrivacyCrossfade(privacyMode) { masked ->
-                Text(
-                    "${if (isIncome) "+" else "-"}${maskIfPrivate(masked, fmt(tx.amount))}",
-                    color = if (isIncome) AppPrimary else AppDanger,
-                    fontSize = 13.sp,
-                )
+                Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 8.dp)) {
+                    Text(
+                        "${if (isIncome) "+" else "−"}${maskIfPrivate(masked, fmt(tx.amount / 10))}",
+                        color = if (isIncome) AppPrimary else AppDanger,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                    Text("تومان", color = AppMuted, fontSize = 10.sp)
+                }
             }
         }
     }
