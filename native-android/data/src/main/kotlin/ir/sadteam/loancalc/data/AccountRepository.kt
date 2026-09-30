@@ -555,6 +555,10 @@ class AccountRepository(
             "transactions" to transactionDao.getAll(),
             // ۷ مهر: «همه‌چیز روی سرور» - بقیه‌ی جدول‌های کاربر هم همین‌جا می‌روند.
             "tables" to kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { dumpExtraTables() },
+            // ۸ مهر: خریدهای فروشگاه در DataStore بودند نه جدول، پس به سرور نمی‌رفتند و با
+            // نصبِ دوباره گم می‌شدند (گزارشِ کاربر).
+            // و کلِ تنظیمات (تم، فونت، حالتِ خصوصی، چینشِ نوار و میان‌برها، …) - UiPrefs.exportPortable.
+            "prefs" to (uiPrefs?.exportPortable() ?: emptyMap()),
         )
         return GsonBuilder().setPrettyPrinting().create().toJson(data)
     }
@@ -594,6 +598,9 @@ class AccountRepository(
             // پشتیبانِ قدیمی «tables» ندارد - آن‌وقت بقیه‌ی جدول‌ها دست نمی‌خورند.
             if (tables != null) restoreExtraTables(tables)
         }
+        // تنظیمات؛ خریدها جمع می‌شوند نه جایگزین (UiPrefs.importPortable).
+        @Suppress("UNCHECKED_CAST")
+        (parsed["prefs"] as? Map<String, Any?>)?.let { runCatching { uiPrefs?.importPortable(it) } }
         return true
     }
 

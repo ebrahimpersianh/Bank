@@ -16,6 +16,64 @@ private val Context.uiPrefsDataStore by preferencesDataStore(name = "ui_prefs")
 
 /** پورت toggleTheme/اندازه فونت تو www/index.html (که تو localStorage ذخیره می‌شن). */
 class UiPrefs(private val context: Context) {
+    /**
+     * «همه‌چیز روی سرور» (خواسته‌ی کاربر، ۸ مهر): کلِ تنظیماتِ ظاهری و رفتاری - تم، فونت،
+     * حالتِ خصوصی، چینشِ نوارِ پایین و میان‌برها، خریدهای فروشگاه، یادآورها و… - با پشتیبانِ
+     * سرور می‌رود و با ورودِ دوباره برمی‌گردد. کلیدهای **مالِ همین گوشی** (زمانِ آخرین
+     * پشتیبان، کارهایی که اجازه‌ی گوشی می‌خواهند، مسیرِ فایلِ عکس) عمداً نمی‌روند.
+     */
+    private val deviceOnlyKeys = setOf(
+        "auto_backup_enabled", "last_auto_backup_at", "last_cloud_backup_at", "last_cloud_backup_failed",
+        "cloud_revisions", "sms_auto_import_enabled", "last_sms_import_at", "notif_auto_import_enabled",
+        "notif_auto_import_packages", "recent_auto_import_keys", "reminder_sound_uri", "avatar_photo",
+        "last_seen_day", "last_come_back_notified_at", "rate_prompt_opens", "rate_prompt_last_shown_at_opens",
+    )
+
+    /** همه‌ی تنظیماتِ قابلِ‌انتقال، به شکلِ `{نام: {t: نوع, v: مقدار}}`. */
+    suspend fun exportPortable(): Map<String, Map<String, Any?>> {
+        val out = LinkedHashMap<String, Map<String, Any?>>()
+        context.uiPrefsDataStore.data.first().asMap().forEach { (key, value) ->
+            if (key.name in deviceOnlyKeys) return@forEach
+            val t = when (value) {
+                is Boolean -> "b"; is Int -> "i"; is Long -> "l"; is Float -> "f"; is Double -> "d"
+                is String -> "s"; is Set<*> -> "ss"; else -> return@forEach
+            }
+            out[key.name] = mapOf("t" to t, "v" to (if (value is Set<*>) value.toList() else value))
+        }
+        return out
+    }
+
+    /** برگرداندنِ خروجیِ [exportPortable]. کلیدهای ناشناخته/خراب بی‌صدا رد می‌شوند. */
+    suspend fun importPortable(data: Map<String, Any?>) {
+        context.uiPrefsDataStore.edit { prefs ->
+            data.forEach { (name, raw) ->
+                if (name in deviceOnlyKeys) return@forEach
+                val m = raw as? Map<*, *> ?: return@forEach
+                val v = m["v"]
+                runCatching {
+                    when (m["t"]) {
+                        "b" -> prefs[booleanPreferencesKey(name)] = v as Boolean
+                        "i" -> prefs[intPreferencesKey(name)] = (v as Number).toInt()
+                        "l" -> prefs[longPreferencesKey(name)] = (v as Number).toLong()
+                        "f" -> prefs[floatPreferencesKey(name)] = (v as Number).toFloat()
+                        "d" -> prefs[androidx.datastore.preferences.core.doublePreferencesKey(name)] = (v as Number).toDouble()
+                        // خریدها **جمع** می‌شوند، نه جایگزین - هیچ خریدی با برگرداندن گم نشود.
+                        "s" -> if (name == "owned_items" || name == "owned_themes") {
+                            val k = stringPreferencesKey(name)
+                            val merged = ((prefs[k] ?: "").split(",") + (v as String).split(","))
+                                .filter { it.isNotBlank() }.toSet()
+                            prefs[k] = merged.joinToString(",")
+                        } else {
+                            prefs[stringPreferencesKey(name)] = v as String
+                        }
+                        "ss" -> prefs[androidx.datastore.preferences.core.stringSetPreferencesKey(name)] =
+                            (v as List<*>).map { it.toString() }.toSet()
+                    }
+                }
+            }
+        }
+    }
+
     private object Keys {
         val DARK_THEME = booleanPreferencesKey("dark_theme")
         val THEME_MODE = stringPreferencesKey("theme_mode")
