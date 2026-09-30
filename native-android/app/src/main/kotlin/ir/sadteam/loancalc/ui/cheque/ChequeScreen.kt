@@ -370,7 +370,7 @@ fun ChequeScreen(
                         // سه‌خط، نه دیگه دکمه‌های همیشه‌نمایانِ بالای صفحه (خواسته‌ی کاربر).
                         Box {
                             IconButton(onClick = { menuExpanded = true }) {
-                                Icon(Icons.Filled.Menu, contentDescription = "تنظیمات امور چک")
+                                Icon(Icons.Filled.Menu, contentDescription = "تنظیمات امور چک", tint = AppText)
                             }
                             DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                                 DropdownMenuItem(
