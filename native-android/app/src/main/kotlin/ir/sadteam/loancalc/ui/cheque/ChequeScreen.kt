@@ -1,5 +1,12 @@
 package ir.sadteam.loancalc.ui.cheque
 
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.foundation.layout.width
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -426,10 +433,26 @@ fun ChequeScreen(
 
                 item {
                     // وضعیتِ چک‌های وضع‌نشده - چندتا دریافتی و چندتا پرداختی هنوز منتظرن.
-                    AppCard(label = "وضعیت چک‌های وضع‌نشده") {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                            PendingStatusItem(label = "دریافتی", count = stats.pendingReceived, color = AppPrimary)
-                            PendingStatusItem(label = "پرداختی", count = stats.pendingPaid, color = AppDanger)
+                    AppCard {
+                        Text("وضعیت چک‌های وضع‌نشده", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                        Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier.size(56.dp).clip(CircleShape).background(AppSurface2),
+                                contentAlignment = Alignment.Center,
+                            ) { Icon(Icons.Filled.ReceiptLong, contentDescription = null, tint = AppMuted, modifier = Modifier.size(26.dp)) }
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(start = 12.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(AppSurface2)
+                                    .padding(vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                PendingStatusItem(label = "دریافتی", count = stats.pendingReceived, color = AppPrimary, modifier = Modifier.weight(1f))
+                                Box(Modifier.width(1.dp).height(32.dp).background(AppLine))
+                                PendingStatusItem(label = "پرداختی", count = stats.pendingPaid, color = AppDanger, modifier = Modifier.weight(1f))
+                            }
                         }
                     }
                 }
@@ -440,6 +463,7 @@ fun ChequeScreen(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ChequeTypeButton(
                             label = "چک‌های دریافتی",
+                            icon = Icons.Filled.Download,
                             color = AppPrimary,
                             selected = typeFilter == ChequeType.RECEIVED,
                             onClick = { typeFilter = if (typeFilter == ChequeType.RECEIVED) null else ChequeType.RECEIVED },
@@ -447,6 +471,7 @@ fun ChequeScreen(
                         )
                         ChequeTypeButton(
                             label = "چک‌های پرداختی",
+                            icon = Icons.Filled.Upload,
                             color = AppDanger,
                             selected = typeFilter == ChequeType.PAID,
                             onClick = { typeFilter = if (typeFilter == ChequeType.PAID) null else ChequeType.PAID },
@@ -662,15 +687,20 @@ private fun LiveDateTimeHeader() {
 
     // ⚠️ کارتِ نمایشِ تاریخ/ساعته، نه کارتِ **قهرمانِ** صفحه - طبقِ قاعده‌ی «حداکثر یک رنگِ لهجه
     // در هر صفحه» گرادیانِ سبزش برداشته شد و کارتِ سفیدِ معمولی شد.
+    // طرحِ ChatGPT (۸ مهر): کاشیِ تقویم کنارِ تاریخ.
     AppCard {
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(64.dp).clip(RoundedCornerShape(20.dp)).background(AppPrimary.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Filled.CalendarMonth, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(32.dp)) }
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                 Text(weekDay, color = AppText.copy(alpha = 0.85f), fontSize = 13.sp)
                 Text(
                     dateText,
                     color = AppText,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Black,
                     modifier = Modifier.padding(top = 4.dp),
                 )
                 Box(
@@ -688,8 +718,8 @@ private fun LiveDateTimeHeader() {
 }
 
 @Composable
-private fun PendingStatusItem(label: String, count: Int, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun PendingStatusItem(label: String, count: Int, color: Color, modifier: Modifier = Modifier) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(color))
             Text(label, color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(start = 6.dp))
@@ -707,6 +737,7 @@ private fun PendingStatusItem(label: String, count: Int, color: Color) {
 @Composable
 private fun ChequeTypeButton(
     label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     color: Color,
     selected: Boolean,
     onClick: () -> Unit,
@@ -714,27 +745,32 @@ private fun ChequeTypeButton(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(44.dp),
-        shape = RoundedCornerShape(10.dp),
+        modifier = modifier.height(54.dp),
+        shape = RoundedCornerShape(16.dp),
         color = if (selected) color.pillOverSurface(0.16f) else AppSurface2,
-        border = BorderStroke(1.dp, if (selected) color else Color.Transparent),
+        border = BorderStroke(1.dp, if (selected) color else AppLine),
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
             Text(
                 label,
-                color = if (selected) color else AppMuted,
+                color = if (selected) color else AppText,
                 fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                modifier = Modifier.weight(1f).padding(start = 8.dp),
             )
+            Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
         }
     }
 }
 
 @Composable
-private fun StatNumber(label: String, value: Int, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(toFa(value), color = color, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        Text(label, color = AppMuted, fontSize = 10.5.sp, modifier = Modifier.padding(top = 2.dp))
+private fun StatNumber(label: String, value: Int, color: Color, modifier: Modifier = Modifier) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
+        Box(Modifier.size(7.dp).clip(CircleShape).background(color))
+        Text(label, color = AppMuted, fontSize = 11.sp, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
+        Text(toFa(value), color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 2.dp))
     }
 }
 
@@ -745,12 +781,30 @@ private fun StatNumber(label: String, value: Int, color: Color) {
  */
 @Composable
 private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
-    AppCard(label = "داشبورد تحلیلی چک") {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            StatNumber("کل چک‌ها", stats.total, AppText)
-            StatNumber("پاس‌شده", stats.passed, AppPrimary)
-            StatNumber("برگشت‌خورده", stats.bounced, AppDanger)
-            StatNumber("وضع‌نشده", stats.pending, AppMuted)
+    AppCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(AppPrimary.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Filled.BarChart, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(20.dp)) }
+            Text("داشبورد تحلیلی چک", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(start = 10.dp))
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(AppSurface2)
+                .padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            StatNumber("کل چک‌ها", stats.total, AppInfo, Modifier.weight(1f))
+            Box(Modifier.width(1.dp).height(40.dp).background(AppLine))
+            StatNumber("پاس‌شده", stats.passed, AppPrimary, Modifier.weight(1f))
+            Box(Modifier.width(1.dp).height(40.dp).background(AppLine))
+            StatNumber("برگشت‌خورده", stats.bounced, AppDanger, Modifier.weight(1f))
+            Box(Modifier.width(1.dp).height(40.dp).background(AppLine))
+            StatNumber("وضع‌نشده", stats.pending, AppMuted, Modifier.weight(1f))
         }
 
         HorizontalDivider(color = AppLine, modifier = Modifier.padding(vertical = 12.dp))
@@ -792,12 +846,15 @@ private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("مانده خالص", color = AppText, fontSize = 13.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.AccountBalanceWallet, contentDescription = null, tint = netColor, modifier = Modifier.size(22.dp))
+                    Text("مانده خالص", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
+                }
                 Text(
                     "${if (stats.netBalance >= 0) "+" else ""}${fmt(rialToToman((stats.netBalance).toLong()).toDouble())} تومان",
                     color = netColor,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Black,
                 )
             }
         }
@@ -814,7 +871,7 @@ private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
                     .padding(horizontal = 10.dp)
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = AppAccent,
+                color = AppPrimary,
                 trackColor = AppSurface2,
             )
             Text(
