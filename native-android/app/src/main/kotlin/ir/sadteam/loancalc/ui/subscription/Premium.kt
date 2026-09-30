@@ -1,5 +1,13 @@
 package ir.sadteam.loancalc.ui.subscription
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.WorkspacePremium
 import ir.sadteam.loancalc.ui.update.ExpirySheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -88,28 +96,57 @@ fun androidx.compose.foundation.layout.BoxScope.SubscriptionExpiryReminder(daysL
     )
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun PremiumPaywallHost() {
     PremiumPaywall.feature?.let { feature ->
-        JibakAlertDialog(
-            onDismissRequest = { PremiumPaywall.feature = null },
-            title = { Text("این بخش مالِ اشتراکه") },
-            text = {
+        // هم‌سبکِ پنجره‌ی امتیاز و طرحِ Claude Design (۸ مهر): کاشیِ طلاییِ اشتراک بالای عنوان
+        // (طلایی فقط نشانه‌ی اشتراک است - قاعده‌ی رنگِ پروژه)، دکمه‌ی تمام‌عرض.
+        androidx.compose.material3.BasicAlertDialog(onDismissRequest = { PremiumPaywall.feature = null }) {
+            androidx.compose.foundation.layout.Column(
+                modifier = androidx.compose.ui.Modifier
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(28.dp))
+                    .background(ir.sadteam.loancalc.ui.theme.AppSurface)
+                    .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 18.dp),
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+            ) {
+                androidx.compose.foundation.layout.Box(
+                    androidx.compose.ui.Modifier.size(60.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp))
+                        .background(ir.sadteam.loancalc.ui.theme.AppAccent.copy(alpha = 0.18f)),
+                    contentAlignment = androidx.compose.ui.Alignment.Center,
+                ) {
+                    androidx.compose.material3.Icon(
+                        androidx.compose.material.icons.Icons.Filled.WorkspacePremium,
+                        contentDescription = null,
+                        tint = ir.sadteam.loancalc.ui.theme.AppAccent,
+                        modifier = androidx.compose.ui.Modifier.size(34.dp),
+                    )
+                }
+                Text("این بخش مالِ اشتراکه", color = ir.sadteam.loancalc.ui.theme.AppText, fontSize = 19.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black)
                 Text(
                     "«$feature» با اشتراکِ جیبک باز می‌شه. اطلاعاتی که قبلاً ثبت کردی سرِ جاشه و " +
                         "همیشه می‌بینیش - فقط برای افزودنِ مورد تازه اشتراک لازمه.",
+                    color = ir.sadteam.loancalc.ui.theme.AppMuted,
+                    fontSize = 13.5.sp,
+                    lineHeight = 24.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 )
-            },
-            confirmButton = {
-                GradientButton(onClick = {
-                    PremiumPaywall.feature = null
-                    PremiumPaywall.showPlans = true
-                }) { Text("دیدنِ اشتراک‌ها") }
-            },
-            dismissButton = {
-                GradientButton(onClick = { PremiumPaywall.feature = null }, variant = AppButtonVariant.SECONDARY) { Text("بعداً") }
-            },
-        )
+                GradientButton(
+                    onClick = {
+                        PremiumPaywall.feature = null
+                        PremiumPaywall.showPlans = true
+                    },
+                    modifier = androidx.compose.ui.Modifier.fillMaxWidth().padding(top = 4.dp),
+                ) { Text("دیدنِ اشتراک‌ها", fontSize = 15.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black) }
+                GradientButton(
+                    onClick = { PremiumPaywall.feature = null },
+                    variant = AppButtonVariant.SECONDARY,
+                    modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                ) { Text("بعداً", fontSize = 14.sp) }
+            }
+        }
     }
     if (PremiumPaywall.showPlans) {
         FullScreenDialog(onDismissRequest = { PremiumPaywall.showPlans = false }) {
