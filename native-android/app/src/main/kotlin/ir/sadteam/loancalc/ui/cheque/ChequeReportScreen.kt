@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.ui.cheque
 
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -113,7 +114,7 @@ internal fun ChequeReportScreen(
             // گزارشِ چک - هم‌خانواده‌ی «آمار»ه، پس **بنفش** (همون توکنِ «بنفش = بودجه و آمار»).
             // جوابِ سوالِ ۵: به‌جای حلقه‌ی تک‌مقداریِ ProgressRing، همون CategoryDonutِ چندبخشیِ
             // گزارشِ حسابداری (سهمِ پاس/برگشتی/وضع‌نشده به‌جای سهمِ دسته‌بندی).
-            AppHeroCard(tone = HeroTone.PURPLE) {
+            AppHeroCard(tone = HeroTone.GREEN) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     CategoryDonut(
                         slices = listOf(
@@ -152,15 +153,16 @@ internal fun ChequeReportScreen(
         item {
             AppCard {
                 Column {
-                    Text("خلاصه‌ی وضعیت", color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("خلاصه‌ی وضعیت", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                    // طرحِ Claude Design (۸ مهر): چهار کاشیِ رنگی.
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 11.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        ReportStat(label = "کل چک‌ها", value = toFa(stats.total), color = AppText)
-                        ReportStat(label = "پاس‌شده", value = toFa(stats.passed), color = AppPrimary)
-                        ReportStat(label = "برگشت‌خورده", value = toFa(stats.bounced), color = AppDanger)
-                        ReportStat(label = "وضع‌نشده", value = toFa(stats.pending), color = AppMuted)
+                        ReportStat(label = "کل چک‌ها", value = toFa(stats.total), color = AppText, modifier = Modifier.weight(1f))
+                        ReportStat(label = "پاس‌شده", value = toFa(stats.passed), color = AppPrimary, modifier = Modifier.weight(1f))
+                        ReportStat(label = "برگشت‌خورده", value = toFa(stats.bounced), color = AppDanger, modifier = Modifier.weight(1f))
+                        ReportStat(label = "وضع‌نشده", value = toFa(stats.pending), color = AppMuted, modifier = Modifier.weight(1f))
                     }
                     // نوارِ سهمِ passed/bounced/pending - همون سه عدد به‌صورتِ weight، دادهٔ جدید نیست.
                     Row(
@@ -188,7 +190,7 @@ internal fun ChequeReportScreen(
         item {
             AppCard {
                 Column {
-                    Text("چک‌های وضع‌نشده", color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("چک‌های وضع‌نشده", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
                     Row(modifier = Modifier.fillMaxWidth().padding(top = 11.dp), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                         PendingChequeTile(
                             icon = Icons.Filled.ArrowDownward,
@@ -212,7 +214,7 @@ internal fun ChequeReportScreen(
             val exportGuard = ir.sadteam.loancalc.ui.subscription.premiumGuard()
             AppCard {
                 Column {
-                    Text("خروجی گزارش", color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("خروجی گزارش", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
                     Row(modifier = Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                         ChequeReportExportTile(
                             icon = Icons.Outlined.Description,
@@ -234,8 +236,14 @@ internal fun ChequeReportScreen(
 }
 
 @Composable
-private fun ReportStat(label: String, value: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun ReportStat(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (color == AppText || color == AppMuted) AppMuted.pillOverSurface(0.08f) else color.pillOverSurface(0.10f))
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Text(value, color = color, fontSize = 19.sp, fontWeight = FontWeight.Black)
         Text(label, color = AppMuted, fontSize = 10.sp, modifier = Modifier.padding(top = 2.dp))
     }
@@ -251,14 +259,14 @@ private fun PendingChequeTile(
 ) {
     Row(
         modifier = modifier
-            .height(54.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .height(62.dp)
+            .clip(RoundedCornerShape(18.dp))
             .background(color.pillOverSurface(0.12f))
             .padding(horizontal = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier.size(32.dp).background(color.pillOverSurface(0.18f), CircleShape),
+            modifier = Modifier.size(38.dp).background(ir.sadteam.loancalc.ui.theme.AppSurface, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
@@ -277,16 +285,17 @@ private fun ChequeReportExportTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // دکمه‌ی کپسولیِ حاشیه‌دار (طرحِ Claude Design).
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(AppInfoPill)
-            .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .height(50.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .border(1.5.dp, ir.sadteam.loancalc.ui.theme.AppLine, RoundedCornerShape(999.dp))
+            .pressScaleClickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(9.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
     ) {
-        Icon(icon, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))
-        Text(label, color = AppInfo, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(19.dp))
+        Text(label, color = AppPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold)
     }
 }
