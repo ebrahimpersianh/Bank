@@ -5,6 +5,16 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppSurface2
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,14 +53,28 @@ fun InlineJalaliDateRow(
     val days = remember(maxDay) { (1..maxDay).toList() }
     val safeDay = day.coerceAtMost(maxDay)
 
-    Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+    // قابِ سطحِ دوم + برچسبِ ستون‌ها (بازطراحیِ ۸ مهر): چرخونه‌ی بی‌قاب وسطِ فرم گم می‌شد.
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(AppSurface2)
+            .border(1.dp, AppLine, RoundedCornerShape(18.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+    Row(Modifier.fillMaxWidth().padding(bottom = 2.dp)) {
+        listOf("روز" to 1f, "ماه" to 1.3f, "سال" to 1f).forEach { (label, w) ->
+            Text(label, color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.weight(w))
+        }
+    }
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         // نوار هایلایتِ ردیفِ وسط - عینِ چرخونه‌ی تمام‌صفحه، فقط جمع‌وجورتر.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(InlineWheelItemHeight)
-                .background(AppPrimaryPill, RoundedCornerShape(10.dp))
-                .border(1.dp, AppPrimary.copy(alpha = 0.45f), RoundedCornerShape(10.dp)),
+                .background(AppPrimaryPill, RoundedCornerShape(12.dp))
+                .border(1.dp, AppPrimary.copy(alpha = 0.45f), RoundedCornerShape(12.dp)),
         )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             WheelColumn(
@@ -86,4 +110,5 @@ fun InlineJalaliDateRow(
             )
         }
     }
+}
 }

@@ -18,6 +18,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material3.TextButton
+import ir.sadteam.loancalc.ui.components.appFieldColors
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,6 +61,7 @@ import ir.sadteam.loancalc.ui.theme.AppText
 fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
     val notes by viewModel.notes.collectAsState()
     var showAdd by rememberSaveable { mutableStateOf(false) }
+    var title by rememberSaveable { mutableStateOf("") }
     var text by rememberSaveable { mutableStateOf("") }
     val today = remember { JalaliCalendar.today() }
     var year by rememberSaveable { mutableIntStateOf(today.y) }
@@ -95,56 +100,73 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
         // بلندتر است.
         if (notes.size >= 3) {
             item {
-                OutlinedTextField(
+                ir.sadteam.loancalc.ui.components.PillSearchField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("جست‌وجو در یادداشت‌ها") },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
+                    placeholder = "جست‌وجو در یادداشت‌ها",
                 )
             }
         }
         item {
             if (showAdd) {
-                AppCard(label = "یادداشتِ جدید") {
+                AppCard {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(NoteAmber.copy(alpha = 0.14f)),
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(Icons.Filled.EditNote, contentDescription = null, tint = NoteAmber, modifier = Modifier.size(22.dp)) }
+                        Text("یادداشتِ تازه", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 12.dp))
+                    }
+                    // عنوان ستونِ جدا در دیتابیس ندارد: خطِ اولِ `text` است (همان چیزی که
+                    // جستجوی کلی و فهرست هم عنوان حساب می‌کنند) - بی migration.
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it.replace("\n", " ") },
+                        label = { Text("عنوان") },
+                        placeholder = { Text("مثلاً اجاره‌ی خونه", color = AppMuted) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = appFieldColors(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+                    )
                     OutlinedTextField(
                         value = text,
                         onValueChange = { text = it },
-                        label = { Text("متن") },
-                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("توضیح (اختیاری)") },
+                        minLines = 3,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = appFieldColors(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                     )
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)) {
+                        Icon(Icons.Filled.Event, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
+                        Text("تاریخِ یادآوری", color = AppLabel, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp))
+                    }
                     InlineJalaliDateRow(
                         year = year,
                         month = month,
                         day = day,
                         onDateChange = { y, m, d -> year = y; month = m; day = d },
-                        modifier = Modifier.padding(top = 10.dp),
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        // ⚠️ کارتِ «یادداشتِ جدید» راهِ بستن نداشت: کاربری که اشتباهی بازش
-                        // می‌کرد، تنها راهش خروج از صفحه بود (بازگشتِ سیستمی هم کلِ صفحه را
-                        // می‌بست، نه کارت را).
-                        OutlinedButton(
-                            onClick = { text = ""; showAdd = false },
-                            modifier = Modifier.weight(1f),
-                        ) { Text("بی‌خیال") }
-                        GradientButton(
-                            onClick = {
-                                if (text.isNotBlank()) {
-                                    viewModel.addNote(text.trim(), year, month, day, null)
-                                    text = ""
-                                    showAdd = false
-                                }
-                            },
-                            // دکمه‌ی ثبت با متنِ خالی کاری نمی‌کرد - حالا خودش خاموش است.
-                            enabled = text.isNotBlank(),
-                            modifier = Modifier.weight(1f),
-                        ) { Text("ثبت") }
-                    }
+                    val canSave = title.isNotBlank() || text.isNotBlank()
+                    GradientButton(
+                        onClick = {
+                            if (canSave) {
+                                val full = listOf(title.trim(), text.trim()).filter { it.isNotEmpty() }.joinToString("\n")
+                                viewModel.addNote(full, year, month, day, null)
+                                title = ""
+                                text = ""
+                                showAdd = false
+                            }
+                        },
+                        enabled = canSave,
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    ) { Text("ثبتِ یادداشت") }
+                    // ⚠️ کارتِ «یادداشتِ جدید» راهِ بستن نداشت - «بی‌خیال» ماند، ولی کم‌رنگ‌تر.
+                    TextButton(
+                        onClick = { title = ""; text = ""; showAdd = false },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("بی‌خیال", color = AppMuted, fontWeight = FontWeight.Bold) }
                 }
             } else if (notes.isNotEmpty()) {
                 // وقتی خالی است، دکمه داخلِ کارتِ خالی است (هم‌سبکِ Claude Design).
@@ -188,16 +210,32 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                             contentAlignment = Alignment.Center,
                         ) { Icon(Icons.Filled.EditNote, contentDescription = null, tint = NoteAmber, modifier = Modifier.size(22.dp)) }
                         Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
-                            Text(note.text, color = AppText, fontSize = 14.5.sp, fontWeight = FontWeight.Bold)
+                            val noteTitle = note.text.lineSequence().firstOrNull().orEmpty()
+                            val noteBody = note.text.substringAfter('\n', "").trim()
+                            Text(noteTitle, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
+                            if (noteBody.isNotEmpty()) {
+                                Text(noteBody, color = AppMuted, fontSize = 12.5.sp, lineHeight = 20.sp, maxLines = 3, modifier = Modifier.padding(top = 3.dp))
+                            }
                             // ⚠️ قبلاً `۱۴۰۵/۷/۹` بود: قالبِ پنجم، بی صفرِ ابتدایی و
                             // بیرونِ چهار قالبِ مصوب. `۹ مهر ۱۴۰۵` همان قالبی است که
                             // ردیفِ سررسید و تقویمِ مالی هم می‌نویسند.
-                            Text(
-                                "${toFa(note.day)} ${faMonthName(note.month)} ${toFa(note.year)}",
-                                color = AppLabel,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(top = 3.dp),
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .padding(top = 6.dp)
+                                    .clip(RoundedCornerShape(999.dp))
+                                    .background(NoteAmber.copy(alpha = 0.12f))
+                                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                            ) {
+                                Icon(Icons.Filled.Event, contentDescription = null, tint = NoteAmber, modifier = Modifier.size(13.dp))
+                                Text(
+                                    "${toFa(note.day)} ${faMonthName(note.month)} ${toFa(note.year)}",
+                                    color = NoteAmber,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(start = 4.dp),
+                                )
+                            }
                         }
                         IconButton(onClick = { pendingDelete = note }) {
                             Icon(Icons.Filled.Delete, contentDescription = "حذف", tint = AppDanger)
