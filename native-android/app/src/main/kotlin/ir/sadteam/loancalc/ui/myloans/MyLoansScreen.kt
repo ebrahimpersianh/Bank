@@ -1578,6 +1578,12 @@ private fun DashboardSummary(
         // نشده بود - یعنی یک کارتِ تمام‌عرض که تنها محتوایش یک دکمه‌ی «+ افزودن» بود.
         // کارتی که هیچ‌وقت پر نیست، وزنِ محتوا می‌گیرد برای محتوایی که وجود ندارد.
         if (showIncome) AppCard(label = "تحلیل درآمد") {
+            // تصویرِ سه‌بعدی (۸ مهر، ChatGPT).
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(ir.sadteam.loancalc.R.drawable.jibak_income_chart),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(96.dp).padding(bottom = 8.dp),
+            )
             if (incomes.isNotEmpty()) {
                 Column(modifier = Modifier.padding(bottom = 8.dp)) {
                     incomes.forEach { income ->
