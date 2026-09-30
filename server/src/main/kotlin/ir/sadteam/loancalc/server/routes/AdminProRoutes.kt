@@ -32,7 +32,12 @@ data class MoneyResponse(
     val netTotal: Long,
     val abA: AbGroup,
     val abB: AbGroup,
+    val daily: List<MoneyDay> = emptyList(),
 )
+
+/** فروشِ هر روزِ ۳۰ روزِ اخیر (روزِ ایران) برای نمودار. */
+@Serializable
+data class MoneyDay(val day: String, val purchases: Int, val gross: Long, val net: Long)
 
 @Serializable
 data class AbGroup(val installs: Int, val paywallViews: Int, val purchases: Int)
@@ -98,6 +103,23 @@ private fun Connection.abGroup(variant: String): AbGroup {
     return AbGroup(installs, views, buys)
 }
 
+private fun moneyDaily(conn: Connection): List<MoneyDay> {
+    val rows = mutableMapOf<String, MoneyDay>()
+    conn.list(
+        "SELECT date(created_at, '+210 minutes'), product_id, store, COUNT(*) FROM subscription_purchases " +
+            "WHERE created_at >= datetime('now', '-31 days') GROUP BY 1, 2, 3",
+    ) {
+        val gross = (PLAN_PRICE_TOMAN[it.getString(2)] ?: 0L) * it.getInt(4)
+        val r = STORE_PAYOUT[it.getString(3)]
+        val net = if (r != null) gross * r.first / r.second else gross
+        val d = it.getString(1)
+        val old = rows[d] ?: MoneyDay(d, 0, 0, 0)
+        rows[d] = MoneyDay(d, old.purchases + it.getInt(4), old.gross + gross, old.net + net)
+    }
+    val today = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC).plusMinutes(210).toLocalDate()
+    return (29 downTo 0).map { today.minusDays(it.toLong()).toString() }.map { rows[it] ?: MoneyDay(it, 0, 0, 0) }
+}
+
 internal fun buildMoney(conn: Connection): MoneyResponse {
     // آزمایشیِ ۳۰روزه تمام‌شده = ثبت‌نامِ بیش از ۳۰ روز پیش (و قفل‌نشده).
     val ended = "created_at <= datetime('now', '-30 days') AND trial_blocked = 0"
@@ -119,6 +141,7 @@ internal fun buildMoney(conn: Connection): MoneyResponse {
         netTotal = conn.revenueTotal(true),
         abA = conn.abGroup("a"),
         abB = conn.abGroup("b"),
+        daily = moneyDaily(conn),
     )
 }
 

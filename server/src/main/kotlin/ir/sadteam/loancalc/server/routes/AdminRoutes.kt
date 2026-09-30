@@ -565,7 +565,12 @@ data class DigestResponse(
     val topActions: List<NamedCount>,
     val topScreens: List<NamedCount>,
     val notes: List<String>,
+    val series: List<DigestPoint> = emptyList(),
 )
+
+/** یک روز (از ۷ صبحِ ایران) برای نمودارِ روزبه‌روز. */
+@Serializable
+data class DigestPoint(val day: String, val active: Int, val installs: Int, val purchases: Int, val revenueNet: Long)
 
 internal fun buildDigest(conn: Connection, period: String, store: String? = null, version: Int? = null): DigestResponse {
     // فیلترِ تفکیک (۸ مهر): فقط یک استور و/یا یک نسخه. مقدارها قبل از رسیدن به این‌جا پاک‌سازی شده‌اند.
@@ -626,6 +631,19 @@ internal fun buildDigest(conn: Connection, period: String, store: String? = null
         m.firstOrNull { it.key == "crashes" }?.let { if (it.now > it.prev && it.now > 0) add("crashes_up") }
         m.firstOrNull { it.key == "active" }?.let { if (it.prev > 0 && it.now < it.prev * 8 / 10) add("active_down") }
     }
+    // نمودار: دستِ‌کم ۱۴ روز تا روند دیده شود، حتی وقتی دوره «امروز» است.
+    val series = (maxOf(days, 14L) - 1 downTo 0L).map { back ->
+        val s0 = end.minusDays(back + 1)
+        val s1 = s0.plusDays(1)
+        val (x, y) = utc(s0) to utc(s1)
+        DigestPoint(
+            day = day(s0),
+            active = conn.int("SELECT COUNT(DISTINCT install_id) FROM usage_daily WHERE day = ?$useF", day(s0)),
+            installs = conn.int("SELECT COUNT(*) FROM installs WHERE first_day = ?$insF", day(s0)),
+            purchases = conn.int("SELECT COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND created_at < ?$buyF", x, y),
+            revenueNet = if (store != null) STORE_PAYOUT[store]?.let { r -> revenue(x, y, store) * r.first / r.second } ?: revenue(x, y, store) else net(x, y),
+        )
+    }
     val fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-    return DigestResponse(period, start.format(fmt), end.format(fmt), m, top("action:"), top("screen:"), notes)
+    return DigestResponse(period, start.format(fmt), end.format(fmt), m, top("action:"), top("screen:"), notes, series)
 }

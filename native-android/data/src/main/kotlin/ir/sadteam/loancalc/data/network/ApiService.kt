@@ -510,14 +510,18 @@ data class AdminDigestResponse(
     val topActions: List<AdminNamedCount> = emptyList(),
     val topScreens: List<AdminNamedCount> = emptyList(),
     val notes: List<String> = emptyList(),
+    val series: List<AdminDigestPoint> = emptyList(),
 )
+data class AdminDigestPoint(val day: String = "", val active: Int = 0, val installs: Int = 0, val purchases: Int = 0, val revenueNet: Long = 0)
 
 data class AdminAbGroup(val installs: Int = 0, val paywallViews: Int = 0, val purchases: Int = 0)
 data class AdminMoneyResponse(
     val trialEnded: Int = 0, val converted: Int = 0, val payers: Int = 0, val expiredPayers: Int = 0,
     val renewed: Int = 0, val users: Int = 0, val grossTotal: Long = 0, val netTotal: Long = 0,
     val abA: AdminAbGroup = AdminAbGroup(), val abB: AdminAbGroup = AdminAbGroup(),
+    val daily: List<AdminMoneyDay> = emptyList(),
 )
+data class AdminMoneyDay(val day: String = "", val purchases: Int = 0, val gross: Long = 0, val net: Long = 0)
 data class AdminTimelinePurchase(val product: String = "", val store: String = "", val at: String = "", val until: String = "")
 data class AdminTimelineInstall(val id: String = "", val firstDay: String = "", val lastDay: String = "", val activeDays: Int = 0, val version: Int? = null, val store: String? = null, val model: String? = null)
 data class AdminTimelineDay(val day: String = "", val events: Int = 0, val screens: Int = 0)
