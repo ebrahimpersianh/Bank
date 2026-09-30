@@ -442,6 +442,25 @@ fun NewTransactionSheet(
                         }
                     },
                 )
+                // 💱 مبلغ به ارز (۸ مهر): تبدیل به تومان با نرخِ روز؛ ارزِ اصلی در شرح می‌ماند.
+                var showCurrency by remember { mutableStateOf(false) }
+                if (showCurrency) {
+                    CurrencyAmountDialog(
+                        onDismiss = { showCurrency = false },
+                        onConfirm = { t, note ->
+                            amountText = t.toString()
+                            description = if (description.isBlank()) note else "$description · $note"
+                            showCurrency = false
+                        },
+                    )
+                }
+                Text(
+                    "مبلغ به دلار/یورو/درهم؟",
+                    color = AppPrimary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { showCurrency = true }.padding(horizontal = 8.dp, vertical = 6.dp),
+                )
                 val toman = amountText.toLongOrNull() ?: 0L
                 if (toman > 0) {
                     Text(
