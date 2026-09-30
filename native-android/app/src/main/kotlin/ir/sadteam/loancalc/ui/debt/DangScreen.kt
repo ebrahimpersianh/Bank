@@ -123,12 +123,14 @@ fun DangListScreen(
                 IconButton(onClick = onBack) {
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                 }
-                Text("دنگ‌ها", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("دنگ‌ها", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
             }
         }
-        item {
-            GradientButton(onClick = onAddNew, modifier = Modifier.fillMaxWidth()) {
-                Text("+ دنگِ جدید")
+        if (events.isNotEmpty()) {
+            item {
+                GradientButton(onClick = onAddNew, modifier = Modifier.fillMaxWidth()) {
+                    Text("+ دنگِ جدید")
+                }
             }
         }
         if (events.isEmpty()) {
@@ -137,14 +139,22 @@ fun DangListScreen(
                     icon = Icons.Filled.Celebration,
                     title = "هنوز دنگی ثبت نشده",
                     description = "هزینه‌ی یه مهمونی یا خریدِ گروهی رو اینجا بینِ چند نفر تقسیم کن.",
+                    actionLabel = "+ دنگِ جدید",
+                    onAction = onAddNew,
                 )
             }
         } else {
             items(events, key = { it.id }) { event ->
                 AppCard(modifier = Modifier.pressScaleClickable { onOpen(event) }) {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(event.title, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        // کاشیِ آیکونِ بنفش (هم‌سبکِ Claude Design).
+                        Box(
+                            Modifier.size(42.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
+                                .background(DangPurple.copy(alpha = if (event.settled) 0.08f else 0.14f)),
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(Icons.Filled.Celebration, contentDescription = null, tint = if (event.settled) AppMuted else DangPurple, modifier = Modifier.size(22.dp)) }
+                        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                            Text(event.title, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
                             Text(
                                 DangMethod.valueOf(event.method).label +
                                     (if (event.isEventMode) " · مهمانی" else "") +
@@ -807,3 +817,5 @@ private fun DangItemRow(
         }
     }
 }
+
+private val DangPurple = androidx.compose.ui.graphics.Color(0xFF7C4DDB)
