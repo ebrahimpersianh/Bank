@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -54,7 +55,25 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
     val presets = if (coinsMode) listOf(100, 500, 1_000, 5_000) else listOf(7, 30, 90, 365)
     JibakAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (coinsMode) "هدیه‌ی سکه" else "هدیه‌ی اشتراک", fontWeight = FontWeight.Black) },
+        title = {
+            // بازطراحی (۸ مهر): کاشیِ رنگیِ آیکون + زیرعنوان، مثلِ ردیف‌های هاب.
+            val tint = if (coinsMode) ir.sadteam.loancalc.ui.theme.AppPurple else ir.sadteam.loancalc.ui.theme.AppWarning
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(tint.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    androidx.compose.material3.Icon(
+                        if (coinsMode) androidx.compose.material.icons.Icons.Filled.MonetizationOn else androidx.compose.material.icons.Icons.Filled.WorkspacePremium,
+                        null, tint = tint, modifier = Modifier.size(24.dp),
+                    )
+                }
+                Column(Modifier.padding(start = 12.dp)) {
+                    Text(if (coinsMode) "هدیه‌ی سکه" else "هدیه‌ی اشتراک", fontWeight = FontWeight.Black, fontSize = 17.sp)
+                    Text(if (coinsMode) "سکه به کیفِ یک کاربر" else "روزِ اشتراک به یک کاربر", color = AppMuted, fontSize = 12.sp)
+                }
+            }
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Ltr {
@@ -65,7 +84,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                         placeholder = { Text("7405024") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(999.dp),
                         colors = appFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -77,7 +96,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
                                 .weight(1f)
-                                .height(40.dp)
+                                .height(44.dp)
                                 .clip(RoundedCornerShape(999.dp))
                                 .background(if (sel) AppPrimary else AppSurface2)
                                 .clickable { amount = p.toString() },
@@ -97,7 +116,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                     label = { Text(if (coinsMode) "تعدادِ سکه" else "تعدادِ روز") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(999.dp),
                     colors = appFieldColors(),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -106,10 +125,18 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                     onValueChange = { text = it.take(300) },
                     label = { Text("پیام برای کاربر (اختیاری)") },
                     minLines = 2,
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(22.dp),
                     colors = appFieldColors(),
                     modifier = Modifier.fillMaxWidth(),
                 )
+                val n0 = amount.toIntOrNull() ?: 0
+                if (user.isNotBlank() && n0 > 0) {
+                    Text(
+                        (if (coinsMode) "${toFa(n0)} سکه" else "${toFa(n0)} روز اشتراک") + " برای Uid:${user.trim()}",
+                        color = AppPrimary, fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(AppPrimary.copy(alpha = 0.08f)).padding(10.dp),
+                    )
+                }
                 result?.let {
                     Text(
                         when (it) {

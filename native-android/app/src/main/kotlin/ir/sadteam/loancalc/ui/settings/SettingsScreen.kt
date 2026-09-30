@@ -452,6 +452,20 @@ private fun SettingsMainContent(
                     fontWeight = FontWeight.Bold,
                 )
             }
+            // درِ ادمین بالای صفحه (۸ مهر، خواسته‌ی کاربر: «هر بار تا پایین نروم»).
+            if (isAdmin) {
+                Box(
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(ir.sadteam.loancalc.ui.theme.AppWarning.copy(alpha = 0.15f))
+                        .pressScaleClickable(onClick = onOpenAdminStats),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.AdminPanelSettings, contentDescription = "ادمین", tint = ir.sadteam.loancalc.ui.theme.AppWarning, modifier = Modifier.size(24.dp))
+                }
+            }
             Box(
                 modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimaryPill),
                 contentAlignment = Alignment.Center,
