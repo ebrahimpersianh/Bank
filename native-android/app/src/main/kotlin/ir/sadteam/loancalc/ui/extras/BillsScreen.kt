@@ -1,5 +1,17 @@
 package ir.sadteam.loancalc.ui.extras
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import ir.sadteam.loancalc.ui.components.dashedBorder
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -100,23 +112,47 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                 Text("قبض‌ها", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
             }
         }
-        item {
-            GradientButton(onClick = { adding = true }, modifier = Modifier.fillMaxWidth()) { Text("+ افزودنِ قبض") }
-        }
         if (bills.isEmpty()) {
+            // طرحِ Claude Design (۸ مهر): کارتِ خط‌چین با آیکون و دکمه‌ی داخلش.
             item {
-                EmptyState(
-                    icon = Icons.Filled.Receipt,
-                    title = "هنوز قبضی نداری",
-                    description = "آب، برق، گاز، موبایل… را اضافه کن تا نزدیکِ موعد یادت بیندازیم.",
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(ir.sadteam.loancalc.ui.theme.AppSurface)
+                        .dashedBorder(24.dp)
+                        .padding(horizontal = 18.dp, vertical = 28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Box(
+                        Modifier.size(68.dp).clip(RoundedCornerShape(22.dp)).background(AppPrimary.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(Icons.Filled.Receipt, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(36.dp)) }
+                    Text("هنوز قبضی نداری", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Black)
+                    Text(
+                        "آب، برق، گاز، موبایل… را اضافه کن تا نزدیکِ موعد یادت بیندازیم.",
+                        color = AppMuted, fontSize = 13.sp, lineHeight = 22.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                    GradientButton(onClick = { adding = true }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) { Text("+ افزودنِ قبض") }
+                }
+            }
+        } else {
+            item {
+                GradientButton(onClick = { adding = true }, modifier = Modifier.fillMaxWidth()) { Text("+ افزودنِ قبض") }
             }
         }
         items(bills, key = { it.id }) { bill ->
             val due = bill.isDueSoon(today.y, today.m, today.d)
             AppCard(modifier = Modifier.clickable { editing = bill }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
+                    val (kIcon, kColor) = billKindIcon(bill.kind)
+                    Box(
+                        Modifier.size(40.dp).clip(RoundedCornerShape(13.dp)).background(kColor.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(kIcon, contentDescription = null, tint = kColor, modifier = Modifier.size(22.dp)) }
+                    Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                         Text("${billKindLabel(bill.kind)} · ${bill.name}", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         Text(
                             buildString {
@@ -290,4 +326,16 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
             },
         )
     }
+}
+
+
+/** آیکون و رنگِ هر نوعِ قبض (طرحِ Claude Design). */
+private fun billKindIcon(kind: String): Pair<androidx.compose.ui.graphics.vector.ImageVector, androidx.compose.ui.graphics.Color> = when (kind) {
+    "water" -> Icons.Filled.WaterDrop to androidx.compose.ui.graphics.Color(0xFF2B7BD6)
+    "power" -> Icons.Filled.Bolt to androidx.compose.ui.graphics.Color(0xFFD69E2E)
+    "gas" -> Icons.Filled.LocalFireDepartment to androidx.compose.ui.graphics.Color(0xFFDD6B20)
+    "mobile" -> Icons.Filled.Smartphone to androidx.compose.ui.graphics.Color(0xFF7C4DDB)
+    "phone" -> Icons.Filled.Call to androidx.compose.ui.graphics.Color(0xFF5B6B62)
+    "internet" -> Icons.Filled.Wifi to androidx.compose.ui.graphics.Color(0xFF0E9F8E)
+    else -> Icons.Filled.Receipt to androidx.compose.ui.graphics.Color(0xFF7A8A81)
 }
