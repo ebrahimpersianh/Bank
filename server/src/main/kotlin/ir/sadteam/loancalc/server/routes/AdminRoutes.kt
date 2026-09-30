@@ -77,8 +77,8 @@ data class SaleRow(val product: String, val count30: Int, val countAll: Int, val
  * و همین‌جا اصلاح کن - «خالص» در گزارشِ ادمین از همین حساب می‌شود.
  */
 // سهمِ **توسعه‌دهنده** از فروش (صورت/مخرج). مایکت دقیق از پنل (۸ مهر): ۳۰۰٬۰۰۰ ریال → ۲۳۰٬۷۹۸ ریال.
-// کافه‌بازار هنوز تأیید نشده؛ فعلاً «۲۳ از ۳۰» که کاربر گفت.
-private val STORE_PAYOUT = mapOf("cafebazaar" to (23_000L to 30_000L), "myket" to (230_798L to 300_000L))
+// کاربر: «کافه هم همینه» - هر دو یکسان.
+private val STORE_PAYOUT = mapOf("cafebazaar" to (230_798L to 300_000L), "myket" to (230_798L to 300_000L))
 
 /** قیمتِ هر پلن به تومان - همان قیمتِ پنلِ کافه‌بازار/مایکت (رجوع کن به CLAUDE.md). */
 private val PLAN_PRICE_TOMAN = mapOf(
