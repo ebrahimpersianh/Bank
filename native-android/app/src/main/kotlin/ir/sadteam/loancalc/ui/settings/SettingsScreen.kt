@@ -2512,13 +2512,7 @@ private fun NotificationAppPicker(viewModel: SmsAutoImportViewModel, modifier: M
             lineHeight = 19.sp,
             modifier = Modifier.padding(top = 4.dp, bottom = 10.dp),
         )
-        OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
-            placeholder = { Text("جستجوی اسمِ اپ", color = AppMuted, fontSize = 12.sp) },
-            singleLine = true,
-            colors = appFieldColors(),
-            modifier = Modifier.fillMaxWidth(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+        ir.sadteam.loancalc.ui.components.PillSearchField(value = query, onValueChange = { query = it }, placeholder = "جستجوی اسمِ اپ")
         // ارتفاعِ کرانه‌دار: این کارت خودش داخلِ یه صفحه‌ی اسکرول‌شونده‌ست، پس لیست نباید
         // بی‌نهایت رشد کنه.
         Column(modifier = Modifier.padding(top = 8.dp)) {

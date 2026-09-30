@@ -50,12 +50,7 @@ fun CounterpartyPickerDialog(
         title = { Text(title) },
         text = {
             Column {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    placeholder = { Text("جستجو یا اسمِ طرفِ‌حسابِ جدید") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                ir.sadteam.loancalc.ui.components.PillSearchField(value = query, onValueChange = { query = it }, placeholder = "جستجو یا اسمِ طرفِ‌حسابِ جدید")
                 if (filtered.isNotEmpty()) {
                     LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 260.dp).padding(top = 6.dp)) {
                         items(filtered, key = { it.id }) { counterparty ->

@@ -161,13 +161,7 @@ fun SmsSenderPickerDialog(
                     )
                 }
             }
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                singleLine = true,
-                placeholder = { Text("جست‌وجو در شماره یا متن", color = AppMuted, fontSize = 12.sp) },
-                shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(),)
+            ir.sadteam.loancalc.ui.components.PillSearchField(value = query, onValueChange = { query = it }, placeholder = "جستجو در شماره یا متن", modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp))
             val list = messages
             when {
                 permissionDenied -> CenterNote("بدونِ اجازه‌ی خوندنِ پیامک نمی‌شه پیامک‌ها رو نشون داد. می‌تونی شماره رو دستی هم وارد کنی.")
