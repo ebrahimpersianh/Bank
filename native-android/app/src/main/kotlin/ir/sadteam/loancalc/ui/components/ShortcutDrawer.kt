@@ -495,6 +495,7 @@ private fun shortcutBlurb(id: String): String = when (id) {
     "add-account" -> "کارت یا حسابِ تازه"
     "bills" -> "قبض‌ها و یادآوری"
     "payoff" -> "کی بی‌بدهی می‌شوم؟"
+    "statement" -> "واردکردنِ CSV یا Excel"
     "search" -> "گشتن در همه‌ی برنامه"
     "settings" -> "شخصی‌سازیِ برنامه"
     else -> ""
