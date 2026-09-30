@@ -1330,7 +1330,7 @@ private fun CategoryBreakdownCard(
             CategoryDonut(
                 slices = top.mapIndexed { i, e -> DonutSlice(e.value, colors[i % colors.size]) },
                 size = 74.dp,
-                strokeWidth = 13.dp,
+                strokeWidth = 9.dp,
             ) {
                 // ⚠️ سه چیز روی هم افتاده بود: عدد **ریال** بود (۱۰۲۶٫۶M جای ۱۰۲٫۶)، حرفِ
                 // M لاتین وسطِ ارقامِ فارسی، و یک خطِ بلند در دایره‌ی تنگ. قطرِ داخلی

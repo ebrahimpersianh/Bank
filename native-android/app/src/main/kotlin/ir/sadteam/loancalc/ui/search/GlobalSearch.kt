@@ -65,13 +65,27 @@ import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.data.db.BillDao
 import ir.sadteam.loancalc.ui.account.AccountDetailScreen
 import ir.sadteam.loancalc.ui.components.AppCard
-import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppText
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import ir.sadteam.loancalc.ui.components.dashedBorder
+import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppDashedBorder
+import ir.sadteam.loancalc.ui.theme.AppInfo
+import ir.sadteam.loancalc.ui.theme.AppLabel
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppPurple
+import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.AppWarning
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -226,72 +240,106 @@ fun GlobalSearchScreen(
 
     Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(start = 6.dp, end = 16.dp, top = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onClose) { Icon(Icons.Filled.ArrowForward, contentDescription = "بستن") }
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                placeholder = { Text("جستجو در همه‌ی برنامه…", color = AppMuted, fontSize = 13.sp) },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = AppMuted) },
-                trailingIcon = if (query.isNotEmpty()) {
-                    { IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Close, contentDescription = "پاک کردن") } }
-                } else null,
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = appFieldColors(),
-                modifier = Modifier.weight(1f).focusRequester(focus),
-            )
+            IconButton(onClick = onClose) { Icon(Icons.Filled.ArrowForward, contentDescription = "بستن", tint = AppText) }
+            Text("جستجو", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
         }
+        // کادرِ جستجو هم‌سبکِ جستجوی «وام‌های من»: حاشیه‌ی سبز، نه طلایی (طلایی فقط نشانِ اشتراک است).
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            placeholder = { Text("جستجو در همه‌ی برنامه…", color = AppMuted, fontSize = 13.sp) },
+            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = AppPrimary) },
+            trailingIcon = if (query.isNotEmpty()) {
+                { IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Close, contentDescription = "پاک کردن", tint = AppMuted) } }
+            } else null,
+            singleLine = true,
+            shape = RoundedCornerShape(18.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = AppPrimary,
+                unfocusedBorderColor = AppLine,
+                focusedContainerColor = AppSurface,
+                unfocusedContainerColor = AppSurface,
+                cursorColor = AppPrimary,
+                focusedTextColor = AppText,
+                unfocusedTextColor = AppText,
+            ),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).focusRequester(focus),
+        )
         if (kindsFound.size > 1) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                FilterPill("همه", activeKind == null) { kindFilter = null }
-                kindsFound.forEach { k -> FilterPill(k.label, activeKind == k) { kindFilter = k } }
+                FilterPill("همه (${toFa(allHits.size)})", activeKind == null) { kindFilter = null }
+                kindsFound.forEach { k ->
+                    FilterPill("${k.label} (${toFa(allHits.count { it.kind == k })})", activeKind == k) { kindFilter = k }
+                }
             }
         }
         when {
-            q.length < 2 -> Hint("اسمِ بانک، طرف‌حساب، شرحِ تراکنش، مبلغ، شماره‌ی چک یا کارت را بنویس.")
-            hits.isEmpty() -> Hint("چیزی با «${query.trim()}» پیدا نشد.")
+            q.length < 2 -> SearchIntro()
+            hits.isEmpty() -> SearchMessage(
+                icon = Icons.Filled.SearchOff,
+                title = "چیزی پیدا نشد",
+                body = "با «${query.trim()}» هیچ تراکنش، وام، چک یا حسابی پیدا نکردیم. املای دیگری را امتحان کن.",
+            )
             else -> LazyColumn(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(hits, key = { "${it.kind}-${it.id}" }) { hit ->
-                    Box(Modifier.clip(RoundedCornerShape(18.dp)).clickable {
-                        when (hit.kind) {
-                            SearchKind.TX -> openAccountId = hit.accountId
-                            SearchKind.ACCOUNT -> openAccountId = hit.id
-                            SearchKind.LOAN -> onOpenLoan(hit.id)
-                            SearchKind.CHEQUE -> onOpenCheque(hit.id)
-                            SearchKind.PERSON -> onOpenPerson(hit.id)
-                            SearchKind.BILL -> onOpenBills()
-                            SearchKind.NOTE -> onOpenNotes()
-                        }
-                    }) {
-                        AppCard {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    Modifier.size(36.dp).clip(RoundedCornerShape(11.dp))
-                                        .background(AppChipBg),
-                                    contentAlignment = Alignment.Center,
-                                ) { Icon(hit.kind.icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(19.dp)) }
-                                Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                                    Text(hit.title, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Text("${hit.kind.label} · ${hit.subtitle}", color = AppMuted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                }
-                                hit.amountRial?.let { rial ->
+                    val tint = hit.kind.tint()
+                    AppCard(
+                        modifier = Modifier.clickable {
+                            when (hit.kind) {
+                                SearchKind.TX -> openAccountId = hit.accountId
+                                SearchKind.ACCOUNT -> openAccountId = hit.id
+                                SearchKind.LOAN -> onOpenLoan(hit.id)
+                                SearchKind.CHEQUE -> onOpenCheque(hit.id)
+                                SearchKind.PERSON -> onOpenPerson(hit.id)
+                                SearchKind.BILL -> onOpenBills()
+                                SearchKind.NOTE -> onOpenNotes()
+                            }
+                        },
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(tint.copy(alpha = 0.12f)),
+                                contentAlignment = Alignment.Center,
+                            ) { Icon(hit.kind.icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp)) }
+                            Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                                Text(hit.title, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                                     Text(
-                                        maskIfPrivate(privacy, toFa(fmt(rial / 10))) + " تومان",
-                                        color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(start = 8.dp),
+                                        hit.kind.label,
+                                        color = tint,
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(999.dp))
+                                            .background(tint.copy(alpha = 0.12f))
+                                            .padding(horizontal = 8.dp, vertical = 2.dp),
                                     )
+                                    Text(
+                                        hit.subtitle,
+                                        color = AppMuted,
+                                        fontSize = 11.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(start = 6.dp),
+                                    )
+                                }
+                            }
+                            hit.amountRial?.let { rial ->
+                                Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 8.dp)) {
+                                    Text(maskIfPrivate(privacy, toFa(fmt(rial / 10))), color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                                    Text("تومان", color = AppMuted, fontSize = 10.sp)
                                 }
                             }
                         }
@@ -303,8 +351,75 @@ fun GlobalSearchScreen(
 }
 
 @Composable
-private fun Hint(text: String) {
-    Text(text, color = AppMuted, fontSize = 12.5.sp, lineHeight = 21.sp, modifier = Modifier.padding(24.dp))
+private fun SearchKind.tint(): Color = when (this) {
+    SearchKind.TX -> AppPrimary
+    SearchKind.LOAN -> AppPurple
+    SearchKind.CHEQUE -> AppInfo
+    SearchKind.ACCOUNT -> AppPrimary
+    SearchKind.PERSON -> AppWarning
+    SearchKind.BILL -> AppDanger
+    SearchKind.NOTE -> AppWarning
+}
+
+/** حالتِ پیش از تایپ: کارتِ خط‌چینِ سبکِ حالت‌های خالیِ برنامه + این‌که کجاها را می‌گردد. */
+@Composable
+private fun SearchIntro() {
+    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+        SearchMessage(
+            icon = Icons.Filled.Search,
+            title = "دنبالِ چی می‌گردی؟",
+            body = "اسمِ بانک، طرف‌حساب، شرحِ تراکنش، مبلغ، شماره‌ی چک یا کارت را بنویس.",
+            padded = false,
+        )
+        Text(
+            "جستجو در این بخش‌ها",
+            color = AppLabel,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 20.dp, bottom = 10.dp),
+        )
+        SearchKind.values().toList().chunked(4).forEach { row ->
+            Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { k ->
+                    val tint = k.tint()
+                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            Modifier.size(48.dp).clip(RoundedCornerShape(15.dp)).background(tint.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(k.icon, contentDescription = null, tint = tint, modifier = Modifier.size(23.dp)) }
+                        Text(k.label, color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
+                    }
+                }
+                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchMessage(icon: ImageVector, title: String, body: String, padded: Boolean = true) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(if (padded) 16.dp else 0.dp)
+            .dashedBorder(radius = 24.dp, color = AppDashedBorder, width = 1.5.dp)
+            .padding(horizontal = 20.dp, vertical = 26.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier.size(68.dp).clip(RoundedCornerShape(22.dp)).background(AppPrimaryPill),
+            contentAlignment = Alignment.Center,
+        ) { Icon(icon, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(32.dp)) }
+        Text(title, color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 14.dp))
+        Text(
+            body,
+            color = AppMuted,
+            fontSize = 13.sp,
+            lineHeight = 21.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+    }
 }
 
 @Composable
@@ -313,9 +428,8 @@ private fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit) {
         Modifier.clip(RoundedCornerShape(50))
             .background(if (selected) AppPrimary else AppChipBg)
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 7.dp),
+            .padding(horizontal = 14.dp, vertical = 8.dp),
     ) {
-        Text(label, color = if (selected) androidx.compose.ui.graphics.Color.White else AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = if (selected) Color.White else AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
 }
-
