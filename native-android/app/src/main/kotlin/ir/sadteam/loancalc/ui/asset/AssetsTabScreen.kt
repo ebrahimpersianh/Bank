@@ -394,8 +394,10 @@ fun AssetsTabScreen(
                     )
                 }
             }
-
-
+            // روندِ کلِ دارایی در طولِ زمان (۸ مهر) - آخرِ فهرست تا شاخصِ اسکرولِ بالا جابه‌جا نشود.
+            if (browsing && wealthSnapshots.size >= 2) {
+                item { WealthHistoryCard(wealthSnapshots, privacyMode) }
+            }
         }
 
         // دکمه‌ی «+» شناور (طرحِ ChatGPT) - بالای نوارِ پایین.
