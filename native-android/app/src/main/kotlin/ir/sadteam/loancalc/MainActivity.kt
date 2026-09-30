@@ -896,7 +896,7 @@ private fun LoanCalcApp(
     val ratePromptViewModel: RatePromptViewModel = hiltViewModel()
     val showRatePrompt by ratePromptViewModel.shouldShow.collectAsState()
     LaunchedEffect(Unit) { ratePromptViewModel.onAppOpened() }
-    if (showRatePrompt) {
+    if (showRatePrompt && ir.sadteam.loancalc.ui.components.StartupPopups.canShowRate) {
         RatePromptDialog(
             onRateNow = {
                 ratePromptViewModel.onRateNow()
@@ -1500,8 +1500,11 @@ private fun LoanCalcApp(
         // بنرِ آپدیتِ خودکار - رجوع کن به AppUpdateViewModel. برخلافِ هینتِ خروج، خودش محو نمی‌شه؛
         // تا کاربر یا بزنه «بروزرسانی» (بازکردنِ صفحه‌ی استور) یا خودش با ضربدر ببندتش.
         // برگه‌ی پایینِ آپدیت (هم‌شکلِ برگه‌ی بازار) - جای بنرِ باریکِ قبلی. رجوع کن به UpdateSheet.
+        // اگر پنجره‌ی سکه‌ی روزانه زودتر باز شده، برگه‌ی آپدیت بعد از بستنش می‌آید (نه رویش).
+        val updateVisible = updateUrl != null && tourSeen != false && !ir.sadteam.loancalc.ui.components.StartupPopups.checkInOpen
+        ir.sadteam.loancalc.ui.components.StartupPopups.tourOrUpdate = tourSeen == false || updateVisible
         UpdateSheet(
-            visible = updateUrl != null && tourSeen != false,
+            visible = updateVisible,
             changes = appUpdateChanges,
             onUpdate = {
                 updateUrl?.let { url -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } }

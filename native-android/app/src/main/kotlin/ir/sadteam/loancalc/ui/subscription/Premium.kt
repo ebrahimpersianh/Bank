@@ -75,7 +75,7 @@ fun PremiumBlock(blocked: Boolean, key: String, label: String, onBlocked: () -> 
  */
 @Composable
 fun androidx.compose.foundation.layout.BoxScope.SubscriptionExpiryReminder(daysLeft: Int?) {
-    if (daysLeft == null || daysLeft !in 0..3) return
+    if (daysLeft == null || daysLeft !in 0..3) { ir.sadteam.loancalc.ui.components.StartupPopups.expiryOpen = false; return }
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("sub_expiry_reminder", android.content.Context.MODE_PRIVATE) }
     val today = remember { (System.currentTimeMillis() / 86_400_000L).toInt() }
@@ -84,6 +84,7 @@ fun androidx.compose.foundation.layout.BoxScope.SubscriptionExpiryReminder(daysL
         prefs.edit().putInt("last_day", today).apply()
         show = false
     }
+    ir.sadteam.loancalc.ui.components.StartupPopups.expiryOpen = show
     ExpirySheet(
         visible = show,
         daysLeft = daysLeft,

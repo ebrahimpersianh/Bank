@@ -96,6 +96,10 @@ fun DailyCheckInHost(viewModel: DailyCheckInViewModel = hiltViewModel()) {
         }
     }
     val r by viewModel.result.collectAsState()
+    // سکه همان لحظه ثبت شده؛ فقط نمایش تا بسته شدنِ پنجره‌های جلوتر صبر می‌کند.
+    val visible = r != null && (ir.sadteam.loancalc.ui.components.StartupPopups.checkInOpen || ir.sadteam.loancalc.ui.components.StartupPopups.canShowCheckIn)
+    ir.sadteam.loancalc.ui.components.StartupPopups.checkInOpen = visible
+    if (!visible) return
     val res = r ?: return
     JibakAlertDialog(
         onDismissRequest = viewModel::dismiss,
