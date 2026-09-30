@@ -992,9 +992,9 @@ private fun CategoryDonutCard(
         CategoryDonut(
             slices = top.mapIndexed { i, e -> DonutSlice(e.value, colors[i % colors.size]) },
             size = 74.dp,
-            strokeWidth = 13.dp,
+            strokeWidth = 9.dp,
         ) {
-            // قطرِ داخلیِ دونات ۷۴ − ۲×۱۳ = ۴۸dp است. یک خطِ «۱۰۲٫۶ میلیون» در ۱۱sp
+            // قطرِ داخلیِ دونات ۷۴ − ۲×۹ = ۵۶dp است (رینگ به خواسته‌ی کاربر نازک شد). یک خطِ «۱۰۲٫۶ میلیون» در ۱۱sp
             // حدودِ ۵۲dp عرض می‌گیرد و به لبه‌ی رینگ می‌چسبد. عدد و واحد دو خطِ کوتاه شدند.
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 PrivacyCrossfade(privacyMode) { masked ->

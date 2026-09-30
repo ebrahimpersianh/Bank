@@ -66,7 +66,9 @@ object SmartInsights {
             out += Insight(
                 "dues_${today.y}_${today.m}_${today.d / 7}", Kind.DUES_OVER_BALANCE,
                 "هفته‌ی بعد پولت کم میاد",
-                "تا ۷ روزِ آینده ${toman(upcomingDues7d)} تومان قسط و چک داری ولی موجودیِ حساب‌هات ${toman(totalBalance)} تومانه.",
+                "تا ۷ روزِ آینده ${toman(upcomingDues7d)} تومان قسط و چک داری ولی موجودیِ حساب‌هات " +
+                    // علامتِ منفی در متنِ راست‌به‌چپ سمتِ اشتباه می‌افتاد؛ با کلمه گفته می‌شود.
+                    if (totalBalance < 0) "${toman(-totalBalance)} تومان منفیه." else "${toman(totalBalance)} تومانه.",
             )
         }
 
