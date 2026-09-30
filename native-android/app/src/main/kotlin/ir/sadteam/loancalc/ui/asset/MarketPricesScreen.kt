@@ -327,39 +327,7 @@ private fun groupKeyOf(entry: AssetCatalogEntry): String = when {
 private fun PriceSearchField(value: String, onChange: (String) -> Unit) {
     val shape = RoundedCornerShape(AppRadius.row)
     val ink = AppText
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(AppSurface)
-            .border(2.dp, AppLineRow, shape)
-            .padding(horizontal = 12.dp, vertical = 9.dp),
-    ) {
-        Icon(Icons.Filled.Search, contentDescription = null, tint = AppMuted, modifier = Modifier.size(16.dp))
-        Box(modifier = Modifier.weight(1f)) {
-            if (value.isEmpty()) {
-                Text("جست‌وجوی نماد یا نام", color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
-            }
-            BasicTextField(
-                value = value,
-                onValueChange = onChange,
-                singleLine = true,
-                cursorBrush = SolidColor(AppPrimary),
-                textStyle = TextStyle(color = ink, fontSize = 11.5.sp, fontWeight = FontWeight.Bold),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        if (value.isNotEmpty()) {
-            Icon(
-                Icons.Filled.Close,
-                contentDescription = "پاک‌کردن",
-                tint = AppMuted,
-                modifier = Modifier.size(16.dp).pressScaleClickable { onChange("") },
-            )
-        }
-    }
+    ir.sadteam.loancalc.ui.components.PillSearchField(value = value, onValueChange = onChange, placeholder = "جست‌وجوی نماد یا نام")
 }
 
 @Composable

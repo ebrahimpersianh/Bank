@@ -87,13 +87,11 @@ fun BankPickerField(
         ModalBottomSheet(onDismissRequest = { open = false }, sheetState = sheetState, containerColor = AppSurface) {
             Column(modifier = Modifier.navigationBarsPadding().padding(horizontal = 16.dp)) {
                 Text("انتخابِ بانک", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-                OutlinedTextField(
+                ir.sadteam.loancalc.ui.components.PillSearchField(
                     value = query,
                     onValueChange = { query = it },
-                    placeholder = { Text("جستجوی بانک") },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                    placeholder = "جستجوی بانک",
+                    modifier = Modifier.padding(vertical = 10.dp),
                 )
                 LazyColumn(modifier = Modifier.heightIn(max = 460.dp)) {
                     items(shown, key = { it.name }) { b ->

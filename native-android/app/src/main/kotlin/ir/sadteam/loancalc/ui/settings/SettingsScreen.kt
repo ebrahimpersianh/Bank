@@ -462,40 +462,11 @@ private fun SettingsMainContent(
 
         Column(modifier = Modifier.padding(horizontal = 14.dp)) {
             // جستجوی واقعیِ همین صفحه - فقط شکلش قرصِ گرد شد.
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(AppSurface)
-                    .border(1.dp, AppLine, RoundedCornerShape(20.dp))
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-                    if (searchQuery.isEmpty()) {
-                        Text("جستجو در تنظیمات…", color = AppLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                    BasicTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        singleLine = true,
-                        textStyle = TextStyle(color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold),
-                        cursorBrush = SolidColor(AppPrimary),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-                if (searchQuery.isNotEmpty()) {
-                    Icon(
-                        Icons.Filled.Close,
-                        contentDescription = "پاک‌کردن",
-                        tint = AppMuted,
-                        modifier = Modifier.size(20.dp).clip(CircleShape).pressScaleClickable { searchQuery = "" },
-                    )
-                } else {
-                    Icon(Icons.Filled.Search, contentDescription = null, tint = AppMuted, modifier = Modifier.size(22.dp))
-                }
-            }
+            ir.sadteam.loancalc.ui.components.PillSearchField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = "جستجو در تنظیمات…",
+            )
 
             // ── کارتِ حساب: همان کارتِ رنگیِ بالای بقیه‌ی صفحه‌ها (با تم عوض می‌شود) ──────
             // آدمک و قاب **همان** `FramedAvatar`ِ هدرِ خانه است، از همان `AvatarViewModel`؛

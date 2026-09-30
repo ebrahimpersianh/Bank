@@ -134,40 +134,12 @@ fun CalculationHistoryScreen(onBack: () -> Unit, viewModel: CalculationHistoryVi
             }
         }
 
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 14.dp, vertical = 4.dp)
-                .fillMaxWidth()
-                .height(52.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(AppSurface)
-                .border(1.dp, AppLine, RoundedCornerShape(18.dp))
-                .padding(horizontal = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Filled.Search, contentDescription = null, tint = AppMuted, modifier = Modifier.size(20.dp))
-            Box(modifier = Modifier.weight(1f).padding(start = 10.dp), contentAlignment = Alignment.CenterStart) {
-                if (query.isEmpty()) {
-                    Text("نامِ بانک، مبلغ، نوعِ محاسبه…", color = AppLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-                BasicTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    singleLine = true,
-                    textStyle = TextStyle(color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold),
-                    cursorBrush = SolidColor(AppPrimary),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            if (query.isNotEmpty()) {
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = "پاک‌کردنِ جستجو",
-                    tint = AppMuted,
-                    modifier = Modifier.size(20.dp).clip(CircleShape).pressScaleClickable { query = "" },
-                )
-            }
-        }
+        ir.sadteam.loancalc.ui.components.PillSearchField(
+            value = query,
+            onValueChange = { query = it },
+            placeholder = "نامِ بانک، مبلغ، نوعِ محاسبه…",
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+        )
 
         if (kinds.size > 1) {
             Row(

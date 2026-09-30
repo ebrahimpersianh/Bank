@@ -350,13 +350,10 @@ private fun DebtList(
                 }
             }
             item {
-                OutlinedTextField(
+                ir.sadteam.loancalc.ui.components.PillSearchField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("جستجو تو طرف‌حساب‌ها...") },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
+                    placeholder = "جستجو تو طرف‌حساب‌ها...",
                 )
             }
             item {

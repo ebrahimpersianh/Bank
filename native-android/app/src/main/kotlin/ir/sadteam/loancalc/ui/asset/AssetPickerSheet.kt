@@ -152,52 +152,14 @@ fun AssetPickerSheet(
 
             item(key = "search") {
                 // جست‌وجوی کپسولی و سبک (طرحِ ChatGPT) - همان فیلترِ قبلی، فقط ظاهر.
-                BasicTextField(
+                ir.sadteam.loancalc.ui.components.PillSearchField(
                     value = query,
                     onValueChange = { query = it },
-                    singleLine = true,
-                    textStyle = TextStyle(color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold),
-                    cursorBrush = SolidColor(AppPrimary),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    modifier = Modifier.fillMaxWidth(),
-                    decorationBox = { inner ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp)
-                                .clip(RoundedCornerShape(999.dp))
-                                .background(AppSurface)
-                                .border(1.dp, AppLine, RoundedCornerShape(999.dp))
-                                .padding(horizontal = 16.dp),
-                        ) {
-                            Icon(Icons.Filled.Search, contentDescription = null, tint = AppMuted, modifier = Modifier.size(20.dp))
-                            Box(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                                if (query.isEmpty()) {
-                                    Text(
-                                        when (filter) {
-                                            ASSET_CATEGORY_GOLD -> "جست‌وجو در طلا (مثلاً سکه، ۱۸ عیار…)"
-                                            ASSET_CATEGORY_FIAT -> "جست‌وجو در ارزها (مثلاً دلار، یورو…)"
-                                            ASSET_CATEGORY_CRYPTO -> "جست‌وجو در رمزارزها (مثلاً بیت‌کوین…)"
-                                            else -> "جست‌وجو (مثلاً دلار، طلا، بیت‌کوین…)"
-                                        },
-                                        color = AppMuted,
-                                        fontSize = 12.5.sp,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
-                                inner()
-                            }
-                            if (query.isNotEmpty()) {
-                                Icon(
-                                    Icons.Filled.Close,
-                                    contentDescription = "پاک‌کردنِ جست‌وجو",
-                                    tint = AppMuted,
-                                    modifier = Modifier.size(18.dp).clip(CircleShape).pressScaleClickable { query = "" },
-                                )
-                            }
-                        }
+                    placeholder = when (filter) {
+                        ASSET_CATEGORY_GOLD -> "جست‌وجو در طلا (مثلاً سکه، ۱۸ عیار…)"
+                        ASSET_CATEGORY_FIAT -> "جست‌وجو در ارزها (مثلاً دلار، یورو…)"
+                        ASSET_CATEGORY_CRYPTO -> "جست‌وجو در رمزارزها (مثلاً بیت‌کوین…)"
+                        else -> "جست‌وجو (مثلاً دلار، طلا، بیت‌کوین…)"
                     },
                 )
             }

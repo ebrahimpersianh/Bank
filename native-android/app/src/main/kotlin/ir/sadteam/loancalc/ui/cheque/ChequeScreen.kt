@@ -417,13 +417,10 @@ fun ChequeScreen(
                 }
 
                 item {
-                    OutlinedTextField(
+                    ir.sadteam.loancalc.ui.components.PillSearchField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("جستجو تو چک‌ها (اسم/شماره/بانک)...") },
-                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
+                        placeholder = "جستجو تو چک‌ها (اسم/شماره/بانک)...",
                     )
                 }
 
