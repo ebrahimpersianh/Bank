@@ -188,8 +188,17 @@ private fun StepDots(current: Int, total: Int) {
 
 /** سربرگِ مشترکِ هر چهار مرحله - عنوانِ درشت + یه خطِ توضیح، دقیقاً مثلِ اپِ مرجع. */
 @Composable
-private fun StepHeader(title: String, subtitle: String) {
-    Spacer(Modifier.height(36.dp))
+private fun StepHeader(title: String, subtitle: String, image: Int? = null) {
+    Spacer(Modifier.height(if (image != null) 20.dp else 36.dp))
+    // تصویرِ سه‌بعدیِ بالای مرحله (۸ مهر، تصویرهای ChatGPT).
+    if (image != null) {
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(image),
+            contentDescription = null,
+            modifier = Modifier.fillMaxWidth().height(130.dp),
+        )
+        Spacer(Modifier.height(14.dp))
+    }
     Text(
         title,
         color = AppText,
@@ -222,6 +231,7 @@ private fun WelcomeStep(onNext: () -> Unit) {
         StepHeader(
             title = "به جیبک خوش اومدی",
             subtitle = "دخل و خرجت رو ساده ثبت کن، وام و چک و بودجه‌ت رو یک‌جا داشته باش.",
+            image = ir.sadteam.loancalc.R.drawable.jibak_onb_welcome,
         )
         Spacer(Modifier.height(28.dp))
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -476,6 +486,7 @@ private fun BankReadingPermissionsStep(onNext: () -> Unit) {
         StepHeader(
             title = "دو اجازه لازم دارم",
             subtitle = "تا خرج‌ها را خودم ثبت کنم و تو مجبور نباشی دستی وارد کنی.",
+            image = ir.sadteam.loancalc.R.drawable.jibak_onb_permissions,
         )
         Spacer(Modifier.height(24.dp))
         PermissionExplainCard(
@@ -696,6 +707,7 @@ private fun FirstAccountStep(
         StepHeader(
             title = "اولین حساب‌کتابت رو بساز",
             subtitle = "مثلاً پولِ نقدِ توی جیبت. موجودیِ الانش رو وارد کن.",
+            image = ir.sadteam.loancalc.R.drawable.jibak_onb_account,
         )
         Spacer(Modifier.height(24.dp))
 
