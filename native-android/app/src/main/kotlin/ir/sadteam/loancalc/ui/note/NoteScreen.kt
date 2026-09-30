@@ -91,7 +91,7 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
         item {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 Text("یادداشت‌ها", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
             }

@@ -96,10 +96,10 @@ fun TodayCard(
             // راست و «قبلی» (<) چپ دیده می‌شه.
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onNextDay) {
-                    Icon(Icons.Filled.ChevronRight, contentDescription = "روزِ بعد")
+                    Icon(Icons.Filled.ChevronRight, contentDescription = "روزِ بعد", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 IconButton(onClick = onPrevDay) {
-                    Icon(Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل")
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
             }
         }

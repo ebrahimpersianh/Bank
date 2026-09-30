@@ -139,7 +139,7 @@ fun AddEditAccountScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onCancel) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "انصراف")
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "انصراف", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 Text(
                     if (existing == null) "افزودن حساب‌کتاب" else "ویرایش حساب‌کتاب",

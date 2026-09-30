@@ -148,7 +148,7 @@ fun ChequeDetailScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 Text("جزئیات چک", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 4.dp))
             }

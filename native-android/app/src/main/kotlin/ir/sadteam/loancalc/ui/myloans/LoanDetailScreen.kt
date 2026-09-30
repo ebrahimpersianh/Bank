@@ -971,7 +971,7 @@ fun LoanDetailScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
             }
             // 🚨 **نامِ بانک از جدولِ مشخصات به سرصفحه آمد** (بندِ ۲ی بخشِ ۸۰): نامِ بانک
             // **هویتِ** وام است نه یکی از مشخصاتش، پس کنارِ نامِ وام می‌نشیند نه در فهرست.
@@ -1165,7 +1165,7 @@ fun LoanDetailScreen(
                                     trailingIcon = {
                                         if (noteText.isNotEmpty()) {
                                             IconButton(onClick = { noteText = ""; noteDirty = true }) {
-                                                Icon(Icons.Filled.Close, contentDescription = "پاک‌کردنِ یادداشت")
+                                                Icon(Icons.Filled.Close, contentDescription = "پاک‌کردنِ یادداشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                                             }
                                         }
                                     },

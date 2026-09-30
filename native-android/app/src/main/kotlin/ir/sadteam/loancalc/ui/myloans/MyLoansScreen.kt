@@ -273,6 +273,8 @@ fun MyLoansScreen(
     // بعدِ مصرف [onDeepLinkConsumed] صدا زده می‌شه تا با چرخشِ صفحه/رفرش دوباره تریگر نشه.
     deepLinkLoanId: Long? = null,
     onDeepLinkConsumed: () -> Unit = {},
+    /** سربرگِ واحد (۸ مهر): وقتی جزئیاتِ یک وام باز است، سربرگِ «وام»/تب‌ها پنهان می‌شود. */
+    onDetailOpenChanged: (Boolean) -> Unit = {},
     /**
      * خواسته‌ی کاربر (۲۶ شهریور): دکمه‌ی «+» **محاسبه‌گر** را باز می‌کند، نه فرمِ دستی را.
      * دلیلش هم روشن است - کسی که وام می‌گیرد اول می‌خواهد قسطش را ببیند؛ ثبتِ دستیِ وامِ
@@ -391,6 +393,9 @@ fun MyLoansScreen(
     val subscribed by authViewModel.subscribed.collectAsState()
     val canSaveAnotherLoan = loans.isEmpty() || (gateState == GateState.LOGGED_IN && subscribed)
     val openedLoan = openedLoanId?.let { id -> loans.firstOrNull { it.id == id } }
+    val detailOpen = openedLoan != null
+    LaunchedEffect(detailOpen) { onDetailOpenChanged(detailOpen) }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { onDetailOpenChanged(false) } }
     val editingLoan = editingLoanId?.let { id -> loans.firstOrNull { it.id == id } }
     // قفلِ وام‌ها بعدِ اتمامِ دوره‌ی آزمایشی (مورد ۱۱): همون منطقِ canSaveAnotherLoan (فقط کاربرِ
     // مشترک/تو دوره‌ی آزمایشی می‌تونه بیشتر از یه وام داشته باشه)، ولی برعکس - این‌جا برای وام‌های

@@ -197,7 +197,7 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
         item {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 Text(
                     "دسته‌بندی‌ها",

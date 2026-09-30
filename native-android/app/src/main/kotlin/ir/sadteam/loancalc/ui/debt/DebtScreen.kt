@@ -328,7 +328,7 @@ private fun DebtList(
         item {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 Text("طلب و بدهی", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
@@ -648,7 +648,7 @@ private fun CounterpartyDetail(
         item {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 AvatarView(avatar = counterparty.toAvatar(), size = 32.dp, modifier = Modifier.padding(end = 6.dp))
                 Column(modifier = Modifier.weight(1f)) {

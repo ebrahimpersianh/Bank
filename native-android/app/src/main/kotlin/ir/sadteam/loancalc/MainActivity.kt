@@ -1691,7 +1691,10 @@ private fun LoanTab(
     // خودِ هر اسکرین (مثلاً جزئیاتِ وام تو MyLoansScreen) اولویتِ بالاتری دارن چون دیرتر رجیستر می‌شن.
     BackHandler(enabled = subTab != LoanSubTab.MY_LOANS) { subTab = LoanSubTab.MY_LOANS }
 
+    // سربرگِ واحد (۸ مهر): جزئیاتِ وام سربرگِ خودش را دارد؛ دو فلشِ برگشت پشتِ‌هم گیج‌کننده بود.
+    var loanDetailOpen by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize()) {
+      if (!(subTab == LoanSubTab.MY_LOANS && loanDetailOpen)) {
         // «وام» دیگه تبِ نوارِ پایین نیست (رجوع کن به کامنتِ بالای BottomTab تو این فایل) - چون از
         // «سررسید»/«خانه» به‌عنوانِ صفحه‌ی پوش‌شده باز می‌شه، یه دکمه‌ی برگشتِ واقعی لازم داره.
         Row(
@@ -1701,7 +1704,7 @@ private fun LoanTab(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
             }
             // فریمِ `27a`: عنوانِ ۱۸ با وزنِ ۹۰۰، و دکمه‌ی افزودن سمتِ مقابل تو قابِ ۳۲ی سبز.
             Text(
@@ -1767,6 +1770,7 @@ private fun LoanTab(
                 }
             }
         }
+      }
         Box(modifier = Modifier.weight(1f)) {
             when (subTab) {
                 LoanSubTab.CALCULATOR -> CalculatorHostTab(
@@ -1785,6 +1789,7 @@ private fun LoanTab(
                     onBottomBarVisibilityChanged = onBottomBarVisibilityChanged,
                     deepLinkLoanId = deepLinkLoanId,
                     onDeepLinkConsumed = onDeepLinkConsumed,
+                    onDetailOpenChanged = { loanDetailOpen = it },
                 )
             }
         }

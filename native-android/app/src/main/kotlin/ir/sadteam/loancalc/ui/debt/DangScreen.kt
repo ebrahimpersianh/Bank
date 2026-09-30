@@ -121,7 +121,7 @@ fun DangListScreen(
         item {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 Text("دنگ‌ها", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
             }
@@ -219,7 +219,7 @@ fun DangDetailScreen(
         item {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 Text(event.title, color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 IconButton(
@@ -479,7 +479,7 @@ fun DangCreateScreen(
         item {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onCancel) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 Text("دنگِ جدید", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }

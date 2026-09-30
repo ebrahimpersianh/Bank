@@ -117,7 +117,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت") }
+                IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText) }
                 Text("قبض‌ها", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
             }
         }

@@ -88,7 +88,7 @@ fun SubscriptionFinderScreen(
             item {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                        Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                     }
                     Text("اشتراک‌های فراموش‌شده", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
                 }

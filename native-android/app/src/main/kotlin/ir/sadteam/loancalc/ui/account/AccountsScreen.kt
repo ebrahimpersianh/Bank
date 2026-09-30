@@ -164,7 +164,7 @@ fun AccountsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             IconButton(onClick = onBack) {
-                                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                             }
                             Text("حساب‌های بانکی", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
                         }

@@ -107,7 +107,7 @@ fun CalendarPickerScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = { if (mode == CalendarMode.DAYS) onBack() else mode = CalendarMode.DAYS }) {
-                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
             }
             Text("انتخاب تاریخ", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
         }
@@ -124,7 +124,7 @@ fun CalendarPickerScreen(
                 onClick = { stepMonth(-1) },
                 enabled = mode == CalendarMode.DAYS,
             ) {
-                Icon(Icons.Filled.ChevronRight, contentDescription = "ماه قبل")
+                Icon(Icons.Filled.ChevronRight, contentDescription = "ماه قبل", tint = ir.sadteam.loancalc.ui.theme.AppText)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 HeaderChip(
@@ -142,7 +142,7 @@ fun CalendarPickerScreen(
                 onClick = { stepMonth(1) },
                 enabled = mode == CalendarMode.DAYS,
             ) {
-                Icon(Icons.Filled.ChevronLeft, contentDescription = "ماه بعد")
+                Icon(Icons.Filled.ChevronLeft, contentDescription = "ماه بعد", tint = ir.sadteam.loancalc.ui.theme.AppText)
             }
         }
 

@@ -115,7 +115,7 @@ internal fun InstallmentDetailScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 Text(
                     "قسط ${toFa(m)} · ${loan.name}",
@@ -195,7 +195,7 @@ internal fun InstallmentDetailScreen(
                                 onClick = { pendingPhotoDelete = path },
                                 modifier = Modifier.align(Alignment.TopEnd),
                             ) {
-                                Icon(Icons.Filled.Close, contentDescription = "حذفِ عکس")
+                                Icon(Icons.Filled.Close, contentDescription = "حذفِ عکس", tint = ir.sadteam.loancalc.ui.theme.AppText)
                             }
                         }
                     }

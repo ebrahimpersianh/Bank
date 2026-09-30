@@ -153,7 +153,7 @@ fun AccountDetailScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                    Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 Column(modifier = Modifier.padding(start = 4.dp)) {
                     Text(account.name, color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)

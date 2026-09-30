@@ -194,7 +194,7 @@ fun LoginScreen(
     Box(modifier = Modifier.fillMaxSize().background(AppSurface).statusBarsPadding()) {
         if (onDismiss != null) {
             IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopStart)) {
-                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
+                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
             }
         }
 
