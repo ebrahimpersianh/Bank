@@ -31,6 +31,13 @@
 # هیچ‌کدوم @SerializedName ندارن و رو تطبیقِ اسمِ فیلد با کلیدِ JSON سرور تکیه می‌کنن؛ بدونِ این قانون
 # minify اسم فیلدها رو عوض می‌کنه و همه‌ی این درخواست‌ها بی‌صدا (بدون کرش) با مقادیرِ null جواب می‌گیرن.
 -keep class ir.sadteam.loancalc.data.network.** { *; }
+# تنظیمِ از-راه-دور با Gson (۸ مهر) - نامِ فیلدها باید بماند.
+-keep class ir.sadteam.loancalc.data.RemoteApp** { *; }
+-keep class ir.sadteam.loancalc.data.RemotePromo { *; }
+-keep class ir.sadteam.loancalc.data.RemoteFaq { *; }
+-keep class ir.sadteam.loancalc.data.RemoteSurvey { *; }
+-keep class ir.sadteam.loancalc.data.coin.RemoteShopConfig { *; }
+-keep class ir.sadteam.loancalc.data.coin.RemoteTheme { *; }
 
 # --- Retrofit/OkHttp (طبق راهنمای رسمی Retrofit برای R8) ---
 -dontwarn okhttp3.**

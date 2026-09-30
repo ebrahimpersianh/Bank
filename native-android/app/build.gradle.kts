@@ -126,6 +126,7 @@ kapt {
 dependencies {
     implementation(project(":core"))
     implementation(project(":data"))
+    implementation("com.google.code.gson:gson:2.11.0") // تنظیمِ از-راه-دور (RemoteShop/RemoteApp)
 
     implementation(platform("androidx.compose:compose-bom:2024.09.00"))
     implementation("androidx.compose.ui:ui")

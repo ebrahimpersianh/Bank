@@ -65,7 +65,7 @@ object RemoteShop {
             prices = raw.prices ?: emptyMap(),
             labels = raw.labels ?: emptyMap(),
             newOn = raw.newOn ?: emptyMap(),
-            themes = (raw.themes ?: emptyList()).filter { it.id.isNotBlank() && parseHex(it.primary) != null },
+            themes = (raw.themes as List<RemoteTheme>?).orEmpty().filter { t: RemoteTheme -> t.id.isNotBlank() && parseHex(t.primary) != null },
             dealId = raw.dealId,
             dealPercent = raw.dealPercent,
         )
