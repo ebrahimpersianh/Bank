@@ -108,7 +108,7 @@ object AppModule {
         id?.let { raw ->
             java.security.MessageDigest.getInstance("SHA-256")
                 .digest(("jibak-device:" + raw).toByteArray())
-                .joinToString("") { "%02x".format(it) }
+                .joinToString("") { String.format(java.util.Locale.US, "%02x", it) }
         }
     }
 

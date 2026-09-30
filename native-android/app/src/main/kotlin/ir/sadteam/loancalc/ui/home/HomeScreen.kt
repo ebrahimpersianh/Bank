@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.ui.home
 
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.Search
 import androidx.activity.compose.BackHandler
 import ir.sadteam.loancalc.ui.profile.BadgesScreen
 import androidx.compose.material3.IconButton
@@ -186,6 +187,8 @@ fun HomeScreen(
     onNavigateToRoute: (String) -> Unit,
     onOpenSettings: () -> Unit = {},
     onOpenInbox: () -> Unit = {},
+    /** جستجوی کلیِ برنامه (۸ مهر). */
+    onOpenSearch: () -> Unit = {},
     onOpenLoan: (Long) -> Unit = { onNavigateToRoute("loan") },
     /**
      * کارتِ پیشنهادِ نوارِ پایین (`41a`) - به‌صورتِ یه اسلاتِ آماده‌ی رندر پاس داده می‌شه، نه
@@ -343,6 +346,7 @@ fun HomeScreen(
                     inboxCount = inboxCount,
                     inboxUnreadNews = inboxUnreadNews,
                     onOpenInbox = onOpenInbox,
+                    onOpenSearch = onOpenSearch,
                     todayHasEntry = todayHasEntry,
                 )
             }
@@ -700,6 +704,7 @@ private fun HomeHeader(
     onOpenCoins: () -> Unit,
     onOpenShop: () -> Unit,
     onOpenProfile: () -> Unit,
+    onOpenSearch: () -> Unit,
     /** امروز تراکنشی ثبت شده یا نه - شرطِ برگشتنِ قرصِ «فعال» به هدر (فریمِ `55a`). */
     todayHasEntry: Boolean,
 ) {
@@ -794,6 +799,8 @@ private fun HomeHeader(
             // ⚠️ `todayHasEntry` را باید فراخوان بدهد. در `HomeScreen` از همان داده‌ای
             // می‌آید که `notifyDailyExpenseReminder` استفاده می‌کند: «امروز تراکنشی ثبت
             // شده یا نه». امضایش را حدس نزدم.
+            // جستجوی کلی (۸ مهر، خواسته‌ی کاربر) - اولین دکمه‌ی ردیف.
+            PrivacyEyeButton(icon = Icons.Filled.Search, active = false, onClick = onOpenSearch, contentDescription = "جستجو")
             val streakAtRisk = activeDays >= 7 && !todayHasEntry
             if (streakAtRisk) {
                 ActiveChip(days = activeDays, onClick = onOpenCoins)

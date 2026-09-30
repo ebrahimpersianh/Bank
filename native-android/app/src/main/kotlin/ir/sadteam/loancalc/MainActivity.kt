@@ -738,6 +738,7 @@ private fun LoanCalcApp(
 ) {
     var showSettings by remember { mutableStateOf(false) }
     var showInbox by remember { mutableStateOf(false) }
+    var showGlobalSearch by remember { mutableStateOf(false) }
     val updateUrl by appUpdateViewModel.updateUrl.collectAsState()
     val appUpdateChanges by appUpdateViewModel.changelog.collectAsState()
     // تورِ راهنمای اولین ورود (پایین‌تر) - رجوع کن به رفعِ تداخلِ بنرِ آپدیت/تور: بنر فقط بعدِ تمومِ
@@ -1118,6 +1119,7 @@ private fun LoanCalcApp(
                             onNavigateToRoute = ::navigateTo,
                             onOpenSettings = { showSettings = true },
                             onOpenInbox = { showInbox = true },
+                            onOpenSearch = { showGlobalSearch = true },
                             onOpenLoan = { deepLinkViewModel.openLoan(it) },
                             // نوعِ صریح عمدیه: بدونش `let` لامبدا رو `() -> Unit`ِ ساده حساب
                             // می‌کنه و به `@Composable () -> Unit` نمی‌خوره.
@@ -1342,6 +1344,42 @@ private fun LoanCalcApp(
         ) {
             Surface(color = AppBg, modifier = Modifier.fillMaxSize()) {
                 InboxScreen(onBack = { showInbox = false })
+            }
+        }
+
+        BackHandler(enabled = showGlobalSearch) { showGlobalSearch = false }
+        AnimatedVisibility(
+            visible = showGlobalSearch,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Surface(color = AppBg, modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+                ir.sadteam.loancalc.ui.search.GlobalSearchScreen(
+                    onClose = { showGlobalSearch = false },
+                    onOpenLoan = { id ->
+                        showGlobalSearch = false
+                        deepLinkViewModel.openLoan(id)
+                    },
+                    onOpenCheque = { id ->
+                        showGlobalSearch = false
+                        deepLinkViewModel.openCheque(id)
+                        navigateTo(CHEQUE_ROUTE)
+                    },
+                    onOpenPerson = { id ->
+                        showGlobalSearch = false
+                        deepLinkViewModel.openDebt(id)
+                        navigateTo(DEBT_ROUTE)
+                    },
+                    onOpenBills = {
+                        showGlobalSearch = false
+                        navigateTo(BottomTab.BUDGET.route)
+                    },
+                    onOpenNotes = {
+                        showGlobalSearch = false
+                        navigateTo(NOTES_ROUTE)
+                    },
+                )
             }
         }
 
