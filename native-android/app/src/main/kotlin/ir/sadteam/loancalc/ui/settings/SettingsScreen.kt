@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.settings
 
+import androidx.compose.material.icons.filled.PhoneIphone
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
@@ -999,7 +1000,7 @@ private fun AccountSettings(
             SettingsDivider()
             SettingsRowItem(
                 title = "شماره‌ی موبایل",
-                icon = Icons.Filled.Person,
+                icon = Icons.Filled.PhoneIphone,
                 tone = SettingsTone.BLUE,
                 status = toFa(phone ?: ""),
                 statusTone = StatusTone.HEALTHY,
