@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.account
 
+import androidx.compose.material.icons.filled.Sms
+import androidx.compose.ui.text.font.FontWeight
+import ir.sadteam.loancalc.ui.components.dashedBorder
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -297,11 +300,20 @@ fun AddEditAccountScreen(
                     )
                 }
                 // خواسته‌ی صریحِ کاربر: به‌جای تایپِ دستی، بره تو پیامک‌های گوشی و همون‌جا انتخاب کنه.
-                OutlinedButton(
-                    onClick = { showSmsSenderPicker = true },
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                // دکمه‌ی کپسولیِ خط‌چینِ سبز (طرحِ Claude Design، ۸ مهر).
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .dashedBorder(999.dp, color = AppPrimary.copy(alpha = 0.55f), width = 1.5.dp)
+                        .pressScaleClickable { showSmsSenderPicker = true },
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("انتخاب از پیامک‌های گوشی")
+                    Icon(Icons.Filled.Sms, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(19.dp))
+                    Text("انتخاب از پیامک‌های گوشی", color = AppPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold)
                 }
                 // متنِ توضیحیِ زیرِ این دکمه به‌خواستِ صریحِ کاربر حذف شد - فقط خودِ فیلد و دکمه بمونه.
             }
@@ -353,10 +365,16 @@ fun AddEditAccountScreen(
                         "این رقمِ شروعِ حساب است. موجودیِ امروز از این رقم به‌علاوه‌ی تراکنش‌ها " +
                             "حساب می‌شود، پس عوض‌کردنش کلِ تاریخچه را جابه‌جا می‌کند."
                     },
-                    color = AppMuted,
-                    fontSize = 10.5.sp,
-                    lineHeight = 18.sp,
-                    modifier = Modifier.padding(top = 6.dp),
+                    // جعبه‌ی راهنمای کهربایی (طرحِ Claude Design).
+                    color = androidx.compose.ui.graphics.Color(0xFF6B4A0E),
+                    fontSize = 11.5.sp,
+                    lineHeight = 21.sp,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(androidx.compose.ui.graphics.Color(0xFFFDF6E6))
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
                 )
             }
         }
