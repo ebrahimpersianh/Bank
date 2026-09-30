@@ -395,7 +395,7 @@ fun AssetsTabScreen(
                 }
             }
             // روندِ کلِ دارایی در طولِ زمان (۸ مهر) - آخرِ فهرست تا شاخصِ اسکرولِ بالا جابه‌جا نشود.
-            if (browsing && wealthSnapshots.size >= 2) {
+            if (browsing && wealthSnapshots.size >= 5) {
                 item { WealthHistoryCard(wealthSnapshots, privacyMode) }
             }
         }

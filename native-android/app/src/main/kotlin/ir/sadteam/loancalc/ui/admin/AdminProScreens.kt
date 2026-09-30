@@ -223,9 +223,9 @@ fun AdminUserScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
                 Ltr {
                     OutlinedTextField(
                         value = code, onValueChange = { code = it.take(20) }, singleLine = true,
-                        placeholder = { Text("7405024") },
+                        placeholder = { Text("شماره‌ی کاربری، مثلاً 7405024") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors = appFieldColors(), shape = AppFieldShape, modifier = Modifier.fillMaxWidth(),
+                        colors = appFieldColors(), shape = AdminFieldShape, modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
@@ -340,8 +340,8 @@ fun AdminBroadcastScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewMod
                 }
             }
             AdminGroupLabel("پیام")
-            OutlinedTextField(value = title, onValueChange = { title = it.take(80) }, label = { Text("عنوان") }, singleLine = true, colors = appFieldColors(), shape = AppFieldShape, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = body, onValueChange = { body = it.take(600) }, label = { Text("متنِ پیام") }, minLines = 3, colors = appFieldColors(), shape = AppFieldShape, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = title, onValueChange = { title = it.take(80) }, label = { Text("عنوان") }, singleLine = true, colors = appFieldColors(), shape = AdminFieldShape, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = body, onValueChange = { body = it.take(600) }, label = { Text("متنِ پیام") }, minLines = 3, colors = appFieldColors(), shape = AdminFieldShape, modifier = Modifier.fillMaxWidth())
             if (title.isNotBlank() || body.isNotBlank()) {
                 AdminGroupLabel("همین‌طور در «پیام‌های جیبک» می‌نشیند")
                 AppCard {

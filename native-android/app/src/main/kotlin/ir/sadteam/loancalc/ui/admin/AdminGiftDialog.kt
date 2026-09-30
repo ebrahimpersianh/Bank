@@ -86,10 +86,10 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                         value = user,
                         onValueChange = { user = it.take(20) },
                         label = { Text("شماره‌ی کاربری (Uid)") },
-                        placeholder = { Text("7405024") },
+                        placeholder = { Text("مثلاً 7405024") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+                        shape = AdminFieldShape,
                         colors = appFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -109,7 +109,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                             Text(
                                 if (coinsMode) toFa(p) else if (p == 365) "۱ سال" else "${toFa(p)} روز",
                                 color = if (sel) Color.White else AppText,
-                                fontSize = 12.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                             )
                         }
@@ -121,7 +121,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                     label = { Text(if (coinsMode) "تعدادِ سکه" else "تعدادِ روز") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+                    shape = AdminFieldShape,
                     colors = appFieldColors(),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -130,7 +130,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                     onValueChange = { text = it.take(300) },
                     label = { Text("پیام برای کاربر (اختیاری)") },
                     minLines = 2,
-                    shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+                    shape = AdminFieldShape,
                     colors = appFieldColors(),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -138,7 +138,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                 if (user.isNotBlank() && n0 > 0) {
                     Text(
                         (if (coinsMode) "${toFa(n0)} سکه" else "${toFa(n0)} روز اشتراک") + " برای Uid:${user.trim().filter { it.isDigit() }}",
-                        color = AppPrimary, fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
+                        color = AppPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold,
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(AppPrimary.copy(alpha = 0.08f)).padding(10.dp),
                     )
                 }
@@ -150,11 +150,11 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                             else -> "فرستاده نشد؛ دوباره امتحان کن"
                         },
                         color = if (it == "ok") AppPrimary else AppDanger,
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                     )
                 }
-                Text("هدیه در «پیام‌های جیبک»ِ همان کاربر هم می‌آید.", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
+                Text("هدیه در «پیام‌های جیبک»ِ همان کاربر هم می‌آید.", color = AppMuted, fontSize = 12.5.sp, modifier = Modifier.padding(top = 2.dp))
             }
         },
         confirmButton = {

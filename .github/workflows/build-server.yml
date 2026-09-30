@@ -53,11 +53,11 @@ jobs:
 
       # فقط رو پوشِ main اجرا می‌شه (نه هر PR/بیلدِ تستی)، و فقط اگه سکرت‌ها ست شده باشن.
       - name: آماده‌سازیِ jar تو ریشه‌ی مخزن (برای مسیرِ ساده‌ی scp)
-        if: steps.check.outputs.ready == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.check.outputs.ready == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: cp build/libs/loan-calculator-server-1.0.0-all.jar ../loan-calculator-server-1.0.0-all.jar
 
       - name: کپیِ مستقیمِ jar به VPS (با اسمِ موقت)
-        if: steps.check.outputs.ready == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.check.outputs.ready == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -70,7 +70,7 @@ jobs:
       # به‌جای جایگزینیِ مستقیمِ jarِ زنده، اول با یه اسمِ موقت کپی می‌شه؛ این مرحله فقط اگه فایل
       # واقعاً یه zip/jarِ سالمه (نه خالی/ناقص) جایگزینش می‌کنه.
       - name: تاییدِ سلامتِ jar + جایگزینی + ری‌استارت + تاییدِ بالا اومدن
-        if: steps.check.outputs.ready == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: steps.check.outputs.ready == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}

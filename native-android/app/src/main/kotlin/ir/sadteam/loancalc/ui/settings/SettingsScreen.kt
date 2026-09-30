@@ -1002,7 +1002,7 @@ private fun AccountSettings(
                     status = id,
                     value = "کپی",
                     onClick = {
-                        idClipboard.setText(androidx.compose.ui.text.AnnotatedString(id))
+                        idClipboard.setText(androidx.compose.ui.text.AnnotatedString(id.filter { it.isDigit() }))
                         banner.show("شماره‌ی کاربری کپی شد", isSuccess = true)
                     },
                 )

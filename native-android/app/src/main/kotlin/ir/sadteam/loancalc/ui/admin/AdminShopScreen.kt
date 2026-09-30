@@ -167,8 +167,8 @@ fun AdminShopScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
             title = { Text(item.label) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(label, { label = it.take(40) }, label = { Text("نام") }, singleLine = true, shape = AppFieldShape, colors = appFieldColors(), modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(price, { price = cleanNum(it).take(6) }, label = { Text("قیمت (سکه)") }, singleLine = true, shape = AppFieldShape, colors = appFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(label, { label = it.take(40) }, label = { Text("نام") }, singleLine = true, shape = AdminFieldShape, colors = appFieldColors(), modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(price, { price = cleanNum(it).take(6) }, label = { Text("قیمت (سکه)") }, singleLine = true, shape = AdminFieldShape, colors = appFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("نشانِ «تازه» (۱۴ روز)", color = AppText, fontSize = 13.sp, modifier = Modifier.weight(1f))
                         Switch(checked = isNew, onCheckedChange = { isNew = it })
@@ -177,7 +177,7 @@ fun AdminShopScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
                         Text("تخفیفِ امروز", color = AppText, fontSize = 13.sp, modifier = Modifier.weight(1f))
                         Switch(checked = deal, onCheckedChange = { deal = it })
                     }
-                    if (deal) OutlinedTextField(pct, { pct = cleanNum(it).take(2) }, label = { Text("درصدِ تخفیف") }, singleLine = true, shape = AppFieldShape, colors = appFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
+                    if (deal) OutlinedTextField(pct, { pct = cleanNum(it).take(2) }, label = { Text("درصدِ تخفیف") }, singleLine = true, shape = AdminFieldShape, colors = appFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
                 }
             },
             confirmButton = {
@@ -224,11 +224,11 @@ fun AdminShopScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
             title = { Text("تمِ رنگیِ تازه") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(name, { name = it.take(24) }, label = { Text("نام (مثلاً «یاقوتی»)") }, singleLine = true, shape = AppFieldShape, colors = appFieldColors(), modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(name, { name = it.take(24) }, label = { Text("نام (مثلاً «یاقوتی»)") }, singleLine = true, shape = AdminFieldShape, colors = appFieldColors(), modifier = Modifier.fillMaxWidth())
                     ColorField("رنگِ اصلی", primary) { primary = it }
                     ColorField("تیره (پس‌زمینه‌ی تمِ تیره)", dark) { dark = it }
                     ColorField("روشن (برای تمِ تیره)", light) { light = it }
-                    OutlinedTextField(price, { price = cleanNum(it).take(5) }, label = { Text("قیمت (سکه)") }, singleLine = true, shape = AppFieldShape, colors = appFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(price, { price = cleanNum(it).take(5) }, label = { Text("قیمت (سکه)") }, singleLine = true, shape = AdminFieldShape, colors = appFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
                     Text("رنگ‌ها را از ChatGPT بگیر: «سه hex برای تمِ … : اصلی، خیلی تیره، خیلی روشن».", color = AppMuted, fontSize = 11.sp)
                 }
             },
@@ -256,7 +256,7 @@ private fun ColorField(label: String, value: String, onChange: (String) -> Unit)
     Row(verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(
             value, { onChange(("#" + it.removePrefix("#").filter { ch -> ch.isLetterOrDigit() }.take(6)).uppercase()) },
-            label = { Text(label) }, singleLine = true, shape = AppFieldShape, colors = appFieldColors(), modifier = Modifier.weight(1f),
+            label = { Text(label) }, singleLine = true, shape = AdminFieldShape, colors = appFieldColors(), modifier = Modifier.weight(1f),
         )
         Box(Modifier.padding(start = 8.dp).size(34.dp).clip(CircleShape).background(if (c != null) Color(c) else AppLine))
     }

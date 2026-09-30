@@ -51,7 +51,8 @@ private val RANGES = listOf("۱ ماه" to 30, "۳ ماه" to 90, "۶ ماه" to
  */
 @Composable
 internal fun WealthHistoryCard(snapshots: List<WealthSnapshotEntity>, privacyMode: Boolean) {
-    if (snapshots.size < 2) return
+    // با دو-سه نقطه فقط یک خطِ صاف/اریب دیده می‌شد (گزارشِ کاربر ۸ مهر)؛ از ۵ روز به بعد معنی دارد.
+    if (snapshots.size < 5) return
     var range by rememberSaveable { mutableIntStateOf(0) }
     val points = remember(snapshots, range) { snapshots.sortedBy { it.dateKey }.takeLast(RANGES[range].second) }
     val first = points.first().totalRial
@@ -80,11 +81,9 @@ internal fun WealthHistoryCard(snapshots: List<WealthSnapshotEntity>, privacyMod
                 )
             }
         }
-        WealthLines(points.map { it.totalRial }, points.map { it.cashRial })
-        Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Legend(AppPrimary, "کل (نقد + دارایی)")
-            Legend(AppInfo, "فقط نقد")
-        }
+        // خطِ دومِ «فقط نقد» برداشته شد - کاربر نفهمید چیست؛ یک خط = ارزشِ کلِ دارایی.
+        WealthLines(points.map { it.totalRial }, emptyList())
+        Text("ارزشِ کلِ حساب‌ها و دارایی‌ها در هر روز", color = AppMuted, fontSize = 11.5.sp)
     }
 }
 
@@ -126,7 +125,7 @@ private fun WealthLines(total: List<Double>, cash: List<Double>) {
             close()
         }
         drawPath(area, Brush.verticalGradient(listOf(main.copy(alpha = 0.22f), main.copy(alpha = 0f))))
-        drawPath(path(cash), second, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round))
+        if (cash.size >= 2) drawPath(path(cash), second, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round))
         drawPath(t, main, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
     }
 }

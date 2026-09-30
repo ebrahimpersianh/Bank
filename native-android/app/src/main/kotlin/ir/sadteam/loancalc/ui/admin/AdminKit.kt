@@ -127,6 +127,9 @@ internal fun adminDelta(now: Long, prev: Long, badWhenUp: Boolean = false): Admi
 @Composable
 internal fun AdminDelta.color(): Color = when (tone) { 1 -> AppPrimaryInk; -1 -> AppDangerInk; else -> AppMuted }
 
+/** کادرهای ادمین: گوشه‌ی ۱۶dp تا متنِ چندخطی راحت نوشته شود (کپسولِ ۲۸dp برای جستجوی یک‌خطی است). */
+internal val AdminFieldShape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+
 // ── سربرگ و صفحه ────────────────────────────────────────────────────────────────
 @Composable
 internal fun AdminHeader(title: String, subtitle: String, onBack: () -> Unit, actions: @Composable RowScope.() -> Unit = {}) {

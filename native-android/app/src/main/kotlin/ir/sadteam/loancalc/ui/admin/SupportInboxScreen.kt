@@ -288,7 +288,7 @@ private fun SupportMessageCard(
                 value = giftText,
                 onValueChange = { if (it.length <= 1000) giftText = it },
                 label = { Text("متنی که همراهِ هدیه می‌رود", fontSize = 11.sp) },
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = AdminFieldShape,
             )
             GradientButton(
                 onClick = {
@@ -305,7 +305,7 @@ private fun SupportMessageCard(
                 value = text,
                 onValueChange = { if (it.length <= 1000) text = it },
                 placeholder = { Text("جواب (در «پیام‌های جیبک»ِ همین کاربر می‌نشیند)", fontSize = 11.sp) },
-                modifier = Modifier.fillMaxWidth().padding(top = 10.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = AdminFieldShape,
             )
         }
         Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
