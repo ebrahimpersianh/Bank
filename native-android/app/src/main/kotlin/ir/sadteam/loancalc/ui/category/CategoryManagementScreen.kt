@@ -202,8 +202,8 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                 Text(
                     "دسته‌بندی‌ها",
                     color = AppText,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black,
                     modifier = Modifier.weight(1f),
                 )
                 // دکمه‌ی + بالای صفحه (خواسته‌ی صریحِ کاربر طبقِ اپِ مرجع) - قبلاً یه دکمه‌ی پهنِ
@@ -262,16 +262,17 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                                 .background(AppLineRow, CircleShape),
                         )
                     }
+                    // کاشیِ گوشه‌گردِ ۴۲ (هم‌سبکِ Claude Design).
                     Box(
                         modifier = Modifier
-                            .size(30.dp)
-                            .background(cat.color.copy(alpha = 0.16f), CircleShape),
+                            .size(if (isChild) 36.dp else 42.dp)
+                            .background(cat.color.copy(alpha = 0.14f), androidx.compose.foundation.shape.RoundedCornerShape(14.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(cat.icon, contentDescription = null, tint = cat.color, modifier = Modifier.size(16.dp))
+                        Icon(cat.icon, contentDescription = null, tint = cat.color, modifier = Modifier.size(22.dp))
                     }
-                    Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                        Text(cat.name, color = AppText, fontSize = 13.sp)
+                    Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                        Text(cat.name, color = AppText, fontSize = 14.5.sp, fontWeight = FontWeight.ExtraBold)
                         // فریمِ `74a` بندِ ۳: مبلغِ ماهِ جاری - از `viewModel.monthTotals`.
                         //
                         // کارتِ راهنمای پایینِ صفحه از این عدد حرف می‌زد ولی هیچ ردیفی
@@ -281,7 +282,7 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                                 Text(
                                     "${maskIfPrivate(masked, amountToman(total))} تومان",
                                     color = AppMuted,
-                                    fontSize = 9.5.sp,
+                                    fontSize = 12.sp,
                                     modifier = Modifier.padding(top = 2.dp),
                                 )
                             }
