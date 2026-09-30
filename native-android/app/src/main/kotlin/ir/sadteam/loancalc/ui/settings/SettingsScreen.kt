@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.settings
 
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.AdminPanelSettings
@@ -2402,6 +2404,22 @@ private fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
  *
  * فهرست از خودِ گوشی خونده می‌شه (اپ‌های دارای آیکونِ لانچر) و **هیچ‌جا فرستاده نمی‌شه**.
  */
+/** آیکونِ واقعیِ اپِ نصب‌شده روی گوشی (خواسته‌ی کاربر ۸ مهر: فقط در همین فهرست لوگو باشد). */
+@Composable
+private fun InstalledAppIcon(pkg: String) {
+    val context = LocalContext.current
+    val icon by produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, pkg) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                context.packageManager.getApplicationIcon(pkg).toBitmap(96, 96).asImageBitmap()
+            }.getOrNull()
+        }
+    }
+    Box(modifier = Modifier.padding(end = 10.dp).size(30.dp).clip(RoundedCornerShape(8.dp))) {
+        icon?.let { androidx.compose.foundation.Image(it, contentDescription = null, modifier = Modifier.fillMaxSize()) }
+    }
+}
+
 @Composable
 private fun NotificationAppPicker(viewModel: SmsAutoImportViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -2483,6 +2501,7 @@ private fun NotificationAppPicker(viewModel: SmsAutoImportViewModel, modifier: M
                         .padding(vertical = 9.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    InstalledAppIcon(pkg)
                     Text(
                         label,
                         color = AppText,
