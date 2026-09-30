@@ -1,5 +1,9 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -117,31 +121,37 @@ fun CategoryPickerSheet(
             )
         },
         text = {
-            LazyColumn(
-                modifier = Modifier.heightIn(max = 400.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+            // بازطراحیِ ۸ مهر: کاشی‌های سه‌ستونه با آیکونِ رنگیِ درشت، به‌جای فهرستِ بلند.
+            Column(
+                modifier = Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(categories, key = { it.name }) { entry ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(AppSurface2, RoundedCornerShape(16.dp))
-                            .pressScaleClickable(onClick = { onPick(entry.name) })
-                            .padding(horizontal = 10.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            entry.icon,
-                            contentDescription = null,
-                            tint = entry.color,
-                            modifier = Modifier.size(20.dp),
-                        )
-                        Text(
-                            entry.name,
-                            color = AppText,
-                            fontSize = 13.sp,
-                            modifier = Modifier.padding(start = 10.dp),
-                        )
+                categories.chunked(3).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { entry ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .background(AppSurface2, RoundedCornerShape(16.dp))
+                                    .pressScaleClickable(onClick = { onPick(entry.name) })
+                                    .padding(vertical = 12.dp, horizontal = 4.dp),
+                            ) {
+                                Box(
+                                    Modifier.size(42.dp).background(entry.color.copy(alpha = 0.16f), RoundedCornerShape(14.dp)),
+                                    contentAlignment = Alignment.Center,
+                                ) { Icon(entry.icon, contentDescription = null, tint = entry.color, modifier = Modifier.size(22.dp)) }
+                                Text(
+                                    entry.name,
+                                    color = AppText,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    modifier = Modifier.padding(top = 6.dp),
+                                )
+                            }
+                        }
+                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
