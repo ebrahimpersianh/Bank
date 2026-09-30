@@ -1,5 +1,10 @@
 package ir.sadteam.loancalc.ui.onboarding
 
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.BatteryAlert
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.ui.graphics.Color
+import ir.sadteam.loancalc.ui.components.dashedBorder
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -188,10 +193,11 @@ fun PermissionGateScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 24.dp)
-                .background(AppSurface, RoundedCornerShape(14.dp))
-                .border(1.dp, AppLine, RoundedCornerShape(14.dp)),
+                .background(AppSurface, RoundedCornerShape(24.dp))
+                .border(1.5.dp, AppLine, RoundedCornerShape(24.dp)),
         ) {
             PermissionRow(
+                icon = Icons.Filled.Notifications,
                 title = "اجازه‌ی اعلان",
                 granted = notifOk,
                 // ⚠️ قبلاً "Allow" بود - انگلیسیِ خام در برنامه‌ای که سراسر فارسی است، و کاربرِ
@@ -205,6 +211,7 @@ fun PermissionGateScreen(
             )
             HorizontalDivider(color = AppLine)
             PermissionRow(
+                icon = Icons.Filled.BatteryAlert,
                 title = "باتری بدونِ محدودیت",
                 granted = batteryOk,
                 // ⚠️ قبلاً "Open" بود. عنوان هم از «باتری: نامحدود / بدون بهینه‌سازی» ساده شد -
@@ -244,16 +251,20 @@ fun PermissionGateScreen(
                     // ⚠️ `AppGoldFrom` بود. قاعده‌ی ۸ی README: «طلایی فقط نشانه‌ی
                     // اشتراک/پرمیوم است». راهنمای اجرای خودکار نه پرمیوم است و نه
                     // فروشی - کارتِ خنثی با حاشیه.
-                    .background(AppSurface, RoundedCornerShape(14.dp))
-                    .border(1.dp, AppLine, RoundedCornerShape(14.dp))
-                    .padding(14.dp),
+                    .background(AppSurface, RoundedCornerShape(24.dp))
+                    .dashedBorder(24.dp)
+                    .padding(16.dp),
             ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Tune, contentDescription = null, tint = AppMuted, modifier = Modifier.size(20.dp).padding(end = 2.dp))
+                    Spacer(Modifier.size(6.dp))
                 Text(
                     "یک قدمِ اختیاری",
                     color = AppText,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.ExtraBold,
                 )
+                }
                 Text(
                     "گوشیِ تو علاوه بر بهینه‌سازیِ باتری، یک «اجرای خودکار» جدا هم دارد. اگر خاموش " +
                         "باشد یادآوری‌ها می‌رسند ولی خواندنِ خودکارِ پیامک و اعلانِ بانک بعد از چند " +
@@ -306,22 +317,39 @@ fun PermissionGateScreen(
 }
 
 @Composable
-private fun PermissionRow(title: String, granted: Boolean, actionLabel: String, onClick: () -> Unit) {
+private fun PermissionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    granted: Boolean,
+    actionLabel: String,
+    onClick: () -> Unit,
+) {
+    // طرحِ Claude Design (۸ مهر): کاشیِ آیکونِ رنگی؛ سبز = داده شده، کهربایی = مانده.
+    val amber = Color(0xFFB45309)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column {
-            Text(title, color = AppText, fontSize = 14.sp)
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(if (granted) AppPrimary.copy(alpha = 0.12f) else amber.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = if (granted) AppPrimary else amber, modifier = Modifier.size(22.dp))
+        }
+        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+            Text(title, color = AppText, fontSize = 14.5.sp, fontWeight = FontWeight.ExtraBold)
             Text(
                 // ⚠️ قبلاً «فعال است ✅» بود - ایموجی به‌جای وضعیت. حالا تیکِ واقعی سمتِ دیگرِ
                 // ردیف می‌نشیند (جای دکمه)، پس چشم یک ستونِ وضعیت می‌بیند نه دو نشانه‌ی پراکنده.
                 if (granted) "فعال است" else "باید فعال شود",
-                color = if (granted) AppPrimary else AppMuted,
+                color = if (granted) AppPrimary else amber,
                 fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
