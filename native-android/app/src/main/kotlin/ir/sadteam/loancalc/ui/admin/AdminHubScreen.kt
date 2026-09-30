@@ -69,8 +69,8 @@ fun AdminHubScreen(onBack: () -> Unit, supportVm: SupportInboxViewModel = hiltVi
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowForward, "بازگشت", tint = AppText) }
             Column(Modifier.padding(start = 4.dp)) {
-                Text("ادمین", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
-                Text("ابزارهای مدیریتِ جیبک - فقط برای تو", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                Text("ادمین", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                Text("ابزارهای مدیریتِ جیبک - فقط برای تو", color = AppMuted, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
             }
         }
         HubRow(Icons.Filled.SupportAgent, "پیام‌های کاربران", "مشکل، طراحی، پیشنهاد · جواب و هدیه", badge = open) { page = "support" }
@@ -88,8 +88,8 @@ private fun HubRow(icon: ImageVector, title: String, subtitle: String, badge: In
             ) { Icon(icon, null, tint = AppPrimaryInk, modifier = Modifier.size(22.dp)) }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(title, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
-                Text(subtitle, color = AppMuted, fontSize = 11.sp)
+                Text(title, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)
+                Text(subtitle, color = AppMuted, fontSize = 12.5.sp)
             }
             if (badge > 0) {
                 Text(
