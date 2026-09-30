@@ -879,6 +879,7 @@ private fun LoanCalcApp(
             DeepLinkTarget.SHORTCUT_ADD_TRANSACTION -> navigateTo(BottomTab.HOME.route)
             DeepLinkTarget.SHORTCUT_DUE -> navigateTo(BottomTab.DUE.route)
             DeepLinkTarget.SHORTCUT_REPORT -> navigateTo(BottomTab.REPORT.route)
+            "budget" -> navigateTo(BottomTab.BUDGET.route)
             else -> return@LaunchedEffect
         }
         deepLinkViewModel.consumeShortcut()
