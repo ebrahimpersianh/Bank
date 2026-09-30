@@ -1,5 +1,20 @@
 package ir.sadteam.loancalc.ui.cheque
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.filled.Delete
+import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -135,15 +150,27 @@ fun ChequeDetailScreen(
                 IconButton(onClick = onBack) {
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                 }
-                Text("جزئیات چک", color = AppText, fontSize = 16.sp, modifier = Modifier.padding(start = 4.dp))
+                Text("جزئیات چک", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 4.dp))
             }
         }
 
         item {
             AppCard {
                 Column {
-                    DetailRow("نوع", typeLabel)
-                    DetailRow("مبلغ", "${fmt(rialToToman((cheque.amount).toLong()).toDouble())} تومان")
+                    // طرحِ Claude Design (۸ مهر): نوع به‌صورتِ قرص، مبلغ درشت، ردیف‌ها با خطِ جداکننده.
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("نوع", color = AppMuted, fontSize = 13.sp)
+                        val typeColor = if (cheque.type == "RECEIVED") AppPrimary else AppDanger
+                        Text(
+                            typeLabel, color = typeColor, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(typeColor.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 3.dp),
+                        )
+                    }
+                    DetailRow("مبلغ", "${fmt(rialToToman((cheque.amount).toLong()).toDouble())} تومان", big = true)
                     DetailRow("شماره چک", toFa(cheque.chequeNumber))
                     // smart-cast مستقیم رو یه property از یه ماژول دیگه (:data) مجاز نیست، برای
                     // همین اول تو یه val محلی می‌ریزیمش.
@@ -210,19 +237,38 @@ fun ChequeDetailScreen(
 
         item {
             AppCard(label = "وضعیت چک") {
-                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    ChequeStatus.entries.forEach { status ->
-                        AppChip(
-                            label = status.label,
-                            selected = cheque.status == status.name,
-                            onClick = {
-                                if (status == ChequeStatus.PASSED && cheque.status != ChequeStatus.PASSED.name) {
-                                    if (accounts.isEmpty()) commitPass(null) else pendingPassStatus = true
-                                } else {
-                                    viewModel.setStatus(cheque, status)
+                // شبکه‌ی ۲×۲ از قرص‌های هم‌عرض (طرحِ Claude Design).
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ChequeStatus.entries.chunked(2).forEach { pair ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            pair.forEach { status ->
+                                val selected = cheque.status == status.name
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(40.dp)
+                                        .clip(RoundedCornerShape(999.dp))
+                                        .background(if (selected) AppPrimary else AppSurface2)
+                                        .border(1.5.dp, if (selected) AppPrimary else AppLine, RoundedCornerShape(999.dp))
+                                        .pressScaleClickable {
+                                            if (status == ChequeStatus.PASSED && cheque.status != ChequeStatus.PASSED.name) {
+                                                if (accounts.isEmpty()) commitPass(null) else pendingPassStatus = true
+                                            } else {
+                                                viewModel.setStatus(cheque, status)
+                                            }
+                                        },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        status.label,
+                                        color = if (selected) Color.White else AppText,
+                                        fontSize = 13.sp,
+                                        fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Bold,
+                                    )
                                 }
-                            },
-                        )
+                            }
+                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                        }
                     }
                 }
             }
@@ -259,12 +305,14 @@ fun ChequeDetailScreen(
         }
 
         item {
-            OutlinedButton(
+            TextButton(
                 onClick = { showDeleteConfirm = true },
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AppDanger),
+                colors = ButtonDefaults.textButtonColors(contentColor = AppDanger),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("حذف چک")
+                Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("حذف چک", fontWeight = FontWeight.ExtraBold)
             }
         }
     }
@@ -282,12 +330,14 @@ fun ChequeDetailScreen(
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
+private fun DetailRow(label: String, value: String, big: Boolean = false) {
+    androidx.compose.material3.HorizontalDivider(thickness = 1.5.dp, color = AppLine)
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = AppMuted, fontSize = 12.sp)
-        Text(value, color = AppText, fontSize = 13.sp)
+        Text(label, color = AppMuted, fontSize = 13.sp)
+        Text(value, color = AppText, fontSize = if (big) 17.sp else 14.sp, fontWeight = if (big) FontWeight.Black else FontWeight.Bold)
     }
 }
