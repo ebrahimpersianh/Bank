@@ -71,6 +71,8 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppPrimary
+import androidx.compose.foundation.layout.height
 import ir.sadteam.loancalc.ui.settings.SettingsHero
 import ir.sadteam.loancalc.core.toFa
 
@@ -99,6 +101,9 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
     val gateState by authViewModel.gateState.collectAsState()
     var message by rememberSaveable { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
+    // مرحله‌ی فرستادن برای نوارِ پیشرفت: آماده‌سازی → آپلود (۰..۱) → فرستادنِ پیام.
+    var sendStage by remember { mutableStateOf("") }
+    var uploadProgress by remember { mutableStateOf(0f) }
     var ticket by rememberSaveable { mutableStateOf<String?>(null) }
     var category by rememberSaveable { mutableStateOf("bug") }
 
@@ -265,29 +270,71 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                 }
             }
 
+            if (sending) {
+                item {
+                    AppCard {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                color = AppPrimary,
+                                strokeWidth = 2.5.dp,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Text(sendStage, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 10.dp))
+                            if (shots.isNotEmpty()) {
+                                Text("${toFa((uploadProgress * 100).toInt())}٪", color = AppPrimary, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                            }
+                        }
+                        if (shots.isNotEmpty()) {
+                            val shown by androidx.compose.animation.core.animateFloatAsState(uploadProgress, label = "upload")
+                            androidx.compose.material3.LinearProgressIndicator(
+                                progress = { shown },
+                                color = AppPrimary,
+                                trackColor = AppPrimary.copy(alpha = 0.15f),
+                                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
+                                modifier = Modifier.fillMaxWidth().padding(top = 10.dp).height(8.dp),
+                            )
+                        }
+                    }
+                }
+            }
             item {
+                if (message.isNotEmpty() && message.trim().length < 2) {
+                    Text("پیام خیلی کوتاه است", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(bottom = 6.dp))
+                }
                 GradientButton(
-                    enabled = message.trim().length >= 5 && !sending,
+                    // ⚠️ حداقل ۵ حرف بود و «سلام» (۴ حرف) دکمه را بی‌صدا خاموش نگه می‌داشت.
+                    enabled = message.trim().length >= 2 && !sending,
                     onClick = {
                         if (gateState != GateState.LOGGED_IN) {
                             banner.show("برای فرستادنِ پیام اول وارد حسابت شو")
                             return@GradientButton
                         }
                         sending = true
+                        uploadProgress = 0f
+                        sendStage = if (shots.isEmpty()) "در حالِ فرستادنِ پیام…" else "آماده‌سازیِ فایل‌ها…"
                         scope.launch {
                             val prepared = shots.map { prepare(it) }
                             val skipped = prepared.count { it == null }
+                            var uploadFailed = 0
+                            if (prepared.any { it != null }) sendStage = "در حالِ آپلود…"
                             authViewModel.reportBug(
                                 message = message.trim(),
                                 appVersion = BuildConfig.VERSION_NAME,
                                 device = device,
                                 attachments = prepared.filterNotNull(),
                                 category = category,
+                                onProgress = { p ->
+                                    uploadProgress = p
+                                    if (p >= 1f) sendStage = "در حالِ فرستادنِ پیام…"
+                                },
+                                onAttachmentFailed = { uploadFailed = it },
                             ) { code ->
                                 sending = false
+                                sendStage = ""
                                 ticket = code
                                 when {
                                     code == null -> banner.show("فرستاده نشد؛ اینترنت را چک کن و دوباره بزن")
+                                    uploadFailed > 0 -> banner.show("پیام رفت ولی ${toFa(uploadFailed)} فایل آپلود نشد؛ دوباره امتحان کن")
                                     skipped > 0 -> banner.show("پیام رفت؛ ${toFa(skipped)} فیلمِ بزرگ‌تر از ۲۰ مگ جا ماند")
                                     else -> {
                                         message = ""

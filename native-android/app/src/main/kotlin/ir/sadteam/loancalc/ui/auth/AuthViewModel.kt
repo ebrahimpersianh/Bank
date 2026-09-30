@@ -332,9 +332,13 @@ class AuthViewModel @Inject constructor(
         device: String?,
         attachments: List<Pair<ByteArray, String>> = emptyList(),
         category: String = "bug",
+        onProgress: (Float) -> Unit = {},
+        onAttachmentFailed: (Int) -> Unit = {},
         onResult: (String?) -> Unit,
     ) {
-        viewModelScope.launch { onResult(authRepository.reportBug(message, appVersion, device, attachments, category)) }
+        viewModelScope.launch {
+            onResult(authRepository.reportBug(message, appVersion, device, attachments, category, onProgress, onAttachmentFailed))
+        }
     }
 
     /** 🎁 خرج‌کردنِ کدِ هدیه - رجوع کن به [AuthRepository.redeemGiftCode]. */

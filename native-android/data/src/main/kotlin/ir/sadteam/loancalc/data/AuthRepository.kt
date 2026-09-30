@@ -135,23 +135,40 @@ class AuthRepository(
      * ⚠️ فقط برای کاربرِ واردشده: بی `user_id` گزارش به هیچ حسابی بسته نمی‌شود و
      * دادنِ هدیه ممکن نیست - همان دلیلی که این کار را سمتِ سرور می‌بَرَد.
      */
+    /**
+     * [onProgress] از ۰ تا ۱ - سهمِ بایت‌های فرستاده‌شده‌ی همه‌ی پیوست‌ها (برای نوارِ آپلود).
+     * [onAttachmentFailed] تعدادِ پیوست‌هایی که بالا نرفتند - قبلاً بی‌صدا جا می‌ماندند.
+     */
     suspend fun reportBug(
         message: String,
         appVersion: String?,
         device: String?,
         attachments: List<Pair<ByteArray, String>> = emptyList(),
         category: String = "bug",
+        onProgress: (Float) -> Unit = {},
+        onAttachmentFailed: (Int) -> Unit = {},
     ): String? {
         val token = authPrefs.authToken.first()
         if (token.isNullOrEmpty()) return null
         return try {
+            val total = attachments.sumOf { it.first.size.toLong() }.coerceAtLeast(1L)
+            var done = 0L
+            var failed = 0
             // پیوستِ ردشده (نوعِ نامجاز/بزرگ) کلِ پیام را نمی‌شکند؛ فقط همان جا می‌ماند.
             val ids = attachments.mapNotNull { (bytes, mime) ->
-                runCatching {
-                    val body = bytes.toRequestBody(mime.toMediaType())
+                val base = done
+                val id = runCatching {
+                    val body = ProgressRequestBody(bytes, mime.toMediaType()) { written ->
+                        onProgress(((base + written).toFloat() / total).coerceIn(0f, 1f))
+                    }
                     apiService.uploadSupportFile("Bearer $token", body).id
                 }.getOrNull()
+                done += bytes.size
+                onProgress((done.toFloat() / total).coerceIn(0f, 1f))
+                if (id == null) failed++
+                id
             }
+            if (failed > 0) onAttachmentFailed(failed)
             apiService.reportBug("Bearer $token", BugReportRequest(message, appVersion, device, ids, category)).ticket
         } catch (e: Exception) {
             null
@@ -261,6 +278,25 @@ class AuthRepository(
             data?.get("error") as? String
         } catch (e: Exception) {
             null
+        }
+    }
+}
+
+/** بدنه‌ی آپلود که بایت‌های نوشته‌شده را گزارش می‌دهد (نوارِ پیشرفتِ پیوستِ پشتیبانی). */
+private class ProgressRequestBody(
+    private val bytes: ByteArray,
+    private val type: okhttp3.MediaType,
+    private val onWritten: (Long) -> Unit,
+) : okhttp3.RequestBody() {
+    override fun contentType() = type
+    override fun contentLength() = bytes.size.toLong()
+    override fun writeTo(sink: okio.BufferedSink) {
+        var off = 0
+        while (off < bytes.size) {
+            val n = minOf(16 * 1024, bytes.size - off)
+            sink.write(bytes, off, n)
+            off += n
+            onWritten(off.toLong())
         }
     }
 }
