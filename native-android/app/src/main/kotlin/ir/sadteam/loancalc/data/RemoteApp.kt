@@ -15,6 +15,8 @@ data class RemoteSurvey(val id: String = "", val question: String = "", val opti
  * همه‌ی فیلدها اختیاری‌اند؛ خالی/`null` = رفتارِ داخلیِ برنامه. از «ادمین ← تنظیماتِ از راهِ دور» عوض می‌شود.
  */
 data class RemoteAppConfig(
+    /** دوره‌ی مجانیِ کاربرِ **تازه** (روز) - فقط سرور می‌خواند، لحظه‌ی ثبت‌نام. قدیمی‌ها دست نمی‌خورند. */
+    val trialDays: Int? = null,
     // نسخه‌ی رایگان
     val freeTx: Int? = null,
     val freeAccounts: Int? = null,

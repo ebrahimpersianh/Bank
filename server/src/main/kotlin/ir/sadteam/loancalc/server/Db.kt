@@ -295,6 +295,9 @@ object Db {
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN launch_gift_granted INTEGER NOT NULL DEFAULT 0")
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN cloud_warn_for TEXT")
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN trial_blocked INTEGER NOT NULL DEFAULT 0")
+            // طولِ دوره‌ی مجانیِ **همین کاربر**، لحظه‌ی ثبت‌نام ثبت می‌شود (۸ مهر) تا تغییرش در ادمین
+            // فقط روی کاربرانِ تازه اثر کند. NULL = کاربرِ قدیمی = همان ۳۰ روز.
+            addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN trial_days INTEGER")
             conn.createStatement().use {
                 it.executeUpdate(
                     "CREATE TABLE IF NOT EXISTS device_users (device_hash TEXT NOT NULL, user_id INTEGER NOT NULL, " +
@@ -451,6 +454,7 @@ data class UserRow(
     val createdAt: String,
     /** ماهِ مجانی نمی‌گیرد: روی گوشی‌ای ساخته شد که حسابِ دیگری قبلاً ماهِ مجانی گرفته بود. */
     val trialBlocked: Boolean = false,
+    val trialDays: Int? = null,
 )
 
 fun ResultSet.toUserRow(): UserRow = UserRow(
@@ -464,4 +468,5 @@ fun ResultSet.toUserRow(): UserRow = UserRow(
     legacyGift = runCatching { getInt("legacy_gift_granted") != 0 }.getOrDefault(false),
     createdAt = getString("created_at"),
     trialBlocked = runCatching { getInt("trial_blocked") != 0 }.getOrDefault(false),
+    trialDays = runCatching { getInt("trial_days").takeIf { !wasNull() } }.getOrNull(),
 )

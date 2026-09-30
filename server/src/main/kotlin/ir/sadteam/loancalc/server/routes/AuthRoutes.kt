@@ -214,7 +214,7 @@ fun Route.authRoutes() {
             }
             val isNewUser = user == null
             if (user == null) {
-                val newId = Db.withConnection { conn -> conn.insertReturningId("INSERT INTO users (phone) VALUES (?)", phone) }
+                val newId = Db.withConnection { conn -> conn.insertReturningId("INSERT INTO users (phone, trial_days) VALUES (?, ?)", phone, configuredTrialDays(conn)) }
                 Db.withConnection { conn -> conn.execute("INSERT INTO loans (user_id, data) VALUES (?, '[]')", newId) }
                 // بعد از insert دوباره از دیتابیس می‌خونیم (نه یه آبجکت دستیِ ناقص) تا created_at
                 // واقعی (لازم برای محاسبه‌ی دوره‌ی آزمایشی ۷ روزه‌ی isSubscribed) رو داشته باشیم.

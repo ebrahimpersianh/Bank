@@ -103,6 +103,10 @@ fun AdminRemoteScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel(
 
     Box(Modifier.fillMaxSize()) {
         AdminPage("تنظیماتِ از راهِ دور", "عوض کن بی‌آپدیتِ برنامه · خالی = پیش‌فرض", onBack) {
+            AdminSection("دوره‌ی مجانیِ کاربرِ تازه", "${toFa(c.trialDays ?: 30)} روز") {
+                NumField("چند روز (۱ تا ۹۰)", c.trialDays, "۳۰") { c = c.copy(trialDays = it?.coerceIn(1, 90)) }
+                AdminNote("فقط برای کسانی که از این به بعد ثبت‌نام کنند؛ کاربرانِ فعلی همان مقدارِ قبلی را دارند.")
+            }
             AdminSection("نسخه‌ی رایگان", "تراکنش ${c.freeTx?.let { toFa(it) } ?: "۳۰"} · حساب ${c.freeAccounts?.let { toFa(it) } ?: "۱"} · وام ${c.freeLoans?.let { toFa(it) } ?: "۱"} · چک ${c.freeCheques?.let { toFa(it) } ?: "۱"}") {
                 NumField("تراکنش در ماه", c.freeTx, "۳۰") { c = c.copy(freeTx = it) }
                 NumField("حساب", c.freeAccounts, "۱") { c = c.copy(freeAccounts = it) }

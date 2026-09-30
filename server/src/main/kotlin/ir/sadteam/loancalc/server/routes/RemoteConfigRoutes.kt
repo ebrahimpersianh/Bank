@@ -96,3 +96,12 @@ fun Route.remoteConfigRoutes() {
         call.respond(mapOf("ok" to true))
     }
 }
+
+/** طولِ دوره‌ی مجانیِ کاربرِ **تازه** از `app_config.app.trialDays` (۱ تا ۹۰)، وگرنه ۳۰. */
+internal fun configuredTrialDays(conn: java.sql.Connection): Int {
+    val json = conn.queryOne("SELECT json FROM app_config WHERE key = 'app'") { it.getString(1) } ?: return ir.sadteam.loancalc.server.TRIAL_DAYS
+    val v = runCatching {
+        (Json.parseToJsonElement(json) as? JsonObject)?.get("trialDays")?.let { kotlinx.serialization.json.JsonPrimitive::class.java.cast(it) }?.content?.toIntOrNull()
+    }.getOrNull()
+    return v?.takeIf { it in 1..90 } ?: ir.sadteam.loancalc.server.TRIAL_DAYS
+}
