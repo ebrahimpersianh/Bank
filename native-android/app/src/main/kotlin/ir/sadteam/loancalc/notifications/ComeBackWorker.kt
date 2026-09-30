@@ -76,6 +76,8 @@ class ComeBackWorker @AssistedInject constructor(
         // یه‌بار در روز، نه بیشتر - حتی اگه WorkManager چند بار اجراش کنه.
         val todayKey = "${today.y}-${today.m}-${today.d}"
         if (uiPrefs.lastComeBackNotifiedAt.first() == todayKey) return Result.success()
+        // غیرفوری: اگر اعلانِ دیگری تازه آمده، اجرای بعدی.
+        if (NotifSpacing.busy(applicationContext)) return Result.success()
 
         notifyComeBack(daysAway)
         uiPrefs.setLastComeBackNotifiedAt(todayKey)

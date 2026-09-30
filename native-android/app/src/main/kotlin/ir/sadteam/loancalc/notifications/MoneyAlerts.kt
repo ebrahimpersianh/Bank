@@ -42,6 +42,20 @@ private fun openIntent(context: Context, shortcut: String, requestCode: Int): Pe
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
+/**
+ * 🔕 **فاصله‌ی اعلان‌های غیرفوری** (۸ مهر، خواسته‌ی کاربر: «با هم نیایند»): اگر در یک ساعتِ اخیر
+ * اعلانِ دیگری از جیبک هنوز در نوار هست، اعلانِ غیرفوری (بودجه، خلاصه‌ی هفتگی، «برگرد») صبر می‌کند.
+ * یادآوریِ قسط/چک/قبض هرگز صبر نمی‌کند.
+ */
+object NotifSpacing {
+    private const val GAP_MS = 60 * 60 * 1000L
+    fun busy(context: Context): Boolean = runCatching {
+        val nm = context.getSystemService(android.app.NotificationManager::class.java) ?: return false
+        val now = System.currentTimeMillis()
+        nm.activeNotifications.any { now - it.postTime < GAP_MS }
+    }.getOrDefault(false)
+}
+
 private fun notify(context: Context, id: Int, title: String, text: String, shortcut: String) {
     ReminderChannels.ensureAll(context)
     val n = NotificationCompat.Builder(context, ReminderChannels.CHANNEL_NUDGES)
@@ -72,6 +86,19 @@ object BudgetAlerts {
         }
     }
 
+    @Volatile private var retryScheduled = false
+
+    /** اعلانِ دیگری تازه آمده؛ یک ساعت بعد دوباره نگاه کن (فقط یک نوبتِ منتظر). */
+    private fun retryLater(context: Context, repo: AccountRepository) {
+        if (retryScheduled) return
+        retryScheduled = true
+        CoroutineScope(Dispatchers.IO).launch {
+            kotlinx.coroutines.delay(61 * 60 * 1000L)
+            retryScheduled = false
+            runCatching { check(context, repo, repo.observeBudgets().first(), repo.observeTransactions().first()) }
+        }
+    }
+
     private fun check(
         context: Context,
         repo: AccountRepository,
@@ -92,6 +119,7 @@ object BudgetAlerts {
             }
             val key = "${b.id}:$level"
             if (prefs.getBoolean(key, false)) return@forEach
+            if (NotifSpacing.busy(context)) { retryLater(context, repo); return }
             // ۱۰۰٪ که رسید، ۸۰٪ را هم «گفته‌شده» علامت بزن تا بعداً جدا نیاید.
             prefs.edit().putBoolean(key, true).putBoolean("${b.id}:80", true).apply()
             val left = (b.monthlyCap - spent).coerceAtLeast(0.0)
@@ -135,6 +163,8 @@ class WeeklySummaryWorker @AssistedInject constructor(
         val week = txs.filter { key(it.year, it.month, it.day) in days }
         val prev = txs.filter { key(it.year, it.month, it.day) in prevDays }
         if (week.isEmpty()) return Result.success()
+        // اعلانِ دیگری تازه آمده: اجرای بعدی (۳ ساعت بعد) دوباره امتحان می‌کند.
+        if (NotifSpacing.busy(applicationContext)) return Result.success()
         prefs.edit().putString("last", weekKey).apply()
 
         val spent = week.filter { it.type == out }.sumOf { it.amount }
