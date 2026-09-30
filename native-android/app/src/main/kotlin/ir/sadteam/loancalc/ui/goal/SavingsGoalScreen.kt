@@ -119,7 +119,7 @@ fun SavingsGoalScreen(
             Text(
                 "هدف‌های پس‌انداز",
                 color = AppText,
-                fontSize = 16.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.weight(1f).padding(start = 4.dp),
             )
@@ -132,7 +132,7 @@ fun SavingsGoalScreen(
                         // 🚨 «کنار گذاشته‌ام» و نه «جمعِ پس‌اندازت» (بندِ ۷ی بخشِ ۸۱): صرفِ اولِ‌شخصِ
                         // ماضی خودش می‌گوید پول از قبل هست و کاری انجام نشده - نصفِ ابهامی
                         // که آن پاراگراف می‌خواست رفعش کند، با دو کلمه.
-                        Text("کنار گذاشته‌ام", color = HeroMuted, fontSize = 11.sp)
+                        Text("کنار گذاشته‌ام", color = HeroMuted, fontSize = 13.sp)
                         PrivacyCrossfade(privacyMode) { masked ->
                             Text(
                                 "${maskIfPrivate(masked, amountToman(totalSaved))} تومان",
