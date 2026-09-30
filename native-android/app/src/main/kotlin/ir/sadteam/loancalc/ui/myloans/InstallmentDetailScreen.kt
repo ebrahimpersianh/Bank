@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import androidx.compose.foundation.background
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -119,33 +120,37 @@ internal fun InstallmentDetailScreen(
                 Text(
                     "قسط ${toFa(m)} · ${loan.name}",
                     color = AppText,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Black,
                     modifier = Modifier.padding(start = 4.dp),
                 )
             }
         }
-        // کارتِ مبلغ - بالای هر سه کارتِ دیگه، طبقِ چیدمانِ طرح.
+        // کارتِ مبلغ - هیرویِ سبز با قرصِ وضعیت (طرحِ Claude Design، ۸ مهر).
         item {
-            AppCard {
-                Text("مبلغِ قسط", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            ir.sadteam.loancalc.ui.components.AppHeroCard {
+                Text("مبلغِ قسط", color = ir.sadteam.loancalc.ui.components.HeroMuted, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 Text(
                     "${amountToman(amount)} تومان",
-                    color = AppText,
-                    fontSize = 22.sp,
+                    color = androidx.compose.ui.graphics.Color.White,
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.Black,
                     modifier = Modifier.padding(top = 4.dp),
                 )
                 Text(
                     when {
-                        paid && paidDateLabel != null -> "پرداخت‌شده $paidDateLabel"
-                        paid -> "پرداخت‌شده"
+                        paid && paidDateLabel != null -> "✓ پرداخت‌شده $paidDateLabel"
+                        paid -> "✓ پرداخت‌شده"
                         else -> "هنوز پرداخت نشده"
                     },
-                    color = if (paid) AppPrimaryInk else AppMuted,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 6.dp),
+                    color = if (paid) AppPrimaryInk else AppText,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(999.dp))
+                        .background(androidx.compose.ui.graphics.Color.White)
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
                 )
             }
         }
