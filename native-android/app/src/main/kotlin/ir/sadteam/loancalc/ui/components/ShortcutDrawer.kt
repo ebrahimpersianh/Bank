@@ -1,5 +1,13 @@
 package ir.sadteam.loancalc.ui.components
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Tune
+import ir.sadteam.loancalc.ui.theme.AppSurface2
+import ir.sadteam.loancalc.ui.theme.AppLine
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -128,6 +136,7 @@ fun ShortcutDrawer(
 
     var reorderMode by remember { mutableStateOf(false) }
     var editMode by remember { mutableStateOf(false) }
+    var toolQuery by remember { mutableStateOf("") }
     var order by remember(shortcuts) { mutableStateOf(shortcuts) }
     var selectedIds by remember(shortcuts) { mutableStateOf(shortcuts.map { it.id }) }
     // هر لمسی داخلِ کشو تایمر رو از صفر شروع می‌کنه (قاعده‌ی `31c`).
@@ -136,10 +145,10 @@ fun ShortcutDrawer(
 
     // ⏱ **ده ثانیه**: خطِ ۳ پیکسلی بالای کشو از راست به چپ خالی می‌شه. تو حالتِ جابه‌جایی
     // «تایمر کاملاً متوقف است» - قاعده‌ی صریحِ طرح.
-    LaunchedEffect(timerKey, reorderMode, editMode) {
+    LaunchedEffect(timerKey, reorderMode, editMode, toolQuery.isNotEmpty()) {
         // حالتِ ویرایش هم مثلِ جابه‌جایی تایمر را **کاملاً** متوقف می‌کند: انتخابِ هشت از
         // چهارده بیش از ده ثانیه طول می‌کشد و بسته‌شدنِ وسطِ کار انتخاب را دور می‌ریخت.
-        if (reorderMode || editMode) return@LaunchedEffect
+        if (reorderMode || editMode || toolQuery.isNotEmpty()) return@LaunchedEffect
         val startedAt = System.currentTimeMillis()
         while (true) {
             val elapsed = System.currentTimeMillis() - startedAt
@@ -267,38 +276,76 @@ fun ShortcutDrawer(
                     },
                 )
             } else {
-                ShortcutGrid(
-                    shortcuts = order,
-                    reorderMode = reorderMode,
-                    onEnterReorder = { reorderMode = true },
-                    onMove = { from, to ->
-                        order = order.toMutableList().apply { add(to, removeAt(from)) }
-                    },
-                    onOpen = { route ->
-                        // ⚠️ ترتیبِ جابه‌جاشده فقط با دکمه‌ی «تمام» ذخیره می‌شد. کاربری که
-                        // بعدِ جابه‌جایی روی یک میان‌بر می‌زد (یا پرده را لمس می‌کرد) کارش را
-                        // از دست می‌داد. حالا هر خروجی ذخیره می‌کند.
-                        if (order.map { it.id } != shortcuts.map { it.id }) {
-                            onOrderChanged(order.map { it.id })
-                        }
-                        onDismiss()
-                        onOpenRoute(route)
-                    },
-                )
-                // 🚨 **خانه‌ی دائمیِ راهنمای جابه‌جایی** (بندِ ۲ی بخشِ ۸۱). زیرِ نوارِ پایین فقط
-                // سه بار دیده می‌شود و بعد می‌رود؛ این‌جا سقفِ زمانی نمی‌خواهد، چون همان‌جایی
-                // است که میان‌برها دیده می‌شوند یعنی همان‌جا که جابه‌جایی معنی دارد.
-                // با دستگیره یکی نشد: دستگیره «بکش» می‌گوید و راهنما «نگه‌دار» — دو حرکتِ
-                // متفاوت روی یک عنصر.
-                if (!reorderMode) {
-                    Text(
-                        "روی هر میان‌بر نگه‌دار تا جابه‌جایش کنی",
-                        color = AppLabel,
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                // بازطراحیِ ۸ مهر (طرحِ ChatGPT): ۸ میان‌برِ اولِ ترتیبِ کاربر کارتِ دوستونه؛
+                // بقیه + مقصدهای انتخاب‌نشده پایین در «همه ابزارها» با جستجو.
+                val top = order.take(8)
+                val saveAndOpen: (String) -> Unit = { route ->
+                    // ⚠️ هر خروجی ترتیبِ جابه‌جاشده را ذخیره می‌کند (نه فقط «تمام»).
+                    if (order.map { it.id } != shortcuts.map { it.id }) onOrderChanged(order.map { it.id })
+                    onDismiss()
+                    onOpenRoute(route)
+                }
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 620.dp)
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    ShortcutGrid(
+                        shortcuts = top,
+                        columns = 2,
+                        reorderMode = reorderMode,
+                        onEnterReorder = { reorderMode = true },
+                        onMove = { from, to ->
+                            order = order.toMutableList().apply { add(to, removeAt(from)) }
+                        },
+                        onOpen = saveAndOpen,
                     )
+                    if (!reorderMode) {
+                        Text(
+                            "روی هر کارت نگه‌دار تا جابه‌جایش کنی",
+                            color = AppLabel,
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                        )
+                        val topIds = top.map { it.id }.toSet()
+                        val rest = (order.drop(8) + allShortcuts.filter { a -> order.none { it.id == a.id } })
+                            .filter { it.id !in topIds }
+                        val q = toolQuery.trim()
+                        val shown = if (q.isEmpty()) rest else (order + allShortcuts).distinctBy { it.id }.filter { it.label.contains(q) }
+                        Text(
+                            "همه ابزارها",
+                            color = AppText,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+                        )
+                        PillSearchField(
+                            value = toolQuery,
+                            onValueChange = { toolQuery = it; timerKey++ },
+                            placeholder = "جستجو در ابزارها…",
+                            modifier = Modifier.padding(horizontal = 14.dp),
+                        )
+                        val tiles: List<Pair<Shortcut?, Boolean>> = shown.map { it to false } + if (q.isEmpty()) listOf(null to true) else emptyList()
+                        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            tiles.chunked(3).forEach { row ->
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    row.forEach { (sc, isCustomize) ->
+                                        if (isCustomize) {
+                                            AllToolTile(Icons.Filled.Tune, "سفارشی‌سازی", Modifier.weight(1f)) { editMode = true; timerKey++ }
+                                        } else if (sc != null) {
+                                            AllToolTile(sc.icon, sc.label, Modifier.weight(1f)) { saveAndOpen(sc.route) }
+                                        }
+                                    }
+                                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                                }
+                            }
+                            if (shown.isEmpty() && q.isNotEmpty()) {
+                                Text("ابزاری با «$q» پیدا نشد", color = AppMuted, fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -315,6 +362,7 @@ fun ShortcutDrawer(
 @Composable
 private fun ShortcutGrid(
     shortcuts: List<Shortcut>,
+    columns: Int = COLUMNS,
     reorderMode: Boolean,
     onEnterReorder: () -> Unit,
     onMove: (Int, Int) -> Unit,
@@ -329,14 +377,15 @@ private fun ShortcutGrid(
     var cellHeightPx by remember { mutableFloatStateOf(1f) }
 
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
-        shortcuts.chunked(COLUMNS).forEachIndexed { rowIndex, rowItems ->
+        shortcuts.chunked(columns).forEachIndexed { rowIndex, rowItems ->
             Row(modifier = Modifier.fillMaxWidth()) {
                 rowItems.forEachIndexed { colIndex, item ->
-                    val index = rowIndex * COLUMNS + colIndex
+                    val index = rowIndex * columns + colIndex
                     val dragging = index == draggingIndex
                     Box(
                         modifier = Modifier
                             .weight(1f)
+                            .padding(if (columns == 2) 4.dp else 0.dp)
                             .graphicsLayer {
                                 if (dragging) {
                                     translationX = dragOffsetX
@@ -365,7 +414,7 @@ private fun ShortcutGrid(
                                         // جابه‌جا شده. RTL: حرکت به **چپ** یعنی ایندکسِ بزرگ‌تر.
                                         val cols = -(dragOffsetX / cellWidthPx).roundToInt()
                                         val rows = (dragOffsetY / cellHeightPx).roundToInt()
-                                        val target = (index + cols + rows * COLUMNS)
+                                        val target = (index + cols + rows * columns)
                                             .coerceIn(0, shortcuts.lastIndex)
                                         if (target != index) onMove(index, target)
                                         draggingIndex = -1
@@ -380,7 +429,12 @@ private fun ShortcutGrid(
                                 )
                             },
                     ) {
-                        ShortcutTile(
+                        if (columns == 2) ShortcutCard(
+                            shortcut = item,
+                            wiggling = reorderMode && !dragging,
+                            seed = index,
+                            onClick = { if (!reorderMode) onOpen(item.route) },
+                        ) else ShortcutTile(
                             shortcut = item,
                             wiggling = reorderMode && !dragging,
                             seed = index,
@@ -389,11 +443,93 @@ private fun ShortcutGrid(
                     }
                 }
                 // ردیفِ ناقص با Spacerِ وزن‌دار پر می‌شه تا خانه‌ها هم‌عرض بمونن.
-                repeat(COLUMNS - rowItems.size) {
+                repeat(columns - rowItems.size) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }
+    }
+}
+
+/** توضیحِ یک‌خطیِ کارت‌های دوستونه‌ی «دسترسیِ سریع» (طرحِ ChatGPT، ۸ مهر). */
+private fun shortcutBlurb(id: String): String = when (id) {
+    "expense" -> "افزودنِ هزینه‌ی جدید"
+    "transfer" -> "بینِ حساب‌ها"
+    "report" -> "نمایشِ گزارش‌ها"
+    "due" -> "یادآورها و اقساط"
+    "cheque" -> "مدیریتِ چک‌ها"
+    "budget" -> "مدیریتِ بودجه"
+    "assets" -> "مدیریتِ دارایی‌ها"
+    "loan" -> "مدیریتِ وام‌ها"
+    "gold" -> "طلا و ارز"
+    "debt" -> "تقسیمِ هزینه"
+    "home" -> "صفحه‌ی اصلی"
+    "tools" -> "ابزارهای مالی"
+    "calendar" -> "سررسیدها در تقویم"
+    "loan-stats" -> "آمار و پیشرفتِ وام"
+    "cheque-report" -> "داشبوردِ چک"
+    "archive" -> "خلاصه‌ی هر سال"
+    "sayad" -> "اعتبارِ چکِ صیادی"
+    "notes" -> "یادداشتِ تاریخ‌دار"
+    "bug" -> "پیام به پشتیبانی"
+    "savings-goal" -> "هدف‌های پس‌انداز"
+    "categories" -> "دسته‌های خرج و درآمد"
+    "accounts" -> "کارت‌ها و حساب‌ها"
+    "shop" -> "تم و آیکون با سکه"
+    "inbox" -> "پیام‌های جیبک"
+    "calc-history" -> "محاسبه‌های قبلی"
+    else -> ""
+}
+
+/** کارتِ افقیِ دوستونه: کاشیِ آیکون، عنوان، توضیح و فلش - رنگ‌ها همه از تم. */
+@Composable
+private fun ShortcutCard(shortcut: Shortcut, wiggling: Boolean, seed: Int, onClick: () -> Unit) {
+    val transition = rememberInfiniteTransition(label = "wiggleCard")
+    val angle by transition.animateFloat(
+        initialValue = -1.2f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(tween(160, delayMillis = (seed * 37) % 160, easing = LinearEasing), RepeatMode.Reverse),
+        label = "wiggleCardAngle",
+    )
+    val primary = shortcut.locked
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .rotate(if (wiggling) angle else 0f)
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (primary) AppPrimary.copy(alpha = 0.14f) else AppSurface2)
+            .border(if (primary) 1.5.dp else 1.dp, if (primary) AppPrimary else AppLine, RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 10.dp),
+    ) {
+        Box(
+            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(if (primary) AppPrimary else AppPrimary.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center,
+        ) { Icon(shortcut.icon, contentDescription = null, tint = if (primary) Color.White else AppPrimaryInk, modifier = Modifier.size(22.dp)) }
+        Column(Modifier.weight(1f).padding(start = 10.dp)) {
+            Text(shortcut.label, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            val blurb = shortcutBlurb(shortcut.id)
+            if (blurb.isNotEmpty()) Text(blurb, color = AppMuted, fontSize = 10.sp, maxLines = 1, modifier = Modifier.padding(top = 2.dp))
+        }
+        Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
+    }
+}
+
+/** کاشیِ «همه ابزارها» - سه‌ستونه، کوچک‌تر و خنثی. */
+@Composable
+private fun AllToolTile(icon: ImageVector, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(AppSurface2)
+            .border(1.dp, AppLine, RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 4.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(22.dp))
+        Text(label, color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 2, textAlign = TextAlign.Center, lineHeight = 15.sp, modifier = Modifier.padding(top = 6.dp))
     }
 }
 
