@@ -47,7 +47,10 @@ private object InsightDismissals {
 fun SmartInsightsCard(insights: List<SmartInsights.Insight>, onOpen: (SmartInsights.Insight) -> Unit) {
     val ctx = LocalContext.current
     var tick by remember { mutableStateOf(0) }
-    val visible = remember(insights, tick) { insights.filterNot { InsightDismissals.hidden(ctx, it.key) }.take(2) }
+    var expanded by remember { mutableStateOf(false) }
+    val all = remember(insights, tick) { insights.filterNot { InsightDismissals.hidden(ctx, it.key) } }
+    // فقط مهم‌ترین پیشنهاد؛ بقیه با «+N پیشنهادِ دیگر» (۸ مهر: صفحه‌ی خانه شلوغ بود).
+    val visible = if (expanded) all.take(3) else all.take(1)
     if (visible.isEmpty()) return
     AppCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -72,6 +75,16 @@ fun SmartInsightsCard(insights: List<SmartInsights.Insight>, onOpen: (SmartInsig
                     tick++
                 }) { Icon(Icons.Filled.Close, "بستن", tint = AppMuted, modifier = Modifier.size(16.dp)) }
             }
+        }
+        val more = minOf(all.size, 3) - visible.size
+        if (more > 0 || expanded) {
+            Text(
+                if (expanded) "کمتر" else "+${ir.sadteam.loancalc.core.toFa(more)} پیشنهادِ دیگر",
+                color = AppPrimaryInk,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 6.dp).clickable { expanded = !expanded }.padding(vertical = 6.dp),
+            )
         }
     }
 }

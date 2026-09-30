@@ -331,7 +331,7 @@ fun HomeScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             // حاشیه‌ی صفحه ۱۶ طبقِ بندِ ۳ سیستمِ طراحی، فاصله‌ی بینِ کارت‌ها ۱۳ طبقِ خودِ فریم.
-            contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 110.dp),
+            contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 170.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp),
         ) {
             item {
@@ -431,6 +431,7 @@ fun HomeScreen(
                     // است. مقصدش **شیت** است نه صفحه - یک نگاهِ دوثانیه‌ای، و زمینه
                     // (خودِ عددِ هیرو) بالای شیت می‌مانَد.
                     onClick = { showTodaySpend = true },
+                    weekChangePercent = if (prevWeekTotal > 0.0) (((weekTotal - prevWeekTotal) / prevWeekTotal) * 100).toInt() else null,
                 )
             }
             // 🚨 **چهار درِ همیشه‌درمعرض** (طرحِ مرجعِ کاربر). کشوی میان‌بر قدرتمندتر است
@@ -444,6 +445,31 @@ fun HomeScreen(
                     onNavigateToRoute = onNavigateToRoute,
                     onOpenTransactions = onOpenTransactions,
                 )
+            }
+            // «نیاز به توجه» (۸ مهر): قسطِ عقب‌افتاده **اول**، بعد بودجه/پیش‌بینی - زیرِ یک
+            // عنوان، تا کارت‌های هشدار با هم رقابت نکنند و ترتیبِ اهمیت روشن باشد.
+            if (urgentDue != null || (monthCap > 0.0 && monthSpend > monthCap)) {
+                item {
+                    Text(
+                        "نیاز به توجه",
+                        color = AppText,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(top = 4.dp, start = 2.dp),
+                    )
+                }
+            }
+            urgentDue?.let { due ->
+                item {
+                    UrgentDueCard(
+                        title = "قسطِ ${due.loan.name}",
+                        amount = due.amount,
+                        daysOverdue = due.daysOverdue,
+                        privacyMode = privacyMode,
+                        onPay = { confirmPayDue = due },
+                        onOpen = { onOpenLoan(due.loan.id) },
+                    )
+                }
             }
             if (monthCap > 0.0) {
                 item {
@@ -482,18 +508,6 @@ fun HomeScreen(
                             fontWeight = FontWeight.Bold,
                         )
                     }
-                }
-            }
-            urgentDue?.let { due ->
-                item {
-                    UrgentDueCard(
-                        title = "قسطِ ${due.loan.name}",
-                        amount = due.amount,
-                        daysOverdue = due.daysOverdue,
-                        privacyMode = privacyMode,
-                        onPay = { confirmPayDue = due },
-                        onOpen = { onOpenLoan(due.loan.id) },
-                    )
                 }
             }
             if (smartInsights.isNotEmpty()) {
@@ -548,14 +562,8 @@ fun HomeScreen(
                     )
                 }
             }
-            item {
-                WeekReviewCard(
-                    weekTotal = weekTotal,
-                    prevWeekTotal = prevWeekTotal,
-                    privacyMode = privacyMode,
-                    onClick = { onNavigateToRoute("report") },
-                )
-            }
+            // «مرورِ هفته» حذف شد (۸ مهر): همان عددِ کارتِ سبزِ بالا بود؛ درصدِ تغییرش حالا
+            // برچسبِ کوچکِ همان کارت است.
         }
 
         // فریمِ `15b` دکمه‌ی شناور نداره: تو حالتِ خالی اقدامِ اصلی همون دکمه‌ی تمام‌عرضِ
@@ -878,6 +886,8 @@ private fun TodaySpendHero(
     weekSpend: List<Double>,
     privacyMode: Boolean,
     onClick: () -> Unit,
+    /** تغییرِ این هفته نسبت به هفته‌ی قبل (جایگزینِ کارتِ حذف‌شده‌ی «مرورِ هفته»). */
+    weekChangePercent: Int? = null,
 ) {
     val shown = countUpAmount(periodSpend, enabled = !privacyMode)
     val deltaPercent: Int? = if (yesterdaySpend > 0.0) {
@@ -917,14 +927,29 @@ private fun TodaySpendHero(
             // عرض را می‌گیرد و ستونِ درآمد/خرج از کادر بیرون می‌افتد (باگی که کاربر با
             // اسکرین‌شات گزارش کرد: «همه‌چی کشیده شده»).
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    periodLabel,
-                    color = HeroMuted,
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        periodLabel,
+                        color = HeroMuted,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (period == ReportPeriod.WEEK && weekChangePercent != null && !privacyMode) {
+                        Text(
+                            "${if (weekChangePercent <= 0) "▼" else "▲"} ${kotlin.math.abs(weekChangePercent).toFa()}٪ از هفته‌ی قبل",
+                            color = Color.White,
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(HeroPillBg)
+                                .padding(horizontal = 8.dp, vertical = 2.dp),
+                        )
+                    }
+                }
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
                         // fmt() جداکننده‌ی لاتین می‌داد و عدد ریال بود.
