@@ -459,6 +459,15 @@ fun Route.adminRoutes() {
             val admin = call.isAdminUser() ?: return@get
             call.respond(AdminCheck(admin))
         }
+        get("/digest") {
+            val admin = call.isAdminUser() ?: return@get
+            if (!admin) {
+                call.respond(HttpStatusCode.Forbidden, mapOf("error" to "admin_only"))
+                return@get
+            }
+            val period = call.request.queryParameters["period"] ?: "day"
+            call.respond(Db.withConnection { buildDigest(it, period) })
+        }
         get("/stats") {
             val admin = call.isAdminUser() ?: return@get
             if (!admin) {
@@ -525,4 +534,73 @@ fun Route.adminRoutes() {
             }
         }
     }
+}
+
+/**
+ * 📰 **گزارشِ روزانه/هفتگی/ماهانه** (۸ مهر، خواسته‌ی کاربر): «هر روز بگوید چه شد».
+ * روزِ کاری از **۷ صبحِ ایران** تا ۷ صبحِ فردا است. `period`: day | week | month؛
+ * پنجره‌ی فعلی (از آخرین مرزِ ۷ صبح تا حالا) کنارِ پنجره‌ی قبلیِ هم‌اندازه برای مقایسه.
+ * عددهای استفاده از `usage_daily` روزانه‌اند (مرزشان نیمه‌شب است، نه ۷ صبح) - تقریبی.
+ */
+@Serializable
+data class DigestMetric(val key: String, val now: Long, val prev: Long)
+
+@Serializable
+data class DigestResponse(
+    val period: String,
+    val fromIran: String,
+    val toIran: String,
+    val metrics: List<DigestMetric>,
+    val topActions: List<NamedCount>,
+    val topScreens: List<NamedCount>,
+    val notes: List<String>,
+)
+
+internal fun buildDigest(conn: Connection, period: String): DigestResponse {
+    val iranNow = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC).plusMinutes(210)
+    var start = iranNow.toLocalDate().atTime(7, 0)
+    if (iranNow.isBefore(start)) start = start.minusDays(1)
+    val days = when (period) { "week" -> 7L; "month" -> 30L; else -> 1L }
+    start = start.minusDays(days - 1)
+    val end = start.plusDays(days)
+    val prevStart = start.minusDays(days)
+    fun utc(t: java.time.LocalDateTime) = t.minusMinutes(210).format(SQL_FMT)
+    fun day(t: java.time.LocalDateTime) = t.toLocalDate().toString()
+    val (a, b, pa) = Triple(utc(start), utc(end), utc(prevStart))
+    val (da, db, dpa) = Triple(day(start), day(end), day(prevStart))
+
+    fun pair(key: String, sql: String, vararg p: Any?, prevParams: Array<Any?>): DigestMetric =
+        DigestMetric(key, conn.int(sql, *p).toLong(), conn.int(sql, *prevParams).toLong())
+
+    val m = mutableListOf<DigestMetric>()
+    m += pair("new_users", "SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
+    m += pair("new_installs", "SELECT COUNT(*) FROM installs WHERE first_day >= ? AND first_day < ?", da, db, prevParams = arrayOf(dpa, da))
+    m += pair("active", "SELECT COUNT(DISTINCT install_id) FROM usage_daily WHERE day >= ? AND day < ?", da, db, prevParams = arrayOf(dpa, da))
+    m += pair("purchases", "SELECT COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
+    fun revenue(x: String, y: String): Long {
+        var sum = 0L
+        conn.list("SELECT product_id, COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND created_at < ? GROUP BY 1", x, y) {
+            sum += (PLAN_PRICE_TOMAN[it.getString(1)] ?: 0L) * it.getInt(2)
+        }
+        return sum
+    }
+    m += DigestMetric("revenue", revenue(a, b), revenue(pa, a))
+    m += pair("support", "SELECT COUNT(*) FROM bug_reports WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
+    m += pair("crashes", "SELECT COUNT(*) FROM crash_reports WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
+    m += pair("transactions", "SELECT coalesce(SUM(count),0) FROM usage_daily WHERE day >= ? AND day < ? AND name = 'action:transaction_added'", da, db, prevParams = arrayOf(dpa, da))
+
+    fun top(prefix: String): List<NamedCount> = buildList {
+        conn.list(
+            "SELECT name, SUM(count) FROM usage_daily WHERE day >= ? AND day < ? AND name LIKE ? GROUP BY 1 ORDER BY 2 DESC LIMIT 6",
+            da, db, "$prefix%",
+        ) { add(NamedCount(it.getString(1).removePrefix(prefix), it.getInt(2))) }
+    }
+    val open = conn.int("SELECT COUNT(*) FROM bug_reports WHERE status = 'open'")
+    val notes = buildList {
+        if (open > 0) add("open_support:$open")
+        m.firstOrNull { it.key == "crashes" }?.let { if (it.now > it.prev && it.now > 0) add("crashes_up") }
+        m.firstOrNull { it.key == "active" }?.let { if (it.prev > 0 && it.now < it.prev * 8 / 10) add("active_down") }
+    }
+    val fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+    return DigestResponse(period, start.format(fmt), end.format(fmt), m, top("action:"), top("screen:"), notes)
 }

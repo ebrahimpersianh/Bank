@@ -150,6 +150,9 @@ interface ApiService {
     @GET("api/admin/check")
     suspend fun adminCheck(@Header("Authorization") authHeader: String): AdminCheckResponse
 
+    @GET("api/admin/digest")
+    suspend fun adminDigest(@Header("Authorization") authHeader: String, @retrofit2.http.Query("period") period: String): AdminDigestResponse
+
     @GET("api/admin/stats")
     suspend fun adminStats(@Header("Authorization") authHeader: String): AdminStatsResponse
 
@@ -481,4 +484,17 @@ data class AdminInstallRow(
     val loggedIn: Boolean = false,
     /** شماره‌ی کاربریِ نمایشی (`Uid:…`) اگر این نصب با حساب وارد شده باشد. */
     val userCode: String? = null,
+)
+
+
+data class AdminDigestMetric(val key: String, val now: Long = 0, val prev: Long = 0)
+
+data class AdminDigestResponse(
+    val period: String = "day",
+    val fromIran: String = "",
+    val toIran: String = "",
+    val metrics: List<AdminDigestMetric> = emptyList(),
+    val topActions: List<AdminNamedCount> = emptyList(),
+    val topScreens: List<AdminNamedCount> = emptyList(),
+    val notes: List<String> = emptyList(),
 )

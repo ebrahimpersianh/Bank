@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.ui.admin
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -113,11 +114,24 @@ fun AdminStatsScreen(onBack: () -> Unit, viewModel: AdminStatsViewModel = hiltVi
                 }
                 is AdminStatsViewModel.State.Ready -> {
                     item {
-                        ir.sadteam.loancalc.ui.components.SegmentedToggle(
-                            options = listOf("خلاصه", "استفاده", "کاربران"),
-                            selectedIndex = tab,
-                            onSelect = { tab = it },
-                        )
+                        // ۸ مهر: هفت زبانه‌ی کوتاه به‌جای سه زبانه‌ی بلند - هر کدام یکی دو کارت.
+                        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            val tabs = listOf("خلاصه", "کاربران", "ماندگاری", "زمان", "بخش‌ها", "گوشی‌ها", "سلامت")
+                            items(tabs.size) { i ->
+                                val sel = i == tab
+                                Text(
+                                    tabs[i],
+                                    color = if (sel) androidx.compose.ui.graphics.Color.White else AppText,
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier
+                                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(999.dp))
+                                        .background(if (sel) AppPrimary else AppSurface2)
+                                        .clickable { tab = i }
+                                        .padding(horizontal = 14.dp, vertical = 9.dp),
+                                )
+                            }
+                        }
                     }
                     statsContent(s.stats, tab)
                 }
@@ -139,6 +153,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
 
     item { SalesCard(st) }
 
+    }
+    if (tab == 1) {
     item {
         AppCard(label = "کاربرها") {
             val rows = listOf(
@@ -224,7 +240,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
     item { NotificationCard(actions) }
     }
 
-    if (tab == 1) {
+    if (tab == 3) {
     val flows = st.flows.orEmpty().sortedByDescending { it.total }
     if (flows.isNotEmpty()) {
         item {
@@ -239,7 +255,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
     }
     }
 
-    if (tab == 0) {
+    if (tab == 6) {
     item { HealthCard(st) }
     }
 
@@ -260,7 +276,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
     }
     }
 
-    if (tab == 1) {
+    if (tab == 3) {
     item {
         AppCard(label = "زمانِ استفاده (۳۰ روز)") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -307,6 +323,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
         }
     }
 
+    }
+    if (tab == 4) {
     item { FeatureCard("صفحه‌ها (۳۰ روز)", screens, st.active30, ::screenLabel, SCREEN_LABELS.keys) }
     item { FeatureCard("کارها (۳۰ روز)", actions, st.active30, ::actionLabel, ACTION_LABELS.keys) }
 
@@ -334,7 +352,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
     }
     }
 
-    if (tab == 2) {
+    if (tab == 5) {
     val splits = st.profileSplits.orEmpty()
     if (splits.isNotEmpty()) {
         item {

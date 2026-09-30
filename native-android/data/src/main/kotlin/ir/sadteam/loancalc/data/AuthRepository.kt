@@ -74,6 +74,11 @@ class AuthRepository(
     }
 
     /** گزارشِ کاملِ آمار (فقط ادمین)؛ `null` یعنی نشد (شبکه یا دسترسی). */
+    suspend fun adminDigest(period: String): ir.sadteam.loancalc.data.network.AdminDigestResponse? {
+        val token = authPrefs.authToken.first() ?: return null
+        return runCatching { apiService.adminDigest("Bearer $token", period) }.getOrNull()
+    }
+
     suspend fun adminStats(): ir.sadteam.loancalc.data.network.AdminStatsResponse? {
         val token = authPrefs.authToken.first() ?: return null
         return runCatching { apiService.adminStats("Bearer $token") }.getOrNull()

@@ -145,6 +145,7 @@ class AccountRepository(
         tags: String? = null,
         reimbursable: Boolean = false,
     ): Long {
+        UsageStats.action("transaction_added")
         val txId = id ?: System.currentTimeMillis()
         transactionDao.upsert(
             AccountTransactionEntity(
