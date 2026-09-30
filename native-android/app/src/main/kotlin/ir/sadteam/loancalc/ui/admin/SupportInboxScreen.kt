@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,15 +15,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Attachment
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +43,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -56,8 +61,14 @@ import ir.sadteam.loancalc.ui.components.AppButtonVariant
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
+import ir.sadteam.loancalc.ui.components.Ltr
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
 import ir.sadteam.loancalc.ui.theme.AppBg
+import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppDangerPill
+import ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
+import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
+import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
@@ -136,11 +147,25 @@ private fun defaultGiftText(category: String, days: Int): String {
 }
 
 private val STATUS_LABEL = mapOf("open" to "باز", "answered" to "جواب داده شد", "closed" to "بسته")
+private val FILTERS = listOf("open" to "باز", "answered" to "جواب‌داده", "closed" to "بسته")
 
+/** شناسه‌ی کاربر همیشه `Uid:7405024` با رقمِ لاتین - مثلِ استثنای «نسخه». */
+internal fun supportUid(id: Long?): String = id?.let { "Uid:$it" } ?: "مهمان"
+internal fun supportUid(id: Int?): String = supportUid(id?.toLong())
+
+/** `2026-09-30T10:12:00` → «۸ مهر · ۱۰:۱۲». */
+internal fun supportTime(createdAt: String?): String {
+    if (createdAt.isNullOrBlank()) return ""
+    val time = createdAt.drop(11).take(5).takeIf { it.length == 5 && it[2] == ':' }
+    return listOfNotNull(adminDay(createdAt), time?.let { toFa(it) }).joinToString(" · ")
+}
+
+/** 💬 پیام‌های کاربران (بخشِ ۸۲): زبانه‌ی وضعیت با شمارش، کارتِ بسته که با تپ باز می‌شود. */
 @Composable
 fun SupportInboxScreen(onBack: () -> Unit, viewModel: SupportInboxViewModel = hiltViewModel()) {
     val items by viewModel.items.collectAsState()
     val banner = rememberInAppBanner()
+    var filter by rememberSaveable { mutableStateOf(0) }
     LaunchedEffect(Unit) {
         while (true) {
             viewModel.load()
@@ -148,25 +173,27 @@ fun SupportInboxScreen(onBack: () -> Unit, viewModel: SupportInboxViewModel = hi
         }
     }
     BackHandler(onBack = onBack)
+    val all = items
+    val counts = FILTERS.map { (k, _) -> all?.count { it.status == k } ?: 0 }
+    val shown = all.orEmpty().filter { it.status == FILTERS[filter].first }
     Box(Modifier.fillMaxSize().background(AppBg)) {
         LazyColumn(
             contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 40.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            item { AdminHeader("پیام‌های کاربران", "${toFa(counts[0])} پیامِ بی‌جواب", onBack) }
             item {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowForward, "بازگشت", tint = AppText) }
-                    Column(Modifier.padding(start = 4.dp)) {
-                        Text("پیام‌های کاربران", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Black)
-                        val open = items?.count { it.status == "open" } ?: 0
-                        Text("${toFa(open)} پیامِ بی‌جواب", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
+                AdminTabs(
+                    tabs = FILTERS.mapIndexed { i, (_, label) -> "$label ${toFa(counts[i])}" },
+                    selected = filter,
+                    onSelect = { filter = it },
+                    dots = if (counts[0] > 0) setOf(0) else emptySet(),
+                )
             }
             when {
-                items == null -> item { Text("در حالِ گرفتن…", color = AppMuted) }
-                items!!.isEmpty() -> item { Text("هنوز پیامی نیامده.", color = AppMuted) }
-                else -> items(items!!, key = { it.id }) { msg ->
+                all == null -> item { Text("در حالِ گرفتن…", color = AppMuted) }
+                shown.isEmpty() -> item { Text(if (filter == 0) "همه جواب گرفته‌اند." else "پیامی در این دسته نیست.", color = AppMuted, modifier = Modifier.padding(8.dp)) }
+                else -> items(shown, key = { it.id }) { msg ->
                     SupportMessageCard(msg, viewModel, onGiftResult = { err ->
                         banner.show(
                             when (err) {
@@ -193,59 +220,76 @@ private fun SupportMessageCard(
     onGiftResult: (String?) -> Unit,
     onReplied: (Boolean) -> Unit,
 ) {
+    var expanded by rememberSaveable(msg.id) { mutableStateOf(false) }
     var replying by remember { mutableStateOf(false) }
     var text by remember { mutableStateOf("") }
     var gifting by remember { mutableStateOf(false) }
     var giftDays by remember { mutableStateOf(3) }
     var giftText by remember { mutableStateOf(defaultGiftText(msg.category, 3)) }
-    AppCard {
+    val (pill, ink) = when (msg.status) {
+        "open" -> AppDangerPill to AppDangerInk
+        "answered" -> AppPrimaryPill to AppPrimaryInk
+        else -> AppSurface2 to AppMuted
+    }
+    AppCard(modifier = Modifier.clickable { expanded = !expanded }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "${CATEGORY_LABEL[msg.category] ?: "پیام"} · کاربرِ ${toFa(msg.userId ?: 0)} · ${msg.ticket}",
-                color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f),
-            )
+            Text(CATEGORY_LABEL[msg.category] ?: "پیام", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+            Ltr { Text(supportUid(msg.userId), color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp)) }
+            Box(Modifier.weight(1f))
+            if (msg.attachments.isNotEmpty()) Icon(Icons.Filled.Attachment, "پیوست", tint = AppLabel, modifier = Modifier.padding(end = 6.dp).size(16.dp))
             Text(
                 STATUS_LABEL[msg.status] ?: msg.status,
-                color = AppPrimaryInk, fontSize = 10.sp, fontWeight = FontWeight.Black,
-                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(AppPrimaryPill).padding(horizontal = 8.dp, vertical = 3.dp),
+                color = ink, fontSize = 11.sp, fontWeight = FontWeight.Black,
+                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(pill).padding(horizontal = 8.dp, vertical = 3.dp),
             )
         }
-        Text(msg.message, color = AppText, fontSize = 12.5.sp, lineHeight = 22.sp, modifier = Modifier.padding(top = 8.dp))
         Text(
-            listOfNotNull(msg.createdAt, msg.appVersion?.let { "نسخه $it" }, msg.device).joinToString(" · "),
-            color = AppMuted, fontSize = 9.5.sp, modifier = Modifier.padding(top = 6.dp),
+            msg.message, color = AppText, fontSize = 12.5.sp, lineHeight = 22.sp,
+            maxLines = if (expanded) Int.MAX_VALUE else 2, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 8.dp),
         )
+        Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                listOfNotNull(supportTime(msg.createdAt), if (expanded) msg.appVersion?.let { "نسخه $it" } else null, if (expanded) msg.device else null, if (expanded) msg.ticket else null).joinToString(" · "),
+                color = AppLabel, fontSize = 11.sp, modifier = Modifier.weight(1f),
+            )
+            if (msg.rewardedDays > 0) {
+                Row(
+                    Modifier.clip(RoundedCornerShape(999.dp)).background(AppGoldPillSoft).padding(horizontal = 8.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.CardGiftcard, null, tint = AppGoldInkSoft, modifier = Modifier.size(14.dp))
+                    Text("${toFa(msg.rewardedDays)} روز هدیه", color = AppGoldInkSoft, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 4.dp))
+                }
+            }
+        }
+        if (!expanded) return@AppCard
+
         if (msg.attachments.isNotEmpty()) {
             Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 msg.attachments.forEach { AttachmentThumb(it, viewModel) }
             }
         }
-        if (msg.rewardedDays > 0) {
-            Text("🎁 ${toFa(msg.rewardedDays)} روز هدیه داده شد", color = AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 6.dp))
-        }
         if (gifting) {
-            // ۱ تا ۱۰ روز، در دو ردیفِ پنج‌تایی.
-            GIFT_DAYS.chunked(5).forEach { rowDays ->
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                rowDays.forEach { d ->
+            Row(Modifier.fillMaxWidth().padding(top = 10.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                GIFT_DAYS.forEach { d ->
                     ir.sadteam.loancalc.ui.components.AppChip(
-                        label = toFa(d),
+                        label = "${toFa(d)} روز",
                         selected = giftDays == d,
                         onClick = {
                             // متن فقط اگر دست نخورده باشد با روزِ تازه به‌روز می‌شود.
                             if (giftText == defaultGiftText(msg.category, giftDays)) giftText = defaultGiftText(msg.category, d)
                             giftDays = d
                         },
-                        modifier = Modifier.weight(1f),
                     )
                 }
-            }
             }
             OutlinedTextField(
                 value = giftText,
                 onValueChange = { if (it.length <= 1000) giftText = it },
                 label = { Text("متنی که همراهِ هدیه می‌رود", fontSize = 11.sp) },
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+            )
             GradientButton(
                 onClick = {
                     if (giftText.isNotBlank()) viewModel.gift(msg.id, giftDays, giftText.trim()) { err ->
@@ -261,7 +305,8 @@ private fun SupportMessageCard(
                 value = text,
                 onValueChange = { if (it.length <= 1000) text = it },
                 placeholder = { Text("جواب (در «پیام‌های جیبک»ِ همین کاربر می‌نشیند)", fontSize = 11.sp) },
-                modifier = Modifier.fillMaxWidth().padding(top = 10.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+            )
         }
         Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             GradientButton(
@@ -275,7 +320,10 @@ private fun SupportMessageCard(
                 modifier = Modifier.weight(1f),
             ) { Text(if (replying) "فرستادنِ جواب" else "جواب") }
             if (msg.rewardedDays == 0) {
-                GradientButton(onClick = { gifting = !gifting }, variant = AppButtonVariant.SECONDARY) { Text("🎁 هدیه") }
+                GradientButton(onClick = { gifting = !gifting }, variant = AppButtonVariant.SECONDARY) {
+                    Icon(Icons.Filled.CardGiftcard, null, modifier = Modifier.size(18.dp))
+                    Text("هدیه", modifier = Modifier.padding(start = 4.dp))
+                }
             }
             if (msg.status != "closed") {
                 GradientButton(onClick = { viewModel.close(msg.id) }, variant = AppButtonVariant.SECONDARY) { Text("بستن") }

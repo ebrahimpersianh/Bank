@@ -1,32 +1,42 @@
 package ir.sadteam.loancalc.ui.admin
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.MarkChatUnread
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,17 +46,20 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.sadteam.loancalc.core.toFa
 import ir.sadteam.loancalc.data.AuthRepository
-import ir.sadteam.loancalc.data.network.AdminDigestMetric
 import ir.sadteam.loancalc.data.network.AdminDigestResponse
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AppCardVariant
 import ir.sadteam.loancalc.ui.components.SegmentedToggle
-import ir.sadteam.loancalc.ui.theme.AppBg
-import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.ui.theme.AppDangerInk
+import ir.sadteam.loancalc.ui.theme.AppGoldInk
+import ir.sadteam.loancalc.ui.theme.AppGoldInk2
+import ir.sadteam.loancalc.ui.theme.AppLabel
+import ir.sadteam.loancalc.ui.theme.AppLine
+import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppSurface2
+import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
-import ir.sadteam.loancalc.ui.theme.AppWarning
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -74,9 +87,16 @@ class AdminDigestViewModel @Inject constructor(private val repo: AuthRepository)
             _failed.value = r == null
         }
     }
+
+    /** هاب همین نمونه را برای «امروز» می‌خواند؛ بعد از برگشت از گزارش دوره و استور به پیش‌فرض برمی‌گردند. */
+    fun resetToToday() {
+        if (_period.value == "day" && _store.value == null) return
+        _store.value = null
+        load("day")
+    }
 }
 
-private val METRIC_LABELS = linkedMapOf(
+internal val METRIC_LABELS = linkedMapOf(
     "active" to "کاربرِ فعال",
     "new_installs" to "نصبِ تازه",
     "new_users" to "ثبت‌نامِ تازه",
@@ -93,122 +113,182 @@ private val METRIC_LABELS = linkedMapOf(
 /** متریک‌هایی که بالا رفتنشان **بد** است (قرمز). */
 private val BAD_WHEN_UP = setOf("crashes", "support")
 
+/** چهار کاشیِ بالا - با دو میله‌ی حالا/قبلی. */
+private val HERO_KEYS = listOf("active", "new_installs", "purchases", "new_users")
+/** کارتِ طلایی. */
+private val MONEY_KEYS = setOf("revenue", "revenue_net", "revenue_cafebazaar", "revenue_myket")
+
+internal fun digestNoteText(n: String): String = when {
+    n.startsWith("open_support:") -> "${toFa(n.removePrefix("open_support:"))} پیامِ بی‌جواب منتظرِ توست"
+    n == "crashes_up" -> "کرش‌ها نسبت به دوره‌ی قبل بیشتر شده"
+    n == "active_down" -> "کاربرِ فعال بیش از ۲۰٪ کم شده"
+    else -> n
+}
+
+internal fun digestNoteIcon(n: String): ImageVector = when {
+    n.startsWith("open_support:") -> Icons.Filled.MarkChatUnread
+    n == "crashes_up" -> Icons.Filled.Error
+    n == "active_down" -> Icons.Filled.TrendingDown
+    else -> Icons.Filled.Warning
+}
+
 /**
- * 📰 **گزارشِ روز/هفته/ماه** (۸ مهر، خواسته‌ی کاربر): «هر روز بگوید چه شد». روز از ۷ صبح تا ۷ صبحِ
- * فردا. هر عدد کنارِ دوره‌ی قبلِ هم‌اندازه با فلشِ بالا/پایین.
+ * 📰 **گزارشِ روز/هفته/ماه** (بازطراحیِ بخشِ ۸۲). روز از ۷ صبح تا ۷ صبحِ فردا.
+ * ترتیب: هشدار → چهار عددِ اصلی → پول (طلایی) → بقیه‌ی شاخص‌ها (جمع‌شونده) → بیشترین کارها/صفحه‌ها.
+ * سرور برای این صفحه فقط «حالا/قبلی» می‌دهد، پس نمودارِ زمانی ندارد؛ مقایسه با دو میله است.
  */
 @Composable
 fun AdminDigestScreen(onBack: () -> Unit, vm: AdminDigestViewModel = hiltViewModel()) {
     val period by vm.period.collectAsState()
+    val store by vm.store.collectAsState()
     val data by vm.data.collectAsState()
     val failed by vm.failed.collectAsState()
-    LaunchedEffect(Unit) { vm.load() }
-    BackHandler(onBack = onBack)
-    Column(
-        Modifier.fillMaxSize().background(AppBg).verticalScroll(rememberScrollState()).padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+    LaunchedEffect(Unit) { if (vm.data.value == null) vm.load() }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val d = data
+
+    AdminPage(
+        "گزارشِ روز", "هر روز از ۷ صبح تا ۷ صبحِ فردا", onBack,
+        actions = { if (d != null) AdminHeaderAction(Icons.Filled.Download, "خروجیِ اکسل (CSV)") { shareCsv(ctx, d) } },
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowForward, "بازگشت", tint = AppText) }
-            Column(Modifier.padding(start = 4.dp)) {
-                Text("گزارشِ روز", color = AppText, fontSize = 19.sp, fontWeight = FontWeight.Black)
-                Text("هر روز از ۷ صبح تا ۷ صبحِ فردا", color = AppMuted, fontSize = 12.sp)
+            val periods = listOf("day", "week", "month")
+            Box(Modifier.weight(1f)) {
+                SegmentedToggle(
+                    options = listOf("امروز", "۷ روز", "۳۰ روز"),
+                    selectedIndex = periods.indexOf(period).coerceAtLeast(0),
+                    onSelect = { vm.load(periods[it]) },
+                )
             }
+            Spacer(Modifier.width(8.dp))
+            StorePicker(store) { vm.setStore(it) }
         }
-        val periods = listOf("day", "week", "month")
-        SegmentedToggle(
-            options = listOf("امروز", "۷ روز", "۳۰ روز"),
-            selectedIndex = periods.indexOf(period).coerceAtLeast(0),
-            onSelect = { vm.load(periods[it]) },
-        )
-        // تفکیک بر اساسِ استور (۸ مهر).
-        val store by vm.store.collectAsState()
-        val stores = listOf(null, "cafebazaar", "myket")
-        SegmentedToggle(
-            options = listOf("همه", "کافه‌بازار", "مایکت"),
-            selectedIndex = stores.indexOf(store).coerceAtLeast(0),
-            onSelect = { vm.setStore(stores[it]) },
-        )
-        val d = data
-        val ctx = androidx.compose.ui.platform.LocalContext.current
-        if (d != null) Text(
-            "⤓ خروجیِ اکسل (CSV)",
-            color = AppPrimary, fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
-            modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(AppPrimary.copy(alpha = 0.10f))
-                .clickable { shareCsv(ctx, d) }.padding(horizontal = 12.dp, vertical = 8.dp),
-        )
         when {
-            failed -> Text("گزارش نرسید؛ اینترنت را چک کن.", color = AppDanger, fontSize = 13.sp)
+            failed -> Text("گزارش نرسید؛ اینترنت را چک کن.", color = AppDangerInk, fontSize = 13.sp)
             d == null -> Box(Modifier.fillMaxWidth().padding(30.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = AppPrimary) }
-            else -> {
-                Text(
-                    "${toFa(d.fromIran)} تا ${toFa(d.toIran)} · مقایسه با دوره‌ی قبل",
-                    color = AppMuted, fontSize = 11.sp,
-                )
-                // هشدارها اول: چیزی که باید امروز به آن رسید.
-                d.notes.forEach { n ->
-                    val text = when {
-                        n.startsWith("open_support:") -> "${toFa(n.removePrefix("open_support:"))} پیامِ بی‌جواب منتظرِ توست"
-                        n == "crashes_up" -> "کرش‌ها نسبت به دوره‌ی قبل بیشتر شده"
-                        n == "active_down" -> "کاربرِ فعال بیش از ۲۰٪ کم شده"
-                        else -> n
-                    }
-                    Text(
-                        "⚠ $text", color = AppWarning, fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(AppWarning.copy(alpha = 0.12f)).padding(12.dp),
-                    )
-                }
-                val byKey = d.metrics.associateBy { it.key }
-                METRIC_LABELS.keys.mapNotNull { byKey[it] }.chunked(2).forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        row.forEach { MetricTile(it, Modifier.weight(1f)) }
-                        if (row.size == 1) Spacer(Modifier.weight(1f))
-                    }
-                }
-                Text(
-                    "خالص = سهمِ تو بعد از کارمزدِ استور (کافه‌بازار و مایکت هر دو ۷۶٫۹٪).",
-                    color = AppMuted, fontSize = 10.5.sp,
-                )
-                if (d.topActions.isNotEmpty()) AppCard(label = "بیشترین کارها") {
-                    d.topActions.forEach { Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
-                        Text(actionLabel(it.name), color = AppText, fontSize = 12.5.sp, modifier = Modifier.weight(1f))
-                        Text(toFa(it.count), color = AppMuted, fontSize = 12.5.sp)
-                    } }
-                }
-                if (d.topScreens.isNotEmpty()) AppCard(label = "بیشترین صفحه‌ها") {
-                    d.topScreens.forEach { Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
-                        Text(screenLabel(it.name), color = AppText, fontSize = 12.5.sp, modifier = Modifier.weight(1f))
-                        Text(toFa(it.count), color = AppMuted, fontSize = 12.5.sp)
-                    } }
-                }
-            }
+            else -> DigestBody(d)
         }
     }
 }
 
 @Composable
-private fun MetricTile(m: AdminDigestMetric, modifier: Modifier) {
-    val diff = m.now - m.prev
-    val pct = if (m.prev > 0) (diff * 100 / m.prev) else null
-    val bad = (m.key in BAD_WHEN_UP) == (diff > 0)
-    val color = when { diff == 0L -> AppMuted; bad -> AppDanger; else -> AppPrimary }
-    Column(modifier.clip(RoundedCornerShape(18.dp)).background(AppSurface2).padding(12.dp)) {
-        Text(METRIC_LABELS[m.key] ?: m.key, color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
-        Text(fmtNum(m.now), color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 2.dp))
-        Text(
-            when {
-                diff == 0L -> "بدونِ تغییر"
-                pct != null -> (if (diff > 0) "▲ " else "▼ ") + "${toFa(kotlin.math.abs(pct))}٪ · قبلی ${fmtNum(m.prev)}"
-                else -> "قبلی ${fmtNum(m.prev)}"
-            },
-            color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold,
-        )
+private fun DigestBody(d: AdminDigestResponse) {
+    Text("${toFa(d.fromIran)} تا ${toFa(d.toIran)} · مقایسه با دوره‌ی قبل", color = AppMuted, fontSize = 11.5.sp, modifier = Modifier.padding(horizontal = 4.dp))
+    AdminAlerts(d.notes.map { digestNoteIcon(it) to digestNoteText(it) })
+
+    val byKey = d.metrics.associateBy { it.key }
+    HERO_KEYS.mapNotNull { byKey[it] }.chunked(2).forEach { row ->
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            row.forEach { m ->
+                KpiTile(
+                    label = METRIC_LABELS[m.key] ?: m.key,
+                    value = adminNum(m.now),
+                    delta = adminDelta(m.now, m.prev, m.key in BAD_WHEN_UP),
+                    compare = m.now to m.prev,
+                    prevText = "قبلی ${adminNum(m.prev)}",
+                    standalone = true,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            if (row.size == 1) Spacer(Modifier.weight(1f))
+        }
+    }
+
+    if (d.series.size > 1) {
+        AppCard {
+            AdminSubTitle("روند · ${toFa(d.series.size)} روزِ اخیر")
+            AdminLineChart(values = d.series.map { it.active }, bars = d.series.map { it.installs })
+            AdminNote("خط = فعال · ستون = نصبِ تازه · هر روز از ۷ صبح")
+        }
+    }
+
+    val net = byKey["revenue_net"]
+    val gross = byKey["revenue"]
+    if (net != null || gross != null) {
+        AppCard(variant = AppCardVariant.GOLD) {
+            Row(verticalAlignment = Alignment.Top) {
+                Column(Modifier.weight(1f)) {
+                    Text("فروشِ خالص · سهمِ تو", color = AppGoldInk2, fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold)
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(adminNum(net?.now ?: 0L), color = AppGoldInk, fontSize = 24.sp, fontWeight = FontWeight.Black)
+                        Text("تومان", color = AppGoldInk2, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, bottom = 4.dp))
+                    }
+                }
+                net?.let { val dl = adminDelta(it.now, it.prev); Text(dl.text, color = dl.color(), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 4.dp)) }
+            }
+            Text(
+                listOfNotNull(gross?.let { "ناخالص ${adminNum(it.now)} تومان" }, net?.let { "قبلی ${adminNum(it.prev)}" }).joinToString(" · "),
+                color = AppGoldInk2, fontSize = 12.sp,
+            )
+            SplitBar(
+                title = null,
+                parts = listOfNotNull(
+                    byKey["revenue_cafebazaar"]?.let { SplitPart("کافه‌بازار ${adminNum(it.now)}", it.now.toInt()) },
+                    byKey["revenue_myket"]?.let { SplitPart("مایکت ${adminNum(it.now)}", it.now.toInt()) },
+                ),
+                gold = true,
+            )
+            AdminNote("خالص = سهمِ تو بعد از کارمزدِ استور (کافه‌بازار و مایکت هر دو ۷۶٫۹٪).", gold = true)
+        }
+    }
+
+    val rest = METRIC_LABELS.keys.filter { it !in HERO_KEYS && it !in MONEY_KEYS }.mapNotNull { byKey[it] }
+    if (rest.isNotEmpty()) {
+        AdminSection(
+            title = "بقیه‌ی شاخص‌ها (${toFa(rest.size)})",
+            summary = rest.joinToString(" · ") { "${(METRIC_LABELS[it.key] ?: it.key).substringBefore(' ')} ${adminNum(it.now)}" },
+        ) {
+            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                listOf("شاخص" to 1f, "حالا" to 0.45f, "قبلی" to 0.45f, "تغییر" to 0.45f).forEach { (h, w) ->
+                    Text(h, color = AppLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(w))
+                }
+            }
+            rest.forEach { m ->
+                val dl = adminDelta(m.now, m.prev, m.key in BAD_WHEN_UP)
+                Box(Modifier.fillMaxWidth().height(1.5.dp).background(AppLineRow))
+                Row(Modifier.fillMaxWidth().heightIn(min = 38.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(METRIC_LABELS[m.key] ?: m.key, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+                    Text(adminNum(m.now), color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(0.45f))
+                    Text(adminNum(m.prev), color = AppMuted, fontSize = 12.5.sp, modifier = Modifier.weight(0.45f))
+                    Text(dl.text, color = dl.color(), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, modifier = Modifier.weight(0.45f))
+                }
+            }
+        }
+    }
+
+    if (d.topActions.isNotEmpty()) AppCard(label = "بیشترین کارها") {
+        val max = d.topActions.maxOf { it.count }.coerceAtLeast(1)
+        TopList(d.topActions) { AdminBarRow(actionLabel(it.name), it.count.toFloat() / max, adminNum(it.count)) }
+    }
+    if (d.topScreens.isNotEmpty()) {
+        AdminSection("بیشترین صفحه‌ها", "${toFa(d.topScreens.size)} صفحه · بیشترین: ${screenLabel(d.topScreens.first().name)}") {
+            val max = d.topScreens.maxOf { it.count }.coerceAtLeast(1)
+            TopList(d.topScreens, visible = 8) { AdminBarRow(screenLabel(it.name), it.count.toFloat() / max, adminNum(it.count)) }
+        }
     }
 }
 
-private fun fmtNum(v: Long): String = ir.sadteam.loancalc.core.fmt(v.toDouble())
+/** استور در یک قرصِ کوچک با منو - تا دوره و استور در یک ردیف بنشینند. */
+@Composable
+private fun StorePicker(store: String?, onPick: (String?) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val options = listOf(null to "همه", "cafebazaar" to "کافه‌بازار", "myket" to "مایکت")
+    val shape = RoundedCornerShape(999.dp)
+    Box {
+        Row(
+            Modifier.heightIn(min = 44.dp).clip(shape).background(AppSurface).border(2.dp, AppLine, shape).clickable { open = true }.padding(start = 12.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(options.first { it.first == store }.second, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
+            Icon(Icons.Filled.ExpandMore, "انتخابِ استور", tint = AppMuted)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            options.forEach { (key, label) -> DropdownMenuItem(text = { Text(label) }, onClick = { open = false; onPick(key) }) }
+        }
+    }
+}
 
-/** خروجیِ ساده‌ی CSV (با BOM تا اکسل فارسی را درست نشان دهد) از طریقِ «اشتراک‌گذاری». */
+/** خروجیِ ساده‌ی CSV (با BOM تا اکسل فارسی را درست نشان دهد). عددها لاتین - ماشین می‌خواندش. */
 private fun shareCsv(ctx: android.content.Context, d: AdminDigestResponse) {
     val csv = buildString {
         append('\uFEFF')

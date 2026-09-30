@@ -60,10 +60,12 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
         onDismissRequest = onDismiss,
         title = {
             // بازطراحی (۸ مهر): کاشیِ رنگیِ آیکون + زیرعنوان، مثلِ ردیف‌های هاب.
-            val tint = if (coinsMode) ir.sadteam.loancalc.ui.theme.AppPurple else ir.sadteam.loancalc.ui.theme.AppWarning
+            // اشتراک طلایی (مجاز: نشانِ اشتراک)؛ سکه بنفشِ هاب.
+            val tint = if (coinsMode) ir.sadteam.loancalc.ui.theme.AppPurple else ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
+            val tintBg = if (coinsMode) ir.sadteam.loancalc.ui.theme.AppPurplePill else ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(tint.copy(alpha = 0.15f)),
+                    Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(tintBg),
                     contentAlignment = Alignment.Center,
                 ) {
                     androidx.compose.material3.Icon(
@@ -135,7 +137,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                 val n0 = amount.toIntOrNull() ?: 0
                 if (user.isNotBlank() && n0 > 0) {
                     Text(
-                        (if (coinsMode) "${toFa(n0)} سکه" else "${toFa(n0)} روز اشتراک") + " برای Uid:${user.trim()}",
+                        (if (coinsMode) "${toFa(n0)} سکه" else "${toFa(n0)} روز اشتراک") + " برای Uid:${user.trim().filter { it.isDigit() }}",
                         color = AppPrimary, fontSize = 12.5.sp, fontWeight = FontWeight.Bold,
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(AppPrimary.copy(alpha = 0.08f)).padding(10.dp),
                     )
@@ -143,7 +145,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                 result?.let {
                     Text(
                         when (it) {
-                            "ok" -> "✓ هدیه فرستاده شد"
+                            "ok" -> "هدیه فرستاده شد"
                             "user_not_found" -> "کاربری با این شماره پیدا نشد"
                             else -> "فرستاده نشد؛ دوباره امتحان کن"
                         },
