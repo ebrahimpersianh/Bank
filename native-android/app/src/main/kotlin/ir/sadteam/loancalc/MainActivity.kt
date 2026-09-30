@@ -1078,11 +1078,6 @@ private fun LoanCalcApp(
                                 },
                             )
                         }
-                        // تبِ آخرِ ثابت (۸ مهر، خواسته‌ی کاربر): تنظیمات و تیره/روشن این‌جاست.
-                        MoreNavItem(
-                            onOpenSettings = { showSettings = true },
-                            onOpenShortcuts = { shortcutDrawerOpen = true },
-                        )
                         }
                         // دستگیره‌ی کشوی میان‌بُر - کشیدنِ به بالا یا تپ بازش می‌کند (`31c`). باریک است
                         // (۱۲۰dp) تا لمسِ بالای تب‌ها را نگیرد.
@@ -1212,6 +1207,7 @@ private fun LoanCalcApp(
                         onBottomBarVisibilityChanged = { visible -> bottomBarVisible = visible },
                         deepLinkLoanId = deepLinkLoanId,
                         onDeepLinkConsumed = { deepLinkViewModel.consume() },
+                        onOpenSettings = { showSettings = true },
                     )
                 }
                 composable(CHEQUE_ROUTE) {
@@ -1698,6 +1694,7 @@ private fun LoanTab(
     onBottomBarVisibilityChanged: (Boolean) -> Unit,
     deepLinkLoanId: Long?,
     onDeepLinkConsumed: () -> Unit,
+    onOpenSettings: () -> Unit = {},
 ) {
     var subTab by remember { mutableStateOf(LoanSubTab.MY_LOANS) }
     // خواسته‌ی کاربر (۲۶ شهریور): دکمه‌ی «+»ِ «وام‌های من» دیگر مستقیم فرمِ دستی را باز نمی‌کند،
@@ -1751,6 +1748,18 @@ private fun LoanTab(
             // **تبِ نوارِ پایین نیست** - صفحه‌ای پوش‌شده از «خانه»/«سررسید» است، پس
             // برداشتنِ دکمه تنها راهِ برگشت را به دکمه‌ی سخت‌افزاری محدود می‌کرد.
             // چون در همان ردیف است، ارتفاعی هم اضافه نمی‌کند.
+            // ۸ مهر (خواسته‌ی کاربر): تنظیمات و تیره/روشن کنارِ جستجوی تبِ وام - به این ترتیب.
+            val loanThemeVm: ThemeViewModel = hiltViewModel()
+            val loanThemeMode by loanThemeVm.themeMode.collectAsState()
+            val loanSysDark = androidx.compose.foundation.isSystemInDarkTheme()
+            val loanIsDark = loanThemeMode == ThemeMode.DARK || (loanThemeMode == ThemeMode.SYSTEM && loanSysDark)
+            LoanHeaderIcon(icon = Icons.Outlined.Settings, label = "تنظیمات", active = false, onClick = onOpenSettings)
+            LoanHeaderIcon(
+                icon = if (loanIsDark) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                label = if (loanIsDark) "حالتِ روشن" else "حالتِ تیره",
+                active = false,
+                onClick = { loanThemeVm.setThemeMode(if (loanIsDark) ThemeMode.LIGHT else ThemeMode.DARK) },
+            )
             if (subTab == LoanSubTab.MY_LOANS) {
                 LoanHeaderIcon(
                     icon = Icons.Filled.Search,
@@ -1865,48 +1874,6 @@ private fun LoanHeaderIcon(
                 contentDescription = label,
                 tint = if (active) AppPrimaryInk else AppMuted,
                 modifier = Modifier.size(15.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun RowScope.MoreNavItem(onOpenSettings: () -> Unit, onOpenShortcuts: () -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    val themeVm: ThemeViewModel = hiltViewModel()
-    val mode by themeVm.themeMode.collectAsState()
-    val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
-    val isDark = mode == ThemeMode.DARK || (mode == ThemeMode.SYSTEM && systemDark)
-    val buzz = rememberBuzz()
-    Box(Modifier.weight(1f)) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 3.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .clickable { buzz(); open = true }
-                .padding(top = 7.dp, bottom = 3.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Icon(Icons.Outlined.Menu, contentDescription = "بیشتر", tint = AppLabel, modifier = Modifier.size(22.dp))
-            Text("بیشتر", color = AppLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false, modifier = Modifier.padding(top = 4.dp))
-            Spacer(Modifier.padding(top = 2.dp).size(4.dp))
-        }
-        androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            androidx.compose.material3.DropdownMenuItem(
-                text = { Text("تنظیمات", fontWeight = FontWeight.Bold) },
-                leadingIcon = { Icon(Icons.Outlined.Settings, null, tint = AppMuted) },
-                onClick = { open = false; onOpenSettings() },
-            )
-            androidx.compose.material3.DropdownMenuItem(
-                text = { Text(if (isDark) "حالتِ روشن" else "حالتِ تیره", fontWeight = FontWeight.Bold) },
-                leadingIcon = { Icon(if (isDark) Icons.Filled.LightMode else Icons.Filled.DarkMode, null, tint = AppMuted) },
-                onClick = { open = false; themeVm.setThemeMode(if (isDark) ThemeMode.LIGHT else ThemeMode.DARK) },
-            )
-            androidx.compose.material3.DropdownMenuItem(
-                text = { Text("دسترسیِ سریع", fontWeight = FontWeight.Bold) },
-                leadingIcon = { Icon(Icons.Outlined.Apps, null, tint = AppMuted) },
-                onClick = { open = false; onOpenShortcuts() },
             )
         }
     }

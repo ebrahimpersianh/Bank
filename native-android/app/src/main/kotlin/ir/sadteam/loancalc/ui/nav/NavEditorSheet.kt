@@ -171,7 +171,7 @@ fun NavEditorSheet(
             )
 
             Spacer(Modifier.height(14.dp))
-            Text("چهار جای نوار · «بیشتر» ثابت است", color = AppLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text("پنج جای نوار", color = AppLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
