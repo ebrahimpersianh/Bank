@@ -8,6 +8,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.Db
+import ir.sadteam.loancalc.server.adminTokenMatches
 import ir.sadteam.loancalc.server.env
 import ir.sadteam.loancalc.server.execute
 import ir.sadteam.loancalc.server.executeCounting
@@ -146,7 +147,7 @@ fun Route.giftCodeRoutes() {
             // بماند. سکرتِ تنظیم‌نشده یعنی قابلیت خاموش است، نه بی‌قفل.
             val adminToken = env("ADMIN_TOKEN", "")
             val sent = call.request.headers["X-Admin-Token"]
-            if (adminToken.isEmpty() || sent != adminToken) {
+            if (adminToken.isEmpty() || !adminTokenMatches(sent)) {
                 call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "admin_only"))
                 return@post
             }

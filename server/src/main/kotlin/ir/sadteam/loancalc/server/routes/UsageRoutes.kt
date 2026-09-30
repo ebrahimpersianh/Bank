@@ -10,6 +10,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.Db
+import ir.sadteam.loancalc.server.adminTokenMatches
 import ir.sadteam.loancalc.server.env
 import ir.sadteam.loancalc.server.execute
 import ir.sadteam.loancalc.server.rateLimitOk
@@ -181,7 +182,7 @@ fun Route.usageRoutes() {
 
 private suspend fun ApplicationCall.adminOk(): Boolean {
     val token = env("ADMIN_TOKEN", "")
-    val ok = token.isNotEmpty() && request.headers["X-Admin-Token"] == token
+    val ok = token.isNotEmpty() && adminTokenMatches(request.headers["X-Admin-Token"])
     if (!ok) respond(HttpStatusCode.Unauthorized, mapOf("error" to "admin_only"))
     return ok
 }

@@ -5,6 +5,7 @@ import ir.sadteam.loancalc.server.isSubscribed
 import ir.sadteam.loancalc.server.queryOne
 import ir.sadteam.loancalc.server.Db
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
@@ -64,6 +65,12 @@ fun Route.fileRoutes() {
             }
             if (!isSubscribed(user)) {
                 call.respond(HttpStatusCode.Forbidden, mapOf("error" to "subscription_required"))
+                return@put
+            }
+            // اندازه را قبل از خواندنِ بدنه رد کن تا فایلِ خیلی بزرگ اصلاً در حافظه نیاید.
+            val declared = call.request.headers[HttpHeaders.ContentLength]?.toLongOrNull()
+            if (declared != null && declared > MAX_FILE_BYTES) {
+                call.respond(HttpStatusCode.PayloadTooLarge, mapOf("error" to "file_too_large"))
                 return@put
             }
             val bytes = call.receive<ByteArray>()

@@ -13,6 +13,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.Db
+import ir.sadteam.loancalc.server.adminTokenMatches
 import ir.sadteam.loancalc.server.env
 import ir.sadteam.loancalc.server.executeCounting
 import ir.sadteam.loancalc.server.insertReturningId
@@ -92,7 +93,7 @@ private data class OkResponse(val ok: Boolean)
 private suspend fun ApplicationCall.isAdmin(): Boolean {
     // ⚠️ بی `ADMIN_TOKEN` نوشتن **اصلاً باز نمی‌شود** - همان قاعده‌ی کدِ هدیه.
     val adminToken = env("ADMIN_TOKEN", "")
-    val ok = adminToken.isNotEmpty() && request.headers["X-Admin-Token"] == adminToken
+    val ok = adminToken.isNotEmpty() && adminTokenMatches(request.headers["X-Admin-Token"])
     if (!ok) respond(HttpStatusCode.Unauthorized, mapOf("error" to "admin_only"))
     return ok
 }

@@ -10,6 +10,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import ir.sadteam.loancalc.server.Db
+import ir.sadteam.loancalc.server.adminTokenMatches
 import ir.sadteam.loancalc.server.env
 import ir.sadteam.loancalc.server.executeCounting
 import ir.sadteam.loancalc.server.queryOne
@@ -438,7 +439,7 @@ fun Route.adminRoutes() {
         }
         post("/grant") {
             val token = env("ADMIN_TOKEN", "")
-            if (token.isEmpty() || call.request.headers["X-Admin-Token"] != token) {
+            if (token.isEmpty() || !adminTokenMatches(call.request.headers["X-Admin-Token"])) {
                 call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "admin_only"))
                 return@post
             }

@@ -27,3 +27,14 @@ fun env(key: String, default: String = ""): String =
     System.getenv(key)?.takeIf { it.isNotBlank() }
         ?: System.getProperty(key)?.takeIf { it.isNotBlank() }
         ?: default
+
+
+/**
+ * مقایسه‌ی `X-Admin-Token` در زمانِ ثابت (بررسیِ امنیتیِ ۸ مهر) - مقایسه‌ی معمولیِ رشته با اولین
+ * حرفِ نابرابر برمی‌گردد و از روی زمانِ پاسخ می‌شود حرف‌به‌حرف حدسش زد. توکنِ خالی یعنی خاموش.
+ */
+fun adminTokenMatches(sent: String?): Boolean {
+    val token = env("ADMIN_TOKEN", "")
+    if (token.isEmpty() || sent == null) return false
+    return java.security.MessageDigest.isEqual(token.toByteArray(), sent.toByteArray())
+}

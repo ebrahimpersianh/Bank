@@ -31,7 +31,7 @@ object SupportFiles {
 
     fun newId(): String {
         val b = ByteArray(16).also { SecureRandom().nextBytes(it) }
-        return b.joinToString("") { "%02x".format(it) }
+        return b.joinToString("") { String.format(java.util.Locale.US, "%02x", it) }
     }
 
     /**
