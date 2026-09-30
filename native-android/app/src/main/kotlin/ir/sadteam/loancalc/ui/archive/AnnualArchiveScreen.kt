@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.archive
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -79,43 +82,36 @@ fun AnnualArchiveScreen(onBack: () -> Unit, accountViewModel: AccountViewModel =
                         ?.key
                     val isCurrentYear = year == today.y
                     item(key = year) {
-                        AppCard {
-                            Text("${year.toFa()} · ${rows.size.toFa()} تراکنش", color = AppText, fontWeight = FontWeight.Black, fontSize = 15.sp)
-                            AppHeroCard(modifier = Modifier.padding(top = 10.dp)) {
-                                Text("خالصِ سال", color = HeroMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                // سالِ منفی با رنگِ سالِ مثبت، تنها عددِ قهرمانِ کارت را
-                                // بی‌معنی می‌کند - پس علامت و رنگ می‌گیرد (بندِ ۷ی بخشِ ۸۱).
-                                // منفی با «−» است نه پرانتز، طبقِ قاعده‌ی عددهای برنامه.
+                        // هم‌سبکِ Claude Design (۸ مهر): هیرویِ سبز با سال و خالص، زیرش سه کاشیِ رنگی.
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            AppHeroCard {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("سالِ ${year.toFa()}", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+                                    Text(
+                                        if (isCurrentYear) "در جریان" else "${rows.size.toFa()} تراکنش",
+                                        color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
+                                        modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Color.White).padding(horizontal = 12.dp, vertical = 4.dp),
+                                    )
+                                }
+                                Text("خالصِ سال", color = HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
+                                // منفی با «−» نه پرانتز، طبقِ قاعده‌ی عددهای برنامه.
                                 val sign = if (net < 0) "−" else "+"
                                 Text(
                                     sign + " " + maskIfPrivate(privacyMode, rialToToman(kotlin.math.abs(net).toLong()).toFaMoney()) + " تومان",
-                                    color = if (net < 0) AppDanger else AppPrimary,
-                                    fontSize = 22.sp,
+                                    color = Color.White,
+                                    fontSize = 26.sp,
                                     fontWeight = FontWeight.Black,
                                 )
                             }
-                            Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                                ArchiveStat("واریز", income, AppPrimary, privacyMode = privacyMode)
-                                ArchiveStat("برداشت", expense, AppMuted, privacyMode = privacyMode)
-                                if (isCurrentYear) {
-                                    // «۹ ماه» کنارِ «۱۲ ماه» شبیهِ داده‌ی ناقص به‌نظر می‌رسد نه
-                                    // سالِ نیمه‌تمام، پس سالِ جاری بج می‌گیرد نه عدد.
-                                    Column {
-                                        Text("وضعیت", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
-                                        Text("در جریان", color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 3.dp))
-                                    }
-                                } else {
-                                    Column {
-                                        Text("پرخرج‌ترین", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
-                                        Text(
-                                            topMonth?.let { persianMonthName(it) } ?: "—",
-                                            color = AppText,
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Black,
-                                            modifier = Modifier.padding(top = 3.dp),
-                                        )
-                                    }
-                                }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ArchiveStat("واریز", maskIfPrivate(privacyMode, rialToToman(income.toLong()).toFaMoney()), AppPrimary, Modifier.weight(1f))
+                                ArchiveStat("برداشت", maskIfPrivate(privacyMode, rialToToman(expense.toLong()).toFaMoney()), AppDanger, Modifier.weight(1f))
+                                ArchiveStat(
+                                    if (isCurrentYear) "تعداد" else "پرخرج‌ترین",
+                                    if (isCurrentYear) "${rows.size.toFa()} تراکنش" else (topMonth?.let { persianMonthName(it) } ?: "—"),
+                                    AppText,
+                                    Modifier.weight(1f),
+                                )
                             }
                         }
                     }
@@ -126,14 +122,11 @@ fun AnnualArchiveScreen(onBack: () -> Unit, accountViewModel: AccountViewModel =
 }
 
 @Composable
-private fun ArchiveStat(
-    label: String,
-    value: Double,
-    color: androidx.compose.ui.graphics.Color,
-    privacyMode: Boolean,
-) {
-    Column {
-        Text(label, color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
-        Text(maskIfPrivate(privacyMode, rialToToman(value.toLong()).toFaMoney()), color = color, fontSize = 12.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 3.dp))
+private fun ArchiveStat(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+    AppCard(modifier = modifier, contentPadding = 10.dp, horizontalPadding = 10.dp) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Text(label, color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text(value, color = color, fontSize = 13.sp, fontWeight = FontWeight.Black, maxLines = 1, modifier = Modifier.padding(top = 3.dp))
+        }
     }
 }
