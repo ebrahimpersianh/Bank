@@ -466,7 +466,7 @@ private fun NoBudgetCard(onCreate: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ir.sadteam.loancalc.ui.components.EmptyHeroCard(
             illustration = ir.sadteam.loancalc.R.drawable.empty_illu_budget,
-            tint = ir.sadteam.loancalc.ui.theme.AppWarningPill.copy(alpha = 0.6f),
+            tint = AppPrimaryPill.copy(alpha = 0.55f),
             title = "هنوز بودجه‌ای تعیین نشده",
             description = "برای دسته‌های مهمت سقفِ ماهانه بذار و از خرج‌هات بهتر باخبر باش.",
             action = "ساختنِ بودجه",
