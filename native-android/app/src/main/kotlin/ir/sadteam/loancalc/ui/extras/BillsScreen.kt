@@ -1,5 +1,14 @@
 package ir.sadteam.loancalc.ui.extras
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Event
+import ir.sadteam.loancalc.ui.theme.AppSurface2
+import ir.sadteam.loancalc.ui.theme.AppLine
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -240,36 +249,77 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
             onDismissRequest = close,
             title = { Text(if (base == null) "قبضِ جدید" else "ویرایشِ قبض") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                        BILL_KINDS.take(4).forEach { (k, l) -> AppChip(l, kind == k, onClick = { kind = k }) }
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                        BILL_KINDS.drop(4).forEach { (k, l) -> AppChip(l, kind == k, onClick = { kind = k }) }
+                // بازطراحیِ ۸ مهر: کاشی‌های آیکون‌دارِ نوعِ قبض، کارتِ خط‌چینِ «چسباندن»، کادرهای گرد.
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    BILL_KINDS.chunked(4).forEach { row ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                            row.forEach { (k, l) ->
+                                val (ic, tint) = billKindIcon(k)
+                                val sel = kind == k
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(if (sel) tint.copy(alpha = 0.16f) else AppSurface2)
+                                        .border(if (sel) 1.5.dp else 1.dp, if (sel) tint else AppLine, RoundedCornerShape(16.dp))
+                                        .clickable { kind = k }
+                                        .padding(vertical = 10.dp),
+                                ) {
+                                    Icon(ic, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
+                                    Text(l, color = if (sel) AppText else AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
+                                }
+                            }
+                            repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+                        }
                     }
                     // 📋 پیامکِ قبض (آب/برق/گاز/…) را کپی کن و اینجا بزن: شناسه و نوع خودکار پر می‌شوند.
-                    TextButton(onClick = {
-                        val text = clipboard.getText()?.text.orEmpty()
-                        val r = ir.sadteam.loancalc.core.BillCodes.parseBillSms(text)
-                        if (r == null) {
-                            pasteNote = "در متنِ کپی‌شده شناسه‌ی قبضی پیدا نشد"
-                        } else {
-                            r.billId?.let { billId = it }
-                            r.kind?.let { kind = it }
-                            pasteNote = buildString {
-                                append("از پیامک خوانده شد")
-                                r.amountRial?.let { append(" · مبلغِ این دوره ${toFa(it / 10)} تومان") }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(AppPrimary.copy(alpha = 0.08f))
+                            .dashedBorder(radius = 16.dp, color = AppPrimary.copy(alpha = 0.5f), width = 1.5.dp)
+                            .clickable {
+                                val text = clipboard.getText()?.text.orEmpty()
+                                val r = ir.sadteam.loancalc.core.BillCodes.parseBillSms(text)
+                                if (r == null) {
+                                    pasteNote = "در متنِ کپی‌شده شناسه‌ی قبضی پیدا نشد"
+                                } else {
+                                    r.billId?.let { billId = it }
+                                    r.kind?.let { kind = it }
+                                    pasteNote = buildString {
+                                        append("✓ از پیامک خوانده شد")
+                                        r.amountRial?.let { append(" · مبلغِ این دوره ${toFa(it / 10)} تومان") }
+                                    }
+                                }
                             }
+                            .padding(12.dp),
+                    ) {
+                        Box(
+                            Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(AppPrimary.copy(alpha = 0.16f)),
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(Icons.Filled.ContentPaste, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(20.dp)) }
+                        Column(Modifier.padding(start = 10.dp)) {
+                            Text("چسباندنِ پیامکِ قبض", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text("پیامک را کپی کن و بزن؛ شناسه و نوع خودکار پر می‌شوند", color = AppMuted, fontSize = 11.sp)
                         }
-                    }) { Text("📋 چسباندنِ پیامکِ قبض") }
-                    pasteNote?.let { Text(it, color = AppMuted, fontSize = 11.sp) }
+                    }
+                    pasteNote?.let { Text(it, color = if (it.startsWith("✓")) AppPrimary else AppDanger, fontSize = 11.5.sp) }
                     OutlinedTextField(
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                        colors = ir.sadteam.loancalc.ui.components.appFieldColors(),value = name, onValueChange = { name = it.take(30) }, singleLine = true, placeholder = { Text("نام (مثلاً خانه)") })
+                        value = name,
+                        onValueChange = { name = it.take(30) },
+                        singleLine = true,
+                        label = { Text("نام") },
+                        placeholder = { Text("مثلاً خانه") },
+                        leadingIcon = { Icon(Icons.Filled.Home, contentDescription = null, tint = AppMuted) },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                     Ltr {
                         OutlinedTextField(
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                        colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
                             value = billId,
                             onValueChange = {
                                 billId = cleanNum(it).take(18)
@@ -277,8 +327,11 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                                 ir.sadteam.loancalc.core.BillCodes.billIdKind(billId)?.let { k -> kind = k }
                             },
                             singleLine = true,
-                            placeholder = { Text("شناسه‌ی قبض (اختیاری)") },
+                            label = { Text("شناسه‌ی قبض (اختیاری)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                     if (billId.length >= 6) {
@@ -290,17 +343,30 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         )
                     }
                     OutlinedTextField(
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                        colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
                         value = dayText,
                         onValueChange = { dayText = cleanNum(it).take(2) },
                         singleLine = true,
-                        placeholder = { Text("روزِ موعد در ماه (۱ تا ۳۰)") },
+                        label = { Text("روزِ موعد در ماه") },
+                        placeholder = { Text("۱ تا ۳۰") },
+                        leadingIcon = { Icon(Icons.Filled.Event, contentDescription = null, tint = AppMuted) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
+                        modifier = Modifier.fillMaxWidth(),
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        AppChip("ماهانه", period == 1, onClick = { period = 1 })
-                        AppChip("دوماهه", period == 2, onClick = { period = 2 })
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        listOf(1 to "ماهانه", 2 to "دوماهه").forEach { (v, l) ->
+                            val sel = period == v
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp)
+                                    .clip(RoundedCornerShape(999.dp))
+                                    .background(if (sel) AppPrimary else AppSurface2)
+                                    .clickable { period = v },
+                            ) { Text(l, color = if (sel) androidx.compose.ui.graphics.Color.White else AppMuted, fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                        }
                     }
                 }
             },
