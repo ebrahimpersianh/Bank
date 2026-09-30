@@ -147,7 +147,7 @@ fun AdminDigestScreen(onBack: () -> Unit, vm: AdminDigestViewModel = hiltViewMod
                     }
                 }
                 Text(
-                    "خالص = ناخالص منهای سهمِ استور (فعلاً ۳۰٪ برای هر دو - عددِ دقیق را از پنل‌ها بگو تا اصلاح کنم).",
+                    "خالص = سهمِ تو بعد از کارمزدِ استور (از هر ۳۰ هزار، ۲۳ هزار).",
                     color = AppMuted, fontSize = 10.5.sp,
                 )
                 if (d.topActions.isNotEmpty()) AppCard(label = "بیشترین کارها") {
