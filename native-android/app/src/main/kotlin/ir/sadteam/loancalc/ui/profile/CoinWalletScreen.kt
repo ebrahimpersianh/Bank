@@ -522,6 +522,8 @@ private fun HistoryFilterChip(earnedOnly: Boolean?, onChange: (Boolean?) -> Unit
 private fun coinEventLabel(type: String): String = when (type) {
     GamificationRepository.Type.NEW_PHONE_GIFT -> "هدیه‌ی شروع"
     GamificationRepository.Type.DAILY_LOG -> "ثبتِ روزانه"
+    GamificationRepository.Type.DAILY_OPEN -> "سر زدنِ روزانه"
+    GamificationRepository.Type.DAILY_OPEN_WEEK -> "جایزه‌ی هفت روزِ پیاپی"
     GamificationRepository.Type.WEEK_COMPLETE -> "هفته‌ی کاملِ فعال بودن"
     GamificationRepository.Type.CONNECT_SMS -> "وصل‌کردنِ پیامکِ بانکی"
     GamificationRepository.Type.CONNECT_NOTIFICATION -> "وصل‌کردنِ اعلانِ بانک"

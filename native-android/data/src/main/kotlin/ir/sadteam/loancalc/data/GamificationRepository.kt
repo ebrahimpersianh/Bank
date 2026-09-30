@@ -38,6 +38,8 @@ class GamificationRepository(
         const val COMPLETE_PROFILE = 50
         const val FIRST_BUDGET = 25
         const val FIRST_BACKUP = 25
+        const val DAILY_OPEN = 5
+        const val DAILY_OPEN_WEEK = 30
 
         /** ترمیمِ زنجیرِ «فعال» - خرج، نه جایزه. */
         const val STREAK_REPAIR = 100
@@ -70,6 +72,10 @@ class GamificationRepository(
 
         /** شارژِ آزمایشی - جدا نگه داشته می‌شود تا با دستاوردِ واقعیِ کاربر قاطی نشود. */
         const val TEST_GRANT = "test_grant"
+
+        /** سکه‌ی «سر زدنِ روزانه» (۸ مهر) - فقط باز کردنِ برنامه، جدا از `DAILY_LOG`. */
+        const val DAILY_OPEN = "daily_open"
+        const val DAILY_OPEN_WEEK = "daily_open_week"
     }
 
     val balance: Flow<Int> = coinDao.observeBalance()
@@ -89,6 +95,23 @@ class GamificationRepository(
      */
     val activeDays: Flow<Int> = coinDao.observeDateKeys(Type.DAILY_LOG).map { keys ->
         countActiveDays(keys.toSet(), JalaliCalendar.today())
+    }
+
+    /** نتیجه‌ی سر زدنِ امروز: روزِ چندم از هفت، و سکه‌ی گرفته‌شده (با جایزه‌ی روزِ هفتم). */
+    data class DailyOpen(val dayInWeek: Int, val streak: Int, val coins: Int)
+
+    /**
+     * سکه‌ی سر زدنِ روزانه. اولین بار در روز نتیجه می‌دهد، بعد `null` (ایندکسِ یکتا).
+     * روزِ هفتمِ پیاپی جایزه‌ی [Reward.DAILY_OPEN_WEEK] هم می‌گیرد.
+     */
+    suspend fun claimDailyOpen(today: PersianDate = JalaliCalendar.today()): DailyOpen? {
+        val key = dateKey(today)
+        if (!award(Type.DAILY_OPEN, Reward.DAILY_OPEN, key)) return null
+        val streak = countActiveDays(coinDao.getDateKeys(Type.DAILY_OPEN).toSet(), today).coerceAtLeast(1)
+        val day = (streak - 1) % 7 + 1
+        var coins = Reward.DAILY_OPEN
+        if (day == 7 && award(Type.DAILY_OPEN_WEEK, Reward.DAILY_OPEN_WEEK, key)) coins += Reward.DAILY_OPEN_WEEK
+        return DailyOpen(day, streak, coins)
     }
 
     /**

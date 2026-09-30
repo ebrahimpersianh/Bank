@@ -591,6 +591,8 @@ fun HomeScreen(
         // رندر می‌شود نه با `return` - همان باگی که شش جای دیگر صفحه را سفید می‌کرد.
         // تا وقتی سکه مقصدِ `NavHost` نشده، این کوتاه‌ترین راهِ درست است؛ روکش پس‌زمینه‌ی
         // مات دارد پس صفحه‌ی زیرش دیده نمی‌شود.
+        // جشنِ سر زدنِ روزانه - روزی یک‌بار (۸ مهر).
+        ir.sadteam.loancalc.ui.coin.DailyCheckInHost()
         if (showCoinWallet) {
             CoinHubScreen(onBack = { showCoinWallet = false }, todayHasEntry = todayHasEntry)
         }
