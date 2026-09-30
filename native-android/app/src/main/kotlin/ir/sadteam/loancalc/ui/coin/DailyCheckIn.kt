@@ -54,8 +54,13 @@ class DailyCheckInViewModel @Inject constructor(
     private val _result = MutableStateFlow<GamificationRepository.DailyOpen?>(null)
     val result: StateFlow<GamificationRepository.DailyOpen?> = _result
 
-    init {
-        viewModelScope.launch { _result.value = runCatching { gamification.claimDailyOpen() }.getOrNull() }
+    init { check() }
+
+    /** بی‌خطر برای صدا زدنِ مکرر: فقط اولین بارِ هر روز نتیجه می‌دهد (ایندکسِ یکتا). */
+    fun check() {
+        viewModelScope.launch {
+            runCatching { gamification.claimDailyOpen() }.getOrNull()?.let { _result.value = it }
+        }
     }
 
     fun dismiss() { _result.value = null }
@@ -67,6 +72,29 @@ class DailyCheckInViewModel @Inject constructor(
  */
 @Composable
 fun DailyCheckInHost(viewModel: DailyCheckInViewModel = hiltViewModel()) {
+    // روز = ۰۰:۰۰ تا ۲۳:۵۹ به ساعتِ گوشی. سه راه برای «اولین ورودِ روز»:
+    // باز شدنِ خانه، برگشتن به برنامه (ON_RESUME)، و اگر کسی از دیروز در برنامه مانده،
+    // درست بعد از نیمه‌شب.
+    val owner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(owner) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) viewModel.check()
+        }
+        owner.lifecycle.addObserver(obs)
+        onDispose { owner.lifecycle.removeObserver(obs) }
+    }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val now = java.util.Calendar.getInstance()
+            val next = (now.clone() as java.util.Calendar).apply {
+                add(java.util.Calendar.DAY_OF_MONTH, 1)
+                set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 5); set(java.util.Calendar.MILLISECOND, 0)
+            }
+            delay(next.timeInMillis - now.timeInMillis)
+            viewModel.check()
+        }
+    }
     val r by viewModel.result.collectAsState()
     val res = r ?: return
     JibakAlertDialog(
