@@ -119,10 +119,16 @@ fun AddEditAccountScreen(
     // پیشنهاده: اگه فیلدِ بانک خالیه یا هنوز همون پیشنهادِ خودکارِ قبلیه، به‌روزش می‌کنه؛ اگه کاربر
     // خودش دستی یه چیزِ دیگه تایپ کرده، دیگه بازنویسی نمی‌شه.
     var lastAutoDetected by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(cardNumberText) {
-        val detected = detectBankByCardNumber(cardNumberText)
+    var lastAutoName by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(cardNumberText, shebaText) {
+        val detected = detectBankByCardNumber(cardNumberText) ?: ir.sadteam.loancalc.data.detectBankBySheba(shebaText)
         if (detected != null && (bankName.isBlank() || bankName == lastAutoDetected)) {
             bankName = detected
+            // اسمِ خالی هم پیشنهاد می‌گیرد: «کارتِ ملت» (۸ مهر).
+            if (name.isBlank() || name == lastAutoName) {
+                name = "کارتِ " + detected.removePrefix("بانک ").removePrefix("پست بانک").ifBlank { "پست بانک" }
+                lastAutoName = name
+            }
         }
         lastAutoDetected = detected
     }
@@ -226,6 +232,16 @@ fun AddEditAccountScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                     )
+                }
+                // بانکِ تشخیص‌داده‌شده همان‌جا زیرِ شماره (۸ مهر) - فیلدِ بانک پایین‌تر است و دیده نمی‌شد.
+                val bin = detectBankByCardNumber(cardNumberText)
+                val digitsLen = cardNumberText.length
+                when {
+                    bin != null -> Text("✓ $bin", color = ir.sadteam.loancalc.ui.theme.AppPrimary, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
+                    digitsLen in 1..5 -> Text("با ۶ رقمِ اول، بانک خودش پیدا می‌شود", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+                }
+                if (digitsLen == 16 && !ir.sadteam.loancalc.data.isValidCardNumber(cardNumberText)) {
+                    Text("این شماره‌کارت درست به نظر نمی‌رسد - یک بار دیگر چک کن", color = ir.sadteam.loancalc.ui.theme.AppDanger, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
                 }
             }
         }

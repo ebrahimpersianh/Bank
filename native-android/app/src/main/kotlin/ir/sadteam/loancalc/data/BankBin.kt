@@ -39,3 +39,32 @@ fun detectBankByCardNumber(cardNumber: String): String? {
     if (digits.length < 6) return null
     return bankBins[digits.take(6)]
 }
+
+/** کدِ سه‌رقمیِ بانک در شبا (رقم‌های ۵ تا ۷ِ «IRkk bbb…») - جدولِ عمومیِ بانکِ مرکزی (۸ مهر). */
+private val shebaBankCodes: Map<String, String> = mapOf(
+    "010" to "بانک مرکزی", "011" to "بانک صنعت و معدن", "012" to "بانک ملت", "013" to "بانک رفاه کارگران",
+    "014" to "بانک مسکن", "015" to "بانک سپه", "016" to "بانک کشاورزی", "017" to "بانک ملی ایران",
+    "018" to "بانک تجارت", "019" to "بانک صادرات ایران", "020" to "بانک توسعه صادرات", "021" to "پست بانک ایران",
+    "022" to "بانک توسعه تعاون", "054" to "بانک پارسیان", "055" to "بانک اقتصاد نوین", "056" to "بانک سامان",
+    "057" to "بانک پاسارگاد", "058" to "بانک سرمایه", "059" to "بانک سینا", "061" to "بانک شهر",
+    "062" to "بانک آینده", "064" to "بانک گردشگری", "066" to "بانک دی", "069" to "بانک ایران زمین",
+    "070" to "بانک قرض‌الحسنه رسالت", "078" to "بانک خاورمیانه",
+)
+
+/** ۲۲ رقمِ بعد از «IR» یا ۲۴ رقمِ کامل؛ ارقامِ ۳ تا ۵ (بعد از دو رقمِ کنترل) کدِ بانک است. */
+fun detectBankBySheba(sheba: String): String? {
+    val d = sheba.filter { it.isDigit() }
+    if (d.length < 5) return null
+    return shebaBankCodes[d.substring(2, 5)]
+}
+
+/** آزمونِ لون برای شماره‌کارتِ ۱۶رقمی - فقط برای هشدارِ «احتمالاً اشتباه تایپ شده». */
+fun isValidCardNumber(card: String): Boolean {
+    val d = card.filter { it.isDigit() }
+    if (d.length != 16) return false
+    val sum = d.reversed().mapIndexed { i, c ->
+        val n = c - '0'
+        if (i % 2 == 1) (n * 2).let { if (it > 9) it - 9 else it } else n
+    }.sum()
+    return sum % 10 == 0
+}
