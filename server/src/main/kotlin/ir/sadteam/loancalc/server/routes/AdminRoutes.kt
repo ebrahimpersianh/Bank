@@ -72,6 +72,12 @@ data class InstallRow(
 @Serializable
 data class SaleRow(val product: String, val count30: Int, val countAll: Int, val tomans30: Long, val tomansAll: Long)
 
+/**
+ * سهمِ هر استور از فروش (درصد). ⚠️ تقریبی: عددِ دقیق را از قراردادِ پنلِ کافه‌بازار/مایکت چک کن
+ * و همین‌جا اصلاح کن - «خالص» در گزارشِ ادمین از همین حساب می‌شود.
+ */
+private val STORE_SHARE_PCT = mapOf("cafebazaar" to 30L, "myket" to 30L)
+
 /** قیمتِ هر پلن به تومان - همان قیمتِ پنلِ کافه‌بازار/مایکت (رجوع کن به CLAUDE.md). */
 private val PLAN_PRICE_TOMAN = mapOf(
     "unlimited_loans_1m" to 30_000L,
@@ -577,14 +583,21 @@ internal fun buildDigest(conn: Connection, period: String): DigestResponse {
     m += pair("new_installs", "SELECT COUNT(*) FROM installs WHERE first_day >= ? AND first_day < ?", da, db, prevParams = arrayOf(dpa, da))
     m += pair("active", "SELECT COUNT(DISTINCT install_id) FROM usage_daily WHERE day >= ? AND day < ?", da, db, prevParams = arrayOf(dpa, da))
     m += pair("purchases", "SELECT COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
-    fun revenue(x: String, y: String): Long {
+    // فروشِ ناخالص به تفکیکِ استور + خالص بعد از سهمِ استور (۸ مهر، خواسته‌ی کاربر).
+    fun revenue(x: String, y: String, store: String?): Long {
         var sum = 0L
-        conn.list("SELECT product_id, COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND created_at < ? GROUP BY 1", x, y) {
-            sum += (PLAN_PRICE_TOMAN[it.getString(1)] ?: 0L) * it.getInt(2)
-        }
+        conn.list(
+            "SELECT product_id, COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND created_at < ?" +
+                (if (store != null) " AND store = ?" else "") + " GROUP BY 1",
+            *(if (store != null) arrayOf(x, y, store) else arrayOf(x, y)),
+        ) { sum += (PLAN_PRICE_TOMAN[it.getString(1)] ?: 0L) * it.getInt(2) }
         return sum
     }
-    m += DigestMetric("revenue", revenue(a, b), revenue(pa, a))
+    fun net(x: String, y: String) = STORE_SHARE_PCT.entries.sumOf { (st, pct) -> revenue(x, y, st) * (100 - pct) / 100 }
+    m += DigestMetric("revenue", revenue(a, b, null), revenue(pa, a, null))
+    m += DigestMetric("revenue_cafebazaar", revenue(a, b, "cafebazaar"), revenue(pa, a, "cafebazaar"))
+    m += DigestMetric("revenue_myket", revenue(a, b, "myket"), revenue(pa, a, "myket"))
+    m += DigestMetric("revenue_net", net(a, b), net(pa, a))
     m += pair("support", "SELECT COUNT(*) FROM bug_reports WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
     m += pair("crashes", "SELECT COUNT(*) FROM crash_reports WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
     m += pair("transactions", "SELECT coalesce(SUM(count),0) FROM usage_daily WHERE day >= ? AND day < ? AND name = 'action:transaction_added'", da, db, prevParams = arrayOf(dpa, da))

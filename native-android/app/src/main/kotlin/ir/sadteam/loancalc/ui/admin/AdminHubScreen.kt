@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Today
+import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppPurple
 import ir.sadteam.loancalc.ui.theme.AppWarning
@@ -63,6 +65,7 @@ fun AdminHubScreen(onBack: () -> Unit, supportVm: SupportInboxViewModel = hiltVi
     when (page) {
         "stats" -> { AdminStatsScreen(onBack = { page = null }); return }
         "support" -> { SupportInboxScreen(onBack = { page = null }, viewModel = supportVm); return }
+        "digest" -> { AdminDigestScreen(onBack = { page = null }); return }
     }
     val items by supportVm.items.collectAsState()
     LaunchedEffect(Unit) { supportVm.load() }
@@ -79,27 +82,37 @@ fun AdminHubScreen(onBack: () -> Unit, supportVm: SupportInboxViewModel = hiltVi
                 Text("ابزارهای مدیریتِ جیبک - فقط برای تو", color = AppMuted, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
             }
         }
-        // بازطراحیِ ۸ مهر: کارتِ خلاصه‌ی بالا + ردیف‌های رنگی (پیام، گزارش، دو هدیه).
-        ir.sadteam.loancalc.ui.components.AppHeroCard {
-            Text("پیام‌های باز", color = ir.sadteam.loancalc.ui.components.HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            Text(
-                if (items == null) "…" else toFa(open),
-                color = androidx.compose.ui.graphics.Color.White,
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Black,
-            )
-            Text(
-                if (open > 0) "منتظرِ جوابِ تو" else "همه‌ی پیام‌ها جواب گرفته‌اند",
-                color = ir.sadteam.loancalc.ui.components.HeroMuted,
-                fontSize = 12.sp,
-            )
+        // بازطراحیِ ۸ مهر (طرحِ ChatGPT): گزارشِ روز بالا، چهار کاشیِ ۲×۲، پیام‌های اخیر.
+        HubTile(Icons.Filled.Today, "گزارشِ امروز", "از ۷ صبح تا حالا · مقایسه با دیروز", AppPrimary, Modifier.fillMaxWidth()) { page = "digest" }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HubTile(Icons.Filled.SupportAgent, "پیام‌های کاربران", if (open > 0) "${toFa(open)} بی‌جواب" else "همه جواب گرفته‌اند", AppPrimary, Modifier.weight(1f), badge = open) { page = "support" }
+            HubTile(Icons.Filled.BarChart, "گزارشِ برنامه", "کاربران، زمان، بخش‌ها", AppInfo, Modifier.weight(1f)) { page = "stats" }
         }
-        Text("پشتیبانی و آمار", color = AppMuted, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp, start = 4.dp))
-        HubRow(Icons.Filled.SupportAgent, "پیام‌های کاربران", "مشکل، طراحی، پیشنهاد · جواب و هدیه", badge = open) { page = "support" }
-        HubRow(Icons.Filled.BarChart, "گزارشِ برنامه", "کاربران، استفاده، فروش، خطاها", tint = AppInfo) { page = "stats" }
-        Text("هدیه", color = AppMuted, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp, start = 4.dp))
-        HubRow(Icons.Filled.WorkspacePremium, "هدیه‌ی اشتراک", "چند روز اشتراک به یک شماره‌ی کاربری", tint = AppWarning) { gift = "sub" }
-        HubRow(Icons.Filled.MonetizationOn, "هدیه‌ی سکه", "سکه به کیفِ یک کاربر", tint = AppPurple) { gift = "coins" }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HubTile(Icons.Filled.WorkspacePremium, "هدیه‌ی اشتراک", "روز به یک Uid", AppWarning, Modifier.weight(1f)) { gift = "sub" }
+            HubTile(Icons.Filled.MonetizationOn, "هدیه‌ی سکه", "سکه به یک Uid", AppPurple, Modifier.weight(1f)) { gift = "coins" }
+        }
+        val recent = items.orEmpty().take(4)
+        if (recent.isNotEmpty()) {
+            AppCard(label = "پیام‌های اخیرِ کاربران") {
+                recent.forEach { m ->
+                    Row(
+                        Modifier.fillMaxWidth().clickable { page = "support" }.padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(AppPrimaryPill),
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(Icons.Filled.SupportAgent, null, tint = AppPrimaryInk, modifier = Modifier.size(18.dp)) }
+                        Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                            Text(m.userId?.let { "کاربر #${toFa(it)}" } ?: "مهمان", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text(m.message, color = AppMuted, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        }
+                        if (m.status == "open") Box(Modifier.size(8.dp).clip(RoundedCornerShape(99.dp)).background(AppDanger))
+                    }
+                }
+            }
+        }
     }
     gift?.let { mode ->
         AdminGiftDialog(
@@ -132,6 +145,34 @@ private fun HubRow(icon: ImageVector, title: String, subtitle: String, badge: In
                     modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(AppDanger).padding(horizontal = 9.dp, vertical = 3.dp),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun HubTile(
+    icon: ImageVector, title: String, subtitle: String, tint: androidx.compose.ui.graphics.Color,
+    modifier: Modifier, badge: Int = 0, onClick: () -> Unit,
+) {
+    Box(
+        modifier
+            .clip(RoundedCornerShape(22.dp))
+            .background(tint.copy(alpha = 0.10f))
+            .clickable(onClick = onClick)
+            .padding(14.dp),
+    ) {
+        Column {
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(tint.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = tint, modifier = Modifier.size(24.dp))
+            }
+            Text(title, color = AppText, fontSize = 14.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
+            Text(subtitle, color = AppMuted, fontSize = 11.5.sp, maxLines = 1)
+        }
+        if (badge > 0) {
+            Text(
+                toFa(badge), color = androidx.compose.ui.graphics.Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black,
+                modifier = Modifier.align(Alignment.TopEnd).clip(RoundedCornerShape(999.dp)).background(AppDanger).padding(horizontal = 8.dp, vertical = 2.dp),
+            )
         }
     }
 }

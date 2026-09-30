@@ -567,9 +567,9 @@ private fun String.faDigitsAscii(): String = runCatching {
     "${toFa(p.d)} ${ir.sadteam.loancalc.ui.components.persianMonthName(p.m)}"
 }.getOrDefault(toFa(this))
 
-private fun screenLabel(key: String): String = SCREEN_LABELS[key] ?: key
+internal fun screenLabel(key: String): String = SCREEN_LABELS[key] ?: key
 
-private fun actionLabel(key: String): String = ACTION_LABELS[key]
+internal fun actionLabel(key: String): String = ACTION_LABELS[key]
     ?: when {
         key.startsWith("purchase_start_") -> "شروعِ خریدِ اشتراکِ ${key.removePrefix("purchase_start_")}"
         key.startsWith("purchase_done_") -> "خریدِ موفقِ اشتراکِ ${key.removePrefix("purchase_done_")}"
@@ -648,6 +648,7 @@ private val SCREEN_LABELS = linkedMapOf(
 )
 
 private val ACTION_LABELS = linkedMapOf(
+    "transaction_added" to "ثبتِ تراکنش",
     "login" to "ورود به حساب",
     "onboarding_first_account" to "اولین حساب در شروع",
     "loan_added_manual" to "ثبتِ وامِ دستی",
