@@ -189,6 +189,7 @@ fun HomeScreen(
     onOpenInbox: () -> Unit = {},
     /** جستجوی کلیِ برنامه (۸ مهر). */
     onOpenSearch: () -> Unit = {},
+    onOpenTransactions: () -> Unit = {},
     onOpenLoan: (Long) -> Unit = { onNavigateToRoute("loan") },
     /**
      * کارتِ پیشنهادِ نوارِ پایین (`41a`) - به‌صورتِ یه اسلاتِ آماده‌ی رندر پاس داده می‌شه، نه
@@ -441,6 +442,7 @@ fun HomeScreen(
                     monthTransactionCount = transactions.count { it.year == today.y && it.month == today.m },
                     openChequeCount = openChequeCount,
                     onNavigateToRoute = onNavigateToRoute,
+                    onOpenTransactions = onOpenTransactions,
                 )
             }
             if (monthCap > 0.0) {
@@ -542,7 +544,7 @@ fun HomeScreen(
                     RecentTransactionsCard(
                         transactions = transactions,
                         privacyMode = privacyMode,
-                        onSeeAll = { onNavigateToRoute("assets") },
+                        onSeeAll = onOpenTransactions,
                     )
                 }
             }
@@ -1467,6 +1469,7 @@ private fun HomeQuickCardsRow(
     monthTransactionCount: Int,
     openChequeCount: Int,
     onNavigateToRoute: (String) -> Unit,
+    onOpenTransactions: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -1484,7 +1487,7 @@ private fun HomeQuickCardsRow(
             title = "تراکنش‌ها",
             subtitle = "${monthTransactionCount.toFa()} این ماه",
             modifier = Modifier.weight(1f),
-            onClick = { onNavigateToRoute("assets") },
+            onClick = onOpenTransactions,
         )
         HomeQuickCard(
             icon = Icons.Filled.PieChart,

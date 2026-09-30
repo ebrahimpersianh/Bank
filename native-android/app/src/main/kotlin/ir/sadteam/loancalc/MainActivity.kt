@@ -739,6 +739,7 @@ private fun LoanCalcApp(
     var showSettings by remember { mutableStateOf(false) }
     var showInbox by remember { mutableStateOf(false) }
     var showGlobalSearch by remember { mutableStateOf(false) }
+    var showAllTransactions by remember { mutableStateOf(false) }
     val updateUrl by appUpdateViewModel.updateUrl.collectAsState()
     val appUpdateChanges by appUpdateViewModel.changelog.collectAsState()
     // تورِ راهنمای اولین ورود (پایین‌تر) - رجوع کن به رفعِ تداخلِ بنرِ آپدیت/تور: بنر فقط بعدِ تمومِ
@@ -1120,6 +1121,7 @@ private fun LoanCalcApp(
                             onOpenSettings = { showSettings = true },
                             onOpenInbox = { showInbox = true },
                             onOpenSearch = { showGlobalSearch = true },
+                            onOpenTransactions = { showAllTransactions = true },
                             onOpenLoan = { deepLinkViewModel.openLoan(it) },
                             // نوعِ صریح عمدیه: بدونش `let` لامبدا رو `() -> Unit`ِ ساده حساب
                             // می‌کنه و به `@Composable () -> Unit` نمی‌خوره.
@@ -1344,6 +1346,18 @@ private fun LoanCalcApp(
         ) {
             Surface(color = AppBg, modifier = Modifier.fillMaxSize()) {
                 InboxScreen(onBack = { showInbox = false })
+            }
+        }
+
+        BackHandler(enabled = showAllTransactions) { showAllTransactions = false }
+        AnimatedVisibility(
+            visible = showAllTransactions,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Surface(color = AppBg, modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+                ir.sadteam.loancalc.ui.accounting.AllTransactionsScreen(onBack = { showAllTransactions = false })
             }
         }
 

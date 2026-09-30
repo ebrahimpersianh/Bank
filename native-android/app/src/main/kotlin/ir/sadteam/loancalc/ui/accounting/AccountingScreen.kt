@@ -191,6 +191,25 @@ fun AssetsScreen(
     }
 }
 
+/**
+ * «همه‌ی تراکنش‌ها» - دفترِ کامل با جستجو/فیلتر. از کاشیِ «تراکنش‌ها» و «مشاهده‌ی همه»ِ خانه باز
+ * می‌شود؛ قبلاً هر دو به تبِ دارایی می‌رفتند که فهرستِ تراکنش ندارد (گزارشِ کاربر، ۸ مهر).
+ */
+@Composable
+fun AllTransactionsScreen(
+    onBack: () -> Unit,
+    viewModel: AccountViewModel = hiltViewModel(),
+    categoryViewModel: CategoryViewModel = hiltViewModel(),
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = AppText) }
+            Text("همه‌ی تراکنش‌ها", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
+        }
+        MainSection(viewModel = viewModel, categoryViewModel = categoryViewModel)
+    }
+}
+
 /** میان‌برِ کوچیک به تبِ دارایی - فقط شمارشِ دارایی، بدونِ مبلغ (مبلغ تو هیرویِ خودِ اون تبه). */
 @Composable
 private fun AssetTabShortcutCard(assetCount: Int, onClick: () -> Unit) {
