@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -150,6 +151,7 @@ fun AddEditChequeScreen(
                     subtitle = "چکی که شما صادر کرده‌اید",
                     selected = type == ChequeType.PAID,
                     selectedColor = AppDanger,
+                    image = ir.sadteam.loancalc.R.drawable.cheque_illu_paid,
                     onClick = { type = ChequeType.PAID },
                     modifier = Modifier.weight(1f),
                 )
@@ -158,6 +160,7 @@ fun AddEditChequeScreen(
                     subtitle = "چکی که به شما داده شده",
                     selected = type == ChequeType.RECEIVED,
                     selectedColor = AppPrimary,
+                    image = ir.sadteam.loancalc.R.drawable.cheque_illu_received,
                     onClick = { type = ChequeType.RECEIVED },
                     modifier = Modifier.weight(1f),
                 )
@@ -497,6 +500,7 @@ private fun ChequeTypeToggleCard(
     subtitle: String,
     selected: Boolean,
     selectedColor: androidx.compose.ui.graphics.Color,
+    @androidx.annotation.DrawableRes image: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -507,7 +511,14 @@ private fun ChequeTypeToggleCard(
         color = if (selected) selectedColor.copy(alpha = 0.16f) else AppSurface,
         border = BorderStroke(1.dp, if (selected) selectedColor else AppLine),
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            // تصویرِ سه‌بعدیِ چک (ChatGPT، ۸ مهر). انتخاب‌نشده کم‌رنگ‌تر.
+            androidx.compose.foundation.Image(
+                androidx.compose.ui.res.painterResource(image),
+                contentDescription = null,
+                alpha = if (selected) 1f else 0.55f,
+                modifier = Modifier.fillMaxWidth().height(74.dp).padding(bottom = 6.dp),
+            )
             Text(
                 title,
                 color = if (selected) selectedColor else AppText,
@@ -518,6 +529,7 @@ private fun ChequeTypeToggleCard(
                 subtitle,
                 color = AppMuted,
                 fontSize = 10.5.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
