@@ -101,6 +101,7 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Source
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.Star
@@ -2733,6 +2734,7 @@ private fun AboutSettings(banner: InAppBannerState, onOpenBugReport: () -> Unit)
     val clipboard = LocalClipboardManager.current
     var showContact by remember { mutableStateOf(false) }
     var showPrivacy by remember { mutableStateOf(false) }
+    var showTerms by remember { mutableStateOf(false) }
 
     // ── بلوکِ نشان - **تنها جای تنظیمات که چیزی بی‌کارت رو بستر می‌شینه** ───────
     // همین تفاوته که این صفحه رو «صفحه‌ی هویت» می‌کنه نه یه فهرستِ دیگه.
@@ -2813,6 +2815,12 @@ private fun AboutSettings(banner: InAppBannerState, onOpenBugReport: () -> Unit)
             tone = SettingsTone.NEUTRAL,
             onClick = { showPrivacy = true },
         )
+        SettingsRowItem(
+            title = "قوانینِ استفاده",
+            icon = Icons.Filled.Gavel,
+            tone = SettingsTone.NEUTRAL,
+            onClick = { showTerms = true },
+        )
         // ذکرِ منبعِ قیمت (Servix) به تصمیمِ صریحِ کاربر (۳ مهر) از کلِ برنامه حذف شد.
     }
 
@@ -2833,6 +2841,11 @@ private fun AboutSettings(banner: InAppBannerState, onOpenBugReport: () -> Unit)
     if (showPrivacy) {
         FullScreenDialog(onDismissRequest = { showPrivacy = false }) {
             PrivacyPolicyScreen(onBack = { showPrivacy = false })
+        }
+    }
+    if (showTerms) {
+        FullScreenDialog(onDismissRequest = { showTerms = false }) {
+            TermsScreen(onBack = { showTerms = false })
         }
     }
 }

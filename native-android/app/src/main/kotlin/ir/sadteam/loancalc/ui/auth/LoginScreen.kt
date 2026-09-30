@@ -97,6 +97,7 @@ private val verifyOtpErrors = mapOf(
  * برگشتِ جدا)، و پایینش یه دکمه‌ی «ارسالِ مجدد» با شمارش‌معکوس (کنارِ دکمه‌ی اصلیِ تایید) اضافه شده -
  * قبلاً اصلاً راهی برای ارسالِ دوباره‌ی کد نبود.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
@@ -112,6 +113,15 @@ fun LoginScreen(
     // هر بار کد (اول یا دوباره) با موفقیت درخواست بشه یکی زیاد می‌شه - کلیدِ LaunchedEffectِ
     // شمارش‌معکوسِ ارسالِ مجدد پایین‌تر، تا هم اولین ارسال هم هر ارسالِ مجددی از نو ۶۰ثانیه بشمره.
     var otpSentTick by remember { mutableIntStateOf(0) }
+    // پذیرشِ قوانین و حریمِ خصوصی (۸ مهر) - بی آن کد فرستاده نمی‌شود.
+    var accepted by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    var showDoc by remember { mutableStateOf<String?>(null) }
+    showDoc?.let { doc ->
+        ir.sadteam.loancalc.ui.settings.FullScreenDialog(onDismissRequest = { showDoc = null }) {
+            if (doc == "terms") ir.sadteam.loancalc.ui.settings.TermsScreen(onBack = { showDoc = null })
+            else ir.sadteam.loancalc.ui.settings.PrivacyPolicyScreen(onBack = { showDoc = null })
+        }
+    }
     val syncConflict by viewModel.syncConflict.collectAsState()
 
     if (syncConflict != null) {
@@ -279,6 +289,23 @@ fun LoginScreen(
                         }
                     }
 
+                    androidx.compose.foundation.layout.Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    ) {
+                        androidx.compose.material3.Checkbox(
+                            checked = accepted,
+                            onCheckedChange = { accepted = it },
+                            colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = ir.sadteam.loancalc.ui.theme.AppPrimary),
+                        )
+                        androidx.compose.foundation.layout.FlowRow {
+                            Text("قوانین", color = ir.sadteam.loancalc.ui.theme.AppPrimary, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.clickable { showDoc = "terms" })
+                            Text(" و ", color = ir.sadteam.loancalc.ui.theme.AppMuted, fontSize = 12.sp)
+                            Text("حریمِ خصوصیِ", color = ir.sadteam.loancalc.ui.theme.AppPrimary, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.clickable { showDoc = "privacy" })
+                            Text(" جیبک را خواندم و می‌پذیرم", color = ir.sadteam.loancalc.ui.theme.AppMuted, fontSize = 12.sp, modifier = Modifier.clickable { accepted = !accepted })
+                        }
+                    }
+
                     if (error != null) {
                         Text(
                             text = error ?: "",
@@ -289,7 +316,7 @@ fun LoginScreen(
                     }
 
                     GradientButton(
-                        enabled = !loading,
+                        enabled = !loading && accepted,
                         onClick = { sendOtp() },
                         modifier = Modifier
                             .fillMaxWidth()
