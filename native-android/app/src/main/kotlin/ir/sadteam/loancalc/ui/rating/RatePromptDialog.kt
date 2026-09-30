@@ -66,24 +66,29 @@ fun RatePromptDialog(
     BasicAlertDialog(onDismissRequest = onLater) {
         Column(
             modifier = Modifier
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(28.dp))
                 .background(AppSurface)
-                .padding(18.dp),
+                .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // طرحِ Claude Design (۸ مهر): کاشیِ ستاره‌ی طلایی بالای عنوان، ستاره‌های طلایی.
+            Box(
+                Modifier.size(60.dp).clip(RoundedCornerShape(20.dp)).background(StarGold.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Filled.Star, contentDescription = null, tint = StarGold, modifier = Modifier.size(34.dp)) }
             Text(
                 "لذت بردی از «جیبک»؟",
                 color = AppText,
-                fontSize = 15.sp,
+                fontSize = 19.sp,
                 fontWeight = FontWeight.Black,
                 textAlign = TextAlign.Center,
             )
             Text(
                 "یه امتیازِ ۵ ستاره تو استور خیلی به ما کمک می‌کنه.",
                 color = AppMuted,
-                fontSize = 11.5.sp,
-                lineHeight = 20.sp,
+                fontSize = 13.5.sp,
+                lineHeight = 24.sp,
                 textAlign = TextAlign.Center,
             )
 
@@ -105,15 +110,15 @@ fun RatePromptDialog(
                         Icon(
                             Icons.Filled.Star,
                             contentDescription = "${index + 1} ستاره",
-                            tint = if (filled) AppPrimary else AppLine,
-                            modifier = Modifier.size(30.dp).scale(scale),
+                            tint = if (filled) StarGold else AppLine,
+                            modifier = Modifier.size(38.dp).scale(scale),
                         )
                     }
                 }
             }
 
             GradientButton(onClick = onRateNow, modifier = Modifier.fillMaxWidth()) {
-                Text("بله! امتیاز می‌دم", fontSize = 12.sp, fontWeight = FontWeight.Black)
+                Text("بله! امتیاز می‌دم", fontSize = 15.sp, fontWeight = FontWeight.Black)
             }
 
             Row(
@@ -126,17 +131,17 @@ fun RatePromptDialog(
                         .clip(RoundedCornerShape(999.dp))
                         .background(AppPrimaryPill)
                         .pressScaleClickable(onClick = onLater)
-                        .padding(vertical = 11.dp),
+                        .padding(vertical = 13.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("بعداً", color = AppPrimary, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+                    Text("بعداً", color = AppPrimary, fontSize = 14.sp, fontWeight = FontWeight.Black)
                 }
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(999.dp))
                         .pressScaleClickable(onClick = onDismissForever)
-                        .padding(vertical = 11.dp),
+                        .padding(vertical = 13.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text("دیگه نپرس", color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
@@ -145,3 +150,6 @@ fun RatePromptDialog(
         }
     }
 }
+
+
+private val StarGold = androidx.compose.ui.graphics.Color(0xFFD69E2E)
