@@ -246,8 +246,7 @@ fun AddManualLoanScreen(
                         onValueChange = { name = it },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        colors = appFieldColors(),
-                    )
+                        colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     FieldLabel("بانک یا فروشنده")
                     ir.sadteam.loancalc.ui.components.BankPickerField(value = bank, onValueChange = { bank = it }, includeCreditServices = true)
                 }
@@ -293,8 +292,7 @@ fun AddManualLoanScreen(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = appFieldColors(),
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                )
+                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد - تقسیمِ
                 // دستیِ «/ ۱۰» رفت؛ تنها مرجعِ تبدیل tomanToRial/rialToToman ئه.
                 val instToman = cleanNum(installmentText).toLongOrNull() ?: 0L
@@ -316,8 +314,7 @@ fun AddManualLoanScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    colors = appFieldColors(),
-                )
+                    colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
         }
         if (editingLoan == null) {
@@ -329,8 +326,7 @@ fun AddManualLoanScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        colors = appFieldColors(),
-                    )
+                        colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
             }
         }

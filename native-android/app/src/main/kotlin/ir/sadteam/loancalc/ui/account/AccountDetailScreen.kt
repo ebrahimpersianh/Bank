@@ -232,8 +232,7 @@ fun AccountDetailScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                        )
+                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         val amountToman = amountText.toLongOrNull() ?: 0L
                         if (amountToman > 0) {
                             Text(
@@ -249,8 +248,7 @@ fun AccountDetailScreen(
                             value = description,
                             onValueChange = { description = it },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                        )
+                            singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     }
                     AppCard(label = "تاریخ") {
                         Row(
@@ -521,8 +519,7 @@ private fun EditTransactionDialog(
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                    modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 if (toman > 0) {
                     Text(
                         numberToWordsFa(toman.toDouble()) + " تومان",
@@ -535,8 +532,7 @@ private fun EditTransactionDialog(
                     onValueChange = { description = it },
                     label = { Text("توضیحات") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                    modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
         },
         confirmButton = {

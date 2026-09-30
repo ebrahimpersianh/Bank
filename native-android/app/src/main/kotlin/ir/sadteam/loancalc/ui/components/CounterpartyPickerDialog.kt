@@ -55,8 +55,7 @@ fun CounterpartyPickerDialog(
                     onValueChange = { query = it },
                     placeholder = { Text("جستجو یا اسمِ طرفِ‌حسابِ جدید") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
+                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 if (filtered.isNotEmpty()) {
                     LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 260.dp).padding(top = 6.dp)) {
                         items(filtered, key = { it.id }) { counterparty ->

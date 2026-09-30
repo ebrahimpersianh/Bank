@@ -291,8 +291,7 @@ fun AssetPickerSheet(
                         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                         singleLine = true,
                         shape = RoundedCornerShape(AppRadius.button),
-                        placeholder = { Text("اسمِ دارایی", color = AppMuted, fontSize = 12.5.sp) },
-                    )
+                        placeholder = { Text("اسمِ دارایی", color = AppMuted, fontSize = 12.5.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(),)
                     val trimmed = customName.trim()
                     Text(
                         "افزودن",

@@ -567,7 +567,7 @@ private fun BoxScope.AddCounterpartySheet(visible: Boolean, onDismiss: () -> Uni
             if ((amount.toLongOrNull() ?: 0L) > 0) {
                 Text("تاریخ", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 12.dp))
                 InlineJalaliDateRow(year = y, month = m, day = d, onDateChange = { yy, mm, dd -> y = yy; m = mm; d = dd })
-                OutlinedTextField(value = note, onValueChange = { note = it.take(120) }, label = { Text("یادداشت (اختیاری)") }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(top = 10.dp))
+                OutlinedTextField(value = note, onValueChange = { note = it.take(120) }, label = { Text("یادداشت (اختیاری)") }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(top = 10.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
             GradientButton(
                 onClick = {
@@ -692,8 +692,7 @@ private fun CounterpartyDetail(
                             visualTransformation = ThousandsSeparatorTransformation(),
                             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                             singleLine = true,
-                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                        )
+                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     }
                     val amountRial = (amountText.toLongOrNull() ?: 0L) * 10
                     if (amountRial > 0) {
@@ -709,8 +708,7 @@ private fun CounterpartyDetail(
                         onValueChange = { description = it },
                         label = { Text("توضیح (اختیاری)") },
                         modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                        singleLine = true,
-                    )
+                        singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     InlineJalaliDateRow(
                         year = year,
                         month = month,
@@ -848,8 +846,7 @@ private fun EditCounterpartyDialog(
                     onValueChange = { name = it },
                     label = { Text("اسم") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
+                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 Ltr {
                     OutlinedTextField(
                         value = phone,
@@ -857,8 +854,7 @@ private fun EditCounterpartyDialog(
                         label = { Text("موبایل (اختیاری)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                        singleLine = true,
-                    )
+                        singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
                 Row(modifier = Modifier.padding(top = 12.dp)) {
                     AvatarShape.entries.forEach { s ->

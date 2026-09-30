@@ -1649,8 +1649,7 @@ private fun DashboardSummary(
                         onValueChange = { label = it },
                         label = { Text("اسم منبع درآمد (مثلاً حقوق)") },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                        modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     // مبلغ با جداکننده‌ی هزارگان نشون داده می‌شه و زیرش معادل حروفی (مثل «مبلغ وام»).
                     OutlinedTextField(
                         value = amountText,
@@ -1659,8 +1658,7 @@ private fun DashboardSummary(
                         label = { Text("مبلغ ماهانه (تومان)") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                        modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     // ورودی تومان است، پس معادلِ حروفی هم مستقیم از همین عدد - تقسیمِ دستیِ
                     // «/ ۱۰» رفت؛ تنها مرجعِ تبدیل tomanToRial/rialToToman است.
                     val incomeToman = amountText.toLongOrNull() ?: 0L

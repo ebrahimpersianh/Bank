@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -64,7 +67,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                     contentAlignment = Alignment.Center,
                 ) {
                     androidx.compose.material3.Icon(
-                        if (coinsMode) androidx.compose.material.icons.Icons.Filled.MonetizationOn else androidx.compose.material.icons.Icons.Filled.WorkspacePremium,
+                        if (coinsMode) Icons.Filled.MonetizationOn else Icons.Filled.WorkspacePremium,
                         null, tint = tint, modifier = Modifier.size(24.dp),
                     )
                 }

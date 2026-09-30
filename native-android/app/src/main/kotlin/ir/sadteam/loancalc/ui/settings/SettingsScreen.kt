@@ -1036,8 +1036,7 @@ private fun AccountSettings(
                             onValueChange = { if (it.length <= 30) nameDraft = it },
                             singleLine = true,
                             placeholder = { Text("مثلاً ابراهیم") },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                            modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         Text(
                             "رو سربرگِ خروجیِ PDF و اکسل نوشته می‌شه. خالی گذاشتنش هیچ مشکلی نداره.",
                             color = AppMuted,
@@ -2039,8 +2038,7 @@ private fun SmsParseTestScreen(onBack: () -> Unit) {
             onValueChange = { text = it; checked = false },
             placeholder = { Text("متنِ پیامکِ بانک را اینجا بچسبان") },
             modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 100.dp),
-            textStyle = LocalTextStyle.current.copy(fontSize = 11.sp, lineHeight = 20.sp),
-        )
+            textStyle = LocalTextStyle.current.copy(fontSize = 11.sp, lineHeight = 20.sp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         Text(
             "متن ذخیره نمی‌شود.",
             color = AppLabel,
@@ -2520,8 +2518,7 @@ private fun NotificationAppPicker(viewModel: SmsAutoImportViewModel, modifier: M
             placeholder = { Text("جستجوی اسمِ اپ", color = AppMuted, fontSize = 12.sp) },
             singleLine = true,
             colors = appFieldColors(),
-            modifier = Modifier.fillMaxWidth(),
-        )
+            modifier = Modifier.fillMaxWidth(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         // ارتفاعِ کرانه‌دار: این کارت خودش داخلِ یه صفحه‌ی اسکرول‌شونده‌ست، پس لیست نباید
         // بی‌نهایت رشد کنه.
         Column(modifier = Modifier.padding(top = 8.dp)) {

@@ -245,8 +245,7 @@ private fun SupportMessageCard(
                 value = giftText,
                 onValueChange = { if (it.length <= 1000) giftText = it },
                 label = { Text("متنی که همراهِ هدیه می‌رود", fontSize = 11.sp) },
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            )
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             GradientButton(
                 onClick = {
                     if (giftText.isNotBlank()) viewModel.gift(msg.id, giftDays, giftText.trim()) { err ->
@@ -262,8 +261,7 @@ private fun SupportMessageCard(
                 value = text,
                 onValueChange = { if (it.length <= 1000) text = it },
                 placeholder = { Text("جواب (در «پیام‌های جیبک»ِ همین کاربر می‌نشیند)", fontSize = 11.sp) },
-                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-            )
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         }
         Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             GradientButton(

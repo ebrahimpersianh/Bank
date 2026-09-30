@@ -217,8 +217,7 @@ fun AddEditAccountScreen(
                     value = name,
                     onValueChange = { name = it },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
+                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
         }
         if (accountType == ACCOUNT_TYPE_BANK) {
@@ -230,8 +229,7 @@ fun AddEditAccountScreen(
                         onValueChange = { cardNumberText = cleanNum(it).take(16) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                    )
+                        singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
                 // بانکِ تشخیص‌داده‌شده همان‌جا زیرِ شماره (۸ مهر) - فیلدِ بانک پایین‌تر است و دیده نمی‌شد.
                 val bin = detectBankByCardNumber(cardNumberText)
@@ -255,8 +253,7 @@ fun AddEditAccountScreen(
                         onValueChange = { accountNumberText = cleanNum(it).take(26) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                    )
+                        singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
             }
         }
@@ -269,8 +266,7 @@ fun AddEditAccountScreen(
                         prefix = { Text("IR") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                    )
+                        singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
                 Text(
                     "با این دو، انتقال به حساب‌های خودت خودکار «جابه‌جایی» حساب می‌شود، نه خرج.",
@@ -312,8 +308,7 @@ fun AddEditAccountScreen(
                         onValueChange = { smsSenderText = it.trim() },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        placeholder = { Text("مثلاً 100011111 یا BANKMELLAT", fontSize = 12.sp) },
-                    )
+                        placeholder = { Text("مثلاً 100011111 یا BANKMELLAT", fontSize = 12.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
                 // خواسته‌ی صریحِ کاربر: به‌جای تایپِ دستی، بره تو پیامک‌های گوشی و همون‌جا انتخاب کنه.
                 // دکمه‌ی کپسولیِ خط‌چینِ سبز (طرحِ Claude Design، ۸ مهر).
@@ -350,8 +345,7 @@ fun AddEditAccountScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                )
+                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 // ⚠️ `cleanNum` علامتِ منفی را حذف می‌کند، پس کارتِ اعتباری با موجودیِ منفی
                 // اصلاً قابلِ ثبت نیست - فیلد فقط عددِ مثبت می‌گیرد. تا وقتی cleanNum عوض
                 // نشود، راهِ کاربر یک تراکنشِ برداشت است. اگر لازم شد، بگویید تا فیلد را

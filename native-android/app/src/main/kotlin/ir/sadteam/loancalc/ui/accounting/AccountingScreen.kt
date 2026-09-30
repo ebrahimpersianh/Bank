@@ -665,8 +665,7 @@ private fun AddTransactionForm(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-            )
+                suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             val amountRial = (amountText.toLongOrNull() ?: 0L) * 10
             if (amountRial > 0) {
                 Text(
@@ -684,8 +683,7 @@ private fun AddTransactionForm(
                 onValueChange = { description = it },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                colors = appFieldColors(),
-            )
+                colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         }
 
         AppCard(label = "تاریخ") {
@@ -1009,8 +1007,7 @@ private fun BudgetSection(
                                     modifier = Modifier.fillMaxWidth(),
                                     singleLine = true,
                                     colors = appFieldColors(),
-                                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                                )
+                                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                                 val capRial = (capText.toLongOrNull() ?: 0L) * 10
                                 if (capRial > 0) {
                                     Text(
@@ -1130,8 +1127,7 @@ private fun AddBudgetDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                    )
+                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     val capRial = (capText.toLongOrNull() ?: 0L) * 10
                     if (capRial > 0) {
                         Text(
@@ -1360,7 +1356,7 @@ private fun AddRecurringForm(
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         AppCard(label = "اسم (مثلاً «اجاره‌خونه»)") {
-            OutlinedTextField(value = name, onValueChange = { name = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors())
+            OutlinedTextField(value = name, onValueChange = { name = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         }
         AppCard(label = "مبلغ") {
             OutlinedTextField(
@@ -1371,8 +1367,7 @@ private fun AddRecurringForm(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-            )
+                suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             val amountRial = (amountText.toLongOrNull() ?: 0L) * 10
             if (amountRial > 0) {
                 Text(
@@ -2164,8 +2159,7 @@ private fun <T> AccountingDropdown(
             singleLine = true,
             modifier = Modifier.menuAnchor(),
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            colors = appFieldColors(),
-        )
+            colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { (value, label) ->
                 DropdownMenuItem(text = { Text(label) }, onClick = { onSelect(value); expanded = false })
@@ -2257,8 +2251,7 @@ internal fun NewBudgetSheet(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                )
+                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 val rial = (capText.toLongOrNull() ?: 0L) * 10
                 if (rial > 0) {
                     Text("${numberToWordsFa((rial / 10).toDouble())} تومان", color = AppMuted, fontSize = 11.sp)

@@ -716,8 +716,7 @@ private fun FirstAccountStep(
             onValueChange = { name = it },
             label = { Text("نام") },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
+            modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = balanceText,
@@ -727,8 +726,7 @@ private fun FirstAccountStep(
             visualTransformation = ThousandsSeparatorTransformation(),
             suffix = { Text("تومان") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth(),
-        )
+            modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         if (balanceRial > 0) {
             Text(
                 "${numberToWordsFa(balanceRial / 10)} تومان",

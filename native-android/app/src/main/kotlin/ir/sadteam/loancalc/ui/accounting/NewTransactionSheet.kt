@@ -541,8 +541,7 @@ fun NewTransactionSheet(
                     colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
                         unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
-                    ),
-                )
+                    ), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
         }
 
@@ -702,8 +701,7 @@ fun NewTransactionSheet(
                                     visualTransformation = ThousandsSeparatorTransformation(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     singleLine = true,
-                                    modifier = Modifier.weight(1f),
-                                )
+                                    modifier = Modifier.weight(1f), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                                 Box(
                                     modifier = Modifier
                                         .size(44.dp)
@@ -738,8 +736,7 @@ fun NewTransactionSheet(
                     },
                     placeholder = { Text("برچسب (مثلاً سفرِ شمال، عروسی) - با «،» جدا کن", fontSize = 11.sp) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                )
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 if (kind == NewTxKind.EXPENSE) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                         Text("بازپرداخت می‌شود (خرجِ کاری و…)", color = AppText, fontSize = 13.sp, modifier = Modifier.weight(1f))
@@ -766,7 +763,7 @@ fun NewTransactionSheet(
                 onDismissRequest = { showSaveTemplate = false },
                 title = { Text("ذخیره به‌عنوانِ الگو") },
                 text = {
-                    OutlinedTextField(value = tName, onValueChange = { tName = it.take(30) }, singleLine = true, placeholder = { Text("مثلاً نون، بنزین") })
+                    OutlinedTextField(value = tName, onValueChange = { tName = it.take(30) }, singleLine = true, placeholder = { Text("مثلاً نون، بنزین") }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 },
                 confirmButton = {
                     GradientButton(onClick = {

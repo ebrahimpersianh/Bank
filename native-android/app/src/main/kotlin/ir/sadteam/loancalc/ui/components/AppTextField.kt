@@ -18,7 +18,14 @@ val AppFieldShape: Shape = RoundedCornerShape(14.dp)
  */
 @Composable
 fun appFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = AppAccent,
-    unfocusedBorderColor = AppPrimary.copy(alpha = 0.4f),
-    cursorColor = AppAccent,
+    // همان حسِ کادرِ جستجو (۸ مهر): زمینه‌ی کم‌رنگ، حاشیه‌ی رنگِ تم؛ طلایی فقط مالِ اشتراک است.
+    focusedBorderColor = AppPrimary,
+    unfocusedBorderColor = AppPrimary.copy(alpha = 0.35f),
+    focusedContainerColor = ir.sadteam.loancalc.ui.theme.AppSurface2,
+    unfocusedContainerColor = ir.sadteam.loancalc.ui.theme.AppSurface2,
+    cursorColor = AppPrimary,
+    focusedLabelColor = AppPrimary,
 )
+
+/** گوشه‌ی گردِ همه‌ی کادرها - مثلِ کادرِ جستجو. */
+val AppFieldShape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)

@@ -179,8 +179,7 @@ fun AddEditChequeScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                )
+                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 val amountVal = amountText.toLongOrNull() ?: 0L
                 if (amountVal > 0) {
                     AutoShrinkText(
@@ -269,8 +268,7 @@ fun AddEditChequeScreen(
                                     onValueChange = { chequeNumber = cleanNum(it) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                )
+                                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                             }
                         }
                         AppCard(label = "بانک") {
@@ -281,16 +279,14 @@ fun AddEditChequeScreen(
                                 value = branchName,
                                 onValueChange = { branchName = it },
                                 modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                            )
+                                singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         }
                         AppCard(label = if (type == ChequeType.RECEIVED) "نام پرداخت‌کننده" else "نام دریافت‌کننده") {
                             OutlinedTextField(
                                 value = ownerName,
                                 onValueChange = { ownerName = it },
                                 modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                            )
+                                singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         }
                         AppCard(label = "طرف حساب") {
                             OutlinedButton(
@@ -310,8 +306,7 @@ fun AddEditChequeScreen(
                                     onValueChange = { nationalId = cleanNum(it).take(11) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                )
+                                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                             }
                         }
                         AppCard(label = "مانده قبلی (تومان)") {
@@ -320,8 +315,7 @@ fun AddEditChequeScreen(
                                 onValueChange = { previousBalanceText = cleanNumDecimal(it) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                            )
+                                singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                             Text(
                                 "موجودی حساب قبل از واریز مبلغ جدید",
                                 color = AppMuted,
@@ -335,8 +329,7 @@ fun AddEditChequeScreen(
                                 onValueChange = { depositAmountText = cleanNumDecimal(it) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                            )
+                                singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                             Text(
                                 "مبلغی که امروز به حساب واریز کرده‌اید",
                                 color = AppMuted,
@@ -382,16 +375,14 @@ fun AddEditChequeScreen(
                                     onValueChange = { sayadId = cleanNum(it).take(16) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                )
+                                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                             }
                         }
                         AppCard(label = "بابت (اختیاری)") {
                             OutlinedTextField(
                                 value = notes,
                                 onValueChange = { notes = it },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
+                                modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         }
                     }
                 }
@@ -554,8 +545,7 @@ private fun ChequeBookDropdown(
             readOnly = true,
             singleLine = true,
             modifier = Modifier.fillMaxWidth().menuAnchor(),
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        )
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(text = { Text("بدون دسته‌چک") }, onClick = { onSelect(null); expanded = false })
             chequeBooks.forEach { book ->

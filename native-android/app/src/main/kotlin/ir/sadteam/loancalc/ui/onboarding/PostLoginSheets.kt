@@ -147,8 +147,7 @@ private fun GiftPage(
             value = name,
             onValueChange = { name = it },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
+            modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
 
         Spacer(Modifier.weight(1f))
         GradientButton(

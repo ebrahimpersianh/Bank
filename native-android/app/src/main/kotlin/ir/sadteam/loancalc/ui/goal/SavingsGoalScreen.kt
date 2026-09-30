@@ -455,8 +455,7 @@ private fun AddGoalForm(
             onValueChange = { title = it },
             label = { Text("برای چه؟") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-        )
+            singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         OutlinedTextField(
             value = targetText,
             onValueChange = { targetText = cleanNum(it) },
@@ -465,8 +464,7 @@ private fun AddGoalForm(
             singleLine = true,
             visualTransformation = ThousandsSeparatorTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            suffix = { Text("تومان") },
-        )
+            suffix = { Text("تومان") }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         if (targetToman > 0.0) {
             Text(
                 "${numberToWordsFa(targetToman)} تومان",
@@ -578,8 +576,7 @@ private fun ContributeDialog(
                     modifier = Modifier.fillMaxWidth(),
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    suffix = { Text("تومان") },
-                )
+                    suffix = { Text("تومان") }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 if (valid) {
                     Text(
                         "${numberToWordsFa(toman)} تومان",

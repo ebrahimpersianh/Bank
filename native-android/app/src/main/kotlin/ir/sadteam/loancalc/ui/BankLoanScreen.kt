@@ -393,8 +393,7 @@ fun BankLoanScreen(
                         placeholder = { Text("نام وام‌گیرنده") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        colors = appFieldColors(),
-                    )
+                        colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
             }
         }
@@ -621,8 +620,7 @@ fun BankLoanScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                    )
+                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد - تقسیمِ
                     // دستیِ «/ ۱۰» رفت؛ تنها مرجعِ تبدیل tomanToRial/rialToToman ئه.
                     val tomanVal = cleanNum(amountText).toLongOrNull() ?: 0L
@@ -675,8 +673,7 @@ fun BankLoanScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
-                    )
+                        suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     // فریمِ `69b` بندِ ۱: اسلایدر در حالتِ خواندنی **نمی‌آید**، نه این‌که
                     // بی‌اثر باشد. قبلاً رندر می‌شد و `onValueChange` با `if (!rateReadOnly)`
                     // بی‌صدا دورش می‌انداخت - کاربر دستگیره را می‌کشید و هیچ اتفاقی نمی‌افتاد.
@@ -721,8 +718,7 @@ fun BankLoanScreen(
                         .padding(top = 10.dp),
                     singleLine = true,
                     colors = appFieldColors(),
-                    suffix = { Text("ماه", color = AppMuted, fontSize = 13.sp) },
-                )
+                    suffix = { Text("ماه", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
         }
 

@@ -360,8 +360,7 @@ private fun AddCategoryForm(
                 { Text("دسته‌ای با این نام هست", color = AppDanger, fontSize = 11.sp) }
             } else {
                 null
-            },
-        )
+            }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         Text("رنگ", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 10.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
             items(categoryColorChoices) { color ->
@@ -450,8 +449,7 @@ private fun RenameCategoryDialog(
                     onValueChange = { name = it },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    isError = taken,
-                )
+                    isError = taken, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 if (taken) {
                     Text(
                         "دسته‌ای با این نام هست - دو دسته با هم ادغام می‌شن.",

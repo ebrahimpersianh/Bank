@@ -210,8 +210,7 @@ fun AssetTradeSheet(
                     // فیلد تا وقتی دارایی انتخاب نشده باز است ولی راهنما می‌گوید ترتیب چیست —
                     // قفل‌کردنش کاربر را بی توضیح سرِ جا نگه می‌داشت.
                     enabled = picked != null,
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                )
+                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 if (picked == null) {
                     Text(
                         "اول نوعِ دارایی را انتخاب کن تا مقدار خودکار حساب شود.",
@@ -273,8 +272,7 @@ fun AssetTradeSheet(
                     onValueChange = { description = it },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    placeholder = { Text("توضیحات", color = AppMuted, fontSize = 13.sp) },
-                )
+                    placeholder = { Text("توضیحات", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
 
             if (payAccounts.isNotEmpty()) {
@@ -503,8 +501,7 @@ private fun QuantityField(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                placeholder = { Text("مثلاً ۱٫۲ یا ۳", color = AppMuted, fontSize = 12.sp) },
-            )
+                placeholder = { Text("مثلاً ۱٫۲ یا ۳", color = AppMuted, fontSize = 12.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             if (recordedUnitRial != null && recordedUnitRial > 0.0) {
                 val yours = rialToToman(recordedUnitRial.toLong())
                 val market = marketUnitRial?.let { rialToToman(it.toLong()) }

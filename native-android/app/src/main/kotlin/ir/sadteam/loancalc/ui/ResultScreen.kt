@@ -367,8 +367,7 @@ fun ResultScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            colors = appFieldColors(),
-                        )
+                            colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد.
                         (cleanNum(editAmountText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
                             Text(
@@ -401,8 +400,7 @@ fun ResultScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             colors = appFieldColors(),
-                            suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
-                        )
+                            suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         SlimSlider(
                             value = editRateSlider,
                             onValueChange = { v ->
@@ -420,8 +418,7 @@ fun ResultScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            colors = appFieldColors(),
-                        )
+                            colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     }
                     AppCard(
                         label = if (editGraceOn && editGraceMonths.toInt() > 0) {
@@ -473,8 +470,7 @@ fun ResultScreen(
                             onValueChange = { editBankName = it },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            colors = appFieldColors(),
-                        )
+                            colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         // انتخابِ لوگو - همون الگویی که رو دیالوگِ ویرایشِ مشخصاتِ LoanDetailScreen
                         // پیاده شده؛ لمسِ یه لوگو اسمِ دقیقش رو تو فیلدِ بالا می‌ذاره، فیلد همچنان
                         // برای بانک/فروشنده‌ی خارج از لیست دستی باز می‌مونه.
@@ -497,8 +493,7 @@ fun ResultScreen(
                             onValueChange = { editBorrower = it },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            colors = appFieldColors(),
-                        )
+                            colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     }
                 }
             }
@@ -595,8 +590,7 @@ fun ResultScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        colors = appFieldColors(),
-                    )
+                        colors = appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
                 GradientButton(
                     enabled = !saving,

@@ -196,8 +196,7 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                    )
+                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد.
                     val tomanVal = cleanNum(amountText).toLongOrNull() ?: 0L
                     if (tomanVal > 0) {
@@ -239,8 +238,7 @@ fun DepositScreen(historyViewModel: CalculationHistoryViewModel = hiltViewModel(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
-                    )
+                        suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     SlimSlider(
                         value = rateSlider,
                         onValueChange = { v ->

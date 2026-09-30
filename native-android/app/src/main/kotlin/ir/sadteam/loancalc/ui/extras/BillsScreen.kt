@@ -204,8 +204,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                             },
                             singleLine = true,
                             placeholder = { Text("شناسه‌ی پرداخت (اختیاری)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        )
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     }
                     OutlinedTextField(
                         value = amountText,
@@ -213,8 +212,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         singleLine = true,
                         placeholder = { Text("مبلغ (تومان)") },
                         visualTransformation = ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     if (accounts.size > 1) {
                         Text("از کدام حساب؟", color = AppMuted, fontSize = 12.sp)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {

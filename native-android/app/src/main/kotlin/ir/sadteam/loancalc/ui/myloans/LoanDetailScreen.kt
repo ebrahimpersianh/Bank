@@ -476,8 +476,7 @@ fun LoanDetailScreen(
                         onValueChange = { editMetaName = it },
                         label = { Text("اسم وام") },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                        modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     // بانک فقط از فهرستِ جستجودار با لوگو (خواسته‌ی کاربر، ۷ مهر) - جای فیلدِ متنی + نوارِ لوگوها.
                     ir.sadteam.loancalc.ui.components.BankPickerField(value = editMetaBank, onValueChange = { editMetaBank = it }, includeCreditServices = true)
                     OutlinedTextField(
@@ -485,8 +484,7 @@ fun LoanDetailScreen(
                         onValueChange = { editMetaBorrower = it },
                         label = { Text("وام‌گیرنده (اختیاری)") },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                        modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     // ═══ نوعِ وام ═══
                     // تا امروز نشانِ ردیفِ فهرست فقط از **نامِ وام** حدس زده می‌شد؛ نامی مثل
                     // «وام ۹۵ میلیونی» هیچ کلیدواژه‌ای ندارد و همیشه نشانِ پیش‌فرض می‌گرفت.
@@ -542,8 +540,7 @@ fun LoanDetailScreen(
                             suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                            modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         editMetaAmountText.toLongOrNull()?.takeIf { it > 0 }?.let {
                             Text("${ir.sadteam.loancalc.core.numberToWordsFa(it.toDouble())} تومان", color = AppMuted, fontSize = 11.sp)
                         }
@@ -553,8 +550,7 @@ fun LoanDetailScreen(
                             label = { Text("تعداد اقساط") },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                            modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         Text(
                             "چون هنوز هیچ قسطی پرداخت نشده، عوض‌کردنِ این دوتا کلِ جدولِ اقساط رو از نو می‌سازه.",
                             color = AppMuted,
@@ -651,8 +647,7 @@ fun LoanDetailScreen(
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                )
+                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -1168,8 +1163,7 @@ fun LoanDetailScreen(
                                                 Icon(Icons.Filled.Close, contentDescription = "پاک‌کردنِ یادداشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                                             }
                                         }
-                                    },
-                                )
+                                    }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(),)
                                 GradientButton(
                                     onClick = {
                                         viewModel.updateLoanNotes(loan, noteText)
@@ -2292,8 +2286,7 @@ private fun DetailDateDropdown(
             readOnly = true,
             singleLine = true,
             modifier = Modifier.menuAnchor(),
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        )
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { (value, label) ->
                 DropdownMenuItem(text = { Text(label) }, onClick = { onSelect(value); expanded = false })

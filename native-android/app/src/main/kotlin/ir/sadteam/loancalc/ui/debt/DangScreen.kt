@@ -491,8 +491,7 @@ fun DangCreateScreen(
                     onValueChange = { title = it },
                     placeholder = { Text("مثلاً: شامِ جمعه") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
+                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
         }
         item {
@@ -504,8 +503,7 @@ fun DangCreateScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                )
+                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
         }
         item {
@@ -750,8 +748,7 @@ private fun DangParticipantRow(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.size(width = 76.dp, height = 52.dp),
                         singleLine = true,
-                        suffix = { Text("٪") },
-                    )
+                        suffix = { Text("٪") }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
             }
             DangMethod.CUSTOM -> {
@@ -761,8 +758,7 @@ private fun DangParticipantRow(
                         onValueChange = { onCustomAmountChange(cleanNum(it)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.size(width = 110.dp, height = 52.dp),
-                        singleLine = true,
-                    )
+                        singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
             }
             else -> Unit
@@ -796,16 +792,14 @@ private fun DangItemRow(
                 onValueChange = onDescriptionChange,
                 placeholder = { Text("شرحِ قلم") },
                 modifier = Modifier.weight(1f),
-                singleLine = true,
-            )
+                singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             Ltr {
                 OutlinedTextField(
                     value = item.amountText,
                     onValueChange = { onAmountChange(cleanNum(it)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.size(width = 110.dp, height = 56.dp).padding(start = 6.dp),
-                    singleLine = true,
-                )
+                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
             IconButton(onClick = onRemove) {
                 Icon(Icons.Filled.Delete, contentDescription = "حذفِ قلم", tint = AppDanger, modifier = Modifier.size(18.dp))

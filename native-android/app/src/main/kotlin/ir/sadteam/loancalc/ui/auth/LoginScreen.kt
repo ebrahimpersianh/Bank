@@ -255,8 +255,7 @@ fun LoginScreen(
                                     .weight(1f)
                                     .padding(end = 8.dp)
                                     .focusRequester(focusRequester),
-                                singleLine = true,
-                            )
+                                singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         }
                         // باگِ رفع‌شده: بدونِ [Ltr]، «+۹۸» گاهی (خصوصاً با فونتِ سیستمیِ بزرگ‌تر)
                         // به‌جای یه خط، دو خط می‌شد («۹+» بالا، «۸» پایین) - چون تویِ ambientِ RTL،

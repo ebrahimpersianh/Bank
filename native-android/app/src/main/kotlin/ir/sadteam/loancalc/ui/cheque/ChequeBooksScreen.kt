@@ -169,8 +169,7 @@ fun ChequeBooksScreen(
                             value = owner,
                             onValueChange = { owner = it },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                        )
+                            singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     }
                     AppCard(label = "بانک") {
                         ir.sadteam.loancalc.ui.components.BankPickerField(value = bank, onValueChange = { bank = it })
@@ -184,8 +183,7 @@ fun ChequeBooksScreen(
                                     onValueChange = { startText = cleanNum(it) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                )
+                                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                             }
                         }
                         AppCard(label = "شماره پایان", modifier = Modifier.weight(1f)) {
@@ -195,8 +193,7 @@ fun ChequeBooksScreen(
                                     onValueChange = { endText = cleanNum(it) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                )
+                                    singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                             }
                         }
                     }
@@ -207,8 +204,7 @@ fun ChequeBooksScreen(
                                 onValueChange = { sayadIdText = cleanNum(it).take(16) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                            )
+                                singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         }
                     }
                     AppCard(label = "۴ رقم آخرِ حساب (اختیاری)") {
@@ -218,8 +214,7 @@ fun ChequeBooksScreen(
                                 onValueChange = { last4Text = cleanNum(it).take(4) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                            )
+                                singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                         }
                     }
                     if (error != null) {

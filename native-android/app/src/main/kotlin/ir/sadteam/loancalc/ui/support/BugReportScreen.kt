@@ -196,8 +196,7 @@ fun BugReportScreen(onBack: () -> Unit, authViewModel: AuthViewModel = hiltViewM
                                 fontSize = 11.sp,
                             )
                         },
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 140.dp),
-                    )
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 140.dp), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "نسخه و مدلِ گوشی خودکار اضافه می‌شود.",

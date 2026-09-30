@@ -367,8 +367,7 @@ private fun RuleSheet(
                     onValueChange = { pattern = it },
                     label = { Text("اگه تو متنِ پیامک این بود") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                    modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 Text(
                     "بخشی از نامِ فروشنده کافیه - «رفاه» هم «فروشگاه رفاه» رو می‌گیره.",
                     color = AppLabel,
@@ -525,8 +524,7 @@ private fun SmsTestDialog(
                     onValueChange = { body = it; tested = false },
                     label = { Text("متنِ پیامکِ بانکی رو اینجا بچسبون") },
                     minLines = 3,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                    modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 Text(
                     "فقط آزمایشه - هیچ تراکنشی ثبت نمی‌شه.",
                     color = AppLabel,

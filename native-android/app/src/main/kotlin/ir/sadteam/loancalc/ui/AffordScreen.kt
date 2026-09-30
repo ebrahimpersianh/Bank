@@ -218,8 +218,7 @@ fun AffordScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
-                    )
+                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     // ورودی از اول تومانه، پس معادلِ حروفی مستقیم از همین عدد میاد.
                     val tomanVal = cleanNum(payText).toLongOrNull() ?: 0L
                     if (tomanVal > 0) {
@@ -262,8 +261,7 @@ fun AffordScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) },
-                    )
+                        suffix = { Text("درصد", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     SlimSlider(
                         value = rateSlider,
                         onValueChange = { v ->
@@ -301,8 +299,7 @@ fun AffordScreen(
                             .padding(top = 10.dp),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("ماه", color = AppMuted, fontSize = 13.sp) },
-                    )
+                        suffix = { Text("ماه", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
             }
         }
@@ -375,8 +372,7 @@ private fun RateFinderCard() {
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("مبلغ وام (تومان)", color = AppMuted, fontSize = 13.sp) },
-            )
+                suffix = { Text("مبلغ وام (تومان)", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             (cleanNum(amountText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
                 Text(
                     "${numberToWordsFa(t.toDouble())} تومان",
@@ -407,8 +403,7 @@ private fun RateFinderCard() {
                     .padding(top = 8.dp),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("مبلغ هر قسط (تومان)", color = AppMuted, fontSize = 13.sp) },
-            )
+                suffix = { Text("مبلغ هر قسط (تومان)", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             (cleanNum(installmentText).toLongOrNull() ?: 0L).takeIf { it > 0 }?.let { t ->
                 Text(
                     "${numberToWordsFa(t.toDouble())} تومان",
@@ -433,8 +428,7 @@ private fun RateFinderCard() {
                     .padding(top = 8.dp),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("تعداد اقساط (ماه)", color = AppMuted, fontSize = 13.sp) },
-            )
+                suffix = { Text("تعداد اقساط (ماه)", color = AppMuted, fontSize = 13.sp) }, shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             if (error != null) {
                 Text(error ?: "", color = AppDanger, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
             }

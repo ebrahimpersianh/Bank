@@ -164,8 +164,7 @@ internal fun InstallmentDetailScreen(
                         Text("مثلاً: از حسابِ ملی پرداخت شد", color = AppMuted, fontSize = 12.sp)
                     },
                     minLines = 2,
-                    maxLines = 4,
-                )
+                    maxLines = 4, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
         }
         item {
@@ -227,8 +226,7 @@ internal fun InstallmentDetailScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             // شماره‌ی پیگیری استثنای دومِ لایه‌ی ارقامه: رقمْ لاتین می‌مونه،
                             // چون کاربر کپی‌ش می‌کنه و جایی می‌چسبونه که ماشین می‌خونه.
-                            placeholder = { Text("8492037715", color = AppMuted, fontSize = 12.sp) },
-                        )
+                            placeholder = { Text("8492037715", color = AppMuted, fontSize = 12.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     }
                     if (trackingDraft.isNotBlank()) {
                         IconButton(onClick = { clipboard.setText(AnnotatedString(trackingDraft)) }) {
