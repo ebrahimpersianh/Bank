@@ -78,10 +78,10 @@ data class SaleRow(val product: String, val count30: Int, val countAll: Int, val
  */
 // سهمِ **توسعه‌دهنده** از فروش (صورت/مخرج). مایکت دقیق از پنل (۸ مهر): ۳۰۰٬۰۰۰ ریال → ۲۳۰٬۷۹۸ ریال.
 // کاربر: «کافه هم همینه» - هر دو یکسان.
-private val STORE_PAYOUT = mapOf("cafebazaar" to (230_798L to 300_000L), "myket" to (230_798L to 300_000L))
+internal val STORE_PAYOUT = mapOf("cafebazaar" to (230_798L to 300_000L), "myket" to (230_798L to 300_000L))
 
 /** قیمتِ هر پلن به تومان - همان قیمتِ پنلِ کافه‌بازار/مایکت (رجوع کن به CLAUDE.md). */
-private val PLAN_PRICE_TOMAN = mapOf(
+internal val PLAN_PRICE_TOMAN = mapOf(
     "unlimited_loans_1m" to 30_000L,
     "unlimited_loans_3m" to 81_000L,
     "unlimited_loans_6m" to 144_000L,
@@ -168,14 +168,14 @@ private fun parseProfile(raw: String?): Map<String, String> = runCatching {
 @Serializable
 private data class GrantBody(val userId: Long? = null, val phone: String? = null, val revoke: Boolean = false)
 
-private suspend fun ApplicationCall.isAdminUser(): Boolean? {
+internal suspend fun ApplicationCall.isAdminUser(): Boolean? {
     val authed = requireAuth() ?: return null
     return Db.withConnection { conn ->
         conn.queryOne("SELECT is_admin FROM users WHERE id = ?", authed.uid) { it.getInt(1) == 1 }
     } ?: false
 }
 
-private fun Connection.int(sql: String, vararg params: Any?): Int = queryOne(sql, *params) { it.getInt(1) } ?: 0
+internal fun Connection.int(sql: String, vararg params: Any?): Int = queryOne(sql, *params) { it.getInt(1) } ?: 0
 
 private val SQL_FMT = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
@@ -203,7 +203,7 @@ internal fun resolveUserCode(conn: Connection, input: String): Long? {
 @Serializable
 private data class AdminGiftBody(val user: String, val days: Int = 0, val coins: Int = 0, val text: String = "")
 
-private fun Connection.list(sql: String, vararg params: Any?, map: (java.sql.ResultSet) -> Unit) {
+internal fun Connection.list(sql: String, vararg params: Any?, map: (java.sql.ResultSet) -> Unit) {
     prepareStatement(sql).use { ps ->
         params.forEachIndexed { i, p -> ps.setObject(i + 1, p) }
         ps.executeQuery().use { rs -> while (rs.next()) map(rs) }
@@ -473,8 +473,11 @@ fun Route.adminRoutes() {
                 call.respond(HttpStatusCode.Forbidden, mapOf("error" to "admin_only"))
                 return@get
             }
-            val period = call.request.queryParameters["period"] ?: "day"
-            call.respond(Db.withConnection { buildDigest(it, period) })
+            val q = call.request.queryParameters
+            val period = q["period"] ?: "day"
+            val store = q["store"]?.takeIf { it == "cafebazaar" || it == "myket" }
+            val version = q["version"]?.toIntOrNull()?.takeIf { it in 1..1_000_000 }
+            call.respond(Db.withConnection { buildDigest(it, period, store, version) })
         }
         get("/stats") {
             val admin = call.isAdminUser() ?: return@get
@@ -564,7 +567,14 @@ data class DigestResponse(
     val notes: List<String>,
 )
 
-internal fun buildDigest(conn: Connection, period: String): DigestResponse {
+internal fun buildDigest(conn: Connection, period: String, store: String? = null, version: Int? = null): DigestResponse {
+    // فیلترِ تفکیک (۸ مهر): فقط یک استور و/یا یک نسخه. مقدارها قبل از رسیدن به این‌جا پاک‌سازی شده‌اند.
+    val insF = buildString {
+        if (store != null) append(" AND store = '$store'")
+        if (version != null) append(" AND app_version = $version")
+    }
+    val useF = if (insF.isEmpty()) "" else " AND install_id IN (SELECT install_id FROM installs WHERE 1=1$insF)"
+    val buyF = if (store != null) " AND store = '$store'" else ""
     val iranNow = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC).plusMinutes(210)
     var start = iranNow.toLocalDate().atTime(7, 0)
     if (iranNow.isBefore(start)) start = start.minusDays(1)
@@ -582,9 +592,9 @@ internal fun buildDigest(conn: Connection, period: String): DigestResponse {
 
     val m = mutableListOf<DigestMetric>()
     m += pair("new_users", "SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
-    m += pair("new_installs", "SELECT COUNT(*) FROM installs WHERE first_day >= ? AND first_day < ?", da, db, prevParams = arrayOf(dpa, da))
-    m += pair("active", "SELECT COUNT(DISTINCT install_id) FROM usage_daily WHERE day >= ? AND day < ?", da, db, prevParams = arrayOf(dpa, da))
-    m += pair("purchases", "SELECT COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
+    m += pair("new_installs", "SELECT COUNT(*) FROM installs WHERE first_day >= ? AND first_day < ?$insF", da, db, prevParams = arrayOf(dpa, da))
+    m += pair("active", "SELECT COUNT(DISTINCT install_id) FROM usage_daily WHERE day >= ? AND day < ?$useF", da, db, prevParams = arrayOf(dpa, da))
+    m += pair("purchases", "SELECT COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND created_at < ?$buyF", a, b, prevParams = arrayOf(pa, a))
     // فروشِ ناخالص به تفکیکِ استور + خالص بعد از سهمِ استور (۸ مهر، خواسته‌ی کاربر).
     fun revenue(x: String, y: String, store: String?): Long {
         var sum = 0L
@@ -602,11 +612,11 @@ internal fun buildDigest(conn: Connection, period: String): DigestResponse {
     m += DigestMetric("revenue_net", net(a, b), net(pa, a))
     m += pair("support", "SELECT COUNT(*) FROM bug_reports WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
     m += pair("crashes", "SELECT COUNT(*) FROM crash_reports WHERE created_at >= ? AND created_at < ?", a, b, prevParams = arrayOf(pa, a))
-    m += pair("transactions", "SELECT coalesce(SUM(count),0) FROM usage_daily WHERE day >= ? AND day < ? AND name = 'action:transaction_added'", da, db, prevParams = arrayOf(dpa, da))
+    m += pair("transactions", "SELECT coalesce(SUM(count),0) FROM usage_daily WHERE day >= ? AND day < ? AND name = 'action:transaction_added'$useF", da, db, prevParams = arrayOf(dpa, da))
 
     fun top(prefix: String): List<NamedCount> = buildList {
         conn.list(
-            "SELECT name, SUM(count) FROM usage_daily WHERE day >= ? AND day < ? AND name LIKE ? GROUP BY 1 ORDER BY 2 DESC LIMIT 6",
+            "SELECT name, SUM(count) FROM usage_daily WHERE day >= ? AND day < ? AND name LIKE ?$useF GROUP BY 1 ORDER BY 2 DESC LIMIT 6",
             da, db, "$prefix%",
         ) { add(NamedCount(it.getString(1).removePrefix(prefix), it.getInt(2))) }
     }

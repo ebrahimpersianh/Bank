@@ -14,6 +14,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import ir.sadteam.loancalc.server.routes.accountsBackupRoutes
+import ir.sadteam.loancalc.server.routes.adminProRoutes
 import ir.sadteam.loancalc.server.routes.appVersionRoutes
 import ir.sadteam.loancalc.server.routes.authRoutes
 import ir.sadteam.loancalc.server.routes.chequesBackupRoutes
@@ -78,6 +79,7 @@ fun Application.module() {
         announcementRoutes()
         usageRoutes()
         adminRoutes()
+        adminProRoutes()
         fileRoutes()
     }
 }
