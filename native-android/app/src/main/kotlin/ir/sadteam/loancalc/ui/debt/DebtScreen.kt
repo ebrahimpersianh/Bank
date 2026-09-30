@@ -663,10 +663,10 @@ private fun CounterpartyDetail(
                             visualTransformation = ThousandsSeparatorTransformation(),
                             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                             singleLine = true,
-                            suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                            suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                         )
                     }
-                    val amountRial = amountText.toLongOrNull() ?: 0L
+                    val amountRial = (amountText.toLongOrNull() ?: 0L) * 10
                     if (amountRial > 0) {
                         Text(
                             "${numberToWordsFa((amountRial / 10).toDouble())} تومان",
@@ -691,7 +691,7 @@ private fun CounterpartyDetail(
                     )
                     GradientButton(
                         onClick = {
-                            val amount = amountText.toDoubleOrNull() ?: 0.0
+                            val amount = (amountText.toDoubleOrNull() ?: 0.0) * 10
                             if (amount > 0) {
                                 onAddDebt(amount, type, description.trim(), year, month, day)
                                 amountText = ""
@@ -740,7 +740,7 @@ private fun CounterpartyDetail(
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    maskIfPrivate(privacyMode, "${fmt(debt.amount)} ریال"),
+                                    maskIfPrivate(privacyMode, "${fmt((debt.amount) / 10)} تومان"),
                                     color = if (debt.type == DebtType.OWED_TO_ME.name) AppPrimary else AppDanger,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
@@ -782,7 +782,7 @@ private fun CounterpartyDetail(
     confirmSettleDebt?.let { debt ->
         ConfirmPayDialog(
             title = "ثبتِ تسویه",
-            text = "«${fmt(debt.amount)} ریال» تسویه‌شده علامت بخوره؟",
+            text = "«${fmt((debt.amount) / 10)} تومان» تسویه‌شده علامت بخوره؟",
             onConfirm = { onToggleSettled(debt, true) },
             onDismiss = { confirmSettleDebt = null },
         )
@@ -790,7 +790,7 @@ private fun CounterpartyDetail(
     confirmDeleteDebt?.let { debt ->
         ConfirmDeleteDialog(
             title = "حذفِ ردیف",
-            text = "این ردیفِ «${fmt(debt.amount)} ریال» حذف بشه؟",
+            text = "این ردیفِ «${fmt((debt.amount) / 10)} تومان» حذف بشه؟",
             onConfirm = { onDeleteDebt(debt) },
             onDismiss = { confirmDeleteDebt = null },
         )

@@ -164,7 +164,7 @@ fun DangListScreen(
                             )
                         }
                         Text(
-                            maskIfPrivate(privacyMode, "${fmt(event.totalAmount)} ریال"),
+                            maskIfPrivate(privacyMode, "${fmt((event.totalAmount) / 10)} تومان"),
                             color = if (event.settled) AppMuted else AppPrimary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
@@ -242,7 +242,7 @@ fun DangDetailScreen(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
                         Text(
-                            maskIfPrivate(privacyMode, "${fmt(event.totalAmount)} ریال"),
+                            maskIfPrivate(privacyMode, "${fmt((event.totalAmount) / 10)} تومان"),
                             color = AppText,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Black,
@@ -268,7 +268,7 @@ fun DangDetailScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(counterpartyNameFor(participant.counterpartyId), color = AppText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                         Text(
-                            maskIfPrivate(privacyMode, "${fmt(participant.shareAmount)} ریال"),
+                            maskIfPrivate(privacyMode, "${fmt((participant.shareAmount) / 10)} تومان"),
                             color = AppMuted,
                             fontSize = 12.sp,
                         )
@@ -373,7 +373,7 @@ private fun DangReceiptCard(
                 modifier = Modifier.padding(top = 2.dp),
             )
             Text(
-                "${fmt(event.totalAmount)} ریال",
+                "${fmt((event.totalAmount) / 10)} تومان",
                 color = AppText,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Black,
@@ -418,7 +418,7 @@ private fun DangReceiptCard(
                         Text("تسویه", color = AppPrimary, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
                     } else {
                         Text(
-                            "${fmt(participant.shareAmount)} ریال",
+                            "${fmt((participant.shareAmount) / 10)} تومان",
                             color = AppDanger,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Black,
@@ -504,7 +504,7 @@ fun DangCreateScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                 )
             }
         }
@@ -580,7 +580,7 @@ fun DangCreateScreen(
                     if (method == DangMethod.CUSTOM) {
                         val sum = participants.value.sumOf { it.customAmountText.toLongOrNull()?.toDouble() ?: 0.0 }
                         Text(
-                            "جمعِ مبلغ‌ها: ${fmt(sum)} از ${fmt(totalAmount)} ریال",
+                            "جمعِ مبلغ‌ها: ${fmt(sum)} از ${fmt(totalAmount)} تومان",
                             color = if (sum == totalAmount) AppPrimary else AppDanger,
                             fontSize = 11.sp,
                         )
@@ -621,7 +621,7 @@ fun DangCreateScreen(
                         }
                         val itemsSum = items.value.sumOf { it.amountText.toLongOrNull()?.toDouble() ?: 0.0 }
                         Text(
-                            "جمعِ قلم‌ها: ${fmt(itemsSum)} از ${fmt(totalAmount)} ریال",
+                            "جمعِ قلم‌ها: ${fmt(itemsSum)} از ${fmt(totalAmount)} تومان",
                             color = if (itemsSum == totalAmount) AppPrimary else AppDanger,
                             fontSize = 11.sp,
                         )
@@ -697,7 +697,14 @@ fun DangCreateScreen(
                             itemInputs = itemInputsBuilt
                         }
                     }
-                    onSave(title.trim(), method, totalAmount, year, month, day, isEventMode, participantInputs, itemInputs)
+                    // فرم تومان است، دیتابیس ریال - تبدیل فقط همین‌جا.
+                    onSave(
+                        title.trim(), method, totalAmount * 10, year, month, day, isEventMode,
+                        participantInputs.map { it.copy(shareAmount = it.shareAmount * 10) },
+                        itemInputs.map { item ->
+                            item.copy(amount = item.amount * 10, shares = item.shares.map { it.copy(shareAmount = it.shareAmount * 10) })
+                        },
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {

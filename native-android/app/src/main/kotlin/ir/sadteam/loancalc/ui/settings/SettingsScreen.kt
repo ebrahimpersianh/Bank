@@ -2095,7 +2095,7 @@ private fun SmsParseTestScreen(onBack: () -> Unit) {
                     }
                     ParseResultRow(
                         label = "مبلغ",
-                        value = "${fmt(parsed.amountRial)} ریال",
+                        value = "${fmt((parsed.amountRial) / 10)} تومان",
                         valueColor = if (parsed.type == TransactionType.WITHDRAWAL) AppDangerInk else AppPrimaryInk,
                     )
                     ParseResultRow(

@@ -537,7 +537,7 @@ private fun MainSection(
                             )
                             PrivacyCrossfade(privacyMode) { masked ->
                                 Text(
-                                    "${maskIfPrivate(masked, fmt(accBalance))} ریال",
+                                    "${maskIfPrivate(masked, fmt((accBalance) / 10))} تومان",
                                     color = if (accBalance < 0) AppDanger else AppPrimary,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
@@ -559,20 +559,20 @@ private fun MainSection(
                         Column {
                             Text("درآمد", color = AppMuted, fontSize = 12.sp)
                             PrivacyCrossfade(privacyMode) { masked ->
-                                Text("${maskIfPrivate(masked, fmt(income))} ریال", color = AppPrimary, fontSize = 15.sp)
+                                Text("${maskIfPrivate(masked, fmt((income) / 10))} تومان", color = AppPrimary, fontSize = 15.sp)
                             }
                         }
                         Column {
                             Text("هزینه", color = AppMuted, fontSize = 12.sp)
                             PrivacyCrossfade(privacyMode) { masked ->
-                                Text("${maskIfPrivate(masked, fmt(expense))} ریال", color = AppDanger, fontSize = 15.sp)
+                                Text("${maskIfPrivate(masked, fmt((expense) / 10))} تومان", color = AppDanger, fontSize = 15.sp)
                             }
                         }
                         Column {
                             Text("مانده", color = AppMuted, fontSize = 12.sp)
                             PrivacyCrossfade(privacyMode) { masked ->
                                 Text(
-                                    "${maskIfPrivate(masked, fmt(income - expense))} ریال",
+                                    "${maskIfPrivate(masked, fmt((income - expense) / 10))} تومان",
                                     color = if (income - expense >= 0) AppText else AppDanger,
                                     fontSize = 15.sp,
                                 )
@@ -612,7 +612,7 @@ private fun MainSection(
                             Text("ازم طلبکارن", color = AppMuted, fontSize = 11.sp)
                             PrivacyCrossfade(privacyMode) { masked ->
                                 Text(
-                                    "${maskIfPrivate(masked, fmt(iOwe))} ریال",
+                                    "${maskIfPrivate(masked, fmt((iOwe) / 10))} تومان",
                                     color = if (iOwe > 0) AppDanger else AppMuted,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
@@ -623,7 +623,7 @@ private fun MainSection(
                             Text("ازشون طلبکارم", color = AppMuted, fontSize = 11.sp)
                             PrivacyCrossfade(privacyMode) { masked ->
                                 Text(
-                                    "${maskIfPrivate(masked, fmt(owedToMe))} ریال",
+                                    "${maskIfPrivate(masked, fmt((owedToMe) / 10))} تومان",
                                     color = if (owedToMe > 0) AppPrimary else AppMuted,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
@@ -839,9 +839,9 @@ private fun AddTransactionForm(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
             )
-            val amountRial = amountText.toLongOrNull() ?: 0L
+            val amountRial = (amountText.toLongOrNull() ?: 0L) * 10
             if (amountRial > 0) {
                 Text(
                     "${numberToWordsFa((amountRial / 10).toDouble())} تومان",
@@ -892,7 +892,7 @@ private fun AddTransactionForm(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             GradientButton(
                 onClick = {
-                    val amount = amountText.toDoubleOrNull() ?: 0.0
+                    val amount = (amountText.toDoubleOrNull() ?: 0.0) * 10
                     error = if (amount <= 0) "مبلغ رو وارد کن" else null
                     if (error == null) {
                         onSubmit(selectedAccountId, type, amount, selectedCategory?.name, description.trim(), txYear, txMonth, txDay)
@@ -1097,7 +1097,7 @@ private fun BudgetSection(
                         modifier = Modifier.padding(top = 10.dp).height(14.dp),
                     )
                     Text(
-                        "${fmt(totalSpent)} از سقفِ ${fmt(totalCap)} ریال",
+                        "${fmt((totalSpent) / 10)} از سقفِ ${fmt((totalCap) / 10)} تومان",
                         color = AppLabel,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -1165,7 +1165,7 @@ private fun BudgetSection(
                             cap = budget?.monthlyCap,
                             onClick = {
                                 editingCategory = cat
-                                capText = budget?.monthlyCap?.toLong()?.toString() ?: ""
+                                capText = budget?.monthlyCap?.toLong()?.div(10)?.toString() ?: ""
                             },
                         )
                         if (editingCategory?.name == cat.name) {
@@ -1183,9 +1183,9 @@ private fun BudgetSection(
                                     modifier = Modifier.fillMaxWidth(),
                                     singleLine = true,
                                     colors = appFieldColors(),
-                                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                                 )
-                                val capRial = capText.toLongOrNull() ?: 0L
+                                val capRial = (capText.toLongOrNull() ?: 0L) * 10
                                 if (capRial > 0) {
                                     Text(
                                         "${numberToWordsFa((capRial / 10).toDouble())} تومان",
@@ -1209,7 +1209,7 @@ private fun BudgetSection(
                                     }
                                     GradientButton(
                                         onClick = {
-                                            val cap = capText.toDoubleOrNull() ?: 0.0
+                                            val cap = (capText.toDoubleOrNull() ?: 0.0) * 10
                                             if (cap > 0) viewModel.setBudget(cat.name, cap, budget?.id)
                                             editingCategory = null
                                         },
@@ -1304,9 +1304,9 @@ private fun AddBudgetDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = appFieldColors(),
-                        suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                        suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                     )
-                    val capRial = capText.toLongOrNull() ?: 0L
+                    val capRial = (capText.toLongOrNull() ?: 0L) * 10
                     if (capRial > 0) {
                         Text(
                             "${numberToWordsFa((capRial / 10).toDouble())} تومان",
@@ -1321,7 +1321,7 @@ private fun AddBudgetDialog(
         confirmButton = {
             if (cat != null) {
                 TextButton(onClick = {
-                    val capVal = capText.toDoubleOrNull() ?: 0.0
+                    val capVal = (capText.toDoubleOrNull() ?: 0.0) * 10
                     if (capVal > 0) onSave(cat, capVal)
                 }) { Text("ذخیره") }
             }
@@ -1379,7 +1379,7 @@ private fun BudgetSuggestionRow(cat: CategoryEntry, spent: Double, onClick: () -
             }
             Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
                 Text(cat.name, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
-                Text("${fmt(spent)} ریال خرج شده", color = AppMuted, fontSize = 10.5.sp)
+                Text("${fmt((spent) / 10)} تومان خرج شده", color = AppMuted, fontSize = 10.5.sp)
             }
             Text("+ سقف", color = AppPrimary, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
         }
@@ -1413,7 +1413,7 @@ private fun BudgetRow(
             Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(name, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    Text("${fmt(spent)} ریال", color = ringColor, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("${fmt((spent) / 10)} تومان", color = ringColor, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
                 Text(
                     if (cap == null) "سقفی تعیین نشده" else if (over) "بیشتر از سقف!" else "از ${fmt(cap)} — ${fmt(cap - spent)} مانده",
@@ -1492,7 +1492,7 @@ private fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Cat
                                 )
                             }
                             Text(
-                                "${fmt(p.amount)} ریال",
+                                "${fmt((p.amount) / 10)} تومان",
                                 color = if (p.type == TransactionType.DEPOSIT.name) AppPrimary else AppDanger,
                                 fontSize = 13.sp,
                             )
@@ -1545,9 +1545,9 @@ private fun AddRecurringForm(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = appFieldColors(),
-                suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
             )
-            val amountRial = amountText.toLongOrNull() ?: 0L
+            val amountRial = (amountText.toLongOrNull() ?: 0L) * 10
             if (amountRial > 0) {
                 Text(
                     "${numberToWordsFa((amountRial / 10).toDouble())} تومان",
@@ -1582,7 +1582,7 @@ private fun AddRecurringForm(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             GradientButton(
                 onClick = {
-                    val amount = amountText.toDoubleOrNull() ?: 0.0
+                    val amount = (amountText.toDoubleOrNull() ?: 0.0) * 10
                     error = when {
                         name.isBlank() -> "اسم رو وارد کن"
                         amount <= 0 -> "مبلغ رو وارد کن"
@@ -2001,7 +2001,7 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
                         Column(modifier = Modifier.weight(1f)) {
                             AppChip(label = "${toFa(dayTx.size)} تراکنش", selected = false, onClick = {})
                             Text(
-                                "${if (net < 0) "-" else ""}${fmt(kotlin.math.abs(net))} ریال",
+                                "${if (net < 0) "-" else ""}${fmt((kotlin.math.abs(net)) / 10)} تومان",
                                 color = if (net >= 0) AppPrimary else AppDanger,
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Black,
@@ -2114,13 +2114,13 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
                                     )
                                     PrivacyCrossfade(privacyMode) { masked ->
                                         Text(
-                                            maskIfPrivate(masked, fmt(breakdownTotal)),
+                                            maskIfPrivate(masked, fmt(breakdownTotal / 10)),
                                             color = AppText,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
                                         )
                                     }
-                                    Text("ریال", color = AppMuted, fontSize = 9.sp)
+                                    Text("تومان", color = AppMuted, fontSize = 9.sp)
                                 }
                             }
                         }
@@ -2152,7 +2152,7 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
                                             modifier = Modifier.padding(start = 6.dp),
                                         )
                                     }
-                                    Text("${fmt(amount)} ریال", color = AppMuted, fontSize = 12.5.sp)
+                                    Text("${fmt((amount) / 10)} تومان", color = AppMuted, fontSize = 12.5.sp)
                                 }
                             }
                         }
@@ -2246,16 +2246,16 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
                         Text("درآمد", color = AppMuted, fontSize = 12.sp)
-                        Text("${fmt(income)} ریال", color = AppPrimary, fontSize = 14.sp)
+                        Text("${fmt((income) / 10)} تومان", color = AppPrimary, fontSize = 14.sp)
                     }
                     Column {
                         Text("هزینه", color = AppMuted, fontSize = 12.sp)
-                        Text("${fmt(expense)} ریال", color = AppDanger, fontSize = 14.sp)
+                        Text("${fmt((expense) / 10)} تومان", color = AppDanger, fontSize = 14.sp)
                     }
                     Column {
                         Text("مانده", color = AppMuted, fontSize = 12.sp)
                         Text(
-                            "${fmt(income - expense)} ریال",
+                            "${fmt((income - expense) / 10)} تومان",
                             color = if (income - expense >= 0) AppText else AppDanger,
                             fontSize = 14.sp,
                         )
@@ -2273,7 +2273,7 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
                                 Text(name, color = AppText, fontSize = 12.5.sp)
-                                Text("${fmt(amount)} ریال", color = AppMuted, fontSize = 12.5.sp)
+                                Text("${fmt((amount) / 10)} تومان", color = AppMuted, fontSize = 12.5.sp)
                             }
                         }
                     }
@@ -2431,9 +2431,9 @@ internal fun NewBudgetSheet(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    suffix = { Text("ریال", color = AppMuted, fontSize = 13.sp) },
+                    suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) },
                 )
-                val rial = capText.toLongOrNull() ?: 0L
+                val rial = (capText.toLongOrNull() ?: 0L) * 10
                 if (rial > 0) {
                     Text("${numberToWordsFa((rial / 10).toDouble())} تومان", color = AppMuted, fontSize = 11.sp)
                 }
@@ -2452,7 +2452,7 @@ internal fun NewBudgetSheet(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val cap = capText.toDoubleOrNull() ?: 0.0
+                    val cap = (capText.toDoubleOrNull() ?: 0.0) * 10
                     val cat = selectedCat
                     if (cap > 0 && cat != null) onSave(cat, cap, selectedAccountId)
                 },

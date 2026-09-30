@@ -72,7 +72,7 @@ fun AccountPickerSheet(
                             Column(modifier = Modifier.padding(start = 10.dp)) {
                                 Text(account.name, color = AppText, fontSize = 13.sp)
                                 Text(
-                                    "${fmt(account.initialBalance)} ریال",
+                                    "${fmt((account.initialBalance) / 10)} تومان",
                                     color = AppMuted,
                                     fontSize = 11.sp,
                                 )

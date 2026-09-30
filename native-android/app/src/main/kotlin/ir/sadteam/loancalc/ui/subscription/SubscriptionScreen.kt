@@ -684,7 +684,7 @@ private fun PlanCard(
                 }
             }
             Text(
-                if (rial != null) groupedFa(rial) else (priceText ?: "…"),
+                if (rial != null) groupedFa(rial / 10) else (priceText ?: "…"),
                 color = AppText,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Black,
@@ -692,9 +692,9 @@ private fun PlanCard(
                 modifier = Modifier.padding(top = 6.dp),
             )
             if (rial != null) {
-                Text("ریال", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                Text("تومان", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    "≈ ماهی ${groupedFa(rial / months)}",
+                    "≈ ماهی ${groupedFa(rial / 10 / months)}",
                     color = AppMuted,
                     fontSize = 8.5.sp,
                     fontWeight = FontWeight.Bold,
