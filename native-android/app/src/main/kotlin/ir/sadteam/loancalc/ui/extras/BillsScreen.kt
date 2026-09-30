@@ -263,9 +263,13 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         }
                     }) { Text("📋 چسباندنِ پیامکِ قبض") }
                     pasteNote?.let { Text(it, color = AppMuted, fontSize = 11.sp) }
-                    OutlinedTextField(value = name, onValueChange = { name = it.take(30) }, singleLine = true, placeholder = { Text("نام (مثلاً خانه)") })
+                    OutlinedTextField(
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        colors = ir.sadteam.loancalc.ui.components.appFieldColors(),value = name, onValueChange = { name = it.take(30) }, singleLine = true, placeholder = { Text("نام (مثلاً خانه)") })
                     Ltr {
                         OutlinedTextField(
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
                             value = billId,
                             onValueChange = {
                                 billId = cleanNum(it).take(18)
@@ -286,6 +290,8 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         )
                     }
                     OutlinedTextField(
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
                         value = dayText,
                         onValueChange = { dayText = cleanNum(it).take(2) },
                         singleLine = true,

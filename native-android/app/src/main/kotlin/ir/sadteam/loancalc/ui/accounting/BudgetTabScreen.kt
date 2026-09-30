@@ -1006,7 +1006,7 @@ private fun BudgetToolCard(
             Icon(icon, contentDescription = null, tint = BudgetGreen, modifier = Modifier.size(22.dp))
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            Text(title, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black, maxLines = 2, lineHeight = 18.sp)
             Text(subtitle, color = AppMuted, fontSize = 10.5.sp, modifier = Modifier.padding(top = 3.dp))
         }
         Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
