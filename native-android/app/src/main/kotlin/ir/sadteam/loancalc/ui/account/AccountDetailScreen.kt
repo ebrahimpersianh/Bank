@@ -80,6 +80,8 @@ import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppPrimary
+import androidx.compose.material.icons.filled.Edit
 
 /**
  * جزئیات یه حساب - موجودی فعلی بزرگ بالای صفحه، فرم افزودن تراکنش (واریز/برداشت + توضیح + تاریخ
@@ -154,7 +156,7 @@ fun AccountDetailScreen(
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                 }
                 Column(modifier = Modifier.padding(start = 4.dp)) {
-                    Text(account.name, color = AppText, fontSize = 16.sp)
+                    Text(account.name, color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
                     val last4 = account.cardNumber?.filter { it.isDigit() }?.takeLast(4)?.takeIf { it.length == 4 }
                     Text(
                         listOfNotNull(account.bankName.takeIf { it.isNotBlank() }, last4?.let { faCardTail(it) }).joinToString(" · "),
@@ -182,8 +184,14 @@ fun AccountDetailScreen(
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     onEdit?.let {
-                        OutlinedButton(onClick = it, modifier = Modifier.weight(1f)) {
-                            Text("ویرایش حساب")
+                        OutlinedButton(
+                            onClick = it,
+                            shape = RoundedCornerShape(999.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, AppPrimary.copy(alpha = 0.5f)),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(Icons.Filled.Edit, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(16.dp))
+                            Text("ویرایش حساب", color = AppPrimary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp))
                         }
                     }
                     onDelete?.let {

@@ -405,10 +405,13 @@ private fun AssetSummaryCard(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        profit.toLong().toFaSignedCompact(),
+                        // ⚠️ «+» و «۰» در دو خط می‌شکستند؛ سودِ صفر هم بی‌علامت.
+                        if (profit.toLong() == 0L) "۰" else profit.toLong().toFaSignedCompact(),
                         color = if (profit >= 0) AppPrimaryInk else AppDangerInk,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        softWrap = false,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                 }

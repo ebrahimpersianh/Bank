@@ -332,7 +332,9 @@ fun AssetTradeSheet(
                             // این پارامتر از قبل وجود داشت و هیچ‌وقت پر نمی‌شد.
                             unitPriceRial = recordedUnitRial,
                         )
-                        showAfterNote = true
+                        // وقتی حساب انتخاب شده، تراکنشِ حساب خودکار ثبت می‌شود؛ پیامِ «برایش
+                        // تراکنش ثبت کن» فقط برای «بدونِ حساب» معنا دارد (گزارشِ کاربر، ۸ مهر).
+                        if (payAccountId == null) showAfterNote = true else onDismiss()
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
