@@ -52,6 +52,9 @@ object UsageStats {
     @Volatile
     var loggedIn: Boolean = false
 
+    /** توکنِ حساب (اگر وارد است) - فقط تا صفحه‌ی ادمین شماره‌ی کاربری را کنارِ نصب نشان دهد. */
+    @Volatile var authToken: String? = null
+
     /**
      * مشخصاتِ بی‌نامِ این نصب (مدلِ گوشی، تم، کلیدهای روشن، تعدادِ وام/حساب/…) - از خودِ اپ پُر
      * می‌شود چون `:data` به تنظیمات و دیتابیس دسترسیِ کامل ندارد. روزی یک بار فرستاده می‌شود.
@@ -182,6 +185,7 @@ object UsageStats {
         }
         val ok = runCatching {
             api.trackBatch(
+                authToken?.let { "Bearer $it" },
                 UsageBatchRequest(
                     installId = installId(),
                     appVersion = appVersion(context),

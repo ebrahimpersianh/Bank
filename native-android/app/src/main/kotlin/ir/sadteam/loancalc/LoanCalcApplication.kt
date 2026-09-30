@@ -63,7 +63,7 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         ir.sadteam.loancalc.data.UsageStats.profileProvider = { buildUsageProfile() }
         // آمار فقط «واردشده یا نه» را می‌خواهد، نه اینکه چه کسی.
         CoroutineScope(Dispatchers.IO).launch {
-            authPrefs.authToken.collect { ir.sadteam.loancalc.data.UsageStats.loggedIn = it != null }
+            authPrefs.authToken.collect { ir.sadteam.loancalc.data.UsageStats.loggedIn = it != null; ir.sadteam.loancalc.data.UsageStats.authToken = it }
         }
         // برای هماهنگ‌کردنِ پترنِ پیامکِ OTP با SMS Retriever API - رجوع کن به کامنتِ
         // SmsRetrieverHash.kt. فقط لاگ می‌کنه (Log.i)، هیچ اثرِ دیگه‌ای رو رفتارِ اپ نداره.

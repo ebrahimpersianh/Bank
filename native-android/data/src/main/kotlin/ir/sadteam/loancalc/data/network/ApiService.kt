@@ -82,6 +82,13 @@ interface ApiService {
         @Body body: AdminSupportReplyRequest,
     ): Response<Unit>
 
+    /** هدیه‌ی مستقیمِ ادمین به یک شماره‌ی کاربری: روزِ اشتراک و/یا سکه (۸ مهر). */
+    @POST("api/admin/gift")
+    suspend fun adminGift(
+        @Header("Authorization") authHeader: String,
+        @Body body: AdminGiftRequest,
+    ): Response<Unit>
+
     @POST("api/admin/support/gift")
     suspend fun adminSupportGift(
         @Header("Authorization") authHeader: String,
@@ -137,7 +144,7 @@ interface ApiService {
     ): okhttp3.ResponseBody
 
     @POST("api/events/batch")
-    suspend fun trackBatch(@Body body: UsageBatchRequest): Response<Unit>
+    suspend fun trackBatch(@retrofit2.http.Header("Authorization") auth: String?, @Body body: UsageBatchRequest): Response<Unit>
 
     /** آیا این حساب صفحه‌ی «آمارِ جیبک» را می‌بیند (ورک‌فلوی make-admin). */
     @GET("api/admin/check")
@@ -357,7 +364,11 @@ data class AnnouncementDto(
     val body: String,
     val kind: String,
     val createdAt: String,
+    /** سکه‌ی هدیه‌ی ادمین (۰ = پیامِ معمولی). */
+    val coins: Int = 0,
 )
+
+data class AdminGiftRequest(val user: String, val days: Int = 0, val coins: Int = 0, val text: String = "")
 
 data class AnnouncementsResponse(val items: List<AnnouncementDto>)
 
@@ -468,4 +479,6 @@ data class AdminInstallRow(
     val minutes30: Int = 0,
     val topScreen: String? = null,
     val loggedIn: Boolean = false,
+    /** شماره‌ی کاربریِ نمایشی (`Uid:…`) اگر این نصب با حساب وارد شده باشد. */
+    val userCode: String? = null,
 )

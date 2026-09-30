@@ -13,6 +13,7 @@ import ir.sadteam.loancalc.server.Db
 import ir.sadteam.loancalc.server.adminTokenMatches
 import ir.sadteam.loancalc.server.env
 import ir.sadteam.loancalc.server.execute
+import ir.sadteam.loancalc.server.optionalUid
 import ir.sadteam.loancalc.server.rateLimitOk
 import kotlinx.serialization.Serializable
 
@@ -105,6 +106,7 @@ fun Route.usageRoutes() {
             }
             val today = iranDay()
             val oldest = iranDay(-14)
+            val uid = call.optionalUid()
             // روزِ کلاینت فقط در بازه‌ی دو هفته‌ی اخیر پذیرفته می‌شود (رویدادِ آفلاین)؛ بقیه = امروز.
             val events = body.events.take(300)
                 .filter { EVENT_NAME.matches(it.name) }
@@ -147,6 +149,7 @@ fun Route.usageRoutes() {
                         if (body.loggedIn) 1 else 0,
                         cleanProfile(body.profile),
                     )
+                    if (uid != null) conn.execute("UPDATE installs SET user_id = ? WHERE install_id = ?", uid, body.installId)
                     events.forEach { (day, name, count) ->
                         conn.execute(
                             "INSERT INTO usage_daily (day, install_id, name, count) VALUES (?, ?, ?, ?) " +

@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.Flow
  */
 class InboxRepository(
     private val dao: InboxMessageDao,
+    /** برای «هدیه‌ی سکه»ی ادمین - پیامی که `coins` دارد یک بار به دفترِ سکه اضافه می‌شود. */
+    private val gamification: GamificationRepository? = null,
 ) {
     fun observeAll(): Flow<List<InboxMessageEntity>> = dao.observeAll()
 
@@ -64,6 +66,8 @@ class InboxRepository(
      */
     suspend fun mergeAnnouncements(items: List<ir.sadteam.loancalc.data.network.AnnouncementDto>) {
         items.forEach { a ->
+            // یکتا به‌ازای شناسه‌ی پیام (نوعِ یکتا در دفتر) - تکرارِ دریافت دوباره سکه نمی‌دهد.
+            if (a.coins > 0) runCatching { gamification?.awardOnce("admin_gift_${a.id}", a.coins) }
             val localId = -a.id
             if (dao.byId(localId) != null) return@forEach
             val created = parseServerUtc(a.createdAt) ?: System.currentTimeMillis()

@@ -20,6 +20,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.SupportAgent
+import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.material.icons.filled.MonetizationOn
+import ir.sadteam.loancalc.ui.theme.AppInfo
+import ir.sadteam.loancalc.ui.theme.AppPurple
+import ir.sadteam.loancalc.ui.theme.AppWarning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -54,6 +59,7 @@ import ir.sadteam.loancalc.ui.theme.AppText
 @Composable
 fun AdminHubScreen(onBack: () -> Unit, supportVm: SupportInboxViewModel = hiltViewModel()) {
     var page by remember { mutableStateOf<String?>(null) }
+    var gift by remember { mutableStateOf<String?>(null) }
     when (page) {
         "stats" -> { AdminStatsScreen(onBack = { page = null }); return }
         "support" -> { SupportInboxScreen(onBack = { page = null }, viewModel = supportVm); return }
@@ -73,19 +79,48 @@ fun AdminHubScreen(onBack: () -> Unit, supportVm: SupportInboxViewModel = hiltVi
                 Text("ابزارهای مدیریتِ جیبک - فقط برای تو", color = AppMuted, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
             }
         }
+        // بازطراحیِ ۸ مهر: کارتِ خلاصه‌ی بالا + ردیف‌های رنگی (پیام، گزارش، دو هدیه).
+        ir.sadteam.loancalc.ui.components.AppHeroCard {
+            Text("پیام‌های باز", color = ir.sadteam.loancalc.ui.components.HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(
+                if (items == null) "…" else toFa(open),
+                color = androidx.compose.ui.graphics.Color.White,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Black,
+            )
+            Text(
+                if (open > 0) "منتظرِ جوابِ تو" else "همه‌ی پیام‌ها جواب گرفته‌اند",
+                color = ir.sadteam.loancalc.ui.components.HeroMuted,
+                fontSize = 12.sp,
+            )
+        }
+        Text("پشتیبانی و آمار", color = AppMuted, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp, start = 4.dp))
         HubRow(Icons.Filled.SupportAgent, "پیام‌های کاربران", "مشکل، طراحی، پیشنهاد · جواب و هدیه", badge = open) { page = "support" }
-        HubRow(Icons.Filled.BarChart, "گزارشِ برنامه", "کاربران، استفاده، فروش، خطاها") { page = "stats" }
+        HubRow(Icons.Filled.BarChart, "گزارشِ برنامه", "کاربران، استفاده، فروش، خطاها", tint = AppInfo) { page = "stats" }
+        Text("هدیه", color = AppMuted, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp, start = 4.dp))
+        HubRow(Icons.Filled.WorkspacePremium, "هدیه‌ی اشتراک", "چند روز اشتراک به یک شماره‌ی کاربری", tint = AppWarning) { gift = "sub" }
+        HubRow(Icons.Filled.MonetizationOn, "هدیه‌ی سکه", "سکه به کیفِ یک کاربر", tint = AppPurple) { gift = "coins" }
+    }
+    gift?.let { mode ->
+        AdminGiftDialog(
+            coinsMode = mode == "coins",
+            onDismiss = { gift = null },
+            onSend = { user, n, text, done ->
+                supportVm.giftUser(user, if (mode == "sub") n else 0, if (mode == "coins") n else 0, text, done)
+            },
+        )
     }
 }
 
 @Composable
-private fun HubRow(icon: ImageVector, title: String, subtitle: String, badge: Int = 0, onClick: () -> Unit) {
+private fun HubRow(icon: ImageVector, title: String, subtitle: String, badge: Int = 0, tint: androidx.compose.ui.graphics.Color? = null, onClick: () -> Unit) {
     AppCard(modifier = Modifier.clickable(onClick = onClick)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            val t = tint ?: AppPrimaryInk
             Box(
-                Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimaryPill),
+                Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(if (tint == null) AppPrimaryPill else t.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
-            ) { Icon(icon, null, tint = AppPrimaryInk, modifier = Modifier.size(22.dp)) }
+            ) { Icon(icon, null, tint = t, modifier = Modifier.size(22.dp)) }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(title, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black)

@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,6 +71,8 @@ fun AdminStatsScreen(onBack: () -> Unit, viewModel: AdminStatsViewModel = hiltVi
     val state by viewModel.state.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     BackHandler(onBack = onBack)
+    // ۸ مهر: گزارش سه زبانه شد تا یک ستونِ بی‌پایان نباشد.
+    var tab by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
 
     Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
         LazyColumn(
@@ -108,18 +111,28 @@ fun AdminStatsScreen(onBack: () -> Unit, viewModel: AdminStatsViewModel = hiltVi
                         description = "اینترنت را چک کن و دوباره تازه کن. اگر درست نشد، شاید دسترسیِ این حساب برداشته شده.",
                     )
                 }
-                is AdminStatsViewModel.State.Ready -> statsContent(s.stats)
+                is AdminStatsViewModel.State.Ready -> {
+                    item {
+                        ir.sadteam.loancalc.ui.components.SegmentedToggle(
+                            options = listOf("خلاصه", "استفاده", "کاربران"),
+                            selectedIndex = tab,
+                            onSelect = { tab = it },
+                        )
+                    }
+                    statsContent(s.stats, tab)
+                }
             }
         }
     }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: AdminStatsResponse) {
+private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: AdminStatsResponse, tab: Int) {
     val daily = st.daily.orEmpty()
     val screens = st.screens.orEmpty()
     val actions = st.actions.orEmpty()
     val funnel = st.funnel.orEmpty()
 
+    if (tab == 0) {
     item { LiveCard(st) }
 
     item { Insights(st) }
@@ -172,7 +185,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
             }
         }
     }
+    }
 
+    if (tab == 2) {
     item {
         AppCard(label = "ماندگاری - برمی‌گردند؟") {
             st.retention.orEmpty().forEach { r ->
@@ -207,7 +222,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
     item { OnboardingCard(actions) }
 
     item { NotificationCard(actions) }
+    }
 
+    if (tab == 1) {
     val flows = st.flows.orEmpty().sortedByDescending { it.total }
     if (flows.isNotEmpty()) {
         item {
@@ -220,9 +237,13 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
             }
         }
     }
+    }
 
+    if (tab == 0) {
     item { HealthCard(st) }
+    }
 
+    if (tab == 2) {
     if (funnel.isNotEmpty()) {
         item {
             AppCard(label = "مسیرِ کاربرِ تازه") {
@@ -237,7 +258,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
             }
         }
     }
+    }
 
+    if (tab == 1) {
     item {
         AppCard(label = "زمانِ استفاده (۳۰ روز)") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -309,7 +332,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
             }
         }
     }
+    }
 
+    if (tab == 2) {
     val splits = st.profileSplits.orEmpty()
     if (splits.isNotEmpty()) {
         item {
@@ -334,6 +359,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.statsContent(st: Admi
             SplitRow("استور", st.stores.orEmpty()) { STORE_LABELS[it] ?: it }
             SplitRow("اندروید", st.sdks.orEmpty()) { sdkLabel(it) }
         }
+    }
     }
 
     item {
@@ -712,7 +738,7 @@ private fun InstallRowView(r: AdminInstallRow) {
                 r.version?.let { "نسخه ${toFa(it)}" },
                 r.store?.let { STORE_LABELS[it] ?: it },
                 r.android?.let { "اندروید ${it.faDigitsAscii()}" },
-                if (r.loggedIn) "وارد شده" else "مهمان",
+                if (r.loggedIn) "وارد شده" + (r.userCode?.let { " · $it" } ?: "") else "مهمان",
             ).joinToString(" · "),
             color = AppLabel,
             fontSize = 9.5.sp,

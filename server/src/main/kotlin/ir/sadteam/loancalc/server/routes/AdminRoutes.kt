@@ -64,6 +64,8 @@ data class InstallRow(
     val minutes30: Int = 0,
     val topScreen: String? = null,
     val loggedIn: Boolean = false,
+    /** شماره‌ی کاربریِ نمایشی (`Uid:…`) اگر نصب با حساب وارد شده باشد (۸ مهر). */
+    val userCode: String? = null,
 )
 
 /** فروشِ واقعی از جدولِ `subscription_purchases` (خرید‌های تأییدشده‌ی سرور). مبلغ به تومان. */
@@ -167,6 +169,32 @@ private suspend fun ApplicationCall.isAdminUser(): Boolean? {
 
 private fun Connection.int(sql: String, vararg params: Any?): Int = queryOne(sql, *params) { it.getInt(1) } ?: 0
 
+private val SQL_FMT = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+/** همان [ir.sadteam.loancalc.server.UserCode.of] ولی روی همین اتصال (بی اتصالِ تو‌در‌تو). */
+internal fun userCodeOf(conn: Connection, uid: Long): String? {
+    val created = conn.queryOne("SELECT created_at FROM users WHERE id = ?", uid) { it.getString(1) } ?: return null
+    return runCatching {
+        val iran = java.time.LocalDateTime.parse(created.take(19), SQL_FMT).plusMinutes(210)
+        val (jy, jm, jd) = ir.sadteam.loancalc.server.UserCode.toJalali(iran.year, iran.monthValue, iran.dayOfMonth)
+        val start = iran.toLocalDate().atStartOfDay().minusMinutes(210).format(SQL_FMT)
+        val end = iran.toLocalDate().plusDays(1).atStartOfDay().minusMinutes(210).format(SQL_FMT)
+        val nth = conn.int("SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ? AND id <= ?", start, end, uid)
+        "Uid:$jm${jy - 1000}${jd.toString().padStart(2, '0')}${nth.coerceAtLeast(1)}"
+    }.getOrNull()
+}
+
+/** «Uid:7405024» یا «7405024» → شناسه‌ی داخلی. تعدادِ حساب‌ها کم است، پس جست‌وجوی مستقیم بس است. */
+internal fun resolveUserCode(conn: Connection, input: String): Long? {
+    val code = input.trim().removePrefix("Uid:").removePrefix("uid:").trim()
+    if (code.isEmpty() || !code.all { it.isDigit() }) return null
+    val ids = buildList { conn.list("SELECT id FROM users") { add(it.getLong(1)) } }
+    return ids.firstOrNull { userCodeOf(conn, it) == "Uid:$code" }
+}
+
+@Serializable
+private data class AdminGiftBody(val user: String, val days: Int = 0, val coins: Int = 0, val text: String = "")
+
 private fun Connection.list(sql: String, vararg params: Any?, map: (java.sql.ResultSet) -> Unit) {
     prepareStatement(sql).use { ps ->
         params.forEachIndexed { i, p -> ps.setObject(i + 1, p) }
@@ -265,7 +293,7 @@ internal fun buildStats(conn: Connection): StatsResponse {
 
     val installsList = buildList {
         conn.list(
-            "SELECT install_id, first_day, last_day, active_days, app_version, store, profile, logged_in FROM installs " +
+            "SELECT install_id, first_day, last_day, active_days, app_version, store, profile, logged_in, user_id FROM installs " +
                 "ORDER BY last_day DESC, first_day DESC LIMIT 60",
         ) { rs ->
             val id = rs.getString(1)
@@ -281,11 +309,13 @@ internal fun buildStats(conn: Connection): StatsResponse {
                     device = listOfNotNull(prof["device_brand"], prof["device_model"]).joinToString(" ").ifBlank { null },
                     android = prof["android"],
                     loggedIn = rs.getInt(8) == 1,
+                    userCode = rs.getLong(9).takeIf { !rs.wasNull() }?.toString(),
                 ),
             )
         }
     }.map { (full, row) ->
         row.copy(
+            userCode = row.userCode?.toLongOrNull()?.let { uid -> userCodeOf(conn, uid) },
             sessions30 = conn.int("SELECT coalesce(SUM(count),0) FROM usage_daily WHERE install_id = ? AND day >= ? AND name = 'session_start'", full, d30),
             minutes30 = conn.int("SELECT coalesce(SUM(count),0) FROM usage_daily WHERE install_id = ? AND day >= ? AND name = 'time:app'", full, d30) / 60,
             topScreen = conn.queryOne(
@@ -436,6 +466,42 @@ fun Route.adminRoutes() {
                 return@get
             }
             call.respond(Db.withConnection { buildStats(it) })
+        }
+        // 🎁 هدیه‌ی مستقیم از صفحه‌ی ادمین (۸ مهر): اشتراک (روز) و/یا سکه به یک شماره‌ی کاربری.
+        // سکه روی خودِ گوشی اضافه می‌شود: یک پیامِ اختصاصی با ستونِ `coins` که گوشی با دیدنش
+        // (یک بار، به‌ازای شناسه‌ی پیام) به دفترِ سکه می‌افزاید.
+        post("/gift") {
+            val admin = call.isAdminUser() ?: return@post
+            if (!admin) {
+                call.respond(HttpStatusCode.Forbidden, mapOf("error" to "admin_only"))
+                return@post
+            }
+            val body = runCatching { call.receive<AdminGiftBody>() }.getOrNull()
+            if (body == null || body.days !in 0..365 || body.coins !in 0..10_000_000 || (body.days == 0 && body.coins == 0) || body.text.length > 1000) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid_request"))
+                return@post
+            }
+            val result = Db.withConnection { conn ->
+                val uid = resolveUserCode(conn, body.user) ?: return@withConnection "user_not_found"
+                if (body.days > 0) {
+                    val currentUntil = conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", uid) { it.getString(1) }
+                    val now = System.currentTimeMillis()
+                    val current = currentUntil?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
+                    val expiry = java.time.Instant.ofEpochMilli(maxOf(current, now) + body.days * 24L * 60 * 60 * 1000).toString()
+                    conn.executeCounting("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, uid)
+                }
+                val title = when {
+                    body.days > 0 && body.coins > 0 -> "🎁 هدیه: ${body.days} روز اشتراک + ${body.coins} سکه"
+                    body.days > 0 -> "🎁 هدیه: ${body.days} روز اشتراک"
+                    else -> "🎁 هدیه: ${body.coins} سکه"
+                }
+                conn.executeCounting(
+                    "INSERT INTO announcements (title, body, kind, target_user_id, coins) VALUES (?, ?, 'info', ?, ?)",
+                    title, body.text.ifBlank { "از طرفِ تیمِ جیبک، با آرزوی بهترین‌ها." }, uid, body.coins,
+                )
+                "ok"
+            }
+            if (result == "ok") call.respond(mapOf("ok" to true)) else call.respond(HttpStatusCode.NotFound, mapOf("error" to result))
         }
         post("/grant") {
             val token = env("ADMIN_TOKEN", "")

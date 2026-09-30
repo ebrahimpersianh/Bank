@@ -322,6 +322,10 @@ object Db {
             addColumnIfMissing(conn, "ALTER TABLE installs ADD COLUMN profile TEXT")
             // آخرین تماسِ این نصب (UTC) - برای «الان چند نفر داخلِ برنامه‌اند».
             addColumnIfMissing(conn, "ALTER TABLE installs ADD COLUMN last_seen_at TEXT")
+            // ۸ مهر (خواسته‌ی کاربر): حسابِ واردشده‌ی هر نصب - فقط برای نمایشِ شماره‌ی کاربری در ادمین.
+            addColumnIfMissing(conn, "ALTER TABLE installs ADD COLUMN user_id INTEGER")
+            // هدیه‌ی سکه از ادمین: پیامِ اختصاصی که گوشی با دیدنش این تعداد سکه به دفتر اضافه می‌کند.
+            addColumnIfMissing(conn, "ALTER TABLE announcements ADD COLUMN coins INTEGER NOT NULL DEFAULT 0")
             // شماره‌ی نسخه‌ی هر اسنپ‌شاتِ ابری - پایه‌ی کنترلِ هم‌زمانی (رجوع کن به BackupRoutes).
             // کلاینتِ کهنه که `expectedRevision` نمی‌فرستد، رفتارِ قبلی را می‌گیرد.
             addColumnIfMissing(conn, "ALTER TABLE loans ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")

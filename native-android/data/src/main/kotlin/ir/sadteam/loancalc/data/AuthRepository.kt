@@ -192,6 +192,15 @@ class AuthRepository(
         }.getOrDefault(false)
     }
 
+    /** هدیه‌ی مستقیم. نتیجه: `null` = موفق، `user_not_found`، یا `failed`. */
+    suspend fun adminGift(user: String, days: Int, coins: Int, text: String): String? {
+        val token = authPrefs.authToken.first() ?: return "no_auth"
+        return runCatching {
+            val r = apiService.adminGift("Bearer $token", ir.sadteam.loancalc.data.network.AdminGiftRequest(user, days, coins, text))
+            if (r.isSuccessful) null else if (r.code() == 404) "user_not_found" else "failed"
+        }.getOrDefault("failed")
+    }
+
     /** نتیجه: `null` = موفق، وگرنه کدِ خطا (`already_rewarded` و…). */
     suspend fun adminSupportGift(id: Long, days: Int, text: String): String? {
         val token = authPrefs.authToken.first() ?: return "no_auth"

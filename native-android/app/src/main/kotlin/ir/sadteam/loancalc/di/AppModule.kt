@@ -267,7 +267,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideInboxRepository(dao: InboxMessageDao): InboxRepository = InboxRepository(dao)
+    fun provideInboxRepository(dao: InboxMessageDao, gamification: GamificationRepository): InboxRepository =
+        InboxRepository(dao, gamification)
 
     @Provides
     @Singleton

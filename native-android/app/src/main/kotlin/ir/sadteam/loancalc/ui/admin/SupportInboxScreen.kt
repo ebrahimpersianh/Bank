@@ -107,6 +107,11 @@ class SupportInboxViewModel @Inject constructor(
         done(ok)
     }
 
+    /** هدیه‌ی مستقیم به شماره‌ی کاربری (از صفحه‌ی ادمین، نه از یک پیام). */
+    fun giftUser(user: String, days: Int, coins: Int, text: String, done: (String?) -> Unit) = viewModelScope.launch {
+        done(repo.adminGift(user, days, coins, text))
+    }
+
     fun gift(id: Long, days: Int, text: String, done: (String?) -> Unit) = viewModelScope.launch {
         val err = repo.adminSupportGift(id, days, text)
         if (err == null) load()
