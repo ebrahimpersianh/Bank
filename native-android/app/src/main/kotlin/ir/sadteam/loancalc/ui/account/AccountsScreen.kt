@@ -228,24 +228,24 @@ private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accoun
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(13.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("جمعِ موجودی", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                    Text("جمعِ موجودی", color = HeroMuted, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
                     Text(
                         // ⚠️ `total` **ریال** است و زیرش «تومان» نوشته می‌شد: عدد ده برابر
                         // بزرگ چاپ می‌شد. `rialToToman` پیش از فرمت.
                         rialToToman(total.toLong()).toFaMoney(),
                         color = Color.White,
-                        fontSize = 26.sp,
+                        fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
                         maxLines = 1,
                         softWrap = false,
                         modifier = Modifier.padding(top = 3.dp),
                     )
-                    Text("تومان · ${accounts.size.toFa()} حساب", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                    Text("تومان · ${accounts.size.toFa()} حساب", color = HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(AppRadius.icon))
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
                         .background(HeroPillBg),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -253,7 +253,7 @@ private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accoun
                         Icons.Outlined.AccountBalance,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(17.dp),
+                        modifier = Modifier.size(24.dp),
                     )
                 }
             }
