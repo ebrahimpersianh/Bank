@@ -90,7 +90,7 @@ fun SubscriptionFinderScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت")
                     }
-                    Text("اشتراک‌یاب", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("اشتراک‌های فراموش‌شده", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
                 }
             }
 
