@@ -763,9 +763,16 @@ fun ShopScreen(
         }
 
         if (tab == null || tab == ShopCategory.SYMBOL) {
-            val symbols = rowsOf(ShopCategory.SYMBOL)
+            // شکلِ سکه در همین دسته ذخیره شده ولی نمادِ دسته نیست - گروهِ جدا (۸ مهر).
+            val all = rowsOf(ShopCategory.SYMBOL)
+            val symbols = all.filterNot { it.id.startsWith("coinskin:") }
+            val coinSkins = all.filter { it.id.startsWith("coinskin:") }
             item { GroupHeader("نمادِ دسته‌بندی", "${toFa(CoinSpend.CATEGORY_ICON_SET.price)} سکه") }
             grid(symbols)
+            if (coinSkins.isNotEmpty()) {
+                item { GroupHeader("شکلِ سکه", "به‌زودی") }
+                grid(coinSkins)
+            }
             if (active[ShopCategory.SYMBOL] != null) {
                 item { ResetRow("بازگشت به نمادهای توپر", viewModel::resetSymbolSet) }
             }
