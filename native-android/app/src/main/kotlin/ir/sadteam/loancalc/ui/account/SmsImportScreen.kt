@@ -1,5 +1,11 @@
 package ir.sadteam.loancalc.ui.account
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.filled.AccountBalance
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -137,9 +143,9 @@ fun SmsImportScreen(
                     "می‌توانی پیام را «اشتراک‌گذاری» کنی و جیبک را بزنی."
             },
             color = AppMuted,
-            fontSize = 11.sp,
-            lineHeight = 19.sp,
-            modifier = Modifier.padding(bottom = 10.dp),
+            fontSize = 13.sp,
+            lineHeight = 21.sp,
+            modifier = Modifier.padding(bottom = 12.dp),
         )
 
         if (!granted) {
@@ -338,35 +344,58 @@ private fun SenderRow(
     banky: Boolean,
     onClick: () -> Unit,
 ) {
-    AppCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.99f, onClick = onClick)) {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Ltr {
-                    Text(address, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
-                }
-                if (banky) {
-                    Text(
-                        "بانکی",
-                        color = AppPrimary,
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
-                Text(
-                    "${count.toString().faDigits()} پیام",
-                    color = AppMuted,
-                    fontSize = 9.5.sp,
-                    modifier = Modifier.padding(start = 8.dp),
+    // طرحِ Claude Design (۸ مهر): کاشیِ آیکون، حاشیه‌ی سبز برای فرستنده‌ی بانکی.
+    AppCard(
+        modifier = Modifier.fillMaxWidth(),
+        borderColor = if (banky) AppPrimary.copy(alpha = 0.45f) else null,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.99f, onClick = onClick),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Box(
+                Modifier.size(40.dp).clip(RoundedCornerShape(13.dp))
+                    .background(if (banky) AppPrimary.copy(alpha = 0.12f) else AppMuted.copy(alpha = 0.10f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    if (banky) Icons.Filled.AccountBalance else Icons.Filled.Sms,
+                    contentDescription = null,
+                    tint = if (banky) AppPrimary else AppMuted,
+                    modifier = Modifier.size(20.dp),
                 )
             }
-            Text(
-                sample.replace('\n', ' ').take(90),
-                color = AppMuted,
-                fontSize = 10.5.sp,
-                lineHeight = 18.sp,
-                modifier = Modifier.padding(top = 3.dp),
-            )
+            Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Ltr {
+                        Text(address, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                    }
+                    if (banky) {
+                        Text(
+                            "بانکی",
+                            color = AppPrimary,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier
+                                .padding(start = 6.dp)
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(AppPrimary.copy(alpha = 0.12f))
+                                .padding(horizontal = 8.dp, vertical = 1.dp),
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Text("${count.toString().faDigits()} پیام", color = AppMuted, fontSize = 11.sp)
+                }
+                Text(
+                    sample.replace('\n', ' ').take(90),
+                    color = AppMuted,
+                    fontSize = 12.sp,
+                    lineHeight = 20.sp,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
         }
     }
 }
