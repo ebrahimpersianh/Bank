@@ -192,6 +192,8 @@ class DueListViewModel @Inject constructor(
                 // `when` نوشته شده نه `==` تا اگر وضعیتِ تازه‌ای اضافه شد جایش پیدا باشد.
                 paid = when (cheque.status) {
                     "PASSED" -> true
+                    // مستردشده دیگر سررسیدی ندارد؛ قبلاً برای همیشه «عقب‌افتاده» می‌ماند.
+                    "REFUNDED" -> true
                     "BOUNCED" -> false
                     else -> false
                 },
