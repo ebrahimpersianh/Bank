@@ -214,6 +214,15 @@ class AuthViewModel @Inject constructor(
             // عکس‌های روزانه‌ی دارایی هم **کاربرمحور**ند: مانده‌ی حسابِ کاربرِ قبلی
             // نباید در نمودارِ کاربرِ بعدی دیده شود (قاعده‌ی داده‌ی کاربرمحور در خروج).
             wealthSnapshotRepository.clearLocal()
+            clearLocalFiles()
+        }
+    }
+
+    /** عکس‌های رسید/چک و پشتیبان‌های خودکارِ محلی هم مالِ همین حساب‌اند (بازبینیِ ۹ مهر): بی این،
+     * با ورودِ شماره‌ی دیگر عکس‌های کاربرِ قبلی در ابرِ نفرِ بعدی بارگذاری می‌شدند. */
+    private fun clearLocalFiles() {
+        listOf("attachments", "receipts", ir.sadteam.loancalc.notifications.AutoBackupWorker.BACKUP_DIR_NAME).forEach {
+            runCatching { java.io.File(appContext.filesDir, it).deleteRecursively() }
         }
     }
 
@@ -229,6 +238,8 @@ class AuthViewModel @Inject constructor(
             dangRepository.observeEvents().first().isNotEmpty() ||
             noteRepository.observeNotes().first().isNotEmpty()
         val accountsOk = !accountsHaveData || accountRepository.pushToServer(token)
+        // عکس‌ها هم پیش از پاک‌شدن بالا بروند.
+        runCatching { ir.sadteam.loancalc.data.PhotoSync.sync(appContext, token) }
         return loansOk && chequesOk && accountsOk
     }
 
@@ -328,6 +339,7 @@ class AuthViewModel @Inject constructor(
                     dangRepository.clearLocal()
                     noteRepository.clearLocal()
                     wealthSnapshotRepository.clearLocal()
+                    clearLocalFiles()
                     onSuccess()
                 }
                 is AuthResult.Error -> onError(result.code)
