@@ -150,6 +150,12 @@ fun BudgetTabScreen(
     }
 
     var showAddBudget by remember { mutableStateOf(false) }
+    // بازبینیِ ۹ مهر: بودجه مالِ اشتراک است ولی از همین تب بی‌قفل ساخته می‌شد.
+    val premium = ir.sadteam.loancalc.ui.subscription.LocalIsPremium.current
+    fun openAddBudget() {
+        if (premium) showAddBudget = true
+        else ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("budget", "بودجه")
+    }
     var suggestionCategory by remember { mutableStateOf<CategoryEntry?>(null) }
 
     val spend = remember(allTransactions, today) {
@@ -239,15 +245,19 @@ fun BudgetTabScreen(
             contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 110.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { BudgetHeader(onAdd = { showAddBudget = true }, showAdd = rows.isNotEmpty()) }
+            item { BudgetHeader(onAdd = { openAddBudget() }, showAdd = rows.isNotEmpty()) }
             if (rows.isEmpty()) {
-                item { NoBudgetCard(onCreate = { showAddBudget = true }) }
+                item { NoBudgetCard(onCreate = { openAddBudget() }) }
                 if (starterSuggestions.isNotEmpty()) {
                     item {
                         StarterSuggestions(
                             starters = starterSuggestions,
                             privacyMode = privacyMode,
                             onAcceptAll = {
+                                if (!premium) {
+                                    ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("budget", "بودجه")
+                                    return@StarterSuggestions
+                                }
                                 starterSuggestions.forEach { viewModel.setBudget(it.category.name, it.cap) }
                             },
                         )
@@ -289,7 +299,7 @@ fun BudgetTabScreen(
             transfer?.let { t ->
                 item {
                     TransferSuggestionCard(
-                        text = "بودجه‌ی ${t.to.category.name} را ${(t.amount).rialToFaCompact()} تومان از " +
+                        text = "بودجه‌ی ${t.to.category.name} را ${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, (t.amount).rialToFaCompact())} تومان از " +
                             "${t.from.category.name} قرض بدهم تا ماه تراز شود؟",
                         // کنشِ بازگشت‌پذیر دیالوگ نمی‌گیرد، `UndoBar` می‌گیرد - قاعده‌ی `46b`.
                         // این تپ دو بودجه را هم‌زمان عوض می‌کند، پس بی راهِ برگشت نمی‌ماند.
@@ -647,7 +657,7 @@ private fun DailyAllowanceHero(
             HeroChart(
                 values = monthDaily,
                 labels = monthDaily.indices.map { i -> if (i + 1 == dayOfMonth) "امروز" else "${toFa(i + 1)} این ماه" },
-                valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
+                valueLabel = { value -> if (privacyMode) "•••" else "${value.rialToFaCompact()} تومان" },
                 currentIndex = (dayOfMonth - 1).coerceIn(0, monthDaily.lastIndex),
                 natural = HeroChartStyle.BARS,
                 height = 34.dp,
@@ -673,7 +683,7 @@ private fun DailyAllowanceHero(
                     modifier = Modifier.size(13.dp),
                 )
                 Text(
-                    "+${saved.rialToFaCompact()} ذخیره",
+                    "+${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, saved.rialToFaCompact())} ذخیره",
                     color = Color.White,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
