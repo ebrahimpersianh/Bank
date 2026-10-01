@@ -16,24 +16,25 @@ object StatsXlsxExporter {
     fun export(summary: StatsSummary, loans: List<LoanEntity>, out: OutputStream) {
         ir.sadteam.loancalc.data.UsageStats.action("export_loans_excel")
         val rows = buildList<List<Any>> {
-            add(listOf("نام وام", "بانک", "مبلغ قسط", "تعداد اقساط", "پرداخت‌شده", "مانده"))
+            add(listOf("نام وام", "بانک", "مبلغ قسط (تومان)", "تعداد اقساط", "پرداخت‌شده", "مانده (تومان)"))
             loans.forEach { loan ->
                 add(
                     listOf(
                         loan.name,
                         loan.bank,
-                        loan.installment,
+                        // دیتابیس ریال؛ خروجی تومان (بازبینیِ ۹ مهر).
+                        loan.installment.toLong() / 10,
                         loan.n,
                         loan.paidCount,
-                        loan.installment * (loan.n - loan.paidCount),
+                        (loan.installment * (loan.n - loan.paidCount)).toLong() / 10,
                     ),
                 )
             }
             add(emptyList())
             add(listOf("تعداد وام‌ها", summary.loanCount))
-            add(listOf("مجموع مبلغ وام‌ها", summary.totalAmount))
-            add(listOf("مجموع پرداخت‌شده", summary.paidAmount))
-            add(listOf("مانده‌ی کل", summary.remainingAmount))
+            add(listOf("مجموع مبلغ وام‌ها (تومان)", summary.totalAmount.toLong() / 10))
+            add(listOf("مجموع پرداخت‌شده (تومان)", summary.paidAmount.toLong() / 10))
+            add(listOf("مانده‌ی کل (تومان)", summary.remainingAmount.toLong() / 10))
             add(listOf("اقساط پرداخت‌شده", summary.paidInstallments))
             add(listOf("تعداد کل اقساط", summary.totalInstallments))
         }
