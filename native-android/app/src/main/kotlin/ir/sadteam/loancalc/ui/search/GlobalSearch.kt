@@ -232,7 +232,7 @@ class GlobalSearchViewModel @Inject constructor(
                     normalizeForSearch("${a.name} ${a.symbol} ${a.category}")))
             }
             goals.forEach { g ->
-                add(SearchHit(SearchKind.GOAL, g.id, g.title, "پس‌انداز شده ${toFa(fmt(g.savedRial / 10))} تومان", g.targetRial,
+                add(SearchHit(SearchKind.GOAL, g.id, g.title, "هدفِ پس‌انداز", g.targetRial,
                     normalizeForSearch("${g.title} ${g.targetRial.toLong()} ${(g.targetRial / 10).toLong()}")))
             }
             dangs.forEach { e ->
