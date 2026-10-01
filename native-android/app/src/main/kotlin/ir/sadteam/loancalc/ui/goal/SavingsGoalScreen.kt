@@ -369,7 +369,7 @@ private fun GoalRow(
             if (months != null && months > 0) {
                 Text(
                     "${toFa(months)} ماه مانده · ماهی " +
-                        "${amountToman(goal.remainingRial / months)} تومان لازم است",
+                        "${maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, amountToman(goal.remainingRial / months))} تومان لازم است",
                     color = AppMuted,
                     fontSize = 10.sp,
                     modifier = Modifier.padding(top = 6.dp),
