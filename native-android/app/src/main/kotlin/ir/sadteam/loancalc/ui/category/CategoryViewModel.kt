@@ -125,7 +125,16 @@ class CategoryViewModel @Inject constructor(
     }
 
     fun deleteCustomCategory(entity: CustomCategoryEntity) {
-        viewModelScope.launch { categoryRepository.deleteCustomCategory(entity) }
+        viewModelScope.launch {
+            dropBudgetsOf(entity.name)
+            categoryRepository.deleteCustomCategory(entity)
+        }
+    }
+
+    /** بودجه‌ی دسته‌ی حذف‌شده هم برود (بازبینیِ ۹ مهر) - وگرنه در سقفِ کلِ ماه و هشدارها می‌ماند. */
+    private suspend fun dropBudgetsOf(name: String) {
+        accountRepository.observeBudgets().first().filter { it.categoryName == name }
+            .forEach { accountRepository.deleteBudget(it) }
     }
 
     /** چند تراکنشِ ثبت‌شده به این دسته وصل‌ان؟ - قبل از حذف باید به کاربر گفته بشه. */
@@ -142,6 +151,7 @@ class CategoryViewModel @Inject constructor(
             accountRepository.observeTransactions().first()
                 .filter { it.category == entity.name }
                 .forEach { accountRepository.updateTransaction(it.copy(category = target)) }
+            dropBudgetsOf(entity.name)
             categoryRepository.deleteCustomCategory(entity)
         }
     }
