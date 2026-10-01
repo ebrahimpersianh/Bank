@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.accounting
 
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.minimumInteractiveComponentSize
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.components.AppButtonVariant
 import ir.sadteam.loancalc.ui.components.GradientButton
@@ -542,6 +543,7 @@ private fun ReportHeader(
             Box(
                 modifier = Modifier
                     .padding(start = 3.dp)
+                    .minimumInteractiveComponentSize()
                     .size(32.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(if (privacyMode) PrivacyOnBg else PrivacyOffBg)

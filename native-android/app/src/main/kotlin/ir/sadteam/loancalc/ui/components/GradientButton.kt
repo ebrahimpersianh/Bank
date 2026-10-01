@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -137,6 +138,7 @@ fun GradientButton(
 
     Box(
         modifier = modifier
+            .then(if (variant == AppButtonVariant.IN_ROW) Modifier.minimumInteractiveComponentSize() else Modifier)
             .offset(y = sink)
             .hardShadow(shadowColor, shadow, AppRadius.button)
             .clip(shape)

@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -155,7 +156,7 @@ fun NavEditorSheet(
                     Icons.Outlined.Close,
                     contentDescription = "بستن",
                     tint = AppMuted,
-                    modifier = Modifier.size(20.dp).clickable(onClick = onClose),
+                    modifier = Modifier.minimumInteractiveComponentSize().clickable(onClick = onClose).size(20.dp),
                 )
             }
             Spacer(Modifier.height(6.dp))

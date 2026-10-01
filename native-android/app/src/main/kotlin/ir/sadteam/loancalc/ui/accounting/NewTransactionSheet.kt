@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.graphics.graphicsLayer
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.theme.AppTxOut
@@ -265,6 +266,7 @@ fun NewTransactionSheet(
         ) {
             Box(
                 modifier = Modifier
+                    .minimumInteractiveComponentSize()
                     .size(32.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(AppSurface)

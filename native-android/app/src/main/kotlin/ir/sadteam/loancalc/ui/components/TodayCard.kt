@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -120,6 +121,7 @@ fun TodayCard(
 private fun TodayQuickAction(label: String, icon: ImageVector, onClick: () -> Unit) {
     Row(
         modifier = Modifier
+            .minimumInteractiveComponentSize()
             .background(AppPrimaryPill, RoundedCornerShape(50))
             .pressScaleClickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 9.dp),

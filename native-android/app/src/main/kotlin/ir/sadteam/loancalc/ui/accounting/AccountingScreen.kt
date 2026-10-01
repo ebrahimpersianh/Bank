@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.PieChart
+import androidx.compose.material3.minimumInteractiveComponentSize
 import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -1168,6 +1169,7 @@ private fun MonthNavArrow(icon: ImageVector, contentDescription: String, onClick
     // سبز رو زمینه‌ی سبز اصلاً دیده نمی‌شد.
     Box(
         modifier = Modifier
+            .minimumInteractiveComponentSize()
             .size(28.dp)
             .clip(CircleShape)
             .background(HeroPillBg)
@@ -1533,6 +1535,7 @@ private fun DateRibbonHeader(viewDate: PersianDate, onDateChange: (PersianDate) 
 private fun DateRibbonArrow(icon: ImageVector, contentDescription: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
+            .minimumInteractiveComponentSize()
             .size(28.dp)
             .clip(CircleShape)
             .background(AppPrimaryPill)
