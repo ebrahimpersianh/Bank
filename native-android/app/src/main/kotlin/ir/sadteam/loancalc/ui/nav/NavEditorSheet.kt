@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.theme.AppElevation
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
@@ -60,6 +61,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppShadowNeutral
 import ir.sadteam.loancalc.ui.theme.AppStroke
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -426,9 +428,9 @@ private fun DraggableCell(
                     translationY = dy
                     scaleX = 1.06f
                     scaleY = 1.06f
-                    shadowElevation = 8f
                 }
             }
+            .then(if (dragging) Modifier.hardShadow(AppShadowNeutral, AppElevation.raised, AppRadius.row) else Modifier)
             .pointerInput(enabled, onDropAt) {
                 if (!enabled) return@pointerInput
                 // کشیدنِ **بی‌درنگ**: نگه‌داشتنِ طولانی لازم نیست، چون این خانه‌ها اسکرول

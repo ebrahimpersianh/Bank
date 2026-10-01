@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.Icon
@@ -69,6 +68,7 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
 import ir.sadteam.loancalc.ui.theme.AppDangerBorder
+import ir.sadteam.loancalc.ui.theme.AppElevation
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -240,7 +240,7 @@ fun FinancialCalendarScreen(
                                                 ) {
                                                     Column(
                                                         modifier = Modifier.size(38.dp)
-                                                            .then(if (isSelected) Modifier.shadow(10.dp, CircleShape, ambientColor = AppPrimary, spotColor = AppPrimary) else Modifier)
+                                                            .then(if (isSelected) Modifier.hardShadow(AppPrimaryDim, AppElevation.raised, 19.dp) else Modifier)
                                                             .background(
                                                                 when { isSelected -> AppPrimary; col == 6 -> AppWarningPill; else -> AppLineRow.copy(alpha = 0.45f) },
                                                                 if (isSelected) CircleShape else RoundedCornerShape(12.dp),

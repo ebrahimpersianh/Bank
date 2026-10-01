@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.ui.components
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -47,10 +48,16 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.toFa
+import ir.sadteam.loancalc.ui.theme.AppElevation
+import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppShadowNeutral
+import ir.sadteam.loancalc.ui.theme.AppStroke
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.hardShadow
 
 /**
  * 🧭 **راهنمای تعاملی روی خودِ برنامه** (۹ مهر، خواسته‌ی کاربر: «رو خودِ برنامه بگه رو فلان
@@ -127,7 +134,7 @@ fun GuideOverlay(
             .align(if (atTop) Alignment.TopCenter else Alignment.BottomCenter)
             .statusBarsPadding()
             .padding(horizontal = 16.dp, vertical = if (atTop) 12.dp else 110.dp)) { _ ->
-            Surface(color = AppSurface, shape = RoundedCornerShape(22.dp), shadowElevation = 8.dp, modifier = Modifier.fillMaxWidth()) {
+            Surface(color = AppSurface, shape = RoundedCornerShape(AppRadius.card), modifier = Modifier.fillMaxWidth().hardShadow(AppShadowNeutral, AppElevation.neutral, AppRadius.card).border(AppStroke.card, AppLine, RoundedCornerShape(AppRadius.card))) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(26.dp).clip(CircleShape).background(primary), contentAlignment = Alignment.Center) {
