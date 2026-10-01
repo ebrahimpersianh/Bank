@@ -317,7 +317,7 @@ private fun AssetSummaryCard(
                         Text(
                             "قیمتِ دستی",
                             color = p.subInk,
-                            fontSize = 8.sp,
+                            fontSize = 9.5.sp,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier
                                 .padding(start = 7.dp)
@@ -500,14 +500,14 @@ private fun AssetSparkline(points: List<PricePoint>) {
             Text(
                 max.rialToFaCompact(),
                 color = AppLabel,
-                fontSize = 8.5.sp,
+                fontSize = 9.5.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.TopStart),
             )
             Text(
                 min.rialToFaCompact(),
                 color = AppLabel,
-                fontSize = 8.5.sp,
+                fontSize = 9.5.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.BottomStart),
             )
@@ -520,11 +520,11 @@ private fun AssetSparkline(points: List<PricePoint>) {
             val last = points.last()
             Text(
                 "${first.day.toFa()} ${faMonthName(first.month)}",
-                color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Bold,
+                color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold,
             )
             Text(
                 "${last.day.toFa()} ${faMonthName(last.month)}",
-                color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Bold,
+                color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold,
             )
         }
     }

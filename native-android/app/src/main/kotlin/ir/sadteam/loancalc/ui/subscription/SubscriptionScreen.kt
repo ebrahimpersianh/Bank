@@ -712,7 +712,7 @@ private fun PlanCard(
                 Text(
                     "≈ ماهی ${groupedFa(rial / 10 / months)}",
                     color = AppMuted,
-                    fontSize = 8.5.sp,
+                    fontSize = 9.5.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     modifier = Modifier.padding(top = 4.dp),

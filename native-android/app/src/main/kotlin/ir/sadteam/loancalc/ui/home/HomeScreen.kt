@@ -1392,8 +1392,8 @@ private fun CategoryBreakdownCard(
                     Text(
                         centerUnit,
                         color = AppLabel,
-                        fontSize = 7.5.sp,
-                        lineHeight = 9.sp,
+                        fontSize = 9.5.sp,
+                        lineHeight = 11.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                     )
@@ -1570,7 +1570,7 @@ private fun HomeQuickCard(
         Text(
             subtitle,
             color = AppLabel,
-            fontSize = 8.5.sp,
+            fontSize = 9.5.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -1770,7 +1770,7 @@ private fun WeekCell(
     trend: Int? = null,
 ) {
     Column {
-        Text(label, color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
         PrivacyCrossfade(privacyMode) { masked ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,

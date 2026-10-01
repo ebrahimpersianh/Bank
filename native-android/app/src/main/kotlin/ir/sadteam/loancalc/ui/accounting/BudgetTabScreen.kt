@@ -670,7 +670,7 @@ private fun DailyAllowanceHero(
         ) {
             Text(
                 "${toFa(daysLeft)} روز تا پایانِ ماه",
-                color = Color.White.copy(alpha = 0.75f),
+                color = Color.White.copy(alpha = 0.85f),
                 fontSize = 9.5.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f),
@@ -720,7 +720,7 @@ private fun HeroPillLabel(icon: androidx.compose.ui.graphics.vector.ImageVector,
 private fun HeroMiniStat(up: Boolean, label: String, value: Double, privacyMode: Boolean, modifier: Modifier = Modifier) {
     val ink = if (up) HeroIncome else HeroExpense
     Column(modifier = modifier, horizontalAlignment = Alignment.End) {
-        Text(label, color = Color.White.copy(alpha = 0.75f), fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(label, color = Color.White.copy(alpha = 0.85f), fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 1.dp)) {
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(

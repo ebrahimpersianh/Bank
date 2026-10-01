@@ -1349,7 +1349,7 @@ private fun DashboardSummary(
                         Text(
                             "${toFa(overdueCount)} قسطِ معوق",
                             color = Color.White,
-                            fontSize = 7.5.sp,
+                            fontSize = 9.5.sp,
                             fontWeight = FontWeight.Black,
                             modifier = Modifier
                                 .padding(start = 6.dp)
@@ -1411,7 +1411,7 @@ private fun DashboardSummary(
                         Text(
                             "${toFa(rowsAll - rowsLeft)} پرداخت شده",
                             color = Color.White,
-                            fontSize = 8.sp,
+                            fontSize = 9.5.sp,
                             fontWeight = FontWeight.Black,
                             maxLines = 1,
                         )
@@ -1509,7 +1509,7 @@ private fun DashboardSummary(
                     Text(
                         persianMonthName(todayForWave.m),
                         color = Color.White,
-                        fontSize = 7.5.sp,
+                        fontSize = 9.5.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier
                             .align(AbsoluteAlignment.TopLeft)
@@ -1529,7 +1529,7 @@ private fun DashboardSummary(
                     Text(
                         "ماندهٔ کل",
                         color = HeroMuted,
-                        fontSize = 7.5.sp,
+                        fontSize = 9.5.sp,
                         fontWeight = FontWeight.Black,
                     )
                     PrivacyCrossfade(privacyMode) { masked ->
@@ -1547,7 +1547,7 @@ private fun DashboardSummary(
                         Text(
                             "تا آزادی",
                             color = HeroMuted,
-                            fontSize = 7.5.sp,
+                            fontSize = 9.5.sp,
                             fontWeight = FontWeight.Black,
                         )
                         Text(
@@ -1565,7 +1565,7 @@ private fun DashboardSummary(
                         Text(
                             "معوق",
                             color = AppDangerInk.copy(alpha = 0.75f),
-                            fontSize = 7.5.sp,
+                            fontSize = 9.5.sp,
                             fontWeight = FontWeight.Black,
                         )
                         PrivacyCrossfade(privacyMode) { masked ->

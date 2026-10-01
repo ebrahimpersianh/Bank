@@ -760,7 +760,7 @@ private fun SelectionTile(
             Text(
                 "در نوارِ پایین",
                 color = AppLabel,
-                fontSize = 8.5.sp,
+                fontSize = 9.5.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 2.dp),

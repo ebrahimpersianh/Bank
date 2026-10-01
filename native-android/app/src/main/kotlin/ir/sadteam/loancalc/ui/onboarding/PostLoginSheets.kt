@@ -102,8 +102,8 @@ private fun GiftPage(
         Text(
             if (daysText != null) "$daysText اشتراک هدیه گرفتی 🎉" else "اشتراک هدیه گرفتی 🎉",
             color = AppText,
-            fontSize = 21.sp,
-            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Black,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
@@ -174,8 +174,8 @@ private fun BackupReassurancePage(onDone: () -> Unit) {
         Text(
             "نگرانِ از دست رفتنِ اطلاعاتت نباش",
             color = AppText,
-            fontSize = 21.sp,
-            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Black,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()

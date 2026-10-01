@@ -175,7 +175,7 @@ private fun BadgeRow(item: BadgeProgress) {
                     Text(
                         "${toFa((progress * 100).roundToInt())}٪",
                         color = AppPrimaryInk,
-                        fontSize = 8.sp,
+                        fontSize = 9.5.sp,
                         fontWeight = FontWeight.Black,
                     )
                 }

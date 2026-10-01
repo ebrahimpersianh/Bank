@@ -104,7 +104,6 @@ import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
-import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
@@ -710,9 +709,9 @@ fun ResultScreen(
                     modifier = Modifier.fillMaxWidth().padding(start = 10.dp, bottom = 6.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text("شماره", color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Black)
-                    Text("سررسید", color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Black)
-                    Text("مبلغِ قسط", color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Black)
+                    Text("شماره", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
+                    Text("سررسید", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
+                    Text("مبلغِ قسط", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
                 }
                 HorizontalDivider(color = AppLine)
 

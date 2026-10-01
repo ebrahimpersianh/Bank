@@ -1136,7 +1136,7 @@ private fun HoldingRow(
                 Text(
                     profit.rialToFaSignedCompact(),
                     color = if (profit >= 0) AppPrimaryInk else AppDangerInk,
-                    fontSize = 8.5.sp,
+                    fontSize = 9.5.sp,
                     fontWeight = FontWeight.Black,
                 )
             }
@@ -1416,7 +1416,7 @@ private fun MyAssetsSection(
                                 fontWeight = FontWeight.Black,
                             )
                         }
-                        Text("تومان", color = AppMuted, fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
+                        Text("تومان", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                         change?.let { PriceChangeBadge(it, modifier = Modifier.padding(top = 2.dp)) }
                     }
                     Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.padding(start = 4.dp).size(18.dp))
@@ -1527,7 +1527,7 @@ internal fun MarketGridRow(
                 if (owned) Box(modifier = Modifier.padding(start = 4.dp).size(6.dp).clip(CircleShape).background(AppPrimary))
             }
             if (subtitle != null) {
-                Ltr { Text(subtitle, color = AppMuted, fontSize = 8.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.padding(top = 2.dp)) }
+                Ltr { Text(subtitle, color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.padding(top = 2.dp)) }
             }
         }
         Box(modifier = Modifier.width(58.dp).padding(horizontal = 4.dp), contentAlignment = Alignment.Center) { trend() }
@@ -1544,10 +1544,10 @@ internal fun MarketGridRow(
                 text = price?.let { "$it تومان" } ?: "—",
                 color = if (price == null) AppMuted else AppText,
                 maxFontSize = 11.sp,
-                minFontSize = 7.sp,
+                minFontSize = 9.5.sp,
                 fontWeight = FontWeight.Black,
             )
-            if (secondLine != null) Text(secondLine, color = AppMuted, fontSize = 8.5.sp, maxLines = 1)
+            if (secondLine != null) Text(secondLine, color = AppMuted, fontSize = 9.5.sp, maxLines = 1)
         }
         Box(modifier = Modifier.width(62.dp).padding(start = 6.dp), contentAlignment = Alignment.Center) { trailing() }
     }

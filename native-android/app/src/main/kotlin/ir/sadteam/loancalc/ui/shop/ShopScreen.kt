@@ -1080,7 +1080,7 @@ private fun ShopRow(
                     Text(
                         "${toFa(item.price - balance)} سکه کم داری",
                         color = AppDangerInk,
-                        fontSize = 8.sp,
+                        fontSize = 9.5.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(top = 2.dp),
                     )
@@ -1433,7 +1433,7 @@ private fun CompactProductCard(
                 Text(
                     item.blurb,
                     color = AppLabel,
-                    fontSize = 8.5.sp,
+                    fontSize = 9.5.sp,
                     lineHeight = 13.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,

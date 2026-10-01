@@ -127,7 +127,7 @@ internal fun ChequeReportScreen(
                         trackColor = Color.White.copy(alpha = 0.15f),
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("${toFa(stats.passRatePercent.toInt())}٪", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
+                            Text("${toFa(stats.passRatePercent.toInt())}٪", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black)
                             Text("پاس‌شده", color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                         }
                     }

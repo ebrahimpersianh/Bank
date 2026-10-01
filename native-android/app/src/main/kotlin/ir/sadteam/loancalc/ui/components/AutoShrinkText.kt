@@ -24,7 +24,7 @@ fun AutoShrinkText(
     color: Color,
     maxFontSize: TextUnit,
     modifier: Modifier = Modifier,
-    minFontSize: TextUnit = 8.sp,
+    minFontSize: TextUnit = 9.5.sp,
     /** عددِ هیرو (بخشِ ۶۹) درشت و ضخیم است؛ بقیه‌ی مصرف‌ها وزنِ پیش‌فرض می‌گیرند. */
     fontWeight: FontWeight? = null,
 ) {

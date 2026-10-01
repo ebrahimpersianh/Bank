@@ -456,7 +456,7 @@ private fun PriceStateBadge(
     Text(
         label,
         color = ink,
-        fontSize = 8.5.sp,
+        fontSize = 9.5.sp,
         fontWeight = FontWeight.Black,
         modifier = modifier
             .clip(shape)

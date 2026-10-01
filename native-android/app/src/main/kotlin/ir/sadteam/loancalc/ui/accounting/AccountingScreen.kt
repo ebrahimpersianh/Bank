@@ -1606,7 +1606,7 @@ private fun ReportMonthHero(
         if (monthlySpend.none { it > 0.0 }) {
             Text(
                 "هنوز خرجی ثبت نکردی - با اولین تراکنش، روندِ ماه‌ها همین‌جا ساخته می‌شه",
-                color = Color.White.copy(alpha = 0.72f),
+                color = Color.White.copy(alpha = 0.85f),
                 fontSize = 10.5.sp,
                 fontWeight = FontWeight.Bold,
                 lineHeight = 18.sp,
@@ -1641,8 +1641,8 @@ private fun ReportMonthHero(
                 .padding(top = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(firstMonthLabel, color = Color.White.copy(alpha = 0.62f), fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
-            Text(monthLabel, color = Color.White, fontSize = 8.5.sp, fontWeight = FontWeight.ExtraBold)
+            Text(firstMonthLabel, color = Color.White.copy(alpha = 0.85f), fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+            Text(monthLabel, color = Color.White, fontSize = 9.5.sp, fontWeight = FontWeight.ExtraBold)
         }
     }
 }

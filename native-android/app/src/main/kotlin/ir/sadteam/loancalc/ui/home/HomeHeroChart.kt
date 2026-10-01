@@ -50,7 +50,7 @@ fun HomeSevenDayChart(
     if (values.none { it > 0.0 }) {
         Text(
             "این هفته هنوز خرجی ثبت نکردی",
-            color = Color.White.copy(alpha = 0.72f),
+            color = Color.White.copy(alpha = 0.85f),
             fontSize = 10.5.sp,
             fontWeight = FontWeight.Bold,
             modifier = modifier.fillMaxWidth().padding(top = 2.dp),
@@ -85,14 +85,14 @@ fun HomeSevenDayChartLabels(modifier: Modifier = Modifier) {
     ) {
         Text(
             "۷ روزِ گذشته",
-            color = Color.White.copy(alpha = 0.60f),
-            fontSize = 8.5.sp,
+            color = Color.White.copy(alpha = 0.85f),
+            fontSize = 9.5.sp,
             fontWeight = FontWeight.Bold,
         )
         Text(
             "امروز",
             color = Color.White.copy(alpha = 0.85f),
-            fontSize = 8.5.sp,
+            fontSize = 9.5.sp,
             fontWeight = FontWeight.ExtraBold,
         )
     }

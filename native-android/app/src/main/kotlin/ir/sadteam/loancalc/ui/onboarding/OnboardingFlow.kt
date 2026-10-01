@@ -202,8 +202,8 @@ private fun StepHeader(title: String, subtitle: String, image: Int? = null) {
     Text(
         title,
         color = AppText,
-        fontSize = 22.sp,
-        fontWeight = FontWeight.Bold,
+        fontSize = 18.sp,
+        fontWeight = FontWeight.Black,
         textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth(),
     )

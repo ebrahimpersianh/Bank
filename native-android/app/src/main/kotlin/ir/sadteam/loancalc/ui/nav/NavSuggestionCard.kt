@@ -147,7 +147,7 @@ private fun MiniNavPreview(
                 Text(
                     dest.label,
                     color = if (on) AppPrimary else AppMuted,
-                    fontSize = 8.sp,
+                    fontSize = 9.5.sp,
                     fontWeight = if (on) FontWeight.Black else FontWeight.Medium,
                     textAlign = TextAlign.Center,
                     maxLines = 1,

@@ -61,7 +61,7 @@ fun ChartTooltip(
                 .padding(horizontal = 9.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(title, color = titleColor, fontSize = 8.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(title, color = titleColor, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             Text(value, color = valueColor, fontSize = 10.5.sp, fontWeight = FontWeight.Black, maxLines = 1)
         }
     }

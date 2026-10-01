@@ -1834,7 +1834,7 @@ private fun LoanIdentityStat(label: String, value: String, unit: String, modifie
             modifier = Modifier.padding(top = 2.dp),
         )
         if (unit.isNotBlank()) {
-            Text(unit, color = HeroMuted, fontSize = 7.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(unit, color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         }
     }
 }
@@ -2000,7 +2000,7 @@ private fun PaymentRhythm(
                     Text(
                         labels.getOrElse(index) { "" },
                         color = if (current) AppText else AppMuted,
-                        fontSize = 8.5.sp,
+                        fontSize = 9.5.sp,
                         fontWeight = if (current) FontWeight.Black else FontWeight.Bold,
                         maxLines = 1,
                         textAlign = TextAlign.Center,
@@ -2029,7 +2029,7 @@ private fun PaymentRhythm(
                         Text(
                             name,
                             color = AppMuted,
-                            fontSize = 8.sp,
+                            fontSize = 9.5.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             modifier = Modifier.padding(start = 3.dp),

@@ -153,7 +153,7 @@ fun FinancialCalendarScreen(
             Text(
                 "تقویم مالی",
                 color = AppText,
-                fontSize = 15.5.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.padding(start = 4.dp).weight(1f),
             )
@@ -433,7 +433,7 @@ private fun CalendarSummary(count: Int, label: String, icon: ImageVector, ink: C
         }
         Text(toFa(count), color = ink, fontSize = 15.sp, fontWeight = FontWeight.Black,
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-        Text(label, color = ink, fontSize = 8.5.sp, fontWeight = FontWeight.Bold,
+        Text(label, color = ink, fontSize = 9.5.sp, fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 2.dp))
     }
 }

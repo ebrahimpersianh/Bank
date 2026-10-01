@@ -774,14 +774,14 @@ private fun PeriodSpendHero(
                     modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text(firstLabel, color = Color.White.copy(alpha = 0.62f), fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
-                    Text(lastLabel, color = Color.White, fontSize = 8.5.sp, fontWeight = FontWeight.ExtraBold)
+                    Text(firstLabel, color = Color.White.copy(alpha = 0.85f), fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
+                    Text(lastLabel, color = Color.White, fontSize = 9.5.sp, fontWeight = FontWeight.ExtraBold)
                 }
             }
         } else {
             Text(
                 "هنوز خرجی ثبت نکردی - با اولین تراکنش، روندِ ماه‌ها همین‌جا ساخته می‌شه",
-                color = Color.White.copy(alpha = 0.72f),
+                color = Color.White.copy(alpha = 0.85f),
                 fontSize = 10.5.sp,
                 fontWeight = FontWeight.Bold,
                 lineHeight = 18.sp,
@@ -883,11 +883,11 @@ private fun PeriodStatCard(
             maxLines = 1,
             modifier = Modifier.padding(top = 6.dp),
         )
-        Text(unit, color = AppLabel, fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
+        Text(unit, color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
         Text(
             footer,
             color = footerTint,
-            fontSize = 8.5.sp,
+            fontSize = 9.5.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             modifier = Modifier.padding(top = 5.dp),
@@ -1014,8 +1014,8 @@ private fun CategoryDonutCard(
                 Text(
                     centerUnit,
                     color = AppLabel,
-                    fontSize = 7.5.sp,
-                    lineHeight = 9.sp,
+                    fontSize = 9.5.sp,
+                    lineHeight = 11.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                 )

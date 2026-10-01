@@ -290,7 +290,7 @@ private fun RuleCard(
                             .background(AppInfoPill)
                             .padding(horizontal = 7.dp, vertical = 3.dp),
                     ) {
-                        Text("خودکار", color = AppInfo, fontSize = 8.5.sp, fontWeight = FontWeight.ExtraBold)
+                        Text("خودکار", color = AppInfo, fontSize = 9.5.sp, fontWeight = FontWeight.ExtraBold)
                     }
                 }
             }

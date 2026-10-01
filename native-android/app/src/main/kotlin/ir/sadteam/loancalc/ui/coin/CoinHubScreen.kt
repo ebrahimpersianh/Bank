@@ -228,7 +228,7 @@ private fun CoinHero(coins: Int, activeDays: Int, earnedToday: Int) {
                     "امروز +${toFa(earnedToday)} از ${toFa(CoinReason.DAILY_COIN_CAP)}" +
                         if (activeDays > 0) " · ${toFa(activeDays)} روز" else "",
                     color = AppPrimaryInk,
-                    fontSize = 8.5.sp,
+                    fontSize = 9.5.sp,
                     fontWeight = FontWeight.Black,
                     maxLines = 1,
                     modifier = Modifier
@@ -255,8 +255,8 @@ private fun WalletHero(coins: Int, activeDays: Int, earnedToday: Int) {
             CoinIcon(size = 56.dp)
             Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text(toFa(coins), color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black, maxLines = 1)
-                    Text("سکه", color = Color.White.copy(alpha = 0.75f), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp, bottom = 4.dp))
+                    Text(toFa(coins), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black, maxLines = 1)
+                    Text("سکه", color = Color.White.copy(alpha = 0.85f), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp, bottom = 4.dp))
                 }
                 Text(
                     "امروز ${toFa(earnedToday)} از ${toFa(CoinReason.DAILY_COIN_CAP)}" +
