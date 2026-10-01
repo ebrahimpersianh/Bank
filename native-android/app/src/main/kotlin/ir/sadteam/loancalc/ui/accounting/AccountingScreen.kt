@@ -317,6 +317,7 @@ private fun MainSection(
     var maxToman by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
     var showAddForm by remember { mutableStateOf(false) }
+    var showNewTx by remember { mutableStateOf(false) }
     var deletingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
     val totalBalance = remember(accounts, allTransactions) { accounts.sumOf { viewModel.balanceOf(it, allTransactions) } }
     // خواسته‌ی صریحِ کاربر: افزودن/مدیریتِ حساب دیگه فقط از تنظیمات نباشه، مستقیم از همین تبِ «دارایی»
@@ -482,7 +483,8 @@ private fun MainSection(
                     },
                 )
             } else {
-                GradientButton(onClick = { showAddForm = true }, modifier = Modifier.fillMaxWidth()) {
+                // بازبینیِ ۹ مهر: همان فرمِ مشترکِ برنامه (با سقفِ نسخه‌ی رایگان و برچسب/رسید)، نه فرمِ قدیمیِ ساده.
+                GradientButton(onClick = { showNewTx = true }, modifier = Modifier.fillMaxWidth()) {
                     Text("+ ثبتِ تراکنش")
                 }
             }
@@ -525,6 +527,10 @@ private fun MainSection(
         )
     }
     InAppBannerHost(banner)
+    if (showNewTx) {
+        androidx.activity.compose.BackHandler { showNewTx = false }
+        NewTransactionSheet(onDismiss = { showNewTx = false })
+    }
     }
 }
 
@@ -1314,7 +1320,7 @@ private fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Cat
                                 )
                             }
                             Text(
-                                "${fmt((p.amount) / 10)} تومان",
+                                ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt((p.amount) / 10)} تومان"),
                                 color = if (p.type == TransactionType.DEPOSIT.name) AppPrimary else AppDanger,
                                 fontSize = 13.sp,
                             )
