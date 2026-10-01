@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.MarkEmailUnread
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Chat
@@ -149,6 +150,13 @@ fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel())
     // دو بخشِ کاملاً جدا: پیام‌های شخصیِ کاربر، و اطلاعیه‌های عمومیِ جیبک از سرور.
     val personal = news.filter { it.kind != InboxMessageEntity.Kind.ANNOUNCEMENT && visible(it) }
     val jibak = news.filter { it.kind == InboxMessageEntity.Kind.ANNOUNCEMENT && visible(it) }
+    // 🎁 هدیه‌ی خوانده‌نشده: با باز شدنِ صندوق، جشنش خودش باز می‌شود (۹ مهر، خواسته‌ی کاربر).
+    var celebrate by remember { mutableStateOf<InboxMessageEntity?>(null) }
+    val firstGift = jibak.firstOrNull { isGift(it) && it.readAt == null }
+    androidx.compose.runtime.LaunchedEffect(firstGift?.id) { if (firstGift != null && celebrate == null) celebrate = firstGift }
+    celebrate?.let { g ->
+        GiftCelebration(g) { viewModel.markRead(g.id); celebrate = null }
+    }
 
     // 🚨 `statusBarsPadding`: عنوانِ قبلی زیرِ نوارِ وضعیتِ گوشی می‌رفت (اسکرین‌شاتِ کاربر).
     Column(modifier = Modifier.fillMaxSize().background(AppBg).statusBarsPadding()) {
@@ -266,7 +274,7 @@ fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel())
                     },
                 ) {
                     if (personal.isEmpty()) {
-                        EmptyLine(if (news.isEmpty()) "هنوز پیامی نداری." else "پیامی با این جستجو یا فیلتر پیدا نشد.")
+                        EmptyLine(if (query.isBlank() && filter == InboxFilter.ALL) "فعلاً پیامی برای حسابت نیست." else "پیامی با این جستجو یا فیلتر پیدا نشد.")
                     }
                     val list = if (showAllPersonal) personal else personal.take(3)
                     list.forEach { message ->
@@ -300,7 +308,7 @@ fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel())
                     if (jibak.isEmpty()) EmptyLine("فعلاً اطلاعیه‌ی تازه‌ای نیست.")
                     val list = if (showAllJibak) jibak else jibak.take(2)
                     list.forEach { message ->
-                        AnnouncementCard(message) { viewModel.markRead(message.id) }
+                        AnnouncementCard(message) { if (isGift(message)) celebrate = message else viewModel.markRead(message.id) }
                     }
                     if (jibak.size > 2) {
                         SeeAllButton(
@@ -620,19 +628,23 @@ private fun SeeAllButton(label: String, green: Boolean, onClick: () -> Unit) {
 @Composable
 private fun AnnouncementCard(message: InboxMessageEntity, onClick: () -> Unit) {
     val kind = message.refId
-    val (icon, tint, chip) = when (kind) {
+    val gift = isGift(message)
+    val (icon, tint, chip) = when {
+        gift -> Triple(Icons.Filled.CardGiftcard, ir.sadteam.loancalc.ui.theme.AppGoldInk, "هدیه · بزن")
+        else -> when (kind) {
         "update" -> Triple(Icons.Filled.CardGiftcard, AppTxIn, "جدید")
         "outage" -> Triple(Icons.Filled.Warning, AppWarningInk, "اطلاعیه")
         "feature" -> Triple(Icons.Filled.AutoAwesome, AppPurple, "قابلیتِ تازه")
         else -> Triple(Icons.Filled.Campaign, AppPrimary, "اطلاعیه")
+        }
     }
     val shape = RoundedCornerShape(20.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(AppSurface)
-            .border(1.dp, AppLine, shape)
+            .background(if (gift) ir.sadteam.loancalc.ui.theme.AppGoldPillSoft else AppSurface)
+            .border(if (gift) 2.dp else 1.dp, if (gift) ir.sadteam.loancalc.ui.theme.AppGoldBorder else AppLine, shape)
             .pressScaleClickable(scale = 0.99f, onClick = onClick)
             .padding(12.dp),
         verticalAlignment = Alignment.Top,
@@ -650,7 +662,7 @@ private fun AnnouncementCard(message: InboxMessageEntity, onClick: () -> Unit) {
                     color = AppText,
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Black,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
@@ -918,3 +930,68 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
         )
     }
 }
+
+
+/** هدیه = نوعِ «gift» از سرور، یا پیام‌های قدیمیِ هدیه که با 🎁 شروع می‌شوند. */
+private fun isGift(m: InboxMessageEntity): Boolean = m.refId == "gift" || m.title.startsWith("🎁")
+
+/**
+ * 🎉 **جشنِ هدیه** (۹ مهر): پنجره‌ای با جعبه‌ی هدیه‌ی تپنده، سکه‌هایی که به بالا پخش می‌شوند و
+ * متنِ ادمین. سکه همان لحظه‌ی رسیدنِ پیام به کیف رفته؛ این فقط نشانش می‌دهد.
+ */
+@Composable
+private fun GiftCelebration(message: InboxMessageEntity, onDone: () -> Unit) {
+    val gold = ir.sadteam.loancalc.ui.theme.AppGoldInk
+    val goldSoft = ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
+    val anim = remember { androidx.compose.animation.core.Animatable(0f) }
+    val pulse = androidx.compose.animation.core.rememberInfiniteTransition(label = "gift")
+    val scale by pulse.animateFloat(
+        0.94f, 1.06f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(700), androidx.compose.animation.core.RepeatMode.Reverse),
+        label = "giftScale",
+    )
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        anim.animateTo(1f, androidx.compose.animation.core.tween(1400, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+    }
+    val buzz = ir.sadteam.loancalc.ui.haptics.rememberBuzz()
+    androidx.compose.runtime.LaunchedEffect(Unit) { runCatching { buzz() } }
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDone) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(AppSurface).padding(22.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(Modifier.size(150.dp), contentAlignment = Alignment.Center) {
+                // سکه‌های پخش‌شونده
+                androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+                    val t = anim.value
+                    repeat(12) { i ->
+                        val a = Math.toRadians(i * 30.0 - 90)
+                        val r = size.minDimension * 0.48f * t
+                        val c = androidx.compose.ui.geometry.Offset(
+                            center.x + (kotlin.math.cos(a) * r).toFloat(),
+                            center.y + (kotlin.math.sin(a) * r).toFloat(),
+                        )
+                        drawCircle(gold.copy(alpha = (1f - t * 0.6f)), radius = 7.dp.toPx() * (1f - t * 0.3f), center = c)
+                    }
+                }
+                Box(
+                    Modifier.size(84.dp).graphicsLayerScale(scale).clip(CircleShape).background(goldSoft),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Filled.CardGiftcard, null, tint = gold, modifier = Modifier.size(46.dp)) }
+            }
+            Text(message.title.removePrefix("🎁").trim(), color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Text("به کیفت اضافه شد", color = gold, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
+            if (message.body.isNotBlank()) {
+                Text(
+                    "«${message.body}»", color = AppMuted, fontSize = 14.sp, lineHeight = 23.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(top = 12.dp),
+                )
+            }
+            ir.sadteam.loancalc.ui.components.GradientButton(onClick = onDone, modifier = Modifier.fillMaxWidth().padding(top = 18.dp)) {
+                Text("ممنون!", fontWeight = FontWeight.Black)
+            }
+        }
+    }
+}
+
+private fun Modifier.graphicsLayerScale(s: Float): Modifier = this.graphicsLayer(scaleX = s, scaleY = s)

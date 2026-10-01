@@ -510,13 +510,16 @@ fun Route.adminRoutes() {
                     val expiry = java.time.Instant.ofEpochMilli(maxOf(current, now) + body.days * 24L * 60 * 60 * 1000).toString()
                     conn.executeCounting("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, uid)
                 }
+                // رقمِ فارسی با «٬» (گزارشِ کاربر ۹ مهر: «5000 …» لاتین و بریده دیده می‌شد).
+                fun fa(n: Int) = "%,d".format(n).map { c -> if (c.isDigit()) "۰۱۲۳۴۵۶۷۸۹"[c - '0'] else if (c == ',') '٬' else c }.joinToString("")
                 val title = when {
-                    body.days > 0 && body.coins > 0 -> "🎁 هدیه: ${body.days} روز اشتراک + ${body.coins} سکه"
-                    body.days > 0 -> "🎁 هدیه: ${body.days} روز اشتراک"
-                    else -> "🎁 هدیه: ${body.coins} سکه"
+                    body.days > 0 && body.coins > 0 -> "🎁 ${fa(body.days)} روز اشتراک + ${fa(body.coins)} سکه"
+                    body.days > 0 -> "🎁 ${fa(body.days)} روز اشتراکِ هدیه"
+                    else -> "🎁 ${fa(body.coins)} سکه‌ی هدیه"
                 }
+                // نوعِ «gift» تا برنامه کارتِ طلایی و جشن نشان دهد (نسخه‌های قدیمی همان «اطلاعیه» می‌بینند).
                 conn.executeCounting(
-                    "INSERT INTO announcements (title, body, kind, target_user_id, coins) VALUES (?, ?, 'info', ?, ?)",
+                    "INSERT INTO announcements (title, body, kind, target_user_id, coins) VALUES (?, ?, 'gift', ?, ?)",
                     title, body.text.ifBlank { "از طرفِ تیمِ جیبک، با آرزوی بهترین‌ها." }, uid, body.coins,
                 )
                 "ok"
