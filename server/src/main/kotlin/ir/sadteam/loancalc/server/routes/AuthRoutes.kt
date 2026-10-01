@@ -328,6 +328,16 @@ fun Route.authRoutes() {
                     conn.execute("DELETE FROM cheques_backup WHERE user_id = ?", authed.uid)
                     conn.execute("DELETE FROM accounts_backup WHERE user_id = ?", authed.uid)
                     conn.execute("DELETE FROM otps WHERE phone = ?", authed.phone)
+                    // بازبینیِ پیش از انتشار (۹ مهر): پیام‌ها، پیوست‌ها و پیوندِ آمار هم پاک/جدا شوند.
+                    conn.prepareStatement("SELECT id FROM support_files WHERE user_id = ?").use { ps ->
+                        ps.setLong(1, authed.uid)
+                        ps.executeQuery().use { rs -> while (rs.next()) ir.sadteam.loancalc.server.SupportFiles.fileFor(rs.getString(1))?.delete() }
+                    }
+                    conn.execute("DELETE FROM support_files WHERE user_id = ?", authed.uid)
+                    conn.execute("DELETE FROM bug_reports WHERE user_id = ?", authed.uid)
+                    conn.execute("DELETE FROM announcements WHERE target_user_id = ?", authed.uid)
+                    conn.execute("UPDATE installs SET user_id = NULL WHERE user_id = ?", authed.uid)
+                    conn.execute("UPDATE crash_reports SET user_id = NULL WHERE user_id = ?", authed.uid)
                     conn.execute("DELETE FROM users WHERE id = ?", authed.uid)
                     conn.commit()
                 } catch (e: Exception) {
@@ -336,6 +346,10 @@ fun Route.authRoutes() {
                 } finally {
                     conn.autoCommit = true
                 }
+            }
+            // عکس‌های ابری (رسید/چک) - بیرون از تراکنش، چون فایل است نه ردیف.
+            runCatching {
+                java.io.File(env("FILES_DIR", System.getProperty("user.home") + "/VameMan/files"), authed.uid.toString()).deleteRecursively()
             }
             call.respond(mapOf("ok" to true))
         }

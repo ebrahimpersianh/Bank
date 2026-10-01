@@ -14,6 +14,7 @@ import ir.sadteam.loancalc.server.execute
 import ir.sadteam.loancalc.server.queryOne
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import ir.sadteam.loancalc.server.rateLimitOk
 import kotlinx.serialization.Serializable
 import io.ktor.server.request.receive
 
@@ -36,6 +37,7 @@ data class AppVersionView(val code: Int, val changelog: String)
 fun Route.remoteConfigRoutes() {
     // 🗳 نظرسنجیِ یک‌سؤاله (۸ مهر): هر نصب یک جواب (دوباره = جایگزین).
     post("/api/survey") {
+        if (!call.rateLimitOk("survey", 30, 60 * 60 * 1000L)) return@post
         val a = runCatching { call.receive<SurveyAnswer>() }.getOrNull()
         if (a == null || a.id.isBlank() || a.answer.isBlank() || a.install.isBlank()) return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "bad"))
         Db.withConnection { c ->

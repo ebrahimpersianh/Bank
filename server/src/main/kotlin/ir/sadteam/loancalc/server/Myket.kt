@@ -15,6 +15,10 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.encodeURLParameter
 import io.ktor.http.isSuccess
+import io.ktor.client.statement.bodyAsText
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -50,5 +54,13 @@ suspend fun validateMyketPurchase(productId: String, purchaseToken: String): Boo
         contentType(ContentType.Application.Json)
         setBody(Json.encodeToString(VerifyBody.serializer(), VerifyBody(tokenId = purchaseToken)))
     }
-    return response.status.isSuccess()
+    if (!response.status.isSuccess()) return false
+    // مستنداتِ مایکت فرمتِ پاسخ را نگفته؛ اگر `purchaseState` آمد، مثلِ کافه‌بازار ۰ یعنی
+    // خریداری‌شده و هر چیزِ دیگر (۱ = برگشت‌خورده) رد می‌شود. نیامد = همان قضاوتِ کدِ HTTP.
+    val text = runCatching { response.bodyAsText() }.getOrDefault("")
+    Log.info("myket_verify", "پاسخِ تأییدِ مایکت", "product" to productId, "body" to text.take(300))
+    val state = runCatching {
+        Json.parseToJsonElement(text).jsonObject["purchaseState"]?.jsonPrimitive?.intOrNull
+    }.getOrNull()
+    return state == null || state == 0
 }
