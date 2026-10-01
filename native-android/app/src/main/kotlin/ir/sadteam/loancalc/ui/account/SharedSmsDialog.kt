@@ -49,6 +49,16 @@ fun SharedSmsDialog(
         return
     }
 
+    // سقفِ ماهانه‌ی نسخه‌ی رایگان این‌جا هم (بازبینیِ ۹ مهر).
+    val monthTxCount = accountViewModel.transactions.collectAsState().value.let { all ->
+        val t = JalaliCalendar.today()
+        all.count { it.year == t.y && it.month == t.m }
+    }
+    ir.sadteam.loancalc.ui.subscription.PremiumBlock(
+        blocked = monthTxCount >= ir.sadteam.loancalc.ui.subscription.FreeLimits.TX_PER_MONTH,
+        key = "tx_month", label = "ثبتِ بیش از ${ir.sadteam.loancalc.core.toFa(ir.sadteam.loancalc.ui.subscription.FreeLimits.TX_PER_MONTH)} تراکنش در ماه",
+        onBlocked = onDone,
+    )
     var confirmed by remember { mutableStateOf(false) }
     val isWithdrawal = parsed.type == TransactionType.WITHDRAWAL
     val tomanText = fmt(rialToToman(parsed.amountRial.toLong()).toDouble()).faDigits()
