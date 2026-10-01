@@ -298,6 +298,17 @@ fun AssetTradeSheet(
                         ir.sadteam.loancalc.ui.components.AppChip("بدونِ حساب", payAccountId == null, onClick = { payAccountId = null })
                     }
                 }
+            } else {
+                // بی‌حساب، خرید از هیچ موجودی‌ای کم نمی‌شود - از قبل بگو (خواسته‌ی کاربر، ۹ مهر).
+                AppCard {
+                    Text(
+                        "هنوز حسابی نساخته‌ای، پس این " + (if (isBuy) "خرید" else "فروش") +
+                            " در موجودی و دخل‌وخرجت حساب نمی‌شود. اول از «حساب‌ها» یک حساب (مثلاً «نقدی») بساز.",
+                        color = AppMuted,
+                        fontSize = 12.5.sp,
+                        lineHeight = 20.sp,
+                    )
+                }
             }
 
             if (error != null) Text(error ?: "", color = AppDangerInk, fontSize = 12.sp)
@@ -379,7 +390,9 @@ fun AssetTradeSheet(
                 },
                 text = {
                     Text(
-                        "خرید و فروشِ دارایی تاثیری تو دخل‌وخرج نداره. اگه می‌خوای این مبلغ تو " +
+                        if (payAccounts.isEmpty()) "چون هنوز حسابی نداری، این مبلغ تو حساب‌کتابت نیومد. اول یه حساب بساز، " +
+                            "بعد دفعه‌ی بعد موقعِ ثبت انتخابش کن تا خودکار از موجودی کم/اضافه بشه."
+                        else "خرید و فروشِ دارایی تاثیری تو دخل‌وخرج نداره. اگه می‌خوای این مبلغ تو " +
                             "حساب‌کتابت هم حساب بشه، براش یه تراکنش ثبت کن.",
                         fontSize = 13.sp,
                         lineHeight = 20.sp,
