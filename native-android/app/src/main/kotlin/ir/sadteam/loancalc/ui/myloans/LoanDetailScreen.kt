@@ -994,7 +994,13 @@ fun LoanDetailScreen(
                     editMetaMonth = sd.m
                     editMetaDay = sd.d
                     editMetaGraceMonths = viewModel.getLoanGraceMonths(loan)
-                    editMetaAmountText = rialToToman(loan.amount.toLong()).toString()
+                    // بازبینیِ ۹ مهر: `loan.amount` برای وامِ با دوره‌ی تنفس «اصل + سودِ تنفس» است؛ اگر همان
+                    // دوباره به محاسبه برود، سودِ تنفس با هر ذخیره یک بارِ دیگر اضافه می‌شد. اصلِ وام برگردانده می‌شود.
+                    val graceForEdit = viewModel.getLoanGraceMonths(loan)
+                    val originalPrincipal = if (graceForEdit > 0) {
+                        loan.amount / (1 + viewModel.getLoanRatePct(loan) / 100.0 / 365.0 * (graceForEdit * 30))
+                    } else loan.amount
+                    editMetaAmountText = rialToToman(Math.round(originalPrincipal)).toString()
                     editMetaNText = loan.n.toString()
                     showEditMetaDialog = true
                 }
