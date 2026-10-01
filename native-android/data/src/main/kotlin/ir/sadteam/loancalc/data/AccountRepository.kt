@@ -733,7 +733,7 @@ class AccountRepository(
      * خالی روی پشتیبانِ ابری می‌نشست و همه‌چیز پاک می‌شد. حالا: گوشی خالی ← از سرور بیاور؛
      * سرور خالی ← بفرست؛ هر دو پر ← دست نزن (پشتیبانِ دوره‌ای بعداً با کنترلِ نسخه می‌فرستد).
      */
-    private suspend fun hasLocalData(): Boolean =
+    suspend fun hasLocalData(): Boolean =
         transactionDao.getAll().isNotEmpty() || accountDao.getAll().size > 1
 
     suspend fun syncAfterLogin(token: String) {

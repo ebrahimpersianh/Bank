@@ -193,8 +193,15 @@ class AuthViewModel @Inject constructor(
      * جدید آپلود می‌کنه (باگی که کاربر موقع تست با دو شماره‌ی مختلف رو یه گوشی گزارش داد). داده‌ی
      * خودِ حسابِ قبلی جایی از دست نمی‌ره چون از قبل رو سرور پشتیبان گرفته شده - دفعه‌ی بعد که با
      * همون شماره وارد بشه، [LoanRepository.syncAfterLogin] از سرور برش می‌گردونه. */
-    fun logout() {
+    fun logout(force: Boolean = false, onBackupFailed: () -> Unit = {}) {
         viewModelScope.launch {
+            // 🚨 بازبینیِ پیش از انتشار (۹ مهر): خروج همه‌ی داده‌ی گوشی را پاک می‌کند و متنِ پنجره
+            // می‌گفت «رو سرور می‌مونه» - ولی برای کاربرِ بی‌اشتراک (سرور پشتیبان را رد می‌کند) یا
+            // تغییراتِ بعد از آخرین پشتیبان راست نبود. حالا اول پشتیبان؛ نشد ← از خودِ کاربر می‌پرسیم.
+            if (!force && !backupBeforeLogout()) {
+                onBackupFailed()
+                return@launch
+            }
             authPrefs.clearSession()
             authPrefs.setGuestMode(true)
             loanRepository.clearLocal()
@@ -208,6 +215,21 @@ class AuthViewModel @Inject constructor(
             // نباید در نمودارِ کاربرِ بعدی دیده شود (قاعده‌ی داده‌ی کاربرمحور در خروج).
             wealthSnapshotRepository.clearLocal()
         }
+    }
+
+    /** هر بخشی که داده دارد باید با موفقیت روی سرور برود؛ بخشِ خالی چیزی برای از دست دادن ندارد
+     * (و عمداً فرستاده نمی‌شود تا نسخه‌ی ابری را خالی نکند). */
+    private suspend fun backupBeforeLogout(): Boolean {
+        val token = authPrefs.authToken.first()
+        if (token.isNullOrEmpty()) return false
+        val loansOk = loanRepository.observeLoans().first().isEmpty() || loanRepository.pushToServer(token)
+        val chequesOk = chequeRepository.getAllCheques().isEmpty() || chequeRepository.pushToServer(token)
+        val accountsHaveData = accountRepository.hasLocalData() ||
+            debtRepository.observeCounterparties().first().isNotEmpty() ||
+            dangRepository.observeEvents().first().isNotEmpty() ||
+            noteRepository.observeNotes().first().isNotEmpty()
+        val accountsOk = !accountsHaveData || accountRepository.pushToServer(token)
+        return loansOk && chequesOk && accountsOk
     }
 
     /** پورت sendPhoneOtp: موفق بشه onSuccess صدا زده می‌شه، وگرنه onError با کد خطای سرور

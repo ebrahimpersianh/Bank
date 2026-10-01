@@ -1145,6 +1145,7 @@ private fun AccountSettings(
         // فاصله‌ی **دو برابرِ** فاصله‌ی معمولِ کارت‌ها - تنها جای برنامه که فاصله‌ی
         // غیرِتوکن مجازه، چون دکمه‌ی مخرب نباید تو ریتمِ عادیِ صفحه بشینه.
         var showLogoutConfirm by remember { mutableStateOf(false) }
+        var showLogoutRisk by remember { mutableStateOf(false) }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1195,11 +1196,31 @@ private fun AccountSettings(
                 .padding(top = 22.dp)
                 .pressScaleClickable { showDeleteAccountConfirm = true },
         )
+        if (showLogoutRisk) {
+            JibakAlertDialog(
+                onDismissRequest = { showLogoutRisk = false },
+                confirmButton = {
+                    TextButton(onClick = { showLogoutRisk = false; authViewModel.logout(force = true) }) {
+                        Text("باز هم خارج شو", color = AppDanger)
+                    }
+                },
+                dismissButton = { TextButton(onClick = { showLogoutRisk = false }) { Text("بمانم") } },
+                title = { Text("نسخه‌ی ابری به‌روز نشد", fontWeight = FontWeight.Black) },
+                text = {
+                    Text(
+                        "نشد قبل از خروج از اطلاعاتت نسخه‌ی ابری بگیریم (اینترنت قطعه یا اشتراک نداری). " +
+                            "با خروج، هرچی فقط روی این گوشیه پاک می‌شه. اگه مطمئن نیستی بمون و اول از " +
+                            "«پشتیبان‌گیری» یه فایلِ پشتیبان بگیر.",
+                        lineHeight = 21.sp,
+                    )
+                },
+            )
+        }
         if (showLogoutConfirm) {
             JibakAlertDialog(
                 onDismissRequest = { showLogoutConfirm = false },
                 confirmButton = {
-                    TextButton(onClick = { showLogoutConfirm = false; authViewModel.logout() }) {
+                    TextButton(onClick = { showLogoutConfirm = false; authViewModel.logout(onBackupFailed = { showLogoutRisk = true }) }) {
                         Text("خروج", color = AppDanger)
                     }
                 },
