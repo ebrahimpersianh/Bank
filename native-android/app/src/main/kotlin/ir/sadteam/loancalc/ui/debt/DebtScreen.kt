@@ -211,6 +211,11 @@ fun DebtScreen(
                     onDelete = { pendingDelete = counterparty },
                     onUpdate = { viewModel.updateCounterparty(it) },
                     onAddDebt = { amount, type, description, y, m, d ->
+                        // طرفِ‌حساب‌ها از وام/چک خودکار ساخته می‌شوند؛ ثبتِ طلب/بدهی همچنان مالِ اشتراک است.
+                        if (!isPremium) {
+                            ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("debts", "طلب و بدهی")
+                            return@CounterpartyDetail
+                        }
                         val partial = accounts.isNotEmpty() && (description.startsWith("دریافتِ بخشی") || description.startsWith("پرداختِ بخشی"))
                         viewModel.addDebt(counterparty.id, amount, type, description, y, m, d) { newId ->
                         // پرداخت/دریافتِ بخشی یعنی پول واقعاً جابه‌جا شد. شناسه = همان ردیف تا حذفش پول را برگرداند.
