@@ -45,6 +45,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -2759,6 +2760,28 @@ private fun AboutSettings(banner: InAppBannerState, onOpenBugReport: () -> Unit)
     var showContact by remember { mutableStateOf(false) }
     var showPrivacy by remember { mutableStateOf(false) }
     var showTerms by remember { mutableStateOf(false) }
+    // ۷ ضربه روی «جیبک» = داده‌ی نمونه برای عکس‌های استور (فقط روی برنامه‌ی خالی - `SampleData.kt`).
+    var logoTaps by remember { mutableStateOf(0) }
+    var showSample by remember { mutableStateOf(false) }
+    val sampleVm: SampleDataViewModel = hiltViewModel()
+    val sampleScope = rememberCoroutineScope()
+    if (showSample) {
+        JibakAlertDialog(
+            onDismissRequest = { showSample = false },
+            title = { Text("داده‌ی نمونه برای عکس", fontWeight = FontWeight.Black) },
+            text = { Text("چند حساب، تراکنش، بودجه، وام، چک و داراییِ ساختگی ثبت می‌شود تا برای عکس‌های استور آماده باشد. فقط روی برنامه‌ی خالی کار می‌کند؛ با حسابِ تست انجامش بده.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showSample = false
+                    sampleScope.launch {
+                        val ok = sampleVm.fill()
+                        banner.show(if (ok) "داده‌ی نمونه ثبت شد" else "برنامه خالی نیست - اول با حسابِ تست وارد شو", isSuccess = ok)
+                    }
+                }) { Text("پر کن") }
+            },
+            dismissButton = { TextButton(onClick = { showSample = false }) { Text("نه") } },
+        )
+    }
 
     // ── بلوکِ نشان - **تنها جای تنظیمات که چیزی بی‌کارت رو بستر می‌شینه** ───────
     // همین تفاوته که این صفحه رو «صفحه‌ی هویت» می‌کنه نه یه فهرستِ دیگه.
@@ -2772,7 +2795,10 @@ private fun AboutSettings(banner: InAppBannerState, onOpenBugReport: () -> Unit)
             color = AppText,
             fontSize = 19.sp,
             fontWeight = FontWeight.Black,
-            modifier = Modifier.padding(top = 14.dp),
+            modifier = Modifier.padding(top = 14.dp).clickable(
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                indication = null,
+            ) { if (++logoTaps >= 7) { logoTaps = 0; showSample = true } },
         )
         // ⚠️ **ضربه‌ی طولانی رو نسخه، اطلاعاتِ فنی رو کپی می‌کنه.** ارزون‌ترین کاری که
         // می‌شه برای پشتیبانی کرد - بی این، هر گفت‌وگو با سه پرسشِ اضافه شروع می‌شه.
