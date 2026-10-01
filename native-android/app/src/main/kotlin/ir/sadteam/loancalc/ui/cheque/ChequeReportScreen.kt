@@ -134,7 +134,7 @@ internal fun ChequeReportScreen(
                     Column(modifier = Modifier.weight(1f).padding(start = 15.dp)) {
                         Text("مانده‌ی خالص", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                         Text(
-                            "${fmt(rialToToman((stats.netBalance).toLong()).toDouble())}",
+                            ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt(rialToToman((stats.netBalance).toLong()).toDouble())}"),
                             color = Color.White,
                             fontSize = 21.sp,
                             fontWeight = FontWeight.Black,

@@ -232,7 +232,7 @@ private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accoun
                     Text(
                         // ⚠️ `total` **ریال** است و زیرش «تومان» نوشته می‌شد: عدد ده برابر
                         // بزرگ چاپ می‌شد. `rialToToman` پیش از فرمت.
-                        rialToToman(total.toLong()).toFaMoney(),
+                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, rialToToman(total.toLong()).toFaMoney()),
                         color = Color.White,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
@@ -321,7 +321,7 @@ private fun AccountCard(
                     Text(
                         // ریال → تومان، مثلِ هیرو. فرمِ کامل نه فشرده: این ستون عرض دارد و
                         // فهرستِ حساب جای عددِ دقیق است.
-                        "${rialToToman(balance.toLong()).toFaMoney()} تومان",
+                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${rialToToman(balance.toLong()).toFaMoney()} تومان"),
                         // موجودیِ منفیِ کارتِ اعتباری وضعِ عادی است نه خطا: فقط عدد قرمز.
                         color = if (balance < 0) AppDangerInk else AppText,
                         fontSize = 14.sp,

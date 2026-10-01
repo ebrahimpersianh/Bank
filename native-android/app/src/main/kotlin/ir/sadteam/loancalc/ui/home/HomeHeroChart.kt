@@ -57,10 +57,11 @@ fun HomeSevenDayChart(
         )
         return
     }
+    val privacy = ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current
     HeroChart(
         values = values,
         labels = labels,
-        valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
+        valueLabel = { value -> ir.sadteam.loancalc.ui.privacy.maskIfPrivate(privacy, "${value.rialToFaCompact()} تومان") },
         currentIndex = values.lastIndex,
         natural = HeroChartStyle.BARS,
         modifier = modifier,

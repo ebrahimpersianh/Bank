@@ -201,7 +201,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
                     // AppPrimary) اینجا نامرئی می‌شدن.
                     Text("پرداخت‌شده", color = HeroMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                     Text(
-                        "${fmt(rialToToman(summary.paidAmount.toLong()).toDouble())} تومان",
+                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt(rialToToman(summary.paidAmount.toLong()).toDouble())} تومان"),
                         color = Color.White,
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Black,
@@ -215,7 +215,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
                         modifier = Modifier.padding(top = 8.dp),
                     )
                     Text(
-                        "${fmt(rialToToman(summary.remainingAmount.toLong()).toDouble())} تومان",
+                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt(rialToToman(summary.remainingAmount.toLong()).toDouble())} تومان"),
                         color = Color.White,
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Black,
@@ -248,9 +248,9 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
 
         val statItems = listOf(
             StatItem("تعداد وام‌ها", toFa(summary.loanCount), null, Icons.Filled.Payments),
-            StatItem("مجموع مبلغ وام‌ها", fmt(rialToToman(summary.totalAmount.toLong()).toDouble()), "تومان", Icons.Filled.AccountBalance),
-            StatItem("مجموع پرداخت‌شده", fmt(rialToToman(summary.paidAmount.toLong()).toDouble()), "تومان", Icons.Filled.CheckCircle),
-            StatItem("مانده‌ی کل", fmt(rialToToman(summary.remainingAmount.toLong()).toDouble()), "تومان", Icons.Filled.HourglassBottom),
+            StatItem("مجموع مبلغ وام‌ها", ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, fmt(rialToToman(summary.totalAmount.toLong()).toDouble())), "تومان", Icons.Filled.AccountBalance),
+            StatItem("مجموع پرداخت‌شده", ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, fmt(rialToToman(summary.paidAmount.toLong()).toDouble())), "تومان", Icons.Filled.CheckCircle),
+            StatItem("مانده‌ی کل", ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, fmt(rialToToman(summary.remainingAmount.toLong()).toDouble())), "تومان", Icons.Filled.HourglassBottom),
             StatItem("اقساط پرداخت‌شده", toFa(summary.paidInstallments), "از ${toFa(summary.totalInstallments)}", Icons.Filled.EventAvailable),
             StatItem("درصد پیشرفت", toFa((summary.progressRatio * 100).toInt()), "٪", Icons.Filled.TrendingUp),
         )
@@ -277,7 +277,7 @@ fun StatsScreen(onBack: () -> Unit, viewModel: StatsViewModel = hiltViewModel())
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("تاریخچه پرداخت (تجمعی)", color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Text("${fmt(rialToToman(paymentHistory.last().cumulativeAmount.toLong()).toDouble())} تومان", color = AppInfo, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, "${fmt(rialToToman(paymentHistory.last().cumulativeAmount.toLong()).toDouble())} تومان"), color = AppInfo, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 PaymentHistoryLineChart(points = paymentHistory, modifier = Modifier.padding(top = 10.dp))
             }

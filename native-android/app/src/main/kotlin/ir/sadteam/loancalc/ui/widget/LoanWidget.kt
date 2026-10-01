@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.widget
 
+import kotlinx.coroutines.flow.first
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -138,13 +139,17 @@ object LoanWidget : GlanceAppWidget() {
             .fromApplication(context.applicationContext, LoanWidgetEntryPoint::class.java)
             .loanRepository()
         val next = findNextInstallment(repository)
+        // ویجت روی صفحه‌ی اصلیِ گوشی است - حالتِ خصوصی باید این‌جا هم مبلغ را بپوشاند (بازبینیِ ۹ مهر).
+        val privacy = runCatching {
+            ir.sadteam.loancalc.data.prefs.UiPrefs(context.applicationContext).privacyModeEnabled.first()
+        }.getOrDefault(false)
 
-        provideContent { WidgetContent(next) }
+        provideContent { WidgetContent(next, privacy) }
     }
 }
 
 @Composable
-private fun WidgetContent(next: NextInstallment?) {
+private fun WidgetContent(next: NextInstallment?, privacy: Boolean = false) {
     val context = LocalContext.current
     val compact = LocalSize.current.width < MEDIUM.width
 
@@ -206,7 +211,7 @@ private fun WidgetContent(next: NextInstallment?) {
                 // ⚠️ `fmt()` جداکننده‌ی **لاتین** می‌دهد، پس خطِ مبلغ لاتین بود و خطِ
                 // تاریخِ زیرش فارسی - یک ویجت، دو الفبا. همان الگوی `amountToman`ِ
                 // بسته‌ی وام.
-                fmt(rialToToman(next.amount.toLong()).toDouble()).faDigits(),
+                if (privacy) "•••••" else fmt(rialToToman(next.amount.toLong()).toDouble()).faDigits(),
                 style = TextStyle(
                     color = if (late) WidgetDanger else WidgetInk,
                     fontSize = if (compact) 21.sp else 30.sp,

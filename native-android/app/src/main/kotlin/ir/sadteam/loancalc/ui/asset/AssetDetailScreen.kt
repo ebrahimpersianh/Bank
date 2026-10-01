@@ -356,7 +356,7 @@ private fun AssetSummaryCard(
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    value?.rialToFaCompact() ?: "—",
+                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, value?.rialToFaCompact() ?: "—"),
                     color = p.ink,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Black,
@@ -409,7 +409,7 @@ private fun AssetSummaryCard(
                     Text(
                         // ⚠️ «+» و «۰» در دو خط می‌شکستند؛ سودِ صفر هم بی‌علامت.
                         // بازبینیِ ۹ مهر: سود به ریال است - بی تبدیل، ده برابر نشان داده می‌شد.
-                        if (rialToToman(profit.toLong()) == 0L) "۰" else profit.rialToFaSignedCompact(),
+                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, if (rialToToman(profit.toLong()) == 0L) "۰" else profit.rialToFaSignedCompact()),
                         color = if (profit >= 0) AppPrimaryInk else AppDangerInk,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Black,
@@ -576,7 +576,7 @@ private fun TradeRow(trade: AssetTradeEntity, assetName: String) {
         }
         // ردیفِ فهرست بی‌واحده - قاعده‌ی عددِ TOKENS.md.
         Text(
-            trade.totalRial.rialToFaCompact(),
+            ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, trade.totalRial.rialToFaCompact()),
             color = AppText,
             fontSize = 12.sp,
             fontWeight = FontWeight.Black,
