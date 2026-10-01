@@ -71,10 +71,11 @@ class DebtRepository(
         year: Int,
         month: Int,
         day: Int,
-    ) {
+    ): Long {
+        val id = System.currentTimeMillis()
         debtDao.upsert(
             DebtEntity(
-                id = System.currentTimeMillis(),
+                id = id,
                 counterpartyId = counterpartyId,
                 amount = amount,
                 type = type.name,
@@ -86,6 +87,7 @@ class DebtRepository(
                 createdAt = isoNow(),
             ),
         )
+        return id
     }
 
     suspend fun setSettled(debt: DebtEntity, settled: Boolean) {

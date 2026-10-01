@@ -26,6 +26,10 @@ import java.util.TimeZone
 /** نشانِ دو سمتِ یک جابه‌جاییِ داخلی. هر جا خرج/درآمدِ واقعی می‌شماریم باید کنار گذاشته شود. */
 const val SOURCE_TYPE_TRANSFER = "transfer"
 
+/** نه خرج نه درآمد (گزارش‌ها): جابه‌جایی بینِ حساب‌ها، و خرید/فروشِ دارایی که فقط شکلِ پول را
+ * عوض می‌کند (تصمیمِ کاربر، ۹ مهر). موجودیِ حساب همچنان کم/زیاد می‌شود. */
+val NON_SPENDING_SOURCES = setOf(SOURCE_TYPE_TRANSFER, "asset")
+
 /** دو پیامکِ یک جابه‌جایی معمولاً چند ثانیه تا چند دقیقه فاصله دارند؛ دو ساعت حاشیه‌ی امن است. */
 /** برچسبِ سمتِ واریزی که از روی شماره‌ی مقصدِ پیامکِ برداشت ساخته شده. */
 const val AUTO_DEST_LEG_LABEL = "تشخیصِ مقصدِ پیامک"
@@ -537,7 +541,7 @@ class AccountRepository(
     ): Map<String, Double> =
         transactions
             .filter { accountId == null || it.accountId == accountId }
-            .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == year && it.month == month && !it.category.isNullOrBlank() }
+            .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == year && it.month == month && !it.category.isNullOrBlank() && it.sourceType !in NON_SPENDING_SOURCES }
             .groupBy { it.category!! }
             .mapValues { (_, list) -> list.sumOf { it.amount } }
 

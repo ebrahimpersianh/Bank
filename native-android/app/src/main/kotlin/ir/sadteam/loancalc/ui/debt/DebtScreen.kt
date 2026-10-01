@@ -211,15 +211,17 @@ fun DebtScreen(
                     onDelete = { pendingDelete = counterparty },
                     onUpdate = { viewModel.updateCounterparty(it) },
                     onAddDebt = { amount, type, description, y, m, d ->
-                        viewModel.addDebt(counterparty.id, amount, type, description, y, m, d)
-                        // پرداخت/دریافتِ بخشی یعنی پول واقعاً جابه‌جا شد.
-                        if (accounts.isNotEmpty() && (description.startsWith("دریافتِ بخشی") || description.startsWith("پرداختِ بخشی"))) {
+                        val partial = accounts.isNotEmpty() && (description.startsWith("دریافتِ بخشی") || description.startsWith("پرداختِ بخشی"))
+                        viewModel.addDebt(counterparty.id, amount, type, description, y, m, d) { newId ->
+                        // پرداخت/دریافتِ بخشی یعنی پول واقعاً جابه‌جا شد. شناسه = همان ردیف تا حذفش پول را برگرداند.
+                        if (partial) {
                             moneyPrompt = MoneyPrompt(
-                                "p:${counterparty.id}:${System.currentTimeMillis()}",
+                                newId.toString(),
                                 amount,
                                 deposit = description.startsWith("دریافتِ بخشی"),
                                 description = "$description - ${counterparty.name}",
                             )
+                        }
                         }
                     },
                     onToggleSettled = { debt, settled ->

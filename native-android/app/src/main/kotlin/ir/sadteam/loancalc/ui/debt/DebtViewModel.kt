@@ -62,10 +62,11 @@ class DebtViewModel @Inject constructor(
         year: Int,
         month: Int,
         day: Int,
+        onAdded: (Long) -> Unit = {},
     ) {
         ir.sadteam.loancalc.data.UsageStats.action("debt_added")
         viewModelScope.launch {
-            debtRepository.addDebt(counterpartyId, amount, type, description, year, month, day)
+            onAdded(debtRepository.addDebt(counterpartyId, amount, type, description, year, month, day))
         }
     }
 
@@ -75,6 +76,10 @@ class DebtViewModel @Inject constructor(
     }
 
     fun deleteDebt(debt: DebtEntity) {
-        viewModelScope.launch { debtRepository.deleteDebt(debt) }
+        viewModelScope.launch {
+            debtRepository.deleteDebt(debt)
+            // ردیفِ پاک‌شده یعنی «اتفاق نیفتاده» - پولی که با آن جابه‌جا شده هم برگردد (۹ مهر).
+            accountRepository.removeLinkedPayment("debt", debt.id.toString())
+        }
     }
 }

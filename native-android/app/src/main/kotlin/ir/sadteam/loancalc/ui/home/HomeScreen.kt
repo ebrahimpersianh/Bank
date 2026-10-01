@@ -302,7 +302,7 @@ fun HomeScreen(
     val accounts by accountViewModel.accounts.collectAsState()
     val smartInsights = remember(transactions, accounts, upcoming7d, recurringForInsights) {
         val today = ir.sadteam.loancalc.core.JalaliCalendar.today()
-        val txs = transactions.filter { it.sourceType != ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER && it.confirmed }.map {
+        val txs = transactions.filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.confirmed }.map {
             ir.sadteam.loancalc.core.SmartInsights.Tx(
                 isExpense = it.type == ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL.name,
                 amountRial = it.amount, y = it.year, m = it.month, d = it.day,
@@ -1465,7 +1465,7 @@ private fun buildHeroSeries(
     today: PersianDate,
     period: ReportPeriod,
 ): HeroSeries {
-    val expenses = transactions.filter { it.sourceType != SOURCE_TYPE_TRANSFER && it.type != "DEPOSIT" }
+    val expenses = transactions.filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type != "DEPOSIT" }
     fun sumOfDay(d: PersianDate) =
         expenses.filter { it.year == d.y && it.month == d.m && it.day == d.d }.sumOf { it.amount }
     fun sumOfMonth(y: Int, m: Int) =

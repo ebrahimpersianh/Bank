@@ -192,7 +192,7 @@ class DueDateReminderWorker @AssistedInject constructor(
             val weekKey = cal.get(java.util.Calendar.YEAR) * 100 + cal.get(java.util.Calendar.WEEK_OF_YEAR)
             if (cal.get(java.util.Calendar.DAY_OF_WEEK) == java.util.Calendar.FRIDAY && prefs.getInt("sent", 0) != weekKey) {
                 val txs = accountRepository.observeTransactions().first()
-                    .filter { it.sourceType != ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER && it.confirmed }
+                    .filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.confirmed }
                     .map {
                         ir.sadteam.loancalc.core.SmartInsights.Tx(
                             it.type == ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL.name, it.amount,

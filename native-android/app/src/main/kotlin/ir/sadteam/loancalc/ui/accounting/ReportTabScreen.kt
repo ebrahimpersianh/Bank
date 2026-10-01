@@ -189,7 +189,7 @@ fun ReportTabScreen(
     // دو عددِ حالتِ «هیچ کشفی نیست». همان فیلترِ `buildReportStats`: انتقالِ بینِ حساب‌ها
     // خرج نیست.
     val realExpenses = remember(transactions) {
-        transactions.filter { it.sourceType != "transfer" && it.type == "WITHDRAWAL" }
+        transactions.filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type == "WITHDRAWAL" }
     }
     val checkedTxCount = remember(realExpenses, today) {
         realExpenses.count { it.year == today.y && it.month == today.m }
@@ -1382,7 +1382,7 @@ private fun MonthCompareCard(all: List<ir.sadteam.loancalc.data.db.AccountTransa
     val (py, pm) = if (today.m == 1) (today.y - 1) to 12 else today.y to (today.m - 1)
     fun spend(y: Int, m: Int) = all.filter {
         it.confirmed && it.year == y && it.month == m && it.type == "WITHDRAWAL" &&
-            it.sourceType != ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER
+            it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES
     }.groupBy { it.category ?: "بی‌دسته" }.mapValues { e -> e.value.sumOf { it.amount } }
     val now = spend(today.y, today.m)
     val prev = spend(py, pm)
