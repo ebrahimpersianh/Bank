@@ -139,7 +139,8 @@ fun DebtPayoffScreen(onBack: () -> Unit, vm: DebtPayoffViewModel = hiltViewModel
     val privacy = LocalPrivacyMode.current
     var extraRaw by rememberSaveable { mutableStateOf("") }
     var mode by rememberSaveable { mutableIntStateOf(0) }
-    val extra = extraRaw.toDoubleOrNull() ?: 0.0
+    // فیلد تومان است (قاعده‌ی برنامه)، محاسبه ریال.
+    val extra = (extraRaw.toDoubleOrNull() ?: 0.0) * 10
     val base = remember(items) { simulatePayoff(items, 0.0, false) }
     val plan = remember(items, extra, mode) { simulatePayoff(items, extra, mode == 1) }
 
@@ -176,15 +177,15 @@ fun DebtPayoffScreen(onBack: () -> Unit, vm: DebtPayoffViewModel = hiltViewModel
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = extraRaw,
-                    onValueChange = { extraRaw = cleanNum(it).take(13) },
+                    onValueChange = { extraRaw = cleanNum(it).take(12) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = AppFieldShape,
                     colors = appFieldColors(),
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    suffix = { Text("ریال") },
-                    placeholder = { Text("مثلاً ۲۰٬۰۰۰٬۰۰۰") },
+                    suffix = { Text("تومان") },
+                    placeholder = { Text("مثلاً ۲٬۰۰۰٬۰۰۰") },
                 )
                 if (extra > 0) Text(numberToWordsFa(extra / 10) + " تومان", color = AppMuted, fontSize = 11.5.sp, modifier = Modifier.padding(top = 4.dp))
                 Spacer(Modifier.height(10.dp))
