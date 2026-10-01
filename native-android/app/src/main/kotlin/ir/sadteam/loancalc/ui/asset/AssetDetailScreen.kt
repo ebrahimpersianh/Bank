@@ -56,6 +56,8 @@ import ir.sadteam.loancalc.ui.jibak.toFa
 import ir.sadteam.loancalc.ui.jibak.rialToFaCompact
 import ir.sadteam.loancalc.ui.jibak.toFaDate
 import ir.sadteam.loancalc.ui.jibak.toFaSignedCompact
+import ir.sadteam.loancalc.ui.jibak.rialToFaSignedCompact
+import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.theme.AppDangerBorder
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
@@ -406,7 +408,8 @@ private fun AssetSummaryCard(
                     )
                     Text(
                         // ⚠️ «+» و «۰» در دو خط می‌شکستند؛ سودِ صفر هم بی‌علامت.
-                        if (profit.toLong() == 0L) "۰" else profit.toLong().toFaSignedCompact(),
+                        // بازبینیِ ۹ مهر: سود به ریال است - بی تبدیل، ده برابر نشان داده می‌شد.
+                        if (rialToToman(profit.toLong()) == 0L) "۰" else profit.rialToFaSignedCompact(),
                         color = if (profit >= 0) AppPrimaryInk else AppDangerInk,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Black,
