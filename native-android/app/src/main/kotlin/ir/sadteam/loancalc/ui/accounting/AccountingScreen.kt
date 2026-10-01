@@ -838,14 +838,14 @@ private fun BudgetSection(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        MonthNavArrow(icon = Icons.Filled.ChevronLeft, contentDescription = "ماهِ قبل") { stepMonth(-1) }
+                        MonthNavArrow(icon = Icons.Filled.ChevronRight, contentDescription = "ماهِ قبل") { stepMonth(-1) }
                         Text(
                             "${faMonthNamesAccounting[viewMonth - 1]} ${toFa(viewYear)}",
                             color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Black,
                         )
-                        MonthNavArrow(icon = Icons.Filled.ChevronRight, contentDescription = "ماهِ بعد") { stepMonth(1) }
+                        MonthNavArrow(icon = Icons.Filled.ChevronLeft, contentDescription = "ماهِ بعد") { stepMonth(1) }
                     }
                     Text(
                         if (isCurrentMonth) "امروز می‌تونی خرج کنی" else "خرجِ این ماه",
@@ -1472,7 +1472,7 @@ private fun DateRibbonHeader(viewDate: PersianDate, onDateChange: (PersianDate) 
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                DateRibbonArrow(icon = Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل") {
+                DateRibbonArrow(icon = Icons.Filled.ChevronRight, contentDescription = "روزِ قبل") {
                     onDateChange(PersianCalendar.addDays(viewDate, -1))
                 }
                 AnimatedContent(
@@ -1491,7 +1491,7 @@ private fun DateRibbonHeader(viewDate: PersianDate, onDateChange: (PersianDate) 
                         fontWeight = FontWeight.Black,
                     )
                 }
-                DateRibbonArrow(icon = Icons.Filled.ChevronRight, contentDescription = "روزِ بعد") {
+                DateRibbonArrow(icon = Icons.Filled.ChevronLeft, contentDescription = "روزِ بعد") {
                     onDateChange(PersianCalendar.addDays(viewDate, 1))
                 }
             }

@@ -92,14 +92,14 @@ fun TodayCard(
                     modifier = Modifier.padding(top = 3.dp),
                 )
             }
-            // ترتیبِ فلش‌ها هم‌شکلِ رفرنس - تو RTL آیتمِ اولِ Row سمتِ راست می‌شینه، پس «بعدی» (>)
-            // راست و «قبلی» (<) چپ دیده می‌شه.
+            // هم‌قاعده‌ی تقویم و حسابداری: تو RTL آیتمِ اولِ Row سمتِ راست می‌شینه، پس «قبلی» (>)
+            // راست و «بعدی» (<) چپ، هر دو رو به بیرون.
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onNextDay) {
-                    Icon(Icons.Filled.ChevronRight, contentDescription = "روزِ بعد", tint = ir.sadteam.loancalc.ui.theme.AppText)
-                }
                 IconButton(onClick = onPrevDay) {
-                    Icon(Icons.Filled.ChevronLeft, contentDescription = "روزِ قبل", tint = ir.sadteam.loancalc.ui.theme.AppText)
+                    Icon(Icons.Filled.ChevronRight, contentDescription = "روزِ قبل", tint = ir.sadteam.loancalc.ui.theme.AppText)
+                }
+                IconButton(onClick = onNextDay) {
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "روزِ بعد", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
             }
         }
