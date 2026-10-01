@@ -202,19 +202,22 @@ class AuthViewModel @Inject constructor(
                 onBackupFailed()
                 return@launch
             }
-            authPrefs.clearSession()
-            authPrefs.setGuestMode(true)
-            loanRepository.clearLocal()
-            chequeRepository.clearLocal()
-            accountRepository.clearLocal()
-            incomeRepository.clearLocal()
-            debtRepository.clearLocal()
-            dangRepository.clearLocal()
-            noteRepository.clearLocal()
-            // عکس‌های روزانه‌ی دارایی هم **کاربرمحور**ند: مانده‌ی حسابِ کاربرِ قبلی
-            // نباید در نمودارِ کاربرِ بعدی دیده شود (قاعده‌ی داده‌ی کاربرمحور در خروج).
-            wealthSnapshotRepository.clearLocal()
-            clearLocalFiles()
+            // نیمه‌کاره نماند: اگر صفحه بسته شود و کار لغو شود، نیمی از داده‌ی کاربرِ قبلی می‌ماند.
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                authPrefs.clearSession()
+                authPrefs.setGuestMode(true)
+                loanRepository.clearLocal()
+                chequeRepository.clearLocal()
+                accountRepository.clearLocal()
+                incomeRepository.clearLocal()
+                debtRepository.clearLocal()
+                dangRepository.clearLocal()
+                noteRepository.clearLocal()
+                // عکس‌های روزانه‌ی دارایی هم **کاربرمحور**ند: مانده‌ی حسابِ کاربرِ قبلی
+                // نباید در نمودارِ کاربرِ بعدی دیده شود (قاعده‌ی داده‌ی کاربرمحور در خروج).
+                wealthSnapshotRepository.clearLocal()
+                clearLocalFiles()
+            }
         }
     }
 
