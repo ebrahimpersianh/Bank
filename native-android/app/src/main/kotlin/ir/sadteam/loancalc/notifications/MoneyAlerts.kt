@@ -122,13 +122,13 @@ object BudgetAlerts {
             if (NotifSpacing.busy(context)) { retryLater(context, repo); return }
             // ۱۰۰٪ که رسید، ۸۰٪ را هم «گفته‌شده» علامت بزن تا بعداً جدا نیاید.
             prefs.edit().putBoolean(key, true).putBoolean("${b.id}:80", true).apply()
-            val left = (b.monthlyCap - spent).coerceAtLeast(0.0)
             val (title, text) = if (level == 100) {
                 "بودجه‌ی «${b.categoryName}» تمام شد" to
                     "این ماه ${toFa(pct)}٪ِ بودجه‌ی ${b.categoryName} خرج شده. اگر لازم است بودجه را جابه‌جا کن."
             } else {
                 "${toFa(pct)}٪ِ بودجه‌ی «${b.categoryName}» خرج شد" to
-                    "${left.rialToFaCompact()} تومان تا آخرِ ماه مانده."
+                    // بی مبلغ: اعلان روی صفحه‌ی قفل دیده می‌شود و حالتِ خصوصی را هم رعایت نمی‌کرد.
+                    "تا آخرِ ماه حواست به خرجِ این دسته باشه."
             }
             notify(context, 918_500 + (b.id % 400).toInt() + if (level == 100) 400 else 0, title, text, "budget")
         }

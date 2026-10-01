@@ -344,7 +344,12 @@ class LoanRepository(
         }
         val data = parseData(loan)
         val ratePct = (data["rate"] as? Number)?.toDouble() ?: 0.0
-        val method = if ((data["method"] as? String) == "qarz") LoanMethod.QARZ else LoanMethod.STANDARD
+        // بازبینیِ ۹ مهر: وامِ «ثابت» (flat) هم باید با فرمولِ خودش دوباره حساب شود، نه ساده.
+        val method = when (data["method"] as? String) {
+            "qarz" -> LoanMethod.QARZ
+            "flat" -> LoanMethod.FLAT
+            else -> LoanMethod.STANDARD
+        }
         val graceMonths = (data["graceMonths"] as? Number)?.toInt() ?: 0
         val intervalDays = (data["intervalDays"] as? Number)?.toInt() ?: 30
         val result = LoanCalculator.compute(principalAmount, ratePct, n, method, graceMonths, intervalDays)

@@ -77,7 +77,9 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         // پرچمِ comeBackReminderEnabled رو چک می‌کنه، پس زمان‌بندیِ بی‌قیدش بی‌ضرره.
         comeBackScheduler.schedule()
         ir.sadteam.loancalc.notifications.AdminAlertWorker.schedule(this)
-        ir.sadteam.loancalc.notifications.WeeklySummaryWorker.schedule(this)
+        // بازبینیِ ۹ مهر: خلاصه‌ی هفتگی از قبل در DueDateReminderWorker بود (با حالتِ خصوصی) - دومی
+        // جمعه‌ها اعلانِ تکراری می‌داد. کارِ قبلاً زمان‌بندی‌شده هم لغو می‌شود.
+        androidx.work.WorkManager.getInstance(this).cancelUniqueWork("weekly_summary")
         // 🛍 فروشگاه از سرور: اول نسخه‌ی ذخیره‌شده (بی‌اینترنت هم درست)، بعد تازه‌اش.
         ir.sadteam.loancalc.data.coin.RemoteShop.loadCached(this)
         ir.sadteam.loancalc.data.RemoteApp.loadCached(this)

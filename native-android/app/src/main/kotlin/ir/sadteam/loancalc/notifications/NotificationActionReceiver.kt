@@ -80,6 +80,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
         when {
             loanId > 0 && installment > 0 -> {
                 loanRepository.getLoans().firstOrNull { it.id == loanId }?.let { loan ->
+                    // بازبینیِ ۹ مهر: اعلانِ قدیمی برای قسطی که در برنامه پرداخت شده دوباره از حساب کم نکند.
+                    val alreadyPaid = loanRepository.getRows(loan)
+                        .firstOrNull { (it["m"] as? Number)?.toInt() == installment }?.get("paid") == true
+                    if (alreadyPaid) return@let
                     loanRepository.setRowPaidOnTime(loan, installment)
                     val amount = loanRepository.getRows(loan).firstOrNull { (it["m"] as? Number)?.toInt() == installment }
                         ?.let { (it["installment"] as? Number)?.toDouble() } ?: loan.installment
@@ -96,13 +100,14 @@ class NotificationActionReceiver : BroadcastReceiver() {
                         inboxRepository.post(
                             kind = ir.sadteam.loancalc.data.db.InboxMessageEntity.Kind.SYSTEM,
                             title = "قسط پرداخت‌شده علامت خورد",
-                            body = "قسط ${toFa(installment)} «${loan.name}» از حسابی کم نشد، چون چند حساب داری. از صفحه‌ی تراکنش‌ها یک برداشت با همین مبلغ ثبت کن.",
+                            body = "قسط ${toFa(installment)} «${loan.name}» از حسابی کم نشد، چون حسابِ مشخصی نبود (هیچ حسابی نداری یا چند حساب داری). از صفحه‌ی تراکنش‌ها یک برداشت با همین مبلغ ثبت کن.",
                         )
                     }
                 }
             }
             chequeId > 0 -> {
                 chequeRepository.getAllCheques().firstOrNull { it.id == chequeId }?.let { cheque ->
+                    if (cheque.status == ChequeStatus.PASSED.name) return@let
                     chequeRepository.setStatus(cheque, ChequeStatus.PASSED)
                     val recorded = accountRepository.recordLinkedPayment(
                         accountId = null,
@@ -116,7 +121,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                         inboxRepository.post(
                             kind = ir.sadteam.loancalc.data.db.InboxMessageEntity.Kind.SYSTEM,
                             title = "چک پاس‌شده علامت خورد",
-                            body = "مبلغِ چکِ «${cheque.ownerName}» در حسابی ثبت نشد، چون چند حساب داری. از صفحه‌ی تراکنش‌ها ثبتش کن.",
+                            body = "مبلغِ چکِ «${cheque.ownerName}» در حسابی ثبت نشد، چون حسابِ مشخصی نبود (هیچ حسابی نداری یا چند حساب داری). از صفحه‌ی تراکنش‌ها ثبتش کن.",
                         )
                     }
                 }
