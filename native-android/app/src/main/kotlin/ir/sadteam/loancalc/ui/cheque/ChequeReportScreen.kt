@@ -49,6 +49,7 @@ import ir.sadteam.loancalc.ui.theme.AppInfoPill
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.pillOverSurface
 
@@ -260,7 +261,7 @@ private fun PendingChequeTile(
     Row(
         modifier = modifier
             .height(62.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(AppRadius.card))
             .background(color.pillOverSurface(0.12f))
             .padding(horizontal = 11.dp),
         verticalAlignment = Alignment.CenterVertically,

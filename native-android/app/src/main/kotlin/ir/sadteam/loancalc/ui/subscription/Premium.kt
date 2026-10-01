@@ -8,6 +8,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.WorkspacePremium
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.update.ExpirySheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -107,7 +108,7 @@ fun PremiumPaywallHost() {
         androidx.compose.material3.BasicAlertDialog(onDismissRequest = { PremiumPaywall.feature = null }) {
             androidx.compose.foundation.layout.Column(
                 modifier = androidx.compose.ui.Modifier
-                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(28.dp))
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(AppRadius.sheet))
                     .background(ir.sadteam.loancalc.ui.theme.AppSurface)
                     .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 18.dp),
                 horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,

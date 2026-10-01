@@ -63,6 +63,7 @@ import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -356,7 +357,7 @@ private fun SenderRow(
             verticalAlignment = Alignment.Top,
         ) {
             Box(
-                Modifier.size(40.dp).clip(RoundedCornerShape(13.dp))
+                Modifier.size(40.dp).clip(RoundedCornerShape(AppRadius.icon))
                     .background(if (banky) AppPrimary.copy(alpha = 0.12f) else AppMuted.copy(alpha = 0.10f)),
                 contentAlignment = Alignment.Center,
             ) {

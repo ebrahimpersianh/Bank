@@ -57,6 +57,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppPurple
 import ir.sadteam.loancalc.ui.theme.AppPurplePill
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /**
@@ -181,7 +182,7 @@ private fun TodayHero(d: ir.sadteam.loancalc.data.network.AdminDigestResponse?, 
 private fun HubTile(icon: ImageVector, title: String, subtitle: String, pill: Color, ink: Color, modifier: Modifier, badge: Int = 0, onClick: () -> Unit) {
     Box(modifier) {
         AppCard(modifier = Modifier.clickable(onClick = onClick), horizontalPadding = 14.dp, contentPadding = 12.dp) {
-            Box(Modifier.size(40.dp).clip(RoundedCornerShape(13.dp)).background(pill), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(40.dp).clip(RoundedCornerShape(AppRadius.icon)).background(pill), contentAlignment = Alignment.Center) {
                 Icon(icon, null, tint = ink, modifier = Modifier.size(21.dp))
             }
             Text(title, color = AppText, fontSize = 13.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 8.dp))

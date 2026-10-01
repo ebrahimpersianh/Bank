@@ -66,6 +66,8 @@ import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppStroke
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import java.util.Locale
@@ -347,8 +349,8 @@ private fun RateFinderCard() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(AppSurface, RoundedCornerShape(18.dp))
-            .border(1.dp, AppPrimary.copy(alpha = 0.4f), RoundedCornerShape(18.dp))
+            .background(AppSurface, RoundedCornerShape(AppRadius.card))
+            .border(AppStroke.card, AppPrimary.copy(alpha = 0.4f), RoundedCornerShape(AppRadius.card))
             .padding(14.dp),
     ) {
         Column {

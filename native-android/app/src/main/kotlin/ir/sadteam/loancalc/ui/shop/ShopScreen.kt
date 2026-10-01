@@ -1549,7 +1549,7 @@ private fun AppIconPreview(itemId: String) {
         else -> R.drawable.ic_launcher_background to R.mipmap.ic_launcher_foreground
     }
     Box(
-        modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)),
+        modifier = Modifier.size(38.dp).clip(RoundedCornerShape(AppRadius.icon)),
         contentAlignment = Alignment.Center,
     ) {
         Image(
@@ -1574,7 +1574,7 @@ private fun GenericItemPreview(item: ShopItem) {
         else -> Icons.Filled.WorkspacePremium
     }
     Box(
-        modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(AppIconFrame),
+        modifier = Modifier.size(38.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppIconFrame),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = null, tint = AppMuted, modifier = Modifier.size(19.dp))
@@ -1715,7 +1715,7 @@ private fun SymbolSetPreview(itemId: String) {
     }
     val keys = listOf("restaurant", "home", "car", "celebration")
     Box(
-        modifier = Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(background),
+        modifier = Modifier.size(42.dp).clip(RoundedCornerShape(AppRadius.icon)).background(background),
         contentAlignment = Alignment.Center,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
@@ -1739,7 +1739,7 @@ private fun SymbolSetPreview(itemId: String) {
 private fun CoinSkinPreview(itemId: String) {
     val accent = if (itemId == "coinskin:ancient") Color(0xFF8A6744) else Color(0xFFC99625)
     Box(
-        modifier = Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(accent.copy(alpha = 0.14f)),
+        modifier = Modifier.size(42.dp).clip(RoundedCornerShape(AppRadius.icon)).background(accent.copy(alpha = 0.14f)),
         contentAlignment = Alignment.Center,
     ) {
         CoinIcon(size = 25.dp, modifier = Modifier.alpha(if (itemId == "coinskin:ancient") 0.76f else 1f))
@@ -1948,11 +1948,11 @@ private fun IconUsageSample(itemId: String) {
                         bitmap != null -> Image(
                             bitmap = bitmap,
                             contentDescription = null,
-                            modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)),
+                            modifier = Modifier.size(38.dp).clip(RoundedCornerShape(AppRadius.icon)),
                         )
                         index == 1 -> AppIconPreview(itemId)
                         else -> Box(
-                            modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(AppIconFrame),
+                            modifier = Modifier.size(38.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppIconFrame),
                         )
                     }
                     Text(
@@ -1984,7 +1984,7 @@ private fun SymbolSetSample(itemId: String) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                     row.forEach { key ->
                         Box(
-                            modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(AppIconFrame),
+                            modifier = Modifier.size(38.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppIconFrame),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(iconForKey(key, style), contentDescription = null, tint = AppText, modifier = Modifier.size(24.dp))
@@ -2008,7 +2008,7 @@ private val chartSampleLabels = listOf("شنبه", "یکشنبه", "دوشنبه
 private fun ChartStylePreview(itemId: String) {
     val style = HeroChartStyle.fromItemId(itemId) ?: return
     Box(
-        modifier = Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(AppPrimary).padding(horizontal = 5.dp),
+        modifier = Modifier.size(38.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPrimary).padding(horizontal = 5.dp),
         contentAlignment = Alignment.Center,
     ) {
         CompositionLocalProvider(LocalHeroChartStyle provides style) {

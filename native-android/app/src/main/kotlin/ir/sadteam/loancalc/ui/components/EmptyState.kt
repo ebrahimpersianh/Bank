@@ -93,7 +93,7 @@ fun EmptyState(
         } else Box(
             modifier = Modifier
                 .size(68.dp)
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(AppRadius.card))
                 .background(AppPrimaryPill),
             contentAlignment = Alignment.Center,
         ) {

@@ -863,7 +863,7 @@ private fun AccountRow(
     privacyMode: Boolean,
     onClick: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(AppRadius.card)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -965,7 +965,7 @@ private fun SectionHeader(
     ) {
         if (icon != null) {
             Box(
-                modifier = Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(AppPrimaryPill),
+                modifier = Modifier.size(30.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPrimaryPill),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(16.dp))
@@ -1380,7 +1380,7 @@ private fun MyAssetsSection(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
             rows.forEach { h ->
                 val change = rememberDailyChange(h.asset.symbol, viewModel)
-                val shape = RoundedCornerShape(18.dp)
+                val shape = RoundedCornerShape(AppRadius.card)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier

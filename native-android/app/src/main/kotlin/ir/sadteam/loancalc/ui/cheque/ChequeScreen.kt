@@ -578,7 +578,7 @@ private fun ChequeCard(
             Box(
                 modifier = Modifier
                     .size(34.dp)
-                    .clip(RoundedCornerShape(11.dp))
+                    .clip(RoundedCornerShape(AppRadius.icon))
                     .background(frameFill),
                 contentAlignment = Alignment.Center,
             ) {
@@ -785,7 +785,7 @@ private fun ChequeAnalyticsDashboard(stats: ChequeStats) {
     AppCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(AppPrimary.copy(alpha = 0.14f)),
+                Modifier.size(34.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPrimary.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) { Icon(Icons.Filled.BarChart, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(20.dp)) }
             Text("داشبورد تحلیلی چک", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(start = 10.dp))

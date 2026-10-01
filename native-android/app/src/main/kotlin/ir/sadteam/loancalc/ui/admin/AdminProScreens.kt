@@ -73,6 +73,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -379,7 +380,7 @@ fun AdminBroadcastScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewMod
 /** کارتِ گروه؛ تعداد فقط روی گروهِ انتخاب‌شده (شمارش یک درخواستِ آزمایشی است، نه شش تا). */
 @Composable
 private fun SegmentCard(label: String, selected: Boolean, count: Int?, modifier: Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(AppRadius.card)
     Column(
         modifier.heightIn(min = 78.dp).clip(shape).background(if (selected) AppPrimaryPill else AppSurface)
             .border(2.dp, if (selected) AppPrimary else AppLine, shape).clickable(onClick = onClick).padding(12.dp),

@@ -244,7 +244,7 @@ private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accoun
                 Box(
                     modifier = Modifier
                         .size(44.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(AppRadius.icon))
                         .background(HeroPillBg),
                     contentAlignment = Alignment.Center,
                 ) {

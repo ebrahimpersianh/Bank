@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLabel
@@ -113,7 +114,7 @@ fun CalculationHistoryScreen(onBack: () -> Unit, viewModel: CalculationHistoryVi
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(AppRadius.icon))
                     .background(AppSurface)
                     .border(1.dp, AppLine, RoundedCornerShape(14.dp))
                     .pressScaleClickable(onClick = onBack),

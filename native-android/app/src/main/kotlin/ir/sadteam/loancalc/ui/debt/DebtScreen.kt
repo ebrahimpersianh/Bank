@@ -6,6 +6,8 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.appFieldColors
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppStroke
 import ir.sadteam.loancalc.ui.theme.AppTxOut
 import ir.sadteam.loancalc.ui.theme.AppTxIn
 import ir.sadteam.loancalc.ui.theme.AppSurface
@@ -522,7 +524,7 @@ private fun BoxScope.AddCounterpartySheet(visible: Boolean, onDismiss: () -> Uni
             Box(Modifier.align(Alignment.CenterHorizontally).size(width = 42.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(AppLine))
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 Box(
-                    Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimary.copy(alpha = 0.14f)),
+                    Modifier.size(42.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPrimary.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Filled.Handshake, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp)) }
                 Text("طرفِ‌حسابِ جدید", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f).padding(start = 10.dp))
@@ -614,7 +616,7 @@ private fun DirectionButton(
             .height(52.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(if (selected) ink.copy(alpha = 0.16f) else AppChipBg)
-            .border(if (selected) 1.5.dp else 1.dp, if (selected) ink else AppLine, RoundedCornerShape(16.dp))
+            .border(if (selected) AppStroke.card else AppStroke.row, if (selected) ink else AppLine, RoundedCornerShape(16.dp))
             .pressScaleClickable(onClick = onClick),
     ) {
         if (icon != null) Icon(icon, contentDescription = null, tint = if (selected) ink else AppMuted, modifier = Modifier.size(18.dp).padding(end = 2.dp))

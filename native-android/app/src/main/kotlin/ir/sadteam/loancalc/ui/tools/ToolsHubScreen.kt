@@ -25,6 +25,7 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPurple
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppWarning
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Description
@@ -178,7 +179,7 @@ private fun ToolCard(
     AppCard(modifier = Modifier.pressScaleClickable(onClick = onClick).semantics { contentDescription = action }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.size(46.dp).clip(RoundedCornerShape(15.dp)).background(tint.copy(alpha = 0.14f)),
+                Modifier.size(46.dp).clip(RoundedCornerShape(AppRadius.icon)).background(tint.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp)) }
             Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {

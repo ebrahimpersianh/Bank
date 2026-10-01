@@ -1824,7 +1824,7 @@ private fun HomeEmptyHero(onAddFirst: () -> Unit) {
  */
 @Composable
 private fun FirstRewardNote() {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(AppRadius.card)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier

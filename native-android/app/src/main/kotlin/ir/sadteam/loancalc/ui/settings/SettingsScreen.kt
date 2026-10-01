@@ -3,6 +3,8 @@ package ir.sadteam.loancalc.ui.settings
 import androidx.compose.material.icons.filled.PhoneIphone
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppStroke
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.AdminPanelSettings
@@ -437,7 +439,7 @@ private fun SettingsMainContent(
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(AppRadius.icon))
                     .background(AppSurface)
                     .border(1.dp, AppLine, RoundedCornerShape(14.dp))
                     .pressScaleClickable(onClick = onBack),
@@ -460,7 +462,7 @@ private fun SettingsMainContent(
                     modifier = Modifier
                         .padding(end = 8.dp)
                         .size(44.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(AppRadius.icon))
                         .background(ir.sadteam.loancalc.ui.theme.AppWarning.copy(alpha = 0.15f))
                         .pressScaleClickable(onClick = onOpenAdminStats),
                     contentAlignment = Alignment.Center,
@@ -469,7 +471,7 @@ private fun SettingsMainContent(
                 }
             }
             Box(
-                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimaryPill),
+                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPrimaryPill),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Filled.Settings, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(24.dp))
@@ -792,7 +794,7 @@ private fun SettingsSubPageScaffold(
                 modifier = Modifier
                     .padding(4.dp)
                     .size(44.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(AppRadius.icon))
                     .background(AppSurface)
                     .border(1.dp, AppLine, RoundedCornerShape(14.dp))
                     .pressScaleClickable(onClick = onBack),
@@ -964,7 +966,7 @@ private fun AccountSettings(
                     )
                 }
                 Box(
-                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(Color.White.copy(alpha = 0.18f)),
+                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(AppRadius.icon)).background(Color.White.copy(alpha = 0.18f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(Icons.Filled.Badge, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
@@ -1059,7 +1061,7 @@ private fun AccountSettings(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(AppRadius.icon))
                         .background(if (subscribed) AppGoldPillSoft else AppSurface),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -1151,15 +1153,15 @@ private fun AccountSettings(
                 .fillMaxWidth()
                 .padding(top = AppSpacing.betweenCards * 2)
                 .height(76.dp)
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(AppRadius.card))
                 .background(AppDangerPill)
-                .border(1.dp, AppDanger.copy(alpha = 0.35f), RoundedCornerShape(24.dp))
+                .border(AppStroke.card, AppDanger.copy(alpha = 0.35f), RoundedCornerShape(AppRadius.card))
                 .pressScaleClickable { showLogoutConfirm = true }
                 .padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.size(46.dp).clip(RoundedCornerShape(15.dp)).background(AppDanger.copy(alpha = 0.12f)),
+                modifier = Modifier.size(46.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppDanger.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(

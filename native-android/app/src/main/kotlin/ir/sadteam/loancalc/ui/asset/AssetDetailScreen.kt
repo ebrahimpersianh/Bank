@@ -545,7 +545,7 @@ private fun TradeRow(trade: AssetTradeEntity, assetName: String) {
         Box(
             modifier = Modifier
                 .size(28.dp)
-                .clip(RoundedCornerShape(9.dp))
+                .clip(RoundedCornerShape(AppRadius.icon))
                 .background(if (trade.isBuy) AppPrimaryPill else AppDangerPill),
             contentAlignment = Alignment.Center,
         ) {

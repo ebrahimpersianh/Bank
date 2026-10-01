@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 
@@ -61,9 +62,9 @@ fun JibakAlertDialog(
                     scaleY = 0.9f + 0.1f * v
                     alpha = v.coerceIn(0f, 1f)
                 }
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(AppRadius.sheet))
                 .background(AppSurface)
-                .border(1.5.dp, AppLine, RoundedCornerShape(24.dp))
+                .border(1.5.dp, AppLine, RoundedCornerShape(AppRadius.sheet))
                 .padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {

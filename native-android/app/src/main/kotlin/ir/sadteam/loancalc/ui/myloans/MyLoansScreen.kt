@@ -1115,7 +1115,7 @@ private fun LoanListActionRow(
         Box(
             modifier = Modifier
                 .size(30.dp)
-                .clip(RoundedCornerShape(9.dp))
+                .clip(RoundedCornerShape(AppRadius.icon))
                 .background(AppSurface2),
             contentAlignment = Alignment.Center,
         ) {

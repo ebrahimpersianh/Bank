@@ -150,7 +150,7 @@ fun SettingsGroupLabel(text: String, subtitle: String? = null, accent: Color = A
  */
 @Composable
 fun SettingsGroup(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    val shape = RoundedCornerShape(22.dp)
+    val shape = RoundedCornerShape(AppRadius.card)
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -208,7 +208,7 @@ fun SettingsRowItem(
         Box(
             modifier = Modifier
                 .size(42.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(AppRadius.icon))
                 .background(tone.fill),
             contentAlignment = Alignment.Center,
         ) {
@@ -306,7 +306,7 @@ fun SettingsHero(
     AppHeroCard(modifier = modifier.padding(top = 4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.size(46.dp).clip(RoundedCornerShape(15.dp)).background(Color.White.copy(alpha = 0.20f)),
+                modifier = Modifier.size(46.dp).clip(RoundedCornerShape(AppRadius.icon)).background(Color.White.copy(alpha = 0.20f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))

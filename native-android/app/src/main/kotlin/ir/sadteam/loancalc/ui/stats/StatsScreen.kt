@@ -76,6 +76,7 @@ import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -376,7 +377,7 @@ private fun StatTile(item: StatItem, modifier: Modifier = Modifier) {
             // ⚠️ دایره‌ی آیکون خالی بود (گزارشِ کاربر، ۸ مهر).
             val tint = item.tint ?: AppPrimary
             Box(
-                modifier = Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(tint.copy(alpha = 0.14f)),
+                modifier = Modifier.size(34.dp).clip(RoundedCornerShape(AppRadius.icon)).background(tint.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) { Icon(item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp)) }
             Text(item.title, color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(start = 8.dp))

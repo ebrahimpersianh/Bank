@@ -4,6 +4,7 @@ import ir.sadteam.loancalc.ui.components.AppHeroCard
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.ui.graphics.Brush
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.foundation.layout.size
@@ -159,7 +160,7 @@ fun CoinHubScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimaryPill),
+                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPrimaryPill),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(Icons.Filled.ShoppingBag, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(22.dp))

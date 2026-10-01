@@ -544,7 +544,7 @@ private fun ReportHeader(
                     .padding(start = 3.dp)
                     .minimumInteractiveComponentSize()
                     .size(32.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(AppRadius.icon))
                     .background(if (privacyMode) PrivacyOnBg else PrivacyOffBg)
                     .border(
                         1.5.dp,
@@ -637,9 +637,9 @@ private fun BankSmsHintCard() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(AppRadius.card))
             .background(GoldHintBg)
-            .border(1.5.dp, GoldHintBorder, RoundedCornerShape(18.dp))
+            .border(1.5.dp, GoldHintBorder, RoundedCornerShape(AppRadius.card))
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -1147,7 +1147,7 @@ private fun CommitmentRow(
             .padding(vertical = 9.dp),
     ) {
         Box(
-            modifier = Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(AppPurplePill),
+            modifier = Modifier.size(30.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPurplePill),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = AppPurple, modifier = Modifier.size(15.dp))
@@ -1205,7 +1205,7 @@ private fun DiscoveryCard(
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Box(
-            modifier = Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(pill),
+            modifier = Modifier.size(34.dp).clip(RoundedCornerShape(AppRadius.icon)).background(pill),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = iconInk, modifier = Modifier.size(16.dp))
@@ -1298,7 +1298,7 @@ private fun NoDiscoveryCard(checkedCount: Int, monthsOfHistory: Int) {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Box(
-            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(16.dp)).background(AppPrimaryPill),
+            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPrimaryPill),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -1354,7 +1354,7 @@ private fun ExportCard(onExcel: () -> Unit, onPdf: () -> Unit) {
     AppCard(contentPadding = 14.dp, horizontalPadding = 14.dp) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(
-                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimaryPill),
+                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPrimaryPill),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Filled.Download, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(21.dp))

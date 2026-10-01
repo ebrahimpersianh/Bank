@@ -2,6 +2,7 @@ package ir.sadteam.loancalc.ui.inbox
 
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import androidx.compose.foundation.clickable
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.horizontalScroll
@@ -434,7 +435,7 @@ private fun ActionableCard(
     onReject: () -> Unit,
     onShowSource: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(AppRadius.card)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -550,7 +551,7 @@ private fun MessageSection(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val tint = if (green) AppTxIn else AppPrimary
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(AppRadius.card)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -562,7 +563,7 @@ private fun MessageSection(
     ) {
         Row(modifier = Modifier.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(if (green) tint else tint.copy(alpha = 0.14f)),
+                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(AppRadius.icon)).background(if (green) tint else tint.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, contentDescription = null, tint = if (green) Color.White else tint, modifier = Modifier.size(22.dp))
@@ -651,7 +652,7 @@ private fun AnnouncementCard(message: InboxMessageEntity, onClick: () -> Unit) {
         verticalAlignment = Alignment.Top,
     ) {
         Box(
-            modifier = Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(tint.copy(alpha = 0.14f)),
+            modifier = Modifier.size(42.dp).clip(RoundedCornerShape(AppRadius.icon)).background(tint.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(21.dp))
@@ -692,7 +693,7 @@ private fun AnnouncementCard(message: InboxMessageEntity, onClick: () -> Unit) {
 /** «ارتباط با جیبک» - فرستادنِ پیام از طرفِ کاربر؛ جدا از پیام‌های دریافتی. */
 @Composable
 private fun ContactCard(onClick: () -> Unit) {
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(AppRadius.card)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -703,7 +704,7 @@ private fun ContactCard(onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimaryPill),
+            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPrimaryPill),
             contentAlignment = Alignment.Center,
         ) {
             Icon(Icons.Filled.Chat, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(22.dp))
@@ -751,7 +752,7 @@ private fun HeaderCircle(icon: ImageVector, label: String, active: Boolean, onCl
 /** کارتِ «پیشینه» - زنگ و یک جمله؛ «همه خوانده شد» هم این‌جاست. */
 @Composable
 private fun HistoryHeaderCard(onMarkAllRead: (() -> Unit)?) {
-    val shape = RoundedCornerShape(22.dp)
+    val shape = RoundedCornerShape(AppRadius.card)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -829,7 +830,7 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
         isDue -> Triple(AppWarningInk, AppWarningPill, Icons.Filled.CalendarMonth)
         else -> Triple(AppPrimary, AppPrimaryPill, Icons.Filled.NotificationsNone)
     }
-    val shape = RoundedCornerShape(22.dp)
+    val shape = RoundedCornerShape(AppRadius.card)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -842,7 +843,7 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
         verticalAlignment = Alignment.Top,
     ) {
         Box(
-            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(fill),
+            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(AppRadius.icon)).background(fill),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
@@ -958,7 +959,7 @@ private fun GiftCelebration(message: InboxMessageEntity, onDone: () -> Unit) {
     androidx.compose.runtime.LaunchedEffect(Unit) { runCatching { buzz() } }
     androidx.compose.ui.window.Dialog(onDismissRequest = onDone) {
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(AppSurface).padding(22.dp),
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(AppRadius.sheet)).background(AppSurface).padding(22.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(Modifier.size(150.dp), contentAlignment = Alignment.Center) {

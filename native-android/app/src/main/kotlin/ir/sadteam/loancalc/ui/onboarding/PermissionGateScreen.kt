@@ -62,6 +62,7 @@ import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppWarningInk
@@ -335,7 +336,7 @@ private fun PermissionRow(
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .clip(RoundedCornerShape(13.dp))
+                .clip(RoundedCornerShape(AppRadius.icon))
                 .background(if (granted) AppPrimary.copy(alpha = 0.12f) else amber.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center,
         ) {

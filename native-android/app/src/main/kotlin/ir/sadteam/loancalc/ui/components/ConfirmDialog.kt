@@ -35,6 +35,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 
@@ -108,7 +109,7 @@ fun ConfirmDialog(
     BasicAlertDialog(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(AppRadius.sheet))
                 .background(AppSurface)
                 .padding(17.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp),
@@ -117,7 +118,7 @@ fun ConfirmDialog(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(RoundedCornerShape(13.dp))
+                        .clip(RoundedCornerShape(AppRadius.icon))
                         .background(pill),
                     contentAlignment = Alignment.Center,
                 ) {

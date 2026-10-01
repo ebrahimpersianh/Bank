@@ -550,7 +550,7 @@ private fun AccountingTransactionRow(
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             val tint = category?.color ?: if (isIncome) AppPrimary else AppDanger
             Box(
-                Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(tint.copy(alpha = 0.14f)),
+                Modifier.size(44.dp).clip(RoundedCornerShape(AppRadius.icon)).background(tint.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -2000,7 +2000,7 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(11.dp)).background(AppInfoPill),
+                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppInfoPill),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(Icons.Filled.Assessment, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))
@@ -2022,7 +2022,7 @@ private fun ReportSection(viewModel: AccountViewModel, categoryViewModel: Catego
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(11.dp)).background(AppInfoPill),
+                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppInfoPill),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(Icons.Outlined.PieChart, contentDescription = null, tint = AppInfo, modifier = Modifier.size(17.dp))

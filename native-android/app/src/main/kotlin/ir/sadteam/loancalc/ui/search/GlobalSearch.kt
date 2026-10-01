@@ -75,6 +75,7 @@ import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppText
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material.icons.filled.SearchOff
@@ -354,7 +355,7 @@ fun GlobalSearchScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
-                                Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(tint.copy(alpha = 0.12f)),
+                                Modifier.size(44.dp).clip(RoundedCornerShape(AppRadius.icon)).background(tint.copy(alpha = 0.12f)),
                                 contentAlignment = Alignment.Center,
                             ) { Icon(hit.kind.icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp)) }
                             Column(Modifier.weight(1f).padding(start = 12.dp)) {
@@ -433,7 +434,7 @@ private fun SearchIntro() {
                     val tint = k.tint()
                     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
-                            Modifier.size(48.dp).clip(RoundedCornerShape(15.dp)).background(tint.copy(alpha = 0.12f)),
+                            Modifier.size(48.dp).clip(RoundedCornerShape(AppRadius.icon)).background(tint.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center,
                         ) { Icon(k.icon, contentDescription = null, tint = tint, modifier = Modifier.size(23.dp)) }
                         Text(k.label, color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))

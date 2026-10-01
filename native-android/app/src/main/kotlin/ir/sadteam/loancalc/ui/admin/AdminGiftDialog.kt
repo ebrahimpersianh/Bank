@@ -40,6 +40,7 @@ import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 
@@ -65,7 +66,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
             val tintBg = if (coinsMode) ir.sadteam.loancalc.ui.theme.AppPurplePill else ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(tintBg),
+                    Modifier.size(46.dp).clip(RoundedCornerShape(AppRadius.icon)).background(tintBg),
                     contentAlignment = Alignment.Center,
                 ) {
                     androidx.compose.material3.Icon(

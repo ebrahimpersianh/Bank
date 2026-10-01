@@ -35,6 +35,7 @@ import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 
@@ -66,7 +67,7 @@ fun RatePromptDialog(
     BasicAlertDialog(onDismissRequest = onLater) {
         Column(
             modifier = Modifier
-                .clip(RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(AppRadius.sheet))
                 .background(AppSurface)
                 .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

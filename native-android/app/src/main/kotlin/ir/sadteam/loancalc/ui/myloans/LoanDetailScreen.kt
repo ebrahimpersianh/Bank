@@ -172,6 +172,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppStroke
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSpacing
 import ir.sadteam.loancalc.ui.theme.AppSurface2
@@ -1559,7 +1560,7 @@ private fun LoanIdentityCard(
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(AppRadius.icon))
                     .background(Color.White.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center,
             ) {
@@ -2140,7 +2141,7 @@ private fun InstallmentRow(
             .alpha(if (bulkPayMode && paid) 0.5f else 1f)
             .clip(rowShape)
             .background(rowBg, rowShape)
-            .border(if (selected) 1.5.dp else 1.dp, borderColor, rowShape)
+            .border(if (selected) AppStroke.card else AppStroke.row, borderColor, rowShape)
             // تپِ ردیف = پرداخت (بی‌تغییر). منوی کارهای ردیف پشتِ شِورونِ سمتِ راست است.
             .pressScaleClickable(scale = 0.975f) { onTogglePaid(m, paid) }
             .padding(start = 2.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),

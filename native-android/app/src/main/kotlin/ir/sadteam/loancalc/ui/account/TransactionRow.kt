@@ -39,6 +39,7 @@ import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppTxIn
 import ir.sadteam.loancalc.ui.theme.AppTxOut
@@ -91,7 +92,7 @@ fun CompactTransactionRow(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Box(
-                modifier = Modifier.size(30.dp).clip(RoundedCornerShape(9.dp)).background(iconBg),
+                modifier = Modifier.size(30.dp).clip(RoundedCornerShape(AppRadius.icon)).background(iconBg),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(15.dp))

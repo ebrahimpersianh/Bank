@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.VolumeUp
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import android.Manifest
@@ -133,7 +134,7 @@ fun ReminderSettingsScreen(
                 Box(
                     modifier = Modifier
                         .size(44.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(AppRadius.icon))
                         .background(AppSurface)
                         .border(1.dp, AppLine, RoundedCornerShape(14.dp))
                         .pressScaleClickable(onClick = onBack),

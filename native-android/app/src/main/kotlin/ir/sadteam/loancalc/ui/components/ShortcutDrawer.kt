@@ -524,7 +524,7 @@ private fun ShortcutCard(shortcut: Shortcut, wiggling: Boolean, seed: Int, onCli
             .padding(horizontal = 10.dp, vertical = 10.dp),
     ) {
         Box(
-            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(if (primary) AppPrimary else AppPrimary.copy(alpha = 0.14f)),
+            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(AppRadius.icon)).background(if (primary) AppPrimary else AppPrimary.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center,
         ) { Icon(shortcut.icon, contentDescription = null, tint = if (primary) Color.White else AppPrimaryInk, modifier = Modifier.size(22.dp)) }
         Column(Modifier.weight(1f).padding(start = 10.dp)) {

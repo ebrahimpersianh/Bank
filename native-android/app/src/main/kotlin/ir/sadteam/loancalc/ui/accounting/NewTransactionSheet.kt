@@ -4,6 +4,7 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.graphics.graphicsLayer
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
 import ir.sadteam.loancalc.ui.theme.AppInfo
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppTxOut
 import ir.sadteam.loancalc.ui.theme.AppTxIn
 import androidx.compose.foundation.layout.height
@@ -267,7 +268,7 @@ fun NewTransactionSheet(
                 modifier = Modifier
                     .minimumInteractiveComponentSize()
                     .size(32.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(AppRadius.icon))
                     .background(AppSurface)
                     .border(1.5.dp, AppLine, RoundedCornerShape(10.dp))
                     .pressScaleClickable(onClick = onDismiss),
@@ -289,7 +290,7 @@ fun NewTransactionSheet(
             Box(
                 modifier = Modifier
                     .size(32.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(AppRadius.icon))
                     .background(accent.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) {

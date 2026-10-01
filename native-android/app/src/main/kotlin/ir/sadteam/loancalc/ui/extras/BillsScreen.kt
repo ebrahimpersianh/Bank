@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Event
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppLine
 import androidx.compose.foundation.background
@@ -158,7 +159,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val (kIcon, kColor) = billKindIcon(bill.kind)
                     Box(
-                        Modifier.size(40.dp).clip(RoundedCornerShape(13.dp)).background(kColor.copy(alpha = 0.12f)),
+                        Modifier.size(40.dp).clip(RoundedCornerShape(AppRadius.icon)).background(kColor.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center,
                     ) { Icon(kIcon, contentDescription = null, tint = kColor, modifier = Modifier.size(22.dp)) }
                     Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {

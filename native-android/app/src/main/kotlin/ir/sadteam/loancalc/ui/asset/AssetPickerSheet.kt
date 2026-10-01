@@ -16,6 +16,7 @@ import ir.sadteam.loancalc.data.db.ASSET_CATEGORY_GOLD
 import ir.sadteam.loancalc.ui.components.CoinIcon
 import ir.sadteam.loancalc.ui.jibak.toFa
 import ir.sadteam.loancalc.ui.theme.AppInfoPill
+import ir.sadteam.loancalc.ui.theme.AppStroke
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -140,7 +141,7 @@ fun AssetPickerSheet(
                     Box(
                         modifier = Modifier
                             .size(42.dp)
-                            .clip(RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(AppRadius.icon))
                             .background(AppIconFrame)
                             .pressScaleClickable(onClick = onDismiss),
                         contentAlignment = Alignment.Center,
@@ -386,7 +387,7 @@ private fun CategoryBanner(category: String) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(AppRadius.card))
             .background(bg)
             .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {
@@ -433,7 +434,7 @@ private fun PickerRow(
             .fillMaxWidth()
             .clip(shape)
             .background(AppSurface)
-            .border(if (selected) 1.5.dp else 1.dp, if (selected) AppPrimary else AppLine, shape)
+            .border(if (selected) AppStroke.card else AppStroke.row, if (selected) AppPrimary else AppLine, shape)
             .pressScaleClickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 8.dp),
     ) {

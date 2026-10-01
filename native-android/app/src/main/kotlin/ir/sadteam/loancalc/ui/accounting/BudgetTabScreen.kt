@@ -103,6 +103,8 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
 import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
+import ir.sadteam.loancalc.ui.theme.AppStroke
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppWarning
@@ -455,7 +457,7 @@ private fun BudgetHeader(onAdd: () -> Unit, showAdd: Boolean = true) {
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(AppRadius.icon))
                 .background(AppPrimaryPill)
                 .pressScaleClickable(onClick = onAdd),
             contentAlignment = Alignment.Center,
@@ -524,9 +526,9 @@ private fun StarterSuggestions(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(AppRadius.card))
                     .background(AppSurface)
-                    .border(2.dp, RailTrack, RoundedCornerShape(18.dp))
+                    .border(2.dp, RailTrack, RoundedCornerShape(AppRadius.card))
                     .padding(horizontal = 15.dp, vertical = 13.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -534,7 +536,7 @@ private fun StarterSuggestions(
                 Box(
                     modifier = Modifier
                         .size(32.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(AppRadius.icon))
                         .background(starter.category.color.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -754,9 +756,9 @@ private fun MonthTotalCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(AppRadius.card))
             .background(AppSurface)
-            .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
+            .border(AppStroke.card, CardBorder, RoundedCornerShape(AppRadius.card))
             .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -843,9 +845,9 @@ private fun CategoryBudgetRow(row: BudgetRowData, privacyMode: Boolean) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(AppRadius.card))
             .background(AppSurface)
-            .border(2.dp, CardBorder, RoundedCornerShape(18.dp))
+            .border(2.dp, CardBorder, RoundedCornerShape(AppRadius.card))
             .padding(horizontal = 14.dp, vertical = 13.dp),
     ) {
         Row(
@@ -856,7 +858,7 @@ private fun CategoryBudgetRow(row: BudgetRowData, privacyMode: Boolean) {
             Box(
                 modifier = Modifier
                     .size(30.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(AppRadius.icon))
                     .background(soft),
                 contentAlignment = Alignment.Center,
             ) {
@@ -949,9 +951,9 @@ private fun TransferSuggestionCard(text: String, onAccept: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(AppRadius.card))
             .background(GoldBg)
-            .border(1.5.dp, GoldBorder, RoundedCornerShape(18.dp))
+            .border(1.5.dp, GoldBorder, RoundedCornerShape(AppRadius.card))
             .padding(horizontal = 14.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -995,9 +997,9 @@ private fun BudgetToolCard(
 ) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(AppRadius.card))
             .background(AppSurface)
-            .border(1.dp, CardBorder, RoundedCornerShape(22.dp))
+            .border(AppStroke.card, CardBorder, RoundedCornerShape(AppRadius.card))
             .pressScaleClickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,

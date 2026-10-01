@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Check
 import ir.sadteam.loancalc.core.fmt
 import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -220,7 +221,7 @@ fun SubscriptionScreen(
                 Box(
                     modifier = Modifier
                         .size(44.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(AppRadius.icon))
                         .background(AppSurface)
                         .border(1.dp, AppLine, RoundedCornerShape(14.dp))
                         .pressScaleClickable(onClick = onBack),
@@ -671,7 +672,7 @@ private fun PlanCard(
     } else {
         fallbackDiscount.takeIf { months > 1 }
     }
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(AppRadius.card)
     Box(modifier = modifier) {
         Column(
             modifier = Modifier

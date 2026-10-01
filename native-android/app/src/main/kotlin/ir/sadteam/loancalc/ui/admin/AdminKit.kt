@@ -82,6 +82,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPurple
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -280,7 +281,7 @@ internal fun AdminListRow(icon: ImageVector, title: String, subtitle: String, pi
     Column {
         if (divider) Box(Modifier.fillMaxWidth().height(1.5.dp).background(AppLineRow))
         Row(Modifier.fillMaxWidth().heightIn(min = 60.dp).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(40.dp).clip(RoundedCornerShape(13.dp)).background(pill), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(40.dp).clip(RoundedCornerShape(AppRadius.icon)).background(pill), contentAlignment = Alignment.Center) {
                 Icon(icon, null, tint = ink, modifier = Modifier.size(21.dp))
             }
             Column(Modifier.weight(1f).padding(start = 12.dp)) {

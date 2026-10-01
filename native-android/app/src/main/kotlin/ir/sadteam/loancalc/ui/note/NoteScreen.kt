@@ -54,6 +54,7 @@ import ir.sadteam.loancalc.ui.components.InlineJalaliDateRow
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppMuted
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /** یادداشتِ مستقل (نه وابسته به یه وام/چکِ خاص) - رجوع کن به تبِ «سررسید» تو CLAUDE.md. */
@@ -112,7 +113,7 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                 AppCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
-                            Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(NoteAmber.copy(alpha = 0.14f)),
+                            Modifier.size(42.dp).clip(RoundedCornerShape(AppRadius.icon)).background(NoteAmber.copy(alpha = 0.14f)),
                             contentAlignment = Alignment.Center,
                         ) { Icon(Icons.Filled.EditNote, contentDescription = null, tint = NoteAmber, modifier = Modifier.size(22.dp)) }
                         Text("یادداشتِ تازه", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 12.dp))
@@ -206,7 +207,7 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         // کاشیِ آیکونِ کهربایی (هم‌سبکِ Claude Design).
                         Box(
-                            Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(NoteAmber.copy(alpha = 0.14f)),
+                            Modifier.size(42.dp).clip(RoundedCornerShape(AppRadius.icon)).background(NoteAmber.copy(alpha = 0.14f)),
                             contentAlignment = Alignment.Center,
                         ) { Icon(Icons.Filled.EditNote, contentDescription = null, tint = NoteAmber, modifier = Modifier.size(22.dp)) }
                         Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
