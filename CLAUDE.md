@@ -282,7 +282,7 @@ sqlite3 ~/VameMan/data.sqlite \
 `com.github.myketstore:myket-billing-client`، الگوی کلاسیکِ IAB v3). هر فلیور
 `SubscriptionManager`ِ خودش رو داره (`app/src/{cafebazaar,myket}/...`)؛ بقیه‌ی اپ فرقی نمی‌بینه.
 مقادیرِ مانیفستِ کتابخونه‌ی مایکت تو `manifestPlaceholders` همون فلیور ست شدن.
-- ۴ محصولِ اشتراک (`unlimited_loans_1m/3m/6m/1y`) رو هر دو پنل. **۹ مهر، تصمیمِ کاربر بعد از مقایسه با پولکی/پولکس**: قیمت از ۳۰۰۰۰۰/۸۱۰۰۰۰/۱۴۴۰۰۰۰/۲۵۲۰۰۰۰ ریال به **۶۹۰۰۰۰/۱۷۹۰۰۰۰/۲۹۹۰۰۰۰/۴۹۹۰۰۰۰ ریال** (کاربر خودش در پنل عوض می‌کند؛ اپ قیمت را از استور می‌خواند). ⏳ `PLAN_PRICE_TOMAN` سرور هنوز قیمتِ قدیم است - پیشنهاد: ستونِ `price_toman` در `subscription_purchases` تا فروشِ گذشته عوض نشود (منتظرِ اجازه‌ی کاربر).
+- ۴ محصولِ اشتراک (`unlimited_loans_1m/3m/6m/1y`) رو هر دو پنل. **۹ مهر، تصمیمِ کاربر بعد از مقایسه با پولکی/پولکس**: قیمت از ۳۰۰۰۰۰/۸۱۰۰۰۰/۱۴۴۰۰۰۰/۲۵۲۰۰۰۰ ریال به **۶۹۰۰۰۰/۱۷۹۰۰۰۰/۲۹۹۰۰۰۰/۴۹۹۰۰۰۰ ریال** (کاربر خودش در پنل عوض می‌کند؛ اپ قیمت را از استور می‌خواند). ✅ پنلِ کافه‌بازار عوض شد؛ سرور قیمتِ هر خرید را در `subscription_purchases.price_toman` نگه می‌دارد (قیمتِ بعدی = فقط `PLAN_PRICE_TOMAN`).
 - `MYKET_IAB_PUBLIC_KEY` مقدارِ واقعیه (تو `app/src/myket/.../SubscriptionManager.kt`).
 - صحت‌سنجیِ سمتِ سرورِ مایکت: `server/.../Myket.kt` (`validateMyketPurchase`) - توکنِ ثابت
   `MYKET_ACCESS_TOKEN` تو `.env`. کلاینت `store` (`BuildConfig.FLAVOR`) رو تو

@@ -79,8 +79,8 @@ private suspend fun ApplicationCall.adminOrNull(): Boolean {
 
 private fun Connection.revenueTotal(net: Boolean): Long {
     var sum = 0L
-    list("SELECT product_id, store, COUNT(*) FROM subscription_purchases GROUP BY 1, 2") {
-        val gross = (PLAN_PRICE_TOMAN[it.getString(1)] ?: 0L) * it.getInt(3)
+    list("SELECT product_id, store, coalesce(SUM(price_toman),0) FROM subscription_purchases GROUP BY 1, 2") {
+        val gross = it.getLong(3)
         val r = STORE_PAYOUT[it.getString(2)]
         sum += if (net && r != null) gross * r.first / r.second else gross
     }
@@ -106,10 +106,10 @@ private fun Connection.abGroup(variant: String): AbGroup {
 private fun moneyDaily(conn: Connection): List<MoneyDay> {
     val rows = mutableMapOf<String, MoneyDay>()
     conn.list(
-        "SELECT date(created_at, '+210 minutes'), product_id, store, COUNT(*) FROM subscription_purchases " +
+        "SELECT date(created_at, '+210 minutes'), product_id, store, COUNT(*), coalesce(SUM(price_toman),0) FROM subscription_purchases " +
             "WHERE created_at >= datetime('now', '-31 days') GROUP BY 1, 2, 3",
     ) {
-        val gross = (PLAN_PRICE_TOMAN[it.getString(2)] ?: 0L) * it.getInt(4)
+        val gross = it.getLong(5)
         val r = STORE_PAYOUT[it.getString(3)]
         val net = if (r != null) gross * r.first / r.second else gross
         val d = it.getString(1)

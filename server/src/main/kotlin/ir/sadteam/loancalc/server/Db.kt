@@ -298,6 +298,17 @@ object Db {
             // طولِ دوره‌ی مجانیِ **همین کاربر**، لحظه‌ی ثبت‌نام ثبت می‌شود (۸ مهر) تا تغییرش در ادمین
             // فقط روی کاربرانِ تازه اثر کند. NULL = کاربرِ قدیمی = همان ۳۰ روز.
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN trial_days INTEGER")
+            // ۹ مهر: قیمتِ هر خرید لحظه‌ی ثبت ذخیره می‌شود تا تغییرِ قیمت، فروشِ گذشته را عوض نکند.
+            // ردیف‌های قدیمی = قیمت‌های قبل از ۹ مهر (۳۰/۸۱/۱۴۴/۲۵۲ هزار تومان).
+            addColumnIfMissing(conn, "ALTER TABLE subscription_purchases ADD COLUMN price_toman INTEGER")
+            conn.createStatement().use {
+                it.executeUpdate(
+                    "UPDATE subscription_purchases SET price_toman = CASE product_id " +
+                        "WHEN 'unlimited_loans_1m' THEN 30000 WHEN 'unlimited_loans_3m' THEN 81000 " +
+                        "WHEN 'unlimited_loans_6m' THEN 144000 WHEN 'unlimited_loans_1y' THEN 252000 ELSE 0 END " +
+                        "WHERE price_toman IS NULL",
+                )
+            }
             conn.createStatement().use {
                 it.executeUpdate(
                     "CREATE TABLE IF NOT EXISTS device_users (device_hash TEXT NOT NULL, user_id INTEGER NOT NULL, " +

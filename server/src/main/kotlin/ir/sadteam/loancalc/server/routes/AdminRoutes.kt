@@ -78,14 +78,19 @@ data class SaleRow(val product: String, val count30: Int, val countAll: Int, val
  */
 // سهمِ **توسعه‌دهنده** از فروش (صورت/مخرج). مایکت دقیق از پنل (۸ مهر): ۳۰۰٬۰۰۰ ریال → ۲۳۰٬۷۹۸ ریال.
 // کاربر: «کافه هم همینه» - هر دو یکسان.
-internal val STORE_PAYOUT = mapOf("cafebazaar" to (230_798L to 300_000L), "myket" to (230_798L to 300_000L))
+// ۹ مهر، پنلِ کافه‌بازار با قیمتِ تازه: ۴٬۹۹۰٬۰۰۰ → ۳٬۸۵۴٬۷۰۶ ریال (فروشِ زیرِ ۱۰ میلیارد).
+internal val STORE_PAYOUT = mapOf("cafebazaar" to (3_854_706L to 4_990_000L), "myket" to (230_798L to 300_000L))
 
-/** قیمتِ هر پلن به تومان - همان قیمتِ پنلِ کافه‌بازار/مایکت (رجوع کن به CLAUDE.md). */
+/**
+ * قیمتِ **فعلیِ** هر پلن به تومان - همان قیمتِ پنلِ کافه‌بازار/مایکت (رجوع کن به CLAUDE.md).
+ * لحظه‌ی خرید در `subscription_purchases.price_toman` کپی می‌شود و گزارش‌ها از آن ستون می‌خوانند،
+ * پس عوض‌کردنِ این‌جا فقط روی خرید‌های بعدی اثر دارد.
+ */
 internal val PLAN_PRICE_TOMAN = mapOf(
-    "unlimited_loans_1m" to 30_000L,
-    "unlimited_loans_3m" to 81_000L,
-    "unlimited_loans_6m" to 144_000L,
-    "unlimited_loans_1y" to 252_000L,
+    "unlimited_loans_1m" to 69_000L,
+    "unlimited_loans_3m" to 179_000L,
+    "unlimited_loans_6m" to 299_000L,
+    "unlimited_loans_1y" to 499_000L,
 )
 
 /** گروهِ هفتگیِ نصب: چند نفر در هفته‌ی k بعد از نصب هنوز برنامه را باز کرده‌اند. */
@@ -336,12 +341,13 @@ internal fun buildStats(conn: Connection): StatsResponse {
     // 💰 فروش - فقط از خرید‌هایی که سرور خودش تأیید کرده.
     val sales = buildList {
         conn.list(
-            "SELECT product_id, SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END), COUNT(*) FROM subscription_purchases GROUP BY product_id ORDER BY 3 DESC",
-            d30,
+            "SELECT product_id, SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END), COUNT(*), " +
+                "coalesce(SUM(CASE WHEN created_at >= ? THEN price_toman ELSE 0 END),0), coalesce(SUM(price_toman),0) " +
+                "FROM subscription_purchases GROUP BY product_id ORDER BY 3 DESC",
+            d30, d30,
         ) {
             val product = it.getString(1)
-            val price = PLAN_PRICE_TOMAN[product] ?: 0L
-            add(SaleRow(product.substringAfterLast('_'), it.getInt(2), it.getInt(3), price * it.getInt(2), price * it.getInt(3)))
+            add(SaleRow(product.substringAfterLast('_'), it.getInt(2), it.getInt(3), it.getLong(4), it.getLong(5)))
         }
     }
     val salesByStore = buildList {
@@ -607,10 +613,10 @@ internal fun buildDigest(conn: Connection, period: String, store: String? = null
     fun revenue(x: String, y: String, store: String?): Long {
         var sum = 0L
         conn.list(
-            "SELECT product_id, COUNT(*) FROM subscription_purchases WHERE created_at >= ? AND created_at < ?" +
-                (if (store != null) " AND store = ?" else "") + " GROUP BY 1",
+            "SELECT coalesce(SUM(price_toman),0) FROM subscription_purchases WHERE created_at >= ? AND created_at < ?" +
+                (if (store != null) " AND store = ?" else ""),
             *(if (store != null) arrayOf(x, y, store) else arrayOf(x, y)),
-        ) { sum += (PLAN_PRICE_TOMAN[it.getString(1)] ?: 0L) * it.getInt(2) }
+        ) { sum += it.getLong(1) }
         return sum
     }
     fun net(x: String, y: String) = STORE_PAYOUT.entries.sumOf { (st, r) -> revenue(x, y, st) * r.first / r.second }

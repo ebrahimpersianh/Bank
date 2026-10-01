@@ -135,11 +135,11 @@ fun Route.subscriptionRoutes() {
                     val claimed = conn.executeCounting(
                         """
                         INSERT INTO subscription_purchases
-                            (user_id, product_id, tier, store, purchase_token, duration_days, subscribed_until)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                            (user_id, product_id, tier, store, purchase_token, duration_days, subscribed_until, price_toman)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT(purchase_token) DO NOTHING
                         """.trimIndent(),
-                        authed.uid, productId, tierCode, store, purchaseToken, durationDays, "",
+                        authed.uid, productId, tierCode, store, purchaseToken, durationDays, "", PLAN_PRICE_TOMAN[productId] ?: 0L,
                     )
                     val currentSubscribedUntil = conn.queryOne(
                         "SELECT subscribed_until FROM users WHERE id = ?", authed.uid,
