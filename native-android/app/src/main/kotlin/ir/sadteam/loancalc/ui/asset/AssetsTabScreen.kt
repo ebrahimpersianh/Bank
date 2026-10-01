@@ -1317,7 +1317,7 @@ private fun MarketMiniCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp)
+            .height(176.dp) // ۱۵۰ بجِ درصد را از پایین می‌برید (اسکرین‌شاتِ کاربر، ۹ مهر)
             .clip(shape)
             .border(1.dp, AppLine, shape)
             .pressScaleClickable { onOpen(e) }
