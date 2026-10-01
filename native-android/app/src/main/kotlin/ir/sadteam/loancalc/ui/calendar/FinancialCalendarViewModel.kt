@@ -96,6 +96,7 @@ class FinancialCalendarViewModel @Inject constructor(
                     // شکلِ خبرِ خوب. فقط `PASSED` پرداخت‌شده است.
                     paid = when (cheque.status) {
                         "PASSED" -> true
+                        "REFUNDED" -> true
                         "BOUNCED" -> false
                         else -> false
                     },
