@@ -55,8 +55,6 @@ class AppLockViewModel @Inject constructor(
 
     private var backgroundedAtMillis: Long? = null
 
-    private val _failedAttempts = MutableStateFlow(0)
-    private val _lockedOutUntilMillis = MutableStateFlow<Long?>(null)
 
     init {
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
@@ -88,27 +86,26 @@ class AppLockViewModel @Inject constructor(
     /** پورت مفهومی قفل موقت بعد از تلاش‌های ناموفق - [MAX_ATTEMPTS] تلاش، بعدش [LOCKOUT_DURATION_MILLIS]
      * قفل موقت. تلاش موفق یا سپری‌شدن مدت قفل، شمارنده رو صفر می‌کنه. */
     fun attemptPin(pin: String): PinAttemptResult {
-        val lockedUntil = _lockedOutUntilMillis.value
-        if (lockedUntil != null) {
-            val remainingMillis = lockedUntil - System.currentTimeMillis()
-            if (remainingMillis > 0) {
-                return PinAttemptResult.LockedOut(remainingMillis / 1000 + 1)
-            }
-            _lockedOutUntilMillis.value = null
-            _failedAttempts.value = 0
-        }
+        val remainingMillis = securityPrefs.lockedUntilMillis - System.currentTimeMillis()
+        if (remainingMillis > 0) return PinAttemptResult.LockedOut(remainingMillis / 1000 + 1)
 
         if (verifyPin(pin)) {
-            _failedAttempts.value = 0
+            securityPrefs.failedAttempts = 0
+            securityPrefs.lockoutCount = 0
             unlock()
             return PinAttemptResult.Success
         }
 
-        val attempts = _failedAttempts.value + 1
-        _failedAttempts.value = attempts
+        val attempts = securityPrefs.failedAttempts + 1
+        securityPrefs.failedAttempts = attempts
         return if (attempts >= MAX_ATTEMPTS) {
-            _lockedOutUntilMillis.value = System.currentTimeMillis() + LOCKOUT_DURATION_MILLIS
-            PinAttemptResult.LockedOut(LOCKOUT_DURATION_MILLIS / 1000)
+            // ۳۰ ثانیه، ۱ دقیقه، ۲، ۴… تا سقفِ ۳۰ دقیقه.
+            val n = securityPrefs.lockoutCount
+            val duration = (LOCKOUT_DURATION_MILLIS shl n.coerceAtMost(6)).coerceAtMost(30 * 60_000L)
+            securityPrefs.lockoutCount = n + 1
+            securityPrefs.failedAttempts = 0
+            securityPrefs.lockedUntilMillis = System.currentTimeMillis() + duration
+            PinAttemptResult.LockedOut(duration / 1000)
         } else {
             PinAttemptResult.WrongPin(MAX_ATTEMPTS - attempts)
         }

@@ -40,4 +40,18 @@ class SecurityPrefs(private val context: Context) {
     suspend fun setAutoLockTimeoutMinutes(value: Int) {
         context.securityDataStore.edit { it[Keys.AUTO_LOCK_TIMEOUT_MINUTES] = value }
     }
+
+    // 🔒 شمارشِ تلاشِ اشتباه و قفلِ موقت **ماندگار** (بازبینیِ ۹ مهر): قبلاً فقط در حافظه بود و با
+    // بستن و بازکردنِ برنامه صفر می‌شد - یعنی PINِ چهاررقمی با حدسِ پشتِ‌هم شکسته می‌شد.
+    private val lockSp = context.getSharedPreferences("security_lock", Context.MODE_PRIVATE)
+    var failedAttempts: Int
+        get() = lockSp.getInt("failed", 0)
+        set(v) { lockSp.edit().putInt("failed", v).apply() }
+    var lockedUntilMillis: Long
+        get() = lockSp.getLong("until", 0L)
+        set(v) { lockSp.edit().putLong("until", v).apply() }
+    /** چندمین قفلِ پشتِ‌هم - هر بار دو برابر طولانی‌تر. */
+    var lockoutCount: Int
+        get() = lockSp.getInt("lockouts", 0)
+        set(v) { lockSp.edit().putInt("lockouts", v).apply() }
 }
