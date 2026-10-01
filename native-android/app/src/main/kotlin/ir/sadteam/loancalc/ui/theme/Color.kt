@@ -397,6 +397,7 @@ val AppPrimaryBorder: Color @Composable get() = LocalAppColors.current.primaryBo
 
 val AppPrimary: Color @Composable get() = LocalAppColors.current.primary
 val AppPrimaryDim: Color @Composable get() = LocalAppColors.current.primaryDim
+val AppHeroShadow: Color @Composable get() = LocalAppColors.current.heroShadow
 val AppPrimaryInk: Color @Composable get() = LocalAppColors.current.primaryInk
 val AppPrimaryInkLight: Color @Composable get() = LocalAppColors.current.primaryLight
 val AppPrimaryPill: Color @Composable get() = LocalAppColors.current.primaryPill

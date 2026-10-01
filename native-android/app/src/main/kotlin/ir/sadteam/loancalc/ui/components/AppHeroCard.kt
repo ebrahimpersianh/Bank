@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.components
 
+import ir.sadteam.loancalc.ui.theme.AppHeroShadow
 import kotlin.math.sin
 import kotlin.math.cos
 import kotlin.math.PI
@@ -307,9 +308,6 @@ val HeroExpense: Color = Color(0xFFFF9A9A)
 /** ته‌رنگِ قرصِ نیمه‌شفافِ رو کارتِ قهرمان - `rgba(255,255,255,.2)` طبقِ طرح. */
 val HeroPillBg: Color = Color.White.copy(alpha = 0.20f)
 
-/** سایه‌ی سختِ کارتِ قهرمان - `#096F45`، تیره‌ترِ همون سبز (نه خاکستریِ عمومی). */
-private val HeroShadowColor = Color(0xFF096F45)
-
 /**
  * قرصِ کوچکِ نیمه‌شفافِ رو کارتِ قهرمان - `rgba(255,255,255,.2)`، متنِ ۹/۹۰۰ سفید، پدینگِ ۵×۱۰،
  * کپسولِ کامل. طبقِ قرص‌های تفکیکِ کارتِ `26b` («نقد ۱۶٫۷M»، «طلا ۹۳٫۹M»...).
@@ -396,6 +394,7 @@ fun AppHeroRow(
 }
 
 /** پایانِ گرادیانِ ردیفِ برجسته و سایه‌ی سختش - مقادیرِ صریحِ فریم. */
-private val HeroRowEnd = Color(0xFF0B8C57)
-private val HeroRowShadowLight = Color(0xFF096F45)
-private val HeroRowShadowDark = Color(0xFF07724A)
+// از تمِ فعال می‌آیند تا با تمِ خریدنی (کبالت، خاکِ رس…) هم‌رنگ بمانند.
+private val HeroRowEnd: Color @Composable get() = AppPrimaryDim
+private val HeroRowShadowLight: Color @Composable get() = AppHeroShadow
+private val HeroRowShadowDark: Color @Composable get() = AppPrimaryDim

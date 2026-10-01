@@ -1029,7 +1029,6 @@ private val BudgetGreenDeep: Color
     @Composable get() = AppPrimaryDim
 private val BudgetGreenLight: Color
     @Composable get() = AppPrimaryInkLight
-private val BudgetGreenShadow = Color(0xFF096F45)
 private val AddTileBg: Color
     @Composable get() = AppPrimaryPill
 private val AddTileBorder: Color

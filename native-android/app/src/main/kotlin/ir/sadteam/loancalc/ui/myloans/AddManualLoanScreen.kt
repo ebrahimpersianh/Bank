@@ -437,4 +437,4 @@ private fun FieldLabel(text: String) {
  * و همان را بگذارید. من امضای `AppHeroCard` را ندیدم.
  */
 private val AppHeroInk = Color.White
-private val AppHeroLabel = Color(0xFFBFEBD5)
+private val AppHeroLabel: Color = Color.White.copy(alpha = 0.85f)
