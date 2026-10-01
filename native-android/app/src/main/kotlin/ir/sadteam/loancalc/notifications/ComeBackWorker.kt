@@ -99,17 +99,16 @@ class ComeBackWorker @AssistedInject constructor(
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+        // متنِ سرور (اگر هست) هم در حالتِ بسته و هم بازِ اعلان - قبلاً حالتِ باز همیشه متنِ پیش‌فرض بود.
+        val title = ir.sadteam.loancalc.data.RemoteApp.config.comeBackTitle?.replace("{days}", toFa(days)) ?: "${toFa(days)} روزه رفتی، وقتشه برگردی"
+        val text = ir.sadteam.loancalc.data.RemoteApp.config.comeBackText?.replace("{days}", toFa(days)) ?: "${toFa(days)} روزه تراکنش ثبت نکردی و نظمِ مالی‌ت در خطره. دخل‌وخرجت رو ثبت کن و ادامه بده."
         val notification = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(ReminderChannels.largeIcon(applicationContext))
             // متن از سرور قابلِ تغییر؛ «{days}» جای تعدادِ روز می‌نشیند.
-            .setContentTitle(ir.sadteam.loancalc.data.RemoteApp.config.comeBackTitle?.replace("{days}", toFa(days)) ?: "${toFa(days)} روزه رفتی، وقتشه برگردی")
-            .setContentText(ir.sadteam.loancalc.data.RemoteApp.config.comeBackText?.replace("{days}", toFa(days)) ?: "${toFa(days)} روزه تراکنش ثبت نکردی و نظمِ مالی‌ت در خطره. دخل‌وخرجت رو ثبت کن و ادامه بده.")
-            .setStyle(
-                NotificationCompat.BigTextStyle().bigText(
-                    "${toFa(days)} روزه تراکنش ثبت نکردی و نظمِ مالی‌ت در خطره. دخل‌وخرجت رو ثبت کن و ادامه بده.",
-                ),
-            )
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -118,8 +117,8 @@ class ComeBackWorker @AssistedInject constructor(
         NotificationManagerCompat.from(applicationContext).notify(NOTIFICATION_ID, notification)
         inboxRepository.post(
             kind = InboxMessageEntity.Kind.STREAK_REMINDER,
-            title = "${toFa(days)} روزه رفتی، وقتشه برگردی",
-            body = "${toFa(days)} روزه تراکنش ثبت نکردی و نظمِ مالی‌ت در خطره.",
+            title = title,
+            body = text,
         )
     }
 

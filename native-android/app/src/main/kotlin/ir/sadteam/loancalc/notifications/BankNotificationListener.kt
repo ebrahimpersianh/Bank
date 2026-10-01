@@ -59,6 +59,8 @@ class BankNotificationListener : NotificationListenerService() {
 
     @Inject lateinit var uiPrefs: UiPrefs
 
+    @Inject lateinit var authPrefs: ir.sadteam.loancalc.data.prefs.AuthPrefs
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onDestroy() {
@@ -81,6 +83,8 @@ class BankNotificationListener : NotificationListenerService() {
 
         scope.launch {
             if (!uiPrefs.notifAutoImportEnabled.first()) return@launch
+            // بازبینیِ ۹ مهر: مثلِ پیامکِ بانکی، ثبتِ خودکار از اعلان هم مالِ اشتراک است.
+            if (!authPrefs.subscribed.first()) return@launch
             val allowed = uiPrefs.notifAutoImportPackages.first()
             if (packageName !in allowed) return@launch
 
