@@ -1247,8 +1247,14 @@ private fun DashboardSummary(
     onAddIncome: (label: String, amount: Double, type: IncomeType) -> Unit,
     onDeleteIncome: (IncomeEntity) -> Unit,
 ) {
-    val totalRemainingDebt = remember(loans) {
-        loans.sumOf { it.installment * (it.n - it.paidCount) }
+    // بازبینیِ ۹ مهر: «قسط × تعدادِ مانده» برای قرض‌الحسنه (قسط‌های کارمزد) و قسط‌های ویرایش‌شده
+    // غلط بود؛ جمعِ واقعیِ ردیف‌های پرداخت‌نشده جایش می‌نشیند (اولش همان تخمین تا بار شود).
+    val loansVm: MyLoansViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+    var totalRemainingDebt by remember { mutableStateOf(loans.sumOf { it.installment * (it.n - it.paidCount) }) }
+    androidx.compose.runtime.LaunchedEffect(loans) {
+        totalRemainingDebt = loans.sumOf { loan ->
+            loansVm.getRows(loan).filter { it["paid"] != true }.sumOf { (it["installment"] as? Number)?.toDouble() ?: 0.0 }
+        }
     }
     val totalIncome = remember(incomes) { incomes.sumOf { it.amount } }
     val ratio = if (totalIncome > 0) totalMonthlyInstallment / totalIncome else 0.0
