@@ -129,7 +129,7 @@ import ir.sadteam.loancalc.ui.theme.AppAssetBorder
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
-import ir.sadteam.loancalc.ui.theme.AppGoldInk
+import ir.sadteam.loancalc.ui.theme.AppDueNextBorder
 import ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
 import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
 import ir.sadteam.loancalc.ui.theme.AppIconFrame
@@ -1269,7 +1269,8 @@ private fun ShortfallForecastCard(
     onClick: () -> Unit,
 ) {
     AppCard(
-        variant = AppCardVariant.GOLD,
+        backgroundColor = AppWarningPill,
+        borderColor = AppDueNextBorder,
         shadow = false,
         modifier = Modifier.pressScaleClickable(onClick = onClick),
     ) {
@@ -1282,10 +1283,10 @@ private fun ShortfallForecastCard(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(RoundedCornerShape(AppRadius.icon))
-                    .background(AppGoldPillSoft),
+                    .background(AppDueNextBorder),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.TrendingDown, contentDescription = null, tint = AppGoldInk, modifier = Modifier.size(17.dp))
+                Icon(Icons.Filled.TrendingDown, contentDescription = null, tint = AppWarningInk, modifier = Modifier.size(17.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
                 // پولِ مانده منفی یعنی «تمام شده»، نه «تمام می‌شود»؛ «روزی ۰ می‌رساند» هم بی‌معناست.
@@ -1300,7 +1301,7 @@ private fun ShortfallForecastCard(
                     Column {
                         Text(
                             "${maskIfPrivate(masked, (-balance).rialToFaCompact())} بیشتر از بودجه خرج کرده‌ای.",
-                            color = AppGoldInk,
+                            color = AppWarningInk,
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 2.dp),
@@ -1318,7 +1319,7 @@ private fun ShortfallForecastCard(
                         Text(
                             "روزی ${maskIfPrivate(masked, perDaySpend.rialToFaCompact())} خرج کرده‌ای و " +
                                 "${maskIfPrivate(masked, balance.rialToFaCompact())} مانده برای ${daysLeft.toFa()} روز.",
-                            color = AppGoldInk,
+                            color = AppWarningInk,
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(top = 2.dp),

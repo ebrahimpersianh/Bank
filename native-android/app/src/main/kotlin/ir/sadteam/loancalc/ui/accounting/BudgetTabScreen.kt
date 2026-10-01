@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import ir.sadteam.loancalc.ui.components.InteractiveBars
 import ir.sadteam.loancalc.ui.components.HeroIncome
 import ir.sadteam.loancalc.ui.components.HeroExpense
+import ir.sadteam.loancalc.ui.theme.AppDueNextBorder
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import androidx.compose.runtime.CompositionLocalProvider
@@ -93,7 +94,6 @@ import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
-import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppMuted
@@ -1045,7 +1045,7 @@ private val OverInk: Color
 private val GoldBg: Color
     @Composable get() = AppWarningPill
 private val GoldBorder: Color
-    @Composable get() = AppGoldPillSoft
+    @Composable get() = AppDueNextBorder
 private val GoldInk: Color
     @Composable get() = AppWarningInk
 private val GoldTextInk: Color

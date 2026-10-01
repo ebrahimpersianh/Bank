@@ -68,7 +68,6 @@ import ir.sadteam.loancalc.ui.theme.AppDueNextBorder
 import ir.sadteam.loancalc.ui.theme.AppDueNextPill
 import ir.sadteam.loancalc.ui.theme.AppDueOverdueBorder
 import ir.sadteam.loancalc.ui.theme.AppDueOverduePill
-import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
@@ -80,6 +79,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppUrgentBorder
+import ir.sadteam.loancalc.ui.theme.AppWarningInk
 import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import ir.sadteam.loancalc.ui.theme.hardShadow
 
@@ -336,7 +336,7 @@ private fun DueRowCard(
     val soon = !urgent && row.daysOverdue >= -7
     val dayInk = when {
         urgent -> AppDangerInk
-        soon -> AppGoldInk
+        soon -> AppWarningInk
         else -> AppMuted
     }
     val dayBg = when {

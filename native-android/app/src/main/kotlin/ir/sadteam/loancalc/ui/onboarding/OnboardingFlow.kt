@@ -74,13 +74,13 @@ import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.JibakBrandMark
 import ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
-import ir.sadteam.loancalc.ui.theme.AppGoldFrom
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
+import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
@@ -366,10 +366,10 @@ private fun ReminderStep(onChoose: (Boolean) -> Unit, onNext: () -> Unit) {
                     modifier = Modifier
                         .size(44.dp)
                         .clip(CircleShape)
-                        .background(AppGoldFrom),
+                        .background(AppPrimaryPill),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Default.Notifications, contentDescription = null, tint = AppAccent)
+                    Icon(Icons.Default.Notifications, contentDescription = null, tint = AppPrimary)
                 }
                 Column(modifier = Modifier.padding(start = 12.dp)) {
                     Text("یادآورِ روزانه", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
@@ -565,7 +565,7 @@ private fun BankReadingPermissionsStep(onNext: () -> Unit) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(AppGoldFrom, RoundedCornerShape(14.dp))
+                    .background(AppPrimaryPill, RoundedCornerShape(AppRadius.row))
                     .padding(14.dp),
             ) {
                 Text(

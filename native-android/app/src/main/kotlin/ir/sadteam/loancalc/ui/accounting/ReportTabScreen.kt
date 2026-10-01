@@ -7,6 +7,7 @@ import ir.sadteam.loancalc.ui.components.GradientButton
 import androidx.compose.animation.AnimatedVisibility
 import ir.sadteam.loancalc.ui.components.InAppBannerHost
 import ir.sadteam.loancalc.ui.components.rememberInAppBanner
+import ir.sadteam.loancalc.ui.theme.AppDueNextBorder
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
@@ -683,7 +684,7 @@ private val PrimaryShadow: Color
 private val GoldHintBg: Color
     @Composable get() = AppWarningPill
 private val GoldHintBorder: Color
-    @Composable get() = AppGoldPillSoft
+    @Composable get() = AppDueNextBorder
 private val GoldHintIcon: Color
     @Composable get() = AppWarningInk
 private val GoldHintInk: Color

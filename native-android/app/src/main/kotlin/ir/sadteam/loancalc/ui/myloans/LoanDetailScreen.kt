@@ -1,6 +1,5 @@
 package ir.sadteam.loancalc.ui.myloans
 
-import ir.sadteam.loancalc.ui.theme.AppBg
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.verticalScroll
@@ -155,6 +154,7 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyCrossfade
 import ir.sadteam.loancalc.ui.privacy.maskIfPrivate
 import ir.sadteam.loancalc.ui.settings.FullScreenDialog
 import ir.sadteam.loancalc.ui.theme.AppAccent
+import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.AppChipBg
 import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerBorder
@@ -163,10 +163,6 @@ import ir.sadteam.loancalc.ui.theme.AppDangerPill
 import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppPurple
-import ir.sadteam.loancalc.ui.theme.AppGoldBorder
-import ir.sadteam.loancalc.ui.theme.AppGoldInk
-import ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
-import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppLine
 import ir.sadteam.loancalc.ui.theme.AppLineRow

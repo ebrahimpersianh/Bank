@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import ir.sadteam.loancalc.ui.theme.AppWarningInk
+import ir.sadteam.loancalc.ui.theme.AppWarningPill
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -59,8 +61,6 @@ import ir.sadteam.loancalc.ui.jibak.faDigits
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.tomanToRial
 import ir.sadteam.loancalc.ui.theme.AppDanger
-import ir.sadteam.loancalc.ui.theme.AppGoldInk
-import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
 import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
@@ -168,18 +168,18 @@ fun AddManualLoanScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .background(AppGoldPillSoft)
+                        .background(AppWarningPill)
                         .padding(13.dp),
                 ) {
                     Icon(
                         Icons.Outlined.Info,
                         contentDescription = null,
-                        tint = AppGoldInk,
+                        tint = AppWarningInk,
                         modifier = Modifier.size(15.dp),
                     )
                     Text(
                         "${toFa(editingLoan.paidCount)} قسط از این وام پرداخت شده. تعدادِ کل نمی‌تواند کمتر از ${toFa(editingLoan.paidCount)} باشد.",
-                        color = AppGoldInk,
+                        color = AppWarningInk,
                         fontSize = 10.sp,
                         lineHeight = 18.sp,
                         fontWeight = FontWeight.Bold,
