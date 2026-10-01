@@ -250,6 +250,21 @@ class ChequeRepository(
         when {
             !localHasData && serverHasData -> importBackupJson(blob)
             localHasData && !serverHasData -> pushToServer(token, allowUnknownRevision = true)
+            // بازبینیِ ۹ مهر - هم‌الگو با حساب‌ها: هر دو پر ← سرور پایه + چک‌های فقط-گوشی، بعد ارسال.
+            // قبلاً پشتیبانِ بعدی نسخه‌ی ابری را با چک‌های گوشی بازنویسی می‌کرد.
+            localHasData && serverHasData -> {
+                val localCheques = chequeDao.getAll()
+                val localBooks = chequeBookDao.getAll()
+                if (importBackupJson(blob)) {
+                    inTransaction {
+                        val ids = chequeDao.getAll().map { it.id }.toSet()
+                        val bookIds = chequeBookDao.getAll().map { it.id }.toSet()
+                        localBooks.filter { it.id !in bookIds }.forEach { chequeBookDao.upsert(it) }
+                        localCheques.filter { it.id !in ids }.forEach { chequeDao.upsert(it) }
+                    }
+                    pushToServer(token, allowUnknownRevision = true)
+                }
+            }
         }
     }
 

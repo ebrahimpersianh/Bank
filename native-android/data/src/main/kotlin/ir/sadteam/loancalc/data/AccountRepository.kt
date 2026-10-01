@@ -753,6 +753,60 @@ class AccountRepository(
         when {
             !localHasData && serverHasData -> importBackupJson(blob)
             localHasData && !serverHasData -> pushToServer(token, allowUnknownRevision = true)
+            // 🚨 بازبینیِ ۹ مهر: هر دو پر (مثلاً اول مهمان کار کرده، بعد وارد شده). قبلاً کاری
+            // نمی‌شد و اولین پشتیبانِ دوره‌ای، نسخه‌ی ابری را با چند ردیفِ گوشی **بازنویسی**
+            // می‌کرد. حالا: نسخه‌ی سرور پایه، ردیف‌هایی که فقط روی گوشی‌اند اضافه، بعد ارسال.
+            localHasData && serverHasData -> {
+                val localJson = exportBackupJson()
+                if (importBackupJson(blob)) {
+                    runCatching { mergeLocalOnly(localJson) }
+                    pushToServer(token, allowUnknownRevision = true)
+                }
+            }
+        }
+    }
+
+    private suspend fun mergeLocalOnly(localJson: String) {
+        val gson = GsonBuilder().create()
+        val parsed: Map<String, Any?> = gson.fromJson(localJson, object : TypeToken<Map<String, Any?>>() {}.type) ?: return
+        val accounts: List<AccountEntity> = gson.fromJson(gson.toJson(parsed["accounts"] ?: emptyList<Any>()), object : TypeToken<List<AccountEntity>>() {}.type)
+        val txs: List<AccountTransactionEntity> = gson.fromJson(gson.toJson(parsed["transactions"] ?: emptyList<Any>()), object : TypeToken<List<AccountTransactionEntity>>() {}.type)
+        inTransaction {
+            val existing = accountDao.getAll()
+            val existingIds = existing.map { it.id }.toSet()
+            val usedAccountIds = txs.map { it.accountId }.toSet()
+            accounts.filter { it.id !in existingIds }
+                // حسابِ پیش‌فرضِ خالیِ گوشی («نقدی» بی‌تراکنش) کنارِ همان حسابِ سرور تکراری نشود.
+                .filterNot { a -> a.id !in usedAccountIds && a.initialBalance == 0.0 && existing.any { it.name == a.name } }
+                .forEach { accountDao.upsert(it) }
+            val txIds = transactionDao.getAll().map { it.id }.toSet()
+            transactionDao.upsertAll(txs.filter { it.id !in txIds })
+            @Suppress("UNCHECKED_CAST")
+            (parsed["tables"] as? Map<String, List<Map<String, Any?>>>)?.let { insertMissingRows(it) }
+        }
+    }
+
+    private fun insertMissingRows(tables: Map<String, List<Map<String, Any?>>>) {
+        val db = database?.openHelper?.writableDatabase ?: return
+        for (table in extraTables) {
+            val rows = tables[table] ?: continue
+            val columns = db.query("PRAGMA table_info(`$table`)").use { c ->
+                buildSet { while (c.moveToNext()) add(c.getString(c.getColumnIndexOrThrow("name"))) }
+            }
+            if (columns.isEmpty()) continue
+            rows.forEach { row ->
+                val values = android.content.ContentValues()
+                row.forEach { (k, v) ->
+                    if (k !in columns) return@forEach
+                    when (v) {
+                        null -> values.putNull(k)
+                        is Number -> if (v.toDouble() % 1.0 == 0.0 && kotlin.math.abs(v.toDouble()) < 9e15) values.put(k, v.toLong()) else values.put(k, v.toDouble())
+                        is Boolean -> values.put(k, if (v) 1 else 0)
+                        else -> values.put(k, v.toString())
+                    }
+                }
+                runCatching { db.insert(table, android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE, values) }
+            }
         }
     }
 
