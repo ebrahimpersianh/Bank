@@ -405,6 +405,19 @@ class AccountRepository(
             .forEach { transactionDao.delete(it) }
     }
 
+    /**
+     * 🚨 خیلی از بانک‌ها برای یک تراکنش **هم پیامک می‌دهند هم اعلانِ اپ** (بازبینیِ ۹ مهر). اگر در
+     * ۱۵ دقیقه‌ی اخیر همین مبلغ و نوع روی همین حساب از **منبعِ دیگری** ثبتِ خودکار شده، دوباره نساز.
+     */
+    suspend fun hasRecentAutoTwin(accountId: Long, type: TransactionType, amount: Double, originLabel: String): Boolean {
+        val now = System.currentTimeMillis()
+        val window = 15 * 60 * 1000L
+        return (observePendingTransactions().first() + observeTransactions().first()).any {
+            it.accountId == accountId && it.type == type.name && it.amount == amount &&
+                it.originLabel != null && it.originLabel != originLabel && now - it.id in 0..window
+        }
+    }
+
     /** تاییدِ یه تراکنشِ خودکار - از همین لحظه رو موجودی و گزارش‌ها اثر می‌ذاره. */
     suspend fun confirmTransaction(id: Long) {
         transactionDao.confirm(id)

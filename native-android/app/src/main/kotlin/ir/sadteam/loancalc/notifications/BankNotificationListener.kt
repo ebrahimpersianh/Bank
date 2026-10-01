@@ -120,6 +120,7 @@ class BankNotificationListener : NotificationListenerService() {
             // ⚠️ **تاییدنشده** ثبت می‌شه (تصمیمِ صریحِ کاربر): تا وقتی خودش تاییدش نکرده رو
             // موجودی اثر نمی‌ذاره. کارتِ اقدام‌دارِ مرکزِ پیام‌ها ازش ساخته می‌شه.
             ir.sadteam.loancalc.data.UsageStats.action("notif_auto_tx")
+            if (accountRepository.hasRecentAutoTwin(account.id, parsed.type, parsed.amountRial, "اعلانِ ${appLabelOf(packageName)}")) return@launch
             val txId = accountRepository.addTransaction(
                 accountId = account.id,
                 type = parsed.type,

@@ -104,6 +104,7 @@ class BankSmsReceiver : BroadcastReceiver() {
                 val category = guessedCategory ?: if (isWithdrawal) "سایر هزینه" else "سایر درآمد"
                 // ⚠️ **تاییدنشده** (تصمیمِ صریحِ کاربر) - تا تاییدِ خودش رو موجودی اثر نمی‌ذاره.
                 ir.sadteam.loancalc.data.UsageStats.action("sms_auto_tx")
+                if (accountRepository.hasRecentAutoTwin(account.id, parsed.type, parsed.amountRial, "پیامکِ $sender")) return@launch
                 val txId = accountRepository.addTransaction(
                     accountId = account.id,
                     type = parsed.type,
