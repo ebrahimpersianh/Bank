@@ -115,6 +115,8 @@ fun AssetTradeSheet(
     var date by remember { mutableStateOf(JalaliCalendar.today()) }
     var description by remember { mutableStateOf("") }
     val payAccounts by viewModel.payAccounts.collectAsState()
+    val heldAssets by viewModel.assets.collectAsState()
+    val heldTrades by viewModel.trades.collectAsState()
     // پیش‌فرض: اگر فقط یک حساب داری همان؛ «بدونِ حساب» هم هست (مثلاً طلای هدیه).
     var payAccountId by remember(payAccounts.size) { mutableStateOf(payAccounts.singleOrNull()?.id) }
     var picked by remember {
@@ -323,6 +325,12 @@ fun AssetTradeSheet(
                         toman <= 0L -> "مبلغ را وارد کن"
                         qty <= 0.0 && !manualQty -> "قیمتِ روزِ این دارایی نرسیده — مقدار را دستی وارد کن"
                         qty <= 0.0 -> "مقدار را وارد کن"
+                        // بازبینیِ ۹ مهر: فروشِ بیشتر از موجودی مقدار را منفی می‌کرد.
+                        !isBuy && entry != null && run {
+                            val held = heldAssets.firstOrNull { it.symbol == entry.symbol }
+                                ?.let { viewModel.quantityOf(it.id, heldTrades) } ?: 0.0
+                            qty > held + 1e-9
+                        } -> "بیشتر از مقداری که داری نمی‌شود فروخت"
                         else -> null
                     }
                     if (error == null && entry != null) {
