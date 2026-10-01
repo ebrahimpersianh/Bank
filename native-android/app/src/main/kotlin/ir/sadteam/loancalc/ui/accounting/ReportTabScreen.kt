@@ -400,7 +400,7 @@ fun ReportTabScreen(
                         DiscoveryCard(
                             icon = Icons.Filled.Autorenew,
                             title = "${(stats.detectedSubscriptions.size).toFa()} خرجِ تکرارشونده پیدا شد",
-                            subtitle = "ماهی ${(stats.detectedMonthly).rialToFaCompact()} تومان — لمس کن ببین چی‌ان",
+                            subtitle = "ماهی ${maskIfPrivate(privacyMode, (stats.detectedMonthly).rialToFaCompact())} تومان — لمس کن ببین چی‌ان",
                             bg = DiscoverWarnBg,
                             border = DiscoverWarnBorder,
                             pill = DiscoverWarnPill,
@@ -422,7 +422,7 @@ fun ReportTabScreen(
                         DiscoveryCard(
                             icon = Icons.Filled.EventRepeat,
                             title = "${(stats.recurringCount).toFa()} پرداختِ تکراریِ ثبت‌شده",
-                            subtitle = "ماهی ${(stats.recurringMonthly).rialToFaCompact()} تومان",
+                            subtitle = "ماهی ${maskIfPrivate(privacyMode, (stats.recurringMonthly).rialToFaCompact())} تومان",
                             bg = AppSurface,
                             border = AppLineRow,
                             pill = AppIconFrame,
@@ -761,7 +761,7 @@ private fun PeriodSpendHero(
             HeroChart(
                 values = bars,
                 labels = barLabels,
-                valueLabel = { value -> "${value.rialToFaCompact()} تومان" },
+                valueLabel = { value -> if (privacyMode) "•••" else "${value.rialToFaCompact()} تومان" },
                 currentIndex = currentBarIndex,
                 natural = HeroChartStyle.BARS,
                 modifier = Modifier.padding(top = 12.dp),
