@@ -325,7 +325,9 @@ class AuthViewModel @Inject constructor(
                     accountRepository.clearLocal()
                     incomeRepository.clearLocal()
                     debtRepository.clearLocal()
+                    dangRepository.clearLocal()
                     noteRepository.clearLocal()
+                    wealthSnapshotRepository.clearLocal()
                     onSuccess()
                 }
                 is AuthResult.Error -> onError(result.code)
