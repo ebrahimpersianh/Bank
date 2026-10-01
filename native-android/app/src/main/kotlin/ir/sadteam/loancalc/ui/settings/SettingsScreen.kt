@@ -2955,6 +2955,42 @@ private fun SecuritySettings(
     var showPinDialog by remember { mutableStateOf(false) }
     var showPatternDialog by remember { mutableStateOf(false) }
     var isPattern by remember { mutableStateOf(ir.sadteam.loancalc.ui.security.LockType.isPattern(context)) }
+    // 🔒 بازبینیِ ۹ مهر: خاموش‌کردن/عوض‌کردنِ قفل اول رمز یا الگوی فعلی را می‌خواهد - وگرنه هر کس
+    // گوشیِ باز را برمی‌داشت قفل را برمی‌داشت.
+    var verifyThen by remember { mutableStateOf<(() -> Unit)?>(null) }
+    verifyThen?.let { action ->
+        var entered by remember { mutableStateOf("") }
+        var wrong by remember { mutableStateOf(false) }
+        fun check(code: String) {
+            if (appLockViewModel.verifyPin(code)) { verifyThen = null; action() } else { wrong = true; entered = "" }
+        }
+        ir.sadteam.loancalc.ui.components.JibakAlertDialog(
+            onDismissRequest = { verifyThen = null },
+            title = { Text(if (isPattern) "الگوی فعلی را بکش" else "رمزِ فعلی را بزن") },
+            text = {
+                Column {
+                    if (isPattern) {
+                        ir.sadteam.loancalc.ui.security.PatternPad(onComplete = { check(it) })
+                    } else {
+                        OutlinedTextField(
+                            value = entered,
+                            onValueChange = { entered = ir.sadteam.loancalc.core.cleanNum(it).take(8); wrong = false },
+                            singleLine = true,
+                            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                            colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
+                            shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+                        )
+                    }
+                    if (wrong) Text(if (isPattern) "الگو اشتباه است" else "رمز اشتباه است", color = AppDanger, fontSize = 12.sp)
+                }
+            },
+            confirmButton = {
+                if (!isPattern) TextButton(onClick = { check(entered) }) { Text("تأیید") }
+            },
+            dismissButton = { TextButton(onClick = { verifyThen = null }) { Text("انصراف") } },
+        )
+    }
     val hasLock = pinHash != null || biometricEnabled
 
     if (showPinDialog) {
@@ -3002,7 +3038,7 @@ private fun SecuritySettings(
             statusTone = if (pinHash != null && !isPattern) StatusTone.HEALTHY else StatusTone.NEUTRAL,
             checked = pinHash != null && !isPattern,
             onCheckedChange = { checked ->
-                if (checked) showPinDialog = true else appLockViewModel.clearPin()
+                if (checked) showPinDialog = true else verifyThen = { appLockViewModel.clearPin() }
             },
         )
         SettingsDivider()
@@ -3018,9 +3054,11 @@ private fun SecuritySettings(
                 if (checked) {
                     showPatternDialog = true
                 } else {
-                    appLockViewModel.clearPin()
-                    ir.sadteam.loancalc.ui.security.LockType.setPattern(context, false)
-                    isPattern = false
+                    verifyThen = {
+                        appLockViewModel.clearPin()
+                        ir.sadteam.loancalc.ui.security.LockType.setPattern(context, false)
+                        isPattern = false
+                    }
                 }
             },
         )
@@ -3030,7 +3068,7 @@ private fun SecuritySettings(
                 title = if (isPattern) "تغییرِ الگو" else "تغییرِ رمزِ عددی",
                 icon = Icons.Filled.Password,
                 tone = SettingsTone.NEUTRAL,
-                onClick = { if (isPattern) showPatternDialog = true else showPinDialog = true },
+                onClick = { verifyThen = { if (isPattern) showPatternDialog = true else showPinDialog = true } },
             )
         }
         if (pinHash != null) SettingsDivider()
