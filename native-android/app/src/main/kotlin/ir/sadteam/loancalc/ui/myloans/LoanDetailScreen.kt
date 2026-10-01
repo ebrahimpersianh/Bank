@@ -546,7 +546,7 @@ fun LoanDetailScreen(
                         }
                         OutlinedTextField(
                             value = editMetaNText,
-                            onValueChange = { editMetaNText = cleanNum(it) },
+                            onValueChange = { editMetaNText = cleanNum(it).take(3) },
                             label = { Text("تعداد اقساط") },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

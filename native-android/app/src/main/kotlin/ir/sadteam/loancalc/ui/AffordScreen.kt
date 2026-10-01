@@ -292,7 +292,7 @@ fun AffordScreen(
                     }
                     OutlinedTextField(
                         value = monthsText,
-                        onValueChange = { monthsText = cleanNum(it) },
+                        onValueChange = { monthsText = cleanNum(it).take(3) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -421,7 +421,7 @@ private fun RateFinderCard() {
             )
             OutlinedTextField(
                 value = monthsText,
-                onValueChange = { monthsText = cleanNum(it) },
+                onValueChange = { monthsText = cleanNum(it).take(3) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
                     .fillMaxWidth()

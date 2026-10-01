@@ -317,7 +317,7 @@ fun AddManualLoanScreen(
             AppCard(label = "تعداد کل اقساط") {
                 OutlinedTextField(
                     value = totalCountText,
-                    onValueChange = { totalCountText = cleanNum(it) },
+                    onValueChange = { totalCountText = cleanNum(it).take(3) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,

@@ -710,7 +710,7 @@ fun BankLoanScreen(
                 }
                 OutlinedTextField(
                     value = customMonthsText,
-                    onValueChange = { formError = null; customMonthsText = cleanNum(it) },
+                    onValueChange = { formError = null; customMonthsText = cleanNum(it).take(3) },
                     placeholder = { Text("تعداد دلخواه") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier

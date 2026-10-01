@@ -414,7 +414,7 @@ fun ResultScreen(
                     AppCard(label = "تعداد اقساط (ماه)") {
                         OutlinedTextField(
                             value = editNText,
-                            onValueChange = { editNText = cleanNum(it) },
+                            onValueChange = { editNText = cleanNum(it).take(3) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
