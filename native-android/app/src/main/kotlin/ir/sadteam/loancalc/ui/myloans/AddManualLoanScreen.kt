@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -80,6 +81,12 @@ fun AddManualLoanScreen(
     editingLoan: LoanEntity? = null,
     viewModel: MyLoansViewModel = hiltViewModel(),
 ) {
+    // بازبینیِ ۹ مهر: سقفِ «یک وام» نسخه‌ی رایگان فقط در مسیرِ محاسبه‌گر بود؛ وامِ دستی بی‌سقف ساخته می‌شد.
+    val existingLoans by viewModel.loans.collectAsState()
+    ir.sadteam.loancalc.ui.subscription.PremiumBlock(
+        blocked = editingLoan == null && existingLoans.size >= ir.sadteam.loancalc.ui.subscription.FreeLimits.LOANS,
+        key = "loans", label = "بیش از یک وام", onBlocked = onCancel,
+    )
     val initialStartDate = remember(editingLoan) {
         // پیش‌فرضِ وامِ تازه **امروز**ه. عددِ ثابتِ ۱۴۰۴/۱/۱ با گذشتِ سال کهنه می‌شد و چون
         // مبنای جدولِ اقساط است، وامِ تازه سررسیدهای گذشته می‌گرفت.
