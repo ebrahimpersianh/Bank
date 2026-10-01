@@ -264,8 +264,8 @@ fun SmsImportScreen(
         val guessed = accounts.firstOrNull { smsSenderMatches(it.smsSender, sms.address) }
         if (guessed != null) {
             LaunchedEffect(sms.id) {
-                val today = JalaliCalendar.today()
-                accountViewModel.addTransaction(
+                val today = smsJalali(sms.dateMs)
+                if (!alreadyRecorded(accountViewModel, guessed.id, parsed, today)) accountViewModel.addTransaction(
                     accountId = guessed.id,
                     type = parsed.type,
                     amount = parsed.amountRial,
@@ -285,8 +285,8 @@ fun SmsImportScreen(
                 title = "روی کدام حساب‌کتاب ثبت شود؟",
                 onDismiss = { pending = null },
                 onSelect = { account ->
-                    val today = JalaliCalendar.today()
-                    accountViewModel.addTransaction(
+                    val today = smsJalali(sms.dateMs)
+                    if (!alreadyRecorded(accountViewModel, account.id, parsed, today)) accountViewModel.addTransaction(
                         accountId = account.id,
                         type = parsed.type,
                         amount = parsed.amountRial,
@@ -465,10 +465,11 @@ private fun addAllFromSender(
     accountId: Long,
     rows: List<SmsInboxMessage>,
 ) {
-    val today = JalaliCalendar.today()
     val base = System.currentTimeMillis()
     rows.forEachIndexed { index, sms ->
         val parsed = sms.parsed ?: return@forEachIndexed
+        val today = smsJalali(sms.dateMs)
+        if (alreadyRecorded(accountViewModel, accountId, parsed, today)) return@forEachIndexed
         accountViewModel.addTransaction(
             accountId = accountId,
             type = parsed.type,
@@ -482,4 +483,22 @@ private fun addAllFromSender(
             originLabel = "پیامکِ ${sms.address}",
         )
     }
+}
+
+/** تاریخِ خودِ پیامک (بازبینیِ ۹ مهر) - پیامکِ ماهِ پیش با تاریخِ امروز ثبت می‌شد و گزارش‌ها را بهم می‌ریخت. */
+private fun smsJalali(ms: Long): ir.sadteam.loancalc.core.PersianDate {
+    if (ms <= 0) return JalaliCalendar.today()
+    val c = java.util.Calendar.getInstance().apply { timeInMillis = ms }
+    return JalaliCalendar.fromGregorian(c.get(java.util.Calendar.YEAR), c.get(java.util.Calendar.MONTH) + 1, c.get(java.util.Calendar.DAY_OF_MONTH))
+}
+
+/** همان مبلغ و نوع در همان روز روی همان حساب از قبل هست (ورودِ دوباره، یا ثبتِ خودکارِ قبلی)؟ */
+private fun alreadyRecorded(
+    vm: AccountViewModel,
+    accountId: Long,
+    parsed: ir.sadteam.loancalc.core.ParsedBankSms,
+    d: ir.sadteam.loancalc.core.PersianDate,
+): Boolean = vm.transactions.value.any {
+    it.accountId == accountId && it.type == parsed.type.name && it.amount == parsed.amountRial &&
+        it.year == d.y && it.month == d.m && it.day == d.d
 }
