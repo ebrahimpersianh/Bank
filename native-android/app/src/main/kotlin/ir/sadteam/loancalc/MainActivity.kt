@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc
 
+import ir.sadteam.loancalc.ui.components.guideTarget
 import ir.sadteam.loancalc.ui.subscription.SubscriptionExpiryReminder
 import ir.sadteam.loancalc.ui.theme.AppLine
 import androidx.compose.foundation.shape.CircleShape
@@ -123,6 +124,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -456,6 +458,10 @@ private fun registerTabTourBounds(
     // برای همون قدم به‌درستی چیزی اسپاتلایت نمی‌کنه، به‌جای اینکه یه مستطیلِ کهنه نشون بده).
     when (route) {
         BottomTab.ASSETS.route -> tourBounds[TourTarget.ASSETS] = rect
+        else -> {}
+    }
+    ir.sadteam.loancalc.ui.components.Guide.bounds["tab_$route"] = rect
+    when (route) {
         BottomTab.REPORT.route -> tourBounds[TourTarget.REPORT] = rect
         BottomTab.BUDGET.route -> tourBounds[TourTarget.BUDGET] = rect
     }
@@ -1113,7 +1119,7 @@ private fun LoanCalcApp(
                         // (۱۲۰dp) تا لمسِ بالای تب‌ها را نگیرد.
                         ShortcutDrawerHandle(
                             onOpen = { shortcutDrawerOpen = true },
-                            modifier = Modifier.align(Alignment.TopCenter).width(120.dp),
+                            modifier = Modifier.align(Alignment.TopCenter).width(120.dp).then(Modifier.guideTarget("shortcuts")),
                         )
                         }
                     }
@@ -1561,26 +1567,67 @@ private fun LoanCalcApp(
         // جدای قبلی) - رجوع کن به AppTourOverlay پایین‌تر. آخرین بچه‌ی Box تا رو همه‌چیز دیگه بشینه.
         // (tourSeen بالاتر جمع‌آوری شده، برای گیت‌کردنِ بنرِ آپدیت هم استفاده می‌شه)
         if (tourSeen == false) {
-            AppTourOverlay(
-                steps = TourTarget.entries.toList(),
-                bounds = tourBounds,
-                onStepChanged = { target ->
-                    showSettings = false
-                    // قدم‌هایی که رو یه تبِ خاص زندگی می‌کنن خودکار به همون تب می‌رن - وگرنه
-                    // المانِ هدف اصلاً رندر/قابل‌اندازه‌گیری نیست.
-                    target.asBottomTab()?.let { tab ->
-                        if (currentRoute != tab.route) navigateTo(tab.route)
-                    }
-                },
-                onDone = {
-                    showSettings = false
-                    authViewModel.markTourSeen()
-                },
-            )
+            // 🧭 راهنمای تعاملی (۹ مهر): هر قدم روی دکمه‌ی واقعی نور می‌اندازد و با کارِ واقعیِ کاربر جلو می‌رود.
+            val guideAccountVm: ir.sadteam.loancalc.ui.account.AccountViewModel = hiltViewModel()
+            val guideAccounts by guideAccountVm.accounts.collectAsState()
+            val guideTxs by guideAccountVm.transactions.collectAsState()
+            val steps = remember { guideSteps() }
+            var guideIndex by rememberSaveable { mutableIntStateOf(0) }
+            val finish = {
+                ir.sadteam.loancalc.data.UsageStats.action("guide_done_$guideIndex")
+                authViewModel.markTourSeen()
+            }
+            val step = steps.getOrNull(guideIndex)
+            // قدمی که کارش از قبل انجام شده خودش رد می‌شود (مثلاً کسی که حساب دارد).
+            LaunchedEffect(Unit) { showSettings = false }
+            LaunchedEffect(guideIndex, currentRoute, guideAccounts.size, guideTxs.size, shortcutDrawerOpen) {
+                val done = when (step?.target) {
+                    "tab_assets" -> currentRoute == BottomTab.ASSETS.route
+                    "add_account" -> guideAccounts.isNotEmpty()
+                    "tab_home" -> currentRoute == BottomTab.HOME.route
+                    "add_tx" -> guideTxs.isNotEmpty()
+                    "tab_loan" -> currentRoute == LOAN_ROUTE
+                    "shortcuts" -> shortcutDrawerOpen
+                    else -> false
+                }
+                if (done) guideIndex++
+                ir.sadteam.loancalc.data.UsageStats.action("guide_step_$guideIndex")
+            }
+            if (step == null) {
+                LaunchedEffect(Unit) { finish() }
+            } else {
+                ir.sadteam.loancalc.ui.components.GuideOverlay(
+                    step = step,
+                    index = guideIndex,
+                    total = steps.size,
+                    onNext = {
+                        if (step.target == "shortcuts") shortcutDrawerOpen = false
+                        if (guideIndex >= steps.lastIndex) finish() else guideIndex++
+                    },
+                    onClose = { shortcutDrawerOpen = false; finish() },
+                )
+            }
         }
     }
     }
 }
+
+/** قدم‌های راهنمای تعاملی؛ آخرش مرورِ سریعِ چند قابلیت (خواسته‌ی کاربر). */
+private fun guideSteps() = listOf(
+    ir.sadteam.loancalc.ui.components.GuideStep("tab_assets", "همه‌چیز از حساب شروع می‌شود", "روی «دارایی» بزن."),
+    ir.sadteam.loancalc.ui.components.GuideStep("add_account", "اولین حسابت را بساز", "روی + بزن، اسمِ حساب (نقدی، کارت یا بانک) و موجودیِ امروزش را بنویس و ذخیره کن."),
+    ir.sadteam.loancalc.ui.components.GuideStep("tab_home", "برگردیم خانه", "روی «خانه» بزن."),
+    ir.sadteam.loancalc.ui.components.GuideStep("add_tx", "اولین خرج یا درآمدت", "این دکمه را بزن و یک خرج یا درآمد ثبت کن؛ از حسابت کم یا به آن اضافه می‌شود."),
+    ir.sadteam.loancalc.ui.components.GuideStep(null, "ثبتِ خودکار با پیامکِ بانک", "اگر بخواهی خرج‌ها خودشان ثبت شوند: تنظیمات ← پیامک‌های بانکی. متنِ پیامک فقط روی گوشی خوانده می‌شود.", optional = true),
+    ir.sadteam.loancalc.ui.components.GuideStep("tab_loan", "وام‌ها و چک‌ها", "روی «وام» بزن؛ وام‌هایت را بگذار تا سررسیدِ هر قسط یادت بیاید.", optional = true),
+    ir.sadteam.loancalc.ui.components.GuideStep(null, "افزودنِ وام", "در «وام‌های من» با دکمه‌ی + وام را اضافه کن؛ پرداختِ هر قسط از حسابت کم می‌شود.", optional = true),
+    ir.sadteam.loancalc.ui.components.GuideStep("shortcuts", "همه‌ی ابزارها این‌جاست", "این دستگیره را بالا بکش یا بزن: چک، دنگ، قبض، تسویه‌ی بدهی و بقیه.", optional = true),
+    ir.sadteam.loancalc.ui.components.GuideStep(null, "بودجه و هشدار", "برای هر دسته سقفِ ماهانه بگذار؛ در ۸۰٪ خبرت می‌کنیم."),
+    ir.sadteam.loancalc.ui.components.GuideStep(null, "گزارش و دارایی", "نمودارِ خرج‌ها در «گزارش»؛ طلا، ارز و رمزارز با قیمتِ روز در «دارایی»."),
+    ir.sadteam.loancalc.ui.components.GuideStep(null, "چک، قبض، دنگ", "سررسیدِ چک و قبض یادآوری می‌شود؛ خرجِ مشترک را با دنگ تقسیم کن."),
+    ir.sadteam.loancalc.ui.components.GuideStep(null, "امن و همیشه همراه", "قفل با رمز یا اثرِ انگشت، حالتِ خصوصی، و ذخیره‌ی ابری روی هر گوشیِ تازه."),
+    ir.sadteam.loancalc.ui.components.GuideStep(null, "آماده‌ای!", "هر وقت خواستی این راهنما را از تنظیمات ← «راهنمای برنامه» دوباره ببین."),
+)
 
 /** جهت اسلاید تعویض تب (پورت محاسبه‌ی جهت switchTab تو www/index.html): تو RTL رفتن به تبِ با
  * ایندکس بالاتر یعنی حرکت به سمت چپ، پس صفحه‌ی جدید از چپ (آفست منفی) میاد تو؛ برگشتن برعکس. */

@@ -102,6 +102,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Source
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.Star
@@ -2814,6 +2815,13 @@ private fun AboutSettings(banner: InAppBannerState, onOpenBugReport: () -> Unit)
             icon = Icons.Filled.Shield,
             tone = SettingsTone.NEUTRAL,
             onClick = { showPrivacy = true },
+        )
+        val guideAuthVm: ir.sadteam.loancalc.ui.auth.AuthViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+        SettingsRowItem(
+            title = "راهنمای برنامه",
+            icon = Icons.Filled.Explore,
+            tone = SettingsTone.NEUTRAL,
+            onClick = { guideAuthVm.replayTour() },
         )
         SettingsRowItem(
             title = "قوانینِ استفاده",

@@ -40,6 +40,8 @@ fun EmptyHeroCard(
     description: String,
     action: String,
     onAction: () -> Unit,
+    /** کلیدِ راهنمای تعاملی برای دکمه (اختیاری). */
+    guideKey: String? = null,
 ) {
     AppCard(backgroundColor = tint) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
@@ -52,7 +54,7 @@ fun EmptyHeroCard(
                 description, color = AppMuted, fontSize = 12.5.sp, lineHeight = 22.sp, textAlign = TextAlign.Center,
                 modifier = Modifier.widthIn(max = 280.dp).padding(top = 6.dp),
             )
-            GradientButton(onClick = onAction, modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+            GradientButton(onClick = onAction, modifier = Modifier.fillMaxWidth().padding(top = 16.dp).then(if (guideKey != null) Modifier.guideTarget(guideKey) else Modifier)) {
                 Text("+ $action", fontSize = 15.sp, fontWeight = FontWeight.Black)
             }
         }

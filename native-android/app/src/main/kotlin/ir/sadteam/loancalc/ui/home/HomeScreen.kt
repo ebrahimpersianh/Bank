@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.home
 
+import ir.sadteam.loancalc.ui.components.guideTarget
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Search
@@ -576,7 +577,8 @@ fun HomeScreen(
             contentDescription = "ثبتِ تراکنش",
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 16.dp, bottom = 16.dp),
+                .padding(start = 16.dp, bottom = 16.dp)
+                .then(Modifier.guideTarget("add_tx")),
         )
 
         if (showNewTransaction) {
@@ -1801,6 +1803,7 @@ private fun HomeEmptyHero(onAddFirst: () -> Unit) {
         description = "اولین ثبتت رو انجام بده تا جیبک کم‌کم الگوی خرج‌هات رو بشناسه.",
         action = "ثبتِ اولین خرج",
         onAction = onAddFirst,
+        guideKey = "add_tx",
     )
 }
 

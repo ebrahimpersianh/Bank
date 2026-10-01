@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.asset
 
+import ir.sadteam.loancalc.ui.components.guideTarget
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import ir.sadteam.loancalc.ui.components.SubScreen
@@ -623,6 +624,7 @@ private fun NoAccountCard(onAddAccount: () -> Unit) {
                     .clip(RoundedCornerShape(10.dp))
                     .background(AppPrimaryPill)
                     .dashedBorder(10.dp, AppPrimaryBorder)
+                    .then(Modifier.guideTarget("add_account"))
                     .pressScaleClickable(onClick = onAddAccount),
                 contentAlignment = Alignment.Center,
             ) {

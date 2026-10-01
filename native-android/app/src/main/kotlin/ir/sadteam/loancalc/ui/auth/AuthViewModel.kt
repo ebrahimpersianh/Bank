@@ -168,6 +168,11 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch { authPrefs.setTourSeen(true) }
     }
 
+    /** «راهنمای برنامه» در تنظیمات - راهنمای تعاملی را دوباره از اول نشان می‌دهد. */
+    fun replayTour() {
+        viewModelScope.launch { authPrefs.setTourSeen(false) }
+    }
+
     /** پورت syncAfterLogin - وقتی هم گوشی هم سرور داده‌ی متفاوت دارن، غیر-null می‌شه و منتظر
      * تصمیم کاربر (resolveSyncConflict) می‌مونه؛ UI (LoginScreen) اینو observe می‌کنه. */
     private val _syncConflict = MutableStateFlow<List<Map<String, Any?>>?>(null)
