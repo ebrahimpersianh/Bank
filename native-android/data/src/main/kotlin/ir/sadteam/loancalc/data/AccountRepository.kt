@@ -118,6 +118,12 @@ class AccountRepository(
         transactionDao.clear()
         budgetDao.clear()
         recurringPaymentDao.clear()
+        // بازبینیِ ۹ مهر: دارایی، قبض، هدف، سکه و… هم مالِ همین حساب‌اند (همه در پشتیبانِ ابری
+        // هستند). بی این، با ورودِ شماره‌ی دیگر روی همین گوشی، داده‌ی کاربرِ قبلی قاطی می‌شد.
+        val db = database?.openHelper?.writableDatabase ?: return
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            for (table in extraTables) runCatching { db.execSQL("DELETE FROM `$table`") }
+        }
     }
 
     suspend fun addTransaction(
