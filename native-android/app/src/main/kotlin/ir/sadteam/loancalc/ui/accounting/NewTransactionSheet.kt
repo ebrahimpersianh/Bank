@@ -52,6 +52,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -177,6 +178,8 @@ fun NewTransactionSheet(
     var date by remember { mutableStateOf(JalaliCalendar.today()) }
     var description by remember { mutableStateOf("") }
     var accountId by remember { mutableStateOf<Long?>(null) }
+    // فقط یک حساب = همان؛ لازم نیست هر بار دستی انتخاب شود.
+    LaunchedEffect(accounts) { if (accountId == null) accounts.singleOrNull()?.let { accountId = it.id } }
     var fromAccountId by remember { mutableStateOf<Long?>(null) }
     var toAccountId by remember { mutableStateOf<Long?>(null) }
     var category by remember { mutableStateOf<String?>(null) }
@@ -768,7 +771,11 @@ fun NewTransactionSheet(
                         color = accent,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f).clickable { pickReceipt.launch("image/*") }.padding(vertical = 10.dp),
+                        modifier = Modifier.weight(1f).clickable {
+                            // عکسِ رسید مالِ اشتراک است (جدولِ ۷ مهر) - این‌جا بی‌قفل مانده بود.
+                            if (txPremium) pickReceipt.launch("image/*")
+                            else ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("receipt_photo", "عکسِ رسید")
+                        }.padding(vertical = 10.dp),
                     )
                 }
                 }
@@ -817,7 +824,7 @@ fun NewTransactionSheet(
         // ⚠️ منطقِ ثبت قبلاً **دو بار** نوشته شده بود، یک‌بار در هر دکمه (سی خطِ یکسان).
         // یک اصلاح در یکی به دیگری نمی‌رسید. حالا یک تابعِ محلی، و هر دکمه فقط می‌گوید بعدش
         // چه کند.
-        val submit: (andClose: Boolean) -> Unit = { andClose ->
+        val submit: (andClose: Boolean) -> Unit = submit@{ andClose ->
             // فیلد تومان است، ستونِ دیتابیس ریال - تبدیل فقط همین‌جا، در لبه.
             val splitRows = if (splitMode && kind == NewTxKind.EXPENSE) {
                 splits.mapNotNull { (c, a) -> a.toLongOrNull()?.takeIf { it > 0 }?.let { c to tomanToRial(it).toDouble() } }
@@ -825,6 +832,15 @@ fun NewTransactionSheet(
             val toman = amountText.toLongOrNull() ?: 0L
             val amount = if (splitRows.isNotEmpty()) splitRows.sumOf { it.second } else tomanToRial(toman).toDouble()
             error = validate(kind, amount, accountId, fromAccountId, toAccountId)
+            // بازبینیِ ۹ مهر: جمعِ ردیف‌های تقسیم باید با مبلغِ کل یکی باشد، وگرنه بی‌صدا عددِ دیگری ثبت می‌شد.
+            if (error == null && splitRows.isNotEmpty() && toman > 0 && tomanToRial(toman).toDouble() != amount) {
+                error = "جمعِ ردیف‌های تقسیم با مبلغِ کل یکی نیست."
+            }
+            // «ثبت و بعدی» سقفِ ماهانه‌ی نسخه‌ی رایگان را دور می‌زد (قفل فقط موقعِ باز شدن بود).
+            if (error == null && !txPremium && monthTxCount >= ir.sadteam.loancalc.ui.subscription.FreeLimits.TX_PER_MONTH) {
+                ir.sadteam.loancalc.ui.subscription.PremiumPaywall.ask("tx_month", "ثبتِ بیش از ${ir.sadteam.loancalc.core.toFa(ir.sadteam.loancalc.ui.subscription.FreeLimits.TX_PER_MONTH)} تراکنش در ماه")
+                return@submit
+            }
             val tags = tagsText.split('،', ',').map { it.trim() }.filter { it.isNotEmpty() }.joinToString(",").ifBlank { null }
             if (error == null) {
                 val onSaved = {
