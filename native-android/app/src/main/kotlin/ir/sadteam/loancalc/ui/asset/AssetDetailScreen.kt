@@ -48,6 +48,7 @@ import ir.sadteam.loancalc.data.assetCategoryLabel
 import ir.sadteam.loancalc.data.assetCatalogGroups
 import ir.sadteam.loancalc.data.db.AssetEntity
 import ir.sadteam.loancalc.data.db.AssetTradeEntity
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.ConfirmDeleteDialog
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
@@ -406,15 +407,13 @@ private fun AssetSummaryCard(
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Bold,
                     )
-                    Text(
+                    AutoShrinkText(
                         // ⚠️ «+» و «۰» در دو خط می‌شکستند؛ سودِ صفر هم بی‌علامت.
                         // بازبینیِ ۹ مهر: سود به ریال است - بی تبدیل، ده برابر نشان داده می‌شد.
                         ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, if (rialToToman(profit.toLong()) == 0L) "۰" else profit.rialToFaSignedCompact()),
                         color = if (profit >= 0) AppPrimaryInk else AppDangerInk,
-                        fontSize = 15.sp,
+                        maxFontSize = 15.sp,
                         fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                        softWrap = false,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                 }

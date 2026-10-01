@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.Brush
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.runtime.mutableFloatStateOf
@@ -217,7 +217,7 @@ private fun earnedToday(events: List<CoinEventEntity>, todayKey: String): Int =
  */
 @Composable
 private fun CoinHero(coins: Int, activeDays: Int, earnedToday: Int) {
-    AppCard(modifier = Modifier.width(170.dp), contentPadding = 10.dp, horizontalPadding = 10.dp) {
+    AppCard(modifier = Modifier.widthIn(max = 170.dp), contentPadding = 10.dp, horizontalPadding = 10.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.Bottom) {

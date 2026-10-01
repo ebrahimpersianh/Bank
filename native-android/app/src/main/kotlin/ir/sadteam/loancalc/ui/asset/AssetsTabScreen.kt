@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.asset
 
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.guideTarget
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
@@ -744,13 +745,11 @@ private fun TotalWealthHero(
             Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.Bottom) {
                 val shownTotal = ir.sadteam.loancalc.ui.components.countUpDouble(total)
                 PrivacyCrossfade(privacyMode) { masked ->
-                    Text(
+                    AutoShrinkText(
                         maskIfPrivate(masked, shownTotal.rialToFaCompact()),
                         color = Color.White,
-                        fontSize = 30.sp,
+                        maxFontSize = 30.sp,
                         fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                        softWrap = false,
                     )
                 }
                 // واحد تو کارتِ خلاصه میاد - قاعده‌ی عددِ TOKENS.md، مثلِ AccountsTotalHero.
@@ -916,14 +915,12 @@ private fun AccountRow(
         Column(horizontalAlignment = Alignment.End) {
             Text("موجودی", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
             PrivacyCrossfade(privacyMode) { masked ->
-                Text(
+                AutoShrinkText(
                     maskIfPrivate(masked, balance.rialToFaCompact()) + " تومان",
                     // موجودیِ منفیِ کارتِ اعتباری وضعِ عادیه نه خطا: فقط عدد قرمز می‌شه.
                     color = if (balance < 0) AppDangerInk else AppText,
-                    fontSize = 13.sp,
+                    maxFontSize = 13.sp,
                     fontWeight = FontWeight.Black,
-                    maxLines = 1,
-                    softWrap = false,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }

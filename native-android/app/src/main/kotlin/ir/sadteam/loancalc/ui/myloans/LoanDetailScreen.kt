@@ -66,6 +66,7 @@ import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Savings
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -1766,14 +1767,11 @@ private fun KeyStat(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 6.dp),
         )
-        Text(
+        AutoShrinkText(
             value,
             color = AppText,
-            fontSize = 14.sp,
+            maxFontSize = 14.sp,
             fontWeight = FontWeight.Black,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 2.dp),
         )
         if (unit.isNotBlank()) {
@@ -1823,14 +1821,11 @@ private fun LoanActionButton(
 private fun LoanIdentityStat(label: String, value: String, unit: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, color = HeroMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(
+        AutoShrinkText(
             value,
             color = Color.White,
-            fontSize = 12.5.sp,
+            maxFontSize = 12.5.sp,
             fontWeight = FontWeight.Black,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 2.dp),
         )
         if (unit.isNotBlank()) {
@@ -2254,13 +2249,11 @@ private fun InstallmentRow(
         }
         Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 6.dp)) {
             PrivacyCrossfade(privacyMode) { masked ->
-                Text(
+                AutoShrinkText(
                     maskIfPrivate(masked, amountToman(installment)),
                     color = if (overdue) AppDangerInk else AppText,
-                    fontSize = 14.sp,
+                    maxFontSize = 14.sp,
                     fontWeight = FontWeight.Black,
-                    maxLines = 1,
-                    softWrap = false,
                 )
             }
             Text("تومان", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)

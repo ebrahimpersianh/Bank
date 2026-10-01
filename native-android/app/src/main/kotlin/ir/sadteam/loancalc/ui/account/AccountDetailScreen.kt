@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
@@ -439,15 +440,13 @@ private fun MonthSumPill(
     ) {
         Text(label, color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
         PrivacyCrossfade(privacyMode) { masked ->
-            Text(
+            AutoShrinkText(
                 maskIfPrivate(
                     masked,
                     rialToToman(amount.toLong()).let { if (positive) it else -it }.toFaSignedMoney(),
                 ),
                 color = Color.White,
-                fontSize = 12.sp,
-                maxLines = 1,
-                softWrap = false,
+                maxFontSize = 12.sp,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.padding(top = 2.dp),
             )

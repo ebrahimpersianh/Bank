@@ -8,6 +8,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.graphics.graphicsLayer
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.pressScaleClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -463,14 +464,12 @@ private fun CoinEventRow(event: CoinEventEntity) {
                 )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
+                AutoShrinkText(
                     (if (spent) "−" else "+") + toFa(kotlin.math.abs(event.amount)),
                     color = ink,
-                    fontSize = 14.sp,
+                    maxFontSize = 14.sp,
                     fontWeight = FontWeight.Black,
                     // 🚨 بی این، «+۱۰» در ستونِ باریک دو خط می‌شد و «۰» زیرش می‌افتاد.
-                    maxLines = 1,
-                    softWrap = false,
                 )
                 Text("سکه", color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }

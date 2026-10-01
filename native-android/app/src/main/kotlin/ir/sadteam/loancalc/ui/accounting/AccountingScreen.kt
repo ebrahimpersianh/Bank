@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material3.minimumInteractiveComponentSize
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -597,13 +598,11 @@ private fun AccountingTransactionRow(
             // ⚠️ مبلغ قبلاً **ریال** و بی‌واحد بود و در دو خط می‌شکست.
             PrivacyCrossfade(privacyMode) { masked ->
                 Column(horizontalAlignment = Alignment.End, modifier = Modifier.padding(start = 8.dp)) {
-                    Text(
+                    AutoShrinkText(
                         "${if (isIncome) "+" else "−"}${maskIfPrivate(masked, fmt(tx.amount / 10))}",
                         color = if (isIncome) AppPrimary else AppDanger,
-                        fontSize = 14.sp,
+                        maxFontSize = 14.sp,
                         fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                        softWrap = false,
                     )
                     Text("تومان", color = AppMuted, fontSize = 10.sp)
                 }

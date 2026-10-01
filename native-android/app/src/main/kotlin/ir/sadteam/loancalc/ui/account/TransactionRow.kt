@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.TransactionType
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.ui.components.AppCard
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import ir.sadteam.loancalc.ui.jibak.toFaSignedMoney
 import ir.sadteam.loancalc.ui.jibak.toFaTime
@@ -114,16 +115,14 @@ fun CompactTransactionRow(
                 )
             }
             PrivacyCrossfade(privacyMode) { masked ->
-                Text(
+                AutoShrinkText(
                     maskIfPrivate(
                         masked,
                         rialToToman(tx.amount.toLong()).let { if (isIn) it else -it }.toFaSignedMoney(),
                     ),
                     color = ink,
-                    fontSize = 13.sp,
+                    maxFontSize = 13.sp,
                     fontWeight = FontWeight.Black,
-                    maxLines = 1,
-                    softWrap = false,
                 )
             }
         }

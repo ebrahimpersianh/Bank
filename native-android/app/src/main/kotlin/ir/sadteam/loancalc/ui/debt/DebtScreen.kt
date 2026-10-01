@@ -4,6 +4,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhoneIphone
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.appFieldColors
 import ir.sadteam.loancalc.ui.theme.AppTxOut
 import ir.sadteam.loancalc.ui.theme.AppTxIn
@@ -457,13 +458,11 @@ private fun SummaryTile(label: String, rial: Double, ink: androidx.compose.ui.gr
     ) {
         Text(label, color = ink, fontSize = 11.sp)
         val toman = rialToToman(rial.toLong())
-        Text(
+        AutoShrinkText(
             maskIfPrivate(privacyMode, (if (signed) toman.toFaSignedMoney() else toman.toFaMoney())),
             color = ink,
-            fontSize = 13.sp,
+            maxFontSize = 13.sp,
             fontWeight = FontWeight.Black,
-            maxLines = 1,
-            softWrap = false,
             modifier = Modifier.padding(top = 3.dp),
         )
         Text("تومان", color = AppMuted, fontSize = 9.5.sp)

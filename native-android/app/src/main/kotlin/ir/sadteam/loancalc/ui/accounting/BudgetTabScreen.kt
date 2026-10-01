@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.accounting
 
 import androidx.compose.material.icons.filled.ReceiptLong
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.extras.isDueSoon
 import ir.sadteam.loancalc.ui.components.HeroChart
 import ir.sadteam.loancalc.ui.components.HeroChartStyle
@@ -624,13 +625,11 @@ private fun DailyAllowanceHero(
                 )
                 Row(verticalAlignment = Alignment.Bottom) {
                     PrivacyCrossfade(privacyMode) { masked ->
-                        Text(
+                        AutoShrinkText(
                             maskIfPrivate(masked, allowance.rialToFaCompact()),
                             color = Color.White,
-                            fontSize = 30.sp,
+                            maxFontSize = 30.sp,
                             fontWeight = FontWeight.Black,
-                            maxLines = 1,
-                            softWrap = false,
                         )
                     }
                     Text(
@@ -723,13 +722,11 @@ private fun HeroMiniStat(up: Boolean, label: String, value: Double, privacyMode:
         Text(label, color = Color.White.copy(alpha = 0.85f), fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 1.dp)) {
             PrivacyCrossfade(privacyMode) { masked ->
-                Text(
+                AutoShrinkText(
                     (if (up) "+ " else "− ") + maskIfPrivate(masked, value.rialToFaCompact()),
                     color = ink,
-                    fontSize = 11.5.sp,
+                    maxFontSize = 11.5.sp,
                     fontWeight = FontWeight.Black,
-                    maxLines = 1,
-                    softWrap = false,
                 )
             }
             Icon(

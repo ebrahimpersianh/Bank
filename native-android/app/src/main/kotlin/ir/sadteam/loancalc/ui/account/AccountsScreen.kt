@@ -44,6 +44,7 @@ import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
 import ir.sadteam.loancalc.data.db.AccountEntity
 import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.AppHeroCard
+import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.BankBadge
 import ir.sadteam.loancalc.ui.components.EmptyState
 import ir.sadteam.loancalc.ui.components.GradientButton
@@ -229,15 +230,13 @@ private fun AccountsTotalHero(total: Double, balances: Map<Long, Double>, accoun
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("جمعِ موجودی", color = HeroMuted, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
-                    Text(
+                    AutoShrinkText(
                         // ⚠️ `total` **ریال** است و زیرش «تومان» نوشته می‌شد: عدد ده برابر
                         // بزرگ چاپ می‌شد. `rialToToman` پیش از فرمت.
                         ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, rialToToman(total.toLong()).toFaMoney()),
                         color = Color.White,
-                        fontSize = 32.sp,
+                        maxFontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                        softWrap = false,
                         modifier = Modifier.padding(top = 3.dp),
                     )
                     Text("تومان · ${accounts.size.toFa()} حساب", color = HeroMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
