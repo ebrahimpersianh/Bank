@@ -142,4 +142,11 @@ class GamificationViewModel @Inject constructor(
     fun awardOnce(type: String, amount: Int) {
         viewModelScope.launch { repository.awardOnce(type, amount) }
     }
+
+    /** پایانِ کاملِ راهنمای برنامه (۹ مهر) - یک‌بار برای همیشه. */
+    fun awardGuideDone() {
+        viewModelScope.launch { repository.awardOnce("guide_done", GUIDE_REWARD) }
+    }
+
+    companion object { const val GUIDE_REWARD = 50 }
 }

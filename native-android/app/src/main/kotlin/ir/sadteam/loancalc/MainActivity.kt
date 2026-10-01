@@ -1571,6 +1571,7 @@ private fun LoanCalcApp(
             val guideAccountVm: ir.sadteam.loancalc.ui.account.AccountViewModel = hiltViewModel()
             val guideAccounts by guideAccountVm.accounts.collectAsState()
             val guideTxs by guideAccountVm.transactions.collectAsState()
+            val guideCoinVm: ir.sadteam.loancalc.ui.profile.GamificationViewModel = hiltViewModel()
             val steps = remember { guideSteps() }
             var guideIndex by rememberSaveable { mutableIntStateOf(0) }
             val finish = {
@@ -1602,7 +1603,7 @@ private fun LoanCalcApp(
                     total = steps.size,
                     onNext = {
                         if (step.target == "shortcuts") shortcutDrawerOpen = false
-                        if (guideIndex >= steps.lastIndex) finish() else guideIndex++
+                        if (guideIndex >= steps.lastIndex) { guideCoinVm.awardGuideDone(); finish() } else guideIndex++
                     },
                     onClose = { shortcutDrawerOpen = false; finish() },
                 )
@@ -1626,7 +1627,7 @@ private fun guideSteps() = listOf(
     ir.sadteam.loancalc.ui.components.GuideStep(null, "گزارش و دارایی", "نمودارِ خرج‌ها در «گزارش»؛ طلا، ارز و رمزارز با قیمتِ روز در «دارایی»."),
     ir.sadteam.loancalc.ui.components.GuideStep(null, "چک، قبض، دنگ", "سررسیدِ چک و قبض یادآوری می‌شود؛ خرجِ مشترک را با دنگ تقسیم کن."),
     ir.sadteam.loancalc.ui.components.GuideStep(null, "امن و همیشه همراه", "قفل با رمز یا اثرِ انگشت، حالتِ خصوصی، و ذخیره‌ی ابری روی هر گوشیِ تازه."),
-    ir.sadteam.loancalc.ui.components.GuideStep(null, "آماده‌ای!", "هر وقت خواستی این راهنما را از تنظیمات ← «راهنمای برنامه» دوباره ببین."),
+    ir.sadteam.loancalc.ui.components.GuideStep(null, "آماده‌ای! +۵۰ سکه", "۵۰ سکه‌ی جایزه به کیفت رفت (فقط بارِ اول). هر وقت خواستی این راهنما را از تنظیمات ← «راهنمای برنامه» دوباره ببین."),
 )
 
 /** جهت اسلاید تعویض تب (پورت محاسبه‌ی جهت switchTab تو www/index.html): تو RTL رفتن به تبِ با
