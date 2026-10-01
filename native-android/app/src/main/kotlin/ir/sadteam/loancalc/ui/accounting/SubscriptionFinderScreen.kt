@@ -129,7 +129,7 @@ fun SubscriptionFinderScreen(
                             // ⚠️ عددِ سالانه = ماهانه × ۱۲، **نه جمعِ گذشته**: سوال این است
                             // «اگر ادامه بدهم چه؟»، نه «تا حالا چه دادم؟».
                             "تومان در ماه · با همین روند، سالی حدودِ " +
-                                (monthlyTotal * 12).rialToFaCompact() + " تومان",
+                                maskIfPrivate(privacyMode, (monthlyTotal * 12).rialToFaCompact()) + " تومان",
                             color = HeroMuted,
                             fontSize = 10.sp,
                             lineHeight = 18.sp,
