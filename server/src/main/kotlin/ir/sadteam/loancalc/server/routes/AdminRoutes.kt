@@ -79,7 +79,7 @@ data class SaleRow(val product: String, val count30: Int, val countAll: Int, val
 // سهمِ **توسعه‌دهنده** از فروش (صورت/مخرج). مایکت دقیق از پنل (۸ مهر): ۳۰۰٬۰۰۰ ریال → ۲۳۰٬۷۹۸ ریال.
 // کاربر: «کافه هم همینه» - هر دو یکسان.
 // ۹ مهر، پنلِ کافه‌بازار با قیمتِ تازه: ۴٬۹۹۰٬۰۰۰ → ۳٬۸۵۴٬۷۰۶ ریال (فروشِ زیرِ ۱۰ میلیارد).
-internal val STORE_PAYOUT = mapOf("cafebazaar" to (3_854_706L to 4_990_000L), "myket" to (230_798L to 300_000L))
+internal val STORE_PAYOUT = mapOf("cafebazaar" to (3_854_706L to 4_990_000L), "myket" to (3_854_889L to 4_990_000L))
 
 /**
  * قیمتِ **فعلیِ** هر پلن به تومان - همان قیمتِ پنلِ کافه‌بازار/مایکت (رجوع کن به CLAUDE.md).
