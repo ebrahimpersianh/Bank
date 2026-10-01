@@ -14,14 +14,15 @@ object ChequeXlsxExporter {
         ir.sadteam.loancalc.data.UsageStats.action("export_cheques_excel")
         val active = cheques.filter { !it.archived }
         val rows = buildList<List<Any>> {
-            add(listOf("صاحب چک", "بانک", "نوع", "مبلغ", "شماره چک", "تاریخ سررسید", "وضعیت", "بابت"))
+            add(listOf("صاحب چک", "بانک", "نوع", "مبلغ (تومان)", "شماره چک", "تاریخ سررسید", "وضعیت", "بابت"))
             active.forEach { c ->
                 add(
                     listOf(
                         c.ownerName,
                         c.bankName,
                         if (c.type == "RECEIVED") "دریافتی" else "پرداختی",
-                        c.amount,
+                        // دیتابیس ریال است؛ ستون تومان (بازبینیِ ۹ مهر - ده برابر چاپ می‌شد).
+                        c.amount.toLong() / 10,
                         c.chequeNumber,
                         "${c.dueYear}/${c.dueMonth}/${c.dueDay}",
                         chequeStatusLabel(c.status),
