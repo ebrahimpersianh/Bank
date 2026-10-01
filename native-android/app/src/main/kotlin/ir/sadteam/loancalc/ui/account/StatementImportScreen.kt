@@ -93,6 +93,8 @@ class StatementImportViewModel @Inject constructor(private val repo: AccountRepo
 /** 📄 **واردکردنِ صورت‌حسابِ بانکی** از فایلِ CSV یا Excel (۸ مهر، خواسته‌ی کاربر). */
 @Composable
 fun StatementImportScreen(onBack: () -> Unit, vm: StatementImportViewModel = hiltViewModel()) {
+    // بازبینیِ ۹ مهر: ورودِ انبوه سقفِ ۳۰ تراکنشِ نسخه‌ی رایگان را دور می‌زد.
+    ir.sadteam.loancalc.ui.subscription.PremiumBlock(blocked = true, key = "statement", label = "ورودِ صورت‌حساب", onBlocked = onBack)
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val accounts by vm.accounts.collectAsState(initial = emptyList())

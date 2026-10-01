@@ -82,6 +82,8 @@ fun SmsImportScreen(
     onBack: () -> Unit,
     accountViewModel: AccountViewModel = hiltViewModel(),
 ) {
+    // بازبینیِ ۹ مهر: ورودِ انبوهِ پیامک‌ها سقفِ ۳۰ تراکنشِ نسخه‌ی رایگان را دور می‌زد.
+    ir.sadteam.loancalc.ui.subscription.PremiumBlock(blocked = true, key = "sms_import", label = "واردکردنِ پیامک‌های قدیمی", onBlocked = onBack)
     val context = LocalContext.current
     val accounts by accountViewModel.accounts.collectAsState()
     var granted by remember {
