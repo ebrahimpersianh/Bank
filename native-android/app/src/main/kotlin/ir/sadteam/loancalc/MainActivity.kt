@@ -1848,18 +1848,11 @@ private fun LoanTab(
             // **تبِ نوارِ پایین نیست** - صفحه‌ای پوش‌شده از «خانه»/«سررسید» است، پس
             // برداشتنِ دکمه تنها راهِ برگشت را به دکمه‌ی سخت‌افزاری محدود می‌کرد.
             // چون در همان ردیف است، ارتفاعی هم اضافه نمی‌کند.
-            // ۸ مهر (خواسته‌ی کاربر): تنظیمات و تیره/روشن کنارِ جستجوی تبِ وام - به این ترتیب.
+            // ۸ مهر (خواسته‌ی کاربر): تنظیمات و تیره/روشن کنارِ جستجوی تبِ وام. ۹ مهر: جای جستجو و تنظیمات عوض شد.
             val loanThemeVm: ThemeViewModel = hiltViewModel()
             val loanThemeMode by loanThemeVm.themeMode.collectAsState()
             val loanSysDark = androidx.compose.foundation.isSystemInDarkTheme()
             val loanIsDark = loanThemeMode == ThemeMode.DARK || (loanThemeMode == ThemeMode.SYSTEM && loanSysDark)
-            LoanHeaderIcon(icon = Icons.Outlined.Settings, label = "تنظیمات", active = false, onClick = onOpenSettings)
-            LoanHeaderIcon(
-                icon = if (loanIsDark) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                label = if (loanIsDark) "حالتِ روشن" else "حالتِ تیره",
-                active = false,
-                onClick = { loanThemeVm.setThemeMode(if (loanIsDark) ThemeMode.LIGHT else ThemeMode.DARK) },
-            )
             if (subTab == LoanSubTab.MY_LOANS) {
                 LoanHeaderIcon(
                     icon = Icons.Filled.Search,
@@ -1868,6 +1861,13 @@ private fun LoanTab(
                     onClick = { searchOpen = !searchOpen },
                 )
             }
+            LoanHeaderIcon(
+                icon = if (loanIsDark) Icons.Filled.LightMode else Icons.Filled.DarkMode,
+                label = if (loanIsDark) "حالتِ روشن" else "حالتِ تیره",
+                active = false,
+                onClick = { loanThemeVm.setThemeMode(if (loanIsDark) ThemeMode.LIGHT else ThemeMode.DARK) },
+            )
+            LoanHeaderIcon(icon = Icons.Outlined.Settings, label = "تنظیمات", active = false, onClick = onOpenSettings)
         }
         Row(
             modifier = Modifier
