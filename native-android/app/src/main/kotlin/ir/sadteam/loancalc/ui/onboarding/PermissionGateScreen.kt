@@ -3,7 +3,6 @@ package ir.sadteam.loancalc.ui.onboarding
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.ui.graphics.Color
 import ir.sadteam.loancalc.ui.components.dashedBorder
 import android.Manifest
 import android.content.Context
@@ -65,6 +64,7 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.theme.AppWarningInk
 
 private fun notificationsGranted(context: Context): Boolean =
     Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
@@ -325,7 +325,7 @@ private fun PermissionRow(
     onClick: () -> Unit,
 ) {
     // طرحِ Claude Design (۸ مهر): کاشیِ آیکونِ رنگی؛ سبز = داده شده، کهربایی = مانده.
-    val amber = Color(0xFFB45309)
+    val amber = AppWarningInk
     Row(
         modifier = Modifier
             .fillMaxWidth()

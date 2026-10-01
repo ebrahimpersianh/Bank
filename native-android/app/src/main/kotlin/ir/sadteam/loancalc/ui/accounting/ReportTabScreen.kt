@@ -106,7 +106,6 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerInk
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
 import ir.sadteam.loancalc.ui.theme.AppGoldInkSoft
-import ir.sadteam.loancalc.ui.theme.AppGoldPillSoft
 import ir.sadteam.loancalc.ui.theme.AppIconFrame
 import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppLabel
@@ -1332,10 +1331,11 @@ private fun NoDiscoveryCard(checkedCount: Int, monthsOfHistory: Int) {
 private val DiscoverWarnBg: Color
     @Composable get() = AppWarningPill
 private val DiscoverWarnBorder: Color
-    @Composable get() = AppGoldPillSoft
-private val DiscoverWarnPill = Color(0xFFFFE3B8)
+    @Composable get() = AppDueNextBorder
+private val DiscoverWarnPill: Color
+    @Composable get() = AppDueNextBorder
 private val DiscoverWarnInk: Color
-    @Composable get() = AppGoldInkSoft
+    @Composable get() = AppWarningInk
 private val DiscoverWarnSubInk: Color
     @Composable get() = AppAssetInk
 private val DiscoverWarnIconInk: Color

@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.ui.accounting
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.ui.graphics.graphicsLayer
 import ir.sadteam.loancalc.ui.jibak.toFaMoney
+import ir.sadteam.loancalc.ui.theme.AppInfo
 import ir.sadteam.loancalc.ui.theme.AppTxOut
 import ir.sadteam.loancalc.ui.theme.AppTxIn
 import androidx.compose.foundation.layout.height
@@ -104,9 +105,6 @@ import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppSurface2
 import ir.sadteam.loancalc.ui.theme.AppText
 
-/** آبیِ تبِ «دخل» - خواسته‌ی صریحِ کاربر طبقِ اپِ مرجع: خرج قرمز، دخل آبی، جابجایی سبز. عمداً
- * اینجا محلی تعریف شده و به پالتِ سراسری اضافه نشده، چون تنها جای مصرفش همین سه‌تاگله. */
-private val IncomeBlue = Color(0xFF4C7DF0)
 
 /** سه حالتِ شیتِ «تراکنش جدید». */
 enum class NewTxKind { EXPENSE, INCOME, TRANSFER }
@@ -115,7 +113,8 @@ enum class NewTxKind { EXPENSE, INCOME, TRANSFER }
 @Composable
 private fun accentOf(kind: NewTxKind): Color = when (kind) {
     NewTxKind.EXPENSE -> AppDanger
-    NewTxKind.INCOME -> IncomeBlue
+    // آبیِ «دخل» خواسته‌ی صریحِ کاربر است (اپِ مرجع)؛ از توکن تا در تمِ تیره هم بچرخد.
+    NewTxKind.INCOME -> AppInfo
     // بنفش (خواسته‌ی کاربر، ۳ مهر): درآمد آبی و خرج قرمز است؛ انتقال نباید با درآمد یکی دیده شود.
     NewTxKind.TRANSFER -> AppPurple
 }
