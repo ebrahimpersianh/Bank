@@ -37,6 +37,8 @@ class SubscriptionManager(private val activity: ComponentActivity) {
     private val helper = IabHelper(activity, MYKET_IAB_PUBLIC_KEY)
     private var connected = false
     private var latestInventory: Inventory? = null
+    /** خریدهای دیده‌شده (از فهرستِ مالکیت یا همین خرید) - برای [consume] شیءِ Purchase لازم است. */
+    private val knownPurchases = mutableMapOf<String, Purchase>()
 
     fun connect(onStateChange: (connected: Boolean) -> Unit) {
         helper.startSetup { result: IabResult ->
@@ -67,7 +69,7 @@ class SubscriptionManager(private val activity: ComponentActivity) {
     fun restorePurchases(): List<Pair<String, String>> {
         val inventory = latestInventory ?: return emptyList()
         return subscriptionTiers.mapNotNull { (productId, _) ->
-            inventory.getPurchase(productId)?.let { productId to it.token }
+            inventory.getPurchase(productId)?.let { knownPurchases[it.token] = it; productId to it.token }
         }
     }
 
@@ -110,11 +112,22 @@ class SubscriptionManager(private val activity: ComponentActivity) {
                 when {
                     result.isFailure -> onFailed()
                     purchase == null -> onFailed()
-                    else -> onSucceed(purchase.token)
+                    else -> { knownPurchases[purchase.token] = purchase; onSucceed(purchase.token) }
                 }
             },
             "sub_$productId",
         )
+    }
+
+    /**
+     * 🚨 بعد از تأییدِ سرور صدا زده می‌شود (بازبینیِ پیش از انتشار، ۹ مهر). محصولِ «درون‌برنامه‌ای»
+     * تا مصرف نشود «مالِ کاربر» می‌ماند و مایکت خریدِ دوباره‌اش را (تمدیدِ ماهِ بعد) رد می‌کند.
+     * سرور رسید را ثبت کرده، پس مصرف‌کردن چیزی را از کاربر نمی‌گیرد.
+     */
+    fun consume(purchaseToken: String) {
+        val p = knownPurchases[purchaseToken] ?: return
+        if (!connected) return
+        runCatching { helper.consumeAsync(p) { _, _ -> knownPurchases.remove(purchaseToken) } }
     }
 
     /** ⚠️ اصلاحیه: نسخه‌ی قبلیِ همین کامنت (که می‌گفت باید helper.handleActivityResult صدا زده بشه)

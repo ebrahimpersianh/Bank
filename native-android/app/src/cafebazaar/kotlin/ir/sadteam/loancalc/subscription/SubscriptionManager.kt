@@ -44,10 +44,24 @@ class SubscriptionManager(private val activity: ComponentActivity) {
     )
 
     private var connection: Connection? = null
+    /** خریدهای مصرف‌نشده‌ی کاربر (productId → توکن) - از لحظه‌ی اتصال. */
+    @Volatile private var owned: List<Pair<String, String>> = emptyList()
 
     fun connect(onStateChange: (connected: Boolean) -> Unit) {
         connection = payment.connect {
-            connectionSucceed { onStateChange(true) }
+            connectionSucceed {
+                onStateChange(true)
+                // خریدهای قبلیِ مصرف‌نشده (بازبینیِ ۹ مهر): بی مصرف‌شدن، تمدیدِ همان پلن ممکن نیست.
+                runCatching {
+                    payment.getPurchasedProducts {
+                        querySucceed { list ->
+                            owned = list.filter { p -> subscriptionTiers.any { it.first == p.productId } }
+                                .map { it.productId to it.purchaseToken }
+                        }
+                        queryFailed { }
+                    }
+                }
+            }
             connectionFailed { onStateChange(false) }
             disconnected { onStateChange(false) }
         }
@@ -95,16 +109,27 @@ class SubscriptionManager(private val activity: ComponentActivity) {
         }
     }
 
+    /**
+     * 🚨 بعد از تأییدِ سرور (بازبینیِ ۹ مهر): محصولِ درون‌برنامه‌ای تا مصرف نشود «خریده‌شده» می‌ماند
+     * و کافه‌بازار خریدِ دوباره‌اش (تمدید) را رد می‌کند. سرور رسید را ثبت کرده است.
+     */
+    fun consume(purchaseToken: String) {
+        if (!isConnected()) return
+        runCatching {
+            payment.consumeProduct(purchaseToken) {
+                consumeSucceed { }
+                consumeFailed { }
+            }
+        }
+    }
+
     /** Poolakey با ActivityResultRegistry مدرن کار می‌کنه، نیازی به onActivityResultِ خام نداره -
      * این متد فقط برای یکسان‌بودنِ امضا با فلیورِ myket (که واقعاً بهش نیاز داره) اینجاست، رجوع کن
      * به MainActivity.onActivityResult. */
     fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {}
 
-    /** رجوع کن به معادلش تو فلیورِ myket (بازیابیِ خریدهای تاییدنشده) - اینجا یه no-opِ بی‌ضرره،
-     * چون کافه‌بازار اون باگِ خاصِ گم‌شدنِ callbackِ purchase() رو نداره (Poolakey از
-     * ActivityResultRegistry استفاده می‌کنه، نه onActivityResultِ خام)، پس هیچ خریدی نمی‌تونه اونجا
-     * گیر کنه. فقط برای یکسان‌بودنِ امضا با فلیورِ myket اینجاست. */
-    fun restorePurchases(): List<Pair<String, String>> = emptyList()
+    /** خریدهای مصرف‌نشده - صفحه‌ی اشتراک دوباره به سرور می‌فرستد (تکراری بی‌اثر است) و بعد مصرف می‌کند. */
+    fun restorePurchases(): List<Pair<String, String>> = owned
 }
 
 /** null یعنی هنوز وصل نشده/در دسترس نیست (مثلاً کافه‌بازار رو گوشی نصب نیست) - صفحه‌ی اشتراک

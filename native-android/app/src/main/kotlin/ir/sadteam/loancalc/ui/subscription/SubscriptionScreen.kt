@@ -160,7 +160,7 @@ fun SubscriptionScreen(
             authViewModel.verifySubscriptionPurchase(
                 productId = productId,
                 purchaseToken = purchaseToken,
-                onSuccess = { onSubscribed() },
+                onSuccess = { subscriptionManager?.consume(purchaseToken); onSubscribed() },
                 onError = { },
             )
         }
@@ -190,7 +190,7 @@ fun SubscriptionScreen(
                 authViewModel.verifySubscriptionPurchase(
                     productId = productId,
                     purchaseToken = purchaseToken,
-                    onSuccess = { purchasingProductId = null; onSubscribed() },
+                    onSuccess = { subscriptionManager?.consume(purchaseToken); purchasingProductId = null; onSubscribed() },
                     onError = {
                         ir.sadteam.loancalc.data.UsageStats.action("purchase_verify_failed")
                         purchasingProductId = null
