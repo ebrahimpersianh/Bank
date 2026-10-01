@@ -207,9 +207,11 @@ fun ReportTabScreen(
     val monthTx = remember(transactions, today) {
         transactions.filter { it.year == today.y && it.month == today.m }.sortedWith(compareBy({ it.day }, { it.id }))
     }
-    val monthIncome = monthTx.filter { it.type == "DEPOSIT" }.sumOf { it.amount }
-    val monthExpense = monthTx.filter { it.type == "WITHDRAWAL" }.sumOf { it.amount }
-    val monthBreakdown = monthTx.groupBy { it.category ?: "بدونِ دسته" }
+    // فهرستِ خروجی همه‌ی تراکنش‌هاست؛ جمعِ درآمد/خرج بی جابه‌جایی و خرید/فروشِ دارایی.
+    val monthReal = monthTx.filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES }
+    val monthIncome = monthReal.filter { it.type == "DEPOSIT" }.sumOf { it.amount }
+    val monthExpense = monthReal.filter { it.type == "WITHDRAWAL" }.sumOf { it.amount }
+    val monthBreakdown = monthReal.groupBy { it.category ?: "بدونِ دسته" }
         .map { (name, txs) -> name to txs.sumOf { it.amount } }
         .sortedByDescending { it.second }
     val monthRangeLabel = "${persianMonthName(today.m)} ${today.y.toFa()}"

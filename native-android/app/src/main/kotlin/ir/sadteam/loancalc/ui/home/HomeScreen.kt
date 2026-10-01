@@ -274,7 +274,10 @@ fun HomeScreen(
     // درآمدِ امروز - برای جفتِ «درآمد/خرجِ امروز»ِ کارتِ قهرمان (خواسته‌ی کاربر با طرحِ
     // مرجع، ۳۱ شهریور). خرج از `weekSpend.last()` می‌آید، پس فقط این یکی تازه است.
     val todayIncome = remember(transactions) {
-        transactions.filter { it.type == "DEPOSIT" && it.year == today.y && it.month == today.m && it.day == today.d }
+        transactions.filter {
+            it.type == "DEPOSIT" && it.year == today.y && it.month == today.m && it.day == today.d &&
+                it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES
+        }
             .sumOf { it.amount }
     }
     val weekTotal = remember(weekSpend) { weekSpend.sum() }
@@ -695,7 +698,8 @@ private fun TodaySpendSheet(
 
 /** خرجِ همون روز؟ (واریز خرج نیست.) */
 private fun AccountTransactionEntity.isExpenseOn(y: Int, m: Int, d: Int): Boolean =
-    type != "DEPOSIT" && year == y && month == m && day == d
+    type != "DEPOSIT" && year == y && month == m && day == d &&
+        sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES
 
 // ═══ ۱ · هدر ═══════════════════════════════════════════════════════════════════
 /**

@@ -181,7 +181,7 @@ fun BudgetTabScreen(
         if (fairShare <= 0.0) emptyList() else (6 downTo 0).map { back ->
             val d = PersianCalendar.addDays(today, -back)
             allTransactions
-                .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == d.y && it.month == d.m && it.day == d.d }
+                .filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type == TransactionType.WITHDRAWAL.name && it.year == d.y && it.month == d.m && it.day == d.d }
                 .sumOf { it.amount } <= fairShare
         }
     }
@@ -190,7 +190,7 @@ fun BudgetTabScreen(
         (6 downTo 0).map { back ->
             val d = PersianCalendar.addDays(today, -back)
             allTransactions
-                .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == d.y && it.month == d.m && it.day == d.d }
+                .filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type == TransactionType.WITHDRAWAL.name && it.year == d.y && it.month == d.m && it.day == d.d }
                 .sumOf { it.amount }
         }
     }
@@ -198,13 +198,13 @@ fun BudgetTabScreen(
     val monthDailySpent = remember(allTransactions, today, daysInMonth) {
         (1..daysInMonth).map { day ->
             allTransactions
-                .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == today.y && it.month == today.m && it.day == day }
+                .filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type == TransactionType.WITHDRAWAL.name && it.year == today.y && it.month == today.m && it.day == day }
                 .sumOf { it.amount }
         }
     }
     val monthIncome = remember(allTransactions, today) {
         allTransactions
-            .filter { it.type == TransactionType.DEPOSIT.name && it.year == today.y && it.month == today.m }
+            .filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type == TransactionType.DEPOSIT.name && it.year == today.y && it.month == today.m }
             .sumOf { it.amount }
     }
     val monthExpense = remember(monthDailySpent) { monthDailySpent.sum() }
