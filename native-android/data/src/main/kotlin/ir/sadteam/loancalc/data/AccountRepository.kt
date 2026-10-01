@@ -127,6 +127,8 @@ class AccountRepository(
         val db = database?.openHelper?.writableDatabase ?: return
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             for (table in extraTables) runCatching { db.execSQL("DELETE FROM `$table`") }
+            // صندوقِ پیام هم متنِ پیامک‌ها و مبلغ‌های کاربرِ قبلی را دارد.
+            runCatching { db.execSQL("DELETE FROM inbox_messages") }
         }
     }
 

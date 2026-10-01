@@ -224,6 +224,8 @@ class AuthViewModel @Inject constructor(
         listOf("attachments", "receipts", ir.sadteam.loancalc.notifications.AutoBackupWorker.BACKUP_DIR_NAME).forEach {
             runCatching { java.io.File(appContext.filesDir, it).deleteRecursively() }
         }
+        // سطل‌زباله‌ی پیامک‌ها (متن و مبلغ) - SmsRecycleBin.
+        appContext.getSharedPreferences("sms_recycle_bin", android.content.Context.MODE_PRIVATE).edit().clear().apply()
     }
 
     /** هر بخشی که داده دارد باید با موفقیت روی سرور برود؛ بخشِ خالی چیزی برای از دست دادن ندارد
