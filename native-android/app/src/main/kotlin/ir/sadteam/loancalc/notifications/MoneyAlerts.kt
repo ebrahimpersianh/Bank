@@ -154,7 +154,8 @@ class WeeklySummaryWorker @AssistedInject constructor(
         val prefs = applicationContext.getSharedPreferences("weekly_summary", Context.MODE_PRIVATE)
         if (prefs.getString("last", null) == weekKey) return Result.success()
 
-        val txs = repo.observeTransactions().first().filter { it.confirmed }
+        // جابه‌جایی بینِ حساب‌های خودِ کاربر نه خرج است نه درآمد (بازبینیِ ۹ مهر).
+        val txs = repo.observeTransactions().first().filter { it.confirmed && it.sourceType != ir.sadteam.loancalc.data.SOURCE_TYPE_TRANSFER }
         fun key(y: Int, m: Int, d: Int) = y * 10_000 + m * 100 + d
         val days = (0..6).map { PersianCalendar.addDays(today, -it) }.map { key(it.y, it.m, it.d) }.toSet()
         val prevDays = (7..13).map { PersianCalendar.addDays(today, -it) }.map { key(it.y, it.m, it.d) }.toSet()

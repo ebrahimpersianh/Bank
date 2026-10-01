@@ -221,7 +221,13 @@ class AssetViewModel @Inject constructor(
     }
 
     fun deleteAsset(asset: AssetEntity) {
-        viewModelScope.launch { assetRepository.deleteAsset(asset) }
+        viewModelScope.launch {
+            // بازبینیِ ۹ مهر: اگر هنوز چیزی از آن فروخته نشده (یعنی ثبتِ اشتباه بوده)، پولِ خریدها
+            // هم به حساب برگردد. دارایی‌ای که فروش داشته، پول واقعاً جابه‌جا شده - دست نزن.
+            val sold = assetRepository.observeTradesForAsset(asset.id).first().any { !it.isBuy }
+            assetRepository.deleteAsset(asset)
+            if (!sold) accountRepository.removeLinkedPaymentsByPrefix("asset", "${asset.symbol}:")
+        }
     }
 
     fun quantityOf(assetId: Long, allTrades: List<AssetTradeEntity>): Double =

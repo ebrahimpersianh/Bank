@@ -112,7 +112,7 @@ fun AssetDetailScreen(
     if (showDelete) {
         ConfirmDeleteDialog(
             title = "حذفِ دارایی",
-            text = "«${asset.name}» و همه‌ی خرید/فروش‌هایش حذف بشن؟",
+            text = "«${asset.name}» و همه‌ی خرید/فروش‌هایش حذف بشن؟ اگه هنوز چیزی ازش نفروختی و موقعِ خرید حساب انتخاب کرده بودی، پولش هم به همون حساب برمی‌گرده.",
             onConfirm = { viewModel.deleteAsset(asset); onBack() },
             onDismiss = { showDelete = false },
         )

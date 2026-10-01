@@ -398,6 +398,13 @@ class AccountRepository(
         }
     }
 
+    /** همه‌ی تراکنش‌های وصل به یک منبع که `sourceId`شان با [prefix] شروع می‌شود (حذفِ دارایی). */
+    suspend fun removeLinkedPaymentsByPrefix(sourceType: String, prefix: String) {
+        observeTransactions().first()
+            .filter { it.sourceType == sourceType && it.sourceId?.startsWith(prefix) == true }
+            .forEach { transactionDao.delete(it) }
+    }
+
     /** تاییدِ یه تراکنشِ خودکار - از همین لحظه رو موجودی و گزارش‌ها اثر می‌ذاره. */
     suspend fun confirmTransaction(id: Long) {
         transactionDao.confirm(id)
