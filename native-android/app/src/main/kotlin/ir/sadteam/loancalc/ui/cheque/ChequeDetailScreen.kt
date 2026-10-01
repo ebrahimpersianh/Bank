@@ -322,7 +322,7 @@ fun ChequeDetailScreen(
     if (showDeleteConfirm) {
         ConfirmDeleteDialog(
             title = "حذف چک",
-            text = "چکِ شماره‌ی «${toFa(cheque.chequeNumber)}» حذف بشه؟ این کار قابلِ‌برگشت نیست.",
+            text = "چکِ شماره‌ی «${toFa(cheque.chequeNumber)}» حذف بشه؟ اگه پاس شده بود، تراکنشش هم از حساب برمی‌گرده. این کار قابلِ‌برگشت نیست.",
             onConfirm = onDelete,
             onDismiss = { showDeleteConfirm = false },
         )

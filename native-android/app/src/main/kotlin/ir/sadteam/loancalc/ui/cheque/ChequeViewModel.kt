@@ -99,6 +99,13 @@ class ChequeViewModel @Inject constructor(
 
     fun updateCheque(cheque: ChequeEntity, onSaved: () -> Unit) {
         viewModelScope.launch {
+            // بازبینیِ ۹ مهر: چکِ پاس‌شده‌ای که مبلغش ویرایش شد، تراکنشِ وصل‌شده‌اش هم همان مبلغ را بگیرد.
+            val old = chequeRepository.getAllCheques().firstOrNull { it.id == cheque.id }
+            if (old != null && old.status == ChequeStatus.PASSED.name && old.amount != cheque.amount) {
+                accountRepository.observeTransactions().first()
+                    .filter { it.sourceType == "cheque" && it.sourceId == cheque.id.toString() }
+                    .forEach { accountRepository.updateTransaction(it.copy(amount = cheque.amount)) }
+            }
             chequeRepository.updateCheque(cheque)
             syncIfLoggedIn()
             onSaved()
@@ -126,6 +133,8 @@ class ChequeViewModel @Inject constructor(
 
     fun deleteCheque(id: Long) {
         viewModelScope.launch {
+            // حذف = «ثبتِ اشتباه» (برای کنار گذاشتن «بایگانی» هست)؛ پولِ چکِ پاس‌شده هم به حساب برگردد.
+            accountRepository.removeLinkedPayment("cheque", id.toString())
             chequeRepository.deleteCheque(id)
             syncIfLoggedIn()
         }
