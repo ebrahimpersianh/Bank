@@ -308,7 +308,7 @@ fun AssetsTabScreen(
                 )
             }
             if (nothingYet) {
-                item { NoAccountCard(onAddAccount = { showAddAccount = true }) }
+                item { NoAccountCard(onAddAccount = { showAddAccount = true }, formOpen = showAddAccount) }
                 return@LazyColumn
             }
             item {
@@ -595,7 +595,7 @@ internal fun HeaderSquareButton(
 
 // ═══ ۱ب · حالتِ خالی (فریمِ `21a`) ═══════════════════════════════════════════════
 @Composable
-private fun NoAccountCard(onAddAccount: () -> Unit) {
+private fun NoAccountCard(onAddAccount: () -> Unit, formOpen: Boolean = false) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -625,7 +625,8 @@ private fun NoAccountCard(onAddAccount: () -> Unit) {
                     .clip(RoundedCornerShape(10.dp))
                     .background(AppPrimaryPill)
                     .dashedBorder(10.dp, AppPrimaryBorder)
-                    .then(Modifier.guideTarget("add_account"))
+                    // وقتی فرمِ افزودن باز است، نشانه‌ی راهنما برداشته می‌شود؛ وگرنه کادرِ سبز روی فرم می‌ماند (۱۰ مهر).
+                    .then(if (formOpen) Modifier else Modifier.guideTarget("add_account"))
                     .pressScaleClickable(onClick = onAddAccount),
                 contentAlignment = Alignment.Center,
             ) {
