@@ -1732,12 +1732,26 @@ private fun AppTourOverlay(
  * منطقِ فرم↔نتیجه و حفظِ حالتِ فرم عیناً همون قبلیه.
  */
 @Composable
-private fun CalculatorHostTab(onAddManualLoan: () -> Unit = {}) {
-    BankLoanTab(useCalculatorHost = true, onAddManualLoan = onAddManualLoan)
+private fun CalculatorHostTab(
+    onAddManualLoan: () -> Unit = {},
+    startInInstallment: Boolean = false,
+    onLeaveInstallment: () -> Unit = {},
+) {
+    BankLoanTab(
+        useCalculatorHost = true,
+        onAddManualLoan = onAddManualLoan,
+        startInInstallment = startInInstallment,
+        onLeaveInstallment = onLeaveInstallment,
+    )
 }
 
 @Composable
-private fun BankLoanTab(useCalculatorHost: Boolean = false, onAddManualLoan: () -> Unit = {}) {
+private fun BankLoanTab(
+    useCalculatorHost: Boolean = false,
+    onAddManualLoan: () -> Unit = {},
+    startInInstallment: Boolean = false,
+    onLeaveInstallment: () -> Unit = {},
+) {
     var loanOutcome by remember { mutableStateOf<BankLoanOutcome?>(null) }
     // نگه‌دارنده‌ی حالتِ ذخیره‌پذیر (SaveableStateHolder): وقتی loanOutcome پر می‌شه، BankLoanScreen
     // کاملاً از کامپوزیشن بیرون می‌ره (جایگزینِ ResultScreen می‌شه) - remember/rememberSaveableِ
@@ -1768,6 +1782,8 @@ private fun BankLoanTab(useCalculatorHost: Boolean = false, onAddManualLoan: () 
                     CalculatorHostScreen(
                         onCalculated = { loanOutcome = it },
                         onAddManualLoan = onAddManualLoan,
+                        startInInstallment = startInInstallment,
+                        onLeaveInstallment = onLeaveInstallment,
                     )
                 } else {
                     BankLoanScreen(onCalculated = { loanOutcome = it }, onAddManualLoan = onAddManualLoan)
@@ -1815,6 +1831,8 @@ private fun LoanTab(
     // **محاسبه‌گر** را باز می‌کند؛ و «افزودنِ وامِ دستی» به تهِ همان محاسبه‌گر رفت. این پرچم
     // همان مسیرِ برگشت است: محاسبه‌گر می‌گوید «فرمِ دستی را باز کن» و تبِ «وام‌های من» بازش می‌کند.
     var openManualAdd by remember { mutableStateOf(false) }
+    // «افزودنِ وام» در «وام‌های من» → فرمِ «قسط و سود»ِ تبِ محاسبه‌گر (۱۰ مهر).
+    var calcAddLoan by remember { mutableStateOf(false) }
     // **فریمِ ۷۶**: جست‌وجو و «تحلیل درآمد» از داخلِ فهرست به دو آیکونِ هم‌ردیفِ عنوان آمدند،
     // پس حالتشان این‌جاست و به [MyLoansScreen] پاس داده می‌شود. فقط در زیرتبِ «وام‌های من»
     // معنی دارند.
@@ -1910,7 +1928,7 @@ private fun LoanTab(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
-                        ) { subTab = entry }
+                        ) { calcAddLoan = false; subTab = entry }
                         .padding(vertical = 6.dp, horizontal = 4.dp),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -1930,13 +1948,22 @@ private fun LoanTab(
                 LoanSubTab.CALCULATOR -> CalculatorHostTab(
                     onAddManualLoan = {
                         openManualAdd = true
+                        calcAddLoan = false
+                        subTab = LoanSubTab.MY_LOANS
+                    },
+                    startInInstallment = calcAddLoan,
+                    onLeaveInstallment = {
+                        calcAddLoan = false
                         subTab = LoanSubTab.MY_LOANS
                     },
                 )
                 LoanSubTab.DEPOSIT -> DepositScreen()
                 LoanSubTab.MY_LOANS -> MyLoansScreen(
                     searchOpen = searchOpen,
-                    onOpenCalculator = { subTab = LoanSubTab.CALCULATOR },
+                    onOpenCalculator = {
+                        calcAddLoan = true
+                        subTab = LoanSubTab.CALCULATOR
+                    },
                     openManualAddSignal = openManualAdd,
                     onManualAddSignalConsumed = { openManualAdd = false },
                     onManualAddFabPositioned = onManualAddFabPositioned,

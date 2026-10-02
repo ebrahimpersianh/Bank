@@ -441,7 +441,8 @@ fun MyLoansScreen(
 
     fun onAddLoanClick() {
         when {
-            canSaveAnotherLoan -> showAddForm = true
+            // ۱۰ مهر: «افزودنِ وام» = فرمِ «قسط و سود» (نتیجه‌اش دکمه‌ی «ذخیره وام» دارد).
+            canSaveAnotherLoan -> onOpenCalculator()
             gateState == null -> Unit // هنوز از DataStore خونده نشده، صبر کن
             gateState != GateState.LOGGED_IN -> showLoginPrompt = true
             else -> showSubscriptionScreen = true

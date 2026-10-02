@@ -860,35 +860,7 @@ fun BankLoanScreen(
                 textAlign = TextAlign.Center,
             )
 
-            // فریمِ `69b` بندِ ۲: «امور چک» از **وسطِ فرم** به این‌جا آمد.
-            //
-            // یک مقصدِ ناوبری بینِ «انتخابِ بانک» و «انتخابِ تاریخ» جریانِ پر‌کردنِ فرم را
-            // می‌شکست. دسترسی حفظ شد (خواسته‌ی ثبت‌شده‌ی کاربر)، ولی جایش تهِ فهرست است -
-            // بعد از این‌که کارِ اصلیِ صفحه تمام شده.
-            AppCard(modifier = Modifier.padding(top = 10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().pressScaleClickable { showCheque = true },
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column {
-                        Text("امور چک", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            "چک‌های دریافتی/پرداختی و دسته‌چک‌هات رو مدیریت کن",
-                            color = AppMuted,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                    // `ArrowForwardIos`ِ خودچرخان: تو RTL چپ رو نشون می‌ده، یعنی «برو».
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowForwardIos,
-                        contentDescription = null,
-                        tint = AppMuted,
-                    )
-                }
-            }
-
+            // «امور چک» از تهِ محاسبه‌گر برداشته شد (۱۰ مهر، خواسته‌ی کاربر) - از خانه/سررسید در دسترس است.
             footer()
         }
     }

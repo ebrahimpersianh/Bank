@@ -80,6 +80,10 @@ fun CalculatorHostScreen(
     onCalculated: (BankLoanOutcome) -> Unit,
     /** رجوع کن به `BankLoanScreen.onAddManualLoan`. */
     onAddManualLoan: () -> Unit = {},
+    /** ۱۰ مهر: «افزودنِ وام» یک‌راست فرمِ «قسط و سود» را باز می‌کند (مثلِ «وام من»ِ قدیم). */
+    startInInstallment: Boolean = false,
+    /** برگشت از فرمِ «قسط و سود» = برگشت به «وام‌های من». */
+    onLeaveInstallment: () -> Unit = {},
 ) {
     // 🚨 **فریمِ ۷۶b - سگمنتِ دوحالته به دو کارتِ توضیح‌دار تبدیل شد.**
     //
@@ -89,7 +93,9 @@ fun CalculatorHostScreen(
     // بالای صفحه می‌رود، که مسئله‌ی اصلیِ کاربر بود (هدرِ ۲۴۸dp).
     //
     // `null` یعنی هنوز انتخاب نشده و فهرستِ انتخاب دیده می‌شود.
-    var mode by remember { mutableStateOf<CalcMode?>(null) }
+    var mode by androidx.compose.runtime.saveable.rememberSaveable(startInInstallment) {
+        mutableStateOf(if (startInInstallment) CalcMode.INSTALLMENT else null)
+    }
     var showHistory by remember { mutableStateOf(false) }
 
     // 🚨 فریمِ `70a`: این قبلاً از `onCalculated` پر می‌شد، یعنی **فقط با تپِ دکمه**.
@@ -101,6 +107,7 @@ fun CalculatorHostScreen(
 
     // برگشت از یک حالت به فهرستِ انتخاب، قبل از اینکه دکمه‌ی برگشت تب را عوض کند.
     BackHandler(enabled = mode != null || showHistory) {
+        if (mode == CalcMode.INSTALLMENT && !showHistory) onLeaveInstallment()
         showHistory = false
         mode = null
     }
@@ -114,17 +121,7 @@ fun CalculatorHostScreen(
                 // هیروِ زنده هر بار که عددش عوض می‌شود این را صدا می‌زند؛ `null` یعنی
                 // ورودی ناقص یا ترکیبِ نامعتبر است و هیرو ساخته نشده.
                 onLiveInstallment = { liveInstallment = it },
-                // کارتِ سبزِ «از عهده‌اش برمی‌آیم؟» زیرِ نتیجه - تنها چیزی که این ادغام رو از
-                // دو تبِ جدا **بهتر** می‌کنه، نه فقط جمع‌وجورتر (تاکیدِ صریحِ طرح: حذفش نکن).
-                footer = {
-                    val installment = liveInstallment
-                    if (installment != null && installment > 0) {
-                        AffordabilityBridgeCard(
-                            installment = installment,
-                            onClick = { mode = CalcMode.AFFORDABILITY },
-                        )
-                    }
-                },
+                // کارتِ «از عهده‌اش برمی‌آیم؟» برداشته شد (۱۰ مهر، خواسته‌ی کاربر).
             )
             mode == CalcMode.AFFORDABILITY -> AffordScreen(initialInstallment = liveInstallment)
             else -> Column(
@@ -133,14 +130,7 @@ fun CalculatorHostScreen(
                     .padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                CalcChoiceCard(
-                    icon = Icons.Filled.Calculate,
-                    title = CalcMode.INSTALLMENT.label,
-                    hint = "مبلغ و نرخ را می‌دانی، قسط را می‌خواهی",
-                    tint = AppPrimaryInk,
-                    tintBg = AppPrimaryPill,
-                    onClick = { mode = CalcMode.INSTALLMENT },
-                )
+                // «قسط و سود» از این فهرست رفت: حالا همان صفحه‌ی «افزودنِ وام» است (۱۰ مهر).
                 CalcChoiceCard(
                     icon = Icons.Filled.TrendingUp,
                     title = CalcMode.AFFORDABILITY.label,
