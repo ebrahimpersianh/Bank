@@ -194,11 +194,19 @@ private fun DigestBody(d: AdminDigestResponse) {
         }
     }
 
-    if (d.series.size > 1) {
+    // روزهای خالیِ قبل از شروعِ آمار نشان داده نمی‌شوند - وگرنه نمودار تا ته صاف روی صفر می‌خوابید
+    // و گمراه‌کننده بود (کاربر ۱۰ مهر).
+    val trend = d.series.dropWhile { it.active == 0 && it.installs == 0 }
+    if (trend.size > 1) {
         AppCard {
-            AdminSubTitle("روند · ${toFa(d.series.size)} روزِ اخیر")
-            AdminLineChart(values = d.series.map { it.active }, bars = d.series.map { it.installs })
-            AdminNote("خط = فعال · ستون = نصبِ تازه · هر روز از ۷ صبح")
+            AdminSubTitle("روند · ${toFa(trend.size)} روزِ اخیر")
+            AdminLineChart(values = trend.map { it.active }, bars = trend.map { it.installs })
+            Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+                Text("${toFa(trend.size - 1)} روز پیش", color = AppLabel, fontSize = 10.sp)
+                Spacer(Modifier.weight(1f))
+                Text("امروز ●", color = AppLabel, fontSize = 10.sp)
+            }
+            AdminNote("خطِ آبی = چند نفر آن روز برنامه را باز کردند · ستون = نصبِ تازه‌ی آن روز")
         }
     }
 
