@@ -541,72 +541,7 @@ fun SubscriptionScreen(
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
                     )
                 }
-                SettingsDivider()
-                // 🎁 کدِ هدیه - روزها به انتهای اشتراکِ فعلی اضافه می‌شوند.
-                SettingsRowItem(
-                    title = "کدِ هدیه داری؟",
-                    icon = Icons.Filled.CardGiftcard,
-                    tone = SettingsTone.GREEN,
-                    status = "کدِ جایزه یا هدیه‌ی گزارشِ باگ",
-                    onClick = { showGift = !showGift },
-                )
-                if (showGift || giftCode.isNotEmpty() || giftMessage != null) {
-                    Column(modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            // ⚠️ کد ذاتاً چپ‌به‌راست است، پس در `Ltr` پیچیده می‌شود.
-                            Ltr {
-                                OutlinedTextField(
-                                    value = giftCode,
-                                    onValueChange = { giftCode = it.uppercase() },
-                                    placeholder = { Text("JIBAK-XXXXX-XXXXX", fontSize = 11.sp) },
-                                    singleLine = true,
-                                    shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
-                                    modifier = Modifier.weight(1f), colors = ir.sadteam.loancalc.ui.components.appFieldColors(),)
-                            }
-                            GradientButton(
-                                enabled = giftCode.isNotBlank() && !redeeming,
-                                onClick = {
-                                    if (gateState != GateState.LOGGED_IN) {
-                                        onNeedsLogin()
-                                        return@GradientButton
-                                    }
-                                    error = null
-                                    giftMessage = null
-                                    redeeming = true
-                                    authViewModel.redeemGiftCode(
-                                        code = giftCode,
-                                        onSuccess = {
-                                            redeeming = false
-                                            giftCode = ""
-                                            giftMessage = "هدیه فعال شد 🎁"
-                                        },
-                                        onError = { code ->
-                                            redeeming = false
-                                            error = when (code) {
-                                                "already_used" -> "این کد قبلاً استفاده شده"
-                                                "expired" -> "مهلتِ این کد تمام شده"
-                                                "not_found" -> "کد پیدا نشد؛ دوباره نگاهش کن"
-                                                else -> "فعال‌سازی ناموفق بود؛ اینترنت را بررسی کن"
-                                            }
-                                        },
-                                    )
-                                },
-                                modifier = Modifier.padding(start = 8.dp),
-                            ) {
-                                if (redeeming) LottieSpinner(modifier = Modifier.size(18.dp)) else Text("فعال کن")
-                            }
-                        }
-                        if (giftMessage != null) {
-                            Text(
-                                giftMessage ?: "",
-                                color = AppPrimaryInk,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Black,
-                                modifier = Modifier.padding(top = 8.dp),
-                            )
-                        }
-                    }
-                }
+                // کدِ هدیه حذف شد (۱۰ مهر، خواسته‌ی کاربر).
             }
         }
     }
@@ -654,7 +589,7 @@ private fun HeroChip(icon: ImageVector, label: String) {
 @Composable
 private fun InfoText(text: String) = Text(text, color = AppMuted, fontSize = 11.5.sp, modifier = Modifier.padding(vertical = 4.dp))
 
-/** کارتِ یک پلن. قیمت متنِ خودِ استور است؛ «٪ تخفیف» و «≈ ماهی» از روی همان عدد حساب می‌شوند. */
+/** کارتِ یک پلن. قیمت متنِ خودِ استور است؛ «٪ تخفیف» و «ماهی» از روی همان عدد حساب می‌شوند. */
 @Composable
 private fun PlanCard(
     label: String,
@@ -711,9 +646,9 @@ private fun PlanCard(
             if (rial != null) {
                 Text("تومان", color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    "≈ ماهی ${groupedFa(rial / 10 / months)}",
+                    "ماهی ${groupedFa(rial / 10 / months)}",
                     color = AppMuted,
-                    fontSize = 9.5.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     modifier = Modifier.padding(top = 4.dp),
