@@ -272,9 +272,16 @@ internal fun KpiTile(
     prevText: String? = null,
     standalone: Boolean = false,
     gold: Boolean = false,
+    icon: ImageVector? = null,
+    accent: Color? = null,
 ) {
     val body: @Composable () -> Unit = {
-        Text(label, color = if (gold) AppGoldInk2 else AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) Box(Modifier.padding(end = 8.dp).size(30.dp).clip(RoundedCornerShape(10.dp)).background((accent ?: AppPrimary).copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = accent ?: AppPrimary, modifier = Modifier.size(18.dp))
+            }
+            Text(label, color = if (gold) AppGoldInk2 else AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
         Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
             Text(value, color = if (gold) AppGoldInk else AppText, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 1)
             if (unit != null) Text(unit, color = if (gold) AppGoldInk2 else AppLabel, fontSize = 11.sp, modifier = Modifier.padding(start = 4.dp, bottom = 3.dp))
@@ -282,7 +289,7 @@ internal fun KpiTile(
         if (delta != null) Text(delta.text, color = delta.color(), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold)
         if (compare != null) {
             val max = maxOf(compare.first, compare.second).coerceAtLeast(1L).toFloat()
-            MiniBar(compare.first / max, AppPrimary, Modifier.padding(top = 6.dp))
+            MiniBar(compare.first / max, accent ?: AppPrimary, Modifier.padding(top = 6.dp))
             MiniBar(compare.second / max, AppMarkOff, Modifier.padding(top = 3.dp))
         }
         if (prevText != null) Text(prevText, color = AppLabel, fontSize = 11.sp, modifier = Modifier.padding(top = 3.dp))

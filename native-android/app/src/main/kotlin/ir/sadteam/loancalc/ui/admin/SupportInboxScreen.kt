@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.admin
 
+import androidx.compose.material.icons.filled.Person
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.BackHandler
@@ -233,6 +234,10 @@ private fun SupportMessageCard(
     }
     AppCard(modifier = Modifier.clickable { expanded = !expanded }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // آدمکِ کاربر (طرحِ ChatGPT، ۱۰ مهر).
+            Box(Modifier.padding(end = 10.dp).size(36.dp).clip(RoundedCornerShape(99.dp)).background(AppSurface2), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Person, null, tint = AppMuted, modifier = Modifier.size(22.dp))
+            }
             Text(CATEGORY_LABEL[msg.category] ?: "پیام", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
             Ltr { Text(supportUid(msg.userId), color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp)) }
             Box(Modifier.weight(1f))

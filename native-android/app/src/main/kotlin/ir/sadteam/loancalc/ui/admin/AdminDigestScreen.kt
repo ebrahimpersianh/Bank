@@ -1,5 +1,9 @@
 package ir.sadteam.loancalc.ui.admin
 
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.InstallMobile
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -187,6 +191,18 @@ private fun DigestBody(d: AdminDigestResponse) {
                     compare = m.now to m.prev,
                     prevText = "قبلی ${adminNum(m.prev)}",
                     standalone = true,
+                    icon = when (m.key) {
+                        "active" -> androidx.compose.material.icons.Icons.Filled.Person
+                        "new_installs" -> androidx.compose.material.icons.Icons.Filled.InstallMobile
+                        "purchases" -> androidx.compose.material.icons.Icons.Filled.ShoppingCart
+                        else -> androidx.compose.material.icons.Icons.Filled.PersonAdd
+                    },
+                    accent = when (m.key) {
+                        "active" -> androidx.compose.ui.graphics.Color(0xFF22C55E)
+                        "new_installs" -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
+                        "purchases" -> androidx.compose.ui.graphics.Color(0xFFF43F5E)
+                        else -> androidx.compose.ui.graphics.Color(0xFFA855F7)
+                    },
                     modifier = Modifier.weight(1f),
                 )
             }
