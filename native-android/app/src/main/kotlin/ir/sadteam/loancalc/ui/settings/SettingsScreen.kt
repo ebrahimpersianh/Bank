@@ -684,18 +684,6 @@ private fun SettingsMainContent(
                 }
             }
 
-            // فقط صاحبِ برنامه می‌بیند؛ برای بقیه این ردیف اصلاً ساخته نمی‌شود.
-            if (isAdmin && searchQuery.isBlank()) {
-                SettingsGroup(modifier = Modifier.padding(top = AppSpacing.betweenCards)) {
-                    SettingsRowItem(
-                        title = "ادمین",
-                        icon = Icons.Filled.AdminPanelSettings,
-                        tone = SettingsTone.NEUTRAL,
-                        status = "پیام‌های کاربران، گزارشِ برنامه",
-                        onClick = onOpenAdminStats,
-                    )
-                }
-            }
             if (matches(SettingsRoute.ABOUT)) {
                 SettingsGroup(modifier = Modifier.padding(top = AppSpacing.betweenCards)) {
                     SettingsRow(
