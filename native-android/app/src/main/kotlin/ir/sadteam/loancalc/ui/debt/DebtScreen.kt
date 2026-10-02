@@ -120,6 +120,8 @@ fun DebtScreen(
     /** تپ روی ردیفِ طلب‌وبدهی در تبِ سررسید مستقیم همان طرفِ‌حساب را باز می‌کند - رسیدن به
      * فهرستِ کامل و گشتن دنبالِ همان نام، همان نیم‌کنشی است که سرِ چک بسته شد. */
     initialCounterpartyId: Long? = null,
+    /** میان‌برِ «دنگ» یک‌راست فهرستِ دنگ را باز می‌کند؛ برگشت از آن = خروج از صفحه. */
+    startInDang: Boolean = false,
     viewModel: DebtViewModel = hiltViewModel(),
     dangViewModel: DangViewModel = hiltViewModel(),
 ) {
@@ -145,7 +147,7 @@ fun DebtScreen(
     // «دنگ» - فریمِ `22c`، ناوبریِ داخلیِ خودش (لیست/فرمِ ساخت/جزئیات) کنارِ همون
     // سه‌حالتِ قبلیِ این صفحه.
     val dangEvents by dangViewModel.events.collectAsState()
-    var dangScreen by rememberSaveable { mutableStateOf("none") } // none | list | create | detail
+    var dangScreen by rememberSaveable { mutableStateOf(if (startInDang) "list" else "none") } // none | list | create | detail
     var openedDangEventId by rememberSaveable { mutableStateOf<Long?>(null) }
     val openedDangEvent = openedDangEventId?.let { id -> dangEvents.firstOrNull { it.id == id } }
     // جشنِ کوچیکِ «تسویه شد» (بستهٔ ارتقاهای گرافیکی، خواسته‌ی صریحِ کاربر). عمداً فقط وقتی
@@ -180,7 +182,7 @@ fun DebtScreen(
         when (key) {
             "dang-list" -> DangListScreen(
                 events = dangEvents,
-                onBack = { dangScreen = "none" },
+                onBack = { if (startInDang) onBack() else dangScreen = "none" },
                 onOpen = { openedDangEventId = it.id; dangScreen = "detail" },
                 onAddNew = { dangScreen = "create" },
             )

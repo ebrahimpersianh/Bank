@@ -79,6 +79,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.TrendingDown
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.MonetizationOn
@@ -329,7 +330,7 @@ internal val allShortcutPool = defaultShortcuts + listOf(
     Shortcut("budget", "بودجه", Icons.Outlined.Savings, "budget"),
     // مقصدش «سررسید» بود و اشتباه: «دنگ» زیرصفحه‌ی `DebtScreen` است، پس تپ روی این
     // میان‌بر کاربر را به تبِ سررسید می‌برد و هیچ‌وقت به دنگ نمی‌رساند.
-    Shortcut("debt", "دنگ", Icons.Outlined.Groups, DEBT_ROUTE),
+    Shortcut("debt", "دنگ", Icons.Outlined.Groups, DANG_ROUTE),
     Shortcut("loan", "وام", Icons.Outlined.CreditCard, LOAN_ROUTE),
     Shortcut("home", "خانه", Icons.Outlined.Home, "home"),
     Shortcut("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, "assets"),
@@ -357,7 +358,7 @@ internal val allShortcutPool = defaultShortcuts + listOf(
     // ۸ مهر (خواسته‌ی کاربر: «هر قابلیتی یک میان‌بر داشته باشد»).
     Shortcut("add-account", "افزودنِ حساب", Icons.Outlined.AddCard, ADD_ACCOUNT_ROUTE),
     Shortcut("bills", "قبض‌ها", Icons.Outlined.ReceiptLong, BILLS_ROUTE),
-    Shortcut("payoff", "تسویه‌ی بدهی‌ها", Icons.Outlined.Flag, PAYOFF_ROUTE),
+    Shortcut("payoff", "تسویه‌ی بدهی‌ها", Icons.Outlined.TrendingDown, PAYOFF_ROUTE),
     Shortcut("statement", "صورت‌حسابِ بانکی", Icons.Outlined.UploadFile, STATEMENT_ROUTE),
     Shortcut("search", "جستجوی کلی", Icons.Outlined.ManageSearch, "search"),
     Shortcut("settings", "تنظیمات", Icons.Outlined.Settings, "settings"),
@@ -377,6 +378,7 @@ private const val CHEQUE_ROUTE = "cheque"
 private const val LOAN_STATS_ROUTE = "loan-stats"
 private const val CHEQUE_REPORT_ROUTE = "cheque-report"
 private const val DEBT_ROUTE = "debt"
+private const val DANG_ROUTE = "dang"
 private const val TOOLS_ROUTE = "tools"
 private const val SAYAD_INQUIRY_ROUTE = "sayad-inquiry"
 private const val ANNUAL_ARCHIVE_ROUTE = "annual-archive"
@@ -1277,17 +1279,20 @@ private fun LoanCalcApp(
                         initialCounterpartyId = openCounterparty,
                     )
                 }
+                composable(DANG_ROUTE) {
+                    DebtScreen(onBack = { navigateTo(BottomTab.HOME.route) }, startInDang = true)
+                }
                 composable(TOOLS_ROUTE) {
                     ToolsHubScreen(
                         onBack = { navigateTo(BottomTab.HOME.route) },
                         onOpenArchive = { navigateTo(ANNUAL_ARCHIVE_ROUTE) },
-                        onOpenDeng = { navigateTo(DEBT_ROUTE) },
+                        onOpenDeng = { navigateTo(DANG_ROUTE) },
                         onOpenSayad = { navigateTo(SAYAD_INQUIRY_ROUTE) },
                         onOpenNotes = { navigateTo(NOTES_ROUTE) },
                     )
                 }
                 composable(NOTES_ROUTE) {
-                    NoteScreen(onBack = { navigateTo(TOOLS_ROUTE) })
+                    NoteScreen(onBack = { navController.popBackStack() })
                 }
                 composable(BUG_REPORT_ROUTE) {
                     BugReportScreen(onBack = { navigateTo(BottomTab.HOME.route) })

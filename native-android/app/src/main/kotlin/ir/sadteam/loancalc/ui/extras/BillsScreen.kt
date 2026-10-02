@@ -242,6 +242,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
         var period by remember(base) { mutableStateOf(base?.periodMonths ?: 1) }
         val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
         var pasteNote by remember(base) { mutableStateOf<String?>(null) }
+        var dayError by remember(base) { mutableStateOf(false) }
         val close = { adding = false; editing = null }
         ir.sadteam.loancalc.ui.subscription.PremiumBlock(blocked = base == null, key = "bills", label = "قبض‌ها", onBlocked = close)
         JibakAlertDialog(
@@ -343,9 +344,11 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                     }
                     OutlinedTextField(
                         value = dayText,
-                        onValueChange = { dayText = cleanNum(it).take(2) },
+                        onValueChange = { dayText = cleanNum(it).take(2); dayError = false },
                         singleLine = true,
                         label = { Text("روزِ موعد در ماه") },
+                        isError = dayError,
+                        supportingText = if (dayError) ({ Text("روزِ موعد را بنویس (۱ تا ۳۰)") }) else null,
                         placeholder = { Text("۱ تا ۳۰") },
                         leadingIcon = { Icon(Icons.Filled.Event, contentDescription = null, tint = AppMuted) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -372,6 +375,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
             confirmButton = {
                 GradientButton(onClick = {
                     val day = dayText.toIntOrNull()?.coerceIn(1, 30)
+                    if (day == null) dayError = true
                     if (day != null) {
                         viewModel.saveBill(
                             (base ?: BillEntity(System.currentTimeMillis(), "", kind, null, day)).copy(
