@@ -91,7 +91,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         shape = AdminFieldShape,
-                        colors = appFieldColors(),
+                        colors = adminFieldColors(),
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -123,7 +123,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = AdminFieldShape,
-                    colors = appFieldColors(),
+                    colors = adminFieldColors(),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
@@ -132,7 +132,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                     label = { Text("پیام برای کاربر (اختیاری)") },
                     minLines = 2,
                     shape = AdminFieldShape,
-                    colors = appFieldColors(),
+                    colors = adminFieldColors(),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 val n0 = amount.toIntOrNull() ?: 0

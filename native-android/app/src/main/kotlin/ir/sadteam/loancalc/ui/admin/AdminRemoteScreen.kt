@@ -53,7 +53,7 @@ private fun NumField(label: String, value: Int?, hint: String, onChange: (Int?) 
     OutlinedTextField(
         value = value?.toString() ?: "", onValueChange = { onChange(cleanNum(it).take(6).toIntOrNull()) },
         label = { Text(label) }, placeholder = { Text("پیش‌فرض: $hint") }, singleLine = true,
-        shape = AdminFieldShape, colors = appFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        shape = AdminFieldShape, colors = adminFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = Modifier.fillMaxWidth(),
     )
 }
@@ -62,7 +62,7 @@ private fun NumField(label: String, value: Int?, hint: String, onChange: (Int?) 
 private fun TextArea(label: String, value: String, hint: String, onChange: (String) -> Unit) {
     OutlinedTextField(
         value = value, onValueChange = onChange, label = { Text(label) }, placeholder = { Text(hint) }, minLines = 2,
-        shape = AdminFieldShape, colors = appFieldColors(), modifier = Modifier.fillMaxWidth(),
+        shape = AdminFieldShape, colors = adminFieldColors(), modifier = Modifier.fillMaxWidth(),
     )
 }
 
@@ -128,7 +128,7 @@ fun AdminRemoteScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel(
                 AdminNote("نسخه‌ی فعلیِ همین گوشی: ${toFa(ir.sadteam.loancalc.BuildConfig.VERSION_CODE)}. عددی بزرگ‌تر از آخرین نسخه‌ی منتشرشده نزن!")
             }
             AdminSection("نسخه‌ی تازه و «چه چیز تازه است»", if (appCode.isBlank()) "…" else "آخرین نسخه ${toFa(appCode)}") {
-                OutlinedTextField(appCode, { appCode = cleanNum(it).take(6) }, label = { Text("آخرین نسخه (versionCode)") }, singleLine = true, shape = AdminFieldShape, colors = appFieldColors(), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(appCode, { appCode = cleanNum(it).take(6) }, label = { Text("آخرین نسخه (versionCode)") }, singleLine = true, shape = AdminFieldShape, colors = adminFieldColors(), modifier = Modifier.fillMaxWidth())
                 TextArea("تغییرات (هر خط یک بند)", changelog, "قابلیتِ تازه…") { changelog = it }
                 GradientButton(onClick = {
                     scope.launch {
@@ -140,12 +140,12 @@ fun AdminRemoteScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel(
             }
             AdminSection("اشتراک: تخفیف و متن‌ها", c.promo?.title?.takeIf { it.isNotBlank() } ?: "بی‌تخفیف", gold = true) {
                 val p = c.promo ?: RemotePromo()
-                OutlinedTextField(p.title, { c = c.copy(promo = p.copy(title = it.take(60))) }, label = { Text("عنوانِ نوارِ تخفیف") }, singleLine = true, shape = AdminFieldShape, colors = appFieldColors(), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(p.title, { c = c.copy(promo = p.copy(title = it.take(60))) }, label = { Text("عنوانِ نوارِ تخفیف") }, singleLine = true, shape = AdminFieldShape, colors = adminFieldColors(), modifier = Modifier.fillMaxWidth())
                 TextArea("توضیح", p.text, "۳۰٪ تخفیف تا آخرِ هفته") { c = c.copy(promo = p.copy(text = it.take(200))) }
-                OutlinedTextField(p.until.orEmpty(), { c = c.copy(promo = p.copy(until = it.take(10).ifBlank { null })) }, label = { Text("تا تاریخ (۱۴۰۵-۰۷-۱۵)") }, singleLine = true, shape = AdminFieldShape, colors = appFieldColors(), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(p.until.orEmpty(), { c = c.copy(promo = p.copy(until = it.take(10).ifBlank { null })) }, label = { Text("تا تاریخ (۱۴۰۵-۰۷-۱۵)") }, singleLine = true, shape = AdminFieldShape, colors = adminFieldColors(), modifier = Modifier.fillMaxWidth())
                 AdminNote("قیمتِ واقعی را در پنلِ استور کم کن؛ این فقط نوارِ اطلاع‌رسانی است.", gold = true)
-                OutlinedTextField(c.paywallA.orEmpty(), { c = c.copy(paywallA = it.ifBlank { null }) }, label = { Text("جمله‌ی گروهِ A") }, shape = AdminFieldShape, colors = appFieldColors(), modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(c.paywallB.orEmpty(), { c = c.copy(paywallB = it.ifBlank { null }) }, label = { Text("جمله‌ی گروهِ B") }, shape = AdminFieldShape, colors = appFieldColors(), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(c.paywallA.orEmpty(), { c = c.copy(paywallA = it.ifBlank { null }) }, label = { Text("جمله‌ی گروهِ A") }, shape = AdminFieldShape, colors = adminFieldColors(), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(c.paywallB.orEmpty(), { c = c.copy(paywallB = it.ifBlank { null }) }, label = { Text("جمله‌ی گروهِ B") }, shape = AdminFieldShape, colors = adminFieldColors(), modifier = Modifier.fillMaxWidth())
             }
             AdminSection("پیامکِ بانک‌ها", "${toFa(lines(smsDep).size + lines(smsWd).size + lines(smsIgn).size)} کلیدواژه‌ی اضافه") {
                 AdminNote("هر خط یک کلیدواژه. فقط به فهرستِ داخلی اضافه می‌شود.")
@@ -169,7 +169,7 @@ fun AdminRemoteScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel(
             }
             AdminSection("متنِ اعلانِ «برگرد»", c.comeBackTitle ?: "پیش‌فرض") {
                 AdminNote("«{days}» جای تعدادِ روز می‌نشیند.")
-                OutlinedTextField(c.comeBackTitle.orEmpty(), { c = c.copy(comeBackTitle = it.ifBlank { null }) }, label = { Text("عنوان") }, shape = AdminFieldShape, colors = appFieldColors(), modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(c.comeBackTitle.orEmpty(), { c = c.copy(comeBackTitle = it.ifBlank { null }) }, label = { Text("عنوان") }, shape = AdminFieldShape, colors = adminFieldColors(), modifier = Modifier.fillMaxWidth())
                 TextArea("متن", c.comeBackText.orEmpty(), "{days} روزه سر نزدی…") { c = c.copy(comeBackText = it.ifBlank { null }) }
             }
             AdminSection("پرسش‌های پرتکرار", "${toFa(faq.split(Regex("\\n\\s*\\n")).count { it.trim().lines().size >= 2 })} پرسش") {
@@ -183,7 +183,7 @@ fun AdminRemoteScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel(
                     Switch(checked = c.survey != null, onCheckedChange = { on -> c = c.copy(survey = if (on) sv.copy(id = sv.id.ifBlank { "s" + System.currentTimeMillis().toString(36) }) else null) })
                 }
                 if (c.survey != null) {
-                    OutlinedTextField(sv.question, { c = c.copy(survey = sv.copy(question = it.take(120))) }, label = { Text("سؤال") }, shape = AdminFieldShape, colors = appFieldColors(), modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(sv.question, { c = c.copy(survey = sv.copy(question = it.take(120))) }, label = { Text("سؤال") }, shape = AdminFieldShape, colors = adminFieldColors(), modifier = Modifier.fillMaxWidth())
                     TextArea("گزینه‌ها (هر خط یکی)", surveyOpts, "بودجه\nگزارش\nچک") { surveyOpts = it }
                     AdminNote("هر کاربر یک بار می‌بیند. برای سؤالِ تازه، خاموش و دوباره روشن کن (شناسه‌ی تازه).")
                     surveyResult?.let { r ->

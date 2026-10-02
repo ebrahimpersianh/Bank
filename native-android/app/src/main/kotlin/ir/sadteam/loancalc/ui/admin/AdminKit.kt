@@ -129,7 +129,19 @@ internal fun adminDelta(now: Long, prev: Long, badWhenUp: Boolean = false): Admi
 internal fun AdminDelta.color(): Color = when (tone) { 1 -> AppPrimaryInk; -1 -> AppDangerInk; else -> AppMuted }
 
 /** کادرهای ادمین: گوشه‌ی ۱۶dp تا متنِ چندخطی راحت نوشته شود (کپسولِ ۲۸dp برای جستجوی یک‌خطی است). */
-internal val AdminFieldShape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+// کادرهای ادمین (۱۰ مهر، کاربر: «این باکس‌ها حالمو بهم می‌زنن»): گوشه‌ی ملایم، حاشیه‌ی خنثی، بی قابِ آبیِ کلفت.
+internal val AdminFieldShape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+
+@Composable
+internal fun adminFieldColors() = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = AppPrimary,
+    unfocusedBorderColor = AppLine,
+    focusedContainerColor = AppSurface,
+    unfocusedContainerColor = AppSurface,
+    cursorColor = AppPrimary,
+    focusedLabelColor = AppPrimary,
+    unfocusedLabelColor = AppMuted,
+)
 
 // ── سربرگ و صفحه ────────────────────────────────────────────────────────────────
 @Composable
