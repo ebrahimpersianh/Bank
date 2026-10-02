@@ -318,11 +318,38 @@ private val SEGMENT_LABELS = linkedMapOf(
     "expired" to "اشتراکشان تمام شده و تمدید نکرده‌اند",
     "free" to "هیچ‌وقت نخریده‌اند",
     "paid" to "اشتراکِ فعال دارند",
+    "inactive30" to "۳۰ روز است نیامده‌اند",
+    "new7" to "تازه‌واردهای این هفته",
+    "old_version" to "نسخه‌ی قدیمی دارند",
+    "cafebazaar" to "کاربرانِ کافه‌بازار",
+    "myket" to "کاربرانِ مایکت",
     "all" to "همه‌ی کاربران",
 )
 
+private val BROADCAST_ACTION_LABELS = linkedMapOf(
+    null to "بی دکمه",
+    "shop" to "برو به فروشگاه",
+    "subscription" to "دیدنِ اشتراک‌ها",
+    "update" to "آپدیت کن",
+)
+
+@Composable
+private fun PickChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(AppRadius.button)
+    Text(
+        label,
+        color = if (selected) AppPrimaryInk else AppText,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.clip(shape).background(if (selected) AppPrimaryPill else AppSurface)
+            .border(1.5.dp, if (selected) AppPrimary else AppLine, shape)
+            .clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
+    )
+}
+
 /** 📣 پیامِ هدفمند به یک گروه (بخشِ ۸۲) - در «پیام‌های جیبک»ِ همان کاربرها. */
 @Composable
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 fun AdminBroadcastScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel()) {
     var segment by remember { mutableStateOf("inactive7") }
     var count by remember { mutableStateOf<Int?>(null) }
@@ -331,23 +358,47 @@ fun AdminBroadcastScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewMod
     var confirm by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val banner = rememberInAppBanner()
+    var counts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var days by remember { mutableStateOf(0) }
+    var coins by remember { mutableStateOf(0) }
+    var action by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) { counts = vm.repo.adminBroadcastCounts() }
     LaunchedEffect(segment) { count = null; count = vm.repo.adminBroadcast(segment, "", "", dryRun = true)?.count }
     Box(Modifier.fillMaxSize()) {
         AdminPage("پیامِ گروهی", "فقط به یک گروهِ خاص", onBack) {
             AdminGroupLabel("به چه کسانی")
             SEGMENT_LABELS.entries.chunked(2).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    row.forEach { (key, label) -> SegmentCard(label, key == segment, if (key == segment) count else null, Modifier.weight(1f)) { segment = key } }
+                    row.forEach { (key, label) -> SegmentCard(label, key == segment, if (key == segment) count else counts[key], Modifier.weight(1f)) { segment = key } }
                 }
             }
             AdminGroupLabel("پیام")
             OutlinedTextField(value = title, onValueChange = { title = it.take(80) }, label = { Text("عنوان") }, singleLine = true, colors = adminFieldColors(), shape = AdminFieldShape, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(value = body, onValueChange = { body = it.take(600) }, label = { Text("متنِ پیام") }, minLines = 3, colors = adminFieldColors(), shape = AdminFieldShape, modifier = Modifier.fillMaxWidth())
+            AdminGroupLabel("هدیه همراهِ پیام (اختیاری)")
+            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(0, 7, 30).forEach { d -> PickChip(if (d == 0) "بی اشتراک" else "${toFa(d)} روز اشتراک", days == d) { days = d } }
+            }
+            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(0, 100, 500, 1000).forEach { c -> PickChip(if (c == 0) "بی سکه" else "${toFa(c)} سکه", coins == c) { coins = c } }
+            }
+            AdminGroupLabel("دکمه‌ی داخلِ پیام")
+            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                BROADCAST_ACTION_LABELS.forEach { (k, l) -> PickChip(l, action == k) { action = k } }
+            }
             if (title.isNotBlank() || body.isNotBlank()) {
                 AdminGroupLabel("همین‌طور در «پیام‌های جیبک» می‌نشیند")
-                AppCard {
+                AppCard(borderColor = if (days > 0 || coins > 0) ir.sadteam.loancalc.ui.theme.AppGoldBorder else null) {
                     Text(title.ifBlank { "عنوان" }, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
                     Text(body.ifBlank { "متنِ پیام" }, color = AppMuted, fontSize = 12.5.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 4.dp))
+                    BROADCAST_ACTION_LABELS[action]?.takeIf { action != null }?.let {
+                        Text(it, color = androidx.compose.ui.graphics.Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(top = 10.dp).clip(RoundedCornerShape(AppRadius.button)).background(AppPrimary).padding(horizontal = 14.dp, vertical = 8.dp))
+                    }
+                    if (days > 0 || coins > 0) Text(
+                        "🎁 " + listOfNotNull(days.takeIf { it > 0 }?.let { "${toFa(it)} روز اشتراک" }, coins.takeIf { it > 0 }?.let { "${toFa(it)} سکه" }).joinToString(" + "),
+                        color = ir.sadteam.loancalc.ui.theme.AppGoldInk, fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 8.dp),
+                    )
                 }
             }
             GradientButton(onClick = { confirm = true }, enabled = title.isNotBlank() && body.isNotBlank() && (count ?: 0) > 0, modifier = Modifier.fillMaxWidth()) {
@@ -360,15 +411,15 @@ fun AdminBroadcastScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewMod
         ir.sadteam.loancalc.ui.components.JibakAlertDialog(
             onDismissRequest = { confirm = false },
             title = { Text("فرستادن به ${toFa(count ?: 0)} نفر؟", fontWeight = FontWeight.Black) },
-            text = { Text("«$title» در «پیام‌های جیبک»ِ همه‌ی این کاربرها می‌نشیند و پس گرفته نمی‌شود.") },
+            text = { Text("«$title» در «پیام‌های جیبک»ِ همه‌ی این کاربرها می‌نشیند و پس گرفته نمی‌شود." + if (days > 0 || coins > 0) " هدیه هم همین الان به همه داده می‌شود." else "") },
             confirmButton = {
                 GradientButton(onClick = {
                     confirm = false
                     scope.launch {
-                        val r = vm.repo.adminBroadcast(segment, title.trim(), body.trim(), dryRun = false)
+                        val r = vm.repo.adminBroadcast(segment, title.trim(), body.trim(), dryRun = false, days = days, coins = coins, action = action)
                         val ok = r?.sent == true
                         banner.show(if (ok) "برای ${toFa(r!!.count)} نفر فرستاده شد" else "فرستاده نشد؛ دوباره امتحان کن", isSuccess = ok)
-                        if (ok) { title = ""; body = "" }
+                        if (ok) { title = ""; body = ""; days = 0; coins = 0; action = null }
                     }
                 }) { Text("بفرست") }
             },
@@ -389,6 +440,6 @@ private fun SegmentCard(label: String, selected: Boolean, count: Int?, modifier:
             Text(label, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 19.sp, modifier = Modifier.weight(1f))
             if (selected) Icon(Icons.Filled.CheckCircle, null, tint = AppPrimaryInk, modifier = Modifier.size(18.dp))
         }
-        if (selected) Text(count?.let { "${adminNum(it)} نفر" } ?: "در حالِ شمردن…", color = AppPrimaryInk, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 4.dp))
+        Text(count?.let { "${adminNum(it)} نفر" } ?: "…", color = if (selected) AppPrimaryInk else AppMuted, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 4.dp))
     }
 }

@@ -66,7 +66,17 @@ data class UserTimeline(
 )
 
 @Serializable
-data class BroadcastBody(val segment: String = "", val title: String = "", val body: String = "", val dryRun: Boolean = true)
+data class BroadcastBody(
+    val segment: String = "",
+    val title: String = "",
+    val body: String = "",
+    val dryRun: Boolean = true,
+    /** هدیه‌ی همراهِ پیام: روزِ اشتراک (از max(الان، انقضا)) و سکه. */
+    val days: Int = 0,
+    val coins: Int = 0,
+    /** دکمه‌ی داخلِ پیام: shop / subscription / update. */
+    val action: String? = null,
+)
 
 @Serializable
 data class BroadcastResult(val segment: String, val count: Int, val sent: Boolean)
@@ -196,16 +206,45 @@ private val SEGMENTS = mapOf(
     // اشتراکِ خریده‌شده‌ی تمام‌شده، بدونِ تمدید.
     "expired" to "id IN (SELECT user_id FROM subscription_purchases) AND (subscribed_until IS NULL OR subscribed_until < datetime('now'))",
     "free" to "id NOT IN (SELECT user_id FROM subscription_purchases)",
+    // ۱۰ مهر: گروه‌های تازه.
+    "inactive30" to "id NOT IN (SELECT user_id FROM installs WHERE user_id IS NOT NULL AND last_day >= date('now', '+210 minutes', '-30 days'))",
+    "new7" to "created_at >= datetime('now', '-7 days')",
+    "cafebazaar" to "id IN (SELECT user_id FROM installs WHERE user_id IS NOT NULL AND store = 'cafebazaar')",
+    "myket" to "id IN (SELECT user_id FROM installs WHERE user_id IS NOT NULL AND store = 'myket')",
+    // نسخه‌ی قدیمی: آخرین نصبِ فعالِ این حساب از آخرین نسخه‌ی ثبت‌شده عقب‌تر است.
+    "old_version" to "id IN (SELECT user_id FROM installs WHERE user_id IS NOT NULL AND app_version IS NOT NULL " +
+        "AND app_version < (SELECT latest_version_code FROM app_version WHERE id = 1))",
     "paid" to "subscribed_until >= datetime('now') AND id IN (SELECT user_id FROM subscription_purchases)",
 )
 
+private val BROADCAST_ACTIONS = setOf("shop", "subscription", "update")
+
 internal fun broadcast(conn: Connection, b: BroadcastBody): BroadcastResult? {
     val where = SEGMENTS[b.segment] ?: return null
+    if (b.days !in 0..365 || b.coins !in 0..100_000) return null
+    val action = b.action?.takeIf { it in BROADCAST_ACTIONS }
     val ids = buildList { conn.list("SELECT id FROM users WHERE $where") { add(it.getLong(1)) } }
     if (b.dryRun || b.title.isBlank() || b.body.isBlank()) return BroadcastResult(b.segment, ids.size, false)
-    ids.forEach { conn.execute("INSERT INTO announcements (title, body, kind, target_user_id) VALUES (?, ?, 'info', ?)", b.title.take(80), b.body.take(600), it) }
+    val gift = b.days > 0 || b.coins > 0
+    val now = System.currentTimeMillis()
+    ids.forEach { uid ->
+        if (b.days > 0) {
+            val cur = conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", uid) { it.getString(1) }
+                ?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
+            val expiry = java.time.Instant.ofEpochMilli(maxOf(cur, now) + b.days * 24L * 60 * 60 * 1000).toString()
+            conn.execute("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, uid)
+        }
+        conn.execute(
+            "INSERT INTO announcements (title, body, kind, target_user_id, coins, action) VALUES (?, ?, ?, ?, ?, ?)",
+            b.title.take(80), b.body.take(600), if (gift) "gift" else "info", uid, b.coins, action,
+        )
+    }
     return BroadcastResult(b.segment, ids.size, true)
 }
+
+/** تعدادِ هر گروه، برای نشان‌دادنِ عدد کنارِ همه‌ی کارت‌ها. */
+internal fun broadcastCounts(conn: Connection): Map<String, Int> =
+    SEGMENTS.mapValues { (_, where) -> runCatching { conn.int("SELECT COUNT(*) FROM users WHERE $where") }.getOrDefault(0) }
 
 fun Route.adminProRoutes() {
     route("/api/admin") {
@@ -217,6 +256,10 @@ fun Route.adminProRoutes() {
             if (!call.adminOrNull()) return@get
             val code = call.request.queryParameters["code"].orEmpty()
             call.respond(Db.withConnection { buildTimeline(it, code) })
+        }
+        get("/broadcast/counts") {
+            if (!call.adminOrNull()) return@get
+            call.respond(Db.withConnection { broadcastCounts(it) })
         }
         post("/broadcast") {
             if (!call.adminOrNull()) return@post

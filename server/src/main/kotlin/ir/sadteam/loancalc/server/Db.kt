@@ -343,6 +343,8 @@ object Db {
             addColumnIfMissing(conn, "ALTER TABLE installs ADD COLUMN user_id INTEGER")
             // هدیه‌ی سکه از ادمین: پیامِ اختصاصی که گوشی با دیدنش این تعداد سکه به دفتر اضافه می‌کند.
             addColumnIfMissing(conn, "ALTER TABLE announcements ADD COLUMN coins INTEGER NOT NULL DEFAULT 0")
+            // دکمه‌ی داخلِ پیام (۱۰ مهر): shop / subscription / update - خالی = بی دکمه.
+            addColumnIfMissing(conn, "ALTER TABLE announcements ADD COLUMN action TEXT")
             // شماره‌ی نسخه‌ی هر اسنپ‌شاتِ ابری - پایه‌ی کنترلِ هم‌زمانی (رجوع کن به BackupRoutes).
             // کلاینتِ کهنه که `expectedRevision` نمی‌فرستد، رفتارِ قبلی را می‌گیرد.
             addColumnIfMissing(conn, "ALTER TABLE loans ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")

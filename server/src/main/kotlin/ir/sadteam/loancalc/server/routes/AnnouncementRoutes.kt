@@ -33,7 +33,7 @@ import ir.sadteam.loancalc.server.Log
 private val KINDS = setOf("update", "outage", "feature", "info")
 
 @Serializable
-data class AnnouncementDto(val id: Long, val title: String, val body: String, val kind: String, val createdAt: String, val coins: Int = 0)
+data class AnnouncementDto(val id: Long, val title: String, val body: String, val kind: String, val createdAt: String, val coins: Int = 0, val action: String? = null)
 
 @Serializable
 private data class AnnouncementsResponse(val items: List<AnnouncementDto>)
@@ -108,7 +108,7 @@ fun Route.announcementRoutes() {
             val uid = call.optionalUid() ?: -1L
             val items = Db.withConnection { conn ->
                 conn.prepareStatement(
-                    "SELECT id, title, body, kind, created_at, coins FROM announcements " +
+                    "SELECT id, title, body, kind, created_at, coins, action FROM announcements " +
                         "WHERE active = 1 AND id > ? AND (target_user_id IS NULL OR target_user_id = ?) " +
                         "ORDER BY id DESC LIMIT 30",
                 ).use { ps ->
@@ -125,6 +125,7 @@ fun Route.announcementRoutes() {
                                         kind = rs.getString("kind"),
                                         createdAt = rs.getString("created_at"),
                                         coins = rs.getInt("coins"),
+                                        action = rs.getString("action"),
                                     ),
                                 )
                             }

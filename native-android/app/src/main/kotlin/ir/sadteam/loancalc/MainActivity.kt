@@ -1323,7 +1323,7 @@ private fun LoanCalcApp(
                     )
                 }
                 composable(INBOX_ROUTE) {
-                    InboxScreen(onBack = { navigateTo(BottomTab.HOME.route) })
+                    InboxScreen(onBack = { navigateTo(BottomTab.HOME.route) }, onOpenShop = { navigateTo(SHOP_ROUTE) })
                 }
                 composable(CALC_HISTORY_ROUTE) {
                     CalculationHistoryScreen(onBack = { navigateTo(LOAN_ROUTE) })
@@ -1408,7 +1408,7 @@ private fun LoanCalcApp(
             modifier = Modifier.fillMaxSize(),
         ) {
             Surface(color = AppBg, modifier = Modifier.fillMaxSize()) {
-                InboxScreen(onBack = { showInbox = false })
+                InboxScreen(onBack = { showInbox = false }, onOpenShop = { showInbox = false; navigateTo(SHOP_ROUTE) })
             }
         }
 

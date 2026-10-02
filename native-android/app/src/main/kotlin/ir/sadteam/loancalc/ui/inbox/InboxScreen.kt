@@ -111,7 +111,20 @@ import ir.sadteam.loancalc.ui.theme.AppText
  * حاشیه‌ی رنگی و ردیفِ دکمه داره و با کشیدن بسته نمی‌شه؛ بقیه «خبر»ن و فقط خونده می‌شن.
  */
 @Composable
-fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel()) {
+fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: InboxViewModel = hiltViewModel()) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    // دکمه‌ی داخلِ پیامِ گروهیِ ادمین (۱۰ مهر).
+    val runAction: (String) -> Unit = { action ->
+        when (action) {
+            "shop" -> onOpenShop()
+            "subscription" -> ir.sadteam.loancalc.ui.subscription.PremiumPaywall.showPlans = true
+            "update" -> runCatching {
+                val url = if (ir.sadteam.loancalc.BuildConfig.FLAVOR == "myket") "https://myket.ir/app/ir.sadteam.loancalc"
+                else "https://cafebazaar.ir/app/ir.sadteam.loancalc"
+                ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+        }
+    }
     val messages by viewModel.messages.collectAsState()
     val bin by viewModel.recycleBin.collectAsState()
     var binOpen by remember { mutableStateOf(false) }
@@ -310,7 +323,7 @@ fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel())
                     if (jibak.isEmpty()) EmptyLine("فعلاً اطلاعیه‌ی تازه‌ای نیست.")
                     val list = if (showAllJibak) jibak else jibak.take(2)
                     list.forEach { message ->
-                        AnnouncementCard(message) { if (isGift(message) && message.readAt == null) celebrate = message else viewModel.markRead(message.id) }
+                        AnnouncementCard(message, onAction = { a -> viewModel.markRead(message.id); runAction(a) }) { if (isGift(message) && message.readAt == null) celebrate = message else viewModel.markRead(message.id) }
                     }
                     if (jibak.size > 2) {
                         SeeAllButton(
@@ -628,7 +641,7 @@ private fun SeeAllButton(label: String, green: Boolean, onClick: () -> Unit) {
 
 /** کارتِ اطلاعیه‌ی جیبک؛ نشان و برچسب از نوعِ اطلاعیه (`refId`). */
 @Composable
-private fun AnnouncementCard(message: InboxMessageEntity, onClick: () -> Unit) {
+private fun AnnouncementCard(message: InboxMessageEntity, onAction: (String) -> Unit = {}, onClick: () -> Unit) {
     val kind = message.refId
     // هدیه‌ی گرفته‌شده (پنجره‌اش یک بار نشان داده شد) خاکستری می‌شود تا معلوم باشد استفاده شده.
     val claimed = isGift(message) && message.readAt != null
@@ -678,6 +691,27 @@ private fun AnnouncementCard(message: InboxMessageEntity, onClick: () -> Unit) {
                 Text(timeLabel(message.createdAt), color = AppMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             }
             Text(message.body, color = AppMuted, fontSize = 11.5.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 4.dp))
+            val action = message.sourceLabel?.removePrefix("action:")?.takeIf { message.sourceLabel?.startsWith("action:") == true }
+            val actionLabel = when (action) {
+                "shop" -> "برو به فروشگاه"
+                "subscription" -> "دیدنِ اشتراک‌ها"
+                "update" -> "آپدیت کن"
+                else -> null
+            }
+            if (action != null && actionLabel != null) {
+                Text(
+                    actionLabel,
+                    color = Color.White,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier
+                        .padding(top = 10.dp)
+                        .clip(RoundedCornerShape(AppRadius.button))
+                        .background(AppPrimary)
+                        .pressScaleClickable(scale = 0.95f) { onAction(action) }
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                )
+            }
             Text(
                 chip,
                 color = tint,

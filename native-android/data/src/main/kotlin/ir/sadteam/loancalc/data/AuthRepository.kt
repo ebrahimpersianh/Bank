@@ -90,11 +90,19 @@ class AuthRepository(
         return runCatching { apiService.adminUser("Bearer $token", code) }.getOrNull()
     }
 
-    suspend fun adminBroadcast(segment: String, title: String, body: String, dryRun: Boolean): ir.sadteam.loancalc.data.network.AdminBroadcastResult? {
+    suspend fun adminBroadcast(
+        segment: String, title: String, body: String, dryRun: Boolean,
+        days: Int = 0, coins: Int = 0, action: String? = null,
+    ): ir.sadteam.loancalc.data.network.AdminBroadcastResult? {
         val token = authPrefs.authToken.first() ?: return null
         return runCatching {
-            apiService.adminBroadcast("Bearer $token", ir.sadteam.loancalc.data.network.AdminBroadcastRequest(segment, title, body, dryRun))
+            apiService.adminBroadcast("Bearer $token", ir.sadteam.loancalc.data.network.AdminBroadcastRequest(segment, title, body, dryRun, days, coins, action))
         }.getOrNull()
+    }
+
+    suspend fun adminBroadcastCounts(): Map<String, Int> {
+        val token = authPrefs.authToken.first() ?: return emptyMap()
+        return runCatching { apiService.adminBroadcastCounts("Bearer $token") }.getOrDefault(emptyMap())
     }
 
     /** JSONِ خامِ یک کلیدِ تنظیمِ از-راه-دور؛ `null` = نرسید (صدازننده نسخه‌ی ذخیره‌شده را نگه دارد). */

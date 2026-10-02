@@ -186,6 +186,9 @@ interface ApiService {
         @Body body: okhttp3.RequestBody,
     ): okhttp3.ResponseBody
 
+    @GET("api/admin/broadcast/counts")
+    suspend fun adminBroadcastCounts(@Header("Authorization") authHeader: String): Map<String, Int>
+
     @POST("api/admin/broadcast")
     suspend fun adminBroadcast(@Header("Authorization") authHeader: String, @Body body: AdminBroadcastRequest): AdminBroadcastResult
 
@@ -405,6 +408,8 @@ data class AnnouncementDto(
     val createdAt: String,
     /** سکه‌ی هدیه‌ی ادمین (۰ = پیامِ معمولی). */
     val coins: Int = 0,
+    /** دکمه‌ی داخلِ پیام: shop / subscription / update. */
+    val action: String? = null,
 )
 
 data class AdminGiftRequest(val user: String, val days: Int = 0, val coins: Int = 0, val text: String = "")
@@ -554,7 +559,7 @@ data class AdminUserTimeline(
     val installs: List<AdminTimelineInstall> = emptyList(), val topScreens: List<AdminNamedCount> = emptyList(),
     val days: List<AdminTimelineDay> = emptyList(),
 )
-data class AdminBroadcastRequest(val segment: String, val title: String, val body: String, val dryRun: Boolean)
+data class AdminBroadcastRequest(val segment: String, val title: String, val body: String, val dryRun: Boolean, val days: Int = 0, val coins: Int = 0, val action: String? = null)
 data class AdminBroadcastResult(val segment: String = "", val count: Int = 0, val sent: Boolean = false)
 
 data class SurveyAnswerRequest(val id: String, val answer: String, val install: String)

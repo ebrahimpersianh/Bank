@@ -83,6 +83,8 @@ class InboxRepository(
                     createdAt = created,
                     actionState = InboxMessageEntity.ActionState.NONE,
                     refId = a.kind,
+                    // دکمه‌ی داخلِ پیام (shop/subscription/update) - در همین ستون تا مهاجرتِ دیتابیس لازم نشود.
+                    sourceLabel = a.action?.let { "action:$it" },
                 ),
             )
         }
