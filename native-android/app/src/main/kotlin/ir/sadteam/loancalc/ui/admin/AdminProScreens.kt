@@ -1,5 +1,10 @@
 package ir.sadteam.loancalc.ui.admin
 
+import androidx.compose.material.icons.filled.Mail
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -250,6 +255,15 @@ fun AdminUserScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
 }
 
 @Composable
+private fun InfoLine(icon: androidx.compose.ui.graphics.vector.ImageVector, color: androidx.compose.ui.graphics.Color, label: String, value: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
+        Text(label, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 10.dp))
+        Text(value, color = AppMuted, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
 private fun UserResult(r: AdminUserTimeline) {
     val subscribed = r.subscribedUntil != null
     AppCard {
@@ -271,7 +285,18 @@ private fun UserResult(r: AdminUserTimeline) {
         }
         r.lastSupport?.let { AdminNote("آخرین پیام: $it") }
     }
-    if (r.days.isNotEmpty()) AppCard(label = "۱۴ روزِ آخر · صفحه‌های دیده‌شده") {
+    // زبانه‌ها مثلِ طرحِ ChatGPT (۱۰ مهر).
+    var tab by remember(r.code) { mutableStateOf(0) }
+    AdminTabs(tabs = listOf("خلاصه", "خرید", "فعالیت", "گوشی"), selected = tab, onSelect = { tab = it })
+    if (tab == 0) AppCard(label = "اطلاعاتِ کلی") {
+        val lastDay = r.installs.mapNotNull { it.lastDay }.maxOrNull()
+        InfoLine(androidx.compose.material.icons.Icons.Filled.Person, androidx.compose.ui.graphics.Color(0xFF22C55E), "آخرین حضور", lastDay?.let { adminDay(it) } ?: "—")
+        InfoLine(androidx.compose.material.icons.Icons.Filled.ShoppingCart, androidx.compose.ui.graphics.Color(0xFFF59E0B), "خریدِ اشتراک", toFa(r.purchases.size))
+        InfoLine(androidx.compose.material.icons.Icons.Filled.CalendarMonth, androidx.compose.ui.graphics.Color(0xFF3B82F6), "آخرین تاریخِ خرید", r.purchases.maxByOrNull { it.at }?.let { adminDay(it.at) } ?: "—")
+        InfoLine(androidx.compose.material.icons.Icons.Filled.Event, androidx.compose.ui.graphics.Color(0xFFA855F7), "روزهای فعال", toFa(r.installs.sumOf { it.activeDays }))
+        InfoLine(androidx.compose.material.icons.Icons.Filled.Mail, androidx.compose.ui.graphics.Color(0xFFEF4444), "پیام‌های ارسالی", toFa(r.supportCount))
+    }
+    if (tab == 2 && r.days.isNotEmpty()) AppCard(label = "۱۴ روزِ آخر · صفحه‌های دیده‌شده") {
         AdminColumnChart(r.days.map { it.screens }, height = 90.dp)
         Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
             Text(adminDay(r.days.first().day), color = AppLabel, fontSize = 11.sp, modifier = Modifier.weight(1f))
@@ -279,7 +304,8 @@ private fun UserResult(r: AdminUserTimeline) {
         }
         AdminNote("جمعِ ${adminNum(r.days.sumOf { it.events })} رویداد در این ۱۴ روز.")
     }
-    if (r.purchases.isNotEmpty()) AppCard(label = "خریدها") {
+    if (tab == 1 && r.purchases.isEmpty()) AdminNote("هنوز خریدی نکرده.")
+    if (tab == 1 && r.purchases.isNotEmpty()) AppCard(label = "خریدها") {
         r.purchases.forEachIndexed { i, p ->
             Row(Modifier.fillMaxWidth().padding(top = if (i > 0) 10.dp else 0.dp), verticalAlignment = Alignment.Top) {
                 Box(Modifier.padding(top = 5.dp).size(10.dp).clip(CircleShape).background(AppGoldInk))
@@ -290,7 +316,7 @@ private fun UserResult(r: AdminUserTimeline) {
             }
         }
     }
-    if (r.installs.isNotEmpty()) {
+    if (tab == 3 && r.installs.isNotEmpty()) {
         val body: @Composable () -> Unit = {
             r.installs.forEachIndexed { i, ins ->
                 if (i > 0) Box(Modifier.fillMaxWidth().padding(vertical = 6.dp).height(1.5.dp).background(AppLineRow))
