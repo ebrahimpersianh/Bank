@@ -29,6 +29,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Poll
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ExpandLess
@@ -330,10 +344,36 @@ internal fun AdminSubSection(title: String, summary: String? = null, gold: Boole
     AdminSectionBody(title, summary, open, { open = !open }, gold, content)
 }
 
+/** آیکون و رنگِ کاشیِ هر بخش از روی عنوانش (طرحِ ChatGPT، ۱۰ مهر). */
+private fun sectionIcon(title: String): Pair<androidx.compose.ui.graphics.vector.ImageVector, androidx.compose.ui.graphics.Color> {
+    val I = Icons.Filled
+    val C = androidx.compose.ui.graphics.Color
+    return when {
+        "پیامک" in title -> I.Sms to C(0xFF16A34A)
+        "آپدیت" in title || "نسخه‌ی تازه" in title -> I.SystemUpdate to C(0xFF0D9488)
+        "اشتراک" in title -> I.WorkspacePremium to C(0xFFD97706)
+        "سکه" in title -> I.MonetizationOn to C(0xFFCA8A04)
+        "نظرسنجی" in title -> I.Poll to C(0xFF7C3AED)
+        "دسته" in title -> I.Category to C(0xFF2563EB)
+        "کارت" in title -> I.CreditCard to C(0xFF0EA5E9)
+        "مجانی" in title || "رایگان" in title -> I.CardGiftcard to C(0xFFC026D3)
+        "خاموش" in title -> I.PowerSettingsNew to C(0xFFDC2626)
+        "اعلان" in title -> I.Notifications to C(0xFFEA580C)
+        "پرسش" in title -> I.HelpOutline to C(0xFF4F46E5)
+        "تم" in title || "پس‌زمینه" in title -> I.Palette to C(0xFF9333EA)
+        "تخفیف" in title || "ویژه" in title -> I.LocalOffer to C(0xFFE11D48)
+        else -> I.Tune to C(0xFF475569)
+    }
+}
+
 @Composable
 private fun AdminSectionBody(title: String, summary: String?, open: Boolean, toggle: () -> Unit, gold: Boolean, content: @Composable ColumnScope.() -> Unit) {
     Column {
-        Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable(onClick = toggle), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 60.dp).clickable(onClick = toggle), verticalAlignment = Alignment.CenterVertically) {
+            val (ic, col) = sectionIcon(title)
+            Box(Modifier.padding(end = 12.dp).size(42.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(col.copy(alpha = 0.85f)), contentAlignment = Alignment.Center) {
+                Icon(ic, null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(22.dp))
+            }
             Column(Modifier.weight(1f)) {
                 Text(title, color = if (gold) AppGoldInk else AppText, fontSize = 13.5.sp, fontWeight = FontWeight.Black)
                 if (!open && summary != null) {
