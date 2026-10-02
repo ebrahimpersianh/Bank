@@ -2,6 +2,10 @@ package ir.sadteam.loancalc.ui.account
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material.icons.filled.CheckCircle
+import ir.sadteam.loancalc.data.db.ACCOUNT_TYPE_BANK
+import ir.sadteam.loancalc.ui.components.AppChip
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
@@ -100,6 +104,14 @@ fun SmsImportScreen(
     // خواسته‌ی کاربر: «یک شماره را کامل بتوانم افزودن بزنم، نه دانه‌دانه‌ی پیام‌ها».
     var bulkSender by remember { mutableStateOf<String?>(null) }
     var bulkAccountPickFor by remember { mutableStateOf<List<SmsInboxMessage>?>(null) }
+    // ۱۰ مهر (خواسته‌ی کاربر): تپ روی سرشماره **خودِ سرشماره را برای یک حسابِ بانکی انتخاب می‌کند**
+    // (نه اینکه وارد پیام‌ها شود)؛ از آن به بعد پیامکِ همان سرشماره سریع شناخته می‌شود. دیدنِ
+    // پیام‌ها / ثبتِ گروهیِ قدیمی‌ها با دکمه‌ی «پیام‌ها» همان‌جا می‌ماند.
+    val bankAccounts = accounts.filter { it.type == ACCOUNT_TYPE_BANK }
+    var pickedAccountId by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<Long?>(null) }
+    val targetAccount = bankAccounts.firstOrNull { it.id == pickedAccountId }
+        ?: bankAccounts.firstOrNull { it.smsSender.isNullOrBlank() }
+        ?: bankAccounts.firstOrNull()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -140,7 +152,8 @@ fun SmsImportScreen(
         }
         Text(
             if (sender == null) {
-                "فرستنده را انتخاب کن تا پیامک‌هایش را ببینی."
+                "اول حسابِ بانکی را بالا انتخاب کن، بعد روی سرشماره‌ی همان بانک بزن. " +
+                    "از آن به بعد پیامک‌های این سرشماره خودکار برای آن حساب شناخته می‌شوند."
             } else {
                 "پیامی را که می‌خواهی ثبت شود انتخاب کن. از برنامه‌ی پیامکِ خودِ گوشی هم " +
                     "می‌توانی پیام را «اشتراک‌گذاری» کنی و جیبک را بزنی."
@@ -177,14 +190,43 @@ fun SmsImportScreen(
             // پیامکِ مبلغ‌دار دارند بالا می‌آیند تا بینِ ده‌ها سرشماره‌ی تبلیغاتی گم نشوند.
             val groups = messages.groupBy { it.address }.entries
                 .sortedByDescending { entry -> entry.value.any { it.parsed != null } }
+            if (bankAccounts.isEmpty()) {
+                AppCard(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                    Text(
+                        "هنوز حسابِ بانکی نساخته‌ای. اول در «دارایی» یک حسابِ بانکی اضافه کن، بعد این‌جا سرشماره‌اش را انتخاب کن.",
+                        color = AppMuted, fontSize = 12.sp, lineHeight = 20.sp,
+                    )
+                }
+            } else {
+                Text("سرشماره‌ها برای کدام حساب؟", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(bottom = 6.dp))
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(bottom = 10.dp),
+                ) {
+                    items(bankAccounts, key = { it.id }) { acc ->
+                        AppChip(
+                            label = acc.name,
+                            selected = acc.id == targetAccount?.id,
+                            onClick = { pickedAccountId = acc.id },
+                        )
+                    }
+                }
+            }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(groups.toList(), key = { it.key }) { entry ->
+                    val owner = bankAccounts.firstOrNull { smsSenderMatches(it.smsSender, entry.key) }
                     SenderRow(
                         address = entry.key,
                         sample = entry.value.first().body,
                         count = entry.value.size,
                         banky = entry.value.any { it.parsed != null },
-                        onClick = { openSender = entry.key },
+                        ownerName = owner?.name,
+                        onClick = {
+                            val t = targetAccount
+                            if (t != null) accountViewModel.updateAccount(t.copy(smsSender = entry.key, smsEnabled = true))
+                        },
+                        onShowMessages = { openSender = entry.key },
                     )
                 }
                 item { OpenPhoneSmsRow(onClick = { openPhoneSmsApp(context) }) }
@@ -345,12 +387,14 @@ private fun SenderRow(
     sample: String,
     count: Int,
     banky: Boolean,
+    ownerName: String?,
     onClick: () -> Unit,
+    onShowMessages: () -> Unit,
 ) {
     // طرحِ Claude Design (۸ مهر): کاشیِ آیکون، حاشیه‌ی سبز برای فرستنده‌ی بانکی.
     AppCard(
         modifier = Modifier.fillMaxWidth(),
-        borderColor = if (banky) AppPrimary.copy(alpha = 0.45f) else null,
+        borderColor = if (ownerName != null) AppPrimary else if (banky) AppPrimary.copy(alpha = 0.45f) else null,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().pressScaleClickable(scale = 0.99f, onClick = onClick),
@@ -387,7 +431,23 @@ private fun SenderRow(
                         )
                     }
                     Spacer(Modifier.weight(1f))
-                    Text("${count.toString().faDigits()} پیام", color = AppMuted, fontSize = 11.sp)
+                    Text(
+                        "${count.toString().faDigits()} پیام ›",
+                        color = AppPrimaryDim,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.pressScaleClickable(onClick = onShowMessages).padding(vertical = 4.dp, horizontal = 4.dp),
+                    )
+                }
+                if (ownerName != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
+                        Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(14.dp))
+                        Text(
+                            "سرشماره‌ی $ownerName",
+                            color = AppPrimary, fontSize = 11.5.sp, fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
+                    }
                 }
                 Text(
                     sample.replace('\n', ' ').take(90),

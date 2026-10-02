@@ -48,6 +48,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -2929,6 +2931,9 @@ internal fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable
         SideEffect {
             dialogWindow?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
             dialogWindow?.setDimAmount(0f)
+            // ۱۰ مهر: ویندو زیرِ نوارِ ناوبریِ پایین نمی‌رفت و گوشه‌ی پایین‌راست لکه‌ی تیره‌ی
+            // پنلِ پشتش را نشان می‌داد. حالا لبه‌تالبه است و Box پایین خودش inset را رعایت می‌کند.
+            dialogWindow?.let { androidx.core.view.WindowCompat.setDecorFitsSystemWindows(it, false) }
         }
         // هیچ‌کدوم از این زیرصفحه‌ها (به‌جز LoginScreen) پس‌زمینه‌ی خودشون رو ست نمی‌کنن - قبلاً چون
         // تویِ همون پنلِ AppSurface پشتشون رندر می‌شدن مشکلی نبود؛ حالا که تو ویندویِ جدای خودشونن،
@@ -2942,7 +2947,15 @@ internal fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable
             visibleState = appear,
             enter = fadeIn(tween(Motion.FADE_IN_MS)) + slideInVertically(Motion.offset()) { it / 10 },
         ) {
-            Box(modifier = Modifier.fillMaxSize().background(AppSurface)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppSurface)
+                    .windowInsetsPadding(
+                        androidx.compose.foundation.layout.WindowInsets.systemBars
+                            .union(androidx.compose.foundation.layout.WindowInsets.ime),
+                    ),
+            ) {
                 content()
             }
         }
