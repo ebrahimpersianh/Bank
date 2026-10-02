@@ -48,6 +48,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Column
@@ -2952,8 +2955,7 @@ internal fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable
                     .fillMaxSize()
                     .background(AppSurface)
                     .windowInsetsPadding(
-                        androidx.compose.foundation.layout.WindowInsets.systemBars
-                            .union(androidx.compose.foundation.layout.WindowInsets.ime),
+                        WindowInsets.systemBars.union(WindowInsets.ime),
                     ),
             ) {
                 content()
