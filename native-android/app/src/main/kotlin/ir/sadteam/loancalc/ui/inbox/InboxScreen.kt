@@ -310,7 +310,7 @@ fun InboxScreen(onBack: () -> Unit, viewModel: InboxViewModel = hiltViewModel())
                     if (jibak.isEmpty()) EmptyLine("فعلاً اطلاعیه‌ی تازه‌ای نیست.")
                     val list = if (showAllJibak) jibak else jibak.take(2)
                     list.forEach { message ->
-                        AnnouncementCard(message) { if (isGift(message)) celebrate = message else viewModel.markRead(message.id) }
+                        AnnouncementCard(message) { if (isGift(message) && message.readAt == null) celebrate = message else viewModel.markRead(message.id) }
                     }
                     if (jibak.size > 2) {
                         SeeAllButton(
@@ -630,8 +630,11 @@ private fun SeeAllButton(label: String, green: Boolean, onClick: () -> Unit) {
 @Composable
 private fun AnnouncementCard(message: InboxMessageEntity, onClick: () -> Unit) {
     val kind = message.refId
-    val gift = isGift(message)
+    // هدیه‌ی گرفته‌شده (پنجره‌اش یک بار نشان داده شد) خاکستری می‌شود تا معلوم باشد استفاده شده.
+    val claimed = isGift(message) && message.readAt != null
+    val gift = isGift(message) && !claimed
     val (icon, tint, chip) = when {
+        claimed -> Triple(Icons.Filled.CardGiftcard, AppMuted, "✓ دریافت شد")
         gift -> Triple(Icons.Filled.CardGiftcard, ir.sadteam.loancalc.ui.theme.AppGoldInk, "هدیه · بزن")
         else -> when (kind) {
         "update" -> Triple(Icons.Filled.CardGiftcard, AppTxIn, "جدید")
