@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.ui.note
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
@@ -68,6 +69,7 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
     var year by rememberSaveable { mutableIntStateOf(today.y) }
     var month by rememberSaveable { mutableIntStateOf(today.m) }
     var day by rememberSaveable { mutableIntStateOf(today.d) }
+    var photoPath by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDelete by remember { mutableStateOf<NoteEntity?>(null) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val visibleNotes = remember(notes, searchQuery) {
@@ -139,6 +141,13 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                         colors = appFieldColors(),
                         modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                     )
+                    ir.sadteam.loancalc.ui.components.PhotoAttachmentCard(
+                        photoPath = photoPath,
+                        onPick = { uri -> viewModel.copyPhoto(uri) { p -> viewModel.discardPhoto(photoPath); photoPath = p } },
+                        onRemove = { viewModel.discardPhoto(photoPath); photoPath = null },
+                        withCard = false,
+                        modifier = Modifier.padding(top = 10.dp),
+                    )
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)) {
                         Icon(Icons.Filled.Event, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
                         Text("تاریخِ یادآوری", color = AppLabel, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp))
@@ -154,9 +163,10 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                         onClick = {
                             if (canSave) {
                                 val full = listOf(title.trim(), text.trim()).filter { it.isNotEmpty() }.joinToString("\n")
-                                viewModel.addNote(full, year, month, day, null)
+                                viewModel.addNote(full, year, month, day, null, photoPath)
                                 title = ""
                                 text = ""
+                                photoPath = null
                                 showAdd = false
                             }
                         },
@@ -165,7 +175,7 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                     ) { Text("ثبتِ یادداشت") }
                     // ⚠️ کارتِ «یادداشتِ جدید» راهِ بستن نداشت - «بی‌خیال» ماند، ولی کم‌رنگ‌تر.
                     TextButton(
-                        onClick = { title = ""; text = ""; showAdd = false },
+                        onClick = { viewModel.discardPhoto(photoPath); photoPath = null; title = ""; text = ""; showAdd = false },
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text("بی‌خیال", color = AppMuted, fontWeight = FontWeight.Bold) }
                 }
@@ -216,6 +226,15 @@ fun NoteScreen(onBack: () -> Unit, viewModel: NoteViewModel = hiltViewModel()) {
                             Text(noteTitle, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
                             if (noteBody.isNotEmpty()) {
                                 Text(noteBody, color = AppMuted, fontSize = 12.5.sp, lineHeight = 20.sp, maxLines = 3, modifier = Modifier.padding(top = 3.dp))
+                            }
+                            val photo = remember(note.photoPath) { note.photoPath?.let { java.io.File(it) }?.takeIf { it.exists() } }
+                            if (photo != null) {
+                                coil.compose.AsyncImage(
+                                    model = photo,
+                                    contentDescription = "عکسِ یادداشت",
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                    modifier = Modifier.padding(top = 8.dp).fillMaxWidth().height(140.dp).clip(RoundedCornerShape(AppRadius.icon)),
+                                )
                             }
                             // ⚠️ قبلاً `۱۴۰۵/۷/۹` بود: قالبِ پنجم، بی صفرِ ابتدایی و
                             // بیرونِ چهار قالبِ مصوب. `۹ مهر ۱۴۰۵` همان قالبی است که

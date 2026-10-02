@@ -12,7 +12,7 @@ import java.util.TimeZone
 class NoteRepository(private val noteDao: NoteDao) {
     fun observeNotes(): Flow<List<NoteEntity>> = noteDao.observeAll()
 
-    suspend fun addNote(text: String, year: Int, month: Int, day: Int, reminderDayOffsets: String?) {
+    suspend fun addNote(text: String, year: Int, month: Int, day: Int, reminderDayOffsets: String?, photoPath: String? = null) {
         noteDao.upsert(
             NoteEntity(
                 id = System.currentTimeMillis(),
@@ -22,6 +22,7 @@ class NoteRepository(private val noteDao: NoteDao) {
                 day = day,
                 reminderDayOffsets = reminderDayOffsets,
                 createdAt = isoNow(),
+                photoPath = photoPath,
             ),
         )
     }

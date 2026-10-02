@@ -13,4 +13,6 @@ data class NoteEntity(
     val day: Int,
     val reminderDayOffsets: String?,
     val createdAt: String,
+    /** عکسِ پیوستِ یادداشت (پوشه‌ی `attachments`، پس PhotoSync خودش می‌بَرَدش). مهاجرتِ ۳۴→۳۵. */
+    val photoPath: String? = null,
 )
