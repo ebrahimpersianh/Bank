@@ -1440,6 +1440,8 @@ private fun CompactProductCard(
                     fontSize = 9.5.sp,
                     lineHeight = 13.sp,
                     fontWeight = FontWeight.Bold,
+                    // همیشه جای دو خط: توضیحِ یک‌خطی کارت را از جفتش کوتاه‌تر می‌کرد.
+                    minLines = 2,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 1.dp),
