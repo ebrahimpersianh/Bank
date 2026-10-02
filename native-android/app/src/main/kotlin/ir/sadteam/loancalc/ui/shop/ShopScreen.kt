@@ -1465,7 +1465,8 @@ private fun CoinPrice(price: Int) {
         modifier = Modifier
             .clip(RoundedCornerShape(AppRadius.button))
             .background(AppGoldPillSoft)
-            .padding(horizontal = 8.dp, vertical = 5.dp),
+            .height(PILL_H)
+            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -1474,6 +1475,9 @@ private fun CoinPrice(price: Int) {
     }
 }
 
+/** ارتفاعِ ثابتِ همه‌ی برچسب‌های کارت (قیمت/استفاده/فعال) تا با فعال‌شدن اندازه‌ی کارت نپرد. */
+private val PILL_H = 28.dp
+
 /** قلمِ فعال: برچسبِ سبزِ پُر با تیک - نه شبیهِ دکمه (خواسته‌ی کاربر ۱۰ مهر: «فعال خوب معلوم نیست»). */
 @Composable
 private fun ActivePill() {
@@ -1481,7 +1485,8 @@ private fun ActivePill() {
         modifier = Modifier
             .clip(RoundedCornerShape(AppRadius.button))
             .background(AppPrimary)
-            .padding(horizontal = 11.dp, vertical = 7.dp),
+            .height(PILL_H)
+            .padding(horizontal = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -1493,30 +1498,26 @@ private fun ActivePill() {
 /** قلمِ خریده‌شده ولی غیرفعال: دکمه‌ی خطیِ «استفاده». */
 @Composable
 private fun UsePill() {
-    Text(
-        "استفاده",
-        color = AppPrimary,
-        fontSize = 9.5.sp,
-        fontWeight = FontWeight.Black,
+    Box(
         modifier = Modifier
             .clip(RoundedCornerShape(AppRadius.button))
             .border(1.5.dp, AppPrimary, RoundedCornerShape(AppRadius.button))
-            .padding(horizontal = 11.dp, vertical = 6.dp),
-    )
+            .height(PILL_H)
+            .padding(horizontal = 11.dp),
+        contentAlignment = Alignment.Center,
+    ) { Text("استفاده", color = AppPrimary, fontSize = 9.5.sp, fontWeight = FontWeight.Black) }
 }
 
 @Composable
 private fun Pill(text: String, bg: Color, ink: Color) {
-    Text(
-        text,
-        color = ink,
-        fontSize = 9.5.sp,
-        fontWeight = FontWeight.Black,
+    Box(
         modifier = Modifier
             .clip(RoundedCornerShape(AppRadius.button))
             .background(bg)
-            .padding(horizontal = 11.dp, vertical = 7.dp),
-    )
+            .height(PILL_H)
+            .padding(horizontal = 11.dp),
+        contentAlignment = Alignment.Center,
+    ) { Text(text, color = ink, fontSize = 9.5.sp, fontWeight = FontWeight.Black) }
 }
 
 
