@@ -402,13 +402,16 @@ class ApplicationTest {
         val put = client.put("/api/files/receipts/r_1.jpg") {
             header("Authorization", "Bearer $token")
             contentType(ContentType.Application.OctetStream)
-            setBody(byteArrayOf(1, 2, 3))
+            setBody(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 1))
         }
         assertEquals(HttpStatusCode.OK, put.status)
+        // فایلِ غیرِ عکس (مثلاً اسکریپت با نامِ .jpg) رد می‌شود.
+        val notImage = client.put("/api/files/receipts/x.jpg") { header("Authorization", "Bearer $token"); setBody("<?php".toByteArray()) }
+        assertEquals(HttpStatusCode.UnsupportedMediaType, notImage.status)
         val bad = client.put("/api/files/receipts/..%2Fx") { header("Authorization", "Bearer $token"); setBody(byteArrayOf(1)) }
         assertTrue(bad.status != HttpStatusCode.OK)
         assertTrue(client.get("/api/files") { header("Authorization", "Bearer $token") }.bodyAsText().contains("receipts/r_1.jpg"))
         val got = client.get("/api/files/receipts/r_1.jpg") { header("Authorization", "Bearer $token") }
-        assertEquals(3, got.readBytes().size)
+        assertEquals(4, got.readBytes().size)
     }
 }

@@ -11,6 +11,7 @@ import io.ktor.server.application.call
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
+import io.ktor.server.response.header
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.put
@@ -41,6 +42,13 @@ private fun userRoot(uid: Long): File =
 private fun safeFile(uid: Long, dir: String?, name: String?): File? {
     if (dir !in DIRS || name == null || !NAME.matches(name) || name.startsWith(".")) return null
     return File(File(userRoot(uid), dir!!), name)
+}
+
+private fun looksLikeImage(b: ByteArray): Boolean {
+    fun at(vararg sig: Int, off: Int = 0) = b.size >= off + sig.size && sig.indices.all { (b[off + it].toInt() and 0xFF) == sig[it] }
+    return at(0xFF, 0xD8, 0xFF) || // JPEG
+        at(0x89, 0x50, 0x4E, 0x47) || // PNG
+        (at(0x52, 0x49, 0x46, 0x46) && at(0x57, 0x45, 0x42, 0x50, off = 8)) // WEBP
 }
 
 fun Route.fileRoutes() {
@@ -78,6 +86,11 @@ fun Route.fileRoutes() {
                 call.respond(HttpStatusCode.PayloadTooLarge, mapOf("error" to "file_too_large"))
                 return@put
             }
+            // 🔒 فقط عکس: نوع از بایت‌های اولِ فایل (نه نام/Content-Type) - هر چیزِ دیگر رد.
+            if (!looksLikeImage(bytes)) {
+                call.respond(HttpStatusCode.UnsupportedMediaType, mapOf("error" to "not_image"))
+                return@put
+            }
             val used = userRoot(authed.uid).walkTopDown().filter { it.isFile }.sumOf { it.length() }
             if (used + bytes.size > MAX_USER_BYTES) {
                 call.respond(HttpStatusCode.InsufficientStorage, mapOf("error" to "quota"))
@@ -94,6 +107,7 @@ fun Route.fileRoutes() {
                 call.respond(HttpStatusCode.NotFound, mapOf("error" to "not_found"))
                 return@get
             }
+            call.response.header("X-Content-Type-Options", "nosniff")
             call.respondBytes(file.readBytes(), ContentType.Image.JPEG)
         }
     }
