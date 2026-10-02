@@ -827,16 +827,16 @@ private fun HomeHeader(
             // می‌آید که `notifyDailyExpenseReminder` استفاده می‌کند: «امروز تراکنشی ثبت
             // شده یا نه». امضایش را حدس نزدم.
             // جستجوی کلی (۸ مهر، خواسته‌ی کاربر) - اولین دکمه‌ی ردیف.
-            // ترتیبِ کاربر (۸ مهر): فروشگاه، زنگ، جستجو. تنظیمات و تیره/روشن در منوی آدمک.
+            // ترتیبِ کاربر (۱۰ مهر، مثلِ هدرِ وام): جستجو، زنگ، فروشگاه - هر سه با قابِ خطی. تنظیمات و تیره/روشن در منوی آدمک.
             val streakAtRisk = activeDays >= 7 && !todayHasEntry
             if (streakAtRisk) ActiveChip(days = activeDays, onClick = onOpenCoins)
-            PrivacyEyeButton(icon = androidx.compose.ui.graphics.vector.ImageVector.vectorResource(ir.sadteam.loancalc.R.drawable.ic_shop_bag), active = false, onClick = onOpenShop, contentDescription = "فروشگاه")
+            PrivacyEyeButton(icon = Icons.Filled.Search, active = false, onClick = onOpenSearch, contentDescription = "جستجو")
             InboxBell(
                 count = inboxCount,
                 hasUnreadNews = inboxUnreadNews > 0,
                 onClick = onOpenInbox,
             )
-            PrivacyEyeButton(icon = Icons.Filled.Search, active = false, onClick = onOpenSearch, contentDescription = "جستجو")
+            PrivacyEyeButton(icon = Icons.Filled.Storefront, active = false, onClick = onOpenShop, contentDescription = "فروشگاه")
         }
     }
     }
@@ -1938,12 +1938,21 @@ private fun InboxBell(count: Int, hasUnreadNews: Boolean, onClick: () -> Unit) {
             .pressScaleClickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            Icons.Filled.NotificationsNone,
-            contentDescription = "پیام‌ها",
-            tint = AppText,
-            modifier = Modifier.size(20.dp),
-        )
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(AppIconFrame)
+                .border(1.5.dp, AppLine, RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.NotificationsNone,
+                contentDescription = "پیام‌ها",
+                tint = AppMuted,
+                modifier = Modifier.size(16.dp),
+            )
+        }
         if (count > 0) {
             Box(
                 modifier = Modifier
