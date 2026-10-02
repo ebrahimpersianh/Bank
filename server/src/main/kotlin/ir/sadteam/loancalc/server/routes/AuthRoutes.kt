@@ -206,6 +206,9 @@ fun Route.authRoutes() {
             }
 
             Db.withConnection { conn -> conn.execute("DELETE FROM otps WHERE id = ?", otp.id) } // یک‌بارمصرف
+            Db.withConnection { conn ->
+                conn.queryOne("SELECT id FROM users WHERE phone = ?", phone) { it.getLong(1) }
+            }?.let { claimLaunchGift(it) }
 
             var user = Db.withConnection { conn ->
                 conn.queryOne(
@@ -275,6 +278,7 @@ fun Route.authRoutes() {
            فعال شده باشه، بدون نیاز به لاگین مجدد باخبر بشه. */
         get("/me") {
             val authed = call.requireAuth() ?: return@get
+            claimLaunchGift(authed.uid)
             val user = Db.withConnection { conn ->
                 conn.queryOne(
                     "SELECT id, phone, subscribed, subscribed_until, subscription_tier, created_at, trial_blocked, name, legacy_gift_granted FROM users WHERE id = ?", authed.uid

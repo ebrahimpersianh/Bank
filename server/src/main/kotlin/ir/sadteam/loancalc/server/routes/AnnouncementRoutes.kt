@@ -18,6 +18,8 @@ import ir.sadteam.loancalc.server.env
 import ir.sadteam.loancalc.server.executeCounting
 import ir.sadteam.loancalc.server.insertReturningId
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import ir.sadteam.loancalc.server.Log
 
 /*
  * «پیام‌های جیبک» - اطلاعیه‌های عمومی از طرفِ صاحبِ برنامه برای همه‌ی کاربرها.
@@ -218,22 +220,19 @@ fun Route.announcementRoutes() {
                     }
                 }
                 var paid = 0; var old = 0; var skipped = 0
-                val now = System.currentTimeMillis()
-                val addMs = body.days * 24L * 60 * 60 * 1000
                 for (r in rows) {
                     val uid = r[0] as Long
                     if ((r[2] as Int) != 0) { skipped++; continue }
-                    val isPaid = (r[3] as Int) != 0
-                    if (isPaid) paid++ else old++
+                    if ((r[3] as Int) != 0) paid++ else old++
                     if (body.dryRun) continue
-                    val current = (r[1] as String?)?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
-                    val expiry = java.time.Instant.ofEpochMilli(maxOf(current, now) + addMs).toString()
-                    conn.execute("UPDATE users SET subscribed_until = ?, launch_gift_granted = 1 WHERE id = ?", expiry, uid)
-                    conn.insertReturningId(
-                        "INSERT INTO announcements (title, body, kind, target_user_id) VALUES (?, ?, ?, ?)",
-                        (if (isPaid) body.paidTitle else body.oldTitle).trim(),
-                        (if (isPaid) body.paidMessage else body.oldMessage).trim(),
-                        "info", uid,
+                    // فقط «در انتظار» علامت می‌خورد؛ خودِ هدیه اولین باری داده می‌شود که این شخص
+                    // برنامه را باز کند (claimLaunchGift) - تا کسی که ماه‌ها بعد برمی‌گردد هم ۳۰ روزِ کامل بگیرد.
+                    conn.execute("UPDATE users SET launch_gift_granted = 2 WHERE id = ? AND launch_gift_granted = 0", uid)
+                }
+                if (!body.dryRun) {
+                    conn.execute(
+                        "INSERT OR REPLACE INTO app_config (key, json) VALUES ('launch_gift', ?)",
+                        Json.encodeToString(LaunchGiftBody.serializer(), body),
                     )
                 }
                 LaunchGiftResponse(dryRun = body.dryRun, paid = paid, old = old, skipped = skipped)
@@ -252,6 +251,39 @@ fun Route.announcementRoutes() {
                 conn.executeCounting("UPDATE announcements SET active = 0 WHERE id = ?", body.id)
             }
             call.respond(OkResponse(n > 0))
+        }
+    }
+}
+
+/**
+ * هدیه‌ی انتشار برای کسی که «در انتظار» است (launch_gift_granted = 2): N روز از max(الان، انقضای فعلی)
+ * + پیامِ تشکرِ گروهِ خودش. ضدِتکرار: شرطِ `= 2` در همان UPDATE، پس دو درخواستِ هم‌زمان دو بار نمی‌دهند.
+ */
+internal fun claimLaunchGift(uid: Long) {
+    runCatching {
+        Db.withConnection { conn ->
+            val cfgJson = conn.queryOne("SELECT json FROM app_config WHERE key = 'launch_gift'") { it.getString(1) } ?: return@withConnection
+            val cfg = Json { ignoreUnknownKeys = true }.decodeFromString(LaunchGiftBody.serializer(), cfgJson)
+            val row = conn.queryOne(
+                "SELECT u.subscribed_until, (u.subscription_tier IS NOT NULL OR EXISTS " +
+                    "(SELECT 1 FROM subscription_purchases p WHERE p.user_id = u.id)) FROM users u " +
+                    "WHERE u.id = ? AND u.launch_gift_granted = 2",
+                uid,
+            ) { it.getString(1) to (it.getInt(2) != 0) } ?: return@withConnection
+            val current = row.first?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0L
+            val expiry = java.time.Instant.ofEpochMilli(maxOf(current, System.currentTimeMillis()) + cfg.days * 24L * 60 * 60 * 1000).toString()
+            val n = conn.executeCounting(
+                "UPDATE users SET subscribed_until = ?, launch_gift_granted = 1 WHERE id = ? AND launch_gift_granted = 2", expiry, uid,
+            )
+            if (n == 0) return@withConnection
+            val isPaid = row.second
+            conn.insertReturningId(
+                "INSERT INTO announcements (title, body, kind, target_user_id) VALUES (?, ?, ?, ?)",
+                (if (isPaid) cfg.paidTitle else cfg.oldTitle).trim(),
+                (if (isPaid) cfg.paidMessage else cfg.oldMessage).trim(),
+                "info", uid,
+            )
+            Log.info("launch_gift_claimed", "هدیه‌ی انتشار داده شد", "uid" to uid, "paid" to isPaid)
         }
     }
 }
