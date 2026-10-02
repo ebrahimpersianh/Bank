@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Close
 import ir.sadteam.loancalc.ui.components.AppButtonVariant
 import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Savings
@@ -1042,6 +1043,7 @@ private fun ShopRow(
         else -> null
     }
     AppCard(
+        borderColor = if (state == RowState.ACTIVE) AppPrimary else null,
         modifier = Modifier
             .alpha(if (dimmed) 0.62f else 1f)
             .then(if (tap != null) Modifier.pressScaleClickable(scale = 0.99f, onClick = tap) else Modifier),
@@ -1064,8 +1066,8 @@ private fun ShopRow(
             }
             Spacer(modifier = Modifier.width(9.dp))
             when (state) {
-                RowState.ACTIVE -> Pill("فعال است", AppPrimaryPill, AppPrimaryInk)
-                RowState.OWNED -> Pill("فعال‌سازی", AppPrimaryPill, AppPrimaryInk)
+                RowState.ACTIVE -> ActivePill()
+                RowState.OWNED -> UsePill()
                 // ردیفی که هنوز مقصد ندارد پنهان **نمی‌شود**: هدفی که دیده نشود،
                 // جمع‌کردنِ سکه را بی‌معنی می‌کند. ولی خریدنی هم نیست.
                 RowState.SOON -> Pill("به‌زودی", AppIconFrame, AppMuted)
@@ -1331,6 +1333,7 @@ private fun ProductCard(
     }
     AppCard(
         contentPadding = 10.dp,
+        borderColor = if (state == RowState.ACTIVE) AppPrimary else null,
         modifier = Modifier
             .fillMaxWidth()
             .then(if (tap != null) Modifier.pressScaleClickable(scale = 0.98f, onClick = tap) else Modifier),
@@ -1366,8 +1369,8 @@ private fun ProductCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             when (state) {
-                RowState.ACTIVE -> Pill("فعال است", AppPrimaryPill, AppPrimaryInk)
-                RowState.OWNED -> Pill("فعال‌سازی", AppPrimaryPill, AppPrimaryInk)
+                RowState.ACTIVE -> ActivePill()
+                RowState.OWNED -> UsePill()
                 RowState.SOON -> Pill("به‌زودی", AppIconFrame, AppMuted)
                 RowState.BADGE_LOCKED -> Pill("نشان لازم است", AppIconFrame, AppMuted)
                 // قیمت **یکدست** است: سکه و عدد کنارِ هم در یک قرص، نه دو جای کارت.
@@ -1413,6 +1416,7 @@ private fun CompactProductCard(
     }
     AppCard(
         contentPadding = 10.dp,
+        borderColor = if (state == RowState.ACTIVE) AppPrimary else null,
         modifier = Modifier
             .fillMaxWidth()
             .alpha(if (state == RowState.BADGE_LOCKED || state == RowState.SOON) 0.62f else 1f)
@@ -1442,8 +1446,8 @@ private fun CompactProductCard(
                 )
                 Box(modifier = Modifier.padding(top = 7.dp)) {
                     when (state) {
-                        RowState.ACTIVE -> Pill("فعال است", AppPrimaryPill, AppPrimaryInk)
-                        RowState.OWNED -> Pill("فعال‌سازی", AppPrimaryPill, AppPrimaryInk)
+                        RowState.ACTIVE -> ActivePill()
+                        RowState.OWNED -> UsePill()
                         RowState.SOON -> Pill("به‌زودی", AppIconFrame, AppMuted)
                         RowState.BADGE_LOCKED -> Pill("نشان لازم است", AppIconFrame, AppMuted)
                         else -> CoinPrice(item.price)
@@ -1468,6 +1472,37 @@ private fun CoinPrice(price: Int) {
         CoinIcon(size = 11.dp)
         Text(toFa(price), color = AppGoldInk, fontSize = 10.sp, fontWeight = FontWeight.Black)
     }
+}
+
+/** قلمِ فعال: برچسبِ سبزِ پُر با تیک - نه شبیهِ دکمه (خواسته‌ی کاربر ۱۰ مهر: «فعال خوب معلوم نیست»). */
+@Composable
+private fun ActivePill() {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(AppRadius.button))
+            .background(AppPrimary)
+            .padding(horizontal = 11.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+        Text("فعال", color = Color.White, fontSize = 9.5.sp, fontWeight = FontWeight.Black)
+    }
+}
+
+/** قلمِ خریده‌شده ولی غیرفعال: دکمه‌ی خطیِ «استفاده». */
+@Composable
+private fun UsePill() {
+    Text(
+        "استفاده",
+        color = AppPrimary,
+        fontSize = 9.5.sp,
+        fontWeight = FontWeight.Black,
+        modifier = Modifier
+            .clip(RoundedCornerShape(AppRadius.button))
+            .border(1.5.dp, AppPrimary, RoundedCornerShape(AppRadius.button))
+            .padding(horizontal = 11.dp, vertical = 6.dp),
+    )
 }
 
 @Composable
@@ -1760,7 +1795,8 @@ private fun BackdropPreview(backdrop: LiveBackground?) {
         modifier = Modifier
             .size(38.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(AppSurface2),
+            // زمینه‌ی تیره‌ی ثابت: پیش‌نمایش همیشه حالتِ تیره را می‌کشد و روی زمینه‌ی روشن محو بود.
+            .background(Color(0xFF14202E)),
         contentAlignment = Alignment.Center,
     ) {
         if (backdrop != null) {
