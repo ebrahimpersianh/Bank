@@ -140,6 +140,7 @@ fun NewTransactionSheet(
     accountViewModel: AccountViewModel = hiltViewModel(),
     extrasViewModel: ir.sadteam.loancalc.ui.extras.ExtrasViewModel = hiltViewModel(),
 ) {
+    ir.sadteam.loancalc.ui.components.GuidePauseWhileShown()
     val accounts by accountViewModel.accounts.collectAsState()
     val monthTxCount = accountViewModel.transactions.collectAsState().value.let { all ->
         val today = remember { ir.sadteam.loancalc.core.JalaliCalendar.today() }

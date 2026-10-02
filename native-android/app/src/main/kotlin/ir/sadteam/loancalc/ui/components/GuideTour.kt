@@ -66,6 +66,19 @@ import ir.sadteam.loancalc.ui.theme.hardShadow
  */
 object Guide {
     val bounds = mutableStateMapOf<String, Rect>()
+
+    /** تعدادِ فرم‌های تمام‌صفحه‌ی باز (افزودنِ حساب، تراکنشِ تازه…). وقتی بیشتر از صفر است راهنما
+     *  کنار می‌رود تا نه روی فرم کادرِ کهنه بیفتد، نه جلوی پر کردنش را بگیرد (۱۰ مهر). */
+    val formsOpen = androidx.compose.runtime.mutableIntStateOf(0)
+}
+
+/** داخلِ هر فرمِ تمام‌صفحه صدا بزن تا راهنما تا بسته شدنِ فرم پنهان بماند. */
+@Composable
+fun GuidePauseWhileShown() {
+    DisposableEffect(Unit) {
+        Guide.formsOpen.intValue++
+        onDispose { Guide.formsOpen.intValue-- }
+    }
 }
 
 /** این عنصر را برای راهنما قابلِ نشانه‌گیری می‌کند؛ وقتی از صفحه رفت، جایش هم پاک می‌شود. */
@@ -96,6 +109,7 @@ fun GuideOverlay(
     onNext: () -> Unit,
     onClose: () -> Unit,
 ) {
+    if (Guide.formsOpen.intValue > 0) return
     val rect = step.target?.let { Guide.bounds[it] }
     val density = LocalDensity.current
     val primary = AppPrimary

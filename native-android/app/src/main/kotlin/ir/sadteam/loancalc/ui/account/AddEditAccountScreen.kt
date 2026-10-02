@@ -71,6 +71,7 @@ fun AddEditAccountScreen(
     onCancel: () -> Unit,
     viewModel: AccountViewModel,
 ) {
+    ir.sadteam.loancalc.ui.components.GuidePauseWhileShown()
     // نوعِ حساب‌کتاب (خواسته‌ی صریحِ کاربر طبقِ اپِ مرجع): «کارت بانکی» یا «منبع دیگر» (نقدی،
     // کیفِ پول، کارتِ اعتباری…). حساب‌های قدیمی همه bank ـن، پس فرمشون دقیقاً مثلِ قبل باز می‌شه.
     var accountType by remember { mutableStateOf(existing?.type ?: ACCOUNT_TYPE_BANK) }
