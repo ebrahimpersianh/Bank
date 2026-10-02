@@ -60,6 +60,8 @@ class AuthRepository(
                 result.subscribedUntil,
                 result.subscriptionTier,
             )
+            // شماره‌ی کاربری/نام از `/me` می‌آید؛ بی این، تا بازکردنِ دوباره‌ی اپ خالی می‌ماند.
+            refreshSubscriptionStatus()
             AuthResult.Success
         } catch (e: HttpException) {
             AuthResult.Error(errorCodeFrom(e.response()?.errorBody()?.string()))
