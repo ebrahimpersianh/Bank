@@ -806,7 +806,7 @@ fun NewTransactionSheet(
                             )
                         }
                         showSaveTemplate = false
-                    }) { Text("ذخیره") }
+                    }, enabled = tName.isNotBlank()) { Text("ذخیره") }
                 },
                 dismissButton = { androidx.compose.material3.TextButton(onClick = { showSaveTemplate = false }) { Text("انصراف") } },
             )

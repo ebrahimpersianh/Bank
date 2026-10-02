@@ -736,6 +736,7 @@ private fun CounterpartyDetail(
                                 showAddDebt = false
                             }
                         },
+                        enabled = (amountText.toDoubleOrNull() ?: 0.0) > 0,
                         modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                     ) { Text("ثبت") }
                 }
@@ -885,6 +886,7 @@ private fun EditCounterpartyDialog(
                         onSave(counterparty.copy(name = name.trim(), phone = phone.trim().takeIf { it.isNotBlank() }, avatarShape = shape.name))
                     }
                 },
+                enabled = name.isNotBlank(),
             ) { Text("ذخیره") }
         },
         dismissButton = {

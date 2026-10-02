@@ -660,7 +660,7 @@ fun LoanDetailScreen(
                         }
                     }
                     editingRowM = null
-                }) { Text("ذخیره") }
+                }, enabled = (editAmountText.toLongOrNull() ?: 0L) > 0) { Text("ذخیره") }
             },
             dismissButton = {
                 TextButton(onClick = { editingRowM = null }) { Text("انصراف") }

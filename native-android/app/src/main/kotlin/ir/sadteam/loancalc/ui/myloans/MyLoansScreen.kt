@@ -1691,6 +1691,7 @@ private fun DashboardSummary(
                                     showAddIncome = false
                                 }
                             },
+                            enabled = label.isNotBlank() && (amountText.toDoubleOrNull() ?: 0.0) > 0,
                             modifier = Modifier.weight(1f),
                         ) {
                             Text("افزودن")

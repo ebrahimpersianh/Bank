@@ -1042,6 +1042,7 @@ private fun BudgetSection(
                                             if (cap > 0) viewModel.setBudget(cat.name, cap, budget?.id)
                                             editingCategory = null
                                         },
+                                        enabled = (capText.toDoubleOrNull() ?: 0.0) > 0,
                                         modifier = Modifier.weight(1f),
                                     ) { Text("ذخیره", fontSize = 12.sp) }
                                 }
@@ -1151,7 +1152,7 @@ private fun AddBudgetDialog(
                 TextButton(onClick = {
                     val capVal = (capText.toDoubleOrNull() ?: 0.0) * 10
                     if (capVal > 0) onSave(cat, capVal)
-                }) { Text("ذخیره") }
+                }, enabled = (capText.toDoubleOrNull() ?: 0.0) > 0) { Text("ذخیره") }
             }
         },
         dismissButton = {
