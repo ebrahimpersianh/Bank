@@ -32,6 +32,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MyLoansViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
+    private val authRepository: ir.sadteam.loancalc.data.AuthRepository,
     private val authPrefs: AuthPrefs,
     private val incomeRepository: IncomeRepository,
     private val attachmentStorage: AttachmentStorage,
@@ -516,6 +517,7 @@ class MyLoansViewModel @Inject constructor(
     fun syncNow(onDone: () -> Unit) {
         viewModelScope.launch {
             syncIfLoggedIn()
+            runCatching { authRepository.refreshSubscriptionStatus() }
             onDone()
         }
     }

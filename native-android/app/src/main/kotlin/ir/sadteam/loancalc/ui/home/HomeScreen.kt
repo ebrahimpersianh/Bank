@@ -186,6 +186,7 @@ import java.util.TimeZone
  * **رفتارهایی که از نسخه‌ی قبل حفظ شدن**: حالتِ خصوصی (`PrivacyCrossfade`)، شمارشِ بالارونده‌ی
  * عدد، بازکردنِ شیتِ تراکنشِ جدید با دکمه‌ی +، و تپ رو کارتِ قهرمان → تبِ دارایی.
  */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigateToRoute: (String) -> Unit,
@@ -335,6 +336,16 @@ fun HomeScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // کشیدنِ صفحه به پایین = تازه‌سازی از سرور (اشتراک، شماره‌ی کاربری، پیام‌ها) - خواسته‌ی کاربر ۱۰ مهر.
+        var homeRefreshing by remember { mutableStateOf(false) }
+        androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+            isRefreshing = homeRefreshing,
+            onRefresh = {
+                homeRefreshing = true
+                authViewModel.refreshStatus { homeRefreshing = false }
+            },
+            modifier = Modifier.fillMaxSize(),
+        ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             // حاشیه‌ی صفحه ۱۶ طبقِ بندِ ۳ سیستمِ طراحی، فاصله‌ی بینِ کارت‌ها ۱۳ طبقِ خودِ فریم.
@@ -571,6 +582,7 @@ fun HomeScreen(
             }
             // «مرورِ هفته» حذف شد (۸ مهر): همان عددِ کارتِ سبزِ بالا بود؛ درصدِ تغییرش حالا
             // برچسبِ کوچکِ همان کارت است.
+        }
         }
 
         // فریمِ `15b` دکمه‌ی شناور نداره: تو حالتِ خالی اقدامِ اصلی همون دکمه‌ی تمام‌عرضِ

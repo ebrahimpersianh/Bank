@@ -1039,26 +1039,19 @@ fun MyLoansScreen(
         androidx.compose.animation.AnimatedVisibility(
             // FABِ ماشین‌حساب رفت (طرحِ ChatGPT): محاسبه‌گر در تبِ بالا هست. قاب می‌ماند
             // چون موقعیتش برای تورِ اپ گزارش می‌شود.
-            visible = false,
+            // ۱۰ مهر (خواسته‌ی کاربر): «+»ِ افزودنِ وام، هم‌شکلِ «+»ِ خانه. با فهرستِ خالی
+            // دکمه‌ی «افزودنِ وام»ِ حالتِ خالی هست، پس آن‌جا نمی‌آید.
+            visible = screenKey == "list" && loans.isNotEmpty(),
             enter = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) + fadeIn(tween(150)),
             exit = scaleOut(tween(120)) + fadeOut(tween(120)),
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                // ۱۶dp از لبه، مثلِ FABِ خانه/گزارش/دارایی.
-                .padding(16.dp),
+                .align(Alignment.BottomStart)
+                .padding(start = 16.dp, bottom = 16.dp),
         ) {
             AppFab(
                 // مقصدش عوض شد: محاسبه‌گر، نه فرمِ دستی (خواسته‌ی صریحِ کاربر، ۲۶ شهریور).
-                onClick = { onOpenCalculator() },
-                // 🚨 **نماد دیگر «+»ِ خالی نیست** (جوابِ طراح، دورِ ۸): «+» وعده‌ی افزودن
-                // می‌دهد و صفحه‌ی محاسبه باز می‌کند، پس کاربری که وامش را از قبل ثبت کرده
-                // انتظارِ فرم دارد و ماشین‌حساب می‌بیند. ولی ماشین‌حسابِ تنها هم بد است، چون
-                // FAB در هر پنج تبِ دیگر جای «اضافه کردن» است و یک‌دستی می‌شکند.
-                // پس ماشین‌حساب با یک «+»ِ ریز روی گوشه: مقصد را می‌گوید (حساب می‌کنی) و
-                // کارِ نهایی را هم (چیزی اضافه می‌شود).
-                icon = Icons.Filled.Calculate,
-                plusBadge = true,
-                contentDescription = "محاسبه‌ی قسط و سود",
+                onClick = { onAddLoanClick() },
+                contentDescription = "افزودنِ وام",
                 modifier = Modifier.onGloballyPositioned {
                     onManualAddFabPositioned(it.boundsInRoot())
                 },

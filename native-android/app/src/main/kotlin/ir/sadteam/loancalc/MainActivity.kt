@@ -789,6 +789,15 @@ private fun LoanCalcApp(
     // نمی‌کرد. اجرای واقعیِ محدودیت (۱ وام رایگان) همیشه سمت سرور (routes/loans.js) دفاعی چک می‌شه؛
     // این فقط UI رو هم‌زمان با واقعیت نگه می‌داره.
     LaunchedEffect(Unit) { authViewModel.refreshStatus() }
+    // برگشت به برنامه (ON_RESUME) هم تازه می‌کند: هدیه/خریدِ تازه بی بستن و بازکردنِ برنامه دیده شود.
+    val resumeOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(resumeOwner) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) authViewModel.refreshStatus()
+        }
+        resumeOwner.lifecycle.addObserver(obs)
+        onDispose { resumeOwner.lifecycle.removeObserver(obs) }
+    }
 
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()

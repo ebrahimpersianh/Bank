@@ -119,8 +119,8 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun refreshStatus() {
-        viewModelScope.launch { authRepository.refreshSubscriptionStatus() }
+    fun refreshStatus(onDone: () -> Unit = {}) {
+        viewModelScope.launch { authRepository.refreshSubscriptionStatus(); onDone() }
     }
 
     /** گیتِ مسیرِ اولین ورود ([ir.sadteam.loancalc.ui.onboarding.OnboardingFlow]) تو AppRoot: تا
