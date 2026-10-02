@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -96,26 +97,22 @@ fun AdminHubScreen(
         TodayHero(digest) { page = "digest" }
         AdminAlerts(digest?.notes.orEmpty().map { digestNoteIcon(it) to digestNoteText(it) }) { page = if (digest?.notes.orEmpty().any { it.startsWith("open_support:") }) "support" else "digest" }
 
-        AdminGroupLabel("دیدن")
-        AppCard(contentPadding = 2.dp) {
-            AdminListRow(Icons.Filled.BarChart, "گزارشِ برنامه", "کاربران، ماندگاری، زمان، سلامت", AppInfoPill, AppInfo, divider = false) { page = "stats" }
-            AdminListRow(Icons.Filled.Payments, "پول و فروش", "تبدیل، تمدید، A/B", AppGoldPillSoft, AppGoldInkSoft, divider = true) { page = "money" }
-            AdminListRow(Icons.Filled.PersonSearch, "تاریخچه‌ی کاربر", "با شماره‌ی کاربری (Uid)", AppPrimaryPill, AppPrimaryInk, divider = true) { page = "user" }
-        }
-
-        AdminGroupLabel("کار کردن")
+        // طرحِ ChatGPT (۱۰ مهر): شش کاشیِ رنگی، بعد ردیف‌های فروشگاه/تنظیمات/پیام‌ها.
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HubTile(Icons.Filled.SupportAgent, "پیام‌های کاربران", if (open > 0) "${toFa(open)} بی‌جواب" else "همه جواب گرفته‌اند", AppPrimaryPill, AppPrimaryInk, Modifier.weight(1f), badge = open) { page = "support" }
-            HubTile(Icons.Filled.Campaign, "پیامِ گروهی", "به یک گروهِ خاص", AppInfoPill, AppInfo, Modifier.weight(1f)) { page = "broadcast" }
+            ColorTile(Icons.Filled.BarChart, "گزارشِ برنامه", "کاربران، آمار، سلامت", Color(0xFF16A34A), Modifier.weight(1f)) { page = "stats" }
+            ColorTile(Icons.Filled.Payments, "پول و فروش", "تمدید، A/B", Color(0xFFCA8A04), Modifier.weight(1f)) { page = "money" }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HubTile(Icons.Filled.WorkspacePremium, "هدیه‌ی اشتراک", "روز به یک Uid", AppGoldPillSoft, AppGoldInkSoft, Modifier.weight(1f)) { gift = "sub" }
-            HubTile(Icons.Filled.MonetizationOn, "هدیه‌ی سکه", "سکه به یک Uid", AppPurplePill, AppPurple, Modifier.weight(1f)) { gift = "coins" }
+            ColorTile(Icons.Filled.PersonSearch, "تاریخچه‌ی کاربر", "با شماره‌ی کاربری (Uid)", Color(0xFF7C3AED), Modifier.weight(1f)) { page = "user" }
+            ColorTile(Icons.Filled.Campaign, "پیامِ گروهی", "به یک گروهِ خاص", Color(0xFF2563EB), Modifier.weight(1f)) { page = "broadcast" }
         }
-        AppCard(contentPadding = 2.dp) {
-            AdminListRow(Icons.Filled.Storefront, "مدیریتِ فروشگاه", "قیمت، پنهان کردن، تمِ تازه، تخفیف", AppPrimaryPill, AppPrimaryInk, divider = false) { page = "shop" }
-            AdminListRow(Icons.Filled.Tune, "تنظیماتِ از راهِ دور", "رایگان، پیامکِ بانک، تخفیف، نسخه، نظرسنجی…", AppInfoPill, AppInfo, divider = true) { page = "remote" }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            ColorTile(Icons.Filled.MonetizationOn, "هدیه‌ی سکه", "سکه به یک کاربر", Color(0xFFC026D3), Modifier.weight(1f)) { gift = "coins" }
+            ColorTile(Icons.Filled.WorkspacePremium, "هدیه‌ی اشتراک", "روز به یک کاربر", Color(0xFFD97706), Modifier.weight(1f)) { gift = "sub" }
         }
+        HubRow(Icons.Filled.SupportAgent, "پیام‌های کاربران", if (open > 0) "${toFa(open)} بی‌جواب" else "همه جواب گرفته‌اند", Color(0xFF0EA5E9), badge = open) { page = "support" }
+        HubRow(Icons.Filled.Storefront, "مدیریتِ فروشگاه", "قیمت، پنهان کردن، تمِ تازه، تخفیف", Color(0xFF16A34A)) { page = "shop" }
+        HubRow(Icons.Filled.Tune, "تنظیماتِ از راهِ دور", "رایگان، پیامکِ بانک، نسخه، نظرسنجی…", Color(0xFF2563EB)) { page = "remote" }
 
         val recent = items.orEmpty().take(4)
         if (recent.isNotEmpty()) {
@@ -174,6 +171,47 @@ private fun TodayHero(d: ir.sadteam.loancalc.data.network.AdminDigestResponse?, 
                     modifier = Modifier.weight(if (i == 2) 1.35f else 1f),
                 )
             }
+        }
+    }
+}
+
+/** کاشیِ رنگیِ هاب (طرحِ ChatGPT): زمینه‌ی گرادیانِ همان رنگ، آیکونِ بزرگ، حاشیه‌ی رنگی. */
+@Composable
+private fun ColorTile(icon: ImageVector, title: String, subtitle: String, color: Color, modifier: Modifier, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(AppRadius.card)
+    Column(
+        modifier
+            .heightIn(min = 112.dp)
+            .clip(shape)
+            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(color.copy(alpha = 0.55f), color.copy(alpha = 0.18f))))
+            .border(1.5.dp, color.copy(alpha = 0.7f), shape)
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(icon, null, tint = Color.White, modifier = Modifier.size(34.dp))
+        Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 8.dp))
+        Text(subtitle, color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** ردیفِ هاب با کاشیِ آیکونِ رنگی. */
+@Composable
+private fun HubRow(icon: ImageVector, title: String, subtitle: String, color: Color, badge: Int = 0, onClick: () -> Unit) {
+    AppCard(modifier = Modifier.clickable(onClick = onClick), contentPadding = 10.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(46.dp).clip(RoundedCornerShape(AppRadius.icon)).background(color.copy(alpha = 0.85f)), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = Color.White, modifier = Modifier.size(24.dp))
+            }
+            Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                Text(title, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                Text(subtitle, color = AppMuted, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            if (badge > 0) Text(
+                toFa(badge), color = Color.White, fontSize = 11.5.sp, fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(end = 6.dp).clip(RoundedCornerShape(999.dp)).background(AppDanger).padding(horizontal = 7.dp, vertical = 2.dp),
+            )
+            Icon(Icons.Filled.ChevronLeft, null, tint = AppMuted, modifier = Modifier.size(20.dp))
         }
     }
 }

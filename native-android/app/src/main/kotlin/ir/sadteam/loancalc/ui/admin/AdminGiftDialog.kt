@@ -170,7 +170,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                     }
                 },
                 enabled = !sending && user.isNotBlank() && n > 0,
-            ) { Text(if (sending) "در حالِ فرستادن…" else "بفرست") }
+            ) { Text(if (sending) "در حالِ فرستادن…" else if (coinsMode) "اهدای سکه 🎁" else "اهدای اشتراک 🎁") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("بستن") } },
     )
