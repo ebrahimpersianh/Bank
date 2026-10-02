@@ -208,6 +208,17 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
+    /**
+     * «وام‌گیرنده» هم داخلِ `dataJson` است هم به‌صورتِ لینک (`counterpartyId`) به فهرستِ طلب‌وبدهی؛
+     * با ویرایشِ نام، لینک هم باید با آن عوض شود وگرنه وام به طرف‌حسابِ قبلی وصل می‌ماند.
+     * وام را **تازه از دیتابیس** می‌خوانیم، چون شیءِ `loan` در دستِ صفحه نسخه‌ی قبل از ویرایش است.
+     */
+    private suspend fun relinkCounterparty(loanId: Long, borrower: String) {
+        val fresh = loanRepository.getLoans().firstOrNull { it.id == loanId } ?: return
+        val cp = debtRepository.guessOrCreateCounterparty(borrower.takeIf { it != "—" && it.isNotBlank() })
+        if (fresh.counterpartyId != cp) loanRepository.setLoanCounterparty(fresh, cp)
+    }
+
     /** ویرایشِ مشخصاتِ *غیرمالیِ* هر نوع وامی (اسم/بانک/وام‌گیرنده/تاریخ) - رجوع کن به
      * [LoanRepository.updateLoanMeta]. */
     fun updateLoanMeta(
@@ -220,6 +231,7 @@ class MyLoansViewModel @Inject constructor(
         category: String? = null,
     ) {
         viewModelScope.launch {
+            val borrowerChanged = loanRepository.getBorrower(loan) != borrower
             loanRepository.updateLoanMeta(
                 loan = loan,
                 name = name,
@@ -228,6 +240,7 @@ class MyLoansViewModel @Inject constructor(
                 startDate = mapOf("y" to startDate.y, "m" to startDate.m, "d" to startDate.d),
                 category = category,
             )
+            if (borrowerChanged) relinkCounterparty(loan.id, borrower)
             syncIfLoggedIn()
             onSaved()
         }
@@ -250,6 +263,7 @@ class MyLoansViewModel @Inject constructor(
         category: String? = null,
     ) {
         viewModelScope.launch {
+            val borrowerChanged = loanRepository.getBorrower(loan) != borrower
             loanRepository.updateComputedLoanAmount(
                 loan = loan,
                 name = name,
@@ -260,6 +274,7 @@ class MyLoansViewModel @Inject constructor(
                 startDate = mapOf("y" to startDate.y, "m" to startDate.m, "d" to startDate.d),
                 category = category,
             )
+            if (borrowerChanged) relinkCounterparty(loan.id, borrower)
             syncIfLoggedIn()
             onSaved()
         }
@@ -280,7 +295,11 @@ class MyLoansViewModel @Inject constructor(
                 principal = r.principal,
                 ratePct = outcome.ratePct,
                 n = outcome.n,
-                method = if (outcome.method == LoanMethod.QARZ) "qarz" else "standard",
+                method = when (outcome.method) {
+                    LoanMethod.QARZ -> "qarz"
+                    LoanMethod.FLAT -> "flat"
+                    else -> "standard"
+                },
                 graceMonths = r.graceMonths,
                 installment = r.installment,
                 totalPaid = r.totalPaid,
