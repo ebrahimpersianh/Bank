@@ -354,22 +354,21 @@ internal fun AdminSubSection(title: String, summary: String? = null, gold: Boole
 /** آیکون و رنگِ کاشیِ هر بخش از روی عنوانش (طرحِ ChatGPT، ۱۰ مهر). */
 private fun sectionIcon(title: String): Pair<androidx.compose.ui.graphics.vector.ImageVector, androidx.compose.ui.graphics.Color> {
     val I = Icons.Filled
-    val C = androidx.compose.ui.graphics.Color
     return when {
-        "پیامک" in title -> I.Sms to C(0xFF16A34A)
-        "آپدیت" in title || "نسخه‌ی تازه" in title -> I.SystemUpdate to C(0xFF0D9488)
-        "اشتراک" in title -> I.WorkspacePremium to C(0xFFD97706)
-        "سکه" in title -> I.MonetizationOn to C(0xFFCA8A04)
-        "نظرسنجی" in title -> I.Poll to C(0xFF7C3AED)
-        "دسته" in title -> I.Category to C(0xFF2563EB)
-        "کارت" in title -> I.CreditCard to C(0xFF0EA5E9)
-        "مجانی" in title || "رایگان" in title -> I.CardGiftcard to C(0xFFC026D3)
-        "خاموش" in title -> I.PowerSettingsNew to C(0xFFDC2626)
-        "اعلان" in title -> I.Notifications to C(0xFFEA580C)
-        "پرسش" in title -> I.HelpOutline to C(0xFF4F46E5)
-        "تم" in title || "پس‌زمینه" in title -> I.Palette to C(0xFF9333EA)
-        "تخفیف" in title || "ویژه" in title -> I.LocalOffer to C(0xFFE11D48)
-        else -> I.Tune to C(0xFF475569)
+        "پیامک" in title -> I.Sms to androidx.compose.ui.graphics.Color(0xFF16A34A)
+        "آپدیت" in title || "نسخه‌ی تازه" in title -> I.SystemUpdate to androidx.compose.ui.graphics.Color(0xFF0D9488)
+        "اشتراک" in title -> I.WorkspacePremium to androidx.compose.ui.graphics.Color(0xFFD97706)
+        "سکه" in title -> I.MonetizationOn to androidx.compose.ui.graphics.Color(0xFFCA8A04)
+        "نظرسنجی" in title -> I.Poll to androidx.compose.ui.graphics.Color(0xFF7C3AED)
+        "دسته" in title -> I.Category to androidx.compose.ui.graphics.Color(0xFF2563EB)
+        "کارت" in title -> I.CreditCard to androidx.compose.ui.graphics.Color(0xFF0EA5E9)
+        "مجانی" in title || "رایگان" in title -> I.CardGiftcard to androidx.compose.ui.graphics.Color(0xFFC026D3)
+        "خاموش" in title -> I.PowerSettingsNew to androidx.compose.ui.graphics.Color(0xFFDC2626)
+        "اعلان" in title -> I.Notifications to androidx.compose.ui.graphics.Color(0xFFEA580C)
+        "پرسش" in title -> I.HelpOutline to androidx.compose.ui.graphics.Color(0xFF4F46E5)
+        "تم" in title || "پس‌زمینه" in title -> I.Palette to androidx.compose.ui.graphics.Color(0xFF9333EA)
+        "تخفیف" in title || "ویژه" in title -> I.LocalOffer to androidx.compose.ui.graphics.Color(0xFFE11D48)
+        else -> I.Tune to androidx.compose.ui.graphics.Color(0xFF475569)
     }
 }
 
