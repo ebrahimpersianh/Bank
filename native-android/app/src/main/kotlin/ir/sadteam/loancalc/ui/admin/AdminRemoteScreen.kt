@@ -1,5 +1,16 @@
 package ir.sadteam.loancalc.ui.admin
 
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Autorenew
+import androidx.compose.material.icons.filled.RocketLaunch
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -49,13 +60,52 @@ private fun toMap(s: String): Map<String, String> =
 private fun fromMap(m: Map<String, String>) = m.entries.joinToString("\n") { "${it.key} = ${it.value}" }
 
 @Composable
-private fun NumField(label: String, value: Int?, hint: String, onChange: (Int?) -> Unit) {
-    OutlinedTextField(
-        value = value?.toString() ?: "", onValueChange = { onChange(cleanNum(it).take(6).toIntOrNull()) },
-        label = { Text(label) }, placeholder = { Text("پیش‌فرض: $hint") }, singleLine = true,
-        shape = AdminFieldShape, colors = adminFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        modifier = Modifier.fillMaxWidth(),
-    )
+private fun NumField(
+    label: String, value: Int?, hint: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector = androidx.compose.material.icons.Icons.Filled.Tune,
+    color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color(0xFF475569),
+    subtitle: String? = null,
+    onChange: (Int?) -> Unit,
+) {
+    // ردیفِ کارت‌شکل با کاشیِ آیکونِ رنگی و شمارنده‌ی − / + (طرحِ ChatGPT، ۱۰ مهر).
+    val def = hint.map { if (it in '۰'..'۹') '0' + (it - '۰') else it }.joinToString("").toIntOrNull() ?: 0
+    val cur = value ?: def
+    Row(
+        Modifier.padding(bottom = 8.dp).fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            .background(ir.sadteam.loancalc.ui.theme.AppSurface2).padding(10.dp),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        androidx.compose.foundation.layout.Box(
+            Modifier.size(44.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp)).background(color),
+            contentAlignment = androidx.compose.ui.Alignment.Center,
+        ) { androidx.compose.material3.Icon(icon, null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(22.dp)) }
+        androidx.compose.foundation.layout.Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+            Text(label, color = ir.sadteam.loancalc.ui.theme.AppText, fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black)
+            Text(subtitle ?: "پیش‌فرض: $hint", color = ir.sadteam.loancalc.ui.theme.AppMuted, fontSize = 11.sp)
+        }
+        Stepper(cur, onMinus = { onChange((cur - 1).coerceAtLeast(0)) }, onPlus = { onChange(cur + 1) })
+    }
+}
+
+@Composable
+internal fun Stepper(value: Int, onMinus: () -> Unit, onPlus: () -> Unit) {
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+    Row(
+        Modifier.clip(shape).border(1.dp, ir.sadteam.loancalc.ui.theme.AppLine, shape),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        StepBtn("−", onMinus)
+        Text(toFa(value), color = ir.sadteam.loancalc.ui.theme.AppText, fontSize = 14.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black, modifier = Modifier.widthIn(min = 40.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        StepBtn("+", onPlus)
+    }
+}
+
+@Composable
+private fun StepBtn(t: String, onClick: () -> Unit) {
+    androidx.compose.foundation.layout.Box(
+        Modifier.size(36.dp).background(ir.sadteam.loancalc.ui.theme.AppSurface).clickable(onClick = onClick),
+        contentAlignment = androidx.compose.ui.Alignment.Center,
+    ) { Text(t, color = ir.sadteam.loancalc.ui.theme.AppPrimary, fontSize = 18.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black) }
 }
 
 @Composable
@@ -123,7 +173,12 @@ fun AdminRemoteScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel(
                 }
             }
             AdminSection("آپدیتِ اجباری", c.minVersion?.let { "زیرِ نسخه‌ی ${toFa(it)} باید آپدیت کند" } ?: "خاموش") {
-                NumField("حداقل نسخه (versionCode)", c.minVersion, "خاموش") { c = c.copy(minVersion = it) }
+                OutlinedTextField(
+                    value = c.minVersion?.toString() ?: "", onValueChange = { c = c.copy(minVersion = cleanNum(it).take(6).toIntOrNull()) },
+                    label = { Text("حداقل نسخه (versionCode)") }, placeholder = { Text("خالی = خاموش") }, singleLine = true,
+                    shape = AdminFieldShape, colors = adminFieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 TextArea("متنِ پنجره", c.minVersionText.orEmpty(), "این نسخه دیگر پشتیبانی نمی‌شود…") { c = c.copy(minVersionText = it.ifBlank { null }) }
                 AdminNote("نسخه‌ی فعلیِ همین گوشی: ${toFa(ir.sadteam.loancalc.BuildConfig.VERSION_CODE)}. عددی بزرگ‌تر از آخرین نسخه‌ی منتشرشده نزن!")
             }
@@ -162,10 +217,10 @@ fun AdminRemoteScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel(
                 TextArea("شش رقمِ اول = نامِ بانک", bins, "585983 = تجارت") { bins = it }
             }
             AdminSection("سکه و امتیاز", "ورودِ روزانه ${toFa(c.dailyCoins ?: 5)} · هفت روز ${toFa(c.weekCoins ?: 30)}") {
-                NumField("سکه‌ی ورودِ روزانه", c.dailyCoins, "۵") { c = c.copy(dailyCoins = it) }
-                NumField("جایزه‌ی روزِ هفتم", c.weekCoins, "۳۰") { c = c.copy(weekCoins = it) }
-                NumField("اولین «امتیاز بده» بعد از چند بار باز کردن", c.rateFirst, "۵") { c = c.copy(rateFirst = it) }
-                NumField("تکرار هر چند بار", c.rateEvery, "۱۵") { c = c.copy(rateEvery = it) }
+                NumField("سکه‌ی ورودِ روزانه", c.dailyCoins, "۵", androidx.compose.material.icons.Icons.Filled.CalendarMonth, androidx.compose.ui.graphics.Color(0xFF16A34A), "هر روز وارد شو و سکه بگیر") { c = c.copy(dailyCoins = it) }
+                NumField("جایزه‌ی روزِ هفتم", c.weekCoins, "۳۰", androidx.compose.material.icons.Icons.Filled.CardGiftcard, androidx.compose.ui.graphics.Color(0xFFE11D48), "با هفت روز فعالیت، جایزه‌ی ویژه") { c = c.copy(weekCoins = it) }
+                NumField("اولین «امتیاز بده»", c.rateFirst, "۵", androidx.compose.material.icons.Icons.Filled.RocketLaunch, androidx.compose.ui.graphics.Color(0xFF7C3AED), "بعد از چند بار باز کردن") { c = c.copy(rateFirst = it) }
+                NumField("تکرار هر چند بار", c.rateEvery, "۱۵", androidx.compose.material.icons.Icons.Filled.Autorenew, androidx.compose.ui.graphics.Color(0xFFEA580C), "با تکرارِ استفاده، امتیاز بگیر") { c = c.copy(rateEvery = it) }
             }
             AdminSection("متنِ اعلانِ «برگرد»", c.comeBackTitle ?: "پیش‌فرض") {
                 AdminNote("«{days}» جای تعدادِ روز می‌نشیند.")
