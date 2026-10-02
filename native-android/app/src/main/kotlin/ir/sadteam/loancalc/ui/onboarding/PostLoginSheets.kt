@@ -34,7 +34,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.core.toFa
-import ir.sadteam.loancalc.ui.components.AppCard
 import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppBg
@@ -118,18 +117,6 @@ private fun GiftPage(
                 .fillMaxWidth()
                 .padding(top = 10.dp),
         )
-        if (legacyGift) {
-            AppCard(modifier = Modifier.padding(top = 16.dp)) {
-                Text(
-                    "چون از قبل وارد برنامه شده بودی، ۱۵ روز هدیه‌ی اضافه‌تر هم برات لحاظ شد. ممنون که همراهمون بودی 💚",
-                    color = AppText,
-                    fontSize = 13.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-
         Spacer(Modifier.height(24.dp))
         Text(
             "اسمت چیه؟ (اختیاری)",
@@ -137,12 +124,7 @@ private fun GiftPage(
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
         )
-        Text(
-            "فقط برای سربرگِ خروجی‌های PDF و اکسل استفاده می‌شه. می‌تونی رد کنی.",
-            color = AppMuted,
-            fontSize = 11.5.sp,
-            modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
-        )
+        Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
