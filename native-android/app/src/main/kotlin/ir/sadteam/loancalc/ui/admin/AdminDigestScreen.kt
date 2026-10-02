@@ -198,9 +198,9 @@ private fun DigestBody(d: AdminDigestResponse) {
                         else -> androidx.compose.material.icons.Icons.Filled.PersonAdd
                     },
                     accent = when (m.key) {
-                        "active" -> androidx.compose.ui.graphics.Color(0xFF22C55E)
-                        "new_installs" -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
-                        "purchases" -> androidx.compose.ui.graphics.Color(0xFFF43F5E)
+                        "active" -> androidx.compose.ui.graphics.Color(0xFF00E89A)
+                        "new_installs" -> androidx.compose.ui.graphics.Color(0xFF1478FF)
+                        "purchases" -> androidx.compose.ui.graphics.Color(0xFFFF5E6C)
                         else -> androidx.compose.ui.graphics.Color(0xFFA855F7)
                     },
                     modifier = Modifier.weight(1f),

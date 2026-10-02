@@ -1,5 +1,10 @@
 package ir.sadteam.loancalc.ui.admin
 
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -99,20 +104,20 @@ fun AdminHubScreen(
 
         // طرحِ ChatGPT (۱۰ مهر): شش کاشیِ رنگی، بعد ردیف‌های فروشگاه/تنظیمات/پیام‌ها.
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ColorTile(Icons.Filled.BarChart, "گزارشِ برنامه", "کاربران، آمار، سلامت", Color(0xFF16A34A), Modifier.weight(1f)) { page = "stats" }
-            ColorTile(Icons.Filled.Payments, "پول و فروش", "تمدید، A/B", Color(0xFFCA8A04), Modifier.weight(1f)) { page = "money" }
+            ColorTile(Icons.Filled.BarChart, "گزارشِ برنامه", "کاربران، آمار، سلامت", Color(0xFF007950), Color(0xFF00E89A), Modifier.weight(1f)) { page = "stats" }
+            ColorTile(Icons.Filled.AccountBalanceWallet, "پول و فروش", "تمدید، A/B", Color(0xFF4D3B11), Color(0xFFFFD34F), Modifier.weight(1f)) { page = "money" }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ColorTile(Icons.Filled.PersonSearch, "تاریخچه‌ی کاربر", "با شماره‌ی کاربری (Uid)", Color(0xFF7C3AED), Modifier.weight(1f)) { page = "user" }
-            ColorTile(Icons.Filled.Campaign, "پیامِ گروهی", "به یک گروهِ خاص", Color(0xFF2563EB), Modifier.weight(1f)) { page = "broadcast" }
+            ColorTile(Icons.Filled.PersonAdd, "تاریخچه‌ی کاربر", "با شماره‌ی کاربری (Uid)", Color(0xFF451E90), Color(0xFFB46CFF), Modifier.weight(1f)) { page = "user" }
+            ColorTile(Icons.Filled.Forum, "پیامِ گروهی", "به یک گروهِ خاص", Color(0xFF062955), Color(0xFF20BFFF), Modifier.weight(1f)) { page = "broadcast" }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ColorTile(Icons.Filled.MonetizationOn, "هدیه‌ی سکه", "سکه به یک کاربر", Color(0xFFC026D3), Modifier.weight(1f)) { gift = "coins" }
-            ColorTile(Icons.Filled.WorkspacePremium, "هدیه‌ی اشتراک", "روز به یک کاربر", Color(0xFFD97706), Modifier.weight(1f)) { gift = "sub" }
+            ColorTile(Icons.Filled.CardGiftcard, "هدیه‌ی سکه", "سکه به یک کاربر", Color(0xFF6C2E61), Color(0xFFF05BDA), Modifier.weight(1f)) { gift = "coins" }
+            ColorTile(Icons.Filled.Bookmark, "هدیه‌ی اشتراک", "روز به یک کاربر", Color(0xFF564314), Color(0xFFFFE49A), Modifier.weight(1f)) { gift = "sub" }
         }
-        HubRow(Icons.Filled.SupportAgent, "پیام‌های کاربران", if (open > 0) "${toFa(open)} بی‌جواب" else "همه جواب گرفته‌اند", Color(0xFF0EA5E9), badge = open) { page = "support" }
-        HubRow(Icons.Filled.Storefront, "مدیریتِ فروشگاه", "قیمت، پنهان کردن، تمِ تازه، تخفیف", Color(0xFF16A34A)) { page = "shop" }
-        HubRow(Icons.Filled.Tune, "تنظیماتِ از راهِ دور", "رایگان، پیامکِ بانک، نسخه، نظرسنجی…", Color(0xFF2563EB)) { page = "remote" }
+        HubRow(Icons.Filled.SupportAgent, "پیام‌های کاربران", if (open > 0) "${toFa(open)} بی‌جواب" else "همه جواب گرفته‌اند", Color(0xFF19C9FF), badge = open) { page = "support" }
+        HubRow(Icons.Filled.Storefront, "مدیریتِ فروشگاه", "قیمت، پنهان کردن، تمِ تازه، تخفیف", Color(0xFF00E89A)) { page = "shop" }
+        HubRow(Icons.Filled.Tune, "تنظیماتِ از راهِ دور", "رایگان، پیامکِ بانک، نسخه، نظرسنجی…", Color(0xFF19C9FF)) { page = "remote" }
 
         val recent = items.orEmpty().take(4)
         if (recent.isNotEmpty()) {
@@ -175,23 +180,23 @@ private fun TodayHero(d: ir.sadteam.loancalc.data.network.AdminDigestResponse?, 
     }
 }
 
-/** کاشیِ رنگیِ هاب (طرحِ ChatGPT): زمینه‌ی گرادیانِ همان رنگ، آیکونِ بزرگ، حاشیه‌ی رنگی. */
+/** کاشیِ رنگیِ هاب - رنگ‌ها از SPEC.mdِ ChatGPT (۱۰ مهر): زمینه‌ی [tile]، آیکون و حاشیه [accent]. */
 @Composable
-private fun ColorTile(icon: ImageVector, title: String, subtitle: String, color: Color, modifier: Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(AppRadius.card)
+private fun ColorTile(icon: ImageVector, title: String, subtitle: String, tile: Color, accent: Color, modifier: Modifier, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(22.dp)
     Column(
         modifier
-            .heightIn(min = 112.dp)
+            .heightIn(min = 128.dp)
             .clip(shape)
-            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(color.copy(alpha = 0.55f), color.copy(alpha = 0.18f))))
-            .border(1.5.dp, color.copy(alpha = 0.7f), shape)
+            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(tile, androidx.compose.ui.graphics.lerp(tile, Color(0xFF0A2129), 0.55f))))
+            .border(1.5.dp, accent.copy(alpha = 0.35f), shape)
             .clickable(onClick = onClick)
-            .padding(12.dp),
+            .padding(horizontal = 12.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(icon, null, tint = Color.White, modifier = Modifier.size(34.dp))
-        Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 8.dp))
-        Text(subtitle, color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Icon(icon, null, tint = accent, modifier = Modifier.size(40.dp))
+        Text(title, color = Color(0xFFF5F7F8), fontSize = 16.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 10.dp))
+        Text(subtitle, color = Color(0xFFF5F7F8).copy(alpha = 0.72f), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -200,8 +205,8 @@ private fun ColorTile(icon: ImageVector, title: String, subtitle: String, color:
 private fun HubRow(icon: ImageVector, title: String, subtitle: String, color: Color, badge: Int = 0, onClick: () -> Unit) {
     AppCard(modifier = Modifier.clickable(onClick = onClick), contentPadding = 10.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(46.dp).clip(RoundedCornerShape(AppRadius.icon)).background(color.copy(alpha = 0.85f)), contentAlignment = Alignment.Center) {
-                Icon(icon, null, tint = Color.White, modifier = Modifier.size(24.dp))
+            Box(Modifier.size(52.dp).clip(RoundedCornerShape(16.dp)).background(color.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = color, modifier = Modifier.size(28.dp))
             }
             Column(Modifier.weight(1f).padding(start = 12.dp)) {
                 Text(title, color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black)
