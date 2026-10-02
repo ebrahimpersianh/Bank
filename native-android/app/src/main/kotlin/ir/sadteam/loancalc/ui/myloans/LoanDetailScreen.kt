@@ -618,11 +618,7 @@ fun LoanDetailScreen(
         val paidDateLabel = paidDate?.let {
             val d = (it["d"] as? Number)?.toInt()
             val mo = (it["m"] as? Number)?.toInt()
-            val yr = (it["y"] as? Number)?.toInt()
-            // اگر سررسید در سالِ دیگری است، سال هم نوشته شود (وگرنه «۱۲۱۵ روز مانده» گیج‌کننده است).
-            if (d != null && mo != null) {
-                "${toFa(d)} ${persianMonthName(mo)}" + if (yr != null && yr != today.y) " ${toFa(yr)}" else ""
-            } else null
+            if (d != null && mo != null) "${toFa(d)} ${persianMonthName(mo)}" else null
         }
         FullScreenDialog(onDismissRequest = { photoRowM = null }) {
             InstallmentDetailScreen(
@@ -930,7 +926,11 @@ fun LoanDetailScreen(
         (row["dueDate"] as? Map<*, *>)?.let {
             val d = (it["d"] as? Number)?.toInt()
             val mo = (it["m"] as? Number)?.toInt()
-            if (d != null && mo != null) "${toFa(d)} ${persianMonthName(mo)}" else null
+            val yr = (it["y"] as? Number)?.toInt()
+            // اگر سررسید در سالِ دیگری است، سال هم نوشته شود (وگرنه «۱۲۱۵ روز مانده» گیج‌کننده است).
+            if (d != null && mo != null) {
+                "${toFa(d)} ${persianMonthName(mo)}" + if (yr != null && yr != today.y) " ${toFa(yr)}" else ""
+            } else null
         }
     }
     val nextDueInDays = nextRow?.let { row ->
