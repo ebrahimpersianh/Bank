@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -114,6 +117,11 @@ fun AdminShopScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
                         Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable { editing = item }.padding(horizontal = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        // همان پیش‌نمایشِ فروشگاهِ اصلی (خواسته‌ی کاربر ۱۰ مهر).
+                        Box(Modifier.padding(vertical = 6.dp).alpha(if (hidden) 0.45f else 1f)) {
+                            ir.sadteam.loancalc.ui.shop.previewFor(item)
+                        }
+                        Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
                             Text(cfg.labels[item.id] ?: item.label, color = if (hidden) AppMuted else AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             val price = cfg.prices[item.id] ?: item.price

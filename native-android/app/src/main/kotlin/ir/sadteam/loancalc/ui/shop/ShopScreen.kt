@@ -1527,7 +1527,7 @@ private fun Pill(text: String, bg: Color, ink: Color) {
  * یک نقطه‌ی انتخاب برای هر دو نما، تا کارت و ردیف هیچ‌وقت دو چیزِ متفاوت نشان ندهند.
  */
 @Composable
-private fun previewFor(item: ShopItem) {
+internal fun previewFor(item: ShopItem) {
     when {
         item.id.startsWith("icon:") -> AppIconPreview(item.id)
         item.id.startsWith("symbolset:") -> SymbolSetPreview(item.id)
