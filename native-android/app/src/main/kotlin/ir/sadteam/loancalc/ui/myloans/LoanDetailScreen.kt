@@ -564,10 +564,17 @@ fun LoanDetailScreen(
                 }
                 GradientButton(
                     onClick = {
+                    // نامِ وام وقتی بانک انتخاب نشده از خودِ بانک («مشخص‌نشده») ساخته می‌شود؛ اگر کاربر
+                    // اسم را دست نزده و فقط بانک را عوض کرده، اسمِ فهرست هم با بانکِ تازه هماهنگ شود.
+                    val newBank = editMetaBank.trim()
+                    val nameIsAuto = editMetaName.trim() == loan.name &&
+                        (loan.name == loan.bank || loan.name == "مشخص‌نشده")
+                    val effectiveName = if (nameIsAuto && newBank.isNotEmpty()) newBank
+                    else editMetaName.trim().ifEmpty { loan.name }
                     if (canEditComputedAmount) {
                         viewModel.updateComputedLoanAmount(
                             loan = loan,
-                            name = editMetaName.trim().ifEmpty { loan.name },
+                            name = effectiveName,
                             bank = editMetaBank.trim(),
                             borrower = editMetaBorrower.trim().ifEmpty { "—" },
                             principalAmount = editMetaAmountText.toLongOrNull()?.let { tomanToRial(it).toDouble() } ?: loan.amount,
@@ -579,7 +586,7 @@ fun LoanDetailScreen(
                     } else {
                         viewModel.updateLoanMeta(
                             loan = loan,
-                            name = editMetaName.trim().ifEmpty { loan.name },
+                            name = effectiveName,
                             bank = editMetaBank.trim(),
                             borrower = editMetaBorrower.trim().ifEmpty { "—" },
                             startDate = PersianDate(editMetaYear, editMetaMonth, editMetaDay),
