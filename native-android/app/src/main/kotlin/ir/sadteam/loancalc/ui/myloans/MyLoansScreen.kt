@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -1448,17 +1449,22 @@ private fun DashboardSummary(
                 }
             } else {
                 // بی منبعِ درآمد، درصدی وجود ندارد - پس به‌جای عددِ دروغ، درِ ورودی.
-                Text(
-                    "درآمدِ ماهانه‌ات را ثبت کن ‹",
-                    color = HeroMuted,
-                    fontSize = 9.5.sp,
-                    fontWeight = FontWeight.Black,
+                // ۱۰ مهر: قرصِ پُر + «+» تا معلوم باشد دکمه است (متنِ کم‌رنگ دیده نمی‌شد).
+                Row(
                     modifier = Modifier
-                        .padding(top = 5.dp)
+                        .padding(top = 6.dp)
                         .clip(RoundedCornerShape(999.dp))
+                        .background(Color.White.copy(alpha = 0.22f))
+                        .border(1.dp, Color.White.copy(alpha = 0.55f), RoundedCornerShape(999.dp))
                         .pressScaleClickable(onClick = onOpenIncome)
-                        .padding(vertical = 3.dp),
-                )
+                        .padding(horizontal = 11.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                    Text("ثبتِ درآمدِ ماهانه", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                }
             }
             // 🌊 **موجِ ماندهٔ بدهی** - خواسته‌ی کاربر با طرحِ مرجع: «آن خطِ پایینِ رقم».
             // شش نقطه = ماندهٔ بدهی در شش ماهِ پیشِ رو، و نقطه‌ی برجسته ماهِ جاری است.
