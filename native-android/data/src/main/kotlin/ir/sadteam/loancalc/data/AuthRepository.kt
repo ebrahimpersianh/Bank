@@ -92,12 +92,17 @@ class AuthRepository(
 
     suspend fun adminBroadcast(
         segment: String, title: String, body: String, dryRun: Boolean,
-        days: Int = 0, coins: Int = 0, action: String? = null,
+        days: Int = 0, coins: Int = 0, action: String? = null, user: String? = null,
     ): ir.sadteam.loancalc.data.network.AdminBroadcastResult? {
         val token = authPrefs.authToken.first() ?: return null
         return runCatching {
-            apiService.adminBroadcast("Bearer $token", ir.sadteam.loancalc.data.network.AdminBroadcastRequest(segment, title, body, dryRun, days, coins, action))
+            apiService.adminBroadcast("Bearer $token", ir.sadteam.loancalc.data.network.AdminBroadcastRequest(segment, title, body, dryRun, days, coins, action, user))
         }.getOrNull()
+    }
+
+    suspend fun adminBroadcastHistory(): List<ir.sadteam.loancalc.data.network.AdminBroadcastHistoryItem> {
+        val token = authPrefs.authToken.first() ?: return emptyList()
+        return runCatching { apiService.adminBroadcastHistory("Bearer $token") }.getOrDefault(emptyList())
     }
 
     suspend fun adminBroadcastCounts(): Map<String, Int> {

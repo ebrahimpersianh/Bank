@@ -186,6 +186,12 @@ interface ApiService {
         @Body body: okhttp3.RequestBody,
     ): okhttp3.ResponseBody
 
+    @POST("api/announcements/{id}/read")
+    suspend fun markAnnouncementRead(@retrofit2.http.Path("id") id: Long, @Header("Authorization") authHeader: String): Map<String, Boolean>
+
+    @GET("api/admin/broadcast/history")
+    suspend fun adminBroadcastHistory(@Header("Authorization") authHeader: String): List<AdminBroadcastHistoryItem>
+
     @GET("api/admin/broadcast/counts")
     suspend fun adminBroadcastCounts(@Header("Authorization") authHeader: String): Map<String, Int>
 
@@ -559,7 +565,8 @@ data class AdminUserTimeline(
     val installs: List<AdminTimelineInstall> = emptyList(), val topScreens: List<AdminNamedCount> = emptyList(),
     val days: List<AdminTimelineDay> = emptyList(),
 )
-data class AdminBroadcastRequest(val segment: String, val title: String, val body: String, val dryRun: Boolean, val days: Int = 0, val coins: Int = 0, val action: String? = null)
+data class AdminBroadcastRequest(val segment: String, val title: String, val body: String, val dryRun: Boolean, val days: Int = 0, val coins: Int = 0, val action: String? = null, val user: String? = null)
+data class AdminBroadcastHistoryItem(val batchId: Long = 0, val title: String = "", val segment: String = "", val sentAt: String = "", val sent: Int = 0, val opened: Int = 0)
 data class AdminBroadcastResult(val segment: String = "", val count: Int = 0, val sent: Boolean = false)
 
 data class SurveyAnswerRequest(val id: String, val answer: String, val install: String)

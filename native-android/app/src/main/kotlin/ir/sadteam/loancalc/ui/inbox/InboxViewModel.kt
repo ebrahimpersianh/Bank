@@ -65,7 +65,14 @@ class InboxViewModel @Inject constructor(
 
     fun closeSourceAccount() { _sourceAccount.value = null }
 
-    fun markRead(id: Long) = viewModelScope.launch { inbox.markRead(id) }
+    fun markRead(id: Long) = viewModelScope.launch {
+        inbox.markRead(id)
+        // پیامِ جیبک (شناسه‌ی منفی = شناسه‌ی سرور): «دیده شد» برای آمارِ پیامِ گروهیِ ادمین.
+        if (id < 0) runCatching {
+            val auth = authPrefs.authToken.first()?.let { "Bearer $it" } ?: return@runCatching
+            api.markAnnouncementRead(-id, auth)
+        }
+    }
 
     fun markAllNewsRead() = viewModelScope.launch { inbox.markAllNewsRead() }
 

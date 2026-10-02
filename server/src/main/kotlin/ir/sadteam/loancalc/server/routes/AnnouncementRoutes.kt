@@ -102,6 +102,17 @@ private suspend fun ApplicationCall.isAdmin(): Boolean {
 
 fun Route.announcementRoutes() {
     route("/api/announcements") {
+        // «دیده شد» برای آمارِ پیامِ گروهی؛ فقط پیامِ اختصاصیِ خودِ همین کاربر.
+        post("/{id}/read") {
+            val uid = call.optionalUid() ?: return@post call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "auth"))
+            val id = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "id"))
+            Db.withConnection { conn ->
+                conn.executeCounting(
+                    "UPDATE announcements SET read_at = datetime('now') WHERE id = ? AND target_user_id = ? AND read_at IS NULL", id, uid,
+                )
+            }
+            call.respond(mapOf("ok" to true))
+        }
         get {
             val since = call.request.queryParameters["since"]?.toLongOrNull() ?: 0L
             // همگانی‌ها برای همه؛ اختصاصی‌ها فقط برای صاحبش (با توکن). بی ورود، فقط همگانی.

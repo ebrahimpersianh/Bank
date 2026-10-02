@@ -76,7 +76,12 @@ data class BroadcastBody(
     val coins: Int = 0,
     /** دکمه‌ی داخلِ پیام: shop / subscription / update. */
     val action: String? = null,
+    /** فقط برای گروهِ «one»: شماره‌ی کاربری (Uid). */
+    val user: String? = null,
 )
+
+@Serializable
+data class BroadcastHistoryItem(val batchId: Long, val title: String, val segment: String, val sentAt: String, val sent: Int, val opened: Int)
 
 @Serializable
 data class BroadcastResult(val segment: String, val count: Int, val sent: Boolean)
@@ -220,13 +225,22 @@ private val SEGMENTS = mapOf(
 private val BROADCAST_ACTIONS = setOf("shop", "subscription", "update")
 
 internal fun broadcast(conn: Connection, b: BroadcastBody): BroadcastResult? {
-    val where = SEGMENTS[b.segment] ?: return null
     if (b.days !in 0..365 || b.coins !in 0..100_000) return null
     val action = b.action?.takeIf { it in BROADCAST_ACTIONS }
-    val ids = buildList { conn.list("SELECT id FROM users WHERE $where") { add(it.getLong(1)) } }
+    val ids: List<Long> = if (b.segment == "one") {
+        listOfNotNull(b.user?.let { resolveUserCode(conn, it) })
+    } else {
+        val where = SEGMENTS[b.segment] ?: return null
+        buildList { conn.list("SELECT id FROM users WHERE $where") { add(it.getLong(1)) } }
+    }
     if (b.dryRun || b.title.isBlank() || b.body.isBlank()) return BroadcastResult(b.segment, ids.size, false)
     val gift = b.days > 0 || b.coins > 0
     val now = System.currentTimeMillis()
+    val batch = now
+    conn.execute(
+        "INSERT OR REPLACE INTO app_config (key, json) VALUES (?, ?)",
+        "broadcast_$batch", kotlinx.serialization.json.Json.encodeToString(kotlinx.serialization.json.JsonPrimitive.serializer(), kotlinx.serialization.json.JsonPrimitive(b.segment)),
+    )
     ids.forEach { uid ->
         if (b.days > 0) {
             val cur = conn.queryOne("SELECT subscribed_until FROM users WHERE id = ?", uid) { it.getString(1) }
@@ -235,11 +249,25 @@ internal fun broadcast(conn: Connection, b: BroadcastBody): BroadcastResult? {
             conn.execute("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, uid)
         }
         conn.execute(
-            "INSERT INTO announcements (title, body, kind, target_user_id, coins, action) VALUES (?, ?, ?, ?, ?, ?)",
-            b.title.take(80), b.body.take(600), if (gift) "gift" else "info", uid, b.coins, action,
+            "INSERT INTO announcements (title, body, kind, target_user_id, coins, action, batch_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            b.title.take(80), b.body.take(600), if (gift) "gift" else "info", uid, b.coins, action, batch,
         )
     }
     return BroadcastResult(b.segment, ids.size, true)
+}
+
+/** ۱۰ پیامِ گروهیِ آخر با تعدادِ فرستاده/دیده‌شده. */
+internal fun broadcastHistory(conn: Connection): List<BroadcastHistoryItem> = buildList {
+    conn.list(
+        "SELECT batch_id, MIN(title), MIN(created_at), COUNT(*), SUM(CASE WHEN read_at IS NOT NULL THEN 1 ELSE 0 END) " +
+            "FROM announcements WHERE batch_id IS NOT NULL GROUP BY batch_id ORDER BY batch_id DESC LIMIT 10",
+    ) {
+        val id = it.getLong(1)
+        val seg = runCatching {
+            conn.queryOne("SELECT json FROM app_config WHERE key = ?", "broadcast_$id") { r -> r.getString(1) }?.trim('"')
+        }.getOrNull().orEmpty()
+        add(BroadcastHistoryItem(id, it.getString(2), seg, it.getString(3), it.getInt(4), it.getInt(5)))
+    }
 }
 
 /** تعدادِ هر گروه، برای نشان‌دادنِ عدد کنارِ همه‌ی کارت‌ها. */
@@ -256,6 +284,10 @@ fun Route.adminProRoutes() {
             if (!call.adminOrNull()) return@get
             val code = call.request.queryParameters["code"].orEmpty()
             call.respond(Db.withConnection { buildTimeline(it, code) })
+        }
+        get("/broadcast/history") {
+            if (!call.adminOrNull()) return@get
+            call.respond(Db.withConnection { broadcastHistory(it) })
         }
         get("/broadcast/counts") {
             if (!call.adminOrNull()) return@get

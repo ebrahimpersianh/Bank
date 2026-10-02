@@ -324,6 +324,7 @@ private val SEGMENT_LABELS = linkedMapOf(
     "cafebazaar" to "کاربرانِ کافه‌بازار",
     "myket" to "کاربرانِ مایکت",
     "all" to "همه‌ی کاربران",
+    "one" to "یک نفر (با Uid)",
 )
 
 private val BROADCAST_ACTION_LABELS = linkedMapOf(
@@ -362,8 +363,15 @@ fun AdminBroadcastScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewMod
     var days by remember { mutableStateOf(0) }
     var coins by remember { mutableStateOf(0) }
     var action by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(Unit) { counts = vm.repo.adminBroadcastCounts() }
-    LaunchedEffect(segment) { count = null; count = vm.repo.adminBroadcast(segment, "", "", dryRun = true)?.count }
+    var oneUser by remember { mutableStateOf("") }
+    var history by remember { mutableStateOf<List<ir.sadteam.loancalc.data.network.AdminBroadcastHistoryItem>>(emptyList()) }
+    var reload by remember { mutableStateOf(0) }
+    LaunchedEffect(reload) { counts = vm.repo.adminBroadcastCounts(); history = vm.repo.adminBroadcastHistory() }
+    LaunchedEffect(segment, oneUser) {
+        count = null
+        count = if (segment == "one") { if (oneUser.isBlank()) 0 else vm.repo.adminBroadcast(segment, "", "", dryRun = true, user = oneUser.trim())?.count }
+        else vm.repo.adminBroadcast(segment, "", "", dryRun = true)?.count
+    }
     Box(Modifier.fillMaxSize()) {
         AdminPage("پیامِ گروهی", "فقط به یک گروهِ خاص", onBack) {
             AdminGroupLabel("به چه کسانی")
@@ -371,6 +379,10 @@ fun AdminBroadcastScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewMod
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     row.forEach { (key, label) -> SegmentCard(label, key == segment, if (key == segment) count else counts[key], Modifier.weight(1f)) { segment = key } }
                 }
+            }
+            if (segment == "one") {
+                OutlinedTextField(value = oneUser, onValueChange = { oneUser = it.take(20) }, label = { Text("شماره‌ی کاربری (Uid)") }, singleLine = true, colors = adminFieldColors(), shape = AdminFieldShape, modifier = Modifier.fillMaxWidth())
+                if (oneUser.isNotBlank() && count == 0) Text("این شماره پیدا نشد", color = ir.sadteam.loancalc.ui.theme.AppDangerInk, fontSize = 12.sp)
             }
             AdminGroupLabel("پیام")
             OutlinedTextField(value = title, onValueChange = { title = it.take(80) }, label = { Text("عنوان") }, singleLine = true, colors = adminFieldColors(), shape = AdminFieldShape, modifier = Modifier.fillMaxWidth())
@@ -404,6 +416,23 @@ fun AdminBroadcastScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewMod
             GradientButton(onClick = { confirm = true }, enabled = title.isNotBlank() && body.isNotBlank() && (count ?: 0) > 0, modifier = Modifier.fillMaxWidth()) {
                 Text(count?.let { "بفرست به ${toFa(it)} نفر" } ?: "بفرست")
             }
+            if (history.isNotEmpty()) {
+                AdminGroupLabel("پیام‌های قبلی · چند نفر دیدند")
+                AppCard {
+                    history.forEachIndexed { i, h ->
+                        Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(h.title, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                Text("${SEGMENT_LABELS[h.segment] ?: h.segment} · ${h.sentAt.take(10)}", color = AppMuted, fontSize = 11.sp, maxLines = 1)
+                            }
+                            val pct = if (h.sent > 0) h.opened * 100 / h.sent else 0
+                            Text("${toFa(h.opened)} از ${toFa(h.sent)} · ${toFa(pct)}٪", color = AppPrimaryInk, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                        }
+                        if (i < history.lastIndex) Box(Modifier.fillMaxWidth().height(1.dp).background(AppLine))
+                    }
+                }
+                AdminNote("«دیدند» فقط از نسخه‌ی ۷۰۶ به بعد شمرده می‌شود.")
+            }
         }
         InAppBannerHost(state = banner, modifier = Modifier.align(Alignment.BottomCenter))
     }
@@ -416,10 +445,10 @@ fun AdminBroadcastScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewMod
                 GradientButton(onClick = {
                     confirm = false
                     scope.launch {
-                        val r = vm.repo.adminBroadcast(segment, title.trim(), body.trim(), dryRun = false, days = days, coins = coins, action = action)
+                        val r = vm.repo.adminBroadcast(segment, title.trim(), body.trim(), dryRun = false, days = days, coins = coins, action = action, user = oneUser.trim().takeIf { segment == "one" })
                         val ok = r?.sent == true
                         banner.show(if (ok) "برای ${toFa(r!!.count)} نفر فرستاده شد" else "فرستاده نشد؛ دوباره امتحان کن", isSuccess = ok)
-                        if (ok) { title = ""; body = ""; days = 0; coins = 0; action = null }
+                        if (ok) { title = ""; body = ""; days = 0; coins = 0; action = null; reload++ }
                     }
                 }) { Text("بفرست") }
             },
