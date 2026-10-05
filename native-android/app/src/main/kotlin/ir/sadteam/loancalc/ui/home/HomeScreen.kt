@@ -222,6 +222,8 @@ fun HomeScreen(
     }
     val billsToday = remember { ir.sadteam.loancalc.core.JalaliCalendar.today() }
     val dueBills = homeBills.filter { with(ir.sadteam.loancalc.ui.extras.BillsDue) { it.dueSoon(billsToday.y, billsToday.m, billsToday.d) } }
+    val startGuideVm: StartGuideViewModel = hiltViewModel()
+    val startGuide by startGuideVm.state.collectAsState()
     val inboxCount by inboxViewModel.actionableCount.collectAsState()
     val inboxUnreadNews by inboxViewModel.unreadNews.collectAsState()
     val userName by authViewModel.userName.collectAsState()
@@ -392,6 +394,23 @@ fun HomeScreen(
             // می‌شد و کاربر باید از رویش رد می‌شد تا محتوای واقعی را ببیند.
             if (!transactionsLoaded) {
                 item { SkeletonRowList(rows = 4) }
+            }
+
+            // ── «چهار قدم تا شروع» (۱۳ مهر) ─────────────────────────────────────────────
+            if (transactionsLoaded && startGuide.visible) {
+                item(key = "start-guide") {
+                    StartGuideCard(
+                        state = startGuide,
+                        onAddAccount = { onNavigateToRoute("accounts-add") },
+                        onAddTransaction = { showNewTransaction = true },
+                        onAddLoan = { onNavigateToRoute("loan") },
+                        onLinkBank = {
+                            ir.sadteam.loancalc.ui.admin.AdminSignals.openSettingsRoute.value = "SMS"
+                            onOpenSettings()
+                        },
+                        onDismiss = { startGuideVm.dismiss() },
+                    )
+                }
             }
 
             // ── حالتِ خالی (فریمِ `15b`) - وقتی هنوز هیچ تراکنشی ثبت نشده ────────────────

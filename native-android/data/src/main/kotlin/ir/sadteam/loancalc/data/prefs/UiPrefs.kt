@@ -88,6 +88,8 @@ class UiPrefs(private val context: Context) {
         val CLOUD_REVISIONS = stringPreferencesKey("cloud_revisions")
         val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
         val PRIVACY_MODE_ENABLED = booleanPreferencesKey("privacy_mode_enabled")
+        val SIMPLE_MODE = booleanPreferencesKey("simple_mode")
+        val GUIDE_DISMISSED = booleanPreferencesKey("start_guide_dismissed")
         val REMINDER_DAY_OFFSETS = stringPreferencesKey("reminder_day_offsets")
         val REMINDER_SOUND_URI = stringPreferencesKey("reminder_sound_uri")
         val REMINDER_VIBRATE = booleanPreferencesKey("reminder_vibrate")
@@ -581,6 +583,23 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setVibrationEnabled(value: Boolean) {
         context.uiPrefsDataStore.edit { it[Keys.VIBRATION_ENABLED] = value }
+    }
+
+    /**
+     * «حالتِ ساده» (۱۳ مهر): نوارِ پایین فقط خانه/گزارش/وام/چک. `null` = هنوز تصمیم گرفته نشده؛
+     * MainActivity برای کاربرِ تازه (بی‌داده) روشن و برای کاربرِ قدیمی خاموش ذخیره‌اش می‌کند.
+     */
+    val simpleMode: Flow<Boolean?> = context.uiPrefsDataStore.data.map { it[Keys.SIMPLE_MODE] }
+
+    suspend fun setSimpleMode(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.SIMPLE_MODE] = value }
+    }
+
+    /** کارتِ «چهار قدمِ شروع» در خانه بسته شد. */
+    val startGuideDismissed: Flow<Boolean> = context.uiPrefsDataStore.data.map { it[Keys.GUIDE_DISMISSED] ?: false }
+
+    suspend fun setStartGuideDismissed(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.GUIDE_DISMISSED] = value }
     }
 
     /** حالت خصوصی: مخفی‌کردن همه‌ی مبلغ‌های روی صفحه پشت «•••» - برای وقتی گوشی دستِ کسیه. */

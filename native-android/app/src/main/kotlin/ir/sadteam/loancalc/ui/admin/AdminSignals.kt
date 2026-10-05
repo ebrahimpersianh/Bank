@@ -11,6 +11,9 @@ object AdminSignals {
     val unreadSupport = MutableStateFlow(0)
     val openAdmin = MutableStateFlow(false)
 
+    /** پرش به یک زیرصفحه‌ی تنظیمات از بیرون (مثلاً «وصلِ پیامکِ بانک» در راهنمای خانه) - نامِ SettingsRoute. */
+    val openSettingsRoute = MutableStateFlow<String?>(null)
+
     fun parseUnread(notes: List<String>): Int =
         notes.firstOrNull { it.startsWith("open_support:") }?.removePrefix("open_support:")?.toIntOrNull() ?: 0
 }

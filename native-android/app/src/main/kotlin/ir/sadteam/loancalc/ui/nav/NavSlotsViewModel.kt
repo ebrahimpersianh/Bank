@@ -22,8 +22,23 @@ import javax.inject.Inject
 @HiltViewModel
 class NavSlotsViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewModel() {
 
-    val slots: StateFlow<List<NavDestination>> = uiPrefs.navSlots
-        .map { raw -> NavDestination.sanitize(raw?.split(',')?.filter { it.isNotBlank() } ?: NavDestination.DEFAULT_SLOTS) }
+    /** «حالتِ ساده» - `null` (کاربرِ قدیمی که هیچ‌وقت انتخاب نکرده) یعنی خاموش. */
+    val simpleMode: StateFlow<Boolean> = uiPrefs.simpleMode.map { it == true }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun setSimpleMode(on: Boolean) {
+        ir.sadteam.loancalc.data.UsageStats.action(if (on) "simple_mode_on" else "simple_mode_off")
+        viewModelScope.launch { uiPrefs.setSimpleMode(on) }
+    }
+
+    val slots: StateFlow<List<NavDestination>> = combine(uiPrefs.navSlots, uiPrefs.simpleMode) { raw, simple ->
+        if (simple == true) {
+            // حالتِ ساده: فقط چهار بخشِ اصلی (۱۳ مهر). بقیه از کشوی میان‌بُر در دسترس می‌مانند.
+            listOf(NavDestination.HOME, NavDestination.REPORT, NavDestination.LOAN, NavDestination.CHEQUE)
+        } else {
+            NavDestination.sanitize(raw?.split(',')?.filter { it.isNotBlank() } ?: NavDestination.DEFAULT_SLOTS)
+        }
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), NavDestination.sanitize(NavDestination.DEFAULT_SLOTS))
 
     /** آیا کاربر نوار رو دستی عوض کرده - ردیفِ «نوارِ پیش‌فرض» فقط وقتی معنی داره. */

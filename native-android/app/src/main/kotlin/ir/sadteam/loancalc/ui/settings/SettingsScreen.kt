@@ -91,6 +91,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.FormatSize
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -276,6 +277,13 @@ fun SettingsScreen(
     startAtAccount: Boolean = false,
 ) {
     var route by remember { mutableStateOf(if (startAtAccount) SettingsRoute.ACCOUNT else SettingsRoute.MAIN) }
+    val jumpRoute by ir.sadteam.loancalc.ui.admin.AdminSignals.openSettingsRoute.collectAsState()
+    LaunchedEffect(jumpRoute) {
+        jumpRoute?.let { name ->
+            SettingsRoute.entries.firstOrNull { it.name == name }?.let { route = it }
+            ir.sadteam.loancalc.ui.admin.AdminSignals.openSettingsRoute.value = null
+        }
+    }
     val closeSub: () -> Unit = { if (startAtAccount) onBack() else route = SettingsRoute.MAIN }
     // زیرصفحه‌های «فیچری» (تقویم/آمار/تاریخچه) از رو خودِ صفحه‌ی «ابزارها» باز می‌شن، پس یه استیتِ
     // جدا لازم دارن تا با برگشت، به «ابزارها» برگردن نه به ریشه‌ی تنظیمات.
@@ -389,7 +397,7 @@ fun SettingsScreen(
 private enum class SettingsRoute(val title: String, val keywords: List<String>) {
     MAIN("تنظیمات", emptyList()),
     ACCOUNT("حساب کاربری", listOf("حساب", "اشتراک", "خروج", "شماره موبایل")),
-    APPEARANCE("ظاهر برنامه", listOf("تم", "رنگ", "اندازه فونت", "روشن", "تاریک")),
+    APPEARANCE("ظاهر برنامه", listOf("تم", "رنگ", "اندازه فونت", "روشن", "تاریک", "ساده", "حالت ساده")),
     REMINDERS("یادآورها", listOf("یادآوری سررسید", "یادآوری روزانه", "نوتیف")),
     DATA("مدیریت داده‌ها", listOf("پشتیبان", "بکاپ", "بازیابی")),
     SMS("پیامک‌های بانکی", listOf("پیامک", "بانک", "خواندن خودکار")),
@@ -771,7 +779,7 @@ private fun routeHint(route: SettingsRoute): String? = when (route) {
     SettingsRoute.BACKGROUND -> "برای ثبتِ خودکار و به‌روز ماندنِ اطلاعات"
     SettingsRoute.DATA -> "پشتیبان‌گیری، بازیابی و پاک‌سازیِ داده‌ها"
     SettingsRoute.REMINDERS -> "یادآوریِ سررسید و ثبتِ روزانه"
-    SettingsRoute.APPEARANCE -> "حالتِ روشن و تیره، اندازه‌ی متن و انیمیشن"
+    SettingsRoute.APPEARANCE -> "حالتِ روشن و تیره، اندازه‌ی متن، حالتِ ساده"
     SettingsRoute.SECURITY -> "قفل با رمزِ عددی و اثرِ انگشت"
     SettingsRoute.TOOLS -> "تقویمِ مالی، آمار و گزارش"
     else -> null
@@ -1437,6 +1445,21 @@ private fun AppearanceSettings(themeViewModel: ThemeViewModel) {
             status = "برای گوشی‌های کم‌قدرت",
             checked = reducedMotion,
             onCheckedChange = { themeViewModel.setReducedMotion(it) },
+        )
+    }
+
+    // ── حالتِ ساده (۱۳ مهر) ──────────────────────────────────────────────────
+    val navVm: ir.sadteam.loancalc.ui.nav.NavSlotsViewModel = hiltViewModel()
+    val simpleMode by navVm.simpleMode.collectAsState()
+    SettingsGroupLabel("سادگی")
+    SettingsGroup {
+        SettingsRowItem(
+            title = "حالتِ ساده",
+            icon = Icons.Filled.Tune,
+            tone = SettingsTone.NEUTRAL,
+            status = if (simpleMode) "نوارِ پایین: خانه، گزارش، وام، چک" else "همه‌ی بخش‌ها در نوارِ پایین",
+            checked = simpleMode,
+            onCheckedChange = { navVm.setSimpleMode(it) },
         )
     }
 }

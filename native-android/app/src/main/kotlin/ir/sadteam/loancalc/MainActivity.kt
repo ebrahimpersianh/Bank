@@ -715,7 +715,10 @@ private fun AppRoot(
     // این‌جا `onboardingDone`/`gateState` قطعاً non-nullن (گیتِ اسپلشِ بالا تضمینش می‌کنه)، پس دیگه
     // شاخه‌ی «هنوز لود نشده» با صفحه‌ی خالیِ سفید لازم نیست.
     if (onboardingDone != true) {
+        val onboardingNavVm: NavSlotsViewModel = hiltViewModel()
         OnboardingFlow(onFinished = {
+            // کاربرِ تازه با «حالتِ ساده» شروع می‌کند (۱۳ مهر) - از تنظیمات ← ظاهر خاموش می‌شود.
+            onboardingNavVm.setSimpleMode(true)
             ir.sadteam.loancalc.data.UsageStats.track(ir.sadteam.loancalc.data.UsageStats.ONBOARDING_COMPLETED)
             authViewModel.markOnboardingDone()
         })
