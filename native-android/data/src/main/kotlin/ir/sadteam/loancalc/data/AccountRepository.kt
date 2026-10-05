@@ -158,6 +158,21 @@ class AccountRepository(
         reimbursable: Boolean = false,
     ): Long {
         UsageStats.action("transaction_added")
+        // 🧠 پرداختِ دستیِ قسط/چک/قبض بعد از اینکه پیامک/اعلانِ بانک همان مبلغ را ثبت کرده:
+        // تراکنشِ خودکار «جذب» می‌شود (به پرداخت وصل و تأیید)، نه اینکه دو بار کم شود.
+        if (sourceType != null && originLabel == null) {
+            val twin = autoTwinOf(accountId, type, amount, ir.sadteam.loancalc.core.PersianDate(year, month, day))
+            if (twin != null) {
+                transactionDao.upsert(
+                    twin.copy(
+                        description = description, category = category ?: twin.category,
+                        sourceType = sourceType, sourceId = sourceId, confirmed = true,
+                        year = year, month = month, day = day,
+                    ),
+                )
+                return twin.id
+            }
+        }
         val txId = id ?: System.currentTimeMillis()
         transactionDao.upsert(
             AccountTransactionEntity(
@@ -421,7 +436,22 @@ class AccountRepository(
      * 🚨 خیلی از بانک‌ها برای یک تراکنش **هم پیامک می‌دهند هم اعلانِ اپ** (بازبینیِ ۹ مهر). اگر در
      * ۱۵ دقیقه‌ی اخیر همین مبلغ و نوع روی همین حساب از **منبعِ دیگری** ثبتِ خودکار شده، دوباره نساز.
      */
+    /** تراکنشِ خودکارِ (پیامک/اعلان) هم‌حساب/هم‌نوع/هم‌مبلغی که هنوز به پرداختی وصل نیست، تا ۳ روز فاصله. */
+    private suspend fun autoTwinOf(accountId: Long, type: TransactionType, amount: Double, date: ir.sadteam.loancalc.core.PersianDate): AccountTransactionEntity? =
+        (observePendingTransactions().first() + observeTransactions().first()).firstOrNull {
+            it.accountId == accountId && it.type == type.name && it.amount == amount &&
+                it.originLabel != null && it.sourceType == null &&
+                kotlin.math.abs(ir.sadteam.loancalc.core.JalaliCalendar.daysBetween(ir.sadteam.loancalc.core.PersianDate(it.year, it.month, it.day), date)) <= 3
+        }
+
     suspend fun hasRecentAutoTwin(accountId: Long, type: TransactionType, amount: Double, originLabel: String): Boolean {
+        // 🧠 پیامک/اعلانی که بعد از ثبتِ دستیِ پرداختِ قسط/چک/قبضِ هم‌مبلغ می‌رسد، تکراری است (خواسته‌ی کاربر ۱۳ مهر).
+        val today = ir.sadteam.loancalc.core.JalaliCalendar.today()
+        if (observeTransactions().first().any {
+                it.accountId == accountId && it.type == type.name && it.amount == amount &&
+                    it.sourceType != null && it.originLabel == null &&
+                    kotlin.math.abs(ir.sadteam.loancalc.core.JalaliCalendar.daysBetween(ir.sadteam.loancalc.core.PersianDate(it.year, it.month, it.day), today)) <= 3
+            }) return true
         val now = System.currentTimeMillis()
         val window = 15 * 60 * 1000L
         return (observePendingTransactions().first() + observeTransactions().first()).any {
