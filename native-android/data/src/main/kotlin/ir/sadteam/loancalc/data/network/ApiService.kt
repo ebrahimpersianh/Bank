@@ -160,6 +160,9 @@ interface ApiService {
     @GET("api/admin/money")
     suspend fun adminMoney(@Header("Authorization") authHeader: String): AdminMoneyResponse
 
+    @GET("api/admin/users")
+    suspend fun adminUsers(@Header("Authorization") authHeader: String, @retrofit2.http.Query("q") q: String): AdminUserList
+
     @GET("api/admin/user")
     suspend fun adminUser(@Header("Authorization") authHeader: String, @retrofit2.http.Query("code") code: String): AdminUserTimeline
 
@@ -561,6 +564,11 @@ data class AdminMoneyDay(val day: String = "", val purchases: Int = 0, val gross
 data class AdminTimelinePurchase(val product: String = "", val store: String = "", val at: String = "", val until: String = "")
 data class AdminTimelineInstall(val id: String = "", val firstDay: String = "", val lastDay: String = "", val activeDays: Int = 0, val version: Int? = null, val store: String? = null, val model: String? = null)
 data class AdminTimelineDay(val day: String = "", val events: Int = 0, val screens: Int = 0)
+data class AdminUserRow(
+    val code: String = "", val phone: String = "", val createdAt: String = "", val subscribedUntil: String? = null,
+    val paid: Boolean = false, val store: String? = null, val lastDay: String? = null,
+)
+data class AdminUserList(val users: List<AdminUserRow> = emptyList())
 data class AdminUserTimeline(
     val found: Boolean = false, val code: String = "", val createdAt: String = "", val subscribedUntil: String? = null,
     val purchases: List<AdminTimelinePurchase> = emptyList(), val supportCount: Int = 0, val lastSupport: String? = null,

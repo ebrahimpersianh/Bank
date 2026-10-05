@@ -215,41 +215,77 @@ private fun AbRow(key: String, quote: String, g: AdminAbGroup, rate: Int, max: I
     }
 }
 
-/** 🔎 تاریخچه‌ی یک کاربر با شماره‌ی کاربری (بخشِ ۸۲). */
+/** 👥 کاربران: فهرست + جستجو با شماره‌ی موبایل یا Uid؛ تپ = تاریخچه‌ی همان کاربر (۱۳ مهر). */
 @Composable
 fun AdminUserScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel()) {
-    var code by remember { mutableStateOf("") }
+    var query by remember { mutableStateOf("") }
+    var users by remember { mutableStateOf<List<ir.sadteam.loancalc.data.network.AdminUserRow>?>(null) }
+    var listFailed by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<AdminUserTimeline?>(null) }
     var failed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    AdminPage("تاریخچه‌ی کاربر", "با شماره‌ی کاربری (Uid)", onBack) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.weight(1f)) {
-                Ltr {
-                    OutlinedTextField(
-                        value = code, onValueChange = { code = it.take(20) }, singleLine = true,
-                        placeholder = { Text("شماره‌ی کاربری، مثلاً 7405024") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors = adminFieldColors(), shape = AdminFieldShape, modifier = Modifier.fillMaxWidth(),
-                    )
+    LaunchedEffect(query) {
+        kotlinx.coroutines.delay(if (query.isEmpty()) 0 else 400)
+        val r = vm.repo.adminUsers(query.filter { it.isDigit() })
+        listFailed = r == null
+        users = r
+    }
+    AdminPage(
+        if (result == null) "کاربران" else "تاریخچه‌ی کاربر",
+        if (result == null) "جستجو با شماره‌ی موبایل یا شماره‌ی کاربری" else "Uid:${result?.code.orEmpty().removePrefix("Uid:")}",
+        { if (result != null) result = null else onBack() },
+    ) {
+        val r = result
+        if (r != null) {
+            if (!r.found) Text("کاربری با این شماره پیدا نشد.", color = AppDangerInk) else UserResult(r)
+            return@AdminPage
+        }
+        Ltr {
+            OutlinedTextField(
+                value = query, onValueChange = { query = it.take(20) }, singleLine = true,
+                placeholder = { Text("مثلاً 0912… یا 7405024") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                colors = adminFieldColors(), shape = AdminFieldShape, modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        if (loading) Text("در حالِ گرفتن…", color = AppMuted, fontSize = 12.sp)
+        if (failed) Text("نرسید؛ اینترنت را چک کن.", color = AppDangerInk)
+        val list = users
+        when {
+            listFailed -> Text("فهرست نرسید؛ اینترنت را چک کن.", color = AppDangerInk)
+            list == null -> Text("…", color = AppMuted)
+            list.isEmpty() -> Text("کاربری پیدا نشد.", color = AppMuted)
+            else -> {
+                Text("${toFa(list.size)} کاربر" + if (list.size >= 300) " (۳۰۰ تای آخر)" else "", color = AppMuted, fontSize = 12.sp)
+                list.forEach { u ->
+                    val active = u.subscribedUntil?.let { runCatching { java.time.Instant.parse(it).isAfter(java.time.Instant.now()) }.getOrNull() } == true
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                loading = true; failed = false
+                                scope.launch { result = vm.repo.adminUser(u.code); failed = result == null; loading = false }
+                            }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Ltr { Text(toFa(u.phone), color = AppText, fontSize = 13.5.sp, fontWeight = FontWeight.Bold) }
+                            Text(
+                                "Uid:${u.code} · " + (if (u.store == "myket") "مایکت" else if (u.store == "cafebazaar") "کافه‌بازار" else "—") +
+                                    (u.lastDay?.let { " · آخرین بار $it" } ?: ""),
+                                color = AppMuted, fontSize = 11.sp,
+                            )
+                        }
+                        Text(
+                            when { u.paid -> "خریدار"; active -> "اشتراکِ فعال"; else -> "رایگان" },
+                            color = if (u.paid) AppPrimary else AppMuted,
+                            fontSize = 11.5.sp, fontWeight = FontWeight.Black,
+                        )
+                    }
                 }
             }
-            Spacer(Modifier.width(8.dp))
-            GradientButton(
-                onClick = {
-                    loading = true; failed = false
-                    scope.launch { result = vm.repo.adminUser(code.trim()); failed = result == null; loading = false }
-                },
-                enabled = code.isNotBlank() && !loading,
-            ) { Text(if (loading) "…" else "نشان بده") }
-        }
-        val r = result
-        when {
-            failed -> Text("نرسید؛ اینترنت را چک کن.", color = AppDangerInk)
-            r == null -> {}
-            !r.found -> Text("کاربری با این شماره پیدا نشد.", color = AppDangerInk)
-            else -> UserResult(r)
         }
     }
 }

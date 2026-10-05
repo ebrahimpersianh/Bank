@@ -108,7 +108,7 @@ fun AdminHubScreen(
             ColorTile(Icons.Filled.AccountBalanceWallet, "پول و فروش", "تمدید، A/B", Color(0xFF4D3B11), Color(0xFFFFD34F), Modifier.weight(1f)) { page = "money" }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ColorTile(Icons.Filled.PersonAdd, "تاریخچه‌ی کاربر", "با شماره‌ی کاربری (Uid)", Color(0xFF451E90), Color(0xFFB46CFF), Modifier.weight(1f)) { page = "user" }
+            ColorTile(Icons.Filled.PersonAdd, "کاربران", "فهرست و جستجو با شماره", Color(0xFF451E90), Color(0xFFB46CFF), Modifier.weight(1f)) { page = "user" }
             ColorTile(Icons.Filled.Forum, "پیامِ گروهی", "به یک گروهِ خاص", Color(0xFF062955), Color(0xFF20BFFF), Modifier.weight(1f)) { page = "broadcast" }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

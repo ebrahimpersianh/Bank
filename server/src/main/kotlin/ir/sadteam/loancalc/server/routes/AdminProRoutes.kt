@@ -270,6 +270,49 @@ internal fun broadcastHistory(conn: Connection): List<BroadcastHistoryItem> = bu
     }
 }
 
+@Serializable
+data class AdminUserRow(
+    val code: String,
+    val phone: String,
+    val createdAt: String,
+    val subscribedUntil: String? = null,
+    val paid: Boolean = false,
+    val store: String? = null,
+    val lastDay: String? = null,
+)
+
+@Serializable
+data class AdminUserList(val users: List<AdminUserRow>)
+
+internal fun listUsers(conn: Connection, q: String): List<AdminUserRow> {
+    val rows = buildList {
+        conn.list(
+            "SELECT u.id, u.phone, u.created_at, u.subscribed_until, " +
+                "EXISTS(SELECT 1 FROM subscription_purchases p WHERE p.user_id = u.id), " +
+                "(SELECT store FROM installs i WHERE i.user_id = u.id ORDER BY last_day DESC LIMIT 1), " +
+                "(SELECT MAX(last_day) FROM installs i WHERE i.user_id = u.id) " +
+                "FROM users u " + (if (q.isNotEmpty()) "WHERE u.phone LIKE ? " else "") +
+                "ORDER BY u.id DESC LIMIT 300",
+            *(if (q.isNotEmpty()) arrayOf<Any?>("%$q%") else emptyArray()),
+        ) {
+            add(
+                AdminUserRow(
+                    code = it.getLong(1).toString(), phone = it.getString(2), createdAt = it.getString(3),
+                    subscribedUntil = it.getString(4), paid = it.getInt(5) != 0, store = it.getString(6), lastDay = it.getString(7),
+                ),
+            )
+        }
+    }
+    // id → Uid (شماره‌ی کاربری‌ای که کاربر در برنامه می‌بیند).
+    val mapped = rows.map { r -> r.copy(code = userCodeOf(conn, r.code.toLong())?.removePrefix("Uid:") ?: r.code) }
+    return if (q.isEmpty() || mapped.isNotEmpty()) mapped
+    else resolveUserCode(conn, q)
+        ?.let { uid -> conn.queryOne("SELECT phone FROM users WHERE id = ?", uid) { it.getString(1) } }
+        ?.takeIf { it.isNotBlank() }
+        ?.let { phone -> listUsers(conn, phone) }
+        .orEmpty()
+}
+
 /** تعدادِ هر گروه، برای نشان‌دادنِ عدد کنارِ همه‌ی کارت‌ها. */
 internal fun broadcastCounts(conn: Connection): Map<String, Int> =
     SEGMENTS.mapValues { (_, where) -> runCatching { conn.int("SELECT COUNT(*) FROM users WHERE $where") }.getOrDefault(0) }
@@ -284,6 +327,12 @@ fun Route.adminProRoutes() {
             if (!call.adminOrNull()) return@get
             val code = call.request.queryParameters["code"].orEmpty()
             call.respond(Db.withConnection { buildTimeline(it, code) })
+        }
+        // 👥 فهرستِ کاربران (تازه‌ترین اول) + جستجو با بخشی از شماره یا Uid.
+        get("/users") {
+            if (!call.adminOrNull()) return@get
+            val q = call.request.queryParameters["q"].orEmpty().filter { it.isDigit() }
+            call.respond(Db.withConnection { conn -> AdminUserList(listUsers(conn, q)) })
         }
         get("/broadcast/history") {
             if (!call.adminOrNull()) return@get

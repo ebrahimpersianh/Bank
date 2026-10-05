@@ -87,6 +87,11 @@ class AuthRepository(
         return runCatching { apiService.adminMoney("Bearer $token") }.getOrNull()
     }
 
+    suspend fun adminUsers(q: String): List<ir.sadteam.loancalc.data.network.AdminUserRow>? {
+        val token = authPrefs.authToken.first() ?: return null
+        return runCatching { apiService.adminUsers("Bearer $token", q).users }.getOrNull()
+    }
+
     suspend fun adminUser(code: String): ir.sadteam.loancalc.data.network.AdminUserTimeline? {
         val token = authPrefs.authToken.first() ?: return null
         return runCatching { apiService.adminUser("Bearer $token", code) }.getOrNull()

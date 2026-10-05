@@ -204,6 +204,10 @@ internal fun userCodeOf(conn: Connection, uid: Long): String? {
 internal fun resolveUserCode(conn: Connection, input: String): Long? {
     val code = input.trim().removePrefix("Uid:").removePrefix("uid:").trim()
     if (code.isEmpty() || !code.all { it.isDigit() }) return null
+    // شماره‌ی موبایل هم قبول است (۱۳ مهر: «جستجو با شماره»).
+    if (code.length == 11 && code.startsWith("09")) {
+        conn.queryOne("SELECT id FROM users WHERE phone = ?", code) { it.getLong(1) }?.let { return it }
+    }
     val ids = buildList { conn.list("SELECT id FROM users") { add(it.getLong(1)) } }
     return ids.firstOrNull { userCodeOf(conn, it) == "Uid:$code" }
 }
