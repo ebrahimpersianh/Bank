@@ -1559,20 +1559,7 @@ private fun HomeQuickCardsRow(
             modifier = Modifier.weight(1f),
             onClick = onOpenTransactions,
         )
-        HomeQuickCard(
-            icon = Icons.Filled.PieChart,
-            title = "گزارش‌ها",
-            subtitle = "تحلیلِ مالی",
-            modifier = Modifier.weight(1f),
-            onClick = { onNavigateToRoute("report") },
-        )
-        HomeQuickCard(
-            icon = Icons.Filled.Description,
-            title = "چک‌ها",
-            subtitle = "${openChequeCount.toFa()} چکِ باز",
-            modifier = Modifier.weight(1f),
-            onClick = { onNavigateToRoute("cheque") },
-        )
+        // «گزارش‌ها» و «چک‌ها» به خواسته‌ی کاربر (۱۳ مهر: «برنامه شلوغه») برداشته شدند.
     }
 }
 
