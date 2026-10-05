@@ -18,15 +18,9 @@ jobs:
           envs: OWNER_PHONE
           script: |
             DB=~/VameMan/data.sqlite
-            echo "=== owner users rows ==="
-            sqlite3 -header $DB "SELECT id, subscribed, subscribed_until, subscription_tier, launch_gift_granted, legacy_gift_granted, trial_days, created_at FROM users WHERE phone IN ('$OWNER_PHONE','09366963867');"
-            echo "=== owner purchases ==="
-            sqlite3 -header $DB "SELECT p.id, p.product_id, p.store, p.duration_days, p.subscribed_until, p.created_at FROM subscription_purchases p JOIN users u ON u.id=p.user_id WHERE u.phone IN ('$OWNER_PHONE','09366963867');"
-            echo "=== last 8 purchases (all) ==="
-            sqlite3 -header $DB "SELECT id, user_id, product_id, store, duration_days, created_at FROM subscription_purchases ORDER BY id DESC LIMIT 8;"
-            echo "=== owner announcements ==="
-            sqlite3 -header $DB "SELECT a.id, a.title, a.created_at FROM announcements a JOIN users u ON u.id=a.target_user_id WHERE u.phone IN ('$OWNER_PHONE','09366963867') ORDER BY a.id DESC LIMIT 8;" 2>&1
-            echo "=== installs by store ==="
-            sqlite3 -header $DB "SELECT store, COUNT(*) n, SUM(logged_in) logged FROM installs GROUP BY store;"
-            echo "=== last 12 crashes ==="
-            sqlite3 -header $DB "SELECT id, created_at, app_version, substr(message,1,120) msg, substr(replace(stack, char(10), ' '), 1, 260) st FROM crash_reports ORDER BY id DESC LIMIT 12;"
+            echo "=== new users (after legacy gift) who got subscribed_until without purchase ==="
+            sqlite3 -header $DB "SELECT u.id, substr(u.phone,1,4)||'***'||substr(u.phone,-3) ph, u.created_at, u.subscribed_until, u.launch_gift_granted lg, u.trial_days FROM users u WHERE u.created_at > '2026-08-12' AND u.subscribed_until IS NOT NULL AND NOT EXISTS (SELECT 1 FROM subscription_purchases p WHERE p.user_id=u.id) ORDER BY u.subscribed_until DESC LIMIT 40;"
+            echo "=== count ==="
+            sqlite3 $DB "SELECT COUNT(*) FROM users u WHERE u.created_at > '2026-08-12' AND u.subscribed_until IS NOT NULL AND NOT EXISTS (SELECT 1 FROM subscription_purchases p WHERE p.user_id=u.id);"
+            echo "=== recent pm2 restarts ==="
+            pm2 describe loan-calc-api | grep -E "restarts|uptime"

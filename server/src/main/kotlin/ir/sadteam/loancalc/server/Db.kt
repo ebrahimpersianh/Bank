@@ -355,7 +355,9 @@ object Db {
             addColumnIfMissing(conn, "ALTER TABLE accounts_backup ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")
             // دسترسیِ صفحه‌ی «آمارِ جیبک» داخلِ اپ - فقط با ورک‌فلوی make-admin روشن می‌شود.
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
-            grantLegacyGift(conn)
+            // 🚨 (۱۳ مهر) دیگر صدا زده نمی‌شود: هر راه‌اندازیِ سرور (= هر دیپلوی) به هر کاربرِ
+            // تازه‌ای که از دیپلویِ قبلی ثبت‌نام کرده بود ۴۵ روز می‌داد، چون ستون پیش‌فرضِ ۰ داشت.
+            // هدیه‌ی قدیمی‌ها مرداد یک بار داده شد و تمام است.
         }
     }
 
