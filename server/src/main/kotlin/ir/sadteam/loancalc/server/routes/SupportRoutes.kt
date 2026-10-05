@@ -277,8 +277,8 @@ fun Route.supportRoutes() {
                     "💬 جوابِ پشتیبانی (${row.second})", text, "info", row.first,
                 )
                 if (body.close) {
+                    // پیوست دیگر با جواب پاک نمی‌شود (۱۳ مهر: «عکس بعد از جواب غیب شد»)؛ sweep بعد از ۳۰ روز.
                     conn.execute("UPDATE bug_reports SET status = 'answered' WHERE id = ?", body.id)
-                    SupportFiles.deleteForReport(conn, body.id)
                 }
                 true
             }
@@ -305,7 +305,6 @@ fun Route.supportRoutes() {
                 val expiry = java.time.Instant.ofEpochMilli(maxOf(current, now) + body.days * 24L * 60 * 60 * 1000).toString()
                 conn.execute("UPDATE users SET subscribed_until = ? WHERE id = ?", expiry, row.first)
                 conn.execute("UPDATE bug_reports SET rewarded_days = ?, status = 'answered' WHERE id = ?", body.days, body.id)
-                SupportFiles.deleteForReport(conn, body.id)
                 conn.insertReturningId(
                     "INSERT INTO announcements (title, body, kind, target_user_id) VALUES (?, ?, ?, ?)",
                     "🎁 هدیه‌ی اشتراک (${row.second})", text, "info", row.first,
@@ -328,7 +327,7 @@ fun Route.supportRoutes() {
             }
             Db.withConnection { conn ->
                 conn.execute("UPDATE bug_reports SET status = ? WHERE id = ?", body.status, body.id)
-                if (body.status != "open") SupportFiles.deleteForReport(conn, body.id)
+
             }
             call.respond(mapOf("ok" to true))
         }
