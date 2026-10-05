@@ -147,6 +147,7 @@ import ir.sadteam.loancalc.ui.components.AppHeroCard
  * کاملِ گذشته بیشتر باشه، با شرطِ حداقل پنج تراکنش در هر پنجره. بزرگ‌ترین انحراف، یکی در ماه.**
  */
 @Composable
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 fun ReportTabScreen(
     onOpenExport: () -> Unit = {},
     onOpenLoanStats: () -> Unit = {},
@@ -242,6 +243,7 @@ fun ReportTabScreen(
     // خاموش می‌شود یعنی باگی که هیچ‌وقت گزارش نمی‌شود. ماهِ بعد دوباره می‌آید.
     // ماندگاری از `UiPrefs.dismissedDiscoveries` می‌آید - رجوع کن به [DiscoveryDismissViewModel].
     val dismissed by discoveryDismissViewModel.dismissed.collectAsState()
+    val ignoredSubs by hiltViewModel<ir.sadteam.loancalc.ui.settings.SmsAutoImportViewModel>().ignoredSubscriptions.collectAsState()
     val monthKey = "${today.y}-${today.m}"
 
     // ⚠️ زیرصفحه‌ها **روی** تب می‌نشینند، نه به‌جایش. قبلاً با `return` صدا زده می‌شدند و
@@ -252,6 +254,14 @@ fun ReportTabScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+    // کشیدن به پایین = تازه‌سازی (خواسته‌ی کاربر ۱۳ مهر؛ داده‌ها خودشان زنده‌اند، این اشتراک/سرور را هم می‌گیرد).
+    val reportAuthVm: ir.sadteam.loancalc.ui.auth.AuthViewModel = hiltViewModel()
+    var reportRefreshing by remember { mutableStateOf(false) }
+    androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+        isRefreshing = reportRefreshing,
+        onRefresh = { reportRefreshing = true; reportAuthVm.refreshStatus { reportRefreshing = false } },
+        modifier = Modifier.fillMaxSize(),
+    ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 110.dp),
@@ -395,20 +405,22 @@ fun ReportTabScreen(
             // ⚠️ **اشتراک‌یاب** با کارتِ بعدی فرق دارد: آن پرداخت‌های تکراریِ **اعلام‌شده‌ی
             // خودِ کاربر** است، این چیزی است که اپ از روی تاریخچه **کشف** کرده و کاربر خبر
             // نداشته. تنها کارتِ کشفی که با تپ صفحه باز می‌کند.
-            if (stats.detectedSubscriptions.isNotEmpty()) {
+            val liveSubs = stats.detectedSubscriptions.filter { it.label !in ignoredSubs }
+            if (liveSubs.isNotEmpty()) {
                 add(
                     Discovery("subscriptions", 2) {
                         DiscoveryCard(
                             icon = Icons.Filled.Autorenew,
-                            title = "${(stats.detectedSubscriptions.size).toFa()} خرجِ تکرارشونده پیدا شد",
-                            subtitle = "ماهی ${maskIfPrivate(privacyMode, (stats.detectedMonthly).rialToFaCompact())} تومان — لمس کن ببین چی‌ان",
+                            title = "${(liveSubs.size).toFa()} خرجِ تکرارشونده پیدا شد",
+                            subtitle = "ماهی ${maskIfPrivate(privacyMode, (liveSubs.sumOf { it.typicalAmountRial }).rialToFaCompact())} تومان — لمس کن ببین چی‌ان",
                             bg = DiscoverWarnBg,
                             border = DiscoverWarnBorder,
                             pill = DiscoverWarnPill,
                             ink = DiscoverWarnInk,
                             subInk = DiscoverWarnSubInk,
                             iconInk = DiscoverWarnIconInk,
-                            onClick = { showSubscriptionFinder = true },
+                            // دیده‌شده = بسته؛ تا ماهِ بعد برنگردد (گزارشِ کاربر ۱۳ مهر).
+                            onClick = { showSubscriptionFinder = true; discoveryDismissViewModel.dismiss("subscriptions@$monthKey", monthKey) },
                             onDismiss = { discoveryDismissViewModel.dismiss("subscriptions@$monthKey", monthKey) },
                         )
                     },
@@ -457,6 +469,7 @@ fun ReportTabScreen(
                 onPdf = { pdfLauncher.launch("jibak-${today.y}-${today.m}.pdf") },
             )
         }
+    }
     }
 
         if (showSubscriptionFinder) {

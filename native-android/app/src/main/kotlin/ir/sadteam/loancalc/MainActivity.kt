@@ -80,6 +80,7 @@ import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.TrendingDown
+import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.MonetizationOn
@@ -331,6 +332,8 @@ internal val allShortcutPool = defaultShortcuts + listOf(
     // مقصدش «سررسید» بود و اشتباه: «دنگ» زیرصفحه‌ی `DebtScreen` است، پس تپ روی این
     // میان‌بر کاربر را به تبِ سررسید می‌برد و هیچ‌وقت به دنگ نمی‌رساند.
     Shortcut("debt", "دنگ", Icons.Outlined.Groups, DANG_ROUTE),
+    // خواسته‌ی کاربر (۱۳ مهر): «طلب و بدهی» پیدا نمی‌شد.
+    Shortcut("debts", "طلب و بدهی", Icons.Outlined.Handshake, DEBT_ROUTE),
     Shortcut("loan", "وام", Icons.Outlined.CreditCard, LOAN_ROUTE),
     Shortcut("home", "خانه", Icons.Outlined.Home, "home"),
     Shortcut("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, "assets"),
@@ -1487,6 +1490,8 @@ private fun LoanCalcApp(
 
         // کشوی میان‌بُر رو کلِ صفحه می‌شینه (پرده‌ی تیره + خودِ کشو) ولی **زیرِ** نوارِ پایین
         // نمی‌ره - طرح صریحاً می‌خواد نوار همیشه دیده بشه.
+        // دکمه‌ی برگشتِ گوشی کشو را ببندد، نه از برنامه بیرون برود (خواسته‌ی کاربر ۱۳ مهر).
+        androidx.activity.compose.BackHandler(enabled = shortcutDrawerOpen) { shortcutDrawerOpen = false }
         ShortcutDrawer(
             // خاموش کردنِ اضطراری از سرور (۸ مهر).
             shortcuts = shortcuts.filterNot { ir.sadteam.loancalc.data.RemoteApp.isDisabled(it.id) },

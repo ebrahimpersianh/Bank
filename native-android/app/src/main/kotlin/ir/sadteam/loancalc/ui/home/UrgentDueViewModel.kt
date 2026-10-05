@@ -49,7 +49,10 @@ class UrgentDueViewModel @Inject constructor(
     val upcoming7d: StateFlow<Double> = _upcoming7d.asStateFlow()
 
     init {
-        refresh()
+        // زنده: هر پرداخت/ویرایشِ وام (paidCount روی خودِ ردیفِ وام هم نوشته می‌شود) کارت را تازه می‌کند.
+        viewModelScope.launch {
+            loanRepository.observeLoans().collect { refresh() }
+        }
     }
 
     fun refresh() {

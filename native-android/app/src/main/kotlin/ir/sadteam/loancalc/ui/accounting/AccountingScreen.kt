@@ -1060,7 +1060,8 @@ private fun BudgetSection(
             visible = unbudgetedCats.isNotEmpty(),
             enter = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) + fadeIn(tween(150)),
             exit = scaleOut(tween(120)) + fadeOut(tween(120)),
-            modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
+            // همان گوشه‌ی FABِ دارایی/وام (خواسته‌ی کاربر ۱۳ مهر: «مثلِ بقیه‌جاها»).
+            modifier = Modifier.align(Alignment.BottomStart).padding(start = 16.dp, bottom = 16.dp),
         ) {
             AppFab(
                 onClick = { showAddBudgetDialog = true },

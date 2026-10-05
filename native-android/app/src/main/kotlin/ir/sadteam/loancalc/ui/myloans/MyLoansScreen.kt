@@ -336,7 +336,11 @@ fun MyLoansScreen(
     // 🚨 **سه‌حالته شد** (طرحِ مرجعِ کاربر، ۳۱ شهریور): پیش از این یک کلیدِ دوحالته بود و
     // هیچ راهی نبود هر دو گروه را با هم دید. `showSettled` برای بقیه‌ی صفحه مشتق می‌ماند،
     // پس شرط‌های موجود دست‌نخورده کار می‌کنند.
-    var loanFilter by remember { mutableStateOf(LoanFilter.ACTIVE) }
+    // انتخابِ فیلتر بعد از بستنِ برنامه هم بماند (خواسته‌ی کاربر ۱۳ مهر).
+    val filterPrefs = androidx.compose.ui.platform.LocalContext.current.getSharedPreferences("loan_list", android.content.Context.MODE_PRIVATE)
+    var loanFilter by remember {
+        mutableStateOf(runCatching { LoanFilter.valueOf(filterPrefs.getString("filter", null) ?: "ACTIVE") }.getOrDefault(LoanFilter.ACTIVE))
+    }
     val showSettled = loanFilter == LoanFilter.SETTLED
     var searchQuery by remember { mutableStateOf("") }
     // بستنِ فیلدِ جست‌وجو باید فیلتر را هم بردارد - وگرنه فهرست فیلترشده می‌مانَد و
@@ -640,7 +644,7 @@ fun MyLoansScreen(
                                         settledCount = settledCount,
                                         activeCount = loans.size - settledCount,
                                         overdueLoanCount = overdueCount,
-                                        onFilter = { loanFilter = it },
+                                        onFilter = { loanFilter = it; filterPrefs.edit().putString("filter", it.name).apply() },
                                     )
                                 } else {
                                     Box {}
