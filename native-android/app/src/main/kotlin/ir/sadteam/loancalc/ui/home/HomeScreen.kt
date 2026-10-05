@@ -474,15 +474,7 @@ fun HomeScreen(
             // 🚨 **چهار درِ همیشه‌درمعرض** (طرحِ مرجعِ کاربر). کشوی میان‌بر قدرتمندتر است
             // ولی باید کشیده شود؛ این ردیف بی هیچ کنشی هم **خبر** می‌دهد: تعدادِ حساب،
             // تعدادِ تراکنشِ ماه، تعدادِ چکِ باز. عدد همان چیزی است که کارتِ بی‌عدد ندارد.
-            item {
-                HomeQuickCardsRow(
-                    accountCount = accounts.size,
-                    monthTransactionCount = transactions.count { it.year == today.y && it.month == today.m },
-                    openChequeCount = openChequeCount,
-                    onNavigateToRoute = onNavigateToRoute,
-                    onOpenTransactions = onOpenTransactions,
-                )
-            }
+            // ردیفِ چهار کاشی (حساب/تراکنش/گزارش/چک) به خواسته‌ی کاربر (۱۳ مهر) برداشته شد - تکراریِ نوارِ پایین.
             // «نیاز به توجه» (۸ مهر): قسطِ عقب‌افتاده **اول**، بعد بودجه/پیش‌بینی - زیرِ یک
             // عنوان، تا کارت‌های هشدار با هم رقابت نکنند و ترتیبِ اهمیت روشن باشد.
             if (urgentDue != null || (monthCap > 0.0 && monthSpend > monthCap)) {
