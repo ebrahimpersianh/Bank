@@ -87,7 +87,8 @@ private fun threeDigitsToWords(n: Int): String {
 fun numberToWordsFa(input: Double): String {
     var num = floor(input + 0.5).toLong()
     if (num == 0L) return "صفر"
-    val scales = listOf("", "هزار", "میلیون", "میلیارد", "تریلیون")
+    // 🚨 کرشِ ۷۲۱ (۶ بار): عددِ ۱۶رقمی ایندکسِ ۵ می‌خواست. Long حداکثر ۷ گروهِ سه‌رقمی دارد.
+    val scales = listOf("", "هزار", "میلیون", "میلیارد", "تریلیون", "کوادریلیون", "کوینتیلیون")
     val groups = mutableListOf<Int>()
     while (num > 0) {
         groups.add((num % 1000).toInt())
@@ -98,7 +99,8 @@ fun numberToWordsFa(input: Double): String {
         val g = groups[idx]
         if (g > 0) {
             val words = threeDigitsToWords(g)
-            parts.add(if (scales[idx].isNotEmpty()) "$words ${scales[idx]}" else words)
+            val scale = scales.getOrElse(idx) { "" }
+            parts.add(if (scale.isNotEmpty()) "$words $scale" else words)
         }
     }
     return parts.joinToString(" و ")

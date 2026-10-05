@@ -819,6 +819,17 @@ private fun SalesCard(st: AdminStatsResponse) {
                 }
             }
         }
+        val inst = st.installsByStore.orEmpty()
+        if (inst.isNotEmpty()) {
+            val logged = st.loggedByStore.orEmpty().associate { it.name to it.count }
+            AdminSubSection(
+                "کاربران از هر فروشگاه",
+                inst.joinToString(" · ") { "${STORE_LABELS[it.name] ?: it.name} ${adminNum(it.count)}" },
+            ) {
+                SplitBar("نصب‌ها", inst.map { SplitPart(STORE_LABELS[it.name] ?: it.name, it.count) })
+                AdminNote(inst.joinToString(" · ") { "${STORE_LABELS[it.name] ?: it.name}: ${adminNum(it.count)} نصب، ${adminNum(logged[it.name] ?: 0)} واردِ حساب شدند" })
+            }
+        }
         val byStore = st.salesByStore.orEmpty()
         val byTier = st.activeByTier.orEmpty()
         if (byStore.isNotEmpty() || byTier.isNotEmpty()) {

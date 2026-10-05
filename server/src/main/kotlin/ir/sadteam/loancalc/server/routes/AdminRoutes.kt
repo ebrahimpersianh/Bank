@@ -130,6 +130,9 @@ data class StatsResponse(
     val installsList: List<InstallRow> = emptyList(),
     val sales: List<SaleRow> = emptyList(),
     val salesByStore: List<NamedCount> = emptyList(),
+    /** نصب‌ها به‌تفکیکِ استور (کل / واردشده). */
+    val installsByStore: List<NamedCount> = emptyList(),
+    val loggedByStore: List<NamedCount> = emptyList(),
     val salesDaily: List<NamedCount> = emptyList(),
     val activeSubscribers: Int = 0,
     val activeByTier: List<NamedCount> = emptyList(),
@@ -355,6 +358,12 @@ internal fun buildStats(conn: Connection): StatsResponse {
             add(NamedCount(it.getString(1), it.getInt(2)))
         }
     }
+    val installsByStore = buildList {
+        conn.list("SELECT coalesce(store,'?'), COUNT(*) FROM installs GROUP BY 1 ORDER BY 2 DESC") { add(NamedCount(it.getString(1), it.getInt(2))) }
+    }
+    val loggedByStore = buildList {
+        conn.list("SELECT coalesce(store,'?'), SUM(logged_in) FROM installs GROUP BY 1 ORDER BY 2 DESC") { add(NamedCount(it.getString(1), it.getInt(2))) }
+    }
     val salesByDay = HashMap<String, Int>()
     conn.list("SELECT substr(created_at, 1, 10), COUNT(*) FROM subscription_purchases WHERE created_at >= ? GROUP BY 1", d30) {
         salesByDay[it.getString(1)] = it.getInt(2)
@@ -445,6 +454,8 @@ internal fun buildStats(conn: Connection): StatsResponse {
         installsList = installsList,
         sales = sales,
         salesByStore = salesByStore,
+        installsByStore = installsByStore,
+        loggedByStore = loggedByStore,
         salesDaily = salesDaily,
         activeSubscribers = activeTiers.size,
         activeByTier = activeByTier,

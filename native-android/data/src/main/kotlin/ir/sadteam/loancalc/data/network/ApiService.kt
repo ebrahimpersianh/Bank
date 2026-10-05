@@ -481,6 +481,8 @@ data class AdminStatsResponse(
     val installsList: List<AdminInstallRow>? = null,
     val sales: List<AdminSaleRow>? = null,
     val salesByStore: List<AdminNamedCount>? = null,
+    val installsByStore: List<AdminNamedCount>? = null,
+    val loggedByStore: List<AdminNamedCount>? = null,
     val salesDaily: List<AdminNamedCount>? = null,
     val activeSubscribers: Int = 0,
     val activeByTier: List<AdminNamedCount>? = null,
