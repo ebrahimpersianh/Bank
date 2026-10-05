@@ -1,0 +1,32 @@
+name: بررسیِ فقط‌خواندنیِ سرور
+
+# فقط SELECT - هیچ چیزی را عوض نمی‌کند. برای بررسیِ اشتراکِ مالک، خریدهای اخیر و کرش‌ها.
+on:
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        env:
+          OWNER_PHONE: ${{ secrets.OWNER_PHONE }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: OWNER_PHONE
+          script: |
+            DB=~/VameMan/data.sqlite
+            echo "=== owner users rows ==="
+            sqlite3 -header $DB "SELECT id, subscribed, subscribed_until, subscription_tier, launch_gift_granted, legacy_gift_granted, trial_days, created_at FROM users WHERE phone IN ('$OWNER_PHONE','09366963867');"
+            echo "=== owner purchases ==="
+            sqlite3 -header $DB "SELECT p.id, p.product_id, p.store, p.duration_days, p.subscribed_until, p.created_at FROM subscription_purchases p JOIN users u ON u.id=p.user_id WHERE u.phone IN ('$OWNER_PHONE','09366963867');"
+            echo "=== last 8 purchases (all) ==="
+            sqlite3 -header $DB "SELECT id, user_id, product_id, store, duration_days, created_at FROM subscription_purchases ORDER BY id DESC LIMIT 8;"
+            echo "=== owner announcements ==="
+            sqlite3 -header $DB "SELECT a.id, a.title, a.created_at FROM announcements a JOIN users u ON u.id=a.target_user_id WHERE u.phone IN ('$OWNER_PHONE','09366963867') ORDER BY a.id DESC LIMIT 8;" 2>&1
+            echo "=== installs by store ==="
+            sqlite3 -header $DB "SELECT store, COUNT(*) n, SUM(logged_in) logged FROM installs GROUP BY store;"
+            echo "=== last 12 crashes ==="
+            sqlite3 -header $DB "SELECT id, created_at, app_version, substr(message,1,120) msg, substr(replace(stack, char(10), ' '), 1, 260) st FROM crash_reports ORDER BY id DESC LIMIT 12;"
