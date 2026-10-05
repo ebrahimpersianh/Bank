@@ -706,10 +706,9 @@ fun LoanDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = {
-                    val due = rows.firstOrNull { (it["m"] as? Number)?.toInt() == m }?.get("dueDate") as? Map<*, *>
-                    lateYear = (due?.get("y") as? Number)?.toInt() ?: lateYear
-                    lateMonth = (due?.get("m") as? Number)?.toInt() ?: lateMonth
-                    lateDay = (due?.get("d") as? Number)?.toInt() ?: lateDay
+                    // پیش‌فرض = امروز (نه سررسید) تا تراکنش در ماهِ واقعیِ پرداخت بیفتد.
+                    val t = JalaliCalendar.today()
+                    lateYear = t.y; lateMonth = t.m; lateDay = t.d
                     lateDateM = m
                     payChoiceM = null
                 }) { Text("پرداخت با تاخیر") }
