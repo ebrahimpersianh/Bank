@@ -19,7 +19,7 @@ object BankSmsParser {
     // مبلغ: یه رشته‌ی رقمی (با یا بدون جداکننده‌ی هزارگان) بلافاصله قبل از «ریال»/«تومان». حداقل
     // ۴ رقم چون مبلغ‌های بانکی واقعی همیشه حداقل هزارتومانی‌ان - جلوگیری از قاپیدنِ اعدادِ کوچیکِ
     // بی‌ربط (مثلاً شماره‌ی پیگیری).
-    private val amountRegex = Regex("([\\d,٬۰-۹]{4,})\\s*(ریال|ريال|تومان)")
+    private val amountRegex = Regex("([\\d۰-۹]{1,3}(?:[,٬٫.][\\d۰-۹]{3})+|[\\d۰-۹]{4,})\\s*(ریال|ريال|تومان|تومن)")
     private val cardSuffixRegex = Regex("(?:\\*+|منتهی به|کارت)\\D{0,6}(\\d{4})(?!\\d)")
     // ⚠️ بانک‌های دیجیتال (بلوبانک و مانندش) متنِ اعلانشان با پیامکِ بانکِ سنتی فرق دارد و
     // فعل‌های دیگری به کار می‌برند. با فهرستِ قبلی، اعلان پارس نمی‌شد و بی‌صدا رد می‌شد -
@@ -98,10 +98,10 @@ object BankSmsParser {
 
     fun parse(body: String): ParsedBankSms? {
         val amountMatch = amountRegex.find(body) ?: return null
-        val digitsOnly = toEnDigits(amountMatch.groupValues[1]).replace(",", "").replace("٬", "")
+        val digitsOnly = toEnDigits(amountMatch.groupValues[1]).replace(",", "").replace("٬", "").replace("٫", "").replace(".", "")
         val amount = digitsOnly.toDoubleOrNull() ?: return null
         if (amount <= 0) return null
-        val amountRial = if (amountMatch.groupValues[2] == "تومان") amount * 10 else amount
+        val amountRial = if (amountMatch.groupValues[2] == "تومان" || amountMatch.groupValues[2] == "تومن") amount * 10 else amount
 
         val type = when {
             (depositKeywords + remoteDeposit).any { body.contains(it) } -> TransactionType.DEPOSIT
@@ -146,7 +146,11 @@ fun normalizeSmsSender(raw: String?): String {
 /** آیا فرستنده‌ی این پیامک همونیه که کاربر برای این حساب ثبت کرده؟ برای اینکه یه سرشماره‌ی
  * ۱۰-۱۴رقمی که اپراتورها گاهی با چند رقمِ اضافه تحویل می‌دن هم بگیره، تطبیقِ «یکی پسوندِ اون یکی
  * باشه» هم قبوله (با حداقلِ ۴ کاراکتر، تا دو سرشماره‌ی بی‌ربط تصادفی جور در نیان). */
-fun smsSenderMatches(accountSender: String?, incoming: String?): Boolean {
+fun smsSenderMatches(accountSender: String?, incoming: String?): Boolean =
+    // یک حساب می‌تواند سرشماره‌ی پیامک و بسته‌نامِ اپِ اعلان را با «,» کنارِ هم داشته باشد.
+    accountSender.orEmpty().split(',').any { singleSenderMatches(it, incoming) }
+
+private fun singleSenderMatches(accountSender: String?, incoming: String?): Boolean {
     val a = normalizeSmsSender(accountSender)
     val b = normalizeSmsSender(incoming)
     if (a.isEmpty() || b.isEmpty()) return false

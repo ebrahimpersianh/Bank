@@ -433,10 +433,9 @@ fun AssetsTabScreen(
                 AccountDetailScreen(
                     account = acc,
                     onBack = { detailAccount = null },
-                    // ویرایش هست، حذف نیست: کاربر همین‌جا می‌بینه اسم/فرستنده‌ی پیامک غلطه و
-                    // باید بتونه درستش کنه، ولی حذف از مسیرِ تماشا جای درستی نیست.
                     onEdit = { editAccount = acc.id },
-                    onDelete = null,
+                    // خواسته‌ی کاربر (۱۰ مهر): حذف هم باشد - پنجره‌ی تأیید دارد.
+                    onDelete = { accountViewModel.deleteAccount(acc); detailAccount = null },
                     viewModel = accountViewModel,
                 )
         }

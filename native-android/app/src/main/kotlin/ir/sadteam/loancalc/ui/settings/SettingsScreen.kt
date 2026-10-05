@@ -2922,6 +2922,8 @@ private fun diagnosticsText(): String = buildString {
  * پس‌زمینه‌ی مستقل ندارن، قبلاً به پس‌زمینه‌ی همون پنلِ پشتشون تکیه می‌کردن). */
 @Composable
 internal fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
+    // ویندوی دیالوگ LocalDensity را از نو می‌سازد و «اندازه‌ی متن»ِ برنامه گم می‌شد.
+    val outerDensity = androidx.compose.ui.platform.LocalDensity.current
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -2958,7 +2960,9 @@ internal fun FullScreenDialog(onDismissRequest: () -> Unit, content: @Composable
                         WindowInsets.systemBars.union(WindowInsets.ime),
                     ),
             ) {
-                content()
+                androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides outerDensity) {
+                    content()
+                }
             }
         }
     }

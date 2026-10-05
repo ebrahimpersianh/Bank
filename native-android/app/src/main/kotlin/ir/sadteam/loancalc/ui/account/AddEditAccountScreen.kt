@@ -31,6 +31,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -83,7 +86,12 @@ fun AddEditAccountScreen(
     var name by remember { mutableStateOf(existing?.name ?: "") }
     var bankName by remember { mutableStateOf(existing?.bankName ?: "") }
     var cardNumberText by remember { mutableStateOf(existing?.cardNumber ?: "") }
-    var smsSenderText by remember { mutableStateOf(existing?.smsSender ?: "") }
+    // smsSender می‌تواند «سرشماره,بسته‌نامِ اپ» باشد؛ بسته‌نام نقطه دارد، سرشماره نه.
+    val senderParts = remember { existing?.smsSender.orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() } }
+    var smsSenderText by remember { mutableStateOf(senderParts.filterNot { '.' in it }.joinToString(",")) }
+    var notifPackage by remember { mutableStateOf(senderParts.firstOrNull { '.' in it }) }
+    var showAppPicker by remember { mutableStateOf(false) }
+    val smsAutoVm: ir.sadteam.loancalc.ui.settings.SmsAutoImportViewModel = androidx.hilt.navigation.compose.hiltViewModel()
     var accountNumberText by remember { mutableStateOf(existing?.accountNumber ?: "") }
     var shebaText by remember { mutableStateOf(existing?.sheba ?: "") }
     var initialBalanceText by remember {
@@ -103,7 +111,19 @@ fun AddEditAccountScreen(
     // سیستمی هم به آن وصل نبود، پس کاربر برای انصراف باید تا آخر اسکرول می‌کرد. دیالوگِ
     // سرشماره اول بسته می‌شود.
     BackHandler {
-        if (showSmsSenderPicker) showSmsSenderPicker = false else onCancel()
+        if (showAppPicker) showAppPicker = false else if (showSmsSenderPicker) showSmsSenderPicker = false else onCancel()
+    }
+
+    if (showAppPicker) {
+        NotifAppPickerDialog(
+            onDismiss = { showAppPicker = false },
+            onPick = { pkg ->
+                notifPackage = pkg
+                // همین‌جا خواندنِ اعلانِ این اپ هم روشن می‌شود - دو جا انتخاب‌کردن لازم نباشد.
+                smsAutoVm.setNotifPackageSelected(pkg, true)
+                showAppPicker = false
+            },
+        )
     }
 
     if (showSmsSenderPicker) {
@@ -270,7 +290,7 @@ fun AddEditAccountScreen(
                         singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 }
                 Text(
-                    "با این دو، انتقال به حساب‌های خودت خودکار «جابه‌جایی» حساب می‌شود، نه خرج.",
+                    "اگر شماره‌ی حساب و شبا را بزنی، وقتی از یک حسابت به حسابِ دیگرت پول می‌فرستی، برنامه آن را خرج حساب نمی‌کند (فقط جابه‌جاییِ پولِ خودت است).",
                     color = AppMuted,
                     fontSize = 10.sp,
                     modifier = Modifier.padding(top = 4.dp),
@@ -327,7 +347,30 @@ fun AddEditAccountScreen(
                     Icon(Icons.Filled.Sms, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(19.dp))
                     Text("انتخاب از پیامک‌های گوشی", color = AppPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold)
                 }
-                // متنِ توضیحیِ زیرِ این دکمه به‌خواستِ صریحِ کاربر حذف شد - فقط خودِ فیلد و دکمه بمونه.
+                // اپِ بانک برای بانک‌هایی که پیامک نمی‌دهند و فقط اعلان می‌دهند (مثلِ بلو).
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .dashedBorder(999.dp, color = AppPrimary.copy(alpha = 0.55f), width = 1.5.dp)
+                        .pressScaleClickable { showAppPicker = true },
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Notifications, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(19.dp))
+                    Text(
+                        notifPackage?.let { "اپِ اعلان: ${appLabel(it)}" } ?: "انتخابِ اپِ بانک (برای اعلان‌ها)",
+                        color = AppPrimary, fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1,
+                    )
+                    if (notifPackage != null) {
+                        Icon(
+                            Icons.Filled.Close, contentDescription = "برداشتن", tint = AppMuted,
+                            modifier = Modifier.size(18.dp).clickable { notifPackage = null },
+                        )
+                    }
+                }
             }
         }
         } // پایانِ بخشِ مخصوصِ «کارت بانکی» - منبعِ دیگر شماره‌کارت/بانک/سرشماره نداره.
@@ -408,7 +451,7 @@ fun AddEditAccountScreen(
                             // بنشاند - همان جنسِ باگِ نامِ تکراریِ دسته، با همان ریشه
                             // (رشته‌ای که کلید است و یکتایی‌اش چک نمی‌شود).
                             isBank && smsSenderText.isNotBlank() && otherAccounts.any {
-                                it.smsSender?.equals(smsSenderText.trim(), ignoreCase = true) == true
+                                it.smsSender.orEmpty().split(',').any { o -> smsSenderText.split(',').any { n -> n.isNotBlank() && o.trim().equals(n.trim(), ignoreCase = true) } }
                             } -> "این سرشماره روی حسابِ دیگری ثبت شده"
                             // و شماره‌ی کارتِ تکراری یعنی دو ردیفِ یک کارت در فهرستِ
                             // حساب‌ها، که کاربر نمی‌تواند از هم تشخیصشان بدهد.
@@ -422,7 +465,7 @@ fun AddEditAccountScreen(
                             // «کارت بانکی» رو پر کرده و بعد نوع رو عوض کرده، نباید یه شماره‌کارتِ
                             // یتیم رو حسابِ نقدی بمونه (و بدتر: BankSmsReceiver باهاش مچ کنه).
                             val cardNumber = if (isBank) cardNumberText.trim().ifBlank { null } else null
-                            val smsSender = if (isBank) smsSenderText.trim().ifBlank { null } else null
+                            val smsSender = if (isBank) (smsSenderText.split(',') + listOfNotNull(notifPackage)).map { it.trim() }.filter { it.isNotEmpty() }.joinToString(",").ifBlank { null } else null
                             val accountNumber = if (isBank) accountNumberText.trim().ifBlank { null } else null
                             val sheba = if (isBank) shebaText.trim().ifBlank { null } else null
                             val finalBank = if (isBank) bankName.trim() else ""
@@ -460,4 +503,57 @@ fun AddEditAccountScreen(
             }
         }
     }
+}
+
+
+@Composable
+private fun appLabel(pkg: String): String {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    return remember(pkg) {
+        runCatching { context.packageManager.let { pm -> pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString() } }.getOrDefault(pkg)
+    }
+}
+
+/** فهرستِ اپ‌های نصب‌شده برای وصل‌کردنِ اعلانِ یک اپِ بانکی به همین حساب. */
+@Composable
+private fun NotifAppPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val apps by androidx.compose.runtime.produceState(emptyList<Pair<String, String>>(), context) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                val pm = context.packageManager
+                pm.getInstalledApplications(0)
+                    .filter { pm.getLaunchIntentForPackage(it.packageName) != null && it.packageName != context.packageName }
+                    .map { it.packageName to pm.getApplicationLabel(it).toString() }
+                    .sortedBy { it.second.lowercase() }
+            }.getOrDefault(emptyList())
+        }
+    }
+    var query by remember { mutableStateOf("") }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("اپِ بانکِ این حساب") },
+        text = {
+            androidx.compose.foundation.layout.Column {
+                OutlinedTextField(
+                    value = query, onValueChange = { query = it }, singleLine = true,
+                    placeholder = { Text("جستجو…") }, modifier = Modifier.fillMaxWidth(),
+                    colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+                )
+                LazyColumn(modifier = Modifier.height(360.dp).padding(top = 8.dp)) {
+                    val shown = apps.filter { query.isBlank() || it.second.contains(query, true) || it.first.contains(query, true) }
+                    items(shown.size) { i ->
+                        val (pkg, label) = shown[i]
+                        Text(
+                            label,
+                            color = AppText,
+                            modifier = Modifier.fillMaxWidth().clickable { onPick(pkg) }.padding(vertical = 12.dp, horizontal = 4.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text("انصراف") } },
+    )
 }

@@ -84,11 +84,12 @@ class BankNotificationListener : NotificationListenerService() {
         scope.launch {
             if (!uiPrefs.notifAutoImportEnabled.first()) return@launch
             // بازبینیِ ۹ مهر: مثلِ پیامکِ بانکی، ثبتِ خودکار از اعلان هم مالِ اشتراک است.
-            if (!authPrefs.subscribed.first()) return@launch
             val allowed = uiPrefs.notifAutoImportPackages.first()
             if (packageName !in allowed) return@launch
+            if (!authPrefs.subscribed.first()) { ir.sadteam.loancalc.data.UsageStats.error("notif_not_subscribed"); return@launch }
 
-            val parsed = BankSmsParser.parse(body) ?: return@launch
+            val parsed = BankSmsParser.parse(body)
+                ?: run { ir.sadteam.loancalc.data.UsageStats.error("notif_parse_fail"); return@launch }
             // 🚨 اپ‌های بانکی همان اعلان را دوباره منتشر/به‌روزرسانی می‌کنند و این تابع هر بار
             // اجرا می‌شود؛ بی این کنترل، یک واریز دو تراکنشِ منتظرِ تایید می‌ساخت و با تاییدِ
             // هر دو، موجودی دو برابر جابه‌جا می‌شد.
@@ -101,7 +102,7 @@ class BankNotificationListener : NotificationListenerService() {
             // ⚠️ بستهٔ فرستنده اول **مجموعه‌ی نامزدها** را محدود می‌کند و بعد شماره‌ی کارت بینِ
             // همان‌ها تصمیم می‌گیرد - با دو حسابِ یک بانک، «اولین تطبیق» می‌توانست حسابِ اشتباه
             // را بردارد در حالی که چهار رقمِ آخرِ کارت صریحاً در متن آمده بود.
-            val sameSender = accounts.filter { it.smsSender?.trim() == packageName }
+            val sameSender = accounts.filter { acc -> acc.smsSender.orEmpty().split(',').any { it.trim() == packageName } }
             val account = sameSender.firstOrNull { acc ->
                 parsed.cardSuffix != null && acc.cardNumber?.takeLast(4) == parsed.cardSuffix
             }
@@ -110,8 +111,26 @@ class BankNotificationListener : NotificationListenerService() {
                 ?: accounts.firstOrNull { acc ->
                     parsed.cardSuffix != null && acc.cardNumber?.takeLast(4) == parsed.cardSuffix
                 }
+                // نامِ اپ (مثلاً «بلو» / «بلوبانک») با نامِ بانکِ حساب - تا کاربر مجبور نباشد بسته‌نام وصل کند.
+                ?: appLabelOf(packageName).let { label ->
+                    accounts.filter { acc ->
+                        val b = acc.bankName.replace("بانک", "").trim()
+                        b.length >= 2 && (label.contains(b) || b.contains(label.replace("بانک", "").trim().ifBlank { "\u0000" }))
+                    }.singleOrNull()
+                }
                 ?: accounts.singleOrNull() // فقط اگه کلاً یه حساب داره، حدس بی‌خطره
-                ?: return@launch
+                ?: run {
+                    ir.sadteam.loancalc.data.UsageStats.error("notif_no_account")
+                    inboxRepository.post(
+                        kind = InboxMessageEntity.Kind.SYSTEM,
+                        title = "اعلانِ بانکی بی‌حساب ماند",
+                        body = "یک تراکنش از «${appLabelOf(packageName)}» دیدیم ولی نمی‌دانیم مالِ کدام حساب است. در ویرایشِ حساب، «اپِ اعلان‌دهنده» را همین اپ انتخاب کن.",
+                        refId = null,
+                        sourceLabel = "اعلانِ ${appLabelOf(packageName)}",
+                        sourceText = body,
+                    )
+                    return@launch
+                }
 
             val today = JalaliCalendar.today()
             val isWithdrawal = parsed.type == TransactionType.WITHDRAWAL
