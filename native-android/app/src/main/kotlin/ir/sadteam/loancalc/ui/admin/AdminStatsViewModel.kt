@@ -29,7 +29,12 @@ class AdminStatsViewModel @Inject constructor(
     val state: StateFlow<State> = _state.asStateFlow()
 
     init {
-        viewModelScope.launch { _isAdmin.value = authRepository.isAdmin() }
+        viewModelScope.launch {
+            _isAdmin.value = authRepository.isAdmin()
+            if (_isAdmin.value) {
+                authRepository.adminDigest("day")?.let { AdminSignals.unreadSupport.value = AdminSignals.parseUnread(it.notes) }
+            }
+        }
     }
 
     fun load() {

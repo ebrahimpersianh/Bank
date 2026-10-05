@@ -528,6 +528,9 @@ class MainActivity : FragmentActivity() {
             ir.sadteam.loancalc.data.UsageStats.action("widget_open")
             deepLinkTarget.setShortcut(DeepLinkTarget.SHORTCUT_DUE)
         }
+        if (intent?.getBooleanExtra(ir.sadteam.loancalc.notifications.AdminAlertWorker.EXTRA_OPEN_ADMIN, false) == true) {
+            ir.sadteam.loancalc.ui.admin.AdminSignals.openAdmin.value = true
+        }
         // میان‌برِ فشارِ طولانی رو آیکونِ اپ - رجوع کن به res/xml/shortcuts.xml
         intent?.getStringExtra("jibak_shortcut")?.let {
             ir.sadteam.loancalc.data.UsageStats.action("shortcut_" + it.lowercase())
@@ -767,6 +770,8 @@ private fun LoanCalcApp(
     deepLinkViewModel: DeepLinkViewModel = hiltViewModel(),
 ) {
     var showSettings by remember { mutableStateOf(false) }
+    val openAdminSignal by ir.sadteam.loancalc.ui.admin.AdminSignals.openAdmin.collectAsState()
+    LaunchedEffect(openAdminSignal) { if (openAdminSignal) showSettings = true }
     var showInbox by remember { mutableStateOf(false) }
     var showGlobalSearch by remember { mutableStateOf(false) }
     var showAllTransactions by remember { mutableStateOf(false) }
@@ -1904,7 +1909,11 @@ private fun LoanTab(
                 active = false,
                 onClick = { loanThemeVm.setThemeMode(if (loanIsDark) ThemeMode.LIGHT else ThemeMode.DARK) },
             )
-            LoanHeaderIcon(icon = Icons.Outlined.Settings, label = "تنظیمات", active = false, onClick = onOpenSettings)
+            Box {
+                LoanHeaderIcon(icon = Icons.Outlined.Settings, label = "تنظیمات", active = false, onClick = onOpenSettings)
+                val adminUnread by ir.sadteam.loancalc.ui.admin.AdminSignals.unreadSupport.collectAsState()
+                if (adminUnread > 0) ir.sadteam.loancalc.ui.admin.UnreadDot(adminUnread, Modifier.align(Alignment.TopEnd))
+            }
         }
         Row(
             modifier = Modifier

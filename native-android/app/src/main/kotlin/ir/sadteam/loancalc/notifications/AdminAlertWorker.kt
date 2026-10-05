@@ -31,6 +31,7 @@ class AdminAlertWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         if (!runCatching { auth.isAdmin() }.getOrDefault(false)) return Result.success()
         val d = auth.adminDigest("day") ?: return Result.success()
+        ir.sadteam.loancalc.ui.admin.AdminSignals.unreadSupport.value = ir.sadteam.loancalc.ui.admin.AdminSignals.parseUnread(d.notes)
         val lines = buildList {
             d.notes.forEach { n ->
                 when {
@@ -52,12 +53,23 @@ class AdminAlertWorker @AssistedInject constructor(
             .setContentTitle("ادمین · گزارشِ امروز")
             .setContentText(lines.joinToString(" · "))
             .setAutoCancel(true)
+            // تپ روی اعلان = بازشدنِ گزارشِ ادمین (خواسته‌ی کاربر ۱۳ مهر).
+            .setContentIntent(
+                android.app.PendingIntent.getActivity(
+                    applicationContext, NOTIFICATION_ID,
+                    android.content.Intent(applicationContext, ir.sadteam.loancalc.MainActivity::class.java)
+                        .putExtra(EXTRA_OPEN_ADMIN, true)
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE,
+                ),
+            )
             .build()
         runCatching { NotificationManagerCompat.from(applicationContext).notify(NOTIFICATION_ID, n) }
         return Result.success()
     }
 
     companion object {
+        const val EXTRA_OPEN_ADMIN = "open_admin"
         private const val NOTIFICATION_ID = 918_400
         fun schedule(context: Context) {
             val req = PeriodicWorkRequestBuilder<AdminAlertWorker>(6, TimeUnit.HOURS).build()

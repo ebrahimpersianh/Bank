@@ -288,6 +288,10 @@ fun SettingsScreen(
     // «آمارِ جیبک» - فقط برای حسابِ صاحبِ برنامه (ورک‌فلوی make-admin).
     var showAdminStats by remember { mutableStateOf(false) }
     var showAdminSupport by remember { mutableStateOf(false) }
+    val openAdminSignal by ir.sadteam.loancalc.ui.admin.AdminSignals.openAdmin.collectAsState()
+    LaunchedEffect(openAdminSignal) {
+        if (openAdminSignal) { showAdminStats = true; ir.sadteam.loancalc.ui.admin.AdminSignals.openAdmin.value = false }
+    }
     LaunchedEffect(route) {
         if (route != SettingsRoute.MAIN) ir.sadteam.loancalc.data.UsageStats.screen("settings_" + route.name.lowercase())
     }
@@ -474,6 +478,8 @@ private fun SettingsMainContent(
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(Icons.Filled.AdminPanelSettings, contentDescription = "ادمین", tint = ir.sadteam.loancalc.ui.theme.AppWarning, modifier = Modifier.size(24.dp))
+                    val adminUnread by ir.sadteam.loancalc.ui.admin.AdminSignals.unreadSupport.collectAsState()
+                    if (adminUnread > 0) ir.sadteam.loancalc.ui.admin.UnreadDot(adminUnread, Modifier.align(Alignment.TopEnd))
                 }
             }
             Box(
