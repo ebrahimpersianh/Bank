@@ -46,6 +46,26 @@ object BackgroundRunHelp {
             .setData(Uri.parse("package:${context.packageName}"))
 
     /**
+     * 🚨 بعضی گوشی‌ها (شیائومی/هواوی/…) پنجره‌ی استاندارد را بی‌صدا نشان نمی‌دهند (گزارشِ ۱۳ مهر:
+     * «اصلاً نمی‌پرسه»). پس: اول پنجره‌ی استاندارد؛ اگر نشد، فهرستِ بهینه‌سازیِ باتری؛ بعد صفحه‌ی اپ.
+     * [preferList] = کاربر یک بار زد و هنوز معاف نیست → مستقیم فهرست.
+     */
+    fun openBatterySettings(context: Context, preferList: Boolean = false) {
+        val tries = buildList {
+            if (!preferList) add(batteryIntent(context))
+            add(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            add(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(Uri.parse("package:${context.packageName}")))
+        }
+        for (i in tries) {
+            val ok = runCatching {
+                if (i.resolveActivity(context.packageManager) == null) error("no activity")
+                context.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }.isSuccess
+            if (ok) return
+        }
+    }
+
+    /**
      * صفحه‌ی «اجرای خودکار»ِ خودِ سازنده. اگر پیدا نشد `null` برمی‌گرداند تا فراخوان به
      * [appDetailsIntent] برگردد - حدس‌زدنِ کورِ یک اکتیویتی یعنی `ActivityNotFoundException`.
      */

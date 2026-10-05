@@ -138,6 +138,7 @@ fun PermissionGateScreen(
     val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         notifOk = notificationsGranted(context)
     }
+    var batteryTaps by remember { mutableStateOf(0) }
     val batteryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         batteryOk = batteryUnrestricted(context)
     }
@@ -219,10 +220,16 @@ fun PermissionGateScreen(
                 // دو اصطلاحِ فنیِ هم‌معنی با یه اسلش بینشان.
                 actionLabel = "تنظیمات",
                 onClick = {
-                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                        data = Uri.parse("package:${context.packageName}")
+                    // دفعه‌ی دوم (پنجره نیامد/رد شد) مستقیم فهرستِ تنظیماتِ باتری.
+                    if (batteryTaps++ == 0) {
+                        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                            data = Uri.parse("package:${context.packageName}")
+                        }
+                        runCatching { batteryLauncher.launch(intent) }
+                            .onFailure { ir.sadteam.loancalc.ui.settings.BackgroundRunHelp.openBatterySettings(context, preferList = true) }
+                    } else {
+                        ir.sadteam.loancalc.ui.settings.BackgroundRunHelp.openBatterySettings(context, preferList = true)
                     }
-                    batteryLauncher.launch(intent)
                 },
             )
         }

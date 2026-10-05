@@ -529,6 +529,9 @@ private fun SettingsMainContent(
                                     color = Color.White,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Black,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false),
                                 )
                                 // حلقه‌ی طلاییِ قبلیِ سربرگ تنها نشانه‌ی اشتراک بود؛ حالا این‌جاست.
                                 if (subscribed) {
@@ -537,6 +540,8 @@ private fun SettingsMainContent(
                                         color = AppGoldInk,
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Black,
+                                        maxLines = 1,
+                                        softWrap = false,
                                         modifier = Modifier
                                             .padding(start = 8.dp)
                                             .clip(RoundedCornerShape(999.dp))
@@ -2182,6 +2187,7 @@ private fun BackgroundRunSettings() {
     )
     SettingsGroupLabel("مراحل")
     // طرحِ Claude Design (۸ مهر): هر سه مرحله در یک کارت با خطِ جداکننده.
+    var batteryTapCount by remember { mutableStateOf(0) }
     AppCard(modifier = Modifier.padding(top = 10.dp)) {
     BackgroundStepCard(
         step = 1,
@@ -2189,7 +2195,7 @@ private fun BackgroundRunSettings() {
         body = "بدونِ این، گوشی بعد از چند دقیقه کارهای پس‌زمینه را متوقف می‌کند و یادآورِ " +
             "سررسید دیر می‌رسد یا اصلاً نمی‌رسد.",
         done = batteryOk,
-        onClick = { runCatching { context.startActivity(BackgroundRunHelp.batteryIntent(context)) } },
+        onClick = { BackgroundRunHelp.openBatterySettings(context, preferList = batteryTapCount++ > 0) },
     )
 
     if (BackgroundRunHelp.needsAutostartSetting()) {
