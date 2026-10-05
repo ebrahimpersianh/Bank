@@ -219,6 +219,15 @@ fun Route.authRoutes() {
             if (user == null) {
                 val newId = Db.withConnection { conn -> conn.insertReturningId("INSERT INTO users (phone, trial_days, legacy_gift_granted) VALUES (?, ?, 1)", phone, configuredTrialDays(conn)) }
                 Db.withConnection { conn -> conn.execute("INSERT INTO loans (user_id, data) VALUES (?, '[]')", newId) }
+                // 🎁 ۱۰۰۰ سکه‌ی خوش‌آمد برای هر حسابِ تازه (خواسته‌ی کاربر ۱۳ مهر) - مثلِ هدیه‌ی گروهی، از «پیام‌ها» دریافت می‌شود.
+                runCatching {
+                    Db.withConnection { conn ->
+                        conn.insertReturningId(
+                            "INSERT INTO announcements (title, body, kind, target_user_id, coins) VALUES (?, ?, 'gift', ?, ?)",
+                            WELCOME_COINS_TITLE, WELCOME_COINS_BODY, newId, WELCOME_COINS,
+                        )
+                    }
+                }
                 // بعد از insert دوباره از دیتابیس می‌خونیم (نه یه آبجکت دستیِ ناقص) تا created_at
                 // واقعی (لازم برای محاسبه‌ی دوره‌ی آزمایشی ۷ روزه‌ی isSubscribed) رو داشته باشیم.
                 user = Db.withConnection { conn ->
@@ -359,3 +368,8 @@ fun Route.authRoutes() {
         }
     }
 }
+
+
+internal const val WELCOME_COINS = 1000
+internal const val WELCOME_COINS_TITLE = "🎁 ۱۰۰۰ سکه هدیه"
+internal const val WELCOME_COINS_BODY = "به جیبک خوش آمدی! ۱۰۰۰ سکه هدیه گرفتی - از فروشگاه تم، نماد و قاب بخر و برنامه را مالِ خودت کن."
