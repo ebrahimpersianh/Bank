@@ -8,6 +8,7 @@ import ir.sadteam.loancalc.data.db.CategoryOrderEntity
 import ir.sadteam.loancalc.data.db.CustomCategoryEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /**
@@ -16,6 +17,8 @@ import kotlinx.coroutines.flow.map
  * CLAUDE.md، مدیریتِ کاملِ دسته‌بندی‌ها. دسته‌هایی که کاربر ترتیبشون رو دستکاری نکرده، با همون
  * ترتیبِ پیش‌فرض (ثابت‌ها اول، بعد دلخواه‌ها به‌ترتیبِ ساخت) نمایش داده می‌شن.
  */
+private const val PIN_SUFFIX = "_PIN"
+
 class CategoryRepository(
     private val categoryDao: CategoryDao,
     /** ۱۴ مهر: برای ترتیبِ خودکار بر اساسِ استفاده - `null` یعنی همان ترتیبِ قبلی. */
@@ -32,9 +35,12 @@ class CategoryRepository(
                 .map { CategoryEntry(it.name, Color(it.colorArgb), it.iconKey, type) }
             val combined = staticList + customForType
             val orderMap = order.filter { it.type == typeName }.associate { it.name to it.sortOrder }
+            val pinMap = order.filter { it.type == typeName + PIN_SUFFIX }.associate { it.name to it.sortOrder }
             // 🧠 (۱۴ مهر) پراستفاده‌ترها اول - خودکار؛ «سایر…» همیشه ته.
             combined.sortedWith(
                 compareBy(
+                    // 📌 سنجاق‌شده‌ها (نگه‌داشتن در صفحه‌ی دسته‌ها) همیشه اول، تازه‌ترین بالاتر.
+                    { pinMap[it.name] ?: Int.MAX_VALUE },
                     { if (it.name.startsWith("سایر")) 1 else 0 },
                     { -(usage[it.name] ?: 0) },
                     { orderMap[it.name] ?: Int.MAX_VALUE },
@@ -42,6 +48,18 @@ class CategoryRepository(
                 ),
             )
         }
+    }
+
+    /** نام‌های سنجاق‌شده‌ی این نوع. */
+    fun observePinned(type: TransactionType): Flow<Set<String>> =
+        categoryDao.observeOrder().map { all -> all.filter { it.type == type.name + PIN_SUFFIX }.map { it.name }.toSet() }
+
+    /** نگه‌داشتنِ یک دسته: سنجاق کن تا همیشه اول بیاید، یا اگر سنجاق بود بردار. */
+    suspend fun togglePin(type: TransactionType, name: String) {
+        val pinType = type.name + PIN_SUFFIX
+        val pinned = categoryDao.observeOrder().first().any { it.type == pinType && it.name == name }
+        if (pinned) categoryDao.deleteOrder(pinType, name)
+        else categoryDao.upsertOrder(listOf(CategoryOrderEntity(pinType, name, -(System.currentTimeMillis() / 1000L).toInt())))
     }
 
     fun observeCustomCategories(): Flow<List<CustomCategoryEntity>> = categoryDao.observeCustom()

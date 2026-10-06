@@ -22,7 +22,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -86,12 +88,17 @@ private val categoryColorChoices = listOf(
 
 /** مدیریتِ کاملِ دسته‌بندی‌ها - جابه‌جاییِ ترتیب (دکمه‌ی بالا/پایین، نه درگ - رجوع کن به CLAUDE.md
  * برای دلیلِ انتخابِ این روش) + افزودن/حذفِ دسته‌ی دلخواه. دسته‌های ثابتِ اپ قابلِ‌حذف نیستن. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = hiltViewModel()) {
     var type by rememberSaveable { mutableStateOf(TransactionType.WITHDRAWAL) }
     val expenseCategories by viewModel.expenseCategories.collectAsState()
     val incomeCategories by viewModel.incomeCategories.collectAsState()
     val categories = if (type == TransactionType.WITHDRAWAL) expenseCategories else incomeCategories
+    val pinnedExp by viewModel.pinnedExpense.collectAsState()
+    val pinnedInc by viewModel.pinnedIncome.collectAsState()
+    val pinned = if (type == TransactionType.WITHDRAWAL) pinnedExp else pinnedInc
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val custom by viewModel.customCategories.collectAsState()
     var showAddForm by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<CustomCategoryEntity?>(null) }
@@ -227,6 +234,17 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                 selectedColor = if (type == TransactionType.WITHDRAWAL) AppDanger else AppPrimary,
             )
         }
+        item {
+            // ۱۴ مهر: جای فلش‌ها - توضیحِ کوتاه که ترتیب خودکار است و «نگه‌داشتن» چه می‌کند.
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 6.dp)) {
+                Icon(Icons.Filled.PushPin, contentDescription = null, tint = AppMuted, modifier = Modifier.size(15.dp))
+                Text(
+                    "پراستفاده‌ها خودکار بالا می‌آیند. روی هر دسته نگه دار تا سنجاق شود و همیشه اول بیاید.",
+                    color = AppMuted, fontSize = 11.sp, lineHeight = 17.sp,
+                    modifier = Modifier.padding(start = 6.dp),
+                )
+            }
+        }
         if (showAddForm) {
             item {
                 AddCategoryForm(
@@ -247,7 +265,16 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
             // خودِ لیست تخت می‌مونه تا جابه‌جایی/ترتیبِ دستیِ موجود دست‌نخورده کار کنه.
             val parentName = row?.parentName
             val isChild = !parentName.isNullOrBlank()
-            AppCard(modifier = Modifier.animateItem()) {
+            val isPinned = cat.name in pinned
+            AppCard(
+                modifier = Modifier.animateItem().combinedClickable(
+                    onClick = {},
+                    onLongClick = {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        viewModel.togglePin(type, cat.name)
+                    },
+                ),
+            ) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     // فریمِ `74a` بندِ ۱: تورفتگی + خطِ عمودیِ نازک جای خطِ «زیرمجموعه‌ی X».
                     //
@@ -272,7 +299,10 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                         Icon(cat.icon, contentDescription = null, tint = cat.color, modifier = Modifier.size(22.dp))
                     }
                     Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
-                        Text(cat.name, color = AppText, fontSize = 14.5.sp, fontWeight = FontWeight.ExtraBold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(cat.name, color = AppText, fontSize = 14.5.sp, fontWeight = FontWeight.ExtraBold)
+                            if (isPinned) Icon(Icons.Filled.PushPin, contentDescription = "سنجاق‌شده", tint = AppPrimary, modifier = Modifier.padding(start = 6.dp).size(15.dp))
+                        }
                         // فریمِ `74a` بندِ ۳: مبلغِ ماهِ جاری - از `viewModel.monthTotals`.
                         //
                         // کارتِ راهنمای پایینِ صفحه از این عدد حرف می‌زد ولی هیچ ردیفی

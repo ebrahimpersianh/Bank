@@ -30,6 +30,15 @@ class CategoryViewModel @Inject constructor(
     val expenseCategories: StateFlow<List<CategoryEntry>> = categoryRepository.orderedCategories(TransactionType.WITHDRAWAL)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val pinnedExpense: StateFlow<Set<String>> = categoryRepository.observePinned(TransactionType.WITHDRAWAL)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+    val pinnedIncome: StateFlow<Set<String>> = categoryRepository.observePinned(TransactionType.DEPOSIT)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    fun togglePin(type: TransactionType, name: String) {
+        viewModelScope.launch { categoryRepository.togglePin(type, name) }
+    }
+
     val incomeCategories: StateFlow<List<CategoryEntry>> = categoryRepository.orderedCategories(TransactionType.DEPOSIT)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
