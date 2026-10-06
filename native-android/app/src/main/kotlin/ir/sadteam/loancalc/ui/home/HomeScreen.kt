@@ -1392,7 +1392,7 @@ private fun CategoryBreakdownCard(
         // سربرگ: برچسبِ کارت راست، درِ خروجی چپ. تا امروز کلِ کارت کلیک‌پذیر بود ولی
         // **هیچ نشانه‌ای نداشت**؛ کاربر با طرحِ مرجع همین را خواست.
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("این ماه", color = AppLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("خرجِ این ماه", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
             Text("جزئیاتِ بیشتر", color = AppPrimaryInk, fontSize = 10.5.sp, fontWeight = FontWeight.Black)
             Icon(
                 Icons.Filled.ChevronLeft,
@@ -1454,26 +1454,23 @@ private fun CategoryBreakdownCard(
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f).padding(start = 7.dp),
                         )
-                        // درصد **و** مبلغ: درصد می‌گوید سهمش چقدر است، مبلغ می‌گوید چقدر
-                        // پول بود - بی دومی کاربر باید حساب کند.
-                        Column(horizontalAlignment = Alignment.Start) {
+                        // ۱۴ مهر: مبلغ و درصد در **یک خط**، چسبیده به لبه - قبلاً دو خطِ نامرتب بود.
+                        PrivacyCrossfade(privacyMode) { masked ->
                             Text(
-                                // total صفر → NaN٪. کارت با جمعِ صفر نمی‌آید، ولی نگهبانش یک خط است.
-                                if (total <= 0.0) "—"
-                                else "${((entry.value / total * 100).toInt()).toFa()}٪",
-                                color = AppMuted,
+                                maskIfPrivate(masked, entry.value.rialToFaCompact()),
+                                color = AppText,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.ExtraBold,
+                                maxLines = 1,
                             )
-                            PrivacyCrossfade(privacyMode) { masked ->
-                                Text(
-                                    maskIfPrivate(masked, entry.value.rialToFaCompact()),
-                                    color = AppLabel,
-                                    fontSize = 9.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
                         }
+                        Text(
+                            if (total <= 0.0) "" else " · ${((entry.value / total * 100).toInt()).toFa()}٪",
+                            color = AppMuted,
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                        )
                     }
                 }
             }
