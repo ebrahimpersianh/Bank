@@ -243,6 +243,7 @@ fun ReportTabScreen(
     // خاموش می‌شود یعنی باگی که هیچ‌وقت گزارش نمی‌شود. ماهِ بعد دوباره می‌آید.
     // ماندگاری از `UiPrefs.dismissedDiscoveries` می‌آید - رجوع کن به [DiscoveryDismissViewModel].
     val dismissed by discoveryDismissViewModel.dismissed.collectAsState()
+    val simpleReport = ir.sadteam.loancalc.ui.privacy.LocalSimpleMode.current
     val ignoredSubs by hiltViewModel<ir.sadteam.loancalc.ui.settings.SmsAutoImportViewModel>().ignoredSubscriptions.collectAsState()
     val monthKey = "${today.y}-${today.m}"
 
@@ -369,6 +370,8 @@ fun ReportTabScreen(
                 )
             }
         }
+        // حالتِ ساده: فقط خلاصه + نمودار + دسته‌ها؛ کشف/مقایسه/برچسب/خروجی نه.
+        if (simpleReport) return@LazyColumn
         // ── کارت‌های کشف ────────────────────────────────────────────────────
         // ترتیب **بر پایه‌ی فوریت**، نه ترتیبِ نوشته‌شدن در فایل: کسری اول، پرداختِ دوباره
         // دوم، اطلاعاتی سوم. قبلاً اشتراک‌یاب همیشه بالای «۳۰٪ بیشتر از معمول» می‌نشست.

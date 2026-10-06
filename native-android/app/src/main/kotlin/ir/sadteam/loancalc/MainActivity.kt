@@ -1028,6 +1028,7 @@ private fun LoanCalcApp(
         LocalPrivacyMode provides privacyMode,
         LocalReducedMotion provides reducedMotion,
         ir.sadteam.loancalc.ui.subscription.LocalIsPremium provides isPremium,
+        ir.sadteam.loancalc.ui.privacy.LocalSimpleMode provides navSlotsViewModel.simpleMode.collectAsState().value,
     ) {
     ir.sadteam.loancalc.ui.subscription.PremiumPaywallHost()
     // صاحبِ برنامه: خبرِ پیامِ تازه‌ی کاربران (برای بقیه همان اولِ کار بی‌صدا تمام می‌شود).
@@ -1139,7 +1140,7 @@ private fun LoanCalcApp(
                         }
                         // دستگیره‌ی کشوی میان‌بُر - کشیدنِ به بالا یا تپ بازش می‌کند (`31c`). باریک است
                         // (۱۲۰dp) تا لمسِ بالای تب‌ها را نگیرد.
-                        ShortcutDrawerHandle(
+                        if (!ir.sadteam.loancalc.ui.privacy.LocalSimpleMode.current) ShortcutDrawerHandle(
                             onOpen = { shortcutDrawerOpen = true },
                             modifier = Modifier.align(Alignment.TopCenter).width(120.dp).then(Modifier.guideTarget("shortcuts")),
                         )
@@ -1918,7 +1919,8 @@ private fun LoanTab(
                 if (adminUnread > 0) ir.sadteam.loancalc.ui.admin.UnreadDot(adminUnread, Modifier.align(Alignment.TopEnd))
             }
         }
-        Row(
+        // حالتِ ساده: فقط «وام‌های من»، بی تب‌های سپرده/محاسبه‌گر.
+        if (!ir.sadteam.loancalc.ui.privacy.LocalSimpleMode.current) Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 8.dp),

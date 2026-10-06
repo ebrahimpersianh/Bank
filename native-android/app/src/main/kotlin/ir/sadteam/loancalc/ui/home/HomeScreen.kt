@@ -222,6 +222,7 @@ fun HomeScreen(
     }
     val billsToday = remember { ir.sadteam.loancalc.core.JalaliCalendar.today() }
     val dueBills = homeBills.filter { with(ir.sadteam.loancalc.ui.extras.BillsDue) { it.dueSoon(billsToday.y, billsToday.m, billsToday.d) } }
+    val simple = ir.sadteam.loancalc.ui.privacy.LocalSimpleMode.current
     val startGuideVm: StartGuideViewModel = hiltViewModel()
     val startGuide by startGuideVm.state.collectAsState()
     val inboxCount by inboxViewModel.actionableCount.collectAsState()
@@ -288,8 +289,9 @@ fun HomeScreen(
     // همان چهار بازه‌ی تبِ گزارش، پس `ReportPeriod` دوباره تعریف نمی‌شود - دو enum برای
     // یک مفهوم یعنی روزی که یکی عوض می‌شود و دیگری جا می‌مانَد.
     var heroPeriod by rememberSaveable { mutableStateOf(ReportPeriod.WEEK) }
-    val heroSeries = remember(transactions, heroPeriod, today) {
-        buildHeroSeries(transactions, today, heroPeriod)
+    val effectivePeriod = if (simple) ReportPeriod.MONTH else heroPeriod
+    val heroSeries = remember(transactions, effectivePeriod, today) {
+        buildHeroSeries(transactions, today, effectivePeriod)
     }
     val prevWeekTotal = remember(transactions) {
         (13 downTo 7).sumOf { back ->
@@ -374,7 +376,7 @@ fun HomeScreen(
 
             // ── پیشنهادِ خودکارِ نوارِ پایین (فریمِ `41a`) ────────────────────────────────
             // «بالای صفحه‌ی خانه، **زیرِ هدر**. هرگز مودال نمی‌شود» - قاعده‌ی صریحِ `41c`.
-            navSuggestionSlot?.let { slot -> item { slot() } }
+            if (!simple) navSuggestionSlot?.let { slot -> item { slot() } }
 
             // ── ترمیمِ زنجیر: **از خانه برداشته شد** (تصمیمِ طراح، فریمِ `56b`) ─────────────
             // کارتش دو جا بود - این‌جا و کیفِ سکه. سندِ طراح صریح است که جایش کیفِ سکه
@@ -455,7 +457,7 @@ fun HomeScreen(
             // ── حالتِ عادی (فریمِ `15a`) ───────────────────────────────────────────────
             item {
                 TodaySpendHero(
-                    period = heroPeriod,
+                    period = effectivePeriod,
                     onPeriod = { heroPeriod = it },
                     periodLabel = heroSeries.label,
                     periodSpend = heroSeries.total,
@@ -477,7 +479,7 @@ fun HomeScreen(
             // ردیفِ چهار کاشی (حساب/تراکنش/گزارش/چک) به خواسته‌ی کاربر (۱۳ مهر) برداشته شد - تکراریِ نوارِ پایین.
             // «نیاز به توجه» (۸ مهر): قسطِ عقب‌افتاده **اول**، بعد بودجه/پیش‌بینی - زیرِ یک
             // عنوان، تا کارت‌های هشدار با هم رقابت نکنند و ترتیبِ اهمیت روشن باشد.
-            if (urgentDue != null || (monthCap > 0.0 && monthSpend > monthCap)) {
+            if (urgentDue != null || (!simple && monthCap > 0.0 && monthSpend > monthCap)) {
                 item {
                     Text(
                         "نیاز به توجه",
@@ -500,7 +502,7 @@ fun HomeScreen(
                     )
                 }
             }
-            if (monthCap > 0.0) {
+            if (!simple && monthCap > 0.0) {
                 item {
                     MonthBudgetCard(
                         monthLabel = persianMonthName(today.m),
@@ -515,7 +517,7 @@ fun HomeScreen(
             }
             // «تا آخرِ ماه کم میاری» - رجوع کن به MonthForecast. عمداً **بالای** کارت‌های
             // تحلیلی و زیرِ بودجه می‌شینه: یه هشدارِ عملیه، نه یه آمار.
-            monthForecast?.let { forecast ->
+            if (!simple) monthForecast?.let { forecast ->
                 item {
                     if (forecast.willRunShort) {
                         ShortfallForecastCard(
@@ -539,7 +541,7 @@ fun HomeScreen(
                     }
                 }
             }
-            if (smartInsights.isNotEmpty()) {
+            if (!simple && smartInsights.isNotEmpty()) {
                 item {
                     SmartInsightsCard(smartInsights) { ins ->
                         when (ins.kind) {
@@ -552,7 +554,7 @@ fun HomeScreen(
                     }
                 }
             }
-            if (dueBills.isNotEmpty()) {
+            if (!simple && dueBills.isNotEmpty()) {
                 item {
                     ir.sadteam.loancalc.ui.components.AppCard(modifier = Modifier.clickable { showHomeBills = true }) {
                         Text(
@@ -569,7 +571,7 @@ fun HomeScreen(
                     }
                 }
             }
-            if (monthSpend > 0.0) {
+            if (!simple && monthSpend > 0.0) {
                 item {
                     CategoryBreakdownCard(
                         byCategory = monthSpendByCategory,
@@ -927,10 +929,12 @@ private fun TodaySpendHero(
     } else {
         null
     }
+    val simpleHero = ir.sadteam.loancalc.ui.privacy.LocalSimpleMode.current
     AppHeroCard(modifier = Modifier.pressScaleClickable(onClick = onClick)) {
         // چهار قرصِ بازه. روی زمینه‌ی تیره‌ی کارت، انتخاب‌شده سفیدِ مات و بقیه فقط متن -
         // همان زبانِ تاگلِ تبِ گزارش، با رنگِ مناسبِ این زمینه.
-        Row(
+        // حالتِ ساده: بی قرص‌های بازه (همیشه «این ماه»).
+        if (!simpleHero) Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
@@ -1017,7 +1021,7 @@ private fun TodaySpendHero(
             //
             // رنگ‌ها معنایی‌اند نه تزئینی، پس **با تمِ خریدنی نمی‌چرخند**: سبزِ درآمد و
             // قرمزِ خرج همان دو توکنِ سراسری‌اند. روی زمینه‌ی تیره‌ی هیرو، نسخه‌ی روشنشان.
-            Column(
+            if (!simpleHero) Column(
                 horizontalAlignment = Alignment.End,
                 modifier = Modifier.padding(start = 10.dp, top = 4.dp),
             ) {

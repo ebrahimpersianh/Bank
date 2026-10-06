@@ -146,3 +146,6 @@ fun RevealOnTap(
 }
 
 private const val REVEAL_MS = 4_000L
+
+/** «حالتِ ساده» (۱۴ مهر): صفحه‌ها فقط ضروری‌ها را نشان می‌دهند. */
+val LocalSimpleMode = staticCompositionLocalOf { false }
