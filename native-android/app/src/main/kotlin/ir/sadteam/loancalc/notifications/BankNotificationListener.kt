@@ -196,7 +196,25 @@ class BankNotificationListener : NotificationListenerService() {
                 sourceLabel = "اعلانِ ${appLabelOf(packageName)}",
             )
             uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
-            runCatching { accountRepository.updateAccount(account.copy(lastSmsAt = System.currentTimeMillis())) }
+            val updated = account.copy(lastSmsAt = System.currentTimeMillis())
+            runCatching { accountRepository.updateAccount(updated) }
+            // 🧠 با کارت/نامِ بانک پیدا شد → اپِ اعلان از این به بعد به همین حساب وصل باشد.
+            if (account !in sameSender) runCatching { accountRepository.learnSender(updated, packageName) }
+            // 🧠 مانده‌ی بانک در برابرِ موجودیِ ثبت‌شده - روزی یک بار برای هر حساب.
+            parsed.balanceRial?.let { bankBal ->
+                val gap = accountRepository.bankBalanceGap(updated, !isWithdrawal, parsed.amountRial, bankBal)
+                if (gap != null && uiPrefs.claimAutoImportKey("gap|${updated.id}|${today.y}-${today.m}-${today.d}")) {
+                    val gapToman = fmt(rialToToman(kotlin.math.abs(gap).toLong()).toDouble()).faDigits()
+                    inboxRepository.post(
+                        kind = InboxMessageEntity.Kind.SYSTEM,
+                        title = "موجودیِ «${updated.name}» با بانک فرق دارد",
+                        body = "بانک مانده را $gapToman تومان " + (if (gap > 0) "بیشتر" else "کمتر") +
+                        " از جیبک نوشته. احتمالاً تراکنشی ثبت نشده یا «موجودیِ روزِ شروع» درست نیست.",
+                        sourceLabel = "اعلانِ ${appLabelOf(packageName)}",
+                        sourceText = body,
+                    )
+                }
+            }
         }
     }
 

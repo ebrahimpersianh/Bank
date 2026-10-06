@@ -166,7 +166,25 @@ class BankSmsReceiver : BroadcastReceiver() {
                 )
                 uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
                 // زمانِ آخرین پیامکِ **همین حساب** - زیرنویسِ صفحه‌ی تنظیماتِ پیامک از این ساخته می‌شه.
-                accountRepository.updateAccount(account.copy(lastSmsAt = System.currentTimeMillis()))
+                val updated = account.copy(lastSmsAt = System.currentTimeMillis())
+                accountRepository.updateAccount(updated)
+                // 🧠 با کارت پیدا شد ولی سرشماره وصل نبود → از این به بعد وصل باشد.
+                if (account !in sameSender) runCatching { accountRepository.learnSender(updated, sender) }
+                // 🧠 مانده‌ی بانک در برابرِ موجودیِ ثبت‌شده - روزی یک بار برای هر حساب.
+                parsed.balanceRial?.let { bankBal ->
+                    val gap = accountRepository.bankBalanceGap(updated, !isWithdrawal, parsed.amountRial, bankBal)
+                    if (gap != null && uiPrefs.claimAutoImportKey("gap|${updated.id}|${today.y}-${today.m}-${today.d}")) {
+                        val gapToman = fmt(rialToToman(kotlin.math.abs(gap).toLong()).toDouble()).faDigits()
+                        inboxRepository.post(
+                            kind = InboxMessageEntity.Kind.SYSTEM,
+                            title = "موجودیِ «${updated.name}» با بانک فرق دارد",
+                            body = "بانک مانده را $gapToman تومان " + (if (gap > 0) "بیشتر" else "کمتر") +
+                                " از جیبک نوشته. احتمالاً تراکنشی ثبت نشده یا «موجودیِ روزِ شروع» درست نیست.",
+                            sourceLabel = "پیامک از $sender",
+                            sourceText = body,
+                        )
+                    }
+                }
             } finally {
                 pendingResult.finish()
             }

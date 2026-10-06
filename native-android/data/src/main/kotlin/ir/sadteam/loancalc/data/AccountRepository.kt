@@ -506,6 +506,33 @@ class AccountRepository(
         return transactionDao.transferLegs(sourceId)
     }
 
+    /**
+     * 🧠 (۱۴ مهر) مانده‌ای که بانک در پیامک/اعلان نوشته را با موجودیِ ثبت‌شده‌ی حساب (به‌علاوه‌ی همین
+     * تراکنشِ تازه) مقایسه می‌کند. اختلافِ معنادار (بیش از ۱۰۰ هزار ریال و ۱٪) یعنی تراکنشی جا افتاده
+     * یا موجودیِ شروع غلط است. خروجی = بانک منهای برنامه (ریال)، یا null اگر هم‌خوان است.
+     */
+    suspend fun bankBalanceGap(account: AccountEntity, newTxDeposit: Boolean, newTxAmount: Double, bankBalance: Double): Double? {
+        val txs = observeTransactions().first().filter { it.confirmed }
+        val expected = currentBalance(account, txs) + if (newTxDeposit) newTxAmount else -newTxAmount
+        val gap = bankBalance - expected
+        val tolerance = maxOf(100_000.0, kotlin.math.abs(bankBalance) * 0.01)
+        return gap.takeIf { kotlin.math.abs(it) > tolerance }
+    }
+
+    /**
+     * 🧠 یادگیری: پیامکی که با ۴ رقمِ کارت به حسابی رسید ولی سرشماره‌اش به آن حساب وصل نبود،
+     * از این به بعد وصل می‌شود - کاربر لازم نیست سرشماره را دستی پیدا کند. (برای اعلان، بسته‌نامِ اپ.)
+     */
+    suspend fun learnSender(account: AccountEntity, sender: String) {
+        if (sender.isBlank()) return
+        val parts = account.smsSender.orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() }
+        if (parts.any { ir.sadteam.loancalc.core.smsSenderMatches(it, sender) || it == sender }) return
+        // هر نوع (سرشماره / بسته‌نام) فقط یکی: اگر از همان نوع چیزی هست، دست نمی‌زنیم.
+        val isPackage = '.' in sender
+        if (parts.any { ('.' in it) == isPackage }) return
+        updateAccount(account.copy(smsSender = (parts + sender).joinToString(",")))
+    }
+
     /** موجودی فعلی = موجودی اولیه + جمع واریزها - جمع برداشت‌ها. */
     fun currentBalance(account: AccountEntity, transactions: List<AccountTransactionEntity>): Double {
         val forAccount = transactions.filter { it.accountId == account.id }
