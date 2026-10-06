@@ -8,6 +8,7 @@ import ir.sadteam.loancalc.data.db.CategoryOrderEntity
 import ir.sadteam.loancalc.data.db.CustomCategoryEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 
 /**
  * ترکیبِ لیستِ ثابتِ دسته‌بندی‌ها ([expenseCategories]/[incomeCategories]) با دسته‌های دلخواهِ
@@ -15,17 +16,27 @@ import kotlinx.coroutines.flow.combine
  * CLAUDE.md، مدیریتِ کاملِ دسته‌بندی‌ها. دسته‌هایی که کاربر ترتیبشون رو دستکاری نکرده، با همون
  * ترتیبِ پیش‌فرض (ثابت‌ها اول، بعد دلخواه‌ها به‌ترتیبِ ساخت) نمایش داده می‌شن.
  */
-class CategoryRepository(private val categoryDao: CategoryDao) {
+class CategoryRepository(
+    private val categoryDao: CategoryDao,
+    /** ۱۴ مهر: برای ترتیبِ خودکار بر اساسِ استفاده - `null` یعنی همان ترتیبِ قبلی. */
+    private val transactionDao: ir.sadteam.loancalc.data.db.AccountTransactionDao? = null,
+) {
     fun orderedCategories(type: TransactionType): Flow<List<CategoryEntry>> {
         val typeName = type.name
-        return combine(categoryDao.observeCustom(), categoryDao.observeOrder()) { custom, order ->
+        val usageFlow: Flow<Map<String, Int>> = transactionDao?.observeAll()
+            ?.map { txs -> txs.filter { it.type == typeName }.mapNotNull { it.category }.groupingBy { it }.eachCount() }
+            ?: kotlinx.coroutines.flow.flowOf(emptyMap())
+        return combine(categoryDao.observeCustom(), categoryDao.observeOrder(), usageFlow) { custom, order, usage ->
             val staticList = categoriesFor(type)
             val customForType = custom.filter { it.type == typeName }
                 .map { CategoryEntry(it.name, Color(it.colorArgb), it.iconKey, type) }
             val combined = staticList + customForType
             val orderMap = order.filter { it.type == typeName }.associate { it.name to it.sortOrder }
+            // 🧠 (۱۴ مهر) پراستفاده‌ترها اول - خودکار؛ «سایر…» همیشه ته.
             combined.sortedWith(
                 compareBy(
+                    { if (it.name.startsWith("سایر")) 1 else 0 },
+                    { -(usage[it.name] ?: 0) },
                     { orderMap[it.name] ?: Int.MAX_VALUE },
                     { combined.indexOf(it) },
                 ),

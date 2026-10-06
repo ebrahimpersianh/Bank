@@ -292,7 +292,8 @@ fun CategoryManagementScreen(onBack: () -> Unit, viewModel: CategoryViewModel = 
                     // دارد نه در فهرستِ تخت (`moveUp` روی فهرستِ تخت کار می‌کند و
                     // زیرمجموعه را از زیرِ والدش بیرون می‌برد)، و چهار آیکون در یک ردیف
                     // هدفِ لمسیِ ۴۴ را می‌شکند.
-                    if (!isChild) {
+                    // ۱۴ مهر: فلش‌ها برداشته شد - ترتیب خودکار بر اساسِ استفاده است (CategoryRepository).
+                    if (false) {
                         IconButton(onClick = { viewModel.moveUp(type, cat.name) }, enabled = index > 0) {
                             Icon(Icons.Filled.ArrowUpward, contentDescription = "جابه‌جایی به بالا", tint = if (index > 0) AppText else AppMuted, modifier = Modifier.size(18.dp))
                         }

@@ -316,5 +316,5 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideCategoryRepository(categoryDao: CategoryDao): CategoryRepository = CategoryRepository(categoryDao)
+    fun provideCategoryRepository(categoryDao: CategoryDao, transactionDao: AccountTransactionDao): CategoryRepository = CategoryRepository(categoryDao, transactionDao)
 }
