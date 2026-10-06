@@ -82,6 +82,8 @@ data class SupportMessageDto(
     /** شماره‌ی کاربریِ کامل (همان Uid که کاربر در برنامه می‌بیند) و موبایل - فقط برای ادمین. */
     val userCode: String? = null,
     val phone: String? = null,
+    /** جواب‌ها/هدیه‌های فرستاده‌شده برای همین پیام (۱۴ مهر) - از «پیام‌های جیبک»ِ همان کاربر. */
+    val replies: List<String> = emptyList(),
 )
 
 @Serializable
@@ -248,7 +250,20 @@ fun Route.supportRoutes() {
                 val open = conn.queryOne("SELECT COUNT(*) FROM bug_reports WHERE status = 'open'") { it.getInt(1) } ?: 0
                 val codes = HashMap<Long, String?>()
                 val withCodes = items.map { m ->
-                    m.copy(userCode = m.userId?.let { uid -> codes.getOrPut(uid) { userCodeOf(conn, uid)?.removePrefix("Uid:") } })
+                    // جواب‌ها همان اطلاعیه‌های اختصاصیِ «… (کدِ پیگیری)»اند - ستونِ تازه لازم نیست و جواب‌های قدیمی هم دیده می‌شوند.
+                    val replies = m.userId?.let { uid ->
+                        conn.prepareStatement(
+                            "SELECT body FROM announcements WHERE target_user_id = ? AND title LIKE ? ORDER BY id",
+                        ).use { ps ->
+                            ps.setLong(1, uid)
+                            ps.setString(2, "%(${m.ticket})")
+                            ps.executeQuery().use { rs -> buildList { while (rs.next()) add(rs.getString(1)) } }
+                        }
+                    }.orEmpty()
+                    m.copy(
+                        userCode = m.userId?.let { uid -> codes.getOrPut(uid) { userCodeOf(conn, uid)?.removePrefix("Uid:") } },
+                        replies = replies,
+                    )
                 }
                 SupportListResponse(withCodes, open)
             }
