@@ -1377,7 +1377,12 @@ private fun CategoryBreakdownCard(
     privacyMode: Boolean,
     onClick: () -> Unit,
 ) {
-    val top = remember(byCategory) { byCategory.entries.sortedByDescending { it.value }.take(3) }
+    // دسته‌ی زیرِ ۱٪ («قبض ۰٪») فقط شلوغی است (۱۴ مهر).
+    val top = remember(byCategory, total) {
+        byCategory.entries.sortedByDescending { it.value }
+            .filter { total <= 0.0 || it.value / total >= 0.01 }
+            .take(3)
+    }
     val colors = listOf(AppDanger, AppPurple, AppInfo)
     val (centerNumber, centerUnit) = total.rialToFaCompactParts()
     AppCard(contentPadding = 14.dp, modifier = Modifier.pressScaleClickable(onClick = onClick)) {
