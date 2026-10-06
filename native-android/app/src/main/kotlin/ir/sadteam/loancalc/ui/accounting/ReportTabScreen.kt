@@ -549,6 +549,21 @@ private fun ReportHeader(
         // تو حالتِ خالی نه بازه‌ای برای انتخاب هست نه مبلغی برای پنهان‌کردن (فریمِ `21c` هدرِ لخت).
         if (!showControls) return@Row
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            // تاگلِ ماه/فصل/سال - انتخاب‌شده قرصِ سبزِ پرشده، بقیه فقط متن.
+            ReportPeriod.entries.forEach { p ->
+                val selected = p == period
+                Text(
+                    p.label,
+                    color = if (selected) Color.White else AppMuted,
+                    fontSize = 10.sp,
+                    fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Bold,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (selected) AppPrimary else Color.Transparent)
+                        .pressScaleClickable { onPeriod(p) }
+                        .padding(horizontal = if (selected) 11.dp else 9.dp, vertical = 6.dp),
+                )
+            }
             if (onExcel != null) Box {
                 Box(
                     modifier = Modifier
@@ -572,21 +587,6 @@ private fun ReportHeader(
                         onClick = { exportMenu = false; onPdf() },
                     )
                 }
-            }
-            // تاگلِ ماه/فصل/سال - انتخاب‌شده قرصِ سبزِ پرشده، بقیه فقط متن.
-            ReportPeriod.entries.forEach { p ->
-                val selected = p == period
-                Text(
-                    p.label,
-                    color = if (selected) Color.White else AppMuted,
-                    fontSize = 10.sp,
-                    fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Bold,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(if (selected) AppPrimary else Color.Transparent)
-                        .pressScaleClickable { onPeriod(p) }
-                        .padding(horizontal = if (selected) 11.dp else 9.dp, vertical = 6.dp),
-                )
             }
             Box(
                 modifier = Modifier

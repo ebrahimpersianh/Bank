@@ -340,9 +340,7 @@ fun AssetsTabScreen(
                 )
             }
 
-            if (liabilities > 0.0) {
-                item { NetWorthCard(grandTotal, liabilities, loanRemaining, iOwe, privacyMode) }
-            }
+            // کارتِ «خالص پس از بدهی‌ها» به خواسته‌ی کاربر برداشته شد (۱۴ مهر).
             // حساب‌های بانکی بالای بازار (خواسته‌ی کاربر، ۷ مهر: «حساب بانکی بره بالا بعد نمودار»).
             if (accounts.isNotEmpty() && query.isBlank()) {
                 item {
