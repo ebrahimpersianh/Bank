@@ -852,6 +852,21 @@ private fun LoanCalcApp(
     // انتخاب نکرده، پس همون هشتِ پیش‌فرض می‌مونه، نه کشوی خالی.
     val savedShortcutSelection by shortcutViewModel.selection.collectAsState()
     var shortcutDrawerOpen by remember { mutableStateOf(false) }
+    // ۱۴ مهر (خواسته‌ی کاربر): میان‌برهایی که فقط یک تبِ نوارِ پایین را باز می‌کردند («ثبتِ خرج»،
+    // «گزارشِ ماه»، «انتقال»، «طلا»، «بودجه» و…) یک بار به «همه‌ی ابزارها» می‌روند و جایشان را
+    // ابزارهای واقعی می‌گیرند. حذف نمی‌شوند و کاربر با نگه‌داشتن می‌تواند برشان گرداند.
+    val shortcutCtx = LocalContext.current
+    val shortcutPrefs = remember { shortcutCtx.getSharedPreferences("shortcut_migrations", android.content.Context.MODE_PRIVATE) }
+    LaunchedEffect(Unit) {
+        if (shortcutPrefs.getBoolean("demote_tab_dupes_v1", false)) return@LaunchedEffect
+        val first = listOf("due", "cheque", "calendar", "debts", "bills", "debt", "savings-goal", "loan-stats")
+        val demoted = setOf("expense", "transfer", "report", "gold", "budget", "home", "assets", "loan")
+        val rest = allShortcutPool.map { it.id }.filterNot { it in first || it in demoted }
+        val newOrder = first + rest + demoted.toList()
+        shortcutViewModel.save(newOrder)
+        shortcutViewModel.saveSelection(allShortcutPool.map { it.id })
+        shortcutPrefs.edit().putBoolean("demote_tab_dupes_v1", true).apply()
+    }
     val shortcuts = remember(savedShortcutOrder, savedShortcutSelection) {
         val byId = allShortcutPool.associateBy { it.id }
         val stored = savedShortcutSelection.mapNotNull { byId[it] }

@@ -137,6 +137,17 @@ fun CompactTransactionRow(
  * `joinToString` خودش حذفش می‌کند (نه «۰۰:۰۰»ِ دروغ).
  */
 fun timeOfTransaction(tx: AccountTransactionEntity): String? {
+    // 🐞 (۱۴ مهر) `createdAt` به وقتِ UTC ذخیره می‌شود («…Z»)؛ قبلاً همان عدد خام نشان داده می‌شد و
+    // تراکنشِ ساعتِ ۲۲:۵۸ «۱۹:۲۸» دیده می‌شد. حالا به ساعتِ خودِ گوشی برگردانده می‌شود.
+    if (tx.createdAt.endsWith("Z")) {
+        runCatching {
+            val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
+            parser.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            val date = parser.parse(tx.createdAt.take(19)) ?: return@runCatching null
+            val cal = java.util.Calendar.getInstance().apply { time = date }
+            return toFaTime(cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE))
+        }
+    }
     val t = tx.createdAt.substringAfter('T', "").take(5)
     if (t.length != 5 || t[2] != ':') return null
     val h = t.take(2).toIntOrNull() ?: return null

@@ -510,6 +510,7 @@ private fun shortcutBlurb(id: String): String = when (id) {
     "calc-history" -> "محاسبه‌های قبلی"
     "add-account" -> "کارت یا حسابِ تازه"
     "bills" -> "قبض‌ها و یادآوری"
+    "debts" -> "طلبکار و بدهکارها"
     "payoff" -> "کی بی‌بدهی می‌شوم؟"
     "statement" -> "واردکردنِ CSV یا Excel"
     "search" -> "گشتن در همه‌ی برنامه"
