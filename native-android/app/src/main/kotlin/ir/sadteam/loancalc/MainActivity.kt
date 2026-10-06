@@ -326,6 +326,9 @@ private val defaultShortcuts = listOf(
 // کیفِ پول، نمودار، تقویم، سند، گروه) و کاربر دو خانه‌ی هم‌شکل می‌دید که از هم
 // تشخیص‌پذیر نبودند - فقط برچسبِ ریزِ زیرشان فرق داشت. ردیفِ تازه هم باید آیکونی
 // بردارد که در این فهرست نیست.
+/** ۱۴ مهر (خواسته‌ی کاربر): تکراریِ تب‌ها و موارد بی‌فایده در کشو نشان داده نمی‌شوند. */
+internal val hiddenShortcutIds = setOf("home", "loan", "assets", "shop", "inbox", "expense", "report", "budget", "gold", "transfer")
+
 internal val allShortcutPool = defaultShortcuts + listOf(
     Shortcut("gold", "طلا", Icons.Outlined.MonetizationOn, "assets"),
     Shortcut("budget", "بودجه", Icons.Outlined.Savings, "budget"),
@@ -878,7 +881,7 @@ private fun LoanCalcApp(
             .let { chosen -> if (chosen.size >= 12) chosen else chosen + allShortcutPool.filterNot { it.id in chosen.map { item -> item.id } }.take(12 - chosen.size) }
         // ترتیبِ ذخیره‌شده اول میاد؛ شناسه‌ی ناشناخته نادیده و میان‌برِ تازه ته لیست اضافه می‌شه.
         val ordered = savedShortcutOrder.mapNotNull { id -> selected.firstOrNull { it.id == id } }
-        ordered + selected.filterNot { it.id in savedShortcutOrder }
+        (ordered + selected.filterNot { it.id in savedShortcutOrder }).filterNot { it.id in hiddenShortcutIds }
     }
 
     // «وام‌های من» دیگه تبِ جداگانه‌ی خودش نیست، یه زیرصفحه‌ی داخلِ تبِ «وام»ه (رجوع کن به
@@ -1533,7 +1536,7 @@ private fun LoanCalcApp(
                 }
             },
             onOrderChanged = { ids -> shortcutViewModel.save(ids) },
-            allShortcuts = allShortcutPool.filterNot { ir.sadteam.loancalc.data.RemoteApp.isDisabled(it.id) },
+            allShortcuts = allShortcutPool.filterNot { ir.sadteam.loancalc.data.RemoteApp.isDisabled(it.id) || it.id in hiddenShortcutIds },
             onSelectionChanged = { ids -> shortcutViewModel.saveSelection(ids) },
             inBottomBarIds = navSlots.map { it.id }.toSet(),
         )
