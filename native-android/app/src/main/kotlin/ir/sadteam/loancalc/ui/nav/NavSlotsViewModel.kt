@@ -23,16 +23,17 @@ import javax.inject.Inject
 class NavSlotsViewModel @Inject constructor(private val uiPrefs: UiPrefs) : ViewModel() {
 
     /** «حالتِ ساده» - `null` (کاربرِ قدیمی که هیچ‌وقت انتخاب نکرده) یعنی خاموش. */
-    val simpleMode: StateFlow<Boolean> = uiPrefs.simpleMode.map { it == true }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    // ۱۴ مهر: «حالتِ ساده» به خواسته‌ی کاربر کلاً برداشته شد - همیشه خاموش. خودِ ترجیح
+    // فقط نشانِ «کاربرِ تازه» برای راهنمای چهار قدم مانده (StartGuide).
+    val simpleMode: StateFlow<Boolean> = kotlinx.coroutines.flow.MutableStateFlow(false)
 
     fun setSimpleMode(on: Boolean) {
         ir.sadteam.loancalc.data.UsageStats.action(if (on) "simple_mode_on" else "simple_mode_off")
         viewModelScope.launch { uiPrefs.setSimpleMode(on) }
     }
 
-    val slots: StateFlow<List<NavDestination>> = combine(uiPrefs.navSlots, uiPrefs.simpleMode) { raw, simple ->
-        if (simple == true) {
+    val slots: StateFlow<List<NavDestination>> = combine(uiPrefs.navSlots, uiPrefs.simpleMode) { raw, _ ->
+        if (false) {
             // حالتِ ساده: فقط چهار بخشِ اصلی (۱۳ مهر). بقیه از کشوی میان‌بُر در دسترس می‌مانند.
             listOf(NavDestination.HOME, NavDestination.REPORT, NavDestination.LOAN, NavDestination.CHEQUE)
         } else {

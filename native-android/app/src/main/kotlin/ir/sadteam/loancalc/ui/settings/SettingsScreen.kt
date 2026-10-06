@@ -616,22 +616,6 @@ private fun SettingsMainContent(
                 )
             }
 
-            // «حالتِ ساده» مستقیم روی صفحه‌ی اصلیِ تنظیمات (خواسته‌ی کاربر ۱۴ مهر: «جایش راحت‌تر باشد»).
-            if (searchQuery.isBlank() || "حالت ساده".contains(searchQuery.trim()) || "ساده".contains(searchQuery.trim())) {
-                val mainNavVm: ir.sadteam.loancalc.ui.nav.NavSlotsViewModel = hiltViewModel()
-                val mainSimple by mainNavVm.simpleMode.collectAsState()
-                SettingsGroup(modifier = Modifier.padding(top = 10.dp)) {
-                    SettingsRowItem(
-                        title = "حالتِ ساده",
-                        icon = Icons.Filled.Tune,
-                        tone = SettingsTone.GREEN,
-                        status = if (mainSimple) "فقط خانه، گزارش، وام، چک" else "همه‌ی بخش‌ها",
-                        checked = mainSimple,
-                        onCheckedChange = { mainNavVm.setSimpleMode(it) },
-                    )
-                }
-            }
-
             SettingsSectionLabel("ثبتِ خودکار", "مدیریتِ ورود و ثبتِ اطلاعات")
             SettingsGroup {
                 if (matches(SettingsRoute.SMS)) {
@@ -795,7 +779,7 @@ private fun routeHint(route: SettingsRoute): String? = when (route) {
     SettingsRoute.BACKGROUND -> "برای ثبتِ خودکار و به‌روز ماندنِ اطلاعات"
     SettingsRoute.DATA -> "پشتیبان‌گیری، بازیابی و پاک‌سازیِ داده‌ها"
     SettingsRoute.REMINDERS -> "یادآوریِ سررسید و ثبتِ روزانه"
-    SettingsRoute.APPEARANCE -> "حالتِ روشن و تیره، اندازه‌ی متن، حالتِ ساده"
+    SettingsRoute.APPEARANCE -> "حالتِ روشن و تیره، اندازه‌ی متن"
     SettingsRoute.SECURITY -> "قفل با رمزِ عددی و اثرِ انگشت"
     SettingsRoute.TOOLS -> "تقویمِ مالی، آمار و گزارش"
     else -> null
@@ -1461,21 +1445,6 @@ private fun AppearanceSettings(themeViewModel: ThemeViewModel) {
             status = "برای گوشی‌های کم‌قدرت",
             checked = reducedMotion,
             onCheckedChange = { themeViewModel.setReducedMotion(it) },
-        )
-    }
-
-    // ── حالتِ ساده (۱۳ مهر) ──────────────────────────────────────────────────
-    val navVm: ir.sadteam.loancalc.ui.nav.NavSlotsViewModel = hiltViewModel()
-    val simpleMode by navVm.simpleMode.collectAsState()
-    SettingsGroupLabel("سادگی")
-    SettingsGroup {
-        SettingsRowItem(
-            title = "حالتِ ساده",
-            icon = Icons.Filled.Tune,
-            tone = SettingsTone.NEUTRAL,
-            status = if (simpleMode) "نوارِ پایین: خانه، گزارش، وام، چک" else "همه‌ی بخش‌ها در نوارِ پایین",
-            checked = simpleMode,
-            onCheckedChange = { navVm.setSimpleMode(it) },
         )
     }
 }
