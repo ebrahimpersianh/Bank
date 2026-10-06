@@ -271,6 +271,15 @@ private fun SupportMessageCard(
                 }
             }
         }
+        // ۱۴ مهر: جوابی که قبلاً فرستادی زیرِ همان پیام دیده شود.
+        msg.replies.orEmpty().forEach { reply ->
+            Row(
+                Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(14.dp)).background(AppPrimaryPill).padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                Text("↩ جوابِ تو: ", color = AppPrimaryInk, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+                Text(reply, color = AppText, fontSize = 12.sp, lineHeight = 20.sp, modifier = Modifier.weight(1f))
+            }
+        }
         if (!expanded) return@AppCard
 
         if (msg.attachments.isNotEmpty()) {
