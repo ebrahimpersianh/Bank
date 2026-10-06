@@ -2496,6 +2496,29 @@ private fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
             }
         }
     }
+    // 🔎 آخرین اعلان‌های بانکی و دلیلِ ثبت‌شدن/نشدن - برای وقتی «نخواند» (۱۴ مهر).
+    var showNotifLog by remember { mutableStateOf(false) }
+    Text(
+        if (showNotifLog) "بستنِ آخرین اعلان‌ها" else "آخرین اعلان‌های بانکی که دیده شد ›",
+        color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
+        modifier = Modifier.fillMaxWidth().clickable { showNotifLog = !showNotifLog }.padding(horizontal = 4.dp, vertical = 12.dp),
+    )
+    if (showNotifLog) {
+        val entries = remember { ir.sadteam.loancalc.notifications.NotifDebugLog.read(context) }
+        AppCard {
+            Column {
+                if (entries.isEmpty()) Text("هنوز اعلانی از اپ‌های بانکیِ وصل‌شده نیامده.", color = AppMuted, fontSize = 12.sp)
+                entries.forEach { e ->
+                    Text(
+                        "${e.pkg} · ${ir.sadteam.loancalc.notifications.NotifDebugLog.label(e.result)}",
+                        color = if (e.result == "ok") AppPrimary else AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                    Text(e.text, color = AppMuted, fontSize = 11.sp, lineHeight = 17.sp)
+                }
+            }
+        }
+    }
     Text(
         "اپِ هر بانک را بالا، زیرِ همان بانک وصل کن. فقط اعلانِ همان اپ‌ها روی گوشی خوانده می‌شود.",
         color = AppMuted,

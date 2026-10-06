@@ -78,23 +78,32 @@ class BankNotificationListener : NotificationListenerService() {
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
         val big = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString().orEmpty()
-        val body = listOf(title, big.ifBlank { text }).filter { it.isNotBlank() }.joinToString(" ")
+        // 🧠 (۱۴ مهر) بعضی اپ‌ها متن را در خط‌ها/زیرمتن/تیکر می‌گذارند، نه در EXTRA_TEXT.
+        val lines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)?.joinToString(" ") { it.toString() }.orEmpty()
+        val sub = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString().orEmpty()
+        val summary = extras.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)?.toString().orEmpty()
+        val ticker = notification.tickerText?.toString().orEmpty()
+        val main = big.ifBlank { text }.ifBlank { lines }.ifBlank { ticker }
+        val body = listOf(title, main, sub, summary).filter { it.isNotBlank() }.distinct().joinToString(" ")
         if (body.isBlank()) return
 
         scope.launch {
-            if (!uiPrefs.notifAutoImportEnabled.first()) return@launch
-            // بازبینیِ ۹ مهر: مثلِ پیامکِ بانکی، ثبتِ خودکار از اعلان هم مالِ اشتراک است.
+            // اپی که به یک حساب وصل شده هم «انتخاب‌شده» است (فهرستِ جدا از تنظیمات برداشته شد).
             val allowed = uiPrefs.notifAutoImportPackages.first()
-            if (packageName !in allowed) return@launch
-            if (!authPrefs.subscribed.first()) { ir.sadteam.loancalc.data.UsageStats.error("notif_not_subscribed"); return@launch }
+            val linked = accountRepository.observeAccounts().first().any { acc -> acc.smsSender.orEmpty().split(',').any { it.trim() == packageName } }
+            if (packageName !in allowed && !linked) return@launch
+            fun log(r: String) = NotifDebugLog.record(applicationContext, appLabelOf(packageName), body, r)
+            if (!uiPrefs.notifAutoImportEnabled.first()) { log("off"); return@launch }
+            // بازبینیِ ۹ مهر: مثلِ پیامکِ بانکی، ثبتِ خودکار از اعلان هم مالِ اشتراک است.
+            if (!authPrefs.subscribed.first()) { log("not_subscribed"); ir.sadteam.loancalc.data.UsageStats.error("notif_not_subscribed"); return@launch }
 
             val parsed = BankSmsParser.parse(body, trustedSource = true)
-                ?: run { ir.sadteam.loancalc.data.UsageStats.error("notif_parse_fail"); return@launch }
+                ?: run { log("parse_fail"); ir.sadteam.loancalc.data.UsageStats.error("notif_parse_fail"); return@launch }
             // 🚨 اپ‌های بانکی همان اعلان را دوباره منتشر/به‌روزرسانی می‌کنند و این تابع هر بار
             // اجرا می‌شود؛ بی این کنترل، یک واریز دو تراکنشِ منتظرِ تایید می‌ساخت و با تاییدِ
             // هر دو، موجودی دو برابر جابه‌جا می‌شد.
             val importKey = "notif|$packageName|${parsed.type}|${parsed.amountRial}|${parsed.cardSuffix.orEmpty()}|${smsDedupeFingerprint(body)}"
-            if (!uiPrefs.claimAutoImportKey(importKey)) return@launch
+            if (!uiPrefs.claimAutoImportKey(importKey)) { log("duplicate"); return@launch }
             // 🚨 اعلانِ بانک هیچ‌وقت روی حسابِ «نقدی/غیربانکی» نمی‌نشیند (گزارشِ کاربر، ۷ مهر: واریزهای
             // بلو در حسابِ نقدی ثبت شده بود چون تنها حسابِ کاربر بود).
             val accounts = accountRepository.observeAccounts().first()
@@ -121,6 +130,7 @@ class BankNotificationListener : NotificationListenerService() {
                 ?: accounts.singleOrNull() // فقط اگه کلاً یه حساب داره، حدس بی‌خطره
                 ?: run {
                     ir.sadteam.loancalc.data.UsageStats.error("notif_no_account")
+                    log("no_account")
                     inboxRepository.post(
                         kind = InboxMessageEntity.Kind.SYSTEM,
                         title = "اعلانِ بانکی بی‌حساب ماند",
@@ -143,7 +153,8 @@ class BankNotificationListener : NotificationListenerService() {
             // ⚠️ **تاییدنشده** ثبت می‌شه (تصمیمِ صریحِ کاربر): تا وقتی خودش تاییدش نکرده رو
             // موجودی اثر نمی‌ذاره. کارتِ اقدام‌دارِ مرکزِ پیام‌ها ازش ساخته می‌شه.
             ir.sadteam.loancalc.data.UsageStats.action("notif_auto_tx")
-            if (accountRepository.hasRecentAutoTwin(account.id, parsed.type, parsed.amountRial, "اعلانِ ${appLabelOf(packageName)}")) return@launch
+            if (accountRepository.hasRecentAutoTwin(account.id, parsed.type, parsed.amountRial, "اعلانِ ${appLabelOf(packageName)}")) { log("twin"); return@launch }
+            log("ok")
             val txId = accountRepository.addTransaction(
                 accountId = account.id,
                 type = parsed.type,

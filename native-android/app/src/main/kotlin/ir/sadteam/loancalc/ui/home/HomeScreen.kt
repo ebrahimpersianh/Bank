@@ -517,7 +517,9 @@ fun HomeScreen(
             }
             // «تا آخرِ ماه کم میاری» - رجوع کن به MonthForecast. عمداً **بالای** کارت‌های
             // تحلیلی و زیرِ بودجه می‌شینه: یه هشدارِ عملیه، نه یه آمار.
-            if (!simple) monthForecast?.let { forecast ->
+            // ۱۴ مهر: وقتی کارتِ بودجه هست، کارتِ دومِ «بودجه تمام شده» تکراری و گاهی متناقض بود
+            // (نوار ۵۰٪ ولی «تمام شده»). کارتِ بودجه خودش «با این روند کم میاری» را می‌گوید.
+            if (!simple && monthCap <= 0.0) monthForecast?.let { forecast ->
                 item {
                     if (forecast.willRunShort) {
                         ShortfallForecastCard(

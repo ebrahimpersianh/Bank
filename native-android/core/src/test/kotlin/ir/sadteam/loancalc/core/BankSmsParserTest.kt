@@ -202,4 +202,14 @@ class BankSmsParserTest {
         val p = BankSmsParser.parse("انتقال وجه 2,000,000 ریال به حساب شما واریز شد. مانده: 5,000,000 ریال")
         assertEquals(TransactionType.DEPOSIT, p?.type)
     }
+
+    /** انتقالِ بلو به بلو (۱۴ مهر): «منتقل شد» برداشت است؛ «به شما» واریز. */
+    @Test
+    fun bluTransferWording() {
+        val out = BankSmsParser.parse("بلو 10,000 ریال به مبینا فتحی مقدم لاکانی منتقل شد", trustedSource = true)
+        assertEquals(TransactionType.WITHDRAWAL, out?.type)
+        assertEquals(10_000.0, out?.amountRial)
+        val inn = BankSmsParser.parse("بلو ابراهیم 10,000 ریال به شما منتقل کرد", trustedSource = true)
+        assertEquals(TransactionType.DEPOSIT, inn?.type)
+    }
 }
