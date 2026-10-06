@@ -112,6 +112,7 @@ jobs:
 
       # اسمِ فایل = نامِ برنامه + نسخه + استور (خواسته‌ی کاربر ۱۴ مهر)، مثلاً Jibak-1.0.727-cafebazaar.apk
       - name: نام‌گذاریِ APKها با نسخه
+        working-directory: .
         run: |
           mkdir -p dist
           cp native-android/app/build/outputs/apk/cafebazaar/release/app-cafebazaar-release.apk dist/Jibak-1.0.${{ github.run_number }}-cafebazaar.apk
