@@ -635,11 +635,13 @@ private fun ShortcutTile(
 @Composable
 fun ShortcutDrawerHandle(onOpen: () -> Unit, modifier: Modifier = Modifier) {
     var dragged by remember { mutableFloatStateOf(0f) }
-    val thresholdPx = with(LocalDensity.current) { 48.dp.toPx() }
+    // ۱۴ مهر: آستانه‌ی کشیدن کمتر - کشیدنِ کوتاه هم باز می‌کند.
+    val thresholdPx = with(LocalDensity.current) { 24.dp.toPx() }
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(14.dp)
+            // ناحیه‌ی لمس ۲۸dp: ۱۲dp بالای نوار + لبه‌ی خودِ نوار - قبلاً ۱۴dp بود و به‌سختی گرفته می‌شد.
+            .height(28.dp)
             .draggable(
                 orientation = Orientation.Vertical,
                 state = rememberDraggableState { delta -> dragged += delta },

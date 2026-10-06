@@ -1130,9 +1130,11 @@ private fun LoanCalcApp(
                     ) {
                         val navShape = RoundedCornerShape(28.dp)
                         // خواسته‌ی کاربر (۳ مهر): خطِ آبی **روی خودِ نوار** بنشیند، نه شناور بالایش.
+                        // ۱۴ مهر: ۱۲dp فضای لمسِ بالای نوار برای دستگیره - قبلاً فقط ۱۴dp روی لبه بود و گرفته نمی‌شد.
                         Box(modifier = Modifier.fillMaxWidth()) {
                         Row(
                             modifier = Modifier
+                                .padding(top = 12.dp)
                                 .fillMaxWidth()
                                 .shadow(12.dp, navShape, ambientColor = AppPrimary.copy(alpha = 0.25f), spotColor = AppPrimary.copy(alpha = 0.25f))
                                 .clip(navShape)
@@ -1164,7 +1166,7 @@ private fun LoanCalcApp(
                         // (۱۲۰dp) تا لمسِ بالای تب‌ها را نگیرد.
                         if (!ir.sadteam.loancalc.ui.privacy.LocalSimpleMode.current) ShortcutDrawerHandle(
                             onOpen = { shortcutDrawerOpen = true },
-                            modifier = Modifier.align(Alignment.TopCenter).width(120.dp).then(Modifier.guideTarget("shortcuts")),
+                            modifier = Modifier.align(Alignment.TopCenter).width(150.dp).then(Modifier.guideTarget("shortcuts")),
                         )
                         }
                     }
