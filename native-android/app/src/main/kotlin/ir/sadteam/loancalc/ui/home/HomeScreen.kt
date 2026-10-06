@@ -1404,8 +1404,9 @@ private fun CategoryBreakdownCard(
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             CategoryDonut(
                 slices = top.mapIndexed { i, e -> DonutSlice(e.value, colors[i % colors.size]) },
-                size = 74.dp,
-                strokeWidth = 9.dp,
+                // ۱۴ مهر: بزرگ‌تر و حلقه نازک‌تر تا «میلیون تومان» به لبه نچسبد (مثلِ دایره‌ی وام).
+                size = 86.dp,
+                strokeWidth = 8.dp,
             ) {
                 // ⚠️ سه چیز روی هم افتاده بود: عدد **ریال** بود (۱۰۲۶٫۶M جای ۱۰۲٫۶)، حرفِ
                 // M لاتین وسطِ ارقامِ فارسی، و یک خطِ بلند در دایره‌ی تنگ. قطرِ داخلی
@@ -1428,7 +1429,7 @@ private fun CategoryBreakdownCard(
                     Text(
                         centerUnit,
                         color = AppLabel,
-                        fontSize = 9.5.sp,
+                        fontSize = 8.5.sp,
                         lineHeight = 11.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
