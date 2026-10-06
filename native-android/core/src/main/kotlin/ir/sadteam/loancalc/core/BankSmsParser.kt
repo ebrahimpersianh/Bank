@@ -6,6 +6,8 @@ data class ParsedBankSms(
     val amountRial: Double,
     val type: TransactionType,
     val cardSuffix: String?,
+    /** مانده‌ی بعد از تراکنش، اگر بانک نوشته باشد (ریال) - برای مقایسه با موجودیِ ثبت‌شده. */
+    val balanceRial: Double? = null,
 )
 
 /**
@@ -20,6 +22,19 @@ object BankSmsParser {
     // ۴ رقم چون مبلغ‌های بانکی واقعی همیشه حداقل هزارتومانی‌ان - جلوگیری از قاپیدنِ اعدادِ کوچیکِ
     // بی‌ربط (مثلاً شماره‌ی پیگیری).
     private val amountRegex = Regex("([\\d۰-۹]{1,3}(?:[,٬٫.][\\d۰-۹]{3})+|[\\d۰-۹]{4,})\\s*(ریال|ريال|تومان|تومن)")
+    private val signedRegex = Regex("(?:^|[\\s:])([+-])\\s?(\\d{1,3}(?:[,٬]\\d{3})+|\\d{5,})|(?:^|[\\s:])()(\\d{1,3}(?:[,٬]\\d{3})+|\\d{5,})([+-])(?![\\d])")
+    private val labeledRegex = Regex("(?:مبلغ|برداشت|واریز|خرید|انتقال|پرداخت)\\s*[:：]?\\s*(\\d{1,3}(?:[,٬]\\d{3})+|\\d{4,})")
+    private val balanceRegex = Regex("(?:مانده|موجودی)\\s*[:：]?\\s*(\\d{1,3}(?:[,٬]\\d{3})+|\\d{4,})")
+
+    private fun cleanAmount(raw: String): Double? =
+        toEnDigits(raw).replace(",", "").replace("٬", "").replace("٫", "").replace(".", "").toDoubleOrNull()?.takeIf { it > 0 }
+
+    /** عدد درست بعد از «مانده/موجودی» آمده؟ (۱۲ کاراکترِ قبلش) */
+    private fun isBalanceNumber(text: String, at: Int): Boolean {
+        val before = text.substring(maxOf(0, at - 12), at)
+        return before.contains("مانده") || before.contains("موجودی")
+    }
+
     private val cardSuffixRegex = Regex("(?:\\*+|منتهی به|کارت)\\D{0,6}(\\d{4})(?!\\d)")
     // ⚠️ بانک‌های دیجیتال (بلوبانک و مانندش) متنِ اعلانشان با پیامکِ بانکِ سنتی فرق دارد و
     // فعل‌های دیگری به کار می‌برند. با فهرستِ قبلی، اعلان پارس نمی‌شد و بی‌صدا رد می‌شد -
@@ -101,12 +116,28 @@ object BankSmsParser {
      * متنِ این اعلان‌ها کوتاه است و «مانده/کارت/حساب» ندارد («پرداخت قبض ۲۰۰٬۰۰۰ ریال بابت…»)،
      * پس شرطِ «نشانه‌ی گزارشِ بانکی» برایشان لازم نیست.
      */
-    fun parse(body: String, trustedSource: Boolean = false): ParsedBankSms? {
-        val amountMatch = amountRegex.find(body) ?: return null
-        val digitsOnly = toEnDigits(amountMatch.groupValues[1]).replace(",", "").replace("٬", "").replace("٫", "").replace(".", "")
-        val amount = digitsOnly.toDoubleOrNull() ?: return null
-        if (amount <= 0) return null
-        val amountRial = if (amountMatch.groupValues[2] == "تومان" || amountMatch.groupValues[2] == "تومن") amount * 10 else amount
+    fun parse(rawBody: String, trustedSource: Boolean = false): ParsedBankSms? {
+        // 🧠 (۱۴ مهر) یکدست‌سازی: ي/ك عربی، نیم‌فاصله و ارقامِ فارسی - بانک‌ها هر کدام یک‌جور می‌نویسند.
+        val body = rawBody.replace('ي', 'ی').replace('ك', 'ک').replace('\u200c', ' ').replace('−', '-')
+        val numbered = toEnDigits(body)
+        var signType: TransactionType? = null
+        val amountRial: Double = run {
+            amountRegex.find(body)?.let { m ->
+                val a = cleanAmount(m.groupValues[1]) ?: return null
+                return@run if (m.groupValues[2] == "تومان" || m.groupValues[2] == "تومن") a * 10 else a
+            }
+            // بی «ریال/تومان»: خیلی از بانک‌ها فقط عدد با علامت می‌نویسند («-1,200,000» / «1,200,000+»)
+            // یا بعد از «مبلغ/برداشت/واریز/خرید». پیش‌فرضِ پیامکِ بانکی ریال است. عددِ بعد از «مانده» نه.
+            signedRegex.findAll(numbered).firstOrNull { !isBalanceNumber(numbered, it.range.first) }?.let { m ->
+                val num = m.groupValues[2].ifEmpty { m.groupValues[4] }
+                val sign = m.groupValues[1].ifEmpty { m.groupValues[5] }
+                signType = if (sign == "+") TransactionType.DEPOSIT else TransactionType.WITHDRAWAL
+                return@run cleanAmount(num) ?: return null
+            }
+            labeledRegex.find(numbered)?.let { m -> return@run cleanAmount(m.groupValues[1]) ?: return null }
+            return null
+        }
+        if (amountRial <= 0) return null
 
         // 🚨 (۱۴ مهر) نوع = کلیدواژه‌ای که **زودتر** در متن آمده، نه «اول واریز را بگرد». پیامکِ
         // «پرداخت صورتحساب … از حساب شما انجام شد … طرحِ ویژه دریافت کنید» به‌خاطرِ «دریافت»ِ
@@ -115,11 +146,14 @@ object BankSmsParser {
         val dIdx = firstIndex(depositKeywords + remoteDeposit)
         val wIdx = firstIndex(withdrawalKeywords + remoteWithdrawal)
         val type = when {
+            signType != null -> signType!!
             dIdx == null && wIdx == null -> return null
             dIdx == null -> TransactionType.WITHDRAWAL
             wIdx == null -> TransactionType.DEPOSIT
             // «از حساب شما» نشانه‌ی قطعیِ برداشت است، هر جای متن باشد.
             body.contains("از حساب شما") || body.contains("از حسابت") -> TransactionType.WITHDRAWAL
+            // «انتقال وجه … به حساب شما واریز شد» = واریز، با اینکه «انتقال» زودتر آمده.
+            body.contains("به حساب شما") || body.contains("به حسابت") -> TransactionType.DEPOSIT
             wIdx < dIdx -> TransactionType.WITHDRAWAL
             else -> TransactionType.DEPOSIT
         }
@@ -137,8 +171,9 @@ object BankSmsParser {
         // و در آخر: بدونِ نشانه‌ی گزارشِ واقعی، پیامک پذیرفته نمی‌شود.
         if (!trustedSource && reportEvidence.none { body.contains(it) }) return null
 
-        val cardSuffix = cardSuffixRegex.find(body)?.groupValues?.get(1)?.let { toEnDigits(it) }
-        return ParsedBankSms(amountRial, type, cardSuffix)
+        val cardSuffix = cardSuffixRegex.find(numbered)?.groupValues?.get(1)
+        val balance = balanceRegex.find(numbered)?.groupValues?.get(1)?.let { cleanAmount(it) }
+        return ParsedBankSms(amountRial, type, cardSuffix, balance)
     }
 }
 

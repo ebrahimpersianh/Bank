@@ -175,4 +175,31 @@ class BankSmsParserTest {
         assertEquals(200_000.0, p?.amountRial)
         assertEquals(TransactionType.WITHDRAWAL, p?.type)
     }
+
+    /** بانک‌هایی که فقط عددِ علامت‌دار می‌فرستند، بی «ریال». */
+    @Test
+    fun signedAmountWithoutCurrency() {
+        val w = BankSmsParser.parse("بانک ملت\nحساب 1234\n-1,250,000\nمانده: 8,400,000\n1405/07/14-10:22")
+        assertEquals(1_250_000.0, w?.amountRial)
+        assertEquals(TransactionType.WITHDRAWAL, w?.type)
+        assertEquals(8_400_000.0, w?.balanceRial)
+        val d = BankSmsParser.parse("واريز به حساب 5678\n3,000,000+\nمانده 9,100,000")
+        assertEquals(3_000_000.0, d?.amountRial)
+        assertEquals(TransactionType.DEPOSIT, d?.type)
+    }
+
+    /** «مبلغ: …» بی واحد، و ي/ك عربی. */
+    @Test
+    fun labeledAmountAndArabicLetters() {
+        val p = BankSmsParser.parse("خريد از کارت ***4821 مبلغ:450,000 مانده:2,000,000")
+        assertEquals(450_000.0, p?.amountRial)
+        assertEquals(TransactionType.WITHDRAWAL, p?.type)
+        assertEquals("4821", p?.cardSuffix)
+    }
+
+    @Test
+    fun incomingTransferIsDeposit() {
+        val p = BankSmsParser.parse("انتقال وجه 2,000,000 ریال به حساب شما واریز شد. مانده: 5,000,000 ریال")
+        assertEquals(TransactionType.DEPOSIT, p?.type)
+    }
 }
