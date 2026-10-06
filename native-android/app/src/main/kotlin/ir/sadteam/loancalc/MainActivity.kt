@@ -888,11 +888,15 @@ private fun LoanCalcApp(
     // همان تراکنش (تایید / انتخابِ دسته) همان‌جاست. دکمه‌ی «دسته» هم به همین‌جا می‌رسد؛
     // ⏳ نشستنِ مستقیم روی شیتِ دسته هنوز نیست و کاربر یک تپِ اضافه می‌زند.
     val pendingTx by deepLinkViewModel.pendingTx.collectAsState()
+    // ۱۴ مهر: دکمه‌ی «انتخابِ دسته/بقیه…» مستقیم پنجره‌ی دسته را باز می‌کند، نه فقط پیام‌ها را.
+    var quickCategoryTxId by remember { mutableStateOf<Long?>(null) }
     LaunchedEffect(pendingTx) {
-        if (pendingTx != null) {
-            showInbox = true
-            deepLinkViewModel.consumeTx()
-        }
+        val p = pendingTx ?: return@LaunchedEffect
+        if (p.second) quickCategoryTxId = p.first else showInbox = true
+        deepLinkViewModel.consumeTx()
+    }
+    quickCategoryTxId?.let { id ->
+        ir.sadteam.loancalc.ui.inbox.QuickCategoryDialog(txId = id, onDismiss = { quickCategoryTxId = null })
     }
 
     // پیامی که از برنامه‌ی پیامکِ خودِ گوشی «اشتراک‌گذاری» شده - خواسته‌ی صریحِ کاربر:

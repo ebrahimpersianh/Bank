@@ -43,6 +43,8 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
     @Inject lateinit var inboxRepository: InboxRepository
 
+    @Inject lateinit var parsingRuleRepository: ir.sadteam.loancalc.data.ParsingRuleRepository
+
     override fun onReceive(context: Context, intent: Intent) {
         val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0)
         // اعلان **فوری** بسته می‌شود، قبلِ کارِ دیتابیس - وگرنه کاربر نیم‌ثانیه دکمه‌ی بی‌اثر
@@ -58,6 +60,13 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     ACTION_SNOOZE -> snooze(intent)
                     ACTION_CONFIRM_TX -> confirmTransaction(context, intent)
                     ACTION_REJECT_TX -> rejectTransaction(intent)
+                    ACTION_SET_CATEGORY -> {
+                        val txId = intent.getLongExtra(EXTRA_TX_ID, -1L)
+                        val cat = intent.getStringExtra(EXTRA_CATEGORY)
+                        if (txId > 0 && !cat.isNullOrBlank()) {
+                            CategoryLearning.apply(accountRepository, parsingRuleRepository, txId, cat)
+                        }
+                    }
                 }
             } finally {
                 pending.finish()
@@ -158,7 +167,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
         accountRepository.confirmTransaction(txId)
         inboxRepository.resolveByRefId(txId.toString(), done = true)
         // سوالِ دوم فقط حالا و فقط اگر دسته نامشخص بوده - یک سوال در هر لحظه.
-        if (!intent.getBooleanExtra(EXTRA_CATEGORY_KNOWN, true)) AutoTxNotifier.askCategory(context, txId)
+        if (!intent.getBooleanExtra(EXTRA_CATEGORY_KNOWN, true)) {
+            val type = accountRepository.transactionById(txId)?.type ?: "WITHDRAWAL"
+            AutoTxNotifier.askCategory(context, txId, CategoryLearning.topCategories(accountRepository, type))
+        }
     }
 
     /**
@@ -177,6 +189,8 @@ class NotificationActionReceiver : BroadcastReceiver() {
         const val ACTION_SNOOZE = "ir.sadteam.loancalc.action.SNOOZE"
         const val ACTION_CONFIRM_TX = "ir.sadteam.loancalc.action.CONFIRM_TX"
         const val ACTION_REJECT_TX = "ir.sadteam.loancalc.action.REJECT_TX"
+        const val ACTION_SET_CATEGORY = "ir.sadteam.loancalc.action.SET_CATEGORY"
+        const val EXTRA_CATEGORY = "category"
         const val EXTRA_CATEGORY_KNOWN = "category_known"
 
         const val EXTRA_NOTIFICATION_ID = "notification_id"

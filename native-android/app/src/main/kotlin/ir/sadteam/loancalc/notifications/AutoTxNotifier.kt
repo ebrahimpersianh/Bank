@@ -145,21 +145,35 @@ object AutoTxNotifier {
      * **مرحله‌ی دوم** — فقط بعدِ تاییدِ کاربر و فقط وقتی دسته نامشخص بوده. عمداً
      * `PRIORITY_LOW` و بی صدا: خبرِ اصلی داده شده، این فقط یک کارِ کوچکِ باقی‌مانده است.
      */
-    fun askCategory(context: Context, txId: Long) {
+    fun askCategory(context: Context, txId: Long, quick: List<String> = emptyList()) {
         ReminderChannels.ensureAll(context)
         val notificationId = "autocat_$txId".hashCode()
         val builder = NotificationCompat.Builder(context, ReminderChannels.CHANNEL_AUTO_TX)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("ثبت شد ✓")
-            .setContentText("فقط دسته‌اش مانده - اگر الان وقت نداری، بعداً از خودِ تراکنش عوضش کن.")
+            .setContentText(if (quick.isEmpty()) "فقط دسته‌اش مانده - اگر الان وقت نداری، بعداً از خودِ تراکنش عوضش کن." else "دسته‌اش چیست؟ یکی را بزن - دفعه‌ی بعد خودم یادم می‌ماند.")
             .setContentIntent(pickCategoryIntent(context, txId))
             .setGroup(GROUP_AUTO_TX)
             .setAutoCancel(true)
             .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
-            .addAction(
-                NotificationCompat.Action.Builder(0, "انتخابِ دسته", pickCategoryIntent(context, txId)).build(),
+        // 🧠 (۱۴ مهر) دو دسته‌ی پراستفاده مستقیم روی اعلان - یک لمس، بی بازکردنِ برنامه.
+        quick.take(2).forEach { cat ->
+            val intent = Intent(context, NotificationActionReceiver::class.java).apply {
+                action = NotificationActionReceiver.ACTION_SET_CATEGORY
+                putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+                putExtra(NotificationActionReceiver.EXTRA_TX_ID, txId)
+                putExtra(NotificationActionReceiver.EXTRA_CATEGORY, cat)
+            }
+            val pending = PendingIntent.getBroadcast(
+                context, "cat_${txId}_$cat".hashCode(), intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
+            builder.addAction(NotificationCompat.Action.Builder(0, cat, pending).build())
+        }
+        builder.addAction(
+            NotificationCompat.Action.Builder(0, if (quick.isEmpty()) "انتخابِ دسته" else "بقیه…", pickCategoryIntent(context, txId)).build(),
+        )
         ir.sadteam.loancalc.data.UsageStats.action("notif_shown_autotx")
         NotificationManagerCompat.from(context).notify(notificationId, builder.build())
     }

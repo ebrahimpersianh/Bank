@@ -134,6 +134,7 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
     val accountViewModel: AccountViewModel = hiltViewModel()
     // پیامی که کاربر «منبعش» را لمس کرده - متنِ خامِ همان پیامک/اعلان را نشان می‌دهیم.
     var sourceOf by remember { mutableStateOf<InboxMessageEntity?>(null) }
+    var quickCatOf by remember { mutableStateOf<InboxMessageEntity?>(null) }
     val actionable = messages.filter {
         InboxMessageEntity.Kind.isActionable(it.kind) &&
             it.actionState == InboxMessageEntity.ActionState.OPEN
@@ -297,7 +298,10 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                             message = message,
                             onClick = {
                                 viewModel.markRead(message.id)
-                                if (message.sourceText != null) sourceOf = message
+                                // ۱۴ مهر: تراکنشِ خودکار → پنجره‌ی دسته (متنِ پیام از همان‌جا).
+                                val txId = message.refId?.toLongOrNull()
+                                if (message.kind == InboxMessageEntity.Kind.DETECTED_TX && txId != null) quickCatOf = message
+                                else if (message.sourceText != null) sourceOf = message
                             },
                         )
                     }
@@ -344,6 +348,14 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
         Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
             BugReportScreen(onBack = { showContact = false })
         }
+    }
+
+    quickCatOf?.let { message ->
+        QuickCategoryDialog(
+            txId = message.refId!!.toLong(),
+            onDismiss = { quickCatOf = null },
+            onShowSource = if (message.sourceText != null) ({ quickCatOf = null; sourceOf = message }) else null,
+        )
     }
 
     sourceOf?.let { message ->

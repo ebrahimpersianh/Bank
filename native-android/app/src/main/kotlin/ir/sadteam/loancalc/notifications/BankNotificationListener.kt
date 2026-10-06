@@ -214,7 +214,9 @@ class BankNotificationListener : NotificationListenerService() {
                 accountId = account.id,
                 type = parsed.type,
                 amount = parsed.amountRial,
-                description = "خودکار از اعلانِ بانکی",
+                // 🧠 (۱۴ مهر) اسمِ طرفِ حساب («به مبینا فتحی») - هم خواناتر، هم کلیدِ یادگیریِ دسته.
+                description = ir.sadteam.loancalc.core.Counterparty.extract(body, isWithdrawal)
+                    ?.let { (if (isWithdrawal) "به " else "از ") + it } ?: "خودکار از اعلانِ بانکی",
                 year = today.y,
                 month = today.m,
                 day = today.d,
