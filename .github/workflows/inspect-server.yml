@@ -18,9 +18,5 @@ jobs:
           envs: OWNER_PHONE
           script: |
             DB=~/VameMan/data.sqlite
-            echo "=== new users (after legacy gift) who got subscribed_until without purchase ==="
-            sqlite3 -header $DB "SELECT u.id, substr(u.phone,1,4)||'***'||substr(u.phone,-3) ph, u.created_at, u.subscribed_until, u.launch_gift_granted lg, u.trial_days FROM users u WHERE u.created_at > '2026-08-12' AND u.subscribed_until IS NOT NULL AND NOT EXISTS (SELECT 1 FROM subscription_purchases p WHERE p.user_id=u.id) ORDER BY u.subscribed_until DESC LIMIT 40;"
-            echo "=== count ==="
-            sqlite3 $DB "SELECT COUNT(*) FROM users u WHERE u.created_at > '2026-08-12' AND u.subscribed_until IS NOT NULL AND NOT EXISTS (SELECT 1 FROM subscription_purchases p WHERE p.user_id=u.id);"
-            echo "=== recent pm2 restarts ==="
-            pm2 describe loan-calc-api | grep -E "restarts|uptime"
+            echo "=== bank notification/SMS events, last 4 days ==="
+            sqlite3 -header $DB "SELECT day, name, count FROM usage_events WHERE day >= date('now','-4 days') AND (name LIKE '%notif%' OR name LIKE '%sms%') ORDER BY day DESC, name;"
