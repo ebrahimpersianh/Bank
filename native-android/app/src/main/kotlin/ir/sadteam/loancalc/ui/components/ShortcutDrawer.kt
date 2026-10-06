@@ -138,6 +138,7 @@ fun ShortcutDrawer(
     var reorderMode by remember { mutableStateOf(false) }
     var editMode by remember { mutableStateOf(false) }
     var toolQuery by remember { mutableStateOf("") }
+    var allToolsOpen by remember { mutableStateOf(false) }
     var order by remember(shortcuts) { mutableStateOf(shortcuts) }
     var selectedIds by remember(shortcuts) { mutableStateOf(shortcuts.map { it.id }) }
     // هر لمسی داخلِ کشو تایمر رو از صفر شروع می‌کنه (قاعده‌ی `31c`).
@@ -334,8 +335,23 @@ fun ShortcutDrawer(
                             modifier = Modifier.padding(horizontal = 14.dp),
                         )
                         val tiles: List<Pair<Shortcut?, Boolean>> = shown.map { it to false } + if (q.isEmpty()) listOf(null to true) else emptyList()
-                        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            tiles.chunked(3).forEach { row ->
+                        // ۱۴ مهر (ساده‌سازی): فهرستِ کامل بسته می‌ماند تا کاربر بخواهد؛ جستجو همیشه بازش می‌کند.
+                        if (q.isEmpty()) {
+                            Text(
+                                if (allToolsOpen) "بستنِ فهرست ⌃" else "نمایشِ همه‌ی ابزارها (${ir.sadteam.loancalc.core.toFa(rest.size)}) ⌄",
+                                color = AppPrimaryInk,
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Black,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 44.dp)
+                                    .clickable { allToolsOpen = !allToolsOpen; timerKey++ }
+                                    .padding(vertical = 12.dp),
+                            )
+                        }
+                        if (q.isNotEmpty() || allToolsOpen) Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            tiles.chunked(4).forEach { row ->
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     row.forEach { (sc, isCustomize) ->
                                         if (isCustomize) {
@@ -351,7 +367,7 @@ fun ShortcutDrawer(
                                             }) { saveAndOpen(sc.route) }
                                         }
                                     }
-                                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                                    repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
                                 }
                             }
                             if (shown.isEmpty() && q.isNotEmpty()) {
@@ -547,10 +563,10 @@ private fun AllToolTile(icon: ImageVector, label: String, modifier: Modifier = M
             .background(AppSurface2)
             .border(1.dp, AppLine, RoundedCornerShape(16.dp))
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(vertical = 12.dp, horizontal = 4.dp),
+            .padding(vertical = 9.dp, horizontal = 2.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(22.dp))
-        Text(label, color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 2, textAlign = TextAlign.Center, lineHeight = 15.sp, modifier = Modifier.padding(top = 6.dp))
+        Icon(icon, contentDescription = null, tint = AppPrimaryInk, modifier = Modifier.size(20.dp))
+        Text(label, color = AppText, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 2, textAlign = TextAlign.Center, lineHeight = 13.sp, minLines = 2, modifier = Modifier.padding(top = 4.dp))
     }
 }
 
