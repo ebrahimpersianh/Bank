@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.myloans
 
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -849,7 +850,8 @@ fun MyLoansScreen(
                                                 // نمی‌خوانَد هیچ‌وقت نمی‌فهمید کدام عقب‌افتاده است.
                                                 val stateLabel = when {
                                                     settled -> "تسویه شده"
-                                                    overdue -> "معوق"
+                                                    // ۱۴ مهر: «معوق» حذف - خطِ قرمزِ «عقب‌افتاده» زیرش همین را می‌گوید.
+                                                    overdue -> null
                                                     dueSoon -> "نزدیک"
                                                     else -> "در جریان"
                                                 }
@@ -1295,6 +1297,8 @@ private fun DashboardSummary(
     val animatedDebt = countUpDouble(totalRemainingDebt)
     val animatedMonthly = countUpDouble(totalMonthlyInstallment)
     val privacyMode = LocalPrivacyMode.current
+    // ۱۴ مهر (ساده‌سازی): حلقه، نمودار و «تا آزادی» پشتِ «جزئیات» - چیزی حذف نشد.
+    var heroDetails by rememberSaveable { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // ⚠️ **بازطراحیِ سبکِ «جیبک»** - کارتِ خلاصه‌ی وام (کارتِ `27a`ی فایلِ طراحی).
@@ -1375,7 +1379,7 @@ private fun DashboardSummary(
                 // 🚨 **حلقه ضخیم‌تر شد و «٪ پرداخت‌شده» زیرش نشست** (طرحِ مرجعِ کاربر).
                 // پیش از این حلقه فقط «چند قسط مانده» را می‌گفت و درصد هیچ‌جای کارت نبود؛
                 // آن دو یک جفت‌اند - «چقدر مانده» بی «چقدر رفته» نصفِ خبر است.
-                Column(
+                if (heroDetails) Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(start = 8.dp),
                 ) {
@@ -1479,7 +1483,7 @@ private fun DashboardSummary(
                     (totalRemainingDebt - monthly * month).coerceAtLeast(0.0).toFloat()
                 }
             }
-            if (debtCurve.any { it > 0f } && totalMonthlyInstallment > 0) {
+            if (heroDetails && debtCurve.any { it > 0f } && totalMonthlyInstallment > 0) {
                 Box(modifier = Modifier.fillMaxWidth().padding(top = 2.dp)) {
                     // لمس‌پذیر، همان نمودارِ مشترکِ دارایی. جهت مثلِ بقیه‌ی نمودارهای برنامه
                     // (خواسته‌ی کاربر): زمان چپ‌به‌راست - ماهِ جاری چپ، ماه‌های آینده به راست.
@@ -1546,7 +1550,7 @@ private fun DashboardSummary(
                         )
                     }
                 }
-                if (monthsLeft > 0) {
+                if (heroDetails && monthsLeft > 0) {
                     Column {
                         Text(
                             "تا آزادی",
@@ -1583,6 +1587,19 @@ private fun DashboardSummary(
                         }
                     }
                 }
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    if (heroDetails) "بستن ›" else "جزئیات ›",
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(Color.White.copy(alpha = 0.16f))
+                        .pressScaleClickable { heroDetails = !heroDetails }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                )
             }
         }
 

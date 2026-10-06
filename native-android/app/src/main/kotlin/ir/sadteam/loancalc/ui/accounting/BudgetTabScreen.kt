@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.filled.ReceiptLong
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.extras.isDueSoon
@@ -327,37 +329,33 @@ fun BudgetTabScreen(
                     )
                 }
             }
+            // ۱۴ مهر: سه کاشیِ ناهم‌اندازه → یک کارت با سه ردیفِ مرتب (همه‌ی درها سرِ جایشان).
             item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    BudgetToolCard(
+                val dueSoon = bills.count { it.isDueSoon(today.y, today.m, today.d) }
+                ir.sadteam.loancalc.ui.components.AppCard {
+                    BudgetToolRow(
+                        icon = Icons.Filled.ReceiptLong,
+                        title = "قبض‌ها",
+                        subtitle = when {
+                            bills.isEmpty() -> "آب، برق، گاز، موبایل…"
+                            dueSoon > 0 -> "${toFa(dueSoon)} قبض نزدیکِ موعد"
+                            else -> "${toFa(bills.size)} قبض · همه پرداخت شده"
+                        },
+                        onClick = { showBills = true },
+                    )
+                    BudgetToolRow(
                         icon = Icons.Filled.EventRepeat,
                         title = "پرداختِ تکراری",
                         subtitle = "${toFa(recurringPayments.size)} مورد",
                         onClick = onOpenRecurring,
-                        modifier = Modifier.weight(1f),
                     )
-                    BudgetToolCard(
+                    BudgetToolRow(
                         icon = Icons.Outlined.PieChart,
                         title = "دسته‌بندی‌ها",
                         subtitle = "${toFa(expenseCats.size)} دسته",
                         onClick = onOpenCategories,
-                        modifier = Modifier.weight(1f),
                     )
                 }
-            }
-            item {
-                val dueSoon = bills.count { it.isDueSoon(today.y, today.m, today.d) }
-                BudgetToolCard(
-                    icon = Icons.Filled.ReceiptLong,
-                    title = "قبض‌ها",
-                    subtitle = when {
-                        bills.isEmpty() -> "آب، برق، گاز، موبایل…"
-                        dueSoon > 0 -> "${toFa(dueSoon)} قبض نزدیکِ موعد"
-                        else -> "${toFa(bills.size)} قبض · همه پرداخت شده"
-                    },
-                    onClick = { showBills = true },
-                    modifier = Modifier.fillMaxWidth(),
-                )
             }
         }
 
@@ -790,7 +788,8 @@ private fun MonthTotalCard(
                 )
             }
             // دستگیره‌ی گردِ سرِ نوار (طرحِ ChatGPT) به‌جای سکه.
-            Box(modifier = Modifier.fillMaxWidth(clamped), contentAlignment = Alignment.CenterEnd) {
+            // ۱۴ مهر: با درصدِ کم، جعبه از دستگیره باریک‌تر بود و دایره له می‌شد و شبیهِ «0» دیده می‌شد.
+            Box(modifier = Modifier.widthIn(min = 22.dp).fillMaxWidth(clamped), contentAlignment = Alignment.CenterEnd) {
                 Box(
                     modifier = Modifier
                         .size(22.dp)
@@ -1017,6 +1016,31 @@ private fun BudgetToolCard(
         Column(modifier = Modifier.weight(1f)) {
             Text(title, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black, maxLines = 2, lineHeight = 18.sp)
             Text(subtitle, color = AppMuted, fontSize = 10.5.sp, modifier = Modifier.padding(top = 3.dp))
+        }
+        Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
+    }
+}
+
+@Composable
+private fun BudgetToolRow(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .pressScaleClickable(scale = 0.98f, onClick = onClick)
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier.size(40.dp).clip(CircleShape).background(AddTileBg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = BudgetGreen, modifier = Modifier.size(20.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            Text(subtitle, color = AppMuted, fontSize = 10.5.sp, maxLines = 1, modifier = Modifier.padding(top = 2.dp))
         }
         Icon(Icons.Filled.ChevronLeft, contentDescription = null, tint = AppMuted, modifier = Modifier.size(18.dp))
     }
