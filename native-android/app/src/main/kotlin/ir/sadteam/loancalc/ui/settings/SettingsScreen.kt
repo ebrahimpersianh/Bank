@@ -616,6 +616,22 @@ private fun SettingsMainContent(
                 )
             }
 
+            // «حالتِ ساده» مستقیم روی صفحه‌ی اصلیِ تنظیمات (خواسته‌ی کاربر ۱۴ مهر: «جایش راحت‌تر باشد»).
+            if (searchQuery.isBlank() || "حالت ساده".contains(searchQuery.trim()) || "ساده".contains(searchQuery.trim())) {
+                val mainNavVm: ir.sadteam.loancalc.ui.nav.NavSlotsViewModel = hiltViewModel()
+                val mainSimple by mainNavVm.simpleMode.collectAsState()
+                SettingsGroup(modifier = Modifier.padding(top = 10.dp)) {
+                    SettingsRowItem(
+                        title = "حالتِ ساده",
+                        icon = Icons.Filled.Tune,
+                        tone = SettingsTone.GREEN,
+                        status = if (mainSimple) "فقط خانه، گزارش، وام، چک" else "همه‌ی بخش‌ها",
+                        checked = mainSimple,
+                        onCheckedChange = { mainNavVm.setSimpleMode(it) },
+                    )
+                }
+            }
+
             SettingsSectionLabel("ثبتِ خودکار", "مدیریتِ ورود و ثبتِ اطلاعات")
             SettingsGroup {
                 if (matches(SettingsRoute.SMS)) {
