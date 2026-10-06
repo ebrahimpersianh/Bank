@@ -169,7 +169,7 @@ class BankSmsReceiver : BroadcastReceiver() {
                 val updated = account.copy(lastSmsAt = System.currentTimeMillis())
                 accountRepository.updateAccount(updated)
                 // 🧠 با کارت پیدا شد ولی سرشماره وصل نبود → از این به بعد وصل باشد.
-                if (account !in sameSender) runCatching { accountRepository.learnSender(updated, sender) }
+                if (account !in sameSender) runCatching { accountRepository.learnSender(updated, sender.orEmpty()) }
                 // 🧠 مانده‌ی بانک در برابرِ موجودیِ ثبت‌شده - روزی یک بار برای هر حساب.
                 parsed.balanceRial?.let { bankBal ->
                     val gap = accountRepository.bankBalanceGap(updated, !isWithdrawal, parsed.amountRial, bankBal)
