@@ -1298,7 +1298,7 @@ private fun DashboardSummary(
     val animatedMonthly = countUpDouble(totalMonthlyInstallment)
     val privacyMode = LocalPrivacyMode.current
     // ۱۴ مهر (ساده‌سازی): حلقه، نمودار و «تا آزادی» پشتِ «جزئیات» - چیزی حذف نشد.
-    var heroDetails by rememberSaveable { mutableStateOf(false) }
+    val heroDetails = true // ۱۴ مهر: کاربر نسخه‌ی کامل را قشنگ‌تر دانست - همیشه باز.
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // ⚠️ **بازطراحیِ سبکِ «جیبک»** - کارتِ خلاصه‌ی وام (کارتِ `27a`ی فایلِ طراحی).
@@ -1392,9 +1392,10 @@ private fun DashboardSummary(
                         centerTopColor = Color.White,
                         centerBottomColor = HeroMuted,
                         // کوچک‌تر (۷۸→۶۶) تا کارتِ وام هم‌قدِ بقیه‌ی کارت‌های قهرمان شود.
-                        size = 54.dp,
+                        // ۱۴ مهر: بزرگ‌تر تا «از ۴۹۸ قسط» کامل دیده شود (بریده می‌شد).
+                        size = 70.dp,
                         stroke = 7.dp,
-                        centerTopSize = 14,
+                        centerTopSize = 15,
                     )
                     Row(
                         modifier = Modifier
@@ -1587,19 +1588,6 @@ private fun DashboardSummary(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    if (heroDetails) "بستن ›" else "جزئیات ›",
-                    color = Color.White,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(Color.White.copy(alpha = 0.16f))
-                        .pressScaleClickable { heroDetails = !heroDetails }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                )
             }
         }
 
