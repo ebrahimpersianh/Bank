@@ -448,25 +448,6 @@ fun NewTransactionSheet(
                         }
                     },
                 )
-                // 💱 مبلغ به ارز (۸ مهر): تبدیل به تومان با نرخِ روز؛ ارزِ اصلی در شرح می‌ماند.
-                var showCurrency by remember { mutableStateOf(false) }
-                if (showCurrency) {
-                    CurrencyAmountDialog(
-                        onDismiss = { showCurrency = false },
-                        onConfirm = { t, note ->
-                            amountText = t.toString()
-                            description = if (description.isBlank()) note else "$description · $note"
-                            showCurrency = false
-                        },
-                    )
-                }
-                Text(
-                    "مبلغ به دلار/یورو/درهم؟",
-                    color = AppPrimary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { showCurrency = true }.padding(horizontal = 8.dp, vertical = 6.dp),
-                )
                 val toman = amountText.toLongOrNull() ?: 0L
                 if (toman > 0) {
                     Text(
@@ -616,6 +597,34 @@ fun NewTransactionSheet(
                 }
                 androidx.compose.animation.AnimatedVisibility(visible = moreOpen) {
                 Column {
+                // 💱 مبلغ به ارز (۸ مهر): تبدیل به تومان با نرخِ روز؛ ارزِ اصلی در شرح می‌ماند.
+                var showCurrency by remember { mutableStateOf(false) }
+                if (showCurrency) {
+                    CurrencyAmountDialog(
+                        onDismiss = { showCurrency = false },
+                        onConfirm = { t, note ->
+                            amountText = t.toString()
+                            description = if (description.isBlank()) note else "$description · $note"
+                            showCurrency = false
+                        },
+                    )
+                }
+                // ۱۴ مهر: از کادرِ مبلغ به این‌جا آمد - برای بیشترِ کاربران لازم نیست.
+                Text(
+                    "مبلغ به دلار/یورو/درهم",
+                    color = AppPrimary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { showCurrency = true }.padding(horizontal = 8.dp, vertical = 6.dp),
+                )
+                // ذخیره به‌عنوانِ الگو - از کنارِ دکمه‌ی ثبت به این‌جا آمد (۱۴ مهر).
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().clickable { showSaveTemplate = true }.padding(horizontal = 8.dp, vertical = 8.dp),
+                ) {
+                    Icon(Icons.Filled.BookmarkAdd, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(18.dp))
+                    Text("ذخیره به‌عنوانِ الگو", color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp))
+                }
                 // تقسیمِ یک خرید بینِ چند دسته - هر ردیف یک تراکنشِ جدا با شناسه‌ی مشترک.
                 if (kind == NewTxKind.EXPENSE) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -927,31 +936,17 @@ fun NewTransactionSheet(
             modifier = Modifier.weight(1f),
         )
 
-            // «ذخیره به‌عنوانِ الگو» کنارِ دکمه‌ی ثبت - قبلاً ته کارتِ گزینه‌ها گم بود (خواسته‌ی کاربر).
+            // «ثبت و بعدی» - ثبت می‌کند و فرم را برای تراکنشِ بعدی خالی نگه می‌دارد (قبلاً «+ باز»ِ نامفهوم).
             Box(
                 modifier = Modifier
-                    .width(56.dp)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(AppSurface)
-                    .border(1.5.dp, AppLine, RoundedCornerShape(999.dp))
-                    .pressScaleClickable { showSaveTemplate = true }
-                    .padding(vertical = 13.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.BookmarkAdd, contentDescription = "ذخیره به‌عنوانِ الگو", tint = AppMuted, modifier = Modifier.size(22.dp))
-            }
-            // «+ باز» - ثبت می‌کنه و فرم رو برای واردکردنِ تراکنشِ بعدی خالی می‌کنه.
-            Box(
-                modifier = Modifier
-                    .width(56.dp)
                     .clip(RoundedCornerShape(999.dp))
                     .background(AppSurface)
                     .border(1.5.dp, AppLine, RoundedCornerShape(999.dp))
                     .pressScaleClickable { submit(false) }
-                    .padding(vertical = 15.dp),
+                    .padding(horizontal = 16.dp, vertical = 15.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("+ باز", color = AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold)
+                Text("ثبت و بعدی", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
             }
         }
     }
