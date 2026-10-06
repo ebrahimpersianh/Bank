@@ -96,17 +96,32 @@ object BankSmsParser {
     @Volatile var remoteWithdrawal: List<String> = emptyList()
     @Volatile var remoteIgnore: List<String> = emptyList()
 
-    fun parse(body: String): ParsedBankSms? {
+    /**
+     * [trustedSource] = اعلانِ اپی که خودِ کاربر به‌عنوانِ اپِ بانکش انتخاب کرده (مثلِ بلو):
+     * متنِ این اعلان‌ها کوتاه است و «مانده/کارت/حساب» ندارد («پرداخت قبض ۲۰۰٬۰۰۰ ریال بابت…»)،
+     * پس شرطِ «نشانه‌ی گزارشِ بانکی» برایشان لازم نیست.
+     */
+    fun parse(body: String, trustedSource: Boolean = false): ParsedBankSms? {
         val amountMatch = amountRegex.find(body) ?: return null
         val digitsOnly = toEnDigits(amountMatch.groupValues[1]).replace(",", "").replace("٬", "").replace("٫", "").replace(".", "")
         val amount = digitsOnly.toDoubleOrNull() ?: return null
         if (amount <= 0) return null
         val amountRial = if (amountMatch.groupValues[2] == "تومان" || amountMatch.groupValues[2] == "تومن") amount * 10 else amount
 
+        // 🚨 (۱۴ مهر) نوع = کلیدواژه‌ای که **زودتر** در متن آمده، نه «اول واریز را بگرد». پیامکِ
+        // «پرداخت صورتحساب … از حساب شما انجام شد … طرحِ ویژه دریافت کنید» به‌خاطرِ «دریافت»ِ
+        // تبلیغِ ته پیام، واریز ثبت می‌شد.
+        fun firstIndex(words: List<String>) = words.mapNotNull { w -> body.indexOf(w).takeIf { it >= 0 } }.minOrNull()
+        val dIdx = firstIndex(depositKeywords + remoteDeposit)
+        val wIdx = firstIndex(withdrawalKeywords + remoteWithdrawal)
         val type = when {
-            (depositKeywords + remoteDeposit).any { body.contains(it) } -> TransactionType.DEPOSIT
-            (withdrawalKeywords + remoteWithdrawal).any { body.contains(it) } -> TransactionType.WITHDRAWAL
-            else -> return null
+            dIdx == null && wIdx == null -> return null
+            dIdx == null -> TransactionType.WITHDRAWAL
+            wIdx == null -> TransactionType.DEPOSIT
+            // «از حساب شما» نشانه‌ی قطعیِ برداشت است، هر جای متن باشد.
+            body.contains("از حساب شما") || body.contains("از حسابت") -> TransactionType.WITHDRAWAL
+            wIdx < dIdx -> TransactionType.WITHDRAWAL
+            else -> TransactionType.DEPOSIT
         }
 
         // تبلیغ/رمزِ پویا بی‌قیدوشرط رد می‌شود - حتی اگر کلمه‌ی «حساب» هم تویش باشد.
@@ -120,7 +135,7 @@ object BankSmsParser {
         }
 
         // و در آخر: بدونِ نشانه‌ی گزارشِ واقعی، پیامک پذیرفته نمی‌شود.
-        if (reportEvidence.none { body.contains(it) }) return null
+        if (!trustedSource && reportEvidence.none { body.contains(it) }) return null
 
         val cardSuffix = cardSuffixRegex.find(body)?.groupValues?.get(1)?.let { toEnDigits(it) }
         return ParsedBankSms(amountRial, type, cardSuffix)

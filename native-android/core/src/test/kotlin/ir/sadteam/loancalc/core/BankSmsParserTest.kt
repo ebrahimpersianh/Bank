@@ -159,4 +159,20 @@ class BankSmsParserTest {
         val body = "پرداخت بدهی و شارژ اعتبار دیجی‌پی\nاعتبار قابل مصرف: ۳۵،۰۰۰،۰۰۰ ریال\nبازگشت به اعتبار: ۷۸،۷۲۱،۰۰۰ ریال\nواریز به کیف دیجی‌پی (بابت پرداخت از کارت بانکی): ۲۸،۷۳۹،۰۰۰ ریال"
         assertNull(BankSmsParser.parse(body))
     }
+
+    /** گزارشِ کاربر (۱۴ مهر): «دریافت»ِ تبلیغِ ته پیامک، پرداخت را واریز کرده بود. */
+    @Test
+    fun billPaymentWithAdTailIsWithdrawal() {
+        val body = "پرداخت صورتحساب به مبلغ 200,000 ریال از حساب شما انجام شد. شناسه تراکنش 652258819 می‌باشد.\nشگفت زده شوید! باشماره گیری #4444* طرح ویژه خودرو دریافت کنید."
+        assertEquals(TransactionType.WITHDRAWAL, BankSmsParser.parse(body)?.type)
+    }
+
+    /** اعلانِ کوتاهِ بلو بی «حساب/کارت/مانده» - از اپِ انتخاب‌شده‌ی کاربر پذیرفته می‌شود. */
+    @Test
+    fun trustedBluNotificationParses() {
+        val body = "بلو پرداخت قبض ابراهیم عزیز، 200,000 ریال بابت پرداخت قبض از حسابت کم شد"
+        val p = BankSmsParser.parse(body, trustedSource = true)
+        assertEquals(200_000.0, p?.amountRial)
+        assertEquals(TransactionType.WITHDRAWAL, p?.type)
+    }
 }

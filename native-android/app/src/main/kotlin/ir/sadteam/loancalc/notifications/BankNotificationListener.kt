@@ -88,7 +88,7 @@ class BankNotificationListener : NotificationListenerService() {
             if (packageName !in allowed) return@launch
             if (!authPrefs.subscribed.first()) { ir.sadteam.loancalc.data.UsageStats.error("notif_not_subscribed"); return@launch }
 
-            val parsed = BankSmsParser.parse(body)
+            val parsed = BankSmsParser.parse(body, trustedSource = true)
                 ?: run { ir.sadteam.loancalc.data.UsageStats.error("notif_parse_fail"); return@launch }
             // 🚨 اپ‌های بانکی همان اعلان را دوباره منتشر/به‌روزرسانی می‌کنند و این تابع هر بار
             // اجرا می‌شود؛ بی این کنترل، یک واریز دو تراکنشِ منتظرِ تایید می‌ساخت و با تاییدِ
