@@ -1944,22 +1944,8 @@ private fun SmsSettings(
             status = "پیامکی که خودکار خوانده نشده را دستی ثبت کن",
             onClick = { showSmsImport = true },
         )
-        SettingsDivider()
-        SettingsRowItem(
-            title = "آزمایشِ تشخیص",
-            icon = Icons.Filled.Science,
-            tone = SettingsTone.GREEN,
-            status = "متنِ یک پیامک را امتحان کن",
-            onClick = { showParseTest = true },
-        )
-        SettingsDivider()
-        SettingsRowItem(
-            title = "قاعده‌های تشخیص",
-            icon = Icons.Filled.Rule,
-            tone = SettingsTone.NEUTRAL,
-            status = "دسته‌بندیِ خودکار بر اساسِ متنِ پیامک",
-            onClick = { onOpenRules() },
-        )
+        // «آزمایشِ تشخیص» و «قاعده‌های تشخیص» به خواسته‌ی کاربر (۱۴ مهر) از این‌جا برداشته شدند:
+        // تشخیص باید خودش هوشمند باشد. قاعده‌های قبلیِ کاربر همچنان اعمال می‌شوند.
     }
 
     NotificationImportSettings(smsAutoImportViewModel)
