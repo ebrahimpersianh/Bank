@@ -66,6 +66,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -1628,8 +1630,19 @@ private fun RecentTransactionsCard(
     onSeeAll: () -> Unit,
 ) {
     val recent = remember(transactions) { transactions.sortedByDescending { it.id }.take(3) }
+    // جمع‌شده به‌طورِ پیش‌فرض؛ فلش بازش می‌کند (خواسته‌ی کاربر ۱۴ مهر - خانه خلوت‌تر).
+    var expanded by rememberSaveable { mutableStateOf(false) }
     AppCard(contentPadding = 14.dp) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                contentDescription = if (expanded) "بستن" else "باز کردن",
+                tint = AppMuted,
+                modifier = Modifier.padding(end = 6.dp).size(22.dp),
+            )
             Text("آخرین تراکنش‌ها", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
             Text(
                 "مشاهده‌ی همه",
@@ -1642,7 +1655,7 @@ private fun RecentTransactionsCard(
                     .padding(horizontal = 6.dp, vertical = 4.dp),
             )
         }
-        recent.forEachIndexed { index, tx ->
+        if (expanded) recent.forEachIndexed { index, tx ->
             val income = tx.type == "DEPOSIT"
             val transfer = tx.sourceType == SOURCE_TYPE_TRANSFER
             Row(
