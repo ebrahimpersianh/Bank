@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.admin
 
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -257,37 +258,83 @@ fun AdminUserScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
             list == null -> Text("…", color = AppMuted)
             list.isEmpty() -> Text("کاربری پیدا نشد.", color = AppMuted)
             else -> {
-                Text("${toFa(list.size)} کاربر" + if (list.size >= 300) " (۳۰۰ تای آخر)" else "", color = AppMuted, fontSize = 12.sp)
-                list.forEach { u ->
-                    val active = u.subscribedUntil?.let { runCatching { java.time.Instant.parse(it).isAfter(java.time.Instant.now()) }.getOrNull() } == true
-                    Row(
-                        Modifier
+                // ۱۴ مهر (بازطراحی): روزبه‌روز، با ساعتِ آخرین بازدید؛ ترتیب از سرور (آخرین بازدید اول).
+                Text("${toFa(list.size)} کاربر" + if (list.size >= 300) " (۳۰۰ تای آخر)" else "", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                val today = ir.sadteam.loancalc.core.JalaliCalendar.today()
+                list.groupBy { seenLocal(it)?.first }.forEach { (day, group) ->
+                    val label = when {
+                        day == null -> "بی‌بازدید"
+                        day == today -> "امروز"
+                        ir.sadteam.loancalc.core.JalaliCalendar.daysBetween(day, today) == 1 -> "دیروز"
+                        else -> "${toFa(day.d)} ${ir.sadteam.loancalc.ui.components.persianMonthName(day.m)}"
+                    }
+                    Text(
+                        label + (day?.let { " · ${toFa(it.d)} ${ir.sadteam.loancalc.ui.components.persianMonthName(it.m)} ${toFa(it.y)}" }?.takeIf { label == "امروز" || label == "دیروز" } ?: "") +
+                            "  (${toFa(group.size)})",
+                        color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black,
+                        modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
+                            .padding(top = 6.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(AppSurface2)
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                    )
+                    group.forEach { u ->
+                        val active = u.subscribedUntil?.let { runCatching { java.time.Instant.parse(it).isAfter(java.time.Instant.now()) }.getOrNull() } == true
+                        val myket = u.store == "myket"
+                        AppCard(
+                            modifier = Modifier.clickable {
                                 loading = true; failed = false
                                 scope.launch { result = vm.repo.adminUser(u.code); failed = result == null; loading = false }
+                            },
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    Modifier.size(40.dp).clip(androidx.compose.foundation.shape.CircleShape)
+                                        .background(if (myket) androidx.compose.ui.graphics.Color(0xFF3F8EF0) else androidx.compose.ui.graphics.Color(0xFF2EAA62)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(androidx.compose.material.icons.Icons.Filled.Phone, null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(20.dp))
+                                }
+                                Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                                    Ltr { Text(toFa(u.phone), color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black) }
+                                    Text(
+                                        (if (myket) "مایکت" else if (u.store == "cafebazaar") "کافه‌بازار" else "—") +
+                                            (seenLocal(u)?.second?.let { " · آخرین بار $it" } ?: ""),
+                                        color = AppMuted, fontSize = 11.5.sp,
+                                    )
+                                    Ltr { Text("Uid:${u.code}", color = AppLabel, fontSize = 11.sp) }
+                                }
+                                Text(
+                                    when { u.paid -> "خریدار"; active -> "اشتراک"; else -> "رایگان" },
+                                    color = if (u.paid || active) AppGoldInkSoft else AppPrimaryInk,
+                                    fontSize = 11.sp, fontWeight = FontWeight.Black,
+                                    modifier = Modifier.clip(RoundedCornerShape(999.dp))
+                                        .background(if (u.paid || active) AppGoldPillSoft else AppPrimaryPill)
+                                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                                )
                             }
-                            .padding(vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Ltr { Text(toFa(u.phone), color = AppText, fontSize = 13.5.sp, fontWeight = FontWeight.Bold) }
-                            Text(
-                                "Uid:${u.code} · " + (if (u.store == "myket") "مایکت" else if (u.store == "cafebazaar") "کافه‌بازار" else "—") +
-                                    (u.lastDay?.let { " · آخرین بار $it" } ?: ""),
-                                color = AppMuted, fontSize = 11.sp,
-                            )
                         }
-                        Text(
-                            when { u.paid -> "خریدار"; active -> "اشتراکِ فعال"; else -> "رایگان" },
-                            color = if (u.paid) AppPrimary else AppMuted,
-                            fontSize = 11.5.sp, fontWeight = FontWeight.Black,
-                        )
                     }
                 }
             }
         }
     }
+}
+
+/** روزِ شمسی و ساعتِ محلیِ آخرین بازدید («YYYY-MM-DD HH:MM:SS» به UTC)؛ اگر نبود، روزِ آخر بدون ساعت. */
+private fun seenLocal(u: ir.sadteam.loancalc.data.network.AdminUserRow): Pair<ir.sadteam.loancalc.core.PersianDate, String?>? {
+    u.lastSeenAt?.takeIf { it.length >= 16 }?.let { raw ->
+        runCatching {
+            val f = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+            val cal = java.util.Calendar.getInstance().apply { time = f.parse(raw.take(16).replace('T', ' '))!! }
+            val day = ir.sadteam.loancalc.core.JalaliCalendar.fromGregorian(cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH) + 1, cal.get(java.util.Calendar.DAY_OF_MONTH))
+            return day to toFa("%02d:%02d".format(cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE)))
+        }
+    }
+    val d = (u.lastDay ?: u.createdAt).take(10).split('-').mapNotNull { it.toIntOrNull() }
+    if (d.size != 3) return null
+    return ir.sadteam.loancalc.core.JalaliCalendar.fromGregorian(d[0], d[1], d[2]) to null
 }
 
 @Composable

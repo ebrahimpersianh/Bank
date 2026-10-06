@@ -570,6 +570,7 @@ data class AdminTimelineDay(val day: String = "", val events: Int = 0, val scree
 data class AdminUserRow(
     val code: String = "", val phone: String = "", val createdAt: String = "", val subscribedUntil: String? = null,
     val paid: Boolean = false, val store: String? = null, val lastDay: String? = null,
+    val lastSeenAt: String? = null,
 )
 data class AdminUserList(val users: List<AdminUserRow> = emptyList())
 data class AdminUserTimeline(
