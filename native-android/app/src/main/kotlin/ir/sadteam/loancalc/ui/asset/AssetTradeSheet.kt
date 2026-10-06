@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -131,6 +132,7 @@ fun AssetTradeSheet(
     var showPicker by remember { mutableStateOf(false) }
     var showCalendar by remember { mutableStateOf(false) }
     var showAfterNote by remember { mutableStateOf(false) }
+    var moreOpen by remember { mutableStateOf(description.isNotBlank()) }
     var error by remember { mutableStateOf<String?>(null) }
 
     val toman = totalText.toLongOrNull() ?: 0L
@@ -197,6 +199,7 @@ fun AssetTradeSheet(
                 picked = picked,
                 unitPriceRial = unitPriceRial,
                 changePercent = picked?.let { changes[it.symbol] },
+                isBuy = isBuy,
                 onClick = { showPicker = true },
             )
 
@@ -212,15 +215,9 @@ fun AssetTradeSheet(
                     // فیلد تا وقتی دارایی انتخاب نشده باز است ولی راهنما می‌گوید ترتیب چیست —
                     // قفل‌کردنش کاربر را بی توضیح سرِ جا نگه می‌داشت.
                     enabled = picked != null,
+                    placeholder = { if (picked == null) Text(if (isBuy) "اول بالا انتخاب کن چه خریدی" else "اول بالا انتخاب کن چه فروختی", color = AppMuted, fontSize = 12.sp) },
                     suffix = { Text("تومان", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
-                if (picked == null) {
-                    Text(
-                        "اول نوعِ دارایی را انتخاب کن تا مقدار خودکار حساب شود.",
-                        color = AppMuted,
-                        fontSize = 10.5.sp,
-                        modifier = Modifier.padding(top = 5.dp),
-                    )
-                } else if (toman > 0L) {
+                if (picked != null && toman > 0L) {
                     Text(
                         "${numberToWordsFa(toman.toDouble())} تومان",
                         color = AppMuted,
@@ -228,53 +225,68 @@ fun AssetTradeSheet(
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
-            }
-
-            // ═══ ۴ · مقدار — خودکار، با ویرایشِ دستی ═══
-            QuantityField(
-                entryName = picked?.name,
-                autoQty = autoQty,
-                unitToman = unitToman,
-                manual = manualQty,
-                qtyText = qtyText,
-                onQtyChange = { new -> qtyText = new.filter { it.isDigit() || it == '.' } },
-                onToggleManual = {
-                    // ورود به حالتِ دستی مقدارِ خودکار را به‌عنوانِ نقطه‌ی شروع می‌گذارد،
-                    // تا کاربر از صفر تایپ نکند.
-                    if (!manualQty) qtyText = autoQty?.let { formatQuantity(it) }.orEmpty()
-                    manualQty = !manualQty
-                },
-                recordedUnitRial = recordedUnitRial,
-                marketUnitRial = unitPriceRial,
-            )
-
-            AppCard {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.CalendarMonth,
-                        contentDescription = null,
-                        tint = AppMuted,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Text(
-                        "${(date.d).toFa()} ${persianMonthName(date.m)} ${(date.y).toFa()}",
-                        color = AppText,
-                        fontSize = 13.sp,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 8.dp)
-                            .pressScaleClickable { showCalendar = true },
-                    )
+                // مقدار داخلِ همین کارت (۱۴ مهر، ساده‌سازی): کارتِ جدایش تقریباً همیشه خالی بود.
+                if (picked != null) {
+                // ═══ ۴ · مقدار — خودکار، با ویرایشِ دستی ═══
+                QuantityField(
+                    entryName = picked?.name,
+                    autoQty = autoQty,
+                    unitToman = unitToman,
+                    manual = manualQty,
+                    qtyText = qtyText,
+                    onQtyChange = { new -> qtyText = new.filter { it.isDigit() || it == '.' } },
+                    onToggleManual = {
+                        // ورود به حالتِ دستی مقدارِ خودکار را به‌عنوانِ نقطه‌ی شروع می‌گذارد،
+                        // تا کاربر از صفر تایپ نکند.
+                        if (!manualQty) qtyText = autoQty?.let { formatQuantity(it) }.orEmpty()
+                        manualQty = !manualQty
+                    },
+                    recordedUnitRial = recordedUnitRial,
+                    marketUnitRial = unitPriceRial,
+                )
                 }
             }
 
-            AppCard {
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    placeholder = { Text("توضیحات", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+            // تاریخ و توضیحات پشتِ «گزینه‌های بیشتر» (۱۴ مهر) - تاریخ پیش‌فرض امروز است.
+            Text(
+                (if (moreOpen) "بستنِ گزینه‌ها" else "تاریخ (${(date.d).toFa()} ${persianMonthName(date.m)}) و توضیحات ›"),
+                color = AppPrimaryInk,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .heightIn(min = 44.dp)
+                    .pressScaleClickable { moreOpen = !moreOpen }
+                    .padding(horizontal = 4.dp, vertical = 12.dp),
+            )
+            if (moreOpen) {
+                AppCard {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.CalendarMonth,
+                            contentDescription = null,
+                            tint = AppMuted,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Text(
+                            "${(date.d).toFa()} ${persianMonthName(date.m)} ${(date.y).toFa()}",
+                            color = AppText,
+                            fontSize = 13.sp,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 8.dp)
+                                .pressScaleClickable { showCalendar = true },
+                        )
+                    }
+                }
+
+                AppCard {
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("توضیحات", color = AppMuted, fontSize = 13.sp) }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                }
             }
 
             if (payAccounts.isNotEmpty()) {
@@ -428,6 +440,7 @@ private fun AssetPickField(
     picked: AssetCatalogEntry?,
     unitPriceRial: Double?,
     changePercent: Double?,
+    isBuy: Boolean = true,
     onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(AppRadius.card)
@@ -458,7 +471,7 @@ private fun AssetPickField(
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                picked?.name ?: "چه چیزی خریدی؟",
+                picked?.name ?: if (isBuy) "چه چیزی خریدی؟" else "چه چیزی فروختی؟",
                 color = if (picked != null) AppText else AppPrimaryInk,
                 fontSize = 12.5.sp,
                 fontWeight = FontWeight.Black,
@@ -514,7 +527,8 @@ private fun QuantityField(
     recordedUnitRial: Double?,
     marketUnitRial: Double?,
 ) {
-    AppCard(label = "مقدار") {
+    Column(Modifier.padding(top = 10.dp)) {
+        Text("مقدار", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
         if (manual) {
             OutlinedTextField(
                 value = qtyText,
@@ -582,7 +596,7 @@ private fun QuantityField(
                         tint = AppMuted,
                         modifier = Modifier.size(13.dp),
                     )
-                    Text("دستی", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Black)
+                    Text("تغییر", color = AppMuted, fontSize = 10.5.sp, fontWeight = FontWeight.Black)
                 }
             }
         }
