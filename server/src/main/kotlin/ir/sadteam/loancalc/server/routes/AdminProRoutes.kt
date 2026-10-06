@@ -279,6 +279,8 @@ data class AdminUserRow(
     val paid: Boolean = false,
     val store: String? = null,
     val lastDay: String? = null,
+    /** آخرین بازدید با ساعت (UTC، «YYYY-MM-DD HH:MM:SS») - ۱۴ مهر. */
+    val lastSeenAt: String? = null,
 )
 
 @Serializable
@@ -290,15 +292,18 @@ internal fun listUsers(conn: Connection, q: String): List<AdminUserRow> {
             "SELECT u.id, u.phone, u.created_at, u.subscribed_until, " +
                 "EXISTS(SELECT 1 FROM subscription_purchases p WHERE p.user_id = u.id), " +
                 "(SELECT store FROM installs i WHERE i.user_id = u.id ORDER BY last_day DESC LIMIT 1), " +
-                "(SELECT MAX(last_day) FROM installs i WHERE i.user_id = u.id) " +
+                "(SELECT MAX(last_day) FROM installs i WHERE i.user_id = u.id), " +
+                "(SELECT MAX(last_seen_at) FROM installs i WHERE i.user_id = u.id) AS seen " +
                 "FROM users u " + (if (q.isNotEmpty()) "WHERE u.phone LIKE ? " else "") +
-                "ORDER BY u.id DESC LIMIT 300",
+                // ۱۴ مهر: بر اساسِ آخرین بازدید (خواسته‌ی کاربر)؛ بی‌بازدیدها با تاریخِ ثبت‌نام.
+                "ORDER BY COALESCE(seen, u.created_at) DESC LIMIT 300",
             *(if (q.isNotEmpty()) arrayOf<Any?>("%$q%") else emptyArray()),
         ) {
             add(
                 AdminUserRow(
                     code = it.getLong(1).toString(), phone = it.getString(2), createdAt = it.getString(3),
                     subscribedUntil = it.getString(4), paid = it.getInt(5) != 0, store = it.getString(6), lastDay = it.getString(7),
+                    lastSeenAt = it.getString(8),
                 ),
             )
         }
