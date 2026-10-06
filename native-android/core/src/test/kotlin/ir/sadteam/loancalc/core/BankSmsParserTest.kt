@@ -212,4 +212,18 @@ class BankSmsParserTest {
         val inn = BankSmsParser.parse("بلو ابراهیم 10,000 ریال به شما منتقل کرد", trustedSource = true)
         assertEquals(TransactionType.DEPOSIT, inn?.type)
     }
+
+    /** لحنِ خودمانی و مبلغِ با کلمه (۱۴ مهر): «فرستادی»، «کم شد»، «۱ هزار تومان». */
+    @Test
+    fun casualWordingAndWordAmounts() {
+        val sent = BankSmsParser.parse("blu ۱,۰۰۰ تومان برای مبینا فتحی مقدم لاکانی فرستادی", trustedSource = true)
+        assertEquals(TransactionType.WITHDRAWAL, sent?.type)
+        assertEquals(10_000.0, sent?.amountRial)
+        val words = BankSmsParser.parse("۱ هزار تومان به مبینا فتحی منتقل شد", trustedSource = true)
+        assertEquals(10_000.0, words?.amountRial)
+        val million = BankSmsParser.parse("۲٫۵ میلیون تومان به حسابت واریز شد", trustedSource = true)
+        assertEquals(TransactionType.DEPOSIT, million?.type)
+        assertEquals(25_000_000.0, million?.amountRial)
+        assertEquals(TransactionType.WITHDRAWAL, BankSmsParser.parse("۱,۰۰۰ تومان از حسابت کم شد", trustedSource = true)?.type)
+    }
 }

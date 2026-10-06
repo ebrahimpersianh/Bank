@@ -2476,7 +2476,12 @@ private fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
         val entries = remember { ir.sadteam.loancalc.notifications.NotifDebugLog.read(context) }
         AppCard {
             Column {
-                if (entries.isEmpty()) Text("هنوز اعلانی از اپ‌های بانکیِ وصل‌شده نیامده.", color = AppMuted, fontSize = 12.sp)
+                val live = remember { ir.sadteam.loancalc.notifications.BankNotificationListener.connected }
+                Text(
+                    if (live) "سرویسِ خواندنِ اعلان همین حالا وصل است ✓" else "⚠️ سرویسِ خواندنِ اعلان هنوز وصل نشده - مجوزِ «دسترسی به اعلان» را یک بار خاموش و روشن کن.",
+                    color = if (live) AppPrimary else AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                )
+                if (entries.isEmpty()) Text("هنوز اعلانی از اپ‌های بانکیِ وصل‌شده نیامده.", color = AppMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
                 entries.forEach { e ->
                     Text(
                         "${e.pkg} · ${ir.sadteam.loancalc.notifications.NotifDebugLog.label(e.result)}",

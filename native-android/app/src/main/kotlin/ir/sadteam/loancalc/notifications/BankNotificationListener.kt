@@ -63,7 +63,56 @@ class BankNotificationListener : NotificationListenerService() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    // 🚨 (۱۴ مهر) بعد از نصبِ نسخه‌ی تازه، اندروید گاهی سرویسِ خواندنِ اعلان را دوباره وصل
+    // نمی‌کند تا کاربر مجوز را خاموش/روشن کند - یعنی «قبلاً درجا می‌فهمید، حالا نه». هر قطعی
+    // فوراً درخواستِ اتصالِ دوباره می‌دهد؛ شروعِ برنامه هم همین را صدا می‌زند ([requestRebind]).
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        connected = true
+        NotifDebugLog.markConnected(applicationContext)
+    }
+
+    override fun onListenerDisconnected() {
+        super.onListenerDisconnected()
+        connected = false
+        requestRebind(applicationContext)
+    }
+
+    companion object {
+        /** همین حالا سیستم سرویس را وصل نگه داشته؟ (در حافظه - با مرگِ پروسه صفر می‌شود.) */
+        @Volatile var connected = false
+
+        private fun granted(context: android.content.Context) = runCatching {
+            androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+        }.getOrDefault(false)
+
+        fun requestRebind(context: android.content.Context) {
+            runCatching {
+                if (granted(context) && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                    NotificationListenerService.requestRebind(android.content.ComponentName(context, BankNotificationListener::class.java))
+                }
+            }
+        }
+
+        /**
+         * شروعِ برنامه: اگر مجوز داده شده ولی چند ثانیه بعد هنوز سیستم سرویس را وصل نکرده
+         * (رایج روی شیائومی بعد از نصبِ نسخه‌ی تازه)، سرویس را یک بار خاموش/روشن می‌کنیم تا
+         * سیستم مجبور به اتصالِ دوباره شود - همان کاری که کاربر با خاموش/روشن‌کردنِ مجوز می‌کرد.
+         */
+        fun ensureConnected(context: android.content.Context) {
+            if (connected || !granted(context)) return
+            runCatching {
+                val pm = context.packageManager
+                val cn = android.content.ComponentName(context, BankNotificationListener::class.java)
+                pm.setComponentEnabledSetting(cn, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+                pm.setComponentEnabledSetting(cn, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+            }
+            requestRebind(context)
+        }
+    }
+
     override fun onDestroy() {
+        connected = false
         scope.cancel()
         super.onDestroy()
     }
@@ -86,14 +135,17 @@ class BankNotificationListener : NotificationListenerService() {
         val main = big.ifBlank { text }.ifBlank { lines }.ifBlank { ticker }
         val body = listOf(title, main, sub, summary).filter { it.isNotBlank() }.distinct().joinToString(" ")
         if (body.isBlank()) return
+        val notifIdentity = "${sbn.key}@${notification.`when`.takeIf { it > 0 } ?: sbn.postTime}"
 
         scope.launch {
             // اپی که به یک حساب وصل شده هم «انتخاب‌شده» است (فهرستِ جدا از تنظیمات برداشته شد).
             val allowed = uiPrefs.notifAutoImportPackages.first()
             val linked = accountRepository.observeAccounts().first().any { acc -> acc.smsSender.orEmpty().split(',').any { it.trim() == packageName } }
             if (packageName !in allowed && !linked) return@launch
+            // فقط شمارش (بی متن/مبلغ): «اعلانِ بانک رسید» - تا بدانیم مسیر کجا قطع می‌شود.
+            ir.sadteam.loancalc.data.UsageStats.action("notif_bank_seen")
             fun log(r: String) = NotifDebugLog.record(applicationContext, appLabelOf(packageName), body, r)
-            if (!uiPrefs.notifAutoImportEnabled.first()) { log("off"); return@launch }
+            if (!uiPrefs.notifAutoImportEnabled.first()) { log("off"); ir.sadteam.loancalc.data.UsageStats.error("notif_off"); return@launch }
             // بازبینیِ ۹ مهر: مثلِ پیامکِ بانکی، ثبتِ خودکار از اعلان هم مالِ اشتراک است.
             if (!authPrefs.subscribed.first()) { log("not_subscribed"); ir.sadteam.loancalc.data.UsageStats.error("notif_not_subscribed"); return@launch }
 
@@ -102,8 +154,11 @@ class BankNotificationListener : NotificationListenerService() {
             // 🚨 اپ‌های بانکی همان اعلان را دوباره منتشر/به‌روزرسانی می‌کنند و این تابع هر بار
             // اجرا می‌شود؛ بی این کنترل، یک واریز دو تراکنشِ منتظرِ تایید می‌ساخت و با تاییدِ
             // هر دو، موجودی دو برابر جابه‌جا می‌شد.
-            val importKey = "notif|$packageName|${parsed.type}|${parsed.amountRial}|${parsed.cardSuffix.orEmpty()}|${smsDedupeFingerprint(body)}"
-            if (!uiPrefs.claimAutoImportKey(importKey)) { log("duplicate"); return@launch }
+            // 🚨 (۱۴ مهر) شناسه‌ی **خودِ اعلان** (کلید + زمانِ ساختش) هم در کلید است: دو انتقالِ
+            // هم‌مبلغ به یک نفر متنِ کاملاً یکسان دارند و قبلاً دومی تا ۶ ساعت «تکراری» دور ریخته
+            // می‌شد. به‌روزرسانیِ همان اعلان همان کلید و زمان را دارد، پس تکرارِ واقعی هنوز گرفته می‌شود.
+            val importKey = "notif|$packageName|${parsed.type}|${parsed.amountRial}|${parsed.cardSuffix.orEmpty()}|${smsDedupeFingerprint(body)}|$notifIdentity"
+            if (!uiPrefs.claimAutoImportKey(importKey)) { log("duplicate"); ir.sadteam.loancalc.data.UsageStats.error("notif_duplicate"); return@launch }
             // 🚨 اعلانِ بانک هیچ‌وقت روی حسابِ «نقدی/غیربانکی» نمی‌نشیند (گزارشِ کاربر، ۷ مهر: واریزهای
             // بلو در حسابِ نقدی ثبت شده بود چون تنها حسابِ کاربر بود).
             val accounts = accountRepository.observeAccounts().first()

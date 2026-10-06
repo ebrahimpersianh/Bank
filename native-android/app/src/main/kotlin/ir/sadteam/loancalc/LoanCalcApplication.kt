@@ -65,6 +65,12 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         ir.sadteam.loancalc.data.UsageStats.init(this, BuildConfig.FLAVOR)
         ir.sadteam.loancalc.data.UsageStats.profileProvider = { buildUsageProfile() }
         recordPastAnrs()
+        // بعد از آپدیت، سرویسِ خواندنِ اعلانِ بانک را دوباره وصل کن (۱۴ مهر).
+        ir.sadteam.loancalc.notifications.BankNotificationListener.requestRebind(this)
+        CoroutineScope(Dispatchers.Main).launch {
+            kotlinx.coroutines.delay(5_000)
+            ir.sadteam.loancalc.notifications.BankNotificationListener.ensureConnected(this@LoanCalcApplication)
+        }
         // آمار فقط «واردشده یا نه» را می‌خواهد، نه اینکه چه کسی.
         CoroutineScope(Dispatchers.IO).launch {
             authPrefs.authToken.collect { ir.sadteam.loancalc.data.UsageStats.loggedIn = it != null; ir.sadteam.loancalc.data.UsageStats.authToken = it }

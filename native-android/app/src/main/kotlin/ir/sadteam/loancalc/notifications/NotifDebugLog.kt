@@ -27,6 +27,14 @@ object NotifDebugLog {
         }
     }
 
+    /** آخرین باری که سرویسِ خواندنِ اعلان به سیستم وصل شد (برای نمایش در تنظیمات). */
+    fun markConnected(context: Context) {
+        runCatching { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putLong("connected_at", System.currentTimeMillis()).apply() }
+    }
+
+    fun connectedAt(context: Context): Long =
+        runCatching { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getLong("connected_at", 0L) }.getOrDefault(0L)
+
     fun read(context: Context): List<Entry> = runCatching {
         val arr = JSONArray(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY, "[]"))
         (0 until arr.length()).map { i ->
