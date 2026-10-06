@@ -298,7 +298,7 @@ fun AssetsTabScreen(
             contentPadding = PaddingValues(16.dp, 14.dp, 16.dp, 110.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp),
         ) {
-            item {
+            item(key = "header") {
                 AssetsHeader(
                     privacyMode = privacyMode,
                     onTogglePrivacy = { privacyViewModel.toggle() },
@@ -311,7 +311,7 @@ fun AssetsTabScreen(
                 item { NoAccountCard(onAddAccount = { showAddAccount = true }, formOpen = showAddAccount) }
                 return@LazyColumn
             }
-            item {
+            item(key = "hero") {
                 TotalWealthHero(
                     total = grandTotal,
                     cash = cashTotal,
@@ -343,7 +343,7 @@ fun AssetsTabScreen(
             // کارتِ «خالص پس از بدهی‌ها» به خواسته‌ی کاربر برداشته شد (۱۴ مهر).
             // حساب‌های بانکی بالای بازار (خواسته‌ی کاربر، ۷ مهر: «حساب بانکی بره بالا بعد نمودار»).
             if (accounts.isNotEmpty() && query.isBlank()) {
-                item {
+                item(key = "accounts-header") {
                     SectionHeader(
                         title = "حساب‌های بانکی",
                         icon = Icons.Filled.AccountBalance,
@@ -352,7 +352,7 @@ fun AssetsTabScreen(
                         onAction = { showAccountList = true },
                     )
                 }
-                items(accounts.size) { index ->
+                items(accounts.size, key = { "acc-${accounts[it].id}" }) { index ->
                     val account = accounts[index]
                     AccountRow(
                         account = account,
@@ -363,7 +363,9 @@ fun AssetsTabScreen(
                 }
             }
 
-            item { AssetSearchBar(query) { query = it } }
+            // 🐞 (۱۵ مهر) کلیدِ ثابت: بی کلید، با اولین حرف فهرستِ حساب‌ها بالای این ردیف حذف می‌شد،
+            // جای ردیف عوض می‌شد و کادر از نو ساخته می‌شد - کیبورد می‌رفت.
+            item(key = "search") { AssetSearchBar(query) { query = it } }
 
             val q = query.trim()
             val browsing = filter == null && q.isEmpty()
@@ -392,6 +394,40 @@ fun AssetsTabScreen(
                         onSeeAll = { showPrices = true },
                         onOpen = { asset -> detailAsset = asset.id },
                     )
+                }
+            }
+            // 🔎 (۱۵ مهر) جستجو قبلاً فقط دارایی‌های خودت را می‌گشت؛ حالا کلِ بازار (طلا، ارز، رمزارز) و حساب‌ها هم.
+            if (q.isNotEmpty()) {
+                val mine = myRows.map { it.asset.symbol }.toSet()
+                val market = assetCatalogGroups.flatMap { it.second }
+                    .filter { it.symbol !in mine && matches(it.name, it.symbol, it.category) }
+                val accHits = accounts.filter { it.name.contains(q, true) || it.bankName.contains(q, true) }
+                accHits.forEach { acc ->
+                    item(key = "s-acc-${acc.id}") {
+                        AccountRow(
+                            account = acc,
+                            balance = accountViewModel.balanceOf(acc, transactions),
+                            privacyMode = privacyMode,
+                            onClick = { detailAccount = acc.id },
+                        )
+                    }
+                }
+                market.forEach { e ->
+                    item(key = "s-mkt-${e.symbol}") {
+                        AppCard(modifier = Modifier.pressScaleClickable { openEntry(e) }) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(e.name, color = AppText, fontSize = 13.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+                                marketPrices[e.symbol]?.let { p ->
+                                    Text("${p.rialToFaCompact()} تومان", color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+                if (myRows.isEmpty() && market.isEmpty() && accHits.isEmpty()) {
+                    item(key = "s-none") {
+                        Text("چیزی با «$q» پیدا نشد.", color = AppMuted, fontSize = 12.sp, modifier = Modifier.fillMaxWidth().padding(16.dp))
+                    }
                 }
             }
             // روندِ کلِ دارایی در طولِ زمان (۸ مهر) - آخرِ فهرست تا شاخصِ اسکرولِ بالا جابه‌جا نشود.
@@ -539,7 +575,7 @@ private fun AssetsHeader(
 }
 
 @Composable
-private fun HeaderRoundAction(
+internal fun HeaderRoundAction(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     description: String,

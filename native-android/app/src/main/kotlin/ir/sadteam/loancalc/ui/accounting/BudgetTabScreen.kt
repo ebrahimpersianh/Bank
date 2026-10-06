@@ -452,21 +452,15 @@ private fun BudgetHeader(onAdd: () -> Unit, showAdd: Boolean = true) {
             )
         }
         if (!showAdd) return@Row
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(AppRadius.icon))
-                .background(AppPrimaryPill)
-                .pressScaleClickable(onClick = onAdd),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Filled.Add,
-                contentDescription = "افزودنِ بودجه",
-                tint = AppPrimaryInk,
-                modifier = Modifier.size(22.dp),
-            )
-        }
+        // ۱۵ مهر: همان دکمه‌ی گردِ برچسب‌دارِ صفحه‌ی دارایی - یک‌دست در کلِ برنامه.
+        ir.sadteam.loancalc.ui.asset.HeaderRoundAction(
+            icon = Icons.Filled.Add,
+            label = "افزودن",
+            description = "افزودنِ بودجه",
+            fill = AppPrimaryPill,
+            ink = AppPrimaryInk,
+            onClick = onAdd,
+        )
     }
 }
 
