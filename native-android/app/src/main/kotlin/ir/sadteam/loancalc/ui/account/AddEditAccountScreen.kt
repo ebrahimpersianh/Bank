@@ -516,7 +516,7 @@ private fun appLabel(pkg: String): String {
 
 /** فهرستِ اپ‌های نصب‌شده برای وصل‌کردنِ اعلانِ یک اپِ بانکی به همین حساب. */
 @Composable
-private fun NotifAppPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
+internal fun NotifAppPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val apps by androidx.compose.runtime.produceState(emptyList<Pair<String, String>>(), context) {
         value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {

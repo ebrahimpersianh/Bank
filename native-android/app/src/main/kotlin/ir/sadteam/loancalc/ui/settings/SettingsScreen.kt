@@ -1842,6 +1842,18 @@ private fun SmsSettings(
     // تصمیمِ تاییدشده‌ی طراح: اگه اجازه قطع شده، **کلید حالتِ چهارم نمی‌گیره** - همین کارت
     // به حالتِ خطا می‌ره و دکمه‌ی «اجازه بده» می‌گیره.
     var senderPickerFor by remember { mutableStateOf<AccountEntity?>(null) }
+    var notifPickerFor by remember { mutableStateOf<AccountEntity?>(null) }
+    notifPickerFor?.let { acc ->
+        ir.sadteam.loancalc.ui.account.NotifAppPickerDialog(
+            onDismiss = { notifPickerFor = null },
+            onPick = { pkg ->
+                val kept = acc.smsSender.orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() && '.' !in it }
+                scope.launch { accountViewModel.updateAccount(acc.copy(smsSender = (kept + pkg).joinToString(","), smsEnabled = true)) }
+                smsAutoImportViewModel.setNotifPackageSelected(pkg, true)
+                notifPickerFor = null
+            },
+        )
+    }
     val listed = accounts.filter { it.type == ACCOUNT_TYPE_BANK }
     val activeCount = listed.count { it.smsEnabled && !it.smsSender.isNullOrBlank() }
     val smsPremium = ir.sadteam.loancalc.ui.subscription.LocalIsPremium.current
@@ -1904,6 +1916,19 @@ private fun SmsSettings(
                     // گوشی اصلاً تو تنظیمات نیست»). حالا همین‌جا انتخابگر باز می‌شود.
                     onClick = if (hasSender) null else ({ senderPickerFor = account }),
                 )
+                // وصلِ اعلانِ اپِ بانک (مثلِ بلو) از همین‌جا - خواسته‌ی کاربر ۱۴ مهر.
+                if (account.smsSender.orEmpty().split(',').none { '.' in it }) {
+                    Text(
+                        "＋ وصلِ اعلانِ اپِ این بانک",
+                        color = AppPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { notifPickerFor = account }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                }
                 if (index != ordered.lastIndex) SettingsDivider()
             }
         }
@@ -1959,14 +1984,22 @@ private fun SmsSettings(
  * کاربرِ کم‌تراکنش رو بی‌دلیل می‌ترسونه، بلندترش خرابیِ واقعی رو دیر می‌گه).
  */
 private fun smsStatusText(account: AccountEntity): String {
-    if (account.smsSender.isNullOrBlank()) return "سرشماره ثبت نشده"
-    val last = account.lastSmsAt ?: return "هنوز پیامکی نیامده"
+    // smsSender = «سرشماره,بسته‌نامِ اپ» - هر دو جدا نشان داده می‌شوند (خواسته‌ی کاربر ۱۴ مهر).
+    val parts = account.smsSender.orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() }
+    val hasSms = parts.any { '.' !in it }
+    val hasNotif = parts.any { '.' in it }
+    if (!hasSms && !hasNotif) return "پیامک و اعلان وصل نشده - لمس کن"
+    val link = listOf(
+        if (hasSms) "پیامک ✓" else "پیامک ✗",
+        if (hasNotif) "اعلانِ اپ ✓" else "اعلانِ اپ ✗",
+    ).joinToString(" · ")
+    val last = account.lastSmsAt ?: return "$link · هنوز چیزی نیامده"
     val days = ((System.currentTimeMillis() - last) / 86_400_000L).toInt()
-    return when {
-        days > 30 -> "۳۰ روز پیامکی نیامده"
-        days <= 0 -> "آخرین پیامک: امروز"
-        days == 1 -> "آخرین پیامک: دیروز"
-        else -> "آخرین پیامک: ${toFa(days)} روز پیش"
+    return link + " · " + when {
+        days > 30 -> "۳۰ روز چیزی نیامده"
+        days <= 0 -> "آخرین: امروز"
+        days == 1 -> "آخرین: دیروز"
+        else -> "آخرین: ${toFa(days)} روز پیش"
     }
 }
 

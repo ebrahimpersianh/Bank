@@ -196,6 +196,7 @@ class BankNotificationListener : NotificationListenerService() {
                 sourceLabel = "اعلانِ ${appLabelOf(packageName)}",
             )
             uiPrefs.setLastSmsImportAt("${today.y}/${today.m}/${today.d}")
+            runCatching { accountRepository.updateAccount(account.copy(lastSmsAt = System.currentTimeMillis())) }
         }
     }
 
