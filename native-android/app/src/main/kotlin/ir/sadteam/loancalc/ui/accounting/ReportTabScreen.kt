@@ -278,6 +278,9 @@ fun ReportTabScreen(
                 privacyMode = privacyMode,
                 onTogglePrivacy = { privacyViewModel.toggle() },
                 showControls = transactions.isNotEmpty(),
+                // خروجی از کارتِ بزرگِ تهِ صفحه به آیکونِ کنارِ چشم آمد (۱۴ مهر). فقط برای مشترک، مثلِ قبل.
+                onExcel = if (isPremium) ({ xlsxLauncher.launch("jibak-${today.y}-${today.m}.xlsx") }) else null,
+                onPdf = { pdfLauncher.launch("jibak-${today.y}-${today.m}.pdf") },
             )
         }
         // هیچ تراکنشی ثبت نشده → **فریمِ `21c`**: کارتِ خط‌چینِ نمودارِ خالی، یادآوریِ پیامکِ
@@ -365,6 +368,15 @@ fun ReportTabScreen(
                     privacyMode = privacyMode,
                     monthlyInstallmentRial = monthlyInstallmentRial,
                     chequesThisMonth = chequesThisMonth,
+                    onOpenLoanStats = onOpenLoanStats,
+                    onOpenChequeReport = onOpenChequeReport,
+                )
+            }
+            item {
+                CommitmentRows(
+                    monthlyInstallmentRial = monthlyInstallmentRial,
+                    chequesThisMonth = chequesThisMonth,
+                    privacyMode = privacyMode,
                     onOpenLoanStats = onOpenLoanStats,
                     onOpenChequeReport = onOpenChequeReport,
                 )
@@ -466,12 +478,6 @@ fun ReportTabScreen(
         // ── مقایسه‌ی ماه‌به‌ماه، برچسب‌ها، بازپرداختی‌ها (۶ مهر، از مقایسه با پارمیس/پولکس) ──
         item { MonthCompareCard(transactions, privacyMode) }
         item { TagsAndReimbursableCard(transactions, privacyMode) }
-        item {
-            ExportCard(
-                onExcel = { xlsxLauncher.launch("jibak-${today.y}-${today.m}.xlsx") },
-                onPdf = { pdfLauncher.launch("jibak-${today.y}-${today.m}.pdf") },
-            )
-        }
     }
     }
 
@@ -530,7 +536,10 @@ private fun ReportHeader(
     privacyMode: Boolean,
     onTogglePrivacy: () -> Unit,
     showControls: Boolean = true,
+    onExcel: (() -> Unit)? = null,
+    onPdf: () -> Unit = {},
 ) {
+    var exportMenu by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -540,6 +549,30 @@ private fun ReportHeader(
         // تو حالتِ خالی نه بازه‌ای برای انتخاب هست نه مبلغی برای پنهان‌کردن (فریمِ `21c` هدرِ لخت).
         if (!showControls) return@Row
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            if (onExcel != null) Box {
+                Box(
+                    modifier = Modifier
+                        .minimumInteractiveComponentSize()
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(AppRadius.icon))
+                        .background(PrivacyOffBg)
+                        .border(1.5.dp, AppLine, RoundedCornerShape(10.dp))
+                        .pressScaleClickable { exportMenu = true },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.Download, contentDescription = "خروجیِ اکسل و PDF", tint = AppMuted, modifier = Modifier.size(16.dp))
+                }
+                androidx.compose.material3.DropdownMenu(expanded = exportMenu, onDismissRequest = { exportMenu = false }) {
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text("خروجیِ اکسل") },
+                        onClick = { exportMenu = false; onExcel() },
+                    )
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text("خروجیِ PDF") },
+                        onClick = { exportMenu = false; onPdf() },
+                    )
+                }
+            }
             // تاگلِ ماه/فصل/سال - انتخاب‌شده قرصِ سبزِ پرشده، بقیه فقط متن.
             ReportPeriod.entries.forEach { p ->
                 val selected = p == period
@@ -992,9 +1025,15 @@ private fun CategoryDonutCard(
     onOpenLoanStats: () -> Unit,
     onOpenChequeReport: () -> Unit,
 ) {
-    val top = remember(byCategory) { byCategory.entries.sortedByDescending { it.value }.take(3) }
+    // زیرِ ۱٪ پنهان (۱۴ مهر، مثلِ خانه) - «قبض ۰٪» فقط شلوغی بود.
+    val top = remember(byCategory, total) {
+        byCategory.entries.sortedByDescending { it.value }
+            .filter { total <= 0.0 || it.value / total >= 0.01 }.take(3)
+    }
     val colors = listOf(AppDanger, AppPurple, AppInfo)
-    val (centerNumber, centerUnit) = total.rialToFaCompactParts()
+    // مبلغِ کل همین بالا در کارتِ سبز هست؛ وسطِ دایره تعدادِ دسته‌ها می‌آید.
+    val centerNumber = top.size.toFa()
+    val centerUnit = "دسته"
     val shape = RoundedCornerShape(AppRadius.card)
     Column(
         verticalArrangement = Arrangement.spacedBy(11.dp),
@@ -1007,7 +1046,7 @@ private fun CategoryDonutCard(
     ) {
     // برچسبِ دوره از داخلِ دایره بیرون آمد. «این ماه»ِ ثابت هم غلط بود: با تاگلِ فصل/سال
     // عوض نمی‌شد، پس روی دوره‌ی سالانه هم «این ماه» می‌نوشت.
-    Text("خرجِ $periodLabel", color = AppLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+    Text("سهمِ دسته‌ها از خرجِ $periodLabel", color = AppLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold)
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         CategoryDonut(
             slices = top.mapIndexed { i, e -> DonutSlice(e.value, colors[i % colors.size]) },
@@ -1017,9 +1056,9 @@ private fun CategoryDonutCard(
             // قطرِ داخلیِ دونات ۷۴ − ۲×۹ = ۵۶dp است (رینگ به خواسته‌ی کاربر نازک شد). یک خطِ «۱۰۲٫۶ میلیون» در ۱۱sp
             // حدودِ ۵۲dp عرض می‌گیرد و به لبه‌ی رینگ می‌چسبد. عدد و واحد دو خطِ کوتاه شدند.
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                PrivacyCrossfade(privacyMode) { masked ->
+                run {
                     Text(
-                        maskIfPrivate(masked, centerNumber),
+                        centerNumber,
                         color = AppText,
                         fontSize = 13.sp,
                         lineHeight = 15.sp,
@@ -1067,16 +1106,6 @@ private fun CategoryDonutCard(
             }
         }
     }
-    // «قسط/چک» خرجِ تعهدی‌اند؛ گزارش جزئی‌شان از داده‌های وام و چک می‌آید، نه از دسته‌بندی حساب.
-    // ⚠️ **بندِ ۴ی بخشِ ۸۱**: فاصله‌ی بالا نصف است تا به دونات بچسبد. فاصله‌ی مساوی بود که
-    // این دو ردیف را «یتیم» نشان می‌داد.
-    CommitmentRows(
-        monthlyInstallmentRial = monthlyInstallmentRial,
-        chequesThisMonth = chequesThisMonth,
-        privacyMode = privacyMode,
-        onOpenLoanStats = onOpenLoanStats,
-        onOpenChequeReport = onOpenChequeReport,
-    )
     }
 }
 
@@ -1107,23 +1136,9 @@ private fun CommitmentRows(
     onOpenLoanStats: () -> Unit,
     onOpenChequeReport: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 16.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 4.dp, bottom = 7.dp),
-        ) {
-            Box(
-                modifier = Modifier.size(9.dp).clip(RoundedCornerShape(999.dp)).background(AppDanger),
-            )
-            Text(
-                "تعهدهای مالی",
-                color = AppMuted,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(start = 7.dp),
-            )
-        }
-        AppCard {
+    // ۱۴ مهر: از داخلِ کارتِ دونات بیرون آمد - دیگر کارت توی کارت نیست.
+    run {
+        AppCard(label = "تعهدهای این ماه") {
             CommitmentRow(
                 icon = Icons.Filled.EventRepeat,
                 title = "اقساط وام",
@@ -1306,41 +1321,22 @@ private fun DiscoveryCard(
  */
 @Composable
 private fun NoDiscoveryCard(checkedCount: Int, monthsOfHistory: Int) {
-    // بسته‌ی ChatGPT (۳ مهر): AppCard و آیکونِ بزرگ‌تر؛ متن و منطق همان.
-    AppCard(contentPadding = 14.dp, horizontalPadding = 16.dp) {
+    // ۱۴ مهر: وقتی چیزی پیدا نشده یک خطِ کوچک کافی است، نه یک کارتِ کامل.
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(13.dp),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp),
     ) {
-        Box(
-            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPrimaryPill),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Filled.CheckCircle,
-                contentDescription = null,
-                tint = AppPrimary,
-                modifier = Modifier.size(25.dp),
-            )
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text("چیزِ غیرعادی‌ای پیدا نشد", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black)
-            Text(
-                if (monthsOfHistory < 4) {
-                    // مقایسه‌ی سه‌ماهه به سه ماهِ کاملِ گذشته نیاز دارد (`detectOverspend`).
-                    "${(checkedCount).toFa()} تراکنشِ این ماه بررسی شد · " +
-                        "مقایسه‌ی سه‌ماهه با ${(4 - monthsOfHistory).toFa()} ماهِ دیگر داده فعال می‌شود"
-                } else {
-                    "${(checkedCount).toFa()} تراکنشِ این ماه با میانگینِ سه ماهِ گذشته سنجیده شد"
-                },
-                color = AppMuted,
-                fontSize = 10.sp,
-                lineHeight = 17.sp,
-                modifier = Modifier.padding(top = 3.dp),
-            )
-        }
-    }
+        Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(16.dp))
+        Text(
+            if (monthsOfHistory < 4) {
+                "خرجِ غیرعادی نداشتی · ${(checkedCount).toFa()} تراکنش بررسی شد"
+            } else {
+                "خرجِ غیرعادی نداشتی · ${(checkedCount).toFa()} تراکنش با سه ماهِ قبل سنجیده شد"
+            },
+            color = AppMuted,
+            fontSize = 11.sp,
+            modifier = Modifier.padding(start = 6.dp),
+        )
     }
 }
 
