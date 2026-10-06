@@ -1484,7 +1484,8 @@ private fun DashboardSummary(
                     (totalRemainingDebt - monthly * month).coerceAtLeast(0.0).toFloat()
                 }
             }
-            if (heroDetails && debtCurve.any { it > 0f } && totalMonthlyInstallment > 0) {
+            // ۱۴ مهر: نمودارِ مانده به خواسته‌ی کاربر برداشته شد («اضافی است»).
+            if (false && debtCurve.any { it > 0f } && totalMonthlyInstallment > 0) {
                 Box(modifier = Modifier.fillMaxWidth().padding(top = 2.dp)) {
                     // لمس‌پذیر، همان نمودارِ مشترکِ دارایی. جهت مثلِ بقیه‌ی نمودارهای برنامه
                     // (خواسته‌ی کاربر): زمان چپ‌به‌راست - ماهِ جاری چپ، ماه‌های آینده به راست.
