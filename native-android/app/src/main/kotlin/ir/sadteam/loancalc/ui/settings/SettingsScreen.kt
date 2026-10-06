@@ -1916,18 +1916,37 @@ private fun SmsSettings(
                     // گوشی اصلاً تو تنظیمات نیست»). حالا همین‌جا انتخابگر باز می‌شود.
                     onClick = if (hasSender) null else ({ senderPickerFor = account }),
                 )
-                // وصلِ اعلانِ اپِ بانک (مثلِ بلو) از همین‌جا - خواسته‌ی کاربر ۱۴ مهر.
-                if (account.smsSender.orEmpty().split(',').none { '.' in it }) {
-                    Text(
-                        "＋ وصلِ اعلانِ اپِ این بانک",
-                        color = AppPrimary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { notifPickerFor = account }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                    )
+                // اپِ اعلانِ این بانک - وصل/تغییر/برداشتن از همین‌جا (خواسته‌ی کاربر ۱۴ مهر).
+                val linkedPkg = account.smsSender.orEmpty().split(',').map { it.trim() }.firstOrNull { '.' in it }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { notifPickerFor = account }
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (linkedPkg != null) {
+                        ir.sadteam.loancalc.ui.account.InstalledAppIconSmall(linkedPkg)
+                        Text(
+                            "اعلانِ «${ir.sadteam.loancalc.ui.account.appLabel(linkedPkg)}»",
+                            color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f).padding(start = 8.dp),
+                        )
+                        Text("تغییر", color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
+                        Text(
+                            "برداشتن",
+                            color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 14.dp).clickable {
+                                val kept = account.smsSender.orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() && '.' !in it }
+                                scope.launch { accountViewModel.updateAccount(account.copy(smsSender = kept.joinToString(",").ifBlank { null })) }
+                            },
+                        )
+                    } else {
+                        Text(
+                            "＋ وصلِ اعلانِ اپِ این بانک",
+                            color = AppPrimary, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
+                        )
+                    }
                 }
                 if (index != ordered.lastIndex) SettingsDivider()
             }
@@ -2434,12 +2453,8 @@ private fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
     // حالتِ سومِ کارتِ `35f`: کاربر روشنش کرده ولی اندروید مجوز رو نداره/پس گرفته.
     val revoked = notifEnabled && !listenerGranted
 
-    SmsHero(
-        ir.sadteam.loancalc.R.drawable.sms_illu_bell,
-        "خواندنِ خودکارِ اعلانِ بانکی",
-        "برای بانک‌هایی که پیامک نمی‌فرستند و فقط اعلان می‌دهند.",
-        AppChipBg,
-    )
+    // ۱۴ مهر (خواسته‌ی کاربر: «ادغامش کن»): انتخابِ اپ حالا زیرِ خودِ هر بانک است؛ این‌جا فقط کلید و اجازه.
+    SettingsGroupLabel("اعلانِ اپ‌های بانکی")
     SettingsSwitchRow(
         icon = Icons.Filled.NotificationsActive,
         title = "خوندنِ خودکارِ اعلانِ بانکی",
@@ -2470,30 +2485,9 @@ private fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
             ) { Text("درستش کن") }
         }
     }
-    AppCard(modifier = Modifier.padding(top = 8.dp)) {
-        Text(
-            "بعضی بانک‌ها (مثلِ بلوبانک) اصلاً پیامکِ برداشت/واریز نمی‌فرستن و فقط تو خودِ گوشی " +
-                "اعلان می‌دن. اگه حسابی داری که این‌طوریه، این گزینه رو روشن کن تا اپ از رو همون " +
-                "اعلان تراکنش رو ثبت کنه. اگه بانکت پیامک می‌فرسته، لازم نیست روشنش کنی.",
-            color = AppMuted,
-            fontSize = 12.sp,
-            lineHeight = 20.sp,
-        )
-        // **قاعده‌ی صریحِ سندِ `35c`**: اگه مجوز از قبل روشنه، راهنما اصلاً نشون داده نشه و
-        // جاش حالتِ «فعال شد» (`35d`) بیاد. سه قدمِ راهنما برای کسی که کارش تمومه فقط نویزه.
-        if (listenerGranted) {
-            Text(
-                "اجازه‌ی خواندنِ اعلان از قبل داده شده - این بخش کارِ دیگه‌ای ازت نمی‌خواد.",
-                color = AppPrimaryDim,
-                fontSize = 12.sp,
-                lineHeight = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 12.dp),
-            )
-        } else {
-            // **راهنمای سه‌قدمیِ کارتِ `35c`** - صفحه‌ای که باز می‌شه مالِ اندرویده نه جیبک، پس
-            // کاربر باید از قبل بدونه اونجا دنبالِ چی بگرده.
-            NotificationPermissionSteps(modifier = Modifier.padding(top = 12.dp))
+    if (!listenerGranted) {
+        AppCard(modifier = Modifier.padding(top = 8.dp)) {
+            NotificationPermissionSteps()
             GradientButton(
                 onClick = { openListenerSettings() },
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
@@ -2501,17 +2495,14 @@ private fun NotificationImportSettings(viewModel: SmsAutoImportViewModel) {
                 Text("بازکردنِ تنظیمات")
             }
         }
-        Text(
-            "فیلتر روی خودِ گوشیه، نه سرور: فقط اعلانِ همون بانکی که خودت انتخاب کردی خونده " +
-                "می‌شه و متنِ خامِ هیچ اعلانِ دیگه‌ای هیچ‌وقت از گوشی بیرون نمی‌ره.",
-            color = AppMuted,
-            fontSize = 11.sp,
-            lineHeight = 18.sp,
-            modifier = Modifier.padding(top = 10.dp),
-        )
     }
-    // انتخابِ خودِ اپ‌ها - **بدونِ این، کلِ قابلیت بی‌اثره** (رجوع کن به notifPackages).
-    NotificationAppPicker(viewModel = viewModel, modifier = Modifier.padding(top = 8.dp))
+    Text(
+        "اپِ هر بانک را بالا، زیرِ همان بانک وصل کن. فقط اعلانِ همان اپ‌ها روی گوشی خوانده می‌شود.",
+        color = AppMuted,
+        fontSize = 11.sp,
+        lineHeight = 18.sp,
+        modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp),
+    )
 }
 
 /**

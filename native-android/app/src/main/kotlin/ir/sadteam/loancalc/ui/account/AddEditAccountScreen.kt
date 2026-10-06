@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.account
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.ui.text.font.FontWeight
 import ir.sadteam.loancalc.ui.components.dashedBorder
@@ -507,7 +510,7 @@ fun AddEditAccountScreen(
 
 
 @Composable
-private fun appLabel(pkg: String): String {
+internal fun appLabel(pkg: String): String {
     val context = androidx.compose.ui.platform.LocalContext.current
     return remember(pkg) {
         runCatching { context.packageManager.let { pm -> pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString() } }.getOrDefault(pkg)
@@ -540,15 +543,20 @@ internal fun NotifAppPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Uni
                     placeholder = { Text("جستجو…") }, modifier = Modifier.fillMaxWidth(),
                     colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
                 )
-                LazyColumn(modifier = Modifier.height(360.dp).padding(top = 8.dp)) {
-                    val shown = apps.filter { query.isBlank() || it.second.contains(query, true) || it.first.contains(query, true) }
+                LazyColumn(modifier = Modifier.height(380.dp).padding(top = 8.dp)) {
+                    val bankish = listOf("بانک", "bank", "blu", "بلو", "pay", "پی", "ملت", "ملی", "سامان", "پاسارگاد", "رسالت", "تجارت", "صادرات", "سپه", "رفاه", "شهر", "کشاورزی", "مسکن")
+                    val shown = apps
+                        .filter { query.isBlank() || it.second.contains(query, true) || it.first.contains(query, true) }
+                        .sortedBy { (pkg, label) -> if (bankish.any { label.contains(it, true) || pkg.contains(it, true) }) 0 else 1 }
                     items(shown.size) { i ->
                         val (pkg, label) = shown[i]
-                        Text(
-                            label,
-                            color = AppText,
-                            modifier = Modifier.fillMaxWidth().clickable { onPick(pkg) }.padding(vertical = 12.dp, horizontal = 4.dp),
-                        )
+                        androidx.compose.foundation.layout.Row(
+                            modifier = Modifier.fillMaxWidth().clickable { onPick(pkg) }.padding(vertical = 8.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            InstalledAppIconSmall(pkg)
+                            Text(label, color = AppText, fontSize = 14.sp, modifier = Modifier.padding(start = 12.dp))
+                        }
                     }
                 }
             }
@@ -556,4 +564,21 @@ internal fun NotifAppPickerDialog(onDismiss: () -> Unit, onPick: (String) -> Uni
         confirmButton = {},
         dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text("انصراف") } },
     )
+}
+
+
+/** آیکونِ واقعیِ اپِ نصب‌شده (۳۰dp). */
+@Composable
+internal fun InstalledAppIconSmall(pkg: String) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val icon by androidx.compose.runtime.produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, pkg) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                context.packageManager.getApplicationIcon(pkg).toBitmap(96, 96).asImageBitmap()
+            }.getOrNull()
+        }
+    }
+    androidx.compose.foundation.layout.Box(Modifier.size(30.dp).clip(RoundedCornerShape(8.dp))) {
+        icon?.let { androidx.compose.foundation.Image(it, contentDescription = null, modifier = Modifier.fillMaxSize()) }
+    }
 }
