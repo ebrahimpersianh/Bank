@@ -18,5 +18,9 @@ jobs:
           envs: OWNER_PHONE
           script: |
             DB=~/VameMan/data.sqlite
-            echo "=== bank notification/SMS events, last 4 days ==="
-            sqlite3 -header $DB "SELECT day, name, count FROM usage_events WHERE day >= date('now','-4 days') AND (name LIKE '%notif%' OR name LIKE '%sms%') ORDER BY day DESC, name;"
+            echo "=== owner: bank notification/SMS events, last 4 days ==="
+            sqlite3 -header $DB "SELECT d.day, d.name, SUM(d.count) c FROM usage_daily d JOIN installs i ON i.install_id=d.install_id JOIN users u ON u.id=i.user_id WHERE u.phone='$OWNER_PHONE' AND d.day >= date('now','-4 days') AND (d.name LIKE '%notif%' OR d.name LIKE '%sms%') GROUP BY d.day, d.name ORDER BY d.day DESC, d.name;"
+            echo "=== owner installs ==="
+            sqlite3 -header $DB "SELECT i.app_version, i.store, i.last_day, i.last_seen_at FROM installs i JOIN users u ON u.id=i.user_id WHERE u.phone='$OWNER_PHONE' ORDER BY i.last_seen_at DESC LIMIT 5;"
+            echo "=== all users: notif/sms events, last 4 days ==="
+            sqlite3 -header $DB "SELECT day, name, SUM(count) c FROM usage_daily WHERE day >= date('now','-4 days') AND (name LIKE '%notif%' OR name LIKE '%sms%') GROUP BY day, name ORDER BY day DESC, name;"
