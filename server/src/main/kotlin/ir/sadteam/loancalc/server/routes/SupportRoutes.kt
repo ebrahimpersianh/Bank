@@ -79,6 +79,9 @@ data class SupportMessageDto(
     val category: String = "bug",
     val rewardedDays: Int = 0,
     val attachments: List<SupportAttachmentDto>,
+    /** شماره‌ی کاربریِ کامل (همان Uid که کاربر در برنامه می‌بیند) و موبایل - فقط برای ادمین. */
+    val userCode: String? = null,
+    val phone: String? = null,
 )
 
 @Serializable
@@ -223,7 +226,7 @@ fun Route.supportRoutes() {
                     }
                 }
                 val items = conn.prepareStatement(
-                    "SELECT id, ticket, user_id, message, app_version, device, status, created_at, category, rewarded_days FROM bug_reports ORDER BY id DESC LIMIT 200",
+                    "SELECT id, ticket, user_id, message, app_version, device, status, created_at, category, rewarded_days, phone FROM bug_reports ORDER BY id DESC LIMIT 200",
                 ).use { ps ->
                     ps.executeQuery().use { rs ->
                         buildList {
@@ -235,6 +238,7 @@ fun Route.supportRoutes() {
                                         message = rs.getString(4), appVersion = rs.getString(5), device = rs.getString(6),
                                         status = rs.getString(7), createdAt = rs.getString(8), attachments = files[id].orEmpty(),
                                         category = rs.getString(9) ?: "bug", rewardedDays = rs.getInt(10),
+                                        phone = rs.getString(11),
                                     ),
                                 )
                             }
@@ -242,7 +246,11 @@ fun Route.supportRoutes() {
                     }
                 }
                 val open = conn.queryOne("SELECT COUNT(*) FROM bug_reports WHERE status = 'open'") { it.getInt(1) } ?: 0
-                SupportListResponse(items, open)
+                val codes = HashMap<Long, String?>()
+                val withCodes = items.map { m ->
+                    m.copy(userCode = m.userId?.let { uid -> codes.getOrPut(uid) { userCodeOf(conn, uid)?.removePrefix("Uid:") } })
+                }
+                SupportListResponse(withCodes, open)
             }
             call.respond(result)
         }

@@ -239,8 +239,11 @@ private fun SupportMessageCard(
                 Icon(Icons.Filled.Person, null, tint = AppMuted, modifier = Modifier.size(22.dp))
             }
             Text(CATEGORY_LABEL[msg.category] ?: "پیام", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
-            Ltr { Text(supportUid(msg.userId), color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp)) }
-            Box(Modifier.weight(1f))
+            // شماره‌ی کاربریِ کامل + موبایل (خواسته‌ی کاربر ۱۴ مهر)؛ سرورِ قدیمی فقط id می‌داد.
+            Column(Modifier.weight(1f).padding(start = 8.dp)) {
+                Ltr { Text(msg.userCode?.let { "Uid:$it" } ?: supportUid(msg.userId), color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                msg.phone?.let { Ltr { Text(it, color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold) } }
+            }
             if (msg.attachments.isNotEmpty()) Icon(Icons.Filled.Attachment, "پیوست", tint = AppLabel, modifier = Modifier.padding(end = 6.dp).size(16.dp))
             Text(
                 STATUS_LABEL[msg.status] ?: msg.status,

@@ -345,6 +345,8 @@ data class SupportMessage(
     val attachments: List<SupportAttachment> = emptyList(),
     val category: String = "bug",
     val rewardedDays: Int = 0,
+    val userCode: String? = null,
+    val phone: String? = null,
 )
 data class AdminSupportGiftRequest(val id: Long, val days: Int, val text: String)
 data class AdminSupportResponse(val items: List<SupportMessage> = emptyList(), val openCount: Int = 0)
