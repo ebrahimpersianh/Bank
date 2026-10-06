@@ -110,14 +110,21 @@ jobs:
       # سهمیه‌ی جدا و بازتری دارن، این مشکل رو ندارن. تگ بر اساسِ شماره‌ی رانه، پس هر بیلد یه ریلیزِ
       # جدا/غیرتکراری می‌سازه.
 
+      # اسمِ فایل = نامِ برنامه + نسخه + استور (خواسته‌ی کاربر ۱۴ مهر)، مثلاً Jibak-1.0.727-cafebazaar.apk
+      - name: نام‌گذاریِ APKها با نسخه
+        run: |
+          mkdir -p dist
+          cp native-android/app/build/outputs/apk/cafebazaar/release/app-cafebazaar-release.apk dist/Jibak-1.0.${{ github.run_number }}-cafebazaar.apk
+          cp native-android/app/build/outputs/apk/myket/release/app-myket-release.apk dist/Jibak-1.0.${{ github.run_number }}-myket.apk
+
       - name: انتشار APKها در Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: بیلد خودکار #${{ github.run_number }}
+          name: جیبک نسخه‌ی 1.0.${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           files: |
-            native-android/app/build/outputs/apk/cafebazaar/release/app-cafebazaar-release.apk
-            native-android/app/build/outputs/apk/myket/release/app-myket-release.apk
+            dist/Jibak-1.0.${{ github.run_number }}-cafebazaar.apk
+            dist/Jibak-1.0.${{ github.run_number }}-myket.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
