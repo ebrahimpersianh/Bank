@@ -543,75 +543,54 @@ private fun ReportHeader(
     onPdf: () -> Unit = {},
 ) {
     var exportMenu by remember { mutableStateOf(false) }
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text("گزارش", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
-        // تو حالتِ خالی نه بازه‌ای برای انتخاب هست نه مبلغی برای پنهان‌کردن (فریمِ `21c` هدرِ لخت).
-        if (!showControls) return@Row
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+    // سربرگِ یکدست (۱۵ مهر): ردیفِ اولِ عنوان + دکمه‌ها (چشم چپ‌ترین)، و بازه‌ی ماه/فصل/سال در
+    // ردیفِ دوم - با دکمه‌های هم‌اندازه‌ی ۴۴ دیگر در یک ردیف جا نمی‌شدند.
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = ir.sadteam.loancalc.ui.components.PageHeaderHeight),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("گزارش", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+            // تو حالتِ خالی نه بازه‌ای برای انتخاب هست نه مبلغی برای پنهان‌کردن (فریمِ `21c` هدرِ لخت).
+            if (showControls) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (onExcel != null) Box {
+                    ir.sadteam.loancalc.ui.components.HeaderIconButton(
+                        icon = Icons.Filled.Download,
+                        description = "خروجیِ اکسل و PDF",
+                        onClick = { exportMenu = true },
+                    )
+                    androidx.compose.material3.DropdownMenu(expanded = exportMenu, onDismissRequest = { exportMenu = false }) {
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text("خروجیِ اکسل") },
+                            onClick = { exportMenu = false; onExcel() },
+                        )
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text("خروجیِ PDF") },
+                            onClick = { exportMenu = false; onPdf() },
+                        )
+                    }
+                }
+                ir.sadteam.loancalc.ui.components.PrivacyEyeHeaderButton(privacyMode = privacyMode, onToggle = onTogglePrivacy)
+            }
+        }
+        if (showControls) Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            modifier = Modifier.padding(bottom = 4.dp),
+        ) {
             // تاگلِ ماه/فصل/سال - انتخاب‌شده قرصِ سبزِ پرشده، بقیه فقط متن.
             ReportPeriod.entries.forEach { p ->
                 val selected = p == period
                 Text(
                     p.label,
                     color = if (selected) Color.White else AppMuted,
-                    fontSize = 10.sp,
+                    fontSize = 11.sp,
                     fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Bold,
                     modifier = Modifier
                         .clip(RoundedCornerShape(999.dp))
                         .background(if (selected) AppPrimary else Color.Transparent)
                         .pressScaleClickable { onPeriod(p) }
-                        .padding(horizontal = if (selected) 11.dp else 9.dp, vertical = 6.dp),
-                )
-            }
-            if (onExcel != null) Box {
-                Box(
-                    modifier = Modifier
-                        .minimumInteractiveComponentSize()
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(AppRadius.icon))
-                        .background(PrivacyOffBg)
-                        .border(1.5.dp, AppLine, RoundedCornerShape(10.dp))
-                        .pressScaleClickable { exportMenu = true },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Filled.Download, contentDescription = "خروجیِ اکسل و PDF", tint = AppMuted, modifier = Modifier.size(16.dp))
-                }
-                androidx.compose.material3.DropdownMenu(expanded = exportMenu, onDismissRequest = { exportMenu = false }) {
-                    androidx.compose.material3.DropdownMenuItem(
-                        text = { Text("خروجیِ اکسل") },
-                        onClick = { exportMenu = false; onExcel() },
-                    )
-                    androidx.compose.material3.DropdownMenuItem(
-                        text = { Text("خروجیِ PDF") },
-                        onClick = { exportMenu = false; onPdf() },
-                    )
-                }
-            }
-            Box(
-                modifier = Modifier
-                    // نزدیک‌تر به دکمه‌ی دانلود (مثلِ فاصله‌ی دکمه‌های سربرگِ خانه).
-                    .offset(x = (-9).dp)
-                    .minimumInteractiveComponentSize()
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(AppRadius.icon))
-                    .background(if (privacyMode) PrivacyOnBg else PrivacyOffBg)
-                    .border(
-                        1.5.dp,
-                        if (privacyMode) PrivacyOnBorder else AppLine,
-                        RoundedCornerShape(10.dp),
-                    )
-                    .pressScaleClickable(onClick = onTogglePrivacy),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    if (privacyMode) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                    contentDescription = "پنهان‌کردنِ مبلغ‌ها",
-                    tint = if (privacyMode) PrivacyOnInk else AppMuted,
-                    modifier = Modifier.size(16.dp),
+                        .padding(horizontal = if (selected) 14.dp else 12.dp, vertical = 7.dp),
                 )
             }
         }

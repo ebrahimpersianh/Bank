@@ -313,7 +313,9 @@ fun MyLoansScreen(
     var showSubscriptionScreen by remember { mutableStateOf(false) }
 
     val rawLoans by viewModel.loans.collectAsState()
-    var sortOption by remember { mutableStateOf(LoanSortOption.NEWEST) }
+    // پیش‌فرض «نزدیک‌ترین سررسید» (۱۵ مهر): وامِ عقب‌افتاده/نزدیک اول، تسویه‌شده آخر - فوری‌ترین
+    // وام همیشه بالای لیست است. هر وقت خواستی از منوی «فیلتر» عوضش کن.
+    var sortOption by remember { mutableStateOf(LoanSortOption.NEXT_DUE) }
     val loans = remember(rawLoans, sortOption) { rawLoans.sortedByOption(sortOption, viewModel) }
     // جمعِ کلِ اقساطِ معوق (مورد ۱۹) - نیازمندِ کوئریِ suspend رو ردیف‌های واقعیِ هر وام، برای همین
     // با LaunchedEffect جدا از بقیه‌ی مبالغِ سینکرونِ داشبورد حساب می‌شه.
@@ -1445,7 +1447,8 @@ private fun DashboardSummary(
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
                     Text(
-                        "${toFa((incomeRatio * 100).roundToInt())}٪ از درآمدت صرفِ اقساط می‌شه",
+                        if (over) "اقساطت از درآمدِ ثبت‌شده‌ات بیشتر است · ${toFa((incomeRatio * 100).roundToInt())}٪"
+                        else "${toFa((incomeRatio * 100).roundToInt())}٪ از درآمدت صرفِ اقساط می‌شه",
                         color = Color.White,
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Black,

@@ -635,7 +635,7 @@ fun HomeScreen(
         }
         if (showProfile) {
             // آدمکِ سربرگ → صفحه‌ی «حسابِ کاربری» (خواسته‌ی کاربر، ۳ مهر). نشان‌ها از تنظیمات در دسترس‌اند.
-            ir.sadteam.loancalc.ui.settings.SettingsScreen(onBack = { showProfile = false }, startAtAccount = true)
+            ir.sadteam.loancalc.ui.settings.SettingsScreen(onBack = { showProfile = false }, startAtAccount = false)
         }
         if (showTodaySpend) {
             TodaySpendSheet(
@@ -809,6 +809,21 @@ private fun HomeHeader(
         ) {
             // کمی بزرگ‌تر (خواسته‌ی کاربر، ۶ مهر).
             FramedAvatar(avatar = avatar, size = 37.dp, frame = avatarFrame)
+            // درِ تنظیمات (۱۵ مهر): آدمک حالا تنظیمات را باز می‌کند؛ چرخ‌دنده‌ی ریز نشانِ همین است.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .size(16.dp)
+                    .clip(CircleShape)
+                    .background(AppSurface)
+                    .border(1.dp, AppLine, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Settings, contentDescription = "تنظیمات", tint = AppMuted, modifier = Modifier.size(11.dp))
+            }
+            // پیامِ پشتیبانیِ خوانده‌نشده (فقط ادمین) - قبلاً روی چرخ‌دنده‌ی صفحه‌ی وام بود.
+            val adminUnreadHome by ir.sadteam.loancalc.ui.admin.AdminSignals.unreadSupport.collectAsState()
+            if (adminUnreadHome > 0) ir.sadteam.loancalc.ui.admin.UnreadDot(adminUnreadHome, Modifier.align(Alignment.TopEnd))
         }
         Column(modifier = Modifier.weight(1f).padding(start = 6.dp)) {
             // تاریخ **دومین چیزی است که در تنگنا می‌رود** (بعدِ عددِ سکه، قبلِ نام).
@@ -862,13 +877,23 @@ private fun HomeHeader(
             // ترتیبِ کاربر (۱۰ مهر، مثلِ هدرِ وام): جستجو، زنگ، فروشگاه - هر سه با قابِ خطی. تنظیمات و تیره/روشن در منوی آدمک.
             val streakAtRisk = activeDays >= 7 && !todayHasEntry
             if (streakAtRisk) ActiveChip(days = activeDays, onClick = onOpenCoins)
-            PrivacyEyeButton(icon = Icons.Filled.Search, active = false, onClick = onOpenSearch, contentDescription = "جستجو")
+            // سربرگِ یکدست (۱۵ مهر): جستجو، پیام‌ها، فروشگاه و چشمِ مبلغ (چپ‌ترین) - هم‌شکلِ بقیه‌ی صفحه‌ها.
+            ir.sadteam.loancalc.ui.components.HeaderIconButton(
+                icon = Icons.Filled.Search, description = "جستجو", onClick = onOpenSearch,
+            )
             InboxBell(
                 count = inboxCount,
                 hasUnreadNews = inboxUnreadNews > 0,
                 onClick = onOpenInbox,
             )
-            PrivacyEyeButton(icon = Icons.Filled.Storefront, active = false, onClick = onOpenShop, contentDescription = "فروشگاه")
+            ir.sadteam.loancalc.ui.components.HeaderIconButton(
+                icon = Icons.Filled.Storefront, description = "فروشگاه", onClick = onOpenShop,
+            )
+            val homePrivacyVm: ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel = hiltViewModel()
+            ir.sadteam.loancalc.ui.components.PrivacyEyeHeaderButton(
+                privacyMode = ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current,
+                onToggle = { homePrivacyVm.toggle() },
+            )
         }
     }
     }
@@ -2002,45 +2027,31 @@ private fun Modifier.dashedCardBorder(): Modifier {
  */
 @Composable
 private fun InboxBell(count: Int, hasUnreadNews: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(AppSpacing.minTouchTarget)
-            .pressScaleClickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(AppIconFrame)
-                .border(1.5.dp, AppLine, RoundedCornerShape(10.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Filled.NotificationsNone,
-                contentDescription = "پیام‌ها",
-                tint = AppMuted,
-                modifier = Modifier.size(16.dp),
-            )
-        }
-        if (count > 0) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(AppDanger)
-                    .padding(horizontal = 5.dp, vertical = 1.dp),
-            ) {
-                Text((count).toFa(), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
+    ir.sadteam.loancalc.ui.components.HeaderIconButton(
+        icon = Icons.Filled.NotificationsNone,
+        description = "پیام‌ها",
+        onClick = onClick,
+        badge = {
+            if (count > 0) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(AppDanger)
+                        .padding(horizontal = 5.dp, vertical = 1.dp),
+                ) {
+                    Text((count).toFa(), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                }
+            } else if (hasUnreadNews) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 3.dp, end = 3.dp)
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(AppPrimary),
+                )
             }
-        } else if (hasUnreadNews) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .size(7.dp)
-                    .clip(CircleShape)
-                    .background(AppPrimary),
-            )
-        }
-    }
+        },
+    )
 }

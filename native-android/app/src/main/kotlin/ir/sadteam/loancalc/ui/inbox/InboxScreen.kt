@@ -64,6 +64,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -182,7 +183,10 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
     // 🚨 `statusBarsPadding`: عنوانِ قبلی زیرِ نوارِ وضعیتِ گوشی می‌رفت (اسکرین‌شاتِ کاربر).
     Column(modifier = Modifier.fillMaxSize().background(AppBg).statusBarsPadding()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 14.dp, top = 8.dp, bottom = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = ir.sadteam.loancalc.ui.components.PageHeaderHeight)
+                .padding(start = 8.dp, end = 14.dp, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
@@ -191,12 +195,15 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
             Text(
                 "پیام‌ها",
                 color = AppText,
-                fontSize = 22.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.weight(1f),
             )
             Box {
-                HeaderCircle(Icons.Filled.Tune, "فیلتر", active = filter != InboxFilter.ALL) { filterMenu = true }
+                ir.sadteam.loancalc.ui.components.HeaderIconButton(
+                    icon = Icons.Filled.Tune, description = "فیلتر",
+                    active = filter != InboxFilter.ALL, onClick = { filterMenu = true },
+                )
                 DropdownMenu(expanded = filterMenu, onDismissRequest = { filterMenu = false }) {
                     InboxFilter.entries.forEach { f ->
                         DropdownMenuItem(
@@ -206,11 +213,13 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                     }
                 }
             }
-            Box(modifier = Modifier.width(8.dp))
-            HeaderCircle(Icons.Filled.Search, "جستجو", active = searching) {
-                searching = !searching
-                if (!searching) query = ""
-            }
+            ir.sadteam.loancalc.ui.components.HeaderIconButton(
+                icon = Icons.Filled.Search, description = "جستجو", active = searching,
+                onClick = {
+                    searching = !searching
+                    if (!searching) query = ""
+                },
+            )
         }
         if (searching) {
             OutlinedTextField(

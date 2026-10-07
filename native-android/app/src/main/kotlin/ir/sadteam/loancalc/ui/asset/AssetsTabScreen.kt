@@ -561,7 +561,7 @@ private fun AssetsHeader(
     showActions: Boolean = true,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().heightIn(min = ir.sadteam.loancalc.ui.components.PageHeaderHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -575,32 +575,20 @@ private fun AssetsHeader(
             )
         }
         if (!showActions) return@Row
-        // سه کنشِ گرد با برچسبِ زیرش (طرحِ ChatGPT) - همان سه کارِ قبلی، فقط خواناتر.
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HeaderRoundAction(
-                icon = if (privacyMode) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                label = if (privacyMode) "پنهان" else "نمایش",
-                description = "پنهان‌کردنِ مبلغ‌ها",
-                fill = if (privacyMode) AppWarningPill else AppIconFrame,
-                ink = if (privacyMode) AppWarningInk else AppMuted,
-                onClick = onTogglePrivacy,
+        // سربرگِ یکدست (۱۵ مهر): دکمه‌های هم‌شکلِ همه‌ی صفحه‌ها؛ چشمِ مبلغ چپ‌ترین.
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            ir.sadteam.loancalc.ui.components.HeaderIconButton(
+                icon = Icons.Filled.Search,
+                description = "جستجوی دارایی",
+                onClick = onSearch,
+                active = searching,
             )
-            HeaderRoundAction(
+            ir.sadteam.loancalc.ui.components.HeaderIconButton(
                 icon = Icons.Filled.TrendingUp,
-                label = "نمودار",
                 description = "قیمتِ روز",
-                fill = AppIconFrame,
-                ink = AppMuted,
                 onClick = onPrices,
             )
-            HeaderRoundAction(
-                icon = Icons.Filled.Search,
-                label = "جستجو",
-                description = "جستجوی دارایی",
-                fill = if (searching) AppPrimaryPill else AppIconFrame,
-                ink = if (searching) AppPrimaryInk else AppMuted,
-                onClick = onSearch,
-            )
+            ir.sadteam.loancalc.ui.components.PrivacyEyeHeaderButton(privacyMode = privacyMode, onToggle = onTogglePrivacy)
             // «افزودن» اینجا نیست: دکمه‌ی شناورِ «+» همین کار را می‌کند (تکراری بود، ۱۵ مهر).
         }
     }

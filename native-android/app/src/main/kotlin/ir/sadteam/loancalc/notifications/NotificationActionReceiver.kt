@@ -9,6 +9,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import ir.sadteam.loancalc.core.ChequeStatus
 import ir.sadteam.loancalc.core.JalaliCalendar
 import ir.sadteam.loancalc.data.AccountRepository
+import kotlinx.coroutines.flow.first
 import ir.sadteam.loancalc.data.ChequeRepository
 import ir.sadteam.loancalc.data.InboxRepository
 import ir.sadteam.loancalc.data.LoanRepository
@@ -40,6 +41,8 @@ class NotificationActionReceiver : BroadcastReceiver() {
     @Inject lateinit var accountRepository: AccountRepository
 
     @Inject lateinit var uiPrefs: UiPrefs
+
+    @Inject lateinit var authPrefs: ir.sadteam.loancalc.data.prefs.AuthPrefs
 
     @Inject lateinit var inboxRepository: InboxRepository
 
@@ -82,6 +85,20 @@ class NotificationActionReceiver : BroadcastReceiver() {
      * - چک: `setStatus(cheque, ChequeStatus.PASSED)` - نوعِ enum است، نه رشته.
      */
     private suspend fun markPaid(intent: Intent) {
+        markPaidLocal(intent)
+        // پرداخت از اعلان هم **همان لحظه** به سرور برود (قبلاً تا اولین تغییرِ بعدیِ داخلِ برنامه
+        // می‌ماند و اگر گوشی خراب می‌شد این پرداخت از پشتیبانِ ابری جا می‌افتاد).
+        runCatching {
+            val token = authPrefs.authToken.first()
+            if (!token.isNullOrEmpty()) {
+                loanRepository.pushToServer(token)
+                chequeRepository.pushToServer(token)
+                accountRepository.pushToServer(token)
+            }
+        }
+    }
+
+    private suspend fun markPaidLocal(intent: Intent) {
         val loanId = intent.getLongExtra(EXTRA_LOAN_ID, -1L)
         val installment = intent.getIntExtra(EXTRA_INSTALLMENT, -1)
         val chequeId = intent.getLongExtra(EXTRA_CHEQUE_ID, -1L)

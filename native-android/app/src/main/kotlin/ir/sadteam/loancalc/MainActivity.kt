@@ -47,6 +47,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -1898,6 +1899,7 @@ private fun LoanTab(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(min = ir.sadteam.loancalc.ui.components.PageHeaderHeight)
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -1908,7 +1910,7 @@ private fun LoanTab(
             Text(
                 "وام",
                 color = AppText,
-                fontSize = 18.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.weight(1f),
             )
@@ -1919,29 +1921,21 @@ private fun LoanTab(
             // برداشتنِ دکمه تنها راهِ برگشت را به دکمه‌ی سخت‌افزاری محدود می‌کرد.
             // چون در همان ردیف است، ارتفاعی هم اضافه نمی‌کند.
             // ۸ مهر (خواسته‌ی کاربر): تنظیمات و تیره/روشن کنارِ جستجوی تبِ وام. ۹ مهر: جای جستجو و تنظیمات عوض شد.
-            val loanThemeVm: ThemeViewModel = hiltViewModel()
-            val loanThemeMode by loanThemeVm.themeMode.collectAsState()
-            val loanSysDark = androidx.compose.foundation.isSystemInDarkTheme()
-            val loanIsDark = loanThemeMode == ThemeMode.DARK || (loanThemeMode == ThemeMode.SYSTEM && loanSysDark)
+            // سربرگِ یکدست (۱۵ مهر): جستجو و چشمِ مبلغ (چپ‌ترین). تیره/روشن و تنظیمات از این‌جا رفتند:
+            // تنظیمات از آدمکِ صفحه‌ی خانه باز می‌شود و تیره/روشن در «تنظیمات ← ظاهرِ برنامه» است.
             if (subTab == LoanSubTab.MY_LOANS) {
-                LoanHeaderIcon(
+                ir.sadteam.loancalc.ui.components.HeaderIconButton(
                     icon = Icons.Filled.Search,
-                    label = "جست‌وجو در وام‌ها",
+                    description = "جست‌وجو در وام‌ها",
                     active = searchOpen,
                     onClick = { searchOpen = !searchOpen },
                 )
             }
-            LoanHeaderIcon(
-                icon = if (loanIsDark) Icons.Filled.LightMode else Icons.Filled.DarkMode,
-                label = if (loanIsDark) "حالتِ روشن" else "حالتِ تیره",
-                active = false,
-                onClick = { loanThemeVm.setThemeMode(if (loanIsDark) ThemeMode.LIGHT else ThemeMode.DARK) },
+            val loanPrivacyVm: ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel = hiltViewModel()
+            ir.sadteam.loancalc.ui.components.PrivacyEyeHeaderButton(
+                privacyMode = ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current,
+                onToggle = { loanPrivacyVm.toggle() },
             )
-            Box {
-                LoanHeaderIcon(icon = Icons.Outlined.Settings, label = "تنظیمات", active = false, onClick = onOpenSettings)
-                val adminUnread by ir.sadteam.loancalc.ui.admin.AdminSignals.unreadSupport.collectAsState()
-                if (adminUnread > 0) ir.sadteam.loancalc.ui.admin.UnreadDot(adminUnread, Modifier.align(Alignment.TopEnd))
-            }
         }
         // حالتِ ساده: فقط «وام‌های من»، بی تب‌های سپرده/محاسبه‌گر.
         if (!ir.sadteam.loancalc.ui.privacy.LocalSimpleMode.current) Row(
