@@ -799,6 +799,11 @@ private fun TotalWealthHero(
             }
             // نمودارِ روندِ نقدی - فقط وقتی داده‌ی واقعی هست. در حالتِ خصوصی هم می‌مانَد:
             // شکلِ روند مبلغ لو نمی‌دهد، و همان چیزی است که کارت برایش ساخته شده.
+            // ۱۶ مهر: روزهای اولِ بی‌تغییر (قبل از اولین داده‌ی واقعی) خطِ صافِ بی‌معنی می‌کشیدند.
+            // حذفشان می‌کنیم تا آن قسمت خالی بماند؛ نقطه‌ها از راست (امروز) چیده می‌شوند.
+            val trend = trend.dropWhile { it == trend.first() }.let { rest ->
+                if (rest.size < trend.size) listOf(trend.first()) + rest else rest
+            }
             if (trend.size >= 2 && trend.any { it != trend.first() }) {
                 HeroChart(
                     values = trend,
