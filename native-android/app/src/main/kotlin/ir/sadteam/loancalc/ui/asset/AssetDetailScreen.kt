@@ -287,26 +287,28 @@ private fun AssetSummaryCard(
     val p = groupPalette(asset.category)
     val shape = RoundedCornerShape(AppRadius.card)
     Column(
-        verticalArrangement = Arrangement.spacedBy(13.dp),
+        // ۱۶ مهر: کارتِ خلاصه کوتاه‌تر شد (خواسته‌ی کاربر) - فاصله‌ها کمتر، «ارزشِ روز» و «تومان» در یک خط.
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
             .then(if (p.paper != null) Modifier.background(p.paper) else Modifier.background(AppSurface))
             .border(if (p.paper != null) 1.5.dp else 2.dp, p.rowBorder, shape)
-            .padding(15.dp),
+            .padding(horizontal = 14.dp, vertical = 11.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(11.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            AssetBadge(asset.symbol, asset.category, 38.dp)
+            AssetBadge(asset.symbol, asset.category, 32.dp)
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        formatQuantity(quantity),
+                        // «۰» تنها در فونتِ درشت شبیهِ یک نقطه است؛ با واحد نوشته می‌شود.
+                        if (quantity <= 0.0) "۰ واحد" else formatQuantity(quantity),
                         color = p.ink,
-                        fontSize = 17.sp,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Black,
                     )
                     // 🚨 `hasLivePrice` گرفته می‌شد و **هیچ‌جا خوانده نمی‌شد** - بجِ
@@ -356,20 +358,21 @@ private fun AssetSummaryCard(
                     fontSize = 9.5.sp,
                     fontWeight = FontWeight.Bold,
                 )
-                Text(
-                    ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, value?.rialToFaCompact() ?: "—"),
-                    color = p.ink,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier.padding(top = 1.dp),
-                )
-                Text(
-                    "تومان",
-                    color = p.subInk,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
+                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 1.dp)) {
+                    Text(
+                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, value?.rialToFaCompact() ?: "—"),
+                        color = p.ink,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                    Text(
+                        "تومان",
+                        color = p.subInk,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 5.dp, bottom = 3.dp),
+                    )
+                }
                 // ⚠️ دو حالتِ متفاوت که یکی نیستند (تاییدِ خودتان، ۲۳ شهریور):
                 // `hasLivePrice = false` یعنی «این نماد اصلاً نرخِ زنده ندارد» (دائمی)، و
                 // `unitPriceRial == null` یعنی «کاربر هنوز قیمتی نزده» (ناقص). دومی تا
@@ -402,7 +405,7 @@ private fun AssetSummaryCard(
                 val profit = value - netCost
                 Column(horizontalAlignment = Alignment.Start) {
                     Text(
-                        if (profit >= 0) "سود" else "زیان",
+                        if (rialToToman(profit.toLong()) == 0L) "سود/زیان" else if (profit >= 0) "سود" else "زیان",
                         color = p.subInk,
                         fontSize = 9.5.sp,
                         fontWeight = FontWeight.Bold,
@@ -410,7 +413,7 @@ private fun AssetSummaryCard(
                     AutoShrinkText(
                         // ⚠️ «+» و «۰» در دو خط می‌شکستند؛ سودِ صفر هم بی‌علامت.
                         // بازبینیِ ۹ مهر: سود به ریال است - بی تبدیل، ده برابر نشان داده می‌شد.
-                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, if (rialToToman(profit.toLong()) == 0L) "۰" else profit.rialToFaSignedCompact()),
+                        ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, if (rialToToman(profit.toLong()) == 0L) "بدونِ تغییر" else profit.rialToFaSignedCompact()),
                         color = if (profit >= 0) AppPrimaryInk else AppDangerInk,
                         maxFontSize = 15.sp,
                         fontWeight = FontWeight.Black,
