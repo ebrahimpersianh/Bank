@@ -899,10 +899,10 @@ class LoanRepository(
         // وام‌هایی بی هیچ قسطی به‌جا می‌گذاشت - یعنی پیشرفتِ پرداختِ همه صفر.
         inTransaction {
             loanDao.replaceAll(parsed.map { it.first })
-            LoanDataChange.notifyChanged()
             loanRowDao.clearAll()
             parsed.forEach { (_, rows) -> if (rows.isNotEmpty()) loanRowDao.upsertAll(rows) }
         }
+        LoanDataChange.notifyChanged()
     }
 
     /** پورت مفهومی restoreFromServer تو ChequeRepository/AccountRepository - برای «بازیابی از سرور

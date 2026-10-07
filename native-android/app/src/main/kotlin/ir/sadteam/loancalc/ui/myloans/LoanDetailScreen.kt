@@ -1387,14 +1387,22 @@ fun LoanDetailScreen(
     }
     if (showDeletePaymentsAsk) {
         // قسط‌های پرداخت‌شده خرج ثبت کرده‌اند؛ کاربر انتخاب می‌کند بمانند یا بروند.
-        ConfirmDialog(
-            tone = ConfirmTone.DESTRUCTIVE,
-            title = "تراکنش‌های پرداخت چه شود؟",
-            consequence = "خرج‌هایی که برای قسط‌های «${loan.name}» ثبت شده هم پاک شود و پولش به حساب برگردد؟",
-            actionLabel = "پاک شود",
-            dismissLabel = "نه، بماند",
-            onConfirm = { showDeletePaymentsAsk = false; viewModel.deleteLoanPayments(loan.id); onDelete() },
-            onDismiss = { showDeletePaymentsAsk = false; onDelete() },
+        // 🚨 بستنِ پنجره (لمسِ بیرون/بازگشت) فقط **انصراف** است و وامی پاک نمی‌شود؛
+        // حذف فقط با یکی از دو دکمه انجام می‌شود.
+        JibakAlertDialog(
+            onDismissRequest = { showDeletePaymentsAsk = false },
+            title = { Text("تراکنش‌های پرداخت چه شود؟") },
+            text = { Text("خرج‌هایی که برای قسط‌های «${loan.name}» ثبت شده هم پاک شود و پولش به حساب برگردد؟") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeletePaymentsAsk = false
+                    viewModel.deleteLoanPayments(loan.id)
+                    onDelete()
+                }) { Text("پاک شود") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeletePaymentsAsk = false; onDelete() }) { Text("نه، فقط وام حذف شود") }
+            },
         )
     }
 
