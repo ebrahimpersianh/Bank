@@ -11,6 +11,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.CreditCard
@@ -253,21 +254,20 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
                             .background(ir.sadteam.loancalc.ui.theme.AppSurface)
                             .clickable(enabled = bin.isNotEmpty()) { binOpen = !binOpen }
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         TrashBinIcon(count = bin.size)
                         Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                            Text("سطلِ زباله", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text("سطلِ زباله", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             Text(
                                 if (bin.isEmpty()) "خالی است · تراکنش‌های ردشده ۳۰ روز این‌جا می‌مانند"
                                 else "${toFa(bin.size)} تراکنشِ ردشده · بزن تا ببینی",
                                 color = AppMuted,
-                                fontSize = 11.sp,
+                                fontSize = 10.5.sp,
                             )
                         }
                         if (bin.isNotEmpty()) Text(if (binOpen) "▴" else "▾", color = AppMuted, fontSize = 16.sp)
@@ -334,10 +334,11 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
 
             // ── پیام‌های جیبک (اطلاعیه‌های عمومیِ سرور) ───────────────────────────
             item(key = "jibak") {
+                Spacer(Modifier.height(10.dp))
                 MessageSection(
                     icon = Icons.Filled.Campaign,
                     title = "پیام‌های جیبک",
-                    subtitle = "خبرها، به‌روزرسانی‌ها، اطلاعیه‌های مهم و قابلیت‌های جدید",
+                    subtitle = "خبرها و قابلیت‌های جدید",
                     count = jibak.size,
                     green = true,
                     onMarkAllRead = null,
@@ -568,7 +569,7 @@ private fun FilterTab(f: InboxFilter, selected: Boolean, onClick: () -> Unit) {
             .background(if (selected) AppPrimary else AppSurface)
             .border(1.dp, if (selected) AppPrimary else AppLine, RoundedCornerShape(16.dp))
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = 13.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(f.icon, contentDescription = null, tint = if (selected) Color.White else AppMuted, modifier = Modifier.size(17.dp))
@@ -887,6 +888,8 @@ private fun timeLabel(millis: Long): String {
  */
 @Composable
 private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
+    // متنِ بلند ۲ خط نشان داده می‌شود؛ زدن روی کارت بازش می‌کند (و کارِ قبلیِ کارت هم انجام می‌شود).
+    var expanded by remember { mutableStateOf(false) }
     val isTx = message.kind == InboxMessageEntity.Kind.DETECTED_TX
     val isDeposit = isTx && message.title.contains("واریز")
     val isDue = isReminder(message)
@@ -905,12 +908,12 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
             .clip(shape)
             .background(AppSurface)
             .border(1.dp, AppLine, shape)
-            .pressScaleClickable(scale = 0.99f, onClick = onClick)
-            .padding(14.dp),
+            .pressScaleClickable(scale = 0.99f, onClick = { expanded = !expanded; onClick() })
+            .padding(11.dp),
         verticalAlignment = Alignment.Top,
     ) {
         Box(
-            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(AppRadius.icon)).background(fill),
+            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(AppRadius.icon)).background(fill),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
@@ -933,8 +936,11 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
                 message.body,
                 color = AppMuted,
                 fontSize = 11.5.sp,
-                lineHeight = 19.sp,
-                modifier = Modifier.padding(top = 5.dp),
+                lineHeight = 18.sp,
+                // حداکثر ۲ خط؛ متنِ کامل با زدن روی کارت باز می‌شود.
+                maxLines = if (expanded) Int.MAX_VALUE else 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 3.dp),
             )
         }
         // ستونِ کناری (طرحِ ChatGPT): زمان بالا؛ پایین نامِ برنامه/فرستنده به آبی **بالای** قرصِ نوع
@@ -964,7 +970,7 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
             if (chipText != null) {
                 val warm = isDue
                 Column(
-                    modifier = Modifier.padding(top = 10.dp),
+                    modifier = Modifier.padding(top = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     source?.second?.let { origin ->
@@ -1083,11 +1089,11 @@ private fun TrashBinIcon(count: Int) {
             label = "binWiggle",
         ).value
     } else 0f
-    Box(Modifier.size(46.dp)) {
+    Box(Modifier.size(36.dp)) {
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(if (full) R.drawable.trash_full else R.drawable.trash_empty),
             contentDescription = "سطلِ زباله",
-            modifier = Modifier.size(40.dp).align(Alignment.Center).graphicsLayer { rotationZ = wiggle * 6f },
+            modifier = Modifier.size(30.dp).align(Alignment.Center).graphicsLayer { rotationZ = wiggle * 6f },
         )
         if (full) Box(
             Modifier.align(Alignment.TopEnd).clip(androidx.compose.foundation.shape.CircleShape)
