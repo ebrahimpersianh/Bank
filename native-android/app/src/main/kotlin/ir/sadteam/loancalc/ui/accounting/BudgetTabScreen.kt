@@ -50,6 +50,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.EventRepeat
@@ -284,6 +285,31 @@ fun BudgetTabScreen(
                         daysLeft = daysLeft,
                         privacyMode = privacyMode,
                     )
+                }
+            }
+            // ۱۶ مهر: بودجه‌ی بزرگ‌تر از درآمد، «امروز می‌توانی X خرج کنی» را گمراه می‌کند.
+            if (totalCap > 0 && monthIncome > 0.0 && totalCap > monthIncome) {
+                item {
+                    val warnCtx = ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(AppRadius.card))
+                            .background(GoldBg)
+                            .border(1.5.dp, GoldBorder, RoundedCornerShape(AppRadius.card))
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Warning, contentDescription = null, tint = ir.sadteam.loancalc.ui.theme.AppWarningInk, modifier = Modifier.size(16.dp))
+                        Text(
+                            "بودجه‌ات (${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(warnCtx, totalCap.rialToFaCompact())}) از درآمدِ ثبت‌شده‌ی این ماهت (${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(warnCtx, monthIncome.rialToFaCompact())}) بیشتر است؛ مطمئن شو بودجه را درست گذاشته‌ای.",
+                            color = ir.sadteam.loancalc.ui.theme.AppWarningInk,
+                            fontSize = 10.5.sp,
+                            lineHeight = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
                 }
             }
             if (totalCap > 0) {
@@ -684,7 +710,7 @@ private fun DailyAllowanceHero(
                     modifier = Modifier.size(13.dp),
                 )
                 Text(
-                    "+${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, saved.rialToFaCompact())} ذخیره",
+                    "${ir.sadteam.loancalc.ui.privacy.maskIfPrivate(ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current, saved.rialToFaCompact())} کمتر از سهمِ روزانه خرج کردی",
                     color = Color.White,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
@@ -884,14 +910,15 @@ private fun CategoryBudgetRow(row: BudgetRowData, privacyMode: Boolean) {
                 }
             }
             Text(
-                "${toFa(row.percent)}٪",
+                // «۰٪» وقتی خرجِ کمی ثبت شده دروغ است؛ «کمتر از ۱٪» می‌نویسیم.
+                if (row.percent == 0 && row.spent > 0.0) "کمتر از ۱٪" else "${toFa(row.percent)}٪",
                 color = tint,
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Black,
                 modifier = Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(soft)
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                    .background(tint.copy(alpha = 0.2f))
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
             )
         }
         // نوارِ ۹ پیکسلی. دسته‌ی ردشده به‌جای رنگِ تخت **هاشورِ موربِ ۱۳۵ درجه** می‌گیره -
@@ -902,6 +929,18 @@ private fun CategoryBudgetRow(row: BudgetRowData, privacyMode: Boolean) {
             striped = row.over,
             modifier = Modifier.fillMaxWidth().padding(top = 9.dp),
         )
+        // ۱۶ مهر: چقدر مانده (یا چقدر بیشتر شده) زیرِ نوار نوشته می‌شود.
+        PrivacyCrossfade(privacyMode) { masked ->
+            val left = row.cap - row.spent
+            Text(
+                if (left >= 0) "${maskIfPrivate(masked, left.rialToFaCompact())} تومان باقی مانده"
+                else "${maskIfPrivate(masked, (-left).rialToFaCompact())} تومان بیشتر از بودجه",
+                color = if (left >= 0) AppMuted else OverInk,
+                fontSize = 9.5.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 5.dp),
+            )
+        }
     }
 }
 
@@ -917,7 +956,8 @@ private fun BudgetBar(fraction: Float, color: Color, striped: Boolean, modifier:
             color = track,
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(r, r),
         )
-        val w = size.width * fraction.coerceIn(0f, 1f)
+        // حداقلِ ۶dp وقتی چیزی خرج شده، تا نوار «خالیِ مطلق» دیده نشود.
+        val w = if (fraction > 0f) maxOf(size.width * fraction.coerceIn(0f, 1f), 6.dp.toPx()) else 0f
         if (w <= 0f) return@Canvas
         // تو RTL نوار از سمتِ راست پر می‌شه.
         val left = size.width - w
