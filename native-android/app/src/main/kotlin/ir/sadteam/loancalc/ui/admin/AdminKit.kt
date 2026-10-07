@@ -162,12 +162,24 @@ internal fun adminFieldColors() = androidx.compose.material3.OutlinedTextFieldDe
 
 // ── سربرگ و صفحه ────────────────────────────────────────────────────────────────
 @Composable
-internal fun AdminHeader(title: String, subtitle: String, onBack: () -> Unit, actions: @Composable RowScope.() -> Unit = {}) {
+internal fun AdminHeader(
+    title: String,
+    subtitle: String,
+    onBack: () -> Unit,
+    refreshKey: Any? = Unit,
+    actions: @Composable RowScope.() -> Unit = {},
+) {
+    // ساعتِ آخرین به‌روزرسانی (وقتِ ایران) - با هر تغییرِ refreshKey تازه می‌شود.
+    val updatedAt = remember(refreshKey) {
+        val c = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Tehran"))
+        "%02d:%02d".format(c.get(java.util.Calendar.HOUR_OF_DAY), c.get(java.util.Calendar.MINUTE))
+    }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowForward, "بازگشت", tint = AppText) }
         Column(Modifier.weight(1f).padding(start = 4.dp)) {
             Text(title, color = AppText, fontSize = 19.sp, fontWeight = FontWeight.Black)
             Text(subtitle, color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("به‌روز شده ساعتِ ${toFa(updatedAt)}", color = AppPrimaryInk, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         }
         actions()
     }
@@ -189,6 +201,7 @@ internal fun AdminPage(
     title: String,
     subtitle: String,
     onBack: () -> Unit,
+    refreshKey: Any? = Unit,
     actions: @Composable RowScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -197,7 +210,7 @@ internal fun AdminPage(
         Modifier.fillMaxSize().background(AppBg).verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        AdminHeader(title, subtitle, onBack, actions)
+        AdminHeader(title, subtitle, onBack, refreshKey, actions)
         content()
         Spacer(Modifier.height(28.dp))
     }

@@ -159,7 +159,7 @@ fun AdminDigestScreen(onBack: () -> Unit, vm: AdminDigestViewModel = hiltViewMod
     val d = data
 
     AdminPage(
-        "گزارشِ روز", "هر روز از ۷ صبح تا ۷ صبحِ فردا", onBack,
+        "گزارشِ روز", "هر روز از ۷ صبح تا ۷ صبحِ فردا", onBack, refreshKey = data,
         actions = { if (d != null) AdminHeaderAction(Icons.Filled.Download, "خروجیِ اکسل (CSV)") { shareCsv(ctx, d) } },
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

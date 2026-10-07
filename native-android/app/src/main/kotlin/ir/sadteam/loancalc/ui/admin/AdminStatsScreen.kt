@@ -119,7 +119,7 @@ fun AdminStatsScreen(onBack: () -> Unit, viewModel: AdminStatsViewModel = hiltVi
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                AdminHeader("گزارشِ برنامه", "بی‌نام · به‌ازای هر نصب، نه هر آدم", onBack) {
+                AdminHeader("گزارشِ برنامه", "بی‌نام · به‌ازای هر نصب، نه هر آدم", onBack, refreshKey = state) {
                     IconButton(onClick = { privacy = true }) { Icon(Icons.Filled.Info, "چه چیزی جمع می‌شود", tint = AppMuted) }
                     AdminHeaderAction(Icons.Filled.Refresh, "تازه‌سازی") { viewModel.load() }
                 }

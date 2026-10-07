@@ -119,7 +119,7 @@ class AssetViewModel @Inject constructor(
     private fun startPriceAutoRefresh() {
         viewModelScope.launch {
             while (isActive) {
-                delay(30 * 60 * 1000L)
+                delay(10 * 60 * 1000L)
                 refreshPrices()
             }
         }

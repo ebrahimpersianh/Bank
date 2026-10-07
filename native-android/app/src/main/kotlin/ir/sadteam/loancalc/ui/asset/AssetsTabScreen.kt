@@ -183,6 +183,8 @@ fun AssetsTabScreen(
     var buyEntry by remember { mutableStateOf<AssetCatalogEntry?>(null) }
     val changes by assetViewModel.monthChange.collectAsState()
     val updatedClock by assetViewModel.pricesUpdatedClock.collectAsState()
+    // هر بار که تب باز می‌شود قیمت‌ها را دوباره بپرس (قبلاً فقط نیم‌ساعتی یک‌بار).
+    LaunchedEffect(Unit) { assetViewModel.refreshPrices() }
     val openAsset = assets.firstOrNull { it.id == detailAsset }
     val openAccount = accounts.firstOrNull { it.id == detailAccount }
     val openEditAccount = accounts.firstOrNull { it.id == editAccount }
