@@ -18,9 +18,7 @@ jobs:
           envs: OWNER_PHONE
           script: |
             DB=~/VameMan/data.sqlite
-            echo "=== owner: bank notification/SMS events, last 4 days ==="
-            sqlite3 -header $DB "SELECT d.day, d.name, SUM(d.count) c FROM usage_daily d JOIN installs i ON i.install_id=d.install_id JOIN users u ON u.id=i.user_id WHERE u.phone='$OWNER_PHONE' AND d.day >= date('now','-4 days') AND (d.name LIKE '%notif%' OR d.name LIKE '%sms%') GROUP BY d.day, d.name ORDER BY d.day DESC, d.name;"
-            echo "=== owner installs ==="
-            sqlite3 -header $DB "SELECT i.app_version, i.store, i.last_day, i.last_seen_at FROM installs i JOIN users u ON u.id=i.user_id WHERE u.phone='$OWNER_PHONE' ORDER BY i.last_seen_at DESC LIMIT 5;"
-            echo "=== all users: notif/sms events, last 4 days ==="
-            sqlite3 -header $DB "SELECT day, name, SUM(count) c FROM usage_daily WHERE day >= date('now','-4 days') AND (name LIKE '%notif%' OR name LIKE '%sms%') GROUP BY day, name ORDER BY day DESC, name;"
+            echo "=== crashes last 14 days by message+version ==="
+            sqlite3 -header $DB "SELECT substr(message,1,90) m, app_version v, COUNT(*) n, MAX(created_at) last FROM crash_reports WHERE created_at >= datetime('now','-14 days') GROUP BY m, v ORDER BY n DESC LIMIT 30;"
+            echo "=== one stack per message ==="
+            sqlite3 $DB "SELECT '#### ' || app_version || ' | ' || substr(message,1,90) || char(10) || substr(stack,1,1500) || char(10) || coalesce(substr(context,1,200),'') FROM crash_reports WHERE id IN (SELECT MAX(id) FROM crash_reports WHERE created_at >= datetime('now','-14 days') GROUP BY substr(message,1,40));"
