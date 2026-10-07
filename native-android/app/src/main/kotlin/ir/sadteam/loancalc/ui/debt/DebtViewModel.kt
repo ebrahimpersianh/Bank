@@ -25,12 +25,15 @@ class DebtViewModel @Inject constructor(
     /** پولی که واقعاً جابه‌جا شد (تسویه یا پرداختِ بخشی) - از/به حساب (بخشِ «اتصالِ پرداخت‌ها»). */
     fun recordMoney(accountId: Long, sourceId: String, amount: Double, deposit: Boolean, description: String) {
         viewModelScope.launch {
-            accountRepository.recordLinkedPayment(accountId, "debt", sourceId, amount, description, deposit, category = "طلب و بدهی")
+            accountRepository.recordLinkedPayment(accountId, sourceTypeOf(sourceId), sourceId, amount, description, deposit, category = "طلب و بدهی")
         }
     }
 
+    /** واریزِ سهمِ دنگ نوعِ جدا دارد تا در گزارش نه خرج حساب شود نه درآمد. */
+    private fun sourceTypeOf(sourceId: String) = if (sourceId.startsWith("dang-")) "dang" else "debt"
+
     fun unrecordMoney(sourceId: String) {
-        viewModelScope.launch { accountRepository.removeLinkedPayment("debt", sourceId) }
+        viewModelScope.launch { accountRepository.removeLinkedPayment(sourceTypeOf(sourceId), sourceId) }
     }
 
     val counterparties: StateFlow<List<CounterpartyEntity>> = debtRepository.observeCounterparties()
