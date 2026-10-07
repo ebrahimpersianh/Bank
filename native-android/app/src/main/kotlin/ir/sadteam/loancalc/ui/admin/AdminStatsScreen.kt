@@ -893,15 +893,26 @@ private fun SalesCard(st: AdminStatsResponse) {
         // ۱۶ مهر: پیامک‌های کدِ ورود به‌تفکیکِ استور (شمارش از همین نسخه‌ی سرور شروع شد).
         val smsAll = st.smsAllByStore.orEmpty()
         run {
-            fun line(l: List<ir.sadteam.loancalc.data.network.AdminNamedCount>) =
-                if (l.isEmpty()) "۰" else adminNum(l.sumOf { it.count }) + "  (" + l.joinToString(" · ") { "${STORE_LABELS[it.name] ?: if (it.name == "unknown") "نامشخص" else it.name} ${adminNum(it.count)}" } + ")"
-            AdminSubSection("پیامکِ کدِ ورود", "کل " + line(smsAll)) {
-                if (smsAll.isNotEmpty()) SplitBar("به‌تفکیکِ استور", smsAll.map { SplitPart(STORE_LABELS[it.name] ?: if (it.name == "unknown") "نامشخص" else it.name, it.count) })
-                AdminNote("امروز: " + line(st.smsTodayByStore.orEmpty()))
-                AdminNote("۳۰ روزِ اخیر: " + line(st.sms30ByStore.orEmpty()))
-                AdminNote("کل: " + line(smsAll))
-                if ((st.smsFailed30 ?: 0) > 0) AdminNote("ناموفق در ۳۰ روز: ${adminNum(st.smsFailed30 ?: 0)}")
-                AdminNote("شمارش از ۱۶ مهر ۱۴۰۵ شروع شده؛ پیامک‌های قبل از آن ثبت نشده‌اند.")
+            fun storeName(n: String) = STORE_LABELS[n] ?: if (n == "unknown") "هنوز وارد نشده" else n
+            fun total(l: List<ir.sadteam.loancalc.data.network.AdminNamedCount>) = l.sumOf { it.count }
+            AdminSubSection("پیامکِ کدِ ورود", "امروز ${adminNum(total(st.smsTodayByStore.orEmpty()))} · ۳۰ روز ${adminNum(total(st.sms30ByStore.orEmpty()))}") {
+                AdminNote("هر بار که کسی برای واردشدن به حساب «کدِ تأیید» خواست، یک پیامک برایش فرستاده شد. این‌جا شمارِ همین پیامک‌هاست.")
+                Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SmsCount("امروز", total(st.smsTodayByStore.orEmpty()), Modifier.weight(1f))
+                    SmsCount("۳۰ روزِ اخیر", total(st.sms30ByStore.orEmpty()), Modifier.weight(1f))
+                    SmsCount("از اول", total(smsAll), Modifier.weight(1f))
+                }
+                if (smsAll.isNotEmpty()) {
+                    Text("از کدام فروشگاه (از اول)", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
+                    smsAll.sortedByDescending { it.count }.forEach {
+                        Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(storeName(it.name), color = AppText, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                            Text("${adminNum(it.count)} پیامک", color = AppMuted, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+                if ((st.smsFailed30 ?: 0) > 0) AdminNote("در ۳۰ روزِ اخیر ${adminNum(st.smsFailed30 ?: 0)} پیامک نرسید (خطای سرویسِ پیامک).")
+                AdminNote("«هنوز وارد نشده» = کسی که کد گرفته ولی هنوز واردِ حساب نشده، برای همین معلوم نیست از کدام فروشگاه است؛ بعد از ورود خودکار درست می‌شود. شمارش از ۱۶ مهر شروع شده.")
             }
         }
         val byStore = st.salesByStore.orEmpty()
@@ -1226,3 +1237,14 @@ private val ERROR_LABELS = mapOf(
     "otp_network" to "کدِ ورود: اینترنت وصل نبود",
     "otp_too_soon" to "کدِ ورود: زودتر از یک دقیقه دوباره خواست",
 )
+
+@Composable
+private fun SmsCount(label: String, value: Int, modifier: Modifier) {
+    Column(
+        modifier.clip(RoundedCornerShape(14.dp)).background(AppSurface2).padding(vertical = 8.dp, horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(adminNum(value), color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
+        Text(label, color = AppMuted, fontSize = 11.sp, maxLines = 1)
+    }
+}
