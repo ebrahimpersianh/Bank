@@ -400,7 +400,6 @@ private fun sectionIcon(title: String): Pair<androidx.compose.ui.graphics.vector
     }
 }
 
-@Composable
 internal val LocalBoxedSection = androidx.compose.runtime.staticCompositionLocalOf { false }
 
 @Composable
