@@ -1155,13 +1155,13 @@ private fun MonthBudgetCard(
     val projected = if (dayOfMonth > 0) spent / dayOfMonth * daysInMonth else 0.0
     val leftover = cap - projected
 
-    AppCard(contentPadding = 15.dp, modifier = Modifier.pressScaleClickable(onClick = onClick)) {
+    AppCard(contentPadding = 12.dp, modifier = Modifier.pressScaleClickable(onClick = onClick)) {
       // تصویرِ سه‌بعدیِ کوچک کنارِ کارت (۸ مهر، طرحِ ChatGPT).
       Row(verticalAlignment = Alignment.CenterVertically) {
         androidx.compose.foundation.Image(
                     painter = androidx.compose.ui.res.painterResource(ir.sadteam.loancalc.R.drawable.jibak_home_budget),
                     contentDescription = null,
-                    modifier = Modifier.size(44.dp),
+                    modifier = Modifier.size(34.dp),
                 )
         Column(Modifier.weight(1f).padding(start = 10.dp)) {
         Row(
@@ -1177,10 +1177,10 @@ private fun MonthBudgetCard(
                 fontWeight = FontWeight.Black,
             )
         }
-        BudgetBarWithCoin(ratio = ratio, modifier = Modifier.padding(top = 9.dp))
+        BudgetBarWithCoin(ratio = ratio, modifier = Modifier.padding(top = 5.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 10.dp),
+            modifier = Modifier.padding(top = 4.dp),
         ) {
             Icon(
                 Icons.Filled.AutoAwesome,
@@ -1427,7 +1427,26 @@ private fun CategoryBreakdownCard(
                 modifier = Modifier.size(14.dp),
             )
         }
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        // وقتی فقط یک دسته هست حلقه‌ی کامل چیزی نمی‌گوید؛ یک جمله و یک نوارِ باریک بس است.
+        if (top.size == 1) {
+            val only = top.first()
+            val pct = if (total <= 0.0) 100 else (only.value / total * 100).toInt()
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Text(
+                        maskIfPrivate(masked, total.rialToFaCompact()) + " تومان",
+                        color = AppText,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Text("${pct.toFa()}٪ ${only.key}", color = colors[0], fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+            }
+            Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(999.dp)).background(AppLineRow)) {
+                Box(Modifier.fillMaxWidth((pct / 100f).coerceIn(0.02f, 1f)).height(6.dp).clip(RoundedCornerShape(999.dp)).background(colors[0]))
+            }
+        } else Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             CategoryDonut(
                 slices = top.mapIndexed { i, e -> DonutSlice(e.value, colors[i % colors.size]) },
                 // ۱۴ مهر: بزرگ‌تر و حلقه نازک‌تر تا «میلیون تومان» به لبه نچسبد (مثلِ دایره‌ی وام).
@@ -1659,7 +1678,7 @@ private fun RecentTransactionsCard(
     onSeeAll: () -> Unit,
 ) {
     val recent = remember(transactions) { transactions.sortedByDescending { it.id }.take(3) }
-    // جمع‌شده به‌طورِ پیش‌فرض؛ فلش بازش می‌کند (خواسته‌ی کاربر ۱۴ مهر - خانه خلوت‌تر).
+    // ۱۶ مهر: همیشه ۲ تراکنشِ آخر پیداست (سؤالِ «آخرین اتفاقِ مالی چی بود؟»)؛ فلش سومی را باز می‌کند.
     var expanded by rememberSaveable { mutableStateOf(false) }
     AppCard(contentPadding = 14.dp) {
         Row(
@@ -1684,7 +1703,7 @@ private fun RecentTransactionsCard(
                     .padding(horizontal = 6.dp, vertical = 4.dp),
             )
         }
-        if (expanded) recent.forEachIndexed { index, tx ->
+        (if (expanded) recent else recent.take(2)).forEachIndexed { index, tx ->
             val income = tx.type == "DEPOSIT"
             val transfer = tx.sourceType == SOURCE_TYPE_TRANSFER
             Row(
