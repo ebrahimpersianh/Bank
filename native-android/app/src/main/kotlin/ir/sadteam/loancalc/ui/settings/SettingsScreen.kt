@@ -490,12 +490,7 @@ private fun SettingsMainContent(
                     if (adminUnread > 0) ir.sadteam.loancalc.ui.admin.UnreadDot(adminUnread, Modifier.align(Alignment.TopEnd))
                 }
             }
-            Box(
-                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(AppRadius.icon)).background(AppPrimaryPill),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.Settings, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(24.dp))
-            }
+            // ۱۶ مهر: چرخ‌دنده‌ی تزئینی برداشته شد - صفحه خودش «تنظیمات» است و آن آیکن کلیک هم نداشت.
         }
 
         Column(modifier = Modifier.padding(horizontal = 14.dp)) {
@@ -544,7 +539,7 @@ private fun SettingsMainContent(
                                 // حلقه‌ی طلاییِ قبلیِ سربرگ تنها نشانه‌ی اشتراک بود؛ حالا این‌جاست.
                                 if (subscribed) {
                                     Text(
-                                        "اشتراکی",
+                                        "مشترک",
                                         color = AppGoldInk,
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Black,
