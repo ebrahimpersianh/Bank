@@ -239,6 +239,7 @@ fun AdminUserScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
     var resultPhone by remember { mutableStateOf<Pair<String, String?>?>(null) }
     var failed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val myPhone by vm.repo.phone.collectAsState(initial = null)
     LaunchedEffect(query) {
         kotlinx.coroutines.delay(if (query.isEmpty()) 0 else 400)
         val r = vm.repo.adminUsers(query.filter { it.isDigit() })
@@ -336,12 +337,24 @@ fun AdminUserScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
                                     )
                                     Ltr { Text("Uid:${u.code}", color = AppLabel, fontSize = 11.sp) }
                                 }
+                                // ۱۶ مهر: برچسب روزهای مانده را هم می‌گوید؛ حساب خودِ ادمین «سازنده» است.
+                                val isMe = !myPhone.isNullOrBlank() && myPhone == u.phone
+                                val subLeft = adminDaysLeft(adminParseInstant(u.subscribedUntil))
+                                val trialLeft = adminDaysLeft(adminParseInstant(u.createdAt)?.plusSeconds(30L * 86400))
+                                val badge = when {
+                                    isMe -> "سازنده"
+                                    u.paid -> "خریدار" + (subLeft?.takeIf { it > 0 }?.let { " · ${toFa(it)} روز" } ?: "")
+                                    active -> "اشتراک" + (subLeft?.let { " · ${toFa(it)} روز" } ?: "")
+                                    else -> "رایگان" + (trialLeft?.let { if (it > 0) " · ${toFa(it)} روز" else " · تمام" } ?: "")
+                                }
                                 Text(
-                                    when { u.paid -> "خریدار"; active -> "اشتراک"; else -> "رایگان" },
-                                    color = if (u.paid || active) AppGoldInkSoft else AppPrimaryInk,
+                                    badge,
+                                    color = if (isMe) AppPrimaryInk else if (u.paid || active) AppGoldInkSoft else AppPrimaryInk,
                                     fontSize = 11.sp, fontWeight = FontWeight.Black,
+                                    maxLines = 1, softWrap = false,
                                     modifier = Modifier.clip(RoundedCornerShape(999.dp))
-                                        .background(if (u.paid || active) AppGoldPillSoft else AppPrimaryPill)
+                                        .background(if (isMe) AppPrimaryPill else if (u.paid || active) AppGoldPillSoft else AppPrimaryPill)
+                                        .then(if (isMe) Modifier.border(1.5.dp, AppPrimary, RoundedCornerShape(999.dp)) else Modifier)
                                         .padding(horizontal = 10.dp, vertical = 4.dp),
                                 )
                             }
@@ -695,3 +708,14 @@ private fun SegmentCard(label: String, selected: Boolean, count: Int?, modifier:
         Text(count?.let { "${adminNum(it)} نفر" } ?: "…", color = if (selected) AppPrimaryInk else AppMuted, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 4.dp))
     }
 }
+
+/** زمانِ ISO یا فرمتِ SQLite («2026-10-07 14:21:00»، UTC) → Instant؛ خراب = null. */
+private fun adminParseInstant(s: String?): java.time.Instant? {
+    if (s.isNullOrBlank()) return null
+    return runCatching { java.time.Instant.parse(s) }.getOrNull()
+        ?: runCatching { java.time.LocalDateTime.parse(s.trim().replace(' ', 'T').take(19)).toInstant(java.time.ZoneOffset.UTC) }.getOrNull()
+}
+
+/** چند روز مانده تا [until] (رو به بالا)؛ null اگر تاریخ نیست. منفی/صفر = تمام. */
+private fun adminDaysLeft(until: java.time.Instant?): Int? =
+    until?.let { Math.ceil((it.toEpochMilli() - System.currentTimeMillis()) / 86_400_000.0).toInt() }

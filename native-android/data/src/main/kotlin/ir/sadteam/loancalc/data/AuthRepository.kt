@@ -36,6 +36,9 @@ class AuthRepository(
 ) {
     private val gson = Gson()
 
+    /** شماره‌ی حسابِ واردشده - پنلِ ادمین با آن «سازنده» را در فهرستِ کاربران نشان می‌دهد. */
+    val phone: kotlinx.coroutines.flow.Flow<String?> get() = authPrefs.phone
+
     suspend fun requestOtp(phone: String): AuthResult {
         return try {
             val response = apiService.requestOtp(RequestOtpRequest(phone, UsageStats.store, runCatching { deviceHash() }.getOrNull()))
