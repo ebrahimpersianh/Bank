@@ -15,6 +15,9 @@
          می‌دارد. ⚠️ روی شیائومی/هواوی/اوپو/ویوو تا «اجرای خودکار» اپ دستی روشن نشود این
          Broadcast اصلاً به اپ نمی‌رسد - محدودیتِ سازنده، نه باگِ ما. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- یادآورِ رأسِ ساعت (notifications/ExactReminderAlarm.kt). از اندروید ۱۳ کاربر باید در
+         «آلارم و یادآوری» اجازه بدهد؛ صفحه‌ی تنظیماتِ یادآوری توضیح می‌دهد و می‌گیرد. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <!-- برای «افزودن سررسید اقساط به تقویم گوشی» (calendar/DeviceCalendarExporter) - runtime تو
          LoanDetailScreen درخواست می‌شن؛ READ لازمه چون قبل از درج باید تقویمِ قابل‌نوشتن پیدا بشه. -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
@@ -1578,6 +1581,15 @@
         <receiver
             android:name=".notifications.NotificationActionReceiver"
             android:exported="false" />
+
+        <!-- آلارمِ رأسِ ساعتِ یادآور + تغییرِ اجازه‌ی آلارمِ دقیق. -->
+        <receiver
+            android:name=".notifications.ExactReminderReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
 
         <!-- چیدنِ دوباره‌ی کارهای زمان‌بندی‌شده بعد از ری‌استارتِ گوشی یا آپدیتِ خودِ اپ. -->
         <receiver

@@ -90,6 +90,13 @@ class DueDateReminderWorker @AssistedInject constructor(
         // می‌دهد، پس هر اجرا پنجره را به ساعتِ مقرر برمی‌گرداند.
         if (staleRun) reminderScheduler.schedule()
 
+        // آلارمِ رأسِ ساعت و کارِ دوره‌ایِ پشتیبان هر دو همین worker را اجرا می‌کنند؛ دومی
+        // در همان روز نباید یادآورها را دوباره بفرستد.
+        val runPrefs = applicationContext.getSharedPreferences("due_reminder_run", Context.MODE_PRIVATE)
+        val runKey = "${today0.y}-${today0.m}-${today0.d}"
+        if (runPrefs.getString("last_full_run", null) == runKey) return Result.success()
+        if (!staleRun) runPrefs.edit().putString("last_full_run", runKey).apply()
+
         val defaultOffsets = parseReminderOffsets(uiPrefs.reminderDayOffsets.first())
         // موردهایی که کاربر دیروز «فردا یادم بیاور» زده بود دوباره می‌آیند؛ آن‌هایی که
         // **امروز** تعویق خورده‌اند رد می‌شوند.

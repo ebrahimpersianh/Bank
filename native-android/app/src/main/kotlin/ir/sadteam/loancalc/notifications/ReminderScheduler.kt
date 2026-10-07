@@ -45,6 +45,9 @@ class ReminderScheduler @Inject constructor(
         val request = PeriodicWorkRequestBuilder<DueDateReminderWorker>(24, TimeUnit.HOURS)
             .setInitialDelay(millisUntilNext(hour), TimeUnit.MILLISECONDS)
             .build()
+        // رأسِ ساعت: آلارمِ دقیق (اگر اجازه داریم). کارِ دوره‌ای پایین فقط پشتیبان است و
+        // اگر آلارم امروز اجرا شده باشد، worker خودش تکرار را رد می‌کند.
+        ExactReminderAlarm.schedule(context, hour)
         WorkManager.getInstance(context)
             // ⚠️ UPDATE نه KEEP: با KEEP زمان‌بندیِ بی‌لنگرِ نسخه‌ی قبلی روی گوشیِ کاربرانِ
             // فعلی برای همیشه می‌ماند و همین باگ هیچ‌وقت برایشان رفع نمی‌شد.
@@ -52,6 +55,7 @@ class ReminderScheduler @Inject constructor(
     }
 
     fun cancel() {
+        ExactReminderAlarm.cancel(context)
         WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
     }
 

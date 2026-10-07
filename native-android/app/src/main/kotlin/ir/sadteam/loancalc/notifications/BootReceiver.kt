@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -38,6 +39,11 @@ class BootReceiver : BroadcastReceiver() {
         // کاربر هم اینجا لازم نیست - اولین باری که برنامه باز شود با ساعتِ واقعی دوباره
         // چیده می‌شود (UPDATE است، نه KEEP).
         runCatching { reminderScheduler.scheduleWithDefaultHour() }
+        // آلارمِ رأسِ ساعت با ری‌استارت پاک می‌شود؛ با ساعتِ واقعیِ کاربر دوباره بچین.
+        val pending = goAsync()
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            try { runCatching { reminderScheduler.schedule() } } finally { pending.finish() }
+        }
         // کانال‌ها هم همین‌جا ساخته می‌شوند تا اولین اعلانِ بعد از ری‌استارت جا نیفتد.
         runCatching { ReminderChannels.ensureAll(context) }
         runCatching { autoBackupScheduler.schedule() }

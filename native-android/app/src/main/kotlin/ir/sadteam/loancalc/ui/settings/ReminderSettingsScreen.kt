@@ -188,6 +188,45 @@ fun ReminderSettingsScreen(
             }
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) item {
+            // یادآورِ رأسِ ساعت به اجازه‌ی «آلارم و یادآوری» نیاز دارد (ExactReminderAlarm).
+            // در ON_RESUME دوباره خوانده می‌شود چون کاربر از تنظیماتِ اندروید برمی‌گردد.
+            var exactOk by remember { mutableStateOf(ir.sadteam.loancalc.notifications.ExactReminderAlarm.canScheduleExact(context)) }
+            val owner = LocalLifecycleOwner.current
+            DisposableEffect(owner) {
+                val obs = LifecycleEventObserver { _, e ->
+                    if (e == Lifecycle.Event.ON_RESUME) {
+                        val now = ir.sadteam.loancalc.notifications.ExactReminderAlarm.canScheduleExact(context)
+                        if (now != exactOk) { exactOk = now; viewModel.setReminderHour(reminderHour) }
+                    }
+                }
+                owner.lifecycle.addObserver(obs)
+                onDispose { owner.lifecycle.removeObserver(obs) }
+            }
+            if (!exactOk) AppCard(label = "یادآوری رأسِ ساعت") {
+                Column {
+                    Text(
+                        "برای این‌که یادآوری‌ها دقیقاً سرِ ساعتِ بالا بیایند (نه با تأخیر)، گوشی باید اجازه‌ی " +
+                            "«آلارم و یادآوری» را به جیبک بدهد. دکمه را بزن، در صفحه‌ای که باز می‌شود کلید را " +
+                            "روشن کن و برگرد. بدونِ این اجازه هم یادآوری می‌آید، ولی ممکن است دیرتر.",
+                        color = AppMuted,
+                        fontSize = 12.sp,
+                    )
+                    OutlinedButton(
+                        onClick = {
+                            runCatching {
+                                context.startActivity(
+                                    Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                                        .setData(Uri.parse("package:${context.packageName}")),
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                    ) { Text("دادنِ اجازه", color = AppPrimary, fontWeight = FontWeight.Bold) }
+                }
+            }
+        }
+
         item {
             // فریمِ `50a`: سه کلید **یک تصمیم**‌اند («چه چیزی خبر بدهد») پس در یک کارت با
             // جداکننده می‌نشینند؛ ساعت تصمیمِ دیگری است («کِی») و کارتِ خودش را دارد. قبلاً
