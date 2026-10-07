@@ -416,6 +416,9 @@ class AccountRepository(
 
     /** خرجِ شامِ یک دنگ: برداشتی با همان مبلغِ کل، همان ماه و حداکثر یک روز اختلاف؛ نبود = 0. */
     suspend fun findDangExpenseId(total: Double, y: Int, m: Int, d: Int): Long =
+        findDangExpense(total, y, m, d)?.id ?: 0L
+
+    suspend fun findDangExpense(total: Double, y: Int, m: Int, d: Int): AccountTransactionEntity? =
         observeTransactions().first()
             .filter {
                 it.type == TransactionType.WITHDRAWAL.name && it.confirmed &&
@@ -423,7 +426,7 @@ class AccountRepository(
                     kotlin.math.abs(it.amount - total) < 1.0 && it.year == y && it.month == m &&
                     kotlin.math.abs(it.day - d) <= 1
             }
-            .maxByOrNull { it.id }?.id ?: 0L
+            .maxByOrNull { it.id }
 
     /**
      * برگرداندنِ پرداخت (قسطِ «پرداخت‌نشده» شد، چکِ پاس‌شده برگشت…): تراکنشِ مربوط حذف می‌شود.

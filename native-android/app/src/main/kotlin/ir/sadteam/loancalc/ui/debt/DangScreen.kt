@@ -32,6 +32,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -470,6 +471,9 @@ fun DangCreateScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var showAddParticipant by remember { mutableStateOf(false) }
     var showExpensePicker by remember { mutableStateOf(false) }
+    var saveRequest by remember { mutableStateOf(0) }
+    var showAdvanced by rememberSaveable { mutableStateOf(false) }
+    var pickForIndex by remember { mutableStateOf(-1) }
     var pickedExpenseId by rememberSaveable { mutableStateOf(0L) }
     if (showExpensePicker) {
         ir.sadteam.loancalc.ui.components.JibakAlertDialog(
@@ -504,10 +508,95 @@ fun DangCreateScreen(
         )
     }
 
-    val participants = remember { mutableStateOf(listOf(DangParticipantDraft(counterpartyId = null, name = ME_NAME))) }
+    val participants = remember { mutableStateOf(listOf(DangParticipantDraft(counterpartyId = null, name = ME_NAME), DangParticipantDraft(counterpartyId = -2L, name = "دوستِ ${toFa(2)}"))) }
     val items = remember { mutableStateOf(listOf<DangItemDraft>()) }
 
     val totalAmount = totalText.toDoubleOrNull() ?: 0.0
+
+    // ثبت: اگر «نفرِ ۲…» هنوز دوستِ واقعی نیست، اول برایش طرف‌حساب می‌سازیم و دوباره ادامه می‌دهیم.
+    LaunchedEffect(saveRequest) {
+        if (saveRequest == 0) return@LaunchedEffect
+        val pending = participants.value.indexOfFirst { (it.counterpartyId ?: 0L) < 0L }
+        if (pending >= 0) {
+            onCreateCounterparty(participants.value[pending].name) { newId ->
+                participants.value = participants.value.toMutableList().also {
+                    it[pending] = it[pending].copy(counterpartyId = newId)
+                }
+                saveRequest++
+            }
+            return@LaunchedEffect
+        }
+
+                    error = when {
+                        totalAmount <= 0 -> "مبلغِ کل رو وارد کن"
+                        participants.value.size < 2 -> "حداقل یه شرکت‌کننده‌ی دیگه اضافه کن"
+                        method == DangMethod.PERCENTAGE &&
+                            participants.value.sumOf { it.percentageText.toDoubleOrNull() ?: 0.0 }.toInt() != 100 ->
+                            "جمعِ درصدها باید ۱۰۰٪ بشه"
+                        method == DangMethod.CUSTOM &&
+                            participants.value.sumOf { it.customAmountText.toLongOrNull()?.toDouble() ?: 0.0 } != totalAmount ->
+                            "جمعِ مبلغ‌های دلخواه باید با مبلغِ کل برابر باشه"
+                        method == DangMethod.ITEMIZED &&
+                            items.value.sumOf { it.amountText.toLongOrNull()?.toDouble() ?: 0.0 } != totalAmount ->
+                            "جمعِ قلم‌ها باید با مبلغِ کل برابر باشه"
+                        method == DangMethod.ITEMIZED && items.value.any { it.sharedByIndices.isEmpty() } ->
+                            "هر قلم باید حداقل یه شرکت‌کننده داشته باشه"
+                        else -> null
+                    }
+                    if (error != null) return@LaunchedEffect
+
+                    val participantInputs: List<DangParticipantInput>
+                    val itemInputs: List<DangItemInput>
+                    when (method) {
+                        DangMethod.EQUAL -> {
+                            val shares = equalDangShares(totalAmount, participants.value.size)
+                            participantInputs = participants.value.mapIndexed { i, p ->
+                                DangParticipantInput(p.counterpartyId, shares[i])
+                            }
+                            itemInputs = emptyList()
+                        }
+                        DangMethod.PERCENTAGE -> {
+                            val pcts = participants.value.map { it.percentageText.toDoubleOrNull() ?: 0.0 }
+                            val shares = percentageDangShares(totalAmount, pcts)
+                            participantInputs = participants.value.mapIndexed { i, p ->
+                                DangParticipantInput(p.counterpartyId, shares[i], pcts[i])
+                            }
+                            itemInputs = emptyList()
+                        }
+                        DangMethod.CUSTOM -> {
+                            participantInputs = participants.value.map { p ->
+                                DangParticipantInput(p.counterpartyId, p.customAmountText.toLongOrNull()?.toDouble() ?: 0.0)
+                            }
+                            itemInputs = emptyList()
+                        }
+                        DangMethod.ITEMIZED -> {
+                            // سهمِ هرکس = جمعِ سهمش از همه‌ی قلم‌هایی که توشون شریکه.
+                            val totals = DoubleArray(participants.value.size)
+                            val itemInputsBuilt = items.value.map { item ->
+                                val amount = item.amountText.toLongOrNull()?.toDouble() ?: 0.0
+                                val indices = item.sharedByIndices.sorted()
+                                val shares = equalDangShares(amount, indices.size)
+                                val shareInputs = indices.mapIndexed { i, pIndex ->
+                                    totals[pIndex] += shares[i]
+                                    DangItemShareInput(participantIndex = pIndex, shareAmount = shares[i])
+                                }
+                                DangItemInput(item.description.trim(), amount, shareInputs)
+                            }
+                            participantInputs = participants.value.mapIndexed { i, p ->
+                                DangParticipantInput(p.counterpartyId, totals[i])
+                            }
+                            itemInputs = itemInputsBuilt
+                        }
+                    }
+                    // فرم تومان است، دیتابیس ریال - تبدیل فقط همین‌جا.
+                    onSave(
+                        title.trim().ifEmpty { "دنگ" }, method, totalAmount * 10, year, month, day, isEventMode,
+                        participantInputs.map { it.copy(shareAmount = it.shareAmount * 10) },
+                        itemInputs.map { item ->
+                            item.copy(amount = item.amount * 10, shares = item.shares.map { it.copy(shareAmount = it.shareAmount * 10) })
+                        },
+                    )
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -538,7 +627,45 @@ fun DangCreateScreen(
             }
         }
         item {
-            AppCard(label = "عنوان") {
+            AppCard(label = "چند نفر بودید؟") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            val list = participants.value
+                            if (list.size > 2) {
+                                // اول «نفرِ …»های ساختگی، بعد دوستِ واقعیِ آخر؛ «خودم» همیشه می‌ماند.
+                                val idx = list.indexOfLast { (it.counterpartyId ?: 0L) < 0L }.takeIf { it >= 0 }
+                                    ?: list.indexOfLast { it.counterpartyId != null }
+                                if (idx > 0) participants.value = list.toMutableList().also { it.removeAt(idx) }
+                            }
+                        },
+                    ) { Text("−") }
+                    Text(
+                        toFa(participants.value.size) + " نفر",
+                        color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Bold,
+                    )
+                    OutlinedButton(
+                        onClick = {
+                            val list = participants.value
+                            if (list.size < 20) {
+                                val n = list.size + 1
+                                participants.value = list + DangParticipantDraft(-n.toLong(), "دوستِ ${toFa(n)}")
+                            }
+                        },
+                    ) { Text("+") }
+                }
+                Text(
+                    "سهمِ همه مساوی حساب می‌شود. اسمِ دوست‌ها را اگر خواستی پایین‌تر بزن و عوض کن.",
+                    color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+        }
+        item {
+            AppCard(label = "عنوان (اختیاری)") {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
@@ -565,6 +692,13 @@ fun DangCreateScreen(
             }
         }
         item {
+            if (!(showAdvanced || method != DangMethod.EQUAL || isEventMode)) {
+                TextButton(onClick = { showAdvanced = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text("تقسیمِ پیشرفته (درصدی، مبلغِ دلخواه، قلم‌به‌قلم، مهمانی)")
+                }
+            }
+        }
+        if (showAdvanced || method != DangMethod.EQUAL || isEventMode) item {
             AppCard(label = "روش تقسیم") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -575,7 +709,7 @@ fun DangCreateScreen(
                 }
             }
         }
-        item {
+        if (showAdvanced || method != DangMethod.EQUAL || isEventMode) item {
             AppCard(label = "حالتِ مهمانی/مناسبت") {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -596,6 +730,7 @@ fun DangCreateScreen(
                             draft = draft,
                             method = method,
                             removable = draft.counterpartyId != null,
+                            onPickFriend = if ((draft.counterpartyId ?: 0L) < 0L) ({ pickForIndex = index }) else null,
                             onPercentageChange = { text ->
                                 participants.value = participants.value.toMutableList().also {
                                     it[index] = it[index].copy(percentageText = text)
@@ -685,83 +820,34 @@ fun DangCreateScreen(
         }
         item {
             GradientButton(
-                onClick = {
-                    error = when {
-                        title.trim().isEmpty() -> "عنوان رو وارد کن"
-                        totalAmount <= 0 -> "مبلغِ کل رو وارد کن"
-                        participants.value.size < 2 -> "حداقل یه شرکت‌کننده‌ی دیگه اضافه کن"
-                        method == DangMethod.PERCENTAGE &&
-                            participants.value.sumOf { it.percentageText.toDoubleOrNull() ?: 0.0 }.toInt() != 100 ->
-                            "جمعِ درصدها باید ۱۰۰٪ بشه"
-                        method == DangMethod.CUSTOM &&
-                            participants.value.sumOf { it.customAmountText.toLongOrNull()?.toDouble() ?: 0.0 } != totalAmount ->
-                            "جمعِ مبلغ‌های دلخواه باید با مبلغِ کل برابر باشه"
-                        method == DangMethod.ITEMIZED &&
-                            items.value.sumOf { it.amountText.toLongOrNull()?.toDouble() ?: 0.0 } != totalAmount ->
-                            "جمعِ قلم‌ها باید با مبلغِ کل برابر باشه"
-                        method == DangMethod.ITEMIZED && items.value.any { it.sharedByIndices.isEmpty() } ->
-                            "هر قلم باید حداقل یه شرکت‌کننده داشته باشه"
-                        else -> null
-                    }
-                    if (error != null) return@GradientButton
-
-                    val participantInputs: List<DangParticipantInput>
-                    val itemInputs: List<DangItemInput>
-                    when (method) {
-                        DangMethod.EQUAL -> {
-                            val shares = equalDangShares(totalAmount, participants.value.size)
-                            participantInputs = participants.value.mapIndexed { i, p ->
-                                DangParticipantInput(p.counterpartyId, shares[i])
-                            }
-                            itemInputs = emptyList()
-                        }
-                        DangMethod.PERCENTAGE -> {
-                            val pcts = participants.value.map { it.percentageText.toDoubleOrNull() ?: 0.0 }
-                            val shares = percentageDangShares(totalAmount, pcts)
-                            participantInputs = participants.value.mapIndexed { i, p ->
-                                DangParticipantInput(p.counterpartyId, shares[i], pcts[i])
-                            }
-                            itemInputs = emptyList()
-                        }
-                        DangMethod.CUSTOM -> {
-                            participantInputs = participants.value.map { p ->
-                                DangParticipantInput(p.counterpartyId, p.customAmountText.toLongOrNull()?.toDouble() ?: 0.0)
-                            }
-                            itemInputs = emptyList()
-                        }
-                        DangMethod.ITEMIZED -> {
-                            // سهمِ هرکس = جمعِ سهمش از همه‌ی قلم‌هایی که توشون شریکه.
-                            val totals = DoubleArray(participants.value.size)
-                            val itemInputsBuilt = items.value.map { item ->
-                                val amount = item.amountText.toLongOrNull()?.toDouble() ?: 0.0
-                                val indices = item.sharedByIndices.sorted()
-                                val shares = equalDangShares(amount, indices.size)
-                                val shareInputs = indices.mapIndexed { i, pIndex ->
-                                    totals[pIndex] += shares[i]
-                                    DangItemShareInput(participantIndex = pIndex, shareAmount = shares[i])
-                                }
-                                DangItemInput(item.description.trim(), amount, shareInputs)
-                            }
-                            participantInputs = participants.value.mapIndexed { i, p ->
-                                DangParticipantInput(p.counterpartyId, totals[i])
-                            }
-                            itemInputs = itemInputsBuilt
-                        }
-                    }
-                    // فرم تومان است، دیتابیس ریال - تبدیل فقط همین‌جا.
-                    onSave(
-                        title.trim(), method, totalAmount * 10, year, month, day, isEventMode,
-                        participantInputs.map { it.copy(shareAmount = it.shareAmount * 10) },
-                        itemInputs.map { item ->
-                            item.copy(amount = item.amount * 10, shares = item.shares.map { it.copy(shareAmount = it.shareAmount * 10) })
-                        },
-                    )
-                },
+                onClick = { saveRequest++ },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("ثبتِ دنگ")
             }
         }
+    }
+    if (pickForIndex >= 0) {
+        CounterpartyPickerDialog(
+            counterparties = counterparties.filter { c -> participants.value.none { it.counterpartyId == c.id } },
+            onSelect = { c ->
+                val i = pickForIndex
+                if (i in participants.value.indices) {
+                    participants.value = participants.value.toMutableList().also { it[i] = it[i].copy(counterpartyId = c.id, name = c.name) }
+                }
+                pickForIndex = -1
+            },
+            onCreateNew = { name ->
+                onCreateCounterparty(name) { newId ->
+                    val i = pickForIndex
+                    if (i in participants.value.indices) {
+                        participants.value = participants.value.toMutableList().also { it[i] = it[i].copy(counterpartyId = newId, name = name) }
+                    }
+                    pickForIndex = -1
+                }
+            },
+            onDismiss = { pickForIndex = -1 },
+        )
     }
     if (showAddParticipant) {
         CounterpartyPickerDialog(
@@ -789,9 +875,18 @@ private fun DangParticipantRow(
     onPercentageChange: (String) -> Unit,
     onCustomAmountChange: (String) -> Unit,
     onRemove: () -> Unit,
+    onPickFriend: (() -> Unit)? = null,
 ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(draft.name, color = AppText, fontSize = 13.5.sp, modifier = Modifier.weight(1f))
+        if (onPickFriend != null) {
+            // نفرِ ساختگی: لمس = انتخابِ دوستِ واقعی از فهرست.
+            Text(
+                draft.name + "  ✎", color = AppPrimary, fontSize = 13.5.sp,
+                modifier = Modifier.weight(1f).clickable { onPickFriend() }.padding(vertical = 10.dp),
+            )
+        } else {
+            Text(draft.name, color = AppText, fontSize = 13.5.sp, modifier = Modifier.weight(1f))
+        }
         when (method) {
             DangMethod.PERCENTAGE -> {
                 Ltr {

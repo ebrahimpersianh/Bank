@@ -218,12 +218,19 @@ fun DebtScreen(
                         dangViewModel.setParticipantSettled(participant, settled)
                         // تسویه‌ی یک دوست = سهمش به حسابِ تو آمده؛ برداشتنِ تیک = همان پس گرفته می‌شود.
                         if (settled && accounts.isNotEmpty()) {
-                            moneyPrompt = MoneyPrompt(
-                                "dang-${participant.id}",
-                                participant.shareAmount,
-                                deposit = true,
-                                description = "دنگ «${event.title}» - ${counterpartyNameFor(participant.counterpartyId)}",
-                                dangTotal = event.totalAmount, dangY = event.year, dangM = event.month, dangD = event.day,
+                            val desc = "دنگ «${event.title}» - ${counterpartyNameFor(participant.counterpartyId)}"
+                            viewModel.settleDangShare(
+                                "dang-${participant.id}", participant.shareAmount, desc,
+                                event.totalAmount, event.year, event.month, event.day,
+                                onNeedPicker = {
+                                    moneyPrompt = MoneyPrompt(
+                                        "dang-${participant.id}", participant.shareAmount, deposit = true, description = desc,
+                                        dangTotal = event.totalAmount, dangY = event.year, dangM = event.month, dangD = event.day,
+                                    )
+                                },
+                                onAuto = { accName ->
+                                    android.widget.Toast.makeText(toastCtx, "سهمش به «$accName» (حسابِ خرجِ شام) اضافه شد.", android.widget.Toast.LENGTH_SHORT).show()
+                                },
                             )
                         } else if (!settled) {
                             viewModel.unrecordMoney("dang-${participant.id}")

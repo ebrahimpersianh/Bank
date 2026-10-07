@@ -40,6 +40,24 @@ class DebtViewModel @Inject constructor(
         }
     }
 
+    /**
+     * تسویه‌ی سهمِ یک دوست در دنگ: اگر خرجِ شام پیدا شد، پول **به همان حسابِ خرجِ شام** می‌آید و
+     * چیزی پرسیده نمی‌شود؛ وگرنه [onNeedPicker] تا کاربر حساب را انتخاب کند.
+     */
+    fun settleDangShare(
+        sourceId: String, amount: Double, description: String,
+        total: Double, y: Int, m: Int, d: Int,
+        onNeedPicker: () -> Unit, onAuto: (String) -> Unit,
+    ) {
+        viewModelScope.launch {
+            val tx = accountRepository.findDangExpense(total, y, m, d)
+            if (tx == null) { onNeedPicker(); return@launch }
+            accountRepository.recordLinkedPayment(tx.accountId, "dang", "$sourceId@${tx.id}", amount, description, true, category = "طلب و بدهی")
+            val name = accounts.value.firstOrNull { it.id == tx.accountId }?.name ?: "حسابِ خرجِ شام"
+            onAuto(name)
+        }
+    }
+
     /** واریزِ سهمِ دنگ نوعِ جدا دارد تا در گزارش نه خرج حساب شود نه درآمد. */
     private fun sourceTypeOf(sourceId: String) = if (sourceId.startsWith("dang-")) "dang" else "debt"
 
