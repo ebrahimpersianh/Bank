@@ -944,15 +944,16 @@ private fun SalesCard(st: AdminStatsResponse) {
 @Composable
 private fun GoldStat(label: String, value: String, unit: String, modifier: Modifier, icon: androidx.compose.ui.graphics.vector.ImageVector) {
     Column(
-        modifier.clip(RoundedCornerShape(16.dp)).background(AppGoldInk.copy(alpha = 0.08f)).border(1.dp, AppGoldBorder, RoundedCornerShape(16.dp)).padding(vertical = 10.dp, horizontal = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier.clip(RoundedCornerShape(16.dp)).background(AppGoldInk.copy(alpha = 0.08f)).border(1.dp, AppGoldBorder, RoundedCornerShape(16.dp)).padding(vertical = 8.dp, horizontal = 8.dp),
     ) {
-        Box(Modifier.size(38.dp).clip(CircleShape).background(AppGoldInk.copy(alpha = 0.22f)), contentAlignment = Alignment.Center) {
-            Icon(icon, null, tint = AppGoldInk, modifier = Modifier.size(20.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, tint = AppGoldInk, modifier = Modifier.size(16.dp))
+            Text(label, color = AppGoldInk2, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 4.dp))
         }
-        Text(label, color = AppGoldInk2, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
-        Text(value, color = AppGoldInk, fontSize = 19.sp, fontWeight = FontWeight.Black, maxLines = 1)
-        Text(unit, color = AppGoldInk2, fontSize = 11.sp)
+        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
+            Text(value, color = AppGoldInk, fontSize = 18.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            Text(unit, color = AppGoldInk2, fontSize = 10.sp, maxLines = 1, modifier = Modifier.padding(start = 4.dp, bottom = 3.dp))
+        }
     }
 }
 
@@ -1030,14 +1031,16 @@ private fun ColorStat(label: String, value: String, unit: String, icon: androidx
         modifier.clip(RoundedCornerShape(16.dp))
             .background(Brush.verticalGradient(listOf(color.copy(alpha = 0.28f), color.copy(alpha = 0.10f))))
             .border(1.dp, color.copy(alpha = 0.45f), RoundedCornerShape(16.dp))
-            .padding(10.dp),
+            .padding(horizontal = 10.dp, vertical = 7.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(label, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
-            Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
+            Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
         }
-        Text(value, color = AppText, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
-        Text(unit, color = AppMuted, fontSize = 10.sp)
+        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
+            Text(value, color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            Text(unit, color = AppMuted, fontSize = 10.sp, maxLines = 1, modifier = Modifier.padding(start = 4.dp, bottom = 3.dp))
+        }
     }
 }
 
@@ -1185,7 +1188,7 @@ private fun HealthCard(st: AdminStatsResponse) {
             KpiTile("خطای همگام‌سازی", adminNum(st.nonFatal30), Modifier.weight(1f), unit = "بار")
             KpiTile("گوشی با ۳+ حساب", adminNum(st.multiAccountDevices), Modifier.weight(1f), unit = "گوشی")
         }
-        KpiTile("بی ماهِ مجانی (گوشیِ تکراری)", adminNum(st.trialBlockedUsers), Modifier.fillMaxWidth().padding(top = 8.dp), unit = "حساب")
+        KpiTile("ماهِ رایگان نگرفت (گوشیِ تکراری)", adminNum(st.trialBlockedUsers), Modifier.fillMaxWidth().padding(top = 8.dp), unit = "حساب")
         val byVersion = st.crashesByVersion.orEmpty().take(6)
         if (byVersion.isNotEmpty()) {
             AdminSubTitle("کرش به‌تفکیکِ نسخه")
