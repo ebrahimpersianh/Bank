@@ -294,7 +294,8 @@ fun AdminUserScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
                                         .background(if (myket) androidx.compose.ui.graphics.Color(0xFF3F8EF0) else androidx.compose.ui.graphics.Color(0xFF2EAA62)),
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    Icon(androidx.compose.material.icons.Icons.Filled.Phone, null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(20.dp))
+                                    // ۱۶ مهر: به‌جای تلفن، نامِ استور داخلِ دایره (سبز بازار، آبی مایکت).
+                                    Text(if (myket) "مایکت" else "بازار", color = androidx.compose.ui.graphics.Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1)
                                 }
                                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
                                     Ltr { Text(toFa(u.phone), color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black) }
