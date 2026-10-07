@@ -203,9 +203,26 @@ fun DebtScreen(
                     participants = participants,
                     counterpartyNameFor = ::counterpartyNameFor,
                     onBack = { dangScreen = "list"; openedDangEventId = null },
-                    onDelete = { dangViewModel.deleteEvent(event); dangScreen = "list"; openedDangEventId = null },
+                    onDelete = {
+                        // پولی که از دوست‌ها گرفته و در حساب ثبت شده بود، با حذفِ دنگ برمی‌گردد.
+                        participants.forEach { viewModel.unrecordMoney("dang-${it.id}") }
+                        dangViewModel.deleteEvent(event); dangScreen = "list"; openedDangEventId = null
+                    },
                     onToggleEventSettled = { dangViewModel.setEventSettled(event, it) },
-                    onToggleParticipantSettled = { participant, settled -> dangViewModel.setParticipantSettled(participant, settled) },
+                    onToggleParticipantSettled = { participant, settled ->
+                        dangViewModel.setParticipantSettled(participant, settled)
+                        // تسویه‌ی یک دوست = سهمش به حسابِ تو آمده؛ برداشتنِ تیک = همان پس گرفته می‌شود.
+                        if (settled && accounts.isNotEmpty()) {
+                            moneyPrompt = MoneyPrompt(
+                                "dang-${participant.id}",
+                                participant.shareAmount,
+                                deposit = true,
+                                description = "دنگ «${event.title}» - ${counterpartyNameFor(participant.counterpartyId)}",
+                            )
+                        } else if (!settled) {
+                            viewModel.unrecordMoney("dang-${participant.id}")
+                        }
+                    },
                 )
             }
             "detail" -> opened?.let { counterparty ->

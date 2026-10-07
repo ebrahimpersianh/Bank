@@ -62,6 +62,8 @@ class DueListViewModel @Inject constructor(
         /** فقط برای طلب‌وبدهی. */
         val debtId: Long? = null,
         val kind: DueSource = DueSource.LOAN,
+        /** `true` = پولی که قرار است **به تو برسد** (چکِ دریافتی، طلب) - در جمعِ «باید بدهی» حساب نمی‌شود. */
+        val incoming: Boolean = false,
         /** سطرِ دومِ ردیف - «قسطِ ۷ از ۶۰» / «بانکِ ملت» / «پرداختِ تکراری». */
         val subtitle: String = "",
     )
@@ -95,8 +97,8 @@ class DueListViewModel @Inject constructor(
      * **فهرستِ یکپارچه‌ی بخشِ ۵۱** - سه منبعِ بدهی در یک لیست، گروه‌بندی روی **فوریت** نه
      * روی نوعِ تعهد: کاربر اولِ ماه یک سوال دارد نه سه.
      *
-     * ⚠️ فقط **بدهی**: چکِ دریافتی و طلبِ کاربر از دیگران نمی‌آیند، وگرنه هیرویِ
-     * «باید بدهی» غلط می‌شود.
+     * چکِ دریافتی و طلب هم می‌آیند ولی با نشانِ «دریافتی» ([DueRow.incoming]) و **در جمعِ
+     * «باید بدهی» حساب نمی‌شوند** (هیرو و شمارنده فقط بدهی‌ها را می‌شمارند).
      */
     private val _all = MutableStateFlow(DueList())
     val all: StateFlow<DueList> = _all.asStateFlow()
@@ -107,7 +109,7 @@ class DueListViewModel @Inject constructor(
         val later: List<DueRow> = emptyList(),
     ) {
         val isEmpty: Boolean get() = overdue.isEmpty() && thisWeek.isEmpty() && later.isEmpty()
-        val upcomingCount: Int get() = thisWeek.size + later.size
+        val upcomingCount: Int get() = (thisWeek + later).count { !it.incoming }
 
         /**
          * عددِ هیرو: جمعِ **تا آخرِ ماهِ جاری**. عقب‌افتاده در این جمع می‌آید چون هنوز
@@ -115,6 +117,7 @@ class DueListViewModel @Inject constructor(
          */
         fun monthTotal(today: PersianDate): Double =
             (overdue + thisWeek + later)
+                .filter { !it.incoming }
                 .filter { it.date.y < today.y || (it.date.y == today.y && it.date.m <= today.m) }
                 .sumOf { it.amount }
     }
@@ -144,8 +147,7 @@ class DueListViewModel @Inject constructor(
             _debts.value = bucket(debtRows)
             // فقط چیزی که کاربر **باید بدهد**: قسط، چکِ پرداختنی، پرداختِ تکراری، و قرضی
             // که خودش گرفته.
-            val owed = debtRows.filter { it.title.isNotBlank() }
-            val unified = (loadInstallments(today) + loadCheques(today) + loadRecurring(today) + owed)
+            val unified = (loadInstallments(today) + loadCheques(today) + loadRecurring(today) + debtRows)
                 .filter { !it.paid }
             _all.value = DueList(
                 // مرزها روزِ شمسی‌اند نه ۲۴ ساعت: «امروز» یعنی `daysOverdue == 0` و در
@@ -212,6 +214,7 @@ class DueListViewModel @Inject constructor(
                     else -> false
                 },
                 chequeId = cheque.id,
+                incoming = cheque.type == "RECEIVED",
                 kind = DueSource.CHEQUE,
                 subtitle = cheque.bankName,
             )
@@ -228,6 +231,7 @@ class DueListViewModel @Inject constructor(
                 date = date,
                 paid = debt.settled,
                 debtId = debt.id,
+                incoming = debt.type == "OWED_TO_ME",
                 kind = DueSource.DEBT,
                 subtitle = "قرض",
             )

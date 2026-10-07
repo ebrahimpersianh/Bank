@@ -103,6 +103,8 @@ fun SavingsGoalScreen(
     val privacyMode = LocalPrivacyMode.current
     var showAddForm by rememberSaveable { mutableStateOf(false) }
     var contributeTo by remember { mutableStateOf<SavingsGoalEntity?>(null) }
+    var pendingGoalMoney by remember { mutableStateOf<Triple<SavingsGoalEntity, Double, Int>?>(null) }
+    val accounts by viewModel.accounts.collectAsState()
     var pendingDelete by remember { mutableStateOf<SavingsGoalEntity?>(null) }
 
     val totalTarget = goals.sumOf { it.targetRial }
@@ -230,7 +232,17 @@ fun SavingsGoalScreen(
             onConfirm = { deltaRial ->
                 viewModel.contribute(goal.id, deltaRial)
                 contributeTo = null
+                // اگر حسابی داری بپرس این پول از/به کدام حساب رفت (بستنِ پنجره = فقط در هدف ثبت می‌ماند).
+                if (accounts.isNotEmpty() && deltaRial != 0.0) pendingGoalMoney = Triple(goal, deltaRial, 0)
             },
+        )
+    }
+    pendingGoalMoney?.let { (goal, delta, _) ->
+        ir.sadteam.loancalc.ui.components.AccountPickerDialog(
+            accounts = accounts,
+            title = if (delta >= 0) "این پول از کدام حساب کم شود؟ (بستن = فقط در هدف ثبت بماند)" else "این پول به کدام حساب برگردد؟ (بستن = فقط از هدف کم شود)",
+            onSelect = { acc -> viewModel.recordGoalMoney(acc.id, goal.id, goal.title, delta); pendingGoalMoney = null },
+            onDismiss = { pendingGoalMoney = null },
         )
     }
 

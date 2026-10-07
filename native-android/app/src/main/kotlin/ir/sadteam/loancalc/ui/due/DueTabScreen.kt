@@ -332,8 +332,9 @@ private fun DueRowCard(
     // 🚨 **بخشِ ۶۵**: هر سه حالت **جوهرِ روشن روی قرصِ هم‌فام** می‌گیرند، نه پس‌زمینه‌ی
     // رنگی - در شب قرمزِ روز ناخوانا می‌شود و طلایی چنان می‌درخشد که از هشدارِ قرمز
     // بلندتر حرف می‌زند. شش هگزِ این قرص‌ها در `AppColorPalette` نشسته‌اند، نه این‌جا.
-    val urgent = overdue || row.daysOverdue == 0
-    val soon = !urgent && row.daysOverdue >= -7
+    // پولی که قرار است به تو برسد قرمز و هشداری نیست؛ فقط روزش را می‌گوید.
+    val urgent = !row.incoming && (overdue || row.daysOverdue == 0)
+    val soon = !row.incoming && !urgent && row.daysOverdue >= -7
     val dayInk = when {
         urgent -> AppDangerInk
         soon -> AppWarningInk
@@ -356,7 +357,7 @@ private fun DueRowCard(
             .fillMaxWidth()
             .clip(shape)
             .background(AppSurface)
-            .border(if (overdue) 2.dp else 2.dp, if (overdue) AppUrgentBorder else AppLineRow, shape)
+            .border(2.dp, if (overdue && !row.incoming) AppUrgentBorder else AppLineRow, shape)
             .pressScaleClickable(onClick = onOpen)
             .padding(horizontal = 12.dp, vertical = 11.dp),
     ) {
@@ -380,7 +381,7 @@ private fun DueRowCard(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                "سررسید ${toFa(row.date.d)} ${persianMonthName(row.date.m)} · ${row.subtitle}",
+                "${if (row.incoming) "دریافتی · " else ""}سررسید ${toFa(row.date.d)} ${persianMonthName(row.date.m)} · ${row.subtitle}",
                 color = AppMuted,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,

@@ -17,7 +17,26 @@ import kotlinx.coroutines.launch
 class SavingsGoalViewModel @Inject constructor(
     private val repository: SavingsGoalRepository,
     private val badgeEvaluator: BadgeEvaluator,
+    private val accountRepository: ir.sadteam.loancalc.data.AccountRepository,
 ) : ViewModel() {
+    val accounts = accountRepository.observeAccounts()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** پولِ واریز به هدف (یا برداشت از آن) را در حساب هم ثبت می‌کند؛ [goalId]+[stamp] یکتاست. */
+    fun recordGoalMoney(accountId: Long, goalId: Long, goalTitle: String, deltaRial: Double) {
+        viewModelScope.launch {
+            accountRepository.recordLinkedPayment(
+                accountId = accountId,
+                sourceType = "goal",
+                sourceId = "$goalId:${System.currentTimeMillis()}",
+                amount = kotlin.math.abs(deltaRial),
+                description = if (deltaRial >= 0) "واریز به هدف «$goalTitle»" else "برداشت از هدف «$goalTitle»",
+                deposit = deltaRial < 0,
+                category = "پس‌انداز",
+            )
+        }
+    }
+
     val goals: StateFlow<List<SavingsGoalEntity>> = repository.observeGoals()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
