@@ -1,6 +1,7 @@
 package ir.sadteam.loancalc.ui.accounting
 
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.minimumInteractiveComponentSize
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.components.AppButtonVariant
@@ -590,7 +591,8 @@ private fun ReportHeader(
             }
             Box(
                 modifier = Modifier
-                    .padding(start = 3.dp)
+                    // نزدیک‌تر به دکمه‌ی دانلود (مثلِ فاصله‌ی دکمه‌های سربرگِ خانه).
+                    .offset(x = (-9).dp)
                     .minimumInteractiveComponentSize()
                     .size(32.dp)
                     .clip(RoundedCornerShape(AppRadius.icon))
