@@ -1351,14 +1351,13 @@ private fun MarketOverviewSection(
                 )
             }
         }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.Top,
+        // ۱۶ مهر: سه کارتِ بلند (۱۷۶dp، نام‌های بریده) جایشان را به سه ردیفِ فشرده‌ی هم‌شکلِ فهرستِ
+        // قیمت داد - نامِ کامل، قیمت و درصد، و کلِ بخش حدودِ نصف شد.
+        Column(
+            verticalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier.padding(top = 8.dp).animateContentSize(),
         ) {
-            picks.forEach { pick ->
-                Box(modifier = Modifier.weight(1f)) { MarketMiniCard(pick, prices, viewModel, onOpen) }
-            }
+            picks.forEach { pick -> MarketWideRow(pick, prices, viewModel, onOpen) }
         }
         // «مشاهده‌ی همه»: به‌جای سه ستونِ ناهم‌قد، ردیف‌های مستطیلیِ تمام‌عرض، گروه‌به‌گروه
         // (خواسته‌ی کاربر، ۷ مهر: «به‌جای مربع مستطیل»).
@@ -1584,23 +1583,25 @@ internal fun MarketGridRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 64.dp)
+            // ۱۶ مهر: فشرده‌تر (خواسته‌ی کاربر) تا نام‌ها بریده نشوند و همه‌ی ردیف‌ها در یک نگاه جا شوند.
+            .heightIn(min = 52.dp)
             .clip(shape)
             .background(AppSurface)
             .border(1.dp, AppLine, shape)
             .pressScaleClickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 9.dp),
+            .padding(horizontal = 9.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        AssetBadge(symbol, category, 32.dp)
-        Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+        AssetBadge(symbol, category, 28.dp)
+        Column(modifier = Modifier.weight(1f).padding(start = 7.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     name,
                     color = AppText,
                     fontSize = 12.sp,
+                    lineHeight = 15.sp,
                     fontWeight = FontWeight.Black,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
@@ -1610,14 +1611,14 @@ internal fun MarketGridRow(
                 Ltr { Text(subtitle, color = AppMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.padding(top = 2.dp)) }
             }
         }
-        Box(modifier = Modifier.width(58.dp).padding(horizontal = 4.dp), contentAlignment = Alignment.Center) { trend() }
+        Box(modifier = Modifier.width(46.dp).padding(horizontal = 2.dp), contentAlignment = Alignment.Center) { trend() }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .width(92.dp)
+                .width(84.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(AppPrimary.copy(alpha = 0.06f))
-                .padding(horizontal = 4.dp, vertical = 6.dp),
+                .padding(horizontal = 3.dp, vertical = 4.dp),
         ) {
             // «۶۹۰٫۹ میلیون تو…» نصفه می‌شد - حالا فونت کوچک می‌شود تا کلِ قیمت جا شود.
             ir.sadteam.loancalc.ui.components.AutoShrinkText(
@@ -1629,6 +1630,6 @@ internal fun MarketGridRow(
             )
             if (secondLine != null) Text(secondLine, color = AppMuted, fontSize = 9.5.sp, maxLines = 1)
         }
-        Box(modifier = Modifier.width(62.dp).padding(start = 6.dp), contentAlignment = Alignment.Center) { trailing() }
+        Box(modifier = Modifier.width(58.dp).padding(start = 4.dp), contentAlignment = Alignment.Center) { trailing() }
     }
 }
