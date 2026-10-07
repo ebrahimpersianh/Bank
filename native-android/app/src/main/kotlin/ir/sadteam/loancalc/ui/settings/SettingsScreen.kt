@@ -397,7 +397,7 @@ fun SettingsScreen(
 private enum class SettingsRoute(val title: String, val keywords: List<String>) {
     MAIN("تنظیمات", emptyList()),
     ACCOUNT("حساب کاربری", listOf("حساب", "اشتراک", "خروج", "شماره موبایل")),
-    APPEARANCE("ظاهر برنامه", listOf("تم", "رنگ", "اندازه فونت", "روشن", "تاریک", "ساده", "حالت ساده")),
+    APPEARANCE("ظاهر برنامه", listOf("تم", "رنگ", "ویبره", "هپتیک", "لرزش", "اندازه فونت", "روشن", "تاریک", "ساده", "حالت ساده")),
     REMINDERS("یادآورها", listOf("یادآوری سررسید", "یادآوری روزانه", "نوتیف")),
     DATA("مدیریت داده‌ها", listOf("پشتیبان", "بکاپ", "بازیابی")),
     SMS("پیامک‌های بانکی", listOf("پیامک", "بانک", "خواندن خودکار")),
@@ -434,7 +434,6 @@ private fun SettingsMainContent(
     val phone by authViewModel.phone.collectAsState()
     val subscribed by authViewModel.subscribed.collectAsState()
     val trialDaysLeft by authViewModel.trialDaysLeft.collectAsState()
-    val vibrationEnabled by hapticsViewModel.enabled.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     fun matches(route: SettingsRoute) = searchQuery.isBlank() ||
         route.title.contains(searchQuery.trim()) ||
@@ -674,19 +673,6 @@ private fun SettingsMainContent(
                     ) { onOpen(SettingsRoute.COLOR_THEME) }
                     SettingsDivider()
                 }
-                // تنها سوییچی که عمداً تو ریشه موند - یه گزینه‌ی تک‌حالته‌ست و زیرصفحه‌ی جدا
-                // براش یه تپِ اضافه می‌شد.
-                if (searchQuery.isBlank() || "ویبره".contains(searchQuery.trim()) || "هپتیک".contains(searchQuery.trim())) {
-                    SettingsRowItem(
-                        title = "لرزشِ لمسی",
-                        icon = Icons.Filled.Vibration,
-                        tone = SettingsTone.PURPLE,
-                        status = "موقعِ لمسِ دکمه‌ها یه لرزشِ کوتاه",
-                        checked = vibrationEnabled,
-                        onCheckedChange = { hapticsViewModel.setEnabled(it) },
-                    )
-                    SettingsDivider()
-                }
                 if (matches(SettingsRoute.SECURITY)) {
                     SettingsRow(
                         Icons.Filled.Lock,
@@ -774,9 +760,9 @@ private fun routeHint(route: SettingsRoute): String? = when (route) {
     SettingsRoute.BACKGROUND -> "برای ثبتِ خودکار و به‌روز ماندنِ اطلاعات"
     SettingsRoute.DATA -> "پشتیبان‌گیری، بازیابی و پاک‌سازیِ داده‌ها"
     SettingsRoute.REMINDERS -> "یادآوریِ سررسید و ثبتِ روزانه"
-    SettingsRoute.APPEARANCE -> "حالتِ روشن و تیره، اندازه‌ی متن"
+    SettingsRoute.APPEARANCE -> "حالتِ روشن و تیره، اندازه‌ی متن، لرزشِ لمسی"
     SettingsRoute.SECURITY -> "قفل با رمزِ عددی و اثرِ انگشت"
-    SettingsRoute.TOOLS -> "تقویمِ مالی، آمار و گزارش"
+    SettingsRoute.TOOLS -> "تقویمِ مالی و خروجی‌ها"
     else -> null
 }
 
@@ -862,7 +848,7 @@ private fun SettingsSubPage(
         SettingsSubPageScaffold(title = route.title, onBack = onBack) {
             when (route) {
                 SettingsRoute.ACCOUNT -> AccountSettings(authViewModel, banner, onShowLoginPrompt, onShowSubscription)
-                SettingsRoute.APPEARANCE -> AppearanceSettings(themeViewModel)
+                SettingsRoute.APPEARANCE -> AppearanceSettings(themeViewModel, hapticsViewModel)
                 SettingsRoute.REMINDERS -> ReminderToggles(notificationsViewModel, onShowReminderSettings)
                 SettingsRoute.DATA -> DataSettings(authViewModel, autoBackupViewModel, banner)
                 SettingsRoute.SMS -> SmsSettings(smsAutoImportViewModel, onOpenRules = { onOpenRules() })
@@ -1314,7 +1300,8 @@ private fun AccountSettings(
 }
 
 @Composable
-private fun AppearanceSettings(themeViewModel: ThemeViewModel) {
+private fun AppearanceSettings(themeViewModel: ThemeViewModel, hapticsViewModel: HapticsViewModel) {
+    val vibrationEnabled by hapticsViewModel.enabled.collectAsState()
     val themeMode by themeViewModel.themeMode.collectAsState()
     val fontScale by themeViewModel.fontScale.collectAsState()
     val reducedMotion by themeViewModel.reducedMotion.collectAsState()
@@ -1440,6 +1427,15 @@ private fun AppearanceSettings(themeViewModel: ThemeViewModel) {
             status = "برای گوشی‌های کم‌قدرت",
             checked = reducedMotion,
             onCheckedChange = { themeViewModel.setReducedMotion(it) },
+        )
+        SettingsDivider()
+        SettingsRowItem(
+            title = "لرزشِ لمسی",
+            icon = Icons.Filled.Vibration,
+            tone = SettingsTone.PURPLE,
+            status = "موقعِ لمسِ دکمه‌ها یه لرزشِ کوتاه",
+            checked = vibrationEnabled,
+            onCheckedChange = { hapticsViewModel.setEnabled(it) },
         )
     }
 }
