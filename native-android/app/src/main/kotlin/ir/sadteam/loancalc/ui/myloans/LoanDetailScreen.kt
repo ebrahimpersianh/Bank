@@ -432,6 +432,7 @@ fun LoanDetailScreen(
     // پرداختی ثبت شده باشه، تاریخچه‌ش گم می‌شه.
     var showEditMetaDialog by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showDeletePaymentsAsk by remember { mutableStateOf(false) }
     var editMetaName by remember { mutableStateOf("") }
     var editMetaBank by remember { mutableStateOf("") }
     var editMetaBorrower by remember { mutableStateOf("") }
@@ -1378,10 +1379,22 @@ fun LoanDetailScreen(
         ConfirmDialog(
             tone = ConfirmTone.DESTRUCTIVE,
             title = "حذف وام",
-            consequence = "وامِ «${loan.name}» و همه‌ی قسط‌ها و عکس‌هایش حذف بشه؟ این کار قابلِ‌برگشت نیست. پرداخت‌هایی که قبلاً از حسابت کم شده، در تراکنش‌ها می‌مانند.",
+            consequence = "وامِ «${loan.name}» و همه‌ی قسط‌ها و عکس‌هایش حذف بشه؟ این کار قابلِ‌برگشت نیست.",
             actionLabel = "حذف وام",
-            onConfirm = { showDeleteConfirm = false; onDelete() },
+            onConfirm = { showDeleteConfirm = false; showDeletePaymentsAsk = true },
             onDismiss = { showDeleteConfirm = false },
+        )
+    }
+    if (showDeletePaymentsAsk) {
+        // قسط‌های پرداخت‌شده خرج ثبت کرده‌اند؛ کاربر انتخاب می‌کند بمانند یا بروند.
+        ConfirmDialog(
+            tone = ConfirmTone.DESTRUCTIVE,
+            title = "تراکنش‌های پرداخت چه شود؟",
+            consequence = "خرج‌هایی که برای قسط‌های «${loan.name}» ثبت شده هم پاک شود و پولش به حساب برگردد؟",
+            actionLabel = "پاک شود",
+            dismissLabel = "نه، بماند",
+            onConfirm = { showDeletePaymentsAsk = false; viewModel.deleteLoanPayments(loan.id); onDelete() },
+            onDismiss = { showDeletePaymentsAsk = false; onDelete() },
         )
     }
 

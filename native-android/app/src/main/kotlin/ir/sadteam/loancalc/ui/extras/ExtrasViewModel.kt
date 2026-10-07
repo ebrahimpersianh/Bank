@@ -84,6 +84,14 @@ class ExtrasViewModel @Inject constructor(
         }
     }
 
+    /** «برگرداندنِ پرداخت»: دوره دوباره پرداخت‌نشده می‌شود و مبلغش به حساب برمی‌گردد. */
+    fun unmarkBillPaid(bill: BillEntity, year: Int, month: Int) {
+        viewModelScope.launch {
+            billDao.upsert(bill.copy(lastPaidKey = null))
+            accountRepository.removeLinkedPayment("bill", "${bill.id}:$year-$month")
+        }
+    }
+
     /**
      * عکسِ رسید را به حافظه‌ی **داخلیِ خودِ برنامه** کپی می‌کند (نه گالری) و مسیرش را برمی‌گرداند.
      * پشتیبانِ ابری عکس را نمی‌برد - فقط روی همین گوشی می‌ماند.

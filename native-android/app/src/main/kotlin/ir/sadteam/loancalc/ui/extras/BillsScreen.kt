@@ -178,6 +178,10 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         TextButton(onClick = { paying = bill }) {
                             Text("پرداخت شد", color = AppPrimary, fontWeight = FontWeight.Bold)
                         }
+                    } else if (bill.lastPaidKey == "${today.y}-${today.m}") {
+                        TextButton(onClick = { viewModel.unmarkBillPaid(bill, today.y, today.m) }) {
+                            Text("برگرداندن", color = AppMuted, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }

@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.debt
 
+import kotlinx.coroutines.flow.first
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -51,7 +52,12 @@ class DebtViewModel @Inject constructor(
     }
 
     fun deleteCounterparty(counterparty: CounterpartyEntity) {
-        viewModelScope.launch { debtRepository.deleteCounterparty(counterparty) }
+        viewModelScope.launch {
+            // بدهی‌های این طرف‌حساب هم می‌روند؛ پولی که با آن‌ها جابه‌جا شده هم برگردد.
+            val debts = debtRepository.observeDebtsForCounterparty(counterparty.id).first()
+            debtRepository.deleteCounterparty(counterparty)
+            debts.forEach { accountRepository.removeLinkedPayment("debt", it.id.toString()) }
+        }
     }
 
     fun addDebt(

@@ -314,6 +314,11 @@ class MyLoansViewModel @Inject constructor(
         }
     }
 
+    /** پاک‌کردنِ تراکنش‌های پرداختِ قسط‌های یک وام (قبل از حذفِ خودِ وام). */
+    fun deleteLoanPayments(id: Long) {
+        viewModelScope.launch { accountRepository.removeLinkedPaymentsByPrefix("loan", "$id:") }
+    }
+
     fun deleteLoan(id: Long) {
         viewModelScope.launch {
             loanRepository.deleteLoan(id)
