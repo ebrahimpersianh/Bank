@@ -263,7 +263,7 @@ interface ApiService {
     ): PriceHistoryResponse
 }
 
-data class RequestOtpRequest(val phone: String, val store: String? = null)
+data class RequestOtpRequest(val phone: String, val store: String? = null, val device: String? = null)
 
 data class VerifyOtpRequest(val phone: String, val code: String, val deviceHash: String? = null)
 

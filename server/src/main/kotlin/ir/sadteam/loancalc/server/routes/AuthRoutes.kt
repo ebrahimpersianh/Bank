@@ -42,7 +42,9 @@ private const val MAX_VERIFY_ATTEMPTS = 5
 private const val HOUR_MS = 60 * 60 * 1000L
 // ۷ مهر: اپراتورهای موبایلِ ایران کاربران را پشتِ IPِ مشترک (CGNAT/VPN) می‌برند؛ ۸ در ساعت برای
 // «هر IP» عملاً سقفِ جمعیِ صدها کاربر بود و ورودِ واقعی رد می‌شد. سقفِ اصلی کول‌داون + سقفِ روزانه‌ی هر شماره است.
-private const val OTP_REQUESTS_PER_IP_PER_HOUR = 40
+// ۱۶ مهر (تأییدِ مالک): ۴۰ کم بود - اینترنتِ همراه صدها کاربر را پشتِ یک IP می‌برد (۴۳ بار
+// «درخواستِ زیاد» برای ۱۰ نفر). سقفِ اصلی حالا به‌ازای **گوشی** است (پایین‌تر)؛ این فقط سدِ آخر است.
+private const val OTP_REQUESTS_PER_IP_PER_HOUR = 120
 private const val OTP_REQUESTS_PER_IP_PER_DAY = 200
 private const val VERIFY_ATTEMPTS_PER_IP_PER_HOUR = 30
 
@@ -65,7 +67,7 @@ private fun hashCode(code: String): String {
 }
 
 @Serializable
-private data class RequestOtpBody(val phone: String? = null, val store: String? = null)
+private data class RequestOtpBody(val phone: String? = null, val store: String? = null, val device: String? = null)
 
 @Serializable
 private data class VerifyOtpBody(
@@ -123,6 +125,12 @@ fun Route.authRoutes() {
                 return@post
             }
 
+            // سقفِ هر **گوشی** (۱۶ مهر): ۸ در ساعت، ۲۰ در روز - کاربرهای پشتِ یک IP دیگر جریمه‌ی هم را نمی‌دهند.
+            val device = body?.device?.filter { it.isLetterOrDigit() }?.take(80)?.takeIf { it.length >= 8 }
+            if (device != null && (!RateLimit.allow("otp_dev_h:$device", 8, HOUR_MS) || !RateLimit.allow("otp_dev_d:$device", 20, 24 * HOUR_MS))) {
+                call.respond(HttpStatusCode.TooManyRequests, mapOf("error" to "rate_limited"))
+                return@post
+            }
             // سقفِ هر **شماره** (جایگزینِ سقفِ سخت‌گیرانه‌ی IP): ۶ پیامک در ساعت، ۱۵ در روز.
             if (!RateLimit.allow("otp_phone_h:$phone", 6, HOUR_MS) || !RateLimit.allow("otp_phone_d:$phone", 15, 24 * HOUR_MS)) {
                 call.respond(HttpStatusCode.TooManyRequests, mapOf("error" to "rate_limited"))
