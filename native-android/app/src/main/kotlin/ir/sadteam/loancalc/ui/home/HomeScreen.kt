@@ -978,7 +978,9 @@ private fun TodaySpendHero(
                     )
                     if (period == ReportPeriod.WEEK && weekChangePercent != null && !privacyMode) {
                         Text(
-                            "${if (weekChangePercent <= 0) "▼" else "▲"} ${kotlin.math.abs(weekChangePercent).toFa()}٪ از هفته‌ی قبل",
+                            // ۱۶ مهر: هفته‌ی قبلِ تقریباً خالی «۲۲۸۵٪» می‌ساخت که بی‌معنا بود؛ بالای ۲۰۰٪ «N برابر».
+                            if (weekChangePercent >= 200) "▲ ${kotlin.math.round(1 + weekChangePercent / 100.0).toInt().toFa()} برابرِ هفته‌ی قبل"
+                            else "${if (weekChangePercent <= 0) "▼" else "▲"} ${kotlin.math.abs(weekChangePercent).toFa()}٪ از هفته‌ی قبل",
                             color = Color.White,
                             fontSize = 9.5.sp,
                             fontWeight = FontWeight.Black,
