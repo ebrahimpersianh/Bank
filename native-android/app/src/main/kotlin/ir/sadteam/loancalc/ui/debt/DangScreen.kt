@@ -446,6 +446,7 @@ private fun DangReceiptCard(
 fun DangCreateScreen(
     counterparties: List<CounterpartyEntity>,
     expenses: List<ir.sadteam.loancalc.data.db.AccountTransactionEntity> = emptyList(),
+    initialExpenseId: Long = 0L,
     onCancel: () -> Unit,
     onCreateCounterparty: (name: String, onCreated: (Long) -> Unit) -> Unit,
     onSave: (
@@ -475,6 +476,17 @@ fun DangCreateScreen(
     var showAdvanced by rememberSaveable { mutableStateOf(false) }
     var pickForIndex by remember { mutableStateOf(-1) }
     var pickedExpenseId by rememberSaveable { mutableStateOf(0L) }
+    // آمدن از «تقسیمِ دنگ» روی یک خرج: همان خرج از اول انتخاب شده است.
+    LaunchedEffect(initialExpenseId, expenses.size) {
+        if (initialExpenseId > 0 && pickedExpenseId == 0L) {
+            expenses.firstOrNull { it.id == initialExpenseId }?.let { e ->
+                pickedExpenseId = e.id
+                title = e.description.take(40)
+                totalText = (e.amount / 10).toLong().toString()
+                year = e.year; month = e.month; day = e.day
+            }
+        }
+    }
     if (showExpensePicker) {
         ir.sadteam.loancalc.ui.components.JibakAlertDialog(
             onDismissRequest = { showExpensePicker = false },

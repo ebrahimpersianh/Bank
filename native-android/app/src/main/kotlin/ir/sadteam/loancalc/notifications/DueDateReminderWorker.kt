@@ -58,6 +58,8 @@ class DueDateReminderWorker @AssistedInject constructor(
      */
     private val inboxRepository: InboxRepository,
     private val billDao: ir.sadteam.loancalc.data.db.BillDao,
+    private val dangRepository: ir.sadteam.loancalc.data.DangRepository,
+    private val debtRepository: ir.sadteam.loancalc.data.DebtRepository,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -215,6 +217,30 @@ class DueDateReminderWorker @AssistedInject constructor(
                     prefs.edit().putInt("sent", weekKey).apply()
                     notifyWeeklySummary(w, privacyMode)
                 }
+            }
+        }
+
+        // 👥 یادآورِ دنگ (متنِ تأییدشده‌ی کاربر): دنگی که ≥۳ روز از آن گذشته و سهمِ کسی هنوز
+        // نیامده؛ برای هر دنگ حداکثر هر ۳ روز یک بار. مبلغ در اعلان نیست.
+        runCatching {
+            val prefs = applicationContext.getSharedPreferences("dang_reminder", android.content.Context.MODE_PRIVATE)
+            val names = debtRepository.observeCounterparties().first().associate { it.id to it.name }
+            val events = dangRepository.getAllEvents().filter { !it.settled }
+            for (event in events) {
+                val age = JalaliCalendar.daysBetween(PersianDate(event.year, event.month, event.day), today)
+                if (age < 3) continue
+                val lastKey = "last_${event.id}"
+                val last = prefs.getInt(lastKey, -1000)
+                val nowEpochDay = (System.currentTimeMillis() / 86_400_000L).toInt()
+                if (nowEpochDay - last < 3) continue
+                val waiting = dangRepository.observeParticipants(event.id).first()
+                    .filter { !it.settled && it.counterpartyId != null }
+                if (waiting.isEmpty()) continue
+                prefs.edit().putInt(lastKey, nowEpochDay).apply()
+                val first = names[waiting.first().counterpartyId] ?: "یکی از دوست‌ها"
+                val who = if (waiting.size == 1) first else "$first و ${toFa(waiting.size - 1)} نفرِ دیگر"
+                notifyDangWaiting(event.id, "سهمِ $who از دنگِ «${event.title}» هنوز نیامده.")
+                break
             }
         }
 
@@ -502,6 +528,22 @@ class DueDateReminderWorker @AssistedInject constructor(
             title = "دخل‌وخرج امروز یادت نره",
             body = "امروز هنوز هیچ تراکنشی ثبت نکردی - یه سر بزن به «جیبک»",
         )
+    }
+
+    private suspend fun notifyDangWaiting(eventId: Long, body: String) {
+        val title = "دنگِ باز"
+        val id = 990100 + (eventId % 500).toInt()
+        val notification = NotificationCompat.Builder(applicationContext, ReminderChannels.CHANNEL_NUDGES)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(openAppIntent(id))
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+        runCatching { NotificationManagerCompat.from(applicationContext).notify(id, notification) }
+        inboxRepository.post(kind = InboxMessageEntity.Kind.STREAK_REMINDER, title = title, body = body)
     }
 
     private suspend fun notifyWeeklySummary(w: ir.sadteam.loancalc.core.SmartInsights.Week, privacyMode: Boolean) {

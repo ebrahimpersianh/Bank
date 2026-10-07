@@ -139,6 +139,7 @@ fun AccountDetailScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deletingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
     var editingTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
+    var splitTx by remember { mutableStateOf<AccountTransactionEntity?>(null) }
 
     // تقویم **روی** صفحه می‌نشیند، نه به‌جایش. با `return` کلِ LazyColumn از کامپوزیشن بیرون
     // می‌رفت و اسکرولِ دفترچه‌ی تراکنش‌ها با هر انتخابِ تاریخ صفر می‌شد.
@@ -371,9 +372,37 @@ fun AccountDetailScreen(
                 onDismiss = { showDeleteConfirm = false },
             )
         }
+        splitTx?.let { tx ->
+            ir.sadteam.loancalc.ui.settings.FullScreenDialog(onDismissRequest = { splitTx = null }) {
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier.fillMaxSize().background(ir.sadteam.loancalc.ui.theme.AppBg),
+                ) {
+                    val debtVm: ir.sadteam.loancalc.ui.debt.DebtViewModel = hiltViewModel()
+                    val dangVm: ir.sadteam.loancalc.ui.debt.DangViewModel = hiltViewModel()
+                    val counterparties by debtVm.counterparties.collectAsState()
+                    val splitCtx = androidx.compose.ui.platform.LocalContext.current
+                    ir.sadteam.loancalc.ui.debt.DangCreateScreen(
+                        counterparties = counterparties,
+                        expenses = listOf(tx),
+                        initialExpenseId = tx.id,
+                        onCancel = { splitTx = null },
+                        onCreateCounterparty = { name, onCreated -> debtVm.addCounterparty(name, onResult = onCreated) },
+                        onSave = { title, method, total, y, m, d, eventMode, participants, items ->
+                            dangVm.createEvent(title, method, total, y, m, d, eventMode, participants, items) {
+                                android.widget.Toast.makeText(splitCtx, "دنگ ساخته شد؛ در «دنگ» می‌بینی‌اش.", android.widget.Toast.LENGTH_LONG).show()
+                                splitTx = null
+                            }
+                        },
+                    )
+                }
+            }
+        }
         editingTx?.let { tx ->
             EditTransactionDialog(
                 tx = tx,
+                onSplitDang = if (tx.type == "WITHDRAWAL" && tx.confirmed && ir.sadteam.loancalc.data.countsInReports(tx)) {
+                    { editingTx = null; splitTx = tx }
+                } else null,
                 onSave = { amountRial, description ->
                     viewModel.updateTransaction(tx, amountRial, description)
                     editingTx = null
@@ -499,6 +528,7 @@ private fun EditTransactionDialog(
     tx: AccountTransactionEntity,
     onSave: (amountRial: Double, description: String) -> Unit,
     onDismiss: () -> Unit,
+    onSplitDang: (() -> Unit)? = null,
 ) {
     var amountText by remember { mutableStateOf(rialToToman(tx.amount.toLong()).toString()) }
     var description by remember { mutableStateOf(tx.description) }
@@ -535,6 +565,11 @@ private fun EditTransactionDialog(
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 16.sp, color = AppText),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                if (onSplitDang != null) {
+                    TextButton(onClick = onSplitDang, modifier = Modifier.fillMaxWidth()) {
+                        Text("تقسیمِ دنگ بینِ دوست‌ها", color = AppPrimaryInk, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         },
         confirmButton = {
