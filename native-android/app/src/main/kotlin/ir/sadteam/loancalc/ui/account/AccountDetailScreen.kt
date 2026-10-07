@@ -514,7 +514,9 @@ private fun EditTransactionDialog(
                     value = amountText,
                     onValueChange = { amountText = cleanNum(it) },
                     label = { Text("مبلغ") },
-                    suffix = { Text("تومان") },
+                    suffix = { Text("تومان", fontSize = 14.sp) },
+                    // ۱۶ مهر: عددِ مبلغ درشت (قبلاً خیلی ریز بود).
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Black, color = AppText),
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
@@ -523,13 +525,14 @@ private fun EditTransactionDialog(
                     Text(
                         numberToWordsFa(toman.toDouble()) + " تومان",
                         color = AppMuted,
-                        fontSize = 11.sp,
+                        fontSize = 13.sp,
                     )
                 }
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("توضیحات") },
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 16.sp, color = AppText),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
             }
