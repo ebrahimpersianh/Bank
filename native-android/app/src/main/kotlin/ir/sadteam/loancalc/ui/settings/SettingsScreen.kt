@@ -848,7 +848,7 @@ private fun SettingsSubPage(
         SettingsSubPageScaffold(title = route.title, onBack = onBack) {
             when (route) {
                 SettingsRoute.ACCOUNT -> AccountSettings(authViewModel, banner, onShowLoginPrompt, onShowSubscription)
-                SettingsRoute.APPEARANCE -> AppearanceSettings(themeViewModel, hapticsViewModel)
+                SettingsRoute.APPEARANCE -> AppearanceSettings(themeViewModel)
                 SettingsRoute.REMINDERS -> ReminderToggles(notificationsViewModel, onShowReminderSettings)
                 SettingsRoute.DATA -> DataSettings(authViewModel, autoBackupViewModel, banner)
                 SettingsRoute.SMS -> SmsSettings(smsAutoImportViewModel, onOpenRules = { onOpenRules() })
@@ -1300,7 +1300,7 @@ private fun AccountSettings(
 }
 
 @Composable
-private fun AppearanceSettings(themeViewModel: ThemeViewModel, hapticsViewModel: HapticsViewModel) {
+private fun AppearanceSettings(themeViewModel: ThemeViewModel, hapticsViewModel: HapticsViewModel = hiltViewModel()) {
     val vibrationEnabled by hapticsViewModel.enabled.collectAsState()
     val themeMode by themeViewModel.themeMode.collectAsState()
     val fontScale by themeViewModel.fontScale.collectAsState()
