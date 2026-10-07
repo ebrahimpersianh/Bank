@@ -74,6 +74,7 @@ private val requestOtpErrors = mapOf(
     "rate_limited" to "درخواستِ زیادی از این اینترنت رسیده؛ چند دقیقه‌ی دیگه دوباره بزن",
     "sms_send_failed" to "پیامک ارسال نشد؛ چند لحظه‌ی دیگه دوباره امتحان کن",
     "invalid_phone" to "شماره‌ی موبایل درست نیست",
+    "network" to "به اینترنت وصل نشد؛ اینترنت یا فیلترشکن را چک کن و دوباره بزن",
 )
 private val verifyOtpErrors = mapOf(
     "wrong_code" to "کد اشتباهه",

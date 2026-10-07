@@ -44,6 +44,9 @@ class AuthRepository(
             } else {
                 AuthResult.Error(errorCodeFrom(response.errorBody()?.string()))
             }
+        } catch (e: java.io.IOException) {
+            // ۱۶ مهر: قطعیِ اینترنت/فیلتر جدا از «خطای نامشخص» شمرده شود.
+            AuthResult.Error("network")
         } catch (e: Exception) {
             AuthResult.Error(null)
         }

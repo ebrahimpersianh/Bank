@@ -1060,4 +1060,6 @@ private val ERROR_LABELS = mapOf(
     "otp_sms_send_failed" to "کدِ ورود: پیامک نرفت",
     "otp_invalid_phone" to "کدِ ورود: شماره‌ی اشتباه",
     "otp_unknown" to "کدِ ورود: خطای نامشخص",
+    "otp_network" to "کدِ ورود: اینترنت وصل نبود",
+    "otp_too_soon" to "کدِ ورود: زودتر از یک دقیقه دوباره خواست",
 )
