@@ -1427,8 +1427,8 @@ private fun CategoryBreakdownCard(
                 modifier = Modifier.size(14.dp),
             )
         }
-        // وقتی فقط یک دسته هست حلقه‌ی کامل چیزی نمی‌گوید؛ یک جمله و یک نوارِ باریک بس است.
-        if (top.size == 1) {
+        // ۱۶ مهر: کاربر حلقه را پسندید و جمله‌ی تک‌دسته را نفهمید؛ پس همیشه حلقه می‌ماند.
+        if (false) {
             val only = top.first()
             val pct = if (total <= 0.0) 100 else (only.value / total * 100).toInt()
             Row(verticalAlignment = Alignment.CenterVertically) {
