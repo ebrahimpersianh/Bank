@@ -31,6 +31,14 @@ class NotificationsViewModel @Inject constructor(
     val dailyExpenseReminderEnabled: StateFlow<Boolean> = uiPrefs.dailyExpenseReminderEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    /** یادآورِ دنگ (سهمِ دوست‌ها هنوز نیامده) - پیش‌فرض روشن. */
+    val dangReminderEnabled: StateFlow<Boolean> = uiPrefs.dangReminderEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setDangReminderEnabled(value: Boolean) {
+        viewModelScope.launch { uiPrefs.setDangReminderEnabled(value) }
+    }
+
     init {
         viewModelScope.launch {
             if (uiPrefs.notificationsEnabled.first() || uiPrefs.dailyExpenseReminderEnabled.first()) {

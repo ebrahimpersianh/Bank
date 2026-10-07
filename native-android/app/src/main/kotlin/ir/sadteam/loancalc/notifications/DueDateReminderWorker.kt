@@ -223,6 +223,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         // 👥 یادآورِ دنگ (متنِ تأییدشده‌ی کاربر): دنگی که ≥۳ روز از آن گذشته و سهمِ کسی هنوز
         // نیامده؛ برای هر دنگ حداکثر هر ۳ روز یک بار. مبلغ در اعلان نیست.
         runCatching {
+            if (!uiPrefs.dangReminderEnabled.first()) return@runCatching
             val prefs = applicationContext.getSharedPreferences("dang_reminder", android.content.Context.MODE_PRIVATE)
             val names = debtRepository.observeCounterparties().first().associate { it.id to it.name }
             val events = dangRepository.getAllEvents().filter { !it.settled }

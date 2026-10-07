@@ -108,6 +108,7 @@ class UiPrefs(private val context: Context) {
         val AUTO_TX_NOTIFY_ENABLED = booleanPreferencesKey("auto_tx_notify_enabled")
         val RECENT_AUTO_IMPORT_KEYS = stringPreferencesKey("recent_auto_import_keys")
         val DAILY_EXPENSE_REMINDER_ENABLED = booleanPreferencesKey("daily_expense_reminder_enabled")
+        val DANG_REMINDER_ENABLED = booleanPreferencesKey("dang_reminder_enabled")
         val AVATAR_SHAPE = stringPreferencesKey("avatar_shape")
         val AVATAR_COLOR = stringPreferencesKey("avatar_color")
         val AVATAR_PHOTO = stringPreferencesKey("avatar_photo")
@@ -822,5 +823,13 @@ class UiPrefs(private val context: Context) {
 
     suspend fun setDailyExpenseReminderEnabled(value: Boolean) {
         context.uiPrefsDataStore.edit { it[Keys.DAILY_EXPENSE_REMINDER_ENABLED] = value }
+    }
+
+    /** یادآورِ «سهمِ دوستی از دنگ هنوز نیامده» - پیش‌فرض روشن؛ کاربر در تنظیمات خاموشش می‌کند. */
+    val dangReminderEnabled: Flow<Boolean> =
+        context.uiPrefsDataStore.data.map { it[Keys.DANG_REMINDER_ENABLED] ?: true }
+
+    suspend fun setDangReminderEnabled(value: Boolean) {
+        context.uiPrefsDataStore.edit { it[Keys.DANG_REMINDER_ENABLED] = value }
     }
 }

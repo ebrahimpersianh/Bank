@@ -759,7 +759,7 @@ private fun routeHint(route: SettingsRoute): String? = when (route) {
     SettingsRoute.SMS -> "خواندن و ثبتِ خودکارِ پیامک‌های بانکی"
     SettingsRoute.BACKGROUND -> "برای ثبتِ خودکار و به‌روز ماندنِ اطلاعات"
     SettingsRoute.DATA -> "پشتیبان‌گیری، بازیابی و پاک‌سازیِ داده‌ها"
-    SettingsRoute.REMINDERS -> "یادآوریِ سررسید و ثبتِ روزانه"
+    SettingsRoute.REMINDERS -> "یادآوریِ سررسید، ثبتِ روزانه و دنگ"
     SettingsRoute.APPEARANCE -> "حالتِ روشن و تیره، اندازه‌ی متن، لرزشِ لمسی"
     SettingsRoute.SECURITY -> "قفل با رمزِ عددی و اثرِ انگشت"
     SettingsRoute.TOOLS -> "تقویمِ مالی و خروجی‌ها"
@@ -1449,6 +1449,7 @@ private fun ReminderToggles(
     val context = LocalContext.current
     val notificationsEnabled by notificationsViewModel.enabled.collectAsState()
     val dailyExpenseReminderEnabled by notificationsViewModel.dailyExpenseReminderEnabled.collectAsState()
+    val dangReminderEnabled by notificationsViewModel.dangReminderEnabled.collectAsState()
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) notificationsViewModel.enable() }
@@ -1553,6 +1554,20 @@ private fun ReminderToggles(
                     )
                 }
             },
+        )
+    }
+
+    // ── دنگ: یادآورِ سهمِ نیامده - روشنِ پیش‌فرض، کلیدِ خاموش‌کردن ───────────────
+    SettingsGroupLabel("دنگ", accent = AppWarningInk)
+    SettingsGroup {
+        SettingsRowItem(
+            title = "یادآورِ سهمِ دوست‌ها",
+            icon = Icons.Filled.Notifications,
+            tone = SettingsTone.ORANGE,
+            status = if (dangReminderEnabled) "دنگی که ۳ روز گذشته و سهمِ کسی نیامده" else "خاموش",
+            statusTone = if (dangReminderEnabled) StatusTone.HEALTHY else StatusTone.NEUTRAL,
+            checked = dangReminderEnabled,
+            onCheckedChange = { notificationsViewModel.setDangReminderEnabled(it) },
         )
     }
 
