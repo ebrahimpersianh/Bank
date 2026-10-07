@@ -61,8 +61,6 @@ import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppText
 import java.io.File
 
-// ذخیره ریال است و نمایش تومان (بندِ ۲ی README): تنها نقطه‌ی تبدیلِ این فایل.
-private fun amountToman(rial: Double): String = fmt(rialToToman(rial.toLong()).toDouble()).faDigits()
 
 /** سقفِ انتخابِ یک‌بارِ گالری. رسیدِ یک قسط عملاً یکی‌دوتاست؛ ده تا سخاوتمندانه است. */
 private const val MAX_RECEIPT_PHOTOS = 10
