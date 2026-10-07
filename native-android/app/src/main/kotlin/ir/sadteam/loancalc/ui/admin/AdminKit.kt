@@ -223,11 +223,14 @@ internal fun AdminNote(text: String, gold: Boolean = false) {
 // ── زبانه ───────────────────────────────────────────────────────────────────────
 @Composable
 internal fun AdminTabs(tabs: List<String>, selected: Int, onSelect: (Int) -> Unit, dots: Set<Int> = emptySet()) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    LazyRow(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(AppSurface).border(1.dp, AppLineRow, RoundedCornerShape(22.dp)).padding(5.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         items(tabs.size) { i ->
             val sel = i == selected
             Row(
-                Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(999.dp)).background(if (sel) AppPrimary else AppChipBg)
+                Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(18.dp)).background(if (sel) AppPrimary else Color.Transparent)
                     .clickable { onSelect(i) }.padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -242,16 +245,21 @@ internal fun AdminTabs(tabs: List<String>, selected: Int, onSelect: (Int) -> Uni
 @Composable
 internal fun AdminAlerts(lines: List<Pair<ImageVector, String>>, onClick: (() -> Unit)? = null) {
     if (lines.isEmpty()) return
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(AppWarningPill)) {
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(AppWarningPill)
+            .border(1.5.dp, AppWarningInk.copy(alpha = 0.45f), RoundedCornerShape(20.dp)),
+    ) {
         lines.forEachIndexed { i, (icon, text) ->
-            if (i > 0) Box(Modifier.fillMaxWidth().height(1.5.dp).background(AppBg))
+            if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(AppWarningInk.copy(alpha = 0.25f)))
             Row(
-                Modifier.fillMaxWidth().heightIn(min = 44.dp)
+                Modifier.fillMaxWidth().heightIn(min = 52.dp)
                     .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(icon, null, tint = AppWarningInk, modifier = Modifier.size(20.dp))
+                Box(Modifier.size(36.dp).clip(RoundedCornerShape(11.dp)).background(AppWarningInk.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                    Icon(icon, null, tint = AppWarningInk, modifier = Modifier.size(20.dp))
+                }
                 Text(text, color = AppWarningInk, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f).padding(start = 10.dp))
                 if (onClick != null) Icon(Icons.Filled.ChevronLeft, null, tint = AppWarningInk, modifier = Modifier.size(18.dp))
             }
@@ -300,7 +308,11 @@ internal fun KpiTile(
     if (standalone) {
         AppCard(modifier = modifier, horizontalPadding = 12.dp, contentPadding = 12.dp) { body() }
     } else {
-        Column(modifier.clip(RoundedCornerShape(14.dp)).background(AppSurface2).padding(10.dp)) { body() }
+        Column(
+            modifier.clip(RoundedCornerShape(16.dp))
+                .background(if (accent != null) accent.copy(alpha = 0.12f) else AppSurface2.copy(alpha = 0.6f))
+                .border(1.dp, accent?.copy(alpha = 0.4f) ?: AppLineRow, RoundedCornerShape(16.dp)).padding(10.dp),
+        ) { body() }
     }
 }
 
@@ -342,7 +354,7 @@ internal fun AdminSection(
 ) {
     var open by rememberSaveable(title) { mutableStateOf(initiallyOpen) }
     AppCard(modifier = modifier, variant = if (gold) AppCardVariant.GOLD else AppCardVariant.DEFAULT, contentPadding = 2.dp) {
-        AdminSectionBody(title, summary, open, { open = !open }, gold, content)
+        AdminSectionBody(title, summary, open, { open = !open }, gold, content, roundChevron = !gold)
     }
 }
 
@@ -351,9 +363,10 @@ internal fun AdminSection(
 internal fun AdminSubSection(title: String, summary: String? = null, gold: Boolean = false, divider: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
     var open by rememberSaveable(title) { mutableStateOf(false) }
     // ۱۶ مهر: بخش‌های «فروش و اشتراک» هر کدام کارتِ جدا با فلشِ گرد (طرح).
-    if (LocalBoxedSection.current) {
+    if (LocalBoxedSection.current || !gold) {
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(AppSurface)
+            Modifier.fillMaxWidth().padding(top = if (LocalBoxedSection.current) 0.dp else 8.dp).clip(RoundedCornerShape(18.dp))
+                .background(if (LocalBoxedSection.current) AppSurface else AppSurface2.copy(alpha = 0.5f))
                 .border(1.dp, AppLineRow, RoundedCornerShape(18.dp)).padding(horizontal = 12.dp),
         ) { AdminSectionBody(title, summary, open, { open = !open }, false, content, roundChevron = true) }
         return
@@ -421,8 +434,12 @@ internal fun <T> TopList(items: List<T>, visible: Int = 5, row: @Composable (T) 
     var all by remember(items.size) { mutableStateOf(false) }
     (if (all) items else items.take(visible)).forEach { row(it) }
     if (items.size > visible) {
-        Box(Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { all = !all }, contentAlignment = Alignment.Center) {
-            Text(if (all) "کمتر" else "بقیه (${toFa(items.size - visible)})", color = AppPrimaryInk, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)
+        Box(Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) {
+            Text(
+                if (all) "کمتر" else "بقیه (${toFa(items.size - visible)})", color = AppPrimaryInk, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.clip(RoundedCornerShape(999.dp)).border(1.dp, AppLineRow, RoundedCornerShape(999.dp))
+                    .clickable { all = !all }.padding(horizontal = 22.dp, vertical = 10.dp),
+            )
         }
     }
 }
@@ -435,8 +452,11 @@ internal fun AdminBarRow(label: String, fraction: Float, trailing: String, sub: 
             Text(label, color = if (gold) AppGoldInk else AppText, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             Text(trailing, color = if (gold) AppGoldInk2 else AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.padding(start = 8.dp))
         }
-        Box(Modifier.fillMaxWidth().padding(top = 4.dp).height(7.dp).clip(RoundedCornerShape(99.dp)).background(AppSurface2)) {
-            Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).fillMaxHeight().clip(RoundedCornerShape(99.dp)).background(if (gold) AppGoldInk else color))
+        Box(Modifier.fillMaxWidth().padding(top = 5.dp).height(9.dp).clip(RoundedCornerShape(99.dp)).background(AppSurface2)) {
+            Box(
+                Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).fillMaxHeight().clip(RoundedCornerShape(99.dp))
+                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(if (gold) listOf(AppGoldInk2, AppGoldInk) else listOf(color, color.copy(alpha = 0.65f)))),
+            )
         }
         if (sub != null) Text(sub, color = if (gold) AppGoldInk2 else AppLabel, fontSize = 11.sp, modifier = Modifier.padding(top = 2.dp))
     }
