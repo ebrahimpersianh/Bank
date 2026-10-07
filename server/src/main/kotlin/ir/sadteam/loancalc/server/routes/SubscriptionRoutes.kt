@@ -16,6 +16,7 @@ import ir.sadteam.loancalc.server.execute
 import ir.sadteam.loancalc.server.executeCounting
 import ir.sadteam.loancalc.server.myketConfigured
 import ir.sadteam.loancalc.server.queryOne
+import ir.sadteam.loancalc.server.rateLimitOk
 import ir.sadteam.loancalc.server.requireAuth
 import ir.sadteam.loancalc.server.validateInAppPurchase
 import ir.sadteam.loancalc.server.validateMyketPurchase
@@ -72,11 +73,19 @@ fun Route.subscriptionRoutes() {
            ما هم مستقیماً حرف کلاینت رو باور نمی‌کنیم، خودمون با API کافه‌بازار تایید می‌کنیم. */
         post("/verify") {
             val authed = call.requireAuth() ?: return@post
+            // هر تأییدِ خرید یک تماس به API استور است؛ سقف جلوی فشارِ بی‌جا (و محدودشدنِ ما از سمتِ
+            // استورها) را می‌گیرد. «بازیابیِ خریدها» چند رسید پشتِ هم می‌فرستد، پس سقف گشاد است.
+            if (!call.rateLimitOk("sub_verify", 60, 60 * 60 * 1000L)) return@post
 
             val body = runCatching { call.receive<VerifyBody>() }.getOrNull()
             val productId = body?.productId
             val purchaseToken = body?.purchaseToken
             val store = body?.store ?: "cafebazaar"
+            // فقط دو استورِ واقعی؛ هر مقدارِ دیگر قبلاً بی‌صدا مثلِ کافه‌بازار حساب می‌شد.
+            if (store != "cafebazaar" && store != "myket") {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid_store"))
+                return@post
+            }
             if (productId.isNullOrEmpty() || purchaseToken.isNullOrEmpty()) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid_input"))
                 return@post
