@@ -3,6 +3,7 @@ package ir.sadteam.loancalc.ui.components
 import androidx.compose.foundation.border
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Tune
@@ -654,6 +655,8 @@ fun ShortcutDrawerHandle(onOpen: () -> Unit, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Row(
+            // ۱۶ مهر: کمی پایین‌تر، نزدیک‌ترِ به نوارِ تب‌ها.
+            modifier = Modifier.offset(y = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
