@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.inbox
 
+import ir.sadteam.loancalc.R
 import androidx.compose.ui.graphics.drawscope.rotate
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import androidx.compose.foundation.clickable
@@ -259,7 +260,7 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        TrashBinIcon(full = bin.isNotEmpty())
+                        TrashBinIcon(count = bin.size)
                         Column(Modifier.weight(1f).padding(start = 10.dp)) {
                             Text("سطلِ زباله", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             Text(
@@ -1064,11 +1065,10 @@ private fun GiftCelebration(message: InboxMessageEntity, onDone: () -> Unit) {
 
 private fun Modifier.graphicsLayerScale(s: Float): Modifier = this.graphicsLayer(scaleX = s, scaleY = s)
 
-/** آیکونِ سطلِ زباله: خالی = درِ کمی باز؛ پر = کاغذ پیداست و هر چند ثانیه یک تکانِ ریز. */
+/** سطلِ زباله: خالی = درِ بسته (خاکستری)؛ پر = درِ باز و کاغذ (فیروزه‌ای) + شمارنده + تکانِ ریز. */
 @Composable
-private fun TrashBinIcon(full: Boolean) {
-    val body = ir.sadteam.loancalc.ui.theme.AppMuted
-    val paper = ir.sadteam.loancalc.ui.theme.AppPrimary
+private fun TrashBinIcon(count: Int) {
+    val full = count > 0
     val wiggle = if (full) {
         val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "bin")
         t.animateFloat(
@@ -1083,27 +1083,16 @@ private fun TrashBinIcon(full: Boolean) {
             label = "binWiggle",
         ).value
     } else 0f
-    androidx.compose.foundation.Canvas(Modifier.size(34.dp).graphicsLayer { rotationZ = wiggle * 6f }) {
-        val w = size.width
-        val h = size.height
-        val stroke = androidx.compose.ui.graphics.drawscope.Stroke(width = w * 0.07f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
-        // بدنه
-        val path = androidx.compose.ui.graphics.Path().apply {
-            moveTo(w * 0.22f, h * 0.34f); lineTo(w * 0.30f, h * 0.90f); lineTo(w * 0.70f, h * 0.90f); lineTo(w * 0.78f, h * 0.34f)
-        }
-        if (full) {
-            // کاغذهای مچاله بیرون‌زده
-            drawCircle(paper, radius = w * 0.11f, center = androidx.compose.ui.geometry.Offset(w * 0.40f, h * 0.30f))
-            drawCircle(paper.copy(alpha = 0.7f), radius = w * 0.09f, center = androidx.compose.ui.geometry.Offset(w * 0.60f, h * 0.32f))
-        }
-        drawPath(path, body, style = stroke)
-        drawLine(body, androidx.compose.ui.geometry.Offset(w * 0.42f, h * 0.48f), androidx.compose.ui.geometry.Offset(w * 0.44f, h * 0.78f), w * 0.05f, androidx.compose.ui.graphics.StrokeCap.Round)
-        drawLine(body, androidx.compose.ui.geometry.Offset(w * 0.58f, h * 0.48f), androidx.compose.ui.geometry.Offset(w * 0.56f, h * 0.78f), w * 0.05f, androidx.compose.ui.graphics.StrokeCap.Round)
-        // در: خالی = کمی باز (چرخیده)، پر = بسته ولی کمی بالا روی کاغذها
-        val lidY = if (full) h * 0.20f else h * 0.26f
-        rotate(degrees = if (full) -6f else -28f, pivot = androidx.compose.ui.geometry.Offset(w * 0.80f, lidY)) {
-            drawLine(body, androidx.compose.ui.geometry.Offset(w * 0.16f, lidY), androidx.compose.ui.geometry.Offset(w * 0.84f, lidY), w * 0.08f, androidx.compose.ui.graphics.StrokeCap.Round)
-            drawLine(body, androidx.compose.ui.geometry.Offset(w * 0.42f, lidY - h * 0.08f), androidx.compose.ui.geometry.Offset(w * 0.58f, lidY - h * 0.08f), w * 0.07f, androidx.compose.ui.graphics.StrokeCap.Round)
-        }
+    Box(Modifier.size(46.dp)) {
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(if (full) R.drawable.trash_full else R.drawable.trash_empty),
+            contentDescription = "سطلِ زباله",
+            modifier = Modifier.size(40.dp).align(Alignment.Center).graphicsLayer { rotationZ = wiggle * 6f },
+        )
+        if (full) Box(
+            Modifier.align(Alignment.TopEnd).clip(androidx.compose.foundation.shape.CircleShape)
+                .background(Color(0xFFE5484D)).padding(horizontal = 6.dp, vertical = 1.dp),
+            contentAlignment = Alignment.Center,
+        ) { Text(toFa(count), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black) }
     }
 }
