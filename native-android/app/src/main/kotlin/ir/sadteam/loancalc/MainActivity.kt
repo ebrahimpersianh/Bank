@@ -1126,7 +1126,7 @@ private fun LoanCalcApp(
                         modifier = Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
-                            .padding(start = 12.dp, end = 12.dp, bottom = 6.dp),
+                            .padding(start = 12.dp, end = 12.dp, bottom = 1.dp),
                     ) {
                         val navShape = RoundedCornerShape(28.dp)
                         // خواسته‌ی کاربر (۳ مهر): خطِ آبی **روی خودِ نوار** بنشیند، نه شناور بالایش.

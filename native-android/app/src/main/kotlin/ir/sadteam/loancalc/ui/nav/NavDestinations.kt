@@ -6,14 +6,14 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -42,7 +42,7 @@ enum class NavDestination(
     REPORT("report", "report", "گزارش", Icons.Outlined.BarChart, Icons.Filled.BarChart),
     BUDGET("budget", "budget", "بودجه", Icons.Outlined.Savings, Icons.Filled.Savings),
     DUE("due", "due", "سررسید", Icons.Outlined.EventNote, Icons.Filled.EventNote),
-    LOAN("loan", "loan", "وام", Icons.Outlined.Payments, Icons.Filled.Payments),
+    LOAN("loan", "loan", "وام", Icons.Outlined.AccountBalance, Icons.Filled.AccountBalance),
     CHEQUE("cheque", "cheque", "چک", Icons.Outlined.Description, Icons.Filled.Description);
 
     companion object {

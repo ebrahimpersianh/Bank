@@ -281,7 +281,7 @@ fun ShortcutDrawer(
             } else {
                 // بازطراحیِ ۸ مهر (طرحِ ChatGPT): ۸ میان‌برِ اولِ ترتیبِ کاربر کارتِ دوستونه؛
                 // بقیه + مقصدهای انتخاب‌نشده پایین در «همه ابزارها» با جستجو.
-                val top = order.take(8)
+                val top = order.take(4)
                 val saveAndOpen: (String) -> Unit = { route ->
                     // ⚠️ هر خروجی ترتیبِ جابه‌جاشده را ذخیره می‌کند (نه فقط «تمام»).
                     if (order.map { it.id } != shortcuts.map { it.id }) onOrderChanged(order.map { it.id })
@@ -359,9 +359,9 @@ fun ShortcutDrawer(
                                             AllToolTile(Icons.Filled.Tune, "سفارشی‌سازی", Modifier.weight(1f)) { editMode = true; timerKey++ }
                                         } else if (sc != null) {
                                             AllToolTile(sc.icon, sc.label, Modifier.weight(1f), onLongClick = {
-                                                // نگه‌داشتن = آوردن به بالا (۸ مهر): کارتِ هشتم پایین می‌رود.
+                                                // نگه‌داشتن = آوردن به بالا (۸ مهر): کارتِ چهارم پایین می‌رود.
                                                 val rest0 = order.filter { it.id != sc.id }
-                                                order = rest0.take(7) + sc + rest0.drop(7)
+                                                order = rest0.take(3) + sc + rest0.drop(3)
                                                 if (sc.id !in selectedIds) { selectedIds = selectedIds + sc.id; onSelectionChanged(selectedIds) }
                                                 onOrderChanged(order.map { it.id })
                                                 timerKey++
