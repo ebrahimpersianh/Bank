@@ -159,7 +159,11 @@ class DueDateReminderWorker @AssistedInject constructor(
         // یادآوریِ پرداخت‌های تکراریِ ماژولِ حسابداری (مثلِ اجاره) - رجوع کن به CLAUDE.md، بخشِ
         // «تغییرِ نامِ اپ + افزودنِ ماژولِ حسابداریِ شخصی». برخلافِ وام/چک که یه dueDateِ ثابت دارن،
         // این‌ها هر ماه تکرار می‌شن - نزدیک‌ترین وقوعِ بعدی (امروز یا آینده) حساب می‌شه.
+        // پرداختِ تکراری‌ای که این ماه «ثبتِ پرداختِ این ماه» خورده، یادآور نمی‌خواهد.
+        val paidRecurring = accountRepository.observeTransactions().first()
+            .filter { it.sourceType == "recurring" }.mapNotNull { it.sourceId }.toSet()
         accountRepository.getRecurringPayments().forEach { payment ->
+            if ("${payment.id}:${today.y}-${today.m}" in paidRecurring) return@forEach
             val offsets = payment.reminderDayOffsets?.let { parseReminderOffsets(it) } ?: defaultOffsets
             if (offsets.isEmpty()) return@forEach
             val due = nextOccurrence(today, payment.dayOfMonth)
