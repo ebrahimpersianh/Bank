@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.inbox
 
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.defaultMinSize
 import ir.sadteam.loancalc.R
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -1092,7 +1093,7 @@ private fun TrashBinIcon(count: Int) {
     } else 0f
     // ۱۶ مهر: شمارنده روی درِ سطل می‌افتاد؛ حالا سطل در یک سمت و شمارنده در گوشه‌ی دیگر،
     // با حاشیه‌ی هم‌رنگِ پس‌زمینه تا مثلِ نشانِ واقعی دیده شود.
-    Box(Modifier.width(46.dp).height(40.dp)) {
+    Box(Modifier.width(56.dp).height(40.dp)) { // ۱۶ مهر: پهن‌تر تا شمارنده کاملاً بیرونِ سطل بماند
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(if (full) R.drawable.trash_full else R.drawable.trash_empty),
             contentDescription = "سطلِ زباله",
@@ -1100,6 +1101,7 @@ private fun TrashBinIcon(count: Int) {
         )
         if (full) Box(
             Modifier.align(Alignment.TopEnd)
+                .offset(x = (-1).dp, y = 0.dp)
                 .defaultMinSize(minWidth = 18.dp, minHeight = 18.dp)
                 .border(1.5.dp, ir.sadteam.loancalc.ui.theme.AppSurface, androidx.compose.foundation.shape.CircleShape)
                 .clip(androidx.compose.foundation.shape.CircleShape)
