@@ -316,6 +316,7 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                     list.forEach { message ->
                         NewsCard(
                             message = message,
+                            onRead = { viewModel.markRead(message.id) },
                             onClick = {
                                 viewModel.markRead(message.id)
                                 // ۱۴ مهر: تراکنشِ خودکار → پنجره‌ی دسته (متنِ پیام از همان‌جا).
@@ -889,7 +890,7 @@ private fun timeLabel(millis: Long): String {
  * متن، قرصِ منبع، زمان و فلش. نقطه‌ی کنارِ عنوان یعنی خوانده‌نشده.
  */
 @Composable
-private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
+private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit, onRead: () -> Unit = {}) {
     // متنِ بلند ۲ خط نشان داده می‌شود؛ زدن روی کارت بازش می‌کند (و کارِ قبلیِ کارت هم انجام می‌شود).
     var expanded by remember { mutableStateOf(false) }
     val isTx = message.kind == InboxMessageEntity.Kind.DETECTED_TX
@@ -910,7 +911,8 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
             .clip(shape)
             .background(AppSurface)
             .border(1.dp, AppLine, shape)
-            .pressScaleClickable(scale = 0.99f, onClick = { expanded = !expanded; onClick() })
+            // ۱۶ مهر: لمسِ خودِ کارت = بازشدنِ متنِ کامل (همان‌جا)؛ پنجره/دسته فقط با فلشِ گوشه باز می‌شود.
+            .pressScaleClickable(scale = 0.99f, onClick = { expanded = !expanded; onRead() })
             .padding(11.dp),
         verticalAlignment = Alignment.Top,
     ) {
@@ -930,7 +932,7 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
                     color = AppText,
                     fontSize = 14.5.sp,
                     fontWeight = FontWeight.Black,
-                    maxLines = 1,
+                    maxLines = if (expanded) 3 else 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -940,7 +942,7 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
                 fontSize = 11.5.sp,
                 lineHeight = 18.sp,
                 // حداکثر ۲ خط؛ متنِ کامل با زدن روی کارت باز می‌شود.
-                maxLines = if (expanded) Int.MAX_VALUE else 2,
+                maxLines = if (expanded) Int.MAX_VALUE else 4,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 3.dp),
             )
@@ -999,12 +1001,22 @@ private fun NewsCard(message: InboxMessageEntity, onClick: () -> Unit) {
                 }
             }
         }
-        Icon(
-            Icons.Filled.KeyboardArrowLeft,
-            contentDescription = null,
-            tint = AppLabel,
-            modifier = Modifier.align(Alignment.CenterVertically).padding(start = 6.dp).size(20.dp),
-        )
+        // فلشِ گوشه: بازکردنِ جزئیات (پنجره‌ی منبع یا انتخابِ دسته) - جدا از بازشدنِ متنِ کارت.
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .size(40.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.KeyboardArrowLeft,
+                contentDescription = "جزئیات",
+                tint = AppLabel,
+                modifier = Modifier.size(22.dp),
+            )
+        }
     }
 }
 
