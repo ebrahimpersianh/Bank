@@ -82,7 +82,7 @@ private val assetVisuals: Map<String, AssetVisual> = mapOf(
     "USD" to AssetVisual("$", Color(0xFF2E7D4F)),
     "EUR" to AssetVisual("€", Color(0xFF20439B)),
     "GBP" to AssetVisual("£", Color(0xFF8C1D3F)),
-    "AED" to AssetVisual("د.إ", Color(0xFF00713C)),
+    "AED" to AssetVisual("درهم", Color(0xFF00713C)), // ۱۶ مهر: فارسی (قبلاً «د.إ» عربی بود)
     "TRY" to AssetVisual("₺", Color(0xFFC8102E)),
     "CAD" to AssetVisual("$", Color(0xFFB3121B)),
     // ── رمز ارز: حرفِ اولِ نماد. رنگِ برند تفکیک را می‌سازد، نه حرف. ─────
@@ -133,7 +133,8 @@ fun AssetBadge(symbol: String, category: String, size: Dp, modifier: Modifier = 
             Text(
                 v.glyph,
                 color = Color.White,
-                fontSize = (size.value * 0.42f).sp,
+                // نشانِ چندحرفیِ فارسی («درهم») کوچک‌تر تا در دایره جا شود.
+                fontSize = (size.value * (if (v.glyph.length >= 4) 0.30f else 0.42f)).sp,
                 fontWeight = FontWeight.Black,
                 maxLines = 1,
             )
