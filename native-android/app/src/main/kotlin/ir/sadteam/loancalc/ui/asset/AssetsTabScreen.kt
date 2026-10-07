@@ -1,5 +1,8 @@
 package ir.sadteam.loancalc.ui.asset
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.ui.focus.focusRequester
 import ir.sadteam.loancalc.ui.components.AutoShrinkText
 import ir.sadteam.loancalc.ui.components.guideTarget
 import androidx.compose.foundation.layout.height
@@ -179,6 +182,9 @@ fun AssetsTabScreen(
     var editAccount by rememberSaveable(stateSaver = idSaver) { mutableStateOf<Long?>(null) }
 
     var query by rememberSaveable { mutableStateOf("") }
+    // ۱۶ مهر: نوارِ جستجو یک ردیفِ کامل می‌گرفت؛ حالا پشتِ ذره‌بینِ سربرگ است.
+    var searchOpen by rememberSaveable { mutableStateOf(false) }
+    var showWealthDetail by rememberSaveable { mutableStateOf(false) }
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     var buyEntry by remember { mutableStateOf<AssetCatalogEntry?>(null) }
     val changes by assetViewModel.monthChange.collectAsState()
@@ -306,6 +312,11 @@ fun AssetsTabScreen(
                     onTogglePrivacy = { privacyViewModel.toggle() },
                     onPrices = { showPrices = true },
                     onAdd = { showAddAsset = true },
+                    searching = searchOpen,
+                    onSearch = {
+                        searchOpen = !searchOpen
+                        if (!searchOpen) query = ""
+                    },
                     showActions = !nothingYet,
                 )
             }
@@ -325,6 +336,7 @@ fun AssetsTabScreen(
                     trendIsReal = trendIsReal,
                     trendPercent = cashTrendPercent,
                     privacyMode = privacyMode,
+                    onOpen = if (wealthSnapshots.size >= 5) ({ showWealthDetail = true }) else null,
                     onPill = { key ->
                         if (key == PILL_CASH) {
                             // پولِ نقد از حساب‌ها میاد، پس «اصلاحِ رقم» یعنی رفتن به حسابِ نقدی.
@@ -367,7 +379,7 @@ fun AssetsTabScreen(
 
             // 🐞 (۱۵ مهر) کلیدِ ثابت: بی کلید، با اولین حرف فهرستِ حساب‌ها بالای این ردیف حذف می‌شد،
             // جای ردیف عوض می‌شد و کادر از نو ساخته می‌شد - کیبورد می‌رفت.
-            item(key = "search") { AssetSearchBar(query) { query = it } }
+            if (searchOpen || query.isNotEmpty()) item(key = "search") { AssetSearchBar(query) { query = it } }
 
             val q = query.trim()
             val browsing = filter == null && q.isEmpty()
@@ -433,9 +445,7 @@ fun AssetsTabScreen(
                 }
             }
             // روندِ کلِ دارایی در طولِ زمان (۸ مهر) - آخرِ فهرست تا شاخصِ اسکرولِ بالا جابه‌جا نشود.
-            if (browsing && wealthSnapshots.size >= 5) {
-                item { WealthHistoryCard(wealthSnapshots, privacyMode) }
-            }
+            // ۱۶ مهر: کارتِ جدا حذف شد (نمودارِ بالا را تکرار می‌کرد)؛ با زدنِ کارتِ بالا باز می‌شود.
         }
 
         // دکمه‌ی «+» شناور (طرحِ ChatGPT) - بالای نوارِ پایین.
@@ -503,6 +513,25 @@ fun AssetsTabScreen(
                 )
                 AssetTradeSheet(onDismiss = { showAddAsset = false }, viewModel = assetViewModel)
         }
+        SubScreen(if (showWealthDetail) Unit else null) { _ ->
+            androidx.activity.compose.BackHandler { showWealthDetail = false }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(ir.sadteam.loancalc.ui.theme.AppBg)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.IconButton(onClick = { showWealthDetail = false }) {
+                        Icon(Icons.Filled.ArrowForward, "بازگشت", tint = AppText)
+                    }
+                    Text("روندِ کلِ دارایی", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                }
+                WealthHistoryCard(wealthSnapshots, privacyMode)
+            }
+        }
         SubScreen(if (showPrices) Unit else null) { _ ->
                 MarketPricesScreen(onBack = { showPrices = false }, viewModel = assetViewModel)
         }
@@ -529,6 +558,8 @@ private fun AssetsHeader(
     onTogglePrivacy: () -> Unit,
     onPrices: () -> Unit,
     onAdd: () -> Unit,
+    searching: Boolean = false,
+    onSearch: () -> Unit = {},
     showActions: Boolean = true,
 ) {
     Row(
@@ -563,6 +594,14 @@ private fun AssetsHeader(
                 fill = AppIconFrame,
                 ink = AppMuted,
                 onClick = onPrices,
+            )
+            HeaderRoundAction(
+                icon = Icons.Filled.Search,
+                label = "جستجو",
+                description = "جستجوی دارایی",
+                fill = if (searching) AppPrimaryPill else AppIconFrame,
+                ink = if (searching) AppPrimaryInk else AppMuted,
+                onClick = onSearch,
             )
             HeaderRoundAction(
                 icon = Icons.Filled.Add,
@@ -725,9 +764,10 @@ private fun TotalWealthHero(
     trendIsReal: Boolean,
     trendPercent: Int?,
     privacyMode: Boolean,
+    onOpen: (() -> Unit)? = null,
     onPill: (String) -> Unit,
 ) {
-    AppHeroCard {
+    AppHeroCard(modifier = if (onOpen != null) Modifier.pressScaleClickable(onClick = onOpen) else Modifier) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -820,7 +860,9 @@ private fun TotalWealthHero(
                 // برچسبِ دو سرِ محور، مثلِ کارتِ خانه - جای قرصِ بزرگِ قبلی که کارت را بلند می‌کرد.
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
                     Text("امروز", color = HeroMuted, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
-                    Box(modifier = Modifier.weight(1f))
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        if (onOpen != null) Text("نمودارِ کامل ‹", color = Color.White.copy(alpha = 0.85f), fontSize = 9.5.sp, fontWeight = FontWeight.Black)
+                    }
                     Text(
                         // صادقانه: تا وقتی عکسِ روزانه جمع نشده، نمودار فقط نقد را می‌گوید.
                         if (trendIsReal) "۳۰ روزِ گذشته" else "نقدِ ۳۰ روزِ گذشته",
@@ -1222,6 +1264,8 @@ internal fun MiniTrend(symbol: String, change: Double?, viewModel: AssetViewMode
 @Composable
 private fun AssetSearchBar(value: String, onChange: (String) -> Unit) {
     val shape = RoundedCornerShape(999.dp)
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -1238,7 +1282,7 @@ private fun AssetSearchBar(value: String, onChange: (String) -> Unit) {
             singleLine = true,
             textStyle = androidx.compose.ui.text.TextStyle(color = AppText, fontSize = 12.5.sp),
             cursorBrush = androidx.compose.ui.graphics.SolidColor(AppPrimary),
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).focusRequester(focus),
             decorationBox = { inner ->
                 if (value.isEmpty()) {
                     Text("جستجو (مثلاً دلار، طلا، بیت‌کوین…)", color = AppMuted, fontSize = 12.sp)
