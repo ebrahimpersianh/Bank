@@ -35,13 +35,20 @@ class NotificationsViewModel @Inject constructor(
     val dangReminderEnabled: StateFlow<Boolean> = uiPrefs.dangReminderEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    /** یادآورِ دنگ مستقل است: با روشن‌بودنش زمان‌بندی زنده می‌ماند، حتی اگر دو یادآورِ دیگر خاموش باشند. */
     fun setDangReminderEnabled(value: Boolean) {
-        viewModelScope.launch { uiPrefs.setDangReminderEnabled(value) }
+        viewModelScope.launch {
+            uiPrefs.setDangReminderEnabled(value)
+            if (value) reminderScheduler.schedule() else if (!anyReminderOn()) reminderScheduler.cancel()
+        }
     }
+
+    private suspend fun anyReminderOn(): Boolean =
+        uiPrefs.notificationsEnabled.first() || uiPrefs.dailyExpenseReminderEnabled.first() || uiPrefs.dangReminderEnabled.first()
 
     init {
         viewModelScope.launch {
-            if (uiPrefs.notificationsEnabled.first() || uiPrefs.dailyExpenseReminderEnabled.first()) {
+            if (anyReminderOn()) {
                 reminderScheduler.schedule()
             }
         }
@@ -58,7 +65,7 @@ class NotificationsViewModel @Inject constructor(
     fun disable() {
         viewModelScope.launch {
             uiPrefs.setNotificationsEnabled(false)
-            if (!uiPrefs.dailyExpenseReminderEnabled.first()) reminderScheduler.cancel()
+            if (!anyReminderOn()) reminderScheduler.cancel()
         }
     }
 
@@ -72,7 +79,7 @@ class NotificationsViewModel @Inject constructor(
     fun disableDailyExpenseReminder() {
         viewModelScope.launch {
             uiPrefs.setDailyExpenseReminderEnabled(false)
-            if (!uiPrefs.notificationsEnabled.first()) reminderScheduler.cancel()
+            if (!anyReminderOn()) reminderScheduler.cancel()
         }
     }
 }

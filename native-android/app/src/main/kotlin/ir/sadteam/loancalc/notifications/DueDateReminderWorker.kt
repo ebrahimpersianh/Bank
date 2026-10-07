@@ -121,7 +121,11 @@ class DueDateReminderWorker @AssistedInject constructor(
         var dueCount = 0
 
         val today = JalaliCalendar.today()
-        loanRepository.getLoans().forEach { loan ->
+        // 🚨 این worker حالا برای یادآورِ دنگ هم زنده می‌ماند؛ پس خودِ یادآورهای سررسید باید با
+        // کلیدِ خودشان گیت شوند، وگرنه کسی که «یادآوریِ سررسید» را خاموش کرده بود دوباره می‌گرفت.
+        val dueRemindersOn = uiPrefs.notificationsEnabled.first()
+        val dailyOn = uiPrefs.dailyExpenseReminderEnabled.first()
+        (if (dueRemindersOn) loanRepository.getLoans() else emptyList()).forEach { loan ->
             val offsets = loan.reminderDayOffsets?.let { parseReminderOffsets(it) } ?: defaultOffsets
             if (offsets.isEmpty()) return@forEach
             loanRepository.getRows(loan).forEach { row ->
@@ -144,7 +148,7 @@ class DueDateReminderWorker @AssistedInject constructor(
 
         // پورت «یادآوری هوشمند سررسید چک» رقیب - همون منطق، فقط رو چک‌های وضع‌نشده (بایگانی‌نشده)
         // به‌جای قسط وام.
-        chequeRepository.getAllCheques()
+        (if (dueRemindersOn) chequeRepository.getAllCheques() else emptyList())
             .filter { it.status == "PENDING" && !it.archived }
             .forEach { cheque ->
                 val offsets = cheque.reminderDayOffsets?.let { parseReminderOffsets(it) } ?: defaultOffsets
@@ -164,7 +168,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         // پرداختِ تکراری‌ای که این ماه «ثبتِ پرداختِ این ماه» خورده، یادآور نمی‌خواهد.
         val paidRecurring = accountRepository.observeTransactions().first()
             .filter { it.sourceType == "recurring" }.mapNotNull { it.sourceId }.toSet()
-        accountRepository.getRecurringPayments().forEach { payment ->
+        (if (dueRemindersOn) accountRepository.getRecurringPayments() else emptyList()).forEach { payment ->
             if ("${payment.id}:${today.y}-${today.m}" in paidRecurring) return@forEach
             val offsets = payment.reminderDayOffsets?.let { parseReminderOffsets(it) } ?: defaultOffsets
             if (offsets.isEmpty()) return@forEach
@@ -179,7 +183,7 @@ class DueDateReminderWorker @AssistedInject constructor(
         }
 
         // قبض‌ها (۶ مهر): سه روز مانده، یک روز مانده و روزِ موعد - تا وقتی «پرداخت شد» نخورده.
-        runCatching { billDao.getAll() }.getOrDefault(emptyList()).forEach { bill ->
+        (if (dueRemindersOn) runCatching { billDao.getAll() }.getOrDefault(emptyList()) else emptyList()).forEach { bill ->
             val left = bill.dueDay - today.d
             val periodOk = bill.periodMonths <= 1 || (today.m - 1) % bill.periodMonths == 0
             if (periodOk && bill.lastPaidKey != "${today.y}-${today.m}" && left in setOf(3, 1, 0) &&
@@ -203,7 +207,7 @@ class DueDateReminderWorker @AssistedInject constructor(
             val cal = java.util.Calendar.getInstance()
             val prefs = applicationContext.getSharedPreferences("weekly_summary", android.content.Context.MODE_PRIVATE)
             val weekKey = cal.get(java.util.Calendar.YEAR) * 100 + cal.get(java.util.Calendar.WEEK_OF_YEAR)
-            if (cal.get(java.util.Calendar.DAY_OF_WEEK) == java.util.Calendar.FRIDAY && prefs.getInt("sent", 0) != weekKey) {
+            if ((dueRemindersOn || dailyOn) && cal.get(java.util.Calendar.DAY_OF_WEEK) == java.util.Calendar.FRIDAY && prefs.getInt("sent", 0) != weekKey) {
                 val txs = accountRepository.observeTransactions().first()
                     .filter { ir.sadteam.loancalc.data.countsInReports(it) && it.confirmed }
                     .map {
