@@ -825,7 +825,8 @@ private val ADOPTION_LABELS = mapOf(
     "achievements" to "نشان",
 )
 
-private val PLAN_LABELS = mapOf("1m" to "یک‌ماهه", "3m" to "سه‌ماهه", "6m" to "شش‌ماهه", "1y" to "یک‌ساله")
+// «?» = اشتراکِ بی پلن: ۳۰ روزِ رایگانِ کاربرِ تازه یا روزهای هدیه (۱۶ مهر).
+private val PLAN_LABELS = mapOf("1m" to "یک‌ماهه", "3m" to "سه‌ماهه", "6m" to "شش‌ماهه", "1y" to "یک‌ساله", "?" to "رایگان/هدیه")
 
 /** 💰 فروشِ واقعی (تأییدشده‌ی سرور) + مسیرِ خرید - کاغذِ طلایی، جزئیات در چهار زیربخشِ جمع‌شونده. */
 @Composable
@@ -848,7 +849,9 @@ private fun SalesCard(st: AdminStatsResponse) {
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
-            GoldStat("مشترکِ فعال", adminNum(st.activeSubscribers), "نفر", Modifier.weight(1f), Icons.Filled.Groups)
+            // فقط پولی‌ها؛ رایگان/هدیه جدا زیرِ کاشی‌ها گفته می‌شود (قبلاً ۷۹۷ با رایگان‌ها قاطی بود).
+            val freeTier = st.activeByTier.orEmpty().filter { it.name == "?" }.sumOf { it.count }
+            GoldStat("مشترکِ پولی", adminNum(st.activeSubscribers - freeTier), "نفر", Modifier.weight(1f), Icons.Filled.Groups)
             GoldStat("فروشِ ۳۰ روز", adminNum(sales.sumOf { it.count30 }), "خرید", Modifier.weight(1f), Icons.Filled.ShoppingCart)
             GoldStat("درآمدِ ۳۰ روز", adminNum(sales.sumOf { it.tomans30.toLong() }), "تومان", Modifier.weight(1.2f), Icons.Filled.Savings)
         }
@@ -856,7 +859,7 @@ private fun SalesCard(st: AdminStatsResponse) {
             Modifier.padding(top = 10.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).border(1.dp, AppGoldBorder, RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("کلِ عمر: ${adminNum(sales.sumOf { it.countAll })} خرید · ${adminNum(sales.sumOf { it.tomansAll.toLong() })} تومان", color = AppGoldInk2, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("${adminNum(st.activeByTier.orEmpty().filter { it.name == "?" }.sumOf { it.count })} نفر در دوره‌ی رایگان/هدیه · کلِ عمر: ${adminNum(sales.sumOf { it.countAll })} خرید · ${adminNum(sales.sumOf { it.tomansAll.toLong() })} تومان", color = AppGoldInk2, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             Icon(Icons.Filled.Info, null, tint = AppGoldInk2, modifier = Modifier.size(20.dp))
         }
     }
