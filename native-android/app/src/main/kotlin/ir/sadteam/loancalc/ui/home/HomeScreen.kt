@@ -1126,7 +1126,7 @@ private fun MonthBudgetCard(
     onClick: () -> Unit,
 ) {
     val ratio = (spent / cap).toFloat().coerceIn(0f, 1f)
-    val percent = (ratio * 100).toInt()
+    val percent = kotlin.math.round(spent / cap * 100).toInt()
     val projected = if (dayOfMonth > 0) spent / dayOfMonth * daysInMonth else 0.0
     val leftover = cap - projected
 
@@ -1198,9 +1198,10 @@ private fun BudgetBarWithCoin(ratio: Float, modifier: Modifier = Modifier) {
                 .clip(RoundedCornerShape(999.dp))
                 .background(track),
         )
-        Box(
+        // ۱۶ مهر: پرشده تا خودِ سکه می‌رسد - با درصدِ کم سکه رویش می‌نشست و نوار خالی دیده می‌شد.
+        if (ratio > 0f) Box(
             modifier = Modifier
-                .fillMaxWidth(ratio.coerceIn(0f, 1f))
+                .fillMaxWidth(if (ratio >= 1f) 1f else ratio.coerceIn(0.06f, 0.94f))
                 .height(14.dp)
                 .clip(RoundedCornerShape(999.dp))
                 .background(

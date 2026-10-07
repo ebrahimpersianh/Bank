@@ -250,7 +250,7 @@ fun BudgetTabScreen(
             contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 110.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { BudgetHeader(onAdd = { openAddBudget() }, showAdd = rows.isNotEmpty()) }
+            item { BudgetHeader(onAdd = { openAddBudget() }, showAdd = false) }
             if (rows.isEmpty()) {
                 item { NoBudgetCard(onCreate = { openAddBudget() }) }
                 if (starterSuggestions.isNotEmpty()) {
@@ -385,6 +385,14 @@ fun BudgetTabScreen(
                 undoTransfer = null
             }
         }
+        // ۱۶ مهر: «+» مثلِ خانه و دارایی پایینِ صفحه (خواسته‌ی کاربر)، نه بالای هدر.
+        if (rows.isNotEmpty()) ir.sadteam.loancalc.ui.components.AppFab(
+            onClick = { openAddBudget() },
+            contentDescription = "افزودنِ بودجه",
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 16.dp, bottom = 16.dp),
+        )
     }
 
     if (showAddBudget || suggestionCategory != null) {
@@ -773,8 +781,9 @@ private fun MonthTotalCard(
             Box(
                 modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(999.dp)).background(RailTrack),
             ) {
-                Box(
+                if (clamped > 0f) Box(
                     modifier = Modifier
+                        .widthIn(min = 22.dp)
                         .fillMaxWidth(clamped)
                         .height(10.dp)
                         .clip(RoundedCornerShape(999.dp))
