@@ -311,7 +311,6 @@ fun AssetsTabScreen(
                     privacyMode = privacyMode,
                     onTogglePrivacy = { privacyViewModel.toggle() },
                     onPrices = { showPrices = true },
-                    onAdd = { showAddAsset = true },
                     searching = searchOpen,
                     onSearch = {
                         searchOpen = !searchOpen
@@ -557,7 +556,6 @@ private fun AssetsHeader(
     privacyMode: Boolean,
     onTogglePrivacy: () -> Unit,
     onPrices: () -> Unit,
-    onAdd: () -> Unit,
     searching: Boolean = false,
     onSearch: () -> Unit = {},
     showActions: Boolean = true,
@@ -603,14 +601,7 @@ private fun AssetsHeader(
                 ink = if (searching) AppPrimaryInk else AppMuted,
                 onClick = onSearch,
             )
-            HeaderRoundAction(
-                icon = Icons.Filled.Add,
-                label = "افزودن",
-                description = "افزودنِ دارایی",
-                fill = AppPrimaryPill,
-                ink = AppPrimaryInk,
-                onClick = onAdd,
-            )
+            // «افزودن» اینجا نیست: دکمه‌ی شناورِ «+» همین کار را می‌کند (تکراری بود، ۱۵ مهر).
         }
     }
 }
