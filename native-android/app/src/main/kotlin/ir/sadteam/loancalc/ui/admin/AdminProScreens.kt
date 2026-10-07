@@ -25,6 +25,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.CircularProgressIndicator
@@ -230,6 +236,7 @@ fun AdminUserScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
     var listFailed by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<AdminUserTimeline?>(null) }
+    var resultPhone by remember { mutableStateOf<Pair<String, String?>?>(null) }
     var failed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(query) {
@@ -257,7 +264,7 @@ fun AdminUserScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
     ) {
         val r = result
         if (r != null) {
-            if (!r.found) Text("کاربری با این شماره پیدا نشد.", color = AppDangerInk) else UserResult(r)
+            if (!r.found) Text("کاربری با این شماره پیدا نشد.", color = AppDangerInk) else UserResult(r, resultPhone?.first, resultPhone?.second)
             return@AdminPage
         }
         if (searchOpen) {
@@ -307,6 +314,7 @@ fun AdminUserScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
                         AppCard(
                             modifier = Modifier.clickable {
                                 loading = true; failed = false
+                                resultPhone = u.phone to u.store
                                 scope.launch { result = vm.repo.adminUser(u.code); failed = result == null; loading = false }
                             },
                         ) {
@@ -362,38 +370,100 @@ private fun seenLocal(u: ir.sadteam.loancalc.data.network.AdminUserRow): Pair<ir
 
 @Composable
 private fun InfoLine(icon: androidx.compose.ui.graphics.vector.ImageVector, color: androidx.compose.ui.graphics.Color, label: String, value: String) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
-        Text(label, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f).padding(start = 10.dp))
-        Text(value, color = AppMuted, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+    // ۱۶ مهر (طرح): هر ردیف قابِ گرد با آیکونِ رنگیِ مربعی.
+    Row(
+        Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(16.dp)).background(AppSurface2.copy(alpha = 0.6f))
+            .border(1.dp, AppLineRow, RoundedCornerShape(16.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Text(value, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 12.dp))
+        Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(color.copy(alpha = 0.85f)), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(22.dp))
+        }
     }
 }
 
 @Composable
-private fun UserResult(r: AdminUserTimeline) {
-    val subscribed = r.subscribedUntil != null
-    AppCard {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Ltr { Text("Uid:${r.code}", color = AppText, fontSize = 17.sp, fontWeight = FontWeight.Black) }
-                Text("ثبت‌نام ${adminDay(r.createdAt)}", color = AppMuted, fontSize = 11.5.sp)
-            }
-            Text(
-                if (subscribed) "اشتراک تا ${adminDay(r.subscribedUntil)}" else "بی اشتراک",
-                color = if (subscribed) AppGoldInkSoft else AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.Black,
-                modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(if (subscribed) AppGoldPillSoft else AppSurface2).padding(horizontal = 10.dp, vertical = 4.dp),
-            )
+private fun UserStatTile(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: androidx.compose.ui.graphics.Color, modifier: Modifier, onClick: (() -> Unit)?) {
+    Column(
+        modifier.clip(RoundedCornerShape(18.dp)).background(AppSurface2.copy(alpha = 0.6f)).border(1.dp, AppLineRow, RoundedCornerShape(18.dp))
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(12.dp),
+    ) {
+        Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(color.copy(alpha = 0.25f)), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
         }
-        Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KpiTile("روزِ فعال", adminNum(r.installs.sumOf { it.activeDays }), Modifier.weight(1f))
-            KpiTile("خرید", adminNum(r.purchases.size), Modifier.weight(1f))
-            KpiTile("پیامِ پشتیبانی", adminNum(r.supportCount), Modifier.weight(1f))
+        Text(label, color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.padding(top = 8.dp))
+        Text(value, color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black)
+    }
+}
+
+@Composable
+private fun UserResult(r: AdminUserTimeline, phone: String? = null, store: String? = null) {
+    val subscribed = r.subscribedUntil != null
+    var tab by remember(r.code) { mutableStateOf(0) }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    AppCard {
+        Row(verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f)) {
+                Ltr { Text("Uid:${r.code}", color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Black) }
+                // ۱۶ مهر: شماره‌ی موبایل زیرِ Uid - لمس = تماس.
+                if (!phone.isNullOrBlank()) Row(
+                    Modifier.padding(top = 4.dp).clip(RoundedCornerShape(999.dp))
+                        .background((if (store == "myket") androidx.compose.ui.graphics.Color(0xFF3F8EF0) else androidx.compose.ui.graphics.Color(0xFF2EAA62)).copy(alpha = 0.18f))
+                        .clickable { runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL, android.net.Uri.parse("tel:$phone"))) } }
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(androidx.compose.material.icons.Icons.Filled.Phone, null, tint = if (store == "myket") androidx.compose.ui.graphics.Color(0xFF3F8EF0) else androidx.compose.ui.graphics.Color(0xFF2EAA62), modifier = Modifier.size(16.dp))
+                    Ltr { Text(toFa(phone), color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 6.dp)) }
+                    Text(" · ${if (store == "myket") "مایکت" else "کافه‌بازار"}", color = AppMuted, fontSize = 11.sp)
+                }
+                Text("ثبت‌نام ${adminDay(r.createdAt)}", color = AppMuted, fontSize = 11.5.sp, modifier = Modifier.padding(top = 4.dp))
+            }
+            Row(
+                Modifier.clip(RoundedCornerShape(999.dp))
+                    .background(if (subscribed) AppGoldPillSoft else AppSurface2)
+                    .border(1.dp, if (subscribed) AppGoldBorder else AppLineRow, RoundedCornerShape(999.dp))
+                    .padding(horizontal = 12.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (subscribed) Icon(androidx.compose.material.icons.Icons.Filled.WorkspacePremium, null, tint = AppGoldInk, modifier = Modifier.padding(end = 5.dp).size(18.dp))
+                Text(
+                    if (subscribed) "اشتراک تا ${adminDay(r.subscribedUntil)}" else "بی اشتراک",
+                    color = if (subscribed) AppGoldInkSoft else AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Black,
+                )
+            }
+        }
+        Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            UserStatTile("روزِ فعال", adminNum(r.installs.sumOf { it.activeDays }), androidx.compose.material.icons.Icons.Filled.CalendarMonth, androidx.compose.ui.graphics.Color(0xFFA855F7), Modifier.weight(1f)) { tab = 2 }
+            UserStatTile("خرید", adminNum(r.purchases.size), androidx.compose.material.icons.Icons.Filled.ShoppingCart, androidx.compose.ui.graphics.Color(0xFFF59E0B), Modifier.weight(1f)) { tab = 1 }
+            UserStatTile("پیامِ پشتیبانی", adminNum(r.supportCount), androidx.compose.material.icons.Icons.Filled.Sms, androidx.compose.ui.graphics.Color(0xFF22C55E), Modifier.weight(1f), null)
         }
         r.lastSupport?.let { AdminNote("آخرین پیام: $it") }
     }
-    // زبانه‌ها مثلِ طرحِ ChatGPT (۱۰ مهر).
-    var tab by remember(r.code) { mutableStateOf(0) }
-    AdminTabs(tabs = listOf("خلاصه", "خرید", "فعالیت", "گوشی"), selected = tab, onSelect = { tab = it })
+    // زبانه‌های آیکون‌دار (طرحِ ۱۶ مهر).
+    val tabs = listOf(
+        "خلاصه" to androidx.compose.material.icons.Icons.Filled.Dashboard,
+        "خرید" to androidx.compose.material.icons.Icons.Filled.LocalOffer,
+        "فعالیت" to androidx.compose.material.icons.Icons.Filled.BarChart,
+        "گوشی" to androidx.compose.material.icons.Icons.Filled.PhoneAndroid,
+    )
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        tabs.forEachIndexed { i, (label, icon) ->
+            val sel = i == tab
+            Column(
+                Modifier.weight(1f).clip(RoundedCornerShape(18.dp))
+                    .background(if (sel) AppPrimary.copy(alpha = 0.22f) else AppSurface)
+                    .border(if (sel) 2.dp else 1.dp, if (sel) AppPrimary else AppLineRow, RoundedCornerShape(18.dp))
+                    .clickable { tab = i }.padding(vertical = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(icon, null, tint = if (sel) AppPrimary else AppMuted, modifier = Modifier.size(24.dp))
+                Text(label, color = if (sel) AppText else AppMuted, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 4.dp))
+            }
+        }
+    }
     if (tab == 0) AppCard(label = "اطلاعاتِ کلی") {
         val lastDay = r.installs.mapNotNull { it.lastDay }.maxOrNull()
         InfoLine(androidx.compose.material.icons.Icons.Filled.Person, androidx.compose.ui.graphics.Color(0xFF22C55E), "آخرین حضور", lastDay?.let { adminDay(it) } ?: "—")
@@ -436,9 +506,30 @@ private fun UserResult(r: AdminUserTimeline) {
         if (r.installs.size > 1) AdminSection("گوشی‌ها (${toFa(r.installs.size)})", r.installs.mapNotNull { it.model }.joinToString("، ")) { body() }
         else AppCard(label = "گوشی") { body() }
     }
-    if (r.topScreens.isNotEmpty()) AppCard(label = "بیشترین صفحه‌ها") {
+    if (r.topScreens.isNotEmpty()) AppCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(androidx.compose.ui.graphics.Color(0xFF10B981).copy(alpha = 0.85f)), contentAlignment = Alignment.Center) {
+                Icon(androidx.compose.material.icons.Icons.Filled.BarChart, null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(22.dp))
+            }
+            Text("بیشترین صفحه‌ها", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 10.dp))
+        }
         val max = r.topScreens.maxOf { it.count }.coerceAtLeast(1)
-        TopList(r.topScreens) { AdminBarRow(screenLabel(it.name), it.count.toFloat() / max, adminNum(it.count)) }
+        TopList(r.topScreens) {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(14.dp)).background(AppSurface2.copy(alpha = 0.6f))
+                    .border(1.dp, AppLineRow, RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(screenLabel(it.name), color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.width(72.dp))
+                Box(Modifier.weight(1f).height(10.dp).clip(RoundedCornerShape(99.dp)).background(AppSurface2)) {
+                    Box(
+                        Modifier.fillMaxWidth(it.count.toFloat() / max).fillMaxHeight().clip(RoundedCornerShape(99.dp))
+                            .background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(androidx.compose.ui.graphics.Color(0xFF22D3EE), androidx.compose.ui.graphics.Color(0xFF10B981)))),
+                    )
+                }
+                Text(adminNum(it.count), color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 10.dp))
+            }
+        }
     }
 }
 
