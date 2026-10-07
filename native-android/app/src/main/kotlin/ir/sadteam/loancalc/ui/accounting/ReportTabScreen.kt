@@ -195,7 +195,7 @@ fun ReportTabScreen(
     // دو عددِ حالتِ «هیچ کشفی نیست». همان فیلترِ `buildReportStats`: انتقالِ بینِ حساب‌ها
     // خرج نیست.
     val realExpenses = remember(transactions) {
-        transactions.netDangShares().filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type == "WITHDRAWAL" }
+        transactions.netDangShares().filter { ir.sadteam.loancalc.data.countsInReports(it) && it.type == "WITHDRAWAL" }
     }
     val checkedTxCount = remember(realExpenses, today) {
         realExpenses.count { it.year == today.y && it.month == today.m }
@@ -214,7 +214,7 @@ fun ReportTabScreen(
         transactions.filter { it.year == today.y && it.month == today.m }.sortedWith(compareBy({ it.day }, { it.id }))
     }
     // فهرستِ خروجی همه‌ی تراکنش‌هاست؛ جمعِ درآمد/خرج بی جابه‌جایی و خرید/فروشِ دارایی.
-    val monthReal = monthTx.netDangShares().filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES }
+    val monthReal = monthTx.netDangShares().filter { ir.sadteam.loancalc.data.countsInReports(it) }
     val monthIncome = monthReal.filter { it.type == "DEPOSIT" }.sumOf { it.amount }
     val monthExpense = monthReal.filter { it.type == "WITHDRAWAL" }.sumOf { it.amount }
     val monthBreakdown = monthReal.groupBy { it.category ?: "بدونِ دسته" }
@@ -1400,7 +1400,7 @@ private fun MonthCompareCard(all: List<ir.sadteam.loancalc.data.db.AccountTransa
     val (py, pm) = if (today.m == 1) (today.y - 1) to 12 else today.y to (today.m - 1)
     fun spend(y: Int, m: Int) = all.netDangShares().filter {
         it.confirmed && it.year == y && it.month == m && it.type == "WITHDRAWAL" &&
-            it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES
+            ir.sadteam.loancalc.data.countsInReports(it)
     }.groupBy { it.category ?: "بی‌دسته" }.mapValues { e -> e.value.sumOf { it.amount } }
     val now = spend(today.y, today.m)
     val prev = spend(py, pm)

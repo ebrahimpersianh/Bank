@@ -131,12 +131,16 @@ fun DebtScreen(
     // «این پول از/به کدام حساب رفت؟» - بعد از تسویه یا پرداختِ بخشی. رد کردن = ثبت نشود.
     data class MoneyPrompt(val sourceId: String, val amount: Double, val deposit: Boolean, val description: String, val dangTotal: Double = 0.0, val dangY: Int = 0, val dangM: Int = 0, val dangD: Int = 0)
     var moneyPrompt by remember { mutableStateOf<MoneyPrompt?>(null) }
+    val toastCtx = androidx.compose.ui.platform.LocalContext.current
     moneyPrompt?.let { p ->
         ir.sadteam.loancalc.ui.components.AccountPickerDialog(
             accounts = accounts,
             title = if (p.deposit) "این پول به کدام حساب آمد؟" else "این پول از کدام حساب رفت؟",
-            onSelect = { acc -> viewModel.recordMoney(acc.id, p.sourceId, p.amount, p.deposit, p.description, p.dangTotal, p.dangY, p.dangM, p.dangD); moneyPrompt = null },
+            onSelect = { acc -> viewModel.recordMoney(acc.id, p.sourceId, p.amount, p.deposit, p.description, p.dangTotal, p.dangY, p.dangM, p.dangD, onNoExpense = {
+                android.widget.Toast.makeText(toastCtx, "خرجِ این شام (همین مبلغ و همین روز) پیدا نشد؛ واریز ثبت شد ولی در گزارش از خرجِ شام کم نمی‌شود.", android.widget.Toast.LENGTH_LONG).show()
+            }); moneyPrompt = null },
             onDismiss = { moneyPrompt = null },
+            dismissHint = "حساب را انتخاب نکردی؛ این پول در موجودی و گزارش ثبت نشد.",
         )
     }
     var openedCounterpartyId by rememberSaveable { mutableStateOf(initialCounterpartyId) }
@@ -188,6 +192,7 @@ fun DebtScreen(
             )
             "dang-create" -> DangCreateScreen(
                 counterparties = counterparties,
+                expenses = viewModel.recentExpenses.collectAsState().value,
                 onCancel = { dangScreen = "list" },
                 onCreateCounterparty = { name, onCreated -> viewModel.addCounterparty(name, onResult = onCreated) },
                 onSave = { title, method, total, y, m, d, eventMode, participants, items ->

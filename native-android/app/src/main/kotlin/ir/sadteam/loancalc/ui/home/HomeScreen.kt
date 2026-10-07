@@ -283,7 +283,7 @@ fun HomeScreen(
     val todayIncome = remember(transactions) {
         transactions.filter {
             it.type == "DEPOSIT" && it.year == today.y && it.month == today.m && it.day == today.d &&
-                it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES
+                ir.sadteam.loancalc.data.countsInReports(it)
         }
             .sumOf { it.amount }
     }
@@ -314,7 +314,7 @@ fun HomeScreen(
     val insightCtx = androidx.compose.ui.platform.LocalContext.current
     val smartInsights = remember(transactions, accounts, upcoming7d, recurringForInsights) {
         val today = ir.sadteam.loancalc.core.JalaliCalendar.today()
-        val txs = transactions.netDangShares().filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.confirmed }.map {
+        val txs = transactions.netDangShares().filter { ir.sadteam.loancalc.data.countsInReports(it) && it.confirmed }.map {
             ir.sadteam.loancalc.core.SmartInsights.Tx(
                 isExpense = it.type == ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL.name,
                 amountRial = it.amount, y = it.year, m = it.month, d = it.day,
@@ -732,7 +732,7 @@ private fun TodaySpendSheet(
 /** خرجِ همون روز؟ (واریز خرج نیست.) */
 private fun AccountTransactionEntity.isExpenseOn(y: Int, m: Int, d: Int): Boolean =
     type != "DEPOSIT" && year == y && month == m && day == d &&
-        sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES
+        ir.sadteam.loancalc.data.countsInReports(this)
 
 // ═══ ۱ · هدر ═══════════════════════════════════════════════════════════════════
 /**
@@ -1568,7 +1568,7 @@ private fun buildHeroSeries(
     today: PersianDate,
     period: ReportPeriod,
 ): HeroSeries {
-    val expenses = transactions.netDangShares().filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type != "DEPOSIT" }
+    val expenses = transactions.netDangShares().filter { ir.sadteam.loancalc.data.countsInReports(it) && it.type != "DEPOSIT" }
     fun sumOfDay(d: PersianDate) =
         expenses.filter { it.year == d.y && it.month == d.m && it.day == d.d }.sumOf { it.amount }
     fun sumOfMonth(y: Int, m: Int) =

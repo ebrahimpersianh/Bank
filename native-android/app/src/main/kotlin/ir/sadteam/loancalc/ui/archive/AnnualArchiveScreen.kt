@@ -54,7 +54,7 @@ fun AnnualArchiveScreen(onBack: () -> Unit, accountViewModel: AccountViewModel =
     val transactions by accountViewModel.transactions.collectAsState()
     val privacyMode = LocalPrivacyMode.current
     val today = remember { JalaliCalendar.today() }
-    val years = remember(transactions) { transactions.filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES }.groupBy { it.year }.toSortedMap(compareByDescending { it }) }
+    val years = remember(transactions) { transactions.filter { ir.sadteam.loancalc.data.countsInReports(it) }.groupBy { it.year }.toSortedMap(compareByDescending { it }) }
     BackHandler(onBack = onBack)
     Box(modifier = Modifier.fillMaxSize().background(AppBg)) {
         LazyColumn(contentPadding = PaddingValues(14.dp, 12.dp, 14.dp, 40.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

@@ -85,7 +85,7 @@ fun buildReportStats(
     // علامت این‌جا خوانده نمی‌شد، پس جابه‌جاییِ دو میلیونی، هم‌زمان دو میلیون «خرج» و دو میلیون
     // «درآمد» شمرده می‌شد و کلِ گزارش و میانگینِ ماهانه را باد می‌کرد. در محاسبه‌ی **موجودیِ
     // حساب‌ها** این ردیف‌ها لازم‌اند و دست‌نخورده می‌مانند - فقط از تحلیلِ خرج بیرون می‌روند.
-    val realTransactions = transactions.netDangShares().filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES }
+    val realTransactions = transactions.netDangShares().filter { ir.sadteam.loancalc.data.countsInReports(it) }
     val expenses = realTransactions.filter { it.type == EXPENSE }
 
     // 🚨 **هفته با روز شمرده می‌شود، نه با ماه** - بازه‌ی تازه‌ی بندِ «هفته».

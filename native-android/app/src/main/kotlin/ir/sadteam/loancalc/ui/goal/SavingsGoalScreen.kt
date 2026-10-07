@@ -243,6 +243,7 @@ fun SavingsGoalScreen(
             title = if (delta >= 0) "این پول از کدام حساب کم شود؟ (بستن = فقط در هدف ثبت بماند)" else "این پول به کدام حساب برگردد؟ (بستن = فقط از هدف کم شود)",
             onSelect = { acc -> viewModel.recordGoalMoney(acc.id, goal.id, goal.title, delta); pendingGoalMoney = null },
             onDismiss = { pendingGoalMoney = null },
+            dismissHint = "حساب را انتخاب نکردی؛ فقط در هدف ثبت شد و از موجودی حساب کم نشد.",
         )
     }
 

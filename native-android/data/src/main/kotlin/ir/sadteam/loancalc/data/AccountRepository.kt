@@ -28,13 +28,16 @@ const val SOURCE_TYPE_TRANSFER = "transfer"
 
 /** نه خرج نه درآمد (گزارش‌ها): جابه‌جایی بینِ حساب‌ها، واریز/برداشت از هدفِ پس‌انداز، و خرید/فروشِ دارایی که فقط شکلِ پول را
  * عوض می‌کند (تصمیمِ کاربر، ۹ مهر). موجودیِ حساب همچنان کم/زیاد می‌شود. */
-val NON_SPENDING_SOURCES = setOf(SOURCE_TYPE_TRANSFER, "asset", "goal", "dang")
+val NON_SPENDING_SOURCES = setOf(SOURCE_TYPE_TRANSFER, "asset", "goal", "dang", "debt")
 
 /**
  * واریزِ سهمِ دوست‌ها در «دنگ» خرجِ شام را کم می‌کند (فقط در **گزارش‌ها**، نه موجودی).
  * شناسه‌ی واریز `dang-<سهم>@<شناسه‌ی خرجِ شام>` است؛ `@0` یعنی خرجی پیدا نشد و چیزی کم نمی‌شود.
  * نتیجه: خرجِ شامِ ۴ میلیونی با سه سهمِ ۱ میلیونی در گزارش ۱ میلیون (سهمِ خودت) می‌شود.
  */
+/** «این تراکنش در گزارش‌ها خرج/درآمد حساب می‌شود؟» - **تنها** جای این تصمیم؛ همه‌ی گزارش‌ها از همین می‌پرسند. */
+fun countsInReports(t: AccountTransactionEntity): Boolean = t.sourceType !in NON_SPENDING_SOURCES
+
 fun List<AccountTransactionEntity>.netDangShares(): List<AccountTransactionEntity> {
     val cut = HashMap<Long, Double>()
     for (t in this) {
@@ -416,7 +419,7 @@ class AccountRepository(
         observeTransactions().first()
             .filter {
                 it.type == TransactionType.WITHDRAWAL.name && it.confirmed &&
-                    it.sourceType !in NON_SPENDING_SOURCES &&
+                    countsInReports(it) &&
                     kotlin.math.abs(it.amount - total) < 1.0 && it.year == y && it.month == m &&
                     kotlin.math.abs(it.day - d) <= 1
             }
@@ -627,7 +630,7 @@ class AccountRepository(
     ): Map<String, Double> =
         transactions
             .filter { accountId == null || it.accountId == accountId }
-            .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == year && it.month == month && !it.category.isNullOrBlank() && it.sourceType !in NON_SPENDING_SOURCES }
+            .filter { it.type == TransactionType.WITHDRAWAL.name && it.year == year && it.month == month && !it.category.isNullOrBlank() && countsInReports(it) }
             .groupBy { it.category!! }
             .mapValues { (_, list) -> list.sumOf { it.amount } }
 

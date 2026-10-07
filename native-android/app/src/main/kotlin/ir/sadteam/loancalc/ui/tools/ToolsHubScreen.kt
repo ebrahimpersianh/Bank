@@ -69,7 +69,7 @@ fun ToolsHubScreen(
     val subscriptions = remember(transactions) {
         RecurringDetector.detect(
             transactions
-                .filter { it.type == TransactionType.WITHDRAWAL.name && it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES }
+                .filter { it.type == TransactionType.WITHDRAWAL.name && ir.sadteam.loancalc.data.countsInReports(it) }
                 .map {
                     RecurringInput(
                         description = it.description,

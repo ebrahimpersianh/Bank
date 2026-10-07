@@ -27,9 +27,16 @@ fun AccountPickerDialog(
     onSelect: (AccountEntity) -> Unit,
     onDismiss: () -> Unit,
     title: String = "از کدوم حساب پرداخت کردی؟",
+    dismissHint: String? = null,
 ) {
+    // بستنِ پنجره = بی‌حساب. اگر فراخوان بخواهد، به کاربر می‌گوید چه اتفاقی افتاد (نه بی‌صدا).
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val dismiss = {
+        dismissHint?.let { android.widget.Toast.makeText(ctx, it, android.widget.Toast.LENGTH_LONG).show() }
+        onDismiss()
+    }
     JibakAlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = dismiss,
         title = { Text(title) },
         text = {
             Column {
@@ -61,7 +68,7 @@ fun AccountPickerDialog(
         },
         confirmButton = {},
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("انصراف") }
+            TextButton(onClick = dismiss) { Text("انصراف") }
         },
     )
 }

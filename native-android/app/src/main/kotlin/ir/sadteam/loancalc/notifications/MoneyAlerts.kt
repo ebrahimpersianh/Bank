@@ -155,7 +155,7 @@ class WeeklySummaryWorker @AssistedInject constructor(
         if (prefs.getString("last", null) == weekKey) return Result.success()
 
         // جابه‌جایی بینِ حساب‌های خودِ کاربر نه خرج است نه درآمد (بازبینیِ ۹ مهر).
-        val txs = repo.observeTransactions().first().filter { it.confirmed && it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES }
+        val txs = repo.observeTransactions().first().filter { it.confirmed && ir.sadteam.loancalc.data.countsInReports(it) }
         fun key(y: Int, m: Int, d: Int) = y * 10_000 + m * 100 + d
         val days = (0..6).map { PersianCalendar.addDays(today, -it) }.map { key(it.y, it.m, it.d) }.toSet()
         val prevDays = (7..13).map { PersianCalendar.addDays(today, -it) }.map { key(it.y, it.m, it.d) }.toSet()

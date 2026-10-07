@@ -214,7 +214,7 @@ class AccountViewModel @Inject constructor(
         // دو ردیف می‌سازد (برداشت + واریز) و بی این فیلتر، گزارشِ ماه هم ۱۰ میلیون درآمد
         // نشان می‌داد هم ۱۰ میلیون هزینه - در حالی که هیچ پولی وارد یا خارج نشده.
         val forMonth = allTransactions.netDangShares().filter {
-            it.year == year && it.month == month && it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES
+            it.year == year && it.month == month && ir.sadteam.loancalc.data.countsInReports(it)
         }
         val income = forMonth.filter { it.type == TransactionType.DEPOSIT.name }.sumOf { it.amount }
         val expense = forMonth.filter { it.type == TransactionType.WITHDRAWAL.name }.sumOf { it.amount }

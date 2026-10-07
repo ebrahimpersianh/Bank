@@ -10,6 +10,7 @@ import ir.sadteam.loancalc.data.db.CounterpartyEntity
 import ir.sadteam.loancalc.data.db.DebtEntity
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -26,11 +27,14 @@ class DebtViewModel @Inject constructor(
     fun recordMoney(
         accountId: Long, sourceId: String, amount: Double, deposit: Boolean, description: String,
         dangTotal: Double = 0.0, dangY: Int = 0, dangM: Int = 0, dangD: Int = 0,
+        onNoExpense: () -> Unit = {},
     ) {
         viewModelScope.launch {
             // سهمِ دنگ: خرجِ شام را پیدا کن تا در گزارش از آن کم شود. شناسه = «dang-<سهم>@<خرج>».
             val sid = if (sourceId.startsWith("dang-")) {
-                "$sourceId@" + if (dangTotal > 0) accountRepository.findDangExpenseId(dangTotal, dangY, dangM, dangD) else 0L
+                val expenseId = if (dangTotal > 0) accountRepository.findDangExpenseId(dangTotal, dangY, dangM, dangD) else 0L
+                if (expenseId == 0L) onNoExpense()
+                "$sourceId@$expenseId"
             } else sourceId
             accountRepository.recordLinkedPayment(accountId, sourceTypeOf(sourceId), sid, amount, description, deposit, category = "طلب و بدهی")
         }
@@ -45,6 +49,18 @@ class DebtViewModel @Inject constructor(
             else accountRepository.removeLinkedPayment(sourceTypeOf(sourceId), sourceId)
         }
     }
+
+    /** خرج‌های اخیر - برای «این دنگ مالِ کدام خرج است؟» (۴۰ مورد، تازه‌ترین اول). */
+    val recentExpenses: StateFlow<List<ir.sadteam.loancalc.data.db.AccountTransactionEntity>> =
+        accountRepository.observeTransactions()
+            .map { all ->
+                all.filter {
+                    it.type == "WITHDRAWAL" && it.confirmed && ir.sadteam.loancalc.data.countsInReports(it)
+                }.sortedWith(compareByDescending<ir.sadteam.loancalc.data.db.AccountTransactionEntity> { it.year }
+                    .thenByDescending { it.month }.thenByDescending { it.day }.thenByDescending { it.id })
+                    .take(40)
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val counterparties: StateFlow<List<CounterpartyEntity>> = debtRepository.observeCounterparties()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

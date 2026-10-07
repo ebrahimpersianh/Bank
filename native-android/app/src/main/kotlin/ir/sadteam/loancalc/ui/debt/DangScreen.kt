@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.TextButton
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -441,6 +444,7 @@ private fun DangReceiptCard(
 @Composable
 fun DangCreateScreen(
     counterparties: List<CounterpartyEntity>,
+    expenses: List<ir.sadteam.loancalc.data.db.AccountTransactionEntity> = emptyList(),
     onCancel: () -> Unit,
     onCreateCounterparty: (name: String, onCreated: (Long) -> Unit) -> Unit,
     onSave: (
@@ -465,6 +469,40 @@ fun DangCreateScreen(
     var day by rememberSaveable { mutableStateOf(today.d) }
     var error by remember { mutableStateOf<String?>(null) }
     var showAddParticipant by remember { mutableStateOf(false) }
+    var showExpensePicker by remember { mutableStateOf(false) }
+    var pickedExpenseId by rememberSaveable { mutableStateOf(0L) }
+    if (showExpensePicker) {
+        ir.sadteam.loancalc.ui.components.JibakAlertDialog(
+            onDismissRequest = { showExpensePicker = false },
+            title = { Text("کدام خرج؟") },
+            text = {
+                LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+                    items(expenses.size) { i ->
+                        val e = expenses[i]
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                                .clickable {
+                                    pickedExpenseId = e.id
+                                    title = e.description.take(40)
+                                    totalText = (e.amount / 10).toLong().toString()
+                                    year = e.year; month = e.month; day = e.day
+                                    showExpensePicker = false
+                                }
+                                .padding(vertical = 10.dp),
+                        ) {
+                            Text(e.description.ifBlank { "خرج" }, color = AppText, fontWeight = FontWeight.Bold, maxLines = 1)
+                            Text(
+                                "${fmt(e.amount / 10)} تومان · ${toFa(e.year)}/${toFa(e.month)}/${toFa(e.day)}",
+                                color = AppMuted, fontSize = 11.sp,
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showExpensePicker = false }) { Text("انصراف") } },
+        )
+    }
 
     val participants = remember { mutableStateOf(listOf(DangParticipantDraft(counterpartyId = null, name = ME_NAME))) }
     val items = remember { mutableStateOf(listOf<DangItemDraft>()) }
@@ -482,6 +520,21 @@ fun DangCreateScreen(
                     Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
                 }
                 Text("دنگِ جدید", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        if (expenses.isNotEmpty()) {
+            item {
+                AppCard(label = "این دنگ مالِ کدام خرج است؟") {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            "خرجی که قبلاً ثبت کرده‌ای را انتخاب کن تا مبلغ و تاریخ خودکار پر شود و در گزارش فقط سهمِ خودت حساب شود.",
+                            color = AppMuted, fontSize = 11.sp,
+                        )
+                        OutlinedButton(onClick = { showExpensePicker = true }, modifier = Modifier.fillMaxWidth()) {
+                            Text(if (pickedExpenseId == 0L) "انتخابِ خرج" else "✓ خرج انتخاب شد · تغییر")
+                        }
+                    }
+                }
             }
         }
         item {
