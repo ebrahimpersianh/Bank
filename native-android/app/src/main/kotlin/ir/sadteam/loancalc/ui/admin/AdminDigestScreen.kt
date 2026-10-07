@@ -17,8 +17,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.ExpandMore
@@ -177,25 +184,41 @@ fun AdminDigestScreen(onBack: () -> Unit, vm: AdminDigestViewModel = hiltViewMod
 
 @Composable
 private fun DigestBody(d: AdminDigestResponse) {
-    Text("${toFa(d.fromIran)} تا ${toFa(d.toIran)} · مقایسه با دوره‌ی قبل", color = AppMuted, fontSize = 11.5.sp, modifier = Modifier.padding(horizontal = 4.dp))
-    AdminAlerts(d.notes.map { digestNoteIcon(it) to digestNoteText(it) })
+    // ۱۶ مهر: بازطراحی طبقِ طرح (کاشی‌های آیکون‌دار، نمودار با محور، ردیف‌های رنگی).
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 4.dp)) {
+        Icon(Icons.Filled.CalendarMonth, null, tint = AppMuted, modifier = Modifier.size(18.dp))
+        Text("${toFa(d.fromIran)} تا ${toFa(d.toIran)} · مقایسه با دوره‌ی قبل", color = AppMuted, fontSize = 11.5.sp, modifier = Modifier.padding(start = 6.dp))
+    }
+    d.notes.forEach { n ->
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(AppGoldInk.copy(alpha = 0.14f))
+                .border(1.5.dp, AppGoldInk.copy(alpha = 0.55f), RoundedCornerShape(20.dp)).padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(AppGoldInk.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
+                Icon(digestNoteIcon(n), null, tint = AppGoldInk, modifier = Modifier.size(24.dp))
+            }
+            Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                Text(digestNoteText(n), color = AppGoldInk, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                Text("در مقایسه با دوره‌ی قبل", color = AppGoldInk2, fontSize = 11.sp)
+            }
+        }
+    }
 
     val byKey = d.metrics.associateBy { it.key }
     HERO_KEYS.mapNotNull { byKey[it] }.chunked(2).forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             row.forEach { m ->
-                KpiTile(
+                DigestTile(
                     label = METRIC_LABELS[m.key] ?: m.key,
-                    value = adminNum(m.now),
+                    now = m.now,
+                    prev = m.prev,
                     delta = adminDelta(m.now, m.prev, m.key in BAD_WHEN_UP),
-                    compare = m.now to m.prev,
-                    prevText = "قبلی ${adminNum(m.prev)}",
-                    standalone = true,
                     icon = when (m.key) {
-                        "active" -> androidx.compose.material.icons.Icons.Filled.Person
-                        "new_installs" -> androidx.compose.material.icons.Icons.Filled.InstallMobile
-                        "purchases" -> androidx.compose.material.icons.Icons.Filled.ShoppingCart
-                        else -> androidx.compose.material.icons.Icons.Filled.PersonAdd
+                        "active" -> Icons.Filled.Person
+                        "new_installs" -> Icons.Filled.InstallMobile
+                        "purchases" -> Icons.Filled.ShoppingCart
+                        else -> Icons.Filled.PersonAdd
                     },
                     accent = when (m.key) {
                         "active" -> androidx.compose.ui.graphics.Color(0xFF00E89A)
@@ -215,14 +238,31 @@ private fun DigestBody(d: AdminDigestResponse) {
     val trend = d.series.dropWhile { it.active == 0 && it.installs == 0 }
     if (trend.size > 1) {
         AppCard {
-            AdminSubTitle("روند · ${toFa(trend.size)} روزِ اخیر")
-            AdminLineChart(values = trend.map { it.active }, bars = trend.map { it.installs })
-            Row(Modifier.fillMaxWidth().padding(top = 2.dp)) {
-                Text("${toFa(trend.size - 1)} روز پیش", color = AppLabel, fontSize = 10.sp)
-                Spacer(Modifier.weight(1f))
-                Text("امروز ●", color = AppLabel, fontSize = 10.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.BarChart, null, tint = androidx.compose.ui.graphics.Color(0xFF38BDF8), modifier = Modifier.size(24.dp))
+                Text("روندِ ${toFa(trend.size)} روزِ اخیر", color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 8.dp))
             }
-            AdminNote("خطِ آبی = چند نفر آن روز برنامه را باز کردند · ستون = نصبِ تازه‌ی آن روز")
+            val maxV = (trend.map { it.active } + trend.map { it.installs }).maxOrNull()?.coerceAtLeast(3) ?: 3
+            val top = ((maxV + 2) / 3) * 3
+            Row(Modifier.padding(top = 8.dp)) {
+                AdminLineChart(values = trend.map { it.active }, bars = trend.map { it.installs }, height = 130.dp, maxValue = top, modifier = Modifier.weight(1f))
+                Column(Modifier.height(130.dp).padding(start = 6.dp, top = 6.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                    listOf(top, top * 2 / 3, top / 3, 0).forEach { Text(toFa(it), color = AppLabel, fontSize = 9.5.sp) }
+                }
+            }
+            // ⚠️ AdminLineChart اولین مقدار را سمتِ راست می‌کشد؛ سری از قدیم به جدید است.
+            val last = trend.size - 1
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp, end = 18.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                listOf(last, last * 3 / 4, last / 2, last / 4, 0).distinct().forEach { back ->
+                    Text(if (back == 0) "امروز" else "${toFa(back)} روز پیش", color = AppLabel, fontSize = 9.5.sp)
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(10.dp).clip(androidx.compose.foundation.shape.CircleShape).background(AppPrimary))
+                Text("چند نفر آن روز برنامه را باز کردند", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(start = 5.dp, end = 14.dp))
+                Box(Modifier.size(10.dp).clip(androidx.compose.foundation.shape.CircleShape).background(ir.sadteam.loancalc.ui.theme.AppInfo))
+                Text("نصبِ تازه‌ی روز", color = AppMuted, fontSize = 11.sp, modifier = Modifier.padding(start = 5.dp))
+            }
         }
     }
 
@@ -262,19 +302,28 @@ private fun DigestBody(d: AdminDigestResponse) {
             title = "بقیه‌ی شاخص‌ها (${toFa(rest.size)})",
             summary = rest.joinToString(" · ") { "${(METRIC_LABELS[it.key] ?: it.key).substringBefore(' ')} ${adminNum(it.now)}" },
         ) {
-            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                listOf("شاخص" to 1f, "حالا" to 0.45f, "قبلی" to 0.45f, "تغییر" to 0.45f).forEach { (h, w) ->
-                    Text(h, color = AppLabel, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(w))
-                }
-            }
+            val maxRest = rest.maxOf { maxOf(it.now, it.prev) }.coerceAtLeast(1L)
             rest.forEach { m ->
                 val dl = adminDelta(m.now, m.prev, m.key in BAD_WHEN_UP)
-                Box(Modifier.fillMaxWidth().height(1.5.dp).background(AppLineRow))
-                Row(Modifier.fillMaxWidth().heightIn(min = 38.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(METRIC_LABELS[m.key] ?: m.key, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
-                    Text(adminNum(m.now), color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(0.45f))
-                    Text(adminNum(m.prev), color = AppMuted, fontSize = 12.5.sp, modifier = Modifier.weight(0.45f))
-                    Text(dl.text, color = dl.color(), fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, modifier = Modifier.weight(0.45f))
+                val (ic, col) = restIcon(m.key)
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(16.dp)).background(AppSurface)
+                        .border(1.dp, AppLineRow, RoundedCornerShape(16.dp)).padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(col.copy(alpha = 0.25f)), contentAlignment = Alignment.Center) {
+                        Icon(ic, null, tint = col, modifier = Modifier.size(20.dp))
+                    }
+                    Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+                        Text(METRIC_LABELS[m.key] ?: m.key, color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+                        Box(Modifier.padding(top = 5.dp).fillMaxWidth().height(7.dp).clip(RoundedCornerShape(99.dp)).background(AppLineRow)) {
+                            Box(Modifier.fillMaxWidth((m.now.toFloat() / maxRest).coerceIn(0.03f, 1f)).height(7.dp).clip(RoundedCornerShape(99.dp)).background(col))
+                        }
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(adminNum(m.now), color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                        Text("قبل: ${adminNum(m.prev)} · ${dl.text}", color = dl.color(), fontSize = 10.sp, maxLines = 1)
+                    }
                 }
             }
         }
@@ -329,4 +378,40 @@ private fun shareCsv(ctx: android.content.Context, d: AdminDigestResponse) {
         putExtra(android.content.Intent.EXTRA_TEXT, csv)
     }
     runCatching { ctx.startActivity(android.content.Intent.createChooser(send, "خروجیِ گزارش")) }
+}
+
+
+/** کاشیِ اصلیِ گزارشِ روز (طرحِ ۱۶ مهر): آیکونِ رنگی، عدد، تغییر، یک نوار و «قبل». */
+@Composable
+private fun DigestTile(label: String, now: Long, prev: Long, delta: AdminDelta, icon: ImageVector, accent: androidx.compose.ui.graphics.Color, modifier: Modifier) {
+    Column(
+        modifier.clip(RoundedCornerShape(20.dp)).background(AppSurface)
+            .border(1.5.dp, accent.copy(alpha = 0.35f), RoundedCornerShape(20.dp)).padding(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.Top) {
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(13.dp)).background(accent.copy(alpha = 0.25f)), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = accent, modifier = Modifier.size(26.dp))
+            }
+            Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                Text(label, color = AppMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(adminNum(now), color = AppText, fontSize = 24.sp, fontWeight = FontWeight.Black)
+            }
+        }
+        Text(delta.text, color = delta.color(), fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 2.dp))
+        Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            val frac = if (maxOf(now, prev) <= 0L) 0f else now.toFloat() / maxOf(now, prev)
+            Box(Modifier.weight(1f).height(7.dp).clip(RoundedCornerShape(99.dp)).background(AppLineRow)) {
+                if (frac > 0f) Box(Modifier.fillMaxWidth(frac.coerceAtLeast(0.04f)).height(7.dp).clip(RoundedCornerShape(99.dp)).background(accent))
+            }
+            Text("قبل: ${adminNum(prev)}", color = AppLabel, fontSize = 10.5.sp, modifier = Modifier.padding(start = 8.dp))
+        }
+    }
+}
+
+private fun restIcon(key: String): Pair<ImageVector, androidx.compose.ui.graphics.Color> = when (key) {
+    "transactions" -> Icons.Filled.TouchApp to androidx.compose.ui.graphics.Color(0xFFF59E0B)
+    "support" -> Icons.Filled.Chat to androidx.compose.ui.graphics.Color(0xFF3B82F6)
+    "crashes" -> Icons.Filled.Error to androidx.compose.ui.graphics.Color(0xFFEF4444)
+    "paywall_view" -> Icons.Filled.Visibility to androidx.compose.ui.graphics.Color(0xFFA855F7)
+    else -> Icons.Filled.Insights to androidx.compose.ui.graphics.Color(0xFF14B8A6)
 }
