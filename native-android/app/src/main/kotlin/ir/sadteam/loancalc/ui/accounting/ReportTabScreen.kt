@@ -1049,60 +1049,72 @@ private fun CategoryDonutCard(
     // برچسبِ دوره از داخلِ دایره بیرون آمد. «این ماه»ِ ثابت هم غلط بود: با تاگلِ فصل/سال
     // عوض نمی‌شد، پس روی دوره‌ی سالانه هم «این ماه» می‌نوشت.
     Text("سهمِ دسته‌ها از خرجِ $periodLabel", color = AppLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+    // ۱۶ مهر (طرحِ مرتب‌تر، مثلِ خانه): حلقه + فهرستِ هم‌ترازِ دسته‌ها با مبلغ و درصد.
+    // جمعِ کل همین بالا در کارتِ سبز هست، پس این‌جا تکرارش نمی‌کنیم.
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         CategoryDonut(
             slices = top.mapIndexed { i, e -> DonutSlice(e.value, colors[i % colors.size]) },
-            size = 74.dp,
+            size = 80.dp,
             strokeWidth = 9.dp,
         ) {
-            // قطرِ داخلیِ دونات ۷۴ − ۲×۹ = ۵۶dp است (رینگ به خواسته‌ی کاربر نازک شد). یک خطِ «۱۰۲٫۶ میلیون» در ۱۱sp
-            // حدودِ ۵۲dp عرض می‌گیرد و به لبه‌ی رینگ می‌چسبد. عدد و واحد دو خطِ کوتاه شدند.
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                run {
-                    Text(
-                        centerNumber,
-                        color = AppText,
-                        fontSize = 13.sp,
-                        lineHeight = 15.sp,
-                        fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                    )
-                }
+                Text(
+                    centerNumber,
+                    color = AppText,
+                    fontSize = 17.sp,
+                    lineHeight = 20.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1,
+                )
                 Text(
                     centerUnit,
                     color = AppLabel,
-                    fontSize = 9.5.sp,
-                    lineHeight = 11.sp,
+                    fontSize = 10.sp,
+                    lineHeight = 12.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                 )
             }
         }
         Column(
-            modifier = Modifier.weight(1f).padding(start = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.weight(1f).padding(start = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             top.forEachIndexed { i, entry ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(8.dp)
+                            .size(9.dp)
                             .clip(RoundedCornerShape(999.dp))
                             .background(colors[i % colors.size]),
                     )
                     Text(
                         entry.key,
                         color = AppText,
-                        fontSize = 11.5.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f).padding(start = 7.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f).padding(start = 8.dp),
                     )
+                    PrivacyCrossfade(privacyMode) { masked ->
+                        Text(
+                            maskIfPrivate(masked, entry.value.rialToFaCompact()),
+                            color = AppText,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            maxLines = 1,
+                        )
+                    }
                     Text(
                         // total صفر → NaN٪. کارت با جمعِ صفر نمی‌آید، ولی نگهبانش یک خط است.
                         if (total <= 0.0) "—" else "${((entry.value / total * 100).toInt()).toFa()}٪",
                         color = AppMuted,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.width(40.dp),
                     )
                 }
             }

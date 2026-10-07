@@ -1411,14 +1411,12 @@ private fun CategoryBreakdownCard(
     }
     val colors = listOf(AppDanger, AppPurple, AppInfo)
     val (centerNumber, centerUnit) = total.rialToFaCompactParts()
-    AppCard(contentPadding = 14.dp, modifier = Modifier.pressScaleClickable(onClick = onClick)) {
-      Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
-        // «این ماه» از داخلِ دایره بیرون آمد: در ۷sp تقریباً خوانده نمی‌شد و جای واحد را
-        // می‌گرفت. اینجا برچسبِ کارت است، جایی که برچسبِ کارت باید باشد.
-        // سربرگ: برچسبِ کارت راست، درِ خروجی چپ. تا امروز کلِ کارت کلیک‌پذیر بود ولی
-        // **هیچ نشانه‌ای نداشت**؛ کاربر با طرحِ مرجع همین را خواست.
+    // ۱۶ مهر (طرحِ مرتب‌تر): بالا حلقه + «جمعِ خرج» با عددِ درشت؛ پایین فهرستِ هم‌ترازِ
+    // دسته‌ها (نام راست، مبلغ و درصد در ستونِ چپ). وسطِ حلقه تعدادِ دسته‌هاست، مثلِ تبِ گزارش.
+    AppCard(contentPadding = 16.dp, modifier = Modifier.pressScaleClickable(onClick = onClick)) {
+      Column {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("خرجِ این ماه", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+            Text("خرجِ این ماه", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
             Text("جزئیاتِ بیشتر", color = AppPrimaryInk, fontSize = 10.5.sp, fontWeight = FontWeight.Black)
             Icon(
                 Icons.Filled.ChevronLeft,
@@ -1427,98 +1425,82 @@ private fun CategoryBreakdownCard(
                 modifier = Modifier.size(14.dp),
             )
         }
-        // ۱۶ مهر: کاربر حلقه را پسندید و جمله‌ی تک‌دسته را نفهمید؛ پس همیشه حلقه می‌ماند.
-        if (false) {
-            val only = top.first()
-            val pct = if (total <= 0.0) 100 else (only.value / total * 100).toInt()
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                PrivacyCrossfade(privacyMode) { masked ->
-                    Text(
-                        maskIfPrivate(masked, total.rialToFaCompact()) + " تومان",
-                        color = AppText,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Text("${pct.toFa()}٪ ${only.key}", color = colors[0], fontSize = 11.5.sp, fontWeight = FontWeight.Black)
-            }
-            Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(999.dp)).background(AppLineRow)) {
-                Box(Modifier.fillMaxWidth((pct / 100f).coerceIn(0.02f, 1f)).height(6.dp).clip(RoundedCornerShape(999.dp)).background(colors[0]))
-            }
-        } else Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             CategoryDonut(
                 slices = top.mapIndexed { i, e -> DonutSlice(e.value, colors[i % colors.size]) },
-                // ۱۴ مهر: بزرگ‌تر و حلقه نازک‌تر تا «میلیون تومان» به لبه نچسبد (مثلِ دایره‌ی وام).
-                size = 86.dp,
-                strokeWidth = 8.dp,
+                size = 80.dp,
+                strokeWidth = 9.dp,
             ) {
-                // ⚠️ سه چیز روی هم افتاده بود: عدد **ریال** بود (۱۰۲۶٫۶M جای ۱۰۲٫۶)، حرفِ
-                // M لاتین وسطِ ارقامِ فارسی، و یک خطِ بلند در دایره‌ی تنگ. قطرِ داخلی
-                // ۷۴ − ۲×۱۳ = ۴۸dp است و آن خط در ۱۱sp حدودِ ۵۲dp عرض می‌گرفت، پس به
-                // لبه‌ی رینگ می‌چسبید. دو خطِ کوتاه حالا ~۳۰dp مصرف می‌کند.
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
-                ) {
-                    PrivacyCrossfade(privacyMode) { masked ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(top.size.toFa(), color = AppText, fontSize = 17.sp, lineHeight = 20.sp, fontWeight = FontWeight.Black)
+                    Text("دسته", color = AppLabel, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            Column(modifier = Modifier.weight(1f).padding(start = 16.dp)) {
+                Text("جمعِ خرجِ این ماه", color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                PrivacyCrossfade(privacyMode) { masked ->
+                    Row(verticalAlignment = Alignment.Bottom) {
                         Text(
                             maskIfPrivate(masked, centerNumber),
                             color = AppText,
-                            fontSize = 13.sp,
-                            lineHeight = 15.sp,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Black,
                             maxLines = 1,
                         )
+                        Text(
+                            centerUnit,
+                            color = AppMuted,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            modifier = Modifier.padding(start = 5.dp, bottom = 3.dp),
+                        )
                     }
+                }
+            }
+        }
+        androidx.compose.material3.HorizontalDivider(color = AppLineRow, modifier = Modifier.padding(top = 14.dp))
+        top.forEachIndexed { i, entry ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = if (i == 0) 10.dp else 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(9.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(colors[i % colors.size]),
+                )
+                Text(
+                    entry.key,
+                    color = AppText,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(start = 9.dp),
+                )
+                PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        centerUnit,
-                        color = AppLabel,
-                        fontSize = 8.5.sp,
-                        lineHeight = 11.sp,
-                        fontWeight = FontWeight.Bold,
+                        maskIfPrivate(masked, entry.value.rialToFaCompact()),
+                        color = AppText,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.ExtraBold,
                         maxLines = 1,
                     )
                 }
-            }
-            Column(
-                modifier = Modifier.weight(1f).padding(start = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                top.forEachIndexed { i, entry ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(RoundedCornerShape(999.dp))
-                                .background(colors[i % colors.size]),
-                        )
-                        Text(
-                            entry.key,
-                            color = AppText,
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f).padding(start = 7.dp),
-                        )
-                        // ۱۴ مهر: مبلغ و درصد در **یک خط**، چسبیده به لبه - قبلاً دو خطِ نامرتب بود.
-                        PrivacyCrossfade(privacyMode) { masked ->
-                            Text(
-                                maskIfPrivate(masked, entry.value.rialToFaCompact()),
-                                color = AppText,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                maxLines = 1,
-                            )
-                        }
-                        Text(
-                            if (total <= 0.0) "" else " · ${((entry.value / total * 100).toInt()).toFa()}٪",
-                            color = AppMuted,
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                        )
-                    }
-                }
+                Text(
+                    if (total <= 0.0) "" else "${((entry.value / total * 100).toInt()).toFa()}٪",
+                    color = AppMuted,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.width(44.dp),
+                )
             }
         }
       }
