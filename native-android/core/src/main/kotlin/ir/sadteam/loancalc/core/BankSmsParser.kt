@@ -185,7 +185,13 @@ object BankSmsParser {
         if (!trustedSource && reportEvidence.none { body.contains(it) }) return null
 
         val cardSuffix = cardSuffixRegex.find(numbered)?.groupValues?.get(1)
-        val balance = balanceRegex.find(numbered)?.groupValues?.get(1)?.let { cleanAmount(it) }
+        // ۱۶ مهر: «مانده: ۱,۲۰۰,۰۰۰ تومان» ده برابر شود، وگرنه مانده‌ی تومانی ریال خوانده می‌شد.
+        val balance = balanceRegex.find(numbered)?.let { m ->
+            cleanAmount(m.groupValues[1])?.let { v ->
+                val after = numbered.substring(m.range.last + 1).trimStart().take(6)
+                if (after.startsWith("تومان") || after.startsWith("تومن")) v * 10 else v
+            }
+        }
         return ParsedBankSms(amountRial, type, cardSuffix, balance)
     }
 }

@@ -215,6 +215,13 @@ class BankSmsParserTest {
 
     /** لحنِ خودمانی و مبلغِ با کلمه (۱۴ مهر): «فرستادی»، «کم شد»، «۱ هزار تومان». */
     @Test
+    fun tomanBalanceIsConvertedToRial() {
+        val p = BankSmsParser.parse("بلو\nبرداشت ۲۵۰,۰۰۰ تومان\nمانده: ۱,۲۰۰,۰۰۰ تومان")!!
+        assertEquals(2_500_000.0, p.amountRial, 0.0)
+        assertEquals(12_000_000.0, p.balanceRial!!, 0.0)
+    }
+
+    @Test
     fun casualWordingAndWordAmounts() {
         val sent = BankSmsParser.parse("blu ۱,۰۰۰ تومان برای مبینا فتحی مقدم لاکانی فرستادی", trustedSource = true)
         assertEquals(TransactionType.WITHDRAWAL, sent?.type)

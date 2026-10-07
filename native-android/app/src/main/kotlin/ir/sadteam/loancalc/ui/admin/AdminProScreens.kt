@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -220,6 +221,9 @@ private fun AbRow(key: String, quote: String, g: AdminAbGroup, rate: Int, max: I
 @Composable
 fun AdminUserScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel()) {
     var query by remember { mutableStateOf("") }
+    // ۱۶ مهر: جستجو پشتِ ذره‌بینِ بالا-چپ؛ کادر فقط با لمسش باز می‌شود.
+    var searchOpen by remember { mutableStateOf(false) }
+    val searchFocus = remember { androidx.compose.ui.focus.FocusRequester() }
     var users by remember { mutableStateOf<List<ir.sadteam.loancalc.data.network.AdminUserRow>?>(null) }
     var listFailed by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
@@ -234,21 +238,37 @@ fun AdminUserScreen(onBack: () -> Unit, vm: AdminProViewModel = hiltViewModel())
     }
     AdminPage(
         if (result == null) "کاربران" else "تاریخچه‌ی کاربر",
-        if (result == null) "جستجو با شماره‌ی موبایل یا شماره‌ی کاربری" else "Uid:${result?.code.orEmpty().removePrefix("Uid:")}",
-        { if (result != null) result = null else onBack() },
+        if (result == null) "برای جستجو ذره‌بین را بزن" else "Uid:${result?.code.orEmpty().removePrefix("Uid:")}",
+        { if (result != null) result = null else if (searchOpen) { searchOpen = false; query = "" } else onBack() },
+        actions = {
+            if (result == null) androidx.compose.material3.IconButton(onClick = {
+                searchOpen = !searchOpen
+                if (!searchOpen) query = ""
+            }) {
+                Icon(
+                    if (searchOpen) androidx.compose.material.icons.Icons.Filled.Close else androidx.compose.material.icons.Icons.Filled.Search,
+                    contentDescription = if (searchOpen) "بستنِ جستجو" else "جستجو",
+                    tint = AppText,
+                )
+            }
+        },
     ) {
         val r = result
         if (r != null) {
             if (!r.found) Text("کاربری با این شماره پیدا نشد.", color = AppDangerInk) else UserResult(r)
             return@AdminPage
         }
-        Ltr {
-            OutlinedTextField(
-                value = query, onValueChange = { query = it.take(20) }, singleLine = true,
-                placeholder = { Text("مثلاً 0912… یا 7405024") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = adminFieldColors(), shape = AdminFieldShape, modifier = Modifier.fillMaxWidth(),
-            )
+        if (searchOpen) {
+            Ltr {
+                OutlinedTextField(
+                    value = query, onValueChange = { query = it.take(20) }, singleLine = true,
+                    placeholder = { Text("مثلاً 0912… یا 7405024") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = adminFieldColors(), shape = AdminFieldShape,
+                    modifier = Modifier.fillMaxWidth().focusRequester(searchFocus),
+                )
+            }
+            LaunchedEffect(Unit) { runCatching { searchFocus.requestFocus() } }
         }
         if (loading) Text("در حالِ گرفتن…", color = AppMuted, fontSize = 12.sp)
         if (failed) Text("نرسید؛ اینترنت را چک کن.", color = AppDangerInk)
