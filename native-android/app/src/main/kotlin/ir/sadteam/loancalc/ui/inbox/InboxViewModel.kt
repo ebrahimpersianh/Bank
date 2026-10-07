@@ -89,7 +89,9 @@ class InboxViewModel @Inject constructor(
     /** ردِ تراکنش - خودِ تراکنشِ تاییدنشده هم پاک می‌شه، وگرنه برای همیشه معلق می‌مونه. */
     fun rejectTransaction(message: InboxMessageEntity) = viewModelScope.launch {
         message.refId?.toLongOrNull()?.let { id ->
-            accounts.transactionById(id)?.let {
+            // فقط تراکنشِ هنوز-تاییدنشده پاک می‌شود؛ اگر در این فاصله با پرداختِ دستیِ قسط/چک/قبض
+            // یکی شده (تأییدشده)، «نه» نباید پرداختِ واقعی را پاک کند.
+            accounts.transactionById(id)?.takeIf { !it.confirmed }?.let {
                 SmsRecycleBin.add(context, it)
                 accounts.deleteTransaction(it)
             }

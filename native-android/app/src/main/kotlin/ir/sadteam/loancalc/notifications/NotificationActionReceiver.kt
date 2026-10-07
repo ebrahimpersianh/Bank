@@ -180,7 +180,8 @@ class NotificationActionReceiver : BroadcastReceiver() {
     private suspend fun rejectTransaction(intent: Intent) {
         val txId = intent.getLongExtra(EXTRA_TX_ID, -1L)
         if (txId <= 0) return
-        accountRepository.transactionById(txId)?.let { accountRepository.deleteTransaction(it) }
+        // فقط تراکنشِ هنوز-تاییدنشده؛ تراکنشِ تأییدشده (مثلاً با پرداختِ دستی یکی شده) پاک نمی‌شود.
+        accountRepository.transactionById(txId)?.takeIf { !it.confirmed }?.let { accountRepository.deleteTransaction(it) }
         inboxRepository.resolveByRefId(txId.toString(), done = false)
     }
 
