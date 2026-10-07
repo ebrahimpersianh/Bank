@@ -1158,7 +1158,8 @@ private fun CommitmentRows(
                 icon = Icons.Filled.EventRepeat,
                 title = "اقساط وام",
                 value = maskIfPrivate(privacyMode, rialToToman(monthlyInstallmentRial.toLong()).toFaMoney()) + " تومان",
-                caption = "این ماه",
+                // ۱۶ مهر: «این ماه» معلوم نبود جمعِ سررسید است، نه پرداخت‌شده؛ و با «خرجِ» بالا اشتباه می‌شد.
+                caption = "سررسیدِ این ماه",
                 onClick = onOpenLoanStats,
             )
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppLineRow))
@@ -1445,6 +1446,7 @@ private fun MonthCompareCard(all: List<ir.sadteam.loancalc.data.db.AccountTransa
                 }
             }
         }
+        val scaleMax = rows.maxOfOrNull { maxOf(it.second, it.third) }?.coerceAtLeast(1.0) ?: 1.0
         rows.forEach { (cat, a, b) ->
             val diff = a - b
             val up = diff > 0
@@ -1462,39 +1464,42 @@ private fun MonthCompareCard(all: List<ir.sadteam.loancalc.data.db.AccountTransa
                         )
                     }
                 }
-                // طولِ نوار = این ماه نسبت به بیشترینِ دو ماه؛ خطِ نازکِ کم‌رنگ = ماهِ قبل.
-                val maxV = maxOf(a, b).coerceAtLeast(1.0)
+                // ۱۶ مهر: دو نوارِ جدا (رنگی = این ماه، خاکستری = ماهِ قبل) با **یک مقیاسِ مشترک** برای
+                // همه‌ی دسته‌ها - قبلاً هر دسته نسبت به خودش پر می‌شد و همه‌ی نوارهای قرمز پر بودند.
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 6.dp)
-                        .height(7.dp)
-                        .clip(RoundedCornerShape(99.dp))
-                        .background(AppLine),
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp).height(7.dp).clip(RoundedCornerShape(99.dp)).background(AppLine),
                 ) {
-                    Box(
-                        Modifier
-                            .fillMaxWidth((b / maxV).toFloat().coerceIn(0f, 1f))
-                            .height(7.dp)
-                            .clip(RoundedCornerShape(99.dp))
-                            .background(AppMuted.copy(alpha = 0.35f)),
+                    if (a > 0.0) Box(
+                        Modifier.fillMaxWidth((a / scaleMax).toFloat().coerceIn(0.03f, 1f)).height(7.dp)
+                            .clip(RoundedCornerShape(99.dp)).background(ink.copy(alpha = 0.85f)),
                     )
-                    Box(
-                        Modifier
-                            .fillMaxWidth((a / maxV).toFloat().coerceIn(0f, 1f))
-                            .height(7.dp)
-                            .clip(RoundedCornerShape(99.dp))
-                            .background(ink.copy(alpha = 0.85f)),
+                }
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(5.dp).clip(RoundedCornerShape(99.dp)).background(AppLine),
+                ) {
+                    if (b > 0.0) Box(
+                        Modifier.fillMaxWidth((b / scaleMax).toFloat().coerceIn(0.03f, 1f)).height(5.dp)
+                            .clip(RoundedCornerShape(99.dp)).background(AppMuted.copy(alpha = 0.45f)),
                     )
                 }
             }
         }
-        Text(
-            "نوارِ رنگی این ماه · نوارِ کم‌رنگ ماهِ قبل",
-            color = AppLabel,
-            fontSize = 9.5.sp,
-            modifier = Modifier.padding(top = 4.dp),
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(top = 6.dp),
+        ) {
+            listOf(
+                AppPrimaryInk to "این ماه (کمتر شده)",
+                AppDangerInk to "این ماه (بیشتر شده)",
+                AppMuted.copy(alpha = 0.45f) to "ماهِ قبل",
+            ).forEach { (c, label) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(width = 12.dp, height = 5.dp).clip(RoundedCornerShape(99.dp)).background(c))
+                    Text(label, color = AppLabel, fontSize = 9.5.sp, modifier = Modifier.padding(start = 4.dp))
+                }
+            }
+        }
     }
 }
 
