@@ -1,5 +1,7 @@
 package ir.sadteam.loancalc.ui.asset
 
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -468,8 +470,16 @@ private fun AssetSparkline(points: List<PricePoint>) {
         val line = AppPrimary
         val fill = AppPrimaryPill
 
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Canvas(modifier = Modifier.fillMaxWidth().height(78.dp)) {
+        // ۱۶ مهر: برچسبِ بیشینه/کمینه روی خطِ نمودار می‌افتاد؛ حالا در ستونِ کنارِ نمودار است.
+        Row(modifier = Modifier.fillMaxWidth().height(78.dp)) {
+            Column(
+                modifier = Modifier.width(60.dp).fillMaxHeight().padding(end = 6.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(max.rialToFaCompact(), color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(min.rialToFaCompact(), color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            }
+            Canvas(modifier = Modifier.weight(1f).fillMaxHeight()) {
                 val w = size.width
                 val h = size.height
                 val stepX = if (points.size > 1) w / (points.size - 1) else w
@@ -499,33 +509,21 @@ private fun AssetSparkline(points: List<PricePoint>) {
                 drawCircle(Color.White, radius = 4.5.dp.toPx(), center = Offset(w, yOf(last)))
                 drawCircle(line, radius = 3.dp.toPx(), center = Offset(w, yOf(last)))
             }
-            Text(
-                max.rialToFaCompact(),
-                color = AppLabel,
-                fontSize = 9.5.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.TopStart),
-            )
-            Text(
-                min.rialToFaCompact(),
-                color = AppLabel,
-                fontSize = 9.5.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.BottomStart),
-            )
         }
+        // تاریخ‌ها زیرِ خودِ نمودار (نه زیرِ ستونِ برچسب). قدیمی‌ترین سمتِ چپ، امروز سمتِ راست -
+        // مثلِ نمودارِ کارتِ دارایی. در چینشِ راست‌به‌چپ اولین فرزند سمتِ راست است، پس «آخرین» اول می‌آید.
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(start = 60.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             val first = points.first()
             val last = points.last()
             Text(
-                "${first.day.toFa()} ${faMonthName(first.month)}",
+                "${last.day.toFa()} ${faMonthName(last.month)}",
                 color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold,
             )
             Text(
-                "${last.day.toFa()} ${faMonthName(last.month)}",
+                "${first.day.toFa()} ${faMonthName(first.month)}",
                 color = AppLabel, fontSize = 9.5.sp, fontWeight = FontWeight.Bold,
             )
         }
