@@ -23,9 +23,16 @@ class DebtViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /** پولی که واقعاً جابه‌جا شد (تسویه یا پرداختِ بخشی) - از/به حساب (بخشِ «اتصالِ پرداخت‌ها»). */
-    fun recordMoney(accountId: Long, sourceId: String, amount: Double, deposit: Boolean, description: String) {
+    fun recordMoney(
+        accountId: Long, sourceId: String, amount: Double, deposit: Boolean, description: String,
+        dangTotal: Double = 0.0, dangY: Int = 0, dangM: Int = 0, dangD: Int = 0,
+    ) {
         viewModelScope.launch {
-            accountRepository.recordLinkedPayment(accountId, sourceTypeOf(sourceId), sourceId, amount, description, deposit, category = "طلب و بدهی")
+            // سهمِ دنگ: خرجِ شام را پیدا کن تا در گزارش از آن کم شود. شناسه = «dang-<سهم>@<خرج>».
+            val sid = if (sourceId.startsWith("dang-")) {
+                "$sourceId@" + if (dangTotal > 0) accountRepository.findDangExpenseId(dangTotal, dangY, dangM, dangD) else 0L
+            } else sourceId
+            accountRepository.recordLinkedPayment(accountId, sourceTypeOf(sourceId), sid, amount, description, deposit, category = "طلب و بدهی")
         }
     }
 
@@ -33,7 +40,10 @@ class DebtViewModel @Inject constructor(
     private fun sourceTypeOf(sourceId: String) = if (sourceId.startsWith("dang-")) "dang" else "debt"
 
     fun unrecordMoney(sourceId: String) {
-        viewModelScope.launch { accountRepository.removeLinkedPayment(sourceTypeOf(sourceId), sourceId) }
+        viewModelScope.launch {
+            if (sourceId.startsWith("dang-")) accountRepository.removeLinkedPaymentsByPrefix("dang", "$sourceId@")
+            else accountRepository.removeLinkedPayment(sourceTypeOf(sourceId), sourceId)
+        }
     }
 
     val counterparties: StateFlow<List<CounterpartyEntity>> = debtRepository.observeCounterparties()

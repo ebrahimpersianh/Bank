@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.account
 
+import ir.sadteam.loancalc.data.netDangShares
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -212,7 +213,7 @@ class AccountViewModel @Inject constructor(
         // 🚨 **جابه‌جاییِ داخلی نه درآمد است نه خرج.** انتقالِ ۱۰ میلیون از حسابِ الف به ب
         // دو ردیف می‌سازد (برداشت + واریز) و بی این فیلتر، گزارشِ ماه هم ۱۰ میلیون درآمد
         // نشان می‌داد هم ۱۰ میلیون هزینه - در حالی که هیچ پولی وارد یا خارج نشده.
-        val forMonth = allTransactions.filter {
+        val forMonth = allTransactions.netDangShares().filter {
             it.year == year && it.month == month && it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES
         }
         val income = forMonth.filter { it.type == TransactionType.DEPOSIT.name }.sumOf { it.amount }

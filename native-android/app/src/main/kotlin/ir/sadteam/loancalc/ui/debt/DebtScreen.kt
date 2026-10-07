@@ -129,13 +129,13 @@ fun DebtScreen(
     val debts by viewModel.debts.collectAsState()
     val accounts by viewModel.accounts.collectAsState()
     // «این پول از/به کدام حساب رفت؟» - بعد از تسویه یا پرداختِ بخشی. رد کردن = ثبت نشود.
-    data class MoneyPrompt(val sourceId: String, val amount: Double, val deposit: Boolean, val description: String)
+    data class MoneyPrompt(val sourceId: String, val amount: Double, val deposit: Boolean, val description: String, val dangTotal: Double = 0.0, val dangY: Int = 0, val dangM: Int = 0, val dangD: Int = 0)
     var moneyPrompt by remember { mutableStateOf<MoneyPrompt?>(null) }
     moneyPrompt?.let { p ->
         ir.sadteam.loancalc.ui.components.AccountPickerDialog(
             accounts = accounts,
             title = if (p.deposit) "این پول به کدام حساب آمد؟" else "این پول از کدام حساب رفت؟",
-            onSelect = { acc -> viewModel.recordMoney(acc.id, p.sourceId, p.amount, p.deposit, p.description); moneyPrompt = null },
+            onSelect = { acc -> viewModel.recordMoney(acc.id, p.sourceId, p.amount, p.deposit, p.description, p.dangTotal, p.dangY, p.dangM, p.dangD); moneyPrompt = null },
             onDismiss = { moneyPrompt = null },
         )
     }
@@ -218,6 +218,7 @@ fun DebtScreen(
                                 participant.shareAmount,
                                 deposit = true,
                                 description = "دنگ «${event.title}» - ${counterpartyNameFor(participant.counterpartyId)}",
+                                dangTotal = event.totalAmount, dangY = event.year, dangM = event.month, dangD = event.day,
                             )
                         } else if (!settled) {
                             viewModel.unrecordMoney("dang-${participant.id}")

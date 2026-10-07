@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import ir.sadteam.loancalc.data.netDangShares
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.filled.ReceiptLong
@@ -237,7 +238,7 @@ fun BudgetTabScreen(
     val weekUnderShare = remember(allTransactions, today, fairShare) {
         if (fairShare <= 0.0) emptyList() else (6 downTo 0).map { back ->
             val d = PersianCalendar.addDays(today, -back)
-            allTransactions
+            allTransactions.netDangShares()
                 .filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type == TransactionType.WITHDRAWAL.name && it.year == d.y && it.month == d.m && it.day == d.d }
                 .sumOf { it.amount } <= fairShare
         }
@@ -246,7 +247,7 @@ fun BudgetTabScreen(
     val weekSpent = remember(allTransactions, today) {
         (6 downTo 0).map { back ->
             val d = PersianCalendar.addDays(today, -back)
-            allTransactions
+            allTransactions.netDangShares()
                 .filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type == TransactionType.WITHDRAWAL.name && it.year == d.y && it.month == d.m && it.day == d.d }
                 .sumOf { it.amount }
         }
@@ -254,7 +255,7 @@ fun BudgetTabScreen(
     // خرجِ هر روزِ همین ماه (نمودارِ میله‌ایِ کارتِ بالا) + درآمد و خرجِ کلِ ماه (دو باکسِ کنارش).
     val monthDailySpent = remember(allTransactions, today, daysInMonth) {
         (1..daysInMonth).map { day ->
-            allTransactions
+            allTransactions.netDangShares()
                 .filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type == TransactionType.WITHDRAWAL.name && it.year == today.y && it.month == today.m && it.day == day }
                 .sumOf { it.amount }
         }

@@ -30,6 +30,22 @@ const val SOURCE_TYPE_TRANSFER = "transfer"
  * عوض می‌کند (تصمیمِ کاربر، ۹ مهر). موجودیِ حساب همچنان کم/زیاد می‌شود. */
 val NON_SPENDING_SOURCES = setOf(SOURCE_TYPE_TRANSFER, "asset", "goal", "dang")
 
+/**
+ * واریزِ سهمِ دوست‌ها در «دنگ» خرجِ شام را کم می‌کند (فقط در **گزارش‌ها**، نه موجودی).
+ * شناسه‌ی واریز `dang-<سهم>@<شناسه‌ی خرجِ شام>` است؛ `@0` یعنی خرجی پیدا نشد و چیزی کم نمی‌شود.
+ * نتیجه: خرجِ شامِ ۴ میلیونی با سه سهمِ ۱ میلیونی در گزارش ۱ میلیون (سهمِ خودت) می‌شود.
+ */
+fun List<AccountTransactionEntity>.netDangShares(): List<AccountTransactionEntity> {
+    val cut = HashMap<Long, Double>()
+    for (t in this) {
+        if (t.sourceType != "dang" || t.type != TransactionType.DEPOSIT.name) continue
+        val id = t.sourceId?.substringAfter('@', "")?.toLongOrNull() ?: continue
+        if (id > 0) cut[id] = (cut[id] ?: 0.0) + t.amount
+    }
+    if (cut.isEmpty()) return this
+    return map { t -> cut[t.id]?.let { t.copy(amount = (t.amount - it).coerceAtLeast(0.0)) } ?: t }
+}
+
 /** دو پیامکِ یک جابه‌جایی معمولاً چند ثانیه تا چند دقیقه فاصله دارند؛ دو ساعت حاشیه‌ی امن است. */
 /** برچسبِ سمتِ واریزی که از روی شماره‌ی مقصدِ پیامکِ برداشت ساخته شده. */
 const val AUTO_DEST_LEG_LABEL = "تشخیصِ مقصدِ پیامک"
@@ -394,6 +410,17 @@ class AccountRepository(
         )
         return true
     }
+
+    /** خرجِ شامِ یک دنگ: برداشتی با همان مبلغِ کل، همان ماه و حداکثر یک روز اختلاف؛ نبود = 0. */
+    suspend fun findDangExpenseId(total: Double, y: Int, m: Int, d: Int): Long =
+        observeTransactions().first()
+            .filter {
+                it.type == TransactionType.WITHDRAWAL.name && it.confirmed &&
+                    it.sourceType !in NON_SPENDING_SOURCES &&
+                    kotlin.math.abs(it.amount - total) < 1.0 && it.year == y && it.month == m &&
+                    kotlin.math.abs(it.day - d) <= 1
+            }
+            .maxByOrNull { it.id }?.id ?: 0L
 
     /**
      * برگرداندنِ پرداخت (قسطِ «پرداخت‌نشده» شد، چکِ پاس‌شده برگشت…): تراکنشِ مربوط حذف می‌شود.

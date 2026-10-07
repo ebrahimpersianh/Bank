@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.home
 
+import ir.sadteam.loancalc.data.netDangShares
 import ir.sadteam.loancalc.ui.components.guideTarget
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.material.icons.filled.Storefront
@@ -274,7 +275,7 @@ fun HomeScreen(
     val weekSpend = remember(transactions) {
         (6 downTo 0).map { back ->
             val d = PersianCalendar.addDays(today, -back)
-            transactions.filter { it.isExpenseOn(d.y, d.m, d.d) }.sumOf { it.amount }
+            transactions.netDangShares().filter { it.isExpenseOn(d.y, d.m, d.d) }.sumOf { it.amount }
         }
     }
     // درآمدِ امروز - برای جفتِ «درآمد/خرجِ امروز»ِ کارتِ قهرمان (خواسته‌ی کاربر با طرحِ
@@ -298,7 +299,7 @@ fun HomeScreen(
     val prevWeekTotal = remember(transactions) {
         (13 downTo 7).sumOf { back ->
             val d = PersianCalendar.addDays(today, -back)
-            transactions.filter { it.isExpenseOn(d.y, d.m, d.d) }.sumOf { it.amount }
+            transactions.netDangShares().filter { it.isExpenseOn(d.y, d.m, d.d) }.sumOf { it.amount }
         }
     }
     val monthSpendByCategory = remember(transactions) {
@@ -313,7 +314,7 @@ fun HomeScreen(
     val insightCtx = androidx.compose.ui.platform.LocalContext.current
     val smartInsights = remember(transactions, accounts, upcoming7d, recurringForInsights) {
         val today = ir.sadteam.loancalc.core.JalaliCalendar.today()
-        val txs = transactions.filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.confirmed }.map {
+        val txs = transactions.netDangShares().filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.confirmed }.map {
             ir.sadteam.loancalc.core.SmartInsights.Tx(
                 isExpense = it.type == ir.sadteam.loancalc.core.TransactionType.WITHDRAWAL.name,
                 amountRial = it.amount, y = it.year, m = it.month, d = it.day,
@@ -685,7 +686,7 @@ private fun TodaySpendSheet(
 ) {
     val today = remember { JalaliCalendar.today() }
     val rows = remember(transactions, today) {
-        transactions.filter { it.isExpenseOn(today.y, today.m, today.d) }
+        transactions.netDangShares().filter { it.isExpenseOn(today.y, today.m, today.d) }
             .sortedByDescending { it.createdAt }
     }
     val total = remember(rows) { rows.sumOf { it.amount } }
@@ -1567,7 +1568,7 @@ private fun buildHeroSeries(
     today: PersianDate,
     period: ReportPeriod,
 ): HeroSeries {
-    val expenses = transactions.filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type != "DEPOSIT" }
+    val expenses = transactions.netDangShares().filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type != "DEPOSIT" }
     fun sumOfDay(d: PersianDate) =
         expenses.filter { it.year == d.y && it.month == d.m && it.day == d.d }.sumOf { it.amount }
     fun sumOfMonth(y: Int, m: Int) =

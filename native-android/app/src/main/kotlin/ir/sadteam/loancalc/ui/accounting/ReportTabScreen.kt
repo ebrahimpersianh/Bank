@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.accounting
 
+import ir.sadteam.loancalc.data.netDangShares
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -194,7 +195,7 @@ fun ReportTabScreen(
     // دو عددِ حالتِ «هیچ کشفی نیست». همان فیلترِ `buildReportStats`: انتقالِ بینِ حساب‌ها
     // خرج نیست.
     val realExpenses = remember(transactions) {
-        transactions.filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type == "WITHDRAWAL" }
+        transactions.netDangShares().filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.type == "WITHDRAWAL" }
     }
     val checkedTxCount = remember(realExpenses, today) {
         realExpenses.count { it.year == today.y && it.month == today.m }
@@ -213,7 +214,7 @@ fun ReportTabScreen(
         transactions.filter { it.year == today.y && it.month == today.m }.sortedWith(compareBy({ it.day }, { it.id }))
     }
     // فهرستِ خروجی همه‌ی تراکنش‌هاست؛ جمعِ درآمد/خرج بی جابه‌جایی و خرید/فروشِ دارایی.
-    val monthReal = monthTx.filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES }
+    val monthReal = monthTx.netDangShares().filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES }
     val monthIncome = monthReal.filter { it.type == "DEPOSIT" }.sumOf { it.amount }
     val monthExpense = monthReal.filter { it.type == "WITHDRAWAL" }.sumOf { it.amount }
     val monthBreakdown = monthReal.groupBy { it.category ?: "بدونِ دسته" }
@@ -1397,7 +1398,7 @@ private fun ExportCard(onExcel: () -> Unit, onPdf: () -> Unit) {
 private fun MonthCompareCard(all: List<ir.sadteam.loancalc.data.db.AccountTransactionEntity>, privacyMode: Boolean) {
     val today = remember { ir.sadteam.loancalc.core.JalaliCalendar.today() }
     val (py, pm) = if (today.m == 1) (today.y - 1) to 12 else today.y to (today.m - 1)
-    fun spend(y: Int, m: Int) = all.filter {
+    fun spend(y: Int, m: Int) = all.netDangShares().filter {
         it.confirmed && it.year == y && it.month == m && it.type == "WITHDRAWAL" &&
             it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES
     }.groupBy { it.category ?: "بی‌دسته" }.mapValues { e -> e.value.sumOf { it.amount } }
