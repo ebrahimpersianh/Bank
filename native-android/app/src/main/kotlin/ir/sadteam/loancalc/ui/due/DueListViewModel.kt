@@ -128,7 +128,8 @@ class DueListViewModel @Inject constructor(
                 chequeRepository.observeCheques(),
                 debtRepository.observeDebts(),
                 accountRepository.observeRecurringPayments(),
-            ) { _, _, _, _ -> Unit }
+                accountRepository.observeTransactions(),
+            ) { _, _, _, _, _ -> Unit }
                 .debounce(250)
                 .collect { refresh() }
         }
@@ -237,13 +238,21 @@ class DueListViewModel @Inject constructor(
      * ماهِ جاری است، و اگر گذشته باشد ماهِ بعد - پس این ردیف هیچ‌وقت «عقب‌افتاده» نمی‌شود
      * (نمی‌دانیم پرداخت شده یا نه، و قرمزکردنش قرمزهای واقعی را ارزان می‌کند).
      */
-    private suspend fun loadRecurring(today: PersianDate): List<DueRow> =
+    private suspend fun loadRecurring(today: PersianDate): List<DueRow> {
+        val paidRecurringKeys = accountRepository.observeTransactions().first()
+            .filter { it.sourceType == "recurring" }.mapNotNull { it.sourceId }.toSet()
+        return loadRecurringRows(today, paidRecurringKeys)
+    }
+
+    private suspend fun loadRecurringRows(today: PersianDate, paidRecurringKeys: Set<String>): List<DueRow> =
         accountRepository.observeRecurringPayments().first()
             .filter { it.type == "WITHDRAWAL" }
             .map { payment ->
                 val day = payment.dayOfMonth.coerceIn(1, JalaliCalendar.daysInMonth(today.y, today.m))
                 val thisMonth = PersianDate(today.y, today.m, day)
-                val date = if (day >= today.d) {
+                // پرداختِ این ماه ثبت شده («ثبتِ پرداختِ این ماه») → سررسیدِ بعدی ماهِ آینده است.
+                val paidThisMonth = paidRecurringKeys.contains("${payment.id}:${today.y}-${today.m}")
+                val date = if (day >= today.d && !paidThisMonth) {
                     thisMonth
                 } else {
                     val nextMonth = if (today.m == 12) PersianDate(today.y + 1, 1, 1) else PersianDate(today.y, today.m + 1, 1)

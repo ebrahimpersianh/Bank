@@ -83,6 +83,7 @@ class LoanRepository(
     suspend fun deleteLoan(id: Long) {
         loanDao.deleteById(id)
         loanRowDao.deleteForLoan(id)
+        LoanDataChange.notifyChanged()
     }
 
     /** پورت پاک‌سازیِ لوکالِ بعد از خروج - وگرنه وام‌های همون گوشی زیرِ حسابِ قبلی، موقع ورود با یه
@@ -91,6 +92,7 @@ class LoanRepository(
     suspend fun clearLocal() {
         loanDao.clear()
         loanRowDao.clearAll()
+        LoanDataChange.notifyChanged()
     }
 
     /**
@@ -143,6 +145,7 @@ class LoanRepository(
             ),
         )
         loanRowDao.upsertAll(buildInitialRowEntities(id, installment, n, paidCount))
+        LoanDataChange.notifyChanged()
     }
 
     /** آیا این وام با فرمِ افزودنِ دستی ساخته شده (نه از رو یه محاسبه‌ی وامِ بانکی/قرض‌الحسنه)؟ فقط
@@ -318,6 +321,7 @@ class LoanRepository(
             ),
         )
         loanRowDao.replaceForLoan(loan.id, newRows)
+        LoanDataChange.notifyChanged()
     }
 
     /**
@@ -450,6 +454,7 @@ class LoanRepository(
         loanRowDao.upsertAll(
             rows.map { (m, inst) -> LoanRowEntity(loanId = id, m = m, installment = inst, paid = m <= paidCount) },
         )
+        LoanDataChange.notifyChanged()
         return id
     }
 
@@ -894,6 +899,7 @@ class LoanRepository(
         // وام‌هایی بی هیچ قسطی به‌جا می‌گذاشت - یعنی پیشرفتِ پرداختِ همه صفر.
         inTransaction {
             loanDao.replaceAll(parsed.map { it.first })
+            LoanDataChange.notifyChanged()
             loanRowDao.clearAll()
             parsed.forEach { (_, rows) -> if (rows.isNotEmpty()) loanRowDao.upsertAll(rows) }
         }

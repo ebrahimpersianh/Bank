@@ -1263,6 +1263,8 @@ private fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Cat
     val accounts by viewModel.accounts.collectAsState()
     var showAddForm by remember { mutableStateOf(false) }
     var deletingPayment by remember { mutableStateOf<RecurringPaymentEntity?>(null) }
+    val allTx by viewModel.transactions.collectAsState()
+    val nowDate = remember { JalaliCalendar.today() }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -1278,7 +1280,7 @@ private fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Cat
         item {
             Text(
                 "مثلِ اجاره‌خونه یا قسطِ ثابتِ ماهانه - تو روزِ مشخص‌شده هر ماه یادآوری می‌گیری، ولی " +
-                    "خودش خودکار تراکنش ثبت نمی‌کنه.",
+                    "خودش خودکار تراکنش ثبت نمی‌کنه؛ وقتی پرداختی، دکمه‌ی «ثبتِ پرداختِ این ماه» رو بزن.",
                 color = AppMuted,
                 fontSize = 11.5.sp,
             )
@@ -1327,6 +1329,33 @@ private fun RecurringSection(viewModel: AccountViewModel, categoryViewModel: Cat
                                 color = if (p.type == TransactionType.DEPOSIT.name) AppPrimary else AppDanger,
                                 fontSize = 13.sp,
                             )
+                        }
+                        // «ثبتِ پرداختِ این ماه»: همان تراکنشِ قسط/قبض - از حساب کم (یا به آن اضافه) می‌شود و
+                        // دوباره زدن، دو بار ثبت نمی‌کند؛ «برگردان» همان را پاک می‌کند.
+                        val periodId = "${p.id}:${nowDate.y}-${nowDate.m}"
+                        val recorded = allTx.firstOrNull { it.sourceType == "recurring" && it.sourceId == periodId }
+                        val targetAccount = p.accountId ?: accounts.firstOrNull()?.id
+                        if (recorded != null) {
+                            TextButton(onClick = { viewModel.deleteTransaction(recorded) }) {
+                                Text("✓ این ماه ثبت شد · برگردان", color = AppMuted, fontSize = 12.sp)
+                            }
+                        } else if (targetAccount != null) {
+                            TextButton(onClick = {
+                                viewModel.addTransaction(
+                                    accountId = targetAccount,
+                                    type = if (p.type == TransactionType.DEPOSIT.name) TransactionType.DEPOSIT else TransactionType.WITHDRAWAL,
+                                    amount = p.amount,
+                                    description = p.name,
+                                    year = nowDate.y,
+                                    month = nowDate.m,
+                                    day = nowDate.d,
+                                    category = p.categoryName,
+                                    sourceType = "recurring",
+                                    sourceId = periodId,
+                                )
+                            }) {
+                                Text("ثبتِ پرداختِ این ماه", color = AppPrimary, fontSize = 12.sp)
+                            }
                         }
                     }
                 }
