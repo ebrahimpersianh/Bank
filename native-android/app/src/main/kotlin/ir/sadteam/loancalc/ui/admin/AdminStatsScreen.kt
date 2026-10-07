@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.foundation.border
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.filled.Groups
@@ -85,6 +87,7 @@ import ir.sadteam.loancalc.ui.theme.AppDanger
 import ir.sadteam.loancalc.ui.theme.AppDangerPill
 import ir.sadteam.loancalc.ui.theme.AppGoldInk
 import ir.sadteam.loancalc.ui.theme.AppGoldInk2
+import ir.sadteam.loancalc.ui.theme.AppGoldBorder
 import ir.sadteam.loancalc.ui.theme.AppMarkOff
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppWarningInk
@@ -831,14 +834,33 @@ private fun SalesCard(st: AdminStatsResponse) {
     val actions = st.actions.orEmpty()
     fun actionSum(prefix: String) = actions.filter { it.name.startsWith(prefix) }.sumOf { it.total }
     fun actionUsers(prefix: String) = actions.filter { it.name.startsWith(prefix) }.sumOf { it.users }
-    AppCard(variant = AppCardVariant.GOLD, label = "فروش و اشتراک") {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            GoldStat("مشترکِ فعال", adminNum(st.activeSubscribers), "نفر", Modifier.weight(1f))
-            GoldStat("فروشِ ۳۰ روز", adminNum(sales.sumOf { it.count30 }), "خرید", Modifier.weight(1f))
-            GoldStat("درآمدِ ۳۰ روز", adminNum(sales.sumOf { it.tomans30.toLong() }), "تومان", Modifier.weight(1.4f))
+    // ۱۶ مهر: بازطراحی طبقِ طرح - کارتِ طلاییِ خلاصه + هر بخش در کارتِ جدا.
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    AppCard(variant = AppCardVariant.GOLD) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("فروش و اشتراک", color = AppGoldInk, fontSize = 17.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+            Row(
+                Modifier.clip(RoundedCornerShape(999.dp)).border(1.dp, AppGoldBorder, RoundedCornerShape(999.dp)).padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.CalendarMonth, null, tint = AppGoldInk2, modifier = Modifier.size(16.dp))
+                Text("۳۰ روزِ گذشته", color = AppGoldInk2, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 5.dp))
+            }
         }
-        AdminNote("کلِ عمر: ${adminNum(sales.sumOf { it.countAll })} خرید · ${adminNum(sales.sumOf { it.tomansAll.toLong() })} تومان", gold = true)
-        Spacer(Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
+            GoldStat("مشترکِ فعال", adminNum(st.activeSubscribers), "نفر", Modifier.weight(1f), Icons.Filled.Groups)
+            GoldStat("فروشِ ۳۰ روز", adminNum(sales.sumOf { it.count30 }), "خرید", Modifier.weight(1f), Icons.Filled.ShoppingCart)
+            GoldStat("درآمدِ ۳۰ روز", adminNum(sales.sumOf { it.tomans30.toLong() }), "تومان", Modifier.weight(1.2f), Icons.Filled.Savings)
+        }
+        Row(
+            Modifier.padding(top = 10.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).border(1.dp, AppGoldBorder, RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("کلِ عمر: ${adminNum(sales.sumOf { it.countAll })} خرید · ${adminNum(sales.sumOf { it.tomansAll.toLong() })} تومان", color = AppGoldInk2, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Icon(Icons.Filled.Info, null, tint = AppGoldInk2, modifier = Modifier.size(20.dp))
+        }
+    }
+    androidx.compose.runtime.CompositionLocalProvider(LocalBoxedSection provides true) {
         if (sales.isNotEmpty()) {
             val top = sales.maxByOrNull { it.count30 }
             AdminSubSection("به‌تفکیکِ پلن", top?.let { "بیشترین: ${PLAN_LABELS[it.product] ?: it.product} · ${toFa(it.count30)} در ماه" }, gold = true) {
@@ -913,13 +935,20 @@ private fun SalesCard(st: AdminStatsResponse) {
             )
         }
     }
+    }
 }
 
 @Composable
-private fun GoldStat(label: String, value: String, unit: String, modifier: Modifier) {
-    Column(modifier) {
-        Text(label, color = AppGoldInk2, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(value, color = AppGoldInk, fontSize = 18.sp, fontWeight = FontWeight.Black, maxLines = 1)
+private fun GoldStat(label: String, value: String, unit: String, modifier: Modifier, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    Column(
+        modifier.clip(RoundedCornerShape(16.dp)).background(AppGoldInk.copy(alpha = 0.08f)).border(1.dp, AppGoldBorder, RoundedCornerShape(16.dp)).padding(vertical = 10.dp, horizontal = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(Modifier.size(38.dp).clip(CircleShape).background(AppGoldInk.copy(alpha = 0.22f)), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = AppGoldInk, modifier = Modifier.size(20.dp))
+        }
+        Text(label, color = AppGoldInk2, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+        Text(value, color = AppGoldInk, fontSize = 19.sp, fontWeight = FontWeight.Black, maxLines = 1)
         Text(unit, color = AppGoldInk2, fontSize = 11.sp)
     }
 }

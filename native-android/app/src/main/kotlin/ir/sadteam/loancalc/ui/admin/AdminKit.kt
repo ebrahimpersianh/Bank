@@ -30,8 +30,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Sms
-import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Poll
 import androidx.compose.material.icons.filled.Category
@@ -347,6 +350,14 @@ internal fun AdminSection(
 @Composable
 internal fun AdminSubSection(title: String, summary: String? = null, gold: Boolean = false, divider: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
     var open by rememberSaveable(title) { mutableStateOf(false) }
+    // ۱۶ مهر: بخش‌های «فروش و اشتراک» هر کدام کارتِ جدا با فلشِ گرد (طرح).
+    if (LocalBoxedSection.current) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(AppSurface)
+                .border(1.dp, AppLineRow, RoundedCornerShape(18.dp)).padding(horizontal = 12.dp),
+        ) { AdminSectionBody(title, summary, open, { open = !open }, false, content, roundChevron = true) }
+        return
+    }
     if (divider) Box(Modifier.fillMaxWidth().height(1.5.dp).background(if (gold) AppGoldBorder else AppLineRow))
     AdminSectionBody(title, summary, open, { open = !open }, gold, content)
 }
@@ -356,6 +367,10 @@ private fun sectionIcon(title: String): Pair<androidx.compose.ui.graphics.vector
     val I = Icons.Filled
     return when {
         "پیامک" in title -> I.Sms to androidx.compose.ui.graphics.Color(0xFF16A34A)
+        "پلن" in title -> I.WorkspacePremium to androidx.compose.ui.graphics.Color(0xFFD97706)
+        "فروشگاه" in title -> I.Storefront to androidx.compose.ui.graphics.Color(0xFF3B82F6)
+        "فروشِ روزانه" in title -> I.BarChart to androidx.compose.ui.graphics.Color(0xFF3B82F6)
+        "مسیرِ خرید" in title -> I.Route to androidx.compose.ui.graphics.Color(0xFF8B5CF6)
         "آپدیت" in title || "نسخه‌ی تازه" in title -> I.SystemUpdate to androidx.compose.ui.graphics.Color(0xFF0D9488)
         "اشتراک" in title -> I.WorkspacePremium to androidx.compose.ui.graphics.Color(0xFFD97706)
         "سکه" in title -> I.MonetizationOn to androidx.compose.ui.graphics.Color(0xFFCA8A04)
@@ -373,7 +388,10 @@ private fun sectionIcon(title: String): Pair<androidx.compose.ui.graphics.vector
 }
 
 @Composable
-private fun AdminSectionBody(title: String, summary: String?, open: Boolean, toggle: () -> Unit, gold: Boolean, content: @Composable ColumnScope.() -> Unit) {
+internal val LocalBoxedSection = androidx.compose.runtime.staticCompositionLocalOf { false }
+
+@Composable
+private fun AdminSectionBody(title: String, summary: String?, open: Boolean, toggle: () -> Unit, gold: Boolean, content: @Composable ColumnScope.() -> Unit, roundChevron: Boolean = false) {
     Column {
         Row(Modifier.fillMaxWidth().heightIn(min = 60.dp).clickable(onClick = toggle), verticalAlignment = Alignment.CenterVertically) {
             val (ic, col) = sectionIcon(title)
@@ -386,7 +404,11 @@ private fun AdminSectionBody(title: String, summary: String?, open: Boolean, tog
                     Text(summary, color = if (gold) AppGoldInk2 else AppMuted, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
-            Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, if (open) "بستن" else "باز کردن", tint = if (gold) AppGoldInk2 else AppMuted)
+            if (roundChevron) {
+                Box(Modifier.size(38.dp).clip(androidx.compose.foundation.shape.CircleShape).background(AppSurface2), contentAlignment = Alignment.Center) {
+                    Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, if (open) "بستن" else "باز کردن", tint = AppMuted)
+                }
+            } else Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, if (open) "بستن" else "باز کردن", tint = if (gold) AppGoldInk2 else AppMuted)
         }
         AnimatedVisibility(open) { Column(Modifier.fillMaxWidth().padding(bottom = 12.dp)) { content() } }
     }
