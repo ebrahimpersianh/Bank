@@ -660,7 +660,7 @@ fun ShortcutDrawerHandle(onOpen: () -> Unit, modifier: Modifier = Modifier) {
             Box(
                 modifier = Modifier
                     // ظریف‌تر (خواسته‌ی کاربر، ۲ مهر): «بمونه ولی به برنامه بیاد».
-                    .width(52.dp)
+                    .width(80.dp) // ۱۶ مهر: کمی کشیده‌تر (خواسته‌ی کاربر)
                     .height(3.dp)
                     .clip(RoundedCornerShape(999.dp))
                     .background(AppPrimary.copy(alpha = 0.85f)),
