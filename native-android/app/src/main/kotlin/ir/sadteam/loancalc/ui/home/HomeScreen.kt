@@ -310,6 +310,7 @@ fun HomeScreen(
     // پیش‌بینیِ «تا آخرِ ماه کم میاری» - رجوع کن به MonthForecast تو :core.
     // موجودی = جمعِ موجودیِ همه‌ی حساب‌کتاب‌ها (همون تعریفی که تبِ دارایی نشون می‌ده).
     val accounts by accountViewModel.accounts.collectAsState()
+    val insightCtx = androidx.compose.ui.platform.LocalContext.current
     val smartInsights = remember(transactions, accounts, upcoming7d, recurringForInsights) {
         val today = ir.sadteam.loancalc.core.JalaliCalendar.today()
         val txs = transactions.filter { it.sourceType !in ir.sadteam.loancalc.data.NON_SPENDING_SOURCES && it.confirmed }.map {
@@ -545,7 +546,9 @@ fun HomeScreen(
                     }
                 }
             }
-            if (!simple && smartInsights.isNotEmpty()) {
+            // اگر همه‌ی پیشنهادها بسته شده باشند کارت چیزی نمی‌کشد، ولی خودِ آیتم ۱۳dp فاصله‌ی
+            // اضافه می‌ساخت (فاصله‌ی دوبرابرِ بودجه تا «خرجِ این ماه»). پس اینجا چک می‌کنیم.
+            if (!simple && smartInsights.any { !InsightDismissals.hidden(insightCtx, it.key) }) {
                 item {
                     SmartInsightsCard(smartInsights) { ins ->
                         when (ins.kind) {
@@ -1051,7 +1054,13 @@ private fun TodaySpendHero(
                 // خبرش می‌مانَد، ولی دیگر جای عددِ اصلی را نمی‌گیرد.
                 if (deltaPercent != null && deltaPercent != 0) {
                     Text(
-                        if (deltaPercent < 0) "${(-deltaPercent).toFa()}٪ کمتر از دیروز" else "${deltaPercent.toFa()}٪ بیشتر از دیروز",
+                        when {
+                            deltaPercent < 0 -> "${(-deltaPercent).toFa()}٪ کمتر از دیروز"
+                            // ۱۶ مهر: «۳۵۱۴۰۰٪ بیشتر» (دیروز تقریباً صفر بود) گمراه‌کننده بود؛
+                            // مثلِ کارتِ هفته از ۲۰۰٪ به بالا «N برابر» می‌نویسیم.
+                            deltaPercent >= 200 -> "${kotlin.math.round(1 + deltaPercent / 100.0).toLong().toFa()} برابرِ دیروز"
+                            else -> "${deltaPercent.toFa()}٪ بیشتر از دیروز"
+                        },
                         color = HeroMuted,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
@@ -1092,7 +1101,7 @@ private fun HeroFlowLine(
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
             PrivacyCrossfade(privacyMode) { masked ->
                 Text(
-                    (if (income) "+ " else "− ") + maskIfPrivate(masked, amount.rialToFaCompact()),
+                    (if (income) "+ " else "− ") + maskIfPrivate(masked, heroFlowAmount(amount)),
                     color = if (income) HeroIncome else HeroExpense,
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Black,
@@ -1107,6 +1116,20 @@ private fun HeroFlowLine(
                 modifier = Modifier.padding(start = 3.dp).size(11.dp),
             )
         }
+    }
+}
+
+/**
+ * مبلغِ دو خطِ «درآمد/خرجِ امروز» با **یک قالبِ هم‌شکل**: میلیون، هزار یا عددِ کامل.
+ * قبلاً «۸ میلیون» کنارِ «۳۵۲,۴۰۳» می‌نشست و ناهماهنگ بود.
+ */
+private fun heroFlowAmount(rial: Double): String {
+    val toman = kotlin.math.abs(rialToToman(rial.toLong()))
+    return when {
+        toman >= 1_000_000_000L -> rial.rialToFaCompact()
+        toman >= 1_000_000L -> rial.rialToFaCompact()
+        toman >= 1_000L -> "${(toman / 1_000).toFa()} هزار"
+        else -> toman.toFa()
     }
 }
 

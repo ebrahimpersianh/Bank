@@ -32,7 +32,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppText
 
 /** «بستن»ِ هر پیشنهاد آن را ۷ روز پنهان می‌کند (هر کلید جدا). */
-private object InsightDismissals {
+internal object InsightDismissals {
     private const val PREFS = "smart_insights"
     private const val WEEK_MS = 7L * 24 * 60 * 60 * 1000
     fun hidden(ctx: Context, key: String) =
