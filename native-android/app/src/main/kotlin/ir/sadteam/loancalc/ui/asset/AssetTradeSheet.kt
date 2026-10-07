@@ -203,6 +203,14 @@ fun AssetTradeSheet(
                 onClick = { showPicker = true },
             )
 
+            // نمودارِ همان دارایی (۱۵ مهر): هر دارایی که انتخاب می‌کنی، روندِ ۳۰ روزش همین‌جا
+            // دیده می‌شود؛ بی نمودار (کمتر از یک نقطه) خودش جایی نمی‌گیرد.
+            picked?.let { sel ->
+                val pickedHistory by remember(sel.symbol) { viewModel.historyOf(sel.symbol) }
+                    .collectAsState(initial = emptyList())
+                AssetSparkline(points = pickedHistory)
+            }
+
             // ═══ ۳ · مبلغِ کل ═══
             AppCard(label = "مبلغِ کل") {
                 OutlinedTextField(

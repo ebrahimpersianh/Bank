@@ -439,7 +439,7 @@ data class PricePoint(val year: Int, val month: Int, val day: Int, val priceRial
  * - **صفر نقطه** کارت اصلاً نمیاد.
  */
 @Composable
-private fun AssetSparkline(points: List<PricePoint>) {
+internal fun AssetSparkline(points: List<PricePoint>) {
     if (points.isEmpty()) return
 
     val shape = RoundedCornerShape(AppRadius.card)
