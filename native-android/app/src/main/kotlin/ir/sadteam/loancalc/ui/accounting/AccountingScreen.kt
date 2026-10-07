@@ -566,7 +566,7 @@ private fun AccountingTransactionRow(
                     Text(tx.description, color = AppMuted, fontSize = 11.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
                 }
                 Text(
-                    "${toFa(tx.day)} ${faMonthNamesAccounting[tx.month - 1]} · $accountName",
+                    listOfNotNull("${toFa(tx.day)} ${faMonthNamesAccounting[tx.month - 1]}", accountName, ir.sadteam.loancalc.ui.account.timeOfTransaction(tx)).joinToString(" · "),
                     color = AppLabel,
                     fontSize = 11.sp,
                     maxLines = 1,

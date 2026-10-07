@@ -1566,6 +1566,15 @@
         <!-- کنش‌های داخلِ اعلان («پرداخت شد» / «فردا یادم بیاور») - رجوع کن به
              notifications/NotificationActionReceiver.kt. exported=false چون فقط
              PendingIntentهای خودِ اپ صداش می‌زنن. -->
+        <!-- ۱۶ مهر: انتخابِ دسته روی خودِ اعلان (پنجره‌ی شفاف، بی بازکردنِ برنامه). -->
+        <activity
+            android:name=".notifications.CategoryPickActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.LoanCalc.Translucent" />
+
         <receiver
             android:name=".notifications.NotificationActionReceiver"
             android:exported="false" />

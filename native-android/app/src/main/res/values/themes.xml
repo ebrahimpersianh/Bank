@@ -4,6 +4,15 @@
         <item name="android:windowBackground">@color/app_bg</item>
     </style>
 
+    <!-- پنجره‌ی شفافِ انتخابِ دسته از روی اعلان. -->
+    <style name="Theme.LoanCalc.Translucent" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+    </style>
+
     <!-- فریمِ اولِ اندروید باید امتدادِ همان اینتروی Compose باشد: زمینهٔ کرم،
          نشان واقعیِ جیبک و بدونِ فلاش/صفحهٔ خالی. بعد از آماده‌شدنِ Compose، سکه می‌افتد،
          کیف ظاهر می‌شود و متن و نوار پیشرفت وارد می‌شوند. -->

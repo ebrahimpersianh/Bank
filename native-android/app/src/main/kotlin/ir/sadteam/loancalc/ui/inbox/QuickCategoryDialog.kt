@@ -1,6 +1,10 @@
 package ir.sadteam.loancalc.ui.inbox
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,7 +34,6 @@ import ir.sadteam.loancalc.data.CategoryRepository
 import ir.sadteam.loancalc.data.ParsingRuleRepository
 import ir.sadteam.loancalc.data.db.AccountTransactionEntity
 import ir.sadteam.loancalc.notifications.CategoryLearning
-import ir.sadteam.loancalc.ui.components.AppChip
 import ir.sadteam.loancalc.ui.components.JibakAlertDialog
 import ir.sadteam.loancalc.ui.jibak.faDigits
 import ir.sadteam.loancalc.ui.jibak.rialToToman
@@ -83,6 +86,7 @@ fun QuickCategoryDialog(
     txId: Long,
     onDismiss: () -> Unit,
     onShowSource: (() -> Unit)? = null,
+    onPicked: ((String) -> Unit)? = null,
     viewModel: QuickCategoryViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(txId) { viewModel.load(txId) }
@@ -91,35 +95,58 @@ fun QuickCategoryDialog(
     val t = tx
     JibakAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("دسته‌ی این تراکنش؟", fontSize = 15.sp, fontWeight = FontWeight.Black) },
+        title = { Text("دسته‌ی این تراکنش؟", fontSize = 16.sp, fontWeight = FontWeight.Black) },
         text = {
             Column(
-                modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (t != null) {
                     val amount = ir.sadteam.loancalc.core.fmt(rialToToman(t.amount.toLong()).toDouble()).faDigits()
-                    Text("$amount تومان · ${t.description}", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("$amount تومان", color = AppText, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                    Text(t.description, color = AppMuted, fontSize = 12.sp, maxLines = 1)
                     if (CategoryLearning.counterpartyOf(t) != null) {
                         Text("دفعه‌ی بعد برای همین طرف، خودم همین دسته را می‌زنم.", color = AppMuted, fontSize = 11.sp)
                     }
                 }
-                options.chunked(3).forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                // ۱۶ مهر: کاشی‌های آیکون‌دار (به‌جای تراشه‌های متنی‌ِ بی‌نظم) - چهار ستون.
+                options.chunked(4).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                         row.forEach { c ->
-                            AppChip(
-                                c.name,
-                                selected = t?.category == c.name,
-                                onClick = { viewModel.pick(txId, c.name, onDismiss) },
-                                modifier = Modifier.weight(1f),
-                            )
+                            val selected = t?.category == c.name
+                            Column(
+                                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                                    .background(if (selected) c.color.copy(alpha = 0.22f) else androidx.compose.ui.graphics.Color.Transparent)
+                                    .clickable {
+                                        viewModel.pick(txId, c.name) { onPicked?.invoke(c.name); onDismiss() }
+                                    }
+                                    .padding(vertical = 8.dp),
+                            ) {
+                                androidx.compose.foundation.layout.Box(
+                                    modifier = Modifier.size(44.dp).clip(androidx.compose.foundation.shape.CircleShape).background(c.color.copy(alpha = 0.18f)),
+                                    contentAlignment = androidx.compose.ui.Alignment.Center,
+                                ) {
+                                    androidx.compose.material3.Icon(c.icon, contentDescription = null, tint = c.color, modifier = Modifier.size(22.dp))
+                                }
+                                Text(
+                                    c.name,
+                                    color = AppText,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (selected) FontWeight.Black else FontWeight.Bold,
+                                    maxLines = 1,
+                                    modifier = Modifier.padding(top = 5.dp),
+                                )
+                            }
                         }
-                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                        repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("بستن") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("بعداً") } },
         dismissButton = onShowSource?.let { show -> { TextButton(onClick = show) { Text("متنِ پیام") } } },
     )
 }

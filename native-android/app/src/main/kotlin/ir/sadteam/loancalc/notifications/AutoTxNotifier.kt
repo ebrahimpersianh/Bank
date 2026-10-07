@@ -152,31 +152,34 @@ object AutoTxNotifier {
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("ثبت شد ✓")
             .setContentText(if (quick.isEmpty()) "فقط دسته‌اش مانده - اگر الان وقت نداری، بعداً از خودِ تراکنش عوضش کن." else "دسته‌اش چیست؟ یکی را بزن - دفعه‌ی بعد خودم یادم می‌ماند.")
-            .setContentIntent(pickCategoryIntent(context, txId))
+            .setContentIntent(pickHereIntent(context, txId, notificationId))
             .setGroup(GROUP_AUTO_TX)
             .setAutoCancel(true)
             .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
-        // 🧠 (۱۴ مهر) دو دسته‌ی پراستفاده مستقیم روی اعلان - یک لمس، بی بازکردنِ برنامه.
+        // 🧠 (۱۴ مهر) دو دسته‌ی پراستفاده مستقیم روی اعلان. ۱۶ مهر: از پنجره‌ی شفاف می‌گذرند
+        // (نه BroadcastReceiver) تا اعلان حتماً بسته شود و «بقیه…» همان‌جا باز شود، نه در برنامه.
         quick.take(2).forEach { cat ->
-            val intent = Intent(context, NotificationActionReceiver::class.java).apply {
-                action = NotificationActionReceiver.ACTION_SET_CATEGORY
-                putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
-                putExtra(NotificationActionReceiver.EXTRA_TX_ID, txId)
-                putExtra(NotificationActionReceiver.EXTRA_CATEGORY, cat)
-            }
-            val pending = PendingIntent.getBroadcast(
-                context, "cat_${txId}_$cat".hashCode(), intent,
+            val pending = PendingIntent.getActivity(
+                context, "cat_${txId}_$cat".hashCode(),
+                CategoryPickActivity.intent(context, txId, notificationId, cat),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
             builder.addAction(NotificationCompat.Action.Builder(0, cat, pending).build())
         }
         builder.addAction(
-            NotificationCompat.Action.Builder(0, if (quick.isEmpty()) "انتخابِ دسته" else "بقیه…", pickCategoryIntent(context, txId)).build(),
+            NotificationCompat.Action.Builder(0, if (quick.isEmpty()) "انتخابِ دسته" else "بقیه…", pickHereIntent(context, txId, notificationId)).build(),
         )
         ir.sadteam.loancalc.data.UsageStats.action("notif_shown_autotx")
         NotificationManagerCompat.from(context).notify(notificationId, builder.build())
     }
+
+    private fun pickHereIntent(context: Context, txId: Long, notificationId: Int): PendingIntent =
+        PendingIntent.getActivity(
+            context, "pickhere_$txId".hashCode(),
+            CategoryPickActivity.intent(context, txId, notificationId),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
 
     private fun pickCategoryIntent(context: Context, txId: Long): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
