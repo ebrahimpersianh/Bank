@@ -20,6 +20,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.MonitorHeart
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.FormatListBulleted
+import androidx.compose.material.icons.filled.ViewInAr
+import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.CloudOff
@@ -60,6 +74,8 @@ import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppSurface2
+import ir.sadteam.loancalc.ui.theme.AppSurface
+import ir.sadteam.loancalc.ui.theme.AppLineRow
 import ir.sadteam.loancalc.ui.theme.AppText
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.mutableStateOf
@@ -119,9 +135,10 @@ fun AdminStatsScreen(onBack: () -> Unit, viewModel: AdminStatsViewModel = hiltVi
                     )
                 }
                 is AdminStatsViewModel.State.Ready -> {
+                    item { RangePill(s.stats) }
                     stickyHeader {
                         Box(Modifier.fillMaxWidth().background(AppBg).padding(vertical = 4.dp)) {
-                            AdminTabs(STATS_TABS, tab, { tab = it }, dots = if (s.stats.crashes30 > 0) setOf(6) else emptySet())
+                            StatsIconTabs(tab, { tab = it }, crashDot = s.stats.crashes30 > 0)
                         }
                     }
                     statsContent(s.stats, tab)
@@ -359,7 +376,11 @@ private fun Insights(st: AdminStatsResponse) {
         }
         st.actions.orEmpty().firstOrNull()?.let { add("پرتکرارترین کار: ${actionLabel(it.name)} (${adminNum(it.total)} بار).") }
     }
-    AppCard(label = "بینش‌ها") {
+    AppCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Lightbulb, null, tint = Color(0xFFFACC15), modifier = Modifier.size(22.dp))
+            Text("بینش‌ها", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 6.dp))
+        }
         TopList(lines, visible = 3) { line ->
             Row(modifier = Modifier.padding(top = 6.dp), verticalAlignment = Alignment.Top) {
                 Box(Modifier.padding(top = 8.dp).size(6.dp).clip(CircleShape).background(AppPrimary))
@@ -906,26 +927,133 @@ private fun GoldStat(label: String, value: String, unit: String, modifier: Modif
 /** ⏱ لحظه‌ای + خطِ ۳۰ روزه + چسبندگی (DAU/MAU) + ازدست‌رفته‌ها. */
 @Composable
 private fun LiveCard(st: AdminStatsResponse) {
-    AppCard(label = "همین حالا") {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KpiTile("داخلِ برنامه", adminNum(st.activeNow), Modifier.weight(1f), unit = "نفر")
-            KpiTile("یک ساعتِ اخیر", adminNum(st.activeLastHour), Modifier.weight(1f), unit = "نفر")
-            KpiTile("میانگینِ روزانه", faDecimal(st.avgDau30), Modifier.weight(1f), unit = "نفر")
+    // ۱۶ مهر: بازطراحی طبقِ طرحِ ChatGPT - کاشی‌های رنگی با آیکون، نمودار با محور و تاریخ.
+    AppCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("نمای کلیِ عملکرد", color = AppText, fontSize = 16.sp, fontWeight = FontWeight.Black)
+            Icon(Icons.Filled.Info, null, tint = AppMuted, modifier = Modifier.padding(start = 6.dp).size(18.dp))
+            Spacer(Modifier.weight(1f))
+            Row(
+                Modifier.clip(RoundedCornerShape(999.dp)).background(AppSurface2).padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("کاربرِ فعالِ ۳۰ روز: ${adminNum(st.active30)}", color = AppText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Box(Modifier.padding(start = 6.dp).size(8.dp).clip(CircleShape).background(Color(0xFF22C55E)))
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
+            ColorStat("داخلِ برنامه", adminNum(st.activeNow), "نفر", Icons.Filled.Groups, Color(0xFF10B981), Modifier.weight(1f))
+            ColorStat("یک ساعتِ اخیر", adminNum(st.activeLastHour), "نفر", Icons.Filled.CalendarMonth, Color(0xFF3B82F6), Modifier.weight(1f))
+            ColorStat("میانگینِ روزانه", faDecimal(st.avgDau30), "نفر", Icons.Filled.AccessTime, Color(0xFF8B5CF6), Modifier.weight(1f))
         }
         val daily = st.daily.orEmpty()
         if (daily.isNotEmpty()) {
-            AdminSubTitle("کاربرِ فعال · ۳۰ روز")
-            AdminLineChart(daily.map { it.active }, height = 64.dp)
+            Column(
+                Modifier.padding(top = 12.dp).fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                    .border(1.dp, AppLineRow, RoundedCornerShape(16.dp)).padding(12.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("کاربرِ فعالِ ۳۰ روزِ اخیر", color = AppText, fontSize = 12.5.sp, fontWeight = FontWeight.Black)
+                    Icon(Icons.Filled.TrendingUp, null, tint = AppPrimary, modifier = Modifier.padding(start = 6.dp).size(18.dp))
+                }
+                val values = daily.map { it.active }
+                val max = (values.maxOrNull() ?: 0).coerceAtLeast(4)
+                val top = ((max + 3) / 4) * 4
+                Row(Modifier.padding(top = 8.dp)) {
+                    AdminLineChart(values, height = 96.dp, maxValue = top, modifier = Modifier.weight(1f))
+                    Column(Modifier.height(96.dp).padding(start = 6.dp, top = 6.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                        listOf(top, top * 3 / 4, top / 2, top / 4, 0).forEach { Text(toFa(it), color = AppLabel, fontSize = 9.sp) }
+                    }
+                }
+                val idx = listOf(0, daily.size / 4, daily.size / 2, daily.size * 3 / 4, daily.size - 1).distinct()
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp, end = 18.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    idx.forEach { Text(daily[it].day.faDigitsAscii(), color = AppLabel, fontSize = 9.5.sp) }
+                }
+            }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
-            KpiTile("چسبندگی", toFa(percent(Math.round(st.avgDau30 * 10).toInt(), st.active30 * 10)), Modifier.weight(1f), unit = "٪")
-            KpiTile("فعالِ هفته", adminNum(st.active7), Modifier.weight(1f), unit = "نفر")
-            KpiTile("ازدست‌رفته", adminNum(st.churned), Modifier.weight(1f), unit = "نصب")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
+            ColorStat("چسبندگی", toFa(percent(Math.round(st.avgDau30 * 10).toInt(), st.active30 * 10)), "٪", Icons.Filled.MonitorHeart, Color(0xFFF59E0B), Modifier.weight(1f))
+            ColorStat("فعالِ هفته", adminNum(st.active7), "نفر", Icons.Filled.CalendarToday, Color(0xFF3B82F6), Modifier.weight(1f))
+            ColorStat("از دست رفته", adminNum(st.churned), "نصب", Icons.Filled.Download, Color(0xFF8B5CF6), Modifier.weight(1f))
         }
-        AdminNote(
-            "«داخلِ برنامه» یعنی در ۵ دقیقه‌ی اخیر. «چسبندگی» = میانگینِ کاربرِ روزانه تقسیم بر کاربرِ ماه " +
-                "(اپ‌های خوب ۲۰٪ به بالا). «ازدست‌رفته» = نصب‌هایی که ۱۴ روز است نیامده‌اند.",
-        )
+        Row(
+            Modifier.padding(top = 12.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                .border(1.dp, AppLineRow, RoundedCornerShape(14.dp)).padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "«داخلِ برنامه» یعنی در ۵ دقیقه‌ی اخیر. «چسبندگی» = میانگینِ کاربرِ روزانه تقسیم بر کاربرِ ماه " +
+                    "(اپ‌های خوب ۲۰٪ به بالا). «از دست رفته» = نصب‌هایی که ۱۴ روز است نیامده‌اند.",
+                color = AppMuted, fontSize = 11.sp, lineHeight = 19.sp, modifier = Modifier.weight(1f),
+            )
+            Icon(Icons.Filled.Info, null, tint = AppMuted, modifier = Modifier.padding(start = 8.dp).size(20.dp))
+        }
+    }
+}
+
+/** کاشیِ رنگیِ آماری با آیکون (طرحِ ۱۶ مهر). */
+@Composable
+private fun ColorStat(label: String, value: String, unit: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, modifier: Modifier = Modifier) {
+    Column(
+        modifier.clip(RoundedCornerShape(16.dp))
+            .background(Brush.verticalGradient(listOf(color.copy(alpha = 0.28f), color.copy(alpha = 0.10f))))
+            .border(1.dp, color.copy(alpha = 0.45f), RoundedCornerShape(16.dp))
+            .padding(10.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(label, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
+            Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
+        }
+        Text(value, color = AppText, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
+        Text(unit, color = AppMuted, fontSize = 10.sp)
+    }
+}
+
+/** بازه‌ی زمانیِ آمار - همیشه ۳۰ روزِ اخیر (سرور همین را می‌دهد). */
+@Composable
+private fun RangePill(st: AdminStatsResponse) {
+    val daily = st.daily.orEmpty()
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(AppSurface)
+            .border(1.dp, AppLineRow, RoundedCornerShape(18.dp)).padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.CalendarMonth, null, tint = AppMuted, modifier = Modifier.size(24.dp))
+        Text("۳۰ روزِ گذشته", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(start = 10.dp).weight(1f))
+        if (daily.size >= 2) {
+            val days = daily.map { it.day }.sorted()
+            Text("${days.first().faDigitsAscii()} - ${days.last().faDigitsAscii()}", color = AppMuted, fontSize = 11.sp)
+        }
+    }
+}
+
+private val STATS_TAB_ICONS = listOf(
+    Icons.Filled.Dashboard, Icons.Filled.Groups, Icons.Filled.AccessTime, Icons.Filled.FormatListBulleted,
+    Icons.Filled.ViewInAr, Icons.Filled.PhoneAndroid, Icons.Filled.MonitorHeart,
+)
+
+/** تب‌های آیکون‌دار در یک قابِ گرد (طرحِ ۱۶ مهر). */
+@Composable
+private fun StatsIconTabs(selected: Int, onSelect: (Int) -> Unit, crashDot: Boolean) {
+    androidx.compose.foundation.lazy.LazyRow(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(AppSurface)
+            .border(1.dp, AppLineRow, RoundedCornerShape(22.dp)).padding(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        items(STATS_TABS.size) { i ->
+            val sel = i == selected
+            Column(
+                Modifier.width(72.dp).clip(RoundedCornerShape(18.dp)).background(if (sel) AppPrimary else Color.Transparent)
+                    .clickable { onSelect(i) }.padding(vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box {
+                    Icon(STATS_TAB_ICONS[i], null, tint = if (sel) Color.White else AppMuted, modifier = Modifier.size(24.dp))
+                    if (i == 6 && crashDot) Box(Modifier.align(Alignment.TopEnd).size(7.dp).clip(CircleShape).background(AppDanger))
+                }
+                Text(STATS_TABS[i], color = if (sel) Color.White else AppMuted, fontSize = 11.5.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, modifier = Modifier.padding(top = 4.dp))
+            }
+        }
     }
 }
 

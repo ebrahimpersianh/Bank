@@ -478,13 +478,13 @@ internal fun FunnelChart(steps: List<Pair<String, Int>>, unit: String = "نفر"
  * ⚠️ رنگ‌ها `@Composable`اند، پس بیرونِ `Canvas` خوانده می‌شوند.
  */
 @Composable
-internal fun AdminLineChart(values: List<Int>, bars: List<Int> = emptyList(), height: Dp = 110.dp, gold: Boolean = false) {
+internal fun AdminLineChart(values: List<Int>, bars: List<Int> = emptyList(), height: Dp = 110.dp, gold: Boolean = false, maxValue: Int? = null, modifier: Modifier = Modifier.fillMaxWidth()) {
     if (values.isEmpty()) return
     val line = if (gold) AppGoldInk else AppPrimary
     val barC = AppInfo
     val grid = AppChartGrid
-    val max = (values + bars).maxOrNull()?.coerceAtLeast(1) ?: 1
-    Canvas(Modifier.fillMaxWidth().height(height).padding(top = 6.dp)) {
+    val max = maxValue ?: (values + bars).maxOrNull()?.coerceAtLeast(1) ?: 1
+    Canvas(modifier.height(height).padding(top = 6.dp)) {
         val n = values.size
         val step = if (n > 1) size.width / (n - 1) else 0f
         fun x(i: Int) = size.width - i * step
