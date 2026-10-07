@@ -13,6 +13,7 @@ import ir.sadteam.loancalc.data.db.LoanEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,6 +25,7 @@ import javax.inject.Inject
  * ⚠️ `LoanRepository.getRows()` **suspend**ه - قاعده‌ی ماندگارِ پروژه می‌گه هیچ‌وقت تو
  * `remember{}` صداش نزن. برای همین کلِ محاسبه اینجا تو ViewModel می‌شینه.
  */
+@OptIn(kotlinx.coroutines.FlowPreview::class)
 @HiltViewModel
 class DueListViewModel @Inject constructor(
     private val loanRepository: LoanRepository,
@@ -118,7 +120,18 @@ class DueListViewModel @Inject constructor(
     }
 
     init {
-        refresh()
+        // لحظه‌ای: هر تغییر در وام‌ها، چک‌ها، بدهی‌ها یا پرداخت‌های تکراری (از هر صفحه‌ای) فهرست را
+        // تازه می‌کند؛ قبلاً فقط یک‌بار موقعِ باز شدن می‌خواند و بعد کهنه می‌ماند.
+        viewModelScope.launch {
+            kotlinx.coroutines.flow.combine(
+                loanRepository.observeLoans(),
+                chequeRepository.observeCheques(),
+                debtRepository.observeDebts(),
+                accountRepository.observeRecurringPayments(),
+            ) { _, _, _, _ -> Unit }
+                .debounce(250)
+                .collect { refresh() }
+        }
     }
 
     fun refresh() {
