@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.inbox
 
+import androidx.compose.foundation.layout.defaultMinSize
 import ir.sadteam.loancalc.R
 import androidx.compose.ui.graphics.drawscope.rotate
 import ir.sadteam.loancalc.ui.jibak.rialToToman
@@ -1089,16 +1090,22 @@ private fun TrashBinIcon(count: Int) {
             label = "binWiggle",
         ).value
     } else 0f
-    Box(Modifier.size(36.dp)) {
+    // ۱۶ مهر: شمارنده روی درِ سطل می‌افتاد؛ حالا سطل در یک سمت و شمارنده در گوشه‌ی دیگر،
+    // با حاشیه‌ی هم‌رنگِ پس‌زمینه تا مثلِ نشانِ واقعی دیده شود.
+    Box(Modifier.width(46.dp).height(40.dp)) {
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(if (full) R.drawable.trash_full else R.drawable.trash_empty),
             contentDescription = "سطلِ زباله",
-            modifier = Modifier.size(30.dp).align(Alignment.Center).graphicsLayer { rotationZ = wiggle * 6f },
+            modifier = Modifier.size(34.dp).align(Alignment.BottomStart).graphicsLayer { rotationZ = wiggle * 6f },
         )
         if (full) Box(
-            Modifier.align(Alignment.TopEnd).clip(androidx.compose.foundation.shape.CircleShape)
-                .background(Color(0xFFE5484D)).padding(horizontal = 6.dp, vertical = 1.dp),
+            Modifier.align(Alignment.TopEnd)
+                .defaultMinSize(minWidth = 18.dp, minHeight = 18.dp)
+                .border(1.5.dp, ir.sadteam.loancalc.ui.theme.AppSurface, androidx.compose.foundation.shape.CircleShape)
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .background(Color(0xFFE5484D))
+                .padding(horizontal = 4.dp),
             contentAlignment = Alignment.Center,
-        ) { Text(toFa(count), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black) }
+        ) { Text(toFa(count), color = Color.White, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Black) }
     }
 }
