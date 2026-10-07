@@ -60,7 +60,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 ir.sadteam.loancalc.data.UsageStats.action("notif_button_" + (intent.action ?: "?").substringAfterLast('.').lowercase())
                 when (intent.action) {
                     ACTION_MARK_PAID -> markPaid(intent)
-                    ACTION_SNOOZE -> snooze(intent)
+                    ACTION_SNOOZE -> snooze(context, intent)
                     ACTION_CONFIRM_TX -> confirmTransaction(context, intent)
                     ACTION_REJECT_TX -> rejectTransaction(intent)
                     ACTION_SET_CATEGORY -> {
@@ -163,10 +163,21 @@ class NotificationActionReceiver : BroadcastReceiver() {
      * پیاده‌سازیِ ساده و عمدی: صفِ جدا و زمان‌بندِ اختصاصی نمی‌سازد. یادآور از قبل روزی
      * یک‌بار همه‌ی سررسیدها را می‌بیند، پس «فردا» یعنی «اجرای بعدی» و کافی است.
      */
-    private suspend fun snooze(intent: Intent) {
+    private suspend fun snooze(context: Context, intent: Intent) {
         val key = intent.getStringExtra(EXTRA_SNOOZE_KEY) ?: return
         val today = JalaliCalendar.today()
         uiPrefs.setSnoozedUntilTomorrow(key, "${today.y}-${today.m}-${today.d}")
+        // سه بار پشتِ هم «فردا یادم بیاور» = احتمالاً تاریخ یا مبلغ درست نیست؛ یک پیامِ ملایم.
+        val counts = context.getSharedPreferences("snooze_counts", Context.MODE_PRIVATE)
+        val n = counts.getInt(key, 0) + 1
+        if (n >= 3) {
+            counts.edit().remove(key).apply()
+            inboxRepository.post(
+                kind = ir.sadteam.loancalc.data.db.InboxMessageEntity.Kind.SYSTEM,
+                title = "چند بار عقبش انداختی",
+                body = "یک یادآور را سه بار «فردا» کردی. اگر موعدش واقعاً عوض شده، تاریخش را در همان صفحه (وام، چک یا پرداختِ تکراری) اصلاح کن تا بی‌جهت یادآوری نشود.",
+            )
+        } else counts.edit().putInt(key, n).apply()
         // زمان‌بندی دوباره چیده نمی‌شود: یادآور از قبل روزی یک‌بار اجرا می‌شود، پس «فردا»
         // یعنی همان اجرای بعدی. فراخوانیِ دوباره‌ی زمان‌بند فقط لنگرِ ساعتش را جابه‌جا می‌کرد.
     }

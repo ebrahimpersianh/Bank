@@ -62,8 +62,11 @@ class BankSmsReceiver : BroadcastReceiver() {
                 if (!uiPrefs.smsAutoImportEnabled.first()) return@launch
                 // خوندنِ خودکار مالِ اشتراک است (۷ مهر)؛ بعدِ پایانش بی‌صدا متوقف می‌شود.
                 if (!authPrefs.subscribed.first()) return@launch
-                val parsed = BankSmsParser.parse(body) ?: return@launch
                 val accounts = accountRepository.observeAccounts().first()
+                val parsed = BankSmsParser.parse(body) ?: run {
+                    noteUnparsedBankSms(accounts, sender, body)
+                    return@launch
+                }
                 // ترتیبِ تشخیصِ حساب، از مطمئن‌ترین به ضعیف‌ترین:
                 // ۱) شماره/سرشماره‌ی پیامکی که کاربر خودش موقعِ ساختِ حساب وصل کرده (خواسته‌ی صریحِ
                 //    کاربر - قابلِ‌اعتمادترین، چون هر بانک سرشماره‌ی خودش رو داره)
@@ -191,5 +194,30 @@ class BankSmsReceiver : BroadcastReceiver() {
                 pendingResult.finish()
             }
         }
+    }
+
+    /**
+     * پیامکی از سرشمارهِ یکی از حساب‌های خودِ کاربر که شبیهِ تراکنش است ولی خوانده نشد: به‌جای
+     * سکوت، یک پیامِ بی‌صدا در «پیام‌ها». متنِ پیامک و مبلغ در آن نمی‌آید؛ هر سرشماره روزی یک بار.
+     */
+    private suspend fun noteUnparsedBankSms(
+        accounts: List<ir.sadteam.loancalc.data.db.AccountEntity>,
+        sender: String?,
+        body: String,
+    ) {
+        if (sender.isNullOrBlank()) return
+        val ours = accounts.any { it.smsEnabled && !it.smsSender.isNullOrBlank() && smsSenderMatches(it.smsSender, sender) }
+        if (!ours) return
+        val looksMoney = body.count { it.isDigit() } >= 4 &&
+            listOf("ریال", "مبلغ", "مانده", "برداشت", "واریز", "خرید").any { body.contains(it) }
+        if (!looksMoney) return
+        val today = JalaliCalendar.today()
+        if (!uiPrefs.claimAutoImportKey("unparsed|$sender|${today.y}-${today.m}-${today.d}")) return
+        inboxRepository.post(
+            kind = InboxMessageEntity.Kind.SYSTEM,
+            title = "یک پیامکِ بانک را نفهمیدم",
+            body = "از سرشمارهِ «$sender» پیامکی آمد که نتوانستم بخوانم. اگر تراکنش بود، دستی ثبتش کن؛ " +
+                "یا در «تنظیمات ← پیامک‌های بانکی» برایش قاعده بساز.",
+        )
     }
 }
