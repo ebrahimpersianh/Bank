@@ -899,7 +899,7 @@ fun MyLoansScreen(
                                                                 },
                                                             )
                                                             append(" · ")
-                                                            append(maskIfPrivate(masked, amountToman(loan.installment)))
+                                                            append(maskIfPrivate(masked, loan.installment.rialToFaCompact()))
                                                             append(" تومان")
                                                         }
                                                     },
@@ -972,9 +972,9 @@ fun MyLoansScreen(
                                                     centerBottom = "",
                                                     centerTopColor = if (attention) AppDangerInk else AppPrimary,
                                                     centerBottomColor = AppMuted,
-                                                    size = 44.dp,
-                                                    stroke = 4.dp,
-                                                    centerTopSize = 11,
+                                                    size = 48.dp,
+                                                    stroke = 4.5.dp,
+                                                    centerTopSize = 12,
                                                 )
                                             }
                                             if (!settled && !isLocked) {
@@ -1364,7 +1364,7 @@ private fun DashboardSummary(
                 }
                 PrivacyCrossfade(privacyMode) { masked ->
                     Text(
-                        "${maskIfPrivate(masked, amountToman(animatedMonthly))} تومان",
+                        "${maskIfPrivate(masked, animatedMonthly.rialToFaCompact())} تومان", // ۱۶ مهر: فشرده، هم‌قالبِ بقیه‌ی صفحه‌ها
                         color = Color.White,
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Black,
@@ -1388,16 +1388,17 @@ private fun DashboardSummary(
                         ringColor = Color.White,
                         trackColor = Color.White.copy(alpha = 0.3f),
                         centerTop = "${toFa(paidPct)}٪",
-                        centerBottom = "از ${toFa(rowsAll)} قسط",
+                        centerBottom = "${toFa(rowsAll - rowsLeft)} از ${toFa(rowsAll)}",
                         centerTopColor = Color.White,
                         centerBottomColor = HeroMuted,
                         // کوچک‌تر (۷۸→۶۶) تا کارتِ وام هم‌قدِ بقیه‌ی کارت‌های قهرمان شود.
                         // ۱۴ مهر: بزرگ‌تر تا «از ۴۹۸ قسط» کامل دیده شود (بریده می‌شد).
-                        size = 70.dp,
+                        size = 64.dp,
                         stroke = 7.dp,
                         centerTopSize = 15,
                     )
-                    Row(
+                    // ۱۶ مهر: «۱۸۴ پرداخت شده» حالا داخلِ حلقه است («۱۸۴ از ۴۹۸»)؛ قرصِ جدا برای کوتاه‌ترشدنِ کارت رفت.
+                    if (false) Row(
                         modifier = Modifier
                             .padding(top = 5.dp)
                             .clip(RoundedCornerShape(999.dp))
@@ -1544,7 +1545,7 @@ private fun DashboardSummary(
                     )
                     PrivacyCrossfade(privacyMode) { masked ->
                         Text(
-                            maskIfPrivate(masked, amountToman(animatedDebt)),
+                            maskIfPrivate(masked, animatedDebt.rialToFaCompact()),
                             color = Color.White,
                             fontSize = 10.5.sp,
                             fontWeight = FontWeight.Black,
@@ -1580,7 +1581,7 @@ private fun DashboardSummary(
                         )
                         PrivacyCrossfade(privacyMode) { masked ->
                             Text(
-                                maskIfPrivate(masked, amountToman(totalOverdue)),
+                                maskIfPrivate(masked, totalOverdue.rialToFaCompact()),
                                 color = Color.White,
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Black,

@@ -20,7 +20,7 @@
 - سندباکس اندروید را نمی‌سازد؛ فقط `build-native-android.yml` (دستی، ~۱۵ دقیقه). `server/`: `./gradlew compileKotlin --offline`.
 - ⛔ **سهمیه‌ی Actions محدود است:** همه‌ی کامیت‌های میانی `[skip ci]`؛ آخرِ کار **یک** بیلدِ دستی.
 - همه‌چیز روی `main` (+ هم‌گام با `claude/bank-9fiumm`). push روی `server/**` بدونِ skip = **دیپلویِ سرور**؛ دستی jar آپلود نکن.
-- APK در Releases با اسمِ `Jibak-1.0.<run>-<store>.apk`.
+- APK در Releases با اسمِ `Jibak-2.0.<run>-<store>.apk`.
 - قبل از بیلد: `native-android/tools/static-checks/*.py` (ایمپورتِ جاافتاده را همه نمی‌گیرند - دستی هم چک کن).
 
 ## سرور (VPS آروان، زنده)

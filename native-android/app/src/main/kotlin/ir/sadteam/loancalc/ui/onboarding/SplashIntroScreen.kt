@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -158,6 +159,17 @@ fun SplashIntroScreen(onDone: () -> Unit) {
                 modifier = Modifier.padding(top = 12.dp),
             )
         }
+        // ۱۶ مهر: نسخه‌ی برنامه پایینِ اسپلش (خواسته‌ی کاربر).
+        Text(
+            "نسخه ${ir.sadteam.loancalc.core.toFa(ir.sadteam.loancalc.BuildConfig.VERSION_NAME)}",
+            color = Color.White.copy(alpha = 0.55f),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = 14.dp),
+        )
         Canvas(modifier = Modifier.fillMaxSize()) {
             sparkles.forEach { s ->
                 // موجِ سینوسی: هر ذره فازِ خودش را دارد، پس همه با هم چشمک نمی‌زنند.
