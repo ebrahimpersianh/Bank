@@ -61,6 +61,8 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.AppUrgentShadow
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.verticalScroll
+import ir.sadteam.loancalc.core.toFa
 
 @Composable
 internal fun SmsSettings(

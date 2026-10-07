@@ -40,6 +40,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
 import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.core.fmt
 
 /**
  * صفحه‌ی **آزمایشِ تشخیص** - زیرصفحه‌ی خودش، نه شیت (خروجیش خونده می‌شه و شیت جا کم داره).

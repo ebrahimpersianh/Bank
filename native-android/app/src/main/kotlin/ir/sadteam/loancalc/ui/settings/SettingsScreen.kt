@@ -106,6 +106,8 @@ import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
 import ir.sadteam.loancalc.ui.theme.Motion
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
+import ir.sadteam.loancalc.BuildConfig
+import ir.sadteam.loancalc.ui.components.AppCard
 
 @Composable
 fun SettingsScreen(

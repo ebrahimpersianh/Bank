@@ -46,6 +46,9 @@ import ir.sadteam.loancalc.ui.theme.AppLabel
 import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppText
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.Build
+import android.os.Build
+import ir.sadteam.loancalc.core.toFa
 
 @Composable
 internal fun AboutSettings(banner: InAppBannerState, onOpenBugReport: () -> Unit) {

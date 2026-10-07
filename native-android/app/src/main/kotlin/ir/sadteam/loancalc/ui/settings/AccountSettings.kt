@@ -74,6 +74,7 @@ import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppSpacing
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
+import ir.sadteam.loancalc.ui.components.persianMonthName
 
 @Composable
 internal fun AccountSettings(

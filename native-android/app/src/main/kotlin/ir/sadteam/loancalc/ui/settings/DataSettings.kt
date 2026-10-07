@@ -39,6 +39,7 @@ import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.components.InAppBannerState
 import ir.sadteam.loancalc.ui.theme.AppDanger
+import ir.sadteam.loancalc.core.toFa
 
 @Composable
 internal fun DataSettings(
