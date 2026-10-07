@@ -173,7 +173,10 @@ fun Route.authRoutes() {
                     }.getOrNull()
                     ?: "unknown"
                 fun logSms(ok: Boolean) = runCatching {
-                    Db.withConnection { conn -> conn.execute("INSERT INTO sms_log (day, store, ok) VALUES (?, ?, ?)", iranDay(), smsStore, if (ok) 1 else 0) }
+                    Db.withConnection { conn -> conn.execute(
+                            "INSERT INTO sms_log (day, store, ok, phone) VALUES (?, ?, ?, ?)",
+                            iranDay(), smsStore, if (ok) 1 else 0, if (smsStore == "unknown") phone else null,
+                        ) }
                 }
                 try {
                     sendOtpSms(phone, code)

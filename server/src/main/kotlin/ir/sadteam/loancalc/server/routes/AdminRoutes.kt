@@ -373,6 +373,15 @@ internal fun buildStats(conn: Connection): StatsResponse {
     val loggedByStore = buildList {
         conn.list("SELECT coalesce(store,'?'), SUM(logged_in) FROM installs GROUP BY 1 ORDER BY 2 DESC") { add(NamedCount(it.getString(1), it.getInt(2))) }
     }
+    // «نامشخص»ها: حالا که شاید وارد شده‌اند، استورشان از آخرین نصبِ همان شماره پر می‌شود.
+    runCatching {
+        conn.prepareStatement(
+            "UPDATE sms_log SET store = (SELECT i.store FROM installs i JOIN users u ON u.id = i.user_id " +
+                "WHERE u.phone = sms_log.phone AND i.store IS NOT NULL ORDER BY i.last_day DESC LIMIT 1), phone = NULL " +
+                "WHERE store = 'unknown' AND phone IS NOT NULL AND EXISTS (SELECT 1 FROM installs i JOIN users u ON u.id = i.user_id " +
+                "WHERE u.phone = sms_log.phone AND i.store IS NOT NULL)"
+        ).use { it.executeUpdate() }
+    }
     fun smsBy(where: String, vararg args: Any) = buildList {
         conn.list("SELECT store, COUNT(*) FROM sms_log WHERE ok = 1 $where GROUP BY store ORDER BY 2 DESC", *args) { add(NamedCount(it.getString(1), it.getInt(2))) }
     }

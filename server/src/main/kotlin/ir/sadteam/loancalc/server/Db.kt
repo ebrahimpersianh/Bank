@@ -289,6 +289,8 @@ object Db {
             /* migration برای دیتابیس‌های قدیمی که از قبل جدول users رو بدون این ستون‌ها دارن.
                ⚠️ **فقط خطای «ستون از قبل هست» بخشیده می‌شود**؛ هر خطای دیگری بالا می‌رود تا
                دیتابیسِ خراب/ناسازگار بی‌صدا رد نشود (یافته‌ی بازبینی، ۳۱ شهریور). */
+            // ۱۶ مهر: شماره‌ی پیامکِ «نامشخص» تا بعداً (بعدِ ورود) استورش از نصب پیدا شود.
+            addColumnIfMissing(conn, "ALTER TABLE sms_log ADD COLUMN phone TEXT")
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN subscribed INTEGER NOT NULL DEFAULT 0")
             addColumnIfMissing(conn, "ALTER TABLE users ADD COLUMN subscribed_until TEXT")
             // پلنِ خریداری‌شده ("1m"/"3m"/"6m"/"1y") - قبلاً اصلاً ذخیره نمی‌شد، فقط تاریخِ انقضا؛
