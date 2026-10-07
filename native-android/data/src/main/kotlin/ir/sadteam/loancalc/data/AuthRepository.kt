@@ -38,7 +38,7 @@ class AuthRepository(
 
     suspend fun requestOtp(phone: String): AuthResult {
         return try {
-            val response = apiService.requestOtp(RequestOtpRequest(phone))
+            val response = apiService.requestOtp(RequestOtpRequest(phone, UsageStats.store))
             if (response.isSuccessful) {
                 AuthResult.Success
             } else {

@@ -65,7 +65,7 @@ private fun hashCode(code: String): String {
 }
 
 @Serializable
-private data class RequestOtpBody(val phone: String? = null)
+private data class RequestOtpBody(val phone: String? = null, val store: String? = null)
 
 @Serializable
 private data class VerifyOtpBody(
@@ -153,9 +153,25 @@ fun Route.authRoutes() {
             }
 
             if (!testAccount) {
+                // استورِ پیامک: اپِ تازه خودش می‌فرستد؛ نسخه‌ی قدیمی از آخرین نصبِ همین شماره.
+                val smsStore = body?.store?.lowercase()?.filter { it in 'a'..'z' }?.take(20)?.takeIf { it.isNotEmpty() }
+                    ?: runCatching {
+                        Db.withConnection { conn ->
+                            conn.queryOne(
+                                "SELECT i.store FROM installs i JOIN users u ON u.id = i.user_id WHERE u.phone = ? AND i.store IS NOT NULL ORDER BY i.last_day DESC LIMIT 1",
+                                phone,
+                            ) { rs -> rs.getString(1) }
+                        }
+                    }.getOrNull()
+                    ?: "unknown"
+                fun logSms(ok: Boolean) = runCatching {
+                    Db.withConnection { conn -> conn.execute("INSERT INTO sms_log (day, store, ok) VALUES (?, ?, ?)", iranDay(), smsStore, if (ok) 1 else 0) }
+                }
                 try {
                     sendOtpSms(phone, code)
+                    logSms(true)
                 } catch (e: SmsSendException) {
+                    logSms(false)
                     // ⚠️ شماره **ماسک‌شده** لاگ می‌شه (قبلاً کاملِ شماره چاپ می‌شد) و کدِ OTP
                     // هیچ‌وقت لاگ نمی‌شه - رجوع کن به قاعده‌ی بالای Log.kt.
                     Log.error("otp_sms_failed", e.message ?: "خطای ناشناخته", "phone" to maskPhone(phone))

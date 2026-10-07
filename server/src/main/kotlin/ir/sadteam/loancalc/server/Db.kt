@@ -24,6 +24,17 @@ object Db {
                     )
                     """.trimIndent()
                 )
+                // ۱۶ مهر: شمارشِ پیامک‌های کدِ ورود به‌تفکیکِ استور - بی شماره و بی کد (فقط آمار).
+                st.executeUpdate(
+                    """
+                    CREATE TABLE IF NOT EXISTS sms_log (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        day TEXT NOT NULL,
+                        store TEXT NOT NULL,
+                        ok INTEGER NOT NULL DEFAULT 1
+                    )
+                    """.trimIndent()
+                )
                 st.executeUpdate(
                     """
                     CREATE TABLE IF NOT EXISTS otps (

@@ -133,6 +133,11 @@ data class StatsResponse(
     /** نصب‌ها به‌تفکیکِ استور (کل / واردشده). */
     val installsByStore: List<NamedCount> = emptyList(),
     val loggedByStore: List<NamedCount> = emptyList(),
+    /** پیامک‌های کدِ ورود به‌تفکیکِ استور: امروز / ۳۰ روز / کل (فقط موفق). */
+    val smsTodayByStore: List<NamedCount> = emptyList(),
+    val sms30ByStore: List<NamedCount> = emptyList(),
+    val smsAllByStore: List<NamedCount> = emptyList(),
+    val smsFailed30: Int = 0,
     val salesDaily: List<NamedCount> = emptyList(),
     val activeSubscribers: Int = 0,
     val activeByTier: List<NamedCount> = emptyList(),
@@ -368,6 +373,13 @@ internal fun buildStats(conn: Connection): StatsResponse {
     val loggedByStore = buildList {
         conn.list("SELECT coalesce(store,'?'), SUM(logged_in) FROM installs GROUP BY 1 ORDER BY 2 DESC") { add(NamedCount(it.getString(1), it.getInt(2))) }
     }
+    fun smsBy(where: String, vararg args: Any) = buildList {
+        conn.list("SELECT store, COUNT(*) FROM sms_log WHERE ok = 1 $where GROUP BY store ORDER BY 2 DESC", *args) { add(NamedCount(it.getString(1), it.getInt(2))) }
+    }
+    val smsTodayByStore = smsBy("AND day = ?", today)
+    val sms30ByStore = smsBy("AND day >= ?", d30)
+    val smsAllByStore = smsBy("")
+    val smsFailed30 = conn.int("SELECT COUNT(*) FROM sms_log WHERE ok = 0 AND day >= ?", d30)
     val salesByDay = HashMap<String, Int>()
     conn.list("SELECT substr(created_at, 1, 10), COUNT(*) FROM subscription_purchases WHERE created_at >= ? GROUP BY 1", d30) {
         salesByDay[it.getString(1)] = it.getInt(2)
@@ -460,6 +472,10 @@ internal fun buildStats(conn: Connection): StatsResponse {
         salesByStore = salesByStore,
         installsByStore = installsByStore,
         loggedByStore = loggedByStore,
+        smsTodayByStore = smsTodayByStore,
+        sms30ByStore = sms30ByStore,
+        smsAllByStore = smsAllByStore,
+        smsFailed30 = smsFailed30,
         salesDaily = salesDaily,
         activeSubscribers = activeTiers.size,
         activeByTier = activeByTier,

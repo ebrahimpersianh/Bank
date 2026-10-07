@@ -46,7 +46,9 @@ object UsageStats {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val api by lazy { ApiClient.create() }
     private var appContext: Context? = null
-    private var store: String? = null
+    /** استورِ همین نصب (برای شمارشِ پیامکِ ورود در سرور هم فرستاده می‌شود). */
+    var store: String? = null
+        private set
 
     /** از بیرون (اپ) پُر می‌شود - فقط «واردشده یا نه»، نه اینکه چه کسی. */
     @Volatile

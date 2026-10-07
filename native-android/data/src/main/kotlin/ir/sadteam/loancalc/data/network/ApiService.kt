@@ -263,7 +263,7 @@ interface ApiService {
     ): PriceHistoryResponse
 }
 
-data class RequestOtpRequest(val phone: String)
+data class RequestOtpRequest(val phone: String, val store: String? = null)
 
 data class VerifyOtpRequest(val phone: String, val code: String, val deviceHash: String? = null)
 
@@ -488,6 +488,10 @@ data class AdminStatsResponse(
     val sales: List<AdminSaleRow>? = null,
     val salesByStore: List<AdminNamedCount>? = null,
     val installsByStore: List<AdminNamedCount>? = null,
+    val smsTodayByStore: List<AdminNamedCount>? = null,
+    val sms30ByStore: List<AdminNamedCount>? = null,
+    val smsAllByStore: List<AdminNamedCount>? = null,
+    val smsFailed30: Int? = null,
     val loggedByStore: List<AdminNamedCount>? = null,
     val salesDaily: List<AdminNamedCount>? = null,
     val activeSubscribers: Int = 0,

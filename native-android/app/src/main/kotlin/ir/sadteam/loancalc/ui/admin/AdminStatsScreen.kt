@@ -844,6 +844,20 @@ private fun SalesCard(st: AdminStatsResponse) {
                 AdminNote(inst.joinToString(" · ") { "${STORE_LABELS[it.name] ?: it.name}: ${adminNum(it.count)} نصب، ${adminNum(logged[it.name] ?: 0)} واردِ حساب شدند" })
             }
         }
+        // ۱۶ مهر: پیامک‌های کدِ ورود به‌تفکیکِ استور (شمارش از همین نسخه‌ی سرور شروع شد).
+        val smsAll = st.smsAllByStore.orEmpty()
+        run {
+            fun line(l: List<ir.sadteam.loancalc.data.network.AdminNamedCount>) =
+                if (l.isEmpty()) "۰" else adminNum(l.sumOf { it.count }) + "  (" + l.joinToString(" · ") { "${STORE_LABELS[it.name] ?: if (it.name == "unknown") "نامشخص" else it.name} ${adminNum(it.count)}" } + ")"
+            AdminSubSection("پیامکِ کدِ ورود", "کل " + line(smsAll)) {
+                if (smsAll.isNotEmpty()) SplitBar("به‌تفکیکِ استور", smsAll.map { SplitPart(STORE_LABELS[it.name] ?: if (it.name == "unknown") "نامشخص" else it.name, it.count) })
+                AdminNote("امروز: " + line(st.smsTodayByStore.orEmpty()))
+                AdminNote("۳۰ روزِ اخیر: " + line(st.sms30ByStore.orEmpty()))
+                AdminNote("کل: " + line(smsAll))
+                if ((st.smsFailed30 ?: 0) > 0) AdminNote("ناموفق در ۳۰ روز: ${adminNum(st.smsFailed30 ?: 0)}")
+                AdminNote("شمارش از ۱۶ مهر ۱۴۰۵ شروع شده؛ پیامک‌های قبل از آن ثبت نشده‌اند.")
+            }
+        }
         val byStore = st.salesByStore.orEmpty()
         val byTier = st.activeByTier.orEmpty()
         if (byStore.isNotEmpty() || byTier.isNotEmpty()) {
