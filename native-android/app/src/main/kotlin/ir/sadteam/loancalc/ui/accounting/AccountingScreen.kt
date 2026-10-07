@@ -691,7 +691,7 @@ internal fun MonthNavArrow(icon: ImageVector, contentDescription: String, onClic
 }
 /** ترتیبِ خطیِ روز/ماه/سالِ شمسی، فقط برای مقایسه‌ی «جلوتر/عقب‌تر» (نه محاسبه‌ی تقویمیِ واقعی) -
  * ماه‌های شمسی حداکثر ۳۱ روزن، پس ضریبِ ۳۲ برای day و ۴۰۰ برای year کاملاً کافیه. */
-private fun PersianDate.ordinal(): Int = y * 400 + m * 32 + d
+internal fun PersianDate.ordinal(): Int = y * 400 + m * 32 + d
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun <T> AccountingDropdown(

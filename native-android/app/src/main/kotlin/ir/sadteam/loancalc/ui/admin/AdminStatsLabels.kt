@@ -7,7 +7,7 @@ import ir.sadteam.loancalc.core.toFa
 internal fun percent(part: Int, whole: Int): Int = if (whole <= 0) 0 else Math.round(part * 100f / whole)
 internal fun faDecimal(v: Double): String = toFa(v.toString().removeSuffix(".0")).replace('.', '٫')
 /** `2026-09-29` → «۷ مهر». */
-private fun String.faDigitsAscii(): String = runCatching {
+internal fun String.faDigitsAscii(): String = runCatching {
     val (y, m, d) = split('-').map { it.toInt() }
     val p = ir.sadteam.loancalc.core.JalaliCalendar.fromGregorian(y, m, d)
     "${toFa(p.d)} ${ir.sadteam.loancalc.ui.components.persianMonthName(p.m)}"
