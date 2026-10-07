@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -1035,8 +1036,10 @@ private fun CategoryDonutCard(
     }
     val colors = listOf(AppDanger, AppPurple, AppInfo)
     // مبلغِ کل همین بالا در کارتِ سبز هست؛ وسطِ دایره تعدادِ دسته‌ها می‌آید.
-    val centerNumber = top.size.toFa()
-    val centerUnit = "دسته"
+    // مثلِ خانه: سهمِ بزرگ‌ترین دسته و نامش («۹۹٪ قسط/چک»)، نه تعدادِ دسته‌ها.
+    val biggest = top.firstOrNull()
+    val centerNumber = if (biggest == null || total <= 0.0) "—" else "${((biggest.value / total * 100).toInt()).toFa()}٪"
+    val centerUnit = biggest?.key ?: ""
     val shape = RoundedCornerShape(AppRadius.card)
     Column(
         verticalArrangement = Arrangement.spacedBy(11.dp),
@@ -1070,10 +1073,12 @@ private fun CategoryDonutCard(
                 Text(
                     centerUnit,
                     color = AppLabel,
-                    fontSize = 10.sp,
+                    fontSize = 9.5.sp,
                     lineHeight = 12.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = 56.dp),
                 )
             }
         }

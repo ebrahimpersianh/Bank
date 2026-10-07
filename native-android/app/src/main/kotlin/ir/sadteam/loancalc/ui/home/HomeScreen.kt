@@ -1412,7 +1412,7 @@ private fun CategoryBreakdownCard(
     val colors = listOf(AppDanger, AppPurple, AppInfo)
     val (centerNumber, centerUnit) = total.rialToFaCompactParts()
     // ۱۶ مهر (طرحِ مرتب‌تر): بالا حلقه + «جمعِ خرج» با عددِ درشت؛ پایین فهرستِ هم‌ترازِ
-    // دسته‌ها (نام راست، مبلغ و درصد در ستونِ چپ). وسطِ حلقه تعدادِ دسته‌هاست، مثلِ تبِ گزارش.
+    // دسته‌ها (نام راست، مبلغ و درصد در ستونِ چپ). وسطِ حلقه سهمِ بزرگ‌ترین دسته و نامش است.
     AppCard(contentPadding = 16.dp, modifier = Modifier.pressScaleClickable(onClick = onClick)) {
       Column {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -1434,9 +1434,20 @@ private fun CategoryBreakdownCard(
                 size = 80.dp,
                 strokeWidth = 9.dp,
             ) {
+                // وسطِ حلقه: سهمِ **بزرگ‌ترین** خرجِ ماه و نامش - «۹۹٪ قسط/چک» یعنی تقریباً همه‌ی
+                // خرجِ این ماه همین بوده (قبلاً فقط «۱ دسته» بود که چیزی نمی‌گفت).
+                val biggest = top.firstOrNull()
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(top.size.toFa(), color = AppText, fontSize = 17.sp, lineHeight = 20.sp, fontWeight = FontWeight.Black)
-                    Text("دسته", color = AppLabel, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (biggest == null || total <= 0.0) "—" else "${((biggest.value / total * 100).toInt()).toFa()}٪",
+                        color = AppText, fontSize = 17.sp, lineHeight = 20.sp, fontWeight = FontWeight.Black,
+                    )
+                    Text(
+                        biggest?.key ?: "",
+                        color = AppLabel, fontSize = 9.5.sp, lineHeight = 12.sp, fontWeight = FontWeight.Bold,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 56.dp),
+                    )
                 }
             }
             Column(modifier = Modifier.weight(1f).padding(start = 16.dp)) {
