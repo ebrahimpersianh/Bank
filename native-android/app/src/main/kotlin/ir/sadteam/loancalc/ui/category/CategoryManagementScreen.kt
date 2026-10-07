@@ -476,6 +476,7 @@ private fun RenameCategoryDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = name,
                     onValueChange = { name = it },
                     singleLine = true,

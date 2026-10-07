@@ -181,6 +181,51 @@ fun BudgetTabScreen(
             )
         }
     }
+    // ویرایش/حذفِ بودجه‌ی یک دسته: روی هر ردیفِ دسته بزن (۱۵ مهر).
+    var editingRow by remember { mutableStateOf<BudgetRowData?>(null) }
+    editingRow?.let { r ->
+        val entity = budgets.firstOrNull { it.categoryName == r.category.name }
+        var capText by remember(r) { mutableStateOf((r.cap / 10).toLong().toString()) }
+        ir.sadteam.loancalc.ui.components.JibakAlertDialog(
+            onDismissRequest = { editingRow = null },
+            title = { androidx.compose.material3.Text("بودجه‌ی ${r.category.name}") },
+            text = {
+                androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.material3.Text("سقفِ ماهانه")
+                    androidx.compose.material3.OutlinedTextField(
+                        value = capText,
+                        onValueChange = { capText = ir.sadteam.loancalc.core.cleanNum(it).take(13) },
+                        visualTransformation = ir.sadteam.loancalc.ui.components.ThousandsSeparatorTransformation(),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        suffix = { androidx.compose.material3.Text("تومان") },
+                        textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
+                        colors = ir.sadteam.loancalc.ui.components.appFieldColors(),
+                        shape = ir.sadteam.loancalc.ui.components.AppFieldShape,
+                    )
+                }
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    val toman = capText.toLongOrNull() ?: 0L
+                    if (toman > 0L && entity != null) {
+                        viewModel.setBudget(r.category.name, toman * 10.0, entity.id, entity.accountId)
+                    }
+                    editingRow = null
+                }) { androidx.compose.material3.Text("ذخیره") }
+            },
+            dismissButton = {
+                androidx.compose.foundation.layout.Row {
+                    androidx.compose.material3.TextButton(onClick = {
+                        entity?.let { viewModel.deleteBudget(it) }
+                        editingRow = null
+                    }) { androidx.compose.material3.Text("حذفِ بودجه", color = ir.sadteam.loancalc.ui.theme.AppDanger) }
+                    androidx.compose.material3.TextButton(onClick = { editingRow = null }) { androidx.compose.material3.Text("انصراف") }
+                }
+            },
+        )
+    }
     val totalCap = rows.sumOf { it.cap }
     val totalSpent = rows.sumOf { it.spent }
 
@@ -324,8 +369,17 @@ fun BudgetTabScreen(
                     )
                 }
             }
+            if (rows.isNotEmpty()) {
+                item(key = "budgets-title") {
+                    Text(
+                        "بودجه‌ی دسته‌ها · برای ویرایش یا حذف روی هر ردیف بزن",
+                        color = AppMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                    )
+                }
+            }
             items(rows, key = { it.category.name }) { row ->
-                CategoryBudgetRow(row, privacyMode)
+                CategoryBudgetRow(row, privacyMode, onClick = { editingRow = row })
             }
             transfer?.let { t ->
                 item {
@@ -867,7 +921,7 @@ private fun MonthTotalCard(
 
 // ═══ ۴ · ردیفِ دسته ═════════════════════════════════════════════════════════════
 @Composable
-private fun CategoryBudgetRow(row: BudgetRowData, privacyMode: Boolean) {
+private fun CategoryBudgetRow(row: BudgetRowData, privacyMode: Boolean, onClick: () -> Unit = {}) {
     val tint = if (row.over) OverInk else row.category.color
     val soft = tint.copy(alpha = 0.12f)
     Column(
@@ -876,6 +930,7 @@ private fun CategoryBudgetRow(row: BudgetRowData, privacyMode: Boolean) {
             .clip(RoundedCornerShape(AppRadius.card))
             .background(AppSurface)
             .border(2.dp, CardBorder, RoundedCornerShape(AppRadius.card))
+            .pressScaleClickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 13.dp),
     ) {
         Row(

@@ -88,6 +88,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Ltr {
                     OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                         value = user,
                         onValueChange = { user = it.take(20) },
                         placeholder = { Text("شماره‌ی کاربری (Uid)") },
@@ -133,6 +134,7 @@ fun AdminGiftDialog(coinsMode: Boolean, onDismiss: () -> Unit, onSend: (user: St
                     Stepper(n, onMinus = { amount = (n - step).coerceAtLeast(0).toString() }, onPlus = { amount = (n + step).toString() })
                 }
                 OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = text,
                     onValueChange = { text = it.take(200) },
                     placeholder = { Text("پیام برای کاربر (اختیاری)") },

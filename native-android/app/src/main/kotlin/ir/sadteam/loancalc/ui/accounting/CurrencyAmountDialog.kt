@@ -84,12 +84,14 @@ fun CurrencyAmountDialog(
                     items(CURRENCIES) { (c, n) -> AppChip(label = n, selected = c == code, onClick = { code = c }) }
                 }
                 OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = amount, onValueChange = { amount = cleanNum(it).take(10) },
                     label = { Text("چند $name؟") }, singleLine = true, shape = AppFieldShape, colors = appFieldColors(),
                     visualTransformation = ThousandsSeparatorTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = rate, onValueChange = { rate = cleanNum(it).take(10) },
                     label = { Text("نرخِ هر $name (تومان)") }, singleLine = true, shape = AppFieldShape, colors = appFieldColors(),
                     visualTransformation = ThousandsSeparatorTransformation(),

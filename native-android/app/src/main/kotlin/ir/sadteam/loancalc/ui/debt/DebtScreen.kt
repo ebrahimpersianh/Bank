@@ -870,6 +870,7 @@ private fun EditCounterpartyDialog(
         text = {
             Column {
                 OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("اسم") },
@@ -877,6 +878,7 @@ private fun EditCounterpartyDialog(
                     singleLine = true, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 Ltr {
                     OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                         value = phone,
                         onValueChange = { phone = cleanNum(it) },
                         label = { Text("موبایل (اختیاری)") },

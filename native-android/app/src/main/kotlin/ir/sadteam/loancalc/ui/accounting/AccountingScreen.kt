@@ -1128,6 +1128,7 @@ private fun AddBudgetDialog(
             } else {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                         value = capText,
                         onValueChange = { capText = cleanNum(it) },
                         visualTransformation = ThousandsSeparatorTransformation(),
@@ -2284,6 +2285,7 @@ internal fun NewBudgetSheet(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("مقدار بودجه", color = AppMuted, fontSize = 11.sp)
                 OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = capText,
                     onValueChange = { capText = cleanNum(it) },
                     visualTransformation = ThousandsSeparatorTransformation(),

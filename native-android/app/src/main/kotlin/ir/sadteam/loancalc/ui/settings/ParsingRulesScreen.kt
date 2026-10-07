@@ -363,6 +363,7 @@ private fun RuleSheet(
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = pattern,
                     onValueChange = { pattern = it },
                     label = { Text("اگه تو متنِ پیامک این بود") },
@@ -520,6 +521,7 @@ private fun SmsTestDialog(
         text = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = body,
                     onValueChange = { body = it; tested = false },
                     label = { Text("متنِ پیامکِ بانکی رو اینجا بچسبون") },

@@ -6,6 +6,7 @@ import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ir.sadteam.loancalc.ui.theme.AppAccent
 import ir.sadteam.loancalc.ui.theme.AppPrimary
 
@@ -27,3 +28,15 @@ fun appFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
 
 /** گوشه‌ی گردِ همه‌ی کادرها - مثلِ کادرِ جستجو. */
 val AppFieldShape: Shape = RoundedCornerShape(28.dp)
+
+/**
+ * متنِ **تایپ‌شده** در فیلدها. داخلِ همه‌ی پنجره‌ها ([JibakAlertDialog]) متنِ پیش‌فرض ۱۲ و کم‌رنگ است
+ * و فیلد همان را می‌گرفت، پس عددِ مبلغ از برچسبِ «تومان» هم ریزتر و کم‌رنگ‌تر می‌شد. فیلدِ داخلِ
+ * پنجره باید این را صریح بدهد: `textStyle = appFieldTextStyle()`.
+ */
+@Composable
+fun appFieldTextStyle(): androidx.compose.ui.text.TextStyle = androidx.compose.ui.text.TextStyle(
+    color = ir.sadteam.loancalc.ui.theme.AppText,
+    fontSize = 15.sp,
+    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+)

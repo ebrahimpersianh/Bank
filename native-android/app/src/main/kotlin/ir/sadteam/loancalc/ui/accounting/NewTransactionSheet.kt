@@ -801,7 +801,8 @@ fun NewTransactionSheet(
                 onDismissRequest = { showSaveTemplate = false },
                 title = { Text("ذخیره به‌عنوانِ الگو") },
                 text = {
-                    OutlinedTextField(value = tName, onValueChange = { tName = it.take(30) }, singleLine = true, placeholder = { Text("مثلاً نون، بنزین") }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
+                    OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),value = tName, onValueChange = { tName = it.take(30) }, singleLine = true, placeholder = { Text("مثلاً نون، بنزین") }, colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                 },
                 confirmButton = {
                     GradientButton(onClick = {

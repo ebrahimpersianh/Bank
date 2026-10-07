@@ -582,6 +582,7 @@ private fun ContributeDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = amountText,
                     onValueChange = { amountText = cleanNum(it) },
                     singleLine = true,

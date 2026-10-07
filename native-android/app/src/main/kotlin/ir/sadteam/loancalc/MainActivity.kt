@@ -1140,7 +1140,7 @@ private fun LoanCalcApp(
                                 .clip(navShape)
                                 .background(AppSurface)
                                 .border(1.dp, AppLine, navShape)
-                                .padding(start = 6.dp, end = 6.dp, top = 8.dp, bottom = 3.dp),
+                                .padding(start = 6.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                         // **بخشِ ۴۱**: دیگه `BottomTab.entries` نیست - چیدمان از [NavSlotsViewModel]
@@ -2097,7 +2097,7 @@ private fun RowScope.BottomNavItem(
                 onClick = { buzz(); onClick() },
                 onLongClick = { buzz(); onLongClick() },
             )
-            .padding(top = 7.dp, bottom = 3.dp)
+            .padding(top = 7.dp, bottom = 5.dp)
             // مختصاتِ خودِ تب برای AppTourOverlay.
             .onGloballyPositioned { coordinates -> onPositioned(coordinates.boundsInRoot()) },
         horizontalAlignment = Alignment.CenterHorizontally,

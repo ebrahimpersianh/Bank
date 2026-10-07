@@ -648,6 +648,7 @@ fun LoanDetailScreen(
             title = { Text("ویرایش مبلغ قسط ${toFa(editingRowM ?: 0)}") },
             text = {
                 OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                     value = editAmountText,
                     onValueChange = { editAmountText = cleanNum(it) },
                     visualTransformation = ThousandsSeparatorTransformation(),

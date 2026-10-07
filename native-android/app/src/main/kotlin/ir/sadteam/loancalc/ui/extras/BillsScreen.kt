@@ -200,6 +200,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                     // مبلغ داخلِ شناسه‌ی پرداخت است؛ با واردکردنش مبلغ خودش پر می‌شود.
                     Ltr {
                         OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                             value = payId,
                             onValueChange = {
                                 payId = cleanNum(it).take(13)
@@ -212,6 +213,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = ir.sadteam.loancalc.ui.components.appFieldColors(), shape = ir.sadteam.loancalc.ui.components.AppFieldShape,)
                     }
                     OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                         value = amountText,
                         onValueChange = { amountText = cleanNum(it).take(12) },
                         singleLine = true,
@@ -312,6 +314,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                     }
                     pasteNote?.let { Text(it, color = if (it.startsWith("✓")) AppPrimary else AppDanger, fontSize = 11.5.sp) }
                     OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                         value = name,
                         onValueChange = { name = it.take(30) },
                         singleLine = true,
@@ -324,6 +327,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                     )
                     Ltr {
                         OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                             value = billId,
                             onValueChange = {
                                 billId = cleanNum(it).take(18)
@@ -347,6 +351,7 @@ fun BillsScreen(onBack: () -> Unit, viewModel: ExtrasViewModel = hiltViewModel()
                         )
                     }
                     OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                         value = dayText,
                         onValueChange = { dayText = cleanNum(it).take(2); dayError = false },
                         singleLine = true,

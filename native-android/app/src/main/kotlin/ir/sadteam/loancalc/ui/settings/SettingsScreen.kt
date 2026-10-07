@@ -1030,6 +1030,7 @@ private fun AccountSettings(
                 text = {
                     Column {
                         OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                             value = nameDraft,
                             onValueChange = { if (it.length <= 30) nameDraft = it },
                             singleLine = true,
@@ -3057,6 +3058,7 @@ private fun SecuritySettings(
                         ir.sadteam.loancalc.ui.security.PatternPad(onComplete = { check(it) })
                     } else {
                         OutlinedTextField(
+ textStyle = ir.sadteam.loancalc.ui.components.appFieldTextStyle(),
                             value = entered,
                             onValueChange = { entered = ir.sadteam.loancalc.core.cleanNum(it).take(8); wrong = false },
                             singleLine = true,
