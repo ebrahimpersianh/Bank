@@ -129,7 +129,9 @@ fun AssetTradeSheet(
             },
         )
     }
-    var showPicker by remember { mutableStateOf(false) }
+    // «+»ِ دارایی (۱۵ مهر): بی دارایی‌ی از پیش انتخاب‌شده، اول همان فهرستِ «کدام دارایی؟» باز
+    // می‌شود؛ بعد از انتخاب، قیمت و نمودارِ همان دارایی دیده می‌شود و مبلغ را می‌نویسی.
+    var showPicker by remember { mutableStateOf(presetSymbol == null) }
     var showCalendar by remember { mutableStateOf(false) }
     var showAfterNote by remember { mutableStateOf(false) }
     var moreOpen by remember { mutableStateOf(description.isNotBlank()) }
