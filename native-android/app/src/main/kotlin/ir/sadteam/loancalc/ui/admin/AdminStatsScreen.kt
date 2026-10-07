@@ -510,6 +510,8 @@ internal fun actionLabel(key: String): String = ACTION_LABELS[key]
         key.startsWith("purchase_failed_") -> "خریدِ ناموفقِ اشتراکِ ${key.removePrefix("purchase_failed_")}"
         key.startsWith("purchase_cancel_") -> "انصراف از خریدِ اشتراکِ ${key.removePrefix("purchase_cancel_")}"
         key == "paywall_view" -> "دیدنِ صفحه‌ی اشتراک"
+        key.startsWith("paywall_gate_") -> "قفلِ اشتراک: ${PAYWALL_GATE_LABELS[key.removePrefix("paywall_gate_")] ?: key.removePrefix("paywall_gate_")}"
+        key.startsWith("guide_step_") -> "راهنمای شروع: قدمِ ${toFa((key.removePrefix("guide_step_").toIntOrNull() ?: 0) + 1)}"
         key.startsWith("notif_shown_") -> "اعلانِ فرستاده‌شده: ${key.removePrefix("notif_shown_")}"
         key.startsWith("notif_open_") -> "باز کردنِ اعلان: ${key.removePrefix("notif_open_")}"
         key.startsWith("notif_button_") -> "دکمه‌ی اعلان: ${NOTIF_BUTTON_LABELS[key.removePrefix("notif_button_")] ?: key}"
@@ -579,6 +581,18 @@ private val SCREEN_LABELS = linkedMapOf(
     "settings_badges" to "تنظیمات · نشان‌ها",
     "settings_parsing_rules" to "تنظیمات · قاعده‌های پیامک",
     "settings_about" to "تنظیمات · درباره",
+)
+
+/** کلیدِ `PremiumPaywall.ask` → نامِ فارسیِ بخشِ قفل‌شده. */
+private val PAYWALL_GATE_LABELS = mapOf(
+    "budget" to "بودجه",
+    "debts" to "طلب و بدهی",
+    "receipt_photo" to "عکسِ رسید",
+    "report_period" to "گزارشِ فصل و سال",
+    "sms_auto" to "خواندنِ خودکارِ پیامک",
+    "split" to "تقسیمِ خرید",
+    "tags" to "برچسب",
+    "tx_month" to "سقفِ تراکنشِ ماهانه",
 )
 
 private val ACTION_LABELS = linkedMapOf(
