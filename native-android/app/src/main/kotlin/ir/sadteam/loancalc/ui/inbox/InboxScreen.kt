@@ -1,5 +1,6 @@
 package ir.sadteam.loancalc.ui.inbox
 
+import androidx.compose.ui.graphics.drawscope.rotate
 import ir.sadteam.loancalc.ui.jibak.rialToToman
 import androidx.compose.foundation.clickable
 import ir.sadteam.loancalc.ui.theme.AppRadius
@@ -245,15 +246,31 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
             }
 
             // ── سطل‌زباله‌ی تراکنش‌های ردشده (۳۰ روز) ──────────────────────────────
-            if (bin.isNotEmpty()) {
+            run {
                 item {
-                    Text(
-                        (if (binOpen) "▾ " else "▸ ") + "سطل‌زباله‌ی ردشده‌ها · ${toFa(bin.size)}",
-                        color = AppMuted,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.fillMaxWidth().clickable { binOpen = !binOpen }.padding(vertical = 10.dp),
-                    )
+                    // ۱۶ مهر: سطلِ زباله‌ی واقعی - خالی = درِ نیمه‌باز، پر = کاغذ بیرون زده و تکانِ ریز.
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                            .background(ir.sadteam.loancalc.ui.theme.AppSurface)
+                            .clickable(enabled = bin.isNotEmpty()) { binOpen = !binOpen }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TrashBinIcon(full = bin.isNotEmpty())
+                        Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                            Text("سطلِ زباله", color = AppText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                if (bin.isEmpty()) "خالی است · تراکنش‌های ردشده ۳۰ روز این‌جا می‌مانند"
+                                else "${toFa(bin.size)} تراکنشِ ردشده · بزن تا ببینی",
+                                color = AppMuted,
+                                fontSize = 11.sp,
+                            )
+                        }
+                        if (bin.isNotEmpty()) Text(if (binOpen) "▴" else "▾", color = AppMuted, fontSize = 16.sp)
+                    }
                 }
                 if (binOpen) {
                     items(bin, key = { "bin_" + it.tx.id }) { item ->
@@ -1046,3 +1063,47 @@ private fun GiftCelebration(message: InboxMessageEntity, onDone: () -> Unit) {
 }
 
 private fun Modifier.graphicsLayerScale(s: Float): Modifier = this.graphicsLayer(scaleX = s, scaleY = s)
+
+/** آیکونِ سطلِ زباله: خالی = درِ کمی باز؛ پر = کاغذ پیداست و هر چند ثانیه یک تکانِ ریز. */
+@Composable
+private fun TrashBinIcon(full: Boolean) {
+    val body = ir.sadteam.loancalc.ui.theme.AppMuted
+    val paper = ir.sadteam.loancalc.ui.theme.AppPrimary
+    val wiggle = if (full) {
+        val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "bin")
+        t.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                androidx.compose.animation.core.keyframes {
+                    durationMillis = 2600
+                    0f at 0; 0f at 2000; -1f at 2120; 1f at 2260; -0.6f at 2400; 0f at 2600
+                },
+            ),
+            label = "binWiggle",
+        ).value
+    } else 0f
+    androidx.compose.foundation.Canvas(Modifier.size(34.dp).graphicsLayer { rotationZ = wiggle * 6f }) {
+        val w = size.width
+        val h = size.height
+        val stroke = androidx.compose.ui.graphics.drawscope.Stroke(width = w * 0.07f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        // بدنه
+        val path = androidx.compose.ui.graphics.Path().apply {
+            moveTo(w * 0.22f, h * 0.34f); lineTo(w * 0.30f, h * 0.90f); lineTo(w * 0.70f, h * 0.90f); lineTo(w * 0.78f, h * 0.34f)
+        }
+        if (full) {
+            // کاغذهای مچاله بیرون‌زده
+            drawCircle(paper, radius = w * 0.11f, center = androidx.compose.ui.geometry.Offset(w * 0.40f, h * 0.30f))
+            drawCircle(paper.copy(alpha = 0.7f), radius = w * 0.09f, center = androidx.compose.ui.geometry.Offset(w * 0.60f, h * 0.32f))
+        }
+        drawPath(path, body, style = stroke)
+        drawLine(body, androidx.compose.ui.geometry.Offset(w * 0.42f, h * 0.48f), androidx.compose.ui.geometry.Offset(w * 0.44f, h * 0.78f), w * 0.05f, androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(body, androidx.compose.ui.geometry.Offset(w * 0.58f, h * 0.48f), androidx.compose.ui.geometry.Offset(w * 0.56f, h * 0.78f), w * 0.05f, androidx.compose.ui.graphics.StrokeCap.Round)
+        // در: خالی = کمی باز (چرخیده)، پر = بسته ولی کمی بالا روی کاغذها
+        val lidY = if (full) h * 0.20f else h * 0.26f
+        rotate(degrees = if (full) -6f else -28f, pivot = androidx.compose.ui.geometry.Offset(w * 0.80f, lidY)) {
+            drawLine(body, androidx.compose.ui.geometry.Offset(w * 0.16f, lidY), androidx.compose.ui.geometry.Offset(w * 0.84f, lidY), w * 0.08f, androidx.compose.ui.graphics.StrokeCap.Round)
+            drawLine(body, androidx.compose.ui.geometry.Offset(w * 0.42f, lidY - h * 0.08f), androidx.compose.ui.geometry.Offset(w * 0.58f, lidY - h * 0.08f), w * 0.07f, androidx.compose.ui.graphics.StrokeCap.Round)
+        }
+    }
+}
