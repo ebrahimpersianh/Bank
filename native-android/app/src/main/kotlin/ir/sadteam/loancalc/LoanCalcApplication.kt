@@ -64,7 +64,6 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         crashReporter.install()
         ir.sadteam.loancalc.data.UsageStats.init(this, BuildConfig.FLAVOR)
         ir.sadteam.loancalc.data.UsageStats.profileProvider = { buildUsageProfile() }
-        recordPastAnrs()
         // بعد از آپدیت، سرویسِ خواندنِ اعلانِ بانک را دوباره وصل کن (۱۴ مهر).
         ir.sadteam.loancalc.notifications.BankNotificationListener.requestRebind(this)
         CoroutineScope(Dispatchers.Main).launch {
@@ -77,7 +76,11 @@ class LoanCalcApplication : Application(), Configuration.Provider, ImageLoaderFa
         }
         // برای هماهنگ‌کردنِ پترنِ پیامکِ OTP با SMS Retriever API - رجوع کن به کامنتِ
         // SmsRetrieverHash.kt. فقط لاگ می‌کنه (Log.i)، هیچ اثرِ دیگه‌ای رو رفتارِ اپ نداره.
-        SmsRetrieverHash.logForDebugging(this)
+        // هر دو فراخوانیِ سیستم (IPC) هستند؛ از رشته‌ی اصلیِ راه‌اندازی بیرون رفتند (۱۶ مهر).
+        CoroutineScope(Dispatchers.IO).launch {
+            recordPastAnrs()
+            SmsRetrieverHash.logForDebugging(this@LoanCalcApplication)
+        }
         // اعلانِ «X روزه تراکنش ثبت نکردی» - اینجا زمان‌بندی می‌شه (نه تو یه ViewModelِ صفحه‌ی
         // تنظیمات) چون نباید به بازکردنِ اون صفحه وابسته باشه. خودِ Worker قبل از هر اعلان
         // پرچمِ comeBackReminderEnabled رو چک می‌کنه، پس زمان‌بندیِ بی‌قیدش بی‌ضرره.
