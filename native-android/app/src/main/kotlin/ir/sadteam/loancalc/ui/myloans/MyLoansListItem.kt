@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package ir.sadteam.loancalc.ui.myloans
 
 import androidx.compose.animation.core.animateFloatAsState
@@ -73,7 +75,7 @@ internal fun LazyItemScope.MyLoanListItem(
     viewModel: MyLoansViewModel,
     loanCardHeights: androidx.compose.runtime.snapshots.SnapshotStateMap<Long, Int>,
     buzz: () -> Unit,
-    gateState: GateState,
+    gateState: GateState?,
     isLoanLocked: (LoanEntity) -> Boolean,
     openedLoanIdState: MutableState<Long?>,
     showLoginPromptState: MutableState<Boolean>,

@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package ir.sadteam.loancalc
 
 import androidx.navigation.NavGraphBuilder
@@ -164,7 +166,7 @@ internal fun NavGraphBuilder.appRoutes(
                         // BottomTab تویِ همین فایلِ MainActivity.kt خصوصیه و HomeScreen تو یه
                         // فایلِ جدا (ui/home/HomeScreen.kt) زندگی می‌کنه.
                         HomeScreen(
-                            onNavigateToRoute = ::navigateTo,
+                            onNavigateToRoute = navigateTo,
                             onOpenSettings = { showSettings = true },
                             onOpenInbox = { showInbox = true },
                             onOpenSearch = { showGlobalSearch = true },

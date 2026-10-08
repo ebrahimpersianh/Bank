@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package ir.sadteam.loancalc.ui.accounting
 
 import androidx.compose.ui.graphics.graphicsLayer

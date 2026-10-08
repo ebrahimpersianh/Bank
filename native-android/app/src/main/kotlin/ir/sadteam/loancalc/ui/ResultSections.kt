@@ -55,7 +55,7 @@ import androidx.compose.runtime.MutableState
 internal fun ResultSaveSection(
     outcome: BankLoanOutcome,
     myLoansViewModel: MyLoansViewModel,
-    gateState: GateState,
+    gateState: GateState?,
     canSaveAnotherLoan: Boolean,
     savedState: MutableState<Boolean>,
     saveMessageState: MutableState<String?>,
@@ -143,7 +143,7 @@ internal fun ResultSaveSection(
 internal fun ResultActionsSection(
     privacyMode: Boolean,
     outcome: BankLoanOutcome,
-    result: LoanResult,
+    result: ir.sadteam.loancalc.core.LoanResult,
     interval: Int,
     dueDates: List<PersianDate>,
     endDate: PersianDate,

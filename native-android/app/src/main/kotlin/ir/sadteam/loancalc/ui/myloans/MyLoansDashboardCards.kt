@@ -82,7 +82,7 @@ internal fun LoansHeroCard(
     totalMonthlyInstallment: Double,
     incomeRatio: Float?,
     onOpenIncome: () -> Unit,
-    todayForWave: PersianDate,
+    todayForWave: ir.sadteam.loancalc.core.PersianDate,
     animatedDebt: Double,
     animatedMonthly: Double,
     privacyMode: Boolean,

@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package ir.sadteam.loancalc.ui.myloans
 
 import androidx.compose.animation.AnimatedVisibility
