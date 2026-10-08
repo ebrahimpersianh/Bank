@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -105,12 +106,26 @@ fun SplashIntroScreen(onDone: () -> Unit) {
 
     // زمینه هم‌رنگِ گوشه‌ی خودِ تصویر است، پس روی نسبت‌های مختلفِ صفحه لبه‌ی روشن دیده نمی‌شود.
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFF013D1F))) {
-        Image(
-            painter = painterResource(R.drawable.jibak_splash_art),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
-        )
+        // ۱۶ مهر: رمزگشاییِ این تصویرِ بزرگ روی رشته‌ی اصلی ~۴۶۰ms اسپلش را قفل می‌کرد (اندازه‌گیریِ
+        // خودِ برنامه روی Redmi Note 9 Pro). حالا در پس‌زمینه رمزگشایی می‌شود و زمینه‌ی سبز فوراً
+        // دیده می‌شود.
+        val ctx = androidx.compose.ui.platform.LocalContext.current
+        val art by androidx.compose.runtime.produceState<androidx.compose.ui.graphics.ImageBitmap?>(null) {
+            value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching {
+                    android.graphics.BitmapFactory.decodeResource(ctx.resources, R.drawable.jibak_splash_art)
+                        ?.asImageBitmap()
+                }.getOrNull()
+            }
+        }
+        art?.let {
+            Image(
+                bitmap = it,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
         // حلقه‌ی چرخانِ بارگذاری + متنش، دقیقاً همان‌جای تصویرِ مرجع.
         // خواسته‌ی کاربر: حلقه **یک دورِ کامل** پر شود، نه چند دور بچرخد - هم‌زمان با
         // خودِ اسپلش، تا لحظه‌ی بسته‌شدن درست کامل شده باشد.

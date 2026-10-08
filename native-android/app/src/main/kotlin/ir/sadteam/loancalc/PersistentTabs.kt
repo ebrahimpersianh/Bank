@@ -105,7 +105,9 @@ internal fun PersistentTabs(
                         .fillMaxSize()
                         .layout { measurable, constraints ->
                             val p = measurable.measure(constraints)
-                            layout(p.width, p.height) { if (active) p.place(0, 0) }
+                            // تا پایانِ گرم‌شدن (زیرِ اسپلش) همه جا می‌گیرند و یک‌بار کشیده می‌شوند
+                            // (سایه‌ها، تصویرها، شیدرها)؛ بعدش فقط تبِ فعال.
+                            layout(p.width, p.height) { if (active || !TabWarmup.done.value) p.place(0, 0) }
                         },
                 ) {
                     CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides (if (active) (realOwner ?: dummyOwner) else dummyOwner)) {
