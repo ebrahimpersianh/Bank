@@ -859,6 +859,9 @@ internal fun LoanCalcApp(
                 showGlobalSearchState = showGlobalSearchState,
                 showAllTransactionsState = showAllTransactionsState,
                 shortcutDrawerOpenState = shortcutDrawerOpenState,
+                deepLinkLoanId = deepLinkLoanId,
+                requestedLoanSubTabState = requestedLoanSubTabState,
+                bottomBarVisibleState = bottomBarVisibleState,
             )
             NavHost(
                 navController = navController,

@@ -170,17 +170,8 @@ internal fun NavGraphBuilder.appRoutes(
                 // «وام» و «چک» دیگه تبِ نوارِ پایین نیستن (رجوع کن به کامنتِ بالای BottomTab) - از
                 // تبِ «سررسید»/«خانه» به‌عنوانِ صفحه‌ی پوش‌شده باز می‌شن، پس خودشون یه دکمه‌ی
                 // برگشتِ واقعی لازم دارن (رجوع کن به onBack پایین).
-                composable(LOAN_ROUTE) {
-                    LoanTab(
-                        onBack = { navigateTo(BottomTab.HOME.route) },
-                        requestedSubTab = requestedLoanSubTab,
-                        onManualAddFabPositioned = {},
-                        onBottomBarVisibilityChanged = { visible -> bottomBarVisible = visible },
-                        deepLinkLoanId = deepLinkLoanId,
-                        onDeepLinkConsumed = { deepLinkViewModel.consume() },
-                        onOpenSettings = { showSettings = true },
-                    )
-                }
+                // «وام» در [PersistentTabs] زنده می‌ماند؛ این‌جا فقط مقصدِ خالی.
+                composable(LOAN_ROUTE) { Box(Modifier.fillMaxSize()) }
                 composable(CHEQUE_ROUTE) {
                     // شناسه از `PendingChequeDeepLink` می‌آید - هم تپِ ردیفِ سررسید و هم
                     // اعلانِ سررسیدِ چک از همین‌جا می‌گذرند، پس منطق یکی می‌ماند.

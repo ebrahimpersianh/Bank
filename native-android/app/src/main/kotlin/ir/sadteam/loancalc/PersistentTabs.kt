@@ -64,23 +64,28 @@ internal fun PersistentTabs(
     showGlobalSearchState: MutableState<Boolean>,
     showAllTransactionsState: MutableState<Boolean>,
     shortcutDrawerOpenState: MutableState<Boolean>,
+    deepLinkLoanId: Long?,
+    requestedLoanSubTabState: MutableState<LoanSubTab?>,
+    bottomBarVisibleState: MutableState<Boolean>,
 ) {
     var showSettings by showSettingsState
     var showInbox by showInboxState
     var showGlobalSearch by showGlobalSearchState
     var showAllTransactions by showAllTransactionsState
     var shortcutDrawerOpen by shortcutDrawerOpenState
+    val requestedLoanSubTab by requestedLoanSubTabState
+    var bottomBarVisible by bottomBarVisibleState
 
     val composed = remember { mutableStateListOf<String>() }
     LaunchedEffect(currentRoute) {
-        if (BottomTab.entries.any { it.route == currentRoute } && currentRoute !in composed) composed.add(currentRoute)
+        if ((currentRoute == LOAN_ROUTE || BottomTab.entries.any { it.route == currentRoute }) && currentRoute !in composed) composed.add(currentRoute)
     }
     LaunchedEffect(Unit) {
         // زیرِ اسپلش اجرا می‌شود (رجوع کن به AppRoot)؛ هر تب جدا و با فاصله تا فریم‌ها نپرند.
         delay(250)
-        for (t in BottomTab.entries) {
-            if (t.route !in composed) {
-                composed.add(t.route)
+        for (route in BottomTab.entries.map { it.route } + LOAN_ROUTE) {
+            if (route !in composed) {
+                composed.add(route)
                 delay(350)
             }
         }
@@ -168,7 +173,46 @@ internal fun PersistentTabs(
             }
         }
     }
+
+    // «وام» (صفحه‌ی پوش‌شده) هم زنده می‌ماند: پرداده‌ترین صفحه‌ی کاربر است و ساختنِ دوباره‌اش هر بار
+    // لحظه‌ی خالی می‌داد. بعد از بسته‌شدن، نسخه‌ی تازه‌اش در پس‌زمینه ساخته می‌شود تا دفعه‌ی بعد
+    // مثلِ قبل از «وام‌های من» شروع شود و آماده باشد.
+    val loanActive = currentRoute == LOAN_ROUTE
+    if (loanActive || LOAN_ROUTE in composed) {
+        key(LOAN_ROUTE) {
+            var loanKey by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+            val wasActive = remember { androidx.compose.runtime.mutableStateOf(false) }
+            LaunchedEffect(loanActive) {
+                if (loanActive) {
+                    wasActive.value = true
+                } else if (wasActive.value) {
+                    wasActive.value = false
+                    bottomBarVisible = true
+                    delay(400)
+                    loanKey++
+                }
+            }
+            TabLayer(feel = Motion.Feel.SOLID, dir = slideDir, active = loanActive) {
+                CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides (if (loanActive) (realOwner ?: dummyOwner) else dummyOwner)) {
+                    holder.SaveableStateProvider(LOAN_ROUTE) {
+                        key(loanKey) {
+                            LoanTab(
+                                onBack = { navigateTo(BottomTab.HOME.route) },
+                                requestedSubTab = requestedLoanSubTab,
+                                onManualAddFabPositioned = {},
+                                onBottomBarVisibilityChanged = { visible -> if (loanActive) bottomBarVisible = visible },
+                                deepLinkLoanId = deepLinkLoanId,
+                                onDeepLinkConsumed = { deepLinkViewModel.consume() },
+                                onOpenSettings = { showSettings = true },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
+
 
 /**
  * حرکتِ تعویضِ تب (برگشتِ انیمیشن‌های هر بخش، ۱۶ مهر): چون تب‌ها دیگر از `NavHost` نمی‌گذرند،
