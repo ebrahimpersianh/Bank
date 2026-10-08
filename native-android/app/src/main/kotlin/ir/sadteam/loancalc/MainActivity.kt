@@ -49,6 +49,8 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -343,15 +345,49 @@ private fun AppRoot(
     // فریمِ اولِ سیستمی عمداً بی‌نشان مانده (`splash_none`)، پس تنها چیزی که کاربر می‌بیند
     // همین است، نه یک تصویرِ بریده و بعد این.
     var introTimerDone by remember { mutableStateOf(false) }
-    if (!introTimerDone || onboardingDone == null || gateState == null) {
-        SplashIntroScreen(onDone = { introTimerDone = true })
-        return
-    }
-
+    // ۱۶ مهر (گزارشِ کاربر: «بارِ اولِ هر تب خالی می‌آید»): صفحه‌ی اصلی و پنج تبش **زیرِ اسپلش** ساخته
+    // می‌شوند و اسپلش تا آماده‌شدنشان می‌ماند (حداکثر ۶ ثانیه). `movableContentOf` همان
+    // کامپوزیشن را بی‌ساخت‌ِ دوباره از زیرِ اسپلش به صفحه‌ی اصلی منتقل می‌کند.
+    val app = remember { movableContentOf { AnimatedAppEntrance { LoanCalcApp() } } }
     val pinHash by appLockViewModel.pinHash.collectAsState()
     val biometricEnabled by appLockViewModel.biometricEnabled.collectAsState()
     val unlocked by appLockViewModel.unlocked.collectAsState()
     val securityEnabled = pinHash != null || biometricEnabled
+    val permissionContext = LocalContext.current
+    var permissionsOk by remember { mutableStateOf(permissionGateSatisfied(permissionContext)) }
+    val permissionGateSkipped by authViewModel.permissionGateSkipped.collectAsState()
+    val canWarm = onboardingDone == true &&
+        (gateState == GateState.GUEST || gateState == GateState.LOGGED_IN) &&
+        !(securityEnabled && !unlocked) &&
+        (permissionsOk || permissionGateSkipped == true) &&
+        !(gateState == GateState.LOGGED_IN && postLoginSheetsSeen == false)
+    var warmTimeout by remember { mutableStateOf(false) }
+    LaunchedEffect(canWarm) {
+        if (canWarm) {
+            kotlinx.coroutines.delay(6_000)
+            warmTimeout = true
+        }
+    }
+    val warmDone by TabWarmup.done
+    if (!introTimerDone || onboardingDone == null || gateState == null || (canWarm && !warmDone && !warmTimeout)) {
+        BackHandler(enabled = true) { }
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (canWarm) app()
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) awaitPointerEvent().changes.forEach { it.consume() }
+                        }
+                    },
+            ) {
+                SplashIntroScreen(onDone = { introTimerDone = true })
+            }
+        }
+        return
+    }
+
     if (securityEnabled && !unlocked) {
         LockScreen(
             pinHash = pinHash,
@@ -362,15 +398,6 @@ private fun AppRoot(
         return
     }
 
-    val permissionContext = LocalContext.current
-    // مقدارِ اولیه **هم‌زمان** خونده می‌شه، نه `false` - وگرنه هر بار باز شدنِ اپ یه فریم از
-    // صفحه‌ی مجوز فلش می‌زنه حتی وقتی کاربر قبلاً هر دو مجوز رو داده.
-    var permissionsOk by remember { mutableStateOf(permissionGateSatisfied(permissionContext)) }
-    // 🚨 هر دو مجوز اختیاری‌اند، ولی تا امروز راهی برای ردشدن نبود و این گیت **بن‌بست** بود:
-    // اندروید بعد از دو بار ردکردنِ اعلان دیالوگ را برای همیشه خاموش می‌کند و از آن لحظه
-    // کاربر اصلاً نمی‌توانست وارد برنامه‌ی خودش شود. ردکردن ذخیره می‌شود، وگرنه چون گیت هر
-    // بار باز شدنِ اپ ارزیابی می‌شود دوباره سرِ راه می‌آمد.
-    val permissionGateSkipped by authViewModel.permissionGateSkipped.collectAsState()
     if (!permissionsOk && permissionGateSkipped == false) {
         PermissionGateScreen(
             onAllGranted = { permissionsOk = true },
@@ -378,11 +405,8 @@ private fun AppRoot(
         )
         return
     }
-    // تا وقتی معلوم نیست کاربر این صفحه را قبلاً رد کرده، هیچ‌چیز نشان نده (چند میلی‌ثانیه).
     if (!permissionsOk && permissionGateSkipped == null) return
 
-    // این‌جا `onboardingDone`/`gateState` قطعاً non-nullن (گیتِ اسپلشِ بالا تضمینش می‌کنه)، پس دیگه
-    // شاخه‌ی «هنوز لود نشده» با صفحه‌ی خالیِ سفید لازم نیست.
     if (onboardingDone != true) {
         val onboardingNavVm: NavSlotsViewModel = hiltViewModel()
         OnboardingFlow(onFinished = {
@@ -421,7 +445,7 @@ private fun AppRoot(
             // تورِ راهنمای اولین ورود دیگه یه گیتِ جداگانه‌ی قبل از ورود نیست - کاربر خواستِ
             // «تو خود برنامه بگه کجا بری»، پس یه اورلیِ spotlight داخلِ خودِ LoanCalcApp
             // (رو المان‌های واقعیِ چیدمان) نشون داده می‌شه - رجوع کن به AppTourOverlay اونجا.
-            AnimatedAppEntrance { LoanCalcApp() }
+            app()
         }
     }
 }

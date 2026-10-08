@@ -12,6 +12,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
@@ -28,6 +29,11 @@ import ir.sadteam.loancalc.ui.nav.NavDestination
 import ir.sadteam.loancalc.ui.nav.NavSlotsViewModel
 import ir.sadteam.loancalc.ui.nav.NavSuggestionCard
 import kotlinx.coroutines.delay
+
+/** آیا هر پنج تب ساخته شده‌اند؟ اسپلش تا این `true` شدن (حداکثر ۶ ثانیه) می‌ماند. */
+internal object TabWarmup {
+    val done = mutableStateOf(false)
+}
 
 /**
  * 🧱 **تب‌های اصلی زنده می‌مانند** (۱۶ مهر، گزارشِ کاربر: «هر تب را می‌زنم اول صفحه خالی می‌آید»).
@@ -69,13 +75,16 @@ internal fun PersistentTabs(
         if (BottomTab.entries.any { it.route == currentRoute } && currentRoute !in composed) composed.add(currentRoute)
     }
     LaunchedEffect(Unit) {
-        delay(2500)
+        // زیرِ اسپلش اجرا می‌شود (رجوع کن به AppRoot)؛ هر تب جدا و با فاصله تا فریم‌ها نپرند.
+        delay(250)
         for (t in BottomTab.entries) {
             if (t.route !in composed) {
                 composed.add(t.route)
-                delay(900)
+                delay(350)
             }
         }
+        delay(250)
+        TabWarmup.done.value = true
     }
     val holder = rememberSaveableStateHolder()
     val realOwner = LocalOnBackPressedDispatcherOwner.current
