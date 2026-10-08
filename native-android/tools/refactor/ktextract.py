@@ -1,52 +1,113 @@
 #!/usr/bin/env python3
-"""Pull top-level blocks out of one giant @Composable into new composables, sharing state.
+"""Pull blocks out of one giant @Composable into new functions that share the same state.
 
-usage: ktextract.py SPEC.json
+usage:
+  ktextract.py SPEC.json            # apply
+  ktextract.py --scan SPEC.json     # only list, per block, which outer locals it captures
 
 SPEC = {
   "source": "path/Screen.kt",          # file holding the giant function
+  "function": "Screen",                # (for --scan) name of the giant function
   "target": "path/ScreenParts.kt",     # new file (created or appended)
   "states": {"name": "Type", ...},     # `var name by remember { mutableStateOf(..) }` locals to share
   "blocks": [
-    {"fn": "NewComposableName",
+    {"fn": "NewName",
      "start": "exact first line of the block (stripped)",
      "occurrence": 1,                  # optional: which match of `start`
-     "params": [["loan", "LoanEntity"], ...],          # read-only values, passed as-is
-     "states": ["photoRowM", ...]}                       # shared MutableState locals used inside
+     "inner": false,                   # true: move only what is inside the braces, keep the opener
+     "receiver": "BoxScope",           # optional receiver (BoxScope / ColumnScope / LazyItemScope ...)
+     "composable": true,               # false for LazyListScope DSL builders
+     "params": [["loan", "LoanEntity"], ["applyPayment", "(P) -> Unit", "::applyPayment"]],
+     "states": ["photoRowM"]}
   ]
 }
 
-How it stays behavior-identical:
+Why behavior cannot change:
 - Each shared `var x by remember(...) { mutableStateOf(...) }` becomes
-  `val xState = remember(...) { mutableStateOf(...) }` + `var x by xState`: same state object.
-- The extracted composable receives `xState: MutableState<T>` and starts with `var x by xState`,
-  so the moved block text is **verbatim** - every read and write hits the same state.
-- A block is the line matching `start` (at 4-space indent) through its matching `    }` line.
+  `val xState = remember(...) { mutableStateOf(...) }` + `var x by xState` - the same state object.
+- The new function receives `xState: MutableState<T>` and opens with `var x by xState`, so the moved
+  text is **verbatim**: every read and write still hits that one state object.
+- Read-only values and local functions are passed in as parameters with the same names.
 """
 import json
 import re
 import sys
 
-spec = json.load(open(sys.argv[1]))
+scan = sys.argv[1] == '--scan'
+spec = json.load(open(sys.argv[2] if scan else sys.argv[1]))
 src = spec['source']
 lines = open(src, encoding='utf-8').read().split('\n')
 
 
-def find_start(text, occ=1):
-    hits = [i for i, l in enumerate(lines) if l.strip() == text and l.startswith('    ') and not l.startswith('     ')]
+def indent_of(l):
+    return len(l) - len(l.lstrip(' '))
+
+
+def find_start(text, occ=1, line=None):
+    if line:  # exact 1-based line number (checked against `text`)
+        if lines[line - 1].strip() != text:
+            sys.exit(f'line {line} is not {text!r}: {lines[line - 1].strip()!r}')
+        return line - 1
+    hits = [i for i, l in enumerate(lines) if l.strip() == text]
     if len(hits) < occ:
         sys.exit(f'start not found: {text!r} (hits={len(hits)})')
     return hits[occ - 1]
 
 
 def find_end(i):
+    ind = indent_of(lines[i])
     for j in range(i + 1, len(lines)):
-        if lines[j] == '    }':
+        l = lines[j]
+        if not l.strip():
+            continue
+        st = l.strip()
+        # `) {` after a multi-line argument list opens the body - not the end
+        if indent_of(l) == ind and st[0] in '})' and not st.endswith('{'):
             return j
-        if lines[j] and lines[j][0] not in ' \t':
+        if indent_of(l) < ind and st[0] in '})':
             break
-    sys.exit(f'no end for block at line {i + 1}')
+    sys.exit(f'no end for block at line {i + 1}: {lines[i].strip()}')
 
+
+def scan_block(fn_name, i, j):
+    """Outer names a block uses: declarations of the enclosing function above the block."""
+    s = next(k for k, l in enumerate(lines) if re.match(r'^(internal |private )?fun ' + fn_name + r'\(', l))
+    decl = {}
+    k = s
+    while True:  # function parameters
+        for m in re.finditer(r'(\w+)\s*:', lines[k]):
+            decl.setdefault(m.group(1), ('param', k + 1, lines[k].strip()[:100]))
+        if lines[k].startswith(') {') or lines[k].startswith(')') or (k > s and lines[k].rstrip().endswith(') {')):
+            break
+        k += 1
+    ind = indent_of(lines[i])
+    for k in range(s, i):  # enclosing declarations above the block
+        l = lines[k]
+        if indent_of(l) > ind:
+            continue
+        for m in re.finditer(r'\b(?:val|var) (\w+)', l):
+            decl[m.group(1)] = ('local', k + 1, l.strip()[:110])
+        m = re.match(r'\s*fun (\w+)\(', l)
+        if m:
+            decl[m.group(1)] = ('fun', k + 1, l.strip()[:110])
+        m = re.search(r'\{\s*([\w, ]+)\s*->\s*$', l)
+        if m:
+            for n in m.group(1).split(','):
+                n = n.strip()
+                if n and n != '_':
+                    decl[n] = ('lambda', k + 1, l.strip()[:110])
+    body = '\n'.join(lines[i:j + 1])
+    return {n: d for n, d in decl.items() if re.search(r'(?<![\w.])' + re.escape(n) + r'\b', body)}
+
+
+if scan:
+    for b in spec['blocks']:
+        i = find_start(b['start'], b.get('occurrence', 1), b.get('line'))
+        j = find_end(i)
+        print(f"== {b['fn']}  lines {i + 1}-{j + 1}")
+        for n, (kind, ln, txt) in sorted(scan_block(spec['function'], i, j).items(), key=lambda x: x[1][1]):
+            print(f"   {n:28s} {kind:6s} {ln:5d}  {txt}")
+    sys.exit(0)
 
 # 1) state declarations -> shared MutableState
 decl_re = re.compile(r'^(\s*)var (\w+) by (remember(?:\([^)]*\))? \{ mutableStateOf.*\})\s*$')
@@ -65,31 +126,42 @@ if missing:
 # 2) cut blocks (locate all first, then cut bottom-up)
 located = []
 for b in spec['blocks']:
-    i = find_start(b['start'], b.get('occurrence', 1))
+    i = find_start(b['start'], b.get('occurrence', 1), b.get('line'))
     j = find_end(i)
-    located.append((i, j, b))
+    call_ind = indent_of(lines[i]) + (4 if b.get('inner') else 0)
+    if b.get('inner'):
+        i, j = i + 1, j - 1
+    located.append((i, j, b, call_ind))
 located.sort(key=lambda t: t[0], reverse=True)
 out_funcs = []
-for i, j, b in located:
+for i, j, b, call_ind in located:
     block = lines[i:j + 1]
     params = b.get('params', [])
     sts = b.get('states', [])
     sig = [f'    {p[0]}: {p[1]},' for p in params] + [f'    {s}State: MutableState<{state_types[s]}>,' for s in sts]
     head = [f'    var {s} by {s}State' for s in sts]
-    body = ['@Composable', f'internal fun {b["fn"]}(', *sig, ') {', *head, *block, '}']
+    recv = (b['receiver'] + '.') if b.get('receiver') else ''
+    ann = ['@Composable'] if b.get('composable', True) else []
+    body = [*ann, f'internal fun {recv}{b["fn"]}(', *sig, ') {', *head, *block, '}']
     out_funcs.append((i, body))
-    # third element = expression at the call site (e.g. `::applyPayment` for a local function)
     args = [f'{p[0]} = {p[2] if len(p) > 2 else p[0]}' for p in params] + [f'{s}State = {s}State' for s in sts]
-    call = ['    ' + b['fn'] + '('] + [f'        {a},' for a in args] + ['    )']
+    ind = ' ' * call_ind
+    call = [ind + b['fn'] + '('] + [f'{ind}    {a},' for a in args] + [ind + ')']
     lines[i:j + 1] = call
 out_funcs.sort(key=lambda t: t[0])
 
-# 3) write target: same package + all source imports (+ MutableState), then the functions
+# 3) write target: same package + needed source imports, then the functions
 src_text = '\n'.join(lines)
 pkg = next(l for l in lines if l.startswith('package '))
 imports = [l for l in lines if l.startswith('import ')]
 need = ['import androidx.compose.runtime.MutableState', 'import androidx.compose.runtime.getValue',
         'import androidx.compose.runtime.setValue', 'import androidx.compose.runtime.Composable']
+for b in spec['blocks']:
+    r = b.get('receiver')
+    if r in ('BoxScope', 'ColumnScope', 'RowScope'):
+        need.append(f'import androidx.compose.foundation.layout.{r}')
+    elif r in ('LazyItemScope', 'LazyListScope'):
+        need.append(f'import androidx.compose.foundation.lazy.{r}')
 for n in need:
     if n not in imports:
         imports.append(n)
@@ -115,7 +187,5 @@ if existing:
 else:
     out = pkg + '\n\n' + '\n'.join(kept) + '\n\n' + funcs_text + '\n'
 open(target, 'w', encoding='utf-8').write(out)
-if 'import androidx.compose.runtime.MutableState' not in src_text:
-    pass  # source only uses `val xState = remember{...}`, no explicit type needed
 open(src, 'w', encoding='utf-8').write(src_text)
 print(f'{src}: {len(src_text.splitlines())} lines; {target}: {len(out.splitlines())} lines; extracted {len(located)} blocks')

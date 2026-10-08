@@ -1,10 +1,6 @@
 package ir.sadteam.loancalc
 
-import ir.sadteam.loancalc.ui.components.guideTarget
 import ir.sadteam.loancalc.ui.subscription.SubscriptionExpiryReminder
-import ir.sadteam.loancalc.ui.theme.AppLine
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.animation.animateColorAsState
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -12,109 +8,38 @@ import android.os.Bundle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.BrightnessAuto
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.EventNote
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
-import androidx.compose.material.icons.outlined.Archive
-import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.BugReport
-import androidx.compose.material.icons.outlined.EditNote
-import androidx.compose.material.icons.outlined.Flag
-import androidx.compose.material.icons.outlined.TrendingDown
-import androidx.compose.material.icons.outlined.Handshake
-import androidx.compose.material.icons.outlined.UploadFile
-import androidx.compose.material.icons.outlined.CreditCard
-import androidx.compose.material.icons.outlined.MonetizationOn
-import androidx.compose.material.icons.outlined.Build
-import androidx.compose.material.icons.outlined.DateRange
-import androidx.compose.material.icons.outlined.PieChart
-import androidx.compose.material.icons.outlined.Assessment
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Apps
-import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.ManageSearch
-import androidx.compose.material.icons.outlined.ReceiptLong
-import androidx.compose.material.icons.outlined.AddCard
-import androidx.compose.material.icons.outlined.Storefront
-import androidx.compose.material.icons.outlined.AccountBalance
-import androidx.compose.material.icons.outlined.MarkEmailUnread
-import androidx.compose.material.icons.outlined.EventNote
-import androidx.compose.material.icons.outlined.Groups
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Payments
-import androidx.compose.material.icons.outlined.Savings
-import androidx.compose.material.icons.outlined.SwapHoriz
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -126,30 +51,16 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathOperation
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -159,7 +70,6 @@ import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
@@ -176,34 +86,14 @@ import ir.sadteam.loancalc.ui.account.SharedSmsDialog
 import ir.sadteam.loancalc.notifications.PendingTxDeepLink
 import ir.sadteam.loancalc.subscription.LocalSubscriptionManager
 import ir.sadteam.loancalc.subscription.SubscriptionManager
-import ir.sadteam.loancalc.ui.AffordScreen
-import ir.sadteam.loancalc.ui.BankLoanOutcome
-import ir.sadteam.loancalc.ui.BankLoanScreen
-import ir.sadteam.loancalc.ui.CalculatorHostScreen
-import ir.sadteam.loancalc.ui.DepositScreen
-import ir.sadteam.loancalc.ui.ResultScreen
-import ir.sadteam.loancalc.ui.accounting.AssetsScreen
-import ir.sadteam.loancalc.ui.accounting.BudgetScreen
-import ir.sadteam.loancalc.ui.accounting.ReportScreen
-import ir.sadteam.loancalc.ui.accounting.ReportTabScreen
-import ir.sadteam.loancalc.ui.asset.AssetsTabScreen
 import ir.sadteam.loancalc.ui.auth.AuthViewModel
 import ir.sadteam.loancalc.ui.auth.GateState
 import ir.sadteam.loancalc.ui.auth.LoginScreen
-import ir.sadteam.loancalc.ui.cheque.ChequeScreen
-import ir.sadteam.loancalc.ui.calendar.FinancialCalendarScreen
-import ir.sadteam.loancalc.ui.stats.StatsScreen
-import ir.sadteam.loancalc.ui.components.GradientButton
 import ir.sadteam.loancalc.ui.components.HeroChartStyle
 import ir.sadteam.loancalc.ui.components.LocalHeroChartStyle
 import ir.sadteam.loancalc.ui.components.LocalReducedMotion
-import ir.sadteam.loancalc.ui.components.Shortcut
 import ir.sadteam.loancalc.ui.components.ShortcutDrawer
-import ir.sadteam.loancalc.ui.components.ShortcutDrawerHandle
-import ir.sadteam.loancalc.ui.debt.DebtScreen
-import ir.sadteam.loancalc.ui.due.DueTabScreen
 import ir.sadteam.loancalc.ui.haptics.rememberBuzz
-import ir.sadteam.loancalc.ui.home.HomeScreen
 import ir.sadteam.loancalc.ui.myloans.MyLoansScreen
 import ir.sadteam.loancalc.ui.onboarding.AnimatedAppEntrance
 import ir.sadteam.loancalc.ui.onboarding.OnboardingFlow
@@ -216,9 +106,6 @@ import ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel
 import ir.sadteam.loancalc.ui.nav.NavDestination
 import ir.sadteam.loancalc.ui.nav.NavEditorSheet
 import ir.sadteam.loancalc.ui.nav.NavSlotsViewModel
-import ir.sadteam.loancalc.ui.note.NoteScreen
-import ir.sadteam.loancalc.ui.support.BugReportScreen
-import ir.sadteam.loancalc.ui.nav.NavSuggestionCard
 import ir.sadteam.loancalc.ui.profile.ShortcutViewModel
 import ir.sadteam.loancalc.ui.rating.RatePromptDialog
 import ir.sadteam.loancalc.ui.rating.RatePromptViewModel
@@ -226,13 +113,6 @@ import ir.sadteam.loancalc.ui.security.AppLockViewModel
 import ir.sadteam.loancalc.ui.security.LockScreen
 import ir.sadteam.loancalc.ui.settings.SettingsScreen
 import ir.sadteam.loancalc.ui.inbox.InboxScreen
-import ir.sadteam.loancalc.ui.goal.SavingsGoalScreen
-import ir.sadteam.loancalc.ui.category.CategoryManagementScreen
-import ir.sadteam.loancalc.ui.history.CalculationHistoryScreen
-import ir.sadteam.loancalc.ui.account.AccountsScreen
-import ir.sadteam.loancalc.ui.cheque.SayadInquiryScreen
-import ir.sadteam.loancalc.ui.tools.ToolsHubScreen
-import ir.sadteam.loancalc.ui.archive.AnnualArchiveScreen
 import ir.sadteam.loancalc.ui.theme.AppBg
 import ir.sadteam.loancalc.ui.theme.LocalAppColors
 import ir.sadteam.loancalc.ui.theme.AppPrimaryInkLight
@@ -240,26 +120,16 @@ import ir.sadteam.loancalc.ui.background.ArtTextureLayer
 import ir.sadteam.loancalc.ui.background.ArtTextureState
 import ir.sadteam.loancalc.ui.background.LiveBackgroundLayer
 import ir.sadteam.loancalc.ui.background.LiveBackgroundState
-import ir.sadteam.loancalc.ui.theme.AppDisabledText
-import ir.sadteam.loancalc.ui.theme.AppLabel
-import ir.sadteam.loancalc.ui.theme.AppLineRow
-import ir.sadteam.loancalc.ui.theme.AppMuted
 import ir.sadteam.loancalc.ui.theme.AppPrimary
-import ir.sadteam.loancalc.ui.theme.AppPrimaryDim
-import ir.sadteam.loancalc.ui.theme.AppPrimaryInk
-import ir.sadteam.loancalc.ui.theme.AppPrimaryBorder
-import ir.sadteam.loancalc.ui.theme.AppPrimaryPill
 import ir.sadteam.loancalc.ui.theme.AppRadius
 import ir.sadteam.loancalc.ui.theme.AppSurface
 import ir.sadteam.loancalc.ui.theme.AppText
-import ir.sadteam.loancalc.ui.theme.hardShadow
 import ir.sadteam.loancalc.ui.theme.ColorTheme
 import ir.sadteam.loancalc.ui.shop.ShopTrial
 import ir.sadteam.loancalc.data.coin.themeById
 import ir.sadteam.loancalc.ui.theme.LoanCalcTheme
 import ir.sadteam.loancalc.ui.theme.LocalThemeReveal
 import ir.sadteam.loancalc.ui.theme.Motion
-import ir.sadteam.loancalc.ui.theme.ThemeMode
 import ir.sadteam.loancalc.ui.theme.ThemeRevealHost
 import ir.sadteam.loancalc.ui.theme.ThemeRevealState
 import ir.sadteam.loancalc.ui.theme.ThemeViewModel
@@ -271,210 +141,6 @@ import ir.sadteam.loancalc.data.prefs.UiPrefs
 import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-// آیکون‌های نوار پایین: حالت عادی outline (مینیمال، مثل نسخه‌ی وب)، تب فعال پُر (filled).
-//
-// بازطراحیِ تب‌بندی (فازِ اولِ بازسازیِ جامع، رجوع کن به CLAUDE.md): قبلاً ۴ تبِ جدا (وام بانکی/
-// محاسبه‌گر/سود سپرده/وام‌های من) + حسابداری بودن. الان زیرِ یه تبِ واحدِ «وام» ادغام شدن (رجوع کن
-// به [LoanTab]/[LoanSubTab])، «چک» که قبلاً فقط زیرمجموعه‌ی تبِ وام بانکی/تنظیمات بود ترفیع گرفته
-// به تبِ مستقل، و دو تبِ کاملاً جدید («خانه»، «سررسید») اضافه شدن.
-//
-// دورِ دومِ بازطراحی (خواسته‌ی صریحِ کاربر: «تب‌های پایین دقیقاً مثل اون برنامه [رفرنس] باشه») - نوارِ
-// پایین دیگه «وام»/«چک»/«حسابداری» نداره؛ به‌جاش «دارایی»/«گزارش»/«بودجه» (دقیقاً هم‌الگو با
-// رفرنس). «وام» و «چک» دیگه تبِ بالانوارِ پایین نیستن - از تبِ «سررسید» (میان‌برهای «قسط و وام»/
-// «چک») به‌عنوانِ یه صفحه‌ی پوش‌شده (با دکمه‌ی برگشتِ خودشون - رجوع کن به [LOAN_ROUTE]/
-// [CHEQUE_ROUTE]) باز می‌شن. «حسابداری»ِ قبلی سه‌جا شد: لیستِ حساب‌ها/تراکنش‌ها → «دارایی»
-// (AssetsScreen)، گزارش‌گیری → تبِ مستقلِ «گزارش» (ReportScreen)، بودجه‌بندی → تبِ مستقلِ «بودجه»
-// (BudgetScreen). «پرداختِ تکراری» و «دسته‌بندی‌ها» هر دو رفتن زیرِ «بودجه» (رجوع کن به CLAUDE.md،
-// «تصمیمِ کاشیِ پرداختِ تکراری» - اول رفته بود زیرِ «سررسید»، بعداً از اونجا به اینجا منتقل شد).
-private enum class BottomTab(
-    val route: String,
-    val label: String,
-    val icon: ImageVector,
-    val selectedIcon: ImageVector,
-) {
-    HOME("home", "خانه", Icons.Outlined.Home, Icons.Filled.Home),
-    ASSETS("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, Icons.Filled.AccountBalanceWallet),
-    REPORT("report", "گزارش", Icons.Outlined.BarChart, Icons.Filled.BarChart),
-    BUDGET("budget", "بودجه", Icons.Outlined.Savings, Icons.Filled.Savings),
-    DUE("due", "سررسید", Icons.Outlined.EventNote, Icons.Filled.EventNote),
-}
-
-/** «وام» و «چک» دیگه تبِ نوارِ پایین نیستن (رجوع کن به کامنتِ بالای [BottomTab]) - این دو route
- * مستقیم به‌عنوانِ رشته تعریف شدن (نه عضوِ enumِ BottomTab) چون فقط از تبِ «سررسید»/«خانه» به‌عنوانِ
- * صفحه‌ی پوش‌شده باز می‌شن، تو نوارِ پایین رندر نمی‌شن. */
-/**
- * هشت میان‌برِ پیش‌فرضِ **کشوی میان‌بُر** - عیناً همون‌هایی که کارتِ `31b` نشون می‌ده.
- * ترتیبِ اینجا فقط پیش‌فرضه؛ ترتیبِ واقعی از [ShortcutViewModel] میاد.
- */
-private val defaultShortcuts = listOf(
-    Shortcut("expense", "ثبتِ خرج", Icons.Outlined.Payments, "home", locked = true),
-    Shortcut("transfer", "انتقال", Icons.Outlined.SwapHoriz, "assets"),
-    Shortcut("report", "گزارشِ ماه", Icons.Outlined.BarChart, "report"),
-    Shortcut("due", "سررسید", Icons.Outlined.EventNote, "due"),
-    Shortcut("cheque", "چک‌ها", Icons.Outlined.Description, "cheque"),
-)
-
-/**
- * **مخزنِ مقصدهای کشو** - ورودیِ حالتِ ویرایشِ فریمِ `53a`. هشتِ بالا انتخابِ پیش‌فرض‌اند،
- * این فهرست همه‌ی چیزهایی است که کاربر می‌تواند بینشان عوض کند.
- *
- * ⚠️ **فاصله‌ی آگاهانه با طرح**، عیناً همان دلیلِ [NavDestination]: فریم از «۱۴ مقصد» حرف
- * می‌زند و «پیام‌ها»/«هدفِ پس‌انداز»/«تقویم»/«سکه‌ها» را هم می‌شمرد؛ آن‌ها در `NavHost`ِ
- * فعلی مقصدِ ناوبری **نیستند**. با اضافه‌شدنِ هر route، فقط یک ردیف این‌جا اضافه می‌شود.
- */
-// 🚨 **هیچ دو میان‌بری نباید یک آیکون داشته باشند.** شش جفتِ تکراری بود (پرداخت،
-// کیفِ پول، نمودار، تقویم، سند، گروه) و کاربر دو خانه‌ی هم‌شکل می‌دید که از هم
-// تشخیص‌پذیر نبودند - فقط برچسبِ ریزِ زیرشان فرق داشت. ردیفِ تازه هم باید آیکونی
-// بردارد که در این فهرست نیست.
-/** ۱۴ مهر (خواسته‌ی کاربر): تکراریِ تب‌ها و موارد بی‌فایده در کشو نشان داده نمی‌شوند. */
-internal val hiddenShortcutIds = setOf("home", "loan", "assets", "shop", "inbox", "expense", "report", "budget", "gold", "transfer")
-
-internal val allShortcutPool = defaultShortcuts + listOf(
-    Shortcut("gold", "طلا", Icons.Outlined.MonetizationOn, "assets"),
-    Shortcut("budget", "بودجه", Icons.Outlined.Savings, "budget"),
-    // مقصدش «سررسید» بود و اشتباه: «دنگ» زیرصفحه‌ی `DebtScreen` است، پس تپ روی این
-    // میان‌بر کاربر را به تبِ سررسید می‌برد و هیچ‌وقت به دنگ نمی‌رساند.
-    Shortcut("debt", "دنگ", Icons.Outlined.Groups, DANG_ROUTE),
-    // خواسته‌ی کاربر (۱۳ مهر): «طلب و بدهی» پیدا نمی‌شد.
-    Shortcut("debts", "طلب و بدهی", Icons.Outlined.Handshake, DEBT_ROUTE),
-    Shortcut("loan", "وام", Icons.Outlined.CreditCard, LOAN_ROUTE),
-    Shortcut("home", "خانه", Icons.Outlined.Home, "home"),
-    Shortcut("assets", "دارایی", Icons.Outlined.AccountBalanceWallet, "assets"),
-    Shortcut("tools", "ابزارها", Icons.Outlined.Build, TOOLS_ROUTE),
-    Shortcut("calendar", "تقویم مالی", Icons.Outlined.DateRange, CALENDAR_ROUTE),
-    // خواسته‌ی کاربر (۳۱ شهریور): «تعدادِ میان‌برها را بیشتر کن». هر ردیفِ تازه باید
-    // یک routeِ **واقعیِ** NavHost داشته باشد، وگرنه میان‌بر به هیچ‌جا نمی‌رود.
-    Shortcut("loan-stats", "آمارِ وام", Icons.Outlined.PieChart, LOAN_STATS_ROUTE),
-    Shortcut("cheque-report", "گزارشِ چک", Icons.Outlined.Assessment, CHEQUE_REPORT_ROUTE),
-    Shortcut("archive", "آرشیوِ سالانه", Icons.Outlined.Archive, ANNUAL_ARCHIVE_ROUTE),
-    Shortcut("sayad", "استعلامِ صیادی", Icons.Outlined.Search, SAYAD_INQUIRY_ROUTE),
-    Shortcut("notes", "یادداشت‌ها", Icons.Outlined.EditNote, NOTES_ROUTE),
-    // 🐞 گزارشِ مشکل - هم این‌جا هم در تنظیمات (خواسته‌ی کاربر): باگ همیشه سرِ
-    // ناراحتی پیدا می‌شود، و آن لحظه کسی حوصله‌ی گشتن در تنظیمات را ندارد.
-    Shortcut("bug", "گزارشِ مشکل", Icons.Outlined.BugReport, BUG_REPORT_ROUTE),
-    // خواسته‌ی کاربر (۳۱ شهریور، دورِ دوم): «این‌جا را اگر می‌توانی بیشتر اضافه کن».
-    // هر شش مقصدِ زیر صفحه‌ی **واقعیِ** موجود بودند که تا حالا فقط از دلِ تنظیمات یا
-    // یک تب باز می‌شدند؛ این‌جا فقط `composable` گرفتند، صفحه‌ی تازه‌ای ساخته نشد.
-    Shortcut("savings-goal", "هدفِ پس‌انداز", Icons.Outlined.Flag, SAVINGS_GOAL_ROUTE),
-    Shortcut("categories", "دسته‌بندی‌ها", Icons.Outlined.Category, CATEGORIES_ROUTE),
-    Shortcut("accounts", "حساب‌های بانکی", Icons.Outlined.AccountBalance, ACCOUNTS_ROUTE),
-    Shortcut("shop", "فروشگاهِ سکه", Icons.Outlined.Storefront, SHOP_ROUTE),
-    Shortcut("inbox", "پیام‌ها", Icons.Outlined.MarkEmailUnread, INBOX_ROUTE),
-    Shortcut("calc-history", "تاریخچه‌ی محاسبات", Icons.Outlined.History, CALC_HISTORY_ROUTE),
-    // ۸ مهر (خواسته‌ی کاربر: «هر قابلیتی یک میان‌بر داشته باشد»).
-    Shortcut("add-account", "افزودنِ حساب", Icons.Outlined.AddCard, ADD_ACCOUNT_ROUTE),
-    Shortcut("bills", "قبض‌ها", Icons.Outlined.ReceiptLong, BILLS_ROUTE),
-    Shortcut("payoff", "تسویه‌ی بدهی‌ها", Icons.Outlined.TrendingDown, PAYOFF_ROUTE),
-    Shortcut("statement", "صورت‌حسابِ بانکی", Icons.Outlined.UploadFile, STATEMENT_ROUTE),
-    Shortcut("search", "جستجوی کلی", Icons.Outlined.ManageSearch, "search"),
-    Shortcut("settings", "تنظیمات", Icons.Outlined.Settings, "settings"),
-)
-
-private const val LOAN_ROUTE = "loan"
-
-/** نگاشتِ مسیر به حسِ حرکتِ بخشش - هر بخش حسِ خودش، درونِ بخش یکدست. */
-private fun feelOf(route: String?): Motion.Feel = when (route) {
-    "home", "shop" -> Motion.Feel.PLAYFUL
-    "assets", "accounts" -> Motion.Feel.FLOW
-    "report", "budget", "loan-stats", "cheque-report", "categories", "savings-goal", "annual-archive" -> Motion.Feel.INSIGHT
-    "loan", "cheque", "due", "debt", "financial-calendar", "sayad-inquiry" -> Motion.Feel.SOLID
-    else -> Motion.Feel.CALM
-}
-private const val CHEQUE_ROUTE = "cheque"
-private const val LOAN_STATS_ROUTE = "loan-stats"
-private const val CHEQUE_REPORT_ROUTE = "cheque-report"
-private const val DEBT_ROUTE = "debt"
-private const val DANG_ROUTE = "dang"
-private const val TOOLS_ROUTE = "tools"
-private const val SAYAD_INQUIRY_ROUTE = "sayad-inquiry"
-private const val ANNUAL_ARCHIVE_ROUTE = "annual-archive"
-private const val CALENDAR_ROUTE = "financial-calendar"
-private const val NOTES_ROUTE = "notes"
-private const val BUG_REPORT_ROUTE = "bug-report"
-private const val SAVINGS_GOAL_ROUTE = "savings-goal"
-private const val CATEGORIES_ROUTE = "categories"
-private const val ACCOUNTS_ROUTE = "accounts"
-private const val SHOP_ROUTE = "shop"
-private const val INBOX_ROUTE = "inbox"
-private const val CALC_HISTORY_ROUTE = "calc-history"
-private const val ADD_ACCOUNT_ROUTE = "accounts-add"
-private const val BILLS_ROUTE = "bills"
-private const val PAYOFF_ROUTE = "debt-payoff"
-private const val STATEMENT_ROUTE = "statement-import"
-
-/** زیرصفحه‌های داخلِ تبِ «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی. رجوع کن به [LoanTab]. */
-private enum class LoanSubTab(val label: String) {
-    // سه تب، طبقِ فریمِ `27a`. تبِ چهارمِ «بانکی» **حذف نشد، ادغام شد**: تصمیمِ کلاد دیزاین
-    // (۹ شهریور) این بود که با «محاسبه‌گر» یکی بشه و به‌جاش داخلِ همون تب یه سگمنتِ دوحالته
-    // بیاد - رجوع کن به [CalculatorHostScreen] و فریمِ `27f`.
-    MY_LOANS("وام‌های من"),
-    DEPOSIT("سپرده"),
-    CALCULATOR("محاسبه‌گر"),
-}
-
-// ترتیب/محتوای کاملِ تورِ راهنمای اولین ورود (AppTourOverlay) - رجوع کن به همون کامپوننت پایین‌تر
-// برای جزئیاتِ فنیِ اسپاتلایت. هر مرحله یه المانِ *واقعیِ* رو صفحه رو هدف می‌گیره (مختصاتش تو
-// tourBounds تو LoanCalcApp اندازه‌گیری می‌شه) - نه یه توضیحِ مستقلِ بدونِ هدف.
-private enum class TourTarget(val title: String, val hint: String) {
-    // ⚠️ قدم‌های «حالت خصوصی»/«تمِ روشن-تاریک»/«تنظیمات» حذف شدن: بعدِ بازطراحیِ Duolingo دیگه
-    // نوارِ بالای ثابتی وجود نداره که این سه آیکون توش بشینن (هر تب هدرِ خودشو داره، تم رفته
-    // داخلِ تنظیمات، و درِ ورودیِ تنظیمات آدمکِ هدرِ خانه‌ست). قدمِ توری که المانِ واقعی نداره
-    // فقط یه اسپاتلایتِ خالی می‌شه.
-    ASSETS(
-        "دارایی",
-        "حساب‌ها و تراکنش‌هات رو اینجا ثبت و پیگیری کن.",
-    ),
-    REPORT(
-        "گزارش",
-        "با فیلترِ حساب و بازه‌ی دلخواه، گزارشِ دخل‌وخرجت رو ببین و PDF/اکسل بگیر.",
-    ),
-    BUDGET(
-        "بودجه",
-        "برای هر دسته‌بندی یه سقفِ ماهانه بذار تا هزینه‌هات دستت باشه.",
-    ),
-
-    // جای راهنمای متنیِ زیرِ نوار. یک‌بار، همان‌جایی که کاربر تازه با نوار آشنا شده، و بعد
-    // دیگر هیچ‌وقت - به‌جای متنی که همیشه آن پایین بماند.
-    REORDER(
-        "نوار رو خودت بچین",
-        "روی هر دکمه‌ی نوارِ پایین نگه‌دار تا جایش رو عوض کنی - آخرین قدمِ تور!",
-    ),
-}
-
-// نگاشتِ TourTarget های تبی → BottomTab واقعی (برای این‌که AppTourOverlay بدونه با کدوم تب باید
-// هماهنگ بشه - هم گرفتنِ مختصات از BottomNavItem هم ناوبریِ خودکار). «وام»/«چک» دیگه تبِ نوارِ
-// پایین نیستن (رجوع کن به کامنتِ بالای BottomTab)، پس دیگه قدمِ تورِ مستقل ندارن.
-private fun TourTarget.asBottomTab(): BottomTab? = when (this) {
-    TourTarget.ASSETS -> BottomTab.ASSETS
-    TourTarget.REPORT -> BottomTab.REPORT
-    TourTarget.BUDGET -> BottomTab.BUDGET
-    // قدمِ «چیدمانِ نوار» روی خودِ خانه اسپاتلایت می‌شود: نوار همان‌جا هم هست و تبِ تازه‌ای
-    // باز نمی‌کند.
-    TourTarget.REORDER -> BottomTab.HOME
-    else -> null
-}
-
-/** مختصاتِ آیکونِ نوارِ پایینِ یه تب رو تویِ [tourBounds] برای قدمِ تورِ مربوط به همون تب ثبت
- * می‌کنه. */
-private fun registerTabTourBounds(
-    route: String,
-    rect: Rect,
-    tourBounds: MutableMap<TourTarget, Rect>,
-) {
-    // ⚠️ از **route** کلید می‌گیره نه از `BottomTab`، چون بعدِ بخشِ ۴۱ نوار دیگه لزوماً همون پنج
-    // تبِ ثابت نیست؛ تبی که کاربر برداشته باشه اصلاً رندر نمی‌شه و مختصاتش ثبت نمی‌شه (تور هم
-    // برای همون قدم به‌درستی چیزی اسپاتلایت نمی‌کنه، به‌جای اینکه یه مستطیلِ کهنه نشون بده).
-    when (route) {
-        BottomTab.ASSETS.route -> tourBounds[TourTarget.ASSETS] = rect
-        else -> {}
-    }
-    ir.sadteam.loancalc.ui.components.Guide.bounds["tab_$route"] = rect
-    when (route) {
-        BottomTab.REPORT.route -> tourBounds[TourTarget.REPORT] = rect
-        BottomTab.BUDGET.route -> tourBounds[TourTarget.BUDGET] = rect
-    }
-}
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
@@ -636,7 +302,6 @@ class MainActivity : FragmentActivity() {
         subscriptionManager.handleActivityResult(requestCode, resultCode, data)
     }
 }
-
 /**
  * پورت checkLoginGateOnStart تو www/index.html: اولین بار که اپ باز می‌شه (و هنوز نه لاگین کرده نه
  * «مهمان» رو انتخاب کرده) LoginScreen اجباریه؛ گیت هیچ‌وقت دوباره نشون داده نمی‌شه (نه بعد از ورود،
@@ -760,7 +425,6 @@ private fun AppRoot(
         }
     }
 }
-
 /**
  * پورت پنل تنظیمات اپ رقیب (VAMMAN): به‌جای این‌که کلاً صفحه‌ی فعلی رو با یه صفحه‌ی جدا جایگزین کنه
  * (return زودهنگام قبلی)، حالا یه overlay روی همون صفحه‌ست - یه scrim نیمه‌شفاف (تپ روش می‌بنده) +
@@ -769,19 +433,23 @@ private fun AppRoot(
  */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-private fun LoanCalcApp(
+internal fun LoanCalcApp(
     themeViewModel: ThemeViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
     privacyModeViewModel: PrivacyModeViewModel = hiltViewModel(),
     appUpdateViewModel: AppUpdateViewModel = hiltViewModel(),
     deepLinkViewModel: DeepLinkViewModel = hiltViewModel(),
 ) {
-    var showSettings by remember { mutableStateOf(false) }
+    val showSettingsState = remember { mutableStateOf(false) }
+    var showSettings by showSettingsState
     val openAdminSignal by ir.sadteam.loancalc.ui.admin.AdminSignals.openAdmin.collectAsState()
     LaunchedEffect(openAdminSignal) { if (openAdminSignal) showSettings = true }
-    var showInbox by remember { mutableStateOf(false) }
-    var showGlobalSearch by remember { mutableStateOf(false) }
-    var showAllTransactions by remember { mutableStateOf(false) }
+    val showInboxState = remember { mutableStateOf(false) }
+    var showInbox by showInboxState
+    val showGlobalSearchState = remember { mutableStateOf(false) }
+    var showGlobalSearch by showGlobalSearchState
+    val showAllTransactionsState = remember { mutableStateOf(false) }
+    var showAllTransactions by showAllTransactionsState
     val updateUrl by appUpdateViewModel.updateUrl.collectAsState()
     val appUpdateChanges by appUpdateViewModel.changelog.collectAsState()
     // تورِ راهنمای اولین ورود (پایین‌تر) - رجوع کن به رفعِ تداخلِ بنرِ آپدیت/تور: بنر فقط بعدِ تمومِ
@@ -855,7 +523,8 @@ private fun LoanCalcApp(
     // **انتخاب** جدا از **ترتیب** ذخیره می‌شه (فریمِ `53a`) - خالی یعنی کاربر هنوز چیزی
     // انتخاب نکرده، پس همون هشتِ پیش‌فرض می‌مونه، نه کشوی خالی.
     val savedShortcutSelection by shortcutViewModel.selection.collectAsState()
-    var shortcutDrawerOpen by remember { mutableStateOf(false) }
+    val shortcutDrawerOpenState = remember { mutableStateOf(false) }
+    var shortcutDrawerOpen by shortcutDrawerOpenState
     // ۱۴ مهر (خواسته‌ی کاربر): میان‌برهایی که فقط یک تبِ نوارِ پایین را باز می‌کردند («ثبتِ خرج»،
     // «گزارشِ ماه»، «انتقال»، «طلا»، «بودجه» و…) یک بار به «همه‌ی ابزارها» می‌روند و جایشان را
     // ابزارهای واقعی می‌گیرند. حذف نمی‌شوند و کاربر با نگه‌داشتن می‌تواند برشان گرداند.
@@ -888,7 +557,8 @@ private fun LoanCalcApp(
     // «وام‌های من» دیگه تبِ جداگانه‌ی خودش نیست، یه زیرصفحه‌ی داخلِ تبِ «وام»ه (رجوع کن به
     // [LoanTab]/[LoanSubTab]) - این state بهش می‌گه کدوم زیرصفحه رو باز کنه، مستقل از اینکه کاربر
     // خودش دستی رو کدوم زیرصفحه بوده.
-    var requestedLoanSubTab by remember { mutableStateOf<LoanSubTab?>(null) }
+    val requestedLoanSubTabState = remember { mutableStateOf<LoanSubTab?>(null) }
+    var requestedLoanSubTab by requestedLoanSubTabState
 
     // زدنِ نوتیفیکیشنِ یادآوریِ قسط (مورد ۵) - رجوع کن به کامنتِ DeepLinkTarget. اگه رو تبِ «وام»
     // نیستیم، اول باید بریم اونجا و زیرصفحه‌ی «وام‌های من» رو باز کنیم؛ خودِ بازکردنِ وامِ خاص تو
@@ -993,7 +663,8 @@ private fun LoanCalcApp(
     // الان زیرصفحه‌ی داخلِ تبِ «وام»ه (نه یه route جدا)، ریست‌شدنِ موقعِ تغییرِ تبِ اصلی اینجا کافیه؛
     // ریست‌شدنِ موقعِ سوییچِ بینِ زیرصفحه‌ها (مثلاً «وام‌های من» ← «بانکی») تو خودِ [LoanTab] انجام
     // می‌شه.
-    var bottomBarVisible by remember { mutableStateOf(true) }
+    val bottomBarVisibleState = remember { mutableStateOf(true) }
+    var bottomBarVisible by bottomBarVisibleState
     LaunchedEffect(currentRoute) {
         if (currentRoute != LOAN_ROUTE) bottomBarVisible = true
     }
@@ -1115,63 +786,15 @@ private fun LoanCalcApp(
                 // برای `Scaffold` نگه می‌داشت و روی اسکرولِ سریع یک نوارِ سفیدِ موقت می‌ساخت.
                 // `shrinkVertically` همان ارتفاع را هم‌قدمِ لغزش جمع می‌کند، پس جای خالی
                 // نمی‌مانَد.
-                AnimatedVisibility(
-                    visible = bottomBarVisible,
-                    enter = slideInVertically(tween(220)) { it } + expandVertically(tween(220)),
-                    exit = slideOutVertically(tween(180)) { it } + shrinkVertically(tween(180)),
-                ) {
-                    // 🎨 **نوارِ شناورِ گردگوشه** (طرحِ ChatGPT، ۲ مهر): سطحِ سفید با حاشیه‌ی ظریف و
-                    // سایه‌ی نرم، با فاصله از لبه‌ها؛ عرض همیشه `fillMaxWidth` منهای حاشیه، پس در
-                    // هیچ عرضی بیرون نمی‌زند. پنج خانه با وزنِ برابر.
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .padding(start = 12.dp, end = 12.dp, bottom = 1.dp),
-                    ) {
-                        val navShape = RoundedCornerShape(28.dp)
-                        // خواسته‌ی کاربر (۳ مهر): خطِ آبی **روی خودِ نوار** بنشیند، نه شناور بالایش.
-                        // ۱۴ مهر: ۱۲dp فضای لمسِ بالای نوار برای دستگیره - قبلاً فقط ۱۴dp روی لبه بود و گرفته نمی‌شد.
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier
-                                .padding(top = 12.dp)
-                                .fillMaxWidth()
-                                .shadow(12.dp, navShape, ambientColor = AppPrimary.copy(alpha = 0.25f), spotColor = AppPrimary.copy(alpha = 0.25f))
-                                .clip(navShape)
-                                .background(AppSurface)
-                                .border(1.dp, AppLine, navShape)
-                                .padding(start = 6.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                        // **بخشِ ۴۱**: دیگه `BottomTab.entries` نیست - چیدمان از [NavSlotsViewModel]
-                        // میاد. اسلاتِ ۰ همیشه «خانه»ست (قفلِ `41c`، تو `NavDestination.sanitize`).
-                        navSlots.forEach { dest ->
-                            BottomNavItem(
-                                dest = dest,
-                                selected = currentRoute == dest.route,
-                                onPositioned = { rect -> registerTabTourBounds(dest.route, rect, tourBounds) },
-                                onLongClick = { shortcutDrawerOpen = true },
-                                onClick = {
-                                    val tab = BottomTab.entries.firstOrNull { it.route == dest.route }
-                                    if (dest.route == currentRoute) {
-                                        if (tab != null) tabResetKeys[tab] = (tabResetKeys[tab] ?: 0) + 1
-                                    } else {
-                                        navigateTo(dest.route)
-                                    }
-                                },
-                            )
-                        }
-                        }
-                        // دستگیره‌ی کشوی میان‌بُر - کشیدنِ به بالا یا تپ بازش می‌کند (`31c`). باریک است
-                        // (۱۲۰dp) تا لمسِ بالای تب‌ها را نگیرد.
-                        if (!ir.sadteam.loancalc.ui.privacy.LocalSimpleMode.current) ShortcutDrawerHandle(
-                            onOpen = { shortcutDrawerOpen = true },
-                            modifier = Modifier.align(Alignment.TopCenter).width(150.dp).then(Modifier.guideTarget("shortcuts")),
-                        )
-                        }
-                    }
-                }
+                AppBottomBar(
+                    currentRoute = currentRoute,
+                    navSlots = navSlots,
+                    navigateTo = ::navigateTo,
+                    tabResetKeys = tabResetKeys,
+                    tourBounds = tourBounds,
+                    shortcutDrawerOpenState = shortcutDrawerOpenState,
+                    bottomBarVisibleState = bottomBarVisibleState,
+                )
             },
         ) { padding ->
             // ⚠️ **بخشِ ۴۱**: محتوا تو یه `Box` پیچیده شد تا ویرایشگرِ نوار بتونه **داخلِ همین
@@ -1209,198 +832,23 @@ private fun LoanCalcApp(
                     Motion.exitFor(feelOf(initialState.destination.route), slideDirection(initialState.destination.route, targetState.destination.route))
                 },
             ) {
-                composable(BottomTab.HOME.route) {
-                    key(tabResetKeys[BottomTab.HOME] ?: 0) {
-                        // route به‌عنوانِ رشته پاس داده می‌شه (نه خودِ enumِ BottomTab) چون
-                        // BottomTab تویِ همین فایلِ MainActivity.kt خصوصیه و HomeScreen تو یه
-                        // فایلِ جدا (ui/home/HomeScreen.kt) زندگی می‌کنه.
-                        HomeScreen(
-                            onNavigateToRoute = ::navigateTo,
-                            onOpenSettings = { showSettings = true },
-                            onOpenInbox = { showInbox = true },
-                            onOpenSearch = { showGlobalSearch = true },
-                            onOpenTransactions = { showAllTransactions = true },
-                            onOpenLoan = { deepLinkViewModel.openLoan(it) },
-                            // نوعِ صریح عمدیه: بدونش `let` لامبدا رو `() -> Unit`ِ ساده حساب
-                            // می‌کنه و به `@Composable () -> Unit` نمی‌خوره.
-                            navSuggestionSlot = navSuggestion?.let { suggestion ->
-                                @Composable {
-                                    NavSuggestionCard(
-                                        suggestion = suggestion,
-                                        currentSlots = navSlots,
-                                        onApply = { navSlotsViewModel.applySuggestion(suggestion) },
-                                        onEdit = {
-                                            navSlotsViewModel.snoozeSuggestion()
-                                            shortcutDrawerOpen = true
-                                        },
-                                        onDismiss = { navSlotsViewModel.dismissSuggestion(suggestion) },
-                                    )
-                                }
-                            },
-                        )
-                    }
-                }
-                composable(BottomTab.ASSETS.route) {
-                    // ⚠️ **بازنویسیِ فریمِ `26b`**: `AssetsScreen`ِ قدیمی دو نمای جدا با تاگل
-                    // بود؛ فریم یه صفحه‌ی پیوسته‌ست - رجوع کن به `ui/asset/AssetsTabScreen.kt`.
-                    key(tabResetKeys[BottomTab.ASSETS] ?: 0) { AssetsTabScreen() }
-                }
-                composable(BottomTab.REPORT.route) {
-                    // ⚠️ **بازنویسیِ فریمِ `26a`** - رجوع کن به `ui/accounting/ReportTabScreen.kt`.
-                    key(tabResetKeys[BottomTab.REPORT] ?: 0) {
-                        ReportTabScreen(
-                            onOpenLoanStats = { navigateTo(LOAN_STATS_ROUTE) },
-                            onOpenChequeReport = { navigateTo(CHEQUE_REPORT_ROUTE) },
-                        )
-                    }
-                }
-                composable(BottomTab.BUDGET.route) {
-                    key(tabResetKeys[BottomTab.BUDGET] ?: 0) { BudgetScreen() }
-                }
-                composable(BottomTab.DUE.route) {
-                    // ⚠️ **بازنویسیِ فریمِ `3a`** - رجوع کن به `ui/due/DueTabScreen.kt`.
-                    key(tabResetKeys[BottomTab.DUE] ?: 0) {
-                        DueTabScreen(
-                            onAddCheque = { navigateTo(CHEQUE_ROUTE) },
-                            onAddLoan = { navigateTo(LOAN_ROUTE) },
-                            // تپ روی ردیفِ چک همان چک را باز می‌کند. تپ روی ردیفِ
-                            // طلب‌وبدهی فعلاً خودِ صفحه را باز می‌کند، نه آن طرفِ‌حسابِ
-                            // مشخص - `DebtScreen` هیچ ورودیِ شناسه‌ای ندارد.
-                            onOpenCheque = { id ->
-                                deepLinkViewModel.openCheque(id)
-                                navigateTo(CHEQUE_ROUTE)
-                            },
-                            onOpenDebt = { id ->
-                                deepLinkViewModel.openDebt(id)
-                                navigateTo(DEBT_ROUTE)
-                            },
-                            // تپ رو ردیفِ قسط → همون وام تو «وام‌های من» باز می‌شه. از همون
-                            // مسیرِ دیپ‌لینکِ نوتیفیکیشن استفاده می‌کنه تا منطق یکی بمونه.
-                            onOpenLoan = { loanId -> deepLinkViewModel.openLoan(loanId) },
-                        )
-                    }
-                }
-                // «وام» و «چک» دیگه تبِ نوارِ پایین نیستن (رجوع کن به کامنتِ بالای BottomTab) - از
-                // تبِ «سررسید»/«خانه» به‌عنوانِ صفحه‌ی پوش‌شده باز می‌شن، پس خودشون یه دکمه‌ی
-                // برگشتِ واقعی لازم دارن (رجوع کن به onBack پایین).
-                composable(LOAN_ROUTE) {
-                    LoanTab(
-                        onBack = { navigateTo(BottomTab.HOME.route) },
-                        requestedSubTab = requestedLoanSubTab,
-                        onManualAddFabPositioned = {},
-                        onBottomBarVisibilityChanged = { visible -> bottomBarVisible = visible },
-                        deepLinkLoanId = deepLinkLoanId,
-                        onDeepLinkConsumed = { deepLinkViewModel.consume() },
-                        onOpenSettings = { showSettings = true },
-                    )
-                }
-                composable(CHEQUE_ROUTE) {
-                    // شناسه از `PendingChequeDeepLink` می‌آید - هم تپِ ردیفِ سررسید و هم
-                    // اعلانِ سررسیدِ چک از همین‌جا می‌گذرند، پس منطق یکی می‌ماند.
-                    val openId = deepLinkViewModel.pendingChequeId.collectAsState().value
-                    LaunchedEffect(openId) { if (openId != null) deepLinkViewModel.consumeCheque() }
-                    ChequeScreen(
-                        onBack = { navigateTo(BottomTab.HOME.route) },
-                        standalone = false,
-                        initialChequeId = openId,
-                    )
-                }
-                composable(LOAN_STATS_ROUTE) {
-                    StatsScreen(onBack = { navigateTo(BottomTab.REPORT.route) })
-                }
-                composable(CHEQUE_REPORT_ROUTE) {
-                    ChequeScreen(
-                        onBack = { navigateTo(BottomTab.REPORT.route) },
-                        standalone = false,
-                        initialReport = true,
-                    )
-                }
-                composable(DEBT_ROUTE) {
-                    val openCounterparty = deepLinkViewModel.pendingCounterpartyId.collectAsState().value
-                    LaunchedEffect(openCounterparty) {
-                        if (openCounterparty != null) deepLinkViewModel.consumeDebt()
-                    }
-                    DebtScreen(
-                        onBack = { navigateTo(BottomTab.DUE.route) },
-                        initialCounterpartyId = openCounterparty,
-                    )
-                }
-                composable(DANG_ROUTE) {
-                    DebtScreen(onBack = { navigateTo(BottomTab.HOME.route) }, startInDang = true)
-                }
-                composable(TOOLS_ROUTE) {
-                    ToolsHubScreen(
-                        onBack = { navigateTo(BottomTab.HOME.route) },
-                        onOpenArchive = { navigateTo(ANNUAL_ARCHIVE_ROUTE) },
-                        onOpenDeng = { navigateTo(DANG_ROUTE) },
-                        onOpenSayad = { navigateTo(SAYAD_INQUIRY_ROUTE) },
-                        onOpenNotes = { navigateTo(NOTES_ROUTE) },
-                    )
-                }
-                composable(NOTES_ROUTE) {
-                    NoteScreen(onBack = { navController.popBackStack() })
-                }
-                composable(BUG_REPORT_ROUTE) {
-                    BugReportScreen(onBack = { navigateTo(BottomTab.HOME.route) })
-                }
-                composable(SAVINGS_GOAL_ROUTE) {
-                    SavingsGoalScreen(onBack = { navigateTo(BottomTab.BUDGET.route) })
-                }
-                composable(CATEGORIES_ROUTE) {
-                    CategoryManagementScreen(onBack = { navigateTo(BottomTab.REPORT.route) })
-                }
-                composable(ACCOUNTS_ROUTE) {
-                    AccountsScreen(onBack = { navigateTo(BottomTab.ASSETS.route) })
-                }
-                composable(ADD_ACCOUNT_ROUTE) {
-                    AccountsScreen(onBack = { navigateTo(BottomTab.ASSETS.route) }, startInAddMode = true)
-                }
-                composable(STATEMENT_ROUTE) {
-                    ir.sadteam.loancalc.ui.account.StatementImportScreen(onBack = { navigateTo(BottomTab.ASSETS.route) })
-                }
-                composable(PAYOFF_ROUTE) {
-                    ir.sadteam.loancalc.ui.debt.DebtPayoffScreen(onBack = { navigateTo(LOAN_ROUTE) })
-                }
-                composable(BILLS_ROUTE) {
-                    ir.sadteam.loancalc.ui.extras.BillsScreen(onBack = { navigateTo(BottomTab.BUDGET.route) })
-                }
-                composable(SHOP_ROUTE) {
-                    // همان صفحه‌ی «فروشگاه/کیف» که از تنظیمات باز می‌شود (خواسته‌ی کاربر، ۷ مهر).
-                    val gamificationVm: ir.sadteam.loancalc.ui.profile.GamificationViewModel = hiltViewModel()
-                    ir.sadteam.loancalc.ui.coin.CoinHubScreen(
-                        onBack = { navigateTo(BottomTab.HOME.route) },
-                        todayHasEntry = gamificationVm.todayLogged.collectAsState().value,
-                        viewModel = gamificationVm,
-                    )
-                }
-                composable(INBOX_ROUTE) {
-                    InboxScreen(onBack = { navigateTo(BottomTab.HOME.route) }, onOpenShop = { navigateTo(SHOP_ROUTE) })
-                }
-                composable(CALC_HISTORY_ROUTE) {
-                    CalculationHistoryScreen(onBack = { navigateTo(LOAN_ROUTE) })
-                }
-                composable(SAYAD_INQUIRY_ROUTE) {
-                    SayadInquiryScreen(
-                        sayadId = null,
-                        onBack = { navigateTo(TOOLS_ROUTE) },
-                    )
-                }
-                composable(ANNUAL_ARCHIVE_ROUTE) {
-                    AnnualArchiveScreen(onBack = { navigateTo(TOOLS_ROUTE) })
-                }
-                composable(CALENDAR_ROUTE) {
-                    FinancialCalendarScreen(
-                        onBack = { navigateTo(BottomTab.HOME.route) },
-                        onOpenLoan = { loanId ->
-                            deepLinkViewModel.openLoan(loanId)
-                            navigateTo(LOAN_ROUTE)
-                        },
-                        onOpenCheque = { chequeId ->
-                            deepLinkViewModel.openCheque(chequeId)
-                            navigateTo(CHEQUE_ROUTE)
-                        },
-                    )
-                }
+                appRoutes(
+                    deepLinkViewModel = deepLinkViewModel,
+                    navController = navController,
+                    navSlotsViewModel = navSlotsViewModel,
+                    navSlots = navSlots,
+                    navSuggestion = navSuggestion,
+                    navigateTo = ::navigateTo,
+                    deepLinkLoanId = deepLinkLoanId,
+                    tabResetKeys = tabResetKeys,
+                    showSettingsState = showSettingsState,
+                    showInboxState = showInboxState,
+                    showGlobalSearchState = showGlobalSearchState,
+                    showAllTransactionsState = showAllTransactionsState,
+                    shortcutDrawerOpenState = shortcutDrawerOpenState,
+                    requestedLoanSubTabState = requestedLoanSubTabState,
+                    bottomBarVisibleState = bottomBarVisibleState,
+                )
             }
             if (navEditorOpen) {
                 NavEditorSheet(
@@ -1663,478 +1111,5 @@ private fun LoanCalcApp(
             }
         }
     }
-    }
-}
-
-/** قدم‌های راهنمای تعاملی؛ آخرش مرورِ سریعِ چند قابلیت (خواسته‌ی کاربر). */
-private fun guideSteps() = listOf(
-    ir.sadteam.loancalc.ui.components.GuideStep("tab_assets", "همه‌چیز از حساب شروع می‌شود", "روی «دارایی» بزن."),
-    ir.sadteam.loancalc.ui.components.GuideStep("add_account", "اولین حسابت را بساز", "روی + بزن، اسمِ حساب (نقدی، کارت یا بانک) و موجودیِ امروزش را بنویس و ذخیره کن."),
-    ir.sadteam.loancalc.ui.components.GuideStep("tab_home", "برگردیم خانه", "روی «خانه» بزن."),
-    ir.sadteam.loancalc.ui.components.GuideStep("add_tx", "اولین خرج یا درآمدت", "این دکمه را بزن و یک خرج یا درآمد ثبت کن؛ از حسابت کم یا به آن اضافه می‌شود."),
-    ir.sadteam.loancalc.ui.components.GuideStep(null, "ثبتِ خودکار با پیامکِ بانک", "اگر بخواهی خرج‌ها خودشان ثبت شوند: تنظیمات ← پیامک‌های بانکی. متنِ پیامک فقط روی گوشی خوانده می‌شود.", optional = true),
-    ir.sadteam.loancalc.ui.components.GuideStep("tab_loan", "وام‌ها و چک‌ها", "روی «وام» بزن؛ وام‌هایت را بگذار تا سررسیدِ هر قسط یادت بیاید.", optional = true),
-    ir.sadteam.loancalc.ui.components.GuideStep(null, "افزودنِ وام", "در «وام‌های من» با دکمه‌ی + وام را اضافه کن؛ پرداختِ هر قسط از حسابت کم می‌شود.", optional = true),
-    ir.sadteam.loancalc.ui.components.GuideStep("shortcuts", "همه‌ی ابزارها این‌جاست", "این دستگیره را بالا بکش یا بزن: چک، دنگ، قبض، تسویه‌ی بدهی و بقیه.", optional = true),
-    ir.sadteam.loancalc.ui.components.GuideStep(null, "بودجه و هشدار", "برای هر دسته سقفِ ماهانه بگذار؛ در ۸۰٪ خبرت می‌کنیم."),
-    ir.sadteam.loancalc.ui.components.GuideStep(null, "گزارش و دارایی", "نمودارِ خرج‌ها در «گزارش»؛ طلا، ارز و رمزارز با قیمتِ روز در «دارایی»."),
-    ir.sadteam.loancalc.ui.components.GuideStep(null, "چک، قبض، دنگ", "سررسیدِ چک و قبض یادآوری می‌شود؛ خرجِ مشترک را با دنگ تقسیم کن."),
-    ir.sadteam.loancalc.ui.components.GuideStep(null, "امن و همیشه همراه", "قفل با رمز یا اثرِ انگشت، حالتِ خصوصی، و ذخیره‌ی ابری روی هر گوشیِ تازه."),
-    ir.sadteam.loancalc.ui.components.GuideStep(null, "آماده‌ای! +۵۰ سکه", "۵۰ سکه‌ی جایزه به کیفت رفت (فقط بارِ اول). هر وقت خواستی این راهنما را از تنظیمات ← «راهنمای برنامه» دوباره ببین."),
-)
-
-/** جهت اسلاید تعویض تب (پورت محاسبه‌ی جهت switchTab تو www/index.html): تو RTL رفتن به تبِ با
- * ایندکس بالاتر یعنی حرکت به سمت چپ، پس صفحه‌ی جدید از چپ (آفست منفی) میاد تو؛ برگشتن برعکس. */
-private fun slideDirection(fromRoute: String?, toRoute: String?): Int {
-    val from = BottomTab.entries.indexOfFirst { it.route == fromRoute }
-    val to = BottomTab.entries.indexOfFirst { it.route == toRoute }
-    return if (to >= from) -1 else 1
-}
-
-/**
- * تورِ راهنمای اولین ورود، به‌صورتِ یه اورلیِ spotlight واقعی رو خودِ چیدمانِ اپ - نه یه صفحه‌ی
- * جدای قبل از ورود. یه لایه‌ی تیره‌ی نیمه‌شفاف کلِ صفحه رو می‌پوشونه با یه «سوراخِ» گردگوشه دقیقاً
- * دورِ هدفِ فعلی (از رو [bounds]، مختصاتِ واقعیِ اندازه‌گیری‌شده - نه حدسی)، + یه کارتِ توضیح که
- * همیشه بالای نوارِ تب می‌شینه (موقعیتش ثابته، فقط سوراخ جابه‌جا می‌شه). قدم‌هایی که رو یه تبِ
- * خاص زندگی می‌کنن (رجوع کن به [TourTarget.asBottomTab]) موقعِ رسیدن، [onStepChanged] رو صدا
- * می‌زنن تا LoanCalcApp خودش به همون تب ناوبری کنه - این‌جوری المانِ هدف (مثلاً دکمه‌ی افزودنِ
- * دستی که فقط رو تبِ «وام‌های من» وجود داره) همیشه واقعاً رندر و قابل‌اندازه‌گیریه. لمسِ هرجای
- * دیگه‌ی صفحه (به‌جز دکمه‌های خودِ کارت) قدمِ بعد رو فعال می‌کنه؛ آخرین قدم «متوجه شدم» تور رو تموم
- * می‌کنه.
- */
-@Composable
-private fun AppTourOverlay(
-    steps: List<TourTarget>,
-    bounds: Map<TourTarget, Rect>,
-    onStepChanged: (TourTarget) -> Unit,
-    onDone: () -> Unit,
-) {
-    var stepIndex by remember { mutableIntStateOf(0) }
-    val currentStep = steps.getOrNull(stepIndex) ?: return
-    LaunchedEffect(currentStep) { onStepChanged(currentStep) }
-    val rect = bounds[currentStep]
-    val isLastStep = stepIndex == steps.lastIndex
-    val advance: () -> Unit = { if (isLastStep) onDone() else stepIndex++ }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { advance() },
-        ) {
-            val scrimPath = Path().apply { addRect(Rect(Offset.Zero, size)) }
-            if (rect != null) {
-                val holePath = Path().apply {
-                    addRoundRect(RoundRect(rect.inflate(8f), CornerRadius(18f, 18f)))
-                }
-                scrimPath.op(scrimPath, holePath, PathOperation.Difference)
-            }
-            drawPath(scrimPath, color = Color.Black.copy(alpha = 0.72f))
-        }
-
-        Surface(
-            color = AppSurface,
-            shape = RoundedCornerShape(16.dp),
-            shadowElevation = 8.dp,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 20.dp, vertical = 110.dp),
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(currentStep.title, color = AppText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                Text(
-                    currentStep.hint,
-                    color = AppMuted,
-                    fontSize = 12.5.sp,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TextButton(onClick = onDone) {
-                        Text("رد کن", color = AppMuted, fontSize = 12.5.sp)
-                    }
-                    GradientButton(onClick = advance) {
-                        Text(if (isLastStep) "متوجه شدم" else "بعدی")
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * میزبانِ تبِ «محاسبه‌گر» - همون [BankLoanTab]ِ قبلی، ولی حالا [CalculatorHostScreen] رو
- * به‌جای [BankLoanScreen] تو حالتِ فرم می‌ذاره تا سگمنتِ دوحالته‌ی `27f` بالاش بشینه.
- * منطقِ فرم↔نتیجه و حفظِ حالتِ فرم عیناً همون قبلیه.
- */
-@Composable
-private fun CalculatorHostTab(
-    onAddManualLoan: () -> Unit = {},
-    startInInstallment: Boolean = false,
-    onLeaveInstallment: () -> Unit = {},
-) {
-    BankLoanTab(
-        useCalculatorHost = true,
-        onAddManualLoan = onAddManualLoan,
-        startInInstallment = startInInstallment,
-        onLeaveInstallment = onLeaveInstallment,
-    )
-}
-
-@Composable
-private fun BankLoanTab(
-    useCalculatorHost: Boolean = false,
-    onAddManualLoan: () -> Unit = {},
-    startInInstallment: Boolean = false,
-    onLeaveInstallment: () -> Unit = {},
-) {
-    var loanOutcome by remember { mutableStateOf<BankLoanOutcome?>(null) }
-    // نگه‌دارنده‌ی حالتِ ذخیره‌پذیر (SaveableStateHolder): وقتی loanOutcome پر می‌شه، BankLoanScreen
-    // کاملاً از کامپوزیشن بیرون می‌ره (جایگزینِ ResultScreen می‌شه) - remember/rememberSaveableِ
-    // معمولیِ توش با این کار پاک می‌شد (خواسته‌ی کاربر: «اگه اشتباه زده باشم باید از نو بزنم»).
-    // با پیچوندنِ BankLoanScreen تو SaveableStateProvider با یه کلیدِ ثابت، حالتِ rememberSaveableِ
-    // فیلدهاش (مبلغ/نرخ/ماه/تاریخ/بانکِ‌انتخابی) حتی بعدِ بیرون‌رفتن از کامپوزیشن حفظ می‌شه و با
-    // برگشتن (دکمه‌ی «ویرایش» تو ResultScreen) دوباره برمی‌گرده - نه از صفر.
-    val formStateHolder = rememberSaveableStateHolder()
-    // اسلاید جهت‌دار فرم→نتیجه (هم‌خانواده‌ی اسلاید تب‌های پایین): نتیجه از چپ میاد تو و فرم به
-    // راست می‌ره؛ برگشت به فرم برعکس - به‌جای fade+scale قبلی.
-    AnimatedContent(
-        targetState = loanOutcome,
-        transitionSpec = {
-            val dir = if (targetState != null) -1 else 1
-            (
-                slideInHorizontally(
-                    animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
-                ) { dir * it / 3 } + fadeIn(tween(220))
-                ).togetherWith(
-                    slideOutHorizontally(animationSpec = tween(180)) { -dir * it / 4 } + fadeOut(tween(150)),
-                )
-        },
-        label = "bankLoanTab",
-    ) { outcome ->
-        if (outcome == null) {
-            formStateHolder.SaveableStateProvider("bankLoanForm") {
-                if (useCalculatorHost) {
-                    CalculatorHostScreen(
-                        onCalculated = { loanOutcome = it },
-                        onAddManualLoan = onAddManualLoan,
-                        startInInstallment = startInInstallment,
-                        onLeaveInstallment = onLeaveInstallment,
-                    )
-                } else {
-                    BankLoanScreen(onCalculated = { loanOutcome = it }, onAddManualLoan = onAddManualLoan)
-                }
-            }
-        } else {
-            ResultScreen(
-                outcome = outcome,
-                // قرصِ منبعِ `68`/`69b`: حالا خودِ `BankLoanScreen` می‌گوید نرخ از سرور آمده
-                // («سرویسِ اعتباری») یا کاربر دستی زده («وامِ بانکی»).
-                sourceLabel = outcome.rateSourceLabel,
-                // ویرایش دیگه اینجا (BankLoanTab) مدیریت نمی‌شه - مورد ۴، ResultScreen خودش با
-                // یه پنلِ اینلاین ویرایش می‌کنه، دیگه نیازی به onEdit/برگشتن به فرم نیست.
-                // بعدِ ذخیره‌ی موفقِ وام، حالتِ ذخیره‌شده‌ی فرم (مبلغ/بانک/...) صریحاً پاک می‌شه -
-                // وگرنه فرم برای وامِ *بعدی* هنوز اعدادِ وامِ قبلاً ذخیره‌شده رو نشون می‌داد (باگِ
-                // گزارش‌شده‌ی کاربر: «ذخیره که می‌کنم بازم اعداد و بانک هستن»).
-                onNewCalculation = {
-                    formStateHolder.removeState("bankLoanForm")
-                    loanOutcome = null
-                },
-            )
-        }
-    }
-}
-
-/**
- * تبِ ادغام‌شده‌ی «وام» - جایگزینِ ۴ تبِ جداگانه‌ی قبلی (وام بانکی/محاسبه‌گر/سود سپرده/وام‌های من).
- * یه انتخابگرِ افقیِ ساده بالای صفحه بینِ چهار زیرصفحه‌ی موجود سوییچ می‌کنه - خودِ صفحه‌ها
- * ([BankLoanTab]/[AffordScreen]/[DepositScreen]/[MyLoansScreen]) دست‌نخورده می‌مونن.
- * [requestedSubTab] برای ناوبریِ خارجی (تور/نوتیفیکیشنِ دیپ‌لینک) استفاده می‌شه - وقتی مقدارش عوض
- * می‌شه، زیرصفحه‌ی متناظر باز می‌شه.
- */
-@Composable
-private fun LoanTab(
-    onBack: () -> Unit,
-    requestedSubTab: LoanSubTab?,
-    onManualAddFabPositioned: (Rect) -> Unit,
-    onBottomBarVisibilityChanged: (Boolean) -> Unit,
-    deepLinkLoanId: Long?,
-    onDeepLinkConsumed: () -> Unit,
-    onOpenSettings: () -> Unit = {},
-) {
-    var subTab by remember { mutableStateOf(LoanSubTab.MY_LOANS) }
-    // خواسته‌ی کاربر (۲۶ شهریور): دکمه‌ی «+»ِ «وام‌های من» دیگر مستقیم فرمِ دستی را باز نمی‌کند،
-    // **محاسبه‌گر** را باز می‌کند؛ و «افزودنِ وامِ دستی» به تهِ همان محاسبه‌گر رفت. این پرچم
-    // همان مسیرِ برگشت است: محاسبه‌گر می‌گوید «فرمِ دستی را باز کن» و تبِ «وام‌های من» بازش می‌کند.
-    var openManualAdd by remember { mutableStateOf(false) }
-    // «افزودنِ وام» در «وام‌های من» → فرمِ «قسط و سود»ِ تبِ محاسبه‌گر (۱۰ مهر).
-    var calcAddLoan by remember { mutableStateOf(false) }
-    // **فریمِ ۷۶**: جست‌وجو و «تحلیل درآمد» از داخلِ فهرست به دو آیکونِ هم‌ردیفِ عنوان آمدند،
-    // پس حالتشان این‌جاست و به [MyLoansScreen] پاس داده می‌شود. فقط در زیرتبِ «وام‌های من»
-    // معنی دارند.
-    var searchOpen by remember { mutableStateOf(false) }
-    LaunchedEffect(requestedSubTab) {
-        requestedSubTab?.let { subTab = it }
-    }
-    // نوارِ پایینِ تب‌ها (که فقط MyLoansScreen موقعِ اسکرول جمعش می‌کنه) باید موقعِ سوییچ به هر
-    // زیرصفحه‌ی دیگه‌ای دوباره نمایان بشه - چون از دیدِ ناوبریِ بیرونی، این سوییچ اصلاً route عوض
-    // نمی‌کنه که خودش این ریست رو انجام بده.
-    LaunchedEffect(subTab) {
-        if (subTab != LoanSubTab.MY_LOANS) onBottomBarVisibilityChanged(true)
-    }
-    // برگشتن از یه زیرصفحه‌ی غیرِ«بانکی» به «بانکی» (زیرصفحه‌ی پیش‌فرض) - قبل از رسیدن به
-    // BackHandlerِ بیرونیِ LoanCalcApp (که دیگه معنیش برگشتن به «خانه»ست). زیرصفحه‌های داخلیِ
-    // خودِ هر اسکرین (مثلاً جزئیاتِ وام تو MyLoansScreen) اولویتِ بالاتری دارن چون دیرتر رجیستر می‌شن.
-    BackHandler(enabled = subTab != LoanSubTab.MY_LOANS) { subTab = LoanSubTab.MY_LOANS }
-
-    // سربرگِ واحد (۸ مهر): جزئیاتِ وام سربرگِ خودش را دارد؛ دو فلشِ برگشت پشتِ‌هم گیج‌کننده بود.
-    var loanDetailOpen by remember { mutableStateOf(false) }
-    Column(modifier = Modifier.fillMaxSize()) {
-      if (!(subTab == LoanSubTab.MY_LOANS && loanDetailOpen)) {
-        // «وام» دیگه تبِ نوارِ پایین نیست (رجوع کن به کامنتِ بالای BottomTab تو این فایل) - چون از
-        // «سررسید»/«خانه» به‌عنوانِ صفحه‌ی پوش‌شده باز می‌شه، یه دکمه‌ی برگشتِ واقعی لازم داره.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = ir.sadteam.loancalc.ui.components.PageHeaderHeight)
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Filled.ArrowForward, contentDescription = "بازگشت", tint = ir.sadteam.loancalc.ui.theme.AppText)
-            }
-            // فریمِ `27a`: عنوانِ ۱۸ با وزنِ ۹۰۰، و دکمه‌ی افزودن سمتِ مقابل تو قابِ ۳۲ی سبز.
-            Text(
-                "وام",
-                color = AppText,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.weight(1f),
-            )
-            // فریمِ ۷۶a: دو آیکونِ ۳۲ی هم‌ردیفِ عنوان - **صفر پیکسل ارتفاعِ تازه**.
-            // ⚠️ انحراف از بندِ ۵ فریمِ `76c`: دکمه‌ی بازگشت **می‌مانَد**. طراح فرض کرده
-            // «وام» تبِ سطحِ اول است و نوارِ پایین جای برگشتن، ولی در این برنامه وام
-            // **تبِ نوارِ پایین نیست** - صفحه‌ای پوش‌شده از «خانه»/«سررسید» است، پس
-            // برداشتنِ دکمه تنها راهِ برگشت را به دکمه‌ی سخت‌افزاری محدود می‌کرد.
-            // چون در همان ردیف است، ارتفاعی هم اضافه نمی‌کند.
-            // ۸ مهر (خواسته‌ی کاربر): تنظیمات و تیره/روشن کنارِ جستجوی تبِ وام. ۹ مهر: جای جستجو و تنظیمات عوض شد.
-            // سربرگِ یکدست (۱۵ مهر): جستجو و چشمِ مبلغ (چپ‌ترین). تیره/روشن و تنظیمات از این‌جا رفتند:
-            // تنظیمات از آدمکِ صفحه‌ی خانه باز می‌شود و تیره/روشن در «تنظیمات ← ظاهرِ برنامه» است.
-            if (subTab == LoanSubTab.MY_LOANS) {
-                ir.sadteam.loancalc.ui.components.HeaderIconButton(
-                    icon = Icons.Filled.Search,
-                    description = "جست‌وجو در وام‌ها",
-                    active = searchOpen,
-                    onClick = { searchOpen = !searchOpen },
-                )
-            }
-            val loanPrivacyVm: ir.sadteam.loancalc.ui.privacy.PrivacyModeViewModel = hiltViewModel()
-            ir.sadteam.loancalc.ui.components.PrivacyEyeHeaderButton(
-                privacyMode = ir.sadteam.loancalc.ui.privacy.LocalPrivacyMode.current,
-                onToggle = { loanPrivacyVm.toggle() },
-            )
-        }
-        // حالتِ ساده: فقط «وام‌های من»، بی تب‌های سپرده/محاسبه‌گر.
-        if (!ir.sadteam.loancalc.ui.privacy.LocalSimpleMode.current) Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            // فریمِ `27a`: تبِ فعال یه **قرصِ سبزِ توپر با سایه‌ی سخت** و متنِ سفیده؛ بقیه فقط
-            // متنِ خاکستریِ بی‌زمینه‌ان. (نسخه‌ی قبلی هر چهارتا رو یه Surfaceِ کم‌آلفا می‌کرد.)
-            LoanSubTab.entries.forEach { entry ->
-                val selected = entry == subTab
-                val shape = RoundedCornerShape(999.dp)
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .then(
-                            if (selected) {
-                                Modifier
-                                    .hardShadow(AppPrimaryDim, offsetY = 3.dp, cornerRadius = 999.dp)
-                                    .clip(shape)
-                                    .background(AppPrimary)
-                            } else {
-                                Modifier.clip(shape)
-                            },
-                        )
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                        ) { calcAddLoan = false; subTab = entry }
-                        .padding(vertical = 6.dp, horizontal = 4.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        entry.label,
-                        color = if (selected) Color.White else AppMuted,
-                        fontSize = 10.sp,
-                        fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-        }
-      }
-        Box(modifier = Modifier.weight(1f)) {
-            when (subTab) {
-                LoanSubTab.CALCULATOR -> CalculatorHostTab(
-                    onAddManualLoan = {
-                        openManualAdd = true
-                        calcAddLoan = false
-                        subTab = LoanSubTab.MY_LOANS
-                    },
-                    startInInstallment = calcAddLoan,
-                    onLeaveInstallment = {
-                        calcAddLoan = false
-                        subTab = LoanSubTab.MY_LOANS
-                    },
-                )
-                LoanSubTab.DEPOSIT -> DepositScreen()
-                LoanSubTab.MY_LOANS -> MyLoansScreen(
-                    searchOpen = searchOpen,
-                    onOpenCalculator = {
-                        calcAddLoan = true
-                        subTab = LoanSubTab.CALCULATOR
-                    },
-                    openManualAddSignal = openManualAdd,
-                    onManualAddSignalConsumed = { openManualAdd = false },
-                    onManualAddFabPositioned = onManualAddFabPositioned,
-                    onBottomBarVisibilityChanged = onBottomBarVisibilityChanged,
-                    deepLinkLoanId = deepLinkLoanId,
-                    onDeepLinkConsumed = onDeepLinkConsumed,
-                    onDetailOpenChanged = { loanDetailOpen = it },
-                )
-            }
-        }
-    }
-}
-
-/**
- * آیکونِ ۳۲یِ هم‌ردیفِ عنوانِ تبِ وام - فریمِ `76a`.
- *
- * هدفِ لمسی ۴۴dp است ولی **قاب** ۳۲ - همان الگوی بندِ ۸ سیستمِ طراحی: فضای لمسی بزرگ‌تر
- * از فضای دیده‌شده. حالتِ فعال قرصِ سبز می‌گیرد تا کاربر بداند فیلد/کارتِ پایین مالِ
- * کدام دکمه است.
- */
-@Composable
-private fun LoanHeaderIcon(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    active: Boolean,
-    onClick: () -> Unit,
-) {
-    val shape = RoundedCornerShape(11.dp)
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(shape)
-                .background(if (active) AppPrimaryPill else AppSurface)
-                .border(1.5.dp, if (active) AppPrimaryBorder else AppLineRow, shape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                icon,
-                contentDescription = label,
-                tint = if (active) AppPrimaryInk else AppMuted,
-                modifier = Modifier.size(15.dp),
-            )
-        }
-    }
-}
-
-@Composable
-@OptIn(ExperimentalFoundationApi::class)
-private fun RowScope.BottomNavItem(
-    dest: NavDestination,
-    selected: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit = {},
-    onPositioned: (Rect) -> Unit = {},
-) {
-    // **بازطراحیِ سبکِ «جیبک»** - مقادیر مو‌به‌مو از کارتِ `15a`ی فایلِ طراحی (نه از حدس):
-    //   تبِ فعال    → قرصِ #E9F7EF پشتِ آیکون (۴۲×۲۸، گوشه‌ی ۱۱) · آیکونِ ۱۸ سبز · برچسبِ ۹٫۵/۹۰۰ سبز
-    //   تبِ غیرفعال → بدونِ قرص · آیکونِ ۱۸ خاکستری · برچسبِ ۹٫۵/۷۰۰ خاکستری
-    //   فاصله‌ی آیکون تا برچسب ۴ · عرضِ هر تب ۵۲ · پدینگِ نوار ۹×۶
-    //
-    // ⚠️ قرصِ پشتِ آیکون یه دورِ اشتباهاً حذف شده بود (فرضِ غلط: «طرح نشانگر نداره»). خودِ طرح
-    // داره - فقط به‌جای نشانگرِ **لغزنده**ی دورِ قبل، یه قرصِ ثابتِ پشتِ آیکونِ همون تبه.
-    // انتقالِ نرمِ ۲۲۰ms فقط روی رنگ‌ها و مقیاسِ خیلی جزئی - هیچ اندازه‌ای عوض نمی‌شود، پس
-    // نوار هنگامِ جابه‌جایی نمی‌لرزد.
-    val ink by animateColorAsState(if (selected) AppPrimaryInk else AppLabel, tween(220), label = "navInk")
-    val pill by animateColorAsState(if (selected) AppPrimaryPill else Color.Transparent, tween(220), label = "navPill")
-    val iconScale by animateFloatAsState(if (selected) 1.06f else 1f, tween(220), label = "navIconScale")
-    val dotAlpha by animateFloatAsState(if (selected) 1f else 0f, tween(220), label = "navDot")
-    val buzz = rememberBuzz()
-    Column(
-        modifier = Modifier
-            .weight(1f)
-            .padding(horizontal = 3.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(pill)
-            // **بخشِ ۴۱**: فشارِ طولانی رو هر خانه‌ی نوار، ویرایشگرِ چیدمان رو باز می‌کنه.
-            .combinedClickable(
-                onClick = { buzz(); onClick() },
-                onLongClick = { buzz(); onLongClick() },
-            )
-            .padding(top = 7.dp, bottom = 5.dp)
-            // مختصاتِ خودِ تب برای AppTourOverlay.
-            .onGloballyPositioned { coordinates -> onPositioned(coordinates.boundsInRoot()) },
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        // **بخشِ ۴۱**: عوض‌شدنِ مقصدِ خانه = «۱۸۰ms محو + scale .9→1»، نه جابه‌جاییِ افقی (`41c`).
-        AnimatedContent(
-            targetState = dest,
-            transitionSpec = {
-                (fadeIn(tween(180)) + scaleIn(tween(180), initialScale = 0.9f))
-                    .togetherWith(fadeOut(tween(180)))
-            },
-            label = "navIconSwap",
-        ) { current ->
-            Icon(
-                if (selected) current.selectedIcon else current.icon,
-                contentDescription = current.label,
-                tint = ink,
-                modifier = Modifier
-                    .size(22.dp)
-                    .graphicsLayer { scaleX = iconScale; scaleY = iconScale },
-            )
-        }
-        Text(
-            dest.label,
-            color = ink,
-            fontSize = 11.sp,
-            fontWeight = if (selected) FontWeight.Black else FontWeight.Bold,
-            maxLines = 1,
-            softWrap = false,
-            modifier = Modifier.padding(top = 4.dp),
-        )
-        // نقطه‌ی ریزِ زیرِ تبِ فعال (طرحِ مرجع). همیشه جا دارد و فقط شفافیتش عوض می‌شود.
-        Box(
-            modifier = Modifier
-                .padding(top = 2.dp)
-                .size(4.dp)
-                .graphicsLayer { alpha = dotAlpha }
-                .clip(CircleShape)
-                .background(AppPrimary),
-        )
-        // ⚠️ راهنمای «نگه‌دار برای چیدمان» از این‌جا **برداشته شد**. زیرِ تبِ فعال که
-        // می‌نشست، یعنی «همین یکی جابه‌جا می‌شود»، در حالی که نگه‌داشتن روی **هر** دکمه
-        // ویرایشگر را باز می‌کند - و ۷sp هم خواندنی نبود. حالا یک خطِ مشترک بالای
-        // کلِ نوار است.
     }
 }
