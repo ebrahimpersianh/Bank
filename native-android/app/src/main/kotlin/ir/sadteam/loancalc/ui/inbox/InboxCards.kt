@@ -651,21 +651,21 @@ internal fun TrashBinIcon(count: Int) {
     } else 0f
     // ۱۶ مهر: شمارنده روی درِ سطل می‌افتاد؛ حالا سطل در یک سمت و شمارنده در گوشه‌ی دیگر،
     // با حاشیه‌ی هم‌رنگِ پس‌زمینه تا مثلِ نشانِ واقعی دیده شود.
-    Box(Modifier.width(56.dp).height(40.dp)) { // ۱۶ مهر: پهن‌تر تا شمارنده کاملاً بیرونِ سطل بماند
+    Box(Modifier.width(42.dp).height(30.dp)) { // ۱۶ مهر: کوچک‌تر (خواسته‌ی کاربر) ولی شمارنده بیرونِ سطل می‌ماند
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(if (full) R.drawable.trash_full else R.drawable.trash_empty),
             contentDescription = "سطلِ زباله",
-            modifier = Modifier.size(34.dp).align(Alignment.BottomStart).graphicsLayer { rotationZ = wiggle * 6f },
+            modifier = Modifier.size(26.dp).align(Alignment.BottomStart).graphicsLayer { rotationZ = wiggle * 6f },
         )
         if (full) Box(
             Modifier.align(Alignment.TopEnd)
                 .offset(x = (-1).dp, y = 0.dp)
-                .defaultMinSize(minWidth = 18.dp, minHeight = 18.dp)
+                .defaultMinSize(minWidth = 15.dp, minHeight = 15.dp)
                 .border(1.5.dp, ir.sadteam.loancalc.ui.theme.AppSurface, androidx.compose.foundation.shape.CircleShape)
                 .clip(androidx.compose.foundation.shape.CircleShape)
                 .background(Color(0xFFE5484D))
                 .padding(horizontal = 4.dp),
             contentAlignment = Alignment.Center,
-        ) { Text(toFa(count), color = Color.White, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Black) }
+        ) { Text(toFa(count), color = Color.White, fontSize = 9.sp, lineHeight = 11.sp, fontWeight = FontWeight.Black) }
     }
 }

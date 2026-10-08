@@ -136,7 +136,14 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
     val jibak = news.filter { it.kind == InboxMessageEntity.Kind.ANNOUNCEMENT && visible(it) }
     // 🎁 هدیه‌ی خوانده‌نشده: با باز شدنِ صندوق، جشنش خودش باز می‌شود (۹ مهر، خواسته‌ی کاربر).
     var celebrate by remember { mutableStateOf<InboxMessageEntity?>(null) }
-    val firstGift = jibak.firstOrNull { isGift(it) && it.readAt == null }
+    // ۱۶ مهر (گزارشِ کاربر: «پیام‌های خوانده‌شده هی دوباره می‌آیند»): جشن فقط برای هدیه‌ی **تازه** (۳ روزِ اخیر)
+    // است. هدیه‌ی قدیمی‌تر که این‌جا خوانده‌نشده مانده (مثلاً بعد از نصبِ دوباره که حافظه‌ی محلی خالی است)
+    // بی‌صدا «خوانده» علامت می‌خورد؛ سکه‌اش هم قبلاً جدا داده شده (awardOnce).
+    val freshCut = System.currentTimeMillis() - 3L * 24 * 60 * 60 * 1000
+    val firstGift = jibak.firstOrNull { isGift(it) && it.readAt == null && it.createdAt >= freshCut }
+    androidx.compose.runtime.LaunchedEffect(jibak.map { it.id to it.readAt }) {
+        jibak.filter { isGift(it) && it.readAt == null && it.createdAt < freshCut }.forEach { viewModel.markRead(it.id) }
+    }
     androidx.compose.runtime.LaunchedEffect(firstGift?.id) { if (firstGift != null && celebrate == null) celebrate = firstGift }
     celebrate?.let { g ->
         GiftCelebration(g) { viewModel.markRead(g.id); celebrate = null }
@@ -230,17 +237,17 @@ fun InboxScreen(onBack: () -> Unit, onOpenShop: () -> Unit = {}, viewModel: Inbo
                             .clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
                             .background(ir.sadteam.loancalc.ui.theme.AppSurface)
                             .clickable(enabled = bin.isNotEmpty()) { binOpen = !binOpen }
-                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                            .padding(horizontal = 10.dp, vertical = 0.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         TrashBinIcon(count = bin.size)
-                        Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                            Text("سطلِ زباله", color = AppText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Column(Modifier.weight(1f).padding(start = 6.dp)) {
+                            Text("سطلِ زباله", color = AppText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             Text(
-                                if (bin.isEmpty()) "خالی است · تراکنش‌های ردشده ۳۰ روز این‌جا می‌مانند"
+                                if (bin.isEmpty()) "خالی · ردشده‌ها ۳۰ روز می‌مانند"
                                 else "${toFa(bin.size)} تراکنشِ ردشده · بزن تا ببینی",
                                 color = AppMuted,
-                                fontSize = 10.5.sp,
+                                fontSize = 9.5.sp,
                             )
                         }
                         if (bin.isNotEmpty()) Text(if (binOpen) "▴" else "▾", color = AppMuted, fontSize = 16.sp)
