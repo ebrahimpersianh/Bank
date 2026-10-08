@@ -68,12 +68,10 @@ object Motion {
      * «میاد جلو» به‌جای اینکه فقط ظاهر بشه.
      */
     val contentEnter: EnterTransition
-        get() = fadeIn(tween(FADE_IN_MS)) +
-            scaleIn(animationSpec = standard(), initialScale = 0.97f)
+        get() = fadeIn(tween(120), initialAlpha = 0.7f)
 
     val contentExit: ExitTransition
-        get() = fadeOut(tween(FADE_OUT_MS)) +
-            scaleOut(animationSpec = standard(), targetScale = 0.98f)
+        get() = fadeOut(tween(70))
 
     // ── تعویضِ صفحه (بخشِ حرکت، ۶ مهر) ──────────────────────────────────────────
     // یک زبان برای همه‌ی صفحه‌ها: ورود با فنرِ سنگینِ بی‌سرریز + محوشدن، خروج کوتاه‌تر و
@@ -93,10 +91,10 @@ object Motion {
 
     /** زیرصفحه‌ای که روی تب می‌نشیند (جزئیاتِ دارایی/حساب/وام): از لبه‌ی شروع (راست در RTL). */
     val subScreenEnter: EnterTransition
-        get() = slideInHorizontally(animationSpec = offset()) { -it / 3 } + fadeIn(tween(FADE_IN_MS))
+        get() = contentEnter
 
     val subScreenExit: ExitTransition
-        get() = slideOutHorizontally(animationSpec = tween(220)) { -it / 4 } + fadeOut(tween(FADE_OUT_MS))
+        get() = contentExit
 
     // ── حسِ هر بخش (۷ مهر، خواسته‌ی کاربر: «هر بخش حسِ خودش؛ درونِ هر بخش یکدست») ────────────
     /**
@@ -111,12 +109,9 @@ object Motion {
     // تعویضِ تب (۱۶ مهر، دورِ سوم): هیچ لغزش/بزرگ‌شدنی نیست؛ دو صفحه‌ی شفاف وقتی با هم می‌لغزیدند
     // روی هم می‌افتادند. حالا فقط یک محوِ خیلی کوتاه: قبلی در ۷۰ms می‌رود، تازه از ۰٫۷ پررنگ
     // در ۱۲۰ms می‌آید. `feel` و `dir` برای سازگاری با فراخوان‌ها مانده‌اند.
-    private const val ENTER_ALPHA = 0.7f
-    private const val EXIT_FADE_MS = 70
+    @Suppress("UNUSED_PARAMETER")
+    fun enterFor(feel: Feel, dir: Int): EnterTransition = contentEnter
 
     @Suppress("UNUSED_PARAMETER")
-    fun enterFor(feel: Feel, dir: Int): EnterTransition = fadeIn(tween(120), initialAlpha = ENTER_ALPHA)
-
-    @Suppress("UNUSED_PARAMETER")
-    fun exitFor(feel: Feel, dir: Int): ExitTransition = fadeOut(tween(EXIT_FADE_MS))
+    fun exitFor(feel: Feel, dir: Int): ExitTransition = contentExit
 }
