@@ -108,26 +108,14 @@ object Motion {
      */
     enum class Feel { PLAYFUL, FLOW, INSIGHT, SOLID, CALM }
 
-    private fun <T> bouncy(): FiniteAnimationSpec<T> = spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow)
-
-    // 🚨 «صفحه‌ی خالی» موقعِ تعویضِ تب (گزارشِ کاربر، ۱۶ مهر): صفحه‌ی قبلی ۱۴۰-۲۲۰ms محو می‌شد
-    // و صفحه‌ی تازه هم از شفافیتِ ۰ شروع می‌کرد؛ وسطِ راه هر دو نیمه‌شفاف بودند و فقط زمینه
-    // دیده می‌شد. حالا: ورود از شفافیتِ ۰٫۷ و لغزشِ کوتاه؛ خروج فقط محوِ سریع (پایین‌تر).
+    // تعویضِ تب (۱۶ مهر، دورِ سوم): هیچ لغزش/بزرگ‌شدنی نیست؛ دو صفحه‌ی شفاف وقتی با هم می‌لغزیدند
+    // روی هم می‌افتادند. حالا فقط یک محوِ خیلی کوتاه: قبلی در ۷۰ms می‌رود، تازه از ۰٫۷ پررنگ
+    // در ۱۲۰ms می‌آید. `feel` و `dir` برای سازگاری با فراخوان‌ها مانده‌اند.
     private const val ENTER_ALPHA = 0.7f
+    private const val EXIT_FADE_MS = 70
 
-    fun enterFor(feel: Feel, dir: Int): EnterTransition = when (feel) {
-        Feel.PLAYFUL -> scaleIn(animationSpec = bouncy(), initialScale = 0.92f) + fadeIn(tween(180), initialAlpha = ENTER_ALPHA) +
-            slideInHorizontally(animationSpec = offset()) { dir * it / 12 }
-        Feel.FLOW -> slideInHorizontally(animationSpec = spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessMediumLow)) { dir * it / 8 } +
-            fadeIn(tween(200), initialAlpha = ENTER_ALPHA)
-        Feel.INSIGHT -> fadeIn(tween(220), initialAlpha = ENTER_ALPHA) + scaleIn(animationSpec = heavy(), initialScale = 0.96f)
-        Feel.SOLID -> slideInHorizontally(animationSpec = heavy<IntOffset>()) { dir * it / 10 } + fadeIn(tween(FADE_IN_MS), initialAlpha = ENTER_ALPHA)
-        Feel.CALM -> fadeIn(tween(200), initialAlpha = ENTER_ALPHA)
-    }
-
-    // صفحه‌ی قبلی **سریع محو می‌شود** (۹۰ms) - بی این، صفحه‌ها پشتِ هم دیده می‌شدند (عکسِ کاربر، ۱۶ مهر).
-    // صفحه‌ی تازه از ۷۰٪ شروع می‌شود، پس فریمِ کاملاً خالی هم نمی‌آید.
-    private const val EXIT_FADE_MS = 90
+    @Suppress("UNUSED_PARAMETER")
+    fun enterFor(feel: Feel, dir: Int): EnterTransition = fadeIn(tween(120), initialAlpha = ENTER_ALPHA)
 
     @Suppress("UNUSED_PARAMETER")
     fun exitFor(feel: Feel, dir: Int): ExitTransition = fadeOut(tween(EXIT_FADE_MS))
