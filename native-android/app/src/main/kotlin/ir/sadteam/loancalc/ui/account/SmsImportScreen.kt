@@ -220,6 +220,7 @@ fun SmsImportScreen(
                         address = entry.key,
                         sample = entry.value.first().body,
                         count = entry.value.size,
+                        dateMs = entry.value.first().dateMs,
                         banky = entry.value.any { it.parsed != null },
                         ownerName = owner?.name,
                         onClick = {
@@ -386,6 +387,7 @@ private fun SenderRow(
     address: String,
     sample: String,
     count: Int,
+    dateMs: Long,
     banky: Boolean,
     ownerName: String?,
     onClick: () -> Unit,
@@ -458,10 +460,25 @@ private fun SenderRow(
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 4.dp),
                 )
+                // تاریخ و ساعتِ همین پیام (۱۶ مهر، خواسته‌ی کاربر).
+                Text(
+                    smsFullDateLabel(dateMs),
+                    color = AppMuted,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
             }
         }
     }
 }
+
+/** «۱۴۰۵/۷/۱۶ · ۱۵:۰۹» - تاریخِ جلالیِ کامل + ساعت. */
+private fun smsFullDateLabel(ms: Long): String = runCatching {
+    val zoned = java.time.Instant.ofEpochMilli(ms).atZone(java.time.ZoneId.systemDefault())
+    val j = ir.sadteam.loancalc.core.JalaliCalendar.fromGregorian(zoned.year, zoned.monthValue, zoned.dayOfMonth)
+    "${toFa(j.y)}/${toFa(j.m)}/${toFa(j.d)} · ${toFa(zoned.hour)}:${toFa(zoned.minute).padStart(2, '۰')}"
+}.getOrDefault("")
 
 /** طبقه‌ی دوم: یک پیامکِ همان فرستنده. بدونِ مبلغِ قابلِ‌خواندن، دکمه‌ی افزودن ندارد. */
 @Composable
